@@ -13,7 +13,14 @@ function SimpleFloatingEdge({ id, source, target, markerEnd, style, sourceHandle
     return null;
   }
 
-  const { sx, sy, tx, ty, sourcePos, targetPos } = getEdgeParams(sourceNode, targetNode);
+  const {
+    sx,
+    sy,
+    tx,
+    ty,
+    sourcePos,
+    targetPos
+  } = getEdgeParams(sourceNode, sourceHandleId, targetNode, targetHandleId);
 
   const d = getBezierPath({
     sourceX: sx,

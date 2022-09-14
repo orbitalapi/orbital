@@ -1,17 +1,18 @@
-import { Position } from 'react-flow-renderer';
+import { Position, Node } from 'react-flow-renderer';
 import { internalsSymbol } from 'react-flow-renderer';
+import { HandleIds } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
 
 // This whole file taken from : https://reactflow.dev/docs/examples/edges/simple-floating-edges/
 
 // returns the position (top,right,bottom or right) passed node compared to
-function getParams(nodeA, nodeB) {
+function getParams(nodeA: Node, nodeAHandleId: string, nodeB: Node): [number, number, Position] {
   const centerA = getNodeCenter(nodeA);
   const centerB = getNodeCenter(nodeB);
 
   const horizontalDiff = Math.abs(centerA.x - centerB.x);
   const verticalDiff = Math.abs(centerA.y - centerB.y);
 
-  const position =  centerA.x > centerB.x ? Position.Left : Position.Right;
+  const position = centerA.x > centerB.x ? Position.Left : Position.Right;
 
   // when the horizontal difference between the nodes is bigger, we use Position.Left or Position.Right for the handle
   // if (horizontalDiff > verticalDiff) {
@@ -21,19 +22,15 @@ function getParams(nodeA, nodeB) {
     // position = centerA.y > centerB.y ? Position.Top : Position.Bottom;
   // }
 
-  const [x, y] = getHandleCoordsByPosition(nodeA, position);
+  const [x, y] = getHandleCoordsByPosition(nodeA, nodeAHandleId, position);
   return [x, y, position];
 }
 
-function getHandleCoordsByPosition(node, handlePosition) {
-  // all handles are from type source, that's why we use handleBounds.source here
-  const defaultHandle = node[internalsSymbol].handleBounds.source[0];
-  // Look for the preferred handle.
-  // However, not all node types have handles on both LHS and RHS.
-  // In that case, fall back to the default (which is whatever we have to work with)
+function getHandleCoordsByPosition(node: Node, handleId: string, handlePosition: Position.Left | Position.Right) {
+  const handleIdWithPosition = HandleIds.appendPositionToHandleId(handleId, handlePosition);
   const handle = node[internalsSymbol].handleBounds.source.find(
-    (h) => h.position === handlePosition
-  ) || defaultHandle;
+    (h) => h.id === handleIdWithPosition
+  );
 
 
   // Default size, in case we haven't yet measured.
@@ -51,12 +48,6 @@ function getHandleCoordsByPosition(node, handlePosition) {
     case Position.Right:
       offsetX = handle.width;
       break;
-    case Position.Top:
-      offsetY = 0;
-      break;
-    case Position.Bottom:
-      offsetY = handle.height;
-      break;
   }
 
   const x = node.positionAbsolute.x + handle.x + offsetX;
@@ -73,9 +64,9 @@ function getNodeCenter(node) {
 }
 
 // returns the parameters (sx, sy, tx, ty, sourcePos, targetPos) you need to create an edge
-export function getEdgeParams(source, target) {
-  const [sx, sy, sourcePos] = getParams(source, target);
-  const [tx, ty, targetPos] = getParams(target, source);
+export function getEdgeParams(source: Node, sourceHandleId: string, target: Node, targetHandleId: string) {
+  const [sx, sy, sourcePos] = getParams(source, sourceHandleId, target);
+  const [tx, ty, targetPos] = getParams(target, targetHandleId, source);
 
   return {
     sx,

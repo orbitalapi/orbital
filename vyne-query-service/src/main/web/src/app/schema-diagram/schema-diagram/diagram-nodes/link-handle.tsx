@@ -1,31 +1,30 @@
 import { Handle, Node, Position } from 'react-flow-renderer';
-import { Link, MemberWithLinks } from '../schema-chart-builder';
-import { HandleType } from 'react-flow-renderer/dist/esm/types/handles';
+import { HandleIds, Link, MemberWithLinks } from '../schema-chart-builder';
 import * as React from 'react';
 
 export interface LinkHandleProps {
   node: Node<MemberWithLinks>,
   links: Link[],
-  handleType: HandleType
-  handleId? : string
+  position: Position.Right | Position.Left,
+  handleId?: string
 }
 
 export function LinkHandle(props: LinkHandleProps) {
   if (!props.links || props.links.length === 0) {
     return <></>
   }
-  const thisHandleId = props.handleType === 'source' ? props.links[0].sourceHandleId : props.links[0].targetHandleId;
-  const position = (props.handleType === 'source') ? Position.Right : Position.Left;
+  const handleId = props.node.id === props.links[0].sourceNodeId ? props.links[0].sourceHandleId : props.links[0].targetHandleId;
+  const handleIdWithSide = HandleIds.appendPositionToHandleId(handleId, props.position);
 
   function clickHandler(handleId: string) {
     if (!props.links || props.links.length === 0) {
     }
     const controller = props.node.data.chartController;
-    controller.appendNodesAndEdgesForLinks(props.node, props.links, position);
+    controller.appendNodesAndEdgesForLinks(props.node, props.links, props.position);
   }
 
-  return <Handle type={'source'} position={position}
-                 id={thisHandleId}
-                 key={thisHandleId}
+  return <Handle type={'source'} position={props.position}
+                 id={handleIdWithSide}
+                 key={handleIdWithSide}
                  onClick={clickHandler}></Handle>
 }

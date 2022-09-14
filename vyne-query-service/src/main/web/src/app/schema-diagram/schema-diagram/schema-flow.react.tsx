@@ -48,8 +48,6 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   const [awaitingLayout, setAwaitingLayout] = useState(false);
   const updateNodeInternals = useUpdateNodeInternals();
 
-  const nodes$ = useNodes();
-
   useEffect(() => {
     const subscription = props.requiredMembers$.subscribe(event => {
       const [schema, requiredMembers] = event;
@@ -77,11 +75,6 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
       subscription.unsubscribe();
     }
   });
-
-  useEffect(() => {
-    console.log('nodes: ', nodes$);
-  }, [nodes$])
-
 
   function ensureMemberPresentByName(typeName: string, relativePosition: RelativeNodePosition | null = null, schema: Schema = this.currentSchema): Node<MemberWithLinks> {
     if (this.currentSchema === null) {

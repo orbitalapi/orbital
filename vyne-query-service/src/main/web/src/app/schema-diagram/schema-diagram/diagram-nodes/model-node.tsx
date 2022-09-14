@@ -1,14 +1,16 @@
 import * as React from 'react';
-import { Node } from 'react-flow-renderer';
+import { Node, Position } from 'react-flow-renderer';
 import { Type } from '../../../services/schema';
 import { SchemaNodeContainer } from './schema-node-container';
-import { MemberWithLinks, ModelLinks } from '../schema-chart-builder';
+import { collectLinks, MemberWithLinks, ModelLinks } from '../schema-chart-builder';
 import { LinkHandle } from './link-handle';
 
 function ModelNode(node: Node<MemberWithLinks>) {
 
   const type: Type = node.data.member.member as Type;
   const links: ModelLinks = node.data.links as ModelLinks;
+
+  const modelLinks = links.inputs.concat(links.outputs);
 
   return (
     <SchemaNodeContainer>
@@ -20,27 +22,27 @@ function ModelNode(node: Node<MemberWithLinks>) {
         <tr className={'member-name'}>
           <th colSpan={2}>
             <div className={'handle-container'}>
-              <LinkHandle node={node} links={links.inputs} handleType={'target'} handleId={'lhs'}></LinkHandle>
+              <LinkHandle node={node} links={modelLinks} position={Position.Left}></LinkHandle>
               {node.data.member.name.shortDisplayName}
-              <LinkHandle node={node} links={links.outputs} handleType={'source'} handleId={'rhs'}></LinkHandle>
+              <LinkHandle node={node} links={modelLinks} position={Position.Right}></LinkHandle>
             </div>
           </th>
         </tr>
         </thead>
         <tbody>
         {Object.keys(type.attributes).map(fieldName => {
-          const fieldLinks = links.attributeLinks[fieldName];
+          const fieldLinks = collectLinks(links.attributeLinks[fieldName]);
           return <tr key={'field-' + fieldName}>
             <td>
               <div className={'handle-container'}>
                 {fieldName}
-                <LinkHandle node={node} links={fieldLinks?.inputs} handleType={'target'}></LinkHandle>
+                <LinkHandle node={node} links={fieldLinks} position={Position.Left}></LinkHandle>
               </div>
             </td>
             <td>
               <div className={'handle-container'}>
                 {type.attributes[fieldName].type.shortDisplayName}
-                <LinkHandle node={node} links={fieldLinks?.outputs} handleType={'source'}></LinkHandle>
+                <LinkHandle node={node} links={fieldLinks} position={Position.Right}></LinkHandle>
               </div>
             </td>
           </tr>

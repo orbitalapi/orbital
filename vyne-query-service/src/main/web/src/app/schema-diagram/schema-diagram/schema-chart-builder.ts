@@ -11,7 +11,7 @@ import {
   Type
 } from '../../services/schema';
 import { NodeType } from './schema-flow.react';
-import { Node, XYPosition } from 'react-flow-renderer';
+import { Node, XYPosition, Position } from 'react-flow-renderer';
 import { SchemaChartController } from './schema-chart.controller';
 import { splitOperationQualifiedName } from '../../service-view/service-view.component';
 
@@ -28,7 +28,10 @@ export interface Links {
   outputs: Link[];
 }
 
-export function collectLinks(links: Links): Link[] {
+export function collectLinks(links: Links | null): Link[] {
+  if (!links) {
+    return [];
+  }
   return links.inputs.concat(links.outputs);
 }
 
@@ -288,28 +291,39 @@ export interface MemberWithLinks {
 }
 
 
-class HandleIds {
+export class HandleIds {
   static modelOutbound(name: QualifiedName): string {
-    return `model-${name.fullyQualifiedName}-outbound`;
+    return `model-${name.fullyQualifiedName}`;
   }
 
   static modelInbound(name: QualifiedName): string {
-    return `model-${name.fullyQualifiedName}-inbound`;
+    return `model-${name.fullyQualifiedName}`;
   }
 
   static modelFieldInbound(modelName: QualifiedName, fieldName: string): string {
-    return `model-${modelName.fullyQualifiedName}-field-${fieldName}-inbound`;
+    return `model-${modelName.fullyQualifiedName}-field-${fieldName}`;
   }
 
   static modelFieldOutbound(modelName: QualifiedName, fieldName: string): string {
-    return `model-${modelName.fullyQualifiedName}-field-${fieldName}-outbound`;
+    return `model-${modelName.fullyQualifiedName}-field-${fieldName}`;
   }
 
   static serviceOperationInbound(serviceName: QualifiedName, operationName: QualifiedName): string {
-    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}-inbound`
+    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}`
   }
 
   static serviceOperationOutbound(serviceName: QualifiedName, operationName: QualifiedName): string {
-    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}-outbound`
+    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}`
+  }
+
+  static appendPositionToHandleId(handleId: string, position: Position): string {
+    // We need a consistent handle id, which is the one React Flow uses for referencing
+    // the handle within the node.
+    // However, we also need distinct ids for each handle.
+    // The handles themselves are floating, so each link can have multiple handles, each of
+    // which needs a unique id.
+    // To deal with this, we append a handleId for the RHS, but not the LHS.
+    // This is simple, and consistent
+    return position === Position.Right ? handleId + '-rhs' : handleId;
   }
 }

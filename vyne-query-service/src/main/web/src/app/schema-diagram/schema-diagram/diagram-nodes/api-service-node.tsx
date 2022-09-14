@@ -1,8 +1,8 @@
 import * as React from 'react';
-import { Node } from 'react-flow-renderer';
+import { Node, Position } from 'react-flow-renderer';
 import { Operation, QueryOperation, Service, StreamOperation, TableOperation } from '../../../services/schema';
 import { SchemaNodeContainer } from './schema-node-container';
-import { Links, MemberWithLinks, ServiceLinks } from '../schema-chart-builder';
+import { collectLinks, Links, MemberWithLinks, ServiceLinks } from '../schema-chart-builder';
 import { LinkHandle } from './link-handle';
 
 type OperationLike = Operation | QueryOperation | StreamOperation | TableOperation;
@@ -19,15 +19,20 @@ function ApiNode(node: Node<MemberWithLinks>) {
 
   function NoArgOperation(props: { operation: OperationLike, operationLinks: Links }) {
     const { operation, operationLinks } = props;
+    const links = collectLinks(operationLinks);
     return (<>
       <tr>
         <td colSpan={2} className="">
-          {operation.qualifiedName.shortDisplayName}
+          <div className={'handle-container'}>
+            <LinkHandle node={node} links={links} position={Position.Left}></LinkHandle>
+            {operation.qualifiedName.shortDisplayName}
+          </div>
+
         </td>
         <td>
           <div className={'handle-container'}>
             {operation.returnTypeName.shortDisplayName}
-            <LinkHandle node={node} links={operationLinks?.outputs} handleType={'source'}></LinkHandle>
+            <LinkHandle node={node} links={links} position={Position.Right}></LinkHandle>
           </div>
         </td>
       </tr>
@@ -36,6 +41,7 @@ function ApiNode(node: Node<MemberWithLinks>) {
 
   function OperationWithArgs(props: { operation: OperationLike, operationLinks: Links }) {
     const { operation, operationLinks } = props;
+    const links = collectLinks(operationLinks);
     return (<>
       <tr>
         <td colSpan={3} className="operation-name">
@@ -54,14 +60,14 @@ function ApiNode(node: Node<MemberWithLinks>) {
               return param.typeName.shortDisplayName
             }).join(', ')
             }
-            <LinkHandle node={node} links={operationLinks?.inputs} handleType={'target'}></LinkHandle>
+            <LinkHandle node={node} links={links} position={Position.Left}></LinkHandle>
           </div>
         </td>
         <td>{operation.parameters.length > 0 ? '→' : ''}</td>
         <td>
           <div className={'handle-container'}>
             {operation.returnTypeName.shortDisplayName}
-            <LinkHandle node={node} links={operationLinks?.outputs} handleType={'source'}></LinkHandle>
+            <LinkHandle node={node} links={links} position={Position.Right}></LinkHandle>
           </div>
         </td>
       </tr>

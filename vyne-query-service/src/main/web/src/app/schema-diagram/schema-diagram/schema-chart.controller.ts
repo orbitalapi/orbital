@@ -52,7 +52,6 @@ export class SchemaChartController {
     autoAppendLinks: boolean,
     layoutAlgo: 'full' | 'incremental'
   }): ChartBuildResult {
-    console.log('Performing chart rebuild');
     const builtNodesById = new Map<string, Node<MemberWithLinks>>();
 
     this.requiredMembers.map(member => {
