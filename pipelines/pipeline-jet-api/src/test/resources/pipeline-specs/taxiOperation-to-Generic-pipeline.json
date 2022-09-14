@@ -9,10 +9,10 @@
       "searchStartDate" : "$LAST_POLL_TIME"
     }
   },
-  "output" : {
+  "outputs" : [ {
     "type" : "Generic",
     "direction" : "OUTPUT"
-  },
+  } ],
   "id" : "Pipeline-PollingTaxiOperationInputSpec-to-GenericPipelineTransportSpec",
-  "description" : "From Fetch data from operation com.foo.bar.MyService / listAllUsers to Pipeline OUTPUT Generic"
+  "description" : "From Fetch data from operation com.foo.bar.MyService / listAllUsers to 1 outputs"
 }

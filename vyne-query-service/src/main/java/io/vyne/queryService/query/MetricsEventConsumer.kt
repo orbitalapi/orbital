@@ -75,6 +75,7 @@ class MetricsEventConsumer(val meterRegistry: MeterRegistry) : QueryEventConsume
                counterGraphSearch.increment(event.vyneQueryStatistics.graphSearchSuccessCount.toDouble())
                counterGraphBuild.increment(event.vyneQueryStatistics.graphCreatedCount.toDouble())
             }
+           else -> {}
         }
     }
 

@@ -19,6 +19,8 @@ import org.junit.Test
 import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest
@@ -113,6 +115,7 @@ class SqsInvokerTest {
          .builder()
          .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
          .region(Region.of(localstack.region))
+         .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("not-used", "not-used")))
          .build()
 
       val sqsQueue = sqsClient.createQueue(CreateQueueRequest.builder().queueName(sqsQueueName).build()).queueUrl()
@@ -125,6 +128,7 @@ class SqsInvokerTest {
          .builder()
          .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.SQS))
          .region(Region.of(localstack.region))
+         .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("not-used", "not-used")))
          .build()
 
       logger.info { "publising $messageBody to $sqsQueueUrl" }

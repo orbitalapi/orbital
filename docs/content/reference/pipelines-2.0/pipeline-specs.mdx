@@ -20,10 +20,10 @@ The high level format is as follows:
     "type" : "Generic", // The type of the source
     ... // other config here, as defined by the source type
   },
-  "outputs" : [{
+  "output" : {
       "type" : "Generic" // The type of the output
     ... // other config here, as defined by the output type
-  }],
+  },
 
 }
 ```
@@ -49,7 +49,7 @@ The following configuration parameters are available:
 |`bucket`|The bucket name|true||
 |`objectKey`|The name of the object in the S3 bucket - generally a file name|true||
 |`targetTypeName`|The name of the type that content from the S3 bucket should be consumed as|true||
-
+         
 
 #### Example
 
@@ -62,18 +62,17 @@ The following configuration parameters are available:
     "bucket" : "my-bucket",
     "objectKey" : "customers.csv",
     "targetTypeName" : "com.demo.customers.Customer",
-    "endPointOverride" : null,
     "targetType" : "com.demo.customers.Customer"
   }
 }
 ```
 
-### AWS S3 via Sqs
+### AWS S3 via SQS
 | Pipeline Type Key | Direction | Maturity |
 |-------------------|-----------|----------|
 | `awsS3`    | `INPUT` | Beta |
 
-A source that consumes a stream of S3 events via a preconfigured Sqs queue
+A source that consumes a stream of S3 events via a preconfigured SQS queue
 
 #### Parameters
 
@@ -84,8 +83,8 @@ The following configuration parameters are available:
 |`connection`|The name of the connection, as registered in Vyne's connection manager|true||
 |`targetTypeName`|The name of the type that content from the S3 bucket should be consumed as|true||
 |`queueName`|The name of the SQS queue|true||
-|`pollSchedule`|A cron expression that defines how frequently to check for new messages.  Defaults to every second|false||
-
+|`pollSchedule`|A cron expression that defines how frequently to check for new messages. Defaults to every second.|false||
+         
 
 #### Example
 
@@ -98,7 +97,6 @@ The following configuration parameters are available:
     "bucket" : "my-bucket",
     "objectKey" : "customers.csv",
     "targetTypeName" : "com.demo.customers.Customer",
-    "endPointOverride" : null,
     "targetType" : "com.demo.customers.Customer"
   }
 }
@@ -113,7 +111,7 @@ Invokes an operation (as defined or published to Vyne), on a periodic basis.
 
 Accepts inputs defined in the configuration, which will be passed to the service on invocation.
 The result of this operation is published downstream on the pipeline to be transformed to
-another type, and published to outputs.
+another type, and published to an output.
 
 #### Parameters
 
@@ -124,7 +122,7 @@ The following configuration parameters are available:
 |`operationName`|The name of the operation, as defined in the schema.  Should be in the format of a fully qualified operation name.  See the sample for an example|true||
 |`pollSchedule`|A [Spring-flavored cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this operation should be invoked.|true||
 |`parameterMap`|An optional map of parameters to pass to the operation|false||
-
+         
 
 #### Example
 
@@ -150,7 +148,7 @@ The following configuration parameters are available:
 Invokes a TaxiQL query on Vyne, on a periodic basis.
 
 The result of this query is published downstream on the pipeline to be transformed to
-another type, and published to outputs.
+another type, and published to an output.
 
 #### Parameters
 
@@ -160,7 +158,7 @@ The following configuration parameters are available:
 |---------|-----------|--------|-------------|
 |`query`|The query to be executed. See the sample for an example. |true||
 |`pollSchedule`|A [Spring-flavored cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this query should be invoked.|true||
-
+         
 
 #### Example
 
@@ -199,7 +197,7 @@ The following configuration parameters are available:
 |`connectionName`|The name of the connection, as registered in Vyne's connection manager|true||
 |`topic`|The name of the topic to consume from|true||
 |`targetTypeName`|The fully qualified name of the type that content should be read as.|true||
-
+         
 
 #### Example
 
@@ -237,17 +235,17 @@ The following configuration parameters are available:
 |Parameter|Description|Required|Default Value|
 |---------|-----------|--------|-------------|
 |`targetType`|The type that defines the cask containing this data|true||
-
+         
 
 #### Example
 
 ```json
 {
-  "outputs" : [{
+  "output" : {
     "type" : "cask",
     "direction" : "OUTPUT",
     "targetType" : "com.demo.Customer"
-  }]
+  }
 }
 ```
 
@@ -270,17 +268,17 @@ The following configuration parameters are available:
 |Parameter|Description|Required|Default Value|
 |---------|-----------|--------|-------------|
 |`operationName`|The name of the operation, as defined in the schema.  Should be in the format of a fully qualified operation name.  See the sample for an example|true||
-
+         
 
 #### Example
 
 ```json
 {
-  "outputs" : [{
+  "output" : {
     "type" : "taxiOperation",
     "direction" : "OUTPUT",
     "operationName" : "com.demo.customers.CustomerService@@DisableCustomerAccounts"
-  }]
+  }
 }
 ```
 
@@ -308,20 +306,20 @@ The following configuration parameters are available:
 |`connectionName`|The name of the connection, as registered in Vyne's connection manager|true||
 |`topic`|The name of the topic to write to|true||
 |`targetTypeName`|The fully qualified name of the type that content should be written as.|true||
-
+         
 
 #### Example
 
 ```json
 {
-  "outputs" : [{
+  "output" : {
     "type" : "kafka",
     "direction" : "OUTPUT",
     "connectionName" : "my-kafka-connection",
     "topic" : "CustomerEvents",
     "targetTypeName" : "com.demo.customers.CustomerEvent",
     "targetType" : "com.demo.customers.CustomerEvent"
-  }]
+  }
 }
 ```
 
@@ -360,20 +358,20 @@ The following configuration parameters are available:
 |---------|-----------|--------|-------------|
 |`connection`|The name of a connection, configured in Vyne's connection manager|true||
 |`targetTypeName`|The fully qualified name of the type which content being pushed to the database should be read as|true||
-
+         
 
 #### Example
 
 ```json
 {
-  "outputs" : [{
+  "output" : {
     "type" : "jdbc",
     "direction" : "OUTPUT",
     "connection" : "my-connection",
     "targetTypeName" : "com.demo.Customer",
     "targetType" : "com.demo.Customer",
     "windowDurationMs" : 500
-  }]
+  }
 }
 ```
 
@@ -394,13 +392,13 @@ The following configuration parameters are available:
 |`bucket`|The bucket name|true||
 |`objectKey`|The name of the object in the S3 bucket - generally a file name. To obtain unique file names you can use the "{env.now}" as part of the object key to add a timestamp in the ISO format (YYYY-MM-DDTHH:mm:ss.sssZ). If the object exists already, it will be overwritten.|true||
 |`targetTypeName`|The name of the type based on which to produce the file|true||
-
+         
 
 #### Example
 
 ```json
 {
-  "outputs" : [{
+  "output" : {
     "type" : "awsS3",
     "direction" : "OUTPUT",
     "connectionName" : "my-aws-connection",
@@ -408,6 +406,6 @@ The following configuration parameters are available:
     "objectKey" : "customers.csv",
     "targetTypeName" : "com.demo.customers.Customer",
     "targetType" : "com.demo.customers.Customer"
-  }]
+  }
 }
 ```

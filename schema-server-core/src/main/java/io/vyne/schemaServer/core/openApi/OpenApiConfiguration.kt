@@ -13,7 +13,7 @@ class OpenApiConfiguration {
    fun openApiVersionedSourceLoaders(
       config: OpenApiSchemaRepositoryConfig
    ): List<OpenApiVersionedSourceLoader> {
-      return config.services?.map {
+      return config.services.map {
          OpenApiVersionedSourceLoader(
             name = it.name,
             url = URI(it.uri),

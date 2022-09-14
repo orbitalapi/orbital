@@ -170,14 +170,14 @@ class PropertyToParameterConstraint(propertyIdentifier: PropertyIdentifier,
          is ConstantValueExpression -> {
             // We expected a constant value.  Convert the value we were given into the appropriate type
             val type = schema.type(argumentType.attribute(propertyIdentifier).type)
-            TypedInstance.from(type, expectedValue.value, schema, source = DefinedInSchema)
+            TypedInstance.from(type, (expectedValue as ConstantValueExpression).value, schema, source = DefinedInSchema)
          }
          is RelativeValueExpression -> {
             when (value) {
                // This seems wrong - we shouldn't be accessing the the expected value path against value,
                // as it might be constrainted against something else.
                // Lets see if the tests pass...
-               is TypedObject -> value[expectedValue.path]
+               is TypedObject -> value[(expectedValue as RelativeValueExpression).path]
                else -> error("Relative value expressions are not supported on values of type ${value::class.simpleName}")
             }
          }
