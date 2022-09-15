@@ -19,12 +19,11 @@ function ApiNode(node: Node<MemberWithLinks>) {
 
   function NoArgOperation(props: { operation: OperationLike, operationLinks: Links }) {
     const { operation, operationLinks } = props;
-    const links = collectLinks(operationLinks);
     return (<>
       <tr>
         <td colSpan={2} className="">
           <div className={'handle-container'}>
-            <LinkHandle node={node} links={links} position={Position.Left}></LinkHandle>
+            <LinkHandle node={node} links={operationLinks.inputs} position={Position.Left}></LinkHandle>
             {operation.qualifiedName.shortDisplayName}
           </div>
 
@@ -32,7 +31,7 @@ function ApiNode(node: Node<MemberWithLinks>) {
         <td>
           <div className={'handle-container'}>
             {operation.returnTypeName.shortDisplayName}
-            <LinkHandle node={node} links={links} position={Position.Right}></LinkHandle>
+            <LinkHandle node={node} links={operationLinks.outputs} position={Position.Right}></LinkHandle>
           </div>
         </td>
       </tr>
@@ -41,7 +40,6 @@ function ApiNode(node: Node<MemberWithLinks>) {
 
   function OperationWithArgs(props: { operation: OperationLike, operationLinks: Links }) {
     const { operation, operationLinks } = props;
-    const links = collectLinks(operationLinks);
     return (<>
       <tr>
         <td colSpan={3} className="operation-name">
@@ -60,14 +58,14 @@ function ApiNode(node: Node<MemberWithLinks>) {
               return param.typeName.shortDisplayName
             }).join(', ')
             }
-            <LinkHandle node={node} links={links} position={Position.Left}></LinkHandle>
+            <LinkHandle node={node} links={operationLinks.inputs} position={Position.Left}></LinkHandle>
           </div>
         </td>
         <td>{operation.parameters.length > 0 ? '→' : ''}</td>
         <td>
           <div className={'handle-container'}>
             {operation.returnTypeName.shortDisplayName}
-            <LinkHandle node={node} links={links} position={Position.Right}></LinkHandle>
+            <LinkHandle node={node} links={operationLinks.outputs} position={Position.Right}></LinkHandle>
           </div>
         </td>
       </tr>

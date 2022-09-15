@@ -2,14 +2,14 @@ import {
   arrayMemberTypeNameOrTypeNameFromName,
   findSchemaMember,
   Schema,
-  SchemaMember,
+  SchemaMember, SchemaMemberType,
   ServiceMember
 } from '../../services/schema';
-import { Edge, Node, XYPosition } from 'react-flow-renderer';
+import { Edge, EdgeMarkerType, MarkerType, Node, XYPosition } from 'react-flow-renderer';
 import {
   buildSchemaNode,
   collectionOperations,
-  collectLinks,
+  collectLinks, EdgeParams,
   getNodeId,
   Link,
   Links,
@@ -166,15 +166,37 @@ export class SchemaChartController {
     // }, 25);
   }
 
-  private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, targetNode: Node<MemberWithLinks>, targetHandleId: string): Edge {
+  private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, sourceSchemaKind: SchemaMemberType, targetNode: Node<MemberWithLinks>, targetHandleId: string, targetSchemaKind: SchemaMemberType): Edge {
+    const edgeParams:EdgeParams = {
+      sourceCanFloat: sourceSchemaKind === 'TYPE',
+      targetCanFloat: targetSchemaKind === 'TYPE',
+    }
+    let label: string;
+    let markerStart, markerEnd: EdgeMarkerType;
+    if (sourceSchemaKind === 'OPERATION' && targetSchemaKind === 'TYPE') {
+      label = 'provides';
+      markerEnd = {
+        type: MarkerType.Arrow
+      };
+    }
+    if (sourceSchemaKind === 'TYPE' && targetSchemaKind === 'OPERATION') {
+      label = 'Is input'
+      markerEnd = {
+        type: MarkerType.Arrow
+      };
+    }
     const id = [sourceNode.id, sourceHandleId, '->', targetNode.id, targetHandleId].join('-');
     return {
       id: id,
+      data: edgeParams,
       source: sourceNode.id,
       sourceHandle: sourceHandleId,
       target: targetNode.id,
       targetHandle: targetHandleId,
-      type: 'floating'
+      type: 'floating',
+      label: label,
+      markerStart,
+      markerEnd
     };
   }
 
@@ -191,7 +213,7 @@ export class SchemaChartController {
       nodeLinks.filter(link => {
         return nodes.has(link.sourceNodeId) && nodes.has(link.targetNodeId)
       }).forEach(link => {
-        const edge = this.buildEdge(nodes.get(link.sourceNodeId), link.sourceHandleId, nodes.get(link.targetNodeId), link.targetHandleId)
+        const edge = this.buildEdge(nodes.get(link.sourceNodeId), link.sourceHandleId, link.sourceMemberType, nodes.get(link.targetNodeId), link.targetHandleId, link.targetMemberType)
         createdEdges.set(edge.id, edge);
       });
     })
@@ -213,4 +235,3 @@ export function isRelativeNodePosition(item: any): item is RelativeNodePosition 
 export interface RelativeNodeXyPosition extends RelativeNodePosition {
   position: XYPosition
 }
-

@@ -5,7 +5,7 @@ import { HandleIds } from 'src/app/schema-diagram/schema-diagram/schema-chart-bu
 // This whole file taken from : https://reactflow.dev/docs/examples/edges/simple-floating-edges/
 
 // returns the position (top,right,bottom or right) passed node compared to
-function getParams(nodeA: Node, nodeAHandleId: string, nodeB: Node): [number, number, Position] {
+function getCoords(nodeA: Node, nodeAHandleId: string, nodeB: Node, canFloat: boolean): [number, number, Position] {
   const centerA = getNodeCenter(nodeA);
   const centerB = getNodeCenter(nodeB);
 
@@ -22,12 +22,12 @@ function getParams(nodeA: Node, nodeAHandleId: string, nodeB: Node): [number, nu
     // position = centerA.y > centerB.y ? Position.Top : Position.Bottom;
   // }
 
-  const [x, y] = getHandleCoordsByPosition(nodeA, nodeAHandleId, position);
+  const [x, y] = getHandleCoordsByPosition(nodeA, nodeAHandleId, position, canFloat);
   return [x, y, position];
 }
 
-function getHandleCoordsByPosition(node: Node, handleId: string, handlePosition: Position.Left | Position.Right) {
-  const handleIdWithPosition = HandleIds.appendPositionToHandleId(handleId, handlePosition);
+function getHandleCoordsByPosition(node: Node, handleId: string, handlePosition: Position.Left | Position.Right, canFloat: boolean) {
+  const handleIdWithPosition = canFloat ? HandleIds.appendPositionToHandleId(handleId, handlePosition) : handleId;
   const handle = node[internalsSymbol].handleBounds.source.find(
     (h) => h.id === handleIdWithPosition
   );
@@ -64,9 +64,9 @@ function getNodeCenter(node) {
 }
 
 // returns the parameters (sx, sy, tx, ty, sourcePos, targetPos) you need to create an edge
-export function getEdgeParams(source: Node, sourceHandleId: string, target: Node, targetHandleId: string) {
-  const [sx, sy, sourcePos] = getParams(source, sourceHandleId, target);
-  const [tx, ty, targetPos] = getParams(target, targetHandleId, source);
+export function getEdgeCoords(source: Node, sourceHandleId: string, sourceCanFloat: boolean, target: Node, targetHandleId: string, targetCanFloat: boolean) {
+  const [sx, sy, sourcePos] = getCoords(source, sourceHandleId, target, sourceCanFloat);
+  const [tx, ty, targetPos] = getCoords(target, targetHandleId, source, targetCanFloat);
 
   return {
     sx,

@@ -1,17 +1,19 @@
 import { useCallback } from 'react';
-import { useStore, getBezierPath } from 'react-flow-renderer';
+import { useStore, getBezierPath, EdgeText, getSimpleBezierEdgeCenter } from 'react-flow-renderer';
 
-import { getEdgeParams } from './edge-utils';
+import { getEdgeCoords } from './edge-utils';
 import * as React from 'react';
+import { EdgeParams } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
 
 // Taken from : https://reactflow.dev/docs/examples/edges/simple-floating-edges/
-function SimpleFloatingEdge({ id, source, target, markerEnd, style, sourceHandleId, targetHandleId }) {
+function SimpleFloatingEdge({ id, source, target, markerEnd, style, sourceHandleId, targetHandleId, label, data }) {
   const sourceNode = useStore(useCallback((store) => store.nodeInternals.get(source), [source]));
   const targetNode = useStore(useCallback((store) => store.nodeInternals.get(target), [target]));
 
   if (!sourceNode || !targetNode) {
     return null;
   }
+  const edgeParams: EdgeParams = data as EdgeParams;
 
   const {
     sx,
@@ -20,7 +22,7 @@ function SimpleFloatingEdge({ id, source, target, markerEnd, style, sourceHandle
     ty,
     sourcePos,
     targetPos
-  } = getEdgeParams(sourceNode, sourceHandleId, targetNode, targetHandleId);
+  } = getEdgeCoords(sourceNode, sourceHandleId, edgeParams.sourceCanFloat,  targetNode, targetHandleId, edgeParams.targetCanFloat);
 
   const d = getBezierPath({
     sourceX: sx,
@@ -31,15 +33,31 @@ function SimpleFloatingEdge({ id, source, target, markerEnd, style, sourceHandle
     targetY: ty,
   });
 
+  const [centerX, centerY, offsetX, offsetY] = getSimpleBezierEdgeCenter({
+    sourceX: sx,
+    sourceY: sy,
+    sourcePosition: sourcePos,
+    targetPosition: targetPos,
+    targetX: tx,
+    targetY: ty,
+  })
+
   return (
-    <path
-      id={id}
-      className="react-flow__edge-path"
-      d={d}
-      strokeWidth={5}
-      markerEnd={markerEnd}
-      style={style}
-    />
+    <>
+      <EdgeText
+        x={centerX}
+        y={centerY}
+        label={label}
+      />
+      <path
+        id={id}
+        className="react-flow__edge-path"
+        d={d}
+        strokeWidth={5}
+        markerEnd={markerEnd}
+        style={style}
+      />
+    </>
   );
 }
 

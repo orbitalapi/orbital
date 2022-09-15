@@ -6,7 +6,8 @@ export interface LinkHandleProps {
   node: Node<MemberWithLinks>,
   links: Link[],
   position: Position.Right | Position.Left,
-  handleId?: string
+  handleId?: string,
+  allowConnectionToFloat?: boolean
 }
 
 export function LinkHandle(props: LinkHandleProps) {
@@ -14,7 +15,7 @@ export function LinkHandle(props: LinkHandleProps) {
     return <></>
   }
   const handleId = props.node.id === props.links[0].sourceNodeId ? props.links[0].sourceHandleId : props.links[0].targetHandleId;
-  const handleIdWithSide = HandleIds.appendPositionToHandleId(handleId, props.position);
+  const handleIdWithSide = props.allowConnectionToFloat ? HandleIds.appendPositionToHandleId(handleId, props.position) : handleId;
 
   function clickHandler(handleId: string) {
     if (!props.links || props.links.length === 0) {

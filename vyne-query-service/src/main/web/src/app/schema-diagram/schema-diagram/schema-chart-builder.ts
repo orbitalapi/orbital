@@ -1,8 +1,7 @@
 import {
-  arrayMemberTypeNameOrTypeNameFromName, collectAllServiceOperations,
-  Operation,
+  arrayMemberTypeNameOrTypeNameFromName,
+  collectAllServiceOperations,
   QualifiedName,
-  QueryOperation,
   Schema,
   SchemaMember,
   SchemaMemberType,
@@ -11,7 +10,7 @@ import {
   Type
 } from '../../services/schema';
 import { NodeType } from './schema-flow.react';
-import { Node, XYPosition, Position } from 'react-flow-renderer';
+import { Node, Position, XYPosition } from 'react-flow-renderer';
 import { SchemaChartController } from './schema-chart.controller';
 import { splitOperationQualifiedName } from '../../service-view/service-view.component';
 
@@ -23,6 +22,10 @@ function getNodeKind(member: SchemaMember): NodeType {
   }
 }
 
+export interface EdgeParams {
+  sourceCanFloat: boolean;
+  targetCanFloat: boolean;
+}
 export interface Links {
   inputs: Link[];
   outputs: Link[];
@@ -90,11 +93,13 @@ function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: 
     sourceNodeId: parent.nodeId,
     sourceNodeName: parent.name,
     sourceHandleId: HandleIds.modelFieldOutbound(parent.name, parent.field),
-    inverseSourceHandleId: HandleIds.modelFieldInbound(parent.name, parent.field)
+    inverseSourceHandleId: HandleIds.modelFieldInbound(parent.name, parent.field),
+    sourceMemberType: 'TYPE'  as SchemaMemberType,
   } : {
     sourceNodeId: typeNodeId,
     sourceNodeName: typeName,
     sourceHandleId: HandleIds.modelOutbound(typeName),
+    sourceMemberType: 'TYPE' as SchemaMemberType,
     inverseSourceHandleId: HandleIds.modelInbound(typeName)
   }
 
@@ -108,7 +113,8 @@ function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: 
 
         targetNodeId: getNodeId('SERVICE', QualifiedName.from(nameParts.serviceName)),
         targetHandleId: HandleIds.serviceOperationInbound(QualifiedName.from(nameParts.serviceName), QualifiedName.from(nameParts.operationName)),
-        targetNodeName: QualifiedName.from(nameParts.serviceName)
+        targetNodeName: QualifiedName.from(nameParts.serviceName),
+        targetMemberType: 'OPERATION'
       })
     }
   })
@@ -123,11 +129,13 @@ function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: 
         sourceNodeId: getNodeId('SERVICE', QualifiedName.from(nameParts.serviceName)),
         sourceHandleId: HandleIds.serviceOperationOutbound(QualifiedName.from(nameParts.serviceName), QualifiedName.from(nameParts.operationName)),
         sourceNodeName: QualifiedName.from(nameParts.serviceName),
+        sourceMemberType: 'OPERATION',
 
 
         targetNodeId: typeNodeId,
         targetHandleId: HandleIds.modelInbound(typeName),
-        targetNodeName: typeName
+        targetNodeName: typeName,
+        targetMemberType: 'TYPE'
       })
     }
   })
@@ -158,17 +166,20 @@ function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: 
 
             targetNodeId: getNodeId('TYPE', typeInSchema.name),
             targetNodeName: typeInSchema.name,
-            targetHandleId: HandleIds.modelFieldInbound(typeInSchema.name, fieldName)
+            targetHandleId: HandleIds.modelFieldInbound(typeInSchema.name, fieldName),
+            targetMemberType: 'TYPE'
           });
           producedByOtherTypes.push({
             sourceNodeId: getNodeId('TYPE', typeInSchema.name),
             sourceNodeName: typeInSchema.name,
             sourceHandleId: HandleIds.modelFieldOutbound(typeInSchema.name, fieldName),
+            sourceMemberType: 'TYPE',
 
             // This is the "inverse" side, ie., links to the source (as determined above),
             targetNodeId: source.sourceNodeId,
             targetNodeName: source.sourceNodeName,
-            targetHandleId: source.inverseSourceHandleId
+            targetHandleId: source.inverseSourceHandleId,
+            targetMemberType: source.sourceMemberType
           })
         }
       })
@@ -207,10 +218,12 @@ export interface Link {
   sourceNodeName: QualifiedName;
   sourceNodeId: string;
   sourceHandleId: string;
+  sourceMemberType: SchemaMemberType;
 
   targetNodeName: QualifiedName;
   targetNodeId: string;
   targetHandleId: string;
+  targetMemberType: SchemaMemberType;
 }
 
 function buildOperationLinks(operation: ServiceMember, service: Service): Links {
@@ -222,10 +235,13 @@ function buildOperationLinks(operation: ServiceMember, service: Service): Links 
       sourceNodeId: getNodeId('TYPE', paramTypeName),
       sourceHandleId: HandleIds.modelOutbound(paramTypeName),
       sourceNodeName: paramTypeName,
+      sourceMemberType: 'TYPE',
 
       targetNodeId: serviceNodeId,
       targetHandleId: HandleIds.serviceOperationInbound(QualifiedName.from(nameParts.serviceName), QualifiedName.from(nameParts.operationName)),
-      targetNodeName: QualifiedName.from(nameParts.serviceName)
+      targetNodeName: QualifiedName.from(nameParts.serviceName),
+      targetMemberType: 'OPERATION'
+
     }
   });
 
@@ -234,10 +250,12 @@ function buildOperationLinks(operation: ServiceMember, service: Service): Links 
     sourceNodeId: serviceNodeId,
     sourceHandleId: HandleIds.serviceOperationOutbound(QualifiedName.from(nameParts.serviceName), QualifiedName.from(nameParts.operationName)),
     sourceNodeName: service.name,
+    sourceMemberType: 'OPERATION',
 
     targetNodeId: getNodeId('TYPE', returnTypeName),
     targetHandleId: HandleIds.modelInbound(returnTypeName),
     targetNodeName: returnTypeName,
+    targetMemberType: 'TYPE'
   }]
   // Not sure if returning operation links here is helpful.
   return {
@@ -309,11 +327,11 @@ export class HandleIds {
   }
 
   static serviceOperationInbound(serviceName: QualifiedName, operationName: QualifiedName): string {
-    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}`
+    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}-inbound`
   }
 
   static serviceOperationOutbound(serviceName: QualifiedName, operationName: QualifiedName): string {
-    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}`
+    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}-outbound`
   }
 
   static appendPositionToHandleId(handleId: string, position: Position): string {
