@@ -11,7 +11,7 @@
 
    <artifactId>jdbc-connector</artifactId>
    <properties>
-      <schemacrawler.version>16.18.1</schemacrawler.version>
+      <schemacrawler.version>16.18.2</schemacrawler.version>
    </properties>
 
    <dependencies>
