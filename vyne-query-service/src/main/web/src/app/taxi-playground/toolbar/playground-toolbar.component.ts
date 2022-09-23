@@ -4,18 +4,29 @@ import { AuthService } from '@auth0/auth0-angular';
 @Component({
   selector: 'playground-toolbar',
   template: `
-    <img src="assets/img/taxi-icon.svg" class="logo">
+    <img src="assets/img/taxi-icon-white.svg" class="logo">
     <span class="title">Taxi playground</span>
     <div class="spacer"></div>
-    <button class="secondary" (click)="authService.loginWithRedirect()">Save your design in Orbital</button>
-
+    <button class="header-icon-button">
+      <a target="_blank" href="https://vyne.co"><mat-icon svgIcon="vyneDots"></mat-icon></a>
+    </button>
+    <button class="header-icon-button">
+      <mat-icon svgIcon="brandGitHub"></mat-icon>
+    </button>
+    <button class="header-icon-button" (click)="slackInvite()">
+      <mat-icon svgIcon="slack"></mat-icon>
+    </button>
   `,
   styleUrls: ['./playground-toolbar.component.scss']
 })
 export class PlaygroundToolbarComponent {
 
+  readonly slackInviteLink = "https://join.slack.com/t/vynehq/shared_invite/zt-1gxb15z4g-H2IeysSGo_rI1ptOty6mwA";
+  
   constructor(public authService: AuthService) {
   }
 
-
+  slackInvite() {
+    window.open(this.slackInviteLink)
+  }
 }

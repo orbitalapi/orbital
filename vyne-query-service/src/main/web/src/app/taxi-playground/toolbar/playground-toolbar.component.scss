@@ -2,10 +2,14 @@
 :host {
   display: flex;
   align-items: center;
+  fill: white;
+  color: white;
 
   padding: 0 1rem;
 
-  border-bottom: 1px solid;
+  // border-bottom: 1px solid;
+
+  background-color: #3b6af9;
 
   .logo {
     height: 48px;
@@ -22,6 +26,13 @@
   font-weight: 300;
 }
 
+button {
+  border: none;
+  background-color: transparent;
+  color: black;
+  padding: 0px 4px;
+}
+
 button.secondary {
   border: 1px solid $primary;
   background-color: white;
@@ -35,4 +46,17 @@ button.secondary {
   font-weight: 300;
   padding: 8px 16px;
 
+}
+
+mat-icon {
+  fill: white;
+  color: white;
+  
+}
+
+.header-icon-button {
+
+  &:hover {
+    cursor: pointer;
+  }
 }
