@@ -129,14 +129,6 @@
          <scope>test</scope>
          <type>test-jar</type>
       </dependency>
-
-      <dependency>
-         <groupId>com.hazelcast.jet</groupId>
-         <artifactId>hazelcast-jet-core</artifactId>
-         <version>${hazelcast-jet.version}</version>
-         <classifier>tests</classifier>
-         <scope>test</scope>
-      </dependency>
       <dependency>
          <groupId>com.hazelcast</groupId>
          <artifactId>hazelcast</artifactId>
