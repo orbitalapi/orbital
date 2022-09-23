@@ -57,9 +57,6 @@ class TaxiOperationSinkBuilderTest : BaseJetIntegrationTest() {
       val body = request.body.readByteString().toString()
          .removeSurrounding("[text=", "]")
       body.should.equal("""{"givenName":"jimmy"}""")
-      // FIXME: This is not compiling, because branches
-      // seem to be midway through merging hazelcast5.
-      // Fix once the actual hzc5 branch has been merged.
-//      terminateInstance(hazelcastInstance)
+      terminateInstance(hazelcastInstance)
    }
 }

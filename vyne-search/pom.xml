@@ -19,7 +19,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-core-types</artifactId>
-         <version>0.20.2-SNAPSHOT</version>
+         <version>${project.version}</version>
          <scope>test</scope>
          <type>test-jar</type>
       </dependency>
