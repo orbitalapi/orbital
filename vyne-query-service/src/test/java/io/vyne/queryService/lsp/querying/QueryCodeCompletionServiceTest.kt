@@ -6,6 +6,7 @@ import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.lsp.TaxiTextDocumentService
 import lang.taxi.lsp.sourceService.inMemoryIdentifier
 import lang.taxi.lsp.sourceService.inMemoryVersionedId
+import lang.taxi.lsp.sourceService.inmemoryUri
 import org.eclipse.lsp4j.*
 import org.junit.Test
 
@@ -31,7 +32,7 @@ class QueryCodeCompletionServiceTest {
          name : StudioName inherits String
       }
       model Tweet {
-         text: TweetBody
+         text: TweetBody inherits String
       }
       service MyService {
          operation listFilms():Film[]
@@ -200,7 +201,7 @@ class QueryCodeCompletionServiceTest {
          )
       ).get().left
       completions.map { it.label }
-         .should.contain.elements("Film", "Actor", "ActorId", "FilmTitle") // and others...
+         .should.contain.elements("Tweet", "Studio") // and others...
    }
 
    @Test

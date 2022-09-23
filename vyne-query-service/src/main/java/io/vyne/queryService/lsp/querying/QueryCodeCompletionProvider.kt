@@ -7,6 +7,7 @@ import lang.taxi.TaxiParser.ConditionalTypeStructureDeclarationContext
 import lang.taxi.TaxiParser.FactListContext
 import lang.taxi.TaxiParser.FieldDeclarationContext
 import lang.taxi.TaxiParser.GivenBlockContext
+import lang.taxi.TaxiParser.IdentifierContext
 import lang.taxi.TaxiParser.ListTypeContext
 import lang.taxi.TaxiParser.QueryDirectiveContext
 import lang.taxi.TaxiParser.QueryProjectionContext
@@ -91,8 +92,10 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
                   findModelsReturnableFromQueryOperations(importDecorator, queryMode)
             }
          }
+
          is FieldDeclarationContext,
          is TypeBodyContext,
+         is IdentifierContext,
          is ClassOrInterfaceTypeContext -> {
             // In tests, it looks like we could be either declaring a filter criteria here,
             // or listing fields we want to add to the query.
