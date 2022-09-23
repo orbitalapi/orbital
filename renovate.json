@@ -1,8 +1,10 @@
 {
    "extends": [
       "config:base",
-      ":prConcurrentLimitNone"
+      ":prConcurrentLimitNone",
+      ":prHourlyLimitNone"
    ],
+   "rebaseWhen": "conflicted",
    "packageRules": [
       {
          "updateTypes": [

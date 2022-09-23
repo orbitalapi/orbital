@@ -38,7 +38,7 @@ default:
    tags:
       - docker-heavy
    services:
-      -  name: docker:20.10.17-dind
+      -  name: docker:20.10.18-dind
          command: [ "--tls=false" ]
    variables:
       # Instruct Testcontainers to use the daemon of DinD.
@@ -223,7 +223,7 @@ regression-test:
       BUILDKIT_PROGRESS: plain
       PROGRESS_NO_TRUNC: 1
    services:
-      -  name: docker:20.10.17-dind
+      -  name: docker:20.10.18-dind
          command: ["--tls=false"]
    before_script:
       # Grab the version we plucked from Maven earlier.
@@ -301,7 +301,7 @@ terraform-validate:
 build-helm:
    stage: build
    image:
-      name: alpine/helm:3.9.4
+      name: alpine/helm:3.10.0
       entrypoint: [""]
    script:
       - cd ${CI_PROJECT_DIR}/infra/helm/vyne-helm
