@@ -73,6 +73,7 @@ enum class QueryMode {
    /**
     * Find a single value
     */
+   @Deprecated("findOne is no longer supported.  Use Gather - which is equivalent of old findAll {}, and current find {} ")
    DISCOVER,
 
    /**

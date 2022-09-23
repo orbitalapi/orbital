@@ -95,11 +95,16 @@ class HipsterDiscoverGraphQueryStrategy(
       if (target.size != 1) TODO("Support for target sets not yet built")
       val firstTarget = target.first()
 
-      // We only support DISCOVER_ONE mode here.
-      if (firstTarget.mode != QueryMode.DISCOVER) {
-         return QueryStrategyResult.searchFailed()
-      }
-
+      // MP: 23-Sep-22: We have removed the concept of findOne / findAll, and now only support find.
+      // Having made that change, EsgTest started failing, as the below wasn't being invoked.
+      // Not sure why we didn't use GraphSearch when doing DISCOVER (which related to findOne).
+      //
+      // Have excluded this, as I suspect the check is legacy.
+      // All tests passed after I did that, but...well... I'm worried.
+      // If stuff starts breaking, this could be the cause.
+//      if (firstTarget.mode != QueryMode.DISCOVER) {
+//         return QueryStrategyResult.searchFailed()
+//      }
       if (context.facts.isEmpty()) {
          logger.debug { "[${context.queryId}] Cannot perform a graph search, as no facts provided to serve as starting point. " }
          return QueryStrategyResult.searchFailed()
