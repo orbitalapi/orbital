@@ -364,7 +364,7 @@ class AccessorReader(
          // I think the ACTUAL approach to use here is to introduce an operator that indicates "Search for this thing".
          // Also, our search scope should (by default) consider the typed objects in our hand, where at the moment, it doesn't
          // eg: Currently
-         // findAll { Foo } as {
+         // find { Foo } as {
          // ... <- Here, the attributes of Foo aren't available by default, but they should be.
          // nested1 : {
          // ... <-- Here, the attributes one layer up aren't available, but they should be.

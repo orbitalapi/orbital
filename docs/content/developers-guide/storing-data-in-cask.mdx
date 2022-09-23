@@ -259,7 +259,7 @@ The query builder can be found at [http://localhost:9022/query-wizard](http://lo
 Let's write the following query:
 
 ```text
-findAll { CustomerRecords[] }
+find { CustomerRecords[] }
 ```
 
 This will return all our customers from our csv that are stored in cask. It will look something like this:
@@ -300,7 +300,7 @@ Save this, and Vyne will automatically the taxonomy.  Looking in the Type explor
 Finally, let's issue our query. Taking the query below, paste it into your query builder and see the full power of Vyne.
 
 ```text
-findAll { PurchaseRecord[] } as {
+find { PurchaseRecord[] } as {
     id: CustomerId
     product: ItemName
     price: ItemPrice

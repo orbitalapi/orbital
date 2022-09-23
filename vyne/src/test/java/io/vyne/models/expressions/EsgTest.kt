@@ -105,13 +105,13 @@ class EsgTest {
 //      results.should.have.size(1)
 
 //      |  portfolioScore : Decimal by sum(this.scores, (FundHolding) -> (HoldingPercentage * EsgAveragedScore)) / sum(this.scores, (FundHolding) -> HoldingPercentage)
-      val query = """given { isin : Isin = "${isin.value}" } findOne { IsinFundHoldings } as {
+      val query = """given { isin : Isin = "${isin.value}" } find { IsinFundHoldings } as {
          |  scores: FundHoldingWithScore[] by [FundHolding]
          |  portfolioScore : Decimal by sum(this.scores, (FundHoldingWithScore) -> HoldingPercentage * EsgAveragedScore) / sum(this.scores, (FundHoldingWithScore) -> HoldingPercentage)
          |}[]
       """.trimMargin()
 
-      val minQuery = """given { isin : Isin = "${isin.value}" } findOne { IsinFundHoldings } as {
+      val minQuery = """given { isin : Isin = "${isin.value}" } find { IsinFundHoldings } as {
          |  scores: FundHoldingWithScore[] by [FundHolding]
          |  portfolioScore : Decimal by min(this.scores, (FundHoldingWithScore) -> EsgAveragedScore)
          |}[]
@@ -224,7 +224,7 @@ class EsgTest {
       setUpStubsForClassification(stub, vyne)
 
      val res1 =   vyne.query("""
-          findAll {
+          find {
             SlEquity[]
          } as {
             isin: Isin
@@ -235,7 +235,7 @@ class EsgTest {
       res1.size.should.equal(3)
 
       val results = vyne.query("""
-         findAll {
+         find {
             SlEquity[]
          } as {
             isin: Isin

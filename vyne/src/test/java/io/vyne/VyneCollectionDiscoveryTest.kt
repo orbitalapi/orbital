@@ -41,9 +41,11 @@ class VyneCollectionDiscoveryTest {
       stub.addResponse("findAllFriends", vyne.parseJson("Friend[]", """[{ "id": 1, "name" : "Jimmy" }, {"id" : 2, "name": "Jack" }] """))
       stub.addResponse("findAllPeople", vyne.parseJson("PersonId[]", """[ 0 ]"""))
       stub.addResponse("findPerson", vyne.parseJson("Person", """[{ "id" : 0, "name" : "Doug" }]"""))
-      val results = vyne.query("""findAll { PersonId[] } as { name : PersonName
+      val results = vyne.query(
+         """find { PersonId[] } as { name : PersonName
          | friends : Friend[]
-         |}[]""".trimMargin())
+         |}[]""".trimMargin()
+      )
          .rawObjects()
       results.should.equal(listOf(
          mapOf("name" to "Doug", "friends" to listOf(
@@ -130,7 +132,7 @@ class VyneCollectionDiscoveryTest {
             listOf(actors[actorId]!!)
          }
 
-         val results = vyne.query("""findAll { Movie[] } as OutputMovie[]""").typedObjects()
+         val results = vyne.query("""find { Movie[] } as OutputMovie[]""").typedObjects()
          results.should.have.size(1)
          val result = results.first().toRawObject()
          result.should.equal(
@@ -194,7 +196,7 @@ class VyneCollectionDiscoveryTest {
          }
 
          val results = vyne.query(
-            """findAll { Movie[] } as {
+            """find { Movie[] } as {
             | movieTitle: MovieTitle
             | actors: ActorName[]
             | }[]
@@ -262,7 +264,7 @@ class VyneCollectionDiscoveryTest {
             listOf(actors[actorId]!!)
          }
 
-         val results = vyne.query("""findAll { Movie[] } as OutputMovie[]""").typedObjects()
+         val results = vyne.query("""find { Movie[] } as OutputMovie[]""").typedObjects()
          results.should.have.size(1)
          val result = results.first().toRawObject()
          result.should.equal(
@@ -322,10 +324,12 @@ class VyneCollectionDiscoveryTest {
             )
          )
       }
-      val queryResult = vyne.query("""findAll { OrderTransaction[] } as {
+      val queryResult = vyne.query(
+         """find { OrderTransaction[] } as {
          | items: { sku: ProductSku size: ProductSize }[] by [TransactionProduct]
          | }[]
-      """.trimMargin())
+      """.trimMargin()
+      )
          .rawObjects()
       queryResult.size.should.equal(2)
       queryResult.should.equal(listOf(
@@ -369,14 +373,16 @@ class VyneCollectionDiscoveryTest {
       """.trimIndent())
       stub.addResponse("findComposer", vyne.parseJson("Composer", source))
 
-      val result = vyne.query("""findAll { Composer } as {
+      val result = vyne.query(
+         """find { Composer } as {
             results:  {
                name : ComposerName
                title : MusicalTitle
                year: YearProduced
                }[] by [Musical with ( ComposerName )]
             }
-      """).rawObjects()
+      """
+      ).rawObjects()
       result.should.have.size(1)
       // We've taken an array of [ Title, Year ], and
       // moved it up one level, combining it the ComposerName,
@@ -421,12 +427,14 @@ class VyneCollectionDiscoveryTest {
       """.trimIndent())
       stub.addResponse("findComposer", vyne.parseJson("Composer", source))
 
-      val result = vyne.query("""findAll { Composer } as {
+      val result = vyne.query(
+         """find { Composer } as {
             name : ComposerName
             title : MusicalTitle
             year: YearProduced
             }[] by [Musical with ( ComposerName )]
-      """).rawObjects()
+      """
+      ).rawObjects()
 
       val expectedJson = """[ {
   "name" : "Stephen Sondheim",
@@ -483,7 +491,7 @@ class VyneCollectionDiscoveryTest {
          )
          stub.addResponse("findAllMovies", movies)
 
-         val results = vyne.query("""findAll { ImdbMovie[] } as RottenTomatoesMovie[]""").typedObjects()
+         val results = vyne.query("""find { ImdbMovie[] } as RottenTomatoesMovie[]""").typedObjects()
          results.should.have.size(1)
          val result = results.first().toRawObject()
          result.should.equal(

@@ -57,10 +57,10 @@ namespace QueryWizardPageObjects {
                 let objectViewFirst = itemText;
                 cy.wrap(objectViewFirst).as('objectViewFirst');
 
-                // go back to grid 
+                // go back to grid
                 action.clickButton(gridButton);
 
-                // get first item of the query 
+              // get first item of the query
                 cy.get('div[class="ag-center-cols-container"]')
                     .children('[row-index="0"]').findAllByRole('gridcell').first().invoke('text').then(spanText => {
                         let firstItem = spanText;
@@ -83,8 +83,8 @@ namespace QueryWizardPageObjects {
 
         makeQuery(query: string) {
             cy.get('.view-lines').click().focused().type('{selectall}{backspace}{selectall}{backspace}').should('be.empty'); // .clear() not working as expected
-            cy.get('.view-lines').type(`findAll { ${query}[]`) // '}' is not missing, auto creation of curly brackets
-                .get(runButton).click();
+          cy.get('.view-lines').type(`find { ${query}[]`) // '}' is not missing, auto creation of curly brackets
+            .get(runButton).click();
         }
 
         queryCancelCheck() {

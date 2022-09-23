@@ -104,7 +104,7 @@ class S3InvokerTest {
    fun `can consume a csv file in s3`() {
       val resultsFromQuery = mutableListOf<TypedInstance>()
       val vyne = vyneWithS3Invoker()
-      val query = runBlocking { vyne.query("""findAll { OrderWindowSummary[] }""") }
+      val query = runBlocking { vyne.query("""find { OrderWindowSummary[] }""") }
       collectQueryResults(query, resultsFromQuery)
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until<Boolean> { resultsFromQuery.size == 6 }
       val firstObject = (resultsFromQuery.first().value as Map<String, TypedValue>)

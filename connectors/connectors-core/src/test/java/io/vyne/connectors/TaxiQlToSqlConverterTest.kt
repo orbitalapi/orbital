@@ -19,7 +19,7 @@ class TaxiQlToSqlConverterTest {
             id : MovieId by column("id")
             title : MovieTitle by column("title")
          }""".compiled()
-      val query = """findAll { Movie[] }""".query(taxi)
+      val query = """find { Movie[] }""".query(taxi)
       val (sql, params) = TaxiQlToSqlConverter(taxi).toSql(query) { type -> type.qualifiedName.toQualifiedName().typeName  }
       sql.should.equal("""select * from Movie t0""")
       params.should.be.empty
@@ -35,7 +35,7 @@ class TaxiQlToSqlConverterTest {
             id : MovieId
             title : MovieTitle
          }""".compiled()
-      val query = """findAll { Movie[]( MovieTitle == 'Hello' ) }""".query(taxi)
+      val query = """find { Movie[]( MovieTitle == 'Hello' ) }""".query(taxi)
       val (sql, params) = TaxiQlToSqlConverter(taxi).toSql(query) { type -> type.qualifiedName.toQualifiedName().typeName  }
       sql.should.equal("""select * from Movie t0 WHERE t0.title = :title0""")
       params.should.equal(listOf(SqlTemplateParameter("title0", "Hello")))

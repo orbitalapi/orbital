@@ -689,7 +689,7 @@ class VyneQuerySecurityIntegrationTest {
    }
 
    private fun issueVyneQuery(headers: HttpHeaders): ResponseEntity<String> {
-      val entity = HttpEntity("findAll { io.vyne.Username[] }", headers)
+      val entity = HttpEntity("find { io.vyne.Username[] }", headers)
       return restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
    }
 

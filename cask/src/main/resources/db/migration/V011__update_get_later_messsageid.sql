@@ -4,7 +4,7 @@
  * For view 'find' statements where we need to left join two cask tables, we have two cask message ids to choose from.
  * This function enables us to select the message id with more recent insertion date.
  * 'insertedAt' important as
- * findAll { Foo[] } (CaskInsertedAt < t1, CasekInsertedAt > t2)
+ * find { Foo[] } (CaskInsertedAt < t1, CasekInsertedAt > t2)
  * query is resolved through:
  * SELECT FOO_TABLE.*, cask_message insertedAt FROM FOO_TABLE INNER JOIN ON FOO_TABLE.messageId = cask_message.messageid
  *   WHERE insertedAt < t1 AND insertedAt > t2

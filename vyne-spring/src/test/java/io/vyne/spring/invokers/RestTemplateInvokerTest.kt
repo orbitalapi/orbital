@@ -207,7 +207,7 @@ namespace vyne {
 
 
       runTest {
-         val turbine = vyne.query("findAll { Person[] }").results.testIn(this)
+         val turbine = vyne.query("find { Person[] }").results.testIn(this)
          turbine.awaitItem()
          turbine.awaitComplete()
 
@@ -254,7 +254,7 @@ namespace vyne {
 
          // Create a new vyne instance to destroy the cache between loops
          val result = buildNewVyne().query(
-            """findAll { Person[] } as {
+            """find { Person[] } as {
          personName : Name
          countryName : CountryName }[]"""
          )
@@ -310,7 +310,7 @@ namespace vyne {
             "/country/iso/NZD/name" to response("New Zealand")
          )
 
-         val response = vyne.query("""findAll { Person[] } as { name : Name country : CountryName }[]""")
+         val response = vyne.query("""find { Person[] } as { name : Name country : CountryName }[]""")
             .rawObjects()
          response.should.equal(
             listOf(
@@ -359,7 +359,7 @@ namespace vyne {
 
             // Create a new vyne instance to destroy the cache between loops
             val result = buildNewVyne().query(
-               """findAll { Person[] } as {
+               """find { Person[] } as {
          personName : Name
          countryName : CountryName }[]"""
             )
@@ -711,7 +711,7 @@ namespace vyne {
             )
 
             val result = vyne.query(
-               """findAll { Movie[] } as {
+               """find { Movie[] } as {
          title : MovieTitle
          director : DirectorName
          producer : ProductionCompanyName

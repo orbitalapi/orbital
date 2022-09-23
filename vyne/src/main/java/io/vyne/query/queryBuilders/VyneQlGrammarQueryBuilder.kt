@@ -34,7 +34,7 @@ class VyneQlGrammarQueryBuilder : QueryGrammarQueryBuilder {
 
    @VisibleForTesting
    internal fun buildVyneQl(spec: QuerySpecTypeNode): String {
-      return """findAll { ${spec.type.name.parameterizedName}(
+      return """find { ${spec.type.name.parameterizedName}(
             |     ${spec.dataConstraints.joinToString(", \n") { buildConstraint(it) }}
             |   )
             |}

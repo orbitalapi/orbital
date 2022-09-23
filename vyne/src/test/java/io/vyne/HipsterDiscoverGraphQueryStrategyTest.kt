@@ -69,7 +69,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
 
       val result = vyne.query(
          """
-            findAll {
+            find {
                 Input[]
               } as Output[]
             """.trimIndent()
@@ -131,7 +131,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
 
       val result = vyne.query(
          """
-            findAll {
+            find {
                 Input[]
               } as Output[]
             """.trimIndent()
@@ -321,7 +321,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
 
       val result = vyne.query(
          """
-         findAll {
+         find {
              Input[]
            } as Output[]
          """.trimIndent()
@@ -513,7 +513,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
 
          runTest {
             val query = """
-               findAll {
+               find {
                    Input[]
                  } as Output[]
                  """.trimIndent()

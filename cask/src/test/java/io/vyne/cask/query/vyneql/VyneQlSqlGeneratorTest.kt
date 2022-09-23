@@ -48,48 +48,51 @@ class VyneQlSqlGeneratorTest {
 
    @Test
    fun generatesSqlForFindAllWithoutArgs() {
-      val statement = sqlGenerator.generateSql("findAll { Person[] }")
+      val statement = sqlGenerator.generateSql("find { Person[] }")
       statement.shouldEqual("SELECT * from person;", emptyList())
    }
 
    @Test
    fun generatesSqlForFindByStringArg() {
-      val statement = sqlGenerator.generateSql("findAll { Person[]( FirstName == 'Jimmy' ) }")
+      val statement = sqlGenerator.generateSql("find { Person[]( FirstName == 'Jimmy' ) }")
       statement.shouldEqual("""SELECT * from person WHERE "firstName" = ?;""", listOf("Jimmy"))
    }
    @Test
    fun generatesSqlForFindByNumberArg() {
-      val statement = sqlGenerator.generateSql("findAll { Person[]( Age == 21 ) }")
+      val statement = sqlGenerator.generateSql("find { Person[]( Age == 21 ) }")
       statement.shouldEqual("""SELECT * from person WHERE "age" = ?;""", listOf(21))
    }
 
    @Test
    fun generatesSqlForFindBetweenNumberArg() {
-      val statement = sqlGenerator.generateSql("findAll { Person[]( Age >= 21, Age < 40 ) }")
+      val statement = sqlGenerator.generateSql("find { Person[]( Age >= 21, Age < 40 ) }")
       statement.shouldEqual("""SELECT * from person WHERE "age" >= ? AND "age" < ?;""", listOf(21, 40))
    }
 
    @Test
    fun `params that are date time strings are parsed to instant`() {
-      val statement = sqlGenerator.generateSql("findAll { Person[]( LastLoggedIn >= '2020-11-10T15:00:00Z' ) }")
+      val statement = sqlGenerator.generateSql("find { Person[]( LastLoggedIn >= '2020-11-10T15:00:00Z' ) }")
       statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ?;""", listOf(LocalDateTime.parse("2020-11-10T15:00:00")))
    }
 
    @Test
    fun `date time between params are parsed correctly`() {
-      val statement = sqlGenerator.generateSql("""findAll { Person[]( LastLoggedIn >= "2020-10-10T15:00:00Z",  LastLoggedIn < "2020-11-10T15:00:00Z"  ) }""")
+      val statement =
+         sqlGenerator.generateSql("""find { Person[]( LastLoggedIn >= "2020-10-10T15:00:00Z",  LastLoggedIn < "2020-11-10T15:00:00Z"  ) }""")
       statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ? AND "lastLogin" < ?;""", listOf(LocalDateTime.parse("2020-10-10T15:00:00"), LocalDateTime.parse("2020-11-10T15:00:00")))
    }
 
    @Test
    fun `when querying using a base type, the field is resolved correctly`() {
-      val statement = sqlGenerator.generateSql("""findAll { Person[]( LoginTime >= "2020-10-10T15:00:00Z",  LoginTime < "2020-11-10T15:00:00Z"  ) }""")
+      val statement =
+         sqlGenerator.generateSql("""find { Person[]( LoginTime >= "2020-10-10T15:00:00Z",  LoginTime < "2020-11-10T15:00:00Z"  ) }""")
       statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ? AND "lastLogin" < ?;""", listOf(LocalDateTime.parse("2020-10-10T15:00:00"), LocalDateTime.parse("2020-11-10T15:00:00")))
    }
 
    @Test
    fun `when querying using a grand-base type, the field is resolved correctly`() {
-      val statement = sqlGenerator.generateSql("""findAll { Person[]( BaseDate >= "2020-10-10",  BaseDate < "2020-11-10"  ) }""")
+      val statement =
+         sqlGenerator.generateSql("""find { Person[]( BaseDate >= "2020-10-10",  BaseDate < "2020-11-10"  ) }""")
       statement.shouldEqual("""SELECT * from person WHERE "birthDate" >= ? AND "birthDate" < ?;""", listOf(LocalDate.parse("2020-10-10"), LocalDate.parse("2020-11-10")))
    }
 
@@ -97,14 +100,14 @@ class VyneQlSqlGeneratorTest {
    @Test
    fun generatesSqlForFindAllWithoutArgsWithFilterSQL() {
       val filterSQL = "ABC in ('XYZ')"
-      val statement = sqlGenerator.generateSql("findAll { Person[] }", filterSQL)
+      val statement = sqlGenerator.generateSql("find { Person[] }", filterSQL)
       statement.shouldEqual("SELECT * from person WHERE ABC in ('XYZ');", emptyList())
    }
 
    @Test
    fun generatesSqlForFindByStringArgWithFilterSQL() {
       val filterSQL = "ABC in ('XYZ')"
-      val statement = sqlGenerator.generateSql("findAll { Person[]( FirstName == 'Jimmy' ) }", filterSQL)
+      val statement = sqlGenerator.generateSql("find { Person[]( FirstName == 'Jimmy' ) }", filterSQL)
       statement.shouldEqual("""SELECT * from person WHERE "firstName" = ? AND ABC in ('XYZ');""", listOf("Jimmy"))
    }
 

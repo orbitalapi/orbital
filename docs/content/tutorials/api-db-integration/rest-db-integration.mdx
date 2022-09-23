@@ -352,7 +352,7 @@ Vyne handles working out how to call the REST API, which data to pass, and what 
  * Paste the below query
 
 ```taxi
-findAll { Film[] } as {
+find { Film[] } as {
     film: {
         name: Title
         id : FilmId
@@ -417,7 +417,7 @@ We can use Curl to get the results of our query as a JSON document.
 curl 'http://localhost:9022/api/taxiql' \
   -H 'Accept: application/json' \
   -H 'Content-Type: application/taxiql' \
-  --data-raw 'findAll { Film[] } as {
+  --data-raw 'find { Film[] } as {
     film: {
         name: Title
         id : FilmId
@@ -451,7 +451,7 @@ Simple update the headers with an `Accept: text/event-stream`.
 curl 'http://localhost:9022/api/taxiql' \
   -H 'Accept: text/event-stream' \
   -H 'Content-Type: application/taxiql' \
-  --data-raw 'findAll { Film[] } as {
+  --data-raw 'find { Film[] } as {
     film: {
         name: Title
         id : FilmId

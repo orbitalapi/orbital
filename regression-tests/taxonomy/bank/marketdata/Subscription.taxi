@@ -13,14 +13,14 @@ namespace bank.marketdata
 
 /*
 # Order Query
-findAll {
+find {
     bank.orders.Order[] (
         CaskInsertedAt >= "2020-11-09T00:00:00", CaskInsertedAt < "2020-11-11T00:00:00"
         )
 } as bank.marketdata.OrderSubscription[]
 
 # RFQ Query bank.rfq.Rfq
-findAll {
+find {
     bank.rfq.Rfq[] (
         CaskInsertedAt >= "2020-11-09T00:00:00", CaskInsertedAt < "2020-11-11T00:00:00"
         )

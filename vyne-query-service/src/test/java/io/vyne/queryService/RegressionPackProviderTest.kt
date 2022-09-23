@@ -8,7 +8,7 @@ import org.junit.Test
 class RegressionPackProviderTest {
    @Test
    fun `Query serialisation`() {
-      val queryHolder = QueryHolder("""findAll { foo[] }""")
+      val queryHolder = QueryHolder("""find { foo[] }""")
       val objectMapper = jacksonObjectMapper()
       val jsonStr = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(queryHolder)
 

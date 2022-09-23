@@ -65,7 +65,7 @@ class VyneServiceInvocationTest {
       val trade = TypedInstance.from(vyne.type("Trade"), tradeJson, vyne.schema, source = Provided)
 
       stub.addResponse("findAllTrades", TypedCollection.from(listOf(trade)))
-      vyne.query("""findAll { Trade[] } as Output[]""")
+      vyne.query("""find { Trade[] } as Output[]""")
 
    }
 

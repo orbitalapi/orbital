@@ -761,7 +761,7 @@ changeTime
          .uri(VyneQlQueryService.REST_ENDPOINT)
          .contentType(MediaType.APPLICATION_JSON)
          .accept(MediaType.APPLICATION_JSON)
-         .bodyValue("""findAll { OrderWindowSummaryCsv[] }""")
+         .bodyValue("""find { OrderWindowSummaryCsv[] }""")
          .exchange()
          .expectStatus().isOk
          .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -795,7 +795,7 @@ changeTime
          .post()
          .uri(VyneQlQueryService.REST_ENDPOINT)
          .accept(MediaType.valueOf(MediaType.TEXT_EVENT_STREAM_VALUE))
-         .bodyValue("""findAll { OrderWindowSummaryCsv[] }""")
+         .bodyValue("""find { OrderWindowSummaryCsv[] }""")
          .exchange()
          .expectStatus().isOk
          .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM)

@@ -142,7 +142,7 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
       """
       )
       val vyneQlQuery = """
-         findAll {
+         find {
             Person[]
          } as
          @io.vyne.formats.Csv(

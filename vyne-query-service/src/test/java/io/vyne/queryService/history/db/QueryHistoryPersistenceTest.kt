@@ -149,7 +149,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
          QuerySummary(
             queryId = "queryId",
             clientQueryId = "clientQueryId",
-            taxiQl = "findAll { Foo[] }",
+            taxiQl = "find { Foo[] }",
             queryJson = largeString,
             startTime = Instant.now(),
             responseStatus = QueryResponse.ResponseStatus.RUNNING,
@@ -215,7 +215,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
       runTest {
          val turbine =
-            queryService.submitVyneQlQuery("findAll { Order[] } as Report[]", clientQueryId = id).body.testIn(this)
+            queryService.submitVyneQlQuery("find { Order[] } as Report[]", clientQueryId = id).body.testIn(this)
 
          val first = turbine.awaitItem()
          first.should.not.be.`null`
@@ -230,7 +230,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)
 
       historyRecord.should.not.be.`null`
-      historyRecord!!.taxiQl.should.equal("findAll { Order[] } as Report[]")
+      historyRecord!!.taxiQl.should.equal("find { Order[] } as Report[]")
       historyRecord.endTime.should.not.be.`null`
 
       val results = resultRowRepository.findAllByQueryId(id)
@@ -288,7 +288,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
       val id = UUID.randomUUID().toString()
 
-      val query = "findAll { Book[] } as Output[]"
+      val query = "find { Book[] } as Output[]"
       var firstResult: ValueWithTypeName? = null
       runTest {
 
@@ -377,7 +377,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
       val id = UUID.randomUUID().toString()
 
-      val query = "findAll { Book[] } as Output[]"
+      val query = "find { Book[] } as Output[]"
       var results = mutableListOf<ValueWithTypeName>()
       runTest {
 
@@ -497,7 +497,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
                "/ratings" to response(jackson.writeValueAsString(mapOf("rating" to 5)))
             )
 
-            val query = """findAll { Movie[] } as {
+            val query = """find { Movie[] } as {
          title : MovieTitle
          director : DirectorName
          producer : ProductionCompanyName
@@ -603,7 +603,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
             "/ratings" to response(jackson.writeValueAsString(mapOf("rating" to 5)))
          )
 
-         val query = """findAll { Movie[] } as {
+         val query = """find { Movie[] } as {
          title : MovieTitle
          director : DirectorName
          producer : ProductionCompanyName

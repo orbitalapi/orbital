@@ -88,7 +88,7 @@ class VyneQuerySecurityFirstTimeApiClientLoginIntegrationTest {
       JWSBuilder.initialiseIdpServer(wireMockServerBaseUrl, this.jwsBuilder!!, this.rsaJsonWebKey!!)
       val token = jwsBuilder!!.build().compactSerialization
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
-      val entity = HttpEntity("findAll { io.vyne.Username[] }", headers)
+      val entity = HttpEntity("find { io.vyne.Username[] }", headers)
 
       val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
       logger.info { "$response" }

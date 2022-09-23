@@ -57,7 +57,7 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
 
       runTest {
          val turbine =
-            queryService.submitVyneQlQuery("findAll { Order[] } as Report[]", clientQueryId = id).body.testIn(this)
+            queryService.submitVyneQlQuery("find { Order[] } as Report[]", clientQueryId = id).body.testIn(this)
 
          val first = turbine.awaitItem()
          first.should.not.be.`null`
@@ -72,7 +72,7 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
       val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)
 
       historyRecord.should.not.be.`null`
-      historyRecord!!.taxiQl.should.equal("findAll { Order[] } as Report[]")
+      historyRecord!!.taxiQl.should.equal("find { Order[] } as Report[]")
       historyRecord.endTime.should.not.be.`null`
       historyRecord.recordCount.should.equal(1)
 

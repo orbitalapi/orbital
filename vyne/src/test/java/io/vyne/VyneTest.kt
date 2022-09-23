@@ -296,7 +296,7 @@ class VyneTest {
 
 
          runTest {
-            val turbine = vyne.query("findAll { Input[] } as Output[]".trimIndent()).results.testIn(this)
+            val turbine = vyne.query("find { Input[] } as Output[]".trimIndent()).results.testIn(this)
             val typedInstance = turbine.expectTypedObject()
             typedInstance["puid"].value.should.not.be.`null`
             typedInstance["assetClass"].value.should.not.be.`null`
@@ -1054,7 +1054,7 @@ service Broker2Service {
 
       // act
       runBlocking {
-         val result = vyne.query("""findAll { Order[]( OrderDate >= "2020-01-01" , OrderDate < "2020-01-02" ) }""")
+         val result = vyne.query("""find { Order[]( OrderDate >= "2020-01-01" , OrderDate < "2020-01-02" ) }""")
          val resultList = result.rawResults.toList()
          resultList.should.have.size(4)
          stubService.invocations.should.have.size(2)
@@ -1089,7 +1089,7 @@ service Broker2Service {
       runBlocking {
          val result = vyne.query(
             """
-         findAll { Order[] } as CommonOrder[]
+         find { Order[] } as CommonOrder[]
       """.trimIndent()
          )
 
@@ -1130,7 +1130,7 @@ service Broker2Service {
          val result =
             vyne.query(
                """
-            findAll { Order[] } as CommonOrder[]
+            find { Order[] } as CommonOrder[]
          """.trimIndent()
             )
 
@@ -1212,7 +1212,7 @@ service Broker2Service {
       val (vyne, _) = testVyne(schema)
       vyne.addJsonModel("Source", """{ "eventDate" : "05/28/20T13:44:23.000Z" }""")
       runBlocking {
-         val result = vyne.query("""findOne { Source } as Target""")
+         val result = vyne.query("""find {Source } as Target""")
          result.isFullyResolved.should.be.`true`
          result.firstRawObject().get("eventDate").should.equal("05-28-20T13:44:23.000Z")
       }
@@ -1234,7 +1234,7 @@ service Broker2Service {
 
       runBlocking {
 
-         val result = vyne.query("""findOne { Source[] } as Target[]""")
+         val result = vyne.query("""find {Source[] } as Target[]""")
          result.isFullyResolved.should.be.`true`
          result.rawObjects().first()
             .get("eventDate").should.equal("05-28-20T13:44:23.000Z")
@@ -1298,7 +1298,7 @@ service Broker2Service {
          }
       }
 //      val result =  vyne.query("""
-//        findAll { Client } as ClientAndCountry
+//        find { Client } as ClientAndCountry
 //      """.trimIndent())
    }
 
@@ -1455,7 +1455,7 @@ service Broker2Service {
 
       // When
       runBlocking {
-         val result = vyne.query(""" findOne { BankOrder[] } as  CommonOrder[] """)
+         val result = vyne.query(""" find {BankOrder[] } as  CommonOrder[] """)
 
          // Then
          val results = result.rawObjects()
@@ -1679,7 +1679,7 @@ service ClientService {
       stub.addResponse("findUsers", TypedCollection.from(listOf(user)))
 
       runBlocking {
-         val queryResult = vyne.query("findAll { InputModel[] } as OutputModel[]")
+         val queryResult = vyne.query("find { InputModel[] } as OutputModel[]")
 
          val firstEntity = queryResult.typedObjects().first()
          firstEntity["username"].value.should.equal("JimmyPitt")
@@ -1751,7 +1751,7 @@ service ClientService {
 
       runBlocking {
          val queryResult =
-            vyne.query("""given { email : EmailAddress = "jimmy@demo.com" } findOne { Person } as OutputModel""")
+            vyne.query("""given { email : EmailAddress = "jimmy@demo.com" } find {Person } as OutputModel""")
          queryResult.rawObjects().first().should.equal(
             mapOf(
                "personId" to 1,
@@ -1806,7 +1806,7 @@ service ClientService {
       runBlocking {
          vyne.query(
             """
-              findAll {
+              find {
                  OrderWindowSummary[] ( TransactionEventDateTime  >= "2011-12-03T10:15:30", TransactionEventDateTime < "2021-12-03T10:15:30" )
               }
               """.trimIndent()
@@ -1847,7 +1847,7 @@ service ClientService {
          )
       )
       runBlocking {
-         val queryResult = vyne.query("findAll { Order[] } as Output[]")
+         val queryResult = vyne.query("find { Order[] } as Output[]")
 
          val outputModel = queryResult.typedObjects().first()
          outputModel["averagePrice"].value.should.be.`null`
@@ -1902,7 +1902,7 @@ service ClientService {
                """
          given {
             isin: Bar.ProductIsin = "US500769FH22"
-         } findOne {
+         } find {
             PuidResponse
          }
       """.trimIndent()
@@ -1916,7 +1916,7 @@ service ClientService {
                """
          given {
             isin: Bar.InstrumentIsin = "US500769FH23"
-         } findOne {
+         } find {
             PuidResponse
          }
       """.trimIndent()
@@ -1930,7 +1930,7 @@ service ClientService {
                """
          given {
             isin: Bar.Isin = "US500769FH24"
-         } findOne {
+         } find {
             PuidResponse
          }
       """.trimIndent()
@@ -1987,7 +1987,7 @@ service ClientService {
          val queryResult1 = vyne.query(
             """
           given { id: InstrumentId = "1" }
-          findOne {
+          find {
             PuidResponse
          }
       """.trimIndent()
@@ -2024,7 +2024,7 @@ service ClientService {
       runBlocking {
          vyne.query(
             """
-            findAll {
+            find {
     Bar.Order[](Isin== 'IT0000312312')
     }
       """.trimIndent()

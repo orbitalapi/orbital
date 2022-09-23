@@ -142,7 +142,7 @@ class OperationAuthenticationIntegrationTest {
             """[ { "personId" : "123" } ] """
          )
       }
-      val response = queryService.submitVyneQlQuery("""findAll { Person[] } """)
+      val response = queryService.submitVyneQlQuery("""find { Person[] } """)
          .body.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION)
@@ -165,7 +165,7 @@ class OperationAuthenticationIntegrationTest {
             """[ { "personId" : "123" } ] """
          )
       }
-      val response = queryService.submitVyneQlQuery("""findAll { Person[] } """)
+      val response = queryService.submitVyneQlQuery("""find { Person[] } """)
          .body.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION).should.be.`null`
@@ -189,7 +189,7 @@ class OperationAuthenticationIntegrationTest {
          )
       }
 
-      val response = queryService.submitVyneQlQuery("""findAll { Person[] } """)
+      val response = queryService.submitVyneQlQuery("""find { Person[] } """)
          .body.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.COOKIE)
@@ -204,7 +204,7 @@ class OperationAuthenticationIntegrationTest {
             """[ { "postcode" : "SW11" } ] """
          )
       }
-      val response = queryService.submitVyneQlQuery("""findAll { Address[] } """)
+      val response = queryService.submitVyneQlQuery("""find { Address[] } """)
          .body.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION)

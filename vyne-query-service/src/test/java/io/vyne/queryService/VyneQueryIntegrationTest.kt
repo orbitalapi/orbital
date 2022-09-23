@@ -172,7 +172,7 @@ str2|2"""
       headers.contentType = MediaType.APPLICATION_JSON
       headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
 
-      val entity = HttpEntity("findAll { User[] }", headers)
+      val entity = HttpEntity("find { User[] }", headers)
 
       val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
 
@@ -200,7 +200,7 @@ str2|2"""
       headers.contentType = MediaType.APPLICATION_JSON
       headers.set("Accept", MediaType.TEXT_EVENT_STREAM_VALUE)
 
-      val entity = HttpEntity("findAll { User[] }", headers)
+      val entity = HttpEntity("find { User[] }", headers)
 
       val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
 
@@ -222,7 +222,7 @@ str2|2"""
       headers.contentType = MediaType.APPLICATION_JSON
       headers.set("Accept", MediaType.TEXT_EVENT_STREAM_VALUE)
 
-      val entity = HttpEntity("findAll { Username[] }", headers)
+      val entity = HttpEntity("find { Username[] }", headers)
 
       val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
 
@@ -237,7 +237,7 @@ str2|2"""
       headers.contentType = MediaType.APPLICATION_JSON
       headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
 
-      val entity = HttpEntity("findAll { Username[] }", headers)
+      val entity = HttpEntity("find { Username[] }", headers)
 
       val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
 
@@ -251,7 +251,7 @@ str2|2"""
       headers.accept = listOf(MediaType.APPLICATION_JSON)
       headers.acceptCharset = listOf(StandardCharsets.UTF_8)
 
-      val entity = HttpEntity("findAll { User[] }", headers)
+      val entity = HttpEntity("find { User[] }", headers)
 
       val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
 
@@ -279,7 +279,7 @@ str2|2"""
       headers.contentType = MediaType.APPLICATION_JSON
       headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
 
-      val entity = HttpEntity("findAll { User[] }", headers)
+      val entity = HttpEntity("find { User[] }", headers)
 
       val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
 
@@ -303,7 +303,8 @@ str2|2"""
    fun `Formatted POST request on anonymous type should match expected result`() {
       val headers = HttpHeaders()
       headers.set("Accept", "text/csv")
-      val entity = HttpEntity("""findAll { User[] } as
+      val entity = HttpEntity(
+         """find { User[] } as
         @io.vyne.formats.Csv(
             delimiter = "|",
             nullValue = "NULL",
@@ -313,7 +314,8 @@ str2|2"""
             id : UserId
             name : Username
          }[]
-         """.trimMargin(), headers)
+         """.trimMargin(), headers
+      )
 
       val response = restTemplate.exchange("/api/vyneql", HttpMethod.POST, entity, String::class.java)
 
@@ -334,7 +336,7 @@ str2|2"""
       headers.contentType = MediaType.APPLICATION_JSON
       headers.set("Accept", "text/csv")
 
-      val entity = HttpEntity("findAll { User[] }", headers)
+      val entity = HttpEntity("find { User[] }", headers)
 
       val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
 
@@ -354,7 +356,7 @@ str2|2"""
       headers.contentType = MediaType.APPLICATION_JSON
       headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
 
-      val entity = HttpEntity("findAll { Empty[] }", headers)
+      val entity = HttpEntity("find { Empty[] }", headers)
 
       val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
 
@@ -373,7 +375,7 @@ str2|2"""
       val headers = HttpHeaders()
       headers.contentType = MediaType.APPLICATION_JSON
       headers.set("Accept", "text/csv")
-      val entity = HttpEntity("findAll { ModelWithCsvFormat[] }", headers)
+      val entity = HttpEntity("find { ModelWithCsvFormat[] }", headers)
       val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
       response.statusCodeValue.should.be.equal(200)
       response.headers["Content-Type"].should.equal(listOf("text/csv;charset=UTF-8"))

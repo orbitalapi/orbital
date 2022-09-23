@@ -66,7 +66,7 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
          val typedNullTypes = inputValues
             .mapIndexedNotNull { index, typedInstance ->
                if (typedInstance is TypedNull) {
-                  index to typedInstance.typeName
+                  index to typedInstance.type.qualifiedName.shortDisplayName
                } else {
                   null
                }
@@ -75,7 +75,7 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
             typeName.fqn()
          }
          val message = typedNullTypes.joinToString(
-            prefix = "Function ${this.functionName} does not permit null arguments, but received null for arguments ",
+            prefix = "Function ${this.functionName} (in statement `${function.asTaxi()}`) does not permit null arguments, but received null for arguments ",
             separator = ","
          ) { (parameterIndex, typeName) ->
             "$parameterIndex ($typeName)"

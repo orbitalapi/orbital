@@ -83,7 +83,7 @@ class AzureStoreInvocationTest {
          listOf(StoreInvoker(AzureStreamProvider(), connectionRegistry, SimpleSchemaProvider(schema)))
       }
 
-      val result = vyne.query("""findAll { Movie[]( MovieTitle == "A New Hope" ) } """)
+      val result = vyne.query("""find { Movie[]( MovieTitle == "A New Hope" ) } """)
          .typedObjects()
       result.should.have.size(1)
       result.first().toRawObject()

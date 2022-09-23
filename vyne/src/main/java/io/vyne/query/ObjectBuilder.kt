@@ -201,7 +201,7 @@ class ObjectBuilder(
    /**
     * Builds collections where we're iterating another collection
     * eg:
-    *  findAll { OrderTransaction[] } as {
+    *  find { OrderTransaction[] } as {
     *   items: Thing[] by [ThingToIterate[]   with { CustomerName }]
     * }[]
     */

@@ -52,9 +52,9 @@ class VyneClientTest {
       val expectedRespone = QueryClientResponse(true, mapOf("lang.taxi.Array<foo.Book>" to emptyList<Any>()));
       whenever(queryService.submitVyneQl(any(), any())).thenReturn(expectedRespone)
 
-      val response = client.submitVyneQl("findAll { foo.Book[] }")
+      val response = client.submitVyneQl("find { foo.Book[] }")
 
-      verify(queryService).submitVyneQl("findAll { foo.Book[] }")
+      verify(queryService).submitVyneQl("find { foo.Book[] }")
       response.should.be.equal(expectedRespone)
    }
 

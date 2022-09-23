@@ -112,7 +112,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
       val queryService = setupTestService(vyne, stub, buildHistoryConsumer())
       val clientQueryId = UUID.randomUUID().toString()
       queryService.submitVyneQlQuery(
-         """ findAll { Order[] } as {
+         """ find { Order[] } as {
             orderId : OrderId
             firstName : TraderFirstName
             lastName : TraderLastName
@@ -189,7 +189,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
       val queryService = setupTestService(vyne, stub, buildHistoryConsumer())
       val clientQueryId = UUID.randomUUID().toString()
       queryService.submitVyneQlQuery(
-         """ findAll { Order[] } as {
+         """ find { Order[] } as {
             orderId : OrderId
             traderData : {
                firstName : TraderFirstName

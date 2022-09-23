@@ -36,7 +36,7 @@ class VyneSystemLongRunningTest {
             it.start()
             it.vyneQueryServer.postCsvDataFile(caskDataCsv).should.equal(200)
             it.vyneQueryServer.ensureService("vyne.cask.vyne.test.containers.ProductCaskService")
-            val queryResult = it.vyneQueryServer.submitVyneQl("findAll { vyne.test.containers.Product[]  }")
+            val queryResult = it.vyneQueryServer.submitVyneQl("find { vyne.test.containers.Product[]  }")
             queryResult.should.not.be.empty
          }
    }

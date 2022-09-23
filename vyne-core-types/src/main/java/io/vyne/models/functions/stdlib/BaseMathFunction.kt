@@ -9,6 +9,7 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
 import io.vyne.models.functions.NamedFunctionInvoker
+import io.vyne.models.functions.NullSafeInvoker
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeMatchingStrategy
@@ -17,14 +18,13 @@ import lang.taxi.types.PrimitiveType
 import java.math.BigDecimal
 
 
-abstract class MathIteratingFunction : NamedFunctionInvoker {
-   override fun invoke(
-       inputValues: List<TypedInstance>,
-       schema: Schema,
-       returnType: Type,
-       function: FunctionAccessor,
-       objectFactory: EvaluationValueSupplier,
-       rawMessageBeingParsed: Any?
+abstract class MathIteratingFunction : NullSafeInvoker() {
+   override fun doInvoke(
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val sourceCollection = inputValues[0] as TypedCollection
       val deferredInstance = inputValues[1] as DeferredTypedInstance

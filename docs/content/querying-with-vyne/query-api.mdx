@@ -129,7 +129,7 @@ Building blocks of VyneQL:
 
 * **given** - block allows to specify what is known to us \(facts\) e.g. ISIN number of an instrument that we are looking for.
 * **findAll** - block defines what we querying for, e.g. an individual Instrument or a list of Instruments.
-* **as** - projection block, defines type to which response should be transformed to. 
+* **as** - projection block, defines type to which response should be transformed to.
 
 Sample query:
 
@@ -137,7 +137,7 @@ Sample query:
 given {
    isin: demo.instrument.Isin = "US0378331005"
 }
-findAll {
+find {
    demo.Instrument
 }
 as CommonInstrument
@@ -153,7 +153,7 @@ Sample request to get all instruments from instrument-service
 POST http://localhost:9022/api/vyneql
 
 Request body:
-findAll {
+find {
    demo.Instrument[]
 }
 ```
@@ -209,7 +209,7 @@ Request:
 given {
    isin: demo.instrument.Isin = "US0378331005"
 }
-findAll {
+find {
    demo.Instrument
 }
 
@@ -251,7 +251,7 @@ Response:
 The example below shows how to query for Orders \(created withing a given date range\) and then project results to common Order object.
 
 ```text
-findAll {
+find {
    Order[] ( OrderDateTime  >= "2010-03-27T11:01:09", OrderDateTime < "2030-03-27T11:01:11" )
 } as common.Order[]
 ```

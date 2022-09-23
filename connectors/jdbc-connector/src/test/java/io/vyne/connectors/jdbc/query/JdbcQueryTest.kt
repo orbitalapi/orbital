@@ -90,7 +90,7 @@ class JdbcQueryTest {
       """
          )
       ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
-      val result = vyne.query("""findAll { Movie[]( MovieTitle == "A New Hope" ) } """)
+      val result = vyne.query("""find { Movie[]( MovieTitle == "A New Hope" ) } """)
          .typedObjects()
       result.should.have.size(1)
       result.first().toRawObject()
@@ -143,7 +143,7 @@ class JdbcQueryTest {
          listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)), stub)
       }
       val result = vyne.query(
-         """findAll { Movie[]( MovieTitle == "A New Hope" ) }
+         """find { Movie[]( MovieTitle == "A New Hope" ) }
          | as {
          |  title : MovieTitle
          |  availableCopies : AvailableCopyCount
@@ -214,7 +214,7 @@ class JdbcQueryTest {
          listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)), stub)
       }
       val result = vyne.query(
-         """findAll { NewRelease[] }
+         """find { NewRelease[] }
          | as {
          |  title : MovieTitle
          |  releaseDate : ReleaseDate
@@ -285,7 +285,7 @@ class JdbcQueryTest {
          listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)), stub)
       }
       val result = vyne.query(
-         """findAll { NewRelease[] }
+         """find { NewRelease[] }
          | as {
          |  title : MovieTitle
          |  releaseDate : ReleaseDate

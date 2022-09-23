@@ -76,7 +76,7 @@ class QueryHistoryLineageTest {
       )
       runBlocking {
          val results = queryService.submitVyneQlQuery(
-            """given { email : EmailAddress = "jimmy@foo.com" } findOne { AccountBalance }""",
+            """given { email : EmailAddress = "jimmy@foo.com" } find {AccountBalance }""",
             ResultMode.SIMPLE,
             MediaType.APPLICATION_JSON_VALUE, clientQueryId = queryId
          ).body.toList()

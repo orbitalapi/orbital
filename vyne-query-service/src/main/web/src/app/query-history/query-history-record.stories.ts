@@ -20,7 +20,7 @@ storiesOf('Query History', module)
       historyRecords: [
         {
           durationMs: 20300,
-          taxiQl: 'findAll { foo.bar.baz }',
+          taxiQl: 'find { foo.bar.baz }',
           queryId: '123',
           recordCount: 2300,
           responseStatus: ResponseStatus.COMPLETED,
@@ -28,14 +28,14 @@ storiesOf('Query History', module)
         },
         {
           durationMs: 200300,
-          taxiQl: 'findAll { foo.bar.baz }',
+          taxiQl: 'find { foo.bar.baz }',
           queryId: '123',
           recordCount: 2300,
           responseStatus: ResponseStatus.COMPLETED,
           startTime: new Date()
         }, {
           durationMs: 2300,
-          taxiQl: 'findAll { foo.bar.baz }',
+          taxiQl: 'find { foo.bar.baz }',
           queryId: '123',
           recordCount: 0,
           responseStatus: ResponseStatus.ERROR,

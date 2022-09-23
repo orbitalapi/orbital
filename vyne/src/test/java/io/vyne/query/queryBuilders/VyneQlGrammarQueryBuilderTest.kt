@@ -24,7 +24,7 @@ class VyneQlGrammarQueryBuilderTest {
    }
    @Test
    fun buildsVyneQlForEquals() {
-      val querySpecNode = getQuerySpecNode("findAll { Person[]( FirstName = 'Jimmy' ) }", schema)
+      val querySpecNode = getQuerySpecNode("find { Person[]( FirstName = 'Jimmy' ) }", schema)
       builder.buildVyneQl(querySpecNode)
    }
 }

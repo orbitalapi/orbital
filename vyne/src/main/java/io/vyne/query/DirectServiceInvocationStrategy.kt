@@ -47,8 +47,8 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
          operation currentStock(): NumberOfItems
        }
 
-       findAll { Item[] }  as {
-         isin: Isin
+       find { Item[] }  as {
+       isin: Isin
           currentStock: NumberOfItems
       }[]
 

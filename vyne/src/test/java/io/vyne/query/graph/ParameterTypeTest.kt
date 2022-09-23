@@ -143,7 +143,7 @@ namespace vyne.example
          )
 
          runTest {
-            val turbine = vyne.query("""findAll { Employee[] } as EmployeeDetails[]""".trimIndent())
+            val turbine = vyne.query("""find { Employee[] } as EmployeeDetails[]""".trimIndent())
                .results
                .testIn(this)
 

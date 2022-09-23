@@ -335,7 +335,7 @@ class FirstNotEmptyTest {
             }
          }
          runTest {
-            val turbine = vyne.query("findAll { Id[] } as OutputModel[]").rawResults.testIn(this)
+            val turbine = vyne.query("find { Id[] } as OutputModel[]").rawResults.testIn(this)
             // There are two Name types present - Name (the base type), and FirstName (the subtype).
             // Person1 has their Name (basetype) populated in the service response
             turbine.expectRawMap().should.equal(mapOf("id" to 1, "discoveredName" to "Jimmy BaseName"))
