@@ -19,6 +19,12 @@ import {
 } from './schema-chart-builder';
 import { applyElkLayout } from './elk-chart-layout';
 import { isUndefined } from 'util';
+import { colors } from 'src/app/schema-diagram/schema-diagram/tailwind.colors';
+import { CSSProperties } from 'react';
+import {
+  modelNodeBorderColor,
+  serviceNodeBorderColor
+} from 'src/app/schema-diagram/schema-diagram/diagram-nodes/schema-node-container';
 
 export const HORIZONTAL_GAP = 50;
 
@@ -166,26 +172,44 @@ export class SchemaChartController {
     // }, 25);
   }
 
-  private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, sourceSchemaKind: SchemaMemberType, targetNode: Node<MemberWithLinks>, targetHandleId: string, targetSchemaKind: SchemaMemberType): Edge {
-    const edgeParams:EdgeParams = {
+  private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, sourceSchemaKind: SchemaMemberType, targetNode: Node<MemberWithLinks>, targetHandleId: string, targetSchemaKind: SchemaMemberType, linkId?: string): Edge {
+    const edgeParams: EdgeParams = {
       sourceCanFloat: sourceSchemaKind === 'TYPE',
       targetCanFloat: targetSchemaKind === 'TYPE',
     }
     let label: string;
     let markerStart, markerEnd: EdgeMarkerType;
+    // Default color
+    let lineColor: string = colors.gray['800'];
     if (sourceSchemaKind === 'OPERATION' && targetSchemaKind === 'TYPE') {
       label = 'provides';
       markerEnd = {
-        type: MarkerType.Arrow
+        type: MarkerType.Arrow,
+        width: 30,
+        height: 30,
+        color: serviceNodeBorderColor
       };
+      lineColor = serviceNodeBorderColor;
     }
     if (sourceSchemaKind === 'TYPE' && targetSchemaKind === 'OPERATION') {
       label = 'Is input'
       markerEnd = {
-        type: MarkerType.Arrow
+        type: MarkerType.Arrow,
+        width: 30,
+        height: 30,
+        color: modelNodeBorderColor
       };
+      lineColor = modelNodeBorderColor;
     }
-    const id = [sourceNode.id, sourceHandleId, '->', targetNode.id, targetHandleId].join('-');
+    const style: CSSProperties = {
+    };
+    if (sourceSchemaKind === 'TYPE' && targetSchemaKind === 'TYPE') {
+      lineColor = colors.lime['300'];
+      style.strokeDasharray = '5,5';
+    }
+    style.stroke = lineColor;
+
+    const id = linkId || [sourceNode.id, sourceHandleId, '->', targetNode.id, targetHandleId].join('-');
     return {
       id: id,
       data: edgeParams,
@@ -196,7 +220,8 @@ export class SchemaChartController {
       type: 'floating',
       label: label,
       markerStart,
-      markerEnd
+      markerEnd,
+      style
     };
   }
 
@@ -213,7 +238,7 @@ export class SchemaChartController {
       nodeLinks.filter(link => {
         return nodes.has(link.sourceNodeId) && nodes.has(link.targetNodeId)
       }).forEach(link => {
-        const edge = this.buildEdge(nodes.get(link.sourceNodeId), link.sourceHandleId, link.sourceMemberType, nodes.get(link.targetNodeId), link.targetHandleId, link.targetMemberType)
+        const edge = this.buildEdge(nodes.get(link.sourceNodeId), link.sourceHandleId, link.sourceMemberType, nodes.get(link.targetNodeId), link.targetHandleId, link.targetMemberType, link.linkId)
         createdEdges.set(edge.id, edge);
       });
     })

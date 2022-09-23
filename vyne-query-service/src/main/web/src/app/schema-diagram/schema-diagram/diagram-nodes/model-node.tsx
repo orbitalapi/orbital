@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Node, Position } from 'react-flow-renderer';
-import { Type } from '../../../services/schema';
+import { Type } from 'src/app/services/schema';
 import { SchemaNodeContainer } from './schema-node-container';
 import { collectLinks, MemberWithLinks, ModelLinks } from '../schema-chart-builder';
 import { LinkHandle } from './link-handle';

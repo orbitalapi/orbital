@@ -13,6 +13,8 @@ import { NodeType } from './schema-flow.react';
 import { Node, Position, XYPosition } from 'react-flow-renderer';
 import { SchemaChartController } from './schema-chart.controller';
 import { splitOperationQualifiedName } from '../../service-view/service-view.component';
+import { CSSProperties } from 'react';
+import { colors } from 'src/app/schema-diagram/schema-diagram/tailwind.colors';
 
 function getNodeKind(member: SchemaMember): NodeType {
   if (member.kind === 'TYPE') {
@@ -26,6 +28,7 @@ export interface EdgeParams {
   sourceCanFloat: boolean;
   targetCanFloat: boolean;
 }
+
 export interface Links {
   inputs: Link[];
   outputs: Link[];
@@ -94,7 +97,7 @@ function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: 
     sourceNodeName: parent.name,
     sourceHandleId: HandleIds.modelFieldOutbound(parent.name, parent.field),
     inverseSourceHandleId: HandleIds.modelFieldInbound(parent.name, parent.field),
-    sourceMemberType: 'TYPE'  as SchemaMemberType,
+    sourceMemberType: 'TYPE' as SchemaMemberType,
   } : {
     sourceNodeId: typeNodeId,
     sourceNodeName: typeName,
@@ -135,13 +138,12 @@ function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: 
         targetNodeId: typeNodeId,
         targetHandleId: HandleIds.modelInbound(typeName),
         targetNodeName: typeName,
-        targetMemberType: 'TYPE'
+        targetMemberType: 'TYPE',
       })
     }
   })
 
-  const producedByOtherTypes: Link[] = [];
-  const consumedByOtherTypes: Link[] = [];
+  const modelLinks: Map<string, Link> = new Map<string, Link>();
   // Build links for models which have this type as an attribute
   schema.types
     .filter(t => !t.isScalar)
@@ -161,33 +163,41 @@ function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: 
         const field = typeInSchema.attributes[fieldName];
         const fieldTypeName = arrayMemberTypeNameOrTypeNameFromName(field.type);
         if (fieldTypeName.fullyQualifiedName === typeName.fullyQualifiedName) {
-          consumedByOtherTypes.push({
+          const link = {
             ...source,
 
             targetNodeId: getNodeId('TYPE', typeInSchema.name),
             targetNodeName: typeInSchema.name,
             targetHandleId: HandleIds.modelFieldInbound(typeInSchema.name, fieldName),
             targetMemberType: 'TYPE'
-          });
-          producedByOtherTypes.push({
-            sourceNodeId: getNodeId('TYPE', typeInSchema.name),
-            sourceNodeName: typeInSchema.name,
-            sourceHandleId: HandleIds.modelFieldOutbound(typeInSchema.name, fieldName),
-            sourceMemberType: 'TYPE',
-
-            // This is the "inverse" side, ie., links to the source (as determined above),
-            targetNodeId: source.sourceNodeId,
-            targetNodeName: source.sourceNodeName,
-            targetHandleId: source.inverseSourceHandleId,
-            targetMemberType: source.sourceMemberType
-          })
+          } as Link;
+          // We want an id where source -> destination and destination -> source provide the same id.
+          // This is to prevent duplicate linkes
+          const linkId = [link.sourceNodeId, link.targetNodeId].sort((a, b) => a.localeCompare(b))
+            .join('-')
+          link.linkId = linkId;
+          modelLinks.set(linkId, link);
+          // producedByOtherTypes.push({
+          //   sourceNodeId: getNodeId('TYPE', typeInSchema.name),
+          //   sourceNodeName: typeInSchema.name,
+          //   sourceHandleId: HandleIds.modelFieldOutbound(typeInSchema.name, fieldName),
+          //   sourceMemberType: 'TYPE',
+          //
+          //   // This is the "inverse" side, ie., links to the source (as determined above),
+          //   targetNodeId: source.sourceNodeId,
+          //   targetNodeName: source.sourceNodeName,
+          //   targetHandleId: source.inverseSourceHandleId,
+          //   targetMemberType: source.sourceMemberType
+          // })
         }
       })
     })
 
   return {
-    outputs: consumingOperations.concat(consumedByOtherTypes),
-    inputs: producedByOperations.concat(producedByOtherTypes)
+    // Model links "float" (ie., have no concept of input/output),
+    // so it doesn't matter where we add them.
+    outputs: consumingOperations.concat(Array.from(modelLinks.values())),
+    inputs: producedByOperations
   }
 }
 
@@ -224,6 +234,11 @@ export interface Link {
   targetNodeId: string;
   targetHandleId: string;
   targetMemberType: SchemaMemberType;
+
+  linkStyle?: CSSProperties;
+
+  // Optional, as we only set it if we wish to check for duplicates
+  linkId?: string;
 }
 
 function buildOperationLinks(operation: ServiceMember, service: Service): Links {
