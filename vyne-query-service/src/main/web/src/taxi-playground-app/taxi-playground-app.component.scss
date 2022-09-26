@@ -12,3 +12,13 @@ app-schema-diagram {
   flex-grow: 1;
   height: 100%;
 }
+
+.fullscreen {
+  position: fixed;
+  top: 2rem;
+  height: calc(100vh - 4rem);
+  left: 20px;
+  width: calc(100vw - 60px);
+  z-index: 2000;
+  background-color: white;
+}

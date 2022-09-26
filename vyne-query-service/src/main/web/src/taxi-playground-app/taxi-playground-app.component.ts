@@ -1,10 +1,8 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { ParsedSchema, TaxiPlaygroundService } from 'src/taxi-playground-app/taxi-playground.service';
-import { bufferTime, debounceTime, filter, map, mergeMap, share, switchMap, throttleTime } from 'rxjs/operators';
+import { debounceTime, filter, map, share, switchMap} from 'rxjs/operators';
 import { emptySchema, Schema } from 'src/app/services/schema';
 import { Observable, of, Subject } from 'rxjs';
-import { AuthService } from '@auth0/auth0-angular';
-
 
 @Component({
   selector: 'taxi-playground-app',
@@ -16,7 +14,12 @@ import { AuthService } from '@auth0/auth0-angular';
           <app-code-editor (contentChange)="codeUpdated$.next($event)"></app-code-editor>
         </as-split-area>
         <as-split-area>
-          <app-schema-diagram [schema$]="schema$" displayedMembers="everything">
+          <app-schema-diagram 
+            [class.mat-elevation-z8]="fullscreen"
+            [class.fullscreen]="fullscreen" 
+            [schema$]="schema$" 
+            displayedMembers="everything" 
+            (fullscreenChange)="onFullscreenChange()">
 
           </app-schema-diagram>
         </as-split-area>
@@ -31,6 +34,8 @@ export class TaxiPlaygroundAppComponent {
   codeUpdated$ = new Subject<string>()
 
   schema$: Observable<Schema>;
+
+  fullscreen = false;
 
   constructor(private service: TaxiPlaygroundService) {
     this.schema$ = this.codeUpdated$
@@ -58,5 +63,9 @@ export class TaxiPlaygroundAppComponent {
         // a service call for every subscriber. :(
         share()
       )
+  }
+
+  onFullscreenChange() {
+    this.fullscreen = !this.fullscreen; 
   }
 }

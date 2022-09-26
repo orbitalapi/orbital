@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, Output } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
+import { EventEmitter } from 'stream';
 
 @Component({
   selector: 'playground-toolbar',
@@ -20,7 +21,7 @@ import { AuthService } from '@auth0/auth0-angular';
   styleUrls: ['./playground-toolbar.component.scss']
 })
 export class PlaygroundToolbarComponent {
-
+  
   readonly slackInviteLink = "https://join.slack.com/t/vynehq/shared_invite/zt-1gxb15z4g-H2IeysSGo_rI1ptOty6mwA";
   
   constructor(public authService: AuthService) {

@@ -1,3 +1,4 @@
+@use '~@angular/material' as mat;
 @import "../theme";
 
 
@@ -14,3 +15,90 @@ body {
   margin: 0;
   font-family: $font-sans;
 }
+
+/* For use in src/lib/core/theming/_palette.scss */
+$primary: (
+    50 : #e7edfe,
+    100 : #c4d2fd,
+    200 : #9db5fc,
+    300 : #7697fb,
+    400 : #5880fa,
+    500 : #3b6af9,
+    600 : #3562f8,
+    700 : #2d57f7,
+    800 : #264df6,
+    900 : #193cf5,
+    A100 : #ffffff,
+    A200 : #f3f5ff,
+    A400 : #c0c9ff,
+    A700 : #a7b2ff,
+    contrast: (
+        50 : #000000,
+        100 : #000000,
+        200 : #000000,
+        300 : #000000,
+        400 : #000000,
+        500 : #ffffff,
+        600 : #ffffff,
+        700 : #ffffff,
+        800 : #ffffff,
+        900 : #ffffff,
+        A100 : #000000,
+        A200 : #000000,
+        A400 : #000000,
+        A700 : #000000,
+    )
+);
+
+
+
+$accent: (
+    50 : #fef8e8,
+    100 : #feeec5,
+    200 : #fde29e,
+    300 : #fcd677,
+    400 : #fbce59,
+    500 : #fac53c,
+    600 : #f9bf36,
+    700 : #f9b82e,
+    800 : #f8b027,
+    900 : #f6a31a,
+    A100 : #ffffff,
+    A200 : #fffbf6,
+    A400 : #ffe7c3,
+    A700 : #ffdca9,
+    contrast: (
+        50 : #000000,
+        100 : #000000,
+        200 : #000000,
+        300 : #000000,
+        400 : #000000,
+        500 : #000000,
+        600 : #000000,
+        700 : #000000,
+        800 : #000000,
+        900 : #000000,
+        A100 : #000000,
+        A200 : #000000,
+        A400 : #000000,
+        A700 : #000000,
+    )
+);
+
+
+
+
+// Define the palettes for your theme using the Material Design palettes available in palette.scss
+// (imported above). For each palette, you can optionally specify a default, lighter, and darker
+// hue. Available color palettes: https://material.io/design/color/
+$primary-palette: mat.define-palette($primary);
+$accent-palette: mat.define-palette($accent);
+
+
+// Create the theme object (a Sass map containing all of the palettes).
+$vyne-app-theme: mat.define-light-theme($primary-palette, $accent-palette);
+
+// Include theme styles for core and each component used in your app.
+// Alternatively, you can import and @include the theme mixins for each component
+// that you are using.
+@include mat.all-component-themes($vyne-app-theme);

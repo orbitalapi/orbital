@@ -3,9 +3,9 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 @Component({
   selector: 'app-fullscreen-toggle',
   template: `
-    <button mat-icon-button (click)="toggleFullscreen()" class="fullscreen-toggle">
-      <img src="assets/img/full-screen-on.svg" *ngIf="!fullscreen">
-      <img src="assets/img/full-screen-off.svg" *ngIf="fullscreen">
+    <button mat-mini-fab color="primary" (click)="toggleFullscreen()" class="fullscreen-toggle">
+      <mat-icon svgIcon="fullscreen-on" *ngIf="!fullscreen"></mat-icon>
+      <mat-icon svgIcon="fullscreen-off" *ngIf="fullscreen"></mat-icon>
     </button>
   `,
   styleUrls: ['./fullscreen-toggle.component.scss']

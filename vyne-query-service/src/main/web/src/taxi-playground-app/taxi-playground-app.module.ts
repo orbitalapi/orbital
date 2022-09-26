@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { TaxiPlaygroundAppComponent } from './taxi-playground-app.component';
-import { BrowserModule } from '@angular/platform-browser';
+import { BrowserModule, DomSanitizer } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { CommonModule } from '@angular/common';
 import { TaxiPlaygroundModule } from 'src/app/taxi-playground/taxi-playground.module';
@@ -12,6 +12,7 @@ import { AuthModule } from '@auth0/auth0-angular';
 import { LANGUAGE_SERVER_WS_ADDRESS_TOKEN } from 'src/app/code-editor/code-editor.component';
 import { WebsocketService } from 'src/app/services/websocket.service';
 import { environment } from 'src/taxi-playground-app/environments/environment';
+import { MatIconRegistry } from '@angular/material/icon';
 
 
 @NgModule({
