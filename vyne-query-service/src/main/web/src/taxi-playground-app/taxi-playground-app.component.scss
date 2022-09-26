@@ -3,6 +3,12 @@
   flex-direction: column;
   height: 100vh;
 }
+
 .container {
   flex-grow: 1;
+}
+
+app-schema-diagram {
+  flex-grow: 1;
+  height: 100%;
 }
