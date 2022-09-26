@@ -1,3 +1,5 @@
+@import "src/theme";
+
 :host {
   display: flex;
   flex-direction: column;
@@ -7,4 +9,14 @@
   height: 1px;
   flex-grow: 1;
   width: 100%;
+}
+
+.toolbar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+
+  .spacer {
+    flex-grow: 1;
+  }
 }

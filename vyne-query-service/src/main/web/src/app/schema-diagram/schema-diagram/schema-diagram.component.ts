@@ -13,6 +13,8 @@ import { map } from 'rxjs/operators';
     <!-- we need a wrapper to catch the resize events, and then
     provide explicit sizing to container -->
     <div class="toolbar">
+      <h3>{{ title }}</h3>
+      <div class="spacer"></div>
       <app-fullscreen-toggle></app-fullscreen-toggle>
     </div>
     <div class="wrapper" (resized)="onWrapperResized($event)">
@@ -22,12 +24,12 @@ import { map } from 'rxjs/operators';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class SchemaDiagramComponent implements AfterViewInit {
-
-  ngAfterViewInit(): void {
-  }
+export class SchemaDiagramComponent {
 
   private _displayedMembers: string[] | 'everything' | 'services';
+
+  @Input()
+  title: string;
 
   @Input()
   get displayedMembers(): string[] | 'everything' | 'services' {
@@ -68,6 +70,8 @@ export class SchemaDiagramComponent implements AfterViewInit {
     this.resetComponent();
   }
 
+  // Added this, as was getting lots of resize events from flex layout algos when the
+  // size was changing by a few pixels
   private isSignificantResize(event: ResizedEvent) {
     if (!this.lastMeasureEvent) {
       return true;
@@ -75,8 +79,8 @@ export class SchemaDiagramComponent implements AfterViewInit {
     if (isNullOrUndefined(event.newRect.height) || isNullOrUndefined(event.newRect.width)) {
       return false;
     }
-    return (Math.abs(event.newRect.height - this.lastMeasureEvent.newRect.height) > 100 ||
-      Math.abs(event.newRect.width - this.lastMeasureEvent.newRect.width) > 100);
+    return (Math.abs(event.newRect.height - this.lastMeasureEvent.newRect.height) > 10 ||
+      Math.abs(event.newRect.width - this.lastMeasureEvent.newRect.width) > 10);
   }
 
   private _containerRef: ElementRef;
@@ -121,7 +125,7 @@ export class SchemaDiagramComponent implements AfterViewInit {
       }));
 
     SchemaFlowWrapper.initialize(
-      this._containerRef,
+      this.containerRef,
       membersToDisplay,
       this.schema$,
       this.lastMeasureEvent.newRect.width,

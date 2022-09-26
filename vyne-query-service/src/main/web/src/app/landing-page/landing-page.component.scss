@@ -1,30 +1,23 @@
 :host {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   width: 100%;
   height: 100%;
   flex-grow: 1;
 }
 
 .container {
-  width: 100%;
   display: flex;
   flex-direction: column;
-  margin-bottom: 2rem;
-  padding: 0;
-  flex-grow: 1;
-  height: 10px;
-}
 
-.content-box {
+  flex: 1 0 auto;
+  height: 1px;
+
   background-color: white;
   border-radius: 6px;
   padding: 0 1rem;
-}
-
-.schema-diagram-container {
-  flex-grow: 1;
+  margin: 1rem;
 }
 
 app-header-bar {
@@ -33,20 +26,10 @@ app-header-bar {
 }
 
 app-schema-diagram {
-  flex-grow: 1;
+  flex: 1 0 auto;
   height: 1px;
 }
 
-.changelog-container {
-  width: 10px;
-  flex-grow: 1;
-  max-width: 35rem;
-  overflow: auto;
-}
-
-app-changelog-list {
-  display: block;
-}
 app-search-bar-container {
   display: block;
   margin-bottom: 1rem;
