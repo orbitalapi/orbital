@@ -28,7 +28,7 @@ export const ORBITAL_ROUTES = RouterModule.forRoot(
     },
     {
       path: 'data-explorer',
-      loadChildren: () => import('./data-explorer/data-explorer.module').then(m => m.DataExplorerModule),
+      loadChildren: () => import('./data-explorer/data-explorer.route.module').then(m => m.DataExplorerRouteModule),
       canActivate: [AuthGuard],
       data: { requiredAuthority: VynePrivileges.EditSchema }
     },

@@ -85,12 +85,6 @@ import { VynePrivileges } from 'src/app/services/user-info.service';
     MatIconModule,
     NgxFileDropModule,
     AngularSplitModule,
-    RouterModule.forChild([
-      {
-        path: '',
-        component: DataExplorerComponent,
-      },
-    ])
   ],
   declarations: [
     DataSourceToolbarComponent,
