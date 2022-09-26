@@ -10,6 +10,7 @@
 .container {
   width: 100%;
   display: flex;
+  flex-direction: column;
   margin-bottom: 2rem;
   padding: 0;
   flex-grow: 1;
@@ -23,10 +24,7 @@
 }
 
 .schema-diagram-container {
-  width: 10px;
   flex-grow: 1;
-  margin-left: 1rem;
-  margin-right: 3rem;
 }
 
 app-header-bar {
@@ -35,7 +33,8 @@ app-header-bar {
 }
 
 app-schema-diagram {
-  height: 800px;
+  flex-grow: 1;
+  height: 1px;
 }
 
 .changelog-container {

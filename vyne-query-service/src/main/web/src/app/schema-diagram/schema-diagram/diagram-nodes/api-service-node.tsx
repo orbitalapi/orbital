@@ -77,10 +77,12 @@ function ApiNode(node: Node<MemberWithLinks>) {
       <tr className={'small-heading'}>
         <td colSpan={3}>{props.heading}</td>
       </tr>
-      {props.operations.map(operation => {
+      {props.operations.map((operation, index) => {
         const serviceLinks = node.data.links as ServiceLinks;
         const operationLinks = serviceLinks.operationLinks[operation.name];
-        return (<React.Fragment key={operation.qualifiedName.parameterizedName}>
+        // It's possible to have the same operation name with overloaded args, so need to add the index here
+        const key = `op-${index}-operation.qualifiedName.parameterizedName`
+        return (<React.Fragment key={key}>
           {props.showInputs ? (
               <OperationWithArgs operation={operation} operationLinks={operationLinks}></OperationWithArgs>) :
             (<NoArgOperation operation={operation} operationLinks={operationLinks}></NoArgOperation>)}

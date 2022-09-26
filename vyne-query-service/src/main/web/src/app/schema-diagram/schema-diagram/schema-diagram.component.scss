@@ -1,4 +1,10 @@
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
 .wrapper {
-  height: 100%;
+  height: 1px;
+  flex-grow: 1;
   width: 100%;
 }

@@ -18,11 +18,9 @@ export interface LandingPageCardConfig {
   template: `
     <app-header-bar title="">
     </app-header-bar>
-    <div class="container">
-      <div class="content-box schema-diagram-container">
-        <h3>Your services</h3>
-        <app-schema-diagram [schema$]="schema$" displayedMembers="services"></app-schema-diagram>
-      </div>
+    <div class="container content-box schema-diagram-container">
+      <h3>Your services</h3>
+      <app-schema-diagram [schema$]="schema$" displayedMembers="services"></app-schema-diagram>
     </div>
 
 

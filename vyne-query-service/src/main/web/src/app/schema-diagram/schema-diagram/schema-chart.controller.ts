@@ -1,23 +1,16 @@
-import {
-  arrayMemberTypeNameOrTypeNameFromName,
-  findSchemaMember,
-  Schema,
-  SchemaMember, SchemaMemberType,
-  ServiceMember
-} from '../../services/schema';
+import { findSchemaMember, Schema, SchemaMemberType, ServiceMember } from '../../services/schema';
 import { Edge, EdgeMarkerType, MarkerType, Node, XYPosition } from 'react-flow-renderer';
 import {
   buildSchemaNode,
   collectionOperations,
-  collectLinks, EdgeParams,
+  collectLinks,
+  EdgeParams,
   getNodeId,
   Link,
-  Links,
   MemberWithLinks,
   ModelLinks,
   ServiceLinks
 } from './schema-chart-builder';
-import { applyElkLayout } from './elk-chart-layout';
 import { isUndefined } from 'util';
 import { colors } from 'src/app/schema-diagram/schema-diagram/tailwind.colors';
 import { CSSProperties } from 'react';
@@ -25,6 +18,7 @@ import {
   modelNodeBorderColor,
   serviceNodeBorderColor
 } from 'src/app/schema-diagram/schema-diagram/diagram-nodes/schema-node-container';
+import { AppendLinksHandler } from 'src/app/schema-diagram/schema-diagram/schema-flow.react';
 
 export const HORIZONTAL_GAP = 50;
 
@@ -56,7 +50,8 @@ export class SchemaChartController {
 
   build(buildOptions: {
     autoAppendLinks: boolean,
-    layoutAlgo: 'full' | 'incremental'
+    layoutAlgo: 'full' | 'incremental',
+    appendLinksHandler: AppendLinksHandler
   }): ChartBuildResult {
     const builtNodesById = new Map<string, Node<MemberWithLinks>>();
 
@@ -64,7 +59,7 @@ export class SchemaChartController {
       const schemaMember = findSchemaMember(this.schema, member);
       const nodeId = getNodeId(schemaMember.kind, schemaMember.name);
       const existingPosition = this.currentNodesById.get(nodeId)?.position;
-      return buildSchemaNode(this.schema, schemaMember, this.operations, this, existingPosition);
+      return buildSchemaNode(this.schema, schemaMember, this.operations, buildOptions.appendLinksHandler, existingPosition);
     }).forEach(node => builtNodesById.set(node.id, node));
 
     const builtEdgedById = new Map<string, Edge>();
@@ -146,30 +141,6 @@ export class SchemaChartController {
       childLinks = data.links.collectAllChildLinks()
     }
     return collectLinks(data.links).concat(childLinks);
-  }
-
-  appendNodesAndEdgesForLinks(nodeRequestingLink: Node<MemberWithLinks>, links: Link[], direction?: 'right' | 'left') {
-    throw new Error('fix me');
-    // const affectedNodes = links.flatMap(link => {
-    //   // For whatever reason, looks like we're not getting parameterized names on some node types.
-    //   // Will fix / investigate...eventually.
-    //   const targetNodeName = link.targetNodeName.parameterizedName || link.targetNodeName.fullyQualifiedName;
-    //   const targetNode = this.ensureMemberPresentByName(targetNodeName, { node: nodeRequestingLink, direction })
-    //   const targetHandleId = link.targetHandleId;
-    //
-    //   const sourceNodeName = link.sourceNodeName.parameterizedName || link.sourceNodeName.fullyQualifiedName;
-    //   const sourceNode = this.ensureMemberPresentByName(sourceNodeName, { node: nodeRequestingLink, direction })
-    //   const sourceHandleId = link.sourceHandleId;
-    //
-    //   this.appendEdge(sourceNode, sourceHandleId, targetNode, targetHandleId)
-    //   return [targetNode, sourceNode];
-    // });
-    // setTimeout(() => {
-    //   const adjustedNodes = new CollisionDetector(this._instance.getNodes(), affectedNodes, direction)
-    //     .adjustLayout();
-    //   const [_, setNodes] = this.nodeState;
-    //   setNodes(adjustedNodes)
-    // }, 25);
   }
 
   private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, sourceSchemaKind: SchemaMemberType, targetNode: Node<MemberWithLinks>, targetHandleId: string, targetSchemaKind: SchemaMemberType, linkId?: string): Edge {

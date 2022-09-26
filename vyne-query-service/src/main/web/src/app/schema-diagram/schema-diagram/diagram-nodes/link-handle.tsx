@@ -1,6 +1,7 @@
 import { Handle, Node, Position } from 'react-flow-renderer';
 import { HandleIds, Link, MemberWithLinks } from '../schema-chart-builder';
 import * as React from 'react';
+import { AppendLinksProps } from 'src/app/schema-diagram/schema-diagram/schema-flow.react';
 
 export interface LinkHandleProps {
   node: Node<MemberWithLinks>,
@@ -20,8 +21,11 @@ export function LinkHandle(props: LinkHandleProps) {
   function clickHandler(handleId: string) {
     if (!props.links || props.links.length === 0) {
     }
-    const controller = props.node.data.chartController;
-    controller.appendNodesAndEdgesForLinks(props.node, props.links, props.position);
+    props.node.data.appendNodesHandler({
+      nodeRequestingLink: props.node,
+      links: props.links,
+      direction: props.position
+    } as AppendLinksProps);
   }
 
   return <Handle type={'source'} position={props.position}

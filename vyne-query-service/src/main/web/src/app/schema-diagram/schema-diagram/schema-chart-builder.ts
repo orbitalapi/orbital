@@ -9,12 +9,10 @@ import {
   ServiceMember,
   Type
 } from '../../services/schema';
-import { NodeType } from './schema-flow.react';
+import { AppendLinksHandler, NodeType } from './schema-flow.react';
 import { Node, Position, XYPosition } from 'react-flow-renderer';
-import { SchemaChartController } from './schema-chart.controller';
 import { splitOperationQualifiedName } from '../../service-view/service-view.component';
 import { CSSProperties } from 'react';
-import { colors } from 'src/app/schema-diagram/schema-diagram/tailwind.colors';
 
 function getNodeKind(member: SchemaMember): NodeType {
   if (member.kind === 'TYPE') {
@@ -177,6 +175,8 @@ function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: 
             .join('-')
           link.linkId = linkId;
           modelLinks.set(linkId, link);
+
+          // Commented out, as model links are bidirectional, so we only need one.
           // producedByOtherTypes.push({
           //   sourceNodeId: getNodeId('TYPE', typeInSchema.name),
           //   sourceNodeName: typeInSchema.name,
@@ -295,7 +295,7 @@ export function getNodeId(schemaMemberType: SchemaMemberType, name: QualifiedNam
   return `${schemaMemberType.toLowerCase()}-${name.fullyQualifiedName}`
 }
 
-export function buildSchemaNode(schema: Schema, member: SchemaMember, operations: ServiceMember[], controller: SchemaChartController, position: XYPosition = {
+export function buildSchemaNode(schema: Schema, member: SchemaMember, operations: ServiceMember[], appendLinksHandler: AppendLinksHandler, position: XYPosition = {
   x: 100,
   y: 100
 }): Node<MemberWithLinks> {
@@ -308,7 +308,7 @@ export function buildSchemaNode(schema: Schema, member: SchemaMember, operations
     data: {
       member,
       links,
-      chartController: controller
+      appendNodesHandler: appendLinksHandler
     },
     type: getNodeKind(member),
     position
@@ -317,10 +317,10 @@ export function buildSchemaNode(schema: Schema, member: SchemaMember, operations
 
 
 export interface MemberWithLinks {
-  member: SchemaMember
-  links: Links
+  member: SchemaMember;
+  links: Links;
 
-  chartController: SchemaChartController
+  appendNodesHandler: AppendLinksHandler
 }
 
 

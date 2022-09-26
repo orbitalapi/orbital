@@ -1,23 +1,24 @@
 import * as React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import ReactFlow, {
-  addEdge, ConnectionMode, Node,
-  ReactFlowInstance,
+  ConnectionMode, FitViewOptions,
+  Node,
   ReactFlowProvider,
-  useEdgesState, useNodes,
-  useNodesState,
+  useEdgesState,
+  useNodesState, useReactFlow,
   useUpdateNodeInternals
 } from 'react-flow-renderer';
 import { ElementRef } from '@angular/core';
 import * as ReactDOM from 'react-dom';
 import ModelNode from './diagram-nodes/model-node';
 import ApiNode from './diagram-nodes/api-service-node';
-import { RelativeNodePosition, SchemaChartController } from './schema-chart.controller';
-import { findSchemaMember, Schema } from '../../services/schema';
+import { SchemaChartController } from './schema-chart.controller';
+import { arrayMemberTypeNameOrTypeNameFromName, emptySchema, Schema } from '../../services/schema';
 import { Observable } from 'rxjs';
-import { MemberWithLinks } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
+import { Link, MemberWithLinks } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
 import { applyElkLayout } from 'src/app/schema-diagram/schema-diagram/elk-chart-layout';
 import FloatingEdge from 'src/app/schema-diagram/schema-diagram/diagram-nodes/floating-edge';
+import { isNullOrUndefined } from 'util';
 
 export type NodeType = 'Model' | 'Service';
 type ReactComponentFunction = ({ data }: { data: any }) => JSX.Element
@@ -29,71 +30,91 @@ const nodeTypes: NodeMap = {
 }
 
 const edgeTypes = {
-  'floating' : FloatingEdge
+  'floating': FloatingEdge
 }
 
 interface SchemaFlowDiagramProps {
   schema$: Observable<Schema>;
-  requiredMembers$: Observable<[Schema, string[]]>;
+  requiredMembers$: Observable<RequiredMembersProps>;
   width: number;
   height: number;
 }
 
-const fitViewOptions = { padding: 4 };
+export interface RequiredMembersProps {
+  schema: Schema | null;
+  memberNames: string[];
+}
+
+const fitViewOptions: FitViewOptions = { padding: 1, includeHiddenNodes: true };
 
 function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const instance = useReactFlow();
 
   const [awaitingLayout, setAwaitingLayout] = useState(false);
+  const [requiredMembers, setRequiredMembers] = useState<RequiredMembersProps>({
+    schema: emptySchema(),
+    memberNames: []
+  })
   const updateNodeInternals = useUpdateNodeInternals();
+
+  const appendNodesAndEdgesForLinks = (props: AppendLinksProps) => {
+    const newMemberNames = new Set<string>(requiredMembers.memberNames)
+    props.links.forEach(link => {
+      newMemberNames.add(arrayMemberTypeNameOrTypeNameFromName(link.sourceNodeName).fullyQualifiedName)
+      newMemberNames.add(arrayMemberTypeNameOrTypeNameFromName(link.targetNodeName).fullyQualifiedName)
+    })
+    setRequiredMembers({
+      schema: requiredMembers.schema,
+      memberNames: Array.from(newMemberNames)
+    })
+  }
 
   useEffect(() => {
     const subscription = props.requiredMembers$.subscribe(event => {
-      const [schema, requiredMembers] = event;
-
-      console.log('Required members has changed: ', requiredMembers);
-      const buildResult = new SchemaChartController(schema, nodes, edges, requiredMembers).build({
-        autoAppendLinks: true,
-        layoutAlgo: 'full'
-      })
-      setNodes(buildResult.nodes);
-      buildResult.nodesRequiringUpdate.forEach(node => updateNodeInternals(node.id));
-      setEdges(buildResult.edges);
-
-      setAwaitingLayout(true);
+      setRequiredMembers(event)
     });
+    return () => {
+      subscription.unsubscribe();
+    }
+  }, []); // Note for non-react devs:  Passing [] as deps means this useEffect() only runs on mount / unmount
+
+  useEffect(() => {
     if (awaitingLayout) {
+      const readyForLayout = nodes.length > 0 && nodes.every(node => !isNullOrUndefined((node.width) && !isNullOrUndefined(node.height)));
+      if (!readyForLayout) {
+        return;
+      }
+      console.log('Performing layout');
+
       applyElkLayout(nodes, edges)
         .then(result => {
           setAwaitingLayout(false);
           setNodes(result);
+          instance.fitView();
         });
-    }
-
-    return () => {
-      subscription.unsubscribe();
     }
   });
 
-  function ensureMemberPresentByName(typeName: string, relativePosition: RelativeNodePosition | null = null, schema: Schema = this.currentSchema): Node<MemberWithLinks> {
-    if (this.currentSchema === null) {
-      throw new Error('Schema is not yet provided');
+  useEffect(() => {
+    if (!requiredMembers.schema) {
+      return;
     }
-    const schemaMember = findSchemaMember(schema, typeName);
-    return this.appendOrUpdateMember(schemaMember, relativePosition, schema);
-  }
+    console.log('Required members has changed: ', requiredMembers.memberNames);
+    const buildResult = new SchemaChartController(requiredMembers.schema, nodes, edges, requiredMembers.memberNames).build({
+      autoAppendLinks: true,
+      layoutAlgo: 'full',
+      appendLinksHandler: appendNodesAndEdgesForLinks
+    })
+    setNodes(buildResult.nodes);
+    buildResult.nodesRequiringUpdate.forEach(node => updateNodeInternals(node.id));
+    setEdges(buildResult.edges);
 
+    console.log('Requesting layout');
+    setAwaitingLayout(true);
+  }, [requiredMembers.memberNames.join(','), requiredMembers.schema.hash])
 
-  function resetLayout() {
-    // useEffect(() => {
-    //   controller.resetLayout(nodes, edges)
-    //     .then(laidOutNodes => setNodes(laidOutNodes));
-    // });
-
-  }
-
-  // const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
   return (<div style={{ height: props.height, width: props.width }}>
     <ReactFlow
       connectOnClick={false}
@@ -118,10 +139,19 @@ function SchemaFlowDiagramWithProvider(props) {
   )
 }
 
+
+export type AppendLinksHandler = (AppendLinksProps) => void;
+
+export interface AppendLinksProps {
+  nodeRequestingLink: Node<MemberWithLinks>;
+  links: Link[];
+  direction?: 'right' | 'left';
+}
+
 export class SchemaFlowWrapper {
   static initialize(
     elementRef: ElementRef,
-    requiredMembers$: Observable<[Schema, string[]]>,
+    requiredMembers$: Observable<RequiredMembersProps>,
     schema$: Observable<Schema>,
     width: number = 1800,
     height: number = 1200
