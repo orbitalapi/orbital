@@ -256,6 +256,8 @@ export interface Schema extends TypeCollection {
   services: Array<Service>;
   operations: Array<Operation>;
 
+  hash?: number
+
   members: Array<SchemaMember>;
   // TODO : Are these still required / meaningful?
   // attributes: Set<QualifiedName>
@@ -266,7 +268,8 @@ export function emptySchema(): Schema {
     types: [],
     services: [],
     operations: [],
-    members: []
+    members: [],
+    hash: -1
   }
 }
 
@@ -347,7 +350,7 @@ export interface Service extends SchemaMemberNamed, Named, Documented {
   version?: Version[];
 }
 
-export function collectAllServiceOperations(service: Service):ServiceMember[] {
+export function collectAllServiceOperations(service: Service): ServiceMember[] {
   return (service.operations as ServiceMember[])
     .concat(service.queryOperations)
     .concat(service.streamOperations)

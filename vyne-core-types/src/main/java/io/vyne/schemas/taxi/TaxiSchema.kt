@@ -75,6 +75,8 @@ class TaxiSchema(
       }
    }
 
+   val hash = (services + types).hashCode()
+
 
    @get:JsonIgnore
    override val taxi = document
