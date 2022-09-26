@@ -53,6 +53,8 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   const instance = useReactFlow();
 
   const [awaitingLayout, setAwaitingLayout] = useState(false);
+  const [awaitingRefit, setAwaitingRefit] = useState(false);
+
   const [requiredMembers, setRequiredMembers] = useState<RequiredMembersProps>({
     schema: emptySchema(),
     memberNames: []
@@ -92,10 +94,15 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
         .then(result => {
           setAwaitingLayout(false);
           setNodes(result);
-          instance.fitView();
+          setAwaitingRefit(true);
         });
     }
+    if (awaitingRefit) {
+      instance.fitView({ includeHiddenNodes: true });
+      setAwaitingRefit(false);
+    }
   });
+
 
   useEffect(() => {
     if (!requiredMembers.schema) {
