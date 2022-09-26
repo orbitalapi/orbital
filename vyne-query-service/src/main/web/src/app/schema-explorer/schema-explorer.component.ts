@@ -5,6 +5,8 @@ import { PackagesService, ParsedPackage } from '../package-viewer/packages.servi
 import { Badge } from '../simple-badge-list/simple-badge-list.component';
 import { MomentModule } from 'ngx-moment';
 import * as moment from 'moment';
+import { ChangeLogEntry, ChangelogService } from 'src/app/changelog/changelog.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-schema-explorer',
@@ -18,10 +20,19 @@ export class SchemaExplorerComponent implements OnInit {
   parsedPackage: ParsedPackage;
   badges: Badge[] = [];
 
+  activeTabIndex: number = 0;
+
+  tabs = [
+    { label: 'Browse', icon: 'assets/img/tabler/table.svg' },
+    { label: 'Changelog', icon: 'assets/img/tabler/git-pull-request.svg' },
+    { label: 'Source', icon: 'assets/img/tabler/code.svg' }
+  ]
+
   constructor(private packagesService: PackagesService,
               private schemaNotificationService: SchemaNotificationService,
               private activatedRoute: ActivatedRoute,
               private changeDetector: ChangeDetectorRef,
+              private changelogService: ChangelogService
   ) {
 
   }
@@ -34,6 +45,8 @@ export class SchemaExplorerComponent implements OnInit {
       });
   }
 
+  changelogEntries: Observable<ChangeLogEntry[]>
+
   private loadSchemas() {
     this.activatedRoute.paramMap.subscribe(paramMap => {
       const packageName = paramMap.get('packageName')
@@ -43,6 +56,8 @@ export class SchemaExplorerComponent implements OnInit {
           this.updateBadges();
           this.changeDetector.markForCheck();
         });
+
+      this.changelogEntries = this.changelogService.getChangelogForPackage(packageName);
     })
   }
 
@@ -59,7 +74,11 @@ export class SchemaExplorerComponent implements OnInit {
         value: this.parsedPackage.metadata.identifier.version,
         iconPath: 'assets/img/tabler/versions.svg'
       },
-      { label: 'Last published', value: moment(this.parsedPackage.metadata.submissionDate).fromNow(), iconPath: 'assets/img/tabler/clock.svg' },
+      {
+        label: 'Last published',
+        value: moment(this.parsedPackage.metadata.submissionDate).fromNow(),
+        iconPath: 'assets/img/tabler/clock.svg'
+      },
     ]
   }
 }

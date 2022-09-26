@@ -21,7 +21,8 @@ import { MetadataChangeComponent } from './metadata-change.component';
     MetadataChangeComponent
   ],
   exports: [
-    ChangelogListComponent
+    ChangelogListComponent,
+    InputParamsChangeComponent
   ],
   imports: [
     CommonModule,

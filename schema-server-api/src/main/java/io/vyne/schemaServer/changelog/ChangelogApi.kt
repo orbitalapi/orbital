@@ -7,6 +7,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.QualifiedNameAsStringSerializer
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import reactivefeign.spring.config.ReactiveFeignClient
 import reactor.core.publisher.Mono
 import java.time.Instant
@@ -15,10 +16,13 @@ import java.time.Instant
 // We can use vyne.schema-server.name here as there is another @ReactiveFeignClient - SchemaEditorApi
 // which uses vyne.schema-server.name configuration option. Due to a bug in playtika, qualifier is not considered properly
 // to distinguish these definitions and hence we need to use a different configuration setting here.
-@ReactiveFeignClient("\${vyne.changelog-server.name:schema-server}", qualifier = "schemaChangeLogFeignClient", )
+@ReactiveFeignClient("\${vyne.changelog-server.name:schema-server}", qualifier = "schemaChangeLogFeignClient")
 interface ChangelogApi {
    @GetMapping("/api/schema/changelog")
    fun getChangelog(): Mono<List<ChangeLogEntry>>
+
+   @GetMapping("/api/schema/changelog/{packageName}")
+   fun getChangelog(@PathVariable packageName: String): Mono<List<ChangeLogEntry>>
 }
 
 

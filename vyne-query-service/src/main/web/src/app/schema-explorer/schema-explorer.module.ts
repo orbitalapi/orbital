@@ -25,6 +25,7 @@ import { SimpleBadgeListModule } from '../simple-badge-list/simple-badge-list.mo
 import { TuiButtonModule } from '@taiga-ui/core';
 import { AuthGuard } from 'src/app/services/auth.guard';
 import { VynePrivileges } from 'src/app/services/user-info.service';
+import { TuiTabsModule } from '@taiga-ui/kit';
 
 
 @NgModule({
@@ -62,7 +63,8 @@ import { VynePrivileges } from 'src/app/services/user-info.service';
           }
         ]
       },
-    ])
+    ]),
+    TuiTabsModule
   ],
   exports: [SchemaExplorerComponent],
   declarations: [SchemaExplorerComponent, SchemaExplorerContainerComponent, SchemaSummaryViewComponent],

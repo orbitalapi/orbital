@@ -37,7 +37,6 @@ export class SchemaSummaryViewComponent {
 
   schemas: Observable<ParsedSource[]>;
 
-  selectedSchema: VersionedSource;
   config: QueryServiceConfig;
   packages: Observable<SourcePackageDescription[]>;
   changeLogEntries: Observable<ChangeLogEntry[]>

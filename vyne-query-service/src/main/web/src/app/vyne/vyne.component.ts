@@ -35,9 +35,9 @@ export class VyneComponent implements OnInit {
       requiredAuthority: VynePrivileges.BrowseCatalog
     },
     {
-      title: 'Schema explorer',
+      title: 'Schemas',
       icon: 'assets/img/coding.svg',
-      route: 'schema-explorer',
+      route: 'schemas',
       testId: 'schema-explorer-sidebar',
       requiredAuthority: VynePrivileges.BrowseSchema
     },
@@ -50,13 +50,13 @@ export class VyneComponent implements OnInit {
       testId: 'query-builder-sidebar',
       requiredAuthority: VynePrivileges.RunQuery
     },
-    {
-      title: 'Data explorer',
-      icon: 'assets/img/data-explorer.svg',
-      route: 'data-explorer',
-      testId: 'data-explorer-sidebar',
-      requiredAuthority: VynePrivileges.BrowseCatalog
-    },
+    // {
+    //   title: 'Data explorer',
+    //   icon: 'assets/img/data-explorer.svg',
+    //   route: 'data-explorer',
+    //   testId: 'data-explorer-sidebar',
+    //   requiredAuthority: VynePrivileges.BrowseCatalog
+    // },
     {
       title: 'Query history',
       icon: 'assets/img/history.svg',
@@ -64,13 +64,13 @@ export class VyneComponent implements OnInit {
       testId: 'query-history-sidebar',
       requiredAuthority: VynePrivileges.ViewQueryHistory
     },
-    {
-      title: 'Cask',
-      icon: 'assets/img/cask.svg',
-      route: 'cask-viewer',
-      testId: 'cask-sidebar',
-      requiredAuthority: VynePrivileges.ViewCaskDefinitions
-    },
+    // {
+    //   title: 'Cask',
+    //   icon: 'assets/img/cask.svg',
+    //   route: 'cask-viewer',
+    //   testId: 'cask-sidebar',
+    //   requiredAuthority: VynePrivileges.ViewCaskDefinitions
+    // },
     {
       title: 'Connection manager',
       icon: 'assets/img/connections.svg',
@@ -199,7 +199,7 @@ export class VyneComponent implements OnInit {
       message: 'Compilation errors detected in schemas',
       severity: 'Warning',
       handler: () => {
-        this.router.navigate(['schema-explorer']);
+        this.router.navigate(['schemas']);
       }
     });
   }

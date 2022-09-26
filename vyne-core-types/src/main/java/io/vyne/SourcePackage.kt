@@ -10,12 +10,13 @@ import java.time.Instant
 data class SourcePackage(
    val packageMetadata: PackageMetadata,
    val sources: List<VersionedSource>
-):Serializable {
+) : Serializable {
    val identifier = packageMetadata.identifier
 }
 
 
 typealias UnversionedPackageIdentifier = String
+typealias UriSafePackageIdentifier = String
 
 data class PackageIdentifier(
    val organisation: String,
@@ -25,7 +26,7 @@ data class PackageIdentifier(
     * Will be parsed to Either a Semver or a git-like SHA
     */
    val version: String,
-): Serializable {
+) : Serializable {
    val unversionedId: UnversionedPackageIdentifier = "$organisation/$name"
    val id = "$unversionedId/$version"
 
@@ -37,11 +38,17 @@ data class PackageIdentifier(
          return PackageIdentifier(organisation, name, version)
       }
 
-      fun toUriSafeId(identifier: PackageIdentifier):String {
+      fun toUriSafeId(identifier: PackageIdentifier): UriSafePackageIdentifier {
          return identifier.toString().replace("/", ":")
       }
-      fun fromUriSafeId(uriSafeId:String):PackageIdentifier {
-         return fromId(uriSafeId.replace(":","/"))
+
+      fun fromUriSafeId(uriSafeId: UriSafePackageIdentifier): PackageIdentifier {
+         return fromId(uriSafeId.replace(":", "/"))
+      }
+
+      fun uriSafeIdToUnversionedIdentifier(uriSafeId: UriSafePackageIdentifier): UnversionedPackageIdentifier {
+         val (org, name) = uriSafeId.split(":")
+         return "$org/$name"
       }
    }
 
@@ -53,7 +60,7 @@ data class PackageIdentifier(
 data class ParsedPackage(
    val metadata: PackageMetadata,
    val sources: List<ParsedSource>
-):Serializable {
+) : Serializable {
    val isValid = sources.all { it.isValid }
    val identifier = metadata.identifier
    val sourcesWithErrors = sources.filter { !it.isValid }
@@ -111,7 +118,6 @@ open class DefaultPackageMetadata(
 ) : PackageMetadata
 
 
-
 fun lang.taxi.packages.PackageIdentifier.toVynePackageIdentifier(): PackageIdentifier {
    return PackageIdentifier(
       this.name.organisation,
@@ -128,7 +134,7 @@ fun TaxiPackageProject.toPackageMetadata(): PackageMetadata {
    )
 }
 
-fun TaxiPackageSources.asSourcePackage():SourcePackage {
+fun TaxiPackageSources.asSourcePackage(): SourcePackage {
    return SourcePackage(
       this.project.toPackageMetadata(),
       this.versionedSources()
@@ -136,4 +142,4 @@ fun TaxiPackageSources.asSourcePackage():SourcePackage {
 }
 
 
-fun List<SourcePackage>.toSources():List<VersionedSource> = this.flatMap { it.sources }
+fun List<SourcePackage>.toSources(): List<VersionedSource> = this.flatMap { it.sources }

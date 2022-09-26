@@ -39,7 +39,7 @@ export const ORBITAL_ROUTES = RouterModule.forRoot(
     //   data: { requiredAuthority: VynePrivileges.EditSchema }
     // },
     {
-      path: 'schema-explorer',
+      path: 'schemas',
       loadChildren: () => import('./schema-explorer/schema-explorer.module').then(m => m.SchemaExplorerModule),
       canActivate: [AuthGuard],
       data: { requiredAuthority: VynePrivileges.BrowseSchema },

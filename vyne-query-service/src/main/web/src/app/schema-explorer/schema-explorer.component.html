@@ -3,8 +3,19 @@
     <h2>{{parsedPackage.metadata.identifier.name}}</h2>
     <app-simple-badge-list [badges]="badges"></app-simple-badge-list>
   </div>
-
 </div>
+<div class="tab-bar">
+  <tui-tabs [(activeItemIndex)]="activeTabIndex">
+    <button *ngFor="let tab of tabs; let i = index"
+            tuiTab
+            (click)="activeTabIndex = i"
+    >
+      <img [src]="tab.icon">
+      {{tab.label}}
+    </button>
+  </tui-tabs>
+</div>
+<app-changelog-list *ngIf="activeTabIndex == 1" [changeLogEntries]="changelogEntries | async"></app-changelog-list>
 <app-code-viewer [sources]="parsedPackage?.sources" sidebarMode="Visible"
-                 *ngIf="parsedPackage?.sources?.length>0"></app-code-viewer>
+                 *ngIf="activeTabIndex == 2 && parsedPackage?.sources?.length>0"></app-code-viewer>
 

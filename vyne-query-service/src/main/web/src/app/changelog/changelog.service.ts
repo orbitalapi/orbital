@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { UnversionedPackageIdentifier } from '../package-viewer/packages.service';
 import { Metadata, QualifiedName, QualifiedNameAsString } from '../services/schema';
 import { HttpClient } from '@angular/common/http';
-import {environment} from 'src/environments/environment';
+import { environment } from 'src/environments/environment';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -10,11 +10,15 @@ import { Observable } from 'rxjs';
 })
 export class ChangelogService {
 
-  constructor(private httpClient:HttpClient) {
+  constructor(private httpClient: HttpClient) {
   }
 
-  getChangelog():Observable<ChangeLogEntry[]> {
+  getChangelog(): Observable<ChangeLogEntry[]> {
     return this.httpClient.get<ChangeLogEntry[]>(`${environment.queryServiceUrl}/api/changelog`)
+  }
+
+  getChangelogForPackage(packageName: string): Observable<ChangeLogEntry[]> {
+    return this.httpClient.get<ChangeLogEntry[]>(`${environment.queryServiceUrl}/api/changelog/${packageName}`)
   }
 }
 
