@@ -308,6 +308,8 @@ data class Service(
       // However, if this trashes performance, we can revert,and we'll find another way.
       Service::operations,
       Service::queryOperations,
+      Service::tableOperations,
+      Service::streamOperations,
       Service::typeDoc,
       Service::metadata
    )
