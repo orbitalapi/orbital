@@ -154,7 +154,7 @@ data class StringContentProvider(val content: String) : MessageContentProvider {
    }
 }
 
-data class CsvRecordContentProvider(val content: CSVRecord) : MessageContentProvider {
+data class CsvRecordContentProvider(val content: CSVRecord, val nullValues: Set<String>) : MessageContentProvider {
    override fun asString(logger: PipelineLogger): String {
       return content.joinToString { "," }
    }
@@ -171,7 +171,8 @@ data class CsvRecordContentProvider(val content: CSVRecord) : MessageContentProv
          inputType,
          content,
          schema,
-         source = Provided
+         source = Provided,
+         nullValues = nullValues
       )
    }
 
