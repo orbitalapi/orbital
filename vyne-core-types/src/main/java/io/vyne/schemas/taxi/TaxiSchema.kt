@@ -1,6 +1,5 @@
 package io.vyne.schemas.taxi
 
-import arrow.core.right
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.*
 import io.vyne.models.functions.FunctionRegistry
@@ -33,7 +32,7 @@ class TaxiSchema(
    override val policies: Set<Policy>
 
    @get:JsonIgnore
-   override val sources: List<VersionedSource> = packages.flatMap { it.sources }
+   override val sources: List<VersionedSource> = packages.flatMap { it.sourcesWithPackageIdentifier }
 
    private val equality = Equality(this, TaxiSchema::document, TaxiSchema::sources)
    override fun equals(other: Any?): Boolean {
@@ -234,16 +233,6 @@ class TaxiSchema(
          imports: List<TaxiSchema> = emptyList(),
          functionRegistry: FunctionRegistry = FunctionRegistry.default
       ): Pair<List<CompilationError>, TaxiSchema> {
-
-         val sources = packages.flatMap { sourcePackage ->
-
-            // We append a special prefix, so that if compilation errors occur,
-            // we can identify the source & package within the collection of sources
-            // See also: TaxiSchemaValidator.validate()
-            sourcePackage.sources
-               .map { it.prependPackageIdentifier(sourcePackage.packageMetadata.identifier) }
-
-         }
          return this.compiled(packages, imports, functionRegistry)
       }
 
@@ -252,10 +241,10 @@ class TaxiSchema(
          imports: List<TaxiSchema> = emptyList(),
          functionRegistry: FunctionRegistry = FunctionRegistry.default
       ): Pair<List<CompilationError>, TaxiSchema> {
-         val sources = packages.toSources()
+         val sources = packages.toSourcesWithPackageIdentifier()
          val (compilationErrors, doc) =
             Compiler(
-               sources.map { CharStreams.fromString(it.content, it.name) },
+               sources.map { CharStreams.fromString(it.content, it.packageQualifiedName) },
                imports.map { it.document }).compileWithMessages()
 
          // This is to prevent startup errors if there are compilation errors.

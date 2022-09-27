@@ -190,12 +190,12 @@ data class TableOperation(
    @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
    override val returnType: Type,
    override val metadata: List<Metadata> = emptyList(),
-   val typeDoc: String? = null
-) : MetadataTarget, SchemaMember, RemoteOperation {
+   override val typeDoc: String? = null
+) : PartialOperation, MetadataTarget, SchemaMember, RemoteOperation {
    override val parameters: List<Parameter> = emptyList()
    override val contract = OperationContract(returnType)
    override val operationType: String? = null
-   val returnTypeName: QualifiedName = returnType.name
+   override val returnTypeName: QualifiedName = returnType.name
 
 }
 
@@ -216,13 +216,13 @@ data class StreamOperation(
    @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
    override val returnType: Type,
    override val metadata: List<Metadata> = emptyList(),
-   val typeDoc: String? = null
-) : MetadataTarget, SchemaMember, RemoteOperation {
+   override val typeDoc: String? = null
+) : PartialOperation, MetadataTarget, SchemaMember, RemoteOperation {
    override val parameters: List<Parameter> = emptyList()
    override val contract = OperationContract(returnType)
    override val operationType: String? = null
 
-   val returnTypeName: QualifiedName = returnType.name
+   override val returnTypeName: QualifiedName = returnType.name
 }
 
 data class ConsumedOperation(val serviceName: ServiceName, val operationName: String) {

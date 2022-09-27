@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import io.vyne.VersionedSource
 import io.vyne.schemas.*
 import lang.taxi.Operator
 import lang.taxi.expressions.Expression
@@ -62,7 +63,8 @@ data class EditedType(
    override val unformattedTypeName: QualifiedName?,
    override val offset: Int?,
    override val expression: Expression?,
-   override val declaresFormat: Boolean
+   override val declaresFormat: Boolean,
+   override val sources: List<VersionedSource>
 ) : PartialType
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -100,37 +102,9 @@ data class EditedQueryOperation(
    override val typeDoc: String?,
    override val returnTypeName: QualifiedName,
    override val grammar: String,
-   @JsonDeserialize(contentUsing = QueryOperationCapabilityDeserializer::class)
+
    override val capabilities: List<QueryOperationCapability>,
    override val hasFilterCapability: Boolean,
    override val supportedFilterOperations: List<Operator>
 ) : PartialQueryOperation
 
-class QueryOperationCapabilityDeserializer : JsonDeserializer<QueryOperationCapability>() {
-   override fun deserialize(p: JsonParser, ctxt: DeserializationContext): QueryOperationCapability {
-      when (p.currentToken) {
-         JsonToken.VALUE_STRING -> {
-            val stringToken = p.valueAsString
-            val isSimpleQueryCapability = SimpleQueryCapability.values().any { it -> it.name == stringToken }
-            return if (isSimpleQueryCapability) {
-               SimpleQueryCapability.valueOf(stringToken)
-            } else {
-               error(
-                  "Unknown query capability: $stringToken - expected one of ${
-                     SimpleQueryCapability.values().joinToString(",")
-                  }"
-               )
-            }
-         }
-
-         JsonToken.START_OBJECT -> {
-            val iterator = p.readValuesAs(FilterCapability::class.java)
-            return iterator.next()
-         }
-
-         else -> error("Unhandled deserialization of QueryOperationCapability")
-      }
-
-   }
-
-}

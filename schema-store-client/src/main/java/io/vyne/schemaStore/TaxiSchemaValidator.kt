@@ -25,16 +25,16 @@ class TaxiSchemaValidator :
       removedPackages: List<PackageIdentifier>
    ): Pair<List<ParsedPackage>, Either<List<CompilationError>, Schema>> {
       return when (val validationResult = this.validate(existing, updatedPackage, removedPackages)) {
-            is Either.Right -> {
-                validationResult.value.second to validationResult.value.first.right()
-            }
+         is Either.Right -> {
+            validationResult.value.second to validationResult.value.first.right()
+         }
 
 
          is Either.Left -> {
             validationResult.value.second to validationResult.value.first.left()
-            }
-        }
-    }
+         }
+      }
+   }
 
 
    override fun validate(
@@ -42,7 +42,7 @@ class TaxiSchemaValidator :
       updatedPackage: SourcePackage?,
       removedPackages: List<PackageIdentifier>
    ): Either<Pair<List<CompilationError>, List<ParsedPackage>>, Pair<Schema, List<ParsedPackage>>> {
-        val packages = existing.getPackagesAfterUpdate(updatedPackage, removedPackages)
+      val packages = existing.getPackagesAfterUpdate(updatedPackage, removedPackages)
       return try {
          // TODO : This is sloppy handling of imports, and will cause issues
          // I'm adding each schema as it's compiled into the set of available imports.
@@ -50,15 +50,15 @@ class TaxiSchemaValidator :
          // an import from a removed schema, causing all compilation to fail.
          // Need to consider this, and find a solution.
          val (messages, schema) = TaxiSchema.fromPackages(packages)
-            val errors = messages.errors()
-            val errorsByPackage = messages.errors().map { compilationError ->
+         val errors = messages.errors()
+         val errorsByPackage = messages.errors().map { compilationError ->
             val compilationErrorSourceName = compilationError.sourceName
                ?: error("It should now be illegal to submit a source without a sourcename.  If this error is hit, understand the usecase. If not, lets make the field not nullable.")
             val (packageIdentifier, sourceName) = VersionedSource.splitPackageIdentifier(compilationErrorSourceName)
             Triple(packageIdentifier, sourceName, compilationError)
          }
          val parsedPackages = packages.map { sourcePackage ->
-            val parsedSources = sourcePackage.sources.map { versionedSource ->
+            val parsedSources = sourcePackage.sourcesWithPackageIdentifier.map { versionedSource ->
                val errors = errorsByPackage
                   .filter { error ->
                      error.first == sourcePackage.identifier && error.second == versionedSource.name
@@ -70,7 +70,7 @@ class TaxiSchemaValidator :
          }
          if (errors.isNotEmpty()) {
             logger.error("Schema contained compilation exception: \n${errors.joinToString("\n")}")
-                (errors to parsedPackages).left()
+            (errors to parsedPackages).left()
          } else {
             (schema to parsedPackages).right()
          }
@@ -79,7 +79,7 @@ class TaxiSchemaValidator :
          val message =
             "The compiler threw an unexpected error - this is likely a bug in the compiler - ${exception.message}"
          val parsedPackages = packages.map { sourcePackage ->
-            val parsedSources = sourcePackage.sources.map {
+            val parsedSources = sourcePackage.sourcesWithPackageIdentifier.map {
                ParsedSource(
                   it,
                   listOf(CompilationError(SourceLocation.UNKNOWN_POSITION, message, it.name))
@@ -91,8 +91,8 @@ class TaxiSchemaValidator :
          }
          val errors =
             parsedPackages.flatMap { parsedPackage -> parsedPackage.sources.flatMap { parsedSource -> parsedSource.errors } }
-            (errors to parsedPackages).left()
-        }
+         (errors to parsedPackages).left()
+      }
    }
 }
 

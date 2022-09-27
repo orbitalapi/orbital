@@ -7,7 +7,7 @@
   flex-direction: column;
   width: 10px;
   flex-grow: 1;
-  margin: 1rem 2rem;
+  margin-left: 1rem;
 }
 
 .header-bar {
@@ -31,4 +31,9 @@ app-code-viewer {
     margin-right: 1rem;
     opacity: 0.5;
   }
+}
+
+app-changelog-list {
+  display: block;
+  overflow: auto;
 }

@@ -13,24 +13,34 @@ import java.io.Serializable
 import java.time.Instant
 
 
-data class VersionedSource(val name: String, val version: String, val content: String) : Serializable {
-   fun prependPackageIdentifier(packageIdentifier: PackageIdentifier): VersionedSource {
-      val packageIdentifierPrefix = "[${packageIdentifier.id}]/"
-      return if (this.name.startsWith(packageIdentifierPrefix)) {
-         this
-      } else {
-         this.copy(name = "$packageIdentifierPrefix$name")
-      }
-   }
+data class VersionedSource(
+   val name: String,
+   val version: String,
+   val content: String,
+   val packageIdentifier: PackageIdentifier?
+) : Serializable {
+   constructor(
+      name: String, version: String, content: String
+   ) : this(splitPackageIdentifier(name).second, version, content, splitPackageIdentifier(name).first)
 
-   fun removePackageIdentifier(): Pair<PackageIdentifier?, VersionedSource> {
-      val (packageIdentifier, trimmedName) = splitPackageIdentifier(this.name)
-      return packageIdentifier to this.copy(name = trimmedName)
-   }
+   val packageQualifiedName = prependPackageIdentifier(packageIdentifier, name)
+
 
    companion object {
       const val UNNAMED = "<unknown>"
       val DEFAULT_VERSION: Version = Version.valueOf("0.0.0")
+
+      fun prependPackageIdentifier(packageIdentifier: PackageIdentifier?, sourceName: String): String {
+         if (packageIdentifier == null) {
+            return sourceName
+         }
+         val packageIdentifierPrefix = "[${packageIdentifier.id}]/"
+         return if (sourceName.startsWith(packageIdentifierPrefix)) {
+            sourceName
+         } else {
+            "$packageIdentifierPrefix$sourceName"
+         }
+      }
 
       fun splitPackageIdentifier(name: String): Pair<PackageIdentifier?, String> {
          return if (name.contains("]/")) {
@@ -51,15 +61,7 @@ data class VersionedSource(val name: String, val version: String, val content: S
 
       fun unversioned(name: String, content: String) = VersionedSource(name, DEFAULT_VERSION.toString(), content)
 
-      fun nameAndVersionFromId(id: SchemaId): Pair<String, String> {
-         val parts = id.split(":")
-         require(parts.size == 2)
-         return parts[0] to parts[1]
-      }
 
-      fun fromTaxiSourceCode(sourceCode: SourceCode, version: String = DEFAULT_VERSION.toString()): VersionedSource {
-         return VersionedSource(sourceCode.normalizedSourceName, version, sourceCode.content)
-      }
    }
 
    val id: SchemaId = "$name:$version"

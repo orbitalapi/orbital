@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { ParsedSource } from '../services/schema';
+import { ParsedSource, PartialSchema, Schema } from '../services/schema';
 
 @Injectable({
   providedIn: 'root'
@@ -17,8 +17,11 @@ export class PackagesService {
   }
 
   listPackages(): Observable<SourcePackageDescription[]> {
-    // TODO  :Need to actually wire up this service.
     return this.httpClient.get<SourcePackageDescription[]>(`${environment.queryServiceUrl}/api/schema/packages`)
+  }
+
+  getPartialSchemaForPackage(packageUri: string): Observable<PartialSchema> {
+    return this.httpClient.get<PartialSchema>(`${environment.queryServiceUrl}/api/schema/packages/${packageUri}/schema`)
   }
 }
 

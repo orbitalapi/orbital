@@ -2,7 +2,6 @@ package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.annotation.JsonView
 import com.google.common.cache.CacheBuilder
 import io.vyne.VersionedSource
 import io.vyne.models.DataSource
@@ -42,7 +41,6 @@ private val logger = KotlinLogging.logger {}
 annotation class DeferEvaluationUntilTypeCacheCreated
 
 
-
 /**
  * TODO: We should consider deprecating and removing the vyne specific versions of the type system,
  * and just use Taxi's model throughout.
@@ -51,33 +49,23 @@ annotation class DeferEvaluationUntilTypeCacheCreated
  * it may be worth collapsing them.
  */
 data class Type(
-   @JsonView(TypeLightView::class)
    override val name: QualifiedName,
-   @JsonView(TypeLightView::class)
    override val attributes: Map<AttributeName, Field> = emptyMap(),
-
-   @JsonView(TypeFullView::class)
    override val modifiers: List<Modifier> = emptyList(),
-
-   @JsonView(TypeFullView::class)
    override val metadata: List<Metadata> = emptyList(),
 
    // Implementation note: When this class is being constructed, we first pass
    // the name, then later come back and populate the aliasForType.
    // This is to address any circular references, which are permissable.
-   @JsonView(TypeFullView::class)
    @JsonProperty(value = "aliasForType")
    val aliasForTypeName: QualifiedName? = null,
 
-   @JsonView(TypeFullView::class)
    @JsonProperty("inheritsFrom")
    override val inheritsFromTypeNames: List<QualifiedName> = emptyList(),
 
-   @JsonView(TypeFullView::class)
    override val enumValues: List<EnumValue> = emptyList(),
 
-   @JsonView(TypeFullView::class)
-   val sources: List<VersionedSource>,
+   override val sources: List<VersionedSource>,
 
    @JsonProperty("typeParameters")
    override val typeParametersTypeNames: List<QualifiedName> = emptyList(),
@@ -138,24 +126,19 @@ data class Type(
    private val resolvedAlias: Type
 
 
-   @JsonView(TypeFullView::class)
    val isTypeAlias = aliasForTypeName != null
-
-   @JsonView(TypeFullView::class)
    override val offset: Int? = taxiType.offset
 
    /**
     * Lists the fomrats from this type, and any
     * inherited types
     */
-   @JsonView(TypeFullView::class)
    override val format: List<String>? = taxiType.format
 
    /**
     * Indicates if a format is present on this type, or
     * any of it's inherited types
     */
-   @JsonView(TypeFullView::class)
    val hasFormat = format != null
 
    /**
@@ -167,7 +150,6 @@ data class Type(
 //   @JsonView(TypeFullView::class)
 //   val isCalculated = taxiType.calculation != null
 
-   @get:JsonView(TypeFullView::class)
    override val basePrimitiveTypeName: QualifiedName? = taxiType.basePrimitive?.toQualifiedName()?.toVyneQualifiedName()
 
 //   @get:JsonIgnore
@@ -180,7 +162,6 @@ data class Type(
 
    val hasExpression: Boolean = expression != null
 
-   @get:JsonView(TypeFullView::class)
    override val unformattedTypeName: QualifiedName?
 
    @get:JsonIgnore
@@ -273,11 +254,9 @@ data class Type(
    }
 
    // TODO : I suspect all of these isXxxx vars need to defer to the underlying aliased type.
-   @JsonView(TypeFullView::class)
    val isParameterType: Boolean = this.modifiers.contains(Modifier.PARAMETER_TYPE)
 
    // TODO : I suspect all of these isXxxx vars need to defer to the underlying aliased type.
-   @JsonView
    val isClosed: Boolean = this.modifiers.contains(Modifier.CLOSED)
 
    override val isPrimitive: Boolean = this.modifiers.contains(Modifier.PRIMITIVE)
@@ -308,14 +287,12 @@ data class Type(
    // Note : Lazy evaluation to work around that aliases are partiall populated during
    // construction.
    // If changing, make sure tests pass.
-   @get:JsonView(TypeFullView::class)
    @get:JsonProperty("isCollection")
    override val isCollection: Boolean =
       (listOfNotNull(this.name, this.aliasForTypeName) + this.inheritanceGraph.flatMap {
          listOfNotNull(it.name, it.aliasForTypeName)
       }).any { it.parameterizedName.startsWith(ArrayType.NAME) }
 
-   @get:JsonView(TypeFullView::class)
    @get:JsonProperty("isStream")
    val isStream: Boolean =
       (listOfNotNull(this.name, this.aliasForTypeName) + this.inheritanceGraph.flatMap {
@@ -339,13 +316,12 @@ data class Type(
    }
 
    fun getAttributesWithAnnotation(annotationName: QualifiedName): Map<AttributeName, Field> {
-      return this.attributes.filter { (name,field) -> field.hasMetadata(annotationName)  }
+      return this.attributes.filter { (name, field) -> field.hasMetadata(annotationName) }
    }
 
    // Note : Lazy evaluation to work around that aliases are partiall populated during
    // construction.
    // If changing, make sure tests pass.
-   @get:JsonView(TypeFullView::class)
    @get:JsonProperty("isScalar")
    override val isScalar: Boolean =
       resolveAliases().let { underlyingType ->
@@ -496,6 +472,7 @@ data class Type(
                aliasForTypeName!!.fullyQualifiedName == StreamType.NAME -> {
                resolvedFormattedType.aliasForType!!.resolveAliases()
             }
+
             resolvedFormattedType.aliasForType!!.isPrimitive -> this
             else -> resolvedFormattedType.aliasForType!!.resolveAliases()
          }

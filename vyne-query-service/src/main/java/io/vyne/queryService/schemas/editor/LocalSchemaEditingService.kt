@@ -163,7 +163,7 @@ class LocalSchemaEditingService(
       val vyneTypes = typesInThisRequest.map { (type, _) -> updatedSchema.type(type) }
       val vyneServices = servicesInThisRequest.map { (service, _) -> updatedSchema.service(service.qualifiedName) }
       val submissionResult = SchemaSubmissionResult(
-         vyneTypes, vyneServices, messages, taxi,
+         vyneTypes.toSet(), vyneServices.toSet(), messages, taxi,
          dryRun = validateOnly
       )
       return if (persist) {

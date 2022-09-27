@@ -35,7 +35,7 @@ class FileSystemOpenApiPackageLoaderTest : BaseFileSystemPackageLoaderTest() {
          .test()
          .expectSubscription()
          .expectNextMatches { schemaPackage ->
-            schemaPackage.sources.should.have.size(1)
+            schemaPackage.sourcesWithPackageIdentifier.should.have.size(1)
             schemaPackage.identifier.should.equal(
                PackageIdentifier(
                   organisation = "com.acme",

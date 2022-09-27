@@ -3,8 +3,10 @@
 .container {
   flex-grow: 1;
   display: flex;
+  margin-left: 1rem;
 }
 
 app-package-list {
   margin-right: 2rem;
 }
+

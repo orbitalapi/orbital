@@ -249,11 +249,13 @@ export interface TypeCollection {
   anonymousTypes?: { [key: string]: Type };
 }
 
+export interface PartialSchema {
+  types: Type[];
+  services: Service[];
+}
 
-export interface Schema extends TypeCollection {
+export interface Schema extends TypeCollection, PartialSchema {
 
-  types: Array<Type>;
-  services: Array<Service>;
   operations: Array<Operation>;
 
   hash?: number

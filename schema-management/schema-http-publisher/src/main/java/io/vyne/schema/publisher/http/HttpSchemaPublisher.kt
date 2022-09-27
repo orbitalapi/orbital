@@ -35,7 +35,7 @@ class HttpSchemaPublisher(
 
    override fun submitPackage(submission: SourcePackage): Either<CompilationException, Schema> {
       val result: SourceSubmissionResponse = retryTemplate.execute<SourceSubmissionResponse, Exception> {
-         logger.info("Pushing ${submission.packageMetadata.identifier} with ${submission.sources.size} schemas to store")
+         logger.info("Pushing ${submission.packageMetadata.identifier} with ${submission.sourcesWithPackageIdentifier.size} schemas to store")
          httpSchemaSubmitter
             .submitSources(
                submission

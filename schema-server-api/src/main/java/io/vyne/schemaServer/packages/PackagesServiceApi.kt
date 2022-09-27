@@ -2,7 +2,10 @@ package io.vyne.schemaServer.packages
 
 import io.vyne.PackageIdentifier
 import io.vyne.ParsedPackage
+import io.vyne.UriSafePackageIdentifier
 import io.vyne.schema.publisher.PublisherHealth
+import io.vyne.schemas.DefaultPartialSchema
+import io.vyne.schemas.PartialSchema
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import reactivefeign.spring.config.ReactiveFeignClient
@@ -34,4 +37,7 @@ interface PackagesServiceApi {
 
    @GetMapping("/api/packages/{packageUri}")
    fun loadPackage(@PathVariable("packageUri") packageUri: String): Mono<ParsedPackage>
+
+   @GetMapping("/api/packages/{packageUri}/schema")
+   fun getPartialSchemaForPackage(@PathVariable("packageUri") packageUri: UriSafePackageIdentifier): Mono<PartialSchema>
 }

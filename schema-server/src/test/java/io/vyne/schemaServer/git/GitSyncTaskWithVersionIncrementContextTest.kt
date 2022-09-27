@@ -92,7 +92,7 @@ class GitSyncTaskWithVersionIncrementContextTest {
       await().atMost(Duration(15, SECONDS)).until {
          argumentCaptor<List<SourcePackage>>().apply {
             verify(schemaPublisherMock).submitPackages(capture())
-            lastValue.single().sources.single().should.equal(
+            lastValue.single().sourcesWithPackageIdentifier.single().should.equal(
                VersionedSource(
                   name = "hello.taxi",
                   version = "0.3.0",
@@ -113,7 +113,7 @@ class GitSyncTaskWithVersionIncrementContextTest {
       await().atMost(Duration(15, SECONDS)).until {
          argumentCaptor<List<SourcePackage>>().apply {
             verify(schemaPublisherMock, atLeastOnce()).submitPackages(capture())
-            lastValue.single().sources.single().should.equal(
+            lastValue.single().sourcesWithPackageIdentifier.single().should.equal(
                VersionedSource(
                   name = "hello.taxi",
                   version = "0.3.0",

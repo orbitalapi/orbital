@@ -12,7 +12,6 @@ import { SchemaNotificationService } from '../services/schema-notification.servi
   selector: 'app-schema-summary-view',
   template: `
     <div class="container">
-      <app-package-list [packages]="packages | async" (packageClicked)="navigateToPackage($event)"></app-package-list>
       <div>
         <h1>Changelog</h1>
         <p>This is the changelog of all the data sources connected to Vyne.</p>
@@ -38,12 +37,10 @@ export class SchemaSummaryViewComponent {
   schemas: Observable<ParsedSource[]>;
 
   config: QueryServiceConfig;
-  packages: Observable<SourcePackageDescription[]>;
   changeLogEntries: Observable<ChangeLogEntry[]>
 
   constructor(private service: TypesService,
               private configService: AppInfoService,
-              private packagesService: PackagesService,
               private router: Router,
               private changelogService: ChangelogService,
               private activatedRoute: ActivatedRoute,
@@ -58,12 +55,6 @@ export class SchemaSummaryViewComponent {
 
   private loadSchemas() {
     this.schemas = this.service.getParsedSources();
-    this.packages = this.packagesService.listPackages()
     this.changeLogEntries = this.changelogService.getChangelog();
-  }
-
-
-  navigateToPackage(sourcePackage: SourcePackageDescription) {
-    this.router.navigate([sourcePackage.uriPath], { relativeTo: this.activatedRoute })
   }
 }

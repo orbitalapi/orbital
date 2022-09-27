@@ -7,6 +7,8 @@ import { MomentModule } from 'ngx-moment';
 import * as moment from 'moment';
 import { ChangeLogEntry, ChangelogService } from 'src/app/changelog/changelog.service';
 import { Observable } from 'rxjs';
+import { TypesService } from 'src/app/services/types.service';
+import { PartialSchema, Schema } from 'src/app/services/schema';
 
 @Component({
   selector: 'app-schema-explorer',
@@ -20,7 +22,11 @@ export class SchemaExplorerComponent implements OnInit {
   parsedPackage: ParsedPackage;
   badges: Badge[] = [];
 
+  partialSchema$: Observable<PartialSchema>;
+
   activeTabIndex: number = 0;
+
+  schema: Schema;
 
   tabs = [
     { label: 'Browse', icon: 'assets/img/tabler/table.svg' },
@@ -32,22 +38,25 @@ export class SchemaExplorerComponent implements OnInit {
               private schemaNotificationService: SchemaNotificationService,
               private activatedRoute: ActivatedRoute,
               private changeDetector: ChangeDetectorRef,
-              private changelogService: ChangelogService
+              private changelogService: ChangelogService,
+              private typeService: TypesService
   ) {
 
   }
 
   ngOnInit() {
-    this.loadSchemas();
+    this.typeService.getTypes()
+      .subscribe(schema => this.schema = schema);
+    this.loadPackages();
     this.schemaNotificationService.createSchemaNotificationsSubscription()
       .subscribe(() => {
-        this.loadSchemas();
+        this.loadPackages();
       });
   }
 
   changelogEntries: Observable<ChangeLogEntry[]>
 
-  private loadSchemas() {
+  private loadPackages() {
     this.activatedRoute.paramMap.subscribe(paramMap => {
       const packageName = paramMap.get('packageName')
       this.packagesService.loadPackage(packageName)
@@ -56,7 +65,7 @@ export class SchemaExplorerComponent implements OnInit {
           this.updateBadges();
           this.changeDetector.markForCheck();
         });
-
+      this.partialSchema$ = this.packagesService.getPartialSchemaForPackage(packageName);
       this.changelogEntries = this.changelogService.getChangelogForPackage(packageName);
     })
   }

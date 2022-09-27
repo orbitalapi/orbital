@@ -25,7 +25,7 @@ class FileSystemTaxiPackageLoaderTest : BaseFileSystemPackageLoaderTest() {
          .test()
          .expectSubscription()
          .expectNextMatches { schemaPackage ->
-            schemaPackage.sources.should.be.empty
+            schemaPackage.sourcesWithPackageIdentifier.should.be.empty
             true
          }
          .then {
@@ -34,7 +34,7 @@ class FileSystemTaxiPackageLoaderTest : BaseFileSystemPackageLoaderTest() {
             fileMonitor.pollNow()
          }
          .expectNextMatches { schemaPackage ->
-            schemaPackage.sources.should.have.size(1)
+            schemaPackage.sourcesWithPackageIdentifier.should.have.size(1)
             true
          }
          .thenCancel()

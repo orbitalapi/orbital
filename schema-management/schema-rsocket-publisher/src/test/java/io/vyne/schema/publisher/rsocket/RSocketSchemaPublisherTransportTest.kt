@@ -113,7 +113,7 @@ class RSocketSchemaPublisherTransportTest {
 
       // Ensure that only the second schema was published.
       collectedSubmissions.should.have.size(1)
-      collectedSubmissions.single().sources.single().content.should.equal("type HelloWorld2")
+      collectedSubmissions.single().sourcesWithPackageIdentifier.single().content.should.equal("type HelloWorld2")
    }
 
    @Test
@@ -177,7 +177,7 @@ class RSocketSchemaPublisherTransportTest {
          .until<Boolean> { collectedResponses.size == 2 }
 
       collectedSubmissions.should.have.size(2)
-      collectedSubmissions.last().sources.single().content.should.equal("type HelloWorld2")
+      collectedSubmissions.last().sourcesWithPackageIdentifier.single().content.should.equal("type HelloWorld2")
    }
 
    @Test
@@ -235,7 +235,7 @@ class RSocketSchemaPublisherTransportTest {
          .until<Boolean> { collectedResponses.size == 3 }
 
       collectedSubmissions.should.have.size(3)
-      collectedSubmissions.last().sources.single().content.should.equal("type HelloWorld2")
+      collectedSubmissions.last().sourcesWithPackageIdentifier.single().content.should.equal("type HelloWorld2")
 
    }
 

@@ -69,7 +69,6 @@ export class ModelMemberTreeNodeComponent {
   nodeUpdated = new EventEmitter();
 
   displayName(name: QualifiedName, showFullTypeNames: boolean): string {
-    return '';
     return getDisplayName(name, showFullTypeNames);
   }
 

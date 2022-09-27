@@ -1,7 +1,6 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {SchemaSubmissionResult} from '../../services/types.service';
-import {Operation, QueryOperation, Service, ServiceMember, Type} from '../../services/schema';
-import {Observable} from 'rxjs/internal/Observable';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { Operation, PartialSchema, Service, ServiceMember, Type } from 'src/app/services/schema';
+import { Observable } from 'rxjs/internal/Observable';
 
 export interface AccordionEntry {
   label: string;
@@ -19,7 +18,7 @@ export interface ServiceAccordionEntry extends AccordionEntry {
 @Component({
   selector: 'app-schema-entry-table',
   template: `
-    <tui-accordion>
+    <tui-accordion *ngIf="schemaReceived">
       <tui-accordion-item [showArrow]="true">Models
         <tui-badge
           size="s"
@@ -66,16 +65,21 @@ export interface ServiceAccordionEntry extends AccordionEntry {
     </tui-accordion>
 
   `,
-  styleUrls: ['./schema-entry-table.component.scss']
+  styleUrls: ['./schema-entry-table.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SchemaEntryTableComponent {
 
-  private _importedSchema: Observable<SchemaSubmissionResult>;
+  constructor(private changeDetector: ChangeDetectorRef) {
+  }
+
+  private _importedSchema: Observable<PartialSchema>;
 
   types: AccordionEntry[];
   models: AccordionEntry[];
   services: ServiceAccordionEntry[];
 
+  schemaReceived = false;
   @Output()
   modelSelected = new EventEmitter<Type>()
 
@@ -83,27 +87,28 @@ export class SchemaEntryTableComponent {
   operationSelected = new EventEmitter<ServiceMember>()
 
   @Input()
-  get importedSchema$(): Observable<SchemaSubmissionResult> {
+  get partialSchema$(): Observable<PartialSchema> {
     return this._importedSchema;
   }
 
-  set importedSchema$(value) {
-    if (this.importedSchema$ === value) {
+  set partialSchema$(value) {
+    if (this.partialSchema$ === value) {
       return;
     }
     this._importedSchema = value;
-    this.importedSchema$.subscribe(next => {
+    this.schemaReceived = false;
+    this.partialSchema$.subscribe(next => {
+      this.schemaReceived = true;
       const [types, models, services] = this.buildTree(next);
       this.types = types;
       this.models = models;
       this.services = services;
+      this.changeDetector.markForCheck();
     })
   }
 
 
-
-
-  private buildTree(schema: SchemaSubmissionResult): [AccordionEntry[], AccordionEntry[], ServiceAccordionEntry[]] {
+  private buildTree(schema: PartialSchema): [AccordionEntry[], AccordionEntry[], ServiceAccordionEntry[]] {
     function typeToEntry(type: Type): AccordionEntry {
       return {
         category: 'type',
@@ -116,12 +121,12 @@ export class SchemaEntryTableComponent {
       .types
       .filter(type => type.isScalar)
       .map(type => typeToEntry(type))
-      .sort( (a,b) => a.label.localeCompare(b.label));
+      .sort((a, b) => a.label.localeCompare(b.label));
     const models = schema
       .types
       .filter(type => !type.isScalar)
       .map(type => typeToEntry(type))
-      .sort( (a,b) => a.label.localeCompare(b.label));
+      .sort((a, b) => a.label.localeCompare(b.label));
     const services = schema
       .services
       .map(service => {
@@ -132,7 +137,7 @@ export class SchemaEntryTableComponent {
           operations: (service.operations as ServiceMember[]).concat(service.queryOperations)
         } as ServiceAccordionEntry
       })
-      .sort( (a,b) => a.label.localeCompare(b.label));
+      .sort((a, b) => a.label.localeCompare(b.label));
 
     return [types, models, services]
   }

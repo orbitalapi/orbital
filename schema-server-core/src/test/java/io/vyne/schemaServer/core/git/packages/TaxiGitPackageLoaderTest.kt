@@ -65,7 +65,7 @@ class TaxiGitPackageLoaderTest {
          .test()
          .expectSubscription()
          .expectNextMatches { e ->
-            e.sources.should.be.empty
+            e.sourcesWithPackageIdentifier.should.be.empty
             e.identifier.should.equal(
                PackageIdentifier(
                   organisation = "taxi",
@@ -85,7 +85,7 @@ class TaxiGitPackageLoaderTest {
             fileMonitor.pollNow()
          }
          .expectNextMatches { e ->
-            e.sources.should.have.size(1)
+            e.sourcesWithPackageIdentifier.should.have.size(1)
             true
          }
          .thenCancel()
@@ -124,7 +124,7 @@ class TaxiGitPackageLoaderTest {
          .test()
          .expectSubscription()
          .expectNextMatches { e ->
-            e.sources.should.have.size(1)
+            e.sourcesWithPackageIdentifier.should.have.size(1)
             e.identifier.should.equal(
                PackageIdentifier(
                   organisation = "taxi",

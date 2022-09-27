@@ -10,7 +10,7 @@ import {Policy} from '../policy-manager/policies';
 import {
   CompilationMessage,
   Message, Metadata, Operation,
-  ParsedSource,
+  ParsedSource, PartialSchema,
   QualifiedName,
   Schema,
   SchemaGraph,
@@ -407,9 +407,7 @@ export interface ContentWithSchemaParseResponse {
   types: Type[];
 }
 
-export interface SchemaSubmissionResult {
-  types: Type[];
-  services: Service[];
+export interface SchemaSubmissionResult extends PartialSchema {
   messages: CompilationMessage[];
   taxi: string;
 }

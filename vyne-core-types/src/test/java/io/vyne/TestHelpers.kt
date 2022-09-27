@@ -38,7 +38,7 @@ fun SourcePackage.toParsedPackages(): List<ParsedPackage> = listOf(this.toParsed
 fun SourcePackage.toParsedPackage(): ParsedPackage {
    return ParsedPackage(
       this.packageMetadata,
-      this.sources.map { ParsedSource(it) }
+      this.sourcesWithPackageIdentifier.map { ParsedSource(it) }
    )
 }
 

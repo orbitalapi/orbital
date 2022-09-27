@@ -1,5 +1,6 @@
 package io.vyne
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.packages.TaxiPackageSources
@@ -9,9 +10,21 @@ import java.time.Instant
 
 data class SourcePackage(
    val packageMetadata: PackageMetadata,
+   /**
+    * Contains the sources as they were provided.
+    * It's preferrable to read from sourcesWithPackageIdentifier,
+    * which contains sources guaranteed to have the package identifier correctly set.
+    */
    val sources: List<VersionedSource>
 ) : Serializable {
    val identifier = packageMetadata.identifier
+
+   // Note: Originally this was a lazy property.
+   // However, it was generating duplicates, (ie., a sources.size == 1, sourceswithPackageIdentitfier.size == 2)
+   // and I couldn't work out why.  Can revisit if this needs to become lazy.
+   @get:JsonIgnore
+   val sourcesWithPackageIdentifier: List<VersionedSource> =
+      this.sources.map { it.copy(packageIdentifier = this.packageMetadata.identifier) }
 }
 
 
@@ -29,6 +42,8 @@ data class PackageIdentifier(
 ) : Serializable {
    val unversionedId: UnversionedPackageIdentifier = "$organisation/$name"
    val id = "$unversionedId/$version"
+
+   val uriSafeId = toUriSafeId(this)
 
    companion object {
       fun fromId(id: String): PackageIdentifier {
@@ -142,4 +157,5 @@ fun TaxiPackageSources.asSourcePackage(): SourcePackage {
 }
 
 
-fun List<SourcePackage>.toSources(): List<VersionedSource> = this.flatMap { it.sources }
+fun List<SourcePackage>.toSourcesWithPackageIdentifier(): List<VersionedSource> =
+   this.flatMap { it.sourcesWithPackageIdentifier }

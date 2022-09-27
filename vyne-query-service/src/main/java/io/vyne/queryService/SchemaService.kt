@@ -92,7 +92,6 @@ class SchemaService(
    }
 
    @GetMapping(path = ["/api/types"])
-//   @JsonView(TypeLightView::class)
    fun getTypes(): Schema {
       return schemaProvider.schema
    }

@@ -23,44 +23,6 @@ class VersionedSourceTest {
 
    }
 
-   @Test
-   fun `can prepend and remove a package identifier`() {
-      val source = VersionedSource("foo.taxi", "0.2.3", "")
-      val packageIdentifier = PackageIdentifier(
-         "com.acme",
-         "taxonomy",
-         "1.0.0"
-      )
-      val prepended = source.prependPackageIdentifier(
-         packageIdentifier
-      )
-      prepended.name.should.equal("[com.acme/taxonomy/1.0.0]/foo.taxi")
-      val (removedId,cleanedSource) = prepended.removePackageIdentifier()
-      removedId.should.equal(packageIdentifier)
-      cleanedSource.should.equal(source)
-   }
 
-   @Test
-   fun `prepending package identifier multiple times has no effect`() {
-      val source = VersionedSource("foo.taxi", "0.2.3", "")
-      val packageIdentifier = PackageIdentifier(
-         "com.acme",
-         "taxonomy",
-         "1.0.0"
-      )
-      val prepended = source.prependPackageIdentifier(
-         packageIdentifier
-      ).prependPackageIdentifier(packageIdentifier).prependPackageIdentifier(packageIdentifier)
-
-      prepended.name.should.equal("[com.acme/taxonomy/1.0.0]/foo.taxi")
-   }
-
-   @Test
-   fun `if no package identifier then splitting returns null`() {
-      val source = VersionedSource("foo.taxi", "0.2.3", "")
-      val (removedId,cleanedSource) = source.removePackageIdentifier()
-      removedId.should.be.`null`
-      cleanedSource.should.equal(source)
-   }
 }
 

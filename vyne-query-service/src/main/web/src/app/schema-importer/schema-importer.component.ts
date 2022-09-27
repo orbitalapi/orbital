@@ -33,7 +33,7 @@ import {testImportForUI} from './schema-importer.data';
       </div>
       <div class="configuration-step step" *ngIf="wizardStep === 'configureTypes'">
         <h2>Configure the schema</h2>
-        <app-schema-explorer-table [schemaSubmissionResult]="schemaSubmissionResult"
+        <app-schema-explorer-table [partialSchema]="schemaSubmissionResult"
                                    [schema]="schema"
                                    [working]="working"
                                    [saveResultMessage]="schemaSaveResultMessage"

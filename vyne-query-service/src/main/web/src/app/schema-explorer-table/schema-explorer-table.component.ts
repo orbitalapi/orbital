@@ -1,7 +1,7 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {SchemaSubmissionResult} from '../../services/types.service';
-import {Message, Operation, Schema, ServiceMember, Type} from '../../services/schema';
-import {ReplaySubject} from 'rxjs';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { Message, Operation, PartialSchema, Schema, ServiceMember, Type } from 'src/app/services/schema';
+import { Observable, ReplaySubject } from 'rxjs';
+import { tap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-schema-explorer-table',
@@ -9,7 +9,7 @@ import {ReplaySubject} from 'rxjs';
     <div class="main-content">
       <as-split direction="horizontal" unit="pixel">
         <as-split-area size="250">
-          <app-schema-entry-table [importedSchema$]="schemaBeingEdited$" #schemaEntryTable
+          <app-schema-entry-table [partialSchema$]="partialSchema$" #schemaEntryTable
                                   (modelSelected)="onModelSelected($event)"
                                   (operationSelected)="onOperationSelected($event)"
           ></app-schema-entry-table>
@@ -21,16 +21,16 @@ import {ReplaySubject} from 'rxjs';
                              [schema]="schema"
                              [showUsages]="false"
                              [showContentsList]="false"
-                             [anonymousTypes]="schemaSubmissionResult?.types"
+                             [anonymousTypes]="partialSchema?.types"
                              commitMode="explicit"
                              (newTypeCreated)="handleNewTypeCreated($event,selectedModel)"
                              (typeUpdated)="handleTypeUpdated($event,selectedModel)"
-                             [editable]="true"></app-type-viewer>
+                             [editable]="editable"></app-type-viewer>
             <app-operation-view *ngIf="selectedOperation"
                                 [operation]="selectedOperation"
                                 [schema]="schema"
-                                [allowTryItOut]="false"
-                                [editable]="true"
+                                [allowTryItOut]="allowTryItOut"
+                                [editable]="editable"
                                 (newTypeCreated)="handleNewTypeCreated($event,selectedOperation)"
                                 (updateDeferred)="handleTypeUpdated($event,selectedOperation)"
             ></app-operation-view>
@@ -43,17 +43,20 @@ import {ReplaySubject} from 'rxjs';
     <div class="error-message-box" *ngIf="saveResultMessage && saveResultMessage.level === 'FAILURE'">
       {{saveResultMessage.message}}
     </div>
-    <div class="button-bar">
-      <button tuiButton size="m" (click)="save.emit(schemaSubmissionResult)" [showLoader]="working">Save</button>
+    <div class="button-bar" *ngIf="editable">
+      <button tuiButton size="m" (click)="save.emit(partialSchema)" [showLoader]="working">Save</button>
       <tui-notification status="success" *ngIf="saveResultMessage && saveResultMessage.level === 'SUCCESS'">
         {{ saveResultMessage.message }}
       </tui-notification>
     </div>
 
   `,
-  styleUrls: ['./schema-explorer-table.component.scss']
+  styleUrls: ['./schema-explorer-table.component.scss'],
 })
 export class SchemaExplorerTableComponent {
+
+  constructor(private changeDetection: ChangeDetectorRef) {
+  }
 
   selectedModel: Type;
   selectedOperation: ServiceMember;
@@ -67,27 +70,50 @@ export class SchemaExplorerTableComponent {
   @Input()
   working: boolean = false;
 
-  schemaBeingEdited$ = new ReplaySubject<SchemaSubmissionResult>(1)
-
-  private _schemaSubmissionResult: SchemaSubmissionResult;
   @Input()
-  get schemaSubmissionResult(): SchemaSubmissionResult {
-    return this._schemaSubmissionResult;
+  editable: boolean = true;
+
+  @Input()
+  allowTryItOut: boolean = false;
+
+
+  private _partialSchema$: Observable<PartialSchema> = new ReplaySubject<PartialSchema>(1)
+
+  @Input()
+  get partialSchema$(): Observable<PartialSchema> {
+    return this._partialSchema$;
   }
 
-  set schemaSubmissionResult(value: SchemaSubmissionResult) {
-    if (this.schemaSubmissionResult === value) {
+  set partialSchema$(value) {
+    if (value) {
+      this._partialSchema$ = value.pipe(
+        tap(value => {
+          this._partialSchema = value;
+          this.changeDetection.markForCheck();
+        })
+      )
+    }
+  }
+
+  private _partialSchema: PartialSchema;
+  @Input()
+  get partialSchema(): PartialSchema {
+    return this._partialSchema;
+  }
+
+  set partialSchema(value) {
+    if (this._partialSchema === value) {
       return;
     }
-    this._schemaSubmissionResult = value;
+    this._partialSchema = value;
     if (value) {
-      this.schemaBeingEdited$.next(value);
+      (this.partialSchema$ as ReplaySubject<PartialSchema>).next(value);
     }
   }
 
 
   @Output()
-  save = new EventEmitter<SchemaSubmissionResult>();
+  save = new EventEmitter<PartialSchema>();
 
   onModelSelected($event: Type) {
     this.selectedModel = $event;
@@ -108,7 +134,7 @@ export class SchemaExplorerTableComponent {
   }
 
   handleNewTypeCreated(newType: Type, selectedModel: Type) {
-    this.schemaSubmissionResult.types.push(newType);
-    this.schemaBeingEdited$.next(this.schemaSubmissionResult)
+    this.partialSchema.types.push(newType);
+    (this.partialSchema$ as ReplaySubject<PartialSchema>).next(this.partialSchema)
   }
 }

@@ -80,11 +80,13 @@ class FilePollerSystemTest {
          argumentCaptor<List<SourcePackage>>().apply {
             verify(schemaPublisherMock, atLeastOnce()).submitPackages(capture())
 
-            lastValue.single().sources.single().should.equal(VersionedSource(
-               name = "hello.taxi",
-               version = "0.3.0",
-               content = "Updated"
-            ))
+            lastValue.single().sourcesWithPackageIdentifier.single().should.equal(
+               VersionedSource(
+                  name = "hello.taxi",
+                  version = "0.3.0",
+                  content = "Updated"
+               )
+            )
          }
 
       }

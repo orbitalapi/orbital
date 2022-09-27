@@ -64,7 +64,7 @@ class GitOpenApiPackageLoaderTest {
          .test()
          .expectSubscription()
          .expectNextMatches { e ->
-            e.sources.should.have.size(1)
+            e.sourcesWithPackageIdentifier.should.have.size(1)
             e.identifier.should.equal(
                PackageIdentifier(
                   organisation = "com.acme",

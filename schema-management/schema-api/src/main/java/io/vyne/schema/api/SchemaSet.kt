@@ -138,7 +138,7 @@ data class SchemaSet private constructor(val parsedPackages: List<ParsedPackage>
          val parsed = schema.packages.map { sourcePackage ->
             ParsedPackage(
                sourcePackage.packageMetadata,
-               sourcePackage.sources.map { src -> ParsedSource(src) }
+               sourcePackage.sourcesWithPackageIdentifier.map { src -> ParsedSource(src) }
             )
          }
 

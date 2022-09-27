@@ -26,6 +26,8 @@ import { TuiButtonModule } from '@taiga-ui/core';
 import { AuthGuard } from 'src/app/services/auth.guard';
 import { VynePrivileges } from 'src/app/services/user-info.service';
 import { TuiTabsModule } from '@taiga-ui/kit';
+import { SchemaExplorerTableModule } from 'src/app/schema-explorer-table/schema-explorer-table.module';
+import { SchemaImporterModule } from 'src/app/schema-importer/schema-importer.module';
 
 
 @NgModule({
@@ -49,6 +51,7 @@ import { TuiTabsModule } from '@taiga-ui/kit';
     RouterModule,
     PackageViewerModule,
     ChangelogModule,
+    SchemaExplorerTableModule,
     SimpleBadgeListModule,
     TuiButtonModule,
     RouterModule.forChild([
@@ -64,7 +67,7 @@ import { TuiTabsModule } from '@taiga-ui/kit';
         ]
       },
     ]),
-    TuiTabsModule
+    TuiTabsModule,
   ],
   exports: [SchemaExplorerComponent],
   declarations: [SchemaExplorerComponent, SchemaExplorerContainerComponent, SchemaSummaryViewComponent],

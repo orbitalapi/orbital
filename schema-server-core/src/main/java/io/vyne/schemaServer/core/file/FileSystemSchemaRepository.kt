@@ -57,8 +57,8 @@ class FileSystemSchemaRepository(
    fun refreshSources(): SourcePackage {
       logger.info("Reloading file sources at ${sourceLoader.identifier}")
       val sourcePackage = sourceLoader.loadSourcePackage()
-      if (sourcePackage.sources.isNotEmpty()) {
-         logger.info("Reload returned ${sourcePackage.sources.size} files - emitting SourcesChangedMessage")
+      if (sourcePackage.sourcesWithPackageIdentifier.isNotEmpty()) {
+         logger.info("Reload returned ${sourcePackage.sourcesWithPackageIdentifier.size} files - emitting SourcesChangedMessage")
          sourcesChangedSink.emitNext(SourcesChangedMessage(listOf(sourcePackage))) { signalType, emitResult ->
             logger.warn { "Failed to publish SourcesChangedMessage - $signalType $emitResult" }
             false

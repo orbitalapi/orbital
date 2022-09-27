@@ -128,8 +128,8 @@ export class TypeViewerComponent {
     }
     if (this.type) {
       this.schemaMember = SchemaMember.fromType(this.type);
-      this.sources = this.schemaMember.sources;
-      this.sourceTaxi = this.sources.map(v => v.content)
+      this.sources = this.schemaMember.sources || [];
+      this.sourceTaxi = (this.sources).map(v => v.content)
         .join('\n');
     }
     this.changeDetector.markForCheck();
