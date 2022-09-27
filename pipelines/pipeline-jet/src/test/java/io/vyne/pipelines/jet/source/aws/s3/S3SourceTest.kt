@@ -88,7 +88,7 @@ type OrderWindowSummary {
          validateJobStatusIsRunningEventually = false
       )
       job!!.future.get(10, TimeUnit.SECONDS)
-      listSinkTarget.size.should.equal(4)
+      listSinkTarget.size.should.equal(5)
    }
 
 }

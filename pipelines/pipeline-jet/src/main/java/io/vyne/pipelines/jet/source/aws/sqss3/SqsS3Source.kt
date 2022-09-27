@@ -280,7 +280,7 @@ class PollingSqsOperationSourceContext(
       val csvFormat = CsvFormatFactory.fromParameters(csvModelFormatAnnotation.ingestionParameters)
       val parser = csvFormat.parse(inputStream.bufferedReader())
       parser.forEach { csvRecord ->
-         dataBuffer.add(Pair(CsvRecordContentProvider(csvRecord), clock.millis()))
+         dataBuffer.add(Pair(CsvRecordContentProvider(csvRecord, csvModelFormatAnnotation.ingestionParameters.nullValue), clock.millis()))
       }
    }
 
