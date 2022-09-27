@@ -6,7 +6,7 @@ import { EventEmitter } from 'stream';
   selector: 'playground-toolbar',
   template: `
     <img src="assets/img/taxi-icon-white.svg" class="logo">
-    <span class="title">Taxi playground</span>
+    <span class="title">Voyager</span>
     <div class="spacer"></div>
     <button class="header-icon-button">
       <a target="_blank" href="https://vyne.co"><mat-icon svgIcon="vyneDots"></mat-icon></a>
