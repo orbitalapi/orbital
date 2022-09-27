@@ -12,7 +12,9 @@ import { EventEmitter } from 'stream';
       <a target="_blank" href="https://vyne.co"><mat-icon svgIcon="vyneDots"></mat-icon></a>
     </button>
     <button class="header-icon-button">
-      <mat-icon svgIcon="brandGitHub"></mat-icon>
+      <a target="_blank" href="https://github.com/orbitalapi/orbital">
+        <mat-icon svgIcon="brandGitHub"></mat-icon>
+      </a>
     </button>
     <button class="header-icon-button" (click)="slackInvite()">
       <mat-icon svgIcon="slack"></mat-icon>
