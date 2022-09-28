@@ -1,9 +1,9 @@
-import {Component, Inject, OnInit} from '@angular/core';
-import {TypesService} from '../../services/types.service';
-import {Metadata, QualifiedName, setOrReplaceMetadata, Type} from '../../services/schema';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
-import {CommitMode} from '../type-viewer.component';
+import { Component, Inject, OnInit } from '@angular/core';
+import { TypesService } from '../../services/types.service';
+import { Metadata, QualifiedName, setOrReplaceMetadata, Type } from '../../services/schema';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { CommitMode } from '../type-viewer.component';
 
 
 export interface EditTagsPanelParams {
@@ -22,7 +22,7 @@ export interface EditTagsPanelParams {
 })
 export class EditTagsPanelContainerComponent {
   availableTags: QualifiedName[];
-  selectedTags: QualifiedName[];
+  selectedTags: Metadata[];
   errorMessage: string;
 
   constructor(private typeService: TypesService,
@@ -33,29 +33,26 @@ export class EditTagsPanelContainerComponent {
       .subscribe(metadata => {
         this.availableTags = metadata;
       });
-    this.selectedTags = (params.type.metadata || []).map(m => m.name);
+    this.selectedTags = params.type.metadata || [];
   }
 
 
-  saveTags($event: QualifiedName[]) {
+  saveTags($event: Metadata[]) {
+    this.updateMetadataOnType($event);
     if (this.params.commitMode === 'immediate') {
       this.commitTags($event);
     } else {
-      this.updateMetadataOnType($event);
       this.dialogRef.close(this.params.type);
     }
 
   }
 
-  private updateMetadataOnType($event: QualifiedName[]) {
-    $event.forEach(tagName => setOrReplaceMetadata(this.params.type, {
-      name: tagName,
-      params: {}
-    }))
+  private updateMetadataOnType($event: Metadata[]) {
+    $event.forEach(metadata => setOrReplaceMetadata(this.params.type, metadata));
   }
 
-  private commitTags($event: QualifiedName[]) {
-    this.typeService.setTypeMetadata(this.params.type, $event)
+  private commitTags($event: Metadata[]) {
+    this.typeService.setTypeMetadata(this.params.type, this.params.type.metadata)
       .subscribe(result => {
           this.snackBar.open(`Tags for ${this.params.type.name.shortDisplayName} updated successfully`, 'Dismiss', {
             duration: 5000

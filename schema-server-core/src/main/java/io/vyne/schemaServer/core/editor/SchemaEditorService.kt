@@ -52,7 +52,7 @@ class SchemaEditorService(private val repository: ApiEditorRepository) :
       // It doesn't actually work, as it ignores other locations
 
       val name = QualifiedName.from(typeName)
-      val annotations = request.annotations.joinToString("\n") { "@" + it.name.fullyQualifiedName }
+      val annotations = request.annotations.joinToString("\n") { it.asTaxi() }
       return generateAnnotationExtension(name, annotations, FileContentType.Annotations)
 
    }

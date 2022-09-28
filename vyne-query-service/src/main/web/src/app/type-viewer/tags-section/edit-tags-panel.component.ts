@@ -1,6 +1,6 @@
-import {Component, EventEmitter, Input, Output, ViewEncapsulation} from '@angular/core';
-import {fqn, QualifiedName} from '../../services/schema';
-import {FormBuilder} from '@angular/forms';
+import { Component, EventEmitter, Input, Output, ViewEncapsulation } from '@angular/core';
+import { fqn, Metadata, QualifiedName } from '../../services/schema';
+import { FormBuilder } from '@angular/forms';
 
 @Component({
   selector: 'app-edit-tags-panel',
@@ -15,7 +15,9 @@ import {FormBuilder} from '@angular/forms';
               Set the tags to apply
             </div>
           </div>
-          <ng-select [searchable]="true" bindLabel="shortDisplayName" labelForId="tags"
+          <ng-select [searchable]="true"
+                     bindLabel="name.shortDisplayName"
+                     labelForId="tags"
                      [addTag]="createNewTag"
                      class="local-material"
                      addTagText="Create a new tag"
@@ -44,7 +46,7 @@ export class EditTagsPanelComponent {
   availableTags: QualifiedName[];
 
   @Input()
-  selectedTags: QualifiedName[];
+  selectedTags: Metadata[];
 
   @Input()
   errorMessage: string;
@@ -52,9 +54,12 @@ export class EditTagsPanelComponent {
   @Output()
   cancel = new EventEmitter();
   @Output()
-  save = new EventEmitter<QualifiedName[]>();
+  save = new EventEmitter<Metadata[]>();
 
-  createNewTag(tag: string): QualifiedName {
-    return fqn(tag);
+  createNewTag(tag: string): Metadata {
+    return {
+      name: fqn(tag),
+      params: {}
+    } as Metadata
   }
 }
