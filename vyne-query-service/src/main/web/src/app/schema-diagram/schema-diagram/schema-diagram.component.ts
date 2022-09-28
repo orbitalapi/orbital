@@ -1,10 +1,11 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, Input, OnInit, Output, ViewChild, EventEmitter } from '@angular/core';
 import { Schema } from '../../services/schema';
 import { RequiredMembersProps, SchemaFlowWrapper } from './schema-flow.react';
 import { ResizedEvent } from 'angular-resize-event/lib/resized.event';
 import { isNullOrUndefined } from 'util';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { toPng } from 'html-to-image';
 
 @Component({
   selector: 'app-schema-diagram',
@@ -12,15 +13,17 @@ import { map } from 'rxjs/operators';
   template: `
     <!-- we need a wrapper to catch the resize events, and then
     provide explicit sizing to container -->
+    <h3>{{ title }}</h3>
+    <div class="spacer"></div>
     <div class="toolbar">
-      <h3>{{ title }}</h3>
-      <div class="spacer"></div>
-      <app-fullscreen-toggle></app-fullscreen-toggle>
+      <app-fullscreen-toggle (fullscreenChange)="fullscreenChange.emit()"></app-fullscreen-toggle>
+      <button mat-mini-fab color="primary" class="header-icon-button" (click)="downloadImage()">
+        <mat-icon svgIcon="download"></mat-icon>
+      </button>
     </div>
     <div class="wrapper" (resized)="onWrapperResized($event)">
       <div #container></div>
     </div>
-
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -46,6 +49,9 @@ export class SchemaDiagramComponent {
   get schema$(): Observable<Schema> {
     return this._schema$;
   }
+
+  @Output()
+  fullscreenChange = new EventEmitter();
 
   set schema$(value) {
     if (this._schema$ === value) {
@@ -133,5 +139,25 @@ export class SchemaDiagramComponent {
     )
   }
 
+  downloadImage() {
+    toPng(document.querySelector<HTMLElement>('.react-flow__viewport'), {
+      filter: (node) => {
+        // we don't want to add the minimap and the controls to the image
+        if (
+          node?.classList?.contains('toolbar')
+        ) {
+          return false;
+        }
+
+        return true;
+      },
+    }).then((dataUrl) => {
+      const a = document.createElement('a');
+  
+      a.setAttribute('download', 'orbital-microservices-diagram.png');
+      a.setAttribute('href', dataUrl);
+      a.click();
+    });
+  }
 }
 

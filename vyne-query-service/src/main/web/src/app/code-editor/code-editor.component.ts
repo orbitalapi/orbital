@@ -41,6 +41,8 @@ import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 
 export const LANGUAGE_SERVER_WS_ADDRESS_TOKEN = 'LANGUAGE_SERVER_WS_ADDRESS_TOKEN';
 
+type WordWrapOptions = 'off' | 'on' | 'wordWrapColumn' | 'bounded';
+
 @Component({
   selector: 'app-code-editor',
   templateUrl: './code-editor.component.html',
@@ -93,6 +95,23 @@ export class CodeEditorComponent implements OnDestroy {
     }
   }
 
+  private _wordWrap: WordWrapOptions = 'off';
+
+  @Input()
+  get wordWrap(): WordWrapOptions {
+    return this._wordWrap;
+  }
+
+  set wordWrap(value: WordWrapOptions) {
+    if (value === this._wordWrap) {
+      return;
+    }
+    this._wordWrap = value;
+    if (this.monacoEditor) {
+      this.monacoEditor.updateOptions({ wordWrap: this.wordWrap });
+    }
+  }
+
   private _content: string = '';
   @Input()
   get content(): string {
@@ -105,7 +124,8 @@ export class CodeEditorComponent implements OnDestroy {
     }
     this._content = value;
     if (this.monacoModel) {
-      this.monacoModel.setValue(value)
+      this.monacoModel.setValue(value);
+      this.contentChange.emit(value);
     }
   }
 
@@ -152,7 +172,8 @@ export class CodeEditorComponent implements OnDestroy {
         enabled: true
       },
       automaticLayout: true,
-      readOnly: this._readOnly
+      readOnly: this._readOnly,
+      wordWrap: this._wordWrap
     });
 
     this.updateActionsOnEditor();
