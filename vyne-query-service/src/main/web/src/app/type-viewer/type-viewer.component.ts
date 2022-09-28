@@ -6,6 +6,7 @@ import { Inheritable } from '../inheritence-graph/inheritance-graph.component';
 import { OperationQueryResult } from '../services/types.service';
 import { Router } from '@angular/router';
 import { isNullOrUndefined } from 'util';
+import { Observable } from 'rxjs';
 
 /**
  * Whether changes should be saved immediately, or
@@ -32,6 +33,9 @@ export class TypeViewerComponent {
 
   @Input()
   schema: Schema;
+
+  @Input()
+  schema$: Observable<Schema>;
 
   @Input()
   showFullTypeNames = false;
@@ -118,6 +122,10 @@ export class TypeViewerComponent {
   @Input()
   get type(): Type {
     return this._type;
+  }
+
+  get requiredMembers(): string[] {
+    return [this.type.name.fullyQualifiedName];
   }
 
   set type(value: Type) {

@@ -10,14 +10,20 @@
   }
 }
 
+app-schema-diagram {
+  height: 400px;
+}
+
 .types-row {
   display: flex;
   align-items: center;
+
   app-inherits-from {
     margin-top: 0;
     margin-left: 0.75rem;
   }
 }
+
 .row {
   display: flex;
 

@@ -68,8 +68,9 @@
         other data available.</p>
       <p class="help-text">The data shown here is discoverable by Vyne using a query, and knowing the value of
         a {{type.name.shortDisplayName}}. </p>
-      <app-type-link-graph-container [member]="schemaMember"
-                                     *ngIf="chartDisplayMode === 'links'"></app-type-link-graph-container>
+      <app-schema-diagram [displayedMembers]="requiredMembers" [schema$]="schema$"></app-schema-diagram>
+      <!--      <app-type-link-graph-container [member]="schemaMember"-->
+      <!--                                     *ngIf="chartDisplayMode === 'links'"></app-type-link-graph-container>-->
     </div>
   </section>
 
