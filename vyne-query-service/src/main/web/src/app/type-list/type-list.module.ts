@@ -14,7 +14,8 @@ import {MatInputModule} from '@angular/material/input';
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
 import {MatIconModule} from '@angular/material/icon';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
-import {ScrollingModule} from '@angular/cdk/scrolling';
+import { ScrollingModule } from '@angular/cdk/scrolling';
+import { ScrollingModule as ExperimentalScrollingModule } from '@angular/cdk-experimental/scrolling';
 
 @NgModule({
   imports: [
@@ -31,7 +32,8 @@ import {ScrollingModule} from '@angular/cdk/scrolling';
     TypeAutocompleteModule,
     MatIconModule,
     HeaderBarModule,
-    ScrollingModule
+    ScrollingModule,
+    ExperimentalScrollingModule
   ],
   exports: [TypeListComponent],
   declarations: [TypeListComponent, FilterTypesComponent],

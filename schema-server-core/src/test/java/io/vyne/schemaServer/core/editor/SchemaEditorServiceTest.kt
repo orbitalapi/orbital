@@ -1,10 +1,15 @@
 package io.vyne.schemaServer.core.editor
 
 import com.winterbe.expekt.should
-import io.vyne.schemaServer.editor.UpdateTypeAnnotationRequest
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.api.SimpleSchemaProvider
+import io.vyne.schemaServer.core.editor.DefaultApiEditorRepository.Companion
 import io.vyne.schemaServer.core.file.deployProject
+import io.vyne.schemaServer.editor.UpdateTypeAnnotationRequest
+import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.Metadata
 import io.vyne.schemas.fqn
+import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.withoutWhitespace
 import org.junit.Rule
 import org.junit.Test
@@ -22,7 +27,8 @@ class SchemaEditorServiceTest {
       val projectPath = projectHome.deployProject("sample-project")
       val editorRepository = io.vyne.schemaServer.core.editor.DefaultApiEditorRepository.forPath(projectPath)
 
-      val editor = SchemaEditorService(editorRepository)
+      val schema = TaxiSchema.compiled("namespace com.foo { model Bar{} }").second
+      val editor = SchemaEditorService(editorRepository, SimpleSchemaStore(SchemaSet.from(schema, 0)))
       editor.updateAnnotationsOnType(
          "com.foo.Bar", UpdateTypeAnnotationRequest(
             listOf(Metadata("Documented".fqn()), Metadata("com.foo.Sensitive".fqn()))
@@ -42,6 +48,33 @@ class SchemaEditorServiceTest {
 type extension Bar {}""".withoutWhitespace()
       )
 
+   }
+
+   @Test
+   fun `can submit annotations to enum`() {
+      val projectPath = projectHome.deployProject("sample-project")
+      val editorRepository = io.vyne.schemaServer.core.editor.DefaultApiEditorRepository.forPath(projectPath)
+
+      val schema = TaxiSchema.compiled("namespace com.foo { enum Bar{} }").second
+      val editor = SchemaEditorService(editorRepository, SimpleSchemaStore(SchemaSet.from(schema, 0)))
+      editor.updateAnnotationsOnType(
+         "com.foo.Bar", UpdateTypeAnnotationRequest(
+            listOf(Metadata("Documented".fqn()), Metadata("com.foo.Sensitive".fqn()))
+         )
+      )
+
+      val expectedFilePath = projectPath.resolve("src/com/foo/Bar.annotations.taxi")
+      Files.exists(expectedFilePath).should.be.`true`
+
+      val contents = expectedFilePath.toFile().readText()
+      contents.withoutWhitespace().should.equal(
+         """namespace com.foo
+
+// This code is generated, and will be automatically updated
+@Documented
+@com.foo.Sensitive
+enum extension Bar {}""".withoutWhitespace()
+      )
    }
 
 }

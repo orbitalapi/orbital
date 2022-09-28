@@ -1,7 +1,10 @@
 package io.vyne.schemaServer.core.editor
 
 import io.vyne.VersionedSource
+import io.vyne.schema.api.SchemaProvider
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemaServer.editor.*
+import io.vyne.schemas.toVyneQualifiedName
 import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
 import org.http4k.quoted
@@ -17,7 +20,7 @@ private val logger = KotlinLogging.logger {}
 // Can't use ConditionalOnBean on a RestController.  We could refactor this to ConditionOnExpression, but that would
 // break the config mechanism of HOCON we're using.
 //@ConditionalOnBean(ApiEditorRepository::class)
-class SchemaEditorService(private val repository: ApiEditorRepository) :
+class SchemaEditorService(private val repository: ApiEditorRepository, private val schemaProvider: SchemaStore) :
    SchemaEditorApi {
 
 
@@ -68,6 +71,12 @@ class SchemaEditorService(private val repository: ApiEditorRepository) :
       annotationSource: String,
       contentType: FileContentType
    ): Mono<SchemaEditResponse> {
+      val type = schemaProvider.schemaSet.schema.type(typeName.toVyneQualifiedName())
+      val tokenType = when {
+         type.isEnum -> "enum"
+         else -> "type"
+      }
+
       val namespaceDeclaration = if (typeName.namespace.isNotEmpty()) {
          "namespace ${typeName.namespace}"
       } else ""
@@ -76,7 +85,7 @@ $namespaceDeclaration
 
 // This code is generated, and will be automatically updated
 $annotationSource
-type extension ${typeName.typeName} {}
+$tokenType extension ${typeName.typeName} {}
       """.trimIndent()
          .trim()
 

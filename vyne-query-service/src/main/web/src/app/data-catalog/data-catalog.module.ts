@@ -19,6 +19,7 @@ import { AuthGuard } from 'src/app/services/auth.guard';
 import { VynePrivileges } from 'src/app/services/user-info.service';
 import { TypeViewerContainerComponent } from 'src/app/type-viewer/type-viewer-container.component';
 import { TypeViewerModule } from 'src/app/type-viewer/type-viewer.module';
+import { TypeListModule } from 'src/app/type-list/type-list.module';
 
 
 @NgModule({
@@ -39,6 +40,7 @@ import { TypeViewerModule } from 'src/app/type-viewer/type-viewer.module';
     MatTooltipModule,
     HeaderBarModule,
     TypeViewerModule,
+    TypeListModule,
     RouterModule.forChild([
       { path: '', component: DataCatalogContainerComponent },
       {

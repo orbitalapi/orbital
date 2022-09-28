@@ -55,10 +55,10 @@ export class EditOwnerPanelContainerComponent {
   }
 
   saveUser(user: VyneUser) {
+    this.updateUserOnType(user);
     if (this.params.commitMode === 'immediate') {
       this.commitUser(user);
     } else {
-      this.updateUserOnType(user);
       this.dialogRef.close(this.params.type);
     }
 

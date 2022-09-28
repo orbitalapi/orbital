@@ -3,16 +3,18 @@ import {OperationQueryResult, TypesService} from '../services/types.service';
 import {ActivatedRoute, ParamMap} from '@angular/router';
 import {filter, map} from 'rxjs/operators';
 import {Schema, Type} from '../services/schema';
-import {buildInheritable, Inheritable} from '../inheritence-graph/inheritance-graph.component';
+import { buildInheritable, Inheritable } from '../inheritence-graph/inheritance-graph.component';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-type-viewer-container',
   styleUrls: ['./type-viewer-container.component.scss'],
   template: `
-    <app-header-bar title="Data Catalog">
+    <app-header-bar title="Catalog">
     </app-header-bar>
     <app-type-viewer [type]="type"
                      [schema]="schema"
+                     [schema$]="schema$"
                      class="page-content"
                      [inheritanceView]="inheritenceView"
                      [typeUsages]="typeUsages"
@@ -28,7 +30,10 @@ export class TypeViewerContainerComponent implements OnInit {
   typeUsages: OperationQueryResult;
   schema: Schema;
 
+  schema$: Observable<Schema>;
+
   constructor(private typeService: TypesService, private activeRoute: ActivatedRoute) {
+    this.schema$ = typeService.getTypes();
     typeService.getTypes()
       .subscribe(schema => this.schema = schema);
   }

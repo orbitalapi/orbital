@@ -1,41 +1,43 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {Type} from '../services/schema';
-import {openTypeSearch} from './model-attribute-tree-list/base-schema-member-display';
-import {isNullOrUndefined} from 'util';
-import {MatDialog} from '@angular/material/dialog';
-import {BaseDeferredEditComponent} from './base-deferred-edit.component';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { Type } from '../services/schema';
+import { openTypeSearch } from './model-attribute-tree-list/base-schema-member-display';
+import { isNullOrUndefined } from 'util';
+import { MatDialog } from '@angular/material/dialog';
+import { BaseDeferredEditComponent } from './base-deferred-edit.component';
 
 @Component({
   selector: 'app-inherits-from',
   template: `
     <div
-      *ngIf="type.inheritsFrom.length > 0 && type.inheritsFrom[0].fullyQualifiedName !== type.basePrimitiveTypeName.fullyQualifiedName">
-      <span>inherits&nbsp;</span>
+      *ngIf="!inheritsFromPrimitive">
       <ng-container *ngIf="!editable || type.inheritsFrom.length > 1">
+        <span>inherits&nbsp;</span>
         <div class="inherited-member" *ngFor="let inherits of type.inheritsFrom">
           <span class="mono-badge">{{inherits.longDisplayName}}</span>
-          <span>({{type.basePrimitiveTypeName.shortDisplayName}})</span>
+          <span *ngIf="type.basePrimitiveTypeName">({{type.basePrimitiveTypeName.shortDisplayName}})</span>
         </div>
       </ng-container>
       <div class="editable-type" *ngIf="editable && type.inheritsFrom.length === 1">
+        <span>inherits&nbsp;</span>
         <span class="mono-badge">{{ type.inheritsFrom[0].longDisplayName }}
         </span>
-        <span>&nbsp;({{type.basePrimitiveTypeName.shortDisplayName}})</span>
+        <span *ngIf="type.basePrimitiveTypeName">&nbsp;({{type.basePrimitiveTypeName.shortDisplayName}})</span>
         <mat-icon (click)="setInheritedType()">edit</mat-icon>
       </div>
     </div>
     <!-- when the type inherits directly from a primitive -->
     <div class="editable-type"
-         *ngIf="type.inheritsFrom.length === 1 && type.inheritsFrom[0].fullyQualifiedName === type.basePrimitiveTypeName.fullyQualifiedName">
+         *ngIf="inheritsFromPrimitive">
       <span>inherits&nbsp;</span>
       <span class="mono-badge">{{ type.basePrimitiveTypeName.shortDisplayName }}</span>
       <mat-icon (click)="setInheritedType()" *ngIf="editable">edit</mat-icon>
 
     </div>
   `,
-  styleUrls: ['./inherits-from.component.scss']
+  styleUrls: ['./inherits-from.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class InheritsFromComponent extends BaseDeferredEditComponent<Type>{
+export class InheritsFromComponent extends BaseDeferredEditComponent<Type> {
 
   constructor(private dialog: MatDialog) {
     super();
@@ -46,6 +48,15 @@ export class InheritsFromComponent extends BaseDeferredEditComponent<Type>{
 
   @Input()
   editable: boolean;
+
+  get inheritsFromPrimitive(): boolean {
+    try {
+      return this.type && this.type.inheritsFrom && this.type.basePrimitiveTypeName && this.type.inheritsFrom.length === 1 && this.type.inheritsFrom[0].fullyQualifiedName === this.type.basePrimitiveTypeName.fullyQualifiedName
+    } catch (e) {
+      console.error(e);
+    }
+
+  }
 
   setInheritedType() {
     const dialog = openTypeSearch(this.dialog);
