@@ -5,6 +5,7 @@ import com.jayway.awaitility.Duration
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.verify
 import com.winterbe.expekt.should
+import io.vyne.PackageIdentifier
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.asPackage
@@ -79,7 +80,8 @@ class FileWatcherSystemTest {
                VersionedSource(
                   name = "hello.taxi",
                   version = "0.3.0",
-                  content = "Updated"
+                  content = "Updated",
+                  packageIdentifier = PackageIdentifier("taxi", "sample", "0.3.0")
                )
             )
          }

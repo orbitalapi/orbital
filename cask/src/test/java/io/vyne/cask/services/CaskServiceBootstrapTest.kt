@@ -99,11 +99,15 @@ class CaskServiceBootstrapTest {
          .regenerateCasksOnSchemaChange(event)
 
       // assert
-      verify(caskServiceSchemaGenerator, timeout(1000).times(1)).generateAndPublishServices(
-         listOf(
-            CaskTaxiPublicationRequest(versionedTypeV2)
-         )
-      )
+      argumentCaptor<List<CaskTaxiPublicationRequest>>().apply {
+         verify(caskServiceSchemaGenerator, timeout(1000).times(1)).generateAndPublishServices(capture())
+         val request = lastValue
+         request.size.should.equal(1)
+         val typeInRequest = request.single().type
+         typeInRequest.sources.single().content.should.equal(versionedTypeV2.sources.single().content)
+         typeInRequest.sources.single().version.should.equal(versionedTypeV2.sources.single().version)
+      }
+
    }
 
    @Test
