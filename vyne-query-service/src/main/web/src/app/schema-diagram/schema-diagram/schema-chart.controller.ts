@@ -145,8 +145,8 @@ export class SchemaChartController {
 
   private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, sourceSchemaKind: SchemaMemberType, targetNode: Node<MemberWithLinks>, targetHandleId: string, targetSchemaKind: SchemaMemberType, linkId?: string): Edge {
     const edgeParams: EdgeParams = {
-      sourceCanFloat: sourceSchemaKind === 'TYPE',
-      targetCanFloat: targetSchemaKind === 'TYPE',
+      sourceCanFloat: true, //sourceSchemaKind === 'TYPE',
+      targetCanFloat: true //targetSchemaKind === 'TYPE',
     }
     let label: string;
     let markerStart, markerEnd: EdgeMarkerType;

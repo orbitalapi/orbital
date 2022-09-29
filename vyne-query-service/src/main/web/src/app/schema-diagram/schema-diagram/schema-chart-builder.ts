@@ -342,11 +342,11 @@ export class HandleIds {
   }
 
   static serviceOperationInbound(serviceName: QualifiedName, operationName: QualifiedName): string {
-    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}-inbound`
+    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}`
   }
 
   static serviceOperationOutbound(serviceName: QualifiedName, operationName: QualifiedName): string {
-    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}-outbound`
+    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}`
   }
 
   static appendPositionToHandleId(handleId: string, position: Position): string {
