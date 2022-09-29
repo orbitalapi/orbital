@@ -226,7 +226,7 @@ export class CodeEditorComponent implements OnDestroy {
               uri: 'inmemory://query.taxi',
               languageId: TAXI_LANGUAGE_ID,
               version: 0,
-              text: ''
+              text: this.content
             }
           })
         });
