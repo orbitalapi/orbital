@@ -11,13 +11,11 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { VyneQueryViewerComponent } from './taxi-viewer/vyne-query-viewer/vyne-query-viewer.component';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
-import { CovalentDynamicFormsModule } from '@covalent/dynamic-forms';
 import { ObjectViewModule } from '../object-view/object-view.module';
 import { CovalentHighlightModule } from '@covalent/highlight';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { TypedInstancePanelModule } from '../typed-instance-panel/typed-instance-panel.module';
-import { QueryWizardComponent } from './query-wizard/query-wizard.component';
 import { QueryEditorComponent } from './query-editor/query-editor.component';
 import { MatTabsModule } from '@angular/material/tabs';
 import { CodeViewerModule } from '../code-viewer/code-viewer.module';
@@ -33,7 +31,6 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { CodeEditorModule } from '../code-editor/code-editor.module';
 import { ResultsTableModule } from '../results-table/results-table.module';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { QueryBuilderComponent } from './query-wizard/query-builder.component';
 import { TabbedResultsViewModule } from '../tabbed-results-view/tabbed-results-view.module';
 import { RouterModule } from '@angular/router';
 import { MatSortModule } from '@angular/material/sort';
@@ -53,7 +50,6 @@ import { TuiButtonModule } from '@taiga-ui/core';
     MatCardModule,
     MatToolbarModule,
     MatIconModule,
-    CovalentDynamicFormsModule,
     FormsModule,
     ReactiveFormsModule,
     CovalentFileModule,
@@ -79,11 +75,10 @@ import { TuiButtonModule } from '@taiga-ui/core';
   ],
   exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent,
     ErrorPanelComponent],
-  declarations: [QueryPanelComponent, QueryWizardComponent,
+  declarations: [QueryPanelComponent,
     VyneQueryViewerComponent, QueryEditorComponent, BottomBarComponent, CounterTimerComponent,
 
     ErrorPanelComponent,
-    QueryBuilderComponent,
   ],
   providers: [],
 })

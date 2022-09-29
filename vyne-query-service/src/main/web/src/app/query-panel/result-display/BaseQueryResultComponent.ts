@@ -2,10 +2,10 @@ import {TypesService} from '../../services/types.service';
 import {findType, InstanceLikeOrCollection, QualifiedName, Schema, Type, TypedInstance} from '../../services/schema';
 import { EventEmitter, Input, Output, Directive } from '@angular/core';
 import {QueryResult, ResponseStatus, ResultMode} from '../../services/query.service';
-import {QueryFailure} from '../query-wizard/query-wizard.component';
 import {InstanceSelectedEvent} from '../instance-selected-event';
 import {isNullOrUndefined} from 'util';
 import {FailedSearchResponse} from '../../services/models';
+import { QueryFailure } from 'src/app/query-panel/query-panel.component';
 
 /**
  * Query results contain an entry for each top-level type that was requested.

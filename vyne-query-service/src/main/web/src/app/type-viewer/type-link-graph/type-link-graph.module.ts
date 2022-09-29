@@ -1,15 +1,13 @@
-import {NgModule} from '@angular/core';
-import {NgxGraphModule} from '@swimlane/ngx-graph';
-import {TypeLinkGraphComponent} from './type-link-graph.component';
-import {TypeLinkGraphContainerComponent} from './type-link-graph-container.component';
-import {CommonModule} from '@angular/common';
-import {NgxChartsModule} from '@swimlane/ngx-charts';
+import { NgModule } from '@angular/core';
+import { NgxGraphModule } from '@swimlane/ngx-graph';
+import { TypeLinkGraphComponent } from './type-link-graph.component';
+import { TypeLinkGraphContainerComponent } from './type-link-graph-container.component';
+import { CommonModule } from '@angular/common';
 
 @NgModule({
   imports: [
     NgxGraphModule,
     CommonModule,
-    NgxChartsModule
   ],
   declarations: [
     TypeLinkGraphComponent,

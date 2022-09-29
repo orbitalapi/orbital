@@ -1,11 +1,17 @@
-import {Component} from '@angular/core';
-import {ActivatedRoute, Router} from '@angular/router';
-import {QueryHistorySummary, QueryResult, QueryService} from '../services/query.service';
-import {QueryFailure} from './query-wizard/query-wizard.component';
-import {isQueryResult} from './result-display/BaseQueryResultComponent';
-import {BaseQueryResultDisplayComponent} from './BaseQueryResultDisplayComponent';
-import {TypesService} from '../services/types.service';
-import {isNullOrUndefined} from 'util';
+import { Component } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import {
+  QueryHistorySummary,
+  QueryProfileData,
+  QueryResult,
+  QueryService, RemoteCall,
+  ResponseStatus
+} from '../services/query.service';
+import { isQueryResult } from './result-display/BaseQueryResultComponent';
+import { BaseQueryResultDisplayComponent } from './BaseQueryResultDisplayComponent';
+import { TypesService } from '../services/types.service';
+import { isNullOrUndefined } from 'util';
+import { FailedSearchResponse } from 'src/app/services/models';
 
 @Component({
   selector: 'query-panel',
@@ -54,4 +60,19 @@ export class QueryPanelComponent extends BaseQueryResultDisplayComponent {
   onCloseTypedInstanceDrawer($event: boolean) {
     this.shouldTypedInstancePanelBeVisible = $event;
   }
+}
+
+/**
+ * @deprecated use FailedSearchResponse instead
+ */
+export class QueryFailure implements FailedSearchResponse {
+  responseStatus: ResponseStatus = ResponseStatus.ERROR;
+
+  constructor(readonly message: string,
+              readonly profilerOperation: QueryProfileData | null = null,
+              readonly remoteCalls: RemoteCall[] = [],
+              readonly queryResponseId: string | null = null,
+              readonly  clientQueryId: string | null = null) {
+  }
+
 }

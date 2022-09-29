@@ -1,10 +1,10 @@
-import {Injectable} from '@angular/core';
-import {Router, CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot} from '@angular/router';
-import {VyneUser, UserInfoService} from './user-info.service';
-import {map} from 'rxjs/operators';
-import {AuthService} from "../auth/auth.service";
+import { Injectable } from '@angular/core';
+import { Router, CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { VyneUser, UserInfoService } from './user-info.service';
+import { map } from 'rxjs/operators';
+import { AuthService } from '../auth/auth.service';
 
-@Injectable({providedIn: 'root'})
+@Injectable({ providedIn: 'root' })
 export class AuthGuard implements CanActivate {
   constructor(
     private router: Router,
@@ -24,7 +24,7 @@ export class AuthGuard implements CanActivate {
   }
 
   private checkAuthorisation(vyneUser: VyneUser, route: ActivatedRouteSnapshot) {
-    if (route.data.requiredAuthority && vyneUser.grantedAuthorities.includes(route.data.requiredAuthority)) {
+    if ((route.data as any).requiredAuthority && vyneUser.grantedAuthorities.includes((route.data as any).requiredAuthority)) {
       // authorised so return true
       return true;
     }

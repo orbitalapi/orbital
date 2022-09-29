@@ -2,8 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { delay, map, retryWhen, switchMap } from 'rxjs/operators';
-import { WebSocketSubject } from 'rxjs/internal-compatibility';
-import { webSocket } from 'rxjs/webSocket';
+import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { of } from 'rxjs';
 
 @Injectable({
@@ -13,7 +12,7 @@ export class WebsocketService {
   private connections = new Map<string, WebSocketSubject<any>>();
   RETRY_SECONDS = 10;
 
-  getWsUrl(path: string) {
+  getWsUrl(path: string): string {
     const apiUrl = environment.queryServiceUrl;
     if (apiUrl.startsWith('http')) {
       return apiUrl.replace(/^http/, 'ws') + path;
@@ -28,7 +27,7 @@ export class WebsocketService {
     return of(path).pipe(
       // https becomes wws, http becomes ws
       map(apiUrl => this.getWsUrl(path)),
-      switchMap(wsUrl => {
+      switchMap((wsUrl: string) => {
         if (this.connections.has(wsUrl)) {
           return this.connections.get(wsUrl);
         } else {
