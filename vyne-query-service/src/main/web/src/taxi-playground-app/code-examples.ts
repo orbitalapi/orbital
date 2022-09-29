@@ -4,7 +4,7 @@ export interface CodeSample {
 }
 
 const HelloWorld: CodeSample = {
-  title: 'Hello, world',
+  title: 'Hello, universe',
   code: `/**
 Welcome to Voyager - a microservices diagramming tool.
 

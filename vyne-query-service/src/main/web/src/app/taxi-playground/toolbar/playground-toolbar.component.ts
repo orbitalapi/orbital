@@ -40,7 +40,6 @@ export class PlaygroundToolbarComponent {
   showSubscribeDialog = false;
 
   subscribeForUpdates() {
-    console.log('argh')
     this.dialog.subscribe({
       next: data => {
         console.info(`Dialog emitted data = ${data}`);
