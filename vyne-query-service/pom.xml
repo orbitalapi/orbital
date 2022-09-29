@@ -499,7 +499,7 @@
             <version>1.12.1</version>
             <configuration>
                <workingDirectory>src/main/web/</workingDirectory>
-               <nodeVersion>v12.16.3</nodeVersion>
+               <nodeVersion>v16.14.0</nodeVersion>
             </configuration>
             <executions>
                <execution>
