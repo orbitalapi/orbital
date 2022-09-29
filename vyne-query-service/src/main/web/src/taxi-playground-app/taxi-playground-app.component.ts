@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { ParsedSchema, TaxiPlaygroundService } from 'src/taxi-playground-app/taxi-playground.service';
-import { debounceTime, filter, map, share, switchMap} from 'rxjs/operators';
+import { debounceTime, filter, map, share, shareReplay, switchMap } from 'rxjs/operators';
 import { emptySchema, Schema } from 'src/app/services/schema';
-import { Observable, of, Subject } from 'rxjs';
+import { Observable, of, Subject, defer, ReplaySubject } from 'rxjs';
 
 const intro = `/*
 Welcome to Voyager - a microservices diagramming tool.
@@ -47,18 +47,18 @@ service Reviews {
     <div class="container">
       <as-split direction="horizontal" unit="percent">
         <as-split-area [size]="35">
-          <app-code-editor 
-            [content]="intro" 
+          <app-code-editor
+            [content]="intro"
             wordWrap="on"
             (contentChange)="codeUpdated$.next($event)">
           </app-code-editor>
         </as-split-area>
         <as-split-area>
-          <app-schema-diagram 
+          <app-schema-diagram
             [class.mat-elevation-z8]="fullscreen"
-            [class.fullscreen]="fullscreen" 
-            [schema$]="schema$" 
-            displayedMembers="everything" 
+            [class.fullscreen]="fullscreen"
+            [schema$]="schema$"
+            displayedMembers="everything"
             (fullscreenChange)="onFullscreenChange()">
 
           </app-schema-diagram>
@@ -71,7 +71,7 @@ service Reviews {
 })
 export class TaxiPlaygroundAppComponent {
 
-  codeUpdated$ = new Subject<string>()
+  codeUpdated$ = new ReplaySubject<string>(1)
 
   schema$: Observable<Schema>;
 
@@ -103,11 +103,12 @@ export class TaxiPlaygroundAppComponent {
         }),
         // Sharing is caring.  If we don't do this, then we end up with
         // a service call for every subscriber. :(
-        share()
-      )
+        shareReplay(1)
+      );
+    this.codeUpdated$.next(intro);
   }
 
   onFullscreenChange() {
-    this.fullscreen = !this.fullscreen; 
+    this.fullscreen = !this.fullscreen;
   }
 }

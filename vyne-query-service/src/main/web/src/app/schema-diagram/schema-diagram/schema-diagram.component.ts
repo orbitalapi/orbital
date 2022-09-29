@@ -14,13 +14,6 @@ import { toPng } from 'html-to-image';
     <!-- we need a wrapper to catch the resize events, and then
     provide explicit sizing to container -->
     <h3>{{ title }}</h3>
-    <div class="spacer"></div>
-    <div class="toolbar">
-      <app-fullscreen-toggle (fullscreenChange)="fullscreenChange.emit()"></app-fullscreen-toggle>
-      <button mat-mini-fab color="primary" class="header-icon-button" (click)="downloadImage()">
-        <mat-icon svgIcon="download"></mat-icon>
-      </button>
-    </div>
     <div class="wrapper" (resized)="onWrapperResized($event)">
       <div #container></div>
     </div>
@@ -137,27 +130,6 @@ export class SchemaDiagramComponent {
       this.lastMeasureEvent.newRect.width,
       this.lastMeasureEvent.newRect.height
     )
-  }
-
-  downloadImage() {
-    toPng(document.querySelector<HTMLElement>('.react-flow__viewport'), {
-      filter: (node) => {
-        // we don't want to add the minimap and the controls to the image
-        if (
-          node?.classList?.contains('toolbar')
-        ) {
-          return false;
-        }
-
-        return true;
-      },
-    }).then((dataUrl) => {
-      const a = document.createElement('a');
-  
-      a.setAttribute('download', 'orbital-microservices-diagram.png');
-      a.setAttribute('href', dataUrl);
-      a.click();
-    });
   }
 }
 
