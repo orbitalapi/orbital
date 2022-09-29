@@ -1,21 +1,39 @@
 <img src="assets/img/taxi-icon-white.svg" class="logo">
 <span class="title">Voyager</span>
+
+<span class="examples">Examples</span>
+<tui-select
+  tuiTextfieldSize="s"
+  [ngModel]="selectedExample"
+  (ngModelChange)="setExample($event)"
+>
+  Examples
+  <input
+    tuiTextfield
+    placeholder="Select an example"
+  />
+  <tui-data-list-wrapper
+    *tuiDataList
+    [items]="examples"
+  ></tui-data-list-wrapper>
+</tui-select>
+
 <div class="spacer"></div>
 <button mat-flat-button class="subscribe" (click)="subscribeForUpdates()">
-    Get updates
+  Get updates
 </button>
 <button class="header-icon-button">
-    <a target="_blank" href="https://vyne.co">
-        <mat-icon svgIcon="vyneDots"></mat-icon>
-    </a>
+  <a target="_blank" href="https://vyne.co">
+    <mat-icon svgIcon="vyneDots"></mat-icon>
+  </a>
 </button>
 <button class="header-icon-button">
-    <a target="_blank" href="https://github.com/orbitalapi/orbital">
-        <mat-icon svgIcon="brandGitHub"></mat-icon>
-    </a>
+  <a target="_blank" href="https://github.com/orbitalapi/orbital">
+    <mat-icon svgIcon="brandGitHub"></mat-icon>
+  </a>
 </button>
 <button class="header-icon-button" (click)="slackInvite()">
-    <mat-icon svgIcon="slack"></mat-icon>
+  <mat-icon svgIcon="slack"></mat-icon>
 </button>
 
 <!-- <ng-template let-observer [tuiDialogOptions]="{label: 'Declarative directive', size: 's'}"

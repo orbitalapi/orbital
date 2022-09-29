@@ -32,6 +32,13 @@ function getHandleCoordsByPosition(node: Node, handleId: string, handlePosition:
     (h) => h.id === handleIdWithPosition
   );
 
+  if (!handle) {
+    // Looks like this can happen if we try to layout before everything is rendered.
+    // From testing, looks like we recover
+    console.warn(`No handle with ${handleIdWithPosition} found on handle ${handleId} for node ${node.id}`)
+    return [0, 0];
+  }
+
 
   // Default size, in case we haven't yet measured.
   const DEFAULT_SIZE = 8;

@@ -2,6 +2,7 @@
 @import "src/theme";
 @import "../../../taxi-playground-app/styles.scss";
 
+
 :host {
   display: flex;
   align-items: center;
@@ -24,9 +25,15 @@
   flex-grow: 1;
 }
 
+tui-select {
+  margin-left: 1rem;
+  width: 20rem;
+}
+
 .title {
   font-family: $headings-font;
   font-weight: 300;
+  margin-right: 5rem;
 }
 
 button {
@@ -54,7 +61,7 @@ button.secondary {
 mat-icon {
   fill: white;
   color: white;
-  
+
 }
 
 .header-icon-button {

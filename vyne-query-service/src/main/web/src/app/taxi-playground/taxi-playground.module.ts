@@ -4,10 +4,10 @@ import { PlaygroundToolbarComponent } from 'src/app/taxi-playground/toolbar/play
 import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
 import { DomSanitizer } from '@angular/platform-browser';
 import { MatButtonModule } from '@angular/material/button';
-import { TuiDialogModule } from '@taiga-ui/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { SubscribeDialogComponent } from './subscribe-dialog/subscribe-dialog.component';
-import { TuiInputModule } from '@taiga-ui/kit';
+import { TuiDataListWrapperModule, TuiInputModule, TuiSelectModule } from '@taiga-ui/kit';
+import { TuiDialogModule, TuiTextfieldControllerModule } from '@taiga-ui/core';
 
 
 @NgModule({
@@ -24,7 +24,11 @@ import { TuiInputModule } from '@taiga-ui/kit';
     MatButtonModule,
     TuiDialogModule,
     TuiInputModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    TuiSelectModule,
+    TuiTextfieldControllerModule,
+    TuiDataListWrapperModule,
+    FormsModule
   ],
   entryComponents: [
     SubscribeDialogComponent

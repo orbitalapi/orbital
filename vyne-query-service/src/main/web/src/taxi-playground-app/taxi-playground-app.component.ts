@@ -3,29 +3,29 @@ import { ParsedSchema, TaxiPlaygroundService } from 'src/taxi-playground-app/tax
 import { debounceTime, filter, map, share, shareReplay, switchMap } from 'rxjs/operators';
 import { emptySchema, Schema } from 'src/app/services/schema';
 import { Observable, of, Subject, defer, ReplaySubject } from 'rxjs';
-import { CodeSamples } from 'src/taxi-playground-app/code-examples';
+import { CodeSample, CodeSamples } from 'src/taxi-playground-app/code-examples';
 
 @Component({
   selector: 'taxi-playground-app',
   template: `
     <tui-root>
       <div class="app-container">
-        <playground-toolbar></playground-toolbar>
+        <playground-toolbar (selectedExampleChange)="setCodeFromExample($event)"></playground-toolbar>
         <div class="container">
           <as-split direction="horizontal" unit="percent">
             <as-split-area [size]="35">
-              <app-code-editor 
-                [content]="content" 
+              <app-code-editor
+                [content]="content"
                 wordWrap="on"
                 (contentChange)="codeUpdated$.next($event)">
               </app-code-editor>
             </as-split-area>
             <as-split-area>
-              <app-schema-diagram 
+              <app-schema-diagram
                 [class.mat-elevation-z8]="fullscreen"
-                [class.fullscreen]="fullscreen" 
-                [schema$]="schema$" 
-                displayedMembers="everything" 
+                [class.fullscreen]="fullscreen"
+                [schema$]="schema$"
+                displayedMembers="everything"
                 (fullscreenChange)="onFullscreenChange()">
 
               </app-schema-diagram>
@@ -74,16 +74,16 @@ export class TaxiPlaygroundAppComponent {
         // a service call for every subscriber. :(
         shareReplay(1)
       );
-    this.setCodeSample(0);
-
+    this.setCodeFromExample(CodeSamples[0]);
   }
 
-  setCodeSample(index: number) {
-    this.content = CodeSamples[index].code
-    this.codeUpdated$.next(this.content);
-  }
 
   onFullscreenChange() {
-    this.fullscreen = !this.fullscreen; 
+    this.fullscreen = !this.fullscreen;
+  }
+
+  setCodeFromExample(codeSample: CodeSample) {
+    this.content = codeSample.code;
+    this.codeUpdated$.next(codeSample.code);
   }
 }
