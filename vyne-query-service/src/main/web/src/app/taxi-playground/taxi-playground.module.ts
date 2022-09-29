@@ -3,18 +3,31 @@ import { CommonModule } from '@angular/common';
 import { PlaygroundToolbarComponent } from 'src/app/taxi-playground/toolbar/playground-toolbar.component';
 import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
 import { DomSanitizer } from '@angular/platform-browser';
+import { MatButtonModule } from '@angular/material/button';
+import { TuiDialogModule } from '@taiga-ui/core';
+import { ReactiveFormsModule } from '@angular/forms';
+import { SubscribeDialogComponent } from './subscribe-dialog/subscribe-dialog.component';
+import { TuiInputModule } from '@taiga-ui/kit';
 
 
 @NgModule({
   declarations: [
-    PlaygroundToolbarComponent
+    PlaygroundToolbarComponent,
+    SubscribeDialogComponent
   ],
   exports: [
     PlaygroundToolbarComponent
   ],
   imports: [
     CommonModule,
-    MatIconModule
+    MatIconModule,
+    MatButtonModule,
+    TuiDialogModule,
+    TuiInputModule,
+    ReactiveFormsModule
+  ],
+  entryComponents: [
+    SubscribeDialogComponent
   ]
 })
 export class TaxiPlaygroundModule {

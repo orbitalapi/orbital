@@ -1,0 +1,34 @@
+<img src="assets/img/taxi-icon-white.svg" class="logo">
+<span class="title">Voyager</span>
+<div class="spacer"></div>
+<button mat-flat-button class="subscribe" (click)="subscribeForUpdates()">
+    Get updates
+</button>
+<button class="header-icon-button">
+    <a target="_blank" href="https://vyne.co">
+        <mat-icon svgIcon="vyneDots"></mat-icon>
+    </a>
+</button>
+<button class="header-icon-button">
+    <a target="_blank" href="https://github.com/orbitalapi/orbital">
+        <mat-icon svgIcon="brandGitHub"></mat-icon>
+    </a>
+</button>
+<button class="header-icon-button" (click)="slackInvite()">
+    <mat-icon svgIcon="slack"></mat-icon>
+</button>
+
+<!-- <ng-template let-observer [tuiDialogOptions]="{label: 'Declarative directive', size: 's'}"
+    [(tuiDialog)]="showSubscribeDialog">
+
+    <form [formGroup]="exampleForm" (ngSubmit)="onSubmit(observer)">
+        <p>This abstracts away service and subscription</p>
+        <tui-input tuiAutoFocus formControlName="emailControl">
+        </tui-input>
+        <p>
+            <button tuiButton type="submit">
+                Subscribe
+            </button>
+        </p>
+    </form>
+</ng-template> -->

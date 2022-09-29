@@ -12,8 +12,7 @@ import { AuthModule } from '@auth0/auth0-angular';
 import { LANGUAGE_SERVER_WS_ADDRESS_TOKEN } from 'src/app/code-editor/code-editor.component';
 import { WebsocketService } from 'src/app/services/websocket.service';
 import { environment } from 'src/taxi-playground-app/environments/environment';
-import { MatIconRegistry } from '@angular/material/icon';
-
+import { TuiDialogModule, TuiRootModule } from '@taiga-ui/core';
 
 @NgModule({
   imports: [
@@ -25,6 +24,8 @@ import { MatIconRegistry } from '@angular/material/icon';
     CodeEditorModule,
     SchemaDiagramModule,
     HttpClientModule,
+    TuiRootModule,
+    TuiDialogModule,
     AuthModule.forRoot({
       domain: 'orbitalhq.eu.auth0.com',
       clientId: 'ZaDGRQWEfgTFtlWVR9AXWg9vOiBxgVPv'

@@ -201,6 +201,8 @@
             "polyfills": "src/taxi-playground-app/polyfills.ts",
             "tsConfig": "src/taxi-playground-app/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
+            "scripts": [
+            ],
             "assets": [
               "src/taxi-logo-48x48.png",
               "src/assets",
@@ -208,13 +210,19 @@
                 "glob": "**/*",
                 "input": "node_modules/monaco-editor",
                 "output": "assets/monaco-editor/"
+              },
+              {
+                "glob": "**/*",
+                "input": "node_modules/@taiga-ui/icons/src",
+                "output": "assets/taiga-ui/icons"
               }
             ],
             "styles": [
               "src/taxi-playground-app/styles.scss",
-              "node_modules/monaco-editor/dev/vs/editor/editor.main.css"
-            ],
-            "scripts": []
+              "node_modules/monaco-editor/dev/vs/editor/editor.main.css",
+              "node_modules/@taiga-ui/core/styles/taiga-ui-global.less",
+              "node_modules/@taiga-ui/core/styles/taiga-ui-theme.less"
+            ]
           },
           "configurations": {
             "production": {

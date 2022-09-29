@@ -1,0 +1,10 @@
+<form [formGroup]="subscribeForm" (ngSubmit)="onSubmit()">
+    <p>This abstracts away service and subscription</p>
+    <tui-input tuiAutoFocus formControlName="emailControl">
+    </tui-input>
+    <p>
+        <button tuiButton type="submit">
+            Subscribe
+        </button>
+    </p>
+</form>

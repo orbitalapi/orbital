@@ -1,4 +1,7 @@
+@use '@angular/material' as mat;
 @import "src/theme";
+@import "../../../taxi-playground-app/styles.scss";
+
 :host {
   display: flex;
   align-items: center;
@@ -34,7 +37,7 @@ button {
 }
 
 button.secondary {
-  border: 1px solid $primary;
+  border: 1px solid mat.get-color-from-palette($primary, 500);
   background-color: white;
   &:hover {
     background-color: $base-3;
@@ -59,4 +62,13 @@ mat-icon {
   &:hover {
     cursor: pointer;
   }
+}
+
+.subscribe {
+  background-color: white;
+  color: mat.get-color-from-palette($primary, 500);
+
+  line-height: 2em;
+  margin-right: 40px;
+  padding: 0 10px;
 }

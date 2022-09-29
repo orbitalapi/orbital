@@ -8,28 +8,32 @@ import { CodeSamples } from 'src/taxi-playground-app/code-examples';
 @Component({
   selector: 'taxi-playground-app',
   template: `
-    <playground-toolbar></playground-toolbar>
-    <div class="container">
-      <as-split direction="horizontal" unit="percent">
-        <as-split-area [size]="35">
-          <app-code-editor
-            [content]="content"
-            wordWrap="on"
-            (contentChange)="codeUpdated$.next($event)">
-          </app-code-editor>
-        </as-split-area>
-        <as-split-area>
-          <app-schema-diagram
-            [class.mat-elevation-z8]="fullscreen"
-            [class.fullscreen]="fullscreen"
-            [schema$]="schema$"
-            displayedMembers="everything"
-            (fullscreenChange)="onFullscreenChange()">
+    <tui-root>
+      <div class="app-container">
+        <playground-toolbar></playground-toolbar>
+        <div class="container">
+          <as-split direction="horizontal" unit="percent">
+            <as-split-area [size]="35">
+              <app-code-editor 
+                [content]="content" 
+                wordWrap="on"
+                (contentChange)="codeUpdated$.next($event)">
+              </app-code-editor>
+            </as-split-area>
+            <as-split-area>
+              <app-schema-diagram 
+                [class.mat-elevation-z8]="fullscreen"
+                [class.fullscreen]="fullscreen" 
+                [schema$]="schema$" 
+                displayedMembers="everything" 
+                (fullscreenChange)="onFullscreenChange()">
 
-          </app-schema-diagram>
-        </as-split-area>
-      </as-split>
-    </div>
+              </app-schema-diagram>
+            </as-split-area>
+          </as-split>
+        </div>
+      </div>
+    </tui-root>
   `,
   styleUrls: ['./taxi-playground-app.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -80,6 +84,6 @@ export class TaxiPlaygroundAppComponent {
   }
 
   onFullscreenChange() {
-    this.fullscreen = !this.fullscreen;
+    this.fullscreen = !this.fullscreen; 
   }
 }
