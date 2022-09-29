@@ -9,7 +9,9 @@ import { EventEmitter } from 'stream';
     <span class="title">Voyager</span>
     <div class="spacer"></div>
     <button class="header-icon-button">
-      <a target="_blank" href="https://vyne.co"><mat-icon svgIcon="vyneDots"></mat-icon></a>
+      <a target="_blank" href="https://vyne.co">
+        <mat-icon svgIcon="vyneDots"></mat-icon>
+      </a>
     </button>
     <button class="header-icon-button">
       <a target="_blank" href="https://github.com/orbitalapi/orbital">
@@ -23,9 +25,9 @@ import { EventEmitter } from 'stream';
   styleUrls: ['./playground-toolbar.component.scss']
 })
 export class PlaygroundToolbarComponent {
-  
-  readonly slackInviteLink = "https://join.slack.com/t/vynehq/shared_invite/zt-1gxb15z4g-H2IeysSGo_rI1ptOty6mwA";
-  
+
+  readonly slackInviteLink = 'https://join.slack.com/t/vynehq/shared_invite/zt-1gxb15z4g-H2IeysSGo_rI1ptOty6mwA';
+
   constructor(public authService: AuthService) {
   }
 

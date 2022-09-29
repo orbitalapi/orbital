@@ -3,42 +3,7 @@ import { ParsedSchema, TaxiPlaygroundService } from 'src/taxi-playground-app/tax
 import { debounceTime, filter, map, share, shareReplay, switchMap } from 'rxjs/operators';
 import { emptySchema, Schema } from 'src/app/services/schema';
 import { Observable, of, Subject, defer, ReplaySubject } from 'rxjs';
-
-const intro = `/*
-Welcome to Voyager - a microservices diagramming tool.
-
-Easily create diagrams that visualize the connections between services and data sources in your stack
-
-How it works:
-
-- Describe your services and model
-
-That's it! Links between servies will automatically be made where types are shared.
-
-e.g. In the example below, we have a Reviews service which accepts an Input of FilmId and returns a FilmReview.
-
-Also described is the FilmReview model, and we can see that a connection has been added between the two objects in the diagram.
-
-We'd love to hear what you think. Head over to our GitHub repo to report issues, or jump on our Slack channel to chat.
-*/
-
-model Film {
-  filmId : FilmId inherits String
-}
-
-service FilmsDatabase {
-  table films : Film[]
-}
-
-model FilmReview {
-  id : FilmId
-  reviewScore: Int
-}
-
-service Reviews {
-  operation getReview(FilmId): FilmReview
-}
-`;
+import { CodeSamples } from 'src/taxi-playground-app/code-examples';
 
 @Component({
   selector: 'taxi-playground-app',
@@ -48,7 +13,7 @@ service Reviews {
       <as-split direction="horizontal" unit="percent">
         <as-split-area [size]="35">
           <app-code-editor
-            [content]="intro"
+            [content]="content"
             wordWrap="on"
             (contentChange)="codeUpdated$.next($event)">
           </app-code-editor>
@@ -77,7 +42,7 @@ export class TaxiPlaygroundAppComponent {
 
   fullscreen = false;
 
-  intro = intro;
+  content: string | null = null;
 
   constructor(private service: TaxiPlaygroundService) {
     this.schema$ = this.codeUpdated$
@@ -105,7 +70,13 @@ export class TaxiPlaygroundAppComponent {
         // a service call for every subscriber. :(
         shareReplay(1)
       );
-    this.codeUpdated$.next(intro);
+    this.setCodeSample(0);
+
+  }
+
+  setCodeSample(index: number) {
+    this.content = CodeSamples[index].code
+    this.codeUpdated$.next(this.content);
   }
 
   onFullscreenChange() {
