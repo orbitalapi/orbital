@@ -52,7 +52,8 @@ abstract class BaseSchemaConverterServiceTest {
       val schemaEditorService = SchemaEditorService(
          DefaultApiEditorRepository(
             FileSystemSchemaRepository.forPath(tempFolder.root.toPath())
-         )
+         ),
+         schemaStore
       )
       val editingService: LocalSchemaEditingService = LocalSchemaEditingService(
          schemaEditorService,
