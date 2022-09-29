@@ -36,46 +36,45 @@ import { VynePrivileges } from 'src/app/services/user-info.service';
 
 
 @NgModule({
-  imports: [
-    CommonModule,
-    MatButtonModule,
-    MatCardModule,
-    MatExpansionModule,
-    MatToolbarModule,
-    VyneServicesModule,
-    SearchModule,
-    CodeViewerModule,
-    MatTooltipModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatDatepickerModule,
-    MatIconModule,
-    MatButtonModule,
-    MatInputModule,
-    AgGridModule,
-    ReactiveFormsModule,
-    FormsModule,
-    HeaderBarModule,
-    MatListModule,
-    RouterModule.forChild([
-      {
-        path: '',
-        component: CaskViewerComponent,
-      },
-    ])
-  ],
-  exports: [CaskViewerComponent, CaskRowComponent, CaskDetailsComponent],
-  declarations: [CaskViewerComponent,
-    CaskRowComponent,
-    CaskDetailsComponent,
-    CaskConfirmDialogComponent,
-    CaskSourceViewerComponent,
-    CaskIngestionErrorsSearchPanelComponent,
-    CaskIngestionErrorsComponent,
-    CaskIngestionErrorsGridComponent],
-  providers: [],
-  entryComponents: [CaskConfirmDialogComponent]
+    imports: [
+        CommonModule,
+        MatButtonModule,
+        MatCardModule,
+        MatExpansionModule,
+        MatToolbarModule,
+        VyneServicesModule,
+        SearchModule,
+        CodeViewerModule,
+        MatTooltipModule,
+        MatDialogModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        MatDatepickerModule,
+        MatIconModule,
+        MatButtonModule,
+        MatInputModule,
+        AgGridModule,
+        ReactiveFormsModule,
+        FormsModule,
+        HeaderBarModule,
+        MatListModule,
+        RouterModule.forChild([
+            {
+                path: '',
+                component: CaskViewerComponent,
+            },
+        ])
+    ],
+    exports: [CaskViewerComponent, CaskRowComponent, CaskDetailsComponent],
+    declarations: [CaskViewerComponent,
+        CaskRowComponent,
+        CaskDetailsComponent,
+        CaskConfirmDialogComponent,
+        CaskSourceViewerComponent,
+        CaskIngestionErrorsSearchPanelComponent,
+        CaskIngestionErrorsComponent,
+        CaskIngestionErrorsGridComponent],
+    providers: []
 })
 export class CaskViewerModule {
 }

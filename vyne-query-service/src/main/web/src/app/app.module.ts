@@ -25,36 +25,32 @@ const oauth2OidcModule = [AuthModule];
 
 
 @NgModule({
-  declarations: [
-    AppComponent,
-  ],
-  imports: [
-    ORBITAL_ROUTES,
-
-    BrowserModule,
-    BrowserAnimationsModule,
-    CommonModule,
-    LayoutModule,
-
-    HttpClientModule,
-
-    VyneModule,
-    ...oauth2OidcModule,
-    TuiRootModule,
-    TuiLinkModule,
-    LandingPageModule,
-    ConfirmationDialogModule
-  ],
-  providers: [
-    TypesService,
-    QueryService,
-    SearchService,
-    {
-      provide: LANGUAGE_SERVER_WS_ADDRESS_TOKEN,
-      useValue: WebsocketService.buildWsUrl(environment.queryServiceUrl, '/api/language-server'),
-    }
-  ],
-  entryComponents: [AppComponent]
+    declarations: [
+        AppComponent,
+    ],
+    imports: [
+        ORBITAL_ROUTES,
+        BrowserModule,
+        BrowserAnimationsModule,
+        CommonModule,
+        LayoutModule,
+        HttpClientModule,
+        VyneModule,
+        ...oauth2OidcModule,
+        TuiRootModule,
+        TuiLinkModule,
+        LandingPageModule,
+        ConfirmationDialogModule
+    ],
+    providers: [
+        TypesService,
+        QueryService,
+        SearchService,
+        {
+            provide: LANGUAGE_SERVER_WS_ADDRESS_TOKEN,
+            useValue: WebsocketService.buildWsUrl(environment.queryServiceUrl, '/api/language-server'),
+        }
+    ]
 })
 export class AppModule implements DoBootstrap {
   constructor(@Optional() private authService: AuthService) {

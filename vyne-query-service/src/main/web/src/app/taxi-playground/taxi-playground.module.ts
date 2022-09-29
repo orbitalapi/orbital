@@ -11,28 +11,25 @@ import { TuiDialogModule, TuiTextfieldControllerModule } from '@taiga-ui/core';
 
 
 @NgModule({
-  declarations: [
-    PlaygroundToolbarComponent,
-    SubscribeDialogComponent
-  ],
-  exports: [
-    PlaygroundToolbarComponent
-  ],
-  imports: [
-    CommonModule,
-    MatIconModule,
-    MatButtonModule,
-    TuiDialogModule,
-    TuiInputModule,
-    ReactiveFormsModule,
-    TuiSelectModule,
-    TuiTextfieldControllerModule,
-    TuiDataListWrapperModule,
-    FormsModule
-  ],
-  entryComponents: [
-    SubscribeDialogComponent
-  ]
+    declarations: [
+        PlaygroundToolbarComponent,
+        SubscribeDialogComponent
+    ],
+    exports: [
+        PlaygroundToolbarComponent
+    ],
+    imports: [
+        CommonModule,
+        MatIconModule,
+        MatButtonModule,
+        TuiDialogModule,
+        TuiInputModule,
+        ReactiveFormsModule,
+        TuiSelectModule,
+        TuiTextfieldControllerModule,
+        TuiDataListWrapperModule,
+        FormsModule
+    ]
 })
 export class TaxiPlaygroundModule {
 

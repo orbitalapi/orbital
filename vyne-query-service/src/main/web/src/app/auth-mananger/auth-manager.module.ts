@@ -21,31 +21,30 @@ import { VynePrivileges } from 'src/app/services/user-info.service';
 import { AuthManagerService } from 'src/app/auth-mananger/auth-manager.service';
 
 @NgModule({
-  imports: [
-    HeaderBarModule,
-    CommonModule,
-    MatButtonModule,
-    MatDialogModule,
-    MatCardModule,
-    TypeAutocompleteModule,
-    ReactiveFormsModule,
-    FormsModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatInputModule,
-    MatSnackBarModule,
-    TuiButtonModule,
-    RouterModule.forChild([
-      {
-        path: '',
-        component: AuthManagerComponent,
-      },
-    ])
-  ],
-  exports: [AuthManagerComponent],
-  declarations: [AuthManagerComponent, TokenListComponent, NewTokenPanelComponent],
-  providers: [AuthManagerService],
-  entryComponents: [NewTokenPanelComponent]
+    imports: [
+        HeaderBarModule,
+        CommonModule,
+        MatButtonModule,
+        MatDialogModule,
+        MatCardModule,
+        TypeAutocompleteModule,
+        ReactiveFormsModule,
+        FormsModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        MatInputModule,
+        MatSnackBarModule,
+        TuiButtonModule,
+        RouterModule.forChild([
+            {
+                path: '',
+                component: AuthManagerComponent,
+            },
+        ])
+    ],
+    exports: [AuthManagerComponent],
+    declarations: [AuthManagerComponent, TokenListComponent, NewTokenPanelComponent],
+    providers: [AuthManagerService]
 })
 export class AuthManagerModule {
 }

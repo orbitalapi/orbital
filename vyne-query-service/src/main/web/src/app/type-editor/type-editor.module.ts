@@ -29,10 +29,9 @@ import {TuiInputModule} from '@taiga-ui/kit';
         MatProgressBarModule,
         TuiInputModule
     ],
-  exports: [TypeEditorComponent, TypeEditorCardComponent, TypeEditorPopupComponent],
-  declarations: [TypeEditorComponent, TypeEditorCardComponent, TypeEditorPopupComponent, TypeEditorContainerComponent],
-  providers: [],
-  entryComponents: [TypeEditorPopupComponent]
+    exports: [TypeEditorComponent, TypeEditorCardComponent, TypeEditorPopupComponent],
+    declarations: [TypeEditorComponent, TypeEditorCardComponent, TypeEditorPopupComponent, TypeEditorContainerComponent],
+    providers: []
 })
 export class TypedEditorModule {
 }

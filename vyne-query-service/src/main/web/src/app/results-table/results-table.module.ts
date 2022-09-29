@@ -6,14 +6,13 @@ import {TypeInfoHeaderComponent} from './type-info-header.component';
 import {MatTooltipModule} from '@angular/material/tooltip';
 
 @NgModule({
-  imports: [CommonModule,
-    AgGridModule.withComponents(),
-    MatTooltipModule
-  ],
-  exports: [ResultsTableComponent],
-  declarations: [ResultsTableComponent, TypeInfoHeaderComponent],
-  providers: [],
-  entryComponents: [TypeInfoHeaderComponent]
+    imports: [CommonModule,
+        AgGridModule.withComponents(),
+        MatTooltipModule
+    ],
+    exports: [ResultsTableComponent],
+    declarations: [ResultsTableComponent, TypeInfoHeaderComponent],
+    providers: []
 })
 export class ResultsTableModule {
 }

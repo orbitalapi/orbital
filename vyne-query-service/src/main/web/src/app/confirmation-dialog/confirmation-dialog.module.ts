@@ -4,18 +4,17 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 
 @NgModule({
-  imports: [
-    MatDialogModule,
-    MatButtonModule
-  ],
-  exports: [
-    ConfirmationDialogComponent
-  ],
-  declarations: [
-    ConfirmationDialogComponent
-  ],
-  providers: [],
-  entryComponents: [ConfirmationDialogComponent]
+    imports: [
+        MatDialogModule,
+        MatButtonModule
+    ],
+    exports: [
+        ConfirmationDialogComponent
+    ],
+    declarations: [
+        ConfirmationDialogComponent
+    ],
+    providers: []
 })
 export class ConfirmationDialogModule {
 }

@@ -10,24 +10,19 @@ import {ConfigPersistResultsDisabledFormComponent} from './config-persist-result
 
 
 @NgModule({
-  declarations: [
-    TestSpecFormComponent,
-    ConfigDisabledFormComponent,
-    ConfigPersistResultsDisabledFormComponent
-  ],
-  imports: [
-    CommonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    FormsModule,
-    ReactiveFormsModule,
-    MatButtonModule
-  ],
-  entryComponents: [
-    TestSpecFormComponent,
-    ConfigDisabledFormComponent,
-    ConfigPersistResultsDisabledFormComponent
-  ]
+    declarations: [
+        TestSpecFormComponent,
+        ConfigDisabledFormComponent,
+        ConfigPersistResultsDisabledFormComponent
+    ],
+    imports: [
+        CommonModule,
+        MatFormFieldModule,
+        MatInputModule,
+        FormsModule,
+        ReactiveFormsModule,
+        MatButtonModule
+    ]
 })
 export class TestPackModuleModule {
 }
