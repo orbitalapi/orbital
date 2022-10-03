@@ -221,7 +221,8 @@
               "src/taxi-playground-app/styles.scss",
               "node_modules/monaco-editor/dev/vs/editor/editor.main.css",
               "node_modules/@taiga-ui/core/styles/taiga-ui-global.less",
-              "node_modules/@taiga-ui/core/styles/taiga-ui-theme.less"
+              "node_modules/@taiga-ui/core/styles/taiga-ui-theme.less",
+              "node_modules/reactflow/dist/style.css"
             ]
           },
           "configurations": {

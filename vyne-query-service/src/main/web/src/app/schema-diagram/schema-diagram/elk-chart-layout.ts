@@ -1,4 +1,4 @@
-import { Edge, Node } from 'react-flow-renderer';
+import { Edge, Node } from 'reactflow';
 import ELK, { ElkExtendedEdge, ElkNode } from 'elkjs/lib/elk.bundled';
 // import ELK, { ElkExtendedEdge, ElkNode } from 'elkjs/lib/elk-api';
 import { RelativeNodeXyPosition } from './schema-chart.controller';

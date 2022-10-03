@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Node, Position } from 'react-flow-renderer';
+import { Node, Position } from 'reactflow';
 import { Operation, QueryOperation, Service, StreamOperation, TableOperation } from '../../../services/schema';
 import { SchemaNodeContainer } from './schema-node-container';
 import { collectLinks, Links, MemberWithLinks, ServiceLinks } from '../schema-chart-builder';
@@ -19,13 +19,11 @@ function ApiNode(node: Node<MemberWithLinks>) {
 
   function NoArgOperation(props: { operation: OperationLike, operationLinks: Links }) {
     const { operation, operationLinks } = props;
-    const allOperationLinks = operationLinks.inputs.concat(operationLinks.outputs)
     return (<>
       <tr>
         <td colSpan={2} className="">
           <div className={'handle-container'}>
-            <LinkHandle node={node} links={allOperationLinks} position={Position.Left}
-                        allowConnectionToFloat></LinkHandle>
+            <LinkHandle node={node} links={operationLinks.inputs} position={Position.Left}></LinkHandle>
             {operation.qualifiedName.shortDisplayName}
           </div>
 
@@ -33,8 +31,7 @@ function ApiNode(node: Node<MemberWithLinks>) {
         <td>
           <div className={'handle-container'}>
             {operation.returnTypeName.shortDisplayName}
-            <LinkHandle node={node} links={allOperationLinks} position={Position.Right}
-                        allowConnectionToFloat></LinkHandle>
+            <LinkHandle node={node} links={operationLinks.outputs} position={Position.Right}></LinkHandle>
           </div>
         </td>
       </tr>
@@ -43,7 +40,6 @@ function ApiNode(node: Node<MemberWithLinks>) {
 
   function OperationWithArgs(props: { operation: OperationLike, operationLinks: Links }) {
     const { operation, operationLinks } = props;
-    const allOperationLinks = operationLinks.inputs.concat(operationLinks.outputs)
     return (<>
       <tr>
         <td colSpan={3} className="operation-name">
@@ -62,16 +58,14 @@ function ApiNode(node: Node<MemberWithLinks>) {
               return param.typeName.shortDisplayName
             }).join(', ')
             }
-            <LinkHandle node={node} links={allOperationLinks} position={Position.Left}
-                        allowConnectionToFloat></LinkHandle>
+            <LinkHandle node={node} links={operationLinks.inputs} position={Position.Left}></LinkHandle>
           </div>
         </td>
         <td>{operation.parameters.length > 0 ? '→' : ''}</td>
         <td>
           <div className={'handle-container'}>
             {operation.returnTypeName.shortDisplayName}
-            <LinkHandle node={node} links={allOperationLinks} position={Position.Right}
-                        allowConnectionToFloat></LinkHandle>
+            <LinkHandle node={node} links={operationLinks.outputs} position={Position.Right}></LinkHandle>
           </div>
         </td>
       </tr>

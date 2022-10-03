@@ -1,19 +1,27 @@
 import { useCallback } from 'react';
-import { useStore, getBezierPath, EdgeText, getSimpleBezierEdgeCenter } from 'react-flow-renderer';
+import { useStore, getBezierPath, getSmoothStepPath } from 'reactflow';
 
 import { getEdgeCoords } from './edge-utils';
 import * as React from 'react';
 import { EdgeParams } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
 
 // Taken from : https://reactflow.dev/docs/examples/edges/simple-floating-edges/
-function SimpleFloatingEdge({ id, source, target, markerEnd, style, sourceHandleId, targetHandleId, label, data }) {
+function SimpleFloatingEdge({
+                              id, source, target, markerEnd, style, data, sourceX,
+                              sourceY,
+                              targetX,
+                              targetY,
+                              sourcePosition,
+                              sourceHandleId,
+                              targetPosition,
+                              targetHandleId
+                            }) {
   const sourceNode = useStore(useCallback((store) => store.nodeInternals.get(source), [source]));
   const targetNode = useStore(useCallback((store) => store.nodeInternals.get(target), [target]));
 
   if (!sourceNode || !targetNode) {
     return null;
   }
-  const edgeParams: EdgeParams = data as EdgeParams;
 
   const {
     sx,
@@ -22,18 +30,10 @@ function SimpleFloatingEdge({ id, source, target, markerEnd, style, sourceHandle
     ty,
     sourcePos,
     targetPos
-  } = getEdgeCoords(sourceNode, sourceHandleId, edgeParams.sourceCanFloat,  targetNode, targetHandleId, edgeParams.targetCanFloat);
+  } = getEdgeCoords(sourceNode, sourceHandleId, data.sourceCanFloat, targetNode, targetHandleId, data.targetCanFloat);
 
-  const d = getBezierPath({
-    sourceX: sx,
-    sourceY: sy,
-    sourcePosition: sourcePos,
-    targetPosition: targetPos,
-    targetX: tx,
-    targetY: ty,
-  });
 
-  const [centerX, centerY, offsetX, offsetY] = getSimpleBezierEdgeCenter({
+  const [edgePath] = getSmoothStepPath({
     sourceX: sx,
     sourceY: sy,
     sourcePosition: sourcePos,
@@ -44,19 +44,24 @@ function SimpleFloatingEdge({ id, source, target, markerEnd, style, sourceHandle
 
   return (
     <>
-      <EdgeText
-        x={centerX}
-        y={centerY}
-        label={label}
-      />
       <path
         id={id}
         className="react-flow__edge-path"
-        d={d}
+        d={edgePath}
         strokeWidth={5}
         markerEnd={markerEnd}
         style={style}
-      />
+      >
+        <text>
+          <textPath
+            href={`#${id}`}
+            style={{ fontSize: '12px' }}
+            startOffset="50%"
+            textAnchor="middle"
+          >{data.label}
+          </textPath>
+        </text>
+      </path>
     </>
   );
 }

@@ -10,7 +10,7 @@ import {
   Type
 } from '../../services/schema';
 import { AppendLinksHandler, NodeType } from './schema-flow.react';
-import { Node, Position, XYPosition } from 'react-flow-renderer';
+import { Node, Position, XYPosition } from 'reactflow';
 import { splitOperationQualifiedName } from '../../service-view/service-view.component';
 import { CSSProperties } from 'react';
 
@@ -342,11 +342,11 @@ export class HandleIds {
   }
 
   static serviceOperationInbound(serviceName: QualifiedName, operationName: QualifiedName): string {
-    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}`
+    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}-inbound`
   }
 
   static serviceOperationOutbound(serviceName: QualifiedName, operationName: QualifiedName): string {
-    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}`
+    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}-outbound`
   }
 
   static appendPositionToHandleId(handleId: string, position: Position): string {

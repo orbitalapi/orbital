@@ -8,7 +8,7 @@ import ReactFlow, {
   useEdgesState,
   useNodesState, useReactFlow,
   useUpdateNodeInternals
-} from 'react-flow-renderer';
+} from 'reactflow';
 import { ElementRef } from '@angular/core';
 import * as ReactDOM from 'react-dom';
 import ModelNode from './diagram-nodes/model-node';
@@ -117,11 +117,12 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
       return;
     }
     console.log('Required members has changed: ', requiredMembers.memberNames);
-    const buildResult = new SchemaChartController(requiredMembers.schema, nodes, edges, requiredMembers.memberNames).build({
-      autoAppendLinks: true,
-      layoutAlgo: 'full',
-      appendLinksHandler: appendNodesAndEdgesForLinks
-    })
+    const buildResult = new SchemaChartController(requiredMembers.schema, nodes, edges, requiredMembers.memberNames)
+      .build({
+        autoAppendLinks: true,
+        layoutAlgo: 'full',
+        appendLinksHandler: appendNodesAndEdgesForLinks
+      })
     setNodes(buildResult.nodes);
     buildResult.nodesRequiringUpdate.forEach(node => updateNodeInternals(node.id));
     setEdges(buildResult.edges);

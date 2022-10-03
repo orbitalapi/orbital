@@ -1,4 +1,4 @@
-import { Handle, Node, Position } from 'react-flow-renderer';
+import { Handle, Node, Position } from 'reactflow';
 import { HandleIds, Link, MemberWithLinks } from '../schema-chart-builder';
 import * as React from 'react';
 import { AppendLinksProps } from 'src/app/schema-diagram/schema-diagram/schema-flow.react';
@@ -18,7 +18,7 @@ export function LinkHandle(props: LinkHandleProps) {
   const handleId = props.node.id === props.links[0].sourceNodeId ? props.links[0].sourceHandleId : props.links[0].targetHandleId;
   const handleIdWithSide = props.allowConnectionToFloat ? HandleIds.appendPositionToHandleId(handleId, props.position) : handleId;
 
-  function clickHandler(handleId: string) {
+  function clickHandler() {
     if (!props.links || props.links.length === 0) {
     }
     props.node.data.appendNodesHandler({

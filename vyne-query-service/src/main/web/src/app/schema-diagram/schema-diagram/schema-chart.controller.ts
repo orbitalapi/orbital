@@ -1,5 +1,5 @@
 import { findSchemaMember, Schema, SchemaMemberType, ServiceMember } from '../../services/schema';
-import { Edge, EdgeMarkerType, MarkerType, Node, XYPosition } from 'react-flow-renderer';
+import { Edge, EdgeMarkerType, MarkerType, Node, XYPosition } from 'reactflow';
 import {
   buildSchemaNode,
   collectionOperations,
@@ -145,8 +145,8 @@ export class SchemaChartController {
 
   private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, sourceSchemaKind: SchemaMemberType, targetNode: Node<MemberWithLinks>, targetHandleId: string, targetSchemaKind: SchemaMemberType, linkId?: string): Edge {
     const edgeParams: EdgeParams = {
-      sourceCanFloat: true, //sourceSchemaKind === 'TYPE',
-      targetCanFloat: true //targetSchemaKind === 'TYPE',
+      sourceCanFloat: sourceSchemaKind === 'TYPE',
+      targetCanFloat: targetSchemaKind === 'TYPE',
     }
     let label: string;
     let markerStart, markerEnd: EdgeMarkerType;

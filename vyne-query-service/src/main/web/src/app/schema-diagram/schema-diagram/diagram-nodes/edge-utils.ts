@@ -1,5 +1,4 @@
-import { Position, Node } from 'react-flow-renderer';
-import { internalsSymbol } from 'react-flow-renderer';
+import { Position, Node, internalsSymbol } from 'reactflow';
 import { HandleIds } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
 
 // This whole file taken from : https://reactflow.dev/docs/examples/edges/simple-floating-edges/
