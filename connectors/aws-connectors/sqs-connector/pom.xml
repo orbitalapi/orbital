@@ -85,7 +85,7 @@
          <groupId>org.testcontainers</groupId>
          <artifactId>junit-jupiter</artifactId>
          <scope>test</scope>
-         <version>1.17.3</version>
+         <version>1.17.4</version>
       </dependency>
 
       <dependency>
