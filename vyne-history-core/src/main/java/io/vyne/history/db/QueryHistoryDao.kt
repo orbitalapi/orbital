@@ -1,6 +1,5 @@
 package io.vyne.history.db
 
-import arrow.core.extensions.list.functorFilter.filter
 import com.google.common.base.Stopwatch
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance

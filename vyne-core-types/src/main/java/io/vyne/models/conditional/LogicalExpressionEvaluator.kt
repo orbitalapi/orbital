@@ -15,7 +15,7 @@ import lang.taxi.types.LogicalExpression
 import lang.taxi.types.OrExpression
 import lang.taxi.types.WhenCaseBlock
 import java.math.BigDecimal
-import java.util.Stack
+import java.util.*
 
 object LogicalExpressionEvaluator {
    fun evaluate(cases: List<WhenCaseBlock>, factory: EvaluationValueSupplier, type: Type): WhenCaseBlock? {
@@ -54,11 +54,12 @@ object LogicalExpressionEvaluator {
       while (!expressionStack.empty()) {
          when (val item = expressionStack.pop()) {
             is Either.Left -> result = when (lastLogicalOp) {
-               LogicalOp.And -> result && evaluateComparisonExpression(item.a as ComparisonExpression, factory)
-               LogicalOp.Or -> result || evaluateComparisonExpression(item.a as ComparisonExpression, factory)
-               else -> evaluateComparisonExpression(item.a as ComparisonExpression, factory)
+               LogicalOp.And -> result && evaluateComparisonExpression(item.value as ComparisonExpression, factory)
+               LogicalOp.Or -> result || evaluateComparisonExpression(item.value as ComparisonExpression, factory)
+               else -> evaluateComparisonExpression(item.value as ComparisonExpression, factory)
             }
-            is Either.Right -> lastLogicalOp = item.b
+
+            is Either.Right -> lastLogicalOp = item.value
          }
       }
       return result
