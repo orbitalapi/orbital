@@ -1,7 +1,8 @@
 package io.vyne.pipelines.jet.pipelines
 
-import arrow.core.Either
 import arrow.core.getOrHandle
+import arrow.core.left
+import arrow.core.right
 import com.hazelcast.jet.pipeline.ServiceFactory
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
@@ -80,7 +81,7 @@ class VyneTransformationService(
                "Transforming input message of type ${inputType.longDisplayName} to ${outputType.longDisplayName} failed with exception ${e.message}",
                e
             )
-            return@future Either.left(e)
+            return@future e.left()
          }
 
          logger.info("Transforming input message of type ${inputType.longDisplayName} to ${outputType.longDisplayName} completed with ${transformationResult.size} results")
@@ -90,7 +91,7 @@ class VyneTransformationService(
             transformationResult.size == 1 -> transformationResult.first()
             else -> TypedCollection.from(transformationResult)
          }
-         Either.right(TypedInstanceContentProvider(typedInstance))
+         TypedInstanceContentProvider(typedInstance).right()
       }.thenApply { either ->
          // Outside the Coroutine scope, we need to resurface any exceptions,
          // so the CompletableFuture will show as failed.

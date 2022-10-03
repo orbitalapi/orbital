@@ -63,8 +63,9 @@ class LocalSchemaPublisher(
          logger.debug("Attempting to register schema:\n $sources")
 
          when (val schemaValidationResult = schemaPublisher.submitSchemas(sources)) {
-            is Either.Left -> logger.error("Failed to register schema: ${schemaValidationResult.a.message}\n$sources")
+            is Either.Left -> logger.error("Failed to register schema: ${schemaValidationResult.value.message}\n$sources")
             is Either.Right -> logger.info("Schema registered successfully")
+            else -> error("Either was not Left or Right.")
          }
       }
    }
@@ -77,8 +78,9 @@ class LocalSchemaPublisher(
       } else {
          logger.debug("Attempting to register schema: ${versionedSources.map { it.name }}")
          when (val schemaValidationResult = schemaPublisher.submitSchemas(versionedSources)) {
-            is Either.Left -> logger.error("Failed to register schema: ${schemaValidationResult.a.message}")
+            is Either.Left -> logger.error("Failed to register schema: ${schemaValidationResult.value.message}")
             is Either.Right -> logger.info("Schema registered successfully")
+            else -> error("Either was not Left or Right.")
          }
       }
    }

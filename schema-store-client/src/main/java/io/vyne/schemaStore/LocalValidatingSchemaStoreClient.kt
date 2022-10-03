@@ -1,10 +1,7 @@
 package io.vyne.schemaStore
 
 import arrow.core.Either
-import com.hazelcast.core.EntryEvent
-import com.hazelcast.core.HazelcastInstance
-import com.hazelcast.map.IMap
-import com.hazelcast.map.listener.EntryUpdatedListener
+import arrow.core.right
 import io.vyne.ParsedSource
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
@@ -126,7 +123,7 @@ abstract class ValidatingSchemaStoreClient(
          return schemaSetHolder[SchemaSetCacheKey] ?: SchemaSet.EMPTY
       }
 
-   var lastSubmissionResult: Either<CompilationException, Schema> = Either.right(TaxiSchema.empty())
+   var lastSubmissionResult: Either<CompilationException, Schema> = TaxiSchema.empty().right()
       private set
 
    private val sources: List<ParsedSource>
@@ -179,7 +176,7 @@ abstract class ValidatingSchemaStoreClient(
       rebuildAndStoreSchema()
       logger.info { "After schema update operation, now on generation $generation" }
       lastSubmissionResult = returnValue.mapLeft { CompilationException(it) }
-      return lastSubmissionResult!!
+      return lastSubmissionResult
    }
 
    protected abstract fun incrementGenerationCounterAndGet(): Int
