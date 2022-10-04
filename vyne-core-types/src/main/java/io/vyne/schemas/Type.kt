@@ -32,12 +32,12 @@ typealias AttributeName = String
 private val logger = KotlinLogging.logger {}
 
 /**
- * This is a documenation-only annotation - ie., it has no runtime
+ * This is a documentation-only annotation - i.e., it has no runtime
  * impact.
  *
  * Fields annotated with this annotation must remain lazy evaluation until
  * after a full typeCache has been populated, as they need to look up other
- * types in the typecache
+ * types in the type cache
  */
 annotation class DeferEvaluationUntilTypeCacheCreated
 
@@ -47,7 +47,7 @@ annotation class DeferEvaluationUntilTypeCacheCreated
  * TODO: We should consider deprecating and removing the vyne specific versions of the type system,
  * and just use Taxi's model throughout.
  * There are clear downsides to becoming coupled to Taxi, but
- * given how interweaved their evolution is, and tha the Taxi model is now sufficiently more advanced,
+ * given how interweaved their evolution is, and that the Taxi model is now sufficiently more advanced,
  * it may be worth collapsing them.
  */
 data class Type(
@@ -225,7 +225,7 @@ data class Type(
       val enumTaxiType = this.taxiType as EnumType
       val enumInstance = when (value) {
          is lang.taxi.types.EnumValue -> enumTaxiType.ofName(value.name)
-         else -> (this.taxiType as EnumType)
+         else -> this.taxiType
             .of(searchValue)
       }
       val valueKind = EnumValueKind.from(value, this.taxiType)
@@ -489,7 +489,7 @@ data class Type(
          // For now, let's stop resolving aliases one step before the primitive
          when {
             aliasForTypeName!!.fullyQualifiedName == ArrayType.NAME ||
-               aliasForTypeName!!.fullyQualifiedName == StreamType.NAME -> {
+               aliasForTypeName.fullyQualifiedName == StreamType.NAME -> {
                resolvedFormattedType.aliasForType!!.resolveAliases()
             }
             resolvedFormattedType.aliasForType!!.isPrimitive -> this

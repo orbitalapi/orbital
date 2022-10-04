@@ -26,9 +26,9 @@ import org.testcontainers.utility.DockerImageName
 @RunWith(SpringRunner::class)
 class SqsS3SourceJdbcSinkIntegrationTest : BaseJetIntegrationTest() {
    private val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
-   private var sqsQueueUrl = ""
+   private lateinit var sqsQueueUrl: String
 
-   lateinit var postgresSQLContainerFacade: PostgresSQLContainerFacade
+   private lateinit var postgresSQLContainerFacade: PostgresSQLContainerFacade
 
    @Rule
    @JvmField
@@ -86,11 +86,10 @@ class SqsS3SourceJdbcSinkIntegrationTest : BaseJetIntegrationTest() {
       val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
       val type = vyne.type(RatingReport.typeName)
 
-
       postgresSQLContainerFacade.waitForRowCount(
          connectionFactory.dsl(postgresSQLContainerFacade.connection),
          type,
-         281
+         279 // The file contains 281 rows out of which 2 have missing values for mandatory fields
       )
    }
 

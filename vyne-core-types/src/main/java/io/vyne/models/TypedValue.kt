@@ -12,7 +12,7 @@ interface ConversionService {
 
    companion object {
       var DEFAULT_CONVERTER: ConversionService = NoOpConversionService
-         private set;
+         private set
 
       init {
          DEFAULT_CONVERTER = try {
@@ -50,7 +50,8 @@ object NoOpConversionService : ConversionService {
 
 
 data class TypedValue private constructor(
-   override val type: Type, override val value: Any,
+   override val type: Type,
+   override val value: Any,
    override val source: DataSource
 ) : TypedInstance {
    private val equality = Equality(this, TypedValue::type, TypedValue::value)
@@ -115,7 +116,7 @@ data class TypedValue private constructor(
       if (valueToCompare !is TypedValue) {
          return false
       }
-      if (!(this.type.resolvesSameAs(valueToCompare.type) || valueToCompare.type.inheritsFrom(this.type))) return false;
+      if (!(this.type.resolvesSameAs(valueToCompare.type) || valueToCompare.type.inheritsFrom(this.type))) return false
       return this.value == valueToCompare.value
    }
 }

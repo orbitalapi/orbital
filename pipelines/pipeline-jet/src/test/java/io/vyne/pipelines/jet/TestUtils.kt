@@ -1,6 +1,5 @@
 package io.vyne.pipelines.jet
 
-import com.google.common.io.Resources
 import io.vyne.VersionedTypeReference
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
@@ -8,6 +7,8 @@ import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.SqlUtils
 import io.vyne.connectors.jdbc.builders.PostgresJdbcUrlBuilder
 import io.vyne.schemas.Type
+import io.vyne.utils.asResource
+import io.vyne.utils.toPath
 import mu.KotlinLogging
 import org.awaitility.Awaitility
 import org.jooq.DSLContext
@@ -24,7 +25,6 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import java.io.ByteArrayOutputStream
-import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
 import java.util.*
@@ -95,7 +95,7 @@ fun populateS3AndSqs(
       val uploadHelper = MultipartUploadHelper(s3, bucket, objectKey)
       uploadHelper.start()
       val outputStream = ByteArrayOutputStream()
-      Resources.getResource(csvResourceFile).openStream().use { fileInputStream ->
+      csvResourceFile.asResource().openStream().use { fileInputStream ->
          val buffer = ByteArray(TWENTY_MEGABYTE)
          var bytes = fileInputStream.read(buffer)
          while (bytes >= 0) {
@@ -108,7 +108,7 @@ fun populateS3AndSqs(
    } else {
       s3.putObject(
          { builder -> builder.bucket(bucket).key(objectKey) },
-         Paths.get(Resources.getResource(csvResourceFile).path)
+         csvResourceFile.toPath()
       )
 
    }

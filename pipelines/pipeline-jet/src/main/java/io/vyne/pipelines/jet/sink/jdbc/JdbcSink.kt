@@ -10,7 +10,6 @@ import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.connectors.jdbc.sql.ddl.TableGenerator
 import io.vyne.connectors.jdbc.sql.dml.InsertStatementGenerator
-import io.vyne.pipelines.jet.api.transport.ConsoleLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.jdbc.JdbcTransportOutputSpec
@@ -91,7 +90,7 @@ class JdbcSinkBuilder :
             val targetType = schema.type(pipelineTransportSpec.targetType)
             val typedInstances = message.result().mapNotNull { messageContentProvider ->
                try {
-                  messageContentProvider.readAsTypedInstance(ConsoleLogger, targetType, schema)
+                  messageContentProvider.readAsTypedInstance(targetType, schema)
                } catch (e: Exception) {
                   context.logger.severe(
                      "Error in converting message to \"${targetType.fullyQualifiedName}\", skipping insert.",
