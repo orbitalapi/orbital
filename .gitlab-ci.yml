@@ -119,7 +119,7 @@ build-jvm-branch:
       - master
    extends: .build-jvm
    variables:
-      MAVEN_GOALS: 'clean install -pl taxi-playground -am'
+      MAVEN_GOALS: 'clean install'
       MAVEN_EXTRA_ARGS: ''
 
 build-jvm-develop:
