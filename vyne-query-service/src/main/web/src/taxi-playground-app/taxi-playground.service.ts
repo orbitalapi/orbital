@@ -14,10 +14,19 @@ export class TaxiPlaygroundService {
   parse(source: string): Observable<ParsedSchema> {
     return this.httpClient.post<ParsedSchema>(`${environment.serverUrl}/api/schema/parse`, source);
   }
+
+  subscribeToEmails(subscribeDetails: SubscribeDetails): Observable<string> {
+    return this.httpClient.post<string>(`${environment.serverUrl}/api/subscribe`, subscribeDetails);
+  }
 }
 
 export interface ParsedSchema {
   schema: Schema;
   messages: CompilationMessage[];
   hasErrors: boolean;
+}
+
+export interface SubscribeDetails {
+  email: string;
+  otherCommsConsent: boolean;
 }
