@@ -18,7 +18,7 @@ import Plausible from 'plausible-tracker'
 import { PLAUSIBLE_ANALYTICS } from './plausible';
 
 const plausible = Plausible({
-  domain: 'voyager.orbitalhq.com'
+  domain: 'voyager.vyne.co'
 })
 plausible.enableAutoOutboundTracking();
 
