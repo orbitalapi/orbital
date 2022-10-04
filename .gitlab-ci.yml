@@ -111,16 +111,16 @@ default:
 #         - "vyne-query-service/target/classes/static"
 #      expire_in: 1 hours
 
-#build-jvm-branch:
-#   stage: build
-#   except:
-#      - tags
-#      - develop
-#      - master
-#   extends: .build-jvm
-#   variables:
-#      MAVEN_GOALS: 'clean install -pl taxi-playground -am'
-#      MAVEN_EXTRA_ARGS: ''
+build-jvm-branch:
+   stage: build
+   except:
+      - tags
+      - develop
+      - master
+   extends: .build-jvm
+   variables:
+      MAVEN_GOALS: 'clean install -pl taxi-playground -am'
+      MAVEN_EXTRA_ARGS: ''
 
 build-jvm-develop:
    stage: build
@@ -326,11 +326,11 @@ publish-analytics-server-docker:
          -t "${CI_REGISTRY_IMAGE}:${tag}"
          -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}" .
 
-#publish-taxi-playground:
-#   extends: .publish-docker-gitlab
-#   variables:
-#      projectDir: taxi-playground
-#      microservice: taxi-playground
+publish-taxi-playground:
+   extends: .publish-docker-gitlab
+   variables:
+      projectDir: taxi-playground
+      microservice: taxi-playground
 
 terraform-fmt:
    extends: .terraform:fmt
