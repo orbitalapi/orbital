@@ -6,7 +6,7 @@ locals {
 
   subnet_ids = [aws_subnet.subnet_1.id, aws_subnet.subnet_2.id]
 
-  domain_name = "voyager.orbitalhq.app"
+  domain_name = "voyager.vyne.co"
   environment_domain_name = var.environment == "prod" ? local.domain_name: "${var.environment}.${local.domain_name}"
 }
 
