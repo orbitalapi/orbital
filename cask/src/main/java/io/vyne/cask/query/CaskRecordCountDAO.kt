@@ -2,7 +2,6 @@ package io.vyne.cask.query
 
 import io.vyne.cask.api.CaskStatus
 import io.vyne.cask.config.CaskConfigRepository
-import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_NAME
 import io.vyne.cask.ingest.CaskMessage
 import io.vyne.cask.query.generators.BetweenVariant
@@ -17,15 +16,16 @@ import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import java.sql.Types
 private val logger = KotlinLogging.logger {}
 
 @Component
 class CaskRecordCountDAO(
-    private val jdbcStreamingTemplate: JdbcStreamingTemplate,
-    private val schemaProvider: SchemaProvider,
-    private val caskConfigRepository: CaskConfigRepository,
+   private val jdbcTemplate: JdbcTemplate,
+   private val schemaProvider: SchemaProvider,
+   private val caskConfigRepository: CaskConfigRepository,
 ) {
 
 
@@ -33,7 +33,7 @@ class CaskRecordCountDAO(
       val name = "${versionedType.versionedName}.findCountAll"
       val count = timed(name) {
          countForAllTablesOfType(versionedType) { tableName ->
-            jdbcStreamingTemplate.queryForObject(findCountAllQuery(tableName), Int::class.java)
+            jdbcTemplate.queryForObject(findCountAllQuery(tableName), Int::class.java)
          }
       }
       logger.debug {"Record count for findCountAll : $count"}
@@ -42,7 +42,7 @@ class CaskRecordCountDAO(
    }
 
    fun findCountAll(tableName: String): Int {
-      val count = jdbcStreamingTemplate.queryForObject(findCountAllQuery(tableName), Int::class.java)
+      val count = jdbcTemplate.queryForObject(findCountAllQuery(tableName), Int::class.java)
       logger.debug {"Record count for findCountAll(${tableName}) : $count"}
       return count
 
@@ -69,7 +69,7 @@ class CaskRecordCountDAO(
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
             val findByArg = castArgumentToJdbcType(fieldType, arg)
 
-            val count = jdbcStreamingTemplate.queryForObject(findCountByQuery(tableName, columnName), Int::class.java, findByArg)
+            val count = jdbcTemplate.queryForObject(findCountByQuery(tableName, columnName), Int::class.java, findByArg)
             logger.debug {"Record count for findCountBy : $count"}
             count
 
@@ -92,7 +92,12 @@ class CaskRecordCountDAO(
             val argTypes = inputValues.map { Types.VARCHAR }.toTypedArray().toIntArray()
             val argValues = findMultipleArg.toTypedArray()
 
-            jdbcStreamingTemplate.queryForObject(findCountInQuery(tableName, columnName, inPhrase), Int::class.java, argValues, argTypes)
+            jdbcTemplate.queryForObject(
+               findCountInQuery(tableName, columnName, inPhrase),
+               Int::class.java,
+               argValues,
+               argTypes
+            )
 
          }
       }
@@ -112,7 +117,7 @@ class CaskRecordCountDAO(
                val start = castArgumentToJdbcType(PrimitiveType.INSTANT, start)
                val end = castArgumentToJdbcType(PrimitiveType.INSTANT, end)
                log().info("issuing findCountBetween query => $query with start => $start and end => $end")
-               jdbcStreamingTemplate.queryForObject(query, Int::class.java, start, end)
+               jdbcTemplate.queryForObject(query, Int::class.java, start, end)
             }
          } else {
             val field = fieldForColumnName(versionedType, columnName)
@@ -122,7 +127,7 @@ class CaskRecordCountDAO(
                val end = castArgumentToJdbcType(field, end)
                log().info("issuing findCountBetween query => $query with start => $start and end => $end")
 
-               jdbcStreamingTemplate.queryForObject(query, Int::class.java, start, end)
+               jdbcTemplate.queryForObject(query, Int::class.java, start, end)
 
             }
          }
@@ -160,7 +165,11 @@ class CaskRecordCountDAO(
       val count = timed("${versionedType.versionedName}.findCountBy${columnName}.after") {
          val field = fieldForColumnName(versionedType, columnName)
          countForAllTablesOfType(versionedType) { tableName ->
-            jdbcStreamingTemplate.queryForObject(findCountAfterQuery(tableName, columnName), Int::class.java, castArgumentToJdbcType(field, after))
+            jdbcTemplate.queryForObject(
+               findCountAfterQuery(tableName, columnName),
+               Int::class.java,
+               castArgumentToJdbcType(field, after)
+            )
          }
       }
 
@@ -173,7 +182,11 @@ class CaskRecordCountDAO(
       val count = timed("${versionedType.versionedName}.findCountBefore${columnName}.before") {
          val field = fieldForColumnName(versionedType, columnName)
          countForAllTablesOfType(versionedType) { tableName ->
-            jdbcStreamingTemplate.queryForObject(findCountBeforeQuery(tableName, columnName), Int::class.java, castArgumentToJdbcType(field, before))
+            jdbcTemplate.queryForObject(
+               findCountBeforeQuery(tableName, columnName),
+               Int::class.java,
+               castArgumentToJdbcType(field, before)
+            )
          }
       }
 
