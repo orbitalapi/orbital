@@ -116,7 +116,7 @@ function ApiNode(node: Node<MemberWithLinks>) {
       case 'Kafka' :
         return 'assets/img/chart-icons/kafka-icon.svg';
       default: {
-        console.log(`No icon defined for service kind ${service.serviceKind}, so using Api`);
+        // console.log(`No icon defined for service kind ${service.serviceKind}, so using Api`);
         return 'assets/img/chart-icons/api-icon.svg';
       }
     }

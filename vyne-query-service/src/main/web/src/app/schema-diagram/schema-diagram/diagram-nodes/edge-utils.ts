@@ -11,18 +11,32 @@ function getCoords(nodeA: Node, nodeAHandleId: string, nodeB: Node, canFloat: bo
   const horizontalDiff = Math.abs(centerA.x - centerB.x);
   const verticalDiff = Math.abs(centerA.y - centerB.y);
 
-  const position = centerA.x > centerB.x ? Position.Left : Position.Right;
+  let position: Position.Left | Position.Right;
+  if (canFloat) {
+    position = centerA.x > centerB.x ? Position.Left : Position.Right;
+  } else {
+    const handle = findHandle(nodeA, nodeAHandleId);
+    position = handle.position as Position.Left | Position.Right;
+  }
+
 
   // when the horizontal difference between the nodes is bigger, we use Position.Left or Position.Right for the handle
   // if (horizontalDiff > verticalDiff) {
   //   position = centerA.x > centerB.x ? Position.Left : Position.Right;
   // } else {
-    // here the vertical difference between the nodes is bigger, so we use Position.Top or Position.Bottom for the handle
-    // position = centerA.y > centerB.y ? Position.Top : Position.Bottom;
+  // here the vertical difference between the nodes is bigger, so we use Position.Top or Position.Bottom for the handle
+  // position = centerA.y > centerB.y ? Position.Top : Position.Bottom;
   // }
 
   const [x, y] = getHandleCoordsByPosition(nodeA, nodeAHandleId, position, canFloat);
   return [x, y, position];
+}
+
+function findHandle(node: Node, handleId: string) {
+  return node[internalsSymbol].handleBounds.source.find(
+    (h) => h.id === handleId
+  );
+
 }
 
 function getHandleCoordsByPosition(node: Node, handleId: string, handlePosition: Position.Left | Position.Right, canFloat: boolean) {
