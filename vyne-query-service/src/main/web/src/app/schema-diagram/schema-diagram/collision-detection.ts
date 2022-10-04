@@ -2,7 +2,6 @@ import { Box, System, Vector } from 'detect-collisions';
 import { Node } from 'reactflow';
 import { HORIZONTAL_GAP } from './schema-chart.controller';
 
-
 export class CollisionDetector {
   private physics: System;
   private boxToNode = new Map<Box, Node>();
