@@ -1,6 +1,5 @@
 import { Box, System, Vector } from 'detect-collisions';
-import { Node } from 'react-flow-renderer';
-import { MemberWithLinks } from './schema-chart-builder';
+import { Node } from 'reactflow';
 import { HORIZONTAL_GAP } from './schema-chart.controller';
 
 
