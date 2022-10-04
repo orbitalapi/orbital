@@ -6,3 +6,13 @@ server:
       enabled: true
       mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
       min-response-size: 1024
+
+
+hubspot:
+   api:
+      url: https://api.hubapi.com
+      auth-token: pat-na1-700c5c18-5253-48f2-a2ba-ae68b6dcafc3
+   subscriptions:
+      voyager-updates-id: 57677525
+      general-marketing: 58020439
+

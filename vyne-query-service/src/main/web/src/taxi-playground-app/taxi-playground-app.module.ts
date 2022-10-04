@@ -14,6 +14,14 @@ import { WebsocketService } from 'src/app/services/websocket.service';
 import { environment } from 'src/taxi-playground-app/environments/environment';
 import { TuiDialogModule, TuiRootModule } from '@taiga-ui/core';
 
+import Plausible from 'plausible-tracker'
+import { PLAUSIBLE_ANALYTICS } from './plausible';
+
+const plausible = Plausible({
+  domain: 'voyager.orbitalhq.com'
+})
+plausible.enableAutoOutboundTracking();
+
 @NgModule({
   imports: [
     BrowserModule,
@@ -37,6 +45,10 @@ import { TuiDialogModule, TuiRootModule } from '@taiga-ui/core';
     {
       provide: LANGUAGE_SERVER_WS_ADDRESS_TOKEN,
       useValue: WebsocketService.buildWsUrl(environment.serverUrl, '/api/language-server'),
+    },
+    {
+      provide: PLAUSIBLE_ANALYTICS,
+      useValue: plausible
     }
   ],
   bootstrap: [TaxiPlaygroundAppComponent]

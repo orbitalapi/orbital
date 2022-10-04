@@ -6,6 +6,7 @@ import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
 import { CodeSample, CodeSamples } from 'src/taxi-playground-app/code-examples';
 import { TuiStringHandler } from '@taiga-ui/cdk';
 import { tuiItemsHandlersProvider } from '@taiga-ui/kit';
+import { PLAUSIBLE_ANALYTICS } from 'src/taxi-playground-app/plausible';
 
 const STRINGIFY_CODE_SAMPLE: TuiStringHandler<CodeSample> = (item: CodeSample) => item.title;
 
@@ -22,7 +23,8 @@ export class PlaygroundToolbarComponent {
   constructor(
     public authService: AuthService,
     @Inject(Injector) private readonly injector: Injector,
-    @Inject(TuiDialogService) private readonly dialogService: TuiDialogService) {
+    @Inject(TuiDialogService) private readonly dialogService: TuiDialogService,
+    @Inject(PLAUSIBLE_ANALYTICS) private plausible: any) {
   }
 
   examples = CodeSamples;
@@ -34,12 +36,14 @@ export class PlaygroundToolbarComponent {
   selectedExampleChange = new EventEmitter<CodeSample>();
 
   slackInvite() {
-    window.open(this.slackInviteLink)
+    this.plausible("visit slack invite");
+    window.open(this.slackInviteLink);
   }
 
   showSubscribeDialog = false;
 
   subscribeForUpdates() {
+    this.plausible("visit subscribe dialog");
     this.dialog.subscribe({
       next: data => {
         console.info(`Dialog emitted data = ${data}`);

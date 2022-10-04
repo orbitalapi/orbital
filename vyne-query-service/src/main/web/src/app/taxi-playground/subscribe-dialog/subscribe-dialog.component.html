@@ -1,7 +1,23 @@
-<form [formGroup]="subscribeForm" (ngSubmit)="onSubmit()">
-    <p>This abstracts away service and subscription</p>
-    <tui-input tuiAutoFocus formControlName="emailControl">
+<form [formGroup]="subscribeForm" (ngSubmit)="onSubmit(subscribeForm.value)">
+    <h3>Want to hear from us about cool stuff?</h3>
+    <tui-input tuiAutoFocus formControlName="email">
+        Your email
     </tui-input>
+    <p class="dialog-text">
+        If you'd be so kind as to provide your email, we'll be able to communicate with you about this tool. You know, like when we release new features or very occasionally ask for some feedback on it which is super important for us.
+        <br /><br />
+        Anyway, blah blah legal stuff blah, if you're ok with this it kinda goes without saying clicking Subscribe below means you agree to us emailing you and processing your personal information (how else are we supposed to remember your email?).
+
+        <tui-checkbox-labeled
+            formControlName="otherCommsCheckbox"
+            size="l"
+            class="tui-space_vertical-4">
+
+            <span class="dialog-text">Check this to also hear about our other products, like Orbital, our automated integration platform.</span>
+        </tui-checkbox-labeled>
+        
+        Oh, and if you get sick of us, don't worry you'll be able to unsubscribe later.
+    </p>
     <p>
         <button tuiButton type="submit">
             Subscribe

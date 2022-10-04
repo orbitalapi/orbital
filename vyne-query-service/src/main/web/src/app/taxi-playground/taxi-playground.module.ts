@@ -6,8 +6,8 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { SubscribeDialogComponent } from './subscribe-dialog/subscribe-dialog.component';
-import { TuiDataListWrapperModule, TuiInputModule, TuiSelectModule } from '@taiga-ui/kit';
-import { TuiDialogModule, TuiTextfieldControllerModule } from '@taiga-ui/core';
+import { TuiCheckboxLabeledModule, TuiDataListWrapperModule, TuiInputModule, TuiSelectModule } from '@taiga-ui/kit';
+import { TuiButtonModule, TuiDialogModule, TuiTextfieldControllerModule } from '@taiga-ui/core';
 
 
 @NgModule({
@@ -26,8 +26,10 @@ import { TuiDialogModule, TuiTextfieldControllerModule } from '@taiga-ui/core';
     TuiInputModule,
     ReactiveFormsModule,
     TuiSelectModule,
+    TuiButtonModule,
     TuiTextfieldControllerModule,
     TuiDataListWrapperModule,
+    TuiCheckboxLabeledModule,
     FormsModule
   ],
   entryComponents: [

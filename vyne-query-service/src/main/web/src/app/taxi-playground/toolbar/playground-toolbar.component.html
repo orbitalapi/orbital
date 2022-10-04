@@ -19,7 +19,7 @@
 </tui-select>
 
 <div class="spacer"></div>
-<button mat-flat-button class="subscribe" (click)="subscribeForUpdates()">
+<button tuiButton type="button" appearance="secondary" size="s" class="subscribe" (click)="subscribeForUpdates()">
   Get updates
 </button>
 <button class="header-icon-button">
@@ -36,17 +36,3 @@
   <mat-icon svgIcon="slack"></mat-icon>
 </button>
 
-<!-- <ng-template let-observer [tuiDialogOptions]="{label: 'Declarative directive', size: 's'}"
-    [(tuiDialog)]="showSubscribeDialog">
-
-    <form [formGroup]="exampleForm" (ngSubmit)="onSubmit(observer)">
-        <p>This abstracts away service and subscription</p>
-        <tui-input tuiAutoFocus formControlName="emailControl">
-        </tui-input>
-        <p>
-            <button tuiButton type="submit">
-                Subscribe
-            </button>
-        </p>
-    </form>
-</ng-template> -->
