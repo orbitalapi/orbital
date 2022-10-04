@@ -1,13 +1,13 @@
 locals {
-  system_name = "orbital-${var.environment}"
+  system_name = "voyager-${var.environment}"
 
   any_ip       = "0.0.0.0/0"
   ips_for_http = [local.any_ip] # TODO Remove any_ip
 
   subnet_ids = [aws_subnet.subnet_1.id, aws_subnet.subnet_2.id]
 
-  domain_name = "orbitalhq.app"
-  environment_domain_name = "${var.environment}.${local.domain_name}"
+  domain_name = "voyager.orbitalhq.app"
+  environment_domain_name = var.environment == "prod" ? local.domain_name: "${var.environment}.${local.domain_name}"
 }
 
 resource "aws_acm_certificate" "cert" {
