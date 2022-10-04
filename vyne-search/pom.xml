@@ -12,7 +12,7 @@
    <artifactId>vyne-search</artifactId>
 
    <properties>
-      <lucene.version>9.3.0</lucene.version>
+      <lucene.version>9.4.0</lucene.version>
    </properties>
 
    <dependencies>

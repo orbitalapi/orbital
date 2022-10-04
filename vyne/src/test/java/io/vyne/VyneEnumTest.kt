@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import lang.taxi.types.EnumType
 import org.junit.Ignore
 import org.junit.Test
@@ -117,8 +118,7 @@ class VyneEnumTest {
    }
 
    @Test
-   fun `should build by using synonyms value and name different than String`() = runBlockingTest {
-
+   fun `should build by using synonyms value and name different than String`() = runTest {
       val enumSchema = TaxiSchema.from(
          """
                 namespace common {
@@ -403,7 +403,7 @@ type typeB {
    }
 
    private suspend fun QueryResult.shouldHaveResults(vararg expectedRawResults: Any) {
-      val results = this.results!!.mapNotNull {
+      val results = this.results.mapNotNull {
          it.toRawObject()
       }
          .toList()

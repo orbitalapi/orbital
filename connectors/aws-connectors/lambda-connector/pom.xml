@@ -78,14 +78,14 @@
         <groupId>org.testcontainers</groupId>
         <artifactId>junit-jupiter</artifactId>
         <scope>test</scope>
-        <version>1.17.3</version>
+        <version>1.17.4</version>
      </dependency>
 
      <!-- localstack container still uses AWS SDK v1 -->
      <dependency>
         <groupId>com.amazonaws</groupId>
         <artifactId>aws-java-sdk-lambda</artifactId>
-        <version>1.12.309</version>
+        <version>1.12.314</version>
         <scope>test</scope>
      </dependency>
 

@@ -32,7 +32,7 @@ import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.CollectionProjectionExpressionAccessor
 import lang.taxi.accessors.ConditionalAccessor
 import lang.taxi.types.ObjectType
-import java.util.UUID
+import java.util.*
 
 class ObjectBuilder(
    val queryEngine: QueryEngine,
@@ -171,7 +171,7 @@ class ObjectBuilder(
          }
    }
 
-   private suspend fun buildExpressionScalar(targetType: Type): TypedInstance? {
+   private fun buildExpressionScalar(targetType: Type): TypedInstance {
       return TypedObjectFactory(
          targetType,
          emptyList<String>(), // What do I pass here?
@@ -245,7 +245,7 @@ class ObjectBuilder(
       spec: TypedInstanceValidPredicate,
       // Passing facts here allows for reference to data from parent objects when constructing child objects
       facts: FactBag = FactBag.empty(),
-   ): TypedInstance? {
+   ): TypedInstance {
       val populatedValues = mutableMapOf<String, TypedInstance>()
       val missingAttributes = mutableMapOf<AttributeName, Field>()
       // contains the anonymous projection attributes for:
@@ -384,18 +384,18 @@ class ObjectBuilder(
       attributeName: AttributeName
    ): Pair<AttributeName, TypedInstance>? {
       val typedObject = typedInstance as TypedObject
-      typedObject[sourcedBy.attributeName]?.let { source ->
+      typedObject[sourcedBy.attributeName].let { source ->
          source.value?.let { _ ->
-            ObjectBuilder(
-               this.queryEngine,
-               this.context.only(source),
-               this.context.schema.type(sourcedBy.attributeType),
-               functionRegistry = functionRegistry,
-               formatSpecs = formatSpecs
-            )
-               .build()?.let {
-                  return attributeName to it
-               }
+              ObjectBuilder(
+                 this.queryEngine,
+                 this.context.only(source),
+                 this.context.schema.type(sourcedBy.attributeType),
+                 functionRegistry = functionRegistry,
+                 formatSpecs = formatSpecs
+              )
+                 .build()?.let {
+                    return attributeName to it
+                 }
          }
       }
       return null

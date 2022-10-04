@@ -281,7 +281,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          )
       )
 
-      startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(jetInstance, vyneProvider, pipelineSpec, validateJobStatusIsRunningEventually = false)
       Awaitility.await().atMost(60, TimeUnit.SECONDS).until {
          s3.listObjectsV2 { it.bucket(bucket) }.contents().any { it.key() == objectKey }
       }
