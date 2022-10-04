@@ -12,10 +12,7 @@ import io.vyne.models.json.Jackson
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.Ids
-import io.vyne.utils.log
 import org.apache.commons.csv.CSVRecord
-import java.io.ObjectOutputStream
-import java.io.OutputStream
 import java.io.Serializable
 
 data class PipelineSpec<I : PipelineTransportSpec, O : PipelineTransportSpec>(
@@ -92,9 +89,8 @@ enum class PipelineDirection(val label: String) {
 typealias PipelineTransportType = String
 
 interface MessageContentProvider {
-   fun asString(logger: PipelineLogger): String
-   fun writeToStream(logger: PipelineLogger, outputStream: OutputStream)
-   fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance
+   fun asString(): String
+   fun readAsTypedInstance(inputType: Type, schema: Schema): TypedInstance
 }
 
 data class TypedInstanceContentProvider(
@@ -102,30 +98,22 @@ data class TypedInstanceContentProvider(
    val content: TypedInstance,
    private val mapper: ObjectMapper = Jackson.defaultObjectMapper
 ) : MessageContentProvider {
-   override fun asString(logger: PipelineLogger): String {
+   override fun asString(): String {
       return mapper.writeValueAsString(content.toRawObject())
    }
 
-   override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
-      mapper.writeValue(outputStream, content.toRawObject())
-   }
-
-   override fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance {
+   override fun readAsTypedInstance(inputType: Type, schema: Schema): TypedInstance {
       return content
    }
 }
 
 data class JacksonContentProvider(private val objectMapper: ObjectMapper, private val content: Any) :
    MessageContentProvider {
-   override fun asString(logger: PipelineLogger): String {
+   override fun asString(): String {
       return objectMapper.writeValueAsString(content)
    }
 
-   override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
-      objectMapper.writeValue(outputStream, content)
-   }
-
-   override fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance {
+   override fun readAsTypedInstance(inputType: Type, schema: Schema): TypedInstance {
       return TypedInstance.from(
          inputType,
          content,
@@ -136,15 +124,11 @@ data class JacksonContentProvider(private val objectMapper: ObjectMapper, privat
 }
 
 data class StringContentProvider(val content: String) : MessageContentProvider {
-   override fun asString(logger: PipelineLogger): String {
+   override fun asString(): String {
       return content
    }
 
-   override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
-      outputStream.write(content.toByteArray())
-   }
-
-   override fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance {
+   override fun readAsTypedInstance(inputType: Type, schema: Schema): TypedInstance {
       return TypedInstance.from(
          inputType,
          content,
@@ -155,18 +139,11 @@ data class StringContentProvider(val content: String) : MessageContentProvider {
 }
 
 data class CsvRecordContentProvider(val content: CSVRecord, val nullValues: Set<String>) : MessageContentProvider {
-   override fun asString(logger: PipelineLogger): String {
+   override fun asString(): String {
       return content.joinToString { "," }
    }
 
-   override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
-      ObjectOutputStream(outputStream).use {
-         it.writeObject(content)
-         it.flush()
-      }
-   }
-
-   override fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance {
+   override fun readAsTypedInstance(inputType: Type, schema: Schema): TypedInstance {
       return TypedInstance.from(
          inputType,
          content,
@@ -175,37 +152,4 @@ data class CsvRecordContentProvider(val content: CSVRecord, val nullValues: Set<
          nullValues = nullValues
       )
    }
-
-}
-
-
-interface PipelineLogger {
-   fun debug(message: () -> String)
-   fun info(message: () -> String)
-   fun warn(message: () -> String)
-   fun error(message: () -> String)
-   fun error(exception: Throwable, message: () -> String)
-}
-
-object ConsoleLogger : PipelineLogger {
-   override fun debug(message: () -> String) {
-      log().debug(message())
-   }
-
-   override fun info(message: () -> String) {
-      log().info(message())
-   }
-
-   override fun warn(message: () -> String) {
-      log().warn(message())
-   }
-
-   override fun error(message: () -> String) {
-      log().error(message())
-   }
-
-   override fun error(exception: Throwable, message: () -> String) {
-      log().error(message(), exception)
-   }
-
 }

@@ -7,7 +7,8 @@ import lang.taxi.utils.takeHead
 
 
 data class TypedCollection(
-   override val type: Type, override val value: List<TypedInstance>,
+   override val type: Type,
+   override val value: List<TypedInstance>,
    override val source: DataSource = MixedSources
 ) : List<TypedInstance> by value, TypedInstance {
    private val equality = Equality(this, TypedCollection::type, TypedCollection::value)
@@ -18,7 +19,7 @@ data class TypedCollection(
    operator fun get(key: String): TypedInstance {
       val (thisPart, remaining) = key.split(".")
          .takeHead()
-      val requestedIndex = thisPart.removeSurrounding("[","]").toInt()
+      val requestedIndex = thisPart.removeSurrounding("[", "]").toInt()
       val thisItem = this[requestedIndex]
       val remainingPath = remaining.joinToString(".")
       return when {
@@ -73,7 +74,7 @@ data class TypedCollection(
             error("An empty list was passed, where a populated list was expected.  Cannot infer type.")
          }
          val commonType = types.first().commonTypeAncestor(types)
-         return TypedCollection.arrayOf(commonType, populatedList, source)
+         return arrayOf(commonType, populatedList, source)
       }
    }
 

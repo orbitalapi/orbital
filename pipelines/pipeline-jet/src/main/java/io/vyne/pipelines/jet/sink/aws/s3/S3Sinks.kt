@@ -295,7 +295,7 @@ object S3Sinks {
       }
 
       private fun abortUpload() {
-         this.logger.severe("aborting the upload with id $uploadId to bucket $bucketName")
+         this.logger.severe("Aborting the upload with id $uploadId to bucket $bucketName")
          s3Client.abortMultipartUpload { b: AbortMultipartUploadRequest.Builder ->
             b.uploadId(uploadId).bucket(
                bucketName
