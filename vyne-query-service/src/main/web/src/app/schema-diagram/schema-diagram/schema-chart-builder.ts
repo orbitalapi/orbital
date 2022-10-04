@@ -25,6 +25,7 @@ function getNodeKind(member: SchemaMember): NodeType {
 export interface EdgeParams {
   sourceCanFloat: boolean;
   targetCanFloat: boolean;
+  label: string;
 }
 
 export interface Links {

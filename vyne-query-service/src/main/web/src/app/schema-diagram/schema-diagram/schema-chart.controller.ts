@@ -144,10 +144,6 @@ export class SchemaChartController {
   }
 
   private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, sourceSchemaKind: SchemaMemberType, targetNode: Node<MemberWithLinks>, targetHandleId: string, targetSchemaKind: SchemaMemberType, linkId?: string): Edge {
-    const edgeParams: EdgeParams = {
-      sourceCanFloat: sourceSchemaKind === 'TYPE',
-      targetCanFloat: targetSchemaKind === 'TYPE',
-    }
     let label: string;
     let markerStart, markerEnd: EdgeMarkerType;
     // Default color
@@ -179,6 +175,12 @@ export class SchemaChartController {
       style.strokeDasharray = '5,5';
     }
     style.stroke = lineColor;
+    const edgeParams: EdgeParams = {
+      sourceCanFloat: sourceSchemaKind === 'TYPE',
+      targetCanFloat: targetSchemaKind === 'TYPE',
+      label
+    }
+
 
     const id = linkId || [sourceNode.id, sourceHandleId, '->', targetNode.id, targetHandleId].join('-');
     return {
