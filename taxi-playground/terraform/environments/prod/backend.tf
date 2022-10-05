@@ -27,6 +27,6 @@ provider "aws" {
   }
 
   assume_role {
-    role_arn     = "arn:aws:iam::081644664212:role/TerraformAccessRole"
+    role_arn     = "arn:aws:iam::647692306194:role/TerraformAccessRole"
   }
 }
