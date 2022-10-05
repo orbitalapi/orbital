@@ -77,6 +77,7 @@ default:
          - "vyne-analytics-server/target/vyne-analytics-server.jar"
          - "vyne-query-service/target/vyne.zip"
          - "test-cli/target/*.zip"
+         - "taxi-playground/target/taxi-playground.jar"
          #         - "eureka/target/eureka.jar"
          #         - "jwt-auth-server/target/jwt-auth-server.jar"
       expire_in: 1 hours

@@ -48,7 +48,7 @@ class EmailSubscriptionController(
          }
       }
 
-      return if (voyagerSubscriptionResponse.statusCode == HttpStatus.OK && generalMarketingSubscriptionResponse != null && generalMarketingSubscriptionResponse.statusCode == HttpStatus.OK) {
+      return if (voyagerSubscriptionResponse.statusCode == HttpStatus.OK && (generalMarketingSubscriptionResponse == null || (generalMarketingSubscriptionResponse.statusCode == HttpStatus.OK))) {
          ResponseEntity.ok(EmptyResponse())
       } else {
          ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(EmptyResponse())
