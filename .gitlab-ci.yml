@@ -397,7 +397,7 @@ terraform-deploy-dev-taxi-playground:
       name: $TF_STATE_NAME_DEV
    variables:
       TF_ROOT: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/$TF_STATE_NAME_DEV
-      TF_STATE_NAME: $TF_STATE_NAME_DEV
+      TF_STATE_NAME: taxi_playground_$TF_STATE_NAME_DEV
       TF_VAR_environment: $TF_STATE_NAME_DEV
       TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
    rules:
