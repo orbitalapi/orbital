@@ -14,6 +14,8 @@ variables:
    MINOR_RELEASE_DIGIT: 1
    PATCH_RELEASE_DIGIT: 2
 
+   TF_ROOT_DEV: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/dev
+   TF_ROOT_PROD: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/prod
    TF_STATE_NAME_DEV: dev
    TF_STATE_NAME_PROD: prod
 
@@ -332,6 +334,7 @@ publish-taxi-playground:
    variables:
       projectDir: taxi-playground
       microservice: taxi-playground
+   when: manual
 
 terraform-fmt:
    extends: .terraform:fmt
