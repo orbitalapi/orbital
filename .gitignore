@@ -197,3 +197,6 @@ schema-server/.*_pid*
 
 build-version.txt
 /config/
+
+### Terraform config ###
+**/.terraform

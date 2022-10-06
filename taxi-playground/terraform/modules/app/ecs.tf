@@ -36,7 +36,7 @@ module "gateway" {
   region                    = var.region
   vpc_id                    = var.vpc_id
   subnets                   = var.subnets
-  image                     = "registry.gitlab.com/vyne/vyne/taxi-playground:${var.taxi_playground_docker_image_id}" # TODO specify your image
+  image                     = "registry.gitlab.com/vyne/vyne/taxi-playground-app:${var.taxi_playground_docker_image_id}" # TODO specify your image
   task_definition_cpu       = 2048                          # TODO Adjust to match your needs
   task_definition_memory    = 4096                          # TODO Adjust to match your needs
   port                      = 8080                          # TODO Your port here
