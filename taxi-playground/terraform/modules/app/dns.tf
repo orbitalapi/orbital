@@ -18,6 +18,6 @@ resource "aws_alb_listener" "service" {
   certificate_arn   = var.cert_arn
   default_action {
     type             = "forward"
-    target_group_arn = module.gateway.target_group_arn
+    target_group_arn = module.voyager.target_group_arn
   }
 }

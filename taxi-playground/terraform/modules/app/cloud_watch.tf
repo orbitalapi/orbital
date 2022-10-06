@@ -20,8 +20,8 @@ data "aws_sns_topic" "chatbot_topic" {
   name = "taxi-playground-gateway-events"
 }
 
-resource "aws_cloudwatch_metric_alarm" "gateway_app_error_alarm" {
-  alarm_name = "gateway_app_errors_${var.environment}"
+resource "aws_cloudwatch_metric_alarm" "voyager_app_error_alarm" {
+  alarm_name = "voyager_app_errors_${var.environment}"
   metric_name         = aws_cloudwatch_log_metric_filter.app_error_metric_filter.metric_transformation[0].name
   threshold           = "0"
   statistic           = "Sum"

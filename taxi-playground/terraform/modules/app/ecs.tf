@@ -29,9 +29,9 @@ resource "aws_security_group" "ecs_service" {
   }
 }
 
-module "gateway" {
+module "voyager" {
   source                    = "./modules/service"
-  service_name              = "gateway"
+  service_name              = "voyager"
   environment               = var.environment
   region                    = var.region
   vpc_id                    = var.vpc_id
@@ -39,7 +39,7 @@ module "gateway" {
   image                     = "registry.gitlab.com/vyne/vyne/taxi-playground:${var.taxi_playground_docker_image_id}"
   task_definition_cpu       = 2048
   task_definition_memory    = 4096
-  port                      = 8080
+  port                      = 9500
   protocol                  = "HTTP"
   execution_role_arn        = aws_iam_role.execution.arn
   task_role_arn             = aws_iam_role.task.arn
@@ -47,12 +47,12 @@ module "gateway" {
   cloudwatch_log_group_name = aws_cloudwatch_log_group.main.name
   security_groups           = [aws_security_group.ecs_service.id, var.external_connectivity_security_group_id]
   repository_credentials_secret_arn = aws_secretsmanager_secret.private_registry_access.arn
-  load_balancer_listeners   = [
-    { protocol = "HTTP", port = 8080, load_balancer_arn = aws_alb.main.arn }
-  ]
+#  load_balancer_listeners   = [
+#    { protocol = "HTTP", port = 9500, load_balancer_arn = aws_alb.main.arn }
+#  ]
   health_check = {
     path = "/actuator/health"
-    port = 8080
+    port = 9500
   }
   environment_variables = {
     # TODO Add any environment variables and/or delete the below
