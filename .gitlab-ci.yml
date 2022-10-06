@@ -326,8 +326,8 @@ publish-analytics-server-docker:
          docker buildx build
          --platform linux/arm64/v8,linux/amd64
          --push
-         -t "${CI_REGISTRY_IMAGE}:${tag}"
-         -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}" .
+         -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${tag}"
+         -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${CI_COMMIT_SHORT_SHA}" .
 
 publish-taxi-playground:
    extends: .publish-docker-gitlab
