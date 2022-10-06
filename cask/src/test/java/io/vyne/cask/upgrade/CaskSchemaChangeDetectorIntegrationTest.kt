@@ -13,7 +13,7 @@ import org.junit.Test
 
 class CaskSchemaChangeDetectorIntegrationTest : BaseCaskIntegrationTest() {
 
-   lateinit var configService:CaskConfigService
+   lateinit var configService: CaskConfigService
    lateinit var changeDetector: CaskSchemaChangeDetector
    @Before
    override fun setup() {

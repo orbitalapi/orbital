@@ -5,7 +5,6 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.cask.MessageIds
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.CaskQueryDispatcherConfiguration
-import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.cask.config.StringToQualifiedNameConverter
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.ddl.views.CaskViewBuilderFactory
@@ -58,7 +57,7 @@ import javax.sql.DataSource
 @RunWith(SpringRunner::class)
 @AutoConfigureTestDatabase(replace = NONE)
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
-@Import(StringToQualifiedNameConverter::class, JdbcStreamingTemplate::class, PostProcessorConfiguration::class)
+@Import(StringToQualifiedNameConverter::class, PostProcessorConfiguration::class)
 @ContextConfiguration(initializers = [ConnectionCountingDataSource.Initializer::class])
 abstract class BaseCaskIntegrationTest {
 
@@ -79,10 +78,6 @@ abstract class BaseCaskIntegrationTest {
 
    @Autowired
    lateinit var jdbcTemplate: JdbcTemplate
-
-   @Autowired
-   lateinit var jdbcStreamingTemplate: JdbcStreamingTemplate
-
 
    @Autowired
    lateinit var ingestionErrorRepository: IngestionErrorRepository
@@ -115,7 +110,7 @@ abstract class BaseCaskIntegrationTest {
 
    val taxiSchema: TaxiSchema
       get() {
-         return schemaProvider.schema as TaxiSchema
+         return schemaProvider.schema
       }
 
    fun versionedType(name: String): VersionedType {
@@ -126,15 +121,15 @@ abstract class BaseCaskIntegrationTest {
    fun setup() {
       caskIngestionErrorProcessor = CaskIngestionErrorProcessor(ingestionErrorRepository)
       schemaProvider = UpdatableSchemaProvider.withSource(CoinbaseJsonOrderSchema.sourceV1)
-      caskRecordCountDAO = CaskRecordCountDAO(jdbcStreamingTemplate, schemaProvider,configRepository)
+      caskRecordCountDAO = CaskRecordCountDAO(jdbcTemplate, schemaProvider, configRepository)
       caskDao = CaskDAO(
          jdbcTemplate,
-         jdbcStreamingTemplate,
          schemaProvider,
          dataSource,
          caskMessageRepository,
          configRepository,
-         queryMonitor = QueryMonitor(null,null, CaskQueryDispatcherConfiguration()))
+         queryMonitor = QueryMonitor(null, null, CaskQueryDispatcherConfiguration())
+      )
 
       caskConfigService = CaskConfigService(configRepository)
       viewDefinitions = mutableListOf()

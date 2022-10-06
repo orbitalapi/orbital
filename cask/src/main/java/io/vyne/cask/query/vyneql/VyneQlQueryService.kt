@@ -1,7 +1,6 @@
 package io.vyne.cask.query.vyneql
 
 import io.vyne.cask.config.CaskQueryDispatcherConfiguration
-import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.http.HttpHeaders
 import io.vyne.utils.log
 import kotlinx.coroutines.CoroutineScope
@@ -15,16 +14,16 @@ import lang.taxi.types.TaxiQLQueryString
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.jdbc.core.ColumnMapRowMapper
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
-import reactor.kotlin.core.publisher.toMono
 import java.util.concurrent.Executors
 
 @RestController
 class VyneQlQueryService(
-   private val jdbcStreamTemplate: JdbcStreamingTemplate,
+   private val jdbcTemplate: JdbcTemplate,
    private val sqlGenerator: VyneQlSqlGenerator,
    private val caskQueryDispatcherConfiguration: CaskQueryDispatcherConfiguration
 ) {
@@ -47,7 +46,7 @@ class VyneQlQueryService(
     * Please not that we're returning Mono<Stream<..>> rather than Mono<List<....>>
     * the reason for that is Jackson Stream Serializer which serializes the response eventually
     * invokes 'close' method on the stream which fires the 'onClose' event handler attached to the
-    * Stream in JdbcStreamingTemplate. The Handler in JdbcStreamingTemplate closes the underlying database connection.
+    * Stream in JdbcTemplate. The Handler in JdbcTemplate closes the underlying database connection.
     * Without this mechanism we block all DB connections in the pool after several queries.
     * @param query vyneQL submitted as post body
     * @return Stream of results
@@ -97,12 +96,12 @@ class VyneQlQueryService(
       log().info("Generated sql statement: $statement")
       return Flux.fromStream {
          if (statement.params.isEmpty()) {
-            jdbcStreamTemplate.queryForStream(
+            jdbcTemplate.queryForStream(
                statement.sql,
                ColumnMapRowMapper()
             )
          } else {
-            jdbcStreamTemplate.queryForStream(
+            jdbcTemplate.queryForStream(
                statement.sql,
                ColumnMapRowMapper(),
                *statement.params.toTypedArray()
@@ -114,9 +113,9 @@ class VyneQlQueryService(
    private fun countResultsAsync(query: TaxiQLQueryString): Deferred<Int> = CoroutineScope(vyneQlDispatcher).async {
       val statement = sqlGenerator.generateSqlCountRecords(query)
       if (statement.params.isEmpty()) {
-         jdbcStreamTemplate.queryForObject(statement.sql, Int::class.java)
+         jdbcTemplate.queryForObject(statement.sql, Int::class.java)
       } else {
-         jdbcStreamTemplate.queryForObject(statement.sql, Int::class.java, *statement.params.toTypedArray())
+         jdbcTemplate.queryForObject(statement.sql, Int::class.java, *statement.params.toTypedArray())
       }
    }
 

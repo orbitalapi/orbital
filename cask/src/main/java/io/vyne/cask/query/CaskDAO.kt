@@ -8,7 +8,6 @@ import io.vyne.cask.api.ContentType
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.CaskQueryOptions
 import io.vyne.cask.config.FindOneMatchesManyBehaviour
-import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.cask.config.QueryMatchesNoneBehaviour
 import io.vyne.cask.ddl.PostgresDdlGenerator
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_NAME
@@ -34,6 +33,7 @@ import org.apache.commons.io.IOUtils
 import org.postgresql.PGConnection
 import org.postgresql.largeobject.LargeObjectManager
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.jdbc.core.ColumnMapRowMapper
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -52,6 +52,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
+import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.stream.Stream
 import javax.sql.DataSource
@@ -72,7 +73,6 @@ private val logger = KotlinLogging.logger {}
 @Component
 class CaskDAO(
     private val jdbcTemplate: JdbcTemplate,
-    private val jdbcStreamingTemplate: JdbcStreamingTemplate,
     private val schemaProvider: SchemaProvider,
     private val largeObjectDataSource: DataSource,
     private val caskMessageRepository: CaskMessageRepository,
@@ -93,13 +93,13 @@ class CaskDAO(
       val name = "${versionedType.versionedName}.findAll"
       return timed(name) {
          doForAllTablesOfType(versionedType) { tableName ->
-            jdbcStreamingTemplate.queryForStream(findAllQuery(tableName))
+            jdbcTemplate.queryForStream(findAllQuery(tableName), ColumnMapRowMapper())
          }
       }
    }
 
    fun findAll(tableName: String): Stream<Map<String, Any>> {
-      return jdbcStreamingTemplate.queryForStream(findAllQuery(tableName))
+      return jdbcTemplate.queryForStream(findAllQuery(tableName), ColumnMapRowMapper())
    }
 
    fun streamAll(versionedType: VersionedType): Flux<Map<String, Any>> {
@@ -170,12 +170,11 @@ class CaskDAO(
       val name = "${versionedType.versionedName}.findBy${columnName}"
       return timed(name) {
          doForAllTablesOfType(versionedType) { tableName ->
-
             val originalTypeSchema = schemaProvider.schema
             val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
             val findByArg = castArgumentToJdbcType(fieldType, arg)
-            jdbcStreamingTemplate.queryForStream(findByQuery(tableName, columnName), findByArg)
+            jdbcTemplate.queryForStream(findByQuery(tableName, columnName), ColumnMapRowMapper(), findByArg)
          }
       }
    }
@@ -237,7 +236,12 @@ class CaskDAO(
             val argTypes = inputValues.map { Types.VARCHAR }.toTypedArray().toIntArray()
             val argValues = findMultipleArg.toTypedArray()
             val retVal =
-               jdbcStreamingTemplate.queryForStream(findInQuery(tableName, columnName, inPhrase), argValues, argTypes)
+               jdbcTemplate.queryForStream(
+                  findInQuery(tableName, columnName, inPhrase),
+                  ColumnMapRowMapper(),
+                  argValues,
+                  argTypes
+               )
             retVal
          }
       }
@@ -258,8 +262,9 @@ class CaskDAO(
                val start = castArgumentToJdbcType(PrimitiveType.INSTANT, start)
                val end = castArgumentToJdbcType(PrimitiveType.INSTANT, end)
                log().info("issuing query => $query with start => $start and end => $end")
-               jdbcStreamingTemplate.queryForStream(
+               jdbcTemplate.queryForStream(
                   query,
+                  ColumnMapRowMapper(),
                   start,
                   end
                )
@@ -271,8 +276,9 @@ class CaskDAO(
                val start = castArgumentToJdbcType(field, start)
                val end = castArgumentToJdbcType(field, end)
                log().info("issuing query => $query with start => $start and end => $end")
-               jdbcStreamingTemplate.queryForStream(
+               jdbcTemplate.queryForStream(
                   query,
+                  ColumnMapRowMapper(),
                   start,
                   end
                )
@@ -313,8 +319,9 @@ class CaskDAO(
       return timed("${versionedType.versionedName}.findBy${columnName}.after") {
          val field = fieldForColumnName(versionedType, columnName)
          doForAllTablesOfType(versionedType) { tableName ->
-            jdbcStreamingTemplate.queryForStream(
+            jdbcTemplate.queryForStream(
                findAfterQuery(tableName, columnName),
+               ColumnMapRowMapper(),
                castArgumentToJdbcType(field, after)
             )
          }
@@ -326,8 +333,9 @@ class CaskDAO(
       return timed("${versionedType.versionedName}.findBy${columnName}.before") {
          val field = fieldForColumnName(versionedType, columnName)
          doForAllTablesOfType(versionedType) { tableName ->
-            jdbcStreamingTemplate.queryForStream(
+            jdbcTemplate.queryForStream(
                findBeforeQuery(tableName, columnName),
+               ColumnMapRowMapper(),
                castArgumentToJdbcType(field, before)
             )
          }
@@ -665,7 +673,7 @@ class CaskDAO(
          from information_schema.tables
          where table_name = ?
       """.trimIndent(),
-         arrayOf(tableName.toLowerCase()),
+         arrayOf(tableName.lowercase(Locale.getDefault())),
          String::class.java
       )
 
@@ -730,8 +738,9 @@ class CaskDAO(
 
       val field = fieldForColumnName(versionedType, columnName)
       return doForAllTablesOfType(versionedType) { tableName ->
-         jdbcStreamingTemplate.queryForStream(
+         jdbcTemplate.queryForStream(
             findAfterQuery(tableName, columnName),
+            ColumnMapRowMapper(),
             castArgumentToJdbcType(field, after)
          )
       }.toFlux().concatWith(
@@ -754,8 +763,9 @@ class CaskDAO(
 
       val field = fieldForColumnName(versionedType, columnName)
       return doForAllTablesOfType(versionedType) { tableName ->
-         jdbcStreamingTemplate.queryForStream(
+         jdbcTemplate.queryForStream(
             findBeforeQuery(tableName, columnName),
+            ColumnMapRowMapper(),
             castArgumentToJdbcType(field, before)
          )
       }.toFlux().concatWith(
@@ -785,8 +795,9 @@ class CaskDAO(
             val start = castArgumentToJdbcType(PrimitiveType.INSTANT, start)
             val end = castArgumentToJdbcType(PrimitiveType.INSTANT, end)
             log().info("issuing query => $query with start => $start and end => $end")
-            jdbcStreamingTemplate.queryForStream(
+            jdbcTemplate.queryForStream(
                query,
+               ColumnMapRowMapper(),
                start,
                end
             )
@@ -811,10 +822,11 @@ class CaskDAO(
             val start = castArgumentToJdbcType(field, start)
             val end = castArgumentToJdbcType(field, end)
             log().info("issuing query => $query with start => $start and end => $end")
-            jdbcStreamingTemplate.queryForStream(
+            jdbcTemplate.queryForStream(
                query,
+               ColumnMapRowMapper(),
                start,
-               end
+               end,
             )
          }.toFlux().mergeWith(
             Flux.merge(
