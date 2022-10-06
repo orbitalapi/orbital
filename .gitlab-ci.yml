@@ -26,7 +26,7 @@ stages:
    - build
    - deploy
    - release
-   - test
+   - verify
 
 default:
    tags:
@@ -61,7 +61,7 @@ default:
       #   Read the POM, grab the version, and set to an env variable
       #   https://stackoverflow.com/a/52241594
       # Run the actual command twice.  The first time ensures that any downloads are
-      # already compelted, so that when we try to grep the output string, we get a tidy predictable output
+      # already completed, so that when we try to grep the output string, we get a tidy predictable output
       - mvn --non-recursive help:evaluate -Dexpression=project.version
       - mvn --non-recursive help:evaluate -Dexpression=project.version | grep -v '\[.*' > build-version.txt
    artifacts:
@@ -77,39 +77,12 @@ default:
          - "vyne-analytics-server/target/vyne-analytics-server.jar"
          - "vyne-query-service/target/vyne.zip"
          - "test-cli/target/*.zip"
-         #         - "eureka/target/eureka.jar"
-         #         - "jwt-auth-server/target/jwt-auth-server.jar"
       expire_in: 1 hours
       reports:
          junit:
             # Note:This won't actually work, b/c of https://gitlab.com/gitlab-org/gitlab-runner/issues/2620
             # However, leaving this here to pick up later
             - "*/target/surefire-reports/TEST-*.xml"
-
-# We have to build within the maven phase now, as
-# all build artefacts are bundled into the zip as part of
-# the assemble time.  Previously, these were
-# separated until docker image was built, but with
-# moving to maven assemble (vs spring boot packaging), this
-# doesnt work any more.
-#
-#build-ui:
-#   stage: build
-#   except:
-#      - tags
-#      - develop
-#      - master
-#   cache:
-#      paths:
-#         - vyne-query-service/src/main/web/node
-#      key: "node-$CI_COMMIT_REF_SLUG"
-#   script:
-#      # Only build the frontend. Nothing JVM related
-#      - 'mvn $MAVEN_CLI_OPTS -DskipTests frontend:install-node-and-npm frontend:npm@run-npm-install frontend:npm@ng-build -f vyne-query-service/pom.xml'
-#   artifacts:
-#      paths:
-#         - "vyne-query-service/target/classes/static"
-#      expire_in: 1 hours
 
 build-jvm-branch:
    stage: build
@@ -180,7 +153,7 @@ release-patch:
    when: manual
 
 regression-test:
-   stage: test
+   stage: verify
    resource_group: docker_release
    variables:
       VYNE_DOCKER_TAG: latest
@@ -196,16 +169,9 @@ regression-test:
             - target/surefire-reports/TEST-*.xml
 
 
-# This creates multi-platform docker images.
-# Important things to consider:
-# - You must be running a modern version of Ubuntu (tested with 20.04)
-# - You must be running with docker-in-docker gitlab runner
-# - The gitlab runner must be running in privileged mode. (eg., `privileged = true` in config.toml)
-# See: https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#docker-in-docker-with-tls-enabled-in-the-docker-executor
+# This creates the multi-platform Docker images
 .publish-docker:
    stage: deploy
-#   except:
-#      - tags
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.17-0.8.2
    rules:
       -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -216,8 +182,7 @@ regression-test:
          allow_failure: true
    variables:
       DOCKER_HOST: tcp://docker:2375/
-      # Instruct Docker not to start over TLS.
-      DOCKER_TLS_CERTDIR: ""
+      DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
       DOCKER_DRIVER: overlay2
       DOCKER_BUILDKIT: 1
       BUILDKIT_PROGRESS: plain
@@ -226,12 +191,10 @@ regression-test:
       -  name: docker:20.10.18-dind
          command: ["--tls=false"]
    before_script:
-      # Grab the version we plucked from Maven earlier.
       - PROJECT_VERSION=$(cat build-version.txt)
       - docker info
       - docker buildx create --use
-      # This installs the required emulators, in order to build ARM images
-      - docker run --privileged --rm tonistiigi/binfmt --install all
+      - docker run --privileged --rm tonistiigi/binfmt --install all # Install the required emulators in order to build ARM images
       - docker buildx ls
       - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
       - |
@@ -247,7 +210,6 @@ regression-test:
          fi
          echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
          echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
-
    script:
       - cd $projectDir
       - pwd
@@ -342,3 +304,56 @@ terraform-deploy-prod:
    rules:
       - if: $CI_COMMIT_BRANCH == "main"
 
+e2e-tests:
+   stage: verify
+   image: docker:20.10.18-dind
+   rules:
+      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+         when: never
+      -  if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
+      -  if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
+         when: manual
+         allow_failure: true
+   needs:
+      - publish-vyne-docker
+      - publish-schema-server-docker
+      - build-jvm-branch
+   dependencies:
+      - build-jvm-branch
+   allow_failure: true
+   variables:
+      DOCKER_HOST: tcp://docker:2375/
+      DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
+      DOCKER_DRIVER: overlay2
+      DOCKER_BUILDKIT: 1
+      BUILDKIT_PROGRESS: plain
+      PROGRESS_NO_TRUNC: 1
+   services:
+      -  name: docker:20.10.18-dind
+         command: [ "--tls=false" ]
+   before_script:
+      - PROJECT_VERSION=$(cat build-version.txt)
+      - |
+         if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
+           tag="latest"
+           versionTag="$PROJECT_VERSION"
+         elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
+            tag="latest-preview"
+            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
+         else
+            tag="$CI_COMMIT_BRANCH"
+            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
+         fi
+         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+         echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
+      - cd e2e-tests/
+      - docker build -t e2e .
+   script:
+      - cd demos/
+      - mkdir -p vyne/schema-server/projects
+      - mkdir -p vyne/config
+      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker-compose.yml
+      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/schema-server.conf -P vyne/schema-server
+      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/projects/taxi.conf -P vyne/schema-server/projects
+      - wget https://gitlab.com/vyne/demos/-/raw/master/films/services.conf -P vyne/config
+      - VYNE_VERSION=$versionTag docker compose -f docker-compose.yml -f e2e.docker-compose.yml up --exit-code-from e2e
