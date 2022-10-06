@@ -78,7 +78,7 @@
         <groupId>org.testcontainers</groupId>
         <artifactId>junit-jupiter</artifactId>
         <scope>test</scope>
-        <version>1.17.4</version>
+        <version>1.17.5</version>
      </dependency>
 
      <!-- localstack container still uses AWS SDK v1 -->
