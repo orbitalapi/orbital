@@ -51,4 +51,37 @@
       </dependency>
    </dependencies>
 
+   <build>
+      <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+      <plugins>
+         <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+         </plugin>
+         <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <configuration>
+               <args>
+                  <arg>-Xjsr305=strict</arg>
+               </args>
+               <compilerPlugins>
+                  <plugin>spring</plugin>
+               </compilerPlugins>
+               <sourceDirs>
+                  <sourceDir>src/main/java</sourceDir>
+                  <sourceDir>target/generated-sources/java</sourceDir>
+               </sourceDirs>
+            </configuration>
+            <dependencies>
+               <dependency>
+                  <groupId>org.jetbrains.kotlin</groupId>
+                  <artifactId>kotlin-maven-allopen</artifactId>
+                  <version>${kotlin.version}</version>
+               </dependency>
+            </dependencies>
+         </plugin>
+      </plugins>
+   </build>
+
 </project>
