@@ -307,13 +307,6 @@ terraform-deploy-prod:
 .e2e-tests:
    stage: verify
    image: docker:20.10.18-dind
-   rules:
-      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
-         when: never
-      -  if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
-      -  if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
-         when: manual
-         allow_failure: true
    needs:
       - publish-vyne-docker
       - publish-schema-server-docker
