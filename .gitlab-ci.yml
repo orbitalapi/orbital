@@ -304,7 +304,7 @@ terraform-deploy-prod:
    rules:
       - if: $CI_COMMIT_BRANCH == "main"
 
-e2e-tests:
+.e2e-tests:
    stage: verify
    image: docker:20.10.18-dind
    rules:
@@ -317,9 +317,6 @@ e2e-tests:
    needs:
       - publish-vyne-docker
       - publish-schema-server-docker
-      - build-jvm-branch
-   dependencies:
-      - build-jvm-branch
    allow_failure: true
    variables:
       DOCKER_HOST: tcp://docker:2375/
@@ -357,3 +354,31 @@ e2e-tests:
       - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/projects/taxi.conf -P vyne/schema-server/projects
       - wget https://gitlab.com/vyne/demos/-/raw/master/films/services.conf -P vyne/config
       - VYNE_VERSION=$versionTag docker compose -f docker-compose.yml -f e2e.docker-compose.yml up --exit-code-from e2e
+
+e2e-tests-master:
+   extends: .e2e-tests
+   only:
+      - master
+   needs:
+      - build-jvm-master
+   dependencies:
+      - build-jvm-master
+
+e2e-tests-develop:
+   extends: .e2e-tests
+   only:
+      - develop
+   needs:
+      - build-jvm-develop
+   dependencies:
+      - build-jvm-develop
+
+e2e-tests-other-branches:
+   extends: .e2e-tests
+   except:
+      - develop
+      - master
+   needs:
+      - build-jvm-branch
+   dependencies:
+      - build-jvm-branch
