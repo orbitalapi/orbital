@@ -1,0 +1,9 @@
+version: '3'
+services:
+   e2e:
+      image: e2e
+      volumes:
+         - ./test-results:/app/test-results
+      environment:
+         BASE_URL: http://vyne:9022
+         CI: true

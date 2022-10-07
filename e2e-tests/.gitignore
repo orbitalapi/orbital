@@ -1,0 +1,6 @@
+node_modules/
+/test-results/
+/playwright-report/
+/playwright/.cache/
+demos/*
+!demos/e2e.docker-compose.yml
