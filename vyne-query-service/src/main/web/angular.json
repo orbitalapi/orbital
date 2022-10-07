@@ -228,22 +228,10 @@
           },
           "configurations": {
             "production": {
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "500kb",
-                  "maximumError": "1mb"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "4kb"
-                }
-              ],
               "fileReplacements": [
                 {
-                  "replace": "taxi-playground-app/environments/environment.ts",
-                  "with": "taxi-playground-app/environments/environment.prod.ts"
+                  "replace": "src/taxi-playground-app/environments/environment.ts",
+                  "with": "src/taxi-playground-app/environments/environment.prod.ts"
                 }
               ],
               "outputHashing": "all"

@@ -13,7 +13,6 @@ import {
   MonacoLanguageClient,
   MonacoServices
 } from 'monaco-languageclient';
-import { WebsocketService } from '../services/websocket.service';
 import { iplastic_theme } from './themes/iplastic';
 import { editor } from 'monaco-editor';
 

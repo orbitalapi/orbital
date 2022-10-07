@@ -85,6 +85,41 @@
                </dependency>
             </dependencies>
          </plugin>
+         <plugin>
+            <groupId>com.github.eirslett</groupId>
+            <artifactId>frontend-maven-plugin</artifactId>
+            <version>1.12.1</version>
+            <configuration>
+               <workingDirectory>../vyne-query-service/src/main/web/</workingDirectory>
+               <nodeVersion>v16.14.0</nodeVersion>
+            </configuration>
+            <executions>
+               <execution>
+                  <id>install-npm</id>
+                  <goals>
+                     <goal>install-node-and-npm</goal>
+                  </goals>
+               </execution>
+               <execution>
+                  <id>run-npm-install</id>
+                  <goals>
+                     <goal>npm</goal>
+                  </goals>
+                  <configuration>
+                     <arguments>ci</arguments>
+                  </configuration>
+               </execution>
+               <execution>
+                  <id>ng-build</id>
+                  <goals>
+                     <goal>npm</goal>
+                  </goals>
+                  <configuration>
+                     <arguments>run-script build-prod-voyager</arguments>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
       </plugins>
    </build>
 
