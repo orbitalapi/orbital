@@ -173,13 +173,6 @@ regression-test:
 .publish-docker:
    stage: deploy
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.17-0.8.2
-   rules:
-      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
-         when: never
-      -  if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
-      -  if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
-         when: manual
-         allow_failure: true
    variables:
       DOCKER_HOST: tcp://docker:2375/
       DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
@@ -189,14 +182,13 @@ regression-test:
       PROGRESS_NO_TRUNC: 1
    services:
       -  name: docker:20.10.18-dind
-         command: ["--tls=false"]
-   before_script:
+         command: [ "--tls=false" ]
+   script:
       - PROJECT_VERSION=$(cat build-version.txt)
       - docker info
       - docker buildx create --use
       - docker run --privileged --rm tonistiigi/binfmt --install all # Install the required emulators in order to build ARM images
       - docker buildx ls
-      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
       - |
          if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
            tag="latest"
@@ -210,45 +202,77 @@ regression-test:
          fi
          echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
          echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
-   script:
       - cd $projectDir
       - pwd
       - >
          docker buildx build
          --platform linux/arm64/v8,linux/amd64
          --push
-         -t "vyneco/${microservice}:${tag}"
-         -t "vyneco/${microservice}:${versionTag}" .
+         -t "${registry}/${microservice}:${tag}"
+         -t "${registry}/${microservice}:${versionTag}" .
 
-publish-vyne-docker:
+.publish-to-docker-hub:
    extends: .publish-docker
+   rules:
+      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+         when: never
+      -  if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
+      -  if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
+         when: manual
+         allow_failure: true
+   variables:
+      registry: vyneco
+   before_script:
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
+
+.publish-to-gitlab-container-registry:
+   extends: .publish-docker
+   variables:
+      registry: $CI_REGISTRY_IMAGE
+   before_script:
+      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+
+publish-vyne-to-docker-hub:
+   extends: .publish-to-docker-hub
    variables:
       projectDir: vyne-query-service
       microservice: vyne
 
-publish-cask-docker:
-   extends: .publish-docker
+publish-cask-to-docker-hub:
+   extends: .publish-to-docker-hub
    variables:
       projectDir: cask
       microservice: cask
 
-publish-pipeline-jet-docker:
-   extends: .publish-docker
+publish-pipeline-jet-to-docker-hub:
+   extends: .publish-to-docker-hub
    variables:
       projectDir: pipelines/pipeline-jet
       microservice: pipeline
 
-publish-schema-server-docker:
-   extends: .publish-docker
+publish-schema-server-to-docker-hub:
+   extends: .publish-to-docker-hub
    variables:
       projectDir: schema-server
       microservice: schema-server
 
-publish-analytics-server-docker:
-   extends: .publish-docker
+publish-analytics-server-to-docker-hub:
+   extends: .publish-to-docker-hub
    variables:
       projectDir: vyne-analytics-server
       microservice: analytics-server
+
+publish-vyne-to-gitlab-container-registry:
+   extends: .publish-to-gitlab-container-registry
+   variables:
+      projectDir: vyne-query-service
+      microservice: vyne
+
+publish-schema-server-to-gitlab-container-registry:
+   extends: .publish-to-gitlab-container-registry
+   variables:
+      projectDir: schema-server
+      microservice: schema-server
 
 terraform-fmt:
    extends: .terraform:fmt
@@ -264,7 +288,7 @@ build-helm:
    stage: build
    image:
       name: alpine/helm:3.10.0
-      entrypoint: [""]
+      entrypoint: [ "" ]
    script:
       - cd ${CI_PROJECT_DIR}/infra/helm/vyne-helm
       - helm package .
@@ -291,7 +315,7 @@ terraform-deploy-dev:
       TF_STATE_NAME: $TF_STATE_NAME_DEV
       TF_VAR_environment: $TF_STATE_NAME_DEV
    rules:
-      - if: $CI_COMMIT_BRANCH == "develop"
+      -  if: $CI_COMMIT_BRANCH == "develop"
 
 terraform-deploy-prod:
    extends: .terraform-deploy
@@ -302,15 +326,11 @@ terraform-deploy-prod:
       TF_STATE_NAME: $TF_STATE_NAME_PROD
       TF_VAR_environment: $TF_STATE_NAME_PROD
    rules:
-      - if: $CI_COMMIT_BRANCH == "main"
+      -  if: $CI_COMMIT_BRANCH == "main"
 
 .e2e-tests:
    stage: verify
    image: docker:20.10.18-dind
-   needs:
-      - publish-vyne-docker
-      - publish-schema-server-docker
-   allow_failure: true
    variables:
       DOCKER_HOST: tcp://docker:2375/
       DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
@@ -322,6 +342,7 @@ terraform-deploy-prod:
       -  name: docker:20.10.18-dind
          command: [ "--tls=false" ]
    before_script:
+      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
       - PROJECT_VERSION=$(cat build-version.txt)
       - |
          if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
@@ -346,7 +367,11 @@ terraform-deploy-prod:
       - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/schema-server.conf -P vyne/schema-server
       - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/projects/taxi.conf -P vyne/schema-server/projects
       - wget https://gitlab.com/vyne/demos/-/raw/master/films/services.conf -P vyne/config
-      - VYNE_VERSION=$versionTag docker compose -f docker-compose.yml -f e2e.docker-compose.yml up --exit-code-from e2e
+      - |
+         SCHEMA_SERVER_IMAGE=${CI_REGISTRY_IMAGE}/schema-server \
+            VYNE_IMAGE=${CI_REGISTRY_IMAGE}/vyne \
+            VYNE_VERSION=$versionTag \
+            docker compose -f docker-compose.yml -f e2e.docker-compose.yml up --exit-code-from e2e
 
 e2e-tests-master:
    extends: .e2e-tests
@@ -354,6 +379,8 @@ e2e-tests-master:
       - master
    needs:
       - build-jvm-master
+      - publish-vyne-to-gitlab-container-registry
+      - publish-schema-server-to-gitlab-container-registry
    dependencies:
       - build-jvm-master
 
@@ -363,6 +390,8 @@ e2e-tests-develop:
       - develop
    needs:
       - build-jvm-develop
+      - publish-vyne-to-gitlab-container-registry
+      - publish-schema-server-to-gitlab-container-registry
    dependencies:
       - build-jvm-develop
 
@@ -373,5 +402,7 @@ e2e-tests-other-branches:
       - master
    needs:
       - build-jvm-branch
+      - publish-vyne-to-gitlab-container-registry
+      - publish-schema-server-to-gitlab-container-registry
    dependencies:
       - build-jvm-branch
