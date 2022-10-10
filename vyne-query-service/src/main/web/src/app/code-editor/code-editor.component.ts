@@ -20,6 +20,7 @@ import { editor } from 'monaco-editor';
 // Import the core monaco editor
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import * as monadoEditorAll from 'monaco-editor/esm/vs/editor/editor.all.js';
+import * as languageFeatureService from 'monaco-editor/esm/vs/editor/common/services/languageFeaturesService.js';
 
 // Import features we care abut
 import * as monacoFeature4
@@ -141,7 +142,7 @@ export class CodeEditorComponent implements OnDestroy {
 
   constructor(@Inject(LANGUAGE_SERVER_WS_ADDRESS_TOKEN) private languageServerWsAddress: string) {
     // This does nothing, but prevents tree-shaking
-    const features = [monadoEditorAll, monacoFeature4, monacoFeature5, monacoFeature6, monacoFeature7, monacoFeature8,];
+    const features = [monadoEditorAll, monacoFeature4, monacoFeature5, monacoFeature6, monacoFeature7, monacoFeature8,languageFeatureService];
 
     this.monacoModel = monaco.editor.createModel(this.content, TAXI_LANGUAGE_ID, monaco.Uri.parse('inmemory://query.taxi'));
     monaco.languages.register({ id: TAXI_LANGUAGE_ID });
