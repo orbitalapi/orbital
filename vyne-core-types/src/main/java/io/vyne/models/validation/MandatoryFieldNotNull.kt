@@ -8,13 +8,25 @@ import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
 import io.vyne.schemas.AttributeName
+import io.vyne.schemas.Field
+import lang.taxi.accessors.PathBasedAccessor
 
-private fun getMandatoryFieldsWithNulls(typedObject: TypedObject): List<AttributeName> {
+private fun getMandatoryFieldsWithNulls(typedObject: TypedObject): List<Pair<AttributeName, String?>> {
    return typedObject.type.attributes.entries
       .filter { it.value.nullable }
       .filter { typedObject.getValue(it.key) is TypedNull }
-      .map { it.key }
+      .map { it.key to it.value.accessorPath()}
 }
+
+private fun Field.accessorPath(): String? {
+   return when(this.accessor) {
+      null -> null
+      is PathBasedAccessor -> this.accessor.path
+      else -> null
+   }
+}
+
+private fun Pair<AttributeName, String?>.toLogString(): String = if (second == null) this.first else "$first (path = $second)}"
 
 private fun process(typedInstance: TypedInstance): String? {
    return when (typedInstance) {
@@ -23,7 +35,7 @@ private fun process(typedInstance: TypedInstance): String? {
          if (mandatoryFieldsWithNullValue.isEmpty()) {
             return null
          }
-         "The fields \"${mandatoryFieldsWithNullValue.joinToString("\", \"") { it }}\" are mandatory but there is no value provided."
+         "The fields \"${mandatoryFieldsWithNullValue.joinToString("\", \"") { "${it.toLogString()}" }}\" are mandatory but there is no value provided."
       }
 
       is TypedCollection -> {

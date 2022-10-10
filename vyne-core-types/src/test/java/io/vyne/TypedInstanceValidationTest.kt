@@ -1,6 +1,7 @@
 package io.vyne
 
 import com.winterbe.expekt.expect
+import com.winterbe.expekt.should
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.validation.MandatoryFieldNotNull
@@ -100,5 +101,41 @@ class TypedInstanceValidationTest {
          Item 0: The fields "lastName" are mandatory but there is no value provided.
       """.trimIndent()
       )
+   }
+
+   @Test
+   fun noOpValidationHandlerShouldReportThePathWhenAccessorIsDefined() {
+      val schema = TaxiSchema.from(
+         """
+          model Person {
+            firstName: FirstName inherits String by column("first_name")
+            lastName: LastName? inherits String by column("last_name")
+         }
+      """.trimIndent()
+      )
+
+      val john =
+         TypedInstance.from(
+            schema.type("Person"),
+            """{ "firstName": "John", "lastName": null }""",
+            schema,
+            source = Provided
+         )
+
+      var rawMessage: String? = null
+
+      val validationResult1 = john.validate(
+         listOf(
+            ValidationRule(
+               MandatoryFieldNotNull,
+               listOf(noOpViolationHandler {
+                  rawMessage = it
+               })
+            )
+         )
+      )
+
+      rawMessage.should.equal("""The fields "lastName (path = "last_name")}" are mandatory but there is no value provided.""")
+
    }
 }

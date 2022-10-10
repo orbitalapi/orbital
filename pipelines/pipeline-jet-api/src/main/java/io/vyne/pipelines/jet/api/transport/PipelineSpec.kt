@@ -140,7 +140,7 @@ data class StringContentProvider(val content: String) : MessageContentProvider {
 
 data class CsvRecordContentProvider(val content: CSVRecord, val nullValues: Set<String>) : MessageContentProvider {
    override fun asString(): String {
-      return content.joinToString { "," }
+      return content.joinToString()
    }
 
    override fun readAsTypedInstance(inputType: Type, schema: Schema): TypedInstance {
