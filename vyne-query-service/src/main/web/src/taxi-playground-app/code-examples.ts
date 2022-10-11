@@ -14,7 +14,7 @@ How it works:
 
 - Describe your services and model
 
-That's it! Links between servies will automatically be made where types are shared.
+That's it! Links between services will automatically be made where types are shared.
 
 e.g. In the example below, we have a Reviews service which accepts an Input of FilmId and returns a FilmReview.
 
