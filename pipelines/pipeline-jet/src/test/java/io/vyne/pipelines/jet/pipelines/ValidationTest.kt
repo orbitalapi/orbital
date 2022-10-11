@@ -29,7 +29,7 @@ class ValidationTest : BaseJetIntegrationTest() {
          input = BatchItemsSourceSpec(
             listOf(
                """{ "firstName" : "Augustine", "lastName" : null }""",
-               """{ "firstName" : "Martin", "lastName" : "McMuller" }""",
+               """{ "firstName" : null, "lastName" : "McMuller" }""",
                """{ "firstName" : "Marty", "lastName" : "Islander" }"""
             ),
             "Person".fqn()
@@ -46,14 +46,13 @@ class ValidationTest : BaseJetIntegrationTest() {
 
       applicationContext.moveTimeForward(Duration.ofSeconds(2))
       Awaitility.await().atMost(30, TimeUnit.SECONDS).until {
-         print(listSinkTarget.list.size)
          listSinkTarget.list.size == 2
       }
 
       val outputValue = listSinkTarget.list.map { (it as StringContentProvider).content }
       outputValue.toSet().should.equal(
          setOf(
-            """{ "firstName" : "Martin", "lastName" : "McMuller" }""",
+            """{ "firstName" : "Augustine", "lastName" : null }""",
             """{ "firstName" : "Marty", "lastName" : "Islander" }"""
          )
       )

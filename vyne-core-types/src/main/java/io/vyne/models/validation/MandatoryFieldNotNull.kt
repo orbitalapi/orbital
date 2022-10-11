@@ -13,7 +13,7 @@ import lang.taxi.accessors.PathBasedAccessor
 
 private fun getMandatoryFieldsWithNulls(typedObject: TypedObject): List<Pair<AttributeName, String?>> {
    return typedObject.type.attributes.entries
-      .filter { it.value.nullable }
+      .filter { !it.value.nullable }
       .filter { typedObject.getValue(it.key) is TypedNull }
       .map { it.key to it.value.accessorPath()}
 }

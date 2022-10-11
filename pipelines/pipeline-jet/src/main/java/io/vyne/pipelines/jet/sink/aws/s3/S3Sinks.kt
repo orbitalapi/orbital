@@ -296,10 +296,13 @@ object S3Sinks {
 
       private fun abortUpload() {
          this.logger.severe("Aborting the upload with id $uploadId to bucket $bucketName")
-         s3Client.abortMultipartUpload { b: AbortMultipartUploadRequest.Builder ->
-            b.uploadId(uploadId).bucket(
-               bucketName
-            ).key(key)
+         if (uploadId != null) {
+            // upload Id can be null if the sink is triggered with empy messages.
+            s3Client.abortMultipartUpload { b: AbortMultipartUploadRequest.Builder ->
+               b.uploadId(uploadId).bucket(
+                  bucketName
+               ).key(key)
+            }
          }
       }
 
