@@ -49,10 +49,13 @@ class S3SourceTest : BaseJetIntegrationTest() {
 
    @Test
    fun `can read a csv file from s3`() {
-      // Pipeline Kafka -> Direct
       val coinBaseSchema = """
 type alias Price as Decimal
 type alias Symbol as String
+@io.vyne.formats.Csv(
+  delimiter = ",",
+  nullValue = "NULL"
+)
 model OrderWindowSummary {
     symbol : Symbol by column("Symbol")
     open : Price by column("Open")
@@ -86,7 +89,7 @@ model OrderWindowSummary {
          validateJobStatusIsRunningEventually = false
       )
       job!!.future.get(10, TimeUnit.SECONDS)
-      listSinkTarget.size.should.equal(5)
+      listSinkTarget.size.should.equal(4)
    }
 
 }

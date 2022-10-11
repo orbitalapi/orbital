@@ -22,7 +22,7 @@ class TypedInstanceValidationTest {
          """
           model Person {
             firstName: FirstName inherits String
-            lastName: LastName? inherits String
+            lastName: LastName inherits String
          }
       """.trimIndent()
       )
@@ -72,7 +72,7 @@ class TypedInstanceValidationTest {
          """
           model Person {
             firstName: FirstName inherits String
-            lastName: LastName? inherits String
+            lastName: LastName inherits String
          }
       """.trimIndent()
       )
@@ -109,7 +109,7 @@ class TypedInstanceValidationTest {
          """
           model Person {
             firstName: FirstName inherits String by column("first_name")
-            lastName: LastName? inherits String by column("last_name")
+            lastName: LastName inherits String by column("last_name")
          }
       """.trimIndent()
       )

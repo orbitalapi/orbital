@@ -38,7 +38,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
       val pipelineSpec = PipelineSpec(
          "test-pipeline",
          input = FixedItemsSourceSpec(
-            items = queueOf("""{ "firstName" : "jimmy" }"""),
+            items = queueOf("""{ "firstName" : "jimmy", "lastName": "smith" }"""),
             typeName = "Person".fqn()
          ),
          outputs = listOf(outputSpec)
