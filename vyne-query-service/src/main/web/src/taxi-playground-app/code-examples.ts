@@ -33,6 +33,12 @@ service FilmsDatabase {
 
 model FilmReview {
   id : FilmId
+
+  // reviewScore is typed as an Int.
+  // This is fine, but could be more descriptive by using a
+  // semantic type (such as ReviewScore inherits Int),
+  // which lets other services indicate that they share the same attribute.
+  // The linter offers a warning to let us know.
   reviewScore: Int
 }
 
