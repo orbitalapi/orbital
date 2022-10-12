@@ -17,11 +17,6 @@ import { TuiDialogModule, TuiRootModule } from '@taiga-ui/core';
 import Plausible from 'plausible-tracker'
 import { PLAUSIBLE_ANALYTICS } from './plausible';
 
-const plausible = Plausible({
-  domain: 'voyager.vyne.co'
-})
-plausible.enableAutoOutboundTracking();
-
 @NgModule({
   imports: [
     BrowserModule,
@@ -48,7 +43,13 @@ plausible.enableAutoOutboundTracking();
     },
     {
       provide: PLAUSIBLE_ANALYTICS,
-      useValue: plausible
+      useFactory: () => {
+        const plausible = Plausible({
+          domain: 'voyager.vyne.co'
+        })
+        plausible.enableAutoOutboundTracking();
+        return plausible;
+      }
     }
   ],
   bootstrap: [TaxiPlaygroundAppComponent]
