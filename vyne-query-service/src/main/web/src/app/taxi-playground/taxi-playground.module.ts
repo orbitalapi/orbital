@@ -7,7 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { SubscribeDialogComponent } from './subscribe-dialog/subscribe-dialog.component';
 import { TuiCheckboxLabeledModule, TuiDataListWrapperModule, TuiInputModule, TuiSelectModule } from '@taiga-ui/kit';
-import { TuiButtonModule, TuiDialogModule, TuiTextfieldControllerModule } from '@taiga-ui/core';
+import { TuiButtonModule, TuiDialogModule, TuiHintBoxModule, TuiHintModule, TuiLinkModule, TuiTextfieldControllerModule, TuiTooltipModule } from '@taiga-ui/core';
 
 
 @NgModule({
@@ -30,6 +30,8 @@ import { TuiButtonModule, TuiDialogModule, TuiTextfieldControllerModule } from '
     TuiTextfieldControllerModule,
     TuiDataListWrapperModule,
     TuiCheckboxLabeledModule,
+    TuiHintModule,
+    TuiLinkModule,
     FormsModule
   ],
   entryComponents: [

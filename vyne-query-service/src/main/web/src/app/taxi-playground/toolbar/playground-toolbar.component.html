@@ -1,6 +1,12 @@
 <img src="assets/img/taxi-icon-white.svg" class="logo">
 <span class="title">Voyager</span>
 
+<span class="nav-link">
+  <a tuiLink href="https://taxilang.org/" target="_blank">
+    Docs
+  </a>
+</span>
+
 <span class="examples">Examples</span>
 <tui-select
   tuiTextfieldSize="s"
@@ -22,12 +28,18 @@
 <button tuiButton type="button" appearance="secondary" size="s" class="subscribe" (click)="subscribeForUpdates()">
   Get updates
 </button>
-<button class="header-icon-button">
+<button class="header-icon-button" 
+  tuiHintAppearance="onDark"
+  tuiHintDirection="left"
+  [tuiHint]="vyneTooltip">
   <a target="_blank" href="https://vyne.co">
     <mat-icon svgIcon="vyneDots"></mat-icon>
   </a>
 </button>
-<button class="header-icon-button">
+<button class="header-icon-button"
+  tuiHintAppearance="onDark"
+  tuiHintDirection="left"
+  [tuiHint]="githubTooltip">
   <a target="_blank" href="https://github.com/vyneco/voyager">
     <mat-icon svgIcon="brandGitHub"></mat-icon>
   </a>
@@ -36,3 +48,10 @@
   <mat-icon svgIcon="slack"></mat-icon>
 </button>
 
+<ng-template #vyneTooltip>
+  Vyne
+</ng-template>
+
+<ng-template #githubTooltip>
+  Issues & Roadmap
+</ng-template>

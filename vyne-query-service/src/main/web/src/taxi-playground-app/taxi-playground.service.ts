@@ -5,9 +5,10 @@ import { CompilationMessage, Schema } from 'src/app/services/schema';
 import { environment } from 'src/taxi-playground-app/environments/environment';
 import { map } from 'rxjs/operators';
 
-export enum SubscribeSuccess {
+export enum SubscriptionResult {
   SUCCESS = "SUCCESS",
   FAILED = "FAILED",
+  ALREADY_SUBSCRIBED = "ALREADY_SUBSCRIBED",
   UNKNOWN = "UNKNOWN"
 }
 
@@ -22,12 +23,16 @@ export class TaxiPlaygroundService {
     return this.httpClient.post<ParsedSchema>(`${environment.serverUrl}/api/schema/parse`, source);
   }
 
-  subscribeToEmails(subscribeDetails: SubscribeDetails): Observable<SubscribeSuccess> {
-    return this.httpClient.post<HttpResponse<null>>(`${environment.serverUrl}/api/subscribe`, subscribeDetails, { observe: 'response'})
+  subscribeToEmails(subscribeDetails: SubscribeDetails): Observable<SubscriptionResponse> {
+    return this.httpClient.post<SubscriptionResponse>(`${environment.serverUrl}/api/subscribe`, subscribeDetails, { observe: 'response'})
     .pipe(
-      map( response => response.status == 200 ? SubscribeSuccess.SUCCESS : SubscribeSuccess.FAILED)
+      map( response => response.body)
     );
   }
+}
+
+export interface SubscriptionResponse {
+  result: SubscriptionResult;
 }
 
 export interface ParsedSchema {

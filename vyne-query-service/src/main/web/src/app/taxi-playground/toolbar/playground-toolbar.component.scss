@@ -21,6 +21,12 @@
   }
 }
 
+.nav-link {
+  --tui-link: white;
+  --tui-link-hover: white;
+  margin-right: 10px;
+}
+
 .spacer {
   flex-grow: 1;
 }

@@ -14,6 +14,8 @@ html, body {
 body {
   margin: 0;
   font-family: $font-sans;
+
+  --tui-primary: #3b6af9;
 }
 
 /* For use in src/lib/core/theming/_palette.scss */
@@ -84,7 +86,6 @@ $accent: (
         A700 : #000000,
     )
 );
-
 
 
 

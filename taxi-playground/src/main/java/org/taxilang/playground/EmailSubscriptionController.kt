@@ -7,8 +7,14 @@ import org.springframework.http.*
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.RestTemplate
 import java.time.OffsetDateTime
+
+enum class SubscriptionType {
+   VOYAGER_ONLY,
+   GENERAL_MARKETING
+}
 
 @RestController
 class EmailSubscriptionController(
@@ -19,6 +25,11 @@ class EmailSubscriptionController(
    @Value("\${hubspot.subscriptions.general-marketing}") val generalMarketingSubscriptionId: String
 ) {
 
+   private val subscriptionIds = mapOf(
+      SubscriptionType.VOYAGER_ONLY to voyagerSubscriptionId,
+      SubscriptionType.GENERAL_MARKETING to generalMarketingSubscriptionId
+   )
+
    private val hubspotHeaders: HttpHeaders = HttpHeaders()
    val logger: Logger = LoggerFactory.getLogger(EmailSubscriptionController::class.java)
 
@@ -28,64 +39,105 @@ class EmailSubscriptionController(
    }
 
    @PostMapping("/api/subscribe")
-   fun subscribeFan(@RequestBody subscribeDetails: SubscribeDetails): ResponseEntity<EmptyResponse> {
+   fun subscribeFan(@RequestBody subscribeDetails: SubscribeDetails): ResponseEntity<UiSubscriptionResponse> {
       createContact(subscribeDetails.email)
 
-      val voyagerSubscriptionResponse = requestSubscriptionForContact(voyagerSubscriptionId, subscribeDetails)
-      if (voyagerSubscriptionResponse.statusCode == HttpStatus.OK) {
-         logger.info("Contact has been subscribed to the voyager mailing list")
+      val subscriptionsRequested = if (subscribeDetails.otherCommsConsent) {
+         listOf(SubscriptionType.VOYAGER_ONLY, SubscriptionType.GENERAL_MARKETING)
       } else {
-         logger.error("Failed to subscribe contact to the voyager mailing list")
+         listOf(SubscriptionType.VOYAGER_ONLY)
       }
 
-      var generalMarketingSubscriptionResponse: ResponseEntity<HubspotSubscriptionResponse>? = null
-      if (subscribeDetails.otherCommsConsent) {
-         generalMarketingSubscriptionResponse = requestSubscriptionForContact(generalMarketingSubscriptionId, subscribeDetails)
-         if (generalMarketingSubscriptionResponse.statusCode == HttpStatus.OK) {
-            logger.info("Contact has been subscribed to the general marketing mailing list")
-         } else {
-            logger.error("Failed to subscribe contact to the general marketing list")
+      val results = subscriptionsRequested
+         .map { subscriptionType ->
+            requestSubscriptionForContact(subscriptionIds[subscriptionType]!!, subscribeDetails).result
          }
-      }
 
-      return if (voyagerSubscriptionResponse.statusCode == HttpStatus.OK && (generalMarketingSubscriptionResponse == null || (generalMarketingSubscriptionResponse.statusCode == HttpStatus.OK))) {
-         ResponseEntity.ok(EmptyResponse())
+      return if (results.any { it == SubscriptionResult.FAILED } ) {
+         logger.error("An error occured for one or more subscriptions")
+         ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(UiSubscriptionResponse(SubscriptionResult.FAILED))
+      } else if (results.all { it == SubscriptionResult.ALREADY_SUBSCRIBED }) {
+         logger.info("Contact was already subscribed to requested subscriptions")
+         ResponseEntity.ok(UiSubscriptionResponse(SubscriptionResult.ALREADY_SUBSCRIBED))
+      } else if (results.all { it == SubscriptionResult.SUCCESS || it == SubscriptionResult.ALREADY_SUBSCRIBED} ) {
+         logger.info("All requested subscriptions successfully processed")
+         // all success or mix of already subscribed, in case they resubscribed with wider options
+         ResponseEntity.ok(UiSubscriptionResponse(SubscriptionResult.SUCCESS))
       } else {
-         ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(EmptyResponse())
+         logger.error("Unexpected combination of subscription results")
+         ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(UiSubscriptionResponse(SubscriptionResult.FAILED))
       }
    }
 
    private fun createContact(email: String) {
       val createContactUrl = "$hubspotApiUrl/crm/v3/objects/contacts"
 
-      val response = this.restTemplate.exchange(
-         createContactUrl,
-         HttpMethod.POST,
-         HttpEntity(HubspotCreateContactData(HubspotCreateContactProperties(email)), hubspotHeaders),
-         HubspotCreateContactResponse::class.java
-      )
+      try {
+         val response = this.restTemplate.exchange(
+            createContactUrl,
+            HttpMethod.POST,
+            HttpEntity(HubspotCreateContactData(HubspotCreateContactProperties(email)), hubspotHeaders),
+            HubspotCreateContactResponse::class.java
+         )
 
-      when (response.statusCode) {
-          HttpStatus.CREATED -> {
-             logger.info("New contact successfully created")
-          }
-          HttpStatus.CONFLICT -> {
-             logger.info("Contact already exists in hubspot")
-          }
-          else -> {
-             logger.error("Error occurred creating contact in Hubspot for email $email")
-          }
+         when (response.statusCode) {
+            HttpStatus.CREATED -> {
+               logger.info("New contact successfully created")
+            }
+            else -> {
+               logger.error("New contact call succeeded but with unexpected status code ${response.statusCode}")
+            }
+         }
+      } catch (e: HttpClientErrorException) {
+         when (e.statusCode) {
+            HttpStatus.CONFLICT -> {
+               logger.info("Contact already exists in hubspot, proceed with subscription")
+            }
+            else -> {
+               logger.info("Hubspot create contract call failed: ${e.message}")
+               throw e
+            }
+         }
       }
    }
 
-   private fun requestSubscriptionForContact(subscriptionId: String, subscribeDetails: SubscribeDetails): ResponseEntity<HubspotSubscriptionResponse> {
+   private fun requestSubscriptionForContact(
+      subscriptionId: String,
+      subscribeDetails: SubscribeDetails
+   ): SubscriptionResponse {
       val subscriptionUrl = "$hubspotApiUrl/communication-preferences/v3/subscribe"
 
-      return this.restTemplate.exchange(
-         subscriptionUrl,
-         HttpMethod.POST,
-         HttpEntity(HubspotSubscriptionData(subscribeDetails.email, subscriptionId, "CONSENT_WITH_NOTICE"), hubspotHeaders),
-         HubspotSubscriptionResponse::class.java)
+
+      return try {
+         val response = this.restTemplate.exchange(
+            subscriptionUrl,
+            HttpMethod.POST,
+            HttpEntity(
+               HubspotSubscriptionData(subscribeDetails.email, subscriptionId, "CONSENT_WITH_NOTICE"),
+               hubspotHeaders
+            ),
+            HubspotSubscriptionResponse::class.java
+         ).body
+
+         logger.info("Contact was subscribed to subscription $subscriptionId")
+
+         SubscriptionResponse(
+            SubscriptionResult.SUCCESS,
+            response
+         )
+      } catch (e: HttpClientErrorException) {
+         if (e.statusCode == HttpStatus.BAD_REQUEST && e.message?.contains("already subscribed to subscription") == true) {
+            logger.info("Contact was already subscribed to subscription $subscriptionId")
+            SubscriptionResponse(
+               SubscriptionResult.ALREADY_SUBSCRIBED
+            )
+         } else {
+            logger.error("Subscription for contact failed for $subscriptionId. Error: ${e.message}")
+            SubscriptionResponse(
+               SubscriptionResult.FAILED
+            )
+         }
+      }
    }
 }
 
@@ -153,6 +205,17 @@ data class HubspotSubscriptionData(
    val legalBasisExplanation: String? = null
 )
 
+data class SubscriptionResponse(
+   val result: SubscriptionResult,
+   val hubspotData: HubspotSubscriptionResponse? = null
+)
+
+enum class SubscriptionResult {
+   SUCCESS,
+   ALREADY_SUBSCRIBED,
+   FAILED
+}
+
 data class HubspotSubscriptionResponse(
    val id: String,
    val name: String?,
@@ -164,4 +227,4 @@ data class HubspotSubscriptionResponse(
    val legalBasisExplanation: String?
 )
 
-class EmptyResponse
+class UiSubscriptionResponse(val result: SubscriptionResult)

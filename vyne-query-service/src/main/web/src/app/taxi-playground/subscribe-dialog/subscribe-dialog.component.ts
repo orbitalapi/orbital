@@ -3,7 +3,7 @@ import { FormControl, FormGroup } from '@angular/forms';
 import { TuiDialogContext } from '@taiga-ui/core';
 import {POLYMORPHEUS_CONTEXT} from '@tinkoff/ng-polymorpheus';
 import { PLAUSIBLE_ANALYTICS } from 'src/taxi-playground-app/plausible';
-import { SubscribeSuccess, TaxiPlaygroundService } from 'src/taxi-playground-app/taxi-playground.service';
+import { SubscriptionResult, TaxiPlaygroundService } from 'src/taxi-playground-app/taxi-playground.service';
 
 @Component({
   selector: 'app-subscribe-dialog',
@@ -13,7 +13,7 @@ import { SubscribeSuccess, TaxiPlaygroundService } from 'src/taxi-playground-app
 export class SubscribeDialogComponent {
 
   subscribed = false
-  subscriptionResult: SubscribeSuccess = SubscribeSuccess.UNKNOWN
+  subscriptionResult: SubscriptionResult = SubscriptionResult.UNKNOWN
 
   constructor(
     @Inject(POLYMORPHEUS_CONTEXT) private readonly context: TuiDialogContext<boolean>,
@@ -32,13 +32,13 @@ export class SubscribeDialogComponent {
     this.taxiPlaygroundService.subscribeToEmails({
       email: data.email,
       otherCommsConsent: data.otherCommsCheckbox
-    }).subscribe(result => {
+    }).subscribe(response => {
       this.subscribed = true;
-      this.subscriptionResult = result;
+      this.subscriptionResult = response.result;
       this.ref.markForCheck();
     }, error => {
       this.subscribed = true;
-      this.subscriptionResult = SubscribeSuccess.FAILED;
+      this.subscriptionResult = SubscriptionResult.FAILED;
       this.ref.markForCheck();
     }); 
     
@@ -49,6 +49,10 @@ export class SubscribeDialogComponent {
   }
 
   subscribeSuccess() {
-    return this.subscriptionResult == SubscribeSuccess.SUCCESS;
+    return this.subscriptionResult == SubscriptionResult.SUCCESS;
+  }
+
+  alreadySubscribed() {
+    return this.subscriptionResult == SubscriptionResult.ALREADY_SUBSCRIBED;
   }
 }
