@@ -21,8 +21,7 @@ data "aws_iam_policy_document" "task_permissions" {
 
     actions = [
       "logs:CreateLogStream",
-      "logs:PutLogEvents",
-      "cloudwatch:PutMetricData"
+      "logs:PutLogEvents"
     ]
   }
 }
@@ -37,7 +36,8 @@ data "aws_iam_policy_document" "task_ecs_exec_policy" {
       "ssmmessages:CreateControlChannel",
       "ssmmessages:CreateDataChannel",
       "ssmmessages:OpenControlChannel",
-      "ssmmessages:OpenDataChannel"
+      "ssmmessages:OpenDataChannel",
+      "cloudwatch:PutMetricData"
     ]
   }
 }
