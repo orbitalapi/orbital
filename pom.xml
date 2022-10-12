@@ -377,7 +377,7 @@
          <dependency>
             <groupId>app.cash.turbine</groupId>
             <artifactId>turbine-jvm</artifactId>
-            <version>0.11.0</version>
+            <version>0.12.0</version>
          </dependency>
          <dependency>
             <groupId>com.h2database</groupId>
