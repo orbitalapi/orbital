@@ -22,6 +22,7 @@ data "aws_iam_policy_document" "task_permissions" {
     actions = [
       "logs:CreateLogStream",
       "logs:PutLogEvents",
+      "cloudwatch:PutMetricData"
     ]
   }
 }
@@ -62,29 +63,29 @@ data "aws_iam_policy_document" "task_execution_permissions" {
 
 
 resource "aws_iam_role" "execution" {
-  name               = "task-execution-role-${var.environment}"
+  name               = "${var.system_name}-task-execution-role-${var.environment}"
   assume_role_policy = data.aws_iam_policy_document.task_assume.json
 }
 
 resource "aws_iam_role_policy" "task_execution" {
-  name   = "task-execution-${var.environment}"
+  name   = "${var.system_name}-task-execution-${var.environment}"
   role   = aws_iam_role.execution.id
   policy = data.aws_iam_policy_document.task_execution_permissions.json
 }
 
 resource "aws_iam_role" "task" {
-  name               = "task-role-${var.environment}"
+  name               = "${var.system_name}-task-role-${var.environment}"
   assume_role_policy = data.aws_iam_policy_document.task_assume.json
 }
 
 resource "aws_iam_role_policy" "log_agent" {
-  name   = "log-permissions-${var.environment}"
+  name   = "${var.system_name}-log-permissions-${var.environment}"
   role   = aws_iam_role.task.id
   policy = data.aws_iam_policy_document.task_permissions.json
 }
 
 resource "aws_iam_role_policy" "ecs_exec_inline_policy" {
-  name   = "ecs-exec-permissions-${var.environment}"
+  name   = "${var.system_name}-ecs-exec-permissions-${var.environment}"
   role   = aws_iam_role.task.id
   policy = data.aws_iam_policy_document.task_ecs_exec_policy.json
 }

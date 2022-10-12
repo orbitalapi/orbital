@@ -31,7 +31,7 @@ resource "aws_security_group" "ecs_service" {
 
 module "voyager" {
   source                    = "./modules/service"
-  service_name              = "voyager"
+  service_name              = var.system_name
   environment               = var.environment
   region                    = var.region
   vpc_id                    = var.vpc_id

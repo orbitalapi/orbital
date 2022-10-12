@@ -26,6 +26,7 @@ variables:
 
 stages:
    - build
+   - publish
    - deploy
    - release
    - test
@@ -206,7 +207,7 @@ regression-test:
 # - The gitlab runner must be running in privileged mode. (eg., `privileged = true` in config.toml)
 # See: https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#docker-in-docker-with-tls-enabled-in-the-docker-executor
 .publish-docker:
-   stage: deploy
+   stage: publish
 #   except:
 #      - tags
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.17-0.8.2
@@ -293,7 +294,7 @@ publish-analytics-server-docker:
 
 .publish-docker-gitlab:
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.8-0.6.3
-   stage: deploy
+   stage: publish
    except:
       - tags
    variables:
@@ -329,7 +330,7 @@ publish-analytics-server-docker:
          -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${tag}"
          -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${CI_COMMIT_SHORT_SHA}" .
 
-publish-taxi-playground:
+publish-voyager:
    extends: .publish-docker-gitlab
    variables:
       projectDir: taxi-playground
@@ -391,7 +392,7 @@ terraform-deploy-prod:
    rules:
       - if: $CI_COMMIT_BRANCH == "main"
 
-terraform-deploy-dev-taxi-playground:
+terraform-deploy-dev-voyager:
    extends: .terraform-deploy
    environment:
       name: $TF_STATE_NAME_DEV
@@ -403,7 +404,7 @@ terraform-deploy-dev-taxi-playground:
    rules:
       - when: manual
 
-terraform-deploy-prod-taxi-playground:
+terraform-deploy-prod-voyager:
    extends: .terraform-deploy
    environment:
       name: $TF_STATE_NAME_PROD
