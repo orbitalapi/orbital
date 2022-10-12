@@ -96,8 +96,8 @@ class AwsConfig {
             "cloudwatch.step" to Duration.ofMinutes(1).toString()
          )
 
-         override fun get(key: String): String {
-            return configuration[key]!!
+         override fun get(key: String): String? {
+            return configuration[key]
          }
       }
    }
