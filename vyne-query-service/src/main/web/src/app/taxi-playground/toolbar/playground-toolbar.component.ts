@@ -61,4 +61,11 @@ export class PlaygroundToolbarComponent {
     this.selectedExample = value;
     this.selectedExampleChange.next(value);
   }
+
+  openNewSite(url: string) {
+    let newWindow = window.open();
+    newWindow.opener = null;
+    // @ts-ignore says string can't be assigned here, it's wrong
+    newWindow.location = url;
+  }
 }

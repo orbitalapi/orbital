@@ -2,7 +2,7 @@
 <span class="title">Voyager</span>
 
 <span class="nav-link">
-  <a tuiLink href="https://taxilang.org/" target="_blank">
+  <a tuiLink (click)="openNewSite('https://taxilang.org/')">
     Docs
   </a>
 </span>
@@ -32,7 +32,7 @@
   tuiHintAppearance="onDark"
   tuiHintDirection="left"
   [tuiHint]="vyneTooltip">
-  <a target="_blank" href="https://vyne.co">
+  <a (click)="openNewSite('https://vyne.co')">
     <mat-icon svgIcon="vyneDots"></mat-icon>
   </a>
 </button>
@@ -40,7 +40,7 @@
   tuiHintAppearance="onDark"
   tuiHintDirection="left"
   [tuiHint]="githubTooltip">
-  <a target="_blank" href="https://github.com/vyneco/voyager">
+  <a (click)="openNewSite('https://github.com/vyneco/voyager')">
     <mat-icon svgIcon="brandGitHub"></mat-icon>
   </a>
 </button>
