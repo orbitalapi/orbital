@@ -35,15 +35,18 @@ export class PlaygroundToolbarComponent {
   @Output()
   selectedExampleChange = new EventEmitter<CodeSample>();
 
+  @Output()
+  generateShareUrl = new EventEmitter();
+
   slackInvite() {
-    this.plausible.trackEvent("visit slack invite");
+    this.plausible.trackEvent('visit slack invite');
     window.open(this.slackInviteLink);
   }
 
   showSubscribeDialog = false;
 
   subscribeForUpdates() {
-    this.plausible.trackEvent("visit subscribe dialog");
+    this.plausible.trackEvent('visit subscribe dialog');
     this.dialog.subscribe({
       next: data => {
         console.info(`Dialog emitted data = ${data}`);

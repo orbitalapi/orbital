@@ -1,9 +1,0 @@
-management:
-   endpoint:
-      metrics:
-         enabled: true
-   endpoints:
-      web:
-         exposure:
-            include: '*'
-

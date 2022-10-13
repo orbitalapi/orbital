@@ -6,14 +6,30 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { SubscribeDialogComponent } from './subscribe-dialog/subscribe-dialog.component';
-import { TuiCheckboxLabeledModule, TuiDataListWrapperModule, TuiInputModule, TuiSelectModule } from '@taiga-ui/kit';
-import { TuiButtonModule, TuiDialogModule, TuiHintBoxModule, TuiHintModule, TuiLinkModule, TuiTextfieldControllerModule, TuiTooltipModule } from '@taiga-ui/core';
+import {
+  TuiCheckboxLabeledModule,
+  TuiDataListWrapperModule,
+  TuiInputCopyModule,
+  TuiInputModule,
+  TuiSelectModule
+} from '@taiga-ui/kit';
+import {
+  TuiButtonModule,
+  TuiDialogModule,
+  TuiHintBoxModule,
+  TuiHintModule,
+  TuiLinkModule,
+  TuiTextfieldControllerModule,
+  TuiTooltipModule
+} from '@taiga-ui/core';
+import { ShareDialogComponent } from './share-dialog/share-dialog.component';
 
 
 @NgModule({
   declarations: [
     PlaygroundToolbarComponent,
-    SubscribeDialogComponent
+    SubscribeDialogComponent,
+    ShareDialogComponent
   ],
   exports: [
     PlaygroundToolbarComponent
@@ -32,7 +48,8 @@ import { TuiButtonModule, TuiDialogModule, TuiHintBoxModule, TuiHintModule, TuiL
     TuiCheckboxLabeledModule,
     TuiHintModule,
     TuiLinkModule,
-    FormsModule
+    FormsModule,
+    TuiInputCopyModule
   ],
   entryComponents: [
     SubscribeDialogComponent
@@ -52,6 +69,10 @@ export class TaxiPlaygroundModule {
     this.matIconRegistry.addSvgIcon(
       `vyneDots`,
       this.domSanitizer.bypassSecurityTrustResourceUrl(`../../assets/img/vyne-logo-dots.svg`)
+    );
+    this.matIconRegistry.addSvgIcon(
+      `share`,
+      this.domSanitizer.bypassSecurityTrustResourceUrl(`../../assets/img/tabler/share.svg`)
     );
   }
 }

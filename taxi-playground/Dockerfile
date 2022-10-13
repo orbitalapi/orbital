@@ -1,4 +1,4 @@
-FROM eclipse-temurin:11.0.13_8-jre-focal
+FROM eclipse-temurin:11.0.15_10-jre-focal
 RUN apt-get update
 ARG JAR_FILE=target/*.jar
 
