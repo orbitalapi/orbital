@@ -16,6 +16,8 @@ import { TuiDialogModule, TuiRootModule } from '@taiga-ui/core';
 
 import Plausible from 'plausible-tracker'
 import { PLAUSIBLE_ANALYTICS } from './plausible';
+import { RouterModule } from '@angular/router';
+import { TaxiPlaygroundContainerAppComponent } from 'src/taxi-playground-app/taxi-playground-container-app.component';
 
 @NgModule({
   imports: [
@@ -32,10 +34,15 @@ import { PLAUSIBLE_ANALYTICS } from './plausible';
     AuthModule.forRoot({
       domain: 'orbitalhq.eu.auth0.com',
       clientId: 'ZaDGRQWEfgTFtlWVR9AXWg9vOiBxgVPv'
-    })
+    }),
+    RouterModule.forRoot([
+      { path: 's/:shareSlug', component: TaxiPlaygroundAppComponent },
+      { path: '', component: TaxiPlaygroundAppComponent },
+      { path: '**', redirectTo: '' }
+    ])
   ],
-  declarations: [TaxiPlaygroundAppComponent],
-  exports: [TaxiPlaygroundAppComponent],
+  declarations: [TaxiPlaygroundContainerAppComponent, TaxiPlaygroundAppComponent],
+  exports: [TaxiPlaygroundContainerAppComponent, TaxiPlaygroundAppComponent],
   providers: [
     {
       provide: LANGUAGE_SERVER_WS_ADDRESS_TOKEN,
@@ -52,7 +59,7 @@ import { PLAUSIBLE_ANALYTICS } from './plausible';
       }
     }
   ],
-  bootstrap: [TaxiPlaygroundAppComponent]
+  bootstrap: [TaxiPlaygroundContainerAppComponent]
 })
 export class TaxiPlaygroundAppModule {
 }

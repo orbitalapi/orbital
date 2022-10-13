@@ -25,21 +25,30 @@
 </tui-select>
 
 <div class="spacer"></div>
-<button tuiButton type="button" appearance="secondary" size="s" class="subscribe" (click)="subscribeForUpdates()">
+<button tuiButton type="button" appearance="secondary" size="s" class="header-icon-spacer "
+        (click)="subscribeForUpdates()">
   Get updates
 </button>
-<button class="header-icon-button" 
-  tuiHintAppearance="onDark"
-  tuiHintDirection="left"
-  [tuiHint]="vyneTooltip">
+<button class="header-icon-button header-icon-button-with-text header-icon-spacer "
+        tuiHintAppearance="onDark"
+        tuiHintDirection="left"
+        (click)="generateShareUrl.emit()">
+  <mat-icon svgIcon="share"></mat-icon>
+  Share
+</button>
+
+<button class="header-icon-button"
+        tuiHintAppearance="onDark"
+        tuiHintDirection="left"
+        [tuiHint]="vyneTooltip">
   <a (click)="openNewSite('https://vyne.co')">
     <mat-icon svgIcon="vyneDots"></mat-icon>
   </a>
 </button>
 <button class="header-icon-button"
-  tuiHintAppearance="onDark"
-  tuiHintDirection="left"
-  [tuiHint]="githubTooltip">
+        tuiHintAppearance="onDark"
+        tuiHintDirection="left"
+        [tuiHint]="githubTooltip">
   <a (click)="openNewSite('https://github.com/vyneco/voyager')">
     <mat-icon svgIcon="brandGitHub"></mat-icon>
   </a>

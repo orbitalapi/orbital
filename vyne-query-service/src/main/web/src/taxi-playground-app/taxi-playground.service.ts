@@ -6,10 +6,10 @@ import { environment } from 'src/taxi-playground-app/environments/environment';
 import { map } from 'rxjs/operators';
 
 export enum SubscriptionResult {
-  SUCCESS = "SUCCESS",
-  FAILED = "FAILED",
-  ALREADY_SUBSCRIBED = "ALREADY_SUBSCRIBED",
-  UNKNOWN = "UNKNOWN"
+  SUCCESS = 'SUCCESS',
+  FAILED = 'FAILED',
+  ALREADY_SUBSCRIBED = 'ALREADY_SUBSCRIBED',
+  UNKNOWN = 'UNKNOWN'
 }
 
 @Injectable({
@@ -24,11 +24,24 @@ export class TaxiPlaygroundService {
   }
 
   subscribeToEmails(subscribeDetails: SubscribeDetails): Observable<SubscriptionResponse> {
-    return this.httpClient.post<SubscriptionResponse>(`${environment.serverUrl}/api/subscribe`, subscribeDetails, { observe: 'response'})
-    .pipe(
-      map( response => response.body)
-    );
+    return this.httpClient.post<SubscriptionResponse>(`${environment.serverUrl}/api/subscribe`, subscribeDetails, { observe: 'response' })
+      .pipe(
+        map(response => response.body)
+      );
   }
+
+  getShareUrl(source: string): Observable<SharedSchemaResponse> {
+    return this.httpClient.post<SharedSchemaResponse>(`${environment.serverUrl}/api/schema/share`, source);
+  }
+
+  loadSharedSchema(slug: string): Observable<string> {
+    return this.httpClient.get(`${environment.serverUrl}/api/schema/share/${slug}`, { responseType: 'text' })
+  }
+}
+
+export interface SharedSchemaResponse {
+  uri: string;
+  id: string;
 }
 
 export interface SubscriptionResponse {

@@ -27,6 +27,10 @@
   margin-right: 10px;
 }
 
+.examples {
+  margin-left: 3rem;
+}
+
 .spacer {
   flex-grow: 1;
 }
@@ -71,12 +75,22 @@ mat-icon {
 }
 
 .header-icon-button {
+  display: flex;
+  align-items: center;
 
   &:hover {
     cursor: pointer;
   }
+
+  color: white;
 }
 
-.subscribe {
-  margin-right: 40px;
+.header-icon-button-with-text {
+  mat-icon {
+    margin-right: 0.5rem;
+  }
+}
+
+.header-icon-spacer {
+  margin-right: 3rem;
 }

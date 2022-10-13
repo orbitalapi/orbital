@@ -12,6 +12,7 @@ import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.config.CorsRegistry
 import org.springframework.web.reactive.config.WebFluxConfigurer
@@ -38,7 +39,7 @@ class TaxiPlaygroundApp {
 }
 
 @Configuration
-@Profile("!dev")
+@Profile("!local")
 class AwsConfig {
 
    private val logger = KotlinLogging.logger {}
@@ -105,7 +106,7 @@ class AwsConfig {
 
 
 @Configuration
-@Profile("dev")
+@Profile("local")
 class WebConfiguration : WebFluxConfigurer {
    override fun addCorsMappings(registry: CorsRegistry) {
       registry.addMapping("/**").allowedMethods("*")
@@ -117,3 +118,7 @@ class WebConfiguration : WebFluxConfigurer {
 
 
 data class MetricsTags(val tags: List<String>)
+
+@Configuration
+@EnableJpaRepositories
+class JpaConfig

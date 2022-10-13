@@ -66,13 +66,27 @@ variable "route53_zone_id" {
 }
 
 variable "domain_name" {
-  type        = string
-  description = "The sub domain name being used for this environment"
+   type        = string
+   description = "The sub domain name being used for this environment"
 }
 
 variable "taxi_playground_docker_image_id" {
-  type        = string
-  description = "The specific image ID which should be deployed"
+   type        = string
+   description = "The specific image ID which should be deployed"
 }
 
 
+variable "database_host" {
+   type        = string
+   description = "The RDS Postgres hostname."
+}
+
+variable "database_username" {
+   type        = string
+   description = "The RDS Postgres username."
+}
+
+variable "database_password" {
+   type        = string
+   description = "The RDS Postgres password."
+}
