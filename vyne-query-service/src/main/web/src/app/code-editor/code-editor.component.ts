@@ -139,10 +139,15 @@ export class CodeEditorComponent implements OnDestroy {
 
   private monacoLanguageClient: MonacoLanguageClient;
 
+  private webSocket: WebSocket;
+  private transport: {
+    reader: WebSocketMessageReader,
+    writer: WebSocketMessageWriter
+  };
 
   constructor(@Inject(LANGUAGE_SERVER_WS_ADDRESS_TOKEN) private languageServerWsAddress: string) {
     // This does nothing, but prevents tree-shaking
-    const features = [monadoEditorAll, monacoFeature4, monacoFeature5, monacoFeature6, monacoFeature7, monacoFeature8,languageFeatureService];
+    const features = [monadoEditorAll, monacoFeature4, monacoFeature5, monacoFeature6, monacoFeature7, monacoFeature8, languageFeatureService];
 
     this.monacoModel = monaco.editor.createModel(this.content, TAXI_LANGUAGE_ID, monaco.Uri.parse('inmemory://query.taxi'));
     monaco.languages.register({ id: TAXI_LANGUAGE_ID });
@@ -156,6 +161,9 @@ export class CodeEditorComponent implements OnDestroy {
       debounceTime(500),
     ).subscribe(e => {
       this.updateContent(this.monacoModel.getValue());
+      if (this.webSocket.readyState != this.webSocket.OPEN) {
+        this.createWebsocketConnection()
+      }
     })
     this.monacoModel.onDidChangeContent(e => this.modelChanged$.next(e));
   }
@@ -179,7 +187,9 @@ export class CodeEditorComponent implements OnDestroy {
     this.updateActionsOnEditor();
     MonacoServices.install();
 
-    this.createLanguageClient();
+    this.createWebsocketConnection().then(() => {
+      this.createLanguageClient();
+    });
   }
 
   private updateActionsOnEditor() {
@@ -188,50 +198,51 @@ export class CodeEditorComponent implements OnDestroy {
     })
   }
 
+  createWebsocketConnection(): Promise<void> {
+    this.webSocket = new WebSocket(this.languageServerWsAddress, []);
 
-  createLanguageClient() {
-    const webSocket = new WebSocket(this.languageServerWsAddress, []);
-
-    // Implemented following the example here:
-    // https://github.com/TypeFox/monaco-languageclient/blob/main/packages/examples/client/src/client.ts#L56
-    webSocket.onopen = () => {
-      const socket = toSocket(webSocket);
+    return new Promise<void>((resolve) => {
+      this.webSocket.onopen = () => {
+        resolve();
+      };
+    }).then(() => {
+      const socket = toSocket(this.webSocket);
       const reader = new WebSocketMessageReader(socket);
       const writer = new WebSocketMessageWriter(socket);
+      this.transport = { reader, writer };
+    });
+  }
 
-      const transports = { reader, writer }
-
-      this.monacoLanguageClient = new MonacoLanguageClient({
-        name: 'vyne-taxi-language-client',
-        clientOptions: {
-          // use a language id as a document selector
-          documentSelector: [TAXI_LANGUAGE_ID],
-          // disable the default error handler
-          errorHandler: {
-            error: () => ({ action: ErrorAction.Continue }),
-            closed: () => ({ action: CloseAction.DoNotRestart })
-          }
-        },
-        // create a language client connection from the JSON RPC connection on demand
-        connectionProvider: {
-          get: () => {
-            return Promise.resolve(transports);
-          }
+  createLanguageClient() {
+    this.monacoLanguageClient = new MonacoLanguageClient({
+      name: 'vyne-taxi-language-client',
+      clientOptions: {
+        // use a language id as a document selector
+        documentSelector: [TAXI_LANGUAGE_ID],
+        // disable the default error handler
+        errorHandler: {
+          error: () => ({ action: ErrorAction.Continue }),
+          closed: () => ({ action: CloseAction.DoNotRestart })
         }
+      },
+      // create a language client connection from the JSON RPC connection on demand
+      connectionProvider: {
+        get: () => {
+          return Promise.resolve(this.transport);
+        }
+      }
+    });
+    this.monacoLanguageClient.start()
+      .then(() => {
+        this.monacoLanguageClient.sendNotification(DidOpenTextDocumentNotification.type, {
+          textDocument: {
+            uri: 'inmemory://query.taxi',
+            languageId: TAXI_LANGUAGE_ID,
+            version: 0,
+            text: this.content
+          }
+        })
       });
-      this.monacoLanguageClient.start()
-        .then(() => {
-          this.monacoLanguageClient.sendNotification(DidOpenTextDocumentNotification.type, {
-            textDocument: {
-              uri: 'inmemory://query.taxi',
-              languageId: TAXI_LANGUAGE_ID,
-              version: 0,
-              text: this.content
-            }
-          })
-        });
-    }
-
   }
 
   updateContent(content: string) {
