@@ -1,5 +1,5 @@
 locals {
-  system_name = "voyager-${var.environment}"
+  system_name = "voyager"
 
   any_ip       = "0.0.0.0/0"
   ips_for_http = [local.any_ip] # TODO Remove any_ip

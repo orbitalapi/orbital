@@ -1,7 +1,7 @@
 
 resource "aws_cloudwatch_log_group" "main" {
   name              = "${var.system_name}_${var.environment}"
-  retention_in_days = 90
+  retention_in_days = 5
 }
 
 #resource "aws_cloudwatch_log_metric_filter" "app_error_metric_filter" {
