@@ -1,4 +1,4 @@
-import { Position, Node, internalsSymbol } from 'reactflow';
+import { internalsSymbol, Node, Position } from 'reactflow';
 import { HandleIds } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
 
 // This whole file taken from : https://reactflow.dev/docs/examples/edges/simple-floating-edges/
@@ -16,6 +16,12 @@ function getCoords(nodeA: Node, nodeAHandleId: string, nodeB: Node, canFloat: bo
     position = centerA.x > centerB.x ? Position.Left : Position.Right;
   } else {
     const handle = findHandle(nodeA, nodeAHandleId);
+    if (!handle) {
+      // Looks like this can happen if we try to layout before everything is rendered.
+      // From testing, looks like we recover
+      console.warn(`No handle with ${nodeAHandleId} found on for node ${nodeA.id}`)
+      return [0, 0, Position.Left];
+    }
     position = handle.position as Position.Left | Position.Right;
   }
 

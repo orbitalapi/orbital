@@ -10,7 +10,7 @@ import {
   Type
 } from '../../services/schema';
 import { AppendLinksHandler, NodeType } from './schema-flow.react';
-import { Node, Position, XYPosition } from 'reactflow';
+import { Edge, Node, Position, XYPosition } from 'reactflow';
 import { splitOperationQualifiedName } from '../../service-view/service-view.component';
 import { CSSProperties } from 'react';
 
@@ -40,8 +40,29 @@ export function collectLinks(links: Links | null): Link[] {
   return links.inputs.concat(links.outputs);
 }
 
+
+export function collectAllLinks(data: MemberWithLinks) {
+  let childLinks = [];
+  if (data.links instanceof ModelLinks || data.links instanceof ServiceLinks) {
+    childLinks = data.links.collectAllChildLinks()
+  }
+  return collectLinks(data.links).concat(childLinks);
+}
+
 export interface HasChildLinks extends Links {
   collectAllChildLinks(): Link[]
+}
+
+export function edgeSourceAndTargetExist(nodes: Map<string, Node<MemberWithLinks>>, edge: Edge): boolean {
+  const sourceAndTargetExist = nodes.has(edge.source) && nodes.has(edge.target)
+  if (!sourceAndTargetExist) {
+    return false;
+  }
+  const sourceHandleExists = collectAllLinks(nodes.get(edge.source).data)
+    .some(link => link.sourceHandleId === edge.sourceHandle);
+  const targetHandleExists = collectAllLinks(nodes.get(edge.target).data)
+    .some(link => link.targetHandleId === edge.targetHandle);
+  return sourceHandleExists && targetHandleExists;
 }
 
 export class ModelLinks implements HasChildLinks {

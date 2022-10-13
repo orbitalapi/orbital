@@ -1,12 +1,12 @@
 import { findSchemaMember, Schema, SchemaMemberType, ServiceMember } from '../../services/schema';
 import { Edge, EdgeMarkerType, MarkerType, Node, XYPosition } from 'reactflow';
 import {
-  buildSchemaNode,
+  buildSchemaNode, collectAllLinks,
   collectionOperations,
   collectLinks,
   EdgeParams,
   getNodeId,
-  Link,
+  Link, edgeSourceAndTargetExist,
   MemberWithLinks,
   ModelLinks,
   ServiceLinks
@@ -65,6 +65,10 @@ export class SchemaChartController {
     const builtEdgedById = new Map<string, Edge>();
     this.currentEdges
       .filter(edge => builtNodesById.has(edge.source) && builtNodesById.has(edge.target))
+      .filter(edge => {
+        const sourceAndTargetExist = edgeSourceAndTargetExist(builtNodesById, edge);
+        return sourceAndTargetExist;
+      })
       .forEach(edge => builtEdgedById.set(edge.id, edge));
 
     if (buildOptions.autoAppendLinks) {
@@ -134,15 +138,6 @@ export class SchemaChartController {
     }
   }
 
-
-  private collectAllLinks(data: MemberWithLinks) {
-    let childLinks = [];
-    if (data.links instanceof ModelLinks || data.links instanceof ServiceLinks) {
-      childLinks = data.links.collectAllChildLinks()
-    }
-    return collectLinks(data.links).concat(childLinks);
-  }
-
   private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, sourceSchemaKind: SchemaMemberType, targetNode: Node<MemberWithLinks>, targetHandleId: string, targetSchemaKind: SchemaMemberType, linkId?: string): Edge {
     let label: string;
     let markerStart, markerEnd: EdgeMarkerType;
@@ -168,8 +163,7 @@ export class SchemaChartController {
       };
       lineColor = modelNodeBorderColor;
     }
-    const style: CSSProperties = {
-    };
+    const style: CSSProperties = {};
     if (sourceSchemaKind === 'TYPE' && targetSchemaKind === 'TYPE') {
       lineColor = colors.lime['300'];
       style.strokeDasharray = '5,5';
@@ -207,7 +201,7 @@ export class SchemaChartController {
     // and append an edge
     const createdEdges = new Map<string, Edge>();
     Array.from(nodes.values()).forEach(node => {
-      const nodeLinks = this.collectAllLinks(node.data);
+      const nodeLinks = collectAllLinks(node.data);
       nodeLinks.filter(link => {
         return nodes.has(link.sourceNodeId) && nodes.has(link.targetNodeId)
       }).forEach(link => {
@@ -233,3 +227,4 @@ export function isRelativeNodePosition(item: any): item is RelativeNodePosition 
 export interface RelativeNodeXyPosition extends RelativeNodePosition {
   position: XYPosition
 }
+
