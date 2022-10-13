@@ -332,6 +332,7 @@ publish-analytics-server-docker:
 
 publish-voyager:
    extends: .publish-docker-gitlab
+   stage: publish
    variables:
       projectDir: taxi-playground
       microservice: taxi-playground
@@ -364,6 +365,7 @@ build-helm:
 
 .terraform-deploy:
    extends: .terraform:deploy
+   stage: deploy
    before_script:
       - echo ${TF_ROOT}
       - cd ${TF_ROOT}
@@ -372,6 +374,7 @@ build-helm:
 
 terraform-deploy-dev:
    extends: .terraform-deploy
+   stage: deploy
    environment:
       name: $TF_STATE_NAME_DEV
    variables:
@@ -383,6 +386,7 @@ terraform-deploy-dev:
 
 terraform-deploy-prod:
    extends: .terraform-deploy
+   stage: deploy
    environment:
       name: $TF_STATE_NAME_PROD
    variables:
@@ -394,6 +398,7 @@ terraform-deploy-prod:
 
 terraform-deploy-dev-voyager:
    extends: .terraform-deploy
+   stage: deploy
    environment:
       name: $TF_STATE_NAME_DEV
    variables:
@@ -406,6 +411,7 @@ terraform-deploy-dev-voyager:
 
 terraform-deploy-prod-voyager:
    extends: .terraform-deploy
+   stage: deploy
    environment:
       name: $TF_STATE_NAME_PROD
    variables:
