@@ -39,7 +39,7 @@ class TaxiPlaygroundApp {
 }
 
 @Configuration
-@Profile("!local")
+@Profile(value = ["aws"])
 class AwsConfig {
 
    private val logger = KotlinLogging.logger {}
@@ -106,7 +106,7 @@ class AwsConfig {
 
 
 @Configuration
-@Profile("local")
+@Profile(value = ["local", "local-h2"])
 class WebConfiguration : WebFluxConfigurer {
    override fun addCorsMappings(registry: CorsRegistry) {
       registry.addMapping("/**").allowedMethods("*")

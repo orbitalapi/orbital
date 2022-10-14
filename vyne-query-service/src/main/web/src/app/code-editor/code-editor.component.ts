@@ -162,10 +162,19 @@ export class CodeEditorComponent implements OnDestroy {
     ).subscribe(e => {
       this.updateContent(this.monacoModel.getValue());
       if (this.webSocket.readyState != this.webSocket.OPEN) {
-        this.createWebsocketConnection()
+        console.log("Refresh websocket connection for language server");
+        this.createWebsocketConnection().then(() => {
+          this.startLanguageClient()
+        })
       }
     })
     this.monacoModel.onDidChangeContent(e => this.modelChanged$.next(e));
+
+    // For testing websocket reconnection
+    // @ts-ignore
+    window.killWebsocket = () => {
+      this.webSocket.close()
+    }
   }
 
   private createMonacoEditor(): void {
@@ -232,17 +241,21 @@ export class CodeEditorComponent implements OnDestroy {
         }
       }
     });
+    this.startLanguageClient();
+  }
+
+  startLanguageClient() {
     this.monacoLanguageClient.start()
-      .then(() => {
-        this.monacoLanguageClient.sendNotification(DidOpenTextDocumentNotification.type, {
-          textDocument: {
-            uri: 'inmemory://query.taxi',
-            languageId: TAXI_LANGUAGE_ID,
-            version: 0,
-            text: this.content
-          }
-        })
-      });
+    .then(() => {
+      this.monacoLanguageClient.sendNotification(DidOpenTextDocumentNotification.type, {
+        textDocument: {
+          uri: 'inmemory://query.taxi',
+          languageId: TAXI_LANGUAGE_ID,
+          version: 0,
+          text: this.content
+        }
+      })
+    });
   }
 
   updateContent(content: string) {
