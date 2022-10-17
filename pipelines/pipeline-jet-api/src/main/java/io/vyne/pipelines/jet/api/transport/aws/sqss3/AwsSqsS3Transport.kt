@@ -35,6 +35,8 @@ open class AwsSqsS3TransportInputSpec(
    val queueName: String,
    @PipelineParam("A cron expression that defines how frequently to check for new messages. Defaults to every second.")
    override val pollSchedule: CronExpression = CronExpressions.EVERY_SECOND,
+   @PipelineParam("When set to true, specifically controls the next execution time when the last execution finishes.")
+   override val preventConcurrentExecution: Boolean = false
 ) : ScheduledPipelineTransportSpec {
    constructor(
       connection: String,
