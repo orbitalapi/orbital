@@ -18,10 +18,7 @@ import org.jooq.CreateIndexIncludeStep
 import org.jooq.CreateTableFinalStep
 import org.jooq.DSLContext
 import org.jooq.DataType
-import org.jooq.impl.DSL.constraint
-import org.jooq.impl.DSL.field
-import org.jooq.impl.DSL.name
-import org.jooq.impl.DSL.table
+import org.jooq.impl.DSL.*
 import org.jooq.impl.SQLDataType
 
 /**
@@ -29,15 +26,15 @@ import org.jooq.impl.SQLDataType
  * statement for the target type
  */
 class TableGenerator(private val schema: Schema) {
-   fun execute(type: Type, dsl: DSLContext): Int {
-      val (_, statement, indexes) = generate(type, dsl)
+   fun execute(type: Type, dsl: DSLContext, tableNameSuffix: String? = null): Int {
+      val (_, statement, indexes) = generate(type, dsl, tableNameSuffix)
       val result = statement.execute()
       indexes.forEach { it.execute() }
       return result
    }
 
-   fun generate(type: Type, dsl: DSLContext): TableDDLData {
-      val tableName = SqlUtils.tableNameOrTypeName(type.taxiType)
+   fun generate(type: Type, dsl: DSLContext, tableNameSuffix: String? = null): TableDDLData {
+      val tableName = SqlUtils.tableNameOrTypeName(type.taxiType, tableNameSuffix)
 
       val columns = type.attributes.map { (attributeName, typeField) ->
          val sqlType =

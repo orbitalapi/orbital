@@ -90,7 +90,10 @@ class VyneTransformationService(
             transformationResult.size == 1 -> transformationResult.first()
             else -> TypedCollection.from(transformationResult)
          }
-         TypedInstanceContentProvider(typedInstance).right()
+         TypedInstanceContentProvider(
+            typedInstance,
+            sourceMessageMetadata = messageContentProvider.sourceMessageMetadata
+         ).right()
       }.thenApply { either ->
          // Outside the Coroutine scope, we need to resurface any exceptions,
          // so the CompletableFuture will show as failed.

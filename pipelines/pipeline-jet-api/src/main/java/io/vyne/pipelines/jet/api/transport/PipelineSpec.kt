@@ -93,15 +93,36 @@ enum class PipelineDirection(val label: String) {
 
 typealias PipelineTransportType = String
 
+/**
+Optional data that a producer may include that provides
+consumers with additional information that is only knowable at the
+time the message was emitted
+ **/
+interface SourceMessageMetadata
+
+
+/**
+Indicates that the message source can be described with a simple string.
+Doesn't imply that the message has exactly one message (it's valid for a message source
+to produce multiple messages) - only that there's a simple string-able description of the source.
+ **/
+interface MessageSourceWithGroupId : SourceMessageMetadata {
+   val groupId: String
+}
+
+
 interface MessageContentProvider {
    fun asString(): String
    fun readAsTypedInstance(inputType: Type, schema: Schema): TypedInstance
+
+   val sourceMessageMetadata: SourceMessageMetadata?
 }
 
 data class TypedInstanceContentProvider(
    @VisibleForTesting
    val content: TypedInstance,
-   private val mapper: ObjectMapper = Jackson.defaultObjectMapper
+   private val mapper: ObjectMapper = Jackson.defaultObjectMapper,
+   override val sourceMessageMetadata: SourceMessageMetadata? = null
 ) : MessageContentProvider {
    override fun asString(): String {
       return mapper.writeValueAsString(content.toRawObject())
@@ -112,7 +133,11 @@ data class TypedInstanceContentProvider(
    }
 }
 
-data class JacksonContentProvider(private val objectMapper: ObjectMapper, private val content: Any) :
+data class JacksonContentProvider(
+   private val objectMapper: ObjectMapper,
+   private val content: Any,
+   override val sourceMessageMetadata: SourceMessageMetadata? = null
+) :
    MessageContentProvider {
    override fun asString(): String {
       return objectMapper.writeValueAsString(content)
@@ -128,7 +153,11 @@ data class JacksonContentProvider(private val objectMapper: ObjectMapper, privat
    }
 }
 
-data class StringContentProvider(val content: String) : MessageContentProvider {
+data class StringContentProvider(
+   val content: String,
+   override val sourceMessageMetadata: SourceMessageMetadata? = null
+) :
+   MessageContentProvider {
    override fun asString(): String {
       return content
    }
@@ -143,7 +172,11 @@ data class StringContentProvider(val content: String) : MessageContentProvider {
    }
 }
 
-data class CsvRecordContentProvider(val content: CSVRecord, val nullValues: Set<String>) : MessageContentProvider {
+data class CsvRecordContentProvider(
+   val content: CSVRecord,
+   val nullValues: Set<String>,
+   override val sourceMessageMetadata: SourceMessageMetadata? = null
+) : MessageContentProvider {
    override fun asString(): String {
       return content.joinToString()
    }

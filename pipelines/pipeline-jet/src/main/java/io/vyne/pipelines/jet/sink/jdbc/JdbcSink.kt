@@ -1,5 +1,6 @@
 package io.vyne.pipelines.jet.sink.jdbc
 
+import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.jet.datamodel.WindowResult
 import com.hazelcast.jet.pipeline.Sink
 import com.hazelcast.jet.pipeline.SinkBuilder
@@ -7,12 +8,16 @@ import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.connectors.jdbc.DatabaseMetadataService
 import io.vyne.connectors.jdbc.JdbcConnectionFactory
+import io.vyne.connectors.jdbc.SqlUtils
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.connectors.jdbc.sql.ddl.TableGenerator
+import io.vyne.connectors.jdbc.sql.ddl.ViewGenerator
 import io.vyne.connectors.jdbc.sql.dml.InsertStatementGenerator
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
+import io.vyne.pipelines.jet.api.transport.MessageSourceWithGroupId
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.jdbc.JdbcTransportOutputSpec
+import io.vyne.pipelines.jet.api.transport.jdbc.WriteDisposition
 import io.vyne.pipelines.jet.sink.WindowingPipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
@@ -25,8 +30,7 @@ import javax.annotation.Resource
 
 
 @Component
-class JdbcSinkBuilder :
-   WindowingPipelineSinkBuilder<JdbcTransportOutputSpec> {
+class JdbcSinkBuilder : WindowingPipelineSinkBuilder<JdbcTransportOutputSpec> {
    companion object {
       val logger = KotlinLogging.logger { }
    }
@@ -35,98 +39,127 @@ class JdbcSinkBuilder :
       pipelineTransportSpec is JdbcTransportOutputSpec
 
    override fun getRequiredType(
-      pipelineTransportSpec: JdbcTransportOutputSpec,
-      schema: Schema
+      pipelineTransportSpec: JdbcTransportOutputSpec, schema: Schema
    ): QualifiedName {
       return pipelineTransportSpec.targetType.typeName
    }
 
    override fun build(
-      pipelineId: String,
-      pipelineName: String,
-      pipelineTransportSpec: JdbcTransportOutputSpec
+      pipelineId: String, pipelineName: String, pipelineTransportSpec: JdbcTransportOutputSpec
    ): Sink<WindowResult<List<MessageContentProvider>>> {
-      return SinkBuilder
-         .sinkBuilder("jdbc-sink") { context ->
-            val sinkContext = context.managedContext().initialize(
-               JdbcSinkContext(
-                  context.logger(),
-                  pipelineTransportSpec
-               )
-            ) as JdbcSinkContext
+      fun createTable(context: JdbcSinkContext) {
+         val schema = context.schema()
+         val targetType = schema.type(pipelineTransportSpec.targetType)
+         val (tableName, ddlStatement, indexStatements) = TableGenerator(schema).generate(
+            targetType,
+            context.sqlDsl(),
+            context.tableNameSuffix
+         )
+         context.logger.info("Executing CREATE IF NOT EXISTS for table to store type ${pipelineTransportSpec.targetTypeName} as table $tableName.")
 
-            // Create the target table if it doesn't exist
-            val schema = sinkContext.schema()
-            val (tableName, ddlStatement, indexStatements) = TableGenerator(schema)
-               .generate(schema.type(pipelineTransportSpec.targetType), sinkContext.sqlDsl())
-            context.logger()
-               .info("Executing CREATE IF NOT EXISTS for table to store type ${pipelineTransportSpec.targetTypeName} as table $tableName")
+         context.logger.fine(ddlStatement.sql)
+         ddlStatement.execute()
+         val tableFoundAtDatabase = DatabaseMetadataService(context.jdbcTemplate()).listTables()
+            .any { it.tableName.equals(tableName, ignoreCase = true) }
+         if (tableFoundAtDatabase) {
+            context.logger.info("${pipelineTransportSpec.targetTypeName} => Table $tableName created")
 
-            context.logger().fine(ddlStatement.sql)
-            ddlStatement.execute()
-            val tableFoundAtDatabase = DatabaseMetadataService(sinkContext.jdbcTemplate())
-               .listTables()
-               .any { it.tableName.equals(tableName, ignoreCase = true) }
-            if (tableFoundAtDatabase) {
-               context.logger()
-                  .info("${pipelineTransportSpec.targetTypeName} => Table $tableName created")
-
-               if (indexStatements.isNotEmpty()) {
-                  context.logger().info("${pipelineTransportSpec.targetTypeName} => Creating indexes for $tableName")
-                  indexStatements.forEach { indexStatement ->
-                     context.logger().info("${pipelineTransportSpec.targetTypeName} => creating index => ${indexStatement.sql}")
-                     indexStatement.execute()
-                  }
+            if (indexStatements.isNotEmpty()) {
+               context.logger.info("${pipelineTransportSpec.targetTypeName} => Creating indexes for $tableName")
+               indexStatements.forEach { indexStatement ->
+                  context.logger.info("${pipelineTransportSpec.targetTypeName} => creating index => ${indexStatement.sql}")
+                  indexStatement.execute()
                }
-            } else {
-               context.logger()
-                  .severe("${pipelineTransportSpec.targetTypeName} => Failed to create database table $tableName.  No error was thrown, but the table was not found in the schema after the statement executed")
             }
-
-            sinkContext
+         } else {
+            context.logger.severe("${pipelineTransportSpec.targetTypeName} => Failed to create database table $tableName.  No error was thrown, but the table was not found in the schema after the statement executed")
          }
-         .receiveFn { context: JdbcSinkContext, message: WindowResult<List<MessageContentProvider>> ->
-            val schema = context.schema()
-            val targetType = schema.type(pipelineTransportSpec.targetType)
-            val typedInstances = message.result().mapNotNull { messageContentProvider ->
-               try {
-                  messageContentProvider.readAsTypedInstance(targetType, schema)
-               } catch (e: Exception) {
-                  context.logger.severe(
-                     "Error in converting message to \"${targetType.fullyQualifiedName}\", skipping insert.",
-                     e
-                  )
-                  null
-               }
-            }
-            val insertStatements = InsertStatementGenerator(schema).generateInserts(
-               typedInstances,
-               context.sqlDsl(),
-               useUpsertSemantics = true
+      }
+
+      return SinkBuilder.sinkBuilder("jdbc-sink") { context ->
+         val sinkContext = context.managedContext().initialize(
+            JdbcSinkContext(
+               context.logger(), context.hazelcastInstance(), pipelineTransportSpec
             )
-            logger.info { "${pipelineTransportSpec.targetTypeName} => Executing INSERT batch with size: ${insertStatements.size}" }
+         ) as JdbcSinkContext
+
+         // The table can be created in advance in case the append mode is used since the name will be constant
+         if (pipelineTransportSpec.writeDisposition == WriteDisposition.APPEND) {
+            createTable(sinkContext)
+         }
+         sinkContext
+      }.receiveFn { context: JdbcSinkContext, message: WindowResult<List<MessageContentProvider>> ->
+         // Create the target table if it doesn't exist
+         val schema = context.schema()
+         val result = message.result()
+         if (result.isEmpty()) {
+            context.logger.info("No messages to write to the DB.")
+            return@receiveFn
+         }
+         if (pipelineTransportSpec.writeDisposition == WriteDisposition.RECREATE) {
+            val sourceMessageMetadata = result.firstOrNull()?.sourceMessageMetadata
+            if (sourceMessageMetadata is MessageSourceWithGroupId) {
+               context.tableNameSuffix = "_${sourceMessageMetadata.groupId}"
+               createTable(context)
+            }
+         }
+
+         val targetType = schema.type(pipelineTransportSpec.targetType)
+         val typedInstances = result.mapNotNull { messageContentProvider ->
             try {
-               val insertedCount = context.sqlDsl().batch(insertStatements).execute()
-               context.logger.info("inserted $insertedCount ${targetType.fullyQualifiedName} into DB")
+               messageContentProvider.readAsTypedInstance(targetType, schema)
             } catch (e: Exception) {
                context.logger.severe(
-                  "${pipelineTransportSpec.targetTypeName} => Failed to insert ${insertStatements.size} ${targetType.fullyQualifiedName} into DB",
-                  e
+                  "Error in converting message to \"${targetType.fullyQualifiedName}\", skipping insert.", e
                )
-
+               null
             }
          }
-         .build()
+         val insertStatements = InsertStatementGenerator(schema).generateInserts(
+            typedInstances, context.sqlDsl(), useUpsertSemantics = true, tableNameSuffix = context.tableNameSuffix
+         )
+         logger.info { "${pipelineTransportSpec.targetTypeName} => Executing INSERT batch with size: ${insertStatements.size}" }
+         try {
+            val insertedCount = context.sqlDsl().batch(insertStatements).execute().size
+            context.logger.info("Inserted $insertedCount ${targetType.fullyQualifiedName} records into DB.")
+         } catch (e: Exception) {
+            context.logger.severe(
+               "${pipelineTransportSpec.targetTypeName} => Failed to insert ${insertStatements.size} ${targetType.fullyQualifiedName} into DB.",
+               e
+            )
+
+         }
+      }.destroyFn { context: JdbcSinkContext ->
+         if (pipelineTransportSpec.writeDisposition == WriteDisposition.RECREATE) {
+            val targetType = context.schema().type(pipelineTransportSpec.targetType)
+            val tableNamePrefix = SqlUtils.tableNameOrTypeName(targetType.taxiType)
+            val tableName = "${tableNamePrefix}${context.tableNameSuffix}"
+            context.logger.info("Updating the DB view for ${pipelineTransportSpec.targetTypeName} to point to the table $tableName.")
+            val viewUpdatedSuccessfully = ViewGenerator().execute(targetType, tableName, context.sqlDsl()) == 0
+            if (!viewUpdatedSuccessfully) {
+               context.logger.severe("Failed to update the DB view for ${pipelineTransportSpec.targetTypeName} to point to the table $tableName.")
+            }
+            context.logger.info("DB view for ${pipelineTransportSpec.targetTypeName} now points to the table $tableName.")
+         }
+      }.build()
    }
-
-
 }
 
 @SpringAware
 class JdbcSinkContext(
    val logger: ILogger,
-   val outputSpec: JdbcTransportOutputSpec
+   val hazelcastInstance: HazelcastInstance,
+   val outputSpec: JdbcTransportOutputSpec,
+   tableNameSuffix: String? = null
 ) {
+
+   var tableNameSuffix: String? = tableNameSuffix
+      set(value) {
+         if (tableNameSuffix != null) {
+            error("Table name suffix has been set already. ")
+         }
+         field = value
+      }
 
    @Resource
    lateinit var vyneProvider: VyneProvider
