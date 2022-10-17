@@ -51,7 +51,8 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
       compilationResult: CompilationResult,
       params: CompletionParams,
       importDecorator: ImportCompletionDecorator,
-      contextAtCursor: ParserRuleContext?
+      contextAtCursor: ParserRuleContext?,
+      lastSuccessfulCompilation: CompilationResult?
    ): CompletableFuture<List<CompletionItem>> {
       if (contextAtCursor == null) {
          return completed(topLevelQueryCompletionItems)
