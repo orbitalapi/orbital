@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.FactSetId
 import io.vyne.FactSets
 import io.vyne.Vyne
+import io.vyne.auth.authentication.VyneUser
 import io.vyne.history.QueryEventObserver
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
@@ -23,7 +24,6 @@ import io.vyne.query.ResultMode
 import io.vyne.query.SearchFailedException
 import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.ErrorType
-import io.vyne.queryService.security.VyneUser
 import io.vyne.queryService.security.facts
 import io.vyne.queryService.security.toVyneUser
 import io.vyne.schemas.Schema

@@ -1,4 +1,4 @@
-package io.vyne.queryService.security
+package io.vyne.auth
 
 import mu.KotlinLogging
 import org.http4k.core.cookie.Cookie

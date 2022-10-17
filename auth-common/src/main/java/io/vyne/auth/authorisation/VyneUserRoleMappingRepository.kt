@@ -1,4 +1,4 @@
-package io.vyne.queryService.security.authorisation
+package io.vyne.auth.authorisation
 
 interface VyneUserRoleMappingRepository {
    fun findByUserName(userName: String): VyneUserRoles?

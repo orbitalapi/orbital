@@ -1,4 +1,4 @@
-package io.vyne.queryService.security.authorisation
+package io.vyne.auth.authorisation
 
 import io.vyne.security.VyneGrantedAuthorities
 import java.util.concurrent.ConcurrentHashMap

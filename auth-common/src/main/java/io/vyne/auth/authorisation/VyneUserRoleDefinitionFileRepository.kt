@@ -1,4 +1,4 @@
-package io.vyne.queryService.security.authorisation
+package io.vyne.auth.authorisation
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory

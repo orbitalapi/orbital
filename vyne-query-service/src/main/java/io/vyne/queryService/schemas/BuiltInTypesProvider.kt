@@ -12,7 +12,7 @@ import io.vyne.connectors.kafka.KafkaConnectorTaxi
 import io.vyne.models.csv.CsvAnnotationSpec
 import io.vyne.query.VyneQlGrammar
 import io.vyne.queryService.catalog.DataOwnerAnnotations
-import io.vyne.queryService.security.VyneUser
+import io.vyne.queryService.security.UserFacts
 import io.vyne.schema.publisher.SchemaPublisherService
 import io.vyne.schemas.taxi.toMessage
 import lang.taxi.Compiler
@@ -30,7 +30,7 @@ object BuiltInTypesProvider {
          VersionedSource(
             "UserTypes",
             "0.1.0",
-            VyneUser.USERNAME_TYPEDEF
+            UserFacts.USERNAME_TYPEDEF
          ),
          VersionedSource(
             "JdbcConnectors",

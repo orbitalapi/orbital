@@ -1,4 +1,4 @@
-package io.vyne.queryService.security.authorisation
+package io.vyne.auth.authorisation
 
 interface VyneUserRoleDefinitionRepository {
    fun findByRoleName(vyneRole: VyneUserAuthorisationRole): VyneUserAuthorisationRoleDefinition?

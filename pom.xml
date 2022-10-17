@@ -96,6 +96,8 @@
       <module>vyne-spring-http-client</module>
       <module>datatype-converters</module>
       <module>taxi-playground</module>
+      <module>station</module>
+      <module>auth-common</module>
    </modules>
 
    <scm>

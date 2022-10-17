@@ -1,6 +1,7 @@
 package io.vyne.queryService.security.authorisation
 
 import com.winterbe.expekt.should
+import io.vyne.auth.authorisation.VyneUserRoleDefinitionFileRepository
 import io.vyne.security.VyneGrantedAuthorities
 import org.junit.Test
 import org.springframework.core.io.ClassPathResource

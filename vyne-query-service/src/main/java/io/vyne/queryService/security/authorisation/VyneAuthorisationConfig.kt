@@ -1,5 +1,6 @@
 package io.vyne.queryService.security.authorisation
 
+import io.vyne.auth.authorisation.VyneUserAuthorisationRole
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import java.nio.file.Path

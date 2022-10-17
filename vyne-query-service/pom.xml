@@ -46,6 +46,11 @@
          <artifactId>schema-server-api</artifactId>
          <version>${project.version}</version>
       </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>auth-common</artifactId>
+         <version>${project.version}</version>
+      </dependency>
 
       <!-- use the actual dependency for tests.  at runtime, we just use the api -->
       <dependency>

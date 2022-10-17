@@ -1,5 +1,6 @@
 package io.vyne.queryService.security
 
+import io.vyne.auth.authentication.VyneUser
 import io.vyne.queryService.security.authorisation.VyneOpenIdpConnectConfig
 import org.springframework.security.core.Authentication
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
