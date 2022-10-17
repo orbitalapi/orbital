@@ -6,6 +6,7 @@ import io.vyne.jwt.auth.config.log
 import mu.KotlinLogging
 import org.apache.commons.io.IOUtils
 import org.keycloak.Config
+import org.keycloak.exportimport.ExportImportManager
 import org.keycloak.models.KeycloakSession
 import org.keycloak.models.RealmModel
 import org.keycloak.models.UserCredentialModel
@@ -20,9 +21,12 @@ import kotlin.io.path.exists
 
 private val logger = KotlinLogging.logger {  }
 class EmbeddedKeycloakApplication: KeycloakApplication() {
-   init {
+
+   override fun bootstrap(): ExportImportManager {
+      val exportImportManager = super.bootstrap()
       createMasterRealmAdminUser()
       createVyneRealm()
+      return exportImportManager
    }
 
    override fun loadConfig() {

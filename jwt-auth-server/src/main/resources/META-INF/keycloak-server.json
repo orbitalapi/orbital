@@ -41,11 +41,11 @@
 		"provider": "${keycloak.client.provider:jpa}"
 	},
 	"mapStorage": {
-		"provider": "${keycloak.mapStorage.provider:concurrenthashmap}",
-		"concurrenthashmap": {
-			"dir": "${project.build.directory:target}"
-		}
-	},
+      "provider": "${keycloak.mapStorage.provider:}",
+      "concurrenthashmap": {
+         "dir": "${project.build.directory:target}"
+      }
+   },
 	"userFederatedStorage": {
 		"provider": "${keycloak.userFederatedStorage.provider:jpa}"
 	},
@@ -94,17 +94,17 @@
 	},
 	"connectionsJpa": {
 		"default": {
-			"url": "${keycloak.connectionsJpa.url:jdbc:h2:mem:vynekeycloack}",
-			"driver": "${keycloak.connectionsJpa.driver:org.h2.Driver}",
-			"driverDialect": "${keycloak.connectionsJpa.driverDialect:}",
-			"user": "${keycloak.connectionsJpa.user:sa}",
-			"password": "${keycloak.connectionsJpa.password:}",
-			"initializeEmpty": true,
-			"migrationStrategy": "update",
-			"showSql": "${keycloak.connectionsJpa.showSql:false}",
-			"formatSql": "${keycloak.connectionsJpa.formatSql:true}",
-			"globalStatsInterval": "${keycloak.connectionsJpa.globalStatsInterval:-1}"
-		}
+         "url": "${keycloak.connectionsJpa.url:jdbc:h2:mem:vynekeycloak}",
+         "driver": "${keycloak.connectionsJpa.driver:org.h2.Driver}",
+         "driverDialect": "${keycloak.connectionsJpa.driverDialect:org.hibernate.dialect.H2Dialect}",
+         "user": "${keycloak.connectionsJpa.user:sa}",
+         "password": "${keycloak.connectionsJpa.password:}",
+         "initializeEmpty": true,
+         "migrationStrategy": "update",
+         "showSql": "${keycloak.connectionsJpa.showSql:false}",
+         "formatSql": "${keycloak.connectionsJpa.formatSql:true}",
+         "globalStatsInterval": "${keycloak.connectionsJpa.globalStatsInterval:-1}"
+      }
 	},
 	"realmCache": {
 		"provider": "${keycloak.realm.cache.provider:default}",
