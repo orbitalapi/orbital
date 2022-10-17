@@ -4,7 +4,8 @@
     "type" : "query",
     "direction" : "INPUT",
     "query" : "find { Person( FirstName == 'Jim' ) }",
-    "pollSchedule" : "* 0 * * * *"
+    "pollSchedule" : "* 0 * * * *",
+    "preventConcurrentExecution" : false
   },
   "outputs" : [ {
     "type" : "Generic",

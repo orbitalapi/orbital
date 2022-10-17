@@ -52,6 +52,11 @@ typealias CronExpression = String
 
 interface ScheduledPipelineTransportSpec : PipelineTransportSpec {
    val pollSchedule: CronExpression
+
+   /**
+    * When set to true, specifically controls the next execution time when the last execution finishes.
+    */
+   val preventConcurrentExecution: Boolean
 }
 
 /**

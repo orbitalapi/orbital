@@ -41,6 +41,8 @@ data class PollingQueryInputSpec(
    val query: String,
    @PipelineParam("A [Spring-flavored cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this query should be invoked.")
    override val pollSchedule: CronExpression,
+   @PipelineParam("When set to true, specifically controls the next execution time when the last execution finishes.")
+   override val preventConcurrentExecution: Boolean = false
 ) : ScheduledPipelineTransportSpec {
    object Sample : PipelineDocumentationSample<PollingQueryInputSpec> {
       override val sample = PollingQueryInputSpec(
