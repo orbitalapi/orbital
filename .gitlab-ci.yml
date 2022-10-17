@@ -341,6 +341,7 @@ terraform-deploy-prod:
    services:
       -  name: docker:20.10.19-dind
          command: [ "--tls=false" ]
+   retry: 2
    before_script:
       - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
       - PROJECT_VERSION=$(cat build-version.txt)
