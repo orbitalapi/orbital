@@ -56,7 +56,7 @@ module "voyager" {
    }
    environment_variables = {
       # TODO Add any environment variables and/or delete the below
-      spring_profiles_active = var.environment
+      spring_profiles_active = "aws,${var.environment}"
       DB_HOST                = var.database_host
       DB_PORT                = 5432
       DB_USERNAME            = var.database_username
