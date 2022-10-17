@@ -80,7 +80,6 @@
       <module>pipelines</module>
       <module>cask-api</module>
       <module>test-cli</module>
-      <module>jwt-auth-server</module>
       <module>test-containers</module>
       <module>vyne-csv-utils</module>
       <module>regression-tests</module>
