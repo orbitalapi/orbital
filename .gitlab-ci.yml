@@ -28,8 +28,8 @@ stages:
    - build
    - publish
    - deploy
-   - release
    - verify
+   - release
 
 default:
    tags:
