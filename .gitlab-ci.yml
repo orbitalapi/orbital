@@ -472,9 +472,7 @@ terraform-deploy-dev-voyager:
       TF_VAR_environment: $TF_STATE_NAME_DEV
       TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
    rules:
-      -  when: manual
-      -  if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-         when: never
+      - when: manual
 
 terraform-deploy-prod-voyager:
    extends: .terraform-deploy
@@ -487,7 +485,5 @@ terraform-deploy-prod-voyager:
       TF_VAR_environment: $TF_STATE_NAME_PROD
       TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
    rules:
-      -  when: manual
-      -  if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-         when: never
+      - when: manual
 
