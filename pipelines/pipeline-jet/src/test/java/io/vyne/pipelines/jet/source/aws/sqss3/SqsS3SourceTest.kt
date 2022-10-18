@@ -1,25 +1,17 @@
 package io.vyne.pipelines.jet.source.aws.sqss3
 
-import com.hazelcast.jet.core.JobStatus
 import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
-import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.SqlUtils
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
-import io.vyne.pipelines.jet.BaseJetIntegrationTest
-import io.vyne.pipelines.jet.PostgresSQLContainerFacade
-import io.vyne.pipelines.jet.UTCClockProvider
+import io.vyne.pipelines.jet.*
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
-import io.vyne.pipelines.jet.api.transport.jdbc.JdbcTransportOutputSpec
-import io.vyne.pipelines.jet.awsConnection
-import io.vyne.pipelines.jet.populateS3AndSqs
 import io.vyne.schemas.Type
 import org.awaitility.Awaitility
 import org.jooq.DSLContext
-import org.jooq.impl.DSL
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -31,7 +23,6 @@ import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.TimeUnit
 
 @Testcontainers
 @RunWith(SpringRunner::class)
@@ -98,23 +89,27 @@ type OrderWindowSummary {
             localstack.awsConnection().connectionName,
             VersionedTypeReference.parse("OrderWindowSummary"),
             queueName = sqsQueueUrl,
-            pollSchedule = CronExpressions.EVERY_SECOND
+            pollSchedule = CronExpressions.EVERY_TEN_SECONDS
          ),
-         outputs = listOf(JdbcTransportOutputSpec(
-            "test-connection",
-            "OrderWindowSummary"
-         ))
+         outputs = listOf(
+            JdbcTransportOutputSpec(
+               "test-connection",
+               "OrderWindowSummary"
+            )
+         )
       )
 
-      val (_, job) = startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
-      Awaitility.await().atMost(30, TimeUnit.SECONDS).until {
-         job!!.status == JobStatus.RUNNING
-      }
+      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
 
       val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
       val vyne = vyneProvider.createVyne()
 
-      waitForRowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("OrderWindowSummary"), 1)
+      waitForRowCount(
+         connectionFactory.dsl(postgresSQLContainerFacade.connection),
+         vyne.type("OrderWindowSummary"),
+         1,
+         duration = Duration.ofSeconds(30)
+      )
       symbols(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("OrderWindowSummary"))
          .should.elements("BTCUSD", "")
    }
@@ -136,6 +131,17 @@ type OrderWindowSummary {
             )
             listOfSymbols.size >= rowCount
          }
+   }
+
+   private fun symbols(dsl: DSLContext, type: Type): List<String> {
+      return try {
+         dsl.fetch("select * from ${SqlUtils.tableNameOrTypeName(type.taxiType)}").map { record ->
+            record["symbol"].toString()
+         }
+
+      } catch (e: Exception) {
+         emptyList<String>()
+      } // return -1 if the table doesn't exist
    }
 
    private fun symbols(dsl: DSLContext, type: Type): List<String> {

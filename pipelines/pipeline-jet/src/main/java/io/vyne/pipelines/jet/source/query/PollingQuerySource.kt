@@ -38,11 +38,6 @@ private const val CAPACITY = 1024
  */
 @Component
 class PollingQuerySourceBuilder : PipelineSourceBuilder<PollingQueryInputSpec> {
-
-   companion object {
-      const val NEXT_SCHEDULED_TIME_KEY = "next-scheduled-time"
-   }
-
    override val sourceType: PipelineSourceType
       get() = PipelineSourceType.Batch
 

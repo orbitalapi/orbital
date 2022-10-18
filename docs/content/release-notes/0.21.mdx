@@ -1,0 +1,34 @@
+---
+title: 0.21.x releases
+---
+
+import {Link} from "gatsby";
+
+This page contains details of releases in the 0.21.xx set of releases.
+
+## 0.21.0
+
+0.21 is a minor feature release
+
+#### Taxi Version
+Taxi has been upgraded to 1.33.6
+
+### Improved validation framework
+When parsing data, validation errors can occur when data presented
+doesn't adhere to the data contract defined in the schema.
+
+This validation framework provides fine-grained control over how to react
+when validation errors occur, and how to recover.
+
+Initially, this has been deployed in pipelines, which manifests as richer logging when data pipeline ingestion errors occur.
+
+The validation improvements will be deployed more broadly in a later release, including handling of validation errors in operations.
+
+### Fix: Better null handling when importing CSV's
+We have addressed several issues where CSV's that were parsed with nulls or empty strings could cause
+parsing to fail.
+
+### Upgraded dependencies
+This release contains several internal dependencies that have been upgraded, as we move
+to more aggressively stay in line with the latest releases from 3rd party dependencies.
+

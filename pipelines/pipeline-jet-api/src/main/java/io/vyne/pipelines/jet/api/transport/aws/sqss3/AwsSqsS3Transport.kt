@@ -10,6 +10,7 @@ import io.vyne.pipelines.jet.api.transport.PipelineDirection
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpecId
 import io.vyne.pipelines.jet.api.transport.PipelineTransportType
+import io.vyne.pipelines.jet.api.transport.ScheduledPipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
 
@@ -33,8 +34,10 @@ open class AwsSqsS3TransportInputSpec(
    @PipelineParam("The name of the SQS queue")
    val queueName: String,
    @PipelineParam("A cron expression that defines how frequently to check for new messages. Defaults to every second.")
-   val pollSchedule: CronExpression = CronExpressions.EVERY_SECOND,
-) : PipelineTransportSpec { // TODO Change to ScheduledPipelineTransportSpec and adapt the corresponding builder to that
+   override val pollSchedule: CronExpression = CronExpressions.EVERY_SECOND,
+   @PipelineParam("When set to true, specifically controls the next execution time when the last execution finishes.")
+   override val preventConcurrentExecution: Boolean = false
+) : ScheduledPipelineTransportSpec {
    constructor(
       connection: String,
       targetType: VersionedTypeReference,

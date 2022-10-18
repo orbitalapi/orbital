@@ -24,7 +24,8 @@ import java.util.*
 data class ScheduledSourceSpec(
    val items: Queue<String>,
    val typeName: QualifiedName,
-   override val pollSchedule: CronExpression = CronExpressions.EVERY_SECOND
+   override val pollSchedule: CronExpression = CronExpressions.EVERY_SECOND,
+   override val preventConcurrentExecution: Boolean = false
 ) : ScheduledPipelineTransportSpec {
    override val type: PipelineTransportType = "Scheduled"
    override val direction: PipelineDirection = PipelineDirection.INPUT

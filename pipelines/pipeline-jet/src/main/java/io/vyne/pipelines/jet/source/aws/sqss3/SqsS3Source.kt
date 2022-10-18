@@ -1,7 +1,7 @@
 package io.vyne.pipelines.jet.source.aws.sqss3
 
+import com.hazelcast.jet.pipeline.BatchSource
 import com.hazelcast.jet.pipeline.SourceBuilder
-import com.hazelcast.jet.pipeline.StreamSource
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
@@ -13,17 +13,16 @@ import io.vyne.models.csv.CsvFormatSpecAnnotation
 import io.vyne.models.format.FormatDetector
 import io.vyne.pipelines.jet.api.transport.CsvRecordContentProvider
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
+import io.vyne.pipelines.jet.api.transport.MessageSourceWithGroupId
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.StringContentProvider
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.source.PipelineSourceBuilder
-import io.vyne.pipelines.jet.source.next
+import io.vyne.pipelines.jet.source.PipelineSourceType
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import net.snowflake.client.jdbc.internal.amazonaws.services.s3.event.S3EventNotification
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
-import org.springframework.scheduling.support.CronSequenceGenerator
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
@@ -36,19 +35,19 @@ import java.io.InputStream
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 import java.time.Clock
-import java.time.Instant
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.logging.Level
 import javax.annotation.PostConstruct
 import javax.annotation.Resource
 
+data class S3SourceMetadata(val etag: String) : MessageSourceWithGroupId {
+   override val groupId = etag
+}
+
 @Component
 class SqsS3SourceBuilder : PipelineSourceBuilder<AwsSqsS3TransportInputSpec> {
    private val formatDetector = FormatDetector.get(listOf(CsvFormatSpec))
-
-   companion object {
-      const val NEXT_SCHEDULED_TIME_KEY = "sqss3-next-scheduled-time"
-   }
+   override val sourceType: PipelineSourceType = PipelineSourceType.Batch
 
    override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean {
       return pipelineSpec.input is AwsSqsS3TransportInputSpec
@@ -61,19 +60,18 @@ class SqsS3SourceBuilder : PipelineSourceBuilder<AwsSqsS3TransportInputSpec> {
       return pipelineSpec.input.targetType.typeName
    }
 
-   override fun build(
+   override fun buildBatch(
       pipelineSpec: PipelineSpec<AwsSqsS3TransportInputSpec, *>,
       inputType: Type?
-   ): StreamSource<MessageContentProvider> {
+   ): BatchSource<MessageContentProvider> {
       val csvModelFormatAnnotation = formatDetector.getFormatType(inputType!!)
          ?.let { if (it.second is CsvFormatSpec) CsvFormatSpecAnnotation.from(it.first) else null }
-      return SourceBuilder.timestampedStream("sqs-s3-operation-poll") { context ->
-         PollingSqsOperationSourceContext(context.logger(), pipelineSpec, csvModelFormatAnnotation)
+      return SourceBuilder.batch("sqs-s3-operation-poll") { context ->
+         val sourceContext = PollingSqsOperationSourceContext(context.logger(), pipelineSpec, csvModelFormatAnnotation)
+         sourceContext
       }
-         .fillBufferFn { context: PollingSqsOperationSourceContext, buffer: SourceBuilder.TimestampedSourceBuffer<MessageContentProvider> ->
+         .fillBufferFn { context: PollingSqsOperationSourceContext, buffer: SourceBuilder.SourceBuffer<MessageContentProvider> ->
             context.fill(buffer)
-         }.destroyFn { context ->
-            context.destroy()
          }
          .build()
    }
@@ -90,17 +88,7 @@ class PollingSqsOperationSourceContext(
 ) {
    val inputSpec: AwsSqsS3TransportInputSpec = pipelineSpec.input
 
-   val schedule = CronSequenceGenerator(inputSpec.pollSchedule)
-
    var dataBuffer: LinkedBlockingQueue<Pair<MessageContentProvider, Long>> = LinkedBlockingQueue()
-
-   private val scheduler = ThreadPoolTaskScheduler()
-
-   init {
-      scheduler.poolSize = 1
-      scheduler.threadNamePrefix = "s3SqsPoller"
-      scheduler.initialize()
-   }
 
    @Resource
    lateinit var clock: Clock
@@ -108,25 +96,19 @@ class PollingSqsOperationSourceContext(
    @Resource
    lateinit var connectionRegistry: AwsConnectionRegistry
 
-   private var _lastRunTime: Instant? = null
+   private var isDone = false
 
 
-   fun fill(buffer: SourceBuilder.TimestampedSourceBuffer<MessageContentProvider>) {
+   fun fill(buffer: SourceBuilder.SourceBuffer<MessageContentProvider>) {
       val sink = mutableListOf<Pair<MessageContentProvider, Long>>()
       dataBuffer.drainTo(sink, 1024)
       if (sink.isNotEmpty()) {
          logger.info("Filling the SQS queue \"${inputSpec.queueName}\" with ${sink.size} items.")
          sink.forEach {
-            buffer.add(it.first, it.second)
+            buffer.add(it.first)
          }
-      }
-   }
-
-   fun destroy() {
-      try {
-         scheduler.destroy()
-      } catch (e: Exception) {
-         logger.severe("Error in closing the scheduler for the SQS queue \"${inputSpec.queueName}\" polling.", e)
+      } else if (isDone) {
+         buffer.close()
       }
    }
 
@@ -200,10 +182,9 @@ class PollingSqsOperationSourceContext(
       }
    }
 
-   private fun closeClientsAndScheduleNextPoll(s3Client: S3Client, sqsClient: SqsClient) {
+   private fun closeClients(s3Client: S3Client, sqsClient: SqsClient) {
       closeSqsClient(sqsClient)
       closeS3Client(s3Client)
-      scheduleWork()
    }
 
    private fun deleteSqsMessage(sqsClient: SqsClient, receiptHandle: SqsMessageReceiptHandle) {
@@ -224,20 +205,11 @@ class PollingSqsOperationSourceContext(
       }
    }
 
-
-   private fun scheduleWork() {
-      lastRunTime = clock.instant()
-      val nextSchedule = schedule.next(lastRunTime)
-      logger.info("The SQS queue \"${inputSpec.queueName}\" was checked at $lastRunTime. Next run will happen at $nextSchedule.")
-      scheduler.schedule(this::doWork, nextSchedule)
-   }
-
-   private fun doWork() {
+   fun doWork() {
       val sqsClient = createSqsClient()
       val s3EventNotificationAndSqsReceiptHandler = fetchSqsMessages(sqsClient)
       if (s3EventNotificationAndSqsReceiptHandler == null) {
          closeSqsClient(sqsClient)
-         scheduleWork()
          return
       }
 
@@ -246,20 +218,20 @@ class PollingSqsOperationSourceContext(
       s3EventNotification.records.forEach {
          val bucketName = it.s3.bucket.name
          val objectKey = it.s3.`object`.key
+         val etag = it.s3.`object`.geteTag().substring(0..12)
          logger.log(Level.INFO, "Fetching the object \"$objectKey\" from the S3 bucket \"$bucketName\".")
          try {
             val getObjectRequest = GetObjectRequest.builder().bucket(bucketName).key(objectKey).build()
             val responseInputStream = s3Client.getObject(getObjectRequest)
             if (this.csvModelFormatAnnotation != null) {
-               feedAsCsvRecord(responseInputStream, csvModelFormatAnnotation)
+               feedAsCsvRecord(responseInputStream, csvModelFormatAnnotation, etag)
             } else {
-               // forEach - this is not right
                val linesStream = BufferedReader(InputStreamReader(responseInputStream, StandardCharsets.UTF_8)).lines()
                linesStream.forEach { line ->
-                  dataBuffer.add(Pair(StringContentProvider(line), clock.millis()))
+                  dataBuffer.add(Pair(StringContentProvider(line, S3SourceMetadata(etag)), clock.millis()))
                }
+               isDone = true
             }
-
          } catch (e: Exception) {
             logger.log(
                Level.SEVERE,
@@ -270,34 +242,32 @@ class PollingSqsOperationSourceContext(
       }
 
       deleteSqsMessage(sqsClient, s3EventNotificationAndSqsReceiptHandler.second)
-      closeClientsAndScheduleNextPoll(s3Client, sqsClient)
+      closeClients(s3Client, sqsClient)
    }
 
    private fun feedAsCsvRecord(
       inputStream: InputStream,
-      csvModelFormatAnnotation: CsvFormatSpecAnnotation
+      csvModelFormatAnnotation: CsvFormatSpecAnnotation,
+      etag: String
    ) {
       val csvFormat = CsvFormatFactory.fromParameters(csvModelFormatAnnotation.ingestionParameters)
       val parser = csvFormat.parse(inputStream.bufferedReader())
       parser.forEach { csvRecord ->
-         dataBuffer.add(Pair(CsvRecordContentProvider(csvRecord, csvModelFormatAnnotation.ingestionParameters.nullValue), clock.millis()))
+         dataBuffer.add(
+            Pair(
+               CsvRecordContentProvider(
+                  csvRecord,
+                  csvModelFormatAnnotation.ingestionParameters.nullValue,
+                  S3SourceMetadata(etag)
+               ), clock.millis()
+            )
+         )
       }
+      isDone = true
    }
-
-   // Getter/Setter here to help with serialization challenges and race conditions of spring injecting the clock
-   var lastRunTime: Instant
-      get() {
-         return _lastRunTime!!
-      }
-      set(value) {
-         _lastRunTime = value
-      }
-
 
    @PostConstruct
    fun init() {
-      if (_lastRunTime == null) {
-         scheduleWork()
-      }
+      doWork()
    }
 }

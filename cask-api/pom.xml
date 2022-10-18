@@ -21,7 +21,7 @@
        <dependency>
           <groupId>com.vladmihalcea</groupId>
           <artifactId>hibernate-types-52</artifactId>
-          <version>2.19.2</version>
+          <version>2.20.0</version>
        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

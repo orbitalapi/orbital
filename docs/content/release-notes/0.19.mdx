@@ -1,17 +1,19 @@
 ---
-title: 0.19.0
+title: 0.19.x releases
 ---
 
-import { Link } from 'gatsby';
+import {Link} from "gatsby";
+
+This page contains details of releases in the 0.19.xx set of releases.
+
+## 0.19.0
 
 0.19 is a feature release, containing multiple new features, including some breaking changes.
 
-## Taxi version
+#### Taxi version
 The Taxi version has not changed in this release, and remains on 1.30.2.
 
-## Breaking Changes
-
-### Pipeline Runner Changes
+### Breaking change - Pipeline Runner Changes
 If using a bespoke Pipeline Runner application, you'll need to make the following changes:
 
 Remove the following annotation from the Spring boot application class (i.e. the type annotated with `@SpringBootApplication`)
@@ -92,7 +94,7 @@ as:
           eurekaUri: http://127.0.0.1:8761/eureka/
 ```
 
-### Embedded Vyne
+### Breaking change - Embedded Vyne
 
 Applications using Vyne in embedded mode will need to make the following changes upon updating to `0.19.0`.
 
@@ -170,38 +172,36 @@ vyne:
     memberTag: vyne-query-service # Member tags allow delegation of responsibilities
     eurekaUri: http://127.0.0.1:8761/eureka/
 ```
-### File Schema Server Change
+### Package rename: File Schema Server Changed
 
 file-schema-server renamed as schema-server and hence starting from version 0.19.0 the corresponding docker image name is vyneco/schema-server
 
 
-## New Features
-
-### Cask message retention
+### Feature: Cask message retention
 Casks can now be configured to retain messages for a specified duration.  Messages which are older than this duration
 are periodically purged.
 
 See  <Link to="/casks/configuring-message-retention/">Configuring cask retention</Link> for more details
 
-### Writing Cask messages to Kafka
+### Feature: Writing Cask messages to Kafka
 Casks can now be configured to output messages to Kafka as they are ingested.  For casks with a `@PrimaryKey` annotation, messages contain both the old and the new states.  Otherwise, the full message is output.
 
 Enabling this setting is per-cask, and comes with a performance overhead at ingestion time.
 
 See <Link to="/casks/kafka-publication">Writing Cask Messages to kafka</Link> for more details.
 
-### Authentication headers
+### Feature: Authentication headers
 Vyne can now be configured to include authentication headers when calling upstream services.
 
 See <Link to="/querying-with-vyne/authentication-to-services">Authentication Vyne to other services</Link> for more details.
 
-### Distributing projection work over a cluster
+### Feature: Distributing projection work over a cluster
 Vyne can now be deployed with a cluster of nodes, and configured to parallelize the projection work of projecting queries.
 
 See <Link to="/deployment/clustered-deployment/">clustered deployments</Link> for details of how to deploy Vyne in this configuration.  This is only
 supported for query server workloads, and not currently available for embedded clients.
 
-### Support for continuous queries in Vyne
+### Feature: Support for continuous queries in Vyne
 Vyne now supports continuous queries - ie., queries from data sources that provide infinite streams of data.
 
 Any service can publish support for continuous queries, by exposing a `text/event-stream` endpoint, and defining
@@ -209,7 +209,178 @@ the return type as `Stream<T>` in the schema.
 
 See <Link to="/querying-with-vyne/continuous-queries/">Continuous queries</Link> for more details.
 
-### Continuous query support in Casks
+### Feature: Continuous query support in Casks
 Support for continuous queries has been added to Casks, and is enabled by default.
 
 See <Link to="/casks/continuous-queries/">Continuous queries with Casks</Link> for more details.
+
+## 0.19.1
+
+0.19.1 is a minor feature release
+
+#### Taxi version
+The Taxi version has changed in this release, new version is 1.30.5.
+
+### Feature: String replace function
+
+This release of Vyne brings support for the  String `replace` function, recently added to Taxi lang.
+
+```taxi
+replace(String, String, String)
+Replaces the contents of the provided String, returning a new String
+      Accepts three args:
+       * String: The string to search
+       * String: The string to search for
+       * String: The string to use as a replacement
+      ]]
+```
+
+Example usage
+
+```taxi
+model Actor {
+    actorName : ActorName
+    anotherName : String by replace(this.actorName, "TEXT_TO_REPLACE", "REPLACEMENT_TEXT")
+}
+```
+
+### Fix: Column type change in Cask tables
+`cask_message` now stores references to LOB data as `oid`.  This enables usage of the `vacuumlo` Postgres utility  ( see https://www.postgresql.org/docs/12/vacuumlo.html ) to remove orphaned large object from cask postgres database.
+
+
+## 0.19.2
+
+0.19.2 is a patch release, containing only one bug fix.
+
+#### Taxi version
+No change in taxi version (still 1.30.5) - Same as in 0.19.1
+
+## Bug Fixes
+
+* Vyne now can use the result of interim 'post' rest api responses correctly during enrichment. (Fixes HLP-80)
+
+## 0.19.3
+
+
+0.19.3 is a patch release, containing only one bug fix and updates to Vyne configuration settings for embedded vyne and applications publishing schemas.
+
+#### Taxi version
+No change in taxi version (still 1.30.5) - Same as in 0.19.2
+
+### Bug Fixes
+
+* Vyne now can explore additional enrichment paths when it re-evaluates a previously failed path during search process.
+
+### Configuration Changes
+
+When embedding vyne to existing JVM application, release 0.19.2 requires adding 'projection' and 'hazelcast' configuration sections into the application configuration:
+
+```yaml
+    vyne:
+       schema:
+          publicationMethod: EUREKA
+       queryService:
+          name: QUERY-SERVICE
+       pipelinesOrchestratorService:
+          name: PIPELINES-ORCHESTRATOR
+       caskService:
+          name: CASK
+       queryServiceUrl: http://query-service
+       graph:
+          vyneGraphBuilderCache:
+             baseSchemaCacheSize: 100
+             graphWithFactTypesCacheSize: 100
+             baseSchemaGraphCacheSize: 100
+          vyneDiscoverGraphQuery:
+             schemaGraphCacheSize: 5
+             searchPathExclusionsCacheSize: 200000
+       projection:
+          distributionMode: LOCAL # One of [LOCAL | HAZELCAST] LOCAL = projections are performed on the instance process the query, HAZELCAST = distribute projection work to eligible members
+          distributionPacketSize: 100 # Number of TypedInstances in a distributed workload - only applicable where distributionMode = HAZELCAST
+          distributionRemoteBias: 10 # Number of nodes in the hazelcast cluster before work is preferentially distributed to remote nodes
+       hazelcast:
+          enabled: false # Enable or disable starting a hazelcast cluster
+          discovery: MULTICAST # One of aws/multicast/swarm
+          memberTag: vyne-query-service # Member tags allow delegation of responsibilities
+          eurekaUri: http://127.0.0.1:8761/eureka/
+```
+
+Above is not required anymore and 'projection' and 'hazelcast' vyne configuration sections can be omitted:
+
+```yaml
+spring.application.name: embedded-vyne-sample
+
+
+spring:
+  codec:
+    max-in-memory-size: 100MB
+  mvc:
+    async:
+      request-timeout: 18000000
+
+
+api.title: "Sample Embedded Vyne Application"
+api.description: "Executes VyneQL queries via embedded Vyne"
+
+server:
+  port: 18031
+
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 5000
+
+vyne:
+  schema:
+    publicationMethod: EUREKA
+  queryService:
+    name: query-service
+  graph:
+    vyneGraphBuilderCache:
+      baseSchemaCacheSize: 100
+      graphWithFactTypesCacheSize: 100
+      baseSchemaGraphCacheSize: 100
+    vyneDiscoverGraphQuery:
+      schemaGraphCacheSize: 5
+      searchPathExclusionsCacheSize: 200000
+
+eureka:
+  uri: http://127.0.0.1:8761
+  client:
+    registryFetchIntervalSeconds: 1
+    initialInstanceInfoReplicationIntervalSeconds: 5
+    serviceUrl:
+      defaultZone: ${eureka.uri}/eureka/
+  instance:
+    leaseRenewalIntervalInSeconds: 2
+    leaseExpirationDurationInSeconds: 5
+
+```
+
+## 0.19.4
+
+0.19.4 is a patch release, containing only one bug fix.
+
+#### Taxi version
+No change in taxi version (still 1.30.5) - Same as in 0.19.3
+
+### Bug Fixes
+
+* Enrichment search algorithm rectified to fix an issue in failed search path processing.
+
+
+## 0.19.5
+
+
+0.19.5 is a patch release, containing only the upgrade of H2 dependency to address <Link to="https://github.com/h2database/h2database/security/advisories/GHSA-h376-j262-vhq6">RCE in H2 Console Vulnerability</Link>.
+While we do not believe Vyne is affected by the exploit, this release upgrades the dependency as advised by H2, and as a precautionary measure.
+
+
+#### Taxi version
+No change in taxi version (still 1.30.5) - Same as in 0.19.4
+
+### Security Fixes
+
+* Vyne query server H2 runtime dependency version upgraded to 2.0.206.

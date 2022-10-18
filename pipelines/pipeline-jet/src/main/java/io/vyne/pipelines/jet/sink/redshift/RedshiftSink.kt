@@ -6,7 +6,6 @@ import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.models.TypedInstance
-import io.vyne.pipelines.jet.api.transport.ConsoleLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.redshift.RedshiftTransportOutputSpec
@@ -64,7 +63,7 @@ class RedshiftSinkBuilder :
             val schema = vyne.schema
             val input = TypedInstance.from(
                schema.versionedType(pipelineTransportSpec.targetType.typeName).type,
-               message.asString(ConsoleLogger),
+               message.asString(),
                schema
             )
 

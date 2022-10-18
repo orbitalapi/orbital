@@ -3,7 +3,6 @@ package io.vyne.cask.query.vyneql
 import io.vyne.cask.config.CaskQueryDispatcherConfiguration
 import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.schemas.fqn
-import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
@@ -29,11 +28,12 @@ class StreamingVyneQlQueryServiceTest : BaseCaskIntegrationTest() {
    override fun setup() {
       super.setup()
       schemaProvider.updateSource(schema)
-      val schema = schemaProvider.schema as TaxiSchema
+      val schema = schemaProvider.schema
       val person = schema.versionedType("Person".fqn())
-      service = VyneQlQueryService(jdbcStreamingTemplate, VyneQlSqlGenerator(
-         schemaProvider, configRepository
-      ), CaskQueryDispatcherConfiguration()
+      service = VyneQlQueryService(
+         jdbcTemplate, VyneQlSqlGenerator(
+            schemaProvider, configRepository
+         ), CaskQueryDispatcherConfiguration()
       )
       val json =
          """[

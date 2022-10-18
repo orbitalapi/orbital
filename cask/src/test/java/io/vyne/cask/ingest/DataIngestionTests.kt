@@ -5,7 +5,6 @@ import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockitokotlin2.any
 import com.winterbe.expekt.should
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import io.vyne.cask.CaskIngestionRequest
 import io.vyne.cask.CaskService
 import io.vyne.cask.MessageIds
 import io.vyne.cask.config.CaskQueryDispatcherConfiguration
@@ -55,8 +54,21 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(timeType, TypeDbWrapper(timeType, schema), pipelineSource)
 
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
-      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.timeTypeTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
+      caskDao = CaskDAO(
+         jdbcTemplate,
+         SimpleTaxiSchemaProvider(TestSchema.timeTypeTest),
+         dataSource,
+         caskMessageRepository,
+         configRepository,
+         queryMonitor = queryMonitor
+      )
+      ingester = Ingester(
+         jdbcTemplate,
+         pipeline,
+         caskIngestionErrorProcessor.sink(),
+         caskMutationDispatcher,
+         SimpleMeterRegistry()
+      )
       caskDao.dropCaskRecordTable(timeType)
       caskDao.createCaskRecordTable(timeType)
       ingester.ingest().collectList().block()
@@ -84,8 +96,21 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
+      caskDao = CaskDAO(
+         jdbcTemplate,
+         SimpleTaxiSchemaProvider(TestSchema.upsertTest),
+         dataSource,
+         caskMessageRepository,
+         configRepository,
+         queryMonitor = queryMonitor
+      )
+      ingester = Ingester(
+         jdbcTemplate,
+         pipeline,
+         caskIngestionErrorProcessor.sink(),
+         caskMutationDispatcher,
+         SimpleMeterRegistry()
+      )
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
       ingester.ingest().collectList().block()
@@ -117,12 +142,12 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
 
       caskDao = CaskDAO(
          jdbcTemplate,
-         jdbcStreamingTemplate,
          SimpleTaxiSchemaProvider(TestSchema.upsertTest),
          dataSource,
          caskMessageRepository,
          configRepository,
-         queryMonitor = queryMonitor)
+         queryMonitor = queryMonitor
+      )
 
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
@@ -173,8 +198,21 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
+      caskDao = CaskDAO(
+         jdbcTemplate,
+         SimpleTaxiSchemaProvider(TestSchema.upsertTest),
+         dataSource,
+         caskMessageRepository,
+         configRepository,
+         queryMonitor = queryMonitor
+      )
+      ingester = Ingester(
+         jdbcTemplate,
+         pipeline,
+         caskIngestionErrorProcessor.sink(),
+         caskMutationDispatcher,
+         SimpleMeterRegistry()
+      )
       caskDao.dropCaskRecordTable(type)
 
       ingester.ingest()
@@ -196,7 +234,14 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
             val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
+      caskDao = CaskDAO(
+         jdbcTemplate,
+         SimpleTaxiSchemaProvider(TestSchema.upsertTest),
+         dataSource,
+         caskMessageRepository,
+         configRepository,
+         queryMonitor = queryMonitor
+      )
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
       val caskService = CaskService(
@@ -244,8 +289,21 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
          val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
          val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-         caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-         ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(),caskMutationDispatcher, SimpleMeterRegistry())
+         caskDao = CaskDAO(
+            jdbcTemplate,
+            SimpleTaxiSchemaProvider(TestSchema.upsertTest),
+            dataSource,
+            caskMessageRepository,
+            configRepository,
+            queryMonitor = queryMonitor
+         )
+         ingester = Ingester(
+            jdbcTemplate,
+            pipeline,
+            caskIngestionErrorProcessor.sink(),
+            caskMutationDispatcher,
+            SimpleMeterRegistry()
+         )
          caskDao.dropCaskRecordTable(type)
          caskDao.createCaskRecordTable(type)
          ingester.ingest().collectList().block()
@@ -268,7 +326,14 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       Benchmark.benchmark("UPSERT to db") { stopwatch ->
          val input: Flux<InputStream> = Flux.just(source.byteInputStream())
          val caskMutationDispatcher: CaskMutationDispatcher = mock()
-         caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
+         caskDao = CaskDAO(
+            jdbcTemplate,
+            SimpleTaxiSchemaProvider(TestSchema.upsertTest),
+            dataSource,
+            caskMessageRepository,
+            configRepository,
+            queryMonitor = queryMonitor
+         )
          caskDao.dropCaskRecordTable(type)
          caskDao.createCaskRecordTable(type)
          val caskService = CaskService(
@@ -313,8 +378,21 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(downCastTestType, TypeDbWrapper(downCastTestType, schema), pipelineSource)
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.temporalSchemaSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
+      caskDao = CaskDAO(
+         jdbcTemplate,
+         SimpleTaxiSchemaProvider(TestSchema.temporalSchemaSource),
+         dataSource,
+         caskMessageRepository,
+         configRepository,
+         queryMonitor = queryMonitor
+      )
+      ingester = Ingester(
+         jdbcTemplate,
+         pipeline,
+         caskIngestionErrorProcessor.sink(),
+         caskMutationDispatcher,
+         SimpleMeterRegistry()
+      )
       caskDao.dropCaskRecordTable(downCastTestType)
       caskDao.createCaskRecordTable(downCastTestType)
       ingester.ingest().collectList().block()
@@ -358,8 +436,21 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(modelWithDefaults, TypeDbWrapper(modelWithDefaults, schema), pipelineSource)
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaWithDefaultValueSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
+      caskDao = CaskDAO(
+         jdbcTemplate,
+         SimpleTaxiSchemaProvider(TestSchema.schemaWithDefaultValueSource),
+         dataSource,
+         caskMessageRepository,
+         configRepository,
+         queryMonitor = queryMonitor
+      )
+      ingester = Ingester(
+         jdbcTemplate,
+         pipeline,
+         caskIngestionErrorProcessor.sink(),
+         caskMutationDispatcher,
+         SimpleMeterRegistry()
+      )
       caskDao.dropCaskRecordTable(modelWithDefaults)
       caskDao.createCaskRecordTable(modelWithDefaults)
       ingester.ingest().collectList().block()
@@ -387,8 +478,21 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(concatModel, TypeDbWrapper(concatModel, schema), pipelineSource)
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaConcatSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
+      caskDao = CaskDAO(
+         jdbcTemplate,
+         SimpleTaxiSchemaProvider(TestSchema.schemaConcatSource),
+         dataSource,
+         caskMessageRepository,
+         configRepository,
+         queryMonitor = queryMonitor
+      )
+      ingester = Ingester(
+         jdbcTemplate,
+         pipeline,
+         caskIngestionErrorProcessor.sink(),
+         caskMutationDispatcher,
+         SimpleMeterRegistry()
+      )
       caskDao.dropCaskRecordTable(concatModel)
       caskDao.createCaskRecordTable(concatModel)
       ingester.ingest().collectList().block()
@@ -413,8 +517,21 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(instantModel, TypeDbWrapper(instantModel, schema), pipelineSource)
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.instantFormatSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
+      caskDao = CaskDAO(
+         jdbcTemplate,
+         SimpleTaxiSchemaProvider(TestSchema.instantFormatSource),
+         dataSource,
+         caskMessageRepository,
+         configRepository,
+         queryMonitor = queryMonitor
+      )
+      ingester = Ingester(
+         jdbcTemplate,
+         pipeline,
+         caskIngestionErrorProcessor.sink(),
+         caskMutationDispatcher,
+         SimpleMeterRegistry()
+      )
       caskDao.dropCaskRecordTable(instantModel)
       caskDao.createCaskRecordTable(instantModel)
       ingester.ingest().collectList().block()
@@ -438,8 +555,21 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(decimalModel, TypeDbWrapper(decimalModel, schema), pipelineSource)
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.decimalSchemaSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
+      caskDao = CaskDAO(
+         jdbcTemplate,
+         SimpleTaxiSchemaProvider(TestSchema.decimalSchemaSource),
+         dataSource,
+         caskMessageRepository,
+         configRepository,
+         queryMonitor = queryMonitor
+      )
+      ingester = Ingester(
+         jdbcTemplate,
+         pipeline,
+         caskIngestionErrorProcessor.sink(),
+         caskMutationDispatcher,
+         SimpleMeterRegistry()
+      )
       caskDao.dropCaskRecordTable(decimalModel)
       caskDao.createCaskRecordTable(decimalModel)
       ingester.ingest().collectList().block()
