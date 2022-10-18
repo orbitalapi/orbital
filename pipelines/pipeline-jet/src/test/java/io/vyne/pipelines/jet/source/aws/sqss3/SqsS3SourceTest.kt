@@ -3,12 +3,18 @@ package io.vyne.pipelines.jet.source.aws.sqss3
 import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
+import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.SqlUtils
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
-import io.vyne.pipelines.jet.*
+import io.vyne.pipelines.jet.BaseJetIntegrationTest
+import io.vyne.pipelines.jet.PostgresSQLContainerFacade
+import io.vyne.pipelines.jet.UTCClockProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
+import io.vyne.pipelines.jet.api.transport.jdbc.JdbcTransportOutputSpec
+import io.vyne.pipelines.jet.awsConnection
+import io.vyne.pipelines.jet.populateS3AndSqs
 import io.vyne.schemas.Type
 import org.awaitility.Awaitility
 import org.jooq.DSLContext
@@ -131,17 +137,6 @@ type OrderWindowSummary {
             )
             listOfSymbols.size >= rowCount
          }
-   }
-
-   private fun symbols(dsl: DSLContext, type: Type): List<String> {
-      return try {
-         dsl.fetch("select * from ${SqlUtils.tableNameOrTypeName(type.taxiType)}").map { record ->
-            record["symbol"].toString()
-         }
-
-      } catch (e: Exception) {
-         emptyList<String>()
-      } // return -1 if the table doesn't exist
    }
 
    private fun symbols(dsl: DSLContext, type: Type): List<String> {
