@@ -1,0 +1,10 @@
+server:
+   # 11 more than 9022, the port than Vyne ran on.
+   port: 9033
+spring:
+   security:
+      oauth2:
+         resourceserver:
+            jwt:
+               jwk-set-uri: ${vyne.security.open-ipd.jwk-set-uri:''}
+orbital:
