@@ -23,7 +23,6 @@ class CsvAttributeAccessorParserTest {
          }
          model Foo {
             country : Country? by column("country")
-
          }
       """.trimIndent())
 

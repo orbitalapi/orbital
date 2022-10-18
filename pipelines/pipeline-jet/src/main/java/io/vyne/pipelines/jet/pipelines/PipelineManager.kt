@@ -33,7 +33,8 @@ class PipelineManager(
    data class ScheduledPipeline(
       val nextRunTime: Instant,
       val pipelineSpec: PipelineSpec<ScheduledPipelineTransportSpec, *>,
-      val submittedPipeline: SubmittedPipeline
+      val submittedPipeline: SubmittedPipeline,
+      val jobId: Long? = null
    ) :
       Serializable
 
@@ -69,7 +70,8 @@ class PipelineManager(
 
    private fun scheduleJobToBeExecuted(
       pipelineSpec: PipelineSpec<ScheduledPipelineTransportSpec, *>,
-      pipelineDotRepresentation: String
+      pipelineDotRepresentation: String,
+      jobId: Long? = null
    ): SubmittedPipeline {
       val schedule = CronSequenceGenerator(pipelineSpec.input.pollSchedule)
       val nextScheduledRunTime = schedule.next(Instant.now())
@@ -84,7 +86,7 @@ class PipelineManager(
       )
       scheduledPipelines.put(
          pipelineSpec.id,
-         ScheduledPipeline(nextScheduledRunTime, pipelineSpec, submittedPipeline)
+         ScheduledPipeline(nextScheduledRunTime, pipelineSpec, submittedPipeline, jobId)
       )
       return submittedPipeline
    }
@@ -106,10 +108,23 @@ class PipelineManager(
             scheduledPipelines.unlock(it.key)
             return@forEach
          }
+
+         val previousJobTerminated = it.value.jobId?.let {
+               jobId ->
+            val jobStatus = hazelcastInstance.jet.getJob(jobId)?.status
+            logger.trace { "status for pipeline ${it.value.pipelineSpec.name} $jobId is $jobStatus" }
+            jobStatus?.isTerminal
+         } ?: true
+         if (!previousJobTerminated && it.value.pipelineSpec.input.preventConcurrentExecution) {
+            logger.trace("Skipping pipeline \"${it.value.pipelineSpec.name}\" as it is input spec set as fixedDelay, and there is an active job ${it.value.jobId}.")
+            scheduledPipelines.unlock(it.key)
+            return@forEach
+         }
+
          logger.info("A scheduled run of the pipeline \"${it.value.pipelineSpec.name}\" starting.")
          val pipeline = pipelineFactory.createJetPipeline(it.value.pipelineSpec)
-         hazelcastInstance.jet.newJob(pipeline)
-         scheduleJobToBeExecuted(it.value.pipelineSpec, it.value.submittedPipeline.dotViz)
+         val job = hazelcastInstance.jet.newJob(pipeline)
+         scheduleJobToBeExecuted(it.value.pipelineSpec, it.value.submittedPipeline.dotViz, job.id)
          scheduledPipelines.unlock(it.key)
       }
    }

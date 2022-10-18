@@ -3,7 +3,6 @@ package io.vyne.cask.rest
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
-import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.cask.query.CaskApiHandler
 import io.vyne.cask.query.vyneql.VyneQlSqlGenerator
 import io.vyne.cask.services.QueryMonitor
@@ -12,19 +11,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.context.annotation.Import
-import org.springframework.test.context.junit.jupiter.SpringExtension
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.junit4.SpringRunner
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import reactor.core.publisher.Mono
 import org.springframework.test.web.reactive.server.WebTestClient
+import reactor.core.publisher.Mono
 
 @RunWith(SpringRunner::class)
 @WebFluxTest
@@ -37,7 +28,7 @@ class CaskRestControllerTest {
    lateinit var service: CaskRestController
 
    @MockBean
-   lateinit var jdbcStreamingTemplate: JdbcStreamingTemplate
+   lateinit var jdbcTemplate: JdbcTemplate
 
    @MockBean
    lateinit var vyneQlSqlGenerator: VyneQlSqlGenerator
@@ -55,7 +46,7 @@ class CaskRestControllerTest {
    @Test
    fun `fetch cask configs`() {
       whenever(service.getCasks()).thenReturn(Mono.just(listOf()))
-      client.get().uri("/api/casks").exchange().expectStatus().isOk().expectBody(ArrayList::class.java)
+      client.get().uri("/api/casks").exchange().expectStatus().isOk.expectBody(ArrayList::class.java)
    }
 
 
@@ -69,7 +60,7 @@ class CaskRestControllerTest {
          Mono.just(tableName)
       }
 
-      client.delete().uri("/api/casks/mytable").exchange().expectStatus().isOk()
+      client.delete().uri("/api/casks/mytable").exchange().expectStatus().isOk
       tableName.should.equal("mytable")
       force.should.be.`false`
    }
@@ -85,7 +76,7 @@ class CaskRestControllerTest {
          Mono.just(typeName)
       }
 
-      client.delete().uri("/api/types/cask/typeName").exchange().expectStatus().isOk()
+      client.delete().uri("/api/types/cask/typeName").exchange().expectStatus().isOk
       typeName.should.equal("typeName")
       force.should.be.`false`
    }

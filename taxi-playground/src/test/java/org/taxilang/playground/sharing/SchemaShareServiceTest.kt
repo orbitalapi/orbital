@@ -2,22 +2,35 @@ package org.taxilang.playground.sharing
 
 import com.winterbe.expekt.should
 import org.apache.commons.lang3.RandomStringUtils
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+import org.springframework.boot.test.autoconfigure.orm.jpa.AutoConfigureDataJpa
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
+import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.taxilang.playground.JpaConfig
 import kotlin.test.assertFailsWith
 
-@SpringBootTest
 @RunWith(SpringRunner::class)
+@DataJpaTest(excludeAutoConfiguration = [FlywayAutoConfiguration::class], )
 class SchemaShareServiceTest {
 
    @Autowired
+   lateinit var repository: StoredSchemaRepository
+
+
    lateinit var service: SchemaShareService
+
+   @Before
+   fun setup() {
+      service = SchemaShareService(repository)
+   }
 
    @Test
    fun `can save a schema`() {
@@ -53,7 +66,6 @@ class SchemaShareServiceTest {
    }
 }
 
-@Configuration
 @Import(JpaConfig::class, SchemaShareService::class)
 class TestConfig
 

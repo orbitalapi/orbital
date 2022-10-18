@@ -1,11 +1,11 @@
 package io.vyne.pipelines.jet.source.aws.s3
 
-import com.google.common.io.Resources
 import com.winterbe.expekt.should
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportInputSpec
 import io.vyne.pipelines.jet.awsConnection
+import io.vyne.utils.toPath
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -19,7 +19,6 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
-import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
 
 
@@ -44,24 +43,26 @@ class S3SourceTest : BaseJetIntegrationTest() {
          .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("not-used", "not-used")))
          .build()
 
-      val resource = Resources.getResource("Coinbase_BTCUSD_3rows.csv").path
       s3.createBucket { b: CreateBucketRequest.Builder -> b.bucket(bucket) }
-      s3.putObject({ builder -> builder.bucket(bucket).key(objectKey) }, Paths.get(resource))
+      s3.putObject({ builder -> builder.bucket(bucket).key(objectKey) }, "Coinbase_BTCUSD_3rows.csv".toPath())
    }
 
    @Test
    fun `can read a csv file from s3`() {
-      // Pipeline Kafka -> Direct
       val coinBaseSchema = """
 type alias Price as Decimal
 type alias Symbol as String
-type OrderWindowSummary {
-    symbol : Symbol by column(2)
-    open : Price by column(3)
+@io.vyne.formats.Csv(
+  delimiter = ",",
+  nullValue = "NULL"
+)
+model OrderWindowSummary {
+    symbol : Symbol by column("Symbol")
+    open : Price by column("Open")
     // Added column
-    high : Price by column(4)
+    high : Price by column("High")
     // Changed column
-    close : Price by column(6)
+    close : Price by column("Close")
 }""".trimIndent()
       val awsConnection = localstack.awsConnection()
       val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(

@@ -6,7 +6,6 @@ import io.vyne.pipelines.jet.api.documentation.PipelineDocs
 import io.vyne.pipelines.jet.api.documentation.PipelineDocumentationSample
 import io.vyne.pipelines.jet.api.documentation.PipelineParam
 import io.vyne.pipelines.jet.api.transport.PipelineDirection
-import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpecId
 import io.vyne.pipelines.jet.api.transport.PipelineTransportType
 import io.vyne.pipelines.jet.api.transport.WindowingPipelineTransportSpec
@@ -14,39 +13,13 @@ import org.intellij.lang.annotations.Language
 
 object JdbcTransport {
    const val TYPE: PipelineTransportType = "jdbc"
-   val INPUT = JdbcTransportInputSpec.specId
    val OUTPUT = JdbcTransportOutputSpec.specId
 }
 
-/**
- * This isn't documented, as I suspect it's junk.
- * No tests, variables are misnamed (topic) and unclear how this would work, since it doesn't operate on a schedule.
- */
-open class JdbcTransportInputSpec(
-   val topic: String,
-   val targetTypeName: String,
-) : PipelineTransportSpec {
-
-   companion object {
-      val specId =
-         PipelineTransportSpecId(JdbcTransport.TYPE, PipelineDirection.INPUT, JdbcTransportInputSpec::class.java)
-   }
-
-   val targetType: VersionedTypeReference
-      get() {
-         return VersionedTypeReference.parse(targetTypeName)
-      }
-
-   override val requiredSchemaTypes: List<String>
-      get() = listOf(targetTypeName)
-
-   override val description: String = "JDBC"
-   override val direction: PipelineDirection
-      get() = PipelineDirection.INPUT
-   override val type: PipelineTransportType
-      get() = JdbcTransport.TYPE
+enum class WriteDisposition(val value: String) {
+   APPEND("APPEND"),
+   RECREATE("RECREATE")
 }
-
 
 @PipelineDocs(
    name = "Database Output",
@@ -58,7 +31,9 @@ data class JdbcTransportOutputSpec(
    @PipelineParam("The name of a connection, configured in Vyne's connection manager")
    val connection: String,
    @PipelineParam("The fully qualified name of the type which content being pushed to the database should be read as")
-   val targetTypeName: String
+   val targetTypeName: String,
+   @PipelineParam("Whether to append new data into the existing table (APPEND), or to create a new table with a unique name and switch over the view to point to the newly created table (RECREATE).")
+   val writeDisposition: WriteDisposition = WriteDisposition.APPEND,
 ) : WindowingPipelineTransportSpec {
    constructor(
       connection: String,
@@ -101,9 +76,12 @@ to the database.
 #### Batching inserts
 In order to reduce load on the database, inserts are batched in windows of ${windowDurationMs}ms.
 
-      """
-
-
+#### Write disposition
+Different pipelines have different needs in terms of what should be the result of subsequent runs. In some cases it is preferable to append the new data into the same table. For example when the new data is an increment to the existing dataset. In other cases it makes sense to replace the data with the new batch which is preferable when data always contains the full dataset. There are two supported write disposition modes to cater for different needs:
+- `APPEND`: The data is appended to the existing table on each run of the pipeline. This is the default.
+- `RECREATE`: The data is written to a new table, and the view is switched to point to the new table. It is the responsibility of the user to ensure that there aren't two concurrent runs as this introduces a race condition for the switch over and especially stale table deletion if enabled. The source needs to support this by providing a unique identifier for each run for it to work. In general, this only works for batch sources as the streaming sources don't ever complete. Currently only the AWS SQS S3 source supports this.
+The default write disposition is `APPEND`.
+"""
    }
 
    val targetType: VersionedTypeReference

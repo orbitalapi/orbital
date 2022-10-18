@@ -34,5 +34,6 @@
    ],
    "npm": {
       "enabled": false
-   }
+   },
+   "branchPrefix": "renovate_"
 }

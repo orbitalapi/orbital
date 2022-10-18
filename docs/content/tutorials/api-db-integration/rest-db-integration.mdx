@@ -4,6 +4,9 @@ description: Deploy Vyne locally, then integrate a database, a REST API, and Kaf
 ---
 
 
+
+
+
 import { Callout } from '../../components/callout';
 import { Link } from "gatsby"
 
@@ -47,7 +50,7 @@ Finally, we'll listen for updates on a Kafka topic, sending Protobuf messages, a
 For this tutorial, we're going to deploy Vyne, as well as a few demo projects
 that we'll use throughout this tutorial.
 
-Everything you need is packaged up in a docker-compose file to make getting started easier.  To launch, run the following in your command line:
+Everything you need is packaged up in a Docker Compose file to make getting started easier.  To launch, run the following in your command line:
 
 ```bash
 mkdir vyne-films-demo
@@ -55,16 +58,18 @@ cd vyne-films-demo
 wget https://gitlab.com/vyne/demos/-/raw/master/films/docker-compose.yml
 wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/schema-server.conf -P vyne/schema-server
 wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/projects/taxi.conf -P vyne/schema-server/projects
-docker-compose up -d
+wget https://gitlab.com/vyne/demos/-/raw/master/films/services.conf -P vyne/config
+docker compose up -d
 ```
 
 This will download the following files:
 
-| File                                                                                                           | Purpose                                                                                                                                                                 |
-|----------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [docker-compose.yml](https://gitlab.com/vyne/demos/-/raw/master/films/docker-compose.yml)                      | The docker compose file that contains all the docker images for this tutorial                                                                                           |
-| [schema-server.conf](https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/schema-server.conf) | A config file for Vyne's <Link to="/reference/schema-server/schema-server/">Schema Server</Link>, which will store and publish the schemas we generate in this tutorial |
-| [taxi.conf](https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/projects/taxi.conf)          | A skeleton taxi project configuration, which contains basic information for the schemas we create                                                                       |
+| File                                                                                                           | Purpose                                                                                                                                                                  |
+|----------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [docker-compose.yml](https://gitlab.com/vyne/demos/-/raw/master/films/docker-compose.yml)                      | The Docker Compose file that contains all the Docker images for this tutorial.                                                                                           |
+| [schema-server.conf](https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/schema-server.conf) | A config file for Vyne's <Link to="/reference/schema-server/schema-server/">Schema Server</Link>, which will store and publish the schemas we generate in this tutorial. |
+| [taxi.conf](https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/projects/taxi.conf)          | A skeleton taxi project configuration, which contains basic information for the schemas we create.                                                                       |
+| [services.conf](https://gitlab.com/vyne/demos/-/raw/master/films/services.conf)                                | A service discovery configuration file to tell services where to find each other. Vyne supports various service discovery mechanisms.                                    |
 
 
 After about a minute, and Vyne should be available at [http://localhost:9022](http://localhost:9022).
@@ -83,7 +88,6 @@ If you run `docker ps`, you should see a collection of docker containers now run
 |---------------------------|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | vyneco/vyne               | Vyne                        | The core Vyne server, which provides our UI, and runs all our integration for us                                                                                                |
 | vyneco/schema-server      | Vyne                        | A schema server, which stores all the schemas that Vyne knows about                                                                                                             |
-| vyneco/eureka             | Vyne (Optional)             | A instance of [Eureka](https://github.com/Netflix/eureka) - a service discovery server, which makes finding and resolving services easier.  This is optional when running Vyne. |
 | films-api                 | Demo                        | A REST API, which exposes information about films.  We also publish a protobuf message to Kafka from here.                                                                      |
 | pagila-db                 | Demo                        | A Postgres Db, which contains the Postgres [Pagila](https://github.com/devrimgunduz/pagila) demo database for a fake DVD rental store                                           |
 | confluentinc/cp-zookeeper | Demo (Kafka)                | Official zookeeper image, required to run Kafka                                                                                                                                 |
@@ -126,9 +130,8 @@ First, we need to tell Vyne how to connect to the database.
 | Username        | root           |
 | Password        | admin          |
 
- * Click Test connection.
- * After a short moment, you should see that the connection was tested successfully.
- * Click Create.
+ * Click "Test connection" and wait for the connection test to be successful.
+ * Click "Save".
 
 The connection to the database has now been created, and the pop-up should close.
 
@@ -160,7 +163,7 @@ To import the schema:
 | Table             | film                                                                              |
 | Default namespace | `io.vyne.demos.films`                                                             |
 
-Namespaces are used to help us group related content together - like packages in Java, and namespaces in C# and Typescript.
+Namespaces are used to help us group related content together - like packages in Java or namespaces in C# and Typescript.
 
 Here, we're providing a default namespace, which will be applied to the types, models and services Vyne will create
 importing this table.
@@ -200,7 +203,7 @@ Vyne will create the necessary schema files in a local project.
 
    Taxi ships a great [VS Code
    plugin](https://marketplace.visualstudio.com/items?itemName=taxi-lang.taxi-language-server), which provides
-   click-to-navigate, syntax highlighting, as you type code completion, etc.
+   click-to-navigate, syntax highlighting, autocompletion and more.
 
 </Callout>
 
@@ -228,11 +231,11 @@ We'll use the UI of Vyne to import a Swagger definition of our REST API
 
 Fill in the form with the following values:
 
-| Parameter         | Value                          |
-|-------------------|--------------------------------|
-| Swagger source    | `http://films-api/v2/api-docs` |
-| Default namespace | `io.vyne.demo.films`           |
-| Base url          | Leave this blank               |
+| Parameter         | Value                               |
+|-------------------|-------------------------------------|
+| Swagger source    | `http://films-api/v2/api-docs`      |
+| Default namespace | `io.vyne.demo.films`                |
+| Base url          | Leave this blank                    |
 
 
 * Click Create
@@ -254,7 +257,7 @@ Note that the input parameter - `filmId` is typed as `String`.  Since we know th
 by the Films database table.  We need to update the type accordingly, so that Vyne knows these two pieces of information are linked.
 
  * Click on the `String` link
- * In the search box, type FilmId
+ * In the search box, type `FilmId`
  * Select the FilmId type that's shown
  * Finally, click Save
 
@@ -277,15 +280,14 @@ make calls to it as needed.
 Now that everything is set up, let's fetch and integrate some data.
 
 ### List all the films in the database
-Queries in Vyne are written in TaxiQL.  TaxiQL is a simple query language that
+Queries in Vyne are written in TaxiQL. TaxiQL is a simple query language that
 isn't tied to one specific underlying technology (i.e., it's independent of databases, APIs, etc.).
 
 This means we can write queries for data without worrying where the data is served from.
 
 Our first query is very simple - it just finds all the films.
 
- * Head over to the Query Builder, and select the Query Editor tab.
- * Alternatively, navigate to [http://localhost:9022/query/editor](http://localhost:9022/query/editor)
+ * Head over to the Query Builder, and select the Query Editor tab (or navigate to [http://localhost:9022/query/editor](http://localhost:9022/query/editor))
  * Paste in the below query:
 
 ```taxi
@@ -293,13 +295,13 @@ find { Film[] }
 ```
  * Click run.
 
-This query tells Vyne to return all the `Film` records.
+This query tells asks Vyne for all `Film` records.
 When this query is executed, Vyne looks for services that expose a collection of Films, and invokes them.
-In our example, that means that Vyne will invoke a database query, selecting all the films.
+In our example, that means that Vyne will query the database to select all available films.
 
-There's some different options to show the result of Vyne queries. These are displayed as tabs under the query editor.
+There are different options to show the result of Vyne queries. These are displayed as tabs under the query editor.
 
- * Table - Nice for tabular, two dimensional data
+ * Table - Nice for tabular, two-dimensional data
  * Tree - Nice for nested data
  * Profile - What work did Vyne to produce the result. Contains information about the systems called by Vyne, performance stats and lineage information.
 
@@ -337,7 +339,7 @@ This time, the data has been returned structured as a tree.  To see the tree dat
 Now our data has been restructured into a tree shape.
 Using this approach, we can change the shape of the structure, along with field names.
 
-In Taxi language, this is called a Projection - as we're changing the shape of the output.
+In Taxi language, this is called a _projection_ - as we're changing the shape of the output.
 
 ### List films and the providers they're available on
 
@@ -482,8 +484,8 @@ data from our REST API and Postgres DB.
 ### Import a Protobuf schema
 Our new releases topic emits a protobuf message - which Vyne needs to know about.
 
-To keep things simple in our demo, the protobuf message is available via one of our APIs.  You can view the protobuf yourself by clicking on [http://localhost:9091/proto](http://localhost:9091/proto).
-For Vyne (running inside the docker container), this is visible as `http://films-api/proto`
+To keep things simple in our demo, the protobuf message is available via one of our APIs.  You can view the protobuf yourself by clicking on [http://localhost:9981/proto](http://localhost:9981/proto).
+For Vyne (running inside the Docker Compose network), this is visible as `http://films-api/proto`.
 
 Import the spec by clicking "Add a data source" on the front page of Vyne, or by navigating to [http://localhost:9022/schema-importer](http://localhost:9022/schema-importer).
 
@@ -569,7 +571,7 @@ expose a continuous stream of data.
 
 Take a look around, and then click Save.
 
-## Join data from  Kafka, API and our DB
+## Join data from Kafka, API and our DB
 It's time to explore writing some queries that join data from across all 3 sources.
 
 First, let's start with querying our Kafka topic.  Head over to the [Query Editor](http://localhost:9022/query/editor),
@@ -585,7 +587,7 @@ In order to see some data, we need to publish onto our Kafka topic.
 Open a terminal window, and paste the following:
 
 ```bash
-curl --location --request POST 'http://localhost:9091/kafka/newReleases/23'
+curl --location --request POST 'http://localhost:9981/kafka/newReleases/23'
 ```
 
 This will send a new release Protobuf message onto our Kafka topic - and you should see
@@ -620,9 +622,9 @@ stream { NewFilmReleaseAnnouncement } as {
 Now, let's push a couple of new release announcements to our kafka topic:
 
 ```bash
-curl --location --request POST 'http://localhost:9091/kafka/newReleases/1'
-curl --location --request POST 'http://localhost:9091/kafka/newReleases/2'
-curl --location --request POST 'http://localhost:9091/kafka/newReleases/3'
+curl --location --request POST 'http://localhost:9981/kafka/newReleases/1'
+curl --location --request POST 'http://localhost:9981/kafka/newReleases/2'
+curl --location --request POST 'http://localhost:9981/kafka/newReleases/3'
 ```
 
 In the results panel, you should see the following:
@@ -644,9 +646,9 @@ has generated during this tutorial.
 
 | Directory                                 | What's there?                                                                                                                         |
 |-------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
-| `./vyne/schema-server/schema-server.conf` | The config file that's driving the Schema server.  It defines where to read and write the schema files Vyne created in the background |
-| `./vyne/schema-server/projects`           | The schema project that Vyne was writing schemas to                                                                                   |
-| `./vyne/config/connections.conf`          | A connections file defining the api connections you imported in the UI                                                                |
+| `./vyne/schema-server/schema-server.conf` | The config file that's driving the Schema server. It defines where to read and write the schema files Vyne created in the background. |
+| `./vyne/schema-server/projects`           | The schema project that Vyne was writing schemas to.                                                                                  |
+| `./vyne/config/connections.conf`          | A connections file defining the api connections you imported in the UI.                                                               |
 
 ### Other tutorials
 There's lots of things left to explore - a few great next tutorials are:
