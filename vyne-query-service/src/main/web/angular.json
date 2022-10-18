@@ -266,6 +266,94 @@
           }
         }
       }
+    },
+    "orbital": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss"
+        },
+        "@schematics/angular:application": {
+          "strict": true
+        }
+      },
+      "root": "",
+      "sourceRoot": "src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "outputPath": "../../../../station/target/classes/static",
+            "index": "src/orbital-app/index.html",
+            "main": "src/orbital-app/main.ts",
+            "polyfills": "src/orbital-app/polyfills.ts",
+            "tsConfig": "src/orbital-app/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "scripts": [
+            ],
+            "assets": [
+              "src/taxi-logo-48x48.png",
+              "src/assets",
+              {
+                "glob": "**/*",
+                "input": "node_modules/monaco-editor",
+                "output": "assets/monaco-editor/"
+              },
+              {
+                "glob": "**/*",
+                "input": "node_modules/@taiga-ui/icons/src",
+                "output": "assets/taiga-ui/icons"
+              }
+            ],
+            "styles": [
+              "node_modules/monaco-editor/dev/vs/editor/editor.main.css",
+              "node_modules/@taiga-ui/core/styles/taiga-ui-global.less",
+              "node_modules/@taiga-ui/core/styles/taiga-ui-theme.less",
+              "node_modules/reactflow/dist/style.css",
+              "src/orbital-app/styles.scss"
+            ]
+          },
+          "configurations": {
+            "production": {
+              "fileReplacements": [
+                {
+                  "replace": "src/orbital-app/environments/environment.ts",
+                  "with": "src/orbital-app/environments/environment.prod.ts"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "buildOptimizer": false,
+              "optimization": false,
+              "vendorChunk": true,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "browserTarget": "orbital:build:production"
+            },
+            "development": {
+              "browserTarget": "orbital:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "browserTarget": "orbital:build"
+          }
+        }
+      }
     }
   },
   "defaultProject": "vyne-app",

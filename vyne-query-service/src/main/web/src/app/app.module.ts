@@ -14,7 +14,7 @@ import { AuthModule } from './auth/auth.module';
 import { AuthService } from './auth/auth.service';
 import { TuiLinkModule, TuiRootModule } from '@taiga-ui/core';
 import { LandingPageModule } from './landing-page/landing-page.module';
-import { ORBITAL_ROUTES } from 'src/app/orbital.routes';
+import { VYNE_ROUTES } from 'src/app/vyne.routes';
 import { ConfirmationDialogModule } from 'src/app/confirmation-dialog/confirmation-dialog.module';
 import { LANGUAGE_SERVER_WS_ADDRESS_TOKEN } from 'src/app/code-editor/code-editor.component';
 import { WebsocketService } from 'src/app/services/websocket.service';
@@ -29,7 +29,7 @@ const oauth2OidcModule = [AuthModule];
     AppComponent,
   ],
   imports: [
-    ORBITAL_ROUTES,
+    VYNE_ROUTES,
 
     BrowserModule,
     BrowserAnimationsModule,

@@ -1,0 +1,50 @@
+@import "fonts";
+@import "variables";
+
+$mono: var(--mono-font);
+$body-font: var(--body-font);
+$headings-font: var(--body-font);
+
+.mono {
+  font-family: $mono;
+}
+
+h1, .h1 {
+  font-family: $headings-font;
+  font-weight: 700;
+  //font-size: 4rem;
+  //line-height: 1.3;
+}
+
+h2, .h2 {
+  font-family: $headings-font;
+  font-weight: 500;
+  //font-size: 3rem;
+  //line-height: 1.3;
+}
+
+h3, .h3 {
+  font-family: $headings-font;
+  font-weight: 300;
+  //font-size: 2rem;
+  //line-height: 1.3;
+}
+
+h4, .h4 {
+  font-family: $headings-font;
+  //font-size: 1.5rem;
+  //line-height: 1.3;
+}
+
+h5, .h5 {
+  font-family: $headings-font;
+  //font-size: 1.25rem;
+  //line-height: 1.3;
+}
+
+h6, .h6 {
+  font-family: $headings-font;
+  //font-size: 1.125rem;
+  //line-height: 1.3;
+}
+

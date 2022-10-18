@@ -4,7 +4,7 @@ import { VynePrivileges } from 'src/app/services/user-info.service';
 import { LandingPageContainerComponent } from 'src/app/landing-page/landing-page-container.component';
 import { QueryPanelRouteModule } from 'src/app/query-panel/query-panel.route.module';
 
-export const ORBITAL_ROUTES = RouterModule.forRoot(
+export const VYNE_ROUTES = RouterModule.forRoot(
   [
     {
       path: '',

@@ -5,8 +5,6 @@ import io.vyne.auth.authentication.VyneUser
 import io.vyne.query.Fact
 import io.vyne.queryService.schemas.VyneTypes
 import io.vyne.schemas.fqn
-import reactor.core.publisher.Flux
-import java.util.concurrent.ConcurrentHashMap
 
 
 object UserFacts {
