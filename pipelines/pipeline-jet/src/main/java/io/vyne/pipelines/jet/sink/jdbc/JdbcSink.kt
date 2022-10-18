@@ -131,6 +131,10 @@ class JdbcSinkBuilder : WindowingPipelineSinkBuilder<JdbcTransportOutputSpec> {
          }
       }.destroyFn { context: JdbcSinkContext ->
          if (pipelineTransportSpec.writeDisposition == WriteDisposition.RECREATE) {
+            if (context.tableNameSuffix == null) {
+               context.logger.info("Not updating the DB view for ${pipelineTransportSpec.targetTypeName} as there was no data received, and as such no table was created.")
+               return@destroyFn
+            }
             val targetType = context.schema().type(pipelineTransportSpec.targetType)
             val tableNamePrefix = SqlUtils.tableNameOrTypeName(targetType.taxiType)
             val tableName = "${tableNamePrefix}${context.tableNameSuffix}"

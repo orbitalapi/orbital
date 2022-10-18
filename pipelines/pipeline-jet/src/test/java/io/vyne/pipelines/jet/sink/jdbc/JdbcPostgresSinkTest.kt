@@ -1,5 +1,6 @@
 package io.vyne.pipelines.jet.sink.jdbc
 
+import com.hazelcast.jet.impl.connector.WriteBufferedP
 import com.hazelcast.jet.pipeline.test.TestSources
 import com.winterbe.expekt.should
 import io.vyne.connectors.jdbc.JdbcConnectionFactory
@@ -17,6 +18,7 @@ import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec
 import io.vyne.pipelines.jet.source.fixed.ItemStreamSourceSpec
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
+import nl.altindag.log.LogCaptor
 import org.awaitility.Awaitility
 import org.jooq.DSLContext
 import org.jooq.impl.DSL.condition
@@ -31,6 +33,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
 import java.time.Duration
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 
 @Testcontainers
@@ -244,6 +247,52 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
    }
 
    @Test
+   fun canHandleEmptyBatchSource() {
+      val jdbcSinkBuilderLogCaptor = LogCaptor.forClass(WriteBufferedP::class.java)
+      jdbcSinkBuilderLogCaptor.setLogLevelToInfo()
+      val schemaSource = """
+         model Person {
+            firstName : FirstName inherits String
+            lastName : LastName inherits String
+         }
+         model Target {
+            givenName : FirstName
+         }
+      """
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+         schemaSource, listOf(postgresSQLContainerFacade.connection)
+      )
+      val vyne = vyneProvider.createVyne()
+      val pipelineSpec = PipelineSpec(
+         name = "test-http-poll",
+         input = BatchItemsSourceSpec(
+            items = emptyList(),
+            typeName = "Person".fqn(),
+            groupId = "test"
+         ),
+         outputs = listOf(
+            JdbcTransportOutputSpec(
+               "test-connection",
+               "Target",
+               WriteDisposition.RECREATE
+            )
+         )
+      )
+      val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
+
+      // Table shouldn't exist
+      val startRowCount = rowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Target"))
+      startRowCount.should.equal(-1)
+
+      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec, validateJobStatusIsRunningEventually = false)
+      Awaitility.await().atMost(30, TimeUnit.SECONDS).until {
+         jdbcSinkBuilderLogCaptor.infoLogs.any { traceLog ->
+            traceLog.contains("Not updating the DB view for Target as there was no data received, and as such no table was created.")
+         }
+      }
+   }
+
+   @Test
    fun truncateModeWorks() {
       val schemaSource = """
          model Person {
@@ -364,9 +413,11 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
 
       // Tables shouldn't exist
-      val personStartRowCount = rowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Person"))
+      val personStartRowCount =
+         rowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Person"))
       personStartRowCount.should.equal(-1)
-      val targetStartRowCount = rowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Target"))
+      val targetStartRowCount =
+         rowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Target"))
       targetStartRowCount.should.equal(-1)
 
       val (_, _) = startPipeline(hazelcastInstance, vyneProvider, personPipelineSpec)
@@ -404,7 +455,8 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
 
       // Tables shouldn't exist
-      val personStartRowCount = rowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Person"))
+      val personStartRowCount =
+         rowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Person"))
       personStartRowCount.should.equal(-1)
 
       val (_, _) = startPipeline(hazelcastInstance, vyneProvider, personPipelineSpec)
