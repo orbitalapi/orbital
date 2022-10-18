@@ -25,8 +25,8 @@ variables:
 stages:
    - build
    - deploy
-   - release
    - verify
+   - release
 
 default:
    tags:
