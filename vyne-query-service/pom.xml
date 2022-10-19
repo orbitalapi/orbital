@@ -132,7 +132,7 @@
       <dependency>
          <groupId>org.bitbucket.b_c</groupId>
          <artifactId>jose4j</artifactId>
-         <version>0.9.0</version>
+         <version>0.9.1</version>
          <scope>test</scope>
       </dependency>
       <dependency>
