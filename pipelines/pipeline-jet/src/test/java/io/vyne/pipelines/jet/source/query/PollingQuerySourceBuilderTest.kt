@@ -47,10 +47,7 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
       val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "Person")
       val pipelineSpec = PipelineSpec(
          name = "test-query-poll",
-         input = PollingQueryInputSpec(
-            query,
-            CronExpressions.EVERY_SECOND
-         ),
+         input = PollingQueryInputSpec(query, CronExpressions.EVERY_SECOND),
          outputs = listOf(outputSpec)
       )
 
@@ -70,7 +67,7 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
    }
 
    @Test
-   fun `poll the query with fixed delay`() {
+   fun `poll the query with preventConcurrentExecution delay`() {
       val pipelineManagerLogCaptor = LogCaptor.forClass(PipelineManager::class.java)
       pipelineManagerLogCaptor.setLogLevelToTrace()
       val (hazelcastInstance, applicationContext, vyneProvider, stub) = jetWithSpringAndVyne(
@@ -86,14 +83,13 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
       )
 
       val vyne = vyneProvider.createVyne()
-      stub.addResponseFlow("getAll") { _, _ -> flow {
-         delay(5000L)
-         emit(vyne.parseJson("Person", """{ "firstName": "Jimmy", "lastName": "Fallon" }"""))
-         emit(vyne.parseJson("Person", """{ "firstName": "Conan", "lastName": "O'Brien" }"""))
-         emit(vyne.parseJson("Person", """{ "firstName": "Jimmy", "lastName": "Kimmel" }"""))
-
-      }
-
+      stub.addResponseFlow("getAll") { _, _ ->
+         flow {
+            delay(10000L)
+            emit(vyne.parseJson("Person", """{ "firstName": "Jimmy", "lastName": "Fallon" }"""))
+            emit(vyne.parseJson("Person", """{ "firstName": "Conan", "lastName": "O'Brien" }"""))
+            emit(vyne.parseJson("Person", """{ "firstName": "Jimmy", "lastName": "Kimmel" }"""))
+         }
       }
 
       val query = """
@@ -104,19 +100,17 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
       val pipelineSpec = PipelineSpec(
          name = "test-query-poll",
          input = PollingQueryInputSpec(
-            query,
-            CronExpressions.EVERY_SECOND,
+            query, CronExpressions.EVERY_SECOND,
             preventConcurrentExecution = true
          ),
          outputs = listOf(outputSpec)
       )
 
       startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
-      Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
-            listSinkTarget.list.size == 3 &&
-               pipelineManagerLogCaptor.traceLogs.any { traceLog ->
-                  traceLog.contains("Skipping pipeline \"test-query-poll\" as it is input spec set as fixedDelay, and there is an active job")
-               }
+      Awaitility.await().atMost(30, TimeUnit.SECONDS).until {
+         listSinkTarget.list.size == 3 && pipelineManagerLogCaptor.traceLogs.any { traceLog ->
+            traceLog.contains("Skipping pipeline \"test-query-poll\" as it is input spec set as fixedDelay, and there is an active job")
+         }
       }
    }
 }

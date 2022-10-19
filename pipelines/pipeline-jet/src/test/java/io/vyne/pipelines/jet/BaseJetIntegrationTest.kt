@@ -203,7 +203,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       sourceProvider: PipelineSourceProvider = pipelineSourceProvider,
       sinkProvider: PipelineSinkProvider = pipelineSinkProvider,
       validateJobStatusIsRunningEventually: Boolean = true
-   ): Pair<SubmittedPipeline, Job?> {
+   ): Triple<SubmittedPipeline, Job?, PipelineManager> {
       val manager = pipelineManager(hazelcastInstance, vyneProvider, sourceProvider, sinkProvider)
       Timer().scheduleAtFixedRate(
          object : TimerTask() {
@@ -211,7 +211,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
                manager.runScheduledPipelinesIfAny()
             }
          },
-         0, 100
+         0, 1000
       )
       val (pipeline, job) = manager.startPipeline(
          pipelineSpec
@@ -221,7 +221,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
          assertJobStatusEventually(job, JobStatus.RUNNING, 5)
       }
 
-      return pipeline to job
+      return Triple(pipeline, job, manager)
    }
 
    fun pipelineManager(
