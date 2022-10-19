@@ -65,9 +65,9 @@ class JdbcSinkBuilder : WindowingPipelineSinkBuilder<JdbcTransportOutputSpec> {
             context.logger.info("${pipelineTransportSpec.targetTypeName} => Table $tableName created")
 
             if (indexStatements.isNotEmpty()) {
-               context.logger.info("${pipelineTransportSpec.targetTypeName} => Creating indexes for $tableName")
+               context.logger.fine("${pipelineTransportSpec.targetTypeName} => Creating indexes for $tableName")
                indexStatements.forEach { indexStatement ->
-                  context.logger.info("${pipelineTransportSpec.targetTypeName} => creating index => ${indexStatement.sql}")
+                  context.logger.fine("${pipelineTransportSpec.targetTypeName} => creating index => ${indexStatement.sql}")
                   indexStatement.execute()
                }
             }
@@ -159,8 +159,8 @@ class JdbcSinkContext(
 
    var tableNameSuffix: String? = tableNameSuffix
       set(value) {
-         if (tableNameSuffix != null) {
-            error("Table name suffix has been set already. ")
+         if (tableNameSuffix != null && tableNameSuffix != value) {
+            error("Table name suffix has been set already to be $tableNameSuffix. It cannot be changed to $value. ")
          }
          field = value
       }

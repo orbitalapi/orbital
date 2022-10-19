@@ -80,7 +80,8 @@ fun populateS3AndSqs(
    objectKey: String,
    sqsQueueName: String,
    csvResourceFile: String = "Coinbase_BTCUSD_3rows.csv",
-   isLargeUpload: Boolean = false
+   isLargeUpload: Boolean = false,
+   skipUpload: Boolean = false
 ): String {
    val s3: S3Client = S3Client
       .builder()
@@ -90,27 +91,29 @@ fun populateS3AndSqs(
       .build()
    s3.createBucket { b: CreateBucketRequest.Builder -> b.bucket(bucket) }
 
-   if (isLargeUpload) {
-      val TWENTY_MEGABYTE = 1024 * 1024 * 20
-      val uploadHelper = MultipartUploadHelper(s3, bucket, objectKey)
-      uploadHelper.start()
-      val outputStream = ByteArrayOutputStream()
-      csvResourceFile.asResource().openStream().use { fileInputStream ->
-         val buffer = ByteArray(TWENTY_MEGABYTE)
-         var bytes = fileInputStream.read(buffer)
-         while (bytes >= 0) {
-            outputStream.write(buffer, 0, bytes)
-            bytes = fileInputStream.read(buffer)
-            uploadHelper.partUpload(outputStream)
+   if (!skipUpload) {
+      if (isLargeUpload) {
+         val TWENTY_MEGABYTE = 1024 * 1024 * 20
+         val uploadHelper = MultipartUploadHelper(s3, bucket, objectKey)
+         uploadHelper.start()
+         val outputStream = ByteArrayOutputStream()
+         csvResourceFile.asResource().openStream().use { fileInputStream ->
+            val buffer = ByteArray(TWENTY_MEGABYTE)
+            var bytes = fileInputStream.read(buffer)
+            while (bytes >= 0) {
+               outputStream.write(buffer, 0, bytes)
+               bytes = fileInputStream.read(buffer)
+               uploadHelper.partUpload(outputStream)
+            }
          }
-      }
-      uploadHelper.complete(outputStream)
-   } else {
-      s3.putObject(
-         { builder -> builder.bucket(bucket).key(objectKey) },
-         csvResourceFile.toPath()
-      )
+         uploadHelper.complete(outputStream)
+      } else {
+         s3.putObject(
+            { builder -> builder.bucket(bucket).key(objectKey) },
+            csvResourceFile.toPath()
+         )
 
+      }
    }
 
 
@@ -122,9 +125,11 @@ fun populateS3AndSqs(
       .build()
 
    val sqsQueueUrl = sqsClient.createQueue(CreateQueueRequest.builder().queueName(sqsQueueName).build()).queueUrl()
-   val sqsMessage =
-      SendMessageRequest.builder().messageBody(sqsMessageBody(bucket, objectKey)).queueUrl(sqsQueueUrl).build()
-   sqsClient.sendMessage(sqsMessage)
+   if (!skipUpload) {
+      val sqsMessage =
+         SendMessageRequest.builder().messageBody(sqsMessageBody(bucket, objectKey)).queueUrl(sqsQueueUrl).build()
+      sqsClient.sendMessage(sqsMessage)
+   }
    return sqsQueueUrl
 }
 

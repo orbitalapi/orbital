@@ -81,7 +81,10 @@ class PollingQuerySourceContext(
             .map { TypedInstanceContentProvider(it) }
             .onEach { queue.add(it) }
             .onCompletion { isDone = true }
-            .catch { isDone = true }
+            .catch { foo ->
+               logger.severe(foo.message)
+               isDone = true
+            }
             .launchIn(scope)
       }
    }

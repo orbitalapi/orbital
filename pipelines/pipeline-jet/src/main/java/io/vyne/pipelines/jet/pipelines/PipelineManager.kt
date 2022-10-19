@@ -68,6 +68,31 @@ class PipelineManager(
       }
    }
 
+   fun triggerScheduledPipeline(pipelineSpecId: String): Boolean {
+      if (!scheduledPipelines.tryLock(pipelineSpecId, 100, TimeUnit.MILLISECONDS)) {
+         return false
+      }
+
+      val isScheduledForNextTrigger: Boolean
+      try {
+         isScheduledForNextTrigger = scheduledPipelines[pipelineSpecId]?.let { scheduledPipeline ->
+            if (scheduledPipeline.jobId == null || hazelcastInstance.jet.getJob(scheduledPipeline.jobId)?.status?.isTerminal == true) {
+               scheduledPipelines.put(
+                  pipelineSpecId,
+                  scheduledPipeline.copy(nextRunTime = Instant.now().minusMillis(500L))
+               )
+               logger.info { "The scheduled pipeline with id $pipelineSpecId and name \"${scheduledPipeline.pipelineSpec.name}\" marked for execution." }
+               true
+            } else {
+               false
+            }
+         } ?: false
+      } finally {
+         scheduledPipelines.unlock(pipelineSpecId)
+      }
+      return isScheduledForNextTrigger
+   }
+
    private fun scheduleJobToBeExecuted(
       pipelineSpec: PipelineSpec<ScheduledPipelineTransportSpec, *>,
       pipelineDotRepresentation: String,
@@ -93,6 +118,10 @@ class PipelineManager(
 
    @Scheduled(fixedDelay = 1000)
    fun runScheduledPipelinesIfAny() {
+      if (!hazelcastInstance.lifecycleService.isRunning) {
+         logger.warn("Hazelcast is not running. Skipping scheduled pipelines execution.")
+         return
+      }
       scheduledPipelines.entries.forEach {
          if (scheduledPipelines.isLocked(it.key)) {
             logger.info("Pipeline \"${it.value.pipelineSpec.name}\" is already locked for running by another instance - skipping it.")
@@ -100,23 +129,16 @@ class PipelineManager(
          }
          val lock = scheduledPipelines.tryLock(it.key, 1, TimeUnit.SECONDS)
          if (!lock) {
-            logger.info("Cannot lock the pipeline \"${it.value.pipelineSpec.name}\" for execution failed - skipping it.")
+            logger.info("Cannot lock the pipeline \"${it.value.pipelineSpec.name}\" for execution - skipping it.")
             return@forEach
          }
-         if (it.value.nextRunTime.isAfter(Instant.now())) {
-            logger.trace("Skipping pipeline \"${it.value.pipelineSpec.name}\" as it is next scheduled to run at ${it.value.nextRunTime}.")
+
+         if (isExecutionScheduledForLater(it.value)) {
             scheduledPipelines.unlock(it.key)
             return@forEach
          }
 
-         val previousJobTerminated = it.value.jobId?.let {
-               jobId ->
-            val jobStatus = hazelcastInstance.jet.getJob(jobId)?.status
-            logger.trace { "status for pipeline ${it.value.pipelineSpec.name} $jobId is $jobStatus" }
-            jobStatus?.isTerminal
-         } ?: true
-         if (!previousJobTerminated && it.value.pipelineSpec.input.preventConcurrentExecution) {
-            logger.trace("Skipping pipeline \"${it.value.pipelineSpec.name}\" as it is input spec set as fixedDelay, and there is an active job ${it.value.jobId}.")
+         if (shouldPreventConcurrentExecution(it.value)) {
             scheduledPipelines.unlock(it.key)
             return@forEach
          }
@@ -127,6 +149,28 @@ class PipelineManager(
          scheduleJobToBeExecuted(it.value.pipelineSpec, it.value.submittedPipeline.dotViz, job.id)
          scheduledPipelines.unlock(it.key)
       }
+   }
+
+   private fun isExecutionScheduledForLater(scheduledPipeline: ScheduledPipeline): Boolean {
+      if (scheduledPipeline.nextRunTime.isAfter(Instant.now())) {
+         logger.trace("Skipping pipeline \"${scheduledPipeline.pipelineSpec.name}\" as it is next scheduled to run at ${scheduledPipeline.nextRunTime}.")
+         return true
+      }
+      return false
+   }
+
+   private fun shouldPreventConcurrentExecution(scheduledPipeline: ScheduledPipeline): Boolean {
+      val previousJobTerminated = scheduledPipeline.jobId?.let { jobId ->
+         val jobStatus = hazelcastInstance.jet.getJob(jobId)?.status
+         logger.trace { "Status for pipeline ${scheduledPipeline.pipelineSpec.name} $jobId is $jobStatus" }
+         jobStatus?.isTerminal
+      } ?: true
+
+      if (!previousJobTerminated && scheduledPipeline.pipelineSpec.input.preventConcurrentExecution) {
+         logger.trace("Skipping pipeline \"${scheduledPipeline.pipelineSpec.name}\" as it is input spec set as fixedDelay, and there is an active job ${scheduledPipeline.jobId}.")
+         return true
+      }
+      return false
    }
 
    private fun storeSubmittedPipeline(jobId: String, submittedPipeline: SubmittedPipeline) {
@@ -203,6 +247,15 @@ class PipelineManager(
          matchingPipelines.isEmpty() -> badRequest("No pipeline with id $pipelineId")
          matchingPipelines.size == 1 -> matchingPipelines.single()
          else -> error("Found ${matchingPipelines.size} pipeline jobs with pipelineSpec id $pipelineId")
+      }
+   }
+
+   fun getHazelcastPipelineStatus(pipelineSpecId: String): com.hazelcast.jet.core.JobStatus? {
+      return scheduledPipelines[pipelineSpecId]?.let { scheduledPipeline ->
+         scheduledPipeline.jobId?.let { jobId ->
+            return hazelcastInstance.jet.getJob(jobId)?.status
+         }
+
       }
    }
 

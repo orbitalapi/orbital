@@ -85,4 +85,11 @@ management:
       health:
          show-components: always
          show-details: always
-
+logging:
+   level:
+     us.fatehi.utility.scheduler: WARN
+     schemacrawler.crawl: WARN
+     schemacrawler.loader.attributes: WARN
+     schemacrawler.loader.weakassociations: WARN
+     schemacrawler.loader.counts: WARN
+     schemacrawler.tools.utility: WARN
