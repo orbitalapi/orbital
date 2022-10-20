@@ -32,7 +32,7 @@ class VyneHazelcastConfig(
 
       when (vyneHazelcastConfiguration.discovery) {
          HazelcastDiscovery.MULTICAST -> hazelcastConfiguration.apply { multicastHazelcastConfig(this) }
-         HazelcastDiscovery.AWS -> hazelcastConfiguration.apply { awsHazelcastConfig(this) }
+         HazelcastDiscovery.AWS, HazelcastDiscovery.AWS_EC2 -> hazelcastConfiguration.apply { awsHazelcastConfig(this) }
          HazelcastDiscovery.EUREKA -> {
             hazelcastConfiguration.apply { eurekaHazelcastConfig(this, vyneHazelcastConfiguration.eurekaUri) }
          }

@@ -3,7 +3,7 @@ title: Distributing work across a cluster
 description: Configuration for distributing work across a cluster
 ---
 
-import { Link } from "gatsby"
+
 
 Deploying a cluster of Vyne instances allows for distribution of CPU intensive tasks, especially projections.
 
@@ -58,12 +58,12 @@ For projection work to be distributed across all vyne nodes in a cluster the fol
 
 | Config parameter                           | Description                                                                                                                                                                                                                           | Default setting                 |
 |--------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------|
-| `vyne.hazelcast.discovery`                 | Specifies the discovery mechanism hazelcast will use to find other instances. `multicast`, `aws` or `eureka`                                                                                                                          | `multicast`                     |
+| `vyne.hazelcast.discovery`                 | Specifies the discovery mechanism hazelcast will use to find other instances. `multicast`, `aws_ec2` (formerly called `aws`) or `eureka`                                                                                              | `multicast`                     |
 | `vyne.hazelcast.eurekaUri`                 | URI of the coordinating eureka instance when discovery is set to eureka                                                                                                                                                               | `http://127.0.0.1:8761/eureka/` |
 | `vyne.hazelcast.memberTag`                 | Denotes which member type this is within the hazelcast cluster                                                                                                                                                                        | `vyne-query-service`            |
 | `vyne.hazelcast.networkInterface`          | Should only be specified if the deployment environment requires that hazelcast only bind to a single network interface.  The network interface supplied should be specified in hazelcast networking naming e.g. 10.10.*.*, 172.16.*.* |                                 |
-| `vyne.hazelcast.useMetadataForHostAndPort` | Specific to eureka hazelcast discovery.  Specifies if metadata should be published to and used for hazelcast node and port discovery                                                                                                  | `true`                          |
-| `vyne.hazelcast.awsPortScanRange`          | Specific to aws hazelcast discovery.  Specifies the port ranges that will be scanned from running hazelcast on ec2 instances                                                                                                          | `true`                          |
+| `vyne.hazelcast.useMetadataForHostAndPort` | Specific to Eureka Hazelcast discovery.  Specifies if metadata should be published to and used for hazelcast node and port discovery                                                                                                  | `true`                          |
+| `vyne.hazelcast.awsPortScanRange`          | Specific to AWS Hazelcast discovery.  Specifies the port ranges that will be scanned from running hazelcast on EC2 instances                                                                                                          | `true`                          |
 | `vyne.hazelcast.taskPoolSize`              | Specifies the number of threads dedicated to processing distributed work loads                                                                                                                                                        | 2                               |
 | `vyne.hazelcast.taskQueueSize`             | Specifies the size of the queue of tasks on each cluster node.  A value of 0 sets an infinite queue size                                                                                                                              | 0                               |
 
@@ -74,7 +74,7 @@ Vyne services can form a cluster discovering other nodes via one of three discov
 | Mechanism   | Description                                                            |
 |-------------|------------------------------------------------------------------------|
 | `multicast` | Vyne services attempt to use multicast to discover other cluster nodes |
-| `aws`       | Vyne services attempt use AWS metadata to discover other cluster nodes |
+| `aws_ec2`   | Vyne services attempt use AWS metadata to discover other cluster nodes |
 | `eureka`    | Vyne services use Eureka metadata to discover other cluster nodes      |
 
 
@@ -94,8 +94,8 @@ vyne:
 ### AWS
 Enable clustering using AWS discovery with distributed projections
 
-The vyne query server should be run on a EC2 instances where AWS_REGION is specified as an environment variable and the EC2 instance is authorised to
-query ec2 instances via IAM.
+The vyne query server should be run on a EC2 instances where `AWS_REGION` is specified as an environment variable and the EC2 instance is authorised to
+query EC2 instances via IAM.
 
 `AWS_REGION` may alternatively be specified as a JVM property `-DAWS_REGION=eu-west_2`
 
@@ -105,7 +105,7 @@ vyne:
         distributionMode: DISTRIBUTED
 
     hazelcast:
-        discovery: aws
+        discovery: aws_ec2
 ```
 
 ### Eureka
