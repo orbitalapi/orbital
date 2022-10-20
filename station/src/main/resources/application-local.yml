@@ -14,3 +14,5 @@ spring:
       password: "vynedb"
       driver: "org.postgresql.Driver"
       driverClassName: org.postgresql.Driver
+orbital:
+   cors.enabled: false

@@ -18,18 +18,18 @@ export class ExportFileService {
   exportQueryHistoryFromClientQueryId(clientQueryId: string, type: ExportFormat): Observable<ArrayBuffer> {
     if (type === ExportFormat.CUSTOM_FORMAT) {
       return this.http
-        .get(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/export`, {responseType: 'arraybuffer'});
+        .get(`${environment.serverUrl}/api/query/history/clientId/${clientQueryId}/export`, {responseType: 'arraybuffer'});
     } else {
       return this.http
-        .get(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/${type}/export`, {responseType: 'arraybuffer'});
+        .get(`${environment.serverUrl}/api/query/history/clientId/${clientQueryId}/${type}/export`, {responseType: 'arraybuffer'});
     }
   }
 
   exportQueryHistory(id: string, type: ExportFormat): Observable<ArrayBuffer> {
     if (type === ExportFormat.CUSTOM_FORMAT) {
-      return this.http.get(`${environment.queryServiceUrl}/api/query/history/${id}/export`, {responseType: 'arraybuffer'});
+      return this.http.get(`${environment.serverUrl}/api/query/history/${id}/export`, {responseType: 'arraybuffer'});
     } else {
-      return this.http.get(`${environment.queryServiceUrl}/api/query/history/${id}/${type}/export`, {responseType: 'arraybuffer'});
+      return this.http.get(`${environment.serverUrl}/api/query/history/${id}/${type}/export`, {responseType: 'arraybuffer'});
     }
   }
 
@@ -56,14 +56,14 @@ export class ExportFileService {
   }
 
   downloadRegressionPack(id: string, regressionPackName: string): Observable<ArrayBuffer> {
-    return this.http.post(`${environment.queryServiceUrl}/api/query/history/${id}/regressionPack`,
+    return this.http.post(`${environment.serverUrl}/api/query/history/${id}/regressionPack`,
       { queryId: id, regressionPackName },
       { responseType: 'arraybuffer' }
     );
   }
 
   downloadRegressionPackFromClientId(id: string, regressionPackName: string): Observable<ArrayBuffer> {
-    return this.http.post(`${environment.queryServiceUrl}/api/query/history/clientId/${id}/regressionPack`,
+    return this.http.post(`${environment.serverUrl}/api/query/history/clientId/${id}/regressionPack`,
       { queryId: id, regressionPackName },
       { responseType: 'arraybuffer' }
     );
@@ -102,7 +102,7 @@ export class ExportFileService {
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post(
       // eslint-disable-next-line max-len
-      `${environment.queryServiceUrl}/api/csv/downloadTypedParsedTestSpec?testSpecName=${testSpecName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}&type=${contentType.name.fullyQualifiedName}`,
+      `${environment.serverUrl}/api/csv/downloadTypedParsedTestSpec?testSpecName=${testSpecName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}&type=${contentType.name.fullyQualifiedName}`,
       content, { responseType: 'arraybuffer' });
   }
 
@@ -115,12 +115,12 @@ export class ExportFileService {
     if (isTypeIncluded) {
       return this.http.post(
         // eslint-disable-next-line max-len
-        `${environment.queryServiceUrl}/api/csv/downloadTypedParsed?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}&type=${contentType.name.fullyQualifiedName}`,
+        `${environment.serverUrl}/api/csv/downloadTypedParsed?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}&type=${contentType.name.fullyQualifiedName}`,
         content, { responseType: 'arraybuffer' });
     } else {
       return this.http.post(
         // eslint-disable-next-line max-len
-        `${environment.queryServiceUrl}/api/csv/downloadParsed?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}`,
+        `${environment.serverUrl}/api/csv/downloadParsed?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}`,
         content, {responseType: 'arraybuffer'});
     }
 

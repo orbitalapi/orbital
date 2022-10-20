@@ -1,4 +1,4 @@
-package io.vyne.schemaServer.packages
+package io.vyne.schemaServer.core.packages
 
 import arrow.core.Either
 import io.vyne.PackageIdentifier
@@ -9,8 +9,8 @@ import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.api.SchemaSourceProvider
 import io.vyne.schema.publisher.*
 import io.vyne.schema.rsocket.RSocketRoutes
-import io.vyne.schemaServer.config.LocalSchemaNotifier
-import io.vyne.schemaServer.config.SchemaUpdateNotifier
+import io.vyne.schemaServer.core.config.LocalSchemaNotifier
+import io.vyne.schemaServer.core.config.SchemaUpdateNotifier
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import io.vyne.schemas.Schema

@@ -12,12 +12,24 @@
    <artifactId>station</artifactId>
 
    <properties>
+      <buildNumber>0</buildNumber>
       <maven.compiler.source>11</maven.compiler.source>
       <maven.compiler.target>11</maven.compiler.target>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <app.main.class>io.orbital.station.OrbitalStationApp</app.main.class>
+      <app.distribution.directory>${project.build.directory}/distributions/app</app.distribution.directory>
+
+      <!-- see the plugin below for why we're disabling this -->
+      <spring-boot.repackage.skip>true</spring-boot.repackage.skip>
+
    </properties>
 
    <dependencies>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-server-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-webflux</artifactId>
@@ -81,6 +93,24 @@
    <build>
       <plugins>
          <plugin>
+            <groupId>io.github.git-commit-id</groupId>
+            <artifactId>git-commit-id-maven-plugin</artifactId>
+            <version>5.0.0</version>
+            <executions>
+               <execution>
+                  <id>get-the-git-infos</id>
+                  <goals>
+                     <goal>revision</goal>
+                  </goals>
+               </execution>
+            </executions>
+            <configuration>
+               <generateGitPropertiesFile>true</generateGitPropertiesFile>
+               <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties
+               </generateGitPropertiesFilename>
+            </configuration>
+         </plugin>
+         <plugin>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-maven-plugin</artifactId>
             <executions>
@@ -124,6 +154,51 @@
                   </buildNumber>
                </additionalProperties>
             </configuration>
+         </plugin>
+         <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>appassembler-maven-plugin</artifactId>
+            <version>2.1.0</version>
+            <executions>
+               <execution>
+                  <id>assemble-script</id>
+                  <phase>package</phase>
+                  <goals>
+                     <goal>assemble</goal>
+                  </goals>
+                  <configuration>
+                     <showConsoleWindow>true</showConsoleWindow>
+                     <programs>
+                        <program>
+                           <mainClass>${app.main.class}</mainClass>
+                           <id>orbital</id>
+                        </program>
+                     </programs>
+                     <repositoryLayout>flat</repositoryLayout>
+                     <repositoryName>lib</repositoryName>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <version>3.4.2</version>
+            <configuration>
+               <descriptors>
+                  <descriptor>src/main/assembly/assembly.xml</descriptor>
+               </descriptors>
+               <appendAssemblyId>false</appendAssemblyId>
+               <finalName>orbital</finalName>
+            </configuration>
+            <executions>
+               <execution>
+                  <id>make-assembly</id> <!-- this is used for inheritance merges -->
+                  <phase>package</phase> <!-- bind to the packaging phase -->
+                  <goals>
+                     <goal>single</goal>
+                  </goals>
+               </execution>
+            </executions>
          </plugin>
       </plugins>
    </build>

@@ -5,7 +5,7 @@ import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.asPackage
 import io.vyne.schema.publisher.SchemaPublisherTransport
-import io.vyne.schemaServer.config.SchemaUpdateNotifier
+import io.vyne.schemaServer.core.config.SchemaUpdateNotifier
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import mu.KotlinLogging

@@ -1,11 +1,11 @@
-package io.vyne.schemaServer.schemaStoreConfig.clustered
+package io.vyne.schemaServer.core.schemaStoreConfig.clustered
 
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 import io.vyne.schema.publisher.ExpiringSourcesStore
 import io.vyne.schema.publisher.KeepAliveStrategyMonitor
 import io.vyne.schema.publisher.http.HttpPollKeepAliveStrategyMonitor
-import io.vyne.schemaServer.config.SchemaUpdateNotifier
+import io.vyne.schemaServer.core.config.SchemaUpdateNotifier
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression

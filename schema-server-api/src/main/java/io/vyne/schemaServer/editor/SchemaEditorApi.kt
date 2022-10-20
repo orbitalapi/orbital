@@ -18,14 +18,14 @@ interface SchemaEditorApi {
       @RequestBody request: SchemaEditRequest
    ): Mono<SchemaEditResponse>
 
-   @PostMapping(path = ["/api/types/{typeName}/annotations"])
+   @PostMapping(path = ["/api/repository/types/{typeName}/annotations"])
    fun updateAnnotationsOnType(
       @PathVariable typeName: String,
       @RequestBody request: UpdateTypeAnnotationRequest
    ): Mono<SchemaEditResponse>
 
    // As per below - shouldn't be part of the Schema editing API
-   @PostMapping(path = ["/api/types/{typeName}/owner"])
+   @PostMapping(path = ["/api/repository/types/{typeName}/owner"])
    fun updateDataOwnerOnType(
       @PathVariable typeName: String,
       @RequestBody request: UpdateDataOwnerRequest

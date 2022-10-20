@@ -14,7 +14,7 @@ export class WebsocketService {
   RETRY_SECONDS = 10;
 
   getWsUrl(path: string) {
-    const apiUrl = environment.queryServiceUrl;
+    const apiUrl = environment.serverUrl;
     if (apiUrl.startsWith('http')) {
       return apiUrl.replace(/^http/, 'ws') + path;
     } else {

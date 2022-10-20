@@ -1,10 +1,12 @@
-package io.vyne.schemaServer.packages
+package io.vyne.schemaServer.core.packages
 
 import io.vyne.PackageIdentifier
 import io.vyne.ParsedPackage
 import io.vyne.UriSafePackageIdentifier
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.publisher.ExpiringSourcesStore
+import io.vyne.schemaServer.packages.PackagesServiceApi
+import io.vyne.schemaServer.packages.SourcePackageDescription
 import io.vyne.schemas.DefaultPartialSchema
 import io.vyne.schemas.PartialSchema
 import io.vyne.spring.http.NotFoundException

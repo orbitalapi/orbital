@@ -13,7 +13,7 @@ import { toPng } from 'html-to-image';
   template: `
     <!-- we need a wrapper to catch the resize events, and then
     provide explicit sizing to container -->
-    <h3>{{ title }}</h3>
+    <h3 *ngIf="title">{{ title }}</h3>
     <div class="wrapper" (resized)="onWrapperResized($event)">
       <div #container></div>
     </div>

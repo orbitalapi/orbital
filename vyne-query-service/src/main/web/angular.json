@@ -293,6 +293,7 @@
             "scripts": [
             ],
             "assets": [
+              "src/silent-refresh.html",
               "src/taxi-logo-48x48.png",
               "src/assets",
               {
@@ -342,7 +343,8 @@
               "browserTarget": "orbital:build:production"
             },
             "development": {
-              "browserTarget": "orbital:build:development"
+              "browserTarget": "orbital:build:development",
+              "proxyConfig": "src/proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

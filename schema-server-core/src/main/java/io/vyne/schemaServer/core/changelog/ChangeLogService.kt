@@ -1,15 +1,11 @@
-package io.vyne.schemaServer.changelog
+package io.vyne.schemaServer.core.changelog
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.PackageIdentifier
-import io.vyne.UnversionedPackageIdentifier
 import io.vyne.UriSafePackageIdentifier
 import io.vyne.schema.publisher.SchemaUpdatedMessage
-import io.vyne.schemaServer.config.SchemaUpdateNotifier
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.QualifiedNameAsStringDeserializer
-import io.vyne.schemas.QualifiedNameAsStringSerializer
+import io.vyne.schemaServer.changelog.ChangeLogEntry
+import io.vyne.schemaServer.changelog.ChangelogApi
+import io.vyne.schemaServer.core.config.SchemaUpdateNotifier
 import mu.KotlinLogging
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable

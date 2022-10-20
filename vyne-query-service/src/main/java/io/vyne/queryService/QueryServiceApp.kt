@@ -2,6 +2,7 @@ package io.vyne.queryService
 
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.orbital.station.OrbitalStationConfig
 import io.vyne.cask.api.CaskApi
 import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.licensing.LicenseConfig
@@ -52,7 +53,6 @@ import org.springframework.http.converter.HttpMessageConverter
 import org.springframework.http.converter.json.KotlinSerializationJsonHttpMessageConverter
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.stereotype.Component
-import org.springframework.web.reactive.config.WebFluxConfigurationSupport
 import org.springframework.web.reactive.config.WebFluxConfigurer
 import org.springframework.web.server.ServerWebExchange
 import org.springframework.web.server.WebFilter
@@ -62,10 +62,10 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import reactivefeign.spring.config.EnableReactiveFeignClients
 import reactor.core.publisher.Mono
-import java.util.Collections
+import java.util.*
 
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackageClasses = [QueryServiceApp::class, OrbitalStationConfig::class])
 @EnableConfigurationProperties(
    QueryServerConfig::class,
    VyneSpringCacheConfiguration::class,
@@ -271,7 +271,6 @@ class WebFluxWebConfig(private val objectMapper: ObjectMapper) : WebFluxConfigur
       private val ActuatorV3MediaType = MediaType("application", "vnd.spring-boot.actuator.v3+json")
    }
 }
-
 
 /**
  * Workaround to Spring 5.3 ordering of codecs, to favour Jacckson over Kotlin

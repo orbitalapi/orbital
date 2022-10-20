@@ -40,7 +40,7 @@ export class QueryService {
 
   submitQuery(query: Query, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<ValueWithTypeName> {
     // TODO :  I suspect the return type here is actually ValueWithTypeName | ValueWithTypeName[]
-    return this.http.post<ValueWithTypeName[]>(`${environment.queryServiceUrl}/api/query?resultMode=${resultMode}&clientQueryId=${clientQueryId}`, query, this.httpOptions)
+    return this.http.post<ValueWithTypeName[]>(`${environment.serverUrl}/api/query?resultMode=${resultMode}&clientQueryId=${clientQueryId}`, query, this.httpOptions)
       .pipe(
         // the legaacy (blocking) endpoint returns a ValueWithTypeName[].
         // however, we want to unpack that to multiple emitted items on our observable
@@ -54,7 +54,7 @@ export class QueryService {
 
   submitVyneQlQueryStreaming(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<StreamingQueryMessage> {
     const queryPart = encodeURIComponent(query);
-    const url = `${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}&clientQueryId=${clientQueryId}&query=${queryPart}`;
+    const url = `${environment.serverUrl}/api/vyneql?resultMode=${resultMode}&clientQueryId=${clientQueryId}&query=${queryPart}`;
     return this.sse.getEventStream<ValueWithTypeName>(
       url
     ).pipe(
@@ -73,7 +73,7 @@ export class QueryService {
   }
 
   getQueryResults(queryId: string, limit: number = 100): Observable<ValueWithTypeName> {
-    const url = encodeURI(`${environment.queryServiceUrl}/api/query/history/${queryId}/results?limit=${limit}`);
+    const url = encodeURI(`${environment.serverUrl}/api/query/history/${queryId}/results?limit=${limit}`);
     return this.sse.getEventStream<ValueWithTypeName>(
       url
     ).pipe(
@@ -82,24 +82,24 @@ export class QueryService {
   }
 
   getHistory(): Observable<QueryHistorySummary[]> {
-    return this.http.get<QueryHistorySummary[]>(`${environment.queryServiceUrl}/api/query/history`, this.httpOptions);
+    return this.http.get<QueryHistorySummary[]>(`${environment.serverUrl}/api/query/history`, this.httpOptions);
   }
 
   getQueryResultNodeDetail(queryId: string, rowValueId: number, attributePath: string): Observable<QueryResultNodeDetail> {
     return this.http.get<QueryResultNodeDetail>(
-      `${environment.queryServiceUrl}/api/query/history/${queryId}/dataSource/${rowValueId}/${encodeURI(attributePath)}`, this.httpOptions
+      `${environment.serverUrl}/api/query/history/${queryId}/dataSource/${rowValueId}/${encodeURI(attributePath)}`, this.httpOptions
     );
   }
 
   getQueryResultNodeDetailFromClientId(clientQueryId: string, rowValueId: number, attributePath: string): Observable<QueryResultNodeDetail> {
     return this.http.get<QueryResultNodeDetail>(
-      `${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/dataSource/${rowValueId}/${encodeURI(attributePath)}`, this.httpOptions
+      `${environment.serverUrl}/api/query/history/clientId/${clientQueryId}/dataSource/${rowValueId}/${encodeURI(attributePath)}`, this.httpOptions
     );
   }
 
 
   getQueryProfileFromClientId(clientQueryId: string): Observable<QueryProfileData> {
-    return this.http.get<QueryProfileData>(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/profile`, this.httpOptions)
+    return this.http.get<QueryProfileData>(`${environment.serverUrl}/api/query/history/clientId/${clientQueryId}/profile`, this.httpOptions)
       .pipe(
         shareReplay(1),
         map(profileData => this.parseRemoteCallTimestampsAsDates(profileData))
@@ -108,7 +108,7 @@ export class QueryService {
   }
 
   getQueryProfile(queryId: string): Observable<QueryProfileData> {
-    return this.http.get<QueryProfileData>(`${environment.queryServiceUrl}/api/query/history/${queryId}/profile`, this.httpOptions)
+    return this.http.get<QueryProfileData>(`${environment.serverUrl}/api/query/history/${queryId}/profile`, this.httpOptions)
       .pipe(
         shareReplay(1),
         map(profileData => this.parseRemoteCallTimestampsAsDates(profileData))
@@ -135,35 +135,35 @@ export class QueryService {
   }
 
   invokeOperation(serviceName: string, operationName: string, parameters: { [index: string]: Fact }): Observable<TypedInstance> {
-    return this.http.post<TypedInstance>(`${environment.queryServiceUrl}/api/services/${serviceName}/${operationName}`, parameters, this.httpOptions);
+    return this.http.post<TypedInstance>(`${environment.serverUrl}/api/services/${serviceName}/${operationName}`, parameters, this.httpOptions);
   }
 
   cancelQuery(queryId: string): Observable<void> {
-    return this.http.delete<void>(`${environment.queryServiceUrl}/api/query/active/${queryId}`, this.httpOptions);
+    return this.http.delete<void>(`${environment.serverUrl}/api/query/active/${queryId}`, this.httpOptions);
   }
 
   cancelQueryByClientQueryId(clientQueryId: string): Observable<void> {
-    return this.http.delete<void>(`${environment.queryServiceUrl}/api/query/active/clientId/${clientQueryId}`, this.httpOptions);
+    return this.http.delete<void>(`${environment.serverUrl}/api/query/active/clientId/${clientQueryId}`, this.httpOptions);
   }
 
   getRemoteCallResponse(remoteCallId: string): Observable<string> {
-    return this.http.get<string>(`${environment.queryServiceUrl}/api/query/history/calls/${remoteCallId}`);
+    return this.http.get<string>(`${environment.serverUrl}/api/query/history/calls/${remoteCallId}`);
   }
 
   getLineageRecord(dataSourceId: string): Observable<LineageRecord> {
-    return this.http.get<LineageRecord>(`${environment.queryServiceUrl}/api/query/history/dataSource/${dataSourceId}`);
+    return this.http.get<LineageRecord>(`${environment.serverUrl}/api/query/history/dataSource/${dataSourceId}`);
   }
 
   getHistorySummaryFromClientId(clientQueryId: string): Observable<QueryHistorySummary> {
-    return this.http.get<QueryHistorySummary>(`${environment.queryServiceUrl}/api/query/history/summary/clientId/${clientQueryId}`);
+    return this.http.get<QueryHistorySummary>(`${environment.serverUrl}/api/query/history/summary/clientId/${clientQueryId}`);
   }
 
   getQuerySankeyChartData(queryId: string): Observable<QuerySankeyChartRow[]> {
-    return this.http.get<QuerySankeyChartRow[]>(`${environment.queryServiceUrl}/api/query/history/${queryId}/sankey`);
+    return this.http.get<QuerySankeyChartRow[]>(`${environment.serverUrl}/api/query/history/${queryId}/sankey`);
   }
 
   getQuerySankeyChartDataFromClientId(clientQueryId: string): Observable<QuerySankeyChartRow[]> {
-    return this.http.get<QuerySankeyChartRow[]>(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/sankey`);
+    return this.http.get<QuerySankeyChartRow[]>(`${environment.serverUrl}/api/query/history/clientId/${clientQueryId}/sankey`);
   }
 
 

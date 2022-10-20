@@ -1,4 +1,4 @@
-package io.vyne.schemaServer.schemaStoreConfig.clustered
+package io.vyne.schemaServer.core.schemaStoreConfig.clustered
 
 import com.hazelcast.topic.ITopic
 import com.hazelcast.topic.Message
@@ -6,7 +6,7 @@ import com.hazelcast.topic.MessageListener
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.publisher.PackagesUpdatedMessage
 import io.vyne.schema.publisher.SchemaUpdatedMessage
-import io.vyne.schemaServer.config.SchemaUpdateNotifier
+import io.vyne.schemaServer.core.config.SchemaUpdateNotifier
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import io.vyne.schemas.Schema
 import mu.KotlinLogging

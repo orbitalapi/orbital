@@ -1,4 +1,4 @@
-package io.vyne.schemaServer.schemaStoreConfig.clustered
+package io.vyne.schemaServer.core.schemaStoreConfig.clustered
 
 import com.hazelcast.core.EntryEvent
 import com.hazelcast.core.HazelcastInstance

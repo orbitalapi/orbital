@@ -26,19 +26,19 @@ export class PipelineService {
   }
 
   listPipelines(): Observable<RunningPipelineSummary[]> {
-    return this.http.get<RunningPipelineSummary[]>(`${environment.queryServiceUrl}/api/pipelines`).pipe(map(pipelines => pipelines.map(pipelineSummary => addOutput(pipelineSummary))));
+    return this.http.get<RunningPipelineSummary[]>(`${environment.serverUrl}/api/pipelines`).pipe(map(pipelines => pipelines.map(pipelineSummary => addOutput(pipelineSummary))));
   }
 
   submitPipeline(pipelineSpec: PipelineSpec): Observable<PipelineStateSnapshot> {
-    return this.http.post<PipelineStateSnapshot>(`${environment.queryServiceUrl}/api/pipelines`, addOutputs(pipelineSpec));
+    return this.http.post<PipelineStateSnapshot>(`${environment.serverUrl}/api/pipelines`, addOutputs(pipelineSpec));
   }
 
   deletePipeline(pipelineId: string): Observable<PipelineStatus> {
-    return this.http.delete<PipelineStatus>(`${environment.queryServiceUrl}/api/pipelines/${pipelineId}`);
+    return this.http.delete<PipelineStatus>(`${environment.serverUrl}/api/pipelines/${pipelineId}`);
   }
 
   getPipeline(pipelineId: string): Observable<RunningPipelineSummary> {
-    return this.http.get<RunningPipelineSummary>(`${environment.queryServiceUrl}/api/pipelines/${pipelineId}`).pipe(map(pipelineSummary => addOutput(pipelineSummary)));
+    return this.http.get<RunningPipelineSummary>(`${environment.serverUrl}/api/pipelines/${pipelineId}`).pipe(map(pipelineSummary => addOutput(pipelineSummary)));
   }
 }
 

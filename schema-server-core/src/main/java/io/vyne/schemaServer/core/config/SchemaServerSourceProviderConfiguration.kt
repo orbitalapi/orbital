@@ -1,4 +1,4 @@
-package io.vyne.schemaServer.config
+package io.vyne.schemaServer.core.config
 
 import io.rsocket.core.RSocketServer
 import io.rsocket.transport.netty.server.CloseableChannel

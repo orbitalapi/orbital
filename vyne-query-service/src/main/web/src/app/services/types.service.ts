@@ -1,10 +1,9 @@
-import {Injectable} from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import {Observable, ReplaySubject, Subject} from 'rxjs/index';
 
 import * as _ from 'lodash';
 import {HttpClient} from '@angular/common/http';
 
-import {environment} from 'src/environments/environment';
 import {concatAll, map, shareReplay} from 'rxjs/operators';
 import {Policy} from '../policy-manager/policies';
 import {
@@ -25,6 +24,7 @@ import {VyneServicesModule} from './vyne-services.module';
 import {SchemaNotificationService, SchemaUpdatedNotification} from './schema-notification.service';
 import {ValueWithTypeName} from './models';
 import {VyneUser} from './user-info.service';
+import { ENVIRONMENT, Environment } from './environment';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -35,7 +35,9 @@ export class TypesService {
   private schemaSubject: Subject<Schema> = new ReplaySubject(1);
   private schemaRequest: Observable<Schema>;
 
-  constructor(private http: HttpClient, private schemaNotificationService: SchemaNotificationService) {
+  constructor(
+    @Inject(ENVIRONMENT) private environment: Environment,
+    private http: HttpClient, private schemaNotificationService: SchemaNotificationService) {
     this.getTypes().subscribe(schema => {
       this.schema = schema;
     });
@@ -50,74 +52,74 @@ export class TypesService {
   }
 
   validateSchema(schema: string): Observable<Type[]> {
-    return this.http.post<Type[]>(`${environment.queryServiceUrl}/api/schemas/taxi/validate`, schema);
+    return this.http.post<Type[]>(`${this.environment.serverUrl}/api/schemas/taxi/validate`, schema);
   }
 
   getRawSchema = (): Observable<string> => {
     return this.http
-      .get<string>(`${environment.queryServiceUrl}/api/schemas/raw`);
+      .get<string>(`${this.environment.serverUrl}/api/schemas/raw`);
   }
 
   getSchemaSummary(): Observable<SchemaUpdatedNotification> {
-    return this.http.get<SchemaUpdatedNotification>(`${environment.queryServiceUrl}/api/schemas/summary`);
+    return this.http.get<SchemaUpdatedNotification>(`${this.environment.serverUrl}/api/schemas/summary`);
   }
 
   getVersionedSchemas(): Observable<VersionedSource[]> {
-    return this.http.get<VersionedSource[]>(`${environment.queryServiceUrl}/api/schemas`);
+    return this.http.get<VersionedSource[]>(`${this.environment.serverUrl}/api/schemas`);
   }
 
   getParsedSources(): Observable<ParsedSource[]> {
-    return this.http.get<ParsedSource[]>(`${environment.queryServiceUrl}/api/parsedSources`);
+    return this.http.get<ParsedSource[]>(`${this.environment.serverUrl}/api/parsedSources`);
   }
 
   getLinksForNode = (node: SchemaGraphNode): Observable<SchemaGraph> => {
     return this.http
-      .get<SchemaGraph>(`${environment.queryServiceUrl}/api/nodes/${node.type}/${node.nodeId}/links`);
+      .get<SchemaGraph>(`${this.environment.serverUrl}/api/nodes/${node.type}/${node.nodeId}/links`);
   }
 
   getLinks = (typeName: string): Observable<SchemaGraph> => {
     return this.http
-      .get<SchemaGraph>(`${environment.queryServiceUrl}/api/types/${typeName}/links`);
+      .get<SchemaGraph>(`${this.environment.serverUrl}/api/types/${typeName}/links`);
   }
 
   getTypeLineage(typeName: string): Observable<SchemaGraph> {
     return this.http.get<SchemaGraph>(
-      `${environment.queryServiceUrl}/api/types/${typeName}/lineage`
+      `${this.environment.serverUrl}/api/types/${typeName}/lineage`
     );
   }
 
   getServiceLineage(serviceName: string): Observable<SchemaGraph> {
     return this.http.get<SchemaGraph>(
-      `${environment.queryServiceUrl}/api/services/${serviceName}/lineage`
+      `${this.environment.serverUrl}/api/services/${serviceName}/lineage`
     );
   }
 
   getPolicies(typeName: string): Observable<Policy[]> {
-    return this.http.get(`${environment.queryServiceUrl}/api/types/${typeName}/policies`)
+    return this.http.get(`${this.environment.serverUrl}/api/types/${typeName}/policies`)
       .pipe(map((policyDto: any[]) => {
         return Policy.parseDtoArray(policyDto);
       }));
   }
 
   getDiscoverableTypes(typeName: string): Observable<QualifiedName[]> {
-    return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/api/types/${typeName}/discoverable-types`);
+    return this.http.get<QualifiedName[]>(`${this.environment.serverUrl}/api/types/${typeName}/discoverable-types`);
   }
 
   getType(qualifiedName: string): Observable<Type> {
-    return this.http.get<Type>(`${environment.queryServiceUrl}/api/types/${qualifiedName}`);
+    return this.http.get<Type>(`${this.environment.serverUrl}/api/types/${qualifiedName}`);
   }
 
   getService(qualifiedName: string): Observable<Service> {
-    return this.http.get<Service>(`${environment.queryServiceUrl}/api/services/${qualifiedName}`);
+    return this.http.get<Service>(`${this.environment.serverUrl}/api/services/${qualifiedName}`);
   }
 
   getOperation(serviceName: string, operationName: string): Observable<Operation> {
-    return this.http.get<Operation>(`${environment.queryServiceUrl}/api/services/${serviceName}/${operationName}`);
+    return this.http.get<Operation>(`${this.environment.serverUrl}/api/services/${serviceName}/${operationName}`);
   }
 
   parse(content: string, type: Type): Observable<ParsedTypeInstance[]> {
     return this.http.post<ParsedTypeInstance[]>(
-      `${environment.queryServiceUrl}/api/content/parse?type=${type.name.fullyQualifiedName}`,
+      `${this.environment.serverUrl}/api/content/parse?type=${type.name.fullyQualifiedName}`,
       content);
   }
 
@@ -128,7 +130,7 @@ export class TypesService {
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedTypeInstance[]>(
       // eslint-disable-next-line max-len
-      `${environment.queryServiceUrl}/api/csv/parse?type=${type.name.fullyQualifiedName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
+      `${this.environment.serverUrl}/api/csv/parse?type=${type.name.fullyQualifiedName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
       content);
   }
 
@@ -140,7 +142,7 @@ export class TypesService {
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedCsvContent>(
       // eslint-disable-next-line max-len
-      `${environment.queryServiceUrl}/api/csv?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}`,
+      `${this.environment.serverUrl}/api/csv?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}`,
       content);
   }
 
@@ -158,7 +160,7 @@ export class TypesService {
     };
     return this.http.post<ContentWithSchemaParseResponse>(
       // eslint-disable-next-line max-len
-      `${environment.queryServiceUrl}/api/csvAndSchema/parse?type=${typeName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
+      `${this.environment.serverUrl}/api/csvAndSchema/parse?type=${typeName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
       request);
   }
 
@@ -171,7 +173,7 @@ export class TypesService {
     };
     return this.http.post<ContentWithSchemaParseResponse>(
       // eslint-disable-next-line max-len
-      `${environment.queryServiceUrl}/api/contentAndSchema/parse?type=${typeName}`,
+      `${this.environment.serverUrl}/api/contentAndSchema/parse?type=${typeName}`,
       request);
   }
 
@@ -191,7 +193,7 @@ export class TypesService {
     };
     return this.http.post<ValueWithTypeName[]>(
       // eslint-disable-next-line max-len
-      `${environment.queryServiceUrl}/api/csvAndSchema/project?type=${parseType}&targetType=${projectionType}&clientQueryId=${queryId}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
+      `${this.environment.serverUrl}/api/csvAndSchema/project?type=${parseType}&targetType=${projectionType}&clientQueryId=${queryId}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
       request
     ).pipe(
       // the legaacy (blocking) endpoint returns a ValueWithTypeName[].
@@ -208,9 +210,9 @@ export class TypesService {
   parseXmlToType(content: string, type: Type, xmlIngestionParameters: XmlIngestionParameters): Observable<ParsedTypeInstance> {
     const elementSelector = xmlIngestionParameters.elementSelector;
     const url = elementSelector
-      ? `${environment.queryServiceUrl}/api/xml/parse?type=${type.name.fullyQualifiedName}`
+      ? `${this.environment.serverUrl}/api/xml/parse?type=${type.name.fullyQualifiedName}`
       + `&elementSelector=${encodeURIComponent(elementSelector)}`
-      : `${environment.queryServiceUrl}/api/xml/parse?type=${type.name.fullyQualifiedName}`;
+      : `${this.environment.serverUrl}/api/xml/parse?type=${type.name.fullyQualifiedName}`;
     return this.http.post<ParsedTypeInstance>(url, content);
   }
 
@@ -227,7 +229,7 @@ export class TypesService {
   getTypes(refresh: boolean = false): Observable<Schema> {
     if (refresh || !this.schemaRequest) {
       this.schemaRequest = this.http
-        .get<Schema>(`${environment.queryServiceUrl}/api/types`)
+        .get<Schema>(`${this.environment.serverUrl}/api/types`)
         .pipe(
           map(schema => {
               return prepareSchema(schema);
@@ -257,28 +259,28 @@ export class TypesService {
 
   createSchemaPreview(request: SchemaPreviewRequest): Observable<SchemaPreview> {
     return this.http.post<SchemaPreview>(
-      `${environment.queryServiceUrl}/api/schemas/preview`,
+      `${this.environment.serverUrl}/api/schemas/preview`,
       request
     );
   }
 
   getTypeUsages(typeName: string): Observable<OperationQueryResult> {
-    return this.http.get<OperationQueryResult>(`${environment.queryServiceUrl}/api/types/operations/${typeName}`);
+    return this.http.get<OperationQueryResult>(`${this.environment.serverUrl}/api/types/operations/${typeName}`);
   }
 
   submitSchema(request: SchemaImportRequest): Observable<VersionedSource> {
     return this.http.post<VersionedSource>(
-      `${environment.queryServiceUrl}/api/schemas`,
+      `${this.environment.serverUrl}/api/schemas`,
       request
     );
   }
 
   getAllMetadata(): Observable<QualifiedName[]> {
-    return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/api/schema/annotations`);
+    return this.http.get<QualifiedName[]>(`${this.environment.serverUrl}/api/schema/annotations`);
   }
 
   setTypeDataOwner(type: Type, owner: VyneUser): Observable<Type> {
-    return this.http.post<Type>(`${environment.queryServiceUrl}/api/types/${type.name.fullyQualifiedName}/owner`,
+    return this.http.post<Type>(`${this.environment.serverUrl}/api/types/${type.name.fullyQualifiedName}/owner`,
       {
         id: owner.userId,
         name: owner.name
@@ -287,7 +289,7 @@ export class TypesService {
   }
 
   setTypeMetadata(type: Type, metadata: Metadata[]): Observable<Type> {
-    return this.http.post<Type>(`${environment.queryServiceUrl}/api/types/${type.name.fullyQualifiedName}/annotations`,
+    return this.http.post<Type>(`${this.environment.serverUrl}/api/types/${type.name.fullyQualifiedName}/annotations`,
       {
         annotations: metadata
       }
@@ -299,15 +301,15 @@ export class TypesService {
    * @param type
    */
   getModelFormatSpecsForType(type: Type): Observable<QualifiedName[]> {
-    return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/api/types/${type.name.fullyQualifiedName}/modelFormats`);
+    return this.http.get<QualifiedName[]>(`${this.environment.serverUrl}/api/types/${type.name.fullyQualifiedName}/modelFormats`);
   }
 
   submitTaxi(taxi: string): Observable<SchemaSubmissionResult> {
-    return this.http.post<SchemaSubmissionResult>(`${environment.queryServiceUrl}/api/schema/taxi`, taxi);
+    return this.http.post<SchemaSubmissionResult>(`${this.environment.serverUrl}/api/schema/taxi`, taxi);
   }
 
   validateTaxi(taxi: string): Observable<SchemaSubmissionResult> {
-    return this.http.post<SchemaSubmissionResult>(`${environment.queryServiceUrl}/api/schema/taxi?validate=true`, taxi);
+    return this.http.post<SchemaSubmissionResult>(`${this.environment.serverUrl}/api/schema/taxi?validate=true`, taxi);
   }
 }
 

@@ -1,9 +1,11 @@
-package io.vyne.schemaServer.changelog
+package io.vyne.schemaServer.core.changelog
 
 import com.google.common.collect.Collections2
 import com.google.common.collect.Lists
 import com.google.common.collect.Maps
 import com.google.common.collect.Sets
+import io.vyne.schemaServer.changelog.ChangeLogDiffEntry
+import io.vyne.schemaServer.changelog.DiffKind
 import io.vyne.schemas.*
 
 class ChangeLogDiffFactory(

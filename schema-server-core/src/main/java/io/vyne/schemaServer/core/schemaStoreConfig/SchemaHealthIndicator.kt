@@ -1,4 +1,4 @@
-package io.vyne.schemaServer.schemaStoreConfig
+package io.vyne.schemaServer.core.schemaStoreConfig
 
 import arrow.core.Either
 import io.vyne.schemaStore.ValidatingSchemaStoreClient

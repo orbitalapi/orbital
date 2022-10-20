@@ -1,4 +1,4 @@
-package io.vyne.schemaServer.config
+package io.vyne.schemaServer.core.config
 
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.publisher.PackagesUpdatedMessage

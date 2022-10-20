@@ -99,7 +99,7 @@ export class DataExplorerComponent {
       });
     this.schemaNotificationService.createSchemaNotificationsSubscription()
       .subscribe(() => this.onSchemaUpdated());
-    this.caskServiceUrl = environment.queryServiceUrl;
+    this.caskServiceUrl = environment.serverUrl;
   }
 
   @ViewChild('appCodeViewer', {read: CodeViewerComponent})

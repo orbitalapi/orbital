@@ -14,11 +14,11 @@ export class ChangelogService {
   }
 
   getChangelog(): Observable<ChangeLogEntry[]> {
-    return this.httpClient.get<ChangeLogEntry[]>(`${environment.queryServiceUrl}/api/changelog`)
+    return this.httpClient.get<ChangeLogEntry[]>(`${environment.serverUrl}/api/changelog`)
   }
 
   getChangelogForPackage(packageName: string): Observable<ChangeLogEntry[]> {
-    return this.httpClient.get<ChangeLogEntry[]>(`${environment.queryServiceUrl}/api/changelog/${packageName}`)
+    return this.httpClient.get<ChangeLogEntry[]>(`${environment.serverUrl}/api/changelog/${packageName}`)
   }
 }
 

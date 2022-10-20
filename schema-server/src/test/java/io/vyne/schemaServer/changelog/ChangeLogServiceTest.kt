@@ -4,8 +4,10 @@ import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
 import io.vyne.asPackage
-import io.vyne.schemaServer.config.LocalSchemaNotifier
-import io.vyne.schemaServer.packages.SchemaServerSourceManager
+import io.vyne.schemaServer.core.config.LocalSchemaNotifier
+import io.vyne.schemaServer.core.changelog.ChangeLogDiffFactory
+import io.vyne.schemaServer.core.changelog.ChangeLogService
+import io.vyne.schemaServer.core.packages.SchemaServerSourceManager
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.Metadata
 import io.vyne.schemas.OperationNames

@@ -118,10 +118,7 @@ class OrbitalSecurityAutoConfig {
             // All other api end points must be protected.
             .pathMatchers("/api/**").authenticated()
             .pathMatchers(
-//               "/**", // Allow access to any, to support html5 ui routes (eg /types/foo.bar.Baz)
-               "/eureka/**",
-               "/eureka/",
-               "/eureka",
+               "/**", // Allow access to any, to support html5 ui routes (eg /types/foo.bar.Baz)
                "/assets/**",
 //               "/index.html",
                actuatorPath,
@@ -130,8 +127,8 @@ class OrbitalSecurityAutoConfig {
                "/*.css"
             ).permitAll()
             .anyExchange().authenticated()
-            .and().exceptionHandling()
-            .authenticationEntryPoint(authenticationFailureEntryPoint(http))
+//            .and().exceptionHandling()
+//            .authenticationEntryPoint(authenticationFailureEntryPoint(http))
             .and()
             // Below sets up the Vyne as a resource server, so Vyne will check if there is an 'access' token on every request
             // and whether the token is valid or not. In order to verify that a token is genuine, it'll talk to openID connect server

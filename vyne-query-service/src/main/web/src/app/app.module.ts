@@ -19,6 +19,7 @@ import { ConfirmationDialogModule } from 'src/app/confirmation-dialog/confirmati
 import { LANGUAGE_SERVER_WS_ADDRESS_TOKEN } from 'src/app/code-editor/code-editor.component';
 import { WebsocketService } from 'src/app/services/websocket.service';
 import { environment } from 'src/environments/environment';
+import { ENVIRONMENT } from 'src/app/services/environment';
 
 
 const oauth2OidcModule = [AuthModule];
@@ -51,7 +52,11 @@ const oauth2OidcModule = [AuthModule];
     SearchService,
     {
       provide: LANGUAGE_SERVER_WS_ADDRESS_TOKEN,
-      useValue: WebsocketService.buildWsUrl(environment.queryServiceUrl, '/api/language-server'),
+      useValue: WebsocketService.buildWsUrl(environment.serverUrl, '/api/language-server'),
+    },
+    {
+      provide: ENVIRONMENT,
+      useValue: environment
     }
   ],
   entryComponents: [AppComponent]

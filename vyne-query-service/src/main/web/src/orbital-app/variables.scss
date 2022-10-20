@@ -1,9 +1,10 @@
 :root {
   --mono-font: 'jetbrains-mono', monospace;
-  --body-font: 'poppins', "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  --body-font: 'nunito-sans', "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  --heading-font: 'DM Sans', "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
 
   // Specific taiga-ui overrides
-  --tui-heading-font: var(--body-font);
+  --tui-heading-font: var(--heading-font);
   --tui-text-font: var(--body-font);
 }
 

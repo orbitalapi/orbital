@@ -104,7 +104,7 @@ export class TypeViewerComponent {
 
   constructor(private router: Router,
               private changeDetector: ChangeDetectorRef) {
-    this.showPolicyManager = environment.showPolicyManager;
+    this.showPolicyManager = false; //environment.showPolicyManager;
   }
 
   @Input()

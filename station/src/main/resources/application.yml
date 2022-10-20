@@ -2,9 +2,50 @@ server:
    # 11 more than 9022, the port than Vyne ran on.
    port: 9033
 spring:
+   cloud:
+      config:
+         import-check:
+            enabled: false
+
    security:
       oauth2:
          resourceserver:
             jwt:
                jwk-set-uri: ${vyne.security.open-ipd.jwk-set-uri:''}
-orbital:
+eureka:
+   uri: http://127.0.0.1:8761
+   client:
+      enabled: false
+      registryFetchIntervalSeconds: 1
+      initialInstanceInfoReplicationIntervalSeconds: 5
+      serviceUrl:
+         defaultZone: ${eureka.uri}/eureka/
+   instance:
+      leaseRenewalIntervalInSeconds: 2
+      leaseExpirationDurationInSeconds: 5
+      metadata-map:
+         rsocket-port: ${vyne.schema.server.port}
+
+management:
+   metrics:
+      export:
+         prometheus:
+            enabled: false
+         influx:
+            enabled: false
+         elastic:
+            enabled: false
+         jmx:
+            enabled: false
+         graphite:
+            enabled: false
+         datadog:
+            enabled: false
+         dynatrace:
+            enabled: false
+
+   endpoints:
+      web:
+         exposure:
+            include: prometheus,metrics,info,health,logfile,loggers
+         base-path: /api/actuator

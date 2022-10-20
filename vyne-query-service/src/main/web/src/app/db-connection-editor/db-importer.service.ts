@@ -80,25 +80,25 @@ export class DbConnectionService {
   }
 
   getDrivers(): Observable<ConnectionDriverConfigOptions[]> {
-    return this.http.get<ConnectionDriverConfigOptions[]>(`${environment.queryServiceUrl}/api/connections/drivers`);
+    return this.http.get<ConnectionDriverConfigOptions[]>(`${environment.serverUrl}/api/connections/drivers`);
   }
 
   getConnection(name: string): Observable<ConnectorSummary> {
-    return this.http.get<ConnectorSummary>(`${environment.queryServiceUrl}/api/connections/jdbc/${name}`);
+    return this.http.get<ConnectorSummary>(`${environment.serverUrl}/api/connections/jdbc/${name}`);
   }
 
   getConnections(): Observable<ConnectorSummary[]> {
-    return this.http.get<ConnectorSummary[]>(`${environment.queryServiceUrl}/api/connections`);
+    return this.http.get<ConnectorSummary[]>(`${environment.serverUrl}/api/connections`);
   }
 
   testConnection(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration | AwsConnectionConfiguration): Observable<any> {
     const url = DbConnectionService.getConnectionUrl(connectionConfig);
-    return this.http.post(`${environment.queryServiceUrl}${url}?test=true`, connectionConfig);
+    return this.http.post(`${environment.serverUrl}${url}?test=true`, connectionConfig);
   }
 
   createConnection(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration | AwsConnectionConfiguration): Observable<ConnectorSummary> {
     const url = DbConnectionService.getConnectionUrl(connectionConfig);
-    return this.http.post<ConnectorSummary>(`${environment.queryServiceUrl}${url}`, connectionConfig);
+    return this.http.post<ConnectorSummary>(`${environment.serverUrl}${url}`, connectionConfig);
   }
 
   private static getConnectionUrl(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration): string {
@@ -115,30 +115,30 @@ export class DbConnectionService {
   }
 
   getMappedTablesForConnection(connectionName: string): Observable<MappedTable[]> {
-    return this.http.get<MappedTable[]>(`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables`);
+    return this.http.get<MappedTable[]>(`${environment.serverUrl}/api/connections/jdbc/${connectionName}/tables`);
   }
 
   getColumns(connectionName: string, schemaName: string, tableName: string): Observable<TableMetadata> {
     // eslint-disable-next-line max-len
-    return this.http.get<TableMetadata>(`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/metadata`);
+    return this.http.get<TableMetadata>(`${environment.serverUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/metadata`);
   }
 
   generateTaxiForTable(connectionName: string, tables: TableTaxiGenerationRequest[]): Observable<SchemaSubmissionResult> {
     return this.http.post<SchemaSubmissionResult>
-    (`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/taxi/generate`, {
+    (`${environment.serverUrl}/api/connections/jdbc/${connectionName}/tables/taxi/generate`, {
       tables: tables,
     } as JdbcTaxiGenerationRequest);
   }
 
   submitModel(connectionName: string, schemaName: string, tableName: string, request: TableModelSubmissionRequest): Observable<any> {
     return this.http.post<SchemaSubmissionResult>
-    (`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/model`, request);
+    (`${environment.serverUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/model`, request);
   }
 
   removeTypeMapping(connectionName: string, schemaName: string, tableName: string, typeName: QualifiedName): Observable<any> {
     return this.http.delete(
       // eslint-disable-next-line max-len
-      `${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/model/${typeName.parameterizedName}`);
+      `${environment.serverUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/model/${typeName.parameterizedName}`);
   }
 }
 

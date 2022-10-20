@@ -532,8 +532,12 @@
                   <licenseName>Vyne Enterprise License</licenseName>
                   <licenseResolver>${project.baseUri}/src/license</licenseResolver>
                   <licenseMerges>
-                     <licenseMerge>Apache License, Version 2.0|The Apache Software License, Version 2.0|Apache 2|Apache License 2.0|AL 2.0|Apache-2.0|The Apache License, Version 2.0</licenseMerge>
-                     <licenseMerge>CDDLv1|Common Development and Distribution License (CDDL) v1.0|COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0</licenseMerge>
+                     <licenseMerge>Apache License, Version 2.0|The Apache Software License, Version 2.0|Apache 2|Apache
+                        License 2.0|AL 2.0|Apache-2.0|The Apache License, Version 2.0
+                     </licenseMerge>
+                     <licenseMerge>CDDLv1|Common Development and Distribution License (CDDL) v1.0|COMMON DEVELOPMENT AND
+                        DISTRIBUTION LICENSE (CDDL) Version 1.0
+                     </licenseMerge>
                   </licenseMerges>
 
                   <!--exclude test-scoped dependencies from the 3rd party license-list-->

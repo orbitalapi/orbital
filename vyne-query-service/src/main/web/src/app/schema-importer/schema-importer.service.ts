@@ -14,14 +14,14 @@ export class SchemaImporterService {
   }
 
   convertSchema(event: ConvertSchemaEvent): Observable<SchemaSubmissionResult> {
-    return this.httpClient.post<SchemaSubmissionResult>(`${environment.queryServiceUrl}/api/schemas/import?validateOnly=true`, {
+    return this.httpClient.post<SchemaSubmissionResult>(`${environment.serverUrl}/api/schemas/import?validateOnly=true`, {
       format: event.schemaType,
       options: event.options
     } as SchemaConversionRequest)
   }
 
   submitEditedSchema(schema: SchemaSubmissionResult):Observable<any> {
-    return this.httpClient.post(`${environment.queryServiceUrl}/api/schemas/edit`, {
+    return this.httpClient.post(`${environment.serverUrl}/api/schemas/edit`, {
       types: schema.types,
       services: schema.services
     })

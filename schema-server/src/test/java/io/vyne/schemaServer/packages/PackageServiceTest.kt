@@ -8,6 +8,7 @@ import io.vyne.PackageMetadata
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schemaServer.core.packages.PackageService
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.PartialSchema
 import org.junit.Test

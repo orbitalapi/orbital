@@ -75,37 +75,3 @@ class SchemaServerApp {
    }
 }
 
-@Configuration
-class SchemaPublicationConfig {
-
-   // TODO : We will eventually need to defer all this stuff once we allow changing
-   // repo config at runtime (ie., via a rest service)
-
-   @Bean
-   fun gitConfig(loader: io.vyne.schemaServer.core.SchemaRepositoryConfigLoader): GitSchemaRepositoryConfig {
-      return loader.load().git ?: GitSchemaRepositoryConfig()
-   }
-
-   @Bean
-   fun openApiConfig(loader: io.vyne.schemaServer.core.SchemaRepositoryConfigLoader): OpenApiSchemaRepositoryConfig {
-      return loader.load().openApi ?: OpenApiSchemaRepositoryConfig()
-   }
-
-   @Bean
-   fun fileConfig(loader: io.vyne.schemaServer.core.SchemaRepositoryConfigLoader): FileSystemSchemaRepositoryConfig {
-      return loader.load().file ?: FileSystemSchemaRepositoryConfig()
-   }
-
-   @Bean
-   fun fileSchemaChangePublisher(
-      openApiVersionedSourceLoaders: List<OpenApiVersionedSourceLoader>,
-      gitRepositories: List<GitRepositorySourceLoader>,
-      fileRepositories: List<FileSystemSchemaRepository>,
-      schemaPublisher: SchemaPublisherTransport
-   ): SourceWatchingSchemaPublisher {
-      val loaders: List<VersionedSourceLoader> = openApiVersionedSourceLoaders + gitRepositories + fileRepositories
-      logger.info {"Detected ${loaders.size} total loaders - ${openApiVersionedSourceLoaders.size} openApi loaders, ${gitRepositories.size} gitRepository loaders, ${fileRepositories.size} fileRepository loaders"  }
-      return SourceWatchingSchemaPublisher(loaders, schemaPublisher)
-   }
-}
-
