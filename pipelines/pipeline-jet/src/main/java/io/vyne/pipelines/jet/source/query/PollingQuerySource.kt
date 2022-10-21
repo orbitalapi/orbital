@@ -6,6 +6,7 @@ import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
+import io.vyne.pipelines.jet.api.transport.MessageSourceWithGroupId
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.pipelines.jet.api.transport.query.PollingQueryInputSpec
@@ -50,7 +51,7 @@ class PollingQuerySourceBuilder : PipelineSourceBuilder<PollingQueryInputSpec> {
       inputType: Type?
    ): BatchSource<MessageContentProvider> {
       return SourceBuilder.batch("query-poll") { context ->
-         PollingQuerySourceContext(context.logger(), pipelineSpec)
+         PollingQuerySourceContext(context.logger(), pipelineSpec, context.jobId())
       }
          .fillBufferFn { context: PollingQuerySourceContext, buffer: SourceBuffer<MessageContentProvider> ->
             context.fillBuffer(buffer)
@@ -66,10 +67,15 @@ class PollingQuerySourceBuilder : PipelineSourceBuilder<PollingQueryInputSpec> {
    }
 }
 
+data class PollingQuerySourceMetadata(val jobId: String) : MessageSourceWithGroupId {
+   override val groupId = jobId
+}
+
 @SpringAware
 class PollingQuerySourceContext(
    val logger: ILogger,
-   val pipelineSpec: PipelineSpec<PollingQueryInputSpec, *>
+   val pipelineSpec: PipelineSpec<PollingQueryInputSpec, *>,
+   val jobId: Long
 ) {
    @PostConstruct
    fun runQuery() {
@@ -78,7 +84,12 @@ class PollingQuerySourceContext(
          val vyne = vyneProvider.createVyne()
          vyne.query(pipelineSpec.input.query)
             .results
-            .map { TypedInstanceContentProvider(it) }
+            .map {
+               TypedInstanceContentProvider(
+                  it,
+                  sourceMessageMetadata = PollingQuerySourceMetadata(jobId.toString())
+               )
+            }
             .onEach { queue.add(it) }
             .onCompletion { isDone = true }
             .catch { foo ->
