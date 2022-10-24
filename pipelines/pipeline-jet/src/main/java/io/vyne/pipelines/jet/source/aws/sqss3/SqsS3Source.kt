@@ -231,7 +231,6 @@ class PollingSqsOperationSourceContext(
                linesStream.forEach { line ->
                   dataBuffer.add(Pair(StringContentProvider(line, S3SourceMetadata(etag)), clock.millis()))
                }
-               isDone = true
             }
          } catch (e: Exception) {
             logger.log(
@@ -239,6 +238,8 @@ class PollingSqsOperationSourceContext(
                "Error in retrieving the S3 object \"$objectKey\" from the bucket \"$bucketName\".",
                e
             )
+         } finally {
+            isDone = true
          }
       }
 
