@@ -7,6 +7,8 @@ import com.hazelcast.jet.core.JetTestSupport
 import com.hazelcast.jet.core.JobStatus
 import com.hazelcast.spring.context.SpringManagedContext
 import com.mercateo.test.clock.TestClock
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.StubService
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
@@ -48,7 +50,8 @@ data class JetTestSetup(
    val hazelcastInstance: HazelcastInstance,
    val applicationContext: ApplicationContext,
    val vyneProvider: VyneProvider,
-   val stubService: StubService
+   val stubService: StubService,
+   val meterRegistry: MeterRegistry
 )
 
 abstract class BaseJetIntegrationTest : JetTestSupport() {
@@ -56,6 +59,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
    val awsConnectionRegistry = AwsInMemoryConnectionRegistry()
    val pipelineSourceProvider = PipelineSourceProvider.default(kafkaConnectionRegistry)
    val pipelineSinkProvider = PipelineSinkProvider.default(kafkaConnectionRegistry, awsConnectionRegistry)
+   val meterRegistry = SimpleMeterRegistry()
 
    fun jetWithSpringAndVyne(
       schema: String,
@@ -91,6 +95,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
 
       springApplicationContext.register(testClockConfiguration)
       springApplicationContext.register(TestPipelineStateConfig::class.java)
+      springApplicationContext.register(SimpleMeterRegistry::class.java)
 
       // For some reason, spring is complaining if we try to use a no-arg constructor
       springApplicationContext.registerBean(ListSinkTargetContainer.NAME, ListSinkTargetContainer::class.java, "Hello")
@@ -108,7 +113,8 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       hazelcastConfig.managedContext = SpringManagedContext(springApplicationContext)
       val hazelcastInstance = createHazelcastInstance(hazelcastConfig)
       val vyneProvider = springApplicationContext.getBean(VyneProvider::class.java)
-      return JetTestSetup(hazelcastInstance, springApplicationContext, vyneProvider, stub)
+      val meterRegistry = springApplicationContext.getBean(MeterRegistry::class.java)
+      return JetTestSetup(hazelcastInstance, springApplicationContext, vyneProvider, stub, meterRegistry)
    }
 
    /**
