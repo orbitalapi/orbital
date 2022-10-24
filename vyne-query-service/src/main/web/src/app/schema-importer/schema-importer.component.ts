@@ -17,7 +17,7 @@ import {testImportForUI} from './schema-importer.data';
     </app-header-bar>
     <div class="page-content">
       <div class="importer-step step" *ngIf="wizardStep === 'importSchema'">
-        <h2>Import a new schema</h2>
+        <h2>Add new schemas</h2>
         <div class="form-container">
           <app-schema-source-panel
             [dbConnections]="connections"

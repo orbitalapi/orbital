@@ -86,7 +86,8 @@ class FileWatcherBuilders {
 
 data class FileSystemPackageSpec(
    val path: Path,
-   val loader: PackageLoaderSpec = TaxiPackageLoaderSpec
+   val loader: PackageLoaderSpec = TaxiPackageLoaderSpec,
+   val editable: Boolean = false
 )
 
 data class FileSystemSchemaRepositoryConfig(

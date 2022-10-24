@@ -4,6 +4,7 @@ import { OrbitalLandingPageComponent } from './orbital-landing-page.component';
 import { RouterModule } from '@angular/router';
 import { SchemaDiagramModule } from 'src/app/schema-diagram/schema-diagram.module';
 import { OrbitalLandingPageContainerComponent } from './orbital-landing-page-container.component';
+import { TuiButtonModule } from '@taiga-ui/core';
 
 
 @NgModule({
@@ -14,6 +15,7 @@ import { OrbitalLandingPageContainerComponent } from './orbital-landing-page-con
   imports: [
     CommonModule,
     SchemaDiagramModule,
+    TuiButtonModule,
   ]
 })
 export class OrbitalLandingPageModule {

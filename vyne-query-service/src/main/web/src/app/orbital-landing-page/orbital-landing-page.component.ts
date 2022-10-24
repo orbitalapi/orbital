@@ -7,11 +7,11 @@ import { Schema } from 'src/app/services/schema';
   selector: 'app-orbital-landing-page',
   styleUrls: ['./orbital-landing-page.component.scss'],
   template: `
-    <div class="w-full h-full bg-white p-4 flex flex-col">
+    <div class="w-full h-full bg-white p-4 flex flex-col drop-shadow-lg">
       <div class="w-full flex">
         <span class="h3 flex-none">Your services</span>
         <span class="flex-1"></span>
-        <button class="flex-none">Import schema</button>
+        <button tuiButton type="button" appearance="outline" size="m">Add schemas</button>
       </div>
       <app-schema-diagram
         class="flex-grow-1 w-full h-full"

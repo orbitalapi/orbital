@@ -1,6 +1,5 @@
 import {ElementRef} from '@angular/core';
 import * as React from 'react';
-import RichMarkdownEditor from 'rich-markdown-editor';
 import * as ReactDOM from 'react-dom';
 import {Subject} from 'rxjs';
 import light from './editor-theme';
@@ -31,13 +30,17 @@ export class ReactEditor extends React.Component<EditorState, any> {
   render() {
     return (
       <div className={'renderer'}>
-        <RichMarkdownEditor
-          theme={this.vyneEditorTheme}
-          placeholder={this.props.placeholder}
-          defaultValue={this.props.initialState}
-          value={this.props.value}
-          onChange={value => this.props.changes$.next(value)}
-        />
+        <span>Editor disabled, back soon</span>
+        {/* RichMarkdownEditor is no longer supported, and has pulled in dependencies that are breaking functionality.
+        https://alloyeditor.com/ looks like a good alternative.
+        */}
+        {/*<RichMarkdownEditor*/}
+        {/*  theme={this.vyneEditorTheme}*/}
+        {/*  placeholder={this.props.placeholder}*/}
+        {/*  defaultValue={this.props.initialState}*/}
+        {/*  value={this.props.value}*/}
+        {/*  onChange={value => this.props.changes$.next(value)}*/}
+        {/*/>*/}
       </div>
     );
   }

@@ -46,6 +46,7 @@ import { ConnectionFiltersModule } from '../utils/connections.pipe';
 import { AngularSplitModule } from 'angular-split';
 import { RouterModule } from '@angular/router';
 import { SchemaExplorerTableModule } from 'src/app/schema-explorer-table/schema-explorer-table.module';
+import { AddSchemaTypeSelectorComponent } from './add-schema-type-selector/add-schema-type-selector.component';
 
 
 @NgModule({
@@ -56,7 +57,8 @@ import { SchemaExplorerTableModule } from 'src/app/schema-explorer-table/schema-
     SchemaSourcePanelComponent,
     SwaggerConfigComponent, JsonSchemaConfigComponent,
     DatabaseTableConfigComponent, KafkaTopicConfigComponent,
-    ProtobufConfigComponent
+    ProtobufConfigComponent,
+    AddSchemaTypeSelectorComponent
   ],
   imports: [
     ConnectionFiltersModule,

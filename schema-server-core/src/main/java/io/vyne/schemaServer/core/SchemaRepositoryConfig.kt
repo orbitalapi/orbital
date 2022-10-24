@@ -5,14 +5,18 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
 import io.github.config4k.registerCustomType
+import io.github.config4k.toConfig
 import io.vyne.config.BaseHoconConfigFileRepository
 import io.vyne.config.toConfig
 import io.vyne.schemaServer.core.adaptors.InstantHoconSupport
 import io.vyne.schemaServer.core.adaptors.PackageLoaderSpecHoconSupport
 import io.vyne.schemaServer.core.adaptors.UriHoconSupport
+import io.vyne.schemaServer.core.file.FileSystemPackageSpec
 import io.vyne.schemaServer.core.openApi.OpenApiSchemaRepositoryConfig
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
+import io.vyne.schemaServer.core.git.GitRepositoryConfig
 import io.vyne.schemaServer.core.git.GitSchemaRepositoryConfig
+import io.vyne.utils.concat
 import java.nio.file.Path
 
 data class SchemaRepositoryConfig(
@@ -22,17 +26,32 @@ data class SchemaRepositoryConfig(
 )
 
 
-class InMemorySchemaRepositoryConfigLoader(val config: SchemaRepositoryConfig) : SchemaRepositoryConfigLoader {
+class InMemorySchemaRepositoryConfigLoader(private var config: SchemaRepositoryConfig) : SchemaRepositoryConfigLoader {
    override fun load(): SchemaRepositoryConfig = config
    override fun safeConfigJson(): String {
       return jacksonObjectMapper().writerWithDefaultPrettyPrinter()
          .writeValueAsString(config)
+   }
+
+   override fun addFileSpec(fileSpec: FileSystemPackageSpec) {
+      config = config.copy(
+         file = config.file!!.copy(
+            projects = config.file!!.projects.concat(fileSpec)
+         )
+      )
+   }
+
+   override fun addGitSpec(gitSpec: GitRepositoryConfig) {
+      TODO("Not yet implemented")
    }
 }
 
 interface SchemaRepositoryConfigLoader {
    fun load(): SchemaRepositoryConfig
    fun safeConfigJson(): String
+   fun addFileSpec(fileSpec: FileSystemPackageSpec)
+
+   fun addGitSpec(gitSpec: GitRepositoryConfig)
 }
 
 class FileSchemaRepositoryConfigLoader(
@@ -43,9 +62,9 @@ class FileSchemaRepositoryConfigLoader(
       configFilePath, fallback
    ), SchemaRepositoryConfigLoader {
    init {
-       registerCustomType(PackageLoaderSpecHoconSupport)
-       registerCustomType(UriHoconSupport)
-       registerCustomType(InstantHoconSupport)
+      registerCustomType(PackageLoaderSpecHoconSupport)
+      registerCustomType(UriHoconSupport)
+      registerCustomType(InstantHoconSupport)
    }
 
    override fun extract(config: Config): SchemaRepositoryConfig = config.extract()
@@ -61,7 +80,7 @@ class FileSchemaRepositoryConfigLoader(
       return resolveRelativePaths(original)
    }
 
-   private fun makeRelativeToConfigFile(path:Path):Path {
+   private fun makeRelativeToConfigFile(path: Path): Path {
       return if (path.isAbsolute) {
          path
       } else {
@@ -76,6 +95,28 @@ class FileSchemaRepositoryConfigLoader(
          fileConfig.copy(paths = resolvedPaths, apiEditorProjectPath = apiEditorPath)
       }
       return original.copy(file = updatedFileConfig)
+   }
+
+   override fun addFileSpec(fileSpec: FileSystemPackageSpec) {
+      val current = this.typedConfig() // Don't call load, as we want the original, not the one we resolve paths with
+      val currentFileConfig = current.file ?: FileSystemSchemaRepositoryConfig()
+
+      if (currentFileConfig.projects.any {
+            it.path == fileSpec.path
+         }) {
+         throw BadRepositorySpecException("${fileSpec.path} already exists")
+      }
+
+      val updated = current.copy(
+         file = currentFileConfig.copy(
+            projects = currentFileConfig.projects.concat(fileSpec)
+         )
+      )
+      save(updated)
+   }
+
+   override fun addGitSpec(gitSpec: GitRepositoryConfig) {
+      TODO("Not yet implemented")
    }
 
    fun save(schemaRepoConfig: SchemaRepositoryConfig) {
@@ -93,3 +134,5 @@ class FileSchemaRepositoryConfigLoader(
       saveConfig(updated)
    }
 }
+
+class BadRepositorySpecException(message: String) : RuntimeException(message)

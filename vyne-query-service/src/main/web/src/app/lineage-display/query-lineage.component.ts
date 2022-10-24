@@ -1,11 +1,10 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { BaseGraphComponent } from '../inheritence-graph/base-graph-component';
 import { QuerySankeyChartRow, SankeyNodeType, SankeyOperationNodeDetails } from '../services/query.service';
 import { SchemaGraph, SchemaGraphLink, SchemaGraphNode, SchemaGraphNodeType, SchemaNodeSet } from '../services/schema';
 import { ClusterNode } from '@swimlane/ngx-graph';
 import { isNullOrUndefined } from 'util';
 import { Subject } from 'rxjs';
-import Tooltip from 'rich-markdown-editor/dist/components/Tooltip';
 
 @Component({
   selector: 'app-query-lineage',
