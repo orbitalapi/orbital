@@ -46,9 +46,24 @@ data class EditableRepositoryConfig(
    val editablePackages: List<PackageIdentifier>
 ) {
    val editingEnabled: Boolean = editablePackages.isNotEmpty()
+
+   // Short term workaround...
+   // FOr now, only support editing of a single package.
+   // However, we'll need to allow mutliple editable pacakages,
+   // and edit requests will have to tell us which package the
+   // edit should go to.
+
+   fun getDefaultEditorPackage():PackageIdentifier {
+      return when (editablePackages.size) {
+         0 -> error("There are no packages configured to be editable")
+         1 -> editablePackages.single()
+         else -> error("There are multiple packages defined as editable. Pick one, mofo.")
+      }
+   }
 }
 
 data class SchemaEditRequest(
+   val packageIdentifier: PackageIdentifier,
    val edits: List<VersionedSource>
 )
 

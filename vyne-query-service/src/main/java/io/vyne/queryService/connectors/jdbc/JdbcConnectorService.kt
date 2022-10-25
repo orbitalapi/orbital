@@ -3,6 +3,7 @@ package io.vyne.queryService.connectors.jdbc
 import arrow.core.getOrHandle
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import io.vyne.PackageIdentifier
 import io.vyne.VersionedSource
 import io.vyne.connectors.jdbc.*
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
@@ -39,10 +40,10 @@ private val logger = KotlinLogging.logger {}
 
 @RestController
 class JdbcConnectorService(
-    private val connectionFactory: JdbcConnectionFactory,
-    private val connectionRegistry: JdbcConnectionRegistry,
-    private val schemaProvider: SchemaProvider,
-    private val schemaEditor: LocalSchemaEditingService
+   private val connectionFactory: JdbcConnectionFactory,
+   private val connectionRegistry: JdbcConnectionRegistry,
+   private val schemaProvider: SchemaProvider,
+   private val schemaEditor: LocalSchemaEditingService
 ) {
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
@@ -67,7 +68,8 @@ class JdbcConnectorService(
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections/jdbc/{connectionName}")
    fun getConnection(@PathVariable("connectionName") connectionName: String): Mono<ConnectorConfigurationSummary> {
-      val summary = this.connectionRegistry.getConnection(connectionName).let { connection -> ConnectorConfigurationSummary(connection) }
+      val summary = this.connectionRegistry.getConnection(connectionName)
+         .let { connection -> ConnectorConfigurationSummary(connection) }
       return Mono.just(summary)
    }
 
@@ -100,9 +102,11 @@ class JdbcConnectorService(
          .listColumns(schemaName, tableName)
          .map { column -> buildColumnMapping(tableType, column) }
 
-      return Mono.just(TableMetadata(
-         connectionName, schemaName, tableName, tableType?.qualifiedName, columns
-      ))
+      return Mono.just(
+         TableMetadata(
+            connectionName, schemaName, tableName, tableType?.qualifiedName, columns
+         )
+      )
    }
 
    private fun buildColumnMapping(
@@ -121,11 +125,6 @@ class JdbcConnectorService(
          column
       )
    }
-
-   data class JdbcTaxiGenerationRequest(
-      val tables: List<TableTaxiGenerationRequest>,
-   )
-
 
    @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
    @DeleteMapping("/api/connections/jdbc/{connectionName}/tables/{schemaName}/{tableName}/model/{typeName}")
@@ -152,9 +151,27 @@ class JdbcConnectorService(
          type.sources.single().version, // TODO, we should increment this...
          taxi
       )
-      return this.schemaEditor.submitEdits(
-         listOf(mutatedSource)
-      )
+      return getDefaultEditorPackage().flatMap { editablePackage ->
+         schemaEditor.submitEdits(
+            listOf(mutatedSource), editablePackage
+         )
+      }
+   }
+
+   /**
+    * Short-term workaround.
+    * We used to only allow a single editor package, and we're working towards
+    * allowing many.
+    * That requires callers to indicate which package they want edits to land in.
+    * For now, only a single package is allowed to be editable, but it's not defined
+    * at startup anymore, so we need to query for it.
+    *
+    */
+   private fun getDefaultEditorPackage(): Mono<PackageIdentifier> {
+      return schemaEditor.getEditorConfig()
+         .map { config ->
+            config.getDefaultEditorPackage()
+         }
    }
 
    @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
@@ -174,7 +191,10 @@ class JdbcConnectorService(
       }
       val modelSource = request.model.taxi ?: error("Only taxi based mappings are currently supported")
       val allEdits = versionedSources + modelSource + request.serviceMappings
-      return schemaEditor.submitEdits(allEdits)
+
+      return getDefaultEditorPackage().flatMap { editablePackage ->
+         schemaEditor.submitEdits(allEdits, editablePackage)
+      }
    }
 
 

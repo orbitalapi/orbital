@@ -17,11 +17,12 @@ import java.nio.file.Paths
 import java.time.Duration
 import kotlin.io.path.toPath
 
-class GitRepositorySchemaPackageLoader(
+class GitSchemaPackageLoader(
    val workingDir: Path,
    private val config: GitRepositoryConfig,
    adaptor: SchemaSourcesAdaptor,
-   fileMonitor: ReactiveFileSystemMonitor = ReactiveWatchingFileSystemMonitor(workingDir),
+   // visible for testing
+   val fileMonitor: ReactiveFileSystemMonitor = ReactiveWatchingFileSystemMonitor(workingDir),
    val gitPollFrequency: Duration = Duration.ofSeconds(30),
 ) : SchemaPackageTransport {
 
@@ -58,7 +59,7 @@ class GitRepositorySchemaPackageLoader(
    fun syncNow() {
       logger.info { "Starting a git sync for ${config.description}" }
       try {
-         GitRepositorySourceLoader(workingDir.toFile(), config).fetchLatest()
+         GitOperations(workingDir.toFile(), config).fetchLatest()
       } catch (e: Exception) {
          logger.warn(e) { "Failed to complete git sync for ${config.description}" }
       }

@@ -9,12 +9,11 @@ import com.winterbe.expekt.should
 import io.vyne.PackageIdentifier
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
-import io.vyne.asPackage
 import io.vyne.schema.publisher.SchemaPublisherTransport
-import io.vyne.schemaServer.SchemaPublicationConfig
-import io.vyne.schemaServer.core.InMemorySchemaRepositoryConfigLoader
-import io.vyne.schemaServer.core.SchemaRepositoryConfig
-import io.vyne.schemaServer.core.SchemaRepositoryConfigLoader
+import io.vyne.schemaServer.core.SchemaPublicationConfig
+import io.vyne.schemaServer.core.repositories.InMemorySchemaRepositoryConfigLoader
+import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfig
+import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfigLoader
 import io.vyne.schemaServer.core.file.*
 import mu.KotlinLogging
 import org.junit.Before
@@ -94,21 +93,21 @@ class FilePollerSystemTest {
       }
    }
 
-   @Profile("test")
-   @Configuration
-   @Import(SchemaPublicationConfig::class, FileWatcherBuilders::class, FileSystemMonitorLifecycleHandler::class)
-   class TestConfig {
-      @Bean
-      fun configLoader(): SchemaRepositoryConfigLoader {
-         return InMemorySchemaRepositoryConfigLoader(
-            SchemaRepositoryConfig(
-               FileSystemSchemaRepositoryConfig(
-                  changeDetectionMethod = FileChangeDetectionMethod.POLL,
-                  incrementVersionOnChange = false,
-                  paths = listOf(folder.root.toPath())
-               )
-            )
-         )
-      }
-   }
+//   @Profile("test")
+//   @Configuration
+//   @Import(SchemaPublicationConfig::class, FileWatcherBuilders::class, FileSystemMonitorLifecycleHandler::class)
+//   class TestConfig {
+//      @Bean
+//      fun configLoader(): SchemaRepositoryConfigLoader {
+//         return InMemorySchemaRepositoryConfigLoader(
+//            SchemaRepositoryConfig(
+//               FileSystemSchemaRepositoryConfig(
+//                  changeDetectionMethod = FileChangeDetectionMethod.POLL,
+//                  incrementVersionOnChange = false,
+//                  projects = listOf(FileSystemPackageSpec(folder.root.toPath()))
+//               )
+//            )
+//         )
+//      }
+//   }
 }

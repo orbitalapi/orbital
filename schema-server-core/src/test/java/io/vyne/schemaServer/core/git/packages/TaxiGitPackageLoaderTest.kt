@@ -7,7 +7,7 @@ import io.vyne.schemaServer.core.adaptors.taxi.TaxiPackageLoaderSpec
 import io.vyne.schemaServer.core.file.deployProject
 import io.vyne.schemaServer.core.file.packages.ReactivePollingFileSystemMonitor
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
-import io.vyne.schemaServer.core.git.GitRepositorySchemaPackageLoader
+import io.vyne.schemaServer.core.git.GitSchemaPackageLoader
 import org.eclipse.jgit.api.Git
 import org.junit.Before
 import org.junit.Rule
@@ -53,7 +53,7 @@ class TaxiGitPackageLoaderTest {
 
       val adaptor = SchemaSourcesAdaptorFactory().getAdaptor(config.loader)
       val fileMonitor = ReactivePollingFileSystemMonitor(checkoutRoot, Duration.ofDays(1))
-      val loader = GitRepositorySchemaPackageLoader(
+      val loader = GitSchemaPackageLoader(
          checkoutRoot,
          config,
          adaptor,
@@ -112,7 +112,7 @@ class TaxiGitPackageLoaderTest {
 
       val adaptor = SchemaSourcesAdaptorFactory().getAdaptor(config.loader)
       val fileMonitor = ReactivePollingFileSystemMonitor(checkoutRoot, Duration.ofDays(1))
-      val loader = GitRepositorySchemaPackageLoader(
+      val loader = GitSchemaPackageLoader(
          checkoutRoot,
          config,
          adaptor,

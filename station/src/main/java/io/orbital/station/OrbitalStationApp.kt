@@ -2,24 +2,22 @@ package io.orbital.station
 
 import io.orbital.station.lsp.LanguageServerConfig
 import io.orbital.station.security.OrbitalUserConfig
-import io.orbital.station.security.SecureVyneRepository
-import io.vyne.schemaServer.core.SchemaRepositoryConfig
+import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfig
 import io.vyne.schemaServer.core.VersionedSourceLoader
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
+import io.vyne.schemaServer.core.repositories.FileSchemaRepositoryConfigLoader
+import io.vyne.schemaServer.core.repositories.InMemorySchemaRepositoryConfigLoader
+import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfigLoader
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
-import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
-import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration.WebFluxConfig
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.web.reactive.config.CorsRegistry
 import org.springframework.web.reactive.config.WebFluxConfigurer
 import java.nio.file.Path
@@ -44,21 +42,22 @@ class OrbitalStationApp {
    }
 
    @Bean
-   fun configRepoLoader(@Value("\${vyne.repositories.config-file:repositories.conf}") configFilePath: Path,
-                        @Value("\${vyne.repositories.repository-path:#{null}}") repositoryHome: Path? = null,
-   ): io.vyne.schemaServer.core.SchemaRepositoryConfigLoader {
+   fun configRepoLoader(
+      @Value("\${vyne.repositories.config-file:repositories.conf}") configFilePath: Path,
+      @Value("\${vyne.repositories.repository-path:#{null}}") repositoryHome: Path? = null,
+   ): SchemaRepositoryConfigLoader {
       return if (repositoryHome != null) {
          logger.info { "vyne.repositories.repository-path was set to $repositoryHome running a file-based repository from this path, ignoring any other config from $configFilePath" }
-         return io.vyne.schemaServer.core.InMemorySchemaRepositoryConfigLoader(
-            io.vyne.schemaServer.core.SchemaRepositoryConfig(
+         return InMemorySchemaRepositoryConfigLoader(
+            SchemaRepositoryConfig(
                FileSystemSchemaRepositoryConfig(
-                  paths = listOf(repositoryHome)
+                  projectPaths = listOf(repositoryHome)
                )
             )
          )
       } else {
          logger.info { "Using repository config file at $configFilePath" }
-         io.vyne.schemaServer.core.FileSchemaRepositoryConfigLoader(configFilePath)
+         FileSchemaRepositoryConfigLoader(configFilePath)
       }
    }
 

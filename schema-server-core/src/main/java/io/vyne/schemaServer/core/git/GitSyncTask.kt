@@ -1,13 +1,14 @@
 package io.vyne.schemaServer.core.git
 
 import io.vyne.schemaServer.core.publisher.SourceWatchingSchemaPublisher
+import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import java.nio.file.Files
 
 @Component
 class GitSyncTask(
-   private val repositories: List<GitRepositorySourceLoader>
+   private val repositoryManager: ReactiveRepositoryManager
 ) {
 
    private val logger = KotlinLogging.logger {}
@@ -15,16 +16,17 @@ class GitSyncTask(
 
    //   @Scheduled(fixedRateString = "\${vyne.schemaServer.git.pollFrequency:PT30S}")
    fun sync() {
-      repositories.forEach { gitRepository ->
-         try {
-            syncRepository(gitRepository)
-         } catch (e: Exception) {
-            logger.error(e) { "Failed to complete sync task on repository ${gitRepository.description}" }
-         }
-      }
+      TODO()
+//      repositories.forEach { gitRepository ->
+//         try {
+//            syncRepository(gitRepository)
+//         } catch (e: Exception) {
+//            logger.error(e) { "Failed to complete sync task on repository ${gitRepository.description}" }
+//         }
+//      }
    }
 
-   private fun syncRepository(gitRepository: GitRepositorySourceLoader) {
+   private fun syncRepository(gitRepository: GitOperations) {
       logger.info("Synchronizing repository: ${gitRepository.description}")
       val recompilationRequired = gitRepository.use { gitRepoResource ->
          if (gitRepoResource.lsRemote() == OperationResult.FAILURE) {
@@ -33,7 +35,8 @@ class GitSyncTask(
 
          val operationResultedInChanges = gitRepository.fetchLatest()
          if (operationResultedInChanges) {
-            gitRepository.emitSourcesChangedMessage()
+            TODO()
+//            gitRepository.emitSourcesChangedMessage()
          }
 
          operationResultedInChanges

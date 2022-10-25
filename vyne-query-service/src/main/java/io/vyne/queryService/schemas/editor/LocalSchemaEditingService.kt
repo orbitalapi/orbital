@@ -143,7 +143,7 @@ class LocalSchemaEditingService(
     *
     * The updated Vyne types containing in the Taxi string are returned.
     */
-   @PostMapping("/api/schema/taxi", consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE])
+   @PostMapping("/api/schema/taxi/{packageIdentifier}", consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE])
    fun submit(
       @RequestBody taxi: String,
       @RequestParam("validate", required = false) validateOnly: Boolean = false,
@@ -168,16 +168,18 @@ class LocalSchemaEditingService(
          dryRun = validateOnly
       )
       return if (persist) {
-         submitEdits(versionedSources)
+         submitEdits(versionedSources, packageIdentifier)
             .map { submissionResult }
       } else {
          Mono.just(submissionResult)
       }
    }
 
-   fun submitEdits(versionedSources: List<VersionedSource>): Mono<SchemaEditResponse> {
+   fun submitEdits(versionedSources: List<VersionedSource>, packageIdentifier: PackageIdentifier): Mono<SchemaEditResponse> {
       log().info("Submitting edit requests to schema server for files ${versionedSources.joinToString(", ") { it.name }}")
-      return handleFeignErrors { schemaEditorApi.submitEdits(SchemaEditRequest(versionedSources)) }
+      return handleFeignErrors { schemaEditorApi.submitEdits(
+         SchemaEditRequest(packageIdentifier, versionedSources)
+      ) }
 
    }
 

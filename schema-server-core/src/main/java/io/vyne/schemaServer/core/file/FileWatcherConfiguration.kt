@@ -1,5 +1,6 @@
 package io.vyne.schemaServer.core.file
 
+import io.vyne.PackageIdentifier
 import io.vyne.schemaServer.core.adaptors.PackageLoaderSpec
 import io.vyne.schemaServer.core.adaptors.taxi.TaxiPackageLoaderSpec
 import mu.KotlinLogging
@@ -9,85 +10,17 @@ import java.nio.file.Path
 import java.time.Duration
 
 /**
- * Spring config class that's responsible wiring the file source loader
- * and file system watchers for each configured source directory
+ * Represents a pointer to a file-based project spec.
+ * At it's most simple, is just a path.
+ * However, can be configured to allow richer loading (such as by
+ * providing an adaptor that converts OpenAPI to Taxi, etc)
  *
  */
-@Configuration
-class FileWatcherBuilders {
-
-   private val logger = KotlinLogging.logger {}
-
-   @Bean
-   fun buildFileWatchers(
-      config: FileSystemSchemaRepositoryConfig?,
-      repositories: List<FileSystemSchemaRepository>?,
-   ): List<FileSystemMonitor> {
-      if (config == null || repositories == null || repositories.isEmpty()) {
-         return emptyList()
-      }
-      val paths = (config.paths + config.apiEditorProjectPath).filterNotNull().distinct()
-      val watchers = when (config.changeDetectionMethod) {
-         FileChangeDetectionMethod.POLL -> repositories.map { repository ->
-            logger.info { "Configuring FilePoller at ${repository.projectPath}" }
-            FilePoller(repository, config.pollFrequency)
-         }
-
-         FileChangeDetectionMethod.WATCH -> repositories.map { repository ->
-            logger.info { "Configuring FileWatcher at ${repository.projectPath}" }
-            FileWatcher(repository, config.recompilationFrequencyMillis)
-         }
-      }
-      return watchers
-   }
-
-   @Bean
-   fun buildApiEditorRepository(
-      config: FileSystemSchemaRepositoryConfig?,
-      repositories: List<FileSystemSchemaRepository>?
-   ): io.vyne.schemaServer.core.editor.ApiEditorRepository {
-      if (config?.apiEditorProjectPath == null) {
-         logger.info { "No apiEditorProjectPath is defined, so edits via the REST API are disabled" }
-         return io.vyne.schemaServer.core.editor.EditingDisabledRepository
-      }
-      if (repositories == null) {
-         logger.info { "No repositories are defined, so edits via the REST API are disabled" }
-         return io.vyne.schemaServer.core.editor.EditingDisabledRepository
-      }
-      // By ensuring the apiEditorProjectPath is also a configured project path, it means that a watcher
-      // has already been set up, and we don't have to do much work
-      if (repositories.none { it.projectPath == config.apiEditorProjectPath }) {
-         logger.error { "apiEditorProjectPath has been defined, but it's path is not in the list of project paths.  Add the apiEditorProjectPath to the list of configured paths.  Edits via the REST API are disabled" }
-         return io.vyne.schemaServer.core.editor.EditingDisabledRepository
-      }
-      val repository = repositories.first { it.projectPath == config.apiEditorProjectPath }
-      logger.info { "Project at path ${repository.projectPath.toAbsolutePath()} is configured to accept changes from the REST API" }
-      return io.vyne.schemaServer.core.editor.DefaultApiEditorRepository(repository)
-   }
-
-   @Bean
-   fun buildFileRepositories(
-      config: FileSystemSchemaRepositoryConfig?
-   ): List<FileSystemSchemaRepository> {
-      @Suppress("IfThenToElvis")
-      return if (config == null) {
-         return emptyList()
-      } else {
-         config.paths.map { path ->
-            FileSystemSchemaRepository.forPath(
-               path,
-               config.incrementVersionOnChange
-            )
-         }
-      }
-   }
-
-}
-
 data class FileSystemPackageSpec(
    val path: Path,
    val loader: PackageLoaderSpec = TaxiPackageLoaderSpec,
-   val editable: Boolean = false
+   val editable: Boolean = false,
+   val packageIdentifier: PackageIdentifier? = null
 )
 
 data class FileSystemSchemaRepositoryConfig(
@@ -95,9 +28,6 @@ data class FileSystemSchemaRepositoryConfig(
    val pollFrequency: Duration = Duration.ofSeconds(5L),
    val recompilationFrequencyMillis: Duration = Duration.ofMillis(3000L),
    val incrementVersionOnChange: Boolean = false,
-   @Deprecated("use projects")
-   val paths: List<Path> = emptyList(),
-   val apiEditorProjectPath: Path? = null,
    val projects: List<FileSystemPackageSpec> = emptyList()
 )
 

@@ -9,21 +9,20 @@ import com.winterbe.expekt.should
 import io.vyne.PackageIdentifier
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
-import io.vyne.asPackage
 import io.vyne.schema.publisher.SchemaPublisherTransport
-import io.vyne.schemaServer.SchemaPublicationConfig
-import io.vyne.schemaServer.core.InMemorySchemaRepositoryConfigLoader
-import io.vyne.schemaServer.core.SchemaRepositoryConfig
-import io.vyne.schemaServer.core.SchemaRepositoryConfigLoader
+import io.vyne.schemaServer.core.SchemaPublicationConfig
+import io.vyne.schemaServer.core.repositories.InMemorySchemaRepositoryConfigLoader
+import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfig
+import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfigLoader
 import io.vyne.schemaServer.core.file.deployProject
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
 import io.vyne.schemaServer.core.git.GitSchemaConfiguration
 import io.vyne.schemaServer.core.git.GitSchemaRepositoryConfig
 import io.vyne.schemaServer.core.git.GitSyncTask
-import io.vyne.schemaServer.file.FilePollerSystemTest
+import io.vyne.schemaServer.core.repositories.lifecycle.RepositoryLifecycleEventDispatcher
+import io.vyne.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
 import mu.KotlinLogging
 import org.eclipse.jgit.api.Git
-import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -132,7 +131,7 @@ class GitSyncTaskWithVersionIncrementContextTest {
    @Import(SchemaPublicationConfig::class, GitSchemaConfiguration::class, GitSyncTask::class)
    class TestConfig {
       @Bean
-      fun configLoader(): SchemaRepositoryConfigLoader {
+      fun configLoader(eventDispatcher: RepositorySpecLifecycleEventDispatcher): SchemaRepositoryConfigLoader {
          return InMemorySchemaRepositoryConfigLoader(
             SchemaRepositoryConfig(
                git = GitSchemaRepositoryConfig(
@@ -145,7 +144,7 @@ class GitSyncTaskWithVersionIncrementContextTest {
                      )
                   )
                )
-            )
+            ), eventDispatcher
          )
       }
    }

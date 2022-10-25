@@ -1,7 +1,13 @@
 package io.orbital.station
 
 import io.vyne.schemaServer.core.VersionedSourceLoader
+import io.vyne.schemaServer.core.file.FileSystemPackageSpec
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
+import io.vyne.schemaServer.core.repositories.FileSchemaRepositoryConfigLoader
+import io.vyne.schemaServer.core.repositories.InMemorySchemaRepositoryConfigLoader
+import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfig
+import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfigLoader
+import io.vyne.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -21,20 +27,23 @@ class OrbitalStationConfig {
    fun configRepoLoader(
       @Value("\${vyne.repositories.config-file:repositories.conf}") configFilePath: Path,
       @Value("\${vyne.repositories.repository-path:#{null}}") repositoryHome: Path? = null,
-   ): io.vyne.schemaServer.core.SchemaRepositoryConfigLoader {
+      eventDispatcher: RepositorySpecLifecycleEventDispatcher
+   ): SchemaRepositoryConfigLoader {
       return if (repositoryHome != null) {
          logger.info { "vyne.repositories.repository-path was set to $repositoryHome running a file-based repository from this path, ignoring any other config from $configFilePath" }
-         return io.vyne.schemaServer.core.InMemorySchemaRepositoryConfigLoader(
-            io.vyne.schemaServer.core.SchemaRepositoryConfig(
+         return InMemorySchemaRepositoryConfigLoader(
+            SchemaRepositoryConfig(
                FileSystemSchemaRepositoryConfig(
-                  paths = listOf(repositoryHome)
+                  projects = listOf(FileSystemPackageSpec(repositoryHome))
                )
-            )
+            ),
+            eventDispatcher
          )
       } else {
          logger.info { "Using repository config file at $configFilePath" }
-         io.vyne.schemaServer.core.FileSchemaRepositoryConfigLoader(configFilePath)
+         FileSchemaRepositoryConfigLoader(configFilePath, eventDispatcher = eventDispatcher)
       }
    }
+
 
 }

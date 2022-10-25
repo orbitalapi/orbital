@@ -1,22 +1,14 @@
 package io.vyne.schemaServer.core.git
 
-import io.vyne.SourcePackage
-import io.vyne.VersionedSource
-import io.vyne.schemaServer.core.UpdatingVersionedSourceLoader
-import io.vyne.schemaServer.core.file.FileSystemVersionedSourceLoader
-import io.vyne.schemaServer.core.file.SourcesChangedMessage
 import mu.KotlinLogging
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.PullResult
 import org.eclipse.jgit.api.TransportConfigCallback
 import org.eclipse.jgit.lib.Repository
-import org.eclipse.jgit.lib.RepositoryCache
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
-import org.eclipse.jgit.util.FS
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Sinks
 import java.io.File
 import java.nio.file.Files
+
 
 enum class OperationResult {
    SUCCESS, FAILURE;
@@ -32,17 +24,13 @@ enum class OperationResult {
    }
 }
 
-class GitRepositorySourceLoader(val workingDir: File, private val config: GitRepositoryConfig) : AutoCloseable,
-   UpdatingVersionedSourceLoader {
+class GitOperations(val workingDir: File, private val config: GitRepositoryConfig) : AutoCloseable {
    private val gitDir: File = workingDir.resolve(".git")
 
    @Suppress("JoinDeclarationAndAssignment")
    private val transportConfigCallback: TransportConfigCallback?
    private val fileRepository: Repository
    private val git: Git
-   private val sourceLoader: FileSystemVersionedSourceLoader =
-      FileSystemVersionedSourceLoader.forProjectHome(workingDir.canonicalPath)
-
    val name: String = config.name
    val description = config.description
 
@@ -76,7 +64,7 @@ class GitRepositorySourceLoader(val workingDir: File, private val config: GitRep
     */
    fun fetchLatest(): Boolean {
       return if (existsLocally()) {
-         checkout(false)
+         checkout()
          val pullResult = pull()
          pullResult.mergeResult.mergedCommits.isNotEmpty()
       } else {
@@ -85,7 +73,7 @@ class GitRepositorySourceLoader(val workingDir: File, private val config: GitRep
             Files.createDirectories(workingDirPath.parent)
          }
          clone()
-         checkout(false)
+         checkout()
          true
       }
    }
@@ -119,7 +107,7 @@ class GitRepositorySourceLoader(val workingDir: File, private val config: GitRep
       return pullResult
    }
 
-   fun checkout(emitSourcesChangeMessage: Boolean = true) {
+   fun checkout() {
       val createBranch =
          !git
             .branchList()
@@ -132,18 +120,6 @@ class GitRepositorySourceLoader(val workingDir: File, private val config: GitRep
          .setStartPoint("origin/${config.branch}")
          .setName(config.branch)
          .call()
-
-      if (emitSourcesChangeMessage) {
-         emitSourcesChangedMessage()
-      }
-   }
-
-   fun emitSourcesChangedMessage() {
-      val sourcesChangedMessage = SourcesChangedMessage(listOf(this.loadSourcePackage()))
-      this.sourcesChangedSink.emitNext(sourcesChangedMessage) { signalType, emitResult ->
-         logger.warn { "Checkout operation for ${this.description} completed successfully, but failed to emit sources change message: $signalType $emitResult" }
-         false
-      }
    }
 
    fun lsRemote(): OperationResult {
@@ -155,19 +131,4 @@ class GitRepositorySourceLoader(val workingDir: File, private val config: GitRep
       return OperationResult.fromBoolean(result.isNotEmpty())
    }
 
-   fun isGitRepo(): Boolean {
-      return RepositoryCache.FileKey.isGitRepository(gitDir, FS.DETECTED)
-   }
-
-   private val sourcesChangedSink = Sinks.many().multicast().onBackpressureBuffer<SourcesChangedMessage>()
-   override val sourcesChanged: Flux<SourcesChangedMessage>
-      get() = sourcesChangedSink.asFlux()
-   override val identifier: String = this.description
-
-   override fun loadSourcePackage(
-      forceVersionIncrement: Boolean,
-      cachedValuePermissible: Boolean
-   ): SourcePackage {
-      return this.sourceLoader.loadSourcePackage(forceVersionIncrement)
-   }
 }

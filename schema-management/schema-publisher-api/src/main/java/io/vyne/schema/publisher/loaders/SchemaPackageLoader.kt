@@ -17,6 +17,9 @@ import java.net.URI
  * eg:  Transport that encapsulates loading schemas of some form from a git repository.
  */
 interface SchemaPackageTransport {
+   /**
+    * If called multiple times, the same Flux<> should be returned
+    */
    fun start(): Flux<SourcePackage>
 
    fun listUris(): Flux<URI>

@@ -7,7 +7,7 @@ import io.vyne.schemaServer.core.adaptors.OpenApiPackageLoaderSpec
 import io.vyne.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
 import io.vyne.schemaServer.core.file.packages.ReactivePollingFileSystemMonitor
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
-import io.vyne.schemaServer.core.git.GitRepositorySchemaPackageLoader
+import io.vyne.schemaServer.core.git.GitSchemaPackageLoader
 import org.apache.commons.io.FileUtils
 import org.eclipse.jgit.api.Git
 import org.junit.Before
@@ -52,7 +52,7 @@ class GitOpenApiPackageLoaderTest {
 
       val adaptor = SchemaSourcesAdaptorFactory().getAdaptor(config.loader)
       val fileMonitor = ReactivePollingFileSystemMonitor(checkoutRoot, Duration.ofDays(1))
-      val loader = GitRepositorySchemaPackageLoader(
+      val loader = GitSchemaPackageLoader(
          checkoutRoot,
          config,
          adaptor,

@@ -1,12 +1,15 @@
 package io.vyne.schemaServer.core
 
 import com.google.common.io.Resources
+import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import io.vyne.schemaServer.core.adaptors.OpenApiPackageLoaderSpec
+import io.vyne.schemaServer.core.file.FileSystemPackageSpec
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
 import io.vyne.schemaServer.core.git.GitSchemaRepositoryConfig
-import io.vyne.schemaServer.core.openApi.OpenApiSchemaRepositoryConfig
+import io.vyne.schemaServer.core.repositories.FileSchemaRepositoryConfigLoader
+import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfig
 import org.apache.commons.io.IOUtils
 import org.junit.Rule
 import org.junit.Test
@@ -21,19 +24,23 @@ class ConfigTest {
 
    @Test
    fun `returns an empty config if config file doesn't exist`() {
-      val empty = FileSchemaRepositoryConfigLoader(Paths.get("/this/path/doesnt/exist"))
+      val empty = FileSchemaRepositoryConfigLoader(Paths.get("/this/path/doesnt/exist"),
+         eventDispatcher = mock { })
          .load()
       empty.file.should.be.`null`
       empty.git.should.be.`null`
-      empty.openApi.should.be.`null`
    }
 
    @Test
    fun `can read and write a full config`() {
       val config = SchemaRepositoryConfig(
          file = FileSystemSchemaRepositoryConfig(
-            paths = listOf(
-               Paths.get("/a/b/c/project")
+            projects = listOf(
+               FileSystemPackageSpec(
+                  path = Paths.get("/a/b/c/project"),
+                  editable = true
+               )
+
             )
          ),
          git = GitSchemaRepositoryConfig(
@@ -46,19 +53,12 @@ class ConfigTest {
                )
             )
          ),
-         openApi = OpenApiSchemaRepositoryConfig(
-            services = listOf(
-               OpenApiSchemaRepositoryConfig.OpenApiServiceConfig(
-                  "some-service",
-                  "https://foo.com/swagger.json",
-                  defaultNamespace = "com.foo.bar"
-               )
-            )
+
          )
-      )
 
       val path = folder.root.toPath().resolve("repo.conf")
-      val configRepo = FileSchemaRepositoryConfigLoader(path)
+      val configRepo = FileSchemaRepositoryConfigLoader(path,
+         eventDispatcher = mock { })
       configRepo.save(config)
       val loaded = configRepo.load()
       loaded.should.equal(config)
@@ -72,10 +72,11 @@ class ConfigTest {
       val targetConfigFile = folder.newFile("server.conf")
       IOUtils.copy(configFile.toURL().openStream(), targetConfigFile.outputStream())
 
-      val configRepo = FileSchemaRepositoryConfigLoader(targetConfigFile.toPath())
+      val configRepo = FileSchemaRepositoryConfigLoader(targetConfigFile.toPath(),
+         eventDispatcher = mock { })
       val config = configRepo.load()
-      config.file!!.paths.should.have.size(1)
-      val path = config.file!!.paths[0]
+      config.file!!.projects.should.have.size(1)
+      val path = config.file!!.projects[0].path
 
       path.should.equal(folder.root.resolve("path/to/project").toPath())
    }
@@ -87,7 +88,8 @@ class ConfigTest {
       val targetConfigFile = folder.newFile("server.conf")
       IOUtils.copy(configFile.toURL().openStream(), targetConfigFile.outputStream())
 
-      val configRepo = FileSchemaRepositoryConfigLoader(targetConfigFile.toPath())
+      val configRepo = FileSchemaRepositoryConfigLoader(targetConfigFile.toPath(),
+         eventDispatcher = mock { })
       val config = configRepo.load()
 
       config.file!!.projects.should.have.size(2)

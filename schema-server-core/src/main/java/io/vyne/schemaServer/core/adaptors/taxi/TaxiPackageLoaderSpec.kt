@@ -9,6 +9,7 @@ import io.vyne.schema.publisher.loaders.FileSchemaSourceProvider
 import io.vyne.schemaServer.core.adaptors.PackageLoaderSpec
 import io.vyne.schemaServer.core.adaptors.PackageType
 import io.vyne.toVynePackageIdentifier
+import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.packages.TaxiProjectLoader
 import mu.KotlinLogging
 import reactor.core.publisher.Mono
@@ -40,31 +41,29 @@ data class FileBasedPackageMetadata(
 
 class TaxiSchemaSourcesAdaptor : SchemaSourcesAdaptor {
    private val logger = KotlinLogging.logger {}
+
+   fun loadTaxiProject(transport: SchemaPackageTransport): Mono<Pair<Path, TaxiPackageProject>> {
+      return transport.listUris()
+         .filter { File(it).name == "taxi.conf" }
+         .next()
+         .map { uri ->
+            logger.info { "Reading taxi package file at $uri" }
+            val taxiFilePath = uri.toPath()
+            val project = TaxiProjectLoader().withConfigFileAt(taxiFilePath)
+               .load()
+            taxiFilePath to project
+         }
+   }
+
    override fun buildMetadata(transport: SchemaPackageTransport): Mono<PackageMetadata> {
-      return Mono.create { sink ->
-         transport.listUris()
-            .filter { uri ->
-               File(uri).name == "taxi.conf"
-            }
-            .next()
-            .subscribe { uri ->
-               logger.info { "Reading taxi package file at $uri" }
-               try {
-                  val taxiFilePath = uri.toPath()
-                  val project = TaxiProjectLoader().withConfigFileAt(taxiFilePath)
-                     .load()
-                  val packageIdentifier = FileBasedPackageMetadata(
-                     identifier = project.identifier.toVynePackageIdentifier(),
-                     dependencies = project.dependencyPackages.map { it.toVynePackageIdentifier() },
-                     rootPath = taxiFilePath.parent
-                  )
-                  sink.success(packageIdentifier)
-               } catch (e: Exception) {
-                  logger.error(e) { "Failed to load a taxi project from $uri" }
-                  sink.error(e)
-               }
-            }
-      }
+      return loadTaxiProject(transport)
+         .map { (projectRoot, project) ->
+            FileBasedPackageMetadata(
+               identifier = project.identifier.toVynePackageIdentifier(),
+               dependencies = project.dependencyPackages.map { it.toVynePackageIdentifier() },
+               rootPath = projectRoot
+            )
+         }
    }
 
    override fun convert(packageMetadata: PackageMetadata, transport: SchemaPackageTransport): Mono<SourcePackage> {

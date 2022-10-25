@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
 import io.vyne.config.BaseHoconConfigFileRepository
+import io.vyne.config.ChangeWatchingConfigFileRepository
 import mu.KotlinLogging
 import reactor.core.publisher.Sinks
 import java.nio.file.*
@@ -14,10 +15,8 @@ class ServicesConfigRepository(
    private val configFilePath: Path,
    fallback: Config = ConfigFactory.systemEnvironment(),
    createConfigFileIfMissing: Boolean = true
-) : BaseHoconConfigFileRepository<ServicesConfig>(configFilePath, fallback) {
+) : ChangeWatchingConfigFileRepository<ServicesConfig>(configFilePath, fallback) {
 
-   private var watcherThread: Thread? = null
-   private val registeredWatchKeys = mutableListOf<WatchKey>()
    override fun extract(config: Config): ServicesConfig = config.extract()
 
    override fun emptyConfig(): ServicesConfig = ServicesConfig.DEFAULT
@@ -53,57 +52,6 @@ class ServicesConfigRepository(
       this.saveConfig(unresolvedConfig())
       return typedConfig()
    }
-
-   fun stopWatching() {
-      this.watcherThread?.interrupt()
-   }
-
-   fun watchForChanges() {
-      synchronized(this) {
-
-         this.watcherThread = Thread(Runnable {
-            val canonicalParentPath = configFilePath.toFile().canonicalFile.parentFile.toPath()
-            logger.info("Starting to watch $canonicalParentPath")
-            val watchService = FileSystems.getDefault().newWatchService()
-            registeredWatchKeys.add(
-               canonicalParentPath.register(
-                  watchService,
-                  StandardWatchEventKinds.ENTRY_CREATE,
-                  StandardWatchEventKinds.ENTRY_DELETE,
-                  StandardWatchEventKinds.ENTRY_MODIFY,
-                  StandardWatchEventKinds.OVERFLOW
-               )
-            )
-
-            try {
-               while (true) {
-                  val key = watchService.take()
-                  key.pollEvents()
-                     .mapNotNull {
-                        it.context() as? Path
-                     }
-                     .filter { changedPath ->
-                        val changedPathString = canonicalParentPath.resolve(changedPath).absolutePathString()
-                        changedPathString == configFilePath.absolutePathString()
-                     }
-                     .distinctBy { changedPath -> changedPath.absolutePathString() }
-                     .forEach { changedPath ->
-                        logger.info { "Detected file change in services config file at $changedPath. Invalidating cache and will reload service on next request" }
-                        invalidateCache()
-                     }
-                  key.reset()
-               }
-            } catch (e: ClosedWatchServiceException) {
-               logger.warn(e) { "Watch service was closed. ${e.message}" }
-            } catch (e: Exception) {
-               logger.error(e) { "Error in watch service: ${e.message}" }
-            }
-         })
-         watcherThread!!.start()
-      }
-   }
-
-
 }
 
 data class ServicesConfig(

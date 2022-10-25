@@ -3,12 +3,12 @@ package io.vyne.schemaServer.core.publisher
 import arrow.core.Either
 import io.vyne.SourcePackage
 import io.vyne.schema.publisher.SchemaPublisherTransport
+import io.vyne.schema.publisher.loaders.SchemaPackageTransport
+import io.vyne.schemaServer.core.repositories.lifecycle.RepositoryLifecycleEventSource
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
 import lang.taxi.errors
 import mu.KotlinLogging
-
-private val logger = KotlinLogging.logger {}
 
 /**
  * Watches local schema repositories, and publishes changes out to the
@@ -18,28 +18,27 @@ private val logger = KotlinLogging.logger {}
  * the SchemaPublisher
  */
 class SourceWatchingSchemaPublisher(
-   val sourceLoaders: List<io.vyne.schemaServer.core.VersionedSourceLoader>,
-   val schemaPublisher: SchemaPublisherTransport
+   private val schemaPublisher: SchemaPublisherTransport,
+   private val eventSource: RepositoryLifecycleEventSource
 ) {
+   private val logger = KotlinLogging.logger {}
 
    init {
-      sourceLoaders.filterIsInstance<io.vyne.schemaServer.core.UpdatingVersionedSourceLoader>()
-         .forEach { sourceLoader ->
-            logger.info { "Listening for changes from source loader ${sourceLoader.identifier}" }
-            sourceLoader.sourcesChanged.subscribe { message ->
-               submitSources(message.packages)
-            }
+      eventSource
+         .sourcesChanged
+         .subscribe { message ->
+            logger.info { "Received source change message for packages ${message.packages.joinToString()}" }
+            submitSources(message.packages)
          }
    }
 
-   fun refreshAllSources(): List<SourcePackage> {
-      val allSources = sourceLoaders.map { it.loadSourcePackage() }
-      submitSources(allSources)
-      return allSources
+//   fun refreshAllSources(): List<SourcePackage> {
+//      val allSources = sourceLoaders.map { it.loadSourcePackage() }
+//      submitSources(allSources)
+//      return allSources
+//   }
 
-   }
-
-   fun submitSources(sources: List<SourcePackage>): Either<CompilationException, Schema> {
+   private fun submitSources(sources: List<SourcePackage>): Either<CompilationException, Schema> {
       val result: Either<CompilationException, Schema> = schemaPublisher.submitPackages(sources)
       when (result) {
          is Either.Left -> logger.warn { "Update of sources resulted in ${result.value.errors.errors().size} compilation errors." }
