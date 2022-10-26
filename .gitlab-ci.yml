@@ -38,7 +38,7 @@ default:
    tags:
       - docker-heavy
    services:
-      -  name: docker:20.10.20-dind
+      -  name: docker:20.10.21-dind
          command: [ "--tls=false" ]
    variables:
       # Instruct Testcontainers to use the daemon of DinD.
@@ -181,7 +181,7 @@ regression-test:
       BUILDKIT_PROGRESS: plain
       PROGRESS_NO_TRUNC: 1
    services:
-      -  name: docker:20.10.20-dind
+      -  name: docker:20.10.21-dind
          command: [ "--tls=false" ]
    script:
       - PROJECT_VERSION=$(cat build-version.txt)
@@ -330,7 +330,7 @@ terraform-deploy-prod:
 
 .e2e-tests:
    stage: verify
-   image: docker:20.10.20-dind
+   image: docker:20.10.21-dind
    variables:
       DOCKER_HOST: tcp://docker:2375/
       DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
@@ -339,7 +339,7 @@ terraform-deploy-prod:
       BUILDKIT_PROGRESS: plain
       PROGRESS_NO_TRUNC: 1
    services:
-      -  name: docker:20.10.20-dind
+      -  name: docker:20.10.21-dind
          command: [ "--tls=false" ]
    retry: 2
    before_script:
