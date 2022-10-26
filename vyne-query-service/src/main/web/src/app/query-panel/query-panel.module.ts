@@ -40,6 +40,7 @@ import { MatSortModule } from '@angular/material/sort';
 import { CovalentFileModule } from '@covalent/core/file';
 import { ExpandingPanelSetModule } from '../expanding-panelset/expanding-panel-set.module';
 import { TuiButtonModule } from '@taiga-ui/core';
+import { ResultsDownloadModule } from 'src/app/results-download/results-download.module';
 
 @NgModule({
   imports: [
@@ -76,6 +77,7 @@ import { TuiButtonModule } from '@taiga-ui/core';
     MatSortModule,
     ExpandingPanelSetModule,
     TuiButtonModule,
+    ResultsDownloadModule
   ],
   exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent,
     ErrorPanelComponent],

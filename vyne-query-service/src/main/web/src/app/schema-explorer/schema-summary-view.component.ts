@@ -7,6 +7,7 @@ import { ChangeLogEntry, ChangelogService } from '../changelog/changelog.service
 import { TypesService } from '../services/types.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SchemaNotificationService } from '../services/schema-notification.service';
+import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
 
 @Component({
   selector: 'app-schema-summary-view',
@@ -30,7 +31,8 @@ import { SchemaNotificationService } from '../services/schema-notification.servi
     </div>
 
   `,
-  styleUrls: ['./schema-summary-view.component.scss']
+  styleUrls: ['./schema-summary-view.component.scss'],
+  host: {'class': appInstanceType.appType }
 })
 export class SchemaSummaryViewComponent {
 

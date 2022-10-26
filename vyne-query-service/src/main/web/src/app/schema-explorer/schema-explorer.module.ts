@@ -23,11 +23,12 @@ import { ChangelogModule } from '../changelog/changelog.module';
 import { SchemaSummaryViewComponent } from './schema-summary-view.component';
 import { SimpleBadgeListModule } from '../simple-badge-list/simple-badge-list.module';
 import { TuiButtonModule } from '@taiga-ui/core';
-import { AuthGuard } from 'src/app/services/auth.guard';
-import { VynePrivileges } from 'src/app/services/user-info.service';
 import { TuiTabsModule } from '@taiga-ui/kit';
 import { SchemaExplorerTableModule } from 'src/app/schema-explorer-table/schema-explorer-table.module';
-import { SchemaImporterModule } from 'src/app/schema-importer/schema-importer.module';
+import {
+  OrbitalSchemaExplorerContainerComponent
+} from 'src/app/schema-explorer/orbital-schema-explorer-container.component';
+import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
 
 
 @NgModule({
@@ -56,7 +57,8 @@ import { SchemaImporterModule } from 'src/app/schema-importer/schema-importer.mo
     TuiButtonModule,
     RouterModule.forChild([
       {
-        path: '', component: SchemaExplorerContainerComponent,
+        path: '',
+        component: appInstanceType.appType == 'vyne' ? SchemaExplorerContainerComponent : OrbitalSchemaExplorerContainerComponent,
         children: [
           {
             path: '', component: SchemaSummaryViewComponent
@@ -70,7 +72,7 @@ import { SchemaImporterModule } from 'src/app/schema-importer/schema-importer.mo
     TuiTabsModule,
   ],
   exports: [SchemaExplorerComponent],
-  declarations: [SchemaExplorerComponent, SchemaExplorerContainerComponent, SchemaSummaryViewComponent],
+  declarations: [SchemaExplorerComponent, SchemaExplorerContainerComponent, SchemaSummaryViewComponent, OrbitalSchemaExplorerContainerComponent],
   providers: [],
 })
 export class SchemaExplorerModule {

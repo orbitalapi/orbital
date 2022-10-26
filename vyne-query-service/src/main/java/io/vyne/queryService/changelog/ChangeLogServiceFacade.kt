@@ -1,5 +1,6 @@
 package io.vyne.queryService.changelog
 
+import io.orbital.station.IncludeInVyneOnly
 import io.vyne.UriSafePackageIdentifier
 import io.vyne.queryService.utils.handleFeignErrors
 import io.vyne.schemaServer.changelog.ChangeLogEntry
@@ -11,6 +12,9 @@ import reactor.core.publisher.Mono
 
 // Simple pass-through to the Schema server
 @RestController
+// Only active in Vyne, because in Orbital we have the actual changelog API
+// from the Schema server
+@IncludeInVyneOnly
 class ChangeLogServiceFacade(private val changeLogApi: ChangelogApi) {
 
    @GetMapping("/api/changelog")

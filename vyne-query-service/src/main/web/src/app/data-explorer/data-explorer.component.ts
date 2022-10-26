@@ -1,39 +1,29 @@
-import {Component, EventEmitter, Input, Output, ViewChild} from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { InstanceLike, Schema, Type } from '../services/schema';
 import {
-  findType,
-  Schema,
-  Type,
-  InstanceLike,
-  getTypeName,
-  TypeNamedInstance,
-  isUntypedInstance, asNearestTypedInstance
-} from '../services/schema';
-import {
-  VyneHttpServiceError,
+  CsvOptions,
+  ParsedCsvContent,
   ParsedTypeInstance,
   TypesService,
-  CsvOptions,
-  ParsedCsvContent, XmlIngestionParameters
+  VyneHttpServiceError,
+  XmlIngestionParameters
 } from '../services/types.service';
-import {FileSystemFileEntry} from 'ngx-file-drop';
-import {HttpErrorResponse} from '@angular/common/http';
-import {MatTabChangeEvent} from '@angular/material/tabs';
-import {CodeViewerComponent} from '../code-viewer/code-viewer.component';
-import {environment} from '../../environments/environment';
-import {CaskService} from '../services/cask.service';
-import {HeaderTypes} from './csv-viewer.component';
-import {SchemaGeneratorComponent} from './schema-generator-panel/schema-generator.component';
+import { FileSystemFileEntry, NgxFileDropEntry } from 'ngx-file-drop';
+import { HttpErrorResponse } from '@angular/common/http';
+import { MatTabChangeEvent } from '@angular/material/tabs';
+import { CodeViewerComponent } from '../code-viewer/code-viewer.component';
+import { environment } from '../../environments/environment';
+import { CaskService } from '../services/cask.service';
+import { HeaderTypes } from './csv-viewer.component';
+import { SchemaGeneratorComponent } from './schema-generator-panel/schema-generator.component';
 import * as fileSaver from 'file-saver';
-import {QueryFailure} from '../query-panel/query-wizard/query-wizard.component';
-import {ExportFileService} from '../services/export.file.service';
-import {MatDialog} from '@angular/material/dialog';
-import {TestSpecFormComponent} from '../test-pack-module/test-spec-form.component';
-import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
-import {SchemaNotificationService} from '../services/schema-notification.service';
-import {from, Observable, ReplaySubject} from 'rxjs/index';
-import {Subject} from 'rxjs';
-import {ObjectViewContainerComponent} from '../object-view/object-view-container.component';
-import {NgxFileDropEntry} from 'ngx-file-drop';
+import { MatDialog } from '@angular/material/dialog';
+import { TestSpecFormComponent } from '../test-pack-module/test-spec-form.component';
+import { InstanceSelectedEvent } from '../query-panel/instance-selected-event';
+import { SchemaNotificationService } from '../services/schema-notification.service';
+import { from, Observable, ReplaySubject } from 'rxjs/index';
+import { ObjectViewContainerComponent } from '../object-view/object-view-container.component';
+import { ResultsDownloadService } from 'src/app/results-download/results-download.service';
 
 @Component({
   selector: 'app-data-explorer',
@@ -89,7 +79,7 @@ export class DataExplorerComponent {
 
   constructor(private typesService: TypesService,
               private caskService: CaskService,
-              private exportFileService: ExportFileService,
+              private exportFileService: ResultsDownloadService,
               private dialogService: MatDialog,
               private schemaNotificationService: SchemaNotificationService) {
     this.typesService.getTypes()
@@ -102,7 +92,7 @@ export class DataExplorerComponent {
     this.caskServiceUrl = environment.serverUrl;
   }
 
-  @ViewChild('appCodeViewer', {read: CodeViewerComponent})
+  @ViewChild('appCodeViewer', { read: CodeViewerComponent })
   appCodeViewer: CodeViewerComponent;
 
   @ViewChild('schemaGenerator', {
@@ -293,7 +283,7 @@ export class DataExplorerComponent {
   onDownloadParsedDataClicked() {
     this.exportFileService.exportParsedData(this.fileContents, this.contentType, this.csvOptions, false)
       .subscribe(response => {
-        const blob: Blob = new Blob([response], {type: `text/json; charset=utf-8`});
+        const blob: Blob = new Blob([response], { type: `text/json; charset=utf-8` });
         fileSaver.saveAs(blob, `parsed-data-${new Date().getTime()}.json`);
       });
   }
@@ -309,7 +299,7 @@ export class DataExplorerComponent {
         const specName = result;
         this.exportFileService.exportTestSpec(this.fileContents, this.contentType, this.csvOptions, specName)
           .subscribe(response => {
-            const blob: Blob = new Blob([response], {type: `application/zip`});
+            const blob: Blob = new Blob([response], { type: `application/zip` });
             fileSaver.saveAs(blob, `${specName}-spec-${new Date().getTime()}.zip`);
           });
       }

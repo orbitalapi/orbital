@@ -268,8 +268,8 @@ export class CodeEditorComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     console.info('Closing Language Service');
-    this.monacoLanguageClient.stop();
-    this.monacoModel.dispose();
+    this.monacoLanguageClient?.stop();
+    this.monacoModel?.dispose();
   }
 
 }

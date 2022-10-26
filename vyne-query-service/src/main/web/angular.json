@@ -321,11 +321,21 @@
                 {
                   "replace": "src/orbital-app/environments/environment.ts",
                   "with": "src/orbital-app/environments/environment.prod.ts"
+                },
+                {
+                  "replace": "src/app/app-config/app-instance.vyne.ts",
+                  "with": "src/app/app-config/app-instance.orbital.ts"
                 }
               ],
               "outputHashing": "all"
             },
             "development": {
+              "fileReplacements": [
+                {
+                  "replace": "src/app/app-config/app-instance.vyne.ts",
+                  "with": "src/app/app-config/app-instance.orbital.ts"
+                }
+              ],
               "buildOptimizer": false,
               "optimization": false,
               "vendorChunk": true,

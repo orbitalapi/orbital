@@ -3,3 +3,22 @@
 a:hover {
   color: $citrus;
 }
+
+tui-svg {
+  width: 2rem;
+  height: 2rem;
+  color: $white;
+  margin-bottom: 0.5rem;
+
+  ::ng-deep path {
+    stroke: $white;
+  }
+  &:hover {
+    color: $citrus;
+
+    ::ng-deep path {
+      stroke: $citrus;
+    }
+
+  }
+}

@@ -1,19 +1,19 @@
-import {ChangeDetectorRef, Component, EventEmitter, OnDestroy, OnInit} from '@angular/core';
-import {QueryProfileData, QueryHistorySummary, QueryService} from '../services/query.service';
-import {ActivatedRoute, Router} from '@angular/router';
-import {ExportFormat, ExportFileService} from '../services/export.file.service';
-import {DownloadClickedEvent} from '../object-view/object-view-container.component';
-import {TypesService} from '../services/types.service';
-import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDisplayComponent';
-import {isNullOrUndefined} from 'util';
-import {Observable, ReplaySubject} from 'rxjs/index';
-import {findType, InstanceLike, tryFindType, Type} from '../services/schema';
-import {take, tap} from 'rxjs/operators';
-import {ActiveQueriesNotificationService, RunningQueryStatus} from '../services/active-queries-notification-service';
-import {ValueWithTypeName} from '../services/models';
-import {Subscription} from 'rxjs';
-import {AppInfoService, QueryServiceConfig} from '../services/app-info.service';
-import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { QueryHistorySummary, QueryProfileData, QueryService } from '../services/query.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { DownloadClickedEvent } from '../object-view/object-view-container.component';
+import { TypesService } from '../services/types.service';
+import { BaseQueryResultDisplayComponent } from '../query-panel/BaseQueryResultDisplayComponent';
+import { isNullOrUndefined } from 'util';
+import { Observable, ReplaySubject } from 'rxjs/index';
+import { InstanceLike, tryFindType, Type } from '../services/schema';
+import { take, tap } from 'rxjs/operators';
+import { ActiveQueriesNotificationService, RunningQueryStatus } from '../services/active-queries-notification-service';
+import { ValueWithTypeName } from '../services/models';
+import { Subscription } from 'rxjs';
+import { AppInfoService, QueryServiceConfig } from '../services/app-info.service';
+import { QueryResultInstanceSelectedEvent } from '../query-panel/result-display/BaseQueryResultComponent';
+import { ExportFormat, ResultsDownloadService } from 'src/app/results-download/results-download.service';
 
 @Component({
   selector: 'app-query-history',
@@ -39,7 +39,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
               typeService: TypesService,
               private router: Router,
               private activatedRoute: ActivatedRoute,
-              private fileService: ExportFileService,
+              private fileService: ResultsDownloadService,
               private activeQueryNotificationService: ActiveQueriesNotificationService,
   ) {
     super(queryService, typeService);

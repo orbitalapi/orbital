@@ -13,15 +13,15 @@ export class PackagesService {
   }
 
   loadPackage(packageUri: string): Observable<ParsedPackage> {
-    return this.httpClient.get<ParsedPackage>(`${environment.serverUrl}/api/schema/packages/${packageUri}`)
+    return this.httpClient.get<ParsedPackage>(`${environment.serverUrl}/api/packages/${packageUri}`)
   }
 
   listPackages(): Observable<SourcePackageDescription[]> {
-    return this.httpClient.get<SourcePackageDescription[]>(`${environment.serverUrl}/api/schema/packages`)
+    return this.httpClient.get<SourcePackageDescription[]>(`${environment.serverUrl}/api/packages`)
   }
 
   getPartialSchemaForPackage(packageUri: string): Observable<PartialSchema> {
-    return this.httpClient.get<PartialSchema>(`${environment.serverUrl}/api/schema/packages/${packageUri}/schema`)
+    return this.httpClient.get<PartialSchema>(`${environment.serverUrl}/api/packages/${packageUri}/schema`)
   }
 }
 

@@ -13,11 +13,9 @@ import {testImportForUI} from './schema-importer.data';
   selector: 'app-schema-importer',
   styleUrls: ['./schema-importer.component.scss'],
   template: `
-    <app-header-bar title="Schema Importer">
-    </app-header-bar>
     <div class="page-content">
       <div class="importer-step step" *ngIf="wizardStep === 'importSchema'">
-        <h2>Add new schemas</h2>
+        <h2 *ngIf="title">Add a new schema</h2>
         <div class="form-container">
           <app-schema-source-panel
             [dbConnections]="connections"
@@ -44,6 +42,9 @@ import {testImportForUI} from './schema-importer.data';
 })
 export class SchemaImporterComponent {
   wizardStep: 'importSchema' | 'configureTypes' = 'importSchema';
+
+  @Input()
+  title = 'Add a new schema'
 
   connections: ConnectorSummary[];
   mappedTables$: Observable<MappedTable[]>;

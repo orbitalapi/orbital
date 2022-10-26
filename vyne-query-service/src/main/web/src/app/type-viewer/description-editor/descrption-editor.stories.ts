@@ -1,12 +1,10 @@
-import {moduleMetadata, storiesOf} from '@storybook/angular';
-import {BrowserModule} from '@angular/platform-browser';
-import {RouterModule} from '@angular/router';
-import {routerModule} from '../../app.module';
-import {RouterTestingModule} from '@angular/router/testing';
-import {DescriptionEditorComponent} from './description-editor.component';
-import {CommonModule} from '@angular/common';
-import {MatButtonModule} from '@angular/material/button';
-import {MatIconModule} from '@angular/material/icon';
+import { moduleMetadata, storiesOf } from '@storybook/angular';
+import { BrowserModule } from '@angular/platform-browser';
+import { RouterTestingModule } from '@angular/router/testing';
+import { DescriptionEditorComponent } from './description-editor.component';
+import { CommonModule } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 // eslint-disable-next-line max-len
 const typeDoc = 'This is the type description. \nIt contains markdown, including **bold** and *underline* text. \n ```This is a code block```.';

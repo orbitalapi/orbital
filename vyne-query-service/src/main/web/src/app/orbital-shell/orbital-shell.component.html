@@ -3,9 +3,9 @@
   <header class="relative flex h-16 flex-shrink-0 items-center bg-white">
     <!-- Logo area -->
     <div class="absolute inset-y-0 left-0 md:static md:flex-shrink-0">
-      <a href="#"
-         class="flex h-16 w-28 items-center justify-center bg-midnight focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-600">
-        <img class="h-8 w-auto" src="https://tailwindui.com/img/logos/mark.svg?color=white" alt="Your Company">
+      <a routerLink="/"
+         class="flex h-16 w-28 items-center justify-center bg-midnight focus:outline-none focus:ring-0">
+        <img class="h-full w-auto" src="assets/img/orbital_integrator_citrus-small.png" alt="Orbital">
       </a>
     </div>
 
@@ -20,7 +20,7 @@
     <app-sidebar></app-sidebar>
 
     <!-- Main area -->
-    <main class="min-w-0 flex-1 border-t border-gray-200 lg:flex mt-8 ml-8 mr-8">
+    <main class="min-w-0 flex-1 border-t border-gray-200 lg:flex mt-8 ml-8 mr-8 mb-4 rounded-lg drop-shadow-lg overflow-auto">
       <router-outlet></router-outlet>
     </main>
   </div>

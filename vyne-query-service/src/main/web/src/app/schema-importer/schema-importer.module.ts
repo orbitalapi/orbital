@@ -47,18 +47,24 @@ import { AngularSplitModule } from 'angular-split';
 import { RouterModule } from '@angular/router';
 import { SchemaExplorerTableModule } from 'src/app/schema-explorer-table/schema-explorer-table.module';
 import { AddSchemaTypeSelectorComponent } from './add-schema-type-selector/add-schema-type-selector.component';
+import { OrbitalSchemaImporterContainerComponent } from './orbital-schema-importer-container.component';
+import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
+import { PushSchemaConfigPanelComponent } from 'src/app/schema-importer/push-panel/push-schema-config-panel.component';
+import { SchemaImporterContainerComponent } from './schema-importer-container.component';
 
 
 @NgModule({
   exports: [SchemaImporterComponent,
-
     SchemaSourcePanelComponent, KafkaTopicConfigComponent],
   declarations: [SchemaImporterComponent,
     SchemaSourcePanelComponent,
     SwaggerConfigComponent, JsonSchemaConfigComponent,
     DatabaseTableConfigComponent, KafkaTopicConfigComponent,
     ProtobufConfigComponent,
-    AddSchemaTypeSelectorComponent
+    AddSchemaTypeSelectorComponent,
+    OrbitalSchemaImporterContainerComponent,
+    PushSchemaConfigPanelComponent,
+    SchemaImporterContainerComponent
   ],
   imports: [
     ConnectionFiltersModule,
@@ -99,7 +105,7 @@ import { AddSchemaTypeSelectorComponent } from './add-schema-type-selector/add-s
     RouterModule.forChild([
       {
         path: '',
-        component: SchemaImporterComponent,
+        component: appInstanceType.appType == 'vyne' ? SchemaImporterContainerComponent : OrbitalSchemaImporterContainerComponent,
       },
     ])
   ]

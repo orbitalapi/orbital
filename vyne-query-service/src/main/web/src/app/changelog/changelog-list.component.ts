@@ -19,7 +19,7 @@ import { ChangeLogDiffEntry, ChangeLogEntry } from './changelog.service';
         </app-diff-entry>
       </div>
     </div>
-    <div class="empty-state" *ngIf="changeLogEntries.length === 0">
+    <div class="empty-state" *ngIf="!changeLogEntries || changeLogEntries.length === 0">
       <p>Looks like we don't have any changelogs for this package yet.</p>
     </div>
 

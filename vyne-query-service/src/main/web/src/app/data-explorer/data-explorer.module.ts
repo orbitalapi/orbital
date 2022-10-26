@@ -47,6 +47,7 @@ import { AngularSplitModule } from 'angular-split';
 import { RouterModule } from '@angular/router';
 import { AuthGuard } from 'src/app/services/auth.guard';
 import { VynePrivileges } from 'src/app/services/user-info.service';
+import { ResultsDownloadModule } from 'src/app/results-download/results-download.module';
 
 @NgModule({
   imports: [
@@ -85,6 +86,7 @@ import { VynePrivileges } from 'src/app/services/user-info.service';
     MatIconModule,
     NgxFileDropModule,
     AngularSplitModule,
+    ResultsDownloadModule
   ],
   declarations: [
     DataSourceToolbarComponent,

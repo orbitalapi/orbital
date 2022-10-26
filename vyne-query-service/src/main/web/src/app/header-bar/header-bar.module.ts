@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialogModule } from '@angular/material/dialog';
+import { ConfirmationDialogModule } from 'src/app/confirmation-dialog/confirmation-dialog.module';
 
 @NgModule({
   imports: [
@@ -18,7 +19,8 @@ import { MatDialogModule } from '@angular/material/dialog';
     MatButtonModule,
     MatIconModule,
     MatMenuModule,
-    MatDialogModule
+    MatDialogModule,
+    ConfirmationDialogModule
   ],
   exports: [HeaderBarComponent, AvatarComponent],
   declarations: [HeaderBarComponent, AvatarComponent],

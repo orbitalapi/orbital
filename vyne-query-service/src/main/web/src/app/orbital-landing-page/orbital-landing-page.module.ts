@@ -16,6 +16,7 @@ import { TuiButtonModule } from '@taiga-ui/core';
     CommonModule,
     SchemaDiagramModule,
     TuiButtonModule,
+    RouterModule,
   ]
 })
 export class OrbitalLandingPageModule {

@@ -2,12 +2,19 @@
 @import "src/toolbar";
 
 :host {
-  background-color: $body-bg;
   display: flex;
   flex-direction: column;
-  width: 10px;
   flex-grow: 1;
+  width: 10px;
   margin-left: 1rem;
+}
+:host(.vyne) {
+  background-color: $body-bg;
+
+}
+
+:host(.orbital) {
+  margin-top: 1rem;
 }
 
 .header-bar {

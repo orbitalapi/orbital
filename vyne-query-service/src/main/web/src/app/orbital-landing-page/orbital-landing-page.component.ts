@@ -11,7 +11,7 @@ import { Schema } from 'src/app/services/schema';
       <div class="w-full flex">
         <span class="h3 flex-none">Your services</span>
         <span class="flex-1"></span>
-        <button tuiButton type="button" appearance="outline" size="m">Add schemas</button>
+        <button tuiButton type="button" appearance="outline" size="m" routerLink="/schema-importer">Add schemas</button>
       </div>
       <app-schema-diagram
         class="flex-grow-1 w-full h-full"

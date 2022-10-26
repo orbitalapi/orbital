@@ -9,8 +9,8 @@ import {AppInfoService, QueryServiceConfig} from '../services/app-info.service';
 import {ConfigDisabledFormComponent} from '../test-pack-module/config-disabled-form.component';
 import {ConfigPersistResultsDisabledFormComponent} from '../test-pack-module/config-persist-results-disabled-form.component';
 import {MatDialog} from '@angular/material/dialog';
-import {ExportFormat} from '../services/export.file.service';
 import {isNullOrUndefined} from 'util';
+import { ExportFormat } from 'src/app/results-download/results-download.service';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,

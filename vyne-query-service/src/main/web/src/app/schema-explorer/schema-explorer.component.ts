@@ -3,18 +3,20 @@ import { ActivatedRoute } from '@angular/router';
 import { SchemaNotificationService } from '../services/schema-notification.service';
 import { PackagesService, ParsedPackage } from '../package-viewer/packages.service';
 import { Badge } from '../simple-badge-list/simple-badge-list.component';
-import { MomentModule } from 'ngx-moment';
 import * as moment from 'moment';
 import { ChangeLogEntry, ChangelogService } from 'src/app/changelog/changelog.service';
 import { Observable } from 'rxjs';
 import { TypesService } from 'src/app/services/types.service';
 import { PartialSchema, Schema } from 'src/app/services/schema';
+import { AppType } from 'src/app/app-config/app-type';
+import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
 
 @Component({
   selector: 'app-schema-explorer',
   templateUrl: './schema-explorer.component.html',
   styleUrls: ['./schema-explorer.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {'class': appInstanceType.appType }
 })
 export class SchemaExplorerComponent implements OnInit {
 
