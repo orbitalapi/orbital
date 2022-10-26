@@ -18,10 +18,10 @@ import java.time.Instant
 // to distinguish these definitions and hence we need to use a different configuration setting here.
 @ReactiveFeignClient("\${vyne.changelog-server.name:schema-server}", qualifier = "schemaChangeLogFeignClient")
 interface ChangelogApi {
-   @GetMapping("/api/schema/changelog")
+   @GetMapping("/api/changelog")
    fun getChangelog(): Mono<List<ChangeLogEntry>>
 
-   @GetMapping("/api/schema/changelog/{packageName}")
+   @GetMapping("/api/changelog/{packageName}")
    fun getChangelog(@PathVariable packageName: String): Mono<List<ChangeLogEntry>>
 }
 

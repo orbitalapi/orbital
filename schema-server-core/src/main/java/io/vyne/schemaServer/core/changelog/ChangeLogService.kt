@@ -32,12 +32,12 @@ class ChangeLogService(
       }
    }
 
-   @GetMapping("/api/schema/changelog")
+   @GetMapping("/api/changelog")
    override fun getChangelog(): Mono<List<ChangeLogEntry>> {
       return Mono.just(changeLog.reversed())
    }
 
-   @GetMapping("/api/schema/changelog/{packageName}")
+   @GetMapping("/api/changelog/{packageName}")
    override fun getChangelog(@PathVariable("packageName") packageName: UriSafePackageIdentifier): Mono<List<ChangeLogEntry>> {
       val unversionedIdentifier = PackageIdentifier.uriSafeIdToUnversionedIdentifier(packageName)
       val entries = changeLog
