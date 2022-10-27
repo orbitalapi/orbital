@@ -117,6 +117,7 @@ build-jvm-master:
       MAVEN_EXTRA_ARGS: '-P release -DskipTests'
 
 release-major:
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.6-eclipse-temurin-11
    variables:
       GIT_STRATEGY: clone
    dependencies: [ ]
@@ -129,6 +130,7 @@ release-major:
    when: manual
 
 release-minor:
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.6-eclipse-temurin-11
    variables:
       GIT_STRATEGY: clone
    dependencies: [ ]
@@ -141,6 +143,7 @@ release-minor:
    when: manual
 
 release-patch:
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.6-eclipse-temurin-11
    variables:
       GIT_STRATEGY: clone
    dependencies: [ ]
