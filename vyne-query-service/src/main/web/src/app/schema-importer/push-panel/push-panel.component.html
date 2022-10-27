@@ -1,4 +1,28 @@
 <p class="text-base">
   You can push schemas to Vyne automatically, either directly from your applications, or as part of a CI / CD pipeline.
 </p>
+<div class="tui-form__row">
+  <tui-radio-block
+    item="cd-pipeline"
+    size="l"
+    [(ngModel)]="pushMethod"
+  >
+    <div>
+      CI / CD Pipeline
+    </div>
+  </tui-radio-block>
+
+  <tui-radio-block
+    item="application-push"
+    size="l"
+    [(ngModel)]="pushMethod"
+  >
+    <div>
+      Push directly from your application
+    </div>
+  </tui-radio-block>
+</div>
+
+<app-cd-pipeline-instructions *ngIf="pushMethod==='cd-pipeline'"></app-cd-pipeline-instructions>
+<app-application-push-instructions *ngIf="pushMethod==='application-push'"></app-application-push-instructions>
 

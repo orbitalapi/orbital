@@ -5,11 +5,12 @@ import { Component, OnInit } from '@angular/core';
   templateUrl: './push-panel.component.html',
   styleUrls: ['./push-panel.component.scss']
 })
-export class PushSchemaConfigPanelComponent implements OnInit {
+export class PushSchemaConfigPanelComponent {
+  pushMethod: 'cd-pipeline' | 'application-push' = 'cd-pipeline'
 
-  constructor() { }
-
-  ngOnInit(): void {
-  }
+  pushMethods: string[] = [
+    'In a CI / CD pipeline',
+    'From '
+  ]
 
 }

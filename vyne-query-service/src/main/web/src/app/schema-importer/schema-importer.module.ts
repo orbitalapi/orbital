@@ -2,13 +2,13 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SchemaImporterComponent } from './schema-importer.component';
 import {
-  TuiAccordionModule,
+  TuiAccordionModule, TuiAvatarModule,
   TuiBadgeModule,
   TuiCheckboxLabeledModule,
   TuiComboBoxModule,
   TuiDataListWrapperModule,
   TuiFilterByInputPipeModule,
-  TuiInputModule,
+  TuiInputModule, TuiRadioBlockModule,
   TuiSelectModule,
   TuiStringifyContentPipeModule,
   TuiTabsModule,
@@ -16,7 +16,7 @@ import {
   TuiTextAreaModule,
   TuiTreeModule
 } from '@taiga-ui/kit';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   TuiButtonModule,
   TuiDataListModule,
@@ -51,6 +51,8 @@ import { OrbitalSchemaImporterContainerComponent } from './orbital-schema-import
 import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
 import { PushSchemaConfigPanelComponent } from 'src/app/schema-importer/push-panel/push-schema-config-panel.component';
 import { SchemaImporterContainerComponent } from './schema-importer-container.component';
+import { CdPipelineInstructionsComponent } from './push-panel/cd-pipeline-instructions.component';
+import { ApplicationPushInstructionsComponent } from './push-panel/application-push-instructions.component';
 
 
 @NgModule({
@@ -64,7 +66,9 @@ import { SchemaImporterContainerComponent } from './schema-importer-container.co
     AddSchemaTypeSelectorComponent,
     OrbitalSchemaImporterContainerComponent,
     PushSchemaConfigPanelComponent,
-    SchemaImporterContainerComponent
+    SchemaImporterContainerComponent,
+    CdPipelineInstructionsComponent,
+    ApplicationPushInstructionsComponent
   ],
   imports: [
     ConnectionFiltersModule,
@@ -107,7 +111,10 @@ import { SchemaImporterContainerComponent } from './schema-importer-container.co
         path: '',
         component: appInstanceType.appType == 'vyne' ? SchemaImporterContainerComponent : OrbitalSchemaImporterContainerComponent,
       },
-    ])
+    ]),
+    TuiRadioBlockModule,
+    TuiAvatarModule,
+    ReactiveFormsModule
   ]
 })
 export class SchemaImporterModule {

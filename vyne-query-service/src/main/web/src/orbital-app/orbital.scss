@@ -15,6 +15,12 @@ $tint-8: #bec4c9;
 $tint-9: #d4d8db;
 $tint-10: #e9ebed;
 
+$body-bg: #f5f6fa;
+
+.bg-body {
+  background-color: $body-bg;
+}
+
 // tailwind-style variables
 .bg-midnight {
   background-color: $midnight-blue;

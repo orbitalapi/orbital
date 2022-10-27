@@ -2,8 +2,12 @@
 @import "src/toolbar";
 @import "src/forms";
 
-:host {
+:host(.vyne) {
   background-color: $body-bg;
+}
+
+
+:host {
   display: flex;
   flex-direction: column;
   height: 100%;
