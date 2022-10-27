@@ -52,9 +52,9 @@ class CaskWebsocketHandler(
 
    private fun requestOrError(session: WebSocketSession): Either<CaskService.CaskServiceError, CaskIngestionRequest> {
      return try {
-         Either.right(ContentType.valueOf(session.contentType()))
+         ContentType.valueOf(session.contentType()).right()
       } catch (exception:IllegalArgumentException) {
-         Either.left(CaskService.ContentTypeError("Unknown contentType=${session.contentType()}"))
+        CaskService.ContentTypeError("Unknown contentType=${session.contentType()}").left()
       }.flatMap { contentType ->
          caskService.resolveType(session.typeReference()).map { versionedType ->
             CaskIngestionRequest.fromContentTypeAndHeaders(contentType, versionedType, mapper, session.queryParams(), caskIngestionErrorProcessor)

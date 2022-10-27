@@ -4,11 +4,11 @@
     "type" : "Generic",
     "direction" : "INPUT"
   },
-  "output" : {
+  "outputs" : [ {
     "type" : "cask",
     "direction" : "OUTPUT",
     "targetType" : "com.foo.bar.CaskType"
-  },
+  } ],
   "id" : "Pipeline-GenericPipelineTransportSpec-to-CaskTransportOutputSpec",
-  "description" : "From Pipeline INPUT Generic to Cask for com.foo.bar.CaskType"
+  "description" : "From Pipeline INPUT Generic to 1 outputs"
 }

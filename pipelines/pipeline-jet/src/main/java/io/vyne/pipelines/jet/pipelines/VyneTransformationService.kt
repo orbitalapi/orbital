@@ -1,12 +1,12 @@
 package io.vyne.pipelines.jet.pipelines
 
-import arrow.core.Either
 import arrow.core.getOrHandle
+import arrow.core.left
+import arrow.core.right
 import com.hazelcast.jet.pipeline.ServiceFactory
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.models.TypedCollection
-import io.vyne.pipelines.jet.api.transport.ConsoleLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.schemas.QualifiedName
@@ -64,7 +64,7 @@ class VyneTransformationService(
    ): CompletableFuture<TypedInstanceContentProvider> {
       val vyne = vyneProvider.createVyne()
       val input = try {
-         messageContentProvider.readAsTypedInstance(ConsoleLogger, vyne.schema.type(inputType), vyne.schema)
+         messageContentProvider.readAsTypedInstance(vyne.schema.type(inputType), vyne.schema)
       } catch (e: Exception) {
          logger.severe("Failed to read inbound message as type ${inputType.longDisplayName} - ${e.message}", e)
          return CompletableFuture.failedFuture(e)
@@ -80,7 +80,7 @@ class VyneTransformationService(
                "Transforming input message of type ${inputType.longDisplayName} to ${outputType.longDisplayName} failed with exception ${e.message}",
                e
             )
-            return@future Either.left(e)
+            return@future e.left()
          }
 
          logger.info("Transforming input message of type ${inputType.longDisplayName} to ${outputType.longDisplayName} completed with ${transformationResult.size} results")
@@ -90,7 +90,10 @@ class VyneTransformationService(
             transformationResult.size == 1 -> transformationResult.first()
             else -> TypedCollection.from(transformationResult)
          }
-         Either.right(TypedInstanceContentProvider(typedInstance))
+         TypedInstanceContentProvider(
+            typedInstance,
+            sourceMessageMetadata = messageContentProvider.sourceMessageMetadata
+         ).right()
       }.thenApply { either ->
          // Outside the Coroutine scope, we need to resurface any exceptions,
          // so the CompletableFuture will show as failed.

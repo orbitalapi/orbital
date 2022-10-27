@@ -6,6 +6,7 @@ import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
+import io.vyne.pipelines.jet.api.transport.MessageSourceWithGroupId
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.pipelines.jet.api.transport.query.PollingQueryInputSpec
@@ -17,6 +18,7 @@ import io.vyne.schemas.Type
 import io.vyne.spring.VyneProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -38,11 +40,6 @@ private const val CAPACITY = 1024
  */
 @Component
 class PollingQuerySourceBuilder : PipelineSourceBuilder<PollingQueryInputSpec> {
-
-   companion object {
-      const val NEXT_SCHEDULED_TIME_KEY = "next-scheduled-time"
-   }
-
    override val sourceType: PipelineSourceType
       get() = PipelineSourceType.Batch
 
@@ -55,7 +52,7 @@ class PollingQuerySourceBuilder : PipelineSourceBuilder<PollingQueryInputSpec> {
       inputType: Type?
    ): BatchSource<MessageContentProvider> {
       return SourceBuilder.batch("query-poll") { context ->
-         PollingQuerySourceContext(context.logger(), pipelineSpec)
+         PollingQuerySourceContext(context.logger(), pipelineSpec, context.jobId())
       }
          .fillBufferFn { context: PollingQuerySourceContext, buffer: SourceBuffer<MessageContentProvider> ->
             context.fillBuffer(buffer)
@@ -71,10 +68,15 @@ class PollingQuerySourceBuilder : PipelineSourceBuilder<PollingQueryInputSpec> {
    }
 }
 
+data class PollingQuerySourceMetadata(val jobId: String) : MessageSourceWithGroupId {
+   override val groupId = jobId
+}
+
 @SpringAware
 class PollingQuerySourceContext(
    val logger: ILogger,
-   val pipelineSpec: PipelineSpec<PollingQueryInputSpec, *>
+   val pipelineSpec: PipelineSpec<PollingQueryInputSpec, *>,
+   val jobId: Long
 ) {
    @PostConstruct
    fun runQuery() {
@@ -83,10 +85,18 @@ class PollingQuerySourceContext(
          val vyne = vyneProvider.createVyne()
          vyne.query(pipelineSpec.input.query)
             .results
-            .map { TypedInstanceContentProvider(it) }
-            .onEach { queue.add(it) }
+            .map {
+               TypedInstanceContentProvider(
+                  it,
+                  sourceMessageMetadata = PollingQuerySourceMetadata(jobId.toString())
+               )
+            }
+            .onEach { queue.put(it) }
             .onCompletion { isDone = true }
-            .catch { isDone = true }
+            .catch { foo ->
+               logger.severe(foo.message)
+               isDone = true
+            }
             .launchIn(scope)
       }
    }

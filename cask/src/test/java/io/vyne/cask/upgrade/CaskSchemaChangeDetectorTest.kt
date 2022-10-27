@@ -1,6 +1,5 @@
 package io.vyne.cask.upgrade
 
-import arrow.core.extensions.list.show.show
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.eq
 import com.nhaarman.mockito_kotlin.mock
@@ -12,7 +11,6 @@ import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.query.CaskConfigService
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
-import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 

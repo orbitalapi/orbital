@@ -13,7 +13,12 @@ import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
+import io.vyne.models.csv.CsvFormatFactory
+import io.vyne.models.csv.CsvFormatSpec
+import io.vyne.models.csv.CsvFormatSpecAnnotation
+import io.vyne.models.format.FormatDetector
 import io.vyne.pipelines.jet.BadRequestException
+import io.vyne.pipelines.jet.api.transport.CsvRecordContentProvider
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.StringContentProvider
@@ -23,6 +28,7 @@ import io.vyne.pipelines.jet.source.PipelineSourceType
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import org.apache.commons.csv.CSVRecord
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
@@ -31,6 +37,8 @@ import software.amazon.awssdk.services.s3.model.S3Object
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
+import java.io.Serializable
+import java.io.StringReader
 import java.nio.charset.StandardCharsets
 import java.util.stream.Stream
 import javax.annotation.PostConstruct
@@ -40,6 +48,7 @@ import javax.annotation.Resource
 @Component
 class S3SourceBuilder : PipelineSourceBuilder<AwsS3TransportInputSpec> {
 
+   private val formatDetector = FormatDetector.get(listOf(CsvFormatSpec))
    override val sourceType: PipelineSourceType
       get() = PipelineSourceType.Batch
 
@@ -52,23 +61,38 @@ class S3SourceBuilder : PipelineSourceBuilder<AwsS3TransportInputSpec> {
       inputType: Type?
    ): BatchSource<MessageContentProvider> {
       val bucketName = pipelineSpec.input.bucket
+      val csvModelFormatAnnotation = formatDetector.getFormatType(inputType!!)
+         ?.let { if (it.second is CsvFormatSpec) CsvFormatSpecAnnotation.from(it.first) else null }
 
+      val csvFormat = csvModelFormatAnnotation?.let {  CsvFormatFactory.fromParameters(csvModelFormatAnnotation.ingestionParameters) }
       // Read CSV file as a stream of Strings
-      val readFileFn: FunctionEx<InputStream, Stream<String>> =
-         FunctionEx<InputStream, Stream<String>> { responseInputStream ->
-            val reader = BufferedReader(InputStreamReader(responseInputStream, StandardCharsets.UTF_8))
-            reader.lines()
+      val readFileFn: FunctionEx<InputStream, Stream<out Serializable>> =
+         FunctionEx<InputStream, Stream<out Serializable>> { responseInputStream ->
+            if (csvFormat != null) {
+               csvFormat.parse(responseInputStream.bufferedReader()).stream()
+            } else {
+               val reader = BufferedReader(InputStreamReader(responseInputStream, StandardCharsets.UTF_8))
+               reader.lines()
+            }
          }
 
       // Map Each CSV file to a String Content.
-      val mapFunc: BiFunctionEx<String, String, MessageContentProvider> =
-         BiFunctionEx<String, String, MessageContentProvider>
-         { _, line -> StringContentProvider(line) }
+
+      val mapFunc: BiFunctionEx<Serializable, Serializable, MessageContentProvider> =
+         BiFunctionEx<Serializable, Serializable, MessageContentProvider>
+         { _, line ->
+            if (csvFormat != null) {
+               CsvRecordContentProvider(line as CSVRecord, csvModelFormatAnnotation.ingestionParameters.nullValue)
+            } else {
+               StringContentProvider(line as String)
+            }
+
+         }
 
 
       // Map InputStream to String Stream.
-      val adaptedFunction: TriFunction<InputStream, String, String, Stream<String>> =
-         TriFunction<InputStream, String, String, Stream<String>>
+      val adaptedFunction: TriFunction<InputStream, Serializable, Serializable, Stream<out Serializable>> =
+         TriFunction<InputStream, Serializable, Serializable, Stream<out Serializable>>
          { inputStream, _, _ -> readFileFn.apply(inputStream) }
 
       return SourceBuilder.batch("s3-source") { context ->
@@ -103,8 +127,8 @@ class VyneS3SourceContext(
    private val bucketNames: List<String>,
    private val prefix: String,
    context: Processor.Context,
-   private val readFileFn: TriFunction<InputStream, String, String, Stream<String>>,
-   private val mapFn: BiFunctionEx<String, String, MessageContentProvider>
+   private val readFileFn: TriFunction<InputStream, Serializable, Serializable, Stream<out Serializable>>,
+   private val mapFn: BiFunctionEx<Serializable, Serializable, MessageContentProvider>,
 ) {
 
    private val inputSpec: AwsS3TransportInputSpec = pipelineSpec.input
@@ -112,7 +136,7 @@ class VyneS3SourceContext(
    private val processorIndex: Int = context.globalProcessorIndex()
    private val totalParallelism: Int = context.totalParallelism()
    private var objectIterator: Iterator<Map.Entry<String, String>>? = null
-   private var itemTraverser: Traverser<String>? = null
+   private var itemTraverser: Traverser<out Serializable>? = null
    private var currentKey: String? = null
 
    @Resource

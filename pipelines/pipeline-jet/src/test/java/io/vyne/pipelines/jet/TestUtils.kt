@@ -1,6 +1,5 @@
 package io.vyne.pipelines.jet
 
-import com.google.common.io.Resources
 import io.vyne.VersionedTypeReference
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
@@ -8,6 +7,8 @@ import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.SqlUtils
 import io.vyne.connectors.jdbc.builders.PostgresJdbcUrlBuilder
 import io.vyne.schemas.Type
+import io.vyne.utils.asResource
+import io.vyne.utils.toPath
 import mu.KotlinLogging
 import org.awaitility.Awaitility
 import org.jooq.DSLContext
@@ -15,6 +16,8 @@ import org.jooq.impl.DSL
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.containers.wait.strategy.Wait
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
@@ -22,7 +25,6 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import java.io.ByteArrayOutputStream
-import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
 import java.util.*
@@ -78,36 +80,40 @@ fun populateS3AndSqs(
    objectKey: String,
    sqsQueueName: String,
    csvResourceFile: String = "Coinbase_BTCUSD_3rows.csv",
-   isLargeUpload: Boolean = false
+   isLargeUpload: Boolean = false,
+   skipUpload: Boolean = false
 ): String {
    val s3: S3Client = S3Client
       .builder()
       .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
       .region(Region.of(localstack.region))
+      .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("not-used", "not-used")))
       .build()
    s3.createBucket { b: CreateBucketRequest.Builder -> b.bucket(bucket) }
 
-   if (isLargeUpload) {
-      val TWENTY_MEGABYTE = 1024 * 1024 * 20
-      val uploadHelper = MultipartUploadHelper(s3, bucket, objectKey)
-      uploadHelper.start()
-      val outputStream = ByteArrayOutputStream()
-      Resources.getResource(csvResourceFile).openStream().use { fileInputStream ->
-         val buffer = ByteArray(TWENTY_MEGABYTE)
-         var bytes = fileInputStream.read(buffer)
-         while (bytes >= 0) {
-            outputStream.write(buffer, 0, bytes)
-            bytes = fileInputStream.read(buffer)
-            uploadHelper.partUpload(outputStream)
+   if (!skipUpload) {
+      if (isLargeUpload) {
+         val TWENTY_MEGABYTE = 1024 * 1024 * 20
+         val uploadHelper = MultipartUploadHelper(s3, bucket, objectKey)
+         uploadHelper.start()
+         val outputStream = ByteArrayOutputStream()
+         csvResourceFile.asResource().openStream().use { fileInputStream ->
+            val buffer = ByteArray(TWENTY_MEGABYTE)
+            var bytes = fileInputStream.read(buffer)
+            while (bytes >= 0) {
+               outputStream.write(buffer, 0, bytes)
+               bytes = fileInputStream.read(buffer)
+               uploadHelper.partUpload(outputStream)
+            }
          }
-      }
-      uploadHelper.complete(outputStream)
-   } else {
-      s3.putObject(
-         { builder -> builder.bucket(bucket).key(objectKey) },
-         Paths.get(Resources.getResource(csvResourceFile).path)
-      )
+         uploadHelper.complete(outputStream)
+      } else {
+         s3.putObject(
+            { builder -> builder.bucket(bucket).key(objectKey) },
+            csvResourceFile.toPath()
+         )
 
+      }
    }
 
 
@@ -115,12 +121,15 @@ fun populateS3AndSqs(
       .builder()
       .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
       .region(Region.of(localstack.region))
+      .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("not-used", "not-used")))
       .build()
 
    val sqsQueueUrl = sqsClient.createQueue(CreateQueueRequest.builder().queueName(sqsQueueName).build()).queueUrl()
-   val sqsMessage =
-      SendMessageRequest.builder().messageBody(sqsMessageBody(bucket, objectKey)).queueUrl(sqsQueueUrl).build()
-   sqsClient.sendMessage(sqsMessage)
+   if (!skipUpload) {
+      val sqsMessage =
+         SendMessageRequest.builder().messageBody(sqsMessageBody(bucket, objectKey)).queueUrl(sqsQueueUrl).build()
+      sqsClient.sendMessage(sqsMessage)
+   }
    return sqsQueueUrl
 }
 

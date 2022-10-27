@@ -15,6 +15,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.utility.DockerImageName
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
@@ -41,11 +43,14 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          .builder()
          .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
          .region(Region.of(localstack.region))
+         .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("not-used", "not-used")))
          .build()
       s3.createBucket { b: CreateBucketRequest.Builder -> b.bucket(bucket) }
       awsConnectionConfig = AwsConnectionConfiguration(
          connectionName = "test-aws",
          mapOf(
+            AwsConnection.Parameters.ACCESS_KEY.templateParamName to "not-used",
+            AwsConnection.Parameters.SECRET_KEY.templateParamName to "not-used",
             AwsConnection.Parameters.AWS_REGION.templateParamName to localstack.region,
             AwsConnection.Parameters.ENDPOINT_OVERRIDE.templateParamName to localstack.getEndpointOverride(
                LocalStackContainer.Service.S3
@@ -274,7 +279,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          )
       )
 
-      startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(jetInstance, vyneProvider, pipelineSpec, validateJobStatusIsRunningEventually = false)
       Awaitility.await().atMost(60, TimeUnit.SECONDS).until {
          s3.listObjectsV2 { it.bucket(bucket) }.contents().any { it.key() == objectKey }
       }

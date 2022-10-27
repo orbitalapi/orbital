@@ -5,7 +5,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.20.2</version>
+      <version>0.21.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -65,7 +65,7 @@
       <dependency>
          <groupId>org.eclipse.jgit</groupId>
          <artifactId>org.eclipse.jgit.ssh.jsch</artifactId>
-         <version>5.13.1.202206130422-r</version>
+         <version>6.3.0.202209071007-r</version>
       </dependency>
       <dependency>
          <groupId>commons-io</groupId>

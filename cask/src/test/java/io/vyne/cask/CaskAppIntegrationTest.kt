@@ -21,7 +21,6 @@ import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.spring.config.FileBasedDiscoveryClient
-import io.vyne.spring.config.ServicesConfigRepository
 import io.vyne.spring.config.TestDiscoveryClientConfig
 import io.vyne.utils.log
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -33,14 +32,11 @@ import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.core.io.buffer.NettyDataBufferFactory
@@ -54,7 +50,6 @@ import org.springframework.kafka.listener.MessageListener
 import org.springframework.kafka.test.utils.ContainerTestUtils
 import org.springframework.kafka.test.utils.KafkaTestUtils
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.junit4.SpringRunner
@@ -87,7 +82,7 @@ import java.nio.file.Files
 import java.time.Duration
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.Date
+import java.util.*
 import java.util.function.Consumer
 import javax.sql.DataSource
 
@@ -918,7 +913,7 @@ Date,Symbol,Open,High,Low,Close
 
          return when (monoOrError) {
             is Either.Left -> Mono.error(IllegalStateException("version must be 1.0.1"))
-            is Either.Right -> monoOrError.b
+            is Either.Right -> monoOrError.value
          }
       }
    }
@@ -930,7 +925,7 @@ Date,Symbol,Open,High,Low,Close
       val close: Double
    )
 
-   class KafkaTestMessageListener() : MessageListener<String, ObservedChange> {
+   class KafkaTestMessageListener : MessageListener<String, ObservedChange> {
       private val replaySink = Sinks.many().replay().all<ObservedChange>()
       val flux = replaySink.asFlux()
       override fun onMessage(record: ConsumerRecord<String, ObservedChange>?) {
@@ -970,7 +965,7 @@ Date,Symbol,Open,High,Low,Close
          }
       }
 
-      private fun toHttpHeaders(inbound: WebsocketInbound?): HttpHeaders? {
+      private fun toHttpHeaders(inbound: WebsocketInbound?): HttpHeaders {
          val headers = HttpHeaders()
          val nettyHeaders = inbound?.headers()
          nettyHeaders?.forEach(Consumer { entry: Map.Entry<String, String?> ->

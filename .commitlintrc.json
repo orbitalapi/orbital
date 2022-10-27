@@ -21,6 +21,7 @@
          "logging",
          "pipelines",
          "query-service",
+         "renovate",
          "regression-tests",
          "schema-server",
          "start.vyne.co",

@@ -45,7 +45,7 @@ class LocalProjectionProvider : ProjectionProvider {
       // map { async { .. } }.flatMapMerge { await }
       return results
          .buffer()
-         .withIndex()
+       //  .withIndex()
          .takeWhile { !context.cancelRequested }
          .filter { !context.cancelRequested }
          .map {
@@ -55,7 +55,7 @@ class LocalProjectionProvider : ProjectionProvider {
                   cancel()
                }
                val projectionType = selectProjectionType(context.projectResultsTo!!)
-               val projectionContext = context.only(it.value)
+               val projectionContext = context.only(it)
                val buildResult = projectionContext.build(projectionType.qualifiedName)
                buildResult.results.map { it to projectionContext.vyneQueryStatistics }
             }

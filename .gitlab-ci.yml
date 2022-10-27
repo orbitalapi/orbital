@@ -25,13 +25,28 @@ variables:
 stages:
    - build
    - deploy
+   - verify
    - release
-   - test
 
+default:
+   tags:
+      - docker
 
 .build-jvm:
+   stage: build
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.6-eclipse-temurin-11
    tags:
-      - shell
+      - docker-heavy
+   services:
+      -  name: docker:20.10.21-dind
+         command: [ "--tls=false" ]
+   variables:
+      # Instruct Testcontainers to use the daemon of DinD.
+      DOCKER_HOST: "tcp://docker:2375"
+      # Instruct Docker not to start over TLS.
+      DOCKER_TLS_CERTDIR: ""
+      # Improve performance with overlayfs.
+      DOCKER_DRIVER: overlay2
    cache:
       paths:
          - .m2/repository
@@ -46,10 +61,9 @@ stages:
       #   Read the POM, grab the version, and set to an env variable
       #   https://stackoverflow.com/a/52241594
       # Run the actual command twice.  The first time ensures that any downloads are
-      # already compelted, so that when we try to grep the output string, we get a tidy predictable output
+      # already completed, so that when we try to grep the output string, we get a tidy predictable output
       - mvn --non-recursive help:evaluate -Dexpression=project.version
       - mvn --non-recursive help:evaluate -Dexpression=project.version | grep -v '\[.*' > build-version.txt
-
    artifacts:
       paths:
          - build-version.txt
@@ -63,39 +77,12 @@ stages:
          - "vyne-analytics-server/target/vyne-analytics-server.jar"
          - "vyne-query-service/target/vyne.zip"
          - "test-cli/target/*.zip"
-         #         - "eureka/target/eureka.jar"
-         #         - "jwt-auth-server/target/jwt-auth-server.jar"
       expire_in: 1 hours
       reports:
          junit:
             # Note:This won't actually work, b/c of https://gitlab.com/gitlab-org/gitlab-runner/issues/2620
             # However, leaving this here to pick up later
             - "*/target/surefire-reports/TEST-*.xml"
-
-# We have to build within the maven phase now, as
-# all build artefacts are bundled into the zip as part of
-# the assemble time.  Previously, these were
-# separated until docker image was built, but with
-# moving to maven assemble (vs spring boot packaging), this
-# doesnt work any more.
-#
-#build-ui:
-#   stage: build
-#   except:
-#      - tags
-#      - develop
-#      - master
-#   cache:
-#      paths:
-#         - vyne-query-service/src/main/web/node
-#      key: "node-$CI_COMMIT_REF_SLUG"
-#   script:
-#      # Only build the frontend. Nothing JVM related
-#      - 'mvn $MAVEN_CLI_OPTS -DskipTests frontend:install-node-and-npm frontend:npm@run-npm-install frontend:npm@ng-build -f vyne-query-service/pom.xml'
-#   artifacts:
-#      paths:
-#         - "vyne-query-service/target/classes/static"
-#      expire_in: 1 hours
 
 build-jvm-branch:
    stage: build
@@ -130,6 +117,7 @@ build-jvm-master:
       MAVEN_EXTRA_ARGS: '-P release -DskipTests'
 
 release-major:
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.6-eclipse-temurin-11
    variables:
       GIT_STRATEGY: clone
    dependencies: [ ]
@@ -142,6 +130,7 @@ release-major:
    when: manual
 
 release-minor:
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.6-eclipse-temurin-11
    variables:
       GIT_STRATEGY: clone
    dependencies: [ ]
@@ -154,6 +143,7 @@ release-minor:
    when: manual
 
 release-patch:
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.6-eclipse-temurin-11
    variables:
       GIT_STRATEGY: clone
    dependencies: [ ]
@@ -166,7 +156,7 @@ release-patch:
    when: manual
 
 regression-test:
-   stage: test
+   stage: verify
    resource_group: docker_release
    variables:
       VYNE_DOCKER_TAG: latest
@@ -182,46 +172,26 @@ regression-test:
             - target/surefire-reports/TEST-*.xml
 
 
-# This creates multi-platform docker images.
-# Important things to consider:
-# - You must be running a modern version of Ubuntu (tested with 20.04)
-# - You must be running with docker-in-docker gitlab runner
-# - The gitlab runner must be running in privileged mode. (eg., `privileged = true` in config.toml)
-# See: https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#docker-in-docker-with-tls-enabled-in-the-docker-executor
+# This creates the multi-platform Docker images
 .publish-docker:
    stage: deploy
-#   except:
-#      - tags
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.17-0.8.2
-   rules:
-      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
-         when: never
-      -  if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
-      -  if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
-         when: manual
-         allow_failure: true
-   tags:
-      - docker-ubuntu-20.04
    variables:
       DOCKER_HOST: tcp://docker:2375/
-      # Instruct Docker not to start over TLS.
-      DOCKER_TLS_CERTDIR: ""
+      DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
       DOCKER_DRIVER: overlay2
       DOCKER_BUILDKIT: 1
       BUILDKIT_PROGRESS: plain
       PROGRESS_NO_TRUNC: 1
    services:
-      -  name: docker:20.10.17-dind
-         command: ["--tls=false"]
-   before_script:
-      # Grab the version we plucked from Maven earlier.
+      -  name: docker:20.10.21-dind
+         command: [ "--tls=false" ]
+   script:
       - PROJECT_VERSION=$(cat build-version.txt)
       - docker info
       - docker buildx create --use
-      # This installs the required emulators, in order to build ARM images
-      - docker run --privileged --rm tonistiigi/binfmt --install all
+      - docker run --privileged --rm tonistiigi/binfmt --install all # Install the required emulators in order to build ARM images
       - docker buildx ls
-      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
       - |
          if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
            tag="latest"
@@ -235,66 +205,93 @@ regression-test:
          fi
          echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
          echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
-
-   script:
       - cd $projectDir
       - pwd
       - >
          docker buildx build
          --platform linux/arm64/v8,linux/amd64
          --push
-         -t "vyneco/${microservice}:${tag}"
-         -t "vyneco/${microservice}:${versionTag}" .
+         -t "${registry}/${microservice}:${tag}"
+         -t "${registry}/${microservice}:${versionTag}" .
 
-publish-vyne-docker:
+.publish-to-docker-hub:
    extends: .publish-docker
+   rules:
+      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+         when: never
+      -  if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
+      -  if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
+         when: manual
+         allow_failure: true
+   variables:
+      registry: vyneco
+   before_script:
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
+
+.publish-to-gitlab-container-registry:
+   extends: .publish-docker
+   variables:
+      registry: $CI_REGISTRY_IMAGE
+   before_script:
+      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+
+publish-vyne-to-docker-hub:
+   extends: .publish-to-docker-hub
    variables:
       projectDir: vyne-query-service
       microservice: vyne
 
-publish-cask-docker:
-   extends: .publish-docker
+publish-cask-to-docker-hub:
+   extends: .publish-to-docker-hub
    variables:
       projectDir: cask
       microservice: cask
 
-publish-pipeline-jet-docker:
-   extends: .publish-docker
+publish-pipeline-jet-to-docker-hub:
+   extends: .publish-to-docker-hub
    variables:
       projectDir: pipelines/pipeline-jet
       microservice: pipeline
 
-publish-schema-server-docker:
-   extends: .publish-docker
+publish-schema-server-to-docker-hub:
+   extends: .publish-to-docker-hub
    variables:
       projectDir: schema-server
       microservice: schema-server
 
-publish-analytics-server-docker:
-   extends: .publish-docker
+publish-analytics-server-to-docker-hub:
+   extends: .publish-to-docker-hub
    variables:
       projectDir: vyne-analytics-server
       microservice: analytics-server
+
+publish-vyne-to-gitlab-container-registry:
+   extends: .publish-to-gitlab-container-registry
+   variables:
+      projectDir: vyne-query-service
+      microservice: vyne
+
+publish-schema-server-to-gitlab-container-registry:
+   extends: .publish-to-gitlab-container-registry
+   variables:
+      projectDir: schema-server
+      microservice: schema-server
 
 terraform-fmt:
    extends: .terraform:fmt
    needs: [ ]
    stage: build
-   tags:
-      - docker-ubuntu-20.04
 
 terraform-validate:
    extends: .terraform:validate
    needs: [ ]
    stage: build
-   tags:
-      - docker-ubuntu-20.04
 
 build-helm:
    stage: build
    image:
-      name: alpine/helm:3.9.4
-      entrypoint: [""]
+      name: alpine/helm:3.10.1
+      entrypoint: [ "" ]
    script:
       - cd ${CI_PROJECT_DIR}/infra/helm/vyne-helm
       - helm package .
@@ -304,8 +301,6 @@ build-helm:
    artifacts:
       paths:
          - infra/helm/vyne-helm/charts
-   tags:
-      - docker-ubuntu-20.04
 
 .terraform-deploy:
    extends: .terraform:deploy
@@ -313,8 +308,6 @@ build-helm:
       - cd ${TF_ROOT}
       - gitlab-terraform plan
       - gitlab-terraform plan-json
-   tags:
-      - docker-ubuntu-20.04
 
 terraform-deploy-dev:
    extends: .terraform-deploy
@@ -325,7 +318,7 @@ terraform-deploy-dev:
       TF_STATE_NAME: $TF_STATE_NAME_DEV
       TF_VAR_environment: $TF_STATE_NAME_DEV
    rules:
-      - if: $CI_COMMIT_BRANCH == "develop"
+      -  if: $CI_COMMIT_BRANCH == "develop"
 
 terraform-deploy-prod:
    extends: .terraform-deploy
@@ -336,5 +329,84 @@ terraform-deploy-prod:
       TF_STATE_NAME: $TF_STATE_NAME_PROD
       TF_VAR_environment: $TF_STATE_NAME_PROD
    rules:
-      - if: $CI_COMMIT_BRANCH == "main"
+      -  if: $CI_COMMIT_BRANCH == "main"
 
+.e2e-tests:
+   stage: verify
+   image: docker:20.10.21-dind
+   variables:
+      DOCKER_HOST: tcp://docker:2375/
+      DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
+      DOCKER_DRIVER: overlay2
+      DOCKER_BUILDKIT: 1
+      BUILDKIT_PROGRESS: plain
+      PROGRESS_NO_TRUNC: 1
+   services:
+      -  name: docker:20.10.21-dind
+         command: [ "--tls=false" ]
+   retry: 2
+   before_script:
+      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+      - PROJECT_VERSION=$(cat build-version.txt)
+      - |
+         if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
+           tag="latest"
+           versionTag="$PROJECT_VERSION"
+         elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
+            tag="latest-preview"
+            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
+         else
+            tag="$CI_COMMIT_BRANCH"
+            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
+         fi
+         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+         echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
+      - cd e2e-tests/
+      - docker build -t e2e .
+   script:
+      - cd demos/
+      - mkdir -p vyne/schema-server/projects
+      - mkdir -p vyne/config
+      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker-compose.yml
+      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/schema-server.conf -P vyne/schema-server
+      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/projects/taxi.conf -P vyne/schema-server/projects
+      - wget https://gitlab.com/vyne/demos/-/raw/master/films/services.conf -P vyne/config
+      - |
+         SCHEMA_SERVER_IMAGE=${CI_REGISTRY_IMAGE}/schema-server \
+            VYNE_IMAGE=${CI_REGISTRY_IMAGE}/vyne \
+            VYNE_VERSION=$versionTag \
+            docker compose -f docker-compose.yml -f e2e.docker-compose.yml up --exit-code-from e2e
+
+e2e-tests-master:
+   extends: .e2e-tests
+   only:
+      - master
+   needs:
+      - build-jvm-master
+      - publish-vyne-to-gitlab-container-registry
+      - publish-schema-server-to-gitlab-container-registry
+   dependencies:
+      - build-jvm-master
+
+e2e-tests-develop:
+   extends: .e2e-tests
+   only:
+      - develop
+   needs:
+      - build-jvm-develop
+      - publish-vyne-to-gitlab-container-registry
+      - publish-schema-server-to-gitlab-container-registry
+   dependencies:
+      - build-jvm-develop
+
+e2e-tests-other-branches:
+   extends: .e2e-tests
+   except:
+      - develop
+      - master
+   needs:
+      - build-jvm-branch
+      - publish-vyne-to-gitlab-container-registry
+      - publish-schema-server-to-gitlab-container-registry
+   dependencies:
+      - build-jvm-branch

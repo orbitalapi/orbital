@@ -8,10 +8,10 @@
     "payloadTypeName" : "com.vyne.MyTestPayload",
     "payloadType" : "com.vyne.MyTestPayload"
   },
-  "output" : {
+  "outputs" : [ {
     "type" : "Generic",
     "direction" : "OUTPUT"
-  },
+  } ],
   "id" : "Pipeline-HttpListenerTransportSpec-to-GenericPipelineTransportSpec",
-  "description" : "From Schema operation  POST requests at /foo/bar to Pipeline OUTPUT Generic"
+  "description" : "From Schema operation  POST requests at /foo/bar to 1 outputs"
 }

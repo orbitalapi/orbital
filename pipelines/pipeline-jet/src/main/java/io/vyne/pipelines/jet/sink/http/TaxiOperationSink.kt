@@ -5,7 +5,6 @@ import com.hazelcast.jet.pipeline.SinkBuilder
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.models.TypedInstance
-import io.vyne.pipelines.jet.api.transport.ConsoleLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.http.TaxiOperationOutputSpec
@@ -54,7 +53,7 @@ class TaxiOperationSinkBuilder : SingleMessagePipelineSinkBuilder<TaxiOperationO
             val (service, operation) = schema.operation(context.outputSpec.operationName.fqn())
             val inputPayloadParam = operation.parameters.first()
             val inputPayloadType = inputPayloadParam.type
-            val input = TypedInstance.from(inputPayloadType, message.asString(ConsoleLogger), schema)
+            val input = TypedInstance.from(inputPayloadType, message.asString(), schema)
 
             runBlocking {
                context.logger.info("Invoking operation ${operation.qualifiedName} with arg ${input.toRawObject()}")

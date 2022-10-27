@@ -5,7 +5,7 @@
    <parent>
       <artifactId>aws-connectors</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.20.2</version>
+      <version>0.21.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -85,7 +85,7 @@
          <groupId>org.testcontainers</groupId>
          <artifactId>junit-jupiter</artifactId>
          <scope>test</scope>
-         <version>1.17.3</version>
+         <version>1.17.5</version>
       </dependency>
 
       <dependency>
@@ -98,7 +98,7 @@
       <dependency>
          <groupId>com.amazonaws</groupId>
          <artifactId>aws-java-sdk-s3</artifactId>
-         <version>1.12.299</version>
+         <version>1.12.329</version>
          <scope>test</scope>
       </dependency>
    </dependencies>

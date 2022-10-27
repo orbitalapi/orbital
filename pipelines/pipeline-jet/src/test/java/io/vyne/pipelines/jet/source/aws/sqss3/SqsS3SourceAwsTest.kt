@@ -8,16 +8,12 @@ import io.vyne.pipelines.jet.RatingReport
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
-import mu.KotlinLogging
 import org.awaitility.Awaitility
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.test.context.junit4.SpringRunner
-import java.time.Duration
 import java.util.concurrent.TimeUnit
-
-private val logger = KotlinLogging.logger { }
 
 /**
  * This test is ignored as it is supposed to run against actual Aws.
@@ -60,15 +56,7 @@ class SqsS3SourceAwsTest : BaseJetIntegrationTest() {
          outputs = listOf(outputSpec)
       )
 
-      val (_, job) = startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
-      // Wait until the next scheduled time is set
-      Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
-         val metrics = job!!.metrics
-         val nextScheduledTime = metrics.get(SqsS3SourceBuilder.NEXT_SCHEDULED_TIME_KEY)
-         nextScheduledTime.isNotEmpty()
-      }
-
-      applicationContext.moveTimeForward(Duration.ofSeconds(2))
+      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
       Awaitility.await().atMost(30, TimeUnit.SECONDS).until {
          listSinkTarget.list.isNotEmpty()
       }

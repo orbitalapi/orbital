@@ -5,14 +5,14 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.20.2</version>
+      <version>0.21.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>spring-boot-admin</artifactId>
 
    <properties>
-      <spring-boot-admin.version>2.7.4</spring-boot-admin.version>
+      <spring-boot-admin.version>2.7.6</spring-boot-admin.version>
    </properties>
 
    <dependencies>

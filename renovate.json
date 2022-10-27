@@ -1,10 +1,14 @@
 {
    "extends": [
-      "config:base"
+      "config:base",
+      ":prConcurrentLimitNone",
+      ":prHourlyLimitNone"
    ],
+   "rebaseWhen": "conflicted",
    "packageRules": [
       {
          "updateTypes": [
+            "minor",
             "patch",
             "pin",
             "digest"
@@ -22,7 +26,6 @@
          "automerge": false
       }
    ],
-   "prConcurrentLimit": 2,
    "reviewers": [
       "RoopeHakulinen"
    ],
@@ -31,5 +34,6 @@
    ],
    "npm": {
       "enabled": false
-   }
+   },
+   "branchPrefix": "renovate_"
 }

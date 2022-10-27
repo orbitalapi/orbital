@@ -7,7 +7,6 @@ import com.hazelcast.jet.core.ProcessorSupplier
 import com.hazelcast.jet.core.Watermark
 import io.vyne.Vyne
 import io.vyne.models.TypedCollection
-import io.vyne.pipelines.jet.api.transport.ConsoleLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.pipelines.jet.pipelines.PipelineMessage
@@ -63,7 +62,7 @@ class VyneTransformingProcessor(val vyneFactory: VyneProvider) : Processor {
 
 
       val input = try {
-         message.messageProvider.readAsTypedInstance(ConsoleLogger, inputType, vyne.schema)
+         message.messageProvider.readAsTypedInstance(inputType, vyne.schema)
       } catch (e: Exception) {
          context.logger().severe("Failed to read input message $ordinal of type $inputType - ${e.message}")
          return null

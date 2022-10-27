@@ -39,10 +39,11 @@ class EditedSchema(
 ) : PartialSchema {
    companion object {
       // used for testing
-      fun from(schema:Schema):EditedSchema {
-         return EditedSchema(schema.types,schema.services)
+      fun from(schema: Schema): EditedSchema {
+         return EditedSchema(schema.types, schema.services)
       }
    }
+
    override fun type(name: QualifiedName): PartialType {
       return types.firstOrNull { it.name == name }
          ?: error("Type ${name.fullyQualifiedName} is not present in this collection")
@@ -131,12 +132,15 @@ class QueryOperationCapabilityDeserializer : JsonDeserializer<QueryOperationCapa
                )
             }
          }
+
          JsonToken.START_OBJECT -> {
-            val iterator =  p.readValuesAs(FilterCapability::class.java)
+            val iterator = p.readValuesAs(FilterCapability::class.java)
             return iterator.next()
          }
+
+         else -> error("Unhandled deserialization of QueryOperationCapability")
       }
-      error("Unhandled deserialization of QueryOperationCapability")
+
    }
 
 }

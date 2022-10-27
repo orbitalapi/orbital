@@ -1,6 +1,5 @@
 package io.vyne.history.db
 
-import arrow.core.extensions.list.functorFilter.filter
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.history.HistoryPersistenceQueue
 import io.vyne.history.QueryAnalyticsConfig
@@ -15,7 +14,6 @@ import io.vyne.query.QueryResultEvent
 import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.RemoteCallResponse
-import mu.KotlinLogging
 import java.util.concurrent.ConcurrentHashMap
 
 
@@ -64,8 +62,6 @@ class NoOpResultRowPersistenceStrategy : ResultRowPersistenceStrategy {
       return null
    }
 }
-
-private val logger = KotlinLogging.logger {}
 
 class RemoteDatabaseResultRowPersistenceStrategy(private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
                                                  private val config: QueryAnalyticsConfig)

@@ -4,7 +4,6 @@ import com.hazelcast.jet.kafka.KafkaSinks
 import com.hazelcast.jet.pipeline.Sink
 import io.vyne.connectors.kafka.asKafkaProperties
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
-import io.vyne.pipelines.jet.JetLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportOutputSpec
@@ -49,7 +48,7 @@ class KafkaSinkBuilder(private val connectionRegistry: KafkaConnectionRegistry) 
             pipelineTransportSpec.topic,
             { message: MessageContentProvider -> null }, // What should we do for the key?
             { message: MessageContentProvider ->
-               val stringContent = message.asString(JetLogger.getVynePipelineLogger(KafkaSink::class))
+               val stringContent = message.asString()
                logger.info("Writing content to kafka topic ${pipelineTransportSpec.topic}: $stringContent")
                stringContent.encodeToByteArray()
             }

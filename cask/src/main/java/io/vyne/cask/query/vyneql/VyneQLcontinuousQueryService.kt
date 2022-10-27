@@ -1,6 +1,5 @@
 package io.vyne.cask.query.vyneql
 
-import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.cask.services.QueryMonitor
 import io.vyne.http.HttpHeaders
 import kotlinx.coroutines.reactor.asFlux
@@ -9,6 +8,7 @@ import mu.KotlinLogging
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.jdbc.core.ColumnMapRowMapper
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
@@ -28,25 +28,27 @@ private val logger = KotlinLogging.logger {}
  *
  */
 @RestController
-class VyneQLContinuousQueryService(private val jdbcStreamTemplate: JdbcStreamingTemplate,
-                            private val sqlGenerator: VyneQlSqlGenerator, private val queryMonitor: QueryMonitor
+class VyneQLContinuousQueryService(
+   private val jdbcTemplate: JdbcTemplate,
+   private val sqlGenerator: VyneQlSqlGenerator,
+   private val queryMonitor: QueryMonitor
 ) {
 
    companion object {
-      const val REST_CONTINUOUS_QUERY  = "/api/continuous/vyneQl"
+      const val REST_CONTINUOUS_QUERY = "/api/continuous/vyneQl"
    }
 
    @PostMapping(value = [REST_CONTINUOUS_QUERY], produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
    suspend fun submitVyneQlContinousQuery(@RequestBody query: TaxiQLQueryString): ResponseEntity<Flux<Map<String, Any>>> {
 
-      val resultsDeferred = resultStreamAsync( sqlGenerator.generateSql(query))
+      val resultsDeferred = resultStreamAsync(sqlGenerator.generateSql(query))
       var primaryKeyColumn = ""
-      val meta = jdbcStreamTemplate.dataSource.connection.metaData
+      val meta = jdbcTemplate.dataSource.connection.metaData
       val primaryKeyResults = meta.getPrimaryKeys(null, null, sqlGenerator.toCaskTableName(query))
 
       while (primaryKeyResults.next()) {
          val columnName: String = primaryKeyResults.getString("COLUMN_NAME")
-         primaryKeyColumn=columnName
+         primaryKeyColumn = columnName
       }
 
       val initialResultsFlow = resultsDeferred.toFlux()
@@ -54,13 +56,13 @@ class VyneQLContinuousQueryService(private val jdbcStreamTemplate: JdbcStreaming
       return ResponseEntity
          .ok()
          .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-         .body( initialResultsFlow
+         .body(initialResultsFlow
             .concatWith(
                queryMonitor
                   .registerCaskMonitor(sqlGenerator.toCaskTableName(query))
                   .asFlux()
                   .bufferTimeout(50, Duration.ofMillis(2000))
-                  .filter {it.isNotEmpty()}
+                  .filter { it.isNotEmpty() }
                   .concatMap {
                      val join = it.map { "'${it[primaryKeyColumn]}'" }.joinToString(",")
                      val filter = "\"$primaryKeyColumn\" in ( $join )"
@@ -71,16 +73,16 @@ class VyneQLContinuousQueryService(private val jdbcStreamTemplate: JdbcStreaming
          )
    }
 
-   fun resultStreamAsync(statement: SqlStatement): Stream<Map<String, Any>>  {
+   fun resultStreamAsync(statement: SqlStatement): Stream<Map<String, Any>> {
 
-      logger.debug {"Generated sql statement: $statement" }
+      logger.debug { "Generated sql statement: $statement" }
       if (statement.params.isEmpty()) {
-         return jdbcStreamTemplate.queryForStream(
+         return jdbcTemplate.queryForStream(
             statement.sql,
             ColumnMapRowMapper()
          )
       } else {
-         return jdbcStreamTemplate.queryForStream(
+         return jdbcTemplate.queryForStream(
             statement.sql,
             ColumnMapRowMapper(),
             *statement.params.toTypedArray()

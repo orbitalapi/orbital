@@ -95,6 +95,7 @@ interface TypedInstance {
                   performTypeConversions,
                   source
                )
+
                is Collection<*> -> {
                   val collectionTypeRef = type.attributes[attributeName]?.type
                      ?: error("Cannot look up collection type for attribute $attributeName as it is not a defined attribute on type ${type.name}")
@@ -110,6 +111,7 @@ interface TypedInstance {
                         )
                      })
                }
+
                else -> error("Unhandled scenario creating typedObject from TypeNamedInstance -> ${typedInstance::class.simpleName}")
             }
          }.toMap()
@@ -132,7 +134,7 @@ interface TypedInstance {
          source: DataSource = UndefinedSource,
          evaluateAccessors: Boolean = true,
          functionRegistry: FunctionRegistry = FunctionRegistry.default,
-         formatSpecs:List<ModelFormatSpec> = emptyList(),
+         formatSpecs: List<ModelFormatSpec> = emptyList(),
          inPlaceQueryEngine: InPlaceQueryEngine? = null
       ): TypedInstance {
          return when {
@@ -141,8 +143,20 @@ interface TypedInstance {
             value is NullValue -> TypedNull.create(type)
             value is java.sql.Array -> {
                val list = (value.array as Array<Any>).toList()
-               from(type,list,schema, performTypeConversions, nullValues, source, evaluateAccessors, functionRegistry, formatSpecs, inPlaceQueryEngine)
+               from(
+                  type,
+                  list,
+                  schema,
+                  performTypeConversions,
+                  nullValues,
+                  source,
+                  evaluateAccessors,
+                  functionRegistry,
+                  formatSpecs,
+                  inPlaceQueryEngine
+               )
             }
+
             value is Collection<*> -> {
                val collectionMemberType = getCollectionType(type)
                TypedCollection.arrayOf(
@@ -158,15 +172,16 @@ interface TypedInstance {
                         inPlaceQueryEngine = inPlaceQueryEngine,
                         formatSpecs = formatSpecs,
                         functionRegistry = functionRegistry,
-
                         )
                   },
                   source
                )
             }
+
             type.isEnum -> {
                type.enumTypedInstance(value, source)
             }
+
             type.isScalar -> {
                TypedValue.from(type, value, performTypeConversions, source)
             }
@@ -209,7 +224,14 @@ interface TypedInstance {
          functionRegistry: FunctionRegistry,
          inPlaceQueryEngine: InPlaceQueryEngine?
       ): TypedInstance {
-         return CollectionReader.readCollectionFromNonTypedCollectionValue(type, value, schema, source, functionRegistry, inPlaceQueryEngine)
+         return CollectionReader.readCollectionFromNonTypedCollectionValue(
+            type,
+            value,
+            schema,
+            source,
+            functionRegistry,
+            inPlaceQueryEngine
+         )
       }
 
       private fun getCollectionType(type: Type): Type {

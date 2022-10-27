@@ -5,7 +5,6 @@ import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.format.FormatDetector
-import io.vyne.pipelines.jet.api.transport.ConsoleLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportOutputSpec
@@ -55,7 +54,7 @@ class AwsS3SinkBuilder(private val connectionRegistry: AwsConnectionRegistry) :
          },
          { (message, schema) ->
             val targetType = schema.type(pipelineTransportSpec.targetType)
-            val typedInstance = message.readAsTypedInstance(ConsoleLogger, targetType, schema)
+            val typedInstance = message.readAsTypedInstance(targetType, schema)
             val (metadata, _) = FormatDetector(listOf(CsvFormatSpec)).getFormatType(typedInstance.type)!!
             (CsvFormatSpec.serializer.write(typedInstance, metadata) as String).replace("\r\n", "\n")
          }) as Sink<MessageContentProvider>

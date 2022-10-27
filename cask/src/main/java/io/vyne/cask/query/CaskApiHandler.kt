@@ -11,19 +11,18 @@ import io.vyne.schemas.VersionedType
 import mu.KotlinLogging
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.BodyExtractors
 import org.springframework.web.reactive.function.BodyInserters
-import org.springframework.web.reactive.function.server.*
-import org.springframework.web.reactive.function.server.ServerResponse.badRequest
-import org.springframework.web.reactive.function.server.ServerResponse.notFound
-import org.springframework.web.reactive.function.server.ServerResponse.ok
+import org.springframework.web.reactive.function.server.ServerRequest
+import org.springframework.web.reactive.function.server.ServerResponse
+import org.springframework.web.reactive.function.server.ServerResponse.*
+import org.springframework.web.reactive.function.server.body
+import org.springframework.web.reactive.function.server.sse
 import org.springframework.web.util.UriComponents
 import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.kotlin.core.publisher.toFlux
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.util.stream.Collectors
@@ -135,12 +134,12 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
       val caskType = uriComponents.pathSegments.drop(1).joinToString(".")
       return when (val versionedType = caskService.resolveType(caskType)) {
          is Either.Left -> {
-            logger.warn{"The type failed to resolve for request $requestPath Error: ${versionedType.a.message}"}
+            logger.warn { "The type failed to resolve for request $requestPath Error: ${versionedType.value.message}" }
             badRequest().build()
          }
          is Either.Right -> {
-            val results = caskDAO.findAll(versionedType.b)
-            val resultCount = caskRecordCountDAO.findCountAll(versionedType.b)
+            val results = caskDAO.findAll(versionedType.value)
+            val resultCount = caskRecordCountDAO.findCountAll(versionedType.value)
             streamingResponse(request, results, resultCount)
          }
       }
@@ -161,12 +160,12 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          val caskType = uriComponents.pathSegments.dropLast(1).drop(1).joinToString(".")
          when (val versionedType = caskService.resolveType(caskType)) {
             is Either.Left -> {
-               logger.warn {"The type failed to resolve for request $requestPath Error: ${versionedType.a.message}" }
+               logger.warn { "The type failed to resolve for request $requestPath Error: ${versionedType.value.message}" }
                badRequest().build()
             }
             is Either.Right -> {
-               val results = caskDAO.findMultiple(versionedType.b, fieldName, inputArray)
-               val resultCount = caskRecordCountDAO.findCountMultiple(versionedType.b, fieldName, inputArray)
+               val results = caskDAO.findMultiple(versionedType.value, fieldName, inputArray)
+               val resultCount = caskRecordCountDAO.findCountMultiple(versionedType.value, fieldName, inputArray)
                streamingResponse(request, results, resultCount)
             }
          }
@@ -182,12 +181,12 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
       val caskType = uriComponents.pathSegments.dropLast(2).joinToString(".")
       return when (val versionedType = caskService.resolveType(caskType)) {
          is Either.Left -> {
-            logger.warn{ "The type failed to resolve for request $requestPath Error: ${versionedType.a.message}"}
+            logger.warn { "The type failed to resolve for request $requestPath Error: ${versionedType.value.message}" }
             badRequest().build()
          }
          is Either.Right -> {
-            val results = caskDAO.findBy(versionedType.b, fieldName, findByValue)
-            val resultCount = caskRecordCountDAO.findCountBy(versionedType.b, fieldName, findByValue)
+            val results = caskDAO.findBy(versionedType.value, fieldName, findByValue)
+            val resultCount = caskRecordCountDAO.findCountBy(versionedType.value, fieldName, findByValue)
             streamingResponse(request, results, resultCount)
          }
       }
@@ -206,12 +205,12 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
       val caskType = uriComponents.pathSegments.dropLast(3).joinToString(".")
       return when (val versionedType = caskService.resolveType(caskType)) {
          is Either.Left -> {
-            logger.warn{"The type failed to resolve for request $requestPath Error: ${versionedType.a.message}"}
+            logger.warn { "The type failed to resolve for request $requestPath Error: ${versionedType.value.message}" }
             badRequest().build()
          }
          is Either.Right -> {
-            val results = caskDAO.findBefore(versionedType.b, fieldName, before)
-            val resultCount = caskRecordCountDAO.findCountBefore(versionedType.b, fieldName, before)
+            val results = caskDAO.findBefore(versionedType.value, fieldName, before)
+            val resultCount = caskRecordCountDAO.findCountBefore(versionedType.value, fieldName, before)
             streamingResponse(request, results, resultCount)
          }
       }
@@ -224,12 +223,12 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
       val caskType = uriComponents.pathSegments.dropLast(3).joinToString(".")
       return when (val versionedType = caskService.resolveType(caskType)) {
          is Either.Left -> {
-            logger.warn{"The type failed to resolve for request $requestPath Error: ${versionedType.a.message}"}
+            logger.warn { "The type failed to resolve for request $requestPath Error: ${versionedType.value.message}" }
             badRequest().build()
          }
          is Either.Right -> {
-            val results = caskDAO.findAfter(versionedType.b, fieldName, after)
-            val resultCount = caskRecordCountDAO.findCountAfter(versionedType.b, fieldName, after)
+            val results = caskDAO.findAfter(versionedType.value, fieldName, after)
+            val resultCount = caskRecordCountDAO.findCountAfter(versionedType.value, fieldName, after)
             streamingResponse(request, results, resultCount)
          }
       }
@@ -250,12 +249,12 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
 
       return when (val versionedType = caskService.resolveType(caskType)) {
          is Either.Left -> {
-            logger.info{"The type failed to resolve for request $requestPath Error: ${versionedType.a.message}"}
+            logger.info { "The type failed to resolve for request $requestPath Error: ${versionedType.value.message}" }
             badRequest().build()
          }
          is Either.Right -> {
-            val results = daoFunction(versionedType.b, fieldName, start, end)
-            val resultCount = countFunction(versionedType.b, fieldName, start, end)
+            val results = daoFunction(versionedType.value, fieldName, start, end)
+            val resultCount = countFunction(versionedType.value, fieldName, start, end)
             streamingResponse(request, results, resultCount)
          }
       }
@@ -274,11 +273,11 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
 
       return when (val versionedType = caskService.resolveType(caskType)) {
          is Either.Left -> {
-            logger.warn{"The type failed to resolve for request $requestPath Error: ${versionedType.a.message}"}
+            logger.warn { "The type failed to resolve for request $requestPath Error: ${versionedType.value.message}" }
             badRequest().build()
          }
          is Either.Right -> {
-            val results = daoFunction(versionedType.b, fieldName, start, end)
+            val results = daoFunction(versionedType.value, fieldName, start, end)
             continuousResponse(results)
          }
       }
@@ -299,11 +298,11 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
       val caskType = uriComponents.pathSegments.dropLast(2).drop(1).joinToString(".")
       return when (val versionedType = caskService.resolveType(caskType)) {
          is Either.Left -> {
-            logger.warn{"The type failed to resolve for request $requestPath Error: ${versionedType.a.message}"}
+            logger.warn { "The type failed to resolve for request $requestPath Error: ${versionedType.value.message}" }
             badRequest().build()
          }
          is Either.Right -> {
-            val record = caskDAO.findOne(versionedType.b, fieldName, findByValue)
+            val record = caskDAO.findOne(versionedType.value, fieldName, findByValue)
             if (record.isNullOrEmpty()) {
                return notFound().build()
             } else {
@@ -322,11 +321,11 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
       val caskType = uriComponents.pathSegments.drop(1).joinToString(".")
       return when (val versionedType = caskService.resolveType(caskType)) {
          is Either.Left -> {
-            logger.warn{"The type failed to resolve for request $requestPath Error: ${versionedType.a.message}"}
+            logger.warn { "The type failed to resolve for request $requestPath Error: ${versionedType.value.message}" }
             badRequest().build()
          }
          is Either.Right -> {
-            continuousResponse(caskDAO.streamAll(versionedType.b))
+            continuousResponse(caskDAO.streamAll(versionedType.value))
          }
       }
    }
@@ -338,11 +337,11 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
       val caskType = uriComponents.pathSegments.dropLast(3).joinToString(".")
       return when (val versionedType = caskService.resolveType(caskType)) {
          is Either.Left -> {
-            logger.warn{"The type failed to resolve for request $requestPath Error: ${versionedType.a.message}"}
+            logger.warn { "The type failed to resolve for request $requestPath Error: ${versionedType.value.message}" }
             badRequest().build()
          }
          is Either.Right -> {
-            val results = caskDAO.steamAfterContinuous(versionedType.b, fieldName, after)
+            val results = caskDAO.steamAfterContinuous(versionedType.value, fieldName, after)
             continuousResponse(results)
          }
       }
@@ -355,11 +354,11 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
       val caskType = uriComponents.pathSegments.dropLast(3).joinToString(".")
       return when (val versionedType = caskService.resolveType(caskType)) {
          is Either.Left -> {
-            logger.warn{"The type failed to resolve for request $requestPath Error: ${versionedType.a.message}"}
+            logger.warn { "The type failed to resolve for request $requestPath Error: ${versionedType.value.message}" }
             badRequest().build()
          }
          is Either.Right -> {
-            val results = caskDAO.streamBeforeContinuous(versionedType.b, fieldName, before)
+            val results = caskDAO.streamBeforeContinuous(versionedType.value, fieldName, before)
             continuousResponse(results)
          }
       }

@@ -5,7 +5,7 @@
    <parent>
       <artifactId>schema-management</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.20.2</version>
+      <version>0.21.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -16,12 +16,12 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-api</artifactId>
-         <version>0.20.2</version>
+         <version>0.21.0</version>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>events-api</artifactId>
-         <version>0.20.2</version>
+         <version>0.21.0</version>
       </dependency>
    </dependencies>
 

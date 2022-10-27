@@ -36,7 +36,7 @@ class ArrayMappingAttributeEvaluator : AttributeEvaluator(Relationship.CAN_ARRAY
       }
 
       val result = if (children.any { it.isLeft() }) {
-         val errors = children.mapNotNull { if (it is Either.Left) it.a else null }
+         val errors = children.mapNotNull { if (it is Either.Left) it.value else null }
             .joinToString("; ")
          edge.failure(previousValue, errors)
       } else {

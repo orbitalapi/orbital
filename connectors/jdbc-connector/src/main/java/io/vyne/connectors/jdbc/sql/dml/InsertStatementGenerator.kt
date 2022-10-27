@@ -41,12 +41,13 @@ class InsertStatementGenerator(private val schema: Schema) {
    fun generateInserts(
       values: List<TypedInstance>,
       sql: DSLContext,
-      useUpsertSemantics: Boolean = false
+      useUpsertSemantics: Boolean = false,
+      tableNameSuffix: String? = null
    ): List<InsertValuesStepN<Record>> {
       require(values.isNotEmpty()) { "No values provided to persist." }
       val recordType = assertAllValuesHaveSameType(values)
 
-      val tableName = SqlUtils.tableNameOrTypeName(recordType.taxiType)
+      val tableName = SqlUtils.tableNameOrTypeName(recordType.taxiType, tableNameSuffix)
       val fields = findFieldsToInsert(recordType)
       val sqlFields = fields.map { it.second }
       val rowsToInsert = values.map { typedInstance ->

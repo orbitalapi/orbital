@@ -23,6 +23,9 @@ import org.junit.Test
 import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.auth.credentials.AwsCredentials
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
@@ -75,6 +78,7 @@ class S3InvokerTest {
          .builder()
          .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
          .region(Region.of(localstack.region))
+         .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("not-used", "not-used")))
          .build()
 
       val resource = Resources.getResource("Coinbase_BTCUSD_3rows.csv").path
