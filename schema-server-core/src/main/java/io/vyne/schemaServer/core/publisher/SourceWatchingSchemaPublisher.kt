@@ -27,7 +27,7 @@ class SourceWatchingSchemaPublisher(
       eventSource
          .sourcesChanged
          .subscribe { message ->
-            logger.info { "Received source change message for packages ${message.packages.joinToString()}" }
+            logger.info { "Received source change message for packages ${message.packages.joinToString{ it.identifier.id} }" }
             submitSources(message.packages)
          }
    }
