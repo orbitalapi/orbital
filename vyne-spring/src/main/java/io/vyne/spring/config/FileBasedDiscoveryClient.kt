@@ -26,7 +26,18 @@ class FileBasedDiscoveryClient(private val configRepository: ServicesConfigRepos
 
       fun serviceInstance(serviceId: String, serviceConfiguration: Map<String, String>): DefaultServiceInstance {
          val url = serviceConfiguration[urlParameter]
-         val uri = URI.create(url)
+         if (url == null) {
+            val message = "Service $serviceId does not porivde a $urlParameter parameter"
+            logger.error { message }
+            error(message)
+         }
+         val uri = try {
+            URI.create(url)
+         } catch (e:Exception) {
+            logger.error(e) { "Failed to parse $url as a valid URL." }
+            throw e
+         }
+
          return DefaultServiceInstance(
             serviceId,
             serviceId,
@@ -57,7 +68,11 @@ class FileBasedDiscoveryClient(private val configRepository: ServicesConfigRepos
          emptyMap()
       }
       val serviceAddress = services[serviceId] ?: emptyMap()
-      return mutableListOf(serviceInstance(serviceId, serviceAddress))
+      return if (serviceAddress.isEmpty()) {
+         mutableListOf()
+      } else {
+         mutableListOf(serviceInstance(serviceId, serviceAddress))
+      }
    }
 
    override fun getServices(): MutableList<String> {
