@@ -4,7 +4,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.21.0-SNAPSHOT</version>
+      <version>0.21.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -159,13 +159,13 @@ Do not allow this to leak beyond a test scope
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-spring-http</artifactId>
-         <version>0.21.0-SNAPSHOT</version>
+         <version>0.21.0</version>
          <scope>test</scope>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-csv-utils</artifactId>
-         <version>0.21.0-SNAPSHOT</version>
+         <version>0.21.0</version>
          <scope>test</scope>
       </dependency>
 
