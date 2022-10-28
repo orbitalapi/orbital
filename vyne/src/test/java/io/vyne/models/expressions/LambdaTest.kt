@@ -78,6 +78,7 @@ class LambdaTest {
             val weight:Int,
             val score:Int
         )
+
         val entries = listOf(Entry(10,5), Entry(2,100))
         entries.fold(0) { acc:Int, entry -> acc + (entry.weight * entry.score) }
         val inputs = vyne.parseJson("Input", """{ "entries" : [ { "weight" : 10 , "score" : 5},  {"weight" : 2 , "score" : 100}] }""")
