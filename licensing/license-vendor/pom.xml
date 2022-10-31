@@ -14,7 +14,7 @@
    <properties>
       <maven.compiler.source>11</maven.compiler.source>
       <maven.compiler.target>11</maven.compiler.target>
-      <picocli.version>4.6.3</picocli.version>
+      <picocli.version>4.7.0</picocli.version>
       <app.main.class>io.vyne.licensing.vendor.LicenseCli</app.main.class>
       <app.distribution.directory>${project.build.directory}/distributions/app</app.distribution.directory>
    </properties>
