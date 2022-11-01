@@ -4,6 +4,7 @@ import com.winterbe.expekt.should
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
+import io.vyne.models.json.parseJson
 import io.vyne.query.UnresolvedTypeInQueryException
 import io.vyne.schemas.fqn
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -94,7 +95,30 @@ class VyneServiceInvocationTest {
       }
 
       fail("Expected an exception thrown")
+   }
 
-
+   @Test
+   fun `facts provided in a given will be used in a service invocation`():Unit = runBlocking {
+      val (vyne, stub) = testVyne("""
+         model Person {
+            personId: PersonId inherits String
+            name : PersonName inherits String
+         }
+         type AuthKey inherits String
+         type AuthSecret inherits String
+         service Peeps {
+            operation findPerson(AuthKey,AuthSecret) : Person
+         }
+      """.trimIndent())
+      stub.addResponse("findPerson", vyne.parseJson("Person", """{ "personId" : 1, "name" : "Jimmy"}"""))
+      val result = vyne.query("""given { AuthKey = '123', AuthSecret = '234' } find { Person } """)
+         .rawObjects()
+      result.single().should.equal(mapOf("personId" to "1", "name" to "Jimmy"))
+      val args = stub.invocations["findPerson"]!!
+      args.should.have.size(2)
+      args[0].typeName.should.equal("AuthKey")
+      args[0].value.should.equal("123")
+      args[1].typeName.should.equal("AuthSecret")
+      args[1].value.should.equal("234")
    }
 }
