@@ -61,6 +61,7 @@ class TypedObjectFactory(
          value is FactBag -> value
          value is List<*> && value.filterIsInstance<TypedInstance>()
             .isNotEmpty() -> FactBag.of(value.filterIsInstance<TypedInstance>(), schema)
+
          else -> FactBag.empty()
       }
    }
@@ -81,14 +82,56 @@ class TypedObjectFactory(
    private var accessorEvaluationSupressed: Boolean = false
 
 
-   private val attributesToMap = type.attributes /*by lazy {
-      type.attributes.filter { it.value.formula == null }
-   }*/
+   private val attributesToMap = type.attributes
 
    private val fieldInitializers: Map<AttributeName, Lazy<TypedInstance>> by lazy {
       attributesToMap.map { (attributeName, field) ->
-         attributeName to lazy { buildField(field, attributeName) }
+         attributeName to lazy {
+            val fieldValue = buildField(field, attributeName)
+            if (field.fieldProjection != null) {
+               projectField(field, attributeName, fieldValue)
+            } else {
+               fieldValue
+            }
+         }
       }.toMap()
+   }
+
+   /**
+    * Where a field has an inline projection defined (
+    * foo : Thing as {
+    *    a : A, b: B
+    * }
+    */
+   private fun projectField(field: Field, attributeName: AttributeName, fieldValue: TypedInstance): TypedInstance {
+      val projectedType = schema.type(field.fieldProjection!!.projectedType)
+      val projectedFieldValue = if (fieldValue is TypedCollection && projectedType.isCollection) {
+         // Project each member of the collection seperately
+         fieldValue.map { collectionMember ->
+            newFactory(projectedType.collectionType!!, collectionMember)
+               .build()
+         }.let { projectedCollection -> TypedCollection.from(projectedCollection, source) }
+      } else {
+         newFactory(projectedType, fieldValue).build()
+      }
+      return projectedFieldValue
+   }
+
+   private fun newFactory(type: Type, value: Any): TypedObjectFactory {
+      return TypedObjectFactory(
+         type,
+         value,
+         schema,
+         nullValues,
+         source,
+         objectMapper,
+         functionRegistry,
+         evaluateAccessors,
+         inPlaceQueryEngine,
+         accessorHandlers,
+         formatSpecs,
+         parsingErrorBehaviour
+      )
    }
 
    suspend fun buildAsync(decorator: suspend (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
@@ -124,9 +167,9 @@ class TypedObjectFactory(
       val metadataAndFormat = formatDetector.getFormatType(type)
       if (metadataAndFormat != null) {
          // now what?
-         val (metadata,modelFormatSpec) = metadataAndFormat
+         val (metadata, modelFormatSpec) = metadataAndFormat
          if (modelFormatSpec.deserializer.parseRequired(value, metadata)) {
-            val parsed = modelFormatSpec.deserializer.parse(value, type, metadata,schema)
+            val parsed = modelFormatSpec.deserializer.parse(value, type, metadata, schema)
             return TypedInstance.from(
                type,
                parsed,
@@ -157,7 +200,14 @@ class TypedObjectFactory(
       }
 
       if (type.isCollection) {
-         return CollectionReader.readCollectionFromNonTypedCollectionValue(type, value, schema, source, functionRegistry, inPlaceQueryEngine)
+         return CollectionReader.readCollectionFromNonTypedCollectionValue(
+            type,
+            value,
+            schema,
+            source,
+            functionRegistry,
+            inPlaceQueryEngine
+         )
       }
       if (type.isScalar && type.hasExpression) {
          return evaluateExpressionType(type)
@@ -229,6 +279,7 @@ class TypedObjectFactory(
                handleTypeNotFound(requestedType, queryIfNotFound)
             }
          }
+
          1 -> getValue(candidateTypes.keys.first(), allowAccessorEvaluation)
          else -> TypedNull.create(
             requestedType, FailedEvaluatedExpression(
@@ -265,7 +316,7 @@ class TypedObjectFactory(
             // async up the chain.
             runBlocking {
                val resultsFromSearch = try {
-                   inPlaceQueryEngine.findType(requestedType)
+                  inPlaceQueryEngine.findType(requestedType)
                      .toList()
                } catch (e: Exception) {
                   // handle io.vyne.query.UnresolvedTypeInQueryException
@@ -275,11 +326,13 @@ class TypedObjectFactory(
                   resultsFromSearch.isEmpty() -> createTypedNull(
                      "No attribute with type ${requestedType.name.parameterizedName} is present on type ${type.name.parameterizedName} and attempts to discover a value from the query engine failed"
                   )
+
                   resultsFromSearch.size == 1 -> resultsFromSearch.first()
                   resultsFromSearch.size > 1 && requestedType.isCollection -> {
                      TypedCollection.from(resultsFromSearch, MixedSources.singleSourceOrMixedSources(resultsFromSearch))
                   }
-                  else ->  createTypedNull(
+
+                  else -> createTypedNull(
                      "No attribute with type ${requestedType.name.parameterizedName} is present on type ${type.name.parameterizedName} and attempts to discover a value from the query engine returned ${resultsFromSearch.size} results.  Given this is ambiguous, returning null"
                   )
                }
@@ -287,10 +340,12 @@ class TypedObjectFactory(
             }
 
          }
+
          queryIfNotFound && inPlaceQueryEngine == null -> {
             logger.warn { "Requested to use queryEngine to lookup value ${requestedType.qualifiedName.parameterizedName} but no query engine was provided.  Returning null" }
             createTypedNull()
          }
+
          else -> {
             createTypedNull()
          }
@@ -317,26 +372,38 @@ class TypedObjectFactory(
       return accessorReader.read(value, type, accessor, schema, nullValues, source = source, nullable = nullable)
    }
 
-   fun evaluateExpressionType(expressionType:Type):TypedInstance {
+   fun evaluateExpressionType(expressionType: Type): TypedInstance {
       val expression = expressionType.expression!!
       return accessorReader.evaluate(value, expressionType, expression, schema, nullValues, source)
    }
-   fun evaluateExpression(expression:Expression):TypedInstance {
+
+   fun evaluateExpression(expression: Expression): TypedInstance {
       return accessorReader.evaluate(value, schema.type(expression.returnType), expression, schema, nullValues, source)
    }
+
    private fun evaluateExpressionType(typeName: QualifiedName): TypedInstance {
       val type = schema.type(typeName)
-     return evaluateExpressionType(type)
+      return evaluateExpressionType(type)
    }
 
 
    private fun buildField(field: Field, attributeName: AttributeName): TypedInstance {
+      // When we're building a field, if there's a projection on it,
+      // we build the source type initially.  Once the source is built, we
+      // then project to the target type.
+      val fieldType = if (field.fieldProjection != null) {
+         schema.type(field.fieldProjection.sourceType)
+      } else {
+         schema.type(field.type)
+      }
+      val fieldTypeName = fieldType.qualifiedName
+
       // We don't always want to use accessors.
       // When parsing content from a cask, which has already been processed, what we
       // receive is a TypedObject.  The accessors should be ignored in this scenario.
       // By default, we want to cosndier them.
       val considerAccessor = field.accessor != null && evaluateAccessors && !accessorEvaluationSupressed
-      val evaluateTypeExpression = schema.type(field.type).hasExpression && evaluateAccessors
+      val evaluateTypeExpression = fieldType.hasExpression && evaluateAccessors
 
       // Questionable design choice: Favour directly supplied values over accessors and conditions.
       // The idea here is that when we're reading from a file or non parsed source, we need
@@ -349,7 +416,7 @@ class TypedObjectFactory(
       return when {
          // Cheaper readers first
          value is CSVRecord && field.accessor is ColumnAccessor && considerAccessor -> {
-            readAccessor(field.type, field.accessor, field.nullable)
+            readAccessor(fieldTypeName, field.accessor, field.nullable)
          }
 
          // ValueReader can be expensive if the value is an object,
@@ -360,7 +427,7 @@ class TypedObjectFactory(
          // accessor, which will fail, as this isn't raw content anymore, it's parsed / processed.
          value is Map<*, *> && !considerAccessor && valueReader.contains(value, attributeName) -> readWithValueReader(
             attributeName,
-            field
+            fieldType
          )
 
          // This is not nice, but we're trying to solve the following problem where a model has a column accessor, e.g.:
@@ -368,24 +435,35 @@ class TypedObjectFactory(
          // and we have a rest operation returning Foo as a json, i.e.:
          // { "isin": "IT0003123" }
          // return value of this service can be parsed into 'Foo' without below.
-         value is JsonParsedStructure && considerAccessor && field.accessor !is JsonPathAccessor && valueReader.contains(value, attributeName) ->  readWithValueReader(attributeName, field)
+         value is JsonParsedStructure && considerAccessor && field.accessor !is JsonPathAccessor && valueReader.contains(
+            value,
+            attributeName
+         ) -> readWithValueReader(attributeName, fieldType)
 
          considerAccessor -> {
-            readAccessor(field.type, field.accessor!!, field.nullable)
+            readAccessor(fieldTypeName, field.accessor!!, field.nullable)
          }
+
          evaluateTypeExpression -> {
-            evaluateExpressionType(field.type)
+            evaluateExpressionType(fieldTypeName)
          }
+
          field.readCondition != null -> {
-            conditionalFieldSetEvaluator.evaluate("What do I pass here?",field.readCondition, attributeName, schema.type(field.type), UndefinedSource)
+            conditionalFieldSetEvaluator.evaluate(
+               "What do I pass here?",
+               field.readCondition,
+               attributeName,
+               fieldType,
+               UndefinedSource
+            )
          }
          // Not a map, so could be an object, try the value reader - but this is an expensive
          // call, so we defer to last-ish
-         valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, field)
+         valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, fieldType)
 
          // Is there a default?
          field.defaultValue != null -> TypedValue.from(
-            schema.type(field.type),
+            fieldType,
             field.defaultValue,
             ConversionService.DEFAULT_CONVERTER,
             source = DefinedInSchema,
@@ -394,20 +472,26 @@ class TypedObjectFactory(
 
          else -> {
             // log().debug("The supplied value did not contain an attribute of $attributeName and no accessors or strategies were found to read.  Will return null")
-            TypedNull.create(schema.type(field.type), ValueLookupReturnedNull("Can't populate attribute $attributeName on type ${type.name} as no attribute or expression was found on the supplied value of type ${value::class.simpleName}", field.type))
+            TypedNull.create(
+               fieldType,
+               ValueLookupReturnedNull(
+                  "Can't populate attribute $attributeName on type ${type.name} as no attribute or expression was found on the supplied value of type ${value::class.simpleName}",
+                  fieldTypeName
+               )
+            )
          }
       }
 
    }
 
 
-   private fun readWithValueReader(attributeName: AttributeName, field: Field): TypedInstance {
+   private fun readWithValueReader(attributeName: AttributeName, type: Type): TypedInstance {
       val attributeValue = valueReader.read(value, attributeName)
       return if (attributeValue == null) {
-         TypedNull.create(schema.type(field.type), source)
+         TypedNull.create(type, source)
       } else {
          TypedInstance.from(
-            schema.type(field.type.parameterizedName),
+            schema.type(type.qualifiedName.parameterizedName),
             attributeValue,
             schema,
             true,

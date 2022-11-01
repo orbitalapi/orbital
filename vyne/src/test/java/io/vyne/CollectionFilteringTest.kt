@@ -1,41 +1,50 @@
 package io.vyne
 
 import com.winterbe.expekt.should
+import io.vyne.models.TypedObject
 import io.vyne.models.json.parseJson
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.utils.asA
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
 class CollectionFilteringTest {
-
    val schema = TaxiSchema.from(
       """
-      model Person {
-         firstName : FirstName inherits String
-         lastName: LastName inherits String
-      }
-
-      service TestService {
-         operation getAll():Person[]
-      }
+       model Person {
+           id : PersonId inherits Int
+           name : PersonName inherits String
+          }
+          model Movie {
+            cast : Person[]
+         }
+          service PersonService {
+            operation getAll():Movie[]
+         }
    """.trimIndent()
    )
-   val peopleJson = """[
-      |{ "firstName" : "Jimmy" , "lastName" : "Spitts" },
-      |{ "firstName" : "Johnny", "lastName" : "Splott" },
-      |{ "firstName" : "Jack", "lastName"  :"Splatt" }
-      |]
+   val movieJson = """[{
+         | "cast" : [
+         | { "id" : 1, "name" : "Jack" },
+         | { "id" : 2, "name" : "Sparrow" },
+         | { "id" : 3, "name" : "Butcher" }
+         |]
+         |}]
    """.trimMargin()
 
    @Test
-   fun `can filter a subset of a collection based on a predicate`():Unit = runBlocking {
-      val (vyne, stub) = testVyne(schema)
-      stub.addResponse("getAll", vyne.parseJson("Person[]", peopleJson))
-      val result = vyne.query("find { Person[] } as Person( true == true )[]")
-         .rawObjects()
-      result.should.have.size(3)
-      TODO()
-
+   fun `can filter a list of types from a property on the projected type`():Unit = runBlocking{
+      val (vyne,stub) = testVyne(schema)
+      stub.addResponse("getAll", vyne.parseJson("Movie[]", movieJson))
+      val results = vyne.query("""find { Movie[] } as {
+         | cast : Person[]
+         | // Filtering directly on a field on this type.
+         | aListers : filter(this.cast, (Person) -> containsString(PersonName, 'a') )
+         |}[]
+      """.trimMargin())
+         .typedObjects()
+      val movie = results.single().asA<TypedObject>()
+      val starring = movie.get("starring").toRawObject()
+      starring.should.equal(mapOf("id" to 1, "name" to "Jack"))
    }
-
 }

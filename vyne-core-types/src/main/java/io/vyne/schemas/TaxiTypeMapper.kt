@@ -27,7 +27,8 @@ object TaxiTypeMapper {
                      readCondition = field.readExpression,
                      typeDoc = field.typeDoc,
                      nullable = field.nullable,
-                     metadata = parseAnnotationsToMetadata(field.annotations)
+                     metadata = parseAnnotationsToMetadata(field.annotations),
+                     fieldProjection = field.projection
                   )
                   else -> field.name to Field(
                      field.type.qualifiedName.fqn(),
@@ -50,7 +51,8 @@ object TaxiTypeMapper {
                            field.type.qualifiedName.fqn(),
                            (field.accessor as FieldSourceAccessor).sourceType.toVyneQualifiedName()
                         )
-                     else null
+                     else null,
+                     fieldProjection = field.projection
                   )
                }
             }.toMap()

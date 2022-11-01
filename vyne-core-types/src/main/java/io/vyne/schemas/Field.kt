@@ -3,6 +3,7 @@ package io.vyne.schemas
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.utils.ImmutableEquality
 import lang.taxi.accessors.Accessor
+import lang.taxi.types.FieldProjection
 import lang.taxi.types.FieldSetExpression
 
 // Note: I'm progressively moving this towards Taxi schemas, as discussed
@@ -23,6 +24,8 @@ data class Field(
    val typeDisplayName:String = type.longDisplayName,
    val metadata:List<Metadata> = emptyList(),
    val sourcedBy: FieldSource? = null,
+   @get:JsonIgnore
+   val fieldProjection: FieldProjection? = null
 ) {
    fun hasMetadata(name: QualifiedName): Boolean {
       return this.metadata.any { it.name == name }

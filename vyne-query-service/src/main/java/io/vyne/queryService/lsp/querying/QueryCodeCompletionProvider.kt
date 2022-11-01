@@ -15,7 +15,7 @@ import lang.taxi.TaxiParser.QueryTypeListContext
 import lang.taxi.TaxiParser.SingleNamespaceDocumentContext
 import lang.taxi.TaxiParser.TemporalFormatListContext
 import lang.taxi.TaxiParser.TypeBodyContext
-import lang.taxi.TaxiParser.TypeTypeContext
+import lang.taxi.TaxiParser.TypeReferenceContext
 import lang.taxi.TaxiParser.VariableNameContext
 import lang.taxi.lsp.CompilationResult
 import lang.taxi.lsp.completion.*
@@ -66,7 +66,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
                val children = queryTypeListContext?.children ?: emptyList()
                // If the source type is a collection...
                val sourceTypeIsCollection =
-                  children.isNotEmpty() && children.filterIsInstance<TypeTypeContext>().any { it.listType() != null }
+                  children.isNotEmpty() && children.filterIsInstance<TypeTypeContext>().any { it.arrayMarker() != null }
                if (children.isNotEmpty()) {
                   buildAsCompletion(params, sourceTypeIsCollection)
                } else {
@@ -243,7 +243,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
    ): List<QualifiedName> {
       val queryTypes = contextAtCursor.searchUpForRule(listOf(QueryTypeListContext::class.java))?.let { it ->
          val queryTypeList = it as QueryTypeListContext
-         queryTypeList.typeType()
+         queryTypeList.typeReference()
             .map { typeTypeContext -> compilationResult.compiler.lookupTypeByName(typeTypeContext) }
       } ?: emptyList()
       val factTypes = findTypesInGivenClause(contextAtCursor, compilationResult)

@@ -62,7 +62,7 @@ data class QualifiedName(val fullyQualifiedName: String, val parameters: List<Qu
          }
       }
 
-   override fun toString(): String = fullyQualifiedName
+   override fun toString(): String = parameterizedName
    override fun equals(other: Any?): Boolean {
       if (other == null) return false
       if (other === this) return true

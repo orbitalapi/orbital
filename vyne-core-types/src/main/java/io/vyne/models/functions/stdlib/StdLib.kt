@@ -6,7 +6,8 @@ object StdLib {
    val functions: List<NamedFunctionInvoker> = listOf(
       Strings.functions,
       Functional.functions,
-      Collections.functions
+      Collections.functions,
+      CollectionFiltering.functions
    ).flatten()
 }
 

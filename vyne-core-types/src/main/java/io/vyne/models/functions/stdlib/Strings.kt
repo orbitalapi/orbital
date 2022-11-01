@@ -11,6 +11,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import lang.taxi.functions.FunctionAccessor
+import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
 import kotlin.math.min
 
@@ -26,6 +27,7 @@ object Strings {
       Trim,
       Length,
       Find,
+      ContainsString,
       Replace,
       Coalesce
    )
@@ -242,6 +244,28 @@ object Find : NullSafeInvoker() {
          )
       )
    }
+}
+
+object ContainsString : NullSafeInvoker() {
+   override fun doInvoke(
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
+   ): TypedInstance {
+      val input = inputValues[0].valueAs<String>()
+      val searchString = inputValues[1].valueAs<String>()
+      val contains = input.contains(searchString)
+      return TypedInstance.from(
+         schema.type(PrimitiveType.BOOLEAN.qualifiedName), contains, schema, source = EvaluatedExpression(
+            function.asTaxi(),
+            inputValues
+         )
+      )
+   }
+
+   override val functionName: QualifiedName = lang.taxi.functions.stdlib.ContainsString.name
 }
 
 object Coalesce : NamedFunctionInvoker {

@@ -24,6 +24,7 @@ import io.vyne.schemas.Field
 import io.vyne.schemas.FieldSource
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Type
+import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -311,7 +312,13 @@ class ObjectBuilder(
             else {
                // We need to pass parent facts around, so that when constructing nested objects, children fields have reference to parent facts.
                val theseFacts = FieldAndFactBag(populatedValues, emptyList(), context.schema).merge(facts)
-               val value = build(field.type, buildSpec, theseFacts)
+
+               // When building a field, populate the source (unprojected) type.
+               // When we go to construct the final object (In TypedObjectFactory), this source
+               // value will be projected to it's actual type.
+               val fieldBuildType = field.fieldProjection?.sourceType?.toVyneQualifiedName() ?: field.type
+               val value = build(fieldBuildType, buildSpec, theseFacts)
+
 
                if (value != null) {
                   populatedValues[attributeName] = convertValue(value, targetAttributeType)
