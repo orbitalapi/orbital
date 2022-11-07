@@ -3,15 +3,7 @@ package io.vyne.history.db
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.collect.MultimapBuilder
-import io.vyne.models.DataSource
-import io.vyne.models.EvaluatedExpression
-import io.vyne.models.FailedSearch
-import io.vyne.models.OperationResult
-import io.vyne.models.Provided
-import io.vyne.models.TypeNamedInstance
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedObject
+import io.vyne.models.*
 import io.vyne.query.history.QuerySankeyChartRow
 import io.vyne.query.history.SankeyNodeType
 import io.vyne.schemas.QualifiedName
@@ -59,6 +51,9 @@ class LineageSankeyViewBuilder(schema: Schema) {
                instance.value
                   .filterIsInstance<TypedObject>()
                   .forEach { collectionMember -> buildForObject(collectionMember, prefixes) }
+            }
+            instance is TypedNull -> {
+               // Do nothing, I guess?
             }
             else -> {
                logger.warn { "Appending sankey chart data failed.  Expected either a scalar value, or a TypedObject - but neither condition was true.  ValueType = ${instance::class.simpleName}" }

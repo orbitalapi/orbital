@@ -11,6 +11,7 @@ import io.vyne.query.QueryResult
 import io.vyne.query.QueryResultSerializer
 import io.vyne.query.ValueWithTypeName
 import io.vyne.schemas.Type
+import io.vyne.spring.projection.serde.toSerializable
 
 object RawResultsSerializer : QueryResultSerializer {
    private val converter = TypedInstanceConverter(RawObjectMapper)
@@ -37,6 +38,7 @@ class ModelFormatSpecSerializer(
 object TypeNamedInstanceSerializer : QueryResultSerializer {
    private val converter = TypedInstanceConverter(RawObjectMapper)
    override fun serialize(item: TypedInstance): Any? {
+      item.toSerializable()
       return converter.convert(item)
    }
 }

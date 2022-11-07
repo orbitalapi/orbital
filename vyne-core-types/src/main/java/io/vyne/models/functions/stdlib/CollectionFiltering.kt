@@ -15,7 +15,8 @@ import lang.taxi.types.QualifiedName
 object CollectionFiltering {
    val functions: List<NamedFunctionInvoker> = listOf(
       Single,
-      Filter
+      FilterAll,
+      ArrayEquals
    )
 }
 
@@ -53,7 +54,7 @@ object Single : NamedFunctionInvoker, CollectionFilteringFunction() {
    }
 }
 
-object Filter : NamedFunctionInvoker, CollectionFilteringFunction()  {
+object FilterAll : NamedFunctionInvoker, CollectionFilteringFunction()  {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.FilterAll.name
    override fun invoke(
       inputValues: List<TypedInstance>,
@@ -64,20 +65,41 @@ object Filter : NamedFunctionInvoker, CollectionFilteringFunction()  {
       rawMessageBeingParsed: Any?
    ): TypedInstance {
       return applyFilter(inputValues, schema, returnType, function, objectFactory, rawMessageBeingParsed)
-         .map { TypedCollection.from(it, source = EvaluatedExpression(function.asTaxi(), inputValues)) }
+         .map {
+            if (it.isEmpty()) {
+               TypedCollection.empty(returnType)
+            } else {
+               TypedCollection.from(it, source = EvaluatedExpression(function.asTaxi(), inputValues)) }
+            }
+
          .getOrHandle { it }
    }
 }
 
+object ArrayEquals : NamedFunctionInvoker {
+   override val functionName: QualifiedName = lang.taxi.functions.stdlib.ArrayEquals.name
+   override fun invoke(
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier,
+      rawMessageBeingParsed: Any?
+   ): TypedInstance {
+      TODO("Not yet implemented")
+   }
+}
 
 open class CollectionFilteringFunction {
    protected fun failed(
       returnType: Type,
       function: FunctionAccessor,
       inputValues: List<TypedInstance>,
-      message: String
+      message: String,
+      inputInError: TypedInstance? = null,
+      cause: DataSource? = null,
    ): TypedNull {
-      return TypedNull.create(returnType, FailedEvaluatedExpression(function.asTaxi(), inputValues, message))
+      return TypedNull.create(returnType, FailedEvaluatedExpression(function.asTaxi(), inputValues, message, inputInError = inputInError, cause = cause))
    }
 
    protected fun applyFilter(
@@ -106,7 +128,7 @@ open class CollectionFilteringFunction {
       val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
 
       val filtered = collection.filter { collectionMember ->
-         val factBag = FactBagValueSupplier.of(listOf(collectionMember), schema)
+         val factBag = FactBagValueSupplier.of(listOf(collectionMember), schema, thisScopeValueSupplier = objectFactory)
          val reader = AccessorReader(factBag, schema.functionRegistry, schema)
          val evaluated = reader.evaluate(
             collectionMember,
@@ -120,7 +142,8 @@ open class CollectionFilteringFunction {
                returnType,
                function,
                inputValues,
-               "After evaluating the predicate, expected a return type of boolean, but the returned instance had type ${evaluated.type.qualifiedName.parameterizedName}"
+               "After evaluating the predicate (${deferredInstance.expression.asTaxi()}), expected a return type of boolean, but the returned instance had type ${evaluated.type.qualifiedName.parameterizedName}",
+               evaluated
             ).left()
          }
          if (evaluated is TypedNull) {
@@ -128,7 +151,9 @@ open class CollectionFilteringFunction {
                returnType,
                function,
                inputValues,
-               "When evaluating the predicate, a null value was returned, which cannot be cast to boolean"
+               "When evaluating the predicate  (${deferredInstance.expression.asTaxi()}), a null value was returned, which cannot be cast to boolean",
+               evaluated,
+               evaluated.source
             ).left()
          }
          evaluated.value as Boolean

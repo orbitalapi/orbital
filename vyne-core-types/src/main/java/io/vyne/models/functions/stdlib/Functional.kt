@@ -50,6 +50,7 @@ object Fold : NamedFunctionInvoker {
          val factBagValueSupplier = FactBagValueSupplier.of(
             listOf(acc,typedInstance),
             schema,
+            objectFactory,
             // Exact match so that the accumulated value (which is likely an INT) doesn't conflict with semantic subtypes.
             // We should be smarter about this.
             TypeMatchingStrategy.EXACT_MATCH

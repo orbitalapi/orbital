@@ -1,15 +1,15 @@
-package io.vyne.models
+package io.vyne.models.facts
 
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
 import io.vyne.query.AlwaysGoodSpec
 import io.vyne.query.TypedInstanceValidPredicate
-import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
-import java.util.concurrent.CopyOnWriteArrayList
 
 class EmptyFactBag(private val list: List<TypedInstance> = emptyList()) : FactBag, Collection<TypedInstance> by list {
    private fun notSupported(): Nothing = throw RuntimeException("Not supported on an EmptyFactBag")
-   override fun breadthFirstFilter(predicate: (TypedInstance) -> Boolean): List<TypedInstance> = emptyList()
+   override fun breadthFirstFilter(strategy: FactDiscoveryStrategy, predicate: (TypedInstance) -> Boolean): List<TypedInstance> = emptyList()
 
    override fun addFact(fact: TypedInstance): FactBag = notSupported()
 
@@ -39,6 +39,17 @@ class EmptyFactBag(private val list: List<TypedInstance> = emptyList()) : FactBa
          other.merge(this)
       }
    }
+
+   override fun merge(fact: TypedInstance): FactBag {
+      // Hmm... not sure how to do this, since constructing a FactBag
+      // requires a schema.
+      // We
+      TODO("This isn't implemented, as we need a Schema instance.")
+   }
+
+   override fun excluding(facts: Set<TypedInstance>): FactBag {
+      TODO("Not yet implemented")
+   }
 }
 
 /**
@@ -57,12 +68,38 @@ interface FactBag : Collection<TypedInstance> {
       }
    }
 
-   fun merge(other:FactBag):FactBag
+   fun merge(other: FactBag): FactBag
+
+   /**
+    * Returns a new FactBag, containing the facts from this instance,
+    * plus the fact provided.
+    *
+    * The current instance is unchanged.
+    */
+   fun merge(fact: TypedInstance): FactBag
+
+   /**
+    * Returns a new FactBack, containing the current facts, but
+    * without the excluded facts
+    *
+    * The current instance is unchanged
+    */
+   fun excluding(facts:Set<TypedInstance>): FactBag
 
    //   fun firstOrNull(predicate: (TypedInstance) -> Boolean): TypedInstance?
 //   fun filter(predicate: (TypedInstance) -> Boolean): List<TypedInstance>
-   fun breadthFirstFilter(predicate: (TypedInstance) -> Boolean): List<TypedInstance>
+   fun breadthFirstFilter(strategy: FactDiscoveryStrategy, predicate: (TypedInstance) -> Boolean): List<TypedInstance>
+
+   /**
+    * A mutating operation.  Adds a fact to the current fact bag.
+    * The current, mutated fact bag is returned for convenience
+    */
    fun addFact(fact: TypedInstance): FactBag
+
+   /**
+    * A mutating operation.  Adds a fact to the current fact bag.
+    * The current, mutated fact bag is returned for convenience
+    */
    fun addFacts(facts: Collection<TypedInstance>): FactBag
    fun hasFactOfType(
       type: Type,

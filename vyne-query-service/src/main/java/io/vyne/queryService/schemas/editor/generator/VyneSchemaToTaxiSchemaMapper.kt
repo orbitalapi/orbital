@@ -206,6 +206,7 @@ class VyneSchemaToTaxiSchemaMapper(
             field.typeDoc,
             field.defaultValue,
             null,
+            null,
             CompilationUnit.generatedFor(type.fullyQualifiedName)
          )
       }

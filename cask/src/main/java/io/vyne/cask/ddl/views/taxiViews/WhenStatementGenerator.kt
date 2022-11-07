@@ -208,7 +208,7 @@ class WhenStatementGenerator(private val taxiView: View,
       val expression = assignment.assignment
       return when  {
          expression is ModelAttributeReferenceSelector -> {
-            columnName(taxiView, expression.memberSource, expression.memberType, qualifiedNameToCaskConfig)
+            columnName(taxiView, expression.memberSource, expression.targetType, qualifiedNameToCaskConfig)
          }
          expression is LiteralExpression -> {
             val literalExpression = parseExpression(expression.value.mapSqlValue(), true)
@@ -273,7 +273,7 @@ class WhenStatementGenerator(private val taxiView: View,
           *   View::FieldType1 - Model::FieldType
           */
          isViewOp1 || !isViewOp2 -> {
-            val viewField = getViewField(op1.memberType)
+            val viewField = getViewField(op1.targetType)
             processCalculatedModelAttributeFieldSetExpressionWithOneViewFieldOperand(
                viewField,
                op2,
@@ -287,7 +287,7 @@ class WhenStatementGenerator(private val taxiView: View,
           * Model::FieldType - View::FieldType1
           */
          !isViewOp1 || isViewOp2 -> {
-            val viewField = getViewField(op2.memberType)
+            val viewField = getViewField(op2.targetType)
             processCalculatedModelAttributeFieldSetExpressionWithOneViewFieldOperand(
                viewField,
                op1,
@@ -298,8 +298,8 @@ class WhenStatementGenerator(private val taxiView: View,
 
          //Neither operands refer to a view field, so they must refer to models in 'find' expressions.
          else -> {
-            val op1Sql = columnName(taxiView, op1.memberSource, op1.memberType, qualifiedNameToCaskConfig)
-            val op2Sql = columnName(taxiView, op2.memberSource, op2.memberType, qualifiedNameToCaskConfig)
+            val op1Sql = columnName(taxiView, op1.memberSource, op1.targetType, qualifiedNameToCaskConfig)
+            val op2Sql = columnName(taxiView, op2.memberSource, op2.targetType, qualifiedNameToCaskConfig)
             val sqlString = "$op1Sql ${accessorExpression.operator.symbol} $op2Sql"
             parseExpression(sqlString, true)
          }
@@ -316,8 +316,8 @@ class WhenStatementGenerator(private val taxiView: View,
       // if the accessorExpression is => Foo::Bar - View::FieldType
       val op1 = accessorExpression.lhs as ModelAttributeReferenceSelector
       val op2 = accessorExpression.rhs as ModelAttributeReferenceSelector
-      val op1ViewField = getViewField(op1.memberType)
-      val op2ViewField = getViewField(op2.memberType)
+      val op1ViewField = getViewField(op1.targetType)
+      val op2ViewField = getViewField(op2.targetType)
       if (op1ViewField.accessor != null && op2ViewField.accessor != null) {
          val expression1 = this.toWhenSql(op1ViewField)
          val expression2 = this.toWhenSql(op2ViewField)
@@ -375,7 +375,7 @@ class WhenStatementGenerator(private val taxiView: View,
       accessorExpression: OperatorExpression): SqlExpression {
       val fieldSql = this.toWhenSql(viewField)
       val caseSql = fieldSql as? CaseExpression
-      val otherOpSql = columnName(taxiView, otherOp.memberSource, otherOp.memberType, qualifiedNameToCaskConfig)
+      val otherOpSql = columnName(taxiView, otherOp.memberSource, otherOp.targetType, qualifiedNameToCaskConfig)
       return if (caseSql != null) {
          val modifiedWhenSqlStatements = when (otherOpOrder) {
             BinaryOpOrder.First -> caseSql.whenClauses.map {
@@ -441,7 +441,7 @@ class WhenStatementGenerator(private val taxiView: View,
       return when (operand) {
          // SourceType:FieldType
          is ModelAttributeReferenceSelector -> {
-            columnName(taxiView, operand.memberSource, operand.memberType, qualifiedNameToCaskConfig)
+            columnName(taxiView, operand.memberSource, operand.targetType, qualifiedNameToCaskConfig)
          }
 
          is LiteralExpression -> {

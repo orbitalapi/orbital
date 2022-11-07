@@ -6,9 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
 import com.google.common.collect.HashMultimap
-import io.vyne.models.CopyOnWriteFactBag
-import io.vyne.models.FactBag
-import io.vyne.models.FactDiscoveryStrategy
+import io.vyne.models.facts.CopyOnWriteFactBag
+import io.vyne.models.facts.FactBag
+import io.vyne.models.facts.FactDiscoveryStrategy
 import io.vyne.models.InPlaceQueryEngine
 import io.vyne.models.OperationResult
 import io.vyne.models.RawObjectMapper

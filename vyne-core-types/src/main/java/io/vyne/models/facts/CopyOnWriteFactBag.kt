@@ -1,10 +1,13 @@
-package io.vyne.models
+package io.vyne.models.facts
 
 import com.diffplug.common.base.TreeDef
 import com.diffplug.common.base.TreeStream
+import io.vyne.models.*
 import io.vyne.query.TypedInstanceValidPredicate
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import io.vyne.schemas.TypeMatchingStrategy
+import io.vyne.schemas.or
 import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.cached
 import lang.taxi.types.PrimitiveType
@@ -19,8 +22,9 @@ open class CopyOnWriteFactBag(
    private val schema: Schema
 ) : FactBag, Collection<TypedInstance> by facts {
    constructor(facts: Collection<TypedInstance>, schema:Schema) : this(CopyOnWriteArrayList(facts), schema)
+   constructor(fact: TypedInstance, schema:Schema) : this(listOf(fact), schema)
 
-   fun copy(): CopyOnWriteFactBag {
+   open fun copy(): CopyOnWriteFactBag {
       return CopyOnWriteFactBag(facts, schema)
    }
 
@@ -29,6 +33,15 @@ open class CopyOnWriteFactBag(
          this.facts + other.toList(),
          schema
       )
+   }
+
+   override fun merge(fact: TypedInstance): FactBag {
+      return copy().addFact(fact)
+   }
+   override fun excluding(facts: Set<TypedInstance>): FactBag {
+      val copy = copy()
+      copy.facts.removeAll(facts.toSet())
+      return copy
    }
 
    override val size: Int
@@ -78,7 +91,7 @@ open class CopyOnWriteFactBag(
       list
    }
 
-   override fun breadthFirstFilter(predicate: (TypedInstance) -> Boolean): List<TypedInstance> {
+   override fun breadthFirstFilter(strategy: FactDiscoveryStrategy, predicate: (TypedInstance) -> Boolean): List<TypedInstance> {
       return modelTree().filter(predicate)
    }
 
@@ -149,7 +162,20 @@ open class CopyOnWriteFactBag(
       strategy: FactDiscoveryStrategy,
       spec: TypedInstanceValidPredicate
    ): TypedInstance? {
-      return fromFactCache(GetFactOrNullCacheKey(FactSearch.findType(type, strategy, spec)))
+
+      // MP 4-Nov-22
+      // Design choice around searching for arrays: (weakly held):
+      // Sometimes when we're searching for Foo[], we want to gather up all the values.
+      // (ie., traverse an object graph, and collect all the instances of Foo).
+      // Other times, we only want to find exact instances of Foo[]
+      // We're using the  ALLOW_MANY / ALLOW_ONE heuristic to determine how we search.
+      // Not sure this is correct.  See CopyOnWriteFactBagTest for tests that explore this with use-cases.
+      val predicate = if (strategy == FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) {
+         TypeMatchingStrategy.MATCH_ON_COLLECTION_TYPE.or(TypeMatchingStrategy.ALLOW_INHERITED_TYPES)
+      } else {
+         TypeMatchingStrategy.ALLOW_INHERITED_TYPES // default
+      }
+      return fromFactCache(GetFactOrNullCacheKey(FactSearch.findType(type, strategy, spec, predicate)))
    }
 
    override fun getFactOrNull(

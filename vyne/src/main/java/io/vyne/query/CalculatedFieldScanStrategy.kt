@@ -2,7 +2,7 @@
 //
 //import io.vyne.formulas.CalculatorRegistry
 //import io.vyne.models.Calculated
-//import io.vyne.models.FactDiscoveryStrategy
+//import io.vyne.models.facts.FactDiscoveryStrategy
 //import io.vyne.models.TypedInstance
 //import io.vyne.schemas.Type
 //import kotlinx.coroutines.flow.Flow

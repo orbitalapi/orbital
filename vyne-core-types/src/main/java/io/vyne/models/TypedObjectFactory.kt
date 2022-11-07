@@ -2,6 +2,7 @@ package io.vyne.models
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
+import io.vyne.models.facts.*
 import io.vyne.models.format.FormatDetector
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.functions.FunctionRegistry
@@ -90,6 +91,7 @@ class TypedObjectFactory(
             val fieldValue = buildField(field, attributeName)
             if (field.fieldProjection != null) {
                projectField(field, attributeName, fieldValue)
+
             } else {
                fieldValue
             }
@@ -104,6 +106,10 @@ class TypedObjectFactory(
     * }
     */
    private fun projectField(field: Field, attributeName: AttributeName, fieldValue: TypedInstance): TypedInstance {
+      if (fieldValue is TypedNull) {
+         // Don't attempt to project nulls
+         return TypedNull.create(schema.type(field.type), fieldValue.source)
+      }
       val projectedType = schema.type(field.fieldProjection!!.projectedType)
       val projectedFieldValue = if (fieldValue is TypedCollection && projectedType.isCollection) {
          // Project each member of the collection seperately
@@ -117,10 +123,30 @@ class TypedObjectFactory(
       return projectedFieldValue
    }
 
-   private fun newFactory(type: Type, value: Any): TypedObjectFactory {
+   /**
+    * Returns a new TypedObjectFactory,
+    * merging the current set of known values with the newValue if possible.
+    */
+   private fun newFactory(
+      type: Type,
+      newValue: Any,
+      factsToExclude: Set<TypedInstance> = emptySet()
+   ): TypedObjectFactory {
+
+      val newMergedValue = when {
+         this.value is FactBag && newValue is TypedInstance -> CascadingFactBag(
+            CopyOnWriteFactBag(newValue, schema),
+            this.value
+         )
+
+         this.value is FactBag && newValue is FactBag -> CascadingFactBag(newValue, this.value)
+         this.value !is FactBag && factsToExclude.isNotEmpty() -> error("Cannot exclude facts when the source of facts is not a FactBag")
+         else -> newValue
+      }
+
       return TypedObjectFactory(
          type,
-         value,
+         newMergedValue,
          schema,
          nullValues,
          source,
@@ -405,6 +431,15 @@ class TypedObjectFactory(
       val considerAccessor = field.accessor != null && evaluateAccessors && !accessorEvaluationSupressed
       val evaluateTypeExpression = fieldType.hasExpression && evaluateAccessors
 
+      fun failWithTypedNull(): TypedNull {
+         return TypedNull.create(
+            fieldType,
+            ValueLookupReturnedNull(
+               "Can't populate attribute $attributeName on type ${type.name} as no attribute or expression was found on the supplied value of type ${value::class.simpleName}",
+               fieldTypeName
+            )
+         )
+      }
       // Questionable design choice: Favour directly supplied values over accessors and conditions.
       // The idea here is that when we're reading from a file or non parsed source, we need
       // to know how to construct the instance.
@@ -470,18 +505,28 @@ class TypedObjectFactory(
             parsingErrorBehaviour
          )
 
-         else -> {
-            // log().debug("The supplied value did not contain an attribute of $attributeName and no accessors or strategies were found to read.  Will return null")
-            TypedNull.create(
-               fieldType,
-               ValueLookupReturnedNull(
-                  "Can't populate attribute $attributeName on type ${type.name} as no attribute or expression was found on the supplied value of type ${value::class.simpleName}",
-                  fieldTypeName
+         // 2-Nov-22: Added this when trying to build inline
+         // projections.  However, concerned about knock-on effects...
+         value is FactBag -> {
+
+            // The rationale here is if I asked for Foo[], I want all the Foo's,
+            // not just a single collection.
+            val searchStrategy = if (fieldType.isCollection) {
+               FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY
+            } else {
+               FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT
+            }
+            val searchedValue = value.getFactOrNull(
+               FactSearch.findType(
+                  fieldType,
+                  strategy = searchStrategy
                )
             )
+            searchedValue ?: failWithTypedNull()
          }
-      }
 
+         else -> failWithTypedNull()
+      }
    }
 
 

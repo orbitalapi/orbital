@@ -8,7 +8,6 @@ import io.vyne.models.FactBagValueSupplier
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
-import io.vyne.models.functions.NamedFunctionInvoker
 import io.vyne.models.functions.NullSafeInvoker
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -24,7 +23,8 @@ abstract class MathIteratingFunction : NullSafeInvoker() {
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier
    ): TypedInstance {
       val sourceCollection = inputValues[0] as TypedCollection
       val deferredInstance = inputValues[1] as DeferredTypedInstance
@@ -36,6 +36,7 @@ abstract class MathIteratingFunction : NullSafeInvoker() {
          val factBagValueSupplier = FactBagValueSupplier.of(
             listOf(typedInstance),
             schema,
+            thisScopeValueSupplier,
             // Exact match so that the accumulated value (which is likely an INT) doesn't conflict with semantic subtypes.
             // We should be smarter about this.
             TypeMatchingStrategy.EXACT_MATCH

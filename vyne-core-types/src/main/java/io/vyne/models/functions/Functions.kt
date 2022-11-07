@@ -51,7 +51,8 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier
    ): TypedInstance
 
    override fun invoke(
@@ -85,7 +86,7 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
          TypedNull.create(returnType, FailedEvaluatedExpression(
             function.asTaxi(), inputValues, message, unresolvedInputs))
       } else {
-         doInvoke(inputValues, schema, returnType, function, rawMessageBeingParsed)
+         doInvoke(inputValues, schema, returnType, function, rawMessageBeingParsed, objectFactory)
       }
    }
 }
@@ -103,7 +104,8 @@ class InlineFunctionInvoker(override val functionName: QualifiedName, val handle
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier
    ): TypedInstance {
       return handler.invoke(inputValues, schema, returnType, function)
    }

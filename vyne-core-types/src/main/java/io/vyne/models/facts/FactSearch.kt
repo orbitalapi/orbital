@@ -1,8 +1,12 @@
-package io.vyne.models
+package io.vyne.models.facts
 
+import io.vyne.models.MixedSources
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
 import io.vyne.query.AlwaysGoodSpec
 import io.vyne.query.TypedInstanceValidPredicate
 import io.vyne.schemas.Type
+import io.vyne.schemas.TypeMatchingPredicate
 import io.vyne.schemas.TypeMatchingStrategy
 import io.vyne.utils.ImmutableEquality
 import mu.KotlinLogging
@@ -11,6 +15,7 @@ private val logger = KotlinLogging.logger {}
 
 data class FactSearch(
    val name: String,
+   val targetType: Type,
    val strategy: FactDiscoveryStrategy,
    /**
     * Predicate used to select TypedInstances from the facts.
@@ -50,7 +55,7 @@ data class FactSearch(
          type: Type,
          strategy: FactDiscoveryStrategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY,
          spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-         matcher: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES
+         matcher: TypeMatchingPredicate = TypeMatchingStrategy.ALLOW_INHERITED_TYPES
       ): FactSearch {
          val predicate = { instance: TypedInstance ->
             matcher.matches(type, instance.type) && spec.isValid(instance)
@@ -72,7 +77,7 @@ data class FactSearch(
             } else {
                NO_REFINING_PERMITTED
             }
-         return FactSearch("Find type ${type.fullyQualifiedName}", strategy, predicate, refiningPredicate)
+         return FactSearch("Find type ${type.name.shortDisplayName}", type, strategy, predicate, refiningPredicate)
       }
    }
 }
@@ -97,7 +102,7 @@ enum class FactDiscoveryStrategy {
          search: FactSearch
       ): TypedInstance? {
          val matches = facts
-            .breadthFirstFilter { search.filterPredicate(it) }
+            .breadthFirstFilter(ANY_DEPTH_EXPECT_ONE) { search.filterPredicate(it) }
             .toList()
          return when {
             matches.isEmpty() -> null
@@ -115,7 +120,7 @@ enum class FactDiscoveryStrategy {
 
    /**
     * Will return matches from any depth, providing there is exactly
-    * one DISITNCT match within the context
+    * one DISTINCT match within the context
     */
    ANY_DEPTH_EXPECT_ONE_DISTINCT {
       override fun getFact(
@@ -123,12 +128,12 @@ enum class FactDiscoveryStrategy {
          search: FactSearch
       ): TypedInstance? {
          val matches = facts
-            .breadthFirstFilter { search.filterPredicate(it) }
+            .breadthFirstFilter(ANY_DEPTH_EXPECT_ONE) { search.filterPredicate(it) }
             .distinct()
             .toList()
          return when {
             matches.isEmpty() -> null
-            matches.size == 1 -> matches.first()
+            matches.size == 1 -> toCollectionIfRequested(matches.first(), search.targetType)
             else -> {
                // last ditch attempt
                val refinedSelection = search.refiningPredicate(matches)
@@ -137,7 +142,7 @@ enum class FactDiscoveryStrategy {
                } else {
                   val nonNullMatches = matches.filter { it.value != null }
                   if (nonNullMatches.size == 1) {
-                     nonNullMatches.first()
+                     toCollectionIfRequested(nonNullMatches.first(), search.targetType)
                   } else {
                      logger.debug {
                         "ANY_DEPTH_EXPECT_ONE strategy found ${matches.size} of search ${search.name}, so returning null"
@@ -151,8 +156,8 @@ enum class FactDiscoveryStrategy {
    },
 
    /**
-    * Will return matches from any depth, providing there is exactly
-    * one DISITNCT match within the context
+    * Will return matches from any depth/
+    * Returns a collection of results
     */
    ANY_DEPTH_ALLOW_MANY {
       override fun getFact(
@@ -160,15 +165,16 @@ enum class FactDiscoveryStrategy {
          search: FactSearch
       ): TypedCollection? {
          val matches = factBag
-            .breadthFirstFilter { search.filterPredicate(it) }
+            .breadthFirstFilter(ANY_DEPTH_ALLOW_MANY) { search.filterPredicate(it) }
             .distinct()
             .toList()
          return when {
             matches.isEmpty() -> null
-            else -> TypedCollection.from(matches, MixedSources.singleSourceOrMixedSources(matches))
+            else -> TypedCollection.flatten(matches, MixedSources.singleSourceOrMixedSources(matches))
          }
       }
    };
+
 
 
    abstract fun getFact(
@@ -177,4 +183,22 @@ enum class FactDiscoveryStrategy {
    ): TypedInstance?
 
 
+}
+
+/**
+ * If the requested type is a collection, then returns the instance
+ * wrapped in a collection.
+ *
+ * Otherwise, returns the instance as-is.
+ */
+private fun toCollectionIfRequested(singleInstance: TypedInstance, targetType: Type): TypedInstance {
+   return if (targetType.isCollection) {
+      if (singleInstance is TypedCollection) {
+         return singleInstance
+      } else {
+         return TypedCollection.from(listOf(singleInstance))
+      }
+   } else {
+      singleInstance
+   }
 }

@@ -1,6 +1,8 @@
 package io.vyne.query.collections
 
 import io.vyne.models.*
+import io.vyne.models.facts.FactDiscoveryStrategy
+import io.vyne.models.facts.FactSearch
 import io.vyne.query.ExcludeQueryStrategyKlassPredicate.Companion.ExcludeObjectBuilderPredicate
 import io.vyne.query.QueryContext
 import io.vyne.query.QueryEngine
@@ -17,6 +19,7 @@ import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withContext
+import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -104,6 +107,7 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
             val collectionOfFactsWithCommonBaseType = queryContext.getFactOrNull(
                FactSearch(
                   "Collection of @Id annotated values",
+                  targetMemberType,
                   FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY,
                   filterPredicate
                )
@@ -172,6 +176,9 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
       val collectionOfIds = queryContext.getFactOrNull(
          FactSearch(
             "Collection of @Id annotated values",
+            // Not sure what to pass here.
+            // also, not sure if this should be a collection or not.
+            queryEngine.schema.type(PrimitiveType.ANY),
             FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY,
             filterPredicate
          )

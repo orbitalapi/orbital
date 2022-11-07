@@ -15,7 +15,6 @@ data class TypedCollection(
    override fun toString(): String {
       return "TypedCollection(type=${type.qualifiedName.longDisplayName}, value=$value)"
    }
-
    operator fun get(key: String): TypedInstance {
       val (thisPart, remaining) = key.split(".")
          .takeHead()
@@ -76,7 +75,31 @@ data class TypedCollection(
          val commonType = types.first().commonTypeAncestor(types)
          return arrayOf(commonType, populatedList, source)
       }
+      /**
+       * If all the elements are TypedCollections, then the result is a single TypedCollection
+       * with all the element flattened.
+       *
+       * Otherwise, the list is returned as-is
+       */
+      fun flatten(
+         populatedList: List<TypedInstance>,
+         source: DataSource = MixedSources.singleSourceOrMixedSources(populatedList)
+      ):TypedCollection {
+         if (populatedList.isEmpty()) {
+            // Hmmm .. this is what the old code used to do, but I suspect this will
+            // throw an error, as we can't know what the type is.
+            return TypedCollection.from(populatedList, source)
+         }
+         return if (populatedList.all { it is TypedCollection }) {
+            val nestedList = populatedList as List<TypedCollection>
+            TypedCollection.from(nestedList.flatten(), source)
+         } else {
+            TypedCollection.from(populatedList, source)
+         }
+      }
+
    }
+
 
    override fun withTypeAlias(typeAlias: Type): TypedCollection {
       return TypedCollection(typeAlias, value)

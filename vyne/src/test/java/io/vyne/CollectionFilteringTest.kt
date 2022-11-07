@@ -39,12 +39,15 @@ class CollectionFilteringTest {
       val results = vyne.query("""find { Movie[] } as {
          | cast : Person[]
          | // Filtering directly on a field on this type.
-         | aListers : filter(this.cast, (Person) -> containsString(PersonName, 'a') )
+         | aListers : filterAll(this.cast, (Person) -> containsString(PersonName, 'a') )
          |}[]
       """.trimMargin())
          .typedObjects()
       val movie = results.single().asA<TypedObject>()
-      val starring = movie.get("starring").toRawObject()
-      starring.should.equal(mapOf("id" to 1, "name" to "Jack"))
+      val starring = movie.get("aListers").toRawObject()
+      starring.should.equal(listOf(
+         mapOf("id" to 1, "name" to "Jack"),
+         mapOf("id" to 2, "name" to "Sparrow"),
+      ))
    }
 }

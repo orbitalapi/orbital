@@ -2,21 +2,7 @@ package io.vyne.queryService.lsp.querying
 
 import io.vyne.query.graph.Algorithms
 import io.vyne.schemas.*
-import lang.taxi.TaxiParser.ClassOrInterfaceTypeContext
-import lang.taxi.TaxiParser.ConditionalTypeStructureDeclarationContext
-import lang.taxi.TaxiParser.FactListContext
-import lang.taxi.TaxiParser.FieldDeclarationContext
-import lang.taxi.TaxiParser.GivenBlockContext
-import lang.taxi.TaxiParser.IdentifierContext
-import lang.taxi.TaxiParser.ListTypeContext
-import lang.taxi.TaxiParser.QueryDirectiveContext
-import lang.taxi.TaxiParser.QueryProjectionContext
-import lang.taxi.TaxiParser.QueryTypeListContext
-import lang.taxi.TaxiParser.SingleNamespaceDocumentContext
-import lang.taxi.TaxiParser.TemporalFormatListContext
-import lang.taxi.TaxiParser.TypeBodyContext
-import lang.taxi.TaxiParser.TypeReferenceContext
-import lang.taxi.TaxiParser.VariableNameContext
+import lang.taxi.TaxiParser.*
 import lang.taxi.lsp.CompilationResult
 import lang.taxi.lsp.completion.*
 import lang.taxi.searchUpForRule
@@ -59,14 +45,14 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
       }
 
       val completions = when (contextAtCursor) {
-         is QueryProjectionContext -> {
+         is TypeProjectionContext -> {
             if (contextAtCursor.stop.text == "as") {
                val queryTypeListContext =
                   contextAtCursor.searchUpForRule(QueryTypeListContext::class.java) as? ParserRuleContext?
                val children = queryTypeListContext?.children ?: emptyList()
                // If the source type is a collection...
                val sourceTypeIsCollection =
-                  children.isNotEmpty() && children.filterIsInstance<TypeTypeContext>().any { it.arrayMarker() != null }
+                  children.isNotEmpty() && children.filterIsInstance<TypeReferenceContext>().any { it.arrayMarker() != null }
                if (children.isNotEmpty()) {
                   buildAsCompletion(params, sourceTypeIsCollection)
                } else {
@@ -97,7 +83,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
          is FieldDeclarationContext,
          is TypeBodyContext,
          is IdentifierContext,
-         is ClassOrInterfaceTypeContext -> {
+         is QualifiedNameContext -> {
             // In tests, it looks like we could be either declaring a filter criteria here,
             // or listing fields we want to add to the query.
             if (contextAtCursor.searchUpForRule(ConditionalTypeStructureDeclarationContext::class.java) != null) {
@@ -121,9 +107,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
          }
          is VariableNameContext -> suggestTypesAsInputs(importDecorator)
          // Filter operations - eg: find { Film( <-- here
-         is ListTypeContext,
-            // The grammar may parse an open parenthesis as a Temproal format
-         is TemporalFormatListContext -> suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
+         is ArrayMarkerContext -> suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
          else -> emptyList()
       }
       val distinctCompletions =
@@ -149,10 +133,10 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
       importDecorator: ImportCompletionDecorator,
       compilationResult: CompilationResult
    ): List<CompletionItem> {
-      val typeToFilterToken = contextAtCursor.searchUpForRule(TypeTypeContext::class.java)
+      val typeToFilterToken = contextAtCursor.searchUpForRule(TypeReferenceContext::class.java)
          ?: // Hmm... this shouldn't happen.
          return emptyList()
-      val typeToFilter = compilationResult.compiler.lookupTypeByName(typeToFilterToken as TypeTypeContext)
+      val typeToFilter = compilationResult.compiler.lookupTypeByName(typeToFilterToken as TypeReferenceContext)
          .toVyneQualifiedName()
       val isExposedByQueryOperations = schema.queryOperations
          .any { it.returnTypeName == typeToFilter }
@@ -243,8 +227,8 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
    ): List<QualifiedName> {
       val queryTypes = contextAtCursor.searchUpForRule(listOf(QueryTypeListContext::class.java))?.let { it ->
          val queryTypeList = it as QueryTypeListContext
-         queryTypeList.typeReference()
-            .map { typeTypeContext -> compilationResult.compiler.lookupTypeByName(typeTypeContext) }
+         queryTypeList.fieldTypeDeclaration()
+            .map { fieldTypeContext -> compilationResult.compiler.lookupTypeByName(fieldTypeContext.optionalTypeReference().typeReference()) }
       } ?: emptyList()
       val factTypes = findTypesInGivenClause(contextAtCursor, compilationResult)
       return canonicalizeTypeNames(queryTypes + factTypes)
@@ -273,7 +257,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
          val givenBlock = ruleContext as GivenBlockContext
          val typesOfFacts = givenBlock.getRuleContexts(FactListContext::class.java)
             .flatMap { it.fact() }
-            .map { it.getRuleContexts(TypeTypeContext::class.java) }
+            .map { it.getRuleContexts(TypeReferenceContext::class.java) }
             .flatten()
             .map { typeTypeContext ->
                compilationResult.compiler.lookupTypeByName(typeTypeContext)

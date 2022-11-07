@@ -2,10 +2,10 @@ package io.vyne.query
 
 import io.vyne.models.AccessorHandler
 import io.vyne.models.DataSource
-import io.vyne.models.FactBag
-import io.vyne.models.FactDiscoveryStrategy
+import io.vyne.models.facts.FactBag
+import io.vyne.models.facts.FactDiscoveryStrategy
 import io.vyne.models.FailedSearch
-import io.vyne.models.FieldAndFactBag
+import io.vyne.models.facts.FieldAndFactBag
 import io.vyne.models.MixedSources
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
@@ -80,7 +80,14 @@ class ObjectBuilder(
          when (instance.size) {
             0 -> error("Found 0 instances of ${targetType.fullyQualifiedName}, but hasFactOfType returned true")
             1 -> {
-               val discoveredValue = instance.first()
+               // FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY always returns a collection.
+               // If we didn't request a collection, we actually want the first element.
+               // Otherwise, we want the collection itself.
+               val discoveredValue = if (targetType.isCollection) {
+                  instance
+               } else {
+                  instance.first()
+               }
                // Handle formatting
                // Choosing to copy the type, since as we got this far, we know that
                // the types are compatible.  However, this may prove to cause problems.

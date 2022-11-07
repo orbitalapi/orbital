@@ -3,7 +3,7 @@ package io.vyne.spring.projection
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.core.HazelcastInstanceAware
 import io.vyne.Vyne
-import io.vyne.models.CopyOnWriteFactBag
+import io.vyne.models.facts.CopyOnWriteFactBag
 import io.vyne.query.QueryContext
 import io.vyne.query.QueryProfiler
 import io.vyne.query.SearchGraphExclusion

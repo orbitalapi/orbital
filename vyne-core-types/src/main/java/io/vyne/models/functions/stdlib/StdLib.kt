@@ -7,7 +7,8 @@ object StdLib {
       Strings.functions,
       Functional.functions,
       Collections.functions,
-      CollectionFiltering.functions
+      CollectionFiltering.functions,
+      ObjectFunctions.functions
    ).flatten()
 }
 

@@ -3,7 +3,7 @@ package io.vyne.query.collections
 import io.vyne.models.AccessorHandler
 import io.vyne.models.DataSource
 import io.vyne.models.EvaluationValueSupplier
-import io.vyne.models.FactDiscoveryStrategy
+import io.vyne.models.facts.FactDiscoveryStrategy
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull

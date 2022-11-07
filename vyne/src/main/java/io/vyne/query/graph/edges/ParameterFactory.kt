@@ -1,7 +1,7 @@
 package io.vyne.query.graph.edges
 
-import io.vyne.models.CopyOnWriteFactBag
-import io.vyne.models.FactDiscoveryStrategy
+import io.vyne.models.facts.CopyOnWriteFactBag
+import io.vyne.models.facts.FactDiscoveryStrategy
 import io.vyne.models.MixedSources
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull

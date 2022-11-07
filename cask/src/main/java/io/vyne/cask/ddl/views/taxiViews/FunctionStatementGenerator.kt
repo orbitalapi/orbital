@@ -1,8 +1,6 @@
 package io.vyne.cask.ddl.views.taxiViews
 
-import io.vyne.cask.ddl.PostgresDdlGenerator
 import lang.taxi.functions.FunctionAccessor
-import lang.taxi.functions.stdlib.Coalesce
 import lang.taxi.types.ModelAttributeReferenceSelector
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.Type
@@ -34,7 +32,7 @@ object FunctionStatementGenerator {
       return accessor.inputs.map { input ->
          val modelAttributeReferenceSelector = input as ModelAttributeReferenceSelector
          val memberSource = modelAttributeReferenceSelector.memberSource
-         val memberType = modelAttributeReferenceSelector.memberType
+         val memberType = modelAttributeReferenceSelector.targetType
          modelAttributeToColumNameMapper(memberSource, memberType)
       }
    }

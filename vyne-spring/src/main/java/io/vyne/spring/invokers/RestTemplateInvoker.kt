@@ -48,8 +48,6 @@ import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
-private val logger = KotlinLogging.logger {}
-
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
 
 class RestTemplateInvoker(
@@ -58,7 +56,7 @@ class RestTemplateInvoker(
     private val serviceUrlResolvers: List<ServiceUrlResolver> = ServiceUrlResolver.DEFAULT,
     private val requestFactory: HttpRequestFactory = DefaultRequestFactory()
 ) : OperationInvoker {
-
+   private val logger = KotlinLogging.logger {}
 
    @Autowired
    constructor(
@@ -147,6 +145,8 @@ class RestTemplateInvoker(
          request.bodyValue(httpEntity.body)
       }
 
+      logger.debug { "[$queryId] - Performing $httpMethod to ${expandedUri.toASCIIString()}" }
+
       val remoteCallId = UUID.randomUUID().toString()
       val results = request
          .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
@@ -162,6 +162,7 @@ class RestTemplateInvoker(
                .isCompatibleWith(MediaType.TEXT_EVENT_STREAM)
             val responseMessageType = if (isEventStream) ResponseMessageType.EVENT else ResponseMessageType.FULL
 
+            logger.debug { "[$queryId] - $httpMethod to ${expandedUri.toASCIIString()} returned status ${clientResponse.statusCode()} and body length of ${clientResponse.headers().contentLength().orElse(-1)} after ${duration}ms" }
 
             fun remoteCall(responseBody: String, failed: Boolean = false): RemoteCall {
                return RemoteCall(
@@ -260,7 +261,8 @@ class RestTemplateInvoker(
       headers: ClientResponse.Headers,
       eventDispatcher: QueryContextEventDispatcher
    ): Flux<TypedInstance> {
-      logger.debug { "Result of ${operation.name} was $result" }
+      // Logging responses in our logs is a security issue.  Let's not do this.
+//      logger.debug { "Result of ${operation.name} was $result" }
 
       val isPreparsed = headers
          .header(io.vyne.http.HttpHeaders.CONTENT_PREPARSED).let { headerValues ->

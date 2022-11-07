@@ -45,7 +45,8 @@ abstract class BooleanPredicateEvaluator(
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier
    ): TypedInstance {
       return expectAllBoolean(inputValues, function, returnType)
          .map(reducer)
@@ -95,7 +96,8 @@ object Contains : NullSafeInvoker() {
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier
    ): TypedInstance {
       val collection = inputValues[0] as TypedCollection
       val searchTarget = inputValues[1] as TypedInstance
