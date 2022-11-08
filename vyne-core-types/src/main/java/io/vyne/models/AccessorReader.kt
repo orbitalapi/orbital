@@ -463,14 +463,14 @@ class AccessorReader(
          // Here, we're saying "if the thing we're trying to build is actually the input into the function, then it's ok to search".
          // No real logic behind that, other than it's what I need to make my test pass.
 
-         val queryIfNotFound = if (targetType.hasExpression && targetType.expression!! is LambdaExpression) {
-            val lambdaExpression = targetType.expression as LambdaExpression
-            lambdaExpression.inputs.contains(parameterInputAccessor.returnType)
-         } else if (targetType.hasExpression) {
-            false
-         } else {
-            false
-         }
+//         val queryIfNotFound = if (targetType.hasExpression && targetType.expression!! is LambdaExpression) {
+//            val lambdaExpression = targetType.expression as LambdaExpression
+//            lambdaExpression.inputs.contains(parameterInputAccessor.returnType)
+//         } else if (targetType.hasExpression) {
+//            false
+//         } else {
+//            false
+//         }
 
          // MP, 2-Nov-21: Modifying the rules here where types that are inputs to an expression can be
          // searched for, regardless.  I suspect this will break some stuff.
@@ -483,7 +483,11 @@ class AccessorReader(
          // ... <-- Here, the attributes one layer up aren't available, but they should be.
          // }
          //}
-//         val queryIfNotFound = true
+         // MP 8-Nov-22: One year later...
+         // We had swapped back to the above logic, but without documenting why.
+         // I'd like to be able to discover expression params from services, so re-enabling this.
+         // If we revert, document the reason.
+         val queryIfNotFound = true
 
          read(
             value,

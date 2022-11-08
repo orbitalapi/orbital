@@ -23,6 +23,10 @@ object SingleBy : NamedFunctionInvoker {
       rawMessageBeingParsed: Any?,
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
+
+      if (inputValues[0] is TypedNull) {
+         return TypedNull.create(returnType, FailedEvaluatedExpression(function.asTaxi(), inputValues, "Recevied null for the collection to iterate"))
+      }
       val collection = inputValues[0] as TypedCollection
       val deferredInstance = inputValues[1] as DeferredTypedInstance
       val searchValue = inputValues[2] as TypedInstance

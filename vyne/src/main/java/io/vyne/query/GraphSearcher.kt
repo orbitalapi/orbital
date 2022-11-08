@@ -179,8 +179,8 @@ class GraphSearcher(
          }
 
          if (pathEvaluatedSuccessfully && resultSatisfiesConstraints) {
-            logger.debug { "[$queryId] $searchDescription - path $nextPathId succeeded with type ${resultValue?.typeName}" }
-            logger.trace { "[$queryId] $searchDescription - path $nextPathId succeeded with value $resultValue" }
+            logger.debug { "[$queryId] $searchDescription - path $nextPathId succeeded and returned instance of type ${resultValue?.typeName}" }
+//            logger.trace { "[$queryId] $searchDescription - path $nextPathId succeeded with value $resultValue" }
             return SearchResult(resultValue, nextPath, failedAttempts)
          } else {
             if (pathEvaluatedSuccessfully && !resultSatisfiesConstraints) {

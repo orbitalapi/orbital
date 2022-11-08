@@ -405,7 +405,7 @@ class TypedObjectFactory(
    }
 
    override fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean): TypedInstance {
-      return accessorReader.read(value, type, accessor, schema, nullValues, source = source, nullable = nullable)
+      return accessorReader.read(value, type, accessor, schema, nullValues, source = source, nullable = nullable, allowContextQuerying = true)
    }
 
    fun evaluateExpressionType(expressionType: Type): TypedInstance {
