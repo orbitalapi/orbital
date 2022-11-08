@@ -13,6 +13,35 @@ import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * A predicate, which has an additional id.
+ * When we're caching predicates, we can't use the hashcode of the predicate
+ * to reliably determine equality, so we use this id.
+ */
+interface PredicateWithId {
+   /**
+    * Used to determine equality of two strategies (instead of the predicate)
+    */
+   val id: String
+}
+
+interface FilterPredicateStrategy : PredicateWithId {
+   /**
+    * Predicate used to select TypedInstances from the facts.
+    */
+   val predicate: (TypedInstance) -> Boolean
+}
+
+interface RefiningPredicate : PredicateWithId {
+
+   /**
+    * In the event that many possible matches are found, strategies
+    * may pass a predicate here to select the "best" value.
+    * Alternatively, return null, which indicates that the search has failed.
+    */
+   val predicate: (List<TypedInstance>) -> TypedInstance?
+}
+
 data class FactSearch(
    val name: String,
    val targetType: Type,
@@ -20,21 +49,25 @@ data class FactSearch(
    /**
     * Predicate used to select TypedInstances from the facts.
     */
-   val filterPredicate: (TypedInstance) -> Boolean,
+   val filterPredicate: FilterPredicateStrategy,
    /**
     * In the event that many possible matches are found, strategies
     * may pass a predicate here to select the "best" value.
     * Alternatively, return null, which indicates that the search has failed.
     */
-   val refiningPredicate: (List<TypedInstance>) -> TypedInstance? = NO_REFINING_PERMITTED,
-
-   ) {
+   val refiningPredicate: RefiningPredicate = NO_REFINING_PERMITTED,
+) {
+   private val targetTypeName = targetType.name.parameterizedName
+   private val filterPredicateId = filterPredicate.id
+   private val refiningPredicateId = refiningPredicate.id
    private val equality = ImmutableEquality(
       this,
-      FactSearch::name,
+      // Name is for display purposes only - not part of the hash, to ensure duplciate definitions get the sam hashcode
+//      FactSearch::name,
+      FactSearch::targetTypeName,
       FactSearch::strategy,
-      FactSearch::filterPredicate,
-      FactSearch::refiningPredicate
+      FactSearch::filterPredicateId,
+      FactSearch::refiningPredicateId
    )
 
    override fun equals(other: Any?): Boolean {
@@ -50,30 +83,44 @@ data class FactSearch(
        * Refining predicate that indicates no refining is allowed - ie.,
        * if we didn't get an exact match previously, don't try to refine the list further.
        */
-      val NO_REFINING_PERMITTED: (List<TypedInstance>) -> TypedInstance? = { null }
+      val NO_REFINING_PERMITTED = object : RefiningPredicate {
+         override val id: String = "NO_REFINING_PERMITTED"
+         override val predicate: (List<TypedInstance>) -> TypedInstance? = { null }
+      }
+
+      fun refineToExactTypeMatch(type: Type): RefiningPredicate {
+         return object : RefiningPredicate {
+            override val id: String = "REFINE_TO_EXACT_TYPE_MATCH"
+            override val predicate: (List<TypedInstance>) -> TypedInstance? = { matches: List<TypedInstance> ->
+               val exactMatches = matches.filter { it.type == type }
+               if (exactMatches.size == 1) {
+                  exactMatches.first()
+               } else {
+                  null
+               }
+            }
+         }
+      }
+
       fun findType(
          type: Type,
          strategy: FactDiscoveryStrategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY,
          spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
          matcher: TypeMatchingPredicate = TypeMatchingStrategy.ALLOW_INHERITED_TYPES
       ): FactSearch {
-         val predicate = { instance: TypedInstance ->
-            matcher.matches(type, instance.type) && spec.isValid(instance)
+         val predicate = object : FilterPredicateStrategy {
+            override val id = matcher.id
+            override val predicate: (TypedInstance) -> Boolean = { instance: TypedInstance ->
+               matcher.matches(type, instance.type) && spec.isValid(instance)
+            }
          }
 
-         val refiningPredicate: (List<TypedInstance>) -> TypedInstance? =
+         val refiningPredicate: RefiningPredicate =
          // This has been migrated from the previous implementation.
          // We used to apply this logic ONLY on the ANY_DEPTH_EXPECT_ONE_DISTINCT
             // strategy, so applying it here for consistency.
             if (strategy == FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT) {
-               { matches: List<TypedInstance> ->
-                  val exactMatches = matches.filter { it.type == type }
-                  if (exactMatches.size == 1) {
-                     exactMatches.first()
-                  } else {
-                     null
-                  }
-               }
+               refineToExactTypeMatch(type)
             } else {
                NO_REFINING_PERMITTED
             }
@@ -88,7 +135,7 @@ enum class FactDiscoveryStrategy {
          facts: FactBag,
          search: FactSearch
       ): TypedInstance? {
-         return facts.firstOrNull { search.filterPredicate(it) }
+         return facts.firstOrNull { search.filterPredicate.predicate(it) }
       }
    },
 
@@ -102,7 +149,7 @@ enum class FactDiscoveryStrategy {
          search: FactSearch
       ): TypedInstance? {
          val matches = facts
-            .breadthFirstFilter(ANY_DEPTH_EXPECT_ONE) { search.filterPredicate(it) }
+            .breadthFirstFilter(ANY_DEPTH_EXPECT_ONE) { search.filterPredicate.predicate(it) }
             .toList()
          return when {
             matches.isEmpty() -> null
@@ -128,7 +175,7 @@ enum class FactDiscoveryStrategy {
          search: FactSearch
       ): TypedInstance? {
          val matches = facts
-            .breadthFirstFilter(ANY_DEPTH_EXPECT_ONE) { search.filterPredicate(it) }
+            .breadthFirstFilter(ANY_DEPTH_EXPECT_ONE) { search.filterPredicate.predicate(it) }
             .distinct()
             .toList()
          return when {
@@ -136,7 +183,7 @@ enum class FactDiscoveryStrategy {
             matches.size == 1 -> toCollectionIfRequested(matches.first(), search.targetType)
             else -> {
                // last ditch attempt
-               val refinedSelection = search.refiningPredicate(matches)
+               val refinedSelection = search.refiningPredicate.predicate(matches)
                if (refinedSelection != null) {
                   refinedSelection
                } else {
@@ -165,7 +212,7 @@ enum class FactDiscoveryStrategy {
          search: FactSearch
       ): TypedCollection? {
          val matches = factBag
-            .breadthFirstFilter(ANY_DEPTH_ALLOW_MANY) { search.filterPredicate(it) }
+            .breadthFirstFilter(ANY_DEPTH_ALLOW_MANY) { search.filterPredicate.predicate(it) }
             .distinct()
             .toList()
          return when {
@@ -174,7 +221,6 @@ enum class FactDiscoveryStrategy {
          }
       }
    };
-
 
 
    abstract fun getFact(

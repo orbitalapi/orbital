@@ -1,4 +1,4 @@
-package io.vyne.query.build
+package io.vyne.models
 
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedInstancePredicateProvider

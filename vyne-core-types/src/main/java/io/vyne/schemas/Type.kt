@@ -2,6 +2,7 @@ package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.common.cache.CacheBuilder
 import io.vyne.VersionedSource
 import io.vyne.models.DataSource
@@ -48,6 +49,7 @@ annotation class DeferEvaluationUntilTypeCacheCreated
  * given how interweaved their evolution is, and that the Taxi model is now sufficiently more advanced,
  * it may be worth collapsing them.
  */
+@JsonDeserialize(`as` = Type::class)
 data class Type(
    override val name: QualifiedName,
    override val attributes: Map<AttributeName, Field> = emptyMap(),
@@ -268,14 +270,11 @@ data class Type(
    val qualifiedName: QualifiedName
       get() = QualifiedName(fullyQualifiedName, typeParametersTypeNames)
 
-   val longDisplayName: String
-      get() {
-         return if (this.hasFormat) {
+   val longDisplayName: String = if (this.hasFormat) {
             this.unformattedTypeName!!.longDisplayName + "(${this.format!!.joinToString(",")})"
          } else {
             qualifiedName.longDisplayName
          }
-      }
 
    // Note : Lazy evaluation to work around that aliases are partiall populated during
    // construction.

@@ -3,6 +3,7 @@ package io.vyne.query.collections
 import io.vyne.models.*
 import io.vyne.models.facts.FactDiscoveryStrategy
 import io.vyne.models.facts.FactSearch
+import io.vyne.models.facts.FilterPredicateStrategy
 import io.vyne.query.ExcludeQueryStrategyKlassPredicate.Companion.ExcludeObjectBuilderPredicate
 import io.vyne.query.QueryContext
 import io.vyne.query.QueryEngine
@@ -80,7 +81,7 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
       val resultList = try {
          queryResult.results
             .toList()
-      } catch (e:SearchFailedException) {
+      } catch (e: SearchFailedException) {
          return null
       }
 
@@ -101,15 +102,18 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
          .asSequence()
          .filter { !it.isPrimitive }
          .mapNotNull { baseType ->
-            val filterPredicate: (TypedInstance) -> Boolean = { instance ->
-               instance is TypedCollection && instance.type.collectionType!!.inheritsFrom(baseType)
+            val filterPredicateStrategy = object : FilterPredicateStrategy {
+               override val id: String = "Collection matches on base type of ${baseType.qualifiedName.shortDisplayName}"
+               override val predicate: (TypedInstance) -> Boolean = { instance ->
+                  instance is TypedCollection && instance.type.collectionType!!.inheritsFrom(baseType)
+               }
             }
             val collectionOfFactsWithCommonBaseType = queryContext.getFactOrNull(
                FactSearch(
                   "Collection of @Id annotated values",
                   targetMemberType,
                   FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY,
-                  filterPredicate
+                  filterPredicateStrategy
                )
             )
             collectionOfFactsWithCommonBaseType
@@ -170,8 +174,12 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
 
    private fun findCollectionsOfIdValues(modelsWithIds: Map<Field, Type>): TypedInstance? {
       val idTypeNames = modelsWithIds.keys.map { it.type }.toSet()
-      val filterPredicate: (TypedInstance) -> Boolean = { instance ->
-         instance is TypedCollection && idTypeNames.contains(instance.type.collectionType!!.qualifiedName)
+      val filterPredicate = object : FilterPredicateStrategy {
+         // This is intentionally designed to have a unique id, as we don't want to reuse other searches
+         override val id: String = "find @Id annotated values in collection ${modelsWithIds.hashCode()}"
+         override val predicate: (TypedInstance) -> Boolean = { instance ->
+            instance is TypedCollection && idTypeNames.contains(instance.type.collectionType!!.qualifiedName)
+         }
       }
       val collectionOfIds = queryContext.getFactOrNull(
          FactSearch(

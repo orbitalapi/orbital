@@ -33,9 +33,19 @@ interface FunctionInvoker {
        * The raw value / message being parsed.
        * Not always present, but passed when evaluating from TypedObjectFactory
        */
-      rawMessageBeingParsed:Any? = null
+      rawMessageBeingParsed: Any? = null,
+      resultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf()
    ): TypedInstance
 }
+
+data class FunctionResultCacheKey(
+   val functionName: QualifiedName,
+   /**
+    * The values to use for cache lookup.
+    * Don't pass values that change here, or you'll always get a cache miss
+    */
+   val inputValuesForCache: List<TypedInstance>
+)
 
 interface SelfDescribingFunction : NamedFunctionInvoker {
    val taxiDeclaration: String
@@ -61,7 +71,8 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
       returnType: Type,
       function: FunctionAccessor,
       objectFactory: EvaluationValueSupplier,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       return if (inputValues.any { it is TypedNull }) {
          val typedNullTypes = inputValues
@@ -72,7 +83,7 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
                   null
                }
             }
-         val unresolvedInputs = typedNullTypes.map { (index,typeName) ->
+         val unresolvedInputs = typedNullTypes.map { (index, typeName) ->
             typeName.fqn()
          }
          val message = typedNullTypes.joinToString(
@@ -83,8 +94,11 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
          }
          log().warn("$message.  Not invoking this function, and returning null")
 
-         TypedNull.create(returnType, FailedEvaluatedExpression(
-            function.asTaxi(), inputValues, message, unresolvedInputs))
+         TypedNull.create(
+            returnType, FailedEvaluatedExpression(
+               function.asTaxi(), inputValues, message, unresolvedInputs
+            )
+         )
       } else {
          doInvoke(inputValues, schema, returnType, function, rawMessageBeingParsed, objectFactory)
       }

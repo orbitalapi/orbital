@@ -1,10 +1,11 @@
-package io.vyne.query.build
+package io.vyne.models
 
 import io.vyne.query.AlwaysGoodSpec
 import io.vyne.query.TypedInstanceValidPredicate
 import io.vyne.schemas.Field
 
-class TypedInstancePredicateFactory(private val predicateProviders: List<TypedInstancePredicateProvider> = TypedInstancePredicateProvider.providers) : TypedInstancePredicateProvider {
+class TypedInstancePredicateFactory(private val predicateProviders: List<TypedInstancePredicateProvider> = TypedInstancePredicateProvider.providers) :
+   TypedInstancePredicateProvider {
    override fun provide(field: Field): TypedInstanceValidPredicate {
       return predicateProviders
          .asSequence()

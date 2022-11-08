@@ -25,20 +25,37 @@ class FunctionRegistry(private val invokers: List<NamedFunctionInvoker>) {
        * The raw value / message being parsed.
        * Not always present, but passed when evaluating from TypedObjectFactory
        */
-      rawMessageBeingParsed:Any? = null
+      rawMessageBeingParsed: Any? = null,
+      /**
+       * A result cache allows functions to cache / memoize results
+       * so that future computations can be faster.
+       * Consider that everything should be serializable, so that we can distribute the cache over Hazelcast
+       * DO NOT use this for sharing data between function calls. Seriously.
+       *
+       */
+      resultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf()
    ): TypedInstance {
       val invoker = invokersByName[function.toQualifiedName()]
          ?: error("No invoker provided for function ${function.qualifiedName}")
-      return invoker.invoke(declaredInputs, schema, returnType, accessor, objectFactory, rawMessageBeingParsed)
+      return invoker.invoke(
+         declaredInputs,
+         schema,
+         returnType,
+         accessor,
+         objectFactory,
+         rawMessageBeingParsed,
+         resultCache
+      )
    }
 
    companion object {
       val default: FunctionRegistry = FunctionRegistry(StdLib.functions)
    }
 
-   fun add(invoker: NamedFunctionInvoker) : FunctionRegistry {
+   fun add(invoker: NamedFunctionInvoker): FunctionRegistry {
       return add(listOf(invoker))
    }
+
    fun add(invokers: List<NamedFunctionInvoker>): FunctionRegistry {
       return FunctionRegistry(this.invokers + invokers)
    }

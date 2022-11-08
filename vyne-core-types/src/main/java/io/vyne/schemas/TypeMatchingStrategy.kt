@@ -1,6 +1,7 @@
 package io.vyne.schemas
 
 interface TypeMatchingPredicate {
+   val id: String
    fun matches(requestedType: Type, candidate: Type): Boolean
 }
 
@@ -12,21 +13,14 @@ class CompositeOrPredicate(val predicates: List<TypeMatchingPredicate>) : TypeMa
    override fun matches(requestedType: Type, candidate: Type): Boolean =
       predicates.any { it.matches(requestedType, candidate) }
 
+   override val id: String = predicates.joinToString(" AND ") { it.id }
 }
 
 enum class TypeMatchingStrategy : TypeMatchingPredicate {
    ALLOW_INHERITED_TYPES {
+      override val id: String = "ALLOW_INHERITED_TYPES"
       override fun matches(requestedType: Type, candidate: Type): Boolean {
-         // I've flip-flopped here.
-         // evaluating against the collection type breaks
-         // searches for a collection.
-         // What was the scenario we needed this?
-
-//         return if (requestedType.isCollection) {
-//            ALLOW_INHERITED_TYPES.matches(requestedType.collectionType!!, candidate)
-//         } else {
          return requestedType.isAssignableFrom(candidate)
-//         }
       }
    },
 
@@ -34,6 +28,7 @@ enum class TypeMatchingStrategy : TypeMatchingPredicate {
     * If the requested type is a collection,
     */
    MATCH_ON_COLLECTION_TYPE {
+      override val id: String = "MATCH_ON_COLLECTION_TYPE"
       override fun matches(requestedType: Type, candidate: Type): Boolean {
          return if (requestedType.isCollection) {
             ALLOW_INHERITED_TYPES.matches(requestedType.collectionType!!, candidate)
@@ -43,6 +38,7 @@ enum class TypeMatchingStrategy : TypeMatchingPredicate {
       }
    },
    EXACT_MATCH {
+      override val id: String = "EXACT_MATCH"
       override fun matches(requestedType: Type, candidate: Type): Boolean {
          return requestedType.fullyQualifiedName == candidate.fullyQualifiedName
       }

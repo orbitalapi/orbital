@@ -8,6 +8,7 @@ import io.vyne.models.FactBagValueSupplier
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
+import io.vyne.models.functions.FunctionResultCacheKey
 import io.vyne.models.functions.NamedFunctionInvoker
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -30,12 +31,13 @@ object Fold : NamedFunctionInvoker {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Fold.name
 
    override fun invoke(
-       inputValues: List<TypedInstance>,
-       schema: Schema,
-       returnType: Type,
-       function: FunctionAccessor,
-       objectFactory: EvaluationValueSupplier,
-       rawMessageBeingParsed: Any?
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier,
+      rawMessageBeingParsed: Any?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val sourceCollection = inputValues[0] as TypedCollection
       val initialValue = inputValues[1] as TypedValue
@@ -65,12 +67,13 @@ object Fold : NamedFunctionInvoker {
 
 object Reduce : NamedFunctionInvoker {
    override fun invoke(
-       inputValues: List<TypedInstance>,
-       schema: Schema,
-       returnType: Type,
-       function: FunctionAccessor,
-       objectFactory: EvaluationValueSupplier,
-       rawMessageBeingParsed: Any?
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier,
+      rawMessageBeingParsed: Any?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val sourceCollection = inputValues[0] as TypedCollection
       val deferredInstance = inputValues[1] as DeferredTypedInstance

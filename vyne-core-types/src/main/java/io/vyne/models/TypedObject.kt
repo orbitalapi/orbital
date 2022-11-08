@@ -2,6 +2,7 @@ package io.vyne.models
 
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.functions.FunctionRegistry
+import io.vyne.models.functions.FunctionResultCacheKey
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
@@ -68,7 +69,8 @@ data class TypedObject(
          functionRegistry: FunctionRegistry = FunctionRegistry.default,
          inPlaceQueryEngine: InPlaceQueryEngine? = null,
          formatSpecs: List<ModelFormatSpec> = emptyList(),
-         parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException
+         parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
+         functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf()
       ): TypedInstance {
          return TypedObjectFactory(
             type,
@@ -80,7 +82,8 @@ data class TypedObject(
             functionRegistry = functionRegistry,
             inPlaceQueryEngine = inPlaceQueryEngine,
             formatSpecs = formatSpecs,
-            parsingErrorBehaviour = parsingErrorBehaviour
+            parsingErrorBehaviour = parsingErrorBehaviour,
+            functionResultCache = functionResultCache
          ).build()
       }
    }

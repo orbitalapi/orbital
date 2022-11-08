@@ -2,15 +2,16 @@ package io.vyne.models.facts
 
 import com.diffplug.common.base.TreeDef
 import com.diffplug.common.base.TreeStream
+import com.google.common.annotations.VisibleForTesting
+import com.google.common.base.Stopwatch
 import io.vyne.models.*
+import io.vyne.query.AlwaysGoodSpec
 import io.vyne.query.TypedInstanceValidPredicate
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
-import io.vyne.schemas.TypeMatchingStrategy
-import io.vyne.schemas.or
+import io.vyne.schemas.*
 import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.cached
 import lang.taxi.types.PrimitiveType
+import mu.KotlinLogging
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -21,8 +22,10 @@ open class CopyOnWriteFactBag(
    private val facts: CopyOnWriteArrayList<TypedInstance>,
    private val schema: Schema
 ) : FactBag, Collection<TypedInstance> by facts {
-   constructor(facts: Collection<TypedInstance>, schema:Schema) : this(CopyOnWriteArrayList(facts), schema)
-   constructor(fact: TypedInstance, schema:Schema) : this(listOf(fact), schema)
+   private val logger = KotlinLogging.logger {}
+
+   constructor(facts: Collection<TypedInstance>, schema: Schema) : this(CopyOnWriteArrayList(facts), schema)
+   constructor(fact: TypedInstance, schema: Schema) : this(listOf(fact), schema)
 
    open fun copy(): CopyOnWriteFactBag {
       return CopyOnWriteFactBag(facts, schema)
@@ -38,6 +41,7 @@ open class CopyOnWriteFactBag(
    override fun merge(fact: TypedInstance): FactBag {
       return copy().addFact(fact)
    }
+
    override fun excluding(facts: Set<TypedInstance>): FactBag {
       val copy = copy()
       copy.facts.removeAll(facts.toSet())
@@ -91,7 +95,10 @@ open class CopyOnWriteFactBag(
       list
    }
 
-   override fun breadthFirstFilter(strategy: FactDiscoveryStrategy, predicate: (TypedInstance) -> Boolean): List<TypedInstance> {
+   override fun breadthFirstFilter(
+      strategy: FactDiscoveryStrategy,
+      predicate: (TypedInstance) -> Boolean
+   ): List<TypedInstance> {
       return modelTree().filter(predicate)
    }
 
@@ -151,8 +158,18 @@ open class CopyOnWriteFactBag(
     */
    private val factSearchCache = ConcurrentHashMap<GetFactOrNullCacheKey, Optional<TypedInstance>>()
    private fun fromFactCache(key: GetFactOrNullCacheKey): TypedInstance? {
+//      val stopwatch = Stopwatch.createStarted()
+//      val allFacts = breadthFirstFilter(FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) { true }
+//      val groupedByType = allFacts.groupBy { it.type.fullyQualifiedName }
+//      logger.debug { "Flattened to ${allFacts.size} facts (grouped to ${groupedByType.keys.size} types) in ${stopwatch.elapsed().toMillis()}ms" }
+
+
       val optionalVal = factSearchCache.getOrPut(key) {
-         Optional.ofNullable(key.search.strategy.getFact(this, key.search))
+//         val stopwatch = Stopwatch.createStarted()
+         val result = Optional.ofNullable(key.search.strategy.getFact(this, key.search))
+//         val found = if (result.isPresent) "DID" else "did NOT"
+//         logger.debug { "CopyOnWriteFactBag search ${key.search.name} took ${stopwatch.elapsed().toMillis()}ms and $found return a result" }
+         result
       }
       return if (optionalVal.isPresent) optionalVal.get() else null
    }
@@ -162,7 +179,17 @@ open class CopyOnWriteFactBag(
       strategy: FactDiscoveryStrategy,
       spec: TypedInstanceValidPredicate
    ): TypedInstance? {
+      val searchCacheKey = getFactOrNullCacheKey(strategy, type, spec)
 
+
+      return fromFactCache(searchCacheKey)
+   }
+
+   private fun getFactOrNullCacheKey(
+      strategy: FactDiscoveryStrategy,
+      type: Type,
+      spec: TypedInstanceValidPredicate
+   ): GetFactOrNullCacheKey {
       // MP 4-Nov-22
       // Design choice around searching for arrays: (weakly held):
       // Sometimes when we're searching for Foo[], we want to gather up all the values.
@@ -175,8 +202,19 @@ open class CopyOnWriteFactBag(
       } else {
          TypeMatchingStrategy.ALLOW_INHERITED_TYPES // default
       }
-      return fromFactCache(GetFactOrNullCacheKey(FactSearch.findType(type, strategy, spec, predicate)))
+      return GetFactOrNullCacheKey(FactSearch.findType(type, strategy, spec, predicate))
    }
+
+   @VisibleForTesting
+   internal fun searchIsCached(
+      type: Type,
+      strategy: FactDiscoveryStrategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY,
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+   ): Boolean {
+      val key = getFactOrNullCacheKey(strategy, type, spec)
+      return factSearchCache.containsKey(key)
+   }
+
 
    override fun getFactOrNull(
       search: FactSearch,
@@ -223,6 +261,7 @@ private object TypedInstanceTree {
          is TypedEnumValue -> {
             instance.synonyms
          }
+
          is TypedValue -> {
             if (instance.type.isEnum) {
                error("EnumSynonyms as TypedValue not supported here")
@@ -232,6 +271,7 @@ private object TypedInstanceTree {
             }
 
          }
+
          is TypedCollection -> instance.value
          is TypedNull -> emptyList()
          else -> throw IllegalStateException("TypedInstance of type ${instance.javaClass.simpleName} is not handled")

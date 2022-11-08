@@ -1,6 +1,7 @@
 package io.vyne.schemas.taxi
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.google.common.base.Stopwatch
 import io.vyne.*
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.schemas.*
@@ -62,6 +63,7 @@ class TaxiSchema(
    private val constraintConverter = TaxiConstraintConverter(this)
 
    init {
+      val stopwatch = Stopwatch.createStarted()
       try {
          val (typeCache, types) = parseTypes(document)
          this.typeCache = typeCache
@@ -72,6 +74,7 @@ class TaxiSchema(
          logger.error(e) { "Exception occurred initializing the Taxi Schema" }
          throw e
       }
+      logger.debug { "Parsing TaxiSchema took ${stopwatch.elapsed().toMillis()}ms" }
    }
 
    val hash = (services + types).hashCode()
@@ -242,10 +245,12 @@ class TaxiSchema(
          functionRegistry: FunctionRegistry = FunctionRegistry.default
       ): Pair<List<CompilationError>, TaxiSchema> {
          val sources = packages.toSourcesWithPackageIdentifier()
+         val stopwatch = Stopwatch.createStarted()
          val (compilationErrors, doc) =
             Compiler(
                sources.map { CharStreams.fromString(it.content, it.packageQualifiedName) },
                imports.map { it.document }).compileWithMessages()
+         logger.debug { "Compilation of TaxiSchema took ${stopwatch.elapsed().toMillis()}ms" }
 
          // This is to prevent startup errors if there are compilation errors.
          // If we don't, then the main thread can error, causing

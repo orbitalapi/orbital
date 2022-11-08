@@ -1,11 +1,13 @@
 package io.vyne.models
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.base.Stopwatch
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
 import io.vyne.models.facts.*
 import io.vyne.models.format.FormatDetector
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.functions.FunctionRegistry
+import io.vyne.models.functions.FunctionResultCacheKey
 import io.vyne.models.json.Jackson
 import io.vyne.models.json.JsonParsedStructure
 import io.vyne.models.json.isJson
@@ -42,9 +44,12 @@ class TypedObjectFactory(
    private val inPlaceQueryEngine: InPlaceQueryEngine? = null,
    private val accessorHandlers: List<AccessorHandler<out Accessor>> = emptyList(),
    private val formatSpecs: List<ModelFormatSpec> = emptyList(),
-   private val parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException
+   private val parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
+   private val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf()
 ) : EvaluationValueSupplier {
    private val logger = KotlinLogging.logger {}
+
+   private val buildSpecProvider = TypedInstancePredicateFactory()
 
    private val valueReader = ValueReader()
    private val accessorReader: AccessorReader by lazy {
@@ -52,7 +57,8 @@ class TypedObjectFactory(
          this,
          this.functionRegistry,
          this.schema,
-         this.accessorHandlers
+         this.accessorHandlers,
+         this.functionResultCache
       )
    }
    private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this, this.schema, accessorReader)
@@ -90,7 +96,10 @@ class TypedObjectFactory(
          attributeName to lazy {
             val fieldValue = buildField(field, attributeName)
             if (field.fieldProjection != null) {
-               projectField(field, attributeName, fieldValue)
+//               val sw = Stopwatch.createStarted()
+               val projection = projectField(field, attributeName, fieldValue)
+//               logger.debug { "Projection to ${projection.type.name.shortDisplayName} took ${sw.elapsed().toMillis()}ms" }
+               projection
 
             } else {
                fieldValue
@@ -156,7 +165,8 @@ class TypedObjectFactory(
          inPlaceQueryEngine,
          accessorHandlers,
          formatSpecs,
-         parsingErrorBehaviour
+         parsingErrorBehaviour,
+         functionResultCache
       )
    }
 
@@ -431,15 +441,6 @@ class TypedObjectFactory(
       val considerAccessor = field.accessor != null && evaluateAccessors && !accessorEvaluationSupressed
       val evaluateTypeExpression = fieldType.hasExpression && evaluateAccessors
 
-      fun failWithTypedNull(): TypedNull {
-         return TypedNull.create(
-            fieldType,
-            ValueLookupReturnedNull(
-               "Can't populate attribute $attributeName on type ${type.name} as no attribute or expression was found on the supplied value of type ${value::class.simpleName}",
-               fieldTypeName
-            )
-         )
-      }
       // Questionable design choice: Favour directly supplied values over accessors and conditions.
       // The idea here is that when we're reading from a file or non parsed source, we need
       // to know how to construct the instance.
@@ -522,10 +523,52 @@ class TypedObjectFactory(
                   strategy = searchStrategy
                )
             )
-            searchedValue ?: failWithTypedNull()
+            searchedValue ?: queryForResult(field, fieldType, attributeName, fieldTypeName)
          }
 
-         else -> failWithTypedNull()
+         else -> queryForResult(field, fieldType, attributeName, fieldTypeName)
+      }
+   }
+
+   private fun failWithTypedNull(
+      fieldType: Type,
+      attributeName: AttributeName,
+      fieldTypeName: QualifiedName,
+      message: String = "Can't populate attribute $attributeName on type ${type.name} as no attribute or expression was found on the supplied value of type ${value::class.simpleName}"
+   ): TypedNull {
+      return TypedNull.create(
+         fieldType,
+         ValueLookupReturnedNull(
+            message,
+            fieldTypeName
+         )
+      )
+   }
+
+   private fun queryForResult(
+      field: Field,
+      type: Type,
+      attributeName: AttributeName,
+      fieldTypeName: QualifiedName
+   ): TypedInstance {
+      return if (inPlaceQueryEngine != null) {
+         val fieldInstanceValidPredicate = buildSpecProvider.provide(field)
+         val buildResult = runBlocking {
+            inPlaceQueryEngine.findType(type, fieldInstanceValidPredicate)
+               .toList()
+         }
+         when {
+            buildResult.isEmpty() -> failWithTypedNull(type, attributeName, fieldTypeName)
+            buildResult.size == 1 -> buildResult.single()
+            else -> {
+               val message =
+                  "Querying to find type ${fieldTypeName.parameterizedName} returned ${buildResult.size} results, which is ambiguous.  Returning null"
+               logger.debug { message }
+               failWithTypedNull(type, attributeName, fieldTypeName, message = message)
+            }
+         }
+      } else {
+         failWithTypedNull(type, attributeName, fieldTypeName)
       }
    }
 

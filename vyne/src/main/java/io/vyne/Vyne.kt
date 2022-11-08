@@ -172,6 +172,7 @@ class Vyne(
          schemaWithType,
          source = Provided,
          inPlaceQueryEngine = queryContext,
+         functionResultCache = queryContext.functionResultCache
       ).build()
      return buildResult
    }

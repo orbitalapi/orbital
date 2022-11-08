@@ -36,6 +36,16 @@ class CopyOnWriteFactBagTest  {
    }
 
    @Test
+   fun `two searches are considered equal`() {
+      val person = TypedInstance.from(schema.type("Person"), """ { "name" : "Jimmy" }""", schema)
+      val actor = TypedInstance.from(schema.type("Actor"), """ { "name" : "Jack" }""", schema)
+      val factBag = CopyOnWriteFactBag(listOf(person, actor), schema)
+
+      factBag.getFact(schema.type("Person"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
+      factBag.searchIsCached(schema.type("Person"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY).should.be.`true`
+   }
+
+   @Test
    fun `querying allow all for collections returns a flattened colelction`() {
       val film = TypedInstance.from(schema.type("Film"), """{
          "cast": [   { "name" : "Jack" } , { "name" : "Jimmy" } ],

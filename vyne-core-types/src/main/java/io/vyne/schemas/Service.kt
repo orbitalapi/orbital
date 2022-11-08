@@ -1,6 +1,7 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.VersionedSource
 import io.vyne.models.TypedInstance
@@ -80,6 +81,11 @@ object OperationNames {
    }
 }
 
+// Need to use @JsonDeserialize on this type, as the PartialXxxx
+// interface is overriding default deserialization behaviour
+// causing all of these to be deserialized as partials, even when
+// they're the real thing
+@JsonDeserialize(`as` = Parameter::class)
 data class Parameter(
    @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
    val type: Type,
@@ -104,6 +110,11 @@ data class Parameter(
    override val typeName: QualifiedName = type.name
 }
 
+// Need to use @JsonDeserialize on this type, as the PartialXxxx
+// interface is overriding default deserialization behaviour
+// causing all of these to be deserialized as partials, even when
+// they're the real thing
+@JsonDeserialize(`as` = Operation::class)
 data class Operation(
    override val qualifiedName: QualifiedName,
    override val parameters: List<Parameter>,
@@ -149,6 +160,7 @@ interface RemoteOperation : MetadataTarget {
       get() = OperationNames.operationName(qualifiedName)
 }
 
+@JsonDeserialize(`as` = QueryOperation::class)
 data class QueryOperation(
    override val qualifiedName: QualifiedName,
    override val parameters: List<Parameter>,
@@ -185,6 +197,12 @@ data class QueryOperation(
    override fun hashCode(): Int = equality.hash()
 }
 
+
+// Need to use @JsonDeserialize on this type, as the PartialXxxx
+// interface is overriding default deserialization behaviour
+// causing all of these to be deserialized as partials, even when
+// they're the real thing
+@JsonDeserialize(`as` = TableOperation::class)
 data class TableOperation(
    override val qualifiedName: QualifiedName,
    @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
@@ -211,6 +229,11 @@ data class TableOperation(
  * StreamOperations encapsulate operations that exclusively require a special
  * streaming connector and driver.
  */
+// Need to use @JsonDeserialize on this type, as the PartialXxxx
+// interface is overriding default deserialization behaviour
+// causing all of these to be deserialized as partials, even when
+// they're the real thing
+@JsonDeserialize(`as` = StreamOperation::class)
 data class StreamOperation(
    override val qualifiedName: QualifiedName,
    @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
@@ -282,7 +305,11 @@ enum class ServiceKind : Serializable {
    }
 }
 
-
+// Need to use @JsonDeserialize on this type, as the PartialXxxx
+// interface is overriding default deserialization behaviour
+// causing all of these to be deserialized as partials, even when
+// they're the real thing
+@JsonDeserialize(`as` = Service::class)
 data class Service(
    override val name: QualifiedName,
    override val operations: List<Operation>,

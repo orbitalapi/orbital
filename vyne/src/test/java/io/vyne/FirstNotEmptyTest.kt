@@ -294,7 +294,7 @@ class FirstNotEmptyTest {
       }
 
    @Test
-   fun `when type is present twice on a model through inheritence but only one value is populated, and the model is returned from a service, then the values from the service are present on query results`() =
+   fun `when type is present twice on a model through inheritence but only one value is populated, and the model is returned from a service, then the values from the service are present on query results`():Unit =
       runBlocking {
          val (vyne, stub) = testVyne(
             """
@@ -334,17 +334,15 @@ class FirstNotEmptyTest {
                else -> error("Expected Id of 1 or 2")
             }
          }
-         runTest {
-            val turbine = vyne.query("find { Id[] } as OutputModel[]").rawResults.testIn(this)
-            // There are two Name types present - Name (the base type), and FirstName (the subtype).
-            // Person1 has their Name (basetype) populated in the service response
-            turbine.expectRawMap().should.equal(mapOf("id" to 1, "discoveredName" to "Jimmy BaseName"))
+         val raw = vyne.query("find { Id[] } as OutputModel[]")
+            .firstRawObject()
+         // There are two Name types present - Name (the base type), and FirstName (the subtype).
+         // Person1 has their Name (basetype) populated in the service response
+         raw.should.equal(mapOf("id" to 1, "discoveredName" to "Jimmy BaseName"))
 
-            // TODO Why is this commented out?
-            // Person2 has their FirstName (subtype) populated in the service response.
-            // expectRawMap().should.equal(mapOf("id" to 2, "discoveredName" to "Jimmy FirstName"))
-            turbine.awaitComplete()
-         }
+         // TODO Why is this commented out?
+         // Person2 has their FirstName (subtype) populated in the service response.
+         // expectRawMap().should.equal(mapOf("id" to 2, "discoveredName" to "Jimmy FirstName"))
       }
 
 

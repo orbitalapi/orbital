@@ -15,6 +15,7 @@ import io.vyne.models.RawObjectMapper
 import io.vyne.models.TypeNamedInstanceMapper
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedInstanceConverter
+import io.vyne.models.functions.FunctionResultCacheKey
 import io.vyne.query.QueryResponse.ResponseStatus
 import io.vyne.query.QueryResponse.ResponseStatus.COMPLETED
 import io.vyne.query.QueryResponse.ResponseStatus.INCOMPLETE
@@ -271,6 +272,8 @@ data class QueryContext(
    val eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
 
    val vyneQueryStatistics: VyneQueryStatistics = VyneQueryStatistics(),
+
+   val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf()
 
    ) : ProfilerOperation by profiler, FactBag by facts, QueryContextEventDispatcher, InPlaceQueryEngine {
 

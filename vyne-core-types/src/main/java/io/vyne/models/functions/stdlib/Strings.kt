@@ -5,6 +5,7 @@ import io.vyne.models.EvaluatedExpression
 import io.vyne.models.EvaluationValueSupplier
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
+import io.vyne.models.functions.FunctionResultCacheKey
 import io.vyne.models.functions.NamedFunctionInvoker
 import io.vyne.models.functions.NullSafeInvoker
 import io.vyne.schemas.Schema
@@ -41,7 +42,8 @@ object Concat : NamedFunctionInvoker {
       returnType: Type,
       function: FunctionAccessor,
       objectFactory: EvaluationValueSupplier,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val result = inputValues.mapNotNull { it.value }.joinToString("")
       return TypedInstance.from(
@@ -285,7 +287,8 @@ object Coalesce : NamedFunctionInvoker {
       returnType: Type,
       function: FunctionAccessor,
       objectFactory: EvaluationValueSupplier,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val firstNotNull = inputValues.firstOrNull { it.value != null }
       return firstNotNull ?: TypedNull.create(returnType)
@@ -300,7 +303,8 @@ object Replace : NamedFunctionInvoker {
       returnType: Type,
       function: FunctionAccessor,
       objectFactory: EvaluationValueSupplier,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
 
       val input: String = inputValues[0].valueAs()

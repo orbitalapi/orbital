@@ -16,7 +16,7 @@ import io.vyne.models.TypedValue
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.query.ExcludeQueryStrategyKlassPredicate.Companion.ExcludeObjectBuilderPredicate
-import io.vyne.query.build.TypedInstancePredicateFactory
+import io.vyne.models.TypedInstancePredicateFactory
 import io.vyne.query.collections.CollectionBuilder
 import io.vyne.query.collections.CollectionProjectionBuilder
 import io.vyne.schemas.AttributeName
@@ -186,7 +186,8 @@ class ObjectBuilder(
          context.schema,
          source = MixedSources,
          inPlaceQueryEngine = context,
-         formatSpecs = formatSpecs
+         formatSpecs = formatSpecs,
+         functionResultCache = context.functionResultCache
       ).evaluateExpressionType(targetType) /* { // What's this do?
          forSourceValues(sourcedByAttributes, it, targetType)
       } */
@@ -223,7 +224,8 @@ class ObjectBuilder(
             context.facts,
             context.schema,
             source = MixedSources,
-            inPlaceQueryEngine = context
+            inPlaceQueryEngine = context,
+            functionResultCache = context.functionResultCache
          ),
          context.schema,
          targetType,
@@ -265,6 +267,15 @@ class ObjectBuilder(
       // If source and target types are ObjectTypes, just copy properties in one iteration
       // With this fix projection time of 1000 items was reduced from 37seconds to 650ms!
       // Enum filtering will be removed once the updated enum processing logic branch is merged.
+
+
+
+      // Update - MP: 7-Nov-22:
+      // This code was iterating all attributes in an object, to copy across.
+      // The approach (should be) broadly redundant, since that's what happens in the TypedObjectFactory.
+      // However, need to regression test this.  if you're seeing this comment from a green build,
+      // it suggests the tests passed, and we can delete the below.
+
       if (targetType.taxiType is ObjectType && context.facts.filter { !it.type.isEnum }.size == 1) {
          val sourceObjectType = context.facts.filter { !it.type.isEnum }.iterator().next()
          if (sourceObjectType is TypedObject) {
@@ -349,7 +360,8 @@ class ObjectBuilder(
          source = MixedSources,
          inPlaceQueryEngine = context,
          accessorHandlers = accessorReaders,
-         formatSpecs = formatSpecs
+         formatSpecs = formatSpecs,
+         functionResultCache = context.functionResultCache
       ).buildAsync {
          forSourceValues(sourcedByAttributes, it, targetType)
       }

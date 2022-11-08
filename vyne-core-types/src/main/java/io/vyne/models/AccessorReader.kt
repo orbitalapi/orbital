@@ -11,7 +11,7 @@ import io.vyne.models.facts.FactBag
 import io.vyne.models.facts.FactDiscoveryStrategy
 import io.vyne.models.facts.FactSearch
 import io.vyne.models.functions.FunctionRegistry
-import io.vyne.models.functions.ReadFunctionFieldEvaluator
+import io.vyne.models.functions.FunctionResultCacheKey
 import io.vyne.models.json.JsonAttributeAccessorParser
 import io.vyne.models.xml.XmlTypedInstanceParser
 import io.vyne.schemas.*
@@ -71,7 +71,7 @@ class FactBagValueSupplier(
    private val thisScopeValueSupplier: EvaluationValueSupplier = empty(schema),
    val typeMatchingStrategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES,
 
-) : EvaluationValueSupplier {
+   ) : EvaluationValueSupplier {
    companion object {
       fun of(
          facts: List<TypedInstance>,
@@ -82,7 +82,7 @@ class FactBagValueSupplier(
          return FactBagValueSupplier(FactBag.of(facts, schema), schema, thisScopeValueSupplier, typeMatchingStrategy)
       }
 
-      fun empty(schema:Schema): EvaluationValueSupplier {
+      fun empty(schema: Schema): EvaluationValueSupplier {
          return of(emptyList(), schema)
       }
    }
@@ -151,7 +151,8 @@ class AccessorReader(
    private val objectFactory: EvaluationValueSupplier,
    private val functionRegistry: FunctionRegistry,
    private val schema: Schema,
-   private val accessorHandlers: List<AccessorHandler<out Accessor>> = emptyList()
+   private val accessorHandlers: List<AccessorHandler<out Accessor>> = emptyList(),
+   private val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf()
 ) {
    val accessorsByType = accessorHandlers.associateBy { it.accessorType }
 
@@ -180,7 +181,7 @@ class AccessorReader(
          objectFactory, schema, this
       )
    }
-   private val readFunctionFieldEvaluator: ReadFunctionFieldEvaluator by lazy { ReadFunctionFieldEvaluator() }
+
    fun read(
       value: Any,
       targetTypeRef: QualifiedName,
@@ -189,7 +190,7 @@ class AccessorReader(
       nullValues: Set<String> = emptySet(),
       source: DataSource,
       nullable: Boolean,
-      allowContextQuerying: Boolean = false
+      allowContextQuerying: Boolean = false,
    ): TypedInstance {
       val targetType = schema.type(targetTypeRef)
       return read(value, targetType, accessor, schema, nullValues, source, nullable, allowContextQuerying)
@@ -203,7 +204,7 @@ class AccessorReader(
       nullValues: Set<String> = emptySet(),
       source: DataSource,
       nullable: Boolean = false,
-      allowContextQuerying: Boolean = false
+      allowContextQuerying: Boolean = false,
    ): TypedInstance {
       if (accessorsByType.containsKey(accessor::class)) {
          val accessorHandler = accessorsByType[accessor::class] as AccessorHandler<in Accessor>
@@ -224,6 +225,7 @@ class AccessorReader(
             }
 
          }
+
          is ConditionalAccessor -> evaluateConditionalAccessor(value, targetType, schema, accessor, nullValues, source)
          is ReadFunctionFieldAccessor -> evaluateReadFunctionAccessor(
             value,
@@ -233,10 +235,21 @@ class AccessorReader(
             nullValues,
             source
          )
-         is FunctionAccessor -> evaluateFunctionAccessor(value, targetType, schema, accessor, nullValues, source)
+
+         is FunctionAccessor -> evaluateFunctionAccessor(
+            value,
+            targetType,
+            schema,
+            accessor,
+            nullValues,
+            source,
+            functionResultCache
+         )
+
          is FieldReferenceSelector -> {
             error("FieldReferenceSelector shouldn't exist as an accessor - expected everything was migrated FieldReferenceExpression")
          }
+
          is LiteralAccessor -> {
             // MP: 26-Oct-21 : Not sure about the Source here.
             // Previously we passed the source that we received as an input.
@@ -253,18 +266,22 @@ class AccessorReader(
             }
             return TypedInstance.from(targetType, accessor.value, schema, source = dataSource)
          }
+
          is FunctionExpressionAccessor -> evaluateFunctionExpressionAccessor(
             value,
             targetType,
             schema,
             accessor,
             nullValues,
-            source
+            source,
+            functionResultCache
          )
+
          is TypeReferenceSelector -> objectFactory.getValue(
             accessor.type.toVyneQualifiedName(),
             queryIfNotFound = allowContextQuerying
          )
+
          is FieldSourceAccessor -> TypedNull.create(targetType, source)
          is LambdaExpression -> DeferredTypedInstance(accessor, schema, source)
          is OperatorExpression -> evaluateOperatorExpression(targetType, accessor, schema, value, nullValues, source)
@@ -273,6 +290,7 @@ class AccessorReader(
             accessor.selectors,
             source
          )
+
          is LiteralExpression -> read(
             value,
             targetType,
@@ -283,6 +301,7 @@ class AccessorReader(
             nullable,
             allowContextQuerying
          )
+
          is FunctionExpression -> read(
             value,
             targetType,
@@ -293,36 +312,51 @@ class AccessorReader(
             nullable,
             allowContextQuerying
          )
+
          is TypeExpression -> readTypeExpression(accessor, allowContextQuerying)
-         is ModelAttributeReferenceSelector -> {
-            val source = objectFactory.getValue(accessor.memberSource.toVyneQualifiedName(), queryIfNotFound = allowContextQuerying)
-            val requestedType = schema.type(accessor.targetType)
-            val accessorReturnType = schema.type(accessor.returnType.toVyneQualifiedName())
-            val discoveryStrategy = // If the accessor is looking for a collection of the requestedType
-            // (ie, is declared as:
-            // field: (Foo:Bar)[]
-               // Then we look for all possible matches
-            // If the accessor is looking for a collection of the requestedType
-            // (ie, is declared as:
-            // field: (Foo:Bar)[]
-            // Then we look for all possible matches
-// If the accessor is looking for a collection of the requestedType
-            // (ie, is declared as:
-            // field: (Foo:Bar)[]
-               // Then we look for all possible matches
-               if (accessorReturnType.isCollection && accessorReturnType.collectionType == requestedType) {
-                  FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY
-               } else {
-                  FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE
-               }
-            val fact = FactBag.of(listOf(source), schema)
-               .getFactOrNull(requestedType, discoveryStrategy)
-            fact ?: TypedNull.create(requestedType, FailedEvaluatedExpression(accessor.asTaxi(), emptyList(), "Unable to find instance of ${requestedType.qualifiedName.shortDisplayName} from source of ${source.type.qualifiedName.shortDisplayName}"))
-         }
+         is ModelAttributeReferenceSelector -> readModelAttributeSelector(accessor, allowContextQuerying, schema)
          else -> {
             TODO("Support for accessor not implemented with type $accessor")
          }
       }
+   }
+
+   private fun readModelAttributeSelector(
+      accessor: ModelAttributeReferenceSelector,
+      allowContextQuerying: Boolean,
+      schema: Schema
+   ): TypedInstance {
+      val source =
+         objectFactory.getValue(accessor.memberSource.toVyneQualifiedName(), queryIfNotFound = allowContextQuerying)
+      val requestedType = schema.type(accessor.targetType)
+      val accessorReturnType = schema.type(accessor.returnType.toVyneQualifiedName())
+      val discoveryStrategy = // If the accessor is looking for a collection of the requestedType
+      // (ie, is declared as:
+      // field: (Foo:Bar)[]
+      // Then we look for all possible matches
+      // If the accessor is looking for a collection of the requestedType
+      // (ie, is declared as:
+      // field: (Foo:Bar)[]
+      // Then we look for all possible matches
+      // If the accessor is looking for a collection of the requestedType
+      // (ie, is declared as:
+      // field: (Foo:Bar)[]
+         // Then we look for all possible matches
+         if (accessorReturnType.isCollection && accessorReturnType.collectionType == requestedType) {
+            FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY
+         } else {
+            FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE
+         }
+      val fact = FactBag.of(listOf(source), schema)
+         .getFactOrNull(requestedType, discoveryStrategy)
+      return fact ?: TypedNull.create(
+         requestedType,
+         FailedEvaluatedExpression(
+            accessor.asTaxi(),
+            emptyList(),
+            "Unable to find instance of ${requestedType.qualifiedName.shortDisplayName} from source of ${source.type.qualifiedName.shortDisplayName}"
+         )
+      )
    }
 
    private fun readTypeExpression(
@@ -360,32 +394,41 @@ class AccessorReader(
    ): TypedInstance {
       val (firstFieldRef, remainingFields) = selectors.takeHead()
       val firstObject = objectFactory.getValue(firstFieldRef.fieldName)
-      var errorMessage:String? = null
+      var errorMessage: String? = null
       val value = remainingFields
          .asSequence()
          .takeWhile { errorMessage == null }
-         .fold(firstObject as TypedInstance?) { lastObject,fieldReference  ->
+         .fold(firstObject as TypedInstance?) { lastObject, fieldReference ->
             val result = when {
                lastObject is TypedNull -> {
-                  errorMessage = "Evaluation returned null where a ${lastObject.type.qualifiedName.shortDisplayName} was expected"
+                  errorMessage =
+                     "Evaluation returned null where a ${lastObject.type.qualifiedName.shortDisplayName} was expected"
                   null
                }
+
                lastObject !is TypedObject -> {
-                  errorMessage = "Evaluation returned a type of ${lastObject!!.type.qualifiedName.shortDisplayName} which doesn't have properties"
+                  errorMessage =
+                     "Evaluation returned a type of ${lastObject!!.type.qualifiedName.shortDisplayName} which doesn't have properties"
                   null
                }
+
                !lastObject.hasAttribute(fieldReference.fieldName) -> {
-                  errorMessage = "Evaluation returned a type of ${lastObject.type.qualifiedName.shortDisplayName} which doesn't have a property named ${fieldReference.fieldName}"
+                  errorMessage =
+                     "Evaluation returned a type of ${lastObject.type.qualifiedName.shortDisplayName} which doesn't have a property named ${fieldReference.fieldName}"
                   null
                }
+
                else -> {
                   lastObject.get(fieldReference.fieldName)
                }
             }
             result
-      }
+         }
       return if (errorMessage != null) {
-         TypedNull.create(targetType,FailedEvaluatedExpression(selectors.joinToString(".")  { it.fieldName }, listOf(firstObject), errorMessage!!))
+         TypedNull.create(
+            targetType,
+            FailedEvaluatedExpression(selectors.joinToString(".") { it.fieldName }, listOf(firstObject), errorMessage!!)
+         )
       } else {
          value!!
       }
@@ -397,7 +440,8 @@ class AccessorReader(
       schema: Schema,
       accessor: FunctionAccessor,
       nullValues: Set<String>,
-      source: DataSource
+      source: DataSource,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val function = accessor.function
       // Note - don't check for == here, because of vararg params
@@ -464,7 +508,16 @@ class AccessorReader(
 
       val allInputs = declaredInputs + declaredVarArgs
 
-      return functionRegistry.invoke(function, allInputs, schema, targetType, accessor, objectFactory, value)
+      return functionRegistry.invoke(
+         function,
+         allInputs,
+         schema,
+         targetType,
+         accessor,
+         objectFactory,
+         value,
+         resultCache
+      )
    }
 
    private fun evaluateFunctionExpressionAccessor(
@@ -473,10 +526,19 @@ class AccessorReader(
       schema: Schema,
       accessor: FunctionExpressionAccessor,
       nullValues: Set<String>,
-      source: DataSource
+      source: DataSource,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val functionResult =
-         this.evaluateFunctionAccessor(value, targetType, schema, accessor.functionAccessor, nullValues, source)
+         this.evaluateFunctionAccessor(
+            value,
+            targetType,
+            schema,
+            accessor.functionAccessor,
+            nullValues,
+            source,
+            resultCache
+         )
       val operator = accessor.operator
       val operand = accessor.operand
       val functionValue = functionResult.value ?: return functionResult
@@ -489,12 +551,14 @@ class AccessorReader(
                else -> error("unexpected function expression function return value $functionValue, $operator, $operand")
             }
          }
+
          FormulaOperator.Subtract -> TypedInstance.from(
             targetType,
             (functionValue as Int).minus(operand as Int),
             schema,
             source = source
          )
+
          else -> error("unexpected function expression function return value $functionValue, $operator, $operand")
       }
    }
@@ -556,6 +620,7 @@ class AccessorReader(
             nullValues = nullValues,
             source = source
          )
+
          else -> {
             if (nullable) {
                return TypedInstance.from(targetType, null, schema, source = source)
@@ -600,6 +665,7 @@ class AccessorReader(
             schema,
             source = source
          )
+
          is Document -> xmlParser.parse(value, targetType, accessor, schema, source, nullable)
          else -> TODO("Value=${value} targetType=${targetType} accessor={$accessor} not supported!")
       }
@@ -644,6 +710,7 @@ class AccessorReader(
          expression.startsWith("/") -> {
             TypedInstance.from(targetType, value[accessor.expression.removePrefix("/")], schema, source = source)
          }
+
          else -> error("Invalid json path - expected something starting with $ or / but got $expression")
 
       }
@@ -657,7 +724,8 @@ class AccessorReader(
       expression: Expression,
       schema: Schema = this.schema,
       nullValues: Set<String> = emptySet(),
-      dataSource: DataSource
+      dataSource: DataSource,
+      resultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf()
    ): TypedInstance {
       return when (expression) {
          is OperatorExpression -> evaluateOperatorExpression(
@@ -668,6 +736,7 @@ class AccessorReader(
             nullValues,
             dataSource
          )
+
          is TypeExpression -> evaluateTypeExpression(expression, schema)
          is FunctionExpression -> evaluateFunctionExpression(
             value,
@@ -675,8 +744,10 @@ class AccessorReader(
             expression,
             schema,
             nullValues,
-            dataSource
+            dataSource,
+            resultCache
          )
+
          is LiteralExpression -> TypedInstance.from(returnType, expression.literal.value, schema, source = dataSource)
          is LambdaExpression -> evaluateLambdaExpression(
             value,
@@ -686,9 +757,17 @@ class AccessorReader(
             nullValues,
             dataSource
          )
+
          is FieldReferenceExpression -> {
             evaluateFieldReference(returnType, expression.selectors, dataSource)
          }
+
+         is ModelAttributeReferenceSelector -> {
+            // not sure what to set for allow context querying - seems like we shouldn't
+            // for reading one value from another, but there might be a use-case
+            readModelAttributeSelector(expression, false, schema)
+         }
+
          else -> TODO("Support for expression type ${expression::class.toString()} is not yet implemented")
       }
    }
@@ -712,9 +791,18 @@ class AccessorReader(
       expression: FunctionExpression,
       schema: Schema,
       nullValues: Set<String>,
-      dataSource: DataSource
+      dataSource: DataSource,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
-      return evaluateFunctionAccessor(value, returnType, schema, expression.function, nullValues, dataSource)
+      return evaluateFunctionAccessor(
+         value,
+         returnType,
+         schema,
+         expression.function,
+         nullValues,
+         dataSource,
+         resultCache
+      )
    }
 
    private fun evaluateTypeExpression(expression: TypeExpression, schema: Schema): TypedInstance {
@@ -796,6 +884,7 @@ class AccessorReader(
                ?: error("No calculator exists to perform operation ${expression.operator} against types ${lhsType.fullyQualifiedName} and ${rhsType.fullyQualifiedName}")
             return calculator.getReturnType(expression.operator, listOf(lhsType, rhsType), schema)
          }
+
          is LiteralExpression -> return schema.type(expression.literal.returnType)
          else -> return schema.type(expression.returnType)
       }
