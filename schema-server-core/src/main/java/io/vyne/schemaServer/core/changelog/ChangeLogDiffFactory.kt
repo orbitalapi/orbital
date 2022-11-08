@@ -7,11 +7,13 @@ import com.google.common.collect.Sets
 import io.vyne.schemaServer.changelog.ChangeLogDiffEntry
 import io.vyne.schemaServer.changelog.DiffKind
 import io.vyne.schemas.*
+import mu.KotlinLogging
 
 class ChangeLogDiffFactory(
    private val namespacesToExclude: List<String> = DEFAULT_EXCLUDED_NAMESPACES
 ) {
 
+   private val logger = KotlinLogging.logger {}
    companion object {
       val DEFAULT_EXCLUDED_NAMESPACES = listOf("lang.taxi", "io.vyne")
    }
@@ -223,9 +225,18 @@ class ChangeLogDiffFactory(
          return emptyList()
       }
       return keys.flatMap { name ->
-         val oldOperation = oldOperations.single { it.qualifiedName == name }
-         val newOperation = newOperations.single { it.qualifiedName == name }
-         compareOperation(oldOperation, newOperation)
+         val oldOperation = oldOperations.filter { it.qualifiedName == name }
+         val newOperation = newOperations.filter { it.qualifiedName == name }
+         if (oldOperation.size != 1) {
+            logger.warn { "Cannot build changelog entry - expected to find a single entry for ${name.longDisplayName} in the old operations, but found ${oldOperation.size}" }
+            return emptyList()
+         }
+         if (newOperation.size != 1) {
+            logger.warn { "Cannot build changelog entry - expected to find a single entry for ${name.longDisplayName} in the new operations, but found ${newOperation.size}" }
+            return emptyList()
+         }
+
+         compareOperation(oldOperation.single(), newOperation.single())
       }
    }
 

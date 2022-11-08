@@ -1,6 +1,7 @@
 package io.vyne.schemaServer.core.packages
 
 import arrow.core.Either
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.PackageIdentifier
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 
 private val logger = KotlinLogging.logger { }
 
@@ -82,12 +84,13 @@ class SchemaServerSourceManager(
    init {
       logger.info { "Initialised SchemaServerSourceProvider" }
       schemaUpdateNotifier.emitCurrentSchemaSet()
-      taxiSchemaStoreWatcher
-         .currentSources
-         .subscribe { currentState ->
-            logger.info { "Received an update of SchemaSources, submitting to schema store" }
-            submitToValidatingStore(currentState)
-         }
+//      taxiSchemaStoreWatcher
+//         .currentSources
+//         .publishOn(Schedulers.boundedElastic())
+//         .subscribe { currentState ->
+//            logger.info { "Received an update of SchemaSources, submitting to schema store" }
+//            submitToValidatingStore(currentState)
+//         }
    }
 
    private fun submitToValidatingStore(updates: PackagesUpdatedMessage): Either<CompilationException, Schema> {
@@ -131,7 +134,13 @@ class SchemaServerSourceManager(
    }
 
    @MessageMapping(RSocketRoutes.SCHEMA_UPDATES)
-   fun onSchemaSetSubscriptionRequest(): Flux<SchemaSet> = schemaUpdateNotifier.schemaSetFlux
+   fun onSchemaSetSubscriptionRequest(): Flux<SchemaSet> {
+      return schemaUpdateNotifier
+         .schemaSetFlux
+         .doOnEach { signal ->
+            logger.info { "Publishing SchemaSet generation ${signal.get()?.generation} on RSocket" }
+         }
+   }
 
    @MessageMapping(RSocketRoutes.SCHEMA_SUBMISSION)
    fun schemaSubmissionFromRSocket(
@@ -141,14 +150,16 @@ class SchemaServerSourceManager(
       val rsocketId = connections.get(requester) ?: error("Unknown rsocket attempting to submit schemas")
       logger.info { "Received schema submission: $rsocketId with publisherId ${submission.sourcePackage.packageMetadata.identifier}" }
       taxiSchemaStoreWatcher.associateConnectionToPublisher(rsocketId, submission.publisherId)
-      // We associate the submission with the RSocket, so we can clean up when its disconnected,
-      // so swap out the id now:
-//      val rsocketSubmission = submission.copy(publisherId = rsocketId)
-//      rSocketPublisherKeepAliveStrategyMonitor.addSchemaToConnection(
-//         rsocketId,
-//         submission.sourcePackage.packageMetadata
-//      )
-      return Mono.just(submitKeepAlivePackage(submission).asSourceSubmissionResponse())
+      return Mono.just(submission)
+         .publishOn(Schedulers.boundedElastic())
+         .map {
+            val result = submitKeepAlivePackage(submission).asSourceSubmissionResponse()
+            val json = jacksonObjectMapper()
+               .findAndRegisterModules()
+               .writerWithDefaultPrettyPrinter()
+               .writeValueAsString(result)
+            result
+         }
    }
 
    private fun handleSchemaPublisherDisconnect(rsocketId: TransportConnectionId) {

@@ -11,8 +11,8 @@ import mu.KotlinLogging
 import java.nio.file.Path
 
 /**
- * Watches spec lifecycle events, and creates
- * the corresponding repositories for them
+ * Watches spec lifecycle events, (eg., adding and removing new repositories)
+ * and builds the corresponding repositories for them
  */
 class ReactiveRepositoryManager(
    private val fileRepoFactory: FileSystemPackageLoaderFactory,

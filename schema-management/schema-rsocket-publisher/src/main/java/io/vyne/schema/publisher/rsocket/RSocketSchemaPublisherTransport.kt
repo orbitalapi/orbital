@@ -23,6 +23,7 @@ import lang.taxi.CompilationException
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import reactor.core.scheduler.Schedulers
 
 
 class RSocketSchemaPublisherTransport(
@@ -84,6 +85,8 @@ class RSocketSchemaPublisherTransport(
             // Possibly a memory leak here, as the subscription continues on longer than it should.
             // But we don't do any work on the remaining subscription, so hopefully cheap.
             .filter { !isCancelled }
+            .subscribeOn(Schedulers.boundedElastic())
+            .publishOn(Schedulers.boundedElastic())
             .subscribe { rsocket ->
                logger.debug { "$publisherId: Retrieved new connected rsocket, will use for schema publication" }
                // https://stackoverflow.com/a/62776146
@@ -95,6 +98,7 @@ class RSocketSchemaPublisherTransport(
                      messageData, metadata
                   )
                )
+                  .publishOn(Schedulers.boundedElastic())
                   .subscribe { responsePayload ->
                      logger.debug { "$publisherId: Received response from schema submission" }
                      val result = objectMapper.readValue<SourceSubmissionResponse>(responsePayload.data().array())

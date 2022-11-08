@@ -36,14 +36,6 @@ class RepositoryLifecycleManager(
 
    override val sourcesChanged: Flux<SourcesChangedMessage> = sourcesChangedSink.asFlux()
 
-//   override fun fileRepositoryAdded(repository: FileSystemSchemaRepository) {
-//      repositoryAddedSink.emitNext(repository, emitFailureHandler)
-//   }
-//
-//   override fun gitRepositoryAdded(repository: GitRepositorySourceLoader) {
-//      repositoryAddedSink.emitNext(repository, emitFailureHandler)
-//   }
-
    init {
       repositoryAdded
          .subscribe { schemaTransport ->

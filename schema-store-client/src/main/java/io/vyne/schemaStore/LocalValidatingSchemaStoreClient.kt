@@ -206,7 +206,8 @@ abstract class ValidatingSchemaStoreClient(
              else -> packagesById.remove(schemaIdToRemove.unversionedId)
          }
       }
-      rebuildAndStoreSchema()
+
+      rebuildAndStoreSchema(returnValue.orNull())
       logger.info { "After schema update operation, now on generation $generation" }
       lastSubmissionResult = returnValue.mapLeft { CompilationException(it) }
 
@@ -223,9 +224,13 @@ abstract class ValidatingSchemaStoreClient(
 
    protected abstract fun incrementGenerationCounterAndGet(): Int
 
-   private fun rebuildAndStoreSchema(): SchemaSet {
+   private fun rebuildAndStoreSchema(schema: Schema?): SchemaSet {
       val result = synchronized(this) {
-         val parsedResult = SchemaSet.fromParsed(packages, incrementGenerationCounterAndGet())
+         val parsedResult = if (schema != null) {
+            SchemaSet.fromSchema(packages, schema as TaxiSchema, incrementGenerationCounterAndGet())
+         } else {
+            SchemaSet.fromParsed(packages, incrementGenerationCounterAndGet())
+         }
          log().info("Rebuilt schema cache - $parsedResult")
          schemaSetHolder.compute(SchemaSetCacheKey) { _, current ->
             when {

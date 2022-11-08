@@ -9,6 +9,7 @@ import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
 import lang.taxi.errors
 import mu.KotlinLogging
+import reactor.core.scheduler.Schedulers
 
 /**
  * Watches local schema repositories, and publishes changes out to the
@@ -26,17 +27,12 @@ class SourceWatchingSchemaPublisher(
    init {
       eventSource
          .sourcesChanged
+         .publishOn(Schedulers.boundedElastic())
          .subscribe { message ->
             logger.info { "Received source change message for packages ${message.packages.joinToString{ it.identifier.id} }" }
             submitSources(message.packages)
          }
    }
-
-//   fun refreshAllSources(): List<SourcePackage> {
-//      val allSources = sourceLoaders.map { it.loadSourcePackage() }
-//      submitSources(allSources)
-//      return allSources
-//   }
 
    private fun submitSources(sources: List<SourcePackage>): Either<CompilationException, Schema> {
       val result: Either<CompilationException, Schema> = schemaPublisher.submitPackages(sources)

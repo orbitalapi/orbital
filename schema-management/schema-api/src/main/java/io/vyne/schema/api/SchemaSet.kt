@@ -9,10 +9,14 @@ import io.vyne.utils.log
 import mu.KotlinLogging
 import java.io.Serializable
 
-data class SchemaSet private constructor(val parsedPackages: List<ParsedPackage>, val generation: Int) : Serializable {
-   val id: Int = parsedPackages.hashCode()
+data class SchemaSet private constructor(
+   val parsedPackages: List<ParsedPackage>,
+   val generation: Int,
+   @Transient
+   private var _taxiSchemas: List<TaxiSchema>? = null
 
-   private val packagesById = parsedPackages.associateBy { it.identifier.unversionedId }
+) : Serializable {
+   val id: Int = parsedPackages.hashCode()
 
    init {
       log().info("SchemaSet with generation $generation created")
@@ -38,8 +42,8 @@ data class SchemaSet private constructor(val parsedPackages: List<ParsedPackage>
    // taxi stack serializable).
    // However, after deserialization, transient fields are not set, so we need
    // to reinit before read.
-   @Transient
-   private var _taxiSchemas: List<TaxiSchema>? = null
+//   @Transient
+//   private var _taxiSchemas: List<TaxiSchema>? = null
 
    @Transient
    private var _rawSchemaStrings: List<String>? = null
@@ -105,7 +109,10 @@ data class SchemaSet private constructor(val parsedPackages: List<ParsedPackage>
       } else {
          // TODO : Partway through simplifying everything to have a single schema.
          // Not sure what the impact of changing this is, so will chicken out and defer
-         this._taxiSchemas = listOf(TaxiSchema.from(validPackages.map { it.toSourcePackage() }))
+         if (this._taxiSchemas == null) {
+            this._taxiSchemas = listOf(TaxiSchema.from(validPackages.map { it.toSourcePackage() }))
+         }
+
          this._rawSchemaStrings = this.validSources.map { it.content }
          this._compositeSchema = CompositeSchema(this._taxiSchemas!!)
       }
@@ -122,6 +129,9 @@ data class SchemaSet private constructor(val parsedPackages: List<ParsedPackage>
 
       fun fromParsed(sources: List<ParsedPackage>, generation: Int): SchemaSet {
          return SchemaSet(sources, generation)
+      }
+      fun fromSchema(sources: List<ParsedPackage>, schema:TaxiSchema, generation: Int): SchemaSet {
+         return SchemaSet(sources, generation, listOf(schema))
       }
 
       @Deprecated("call fromParsed instead")
