@@ -3,6 +3,10 @@ package io.vyne.pipelines.jet.pipelines
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.jet.Job
 import com.hazelcast.jet.Util
+import com.hazelcast.jet.config.JobConfig
+import com.hazelcast.jet.core.JobNotFoundException
+import com.hazelcast.jet.impl.JobRecord
+import com.hazelcast.jet.impl.JobResult
 import com.hazelcast.map.IMap
 import com.hazelcast.query.Predicates
 import io.vyne.pipelines.jet.api.JobStatus
@@ -21,6 +25,7 @@ import org.springframework.stereotype.Component
 import java.io.Serializable
 import java.time.Instant
 import java.util.concurrent.TimeUnit
+
 
 private typealias JetJobId = String
 
@@ -76,7 +81,7 @@ class PipelineManager(
       val isScheduledForNextTrigger: Boolean
       try {
          isScheduledForNextTrigger = scheduledPipelines[pipelineSpecId]?.let { scheduledPipeline ->
-            if (scheduledPipeline.jobId == null || hazelcastInstance.jet.getJob(scheduledPipeline.jobId)?.status?.isTerminal == true) {
+            if (scheduledPipeline.jobId == null || isJobTerminated(scheduledPipeline.jobId)) {
                scheduledPipelines.put(
                   pipelineSpecId,
                   scheduledPipeline.copy(nextRunTime = Instant.now().minusMillis(500L))
@@ -91,6 +96,16 @@ class PipelineManager(
          scheduledPipelines.unlock(pipelineSpecId)
       }
       return isScheduledForNextTrigger
+   }
+
+   private fun isJobTerminated(jobId: Long): Boolean {
+      return try {
+         hazelcastInstance.jet.getJob(jobId)?.status?.isTerminal ?: true
+      } catch (e: JobNotFoundException) {
+         //Looks like previously completed job are removed from internal job repository in jet after a certain period.
+         // When that happens jet throws JobNotFoundException.
+         true
+      }
    }
 
    private fun scheduleJobToBeExecuted(
