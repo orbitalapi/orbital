@@ -41,26 +41,6 @@ class OrbitalStationApp {
       }
    }
 
-   @Bean
-   fun configRepoLoader(
-      @Value("\${vyne.repositories.config-file:repositories.conf}") configFilePath: Path,
-      @Value("\${vyne.repositories.repository-path:#{null}}") repositoryHome: Path? = null,
-   ): SchemaRepositoryConfigLoader {
-      return if (repositoryHome != null) {
-         logger.info { "vyne.repositories.repository-path was set to $repositoryHome running a file-based repository from this path, ignoring any other config from $configFilePath" }
-         return InMemorySchemaRepositoryConfigLoader(
-            SchemaRepositoryConfig(
-               FileSystemSchemaRepositoryConfig(
-                  projectPaths = listOf(repositoryHome)
-               )
-            )
-         )
-      } else {
-         logger.info { "Using repository config file at $configFilePath" }
-         FileSchemaRepositoryConfigLoader(configFilePath)
-      }
-   }
-
    @Autowired
    fun logInfo(@Autowired(required = false) buildInfo: BuildProperties? = null) {
       val baseVersion = buildInfo?.get("baseVersion")

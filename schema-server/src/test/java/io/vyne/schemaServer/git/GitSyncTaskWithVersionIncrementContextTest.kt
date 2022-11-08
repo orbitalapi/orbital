@@ -16,10 +16,8 @@ import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfig
 import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfigLoader
 import io.vyne.schemaServer.core.file.deployProject
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
-import io.vyne.schemaServer.core.git.GitSchemaConfiguration
 import io.vyne.schemaServer.core.git.GitSchemaRepositoryConfig
 import io.vyne.schemaServer.core.git.GitSyncTask
-import io.vyne.schemaServer.core.repositories.lifecycle.RepositoryLifecycleEventDispatcher
 import io.vyne.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
 import mu.KotlinLogging
 import org.eclipse.jgit.api.Git
@@ -128,7 +126,7 @@ class GitSyncTaskWithVersionIncrementContextTest {
 
    @Profile("test")
    @Configuration
-   @Import(SchemaPublicationConfig::class, GitSchemaConfiguration::class, GitSyncTask::class)
+   @Import(SchemaPublicationConfig::class, GitSyncTask::class)
    class TestConfig {
       @Bean
       fun configLoader(eventDispatcher: RepositorySpecLifecycleEventDispatcher): SchemaRepositoryConfigLoader {
