@@ -8,6 +8,7 @@ import com.hazelcast.core.IExecutorService
 import com.spikhalskiy.futurity.Futurity
 import io.vyne.Vyne
 import io.vyne.models.TypedInstance
+import io.vyne.models.facts.FactBag
 import io.vyne.query.QueryContext
 import io.vyne.query.SerializableVyneQueryStatistics
 import io.vyne.query.VyneQueryStatistics
@@ -38,7 +39,7 @@ class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistrib
 
     val hazelcastScheduler: Scheduler = Schedulers.parallel()
 
-    override fun project(results: Flow<TypedInstance>, context:QueryContext):Flow<Pair<TypedInstance, VyneQueryStatistics>> {
+    override fun project(results: Flow<TypedInstance>, context: QueryContext, globalFacts: FactBag):Flow<Pair<TypedInstance, VyneQueryStatistics>> {
 
         val instance:HazelcastInstance = Hazelcast.getAllHazelcastInstances().first()
         val executorService:IExecutorService = instance.getExecutorService("projectionExecutorService")

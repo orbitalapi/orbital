@@ -47,6 +47,8 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
       return CascadingFactBag(other, this)
    }
 
+   override fun rootFacts(): List<TypedInstance> = primary.rootFacts() + secondary.rootFacts()
+
 
    override fun merge(fact: TypedInstance): FactBag {
       return CascadingFactBag(primary.merge(fact), this.secondary)

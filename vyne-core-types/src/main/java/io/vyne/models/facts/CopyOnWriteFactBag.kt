@@ -27,6 +27,10 @@ open class CopyOnWriteFactBag(
    constructor(facts: Collection<TypedInstance>, schema: Schema) : this(CopyOnWriteArrayList(facts), schema)
    constructor(fact: TypedInstance, schema: Schema) : this(listOf(fact), schema)
 
+   override fun rootFacts(): List<TypedInstance> {
+      return facts
+   }
+
    open fun copy(): CopyOnWriteFactBag {
       return CopyOnWriteFactBag(facts, schema)
    }

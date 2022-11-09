@@ -11,6 +11,8 @@ class EmptyFactBag(private val list: List<TypedInstance> = emptyList()) : FactBa
    private fun notSupported(): Nothing = throw RuntimeException("Not supported on an EmptyFactBag")
    override fun breadthFirstFilter(strategy: FactDiscoveryStrategy, predicate: (TypedInstance) -> Boolean): List<TypedInstance> = emptyList()
 
+   override fun rootFacts(): List<TypedInstance> = emptyList()
+
    override fun addFact(fact: TypedInstance): FactBag = notSupported()
 
    override fun addFacts(facts: Collection<TypedInstance>): FactBag = notSupported()
@@ -67,6 +69,12 @@ interface FactBag : Collection<TypedInstance> {
          return EmptyFactBag()
       }
    }
+
+   /**
+    * Returns the facts that were provided top-level only.
+    * Other facts may be available by traversing the trees of these facts
+    */
+   fun rootFacts():List<TypedInstance>
 
    fun merge(other: FactBag): FactBag
 
