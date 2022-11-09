@@ -72,10 +72,12 @@ class SchemaPathFindingGraph(connections: HashMap<Element, Set<GraphEdge<Element
 
 
 
-      logger.debug { "Generated path with hash ${executionPath.pathHashExcludingWeights()}" }
+
       return if (executionPath.state() != key.targetFact) {
+         logger.debug { "No path found between ${key.startFact} and ${key.targetFact}" }
          null
       } else {
+         logger.debug { "Generated path with hash ${executionPath.pathHashExcludingWeights()}" }
          executionPath
       }
    }

@@ -1,6 +1,7 @@
 package io.vyne.query.projection
 
 import io.vyne.models.TypedInstance
+import io.vyne.models.facts.FactBag
 import io.vyne.query.QueryContext
 import io.vyne.query.VyneQueryStatistics
 import io.vyne.schemas.Type
@@ -30,7 +31,8 @@ class LocalProjectionProvider : ProjectionProvider {
 
    override fun project(
       results: Flow<TypedInstance>,
-      context: QueryContext
+      context: QueryContext,
+      globalFacts: FactBag
    ): Flow<Pair<TypedInstance, VyneQueryStatistics>> {
 
       context.cancelFlux.subscribe {
@@ -55,7 +57,7 @@ class LocalProjectionProvider : ProjectionProvider {
                   cancel()
                }
                val projectionType = selectProjectionType(context.projectResultsTo!!)
-               val projectionContext = context.only(it.value)
+               val projectionContext = context.only(globalFacts.rootFacts() + it.value)
                val buildResult = projectionContext.build(projectionType.qualifiedName)
                buildResult.results.map { it to projectionContext.vyneQueryStatistics }
             }

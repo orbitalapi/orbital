@@ -1,11 +1,7 @@
 package io.vyne.query
 
 import com.google.common.base.Stopwatch
-import io.vyne.FactSetId
-import io.vyne.FactSetMap
-import io.vyne.FactSets
-import io.vyne.ModelContainer
-import io.vyne.filterFactSets
+import io.vyne.*
 import io.vyne.models.DataSource
 import io.vyne.models.DataSourceUpdater
 import io.vyne.models.MixedSources
@@ -129,29 +125,23 @@ interface QueryEngine {
  * A query engine which allows for the provision of initial state
  */
 class StatefulQueryEngine(
-   initialState: FactSetMap,
-   schema: Schema,
-   strategies: List<QueryStrategy>,
+   private val initialState: FactSetMap,
+   override val schema: Schema,
+   private val strategies: List<QueryStrategy>,
    private val profiler: QueryProfiler = QueryProfiler(),
-   projectionProvider: ProjectionProvider,
-   operationInvocationService: OperationInvocationService,
-   formatSpecs: List<ModelFormatSpec>
+   private val projectionProvider: ProjectionProvider,
+   override val operationInvocationService: OperationInvocationService,
+   val formatSpecs: List<ModelFormatSpec>
 ) :
-   BaseQueryEngine(schema, strategies, projectionProvider, operationInvocationService, formatSpecs = formatSpecs),
+   QueryEngine,
    ModelContainer {
    private val factSets: FactSetMap = FactSetMap.create()
+
 
    init {
       factSets.putAll(initialState)
    }
 
-
-//   override fun find(expression: String, factSet: Set<TypedInstance>): QueryResult {
-//      val nodeSetsWithLocalState = factSets.copy()
-//      nodeSetsWithLocalState.putAll(FactSets.DEFAULT, factSet)
-//
-//      return super.find(expression, nodeSetsWithLocalState.values().toSet())
-//   }
 
    override fun addModel(model: TypedInstance, factSetId: FactSetId): StatefulQueryEngine {
       this.factSets[factSetId].add(model)
@@ -177,20 +167,6 @@ class StatefulQueryEngine(
          eventBroker = eventBroker
       )
    }
-
-}
-
-// Note:  originally, there were two query engines (Default and Stateful), but only one was ever used (stateful).
-// I've removed the default, and made it the BaseQueryEngine.  However, even this might be overkill, and we may
-// fold this into a single class later.
-// The separation between what's in the base and whats in the concrete impl. is not well thought out currently.
-abstract class BaseQueryEngine(
-   override val schema: Schema,
-   private val strategies: List<QueryStrategy>,
-   private val projectionProvider: ProjectionProvider,
-   override val operationInvocationService: OperationInvocationService,
-   val formatSpecs: List<ModelFormatSpec>
-) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
 
@@ -550,7 +526,13 @@ abstract class BaseQueryEngine(
       val results: Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (context.projectResultsTo) {
          null -> resultsFlow.map { it to context.vyneQueryStatistics }
          else -> {
-            projectionProvider.project(resultsFlow, context)
+            // Pick the facts that we want to make available during projection.
+            // Currently, we pass the initial state (things from the `given {}` clause, and anything about the user).
+            // We may wish to expand this.
+            // The projection provider handles picking the correct entity to project,
+            // so we don't need to consdier that here.
+            val factsToPropagate = initialState.toFactBag(schema)
+            projectionProvider.project(resultsFlow, context, factsToPropagate)
          }
       }
 

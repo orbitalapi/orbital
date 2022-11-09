@@ -78,10 +78,6 @@ class ParameterFactory {
       val fields = paramType.attributes.map { (attributeName, field) ->
          val attributeType = context.schema.type(field.type.fullyQualifiedName)
 
-         // THIS IS WHERE I'M UP TO.
-         // Try restructing this to a strategy approach.
-         // Can we try searching within the context before we try constructing?
-         // what are the impacts?
          var attributeValue: TypedInstance? =
             context.getFactOrNull(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
 
