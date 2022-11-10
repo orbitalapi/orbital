@@ -1,6 +1,7 @@
 package io.vyne
 
 import com.google.common.annotations.VisibleForTesting
+import com.google.common.base.Stopwatch
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObjectFactory
@@ -75,7 +76,9 @@ class Vyne(
       clientQueryId: String? = null,
       eventBroker: QueryContextEventBroker = QueryContextEventBroker()
    ): QueryResult {
+      val sw = Stopwatch.createStarted()
       val vyneQuery = Compiler(source = vyneQlQuery, importSources = listOf(this.schema.taxi)).queries().first()
+      log().debug("Compiled query in ${sw.elapsed().toMillis()}ms")
       return query(vyneQuery, queryId, clientQueryId, eventBroker)
    }
 

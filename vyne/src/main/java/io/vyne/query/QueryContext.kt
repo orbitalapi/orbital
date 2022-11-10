@@ -25,6 +25,7 @@ import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -147,7 +148,7 @@ data class QueryContext(
 
    val vyneQueryStatistics: VyneQueryStatistics = VyneQueryStatistics(),
 
-   val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf()
+   val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = ConcurrentHashMap()
 
    ) : ProfilerOperation by profiler, FactBag by facts, QueryContextEventDispatcher, InPlaceQueryEngine {
 
