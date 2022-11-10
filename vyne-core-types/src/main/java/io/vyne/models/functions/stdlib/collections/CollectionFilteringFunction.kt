@@ -56,7 +56,8 @@ open class CollectionFilteringFunction {
             collectionMember,
             expressionReturnType,
             deferredInstance.expression,
-            dataSource = dataSource
+            dataSource = dataSource,
+            format = null
          )
 
          if (evaluated.type.basePrimitiveTypeName?.parameterizedName != PrimitiveType.BOOLEAN.qualifiedName) {

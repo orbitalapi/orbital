@@ -5,6 +5,7 @@ import io.vyne.utils.ImmutableEquality
 import lang.taxi.accessors.Accessor
 import lang.taxi.types.FieldProjection
 import lang.taxi.types.FieldSetExpression
+import lang.taxi.types.FormatsAndZoneOffset
 
 // Note: I'm progressively moving this towards Taxi schemas, as discussed
 // on the Type comment.
@@ -25,7 +26,8 @@ data class Field(
    val metadata:List<Metadata> = emptyList(),
    val sourcedBy: FieldSource? = null,
    @get:JsonIgnore
-   val fieldProjection: FieldProjection? = null
+   val fieldProjection: FieldProjection? = null,
+   val format: FormatsAndZoneOffset?
 ) {
    fun hasMetadata(name: QualifiedName): Boolean {
       return this.metadata.any { it.name == name }

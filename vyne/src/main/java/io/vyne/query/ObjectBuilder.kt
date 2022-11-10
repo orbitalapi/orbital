@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.CollectionProjectionExpressionAccessor
 import lang.taxi.accessors.ConditionalAccessor
+import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.ObjectType
 import java.util.*
 
@@ -91,7 +92,7 @@ class ObjectBuilder(
                // Handle formatting
                // Choosing to copy the type, since as we got this far, we know that
                // the types are compatible.  However, this may prove to cause problems.
-               return convertValue(discoveredValue, targetType)
+               return convertValue(discoveredValue, targetType, format = null)
             }
             else -> {
                // last attempt
@@ -188,7 +189,7 @@ class ObjectBuilder(
          inPlaceQueryEngine = context,
          formatSpecs = formatSpecs,
          functionResultCache = context.functionResultCache
-      ).evaluateExpressionType(targetType) /* { // What's this do?
+      ).evaluateExpressionType(targetType, null) /* { // What's this do?
          forSourceValues(sourcedByAttributes, it, targetType)
       } */
    }
@@ -242,9 +243,9 @@ class ObjectBuilder(
       return build(context.schema.type(targetType), spec , facts)
    }
 
-   private fun convertValue(discoveredValue: TypedInstance, targetType: Type): TypedInstance {
-      return if (discoveredValue is TypedValue && ((targetType.hasFormat && targetType.format != discoveredValue.type.format) || targetType.offset != discoveredValue.type.offset)) {
-         discoveredValue.copy(targetType)
+   private fun convertValue(discoveredValue: TypedInstance, targetType: Type, format: FormatsAndZoneOffset?): TypedInstance {
+      return if (discoveredValue is TypedValue && format != null && format != discoveredValue.format) {
+         discoveredValue.copy(format = format)
       } else {
          discoveredValue
       }
@@ -292,7 +293,7 @@ class ObjectBuilder(
                         else -> {
                            val attributeSatisfiesPredicate = fieldInstanceValidPredicate.isValid(value)
                            if (attributeSatisfiesPredicate) {
-                              populatedValues[attributeName] = convertValue(value, targetAttributeType)
+                              populatedValues[attributeName] = convertValue(value, targetAttributeType, field.format)
                            } else {
                               missingAttributes[attributeName] = field
                            }
@@ -339,7 +340,7 @@ class ObjectBuilder(
 
 
                if (value != null) {
-                  populatedValues[attributeName] = convertValue(value, targetAttributeType)
+                  populatedValues[attributeName] = convertValue(value, targetAttributeType, field.format)
 //                  log().debug("Object builder ${this.id} populated attribute $attributeName : ${targetAttributeType.name.longDisplayName}.  Now contains keys: ${populatedValues.keys}")
                }
             }

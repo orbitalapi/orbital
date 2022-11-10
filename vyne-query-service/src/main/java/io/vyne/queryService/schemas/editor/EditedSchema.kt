@@ -14,6 +14,7 @@ import lang.taxi.expressions.Expression
 import lang.taxi.services.FilterCapability
 import lang.taxi.services.QueryOperationCapability
 import lang.taxi.services.SimpleQueryCapability
+import lang.taxi.types.FormatsAndZoneOffset
 
 /**
  * Not a real schema!
@@ -64,7 +65,8 @@ data class EditedType(
    override val offset: Int?,
    override val expression: Expression?,
    override val declaresFormat: Boolean,
-   override val sources: List<VersionedSource>
+   override val sources: List<VersionedSource>,
+   override val formatAndZoneOffset: FormatsAndZoneOffset?
 ) : PartialType
 
 @JsonIgnoreProperties(ignoreUnknown = true)

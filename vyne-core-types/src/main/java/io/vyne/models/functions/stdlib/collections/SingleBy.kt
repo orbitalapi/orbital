@@ -7,6 +7,7 @@ import io.vyne.models.functions.NamedFunctionInvoker
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.functions.FunctionAccessor
+import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
 
@@ -20,6 +21,7 @@ object SingleBy : NamedFunctionInvoker {
       returnType: Type,
       function: FunctionAccessor,
       objectFactory: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
       rawMessageBeingParsed: Any?,
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
@@ -49,7 +51,8 @@ object SingleBy : NamedFunctionInvoker {
                collectionMember,
                expressionReturnType,
                deferredInstance.expression,
-               dataSource = dataSource
+               dataSource = dataSource,
+               format = null
             )
             evaluated
          }

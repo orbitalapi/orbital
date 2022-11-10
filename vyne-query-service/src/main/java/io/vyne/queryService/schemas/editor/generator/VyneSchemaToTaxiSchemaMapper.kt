@@ -207,6 +207,7 @@ class VyneSchemaToTaxiSchemaMapper(
             field.defaultValue,
             null,
             null,
+            field.format,
             CompilationUnit.generatedFor(type.fullyQualifiedName)
          )
       }
@@ -224,15 +225,7 @@ class VyneSchemaToTaxiSchemaMapper(
                   }
                },
             type.inheritsFromTypeNames.map { getOrCreateType(it) }.toSet(),
-            if (type.declaresFormat) {
-               type.format
-            } else {
-               null
-            },
-            null,
-            type.unformattedTypeName?.let { getOrCreateType(it) },
-            null,
-            type.offset,
+            type.formatAndZoneOffset,
             false,
             if (fields.isEmpty()) TypeKind.Type else TypeKind.Model,
             type.expression,

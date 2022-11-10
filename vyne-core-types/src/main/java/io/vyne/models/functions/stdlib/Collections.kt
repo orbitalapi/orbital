@@ -10,6 +10,7 @@ import io.vyne.models.functions.NullSafeInvoker
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.functions.FunctionAccessor
+import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
 
@@ -46,7 +47,8 @@ abstract class BooleanPredicateEvaluator(
       returnType: Type,
       function: FunctionAccessor,
       rawMessageBeingParsed: Any?,
-      thisScopeValueSupplier: EvaluationValueSupplier
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?
    ): TypedInstance {
       return expectAllBoolean(inputValues, function, returnType)
          .map(reducer)
@@ -97,7 +99,8 @@ object Contains : NullSafeInvoker() {
       returnType: Type,
       function: FunctionAccessor,
       rawMessageBeingParsed: Any?,
-      thisScopeValueSupplier: EvaluationValueSupplier
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?
    ): TypedInstance {
       val collection = inputValues[0] as TypedCollection
       val searchTarget = inputValues[1] as TypedInstance

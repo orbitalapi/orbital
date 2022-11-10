@@ -11,6 +11,7 @@ import io.vyne.utils.log
 import lang.taxi.Equality
 import lang.taxi.accessors.NullValue
 import lang.taxi.types.ArrayType
+import lang.taxi.types.FormatsAndZoneOffset
 
 
 interface TypedInstance {
@@ -137,7 +138,8 @@ interface TypedInstance {
          functionRegistry: FunctionRegistry = FunctionRegistry.default,
          formatSpecs: List<ModelFormatSpec> = emptyList(),
          inPlaceQueryEngine: InPlaceQueryEngine? = null,
-         parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException
+         parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
+         format: FormatsAndZoneOffset? = type.formatAndZoneOffset
       ): TypedInstance {
          return when {
             value is TypedInstance -> value
@@ -156,7 +158,8 @@ interface TypedInstance {
                   functionRegistry,
                   formatSpecs,
                   inPlaceQueryEngine,
-                  parsingErrorBehaviour
+                  parsingErrorBehaviour,
+                  format
                )
             }
 
@@ -175,7 +178,8 @@ interface TypedInstance {
                         inPlaceQueryEngine = inPlaceQueryEngine,
                         formatSpecs = formatSpecs,
                         functionRegistry = functionRegistry,
-                        parsingErrorBehaviour = parsingErrorBehaviour
+                        parsingErrorBehaviour = parsingErrorBehaviour,
+                        format = format
                      )
                   },
                   source
@@ -187,7 +191,7 @@ interface TypedInstance {
             }
 
             type.isScalar -> {
-               TypedValue.from(type, value, performTypeConversions, source, parsingErrorBehaviour)
+               TypedValue.from(type, value, performTypeConversions, source, parsingErrorBehaviour, format)
             }
             // This is here primarily for readability.  We could just let this fall through to below.
             isJson(value) -> TypedObjectFactory(
@@ -200,7 +204,7 @@ interface TypedInstance {
                functionRegistry = functionRegistry,
                inPlaceQueryEngine = inPlaceQueryEngine,
                formatSpecs = formatSpecs,
-               parsingErrorBehaviour = parsingErrorBehaviour
+               parsingErrorBehaviour = parsingErrorBehaviour,
             ).build()
 
             // This is a bit special...value isn't a collection, but the type is.  Oooo!

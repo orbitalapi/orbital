@@ -28,8 +28,10 @@ object TaxiTypeMapper {
                      typeDoc = field.typeDoc,
                      nullable = field.nullable,
                      metadata = parseAnnotationsToMetadata(field.annotations),
-                     fieldProjection = field.projection
+                     fieldProjection = field.projection,
+                     format = field.formatAndZoneOffset
                   )
+
                   else -> field.name to Field(
                      field.type.qualifiedName.fqn(),
                      constraintProvider = buildDeferredConstraintProvider(
@@ -52,7 +54,8 @@ object TaxiTypeMapper {
                            (field.accessor as FieldSourceAccessor).sourceType.toVyneQualifiedName()
                         )
                      else null,
-                     fieldProjection = field.projection
+                     fieldProjection = field.projection,
+                     format = field.formatAndZoneOffset
                   )
                }
             }.toMap()
@@ -69,6 +72,7 @@ object TaxiTypeMapper {
                typeCache = typeCache
             )
          }
+
          is TypeAlias -> {
             Type(
                QualifiedName(taxiType.qualifiedName),
@@ -80,6 +84,7 @@ object TaxiTypeMapper {
                typeCache = typeCache
             )
          }
+
          is EnumType -> {
             val enumValues = taxiType.values.map { EnumValue(it.name, it.value, it.synonyms, it.typeDoc) }
             Type(
@@ -93,11 +98,13 @@ object TaxiTypeMapper {
                typeCache = typeCache
             )
          }
+
          is ArrayType -> {
             val collectionType = typeCache.type(taxiType.parameters[0].qualifiedName)
 
             collectionType.asArrayType()
          }
+
          else -> Type(
             QualifiedName(taxiType.qualifiedName),
             modifiers = parseModifiers(taxiType),
@@ -135,6 +142,7 @@ object TaxiTypeMapper {
                lang.taxi.types.Modifier.PARAMETER_TYPE -> Modifier.PARAMETER_TYPE
             }
          }
+
          else -> emptyList()
       }
    }

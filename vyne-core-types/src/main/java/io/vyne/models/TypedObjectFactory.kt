@@ -1,7 +1,6 @@
 package io.vyne.models
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.common.base.Stopwatch
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
 import io.vyne.models.facts.*
 import io.vyne.models.format.FormatDetector
@@ -22,6 +21,7 @@ import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.ColumnAccessor
 import lang.taxi.accessors.JsonPathAccessor
 import lang.taxi.expressions.Expression
+import lang.taxi.types.FormatsAndZoneOffset
 import mu.KotlinLogging
 import org.apache.commons.csv.CSVRecord
 
@@ -246,7 +246,7 @@ class TypedObjectFactory(
          )
       }
       if (type.isScalar && type.hasExpression) {
-         return evaluateExpressionType(type)
+         return evaluateExpressionType(type, null)
       }
 
       // TODO : Naieve first pass.
@@ -400,26 +400,26 @@ class TypedObjectFactory(
       return getValue(attributeName, allowAccessorEvaluation = true)
    }
 
-   override fun readAccessor(type: Type, accessor: Accessor): TypedInstance {
-      return accessorReader.read(value, type, accessor, schema, source = source)
+   override fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance {
+      return accessorReader.read(value, type, accessor, schema, source = source, format = format)
    }
 
-   override fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean): TypedInstance {
-      return accessorReader.read(value, type, accessor, schema, nullValues, source = source, nullable = nullable, allowContextQuerying = true)
+   override fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean, format: FormatsAndZoneOffset?): TypedInstance {
+      return accessorReader.read(value, type, accessor, schema, nullValues, source = source, nullable = nullable, allowContextQuerying = true, format = format)
    }
 
-   fun evaluateExpressionType(expressionType: Type): TypedInstance {
+   fun evaluateExpressionType(expressionType: Type, format: FormatsAndZoneOffset?): TypedInstance {
       val expression = expressionType.expression!!
-      return accessorReader.evaluate(value, expressionType, expression, schema, nullValues, source)
+      return accessorReader.evaluate(value, expressionType, expression, schema, nullValues, source, format)
    }
 
    fun evaluateExpression(expression: Expression): TypedInstance {
-      return accessorReader.evaluate(value, schema.type(expression.returnType), expression, schema, nullValues, source)
+      return accessorReader.evaluate(value, schema.type(expression.returnType), expression, schema, nullValues, source, null)
    }
 
    private fun evaluateExpressionType(typeName: QualifiedName): TypedInstance {
       val type = schema.type(typeName)
-      return evaluateExpressionType(type)
+      return evaluateExpressionType(type, null)
    }
 
 
@@ -452,7 +452,7 @@ class TypedObjectFactory(
       return when {
          // Cheaper readers first
          value is CSVRecord && field.accessor is ColumnAccessor && considerAccessor -> {
-            readAccessor(fieldTypeName, field.accessor, field.nullable)
+            readAccessor(fieldTypeName, field.accessor, field.nullable,field.format)
          }
 
          // ValueReader can be expensive if the value is an object,
@@ -463,7 +463,8 @@ class TypedObjectFactory(
          // accessor, which will fail, as this isn't raw content anymore, it's parsed / processed.
          value is Map<*, *> && !considerAccessor && valueReader.contains(value, attributeName) -> readWithValueReader(
             attributeName,
-            fieldType
+            fieldType,
+            field.format
          )
 
          // This is not nice, but we're trying to solve the following problem where a model has a column accessor, e.g.:
@@ -474,10 +475,10 @@ class TypedObjectFactory(
          value is JsonParsedStructure && considerAccessor && field.accessor !is JsonPathAccessor && valueReader.contains(
             value,
             attributeName
-         ) -> readWithValueReader(attributeName, fieldType)
+         ) -> readWithValueReader(attributeName, fieldType, field.format)
 
          considerAccessor -> {
-            readAccessor(fieldTypeName, field.accessor!!, field.nullable)
+            readAccessor(fieldTypeName, field.accessor!!, field.nullable,field.format)
          }
 
          evaluateTypeExpression -> {
@@ -495,7 +496,7 @@ class TypedObjectFactory(
          }
          // Not a map, so could be an object, try the value reader - but this is an expensive
          // call, so we defer to last-ish
-         valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, fieldType)
+         valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, fieldType, field.format)
 
          // Is there a default?
          field.defaultValue != null -> TypedValue.from(
@@ -573,7 +574,7 @@ class TypedObjectFactory(
    }
 
 
-   private fun readWithValueReader(attributeName: AttributeName, type: Type): TypedInstance {
+   private fun readWithValueReader(attributeName: AttributeName, type: Type, format: FormatsAndZoneOffset?): TypedInstance {
       val attributeValue = valueReader.read(value, attributeName)
       return if (attributeValue == null) {
          TypedNull.create(type, source)
@@ -584,7 +585,8 @@ class TypedObjectFactory(
             schema,
             true,
             source = source,
-            parsingErrorBehaviour = parsingErrorBehaviour
+            parsingErrorBehaviour = parsingErrorBehaviour,
+            format = format
          )
       }
    }

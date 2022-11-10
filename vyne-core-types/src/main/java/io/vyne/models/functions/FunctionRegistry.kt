@@ -7,6 +7,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.functions.Function
 import lang.taxi.functions.FunctionAccessor
+import lang.taxi.types.FormatsAndZoneOffset
 
 class FunctionRegistry(private val invokers: List<NamedFunctionInvoker>) {
    private val invokersByName = invokers.associateBy { it.functionName }
@@ -21,6 +22,7 @@ class FunctionRegistry(private val invokers: List<NamedFunctionInvoker>) {
       returnType: Type,
       accessor: FunctionAccessor,
       objectFactory: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
       /**
        * The raw value / message being parsed.
        * Not always present, but passed when evaluating from TypedObjectFactory
@@ -43,6 +45,7 @@ class FunctionRegistry(private val invokers: List<NamedFunctionInvoker>) {
          returnType,
          accessor,
          objectFactory,
+         returnTypeFormat         ,
          rawMessageBeingParsed,
          resultCache
       )

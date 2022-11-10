@@ -5,11 +5,12 @@ package io.vyne.models
 import io.vyne.schemas.Type
 import lang.taxi.Equality
 import lang.taxi.jvm.common.PrimitiveTypes
+import lang.taxi.types.FormatsAndZoneOffset
 import mu.KotlinLogging
 import org.apache.commons.lang3.ClassUtils
 
 interface ConversionService {
-   fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T
+   fun <T> convert(source: Any?, targetType: Class<T>, format: FormatsAndZoneOffset?): T
 
    companion object {
       var DEFAULT_CONVERTER: ConversionService = NoOpConversionService
@@ -44,7 +45,7 @@ interface ConversionService {
  * Used when you don't want to perform any conversions
  */
 object NoOpConversionService : ConversionService {
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: FormatsAndZoneOffset?): T {
       return source!! as T
    }
 }
@@ -53,7 +54,8 @@ object NoOpConversionService : ConversionService {
 data class TypedValue private constructor(
    override val type: Type,
    override val value: Any,
-   override val source: DataSource
+   override val source: DataSource,
+   val format: FormatsAndZoneOffset? = null
 ) : TypedInstance {
    private val equality = Equality(this, TypedValue::type, TypedValue::value)
    private val hash: Int by lazy { equality.hash() }
@@ -79,18 +81,24 @@ data class TypedValue private constructor(
          value: Any,
          converter: ConversionService,
          source: DataSource,
-         parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException
+         parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
+         format: FormatsAndZoneOffset? = null
       ): TypedInstance {
          if (!type.taxiType.inheritsFromPrimitive) {
             error("Type ${type.fullyQualifiedName} is not a primitive, cannot be converted")
          } else {
             return try {
                val valueToUse =
-                  converter.convert(value, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!), type.format)
-               TypedValue(type, valueToUse, source)
+                  converter.convert(value, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!), format)
+               TypedValue(type, valueToUse, source, format)
             } catch (exception: Exception) {
+               val messageFormatPart = if (format != null) {
+                  "with formats ${format.patterns.joinToString(" , ")}"
+               } else {
+                  "(no formats were supplied)"
+               }
                val error =
-                  "Failed to parse value $value to type ${type.longDisplayName} - ${exception.message}"
+                  "Failed to parse value $value to type ${type.longDisplayName} $messageFormatPart - ${exception.message}"
                logger.warn { error }
                return when (parsingErrorBehaviour) {
                   ParsingFailureBehaviour.ThrowException -> throw DataParsingException(error, exception)
@@ -107,14 +115,15 @@ data class TypedValue private constructor(
          value: Any,
          performTypeConversions: Boolean = true,
          source: DataSource,
-         parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException
+         parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
+         format: FormatsAndZoneOffset? = null
       ): TypedInstance {
          val conversionServiceToUse = if (performTypeConversions) {
             ConversionService.DEFAULT_CONVERTER
          } else {
             NoOpConversionService
          }
-         return from(type, value, conversionServiceToUse, source, parsingErrorBehaviour)
+         return from(type, value, conversionServiceToUse, source, parsingErrorBehaviour, format)
       }
    }
 

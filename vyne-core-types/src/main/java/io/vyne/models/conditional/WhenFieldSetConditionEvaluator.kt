@@ -11,26 +11,19 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.toVyneQualifiedName
 import lang.taxi.expressions.Expression
-import lang.taxi.types.AccessorExpressionSelector
-import lang.taxi.types.AssignmentExpression
-import lang.taxi.types.ElseMatchExpression
-import lang.taxi.types.FieldReferenceSelector
-import lang.taxi.types.PrimitiveType
-import lang.taxi.types.WhenCaseBlock
-import lang.taxi.types.WhenFieldSetCondition
-import lang.taxi.types.WhenSelectorExpression
+import lang.taxi.types.*
 
 class WhenFieldSetConditionEvaluator(private val factory: EvaluationValueSupplier, private val schema:Schema, private val accessorReader: AccessorReader) {
-   fun evaluate(value:Any,readCondition: WhenFieldSetCondition, source:DataSource, attributeName: AttributeName?, targetType: Type): TypedInstance {
+   fun evaluate(value:Any,readCondition: WhenFieldSetCondition, source:DataSource, attributeName: AttributeName?, targetType: Type, format: FormatsAndZoneOffset?): TypedInstance {
       val selectorExpression = readCondition.selectorExpression
-      val selectorValue = accessorReader.evaluate(value,schema.type(selectorExpression.returnType),selectorExpression,dataSource = source)
-      val caseBlock = selectCaseBlock(selectorValue, readCondition, value)
+      val selectorValue = accessorReader.evaluate(value,schema.type(selectorExpression.returnType),selectorExpression,dataSource = source, format =format)
+      val caseBlock = selectCaseBlock(selectorValue, readCondition, value, format)
 
       /**
        * Enrichment logic updated so that we no longer try to evaluate the target type. Instead we try to resolve case conditions one by one.
        * Therefore, allowContextQuerying set to true here.
        */
-      val evaluatedAssignment = accessorReader.read(value, targetType, caseBlock.getSingleAssignment().assignment, schema, source = source, allowContextQuerying = true)
+      val evaluatedAssignment = accessorReader.read(value, targetType, caseBlock.getSingleAssignment().assignment, schema, source = source, allowContextQuerying = true, format = format)
       return evaluatedAssignment
 //      return when (readCondition.selectorExpression) {
 //         is EmptyReferenceSelector -> {
@@ -91,7 +84,7 @@ class WhenFieldSetConditionEvaluator(private val factory: EvaluationValueSupplie
 //      }
    }
 
-   private fun selectCaseBlock(selectorValue: TypedInstance, readCondition: WhenFieldSetCondition, value: Any): WhenCaseBlock {
+   private fun selectCaseBlock(selectorValue: TypedInstance, readCondition: WhenFieldSetCondition, value: Any, format: FormatsAndZoneOffset?): WhenCaseBlock {
       var index = 0
       return readCondition.cases.firstOrNull { caseBlock ->
          index =  ++index
@@ -101,7 +94,7 @@ class WhenFieldSetConditionEvaluator(private val factory: EvaluationValueSupplie
             // see VyneQueryTest - `failures in boolean expression evalution should not terminate when condition evalutaions`()
             // without below 'catch' logic above test fails with 'io.vyne.query.UnresolvedTypeInQueryException: No strategy found for discovering type Theme'
             val valueToCompare = try {
-               evaluateExpression(caseBlock.matchExpression, selectorValue.type, value)
+               evaluateExpression(caseBlock.matchExpression, selectorValue.type, value, format)
             } catch (e: Exception) {
                if (selectorValue.type.taxiType.basePrimitive == PrimitiveType.BOOLEAN) {
                   TypedInstance.from(type = selectorValue.type, value = false, schema = schema)
@@ -117,9 +110,9 @@ class WhenFieldSetConditionEvaluator(private val factory: EvaluationValueSupplie
 
    }
 
-   private fun evaluateExpression(matchExpression: Expression, type: Type, value:Any): TypedInstance {
+   private fun evaluateExpression(matchExpression: Expression, type: Type, value:Any, format: FormatsAndZoneOffset?): TypedInstance {
       // Which type should it be here?  Expression.returnType or type?
-      val evaluated = accessorReader.evaluate(value,type, matchExpression, dataSource = UndefinedSource)
+      val evaluated = accessorReader.evaluate(value,type, matchExpression, dataSource = UndefinedSource, format = format)
       return evaluated
 //      return when (matchExpression) {
 //         is ReferenceCaseMatchExpression -> factory.getValue(matchExpression.reference)
@@ -134,7 +127,7 @@ class WhenFieldSetConditionEvaluator(private val factory: EvaluationValueSupplie
 //      }
    }
 
-   private fun evaluateSelector(selectorExpression: WhenSelectorExpression): TypedInstance {
+   private fun evaluateSelector(selectorExpression: WhenSelectorExpression, format: FormatsAndZoneOffset?): TypedInstance {
       return when (selectorExpression) {
          is AccessorExpressionSelector -> {
             // Note: I had to split this across several lines
@@ -142,7 +135,7 @@ class WhenFieldSetConditionEvaluator(private val factory: EvaluationValueSupplie
             // method not found exceptions.
             // Probably just a local issue, can refactor later
             val typeReference = selectorExpression.declaredType.toQualifiedName().toVyneQualifiedName()
-            val instance = factory.readAccessor(typeReference, selectorExpression.accessor, nullable = false)
+            val instance = factory.readAccessor(typeReference, selectorExpression.accessor, nullable = false, format = format)
             instance
          }
          is FieldReferenceSelector -> {

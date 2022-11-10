@@ -165,7 +165,8 @@ class FirstNotEmptyTest {
          type ExpiryDate inherits Date
          model TradeInput {
             isin : Isin as String
-            expiryDate : ExpiryDate(@format = "dd-MMM-yy")
+            @Format("dd-MMM-yy")
+            expiryDate : ExpiryDate
          }
          service CalendarService {
             @StubResponse("lookupDate")
@@ -178,7 +179,8 @@ class FirstNotEmptyTest {
             isin : Isin
 
             @FirstNotEmpty
-            expiryDate : ExpiryDate(@format = "yyyy-MM-dd")
+            @Format("yyyy-MM-dd")
+            expiryDate : ExpiryDate
          }
       """.trimIndent()
       )

@@ -9,6 +9,7 @@ import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
 import lang.taxi.functions.FunctionAccessor
+import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.QualifiedName
 
 interface NamedFunctionInvoker : FunctionInvoker {
@@ -29,12 +30,14 @@ interface FunctionInvoker {
       returnType: Type,
       function: FunctionAccessor,
       objectFactory: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
       /**
        * The raw value / message being parsed.
        * Not always present, but passed when evaluating from TypedObjectFactory
        */
       rawMessageBeingParsed: Any? = null,
-      resultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf()
+      resultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf(),
+
    ): TypedInstance
 }
 
@@ -62,7 +65,8 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
       returnType: Type,
       function: FunctionAccessor,
       rawMessageBeingParsed: Any?,
-      thisScopeValueSupplier: EvaluationValueSupplier
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?
    ): TypedInstance
 
    override fun invoke(
@@ -71,9 +75,11 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
       returnType: Type,
       function: FunctionAccessor,
       objectFactory: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
       rawMessageBeingParsed: Any?,
-      resultCache: MutableMap<FunctionResultCacheKey, Any>
-   ): TypedInstance {
+      resultCache: MutableMap<FunctionResultCacheKey, Any>,
+
+      ): TypedInstance {
       return if (inputValues.any { it is TypedNull }) {
          val typedNullTypes = inputValues
             .mapIndexedNotNull { index, typedInstance ->
@@ -100,7 +106,7 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
             )
          )
       } else {
-         doInvoke(inputValues, schema, returnType, function, rawMessageBeingParsed, objectFactory)
+         doInvoke(inputValues, schema, returnType, function, rawMessageBeingParsed, objectFactory, returnTypeFormat)
       }
    }
 }
@@ -119,7 +125,8 @@ class InlineFunctionInvoker(override val functionName: QualifiedName, val handle
       returnType: Type,
       function: FunctionAccessor,
       rawMessageBeingParsed: Any?,
-      thisScopeValueSupplier: EvaluationValueSupplier
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?
    ): TypedInstance {
       return handler.invoke(inputValues, schema, returnType, function)
    }

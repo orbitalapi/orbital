@@ -14,8 +14,9 @@ private object TypeFormatter {
    val UtcZoneId = ZoneId.of("UTC")
    fun applyFormat(typedInstance: TypedInstance): String? {
       require(typedInstance.value is TemporalAccessor) { "Formatted types only supported on TemporalAccessors currently.  If you're seeing this error, time to do some work!" }
+      require(typedInstance is TypedValue) { "Formatted types are only applicable to scalar TypedValues at present"}
       val instant = typedInstance.value as TemporalAccessor
-      val dateTimeFormat = findFormatWith("'T'", typedInstance.type.format!!)?.let { dateTimeFormat ->
+      val dateTimeFormat = findFormatWith("'T'", typedInstance.format?.patterns ?: emptyList())?.let { dateTimeFormat ->
          // Handle down-cast date time times (eg., a Time type that was ingested with a dateTime format)
          if (instant is LocalTime) {
             log().debug("Modifying dateTime format to be suitable for LocalTime")
@@ -31,7 +32,7 @@ private object TypeFormatter {
          is LocalTime -> fromLocalDateTimeToString(typedInstance, dateTimeFormat)
          else -> {
             val zoneId = zoneId(typedInstance)
-            typedInstance.type.format?.firstOrNull()?.let { firstFormat ->
+            typedInstance.format?.patterns?.firstOrNull()?.let { firstFormat ->
                DateTimeFormatter
                   .ofPattern(firstFormat)
                   .withZone(zoneId)
@@ -41,14 +42,15 @@ private object TypeFormatter {
       }
    }
 
-   fun fromLocalDateToString(typedInstance: TypedInstance, dateTimeFormat: String?): String? {
+   fun fromLocalDateToString(typedInstance: TypedValue, dateTimeFormat: String?): String? {
       return when {
          typedInstance.value is LocalDate && dateTimeFormat != null -> DateTimeFormatter
             .ofPattern(dateTimeFormat)
             .withZone(UtcZoneId)
             .format((typedInstance.value as LocalDate).atStartOfDay())
-         typedInstance.value is LocalDate && dateTimeFormat == null && typedInstance.type.format != null && typedInstance.type.format?.firstOrNull() != null -> {
-            val format = typedInstance.type.format!!.first()
+         //  dateTimeFormat == null  at this point.
+         typedInstance.value is LocalDate && typedInstance.format != null && typedInstance.format.definesPattern -> {
+            val format = typedInstance.format.patterns.first()
             val formatter = if (format.contains("HH") || format.contains("hh")) {
                DateTimeFormatter.ISO_DATE.withZone(UtcZoneId)
 
@@ -64,11 +66,11 @@ private object TypeFormatter {
       }
    }
 
-   fun fromLocalDateTimeToString(typedInstance: TypedInstance, dateTimeFormat: String?): String? {
+   fun fromLocalDateTimeToString(typedInstance: TypedValue, dateTimeFormat: String?): String? {
       val formatter = when {
          typedInstance.value is LocalTime && dateTimeFormat != null -> DateTimeFormatter.ofPattern(dateTimeFormat)
-         typedInstance.value is LocalTime && dateTimeFormat == null && typedInstance.type.format != null && typedInstance.type.format?.firstOrNull() != null -> {
-            val format = typedInstance.type.format!!.first()
+         typedInstance.value is LocalTime && dateTimeFormat == null && typedInstance.format != null && typedInstance.format.definesPattern -> {
+            val format = typedInstance.format!!.patterns.first()
             if (format.contains("yy")) {
                DateTimeFormatter.ISO_TIME.withZone(UtcZoneId)
             } else {
@@ -88,13 +90,13 @@ private object TypeFormatter {
       return formats.firstOrNull { it.contains(searchPattern) }
    }
 
-   fun zoneId(typedInstance: TypedInstance): ZoneId {
+   fun zoneId(typedInstance: TypedValue): ZoneId {
       return try {
-         typedInstance.type.offset?.let {
+         typedInstance.format?.utcZoneOffsetInMinutes?.let {
             ZoneOffset.ofTotalSeconds(it * 60).normalized()
          } ?: UtcZoneId
       } catch (e: Exception) {
-         log().warn("offset value of ${typedInstance.type.offset} not corresponds to a valid ZoneId, so using UTC instead, error => ${e.message}")
+         log().warn("offset value of ${typedInstance.format?.utcZoneOffsetInMinutes} not corresponds to a valid ZoneId, so using UTC instead, error => ${e.message}")
          UtcZoneId
       }
    }
@@ -105,7 +107,7 @@ object RawObjectMapper : TypedInstanceMapper {
       if (typedInstance.value == null) {
          return typedInstance.value
       }
-      return if (typedInstance.type.format != null) {
+      return if (typedInstance is TypedValue && typedInstance.format != null) {
          TypeFormatter.applyFormat(typedInstance)
       } else {
          typedInstance.value

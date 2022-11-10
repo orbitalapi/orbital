@@ -15,12 +15,7 @@ import lang.taxi.expressions.Expression
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
-import lang.taxi.types.ArrayType
-import lang.taxi.types.AttributePath
-import lang.taxi.types.EnumType
-import lang.taxi.types.ObjectType
-import lang.taxi.types.PrimitiveType
-import lang.taxi.types.StreamType
+import lang.taxi.types.*
 import lang.taxi.utils.takeHead
 import mu.KotlinLogging
 
@@ -81,7 +76,6 @@ data class Type(
 
    @JsonIgnore
    val typeCache: TypeCache = EmptyTypeCache
-
 ) : SchemaMember, PartialType {
    constructor(
       name: String,
@@ -128,7 +122,9 @@ data class Type(
    private val resolvedAlias: Type
 
 
+
    val isTypeAlias = aliasForTypeName != null
+   override val formatAndZoneOffset: FormatsAndZoneOffset? = taxiType.formatAndZoneOffset
    override val offset: Int? = taxiType.offset
 
    /**
@@ -270,11 +266,7 @@ data class Type(
    val qualifiedName: QualifiedName
       get() = QualifiedName(fullyQualifiedName, typeParametersTypeNames)
 
-   val longDisplayName: String = if (this.hasFormat) {
-            this.unformattedTypeName!!.longDisplayName + "(${this.format!!.joinToString(",")})"
-         } else {
-            qualifiedName.longDisplayName
-         }
+   val longDisplayName: String = qualifiedName.longDisplayName
 
    // Note : Lazy evaluation to work around that aliases are partiall populated during
    // construction.

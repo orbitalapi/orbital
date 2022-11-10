@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.VersionedSource
 import lang.taxi.expressions.Expression
+import lang.taxi.types.FormatsAndZoneOffset
 
 @JsonDeserialize(`as` = DefaultPartialSchema::class)
 interface PartialSchema {
@@ -51,6 +52,7 @@ interface PartialType {
    val declaresFormat: Boolean
 
    val unformattedTypeName: QualifiedName?
+   val formatAndZoneOffset: FormatsAndZoneOffset?
    val offset: Int?
    val expression: Expression?
 
@@ -82,4 +84,6 @@ data class DefaultPartialType(
    override val expression: Expression?,
 
    override val sources: List<VersionedSource>
-) : PartialType
+) : PartialType {
+   override val formatAndZoneOffset: FormatsAndZoneOffset? = FormatsAndZoneOffset.forNullable(format, offset)
+}

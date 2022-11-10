@@ -56,7 +56,7 @@ class CollectionProjectionBuilder(val queryContext: QueryContext) :
 
       // Grab any additional scope facts that were speciied in a 'with scope' clause
       val additionalScopeFacts = accessor.projectionScope?.accessors?.map { scopeAccessor ->
-         objectFactory.readAccessor(scopeAccessor.returnType.toVyneType(schema), scopeAccessor)
+         objectFactory.readAccessor(scopeAccessor.returnType.toVyneType(schema), scopeAccessor,null /* TODO : Formats */)
       } ?: emptyList()
 
       val targetMemberType = targetType.collectionType ?: targetType

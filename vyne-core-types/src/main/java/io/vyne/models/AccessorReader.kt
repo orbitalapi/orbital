@@ -111,11 +111,11 @@ class FactBagValueSupplier(
       return thisScopeValueSupplier.getValue(attributeName)
    }
 
-   override fun readAccessor(type: Type, accessor: Accessor): TypedInstance {
+   override fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance {
       TODO("Not yet implemented")
    }
 
-   override fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean): TypedInstance {
+   override fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean, format: FormatsAndZoneOffset?): TypedInstance {
       TODO("Not yet implemented")
    }
 }
@@ -132,8 +132,8 @@ interface EvaluationValueSupplier {
    ): TypedInstance
 
    fun getValue(attributeName: AttributeName): TypedInstance
-   fun readAccessor(type: Type, accessor: Accessor): TypedInstance
-   fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean): TypedInstance
+   fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance
+   fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean, format: FormatsAndZoneOffset?): TypedInstance
 }
 
 interface AccessorHandler<T : Accessor> {
@@ -190,10 +190,11 @@ class AccessorReader(
       nullValues: Set<String> = emptySet(),
       source: DataSource,
       nullable: Boolean,
+      format: FormatsAndZoneOffset?,
       allowContextQuerying: Boolean = false,
    ): TypedInstance {
       val targetType = schema.type(targetTypeRef)
-      return read(value, targetType, accessor, schema, nullValues, source, nullable, allowContextQuerying)
+      return read(value, targetType, accessor, schema, nullValues, source, format, nullable, allowContextQuerying)
    }
 
    fun read(
@@ -203,6 +204,7 @@ class AccessorReader(
       schema: Schema,
       nullValues: Set<String> = emptySet(),
       source: DataSource,
+      format: FormatsAndZoneOffset?,
       nullable: Boolean = false,
       allowContextQuerying: Boolean = false,
    ): TypedInstance {
@@ -214,7 +216,7 @@ class AccessorReader(
          // TODO : Gradually move these accessors out to individual classes to enable better injection / pluggability
          is JsonPathAccessor -> parseJson(value, targetType, schema, accessor, source)
          is XpathAccessor -> parseXml(value, targetType, schema, accessor, source, nullable)
-         is DestructuredAccessor -> parseDestructured(value, targetType, schema, accessor, source)
+         is DestructuredAccessor -> parseDestructured(value, targetType, schema, accessor, source, format)
          is ColumnAccessor -> {
             if (accessor.index == null && accessor.defaultValue != null) {
                // This is some tech debt.
@@ -243,7 +245,8 @@ class AccessorReader(
             accessor,
             nullValues,
             source,
-            functionResultCache
+            functionResultCache,
+            format
          )
 
          is FieldReferenceSelector -> {
@@ -274,7 +277,8 @@ class AccessorReader(
             accessor,
             nullValues,
             source,
-            functionResultCache
+            functionResultCache,
+            format
          )
 
          is TypeReferenceSelector -> objectFactory.getValue(
@@ -284,7 +288,7 @@ class AccessorReader(
 
          is FieldSourceAccessor -> TypedNull.create(targetType, source)
          is LambdaExpression -> DeferredTypedInstance(accessor, schema, source)
-         is OperatorExpression -> evaluateOperatorExpression(targetType, accessor, schema, value, nullValues, source)
+         is OperatorExpression -> evaluateOperatorExpression(targetType, accessor, schema, value, nullValues, source, format)
          is FieldReferenceExpression -> evaluateFieldReference(
             targetType,
             accessor.selectors,
@@ -298,6 +302,7 @@ class AccessorReader(
             schema,
             nullValues,
             source,
+            format,
             nullable,
             allowContextQuerying
          )
@@ -309,6 +314,7 @@ class AccessorReader(
             schema,
             nullValues,
             source,
+            format,
             nullable,
             allowContextQuerying
          )
@@ -441,7 +447,8 @@ class AccessorReader(
       accessor: FunctionAccessor,
       nullValues: Set<String>,
       source: DataSource,
-      resultCache: MutableMap<FunctionResultCacheKey, Any>
+      resultCache: MutableMap<FunctionResultCacheKey, Any>,
+      format: FormatsAndZoneOffset?
    ): TypedInstance {
       val function = accessor.function
       // Note - don't check for == here, because of vararg params
@@ -496,7 +503,8 @@ class AccessorReader(
             schema,
             nullValues,
             source,
-            allowContextQuerying = queryIfNotFound
+            allowContextQuerying = queryIfNotFound,
+            format = format
          )
       }
 
@@ -506,7 +514,7 @@ class AccessorReader(
          val varargType = schema.type(varargParam.type)
          val inputs = accessor.inputs.subList(varargFrom, accessor.inputs.size)
          inputs.map { varargInputAccessor ->
-            read(value, varargType, varargInputAccessor, schema, nullValues, source, allowContextQuerying = true)
+            read(value, varargType, varargInputAccessor, schema, nullValues, source, format = format, allowContextQuerying = true)
          }
       } else emptyList()
 
@@ -519,6 +527,7 @@ class AccessorReader(
          targetType,
          accessor,
          objectFactory,
+         format,
          value,
          resultCache
       )
@@ -531,7 +540,8 @@ class AccessorReader(
       accessor: FunctionExpressionAccessor,
       nullValues: Set<String>,
       source: DataSource,
-      resultCache: MutableMap<FunctionResultCacheKey, Any>
+      resultCache: MutableMap<FunctionResultCacheKey, Any>,
+      format: FormatsAndZoneOffset?
    ): TypedInstance {
       val functionResult =
          this.evaluateFunctionAccessor(
@@ -541,7 +551,8 @@ class AccessorReader(
             accessor.functionAccessor,
             nullValues,
             source,
-            resultCache
+            resultCache,
+            format
          )
       val operator = accessor.operator
       val operand = accessor.operand
@@ -640,11 +651,12 @@ class AccessorReader(
       targetType: Type,
       schema: Schema,
       accessor: DestructuredAccessor,
-      source: DataSource
+      source: DataSource,
+      format: FormatsAndZoneOffset?
    ): TypedInstance {
       val values = accessor.fields.map { (attributeName, accessor) ->
          val objectMemberField = targetType.attribute(attributeName)
-         val attributeValue = read(value, objectMemberField.type, accessor, schema, source = source, nullable = false)
+         val attributeValue = read(value, objectMemberField.type, accessor, schema, source = source, nullable = false, format = format)
          attributeName to attributeValue
       }.toMap()
       return TypedObject(targetType, values, source)
@@ -729,6 +741,7 @@ class AccessorReader(
       schema: Schema = this.schema,
       nullValues: Set<String> = emptySet(),
       dataSource: DataSource,
+      format: FormatsAndZoneOffset?,
       resultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf()
    ): TypedInstance {
       return when (expression) {
@@ -738,7 +751,8 @@ class AccessorReader(
             schema,
             value,
             nullValues,
-            dataSource
+            dataSource,
+            format
          )
 
          is TypeExpression -> evaluateTypeExpression(expression, schema)
@@ -749,7 +763,8 @@ class AccessorReader(
             schema,
             nullValues,
             dataSource,
-            resultCache
+            resultCache,
+            format
          )
 
          is LiteralExpression -> TypedInstance.from(returnType, expression.literal.value, schema, source = dataSource)
@@ -759,7 +774,8 @@ class AccessorReader(
             expression,
             schema,
             nullValues,
-            dataSource
+            dataSource,
+            format
          )
 
          is FieldReferenceExpression -> {
@@ -782,11 +798,12 @@ class AccessorReader(
       expression: LambdaExpression,
       schema: Schema,
       nullValues: Set<String>,
-      dataSource: DataSource
+      dataSource: DataSource,
+      format: FormatsAndZoneOffset?
    ): TypedInstance {
       // Hmm... gotta use the inputs here somehow, but not sure how right now,
       // since the context will give 'em to us when we need em
-      return evaluate(value, returnType, expression.expression, schema, nullValues, dataSource)
+      return evaluate(value, returnType, expression.expression, schema, nullValues, dataSource, format)
    }
 
    private fun evaluateFunctionExpression(
@@ -796,7 +813,9 @@ class AccessorReader(
       schema: Schema,
       nullValues: Set<String>,
       dataSource: DataSource,
-      resultCache: MutableMap<FunctionResultCacheKey, Any>
+      resultCache: MutableMap<FunctionResultCacheKey, Any>,
+      format: FormatsAndZoneOffset?
+
    ): TypedInstance {
       return evaluateFunctionAccessor(
          value,
@@ -805,7 +824,8 @@ class AccessorReader(
          expression.function,
          nullValues,
          dataSource,
-         resultCache
+         resultCache,
+         format
       )
    }
 
@@ -819,7 +839,8 @@ class AccessorReader(
       schema: Schema,
       value: Any,
       nullValues: Set<String>,
-      dataSource: DataSource
+      dataSource: DataSource,
+      format: FormatsAndZoneOffset?
    ): TypedInstance {
       val lhsReturnType = getReturnTypeFromExpression(expression.lhs, schema)
       val rhsReturnType = getReturnTypeFromExpression(expression.rhs, schema)
@@ -829,7 +850,8 @@ class AccessorReader(
          expression.lhs,
          schema,
          nullValues,
-         dataSource
+         dataSource,
+         format
       )
 
       /**
@@ -864,7 +886,8 @@ class AccessorReader(
          expression.rhs,
          schema,
          nullValues,
-         dataSource
+         dataSource,
+         format
       )
       return OperatorExpressionCalculator.calculate(
          lhs,

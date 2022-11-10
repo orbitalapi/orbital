@@ -13,6 +13,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeMatchingStrategy
 import lang.taxi.functions.FunctionAccessor
+import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.PrimitiveType
 import java.math.BigDecimal
 
@@ -24,7 +25,8 @@ abstract class MathIteratingFunction : NullSafeInvoker() {
       returnType: Type,
       function: FunctionAccessor,
       rawMessageBeingParsed: Any?,
-      thisScopeValueSupplier: EvaluationValueSupplier
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?
    ): TypedInstance {
       val sourceCollection = inputValues[0] as TypedCollection
       val deferredInstance = inputValues[1] as DeferredTypedInstance
@@ -44,7 +46,7 @@ abstract class MathIteratingFunction : NullSafeInvoker() {
          val reader = AccessorReader(factBagValueSupplier,schema.functionRegistry,schema)
          // Not sure what to pass as the data source here.  I hope that the actual expression evaluation will set the
          // data source correctly.
-         val evaluated = reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = typedInstance.source)
+         val evaluated = reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = typedInstance.source, format = null)
          inputValues.add(evaluated)
          val value = evaluated.value ?: return@fold acc ?: BigDecimal.ZERO
          val bigDecimalValue = when (value) {

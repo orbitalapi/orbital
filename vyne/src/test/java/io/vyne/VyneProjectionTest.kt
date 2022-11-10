@@ -1378,11 +1378,13 @@ service Broker1Service {
       val (vyne, stubService) = testVyne(
          """
          model InputModel {
-           inputField: Instant( @format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+          @format( "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+           inputField: Instant
          }
 
          model OutputModel {
-            myField : Instant( @format = ["yyyy-MM-dd'T'HH:mm:ss.SSSZ"], @offset = 60 )
+         @Format(value ="yyyy-MM-dd'T'HH:mm:ss.SSSZ", offset = 60 )
+            myField : Instant
          }
 
          @Datasource
@@ -1420,7 +1422,8 @@ service Broker1Service {
       val (vyne, stubService) = testVyne(
          """
          model InputModel {
-           inputField: Instant( @format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+           @Format( "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+           inputField: Instant(
          }
 
          model OutputModel {
@@ -2686,7 +2689,8 @@ service Broker1Service {
       )
       val results = vyne.query(
          """find { Transaction[] }  as { id : TransactionId
-          date : TransactionDate(@format = 'dd-MMM-yy')
+          @Format( 'dd-MMM-yy')
+          date : TransactionDate
           }[]"""
       )
          .rawObjects()

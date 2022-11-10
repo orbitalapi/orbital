@@ -14,6 +14,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeMatchingStrategy
 import lang.taxi.functions.FunctionAccessor
+import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.QualifiedName
 
 object Functional {
@@ -36,6 +37,7 @@ object Fold : NamedFunctionInvoker {
       returnType: Type,
       function: FunctionAccessor,
       objectFactory: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
       rawMessageBeingParsed: Any?,
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
@@ -58,7 +60,7 @@ object Fold : NamedFunctionInvoker {
             TypeMatchingStrategy.EXACT_MATCH
          )
          val reader = AccessorReader(factBagValueSupplier,schema.functionRegistry,schema)
-         val evaluated = reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = dataSource)
+         val evaluated = reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = dataSource, format = null)
          evaluated as TypedValue
       }
       return foldedValue
@@ -72,6 +74,7 @@ object Reduce : NamedFunctionInvoker {
       returnType: Type,
       function: FunctionAccessor,
       objectFactory: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
       rawMessageBeingParsed: Any?,
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
@@ -85,7 +88,7 @@ object Reduce : NamedFunctionInvoker {
       )
       sourceCollection.reduce { acc, typedInstance ->
          val reader = AccessorReader.forFacts(listOf(acc, typedInstance), schema)
-         val evaluated = reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = dataSource)
+         val evaluated = reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = dataSource, format = null)
          evaluated
       }
       sourceCollection.forEach { instance ->

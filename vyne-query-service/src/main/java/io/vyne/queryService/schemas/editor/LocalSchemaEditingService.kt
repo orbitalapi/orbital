@@ -240,7 +240,6 @@ class LocalSchemaEditingService(
    ): String {
       val imports = if (type is ObjectType) {
          type.referencedTypes
-            .map { referencedType -> referencedType.formattedInstanceOfType ?: referencedType }
             .map { "import ${it.qualifiedName}" }
             .distinct()
       } else emptyList()
