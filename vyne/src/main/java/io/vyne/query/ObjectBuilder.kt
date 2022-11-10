@@ -34,6 +34,7 @@ import lang.taxi.accessors.CollectionProjectionExpressionAccessor
 import lang.taxi.accessors.ConditionalAccessor
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.ObjectType
+import mu.KotlinLogging
 import java.util.*
 
 class ObjectBuilder(
@@ -43,6 +44,7 @@ class ObjectBuilder(
    private val functionRegistry: FunctionRegistry = FunctionRegistry.default,
    private val formatSpecs: List<ModelFormatSpec>
 ) {
+   private val logger = KotlinLogging.logger {}
    private val id = UUID.randomUUID().toString()
    private val buildSpecProvider = TypedInstancePredicateFactory()
    private val originalContext = if (context.isProjecting) context
@@ -60,7 +62,7 @@ class ObjectBuilder(
    private val collectionBuilder = CollectionBuilder(queryEngine, context)
 
    init {
-       log().debug("[${context.queryId}] ObjectBuilder $id created to build ${rootTargetType.name.longDisplayName}")
+      log().debug("[${context.queryId}] ObjectBuilder $id created to build ${rootTargetType.name.longDisplayName}")
    }
 
    suspend fun build(
@@ -94,6 +96,7 @@ class ObjectBuilder(
                // the types are compatible.  However, this may prove to cause problems.
                return convertValue(discoveredValue, targetType, format = null)
             }
+
             else -> {
                // last attempt
                val exactMatches = instance.filter { it.type == targetType }
@@ -107,8 +110,9 @@ class ObjectBuilder(
                }
                if (!targetType.isPrimitive) {
                   // Don't bother logging if the user searched for a primitive type, as it's kinda pointless.
-                  log().info(
-                     "Found ${instance.size} instances of ${targetType.fullyQualifiedName}. Values are ${
+                  logger.debug { "Found ${instance.size} instances of ${targetType.longDisplayName}." }
+                  logger.trace {
+                     "Found ${instance.size} instances of ${targetType.longDisplayName}. Values are ${
                         instance.map {
                            Pair(
                               it.typeName,
@@ -116,7 +120,7 @@ class ObjectBuilder(
                            )
                         }.joinToString()
                      }"
-                  )
+                  }
                }
 
                // HACK : How do we handle this?
@@ -161,6 +165,7 @@ class ObjectBuilder(
                   log().debug(exception.message)
                   failedAttempts = exception.failedAttempts
                }
+
                else -> log().error(
                   "An exception occurred whilst searching for type ${targetType.fullyQualifiedName}",
                   exception
@@ -240,10 +245,14 @@ class ObjectBuilder(
       // Passing facts here allows for reference to data from parent objects when constructing child objects
       facts: FactBag = FactBag.empty()
    ): TypedInstance? {
-      return build(context.schema.type(targetType), spec , facts)
+      return build(context.schema.type(targetType), spec, facts)
    }
 
-   private fun convertValue(discoveredValue: TypedInstance, targetType: Type, format: FormatsAndZoneOffset?): TypedInstance {
+   private fun convertValue(
+      discoveredValue: TypedInstance,
+      targetType: Type,
+      format: FormatsAndZoneOffset?
+   ): TypedInstance {
       return if (discoveredValue is TypedValue && format != null && format != discoveredValue.format) {
          discoveredValue.copy(format = format)
       } else {
@@ -268,7 +277,6 @@ class ObjectBuilder(
       // If source and target types are ObjectTypes, just copy properties in one iteration
       // With this fix projection time of 1000 items was reduced from 37seconds to 650ms!
       // Enum filtering will be removed once the updated enum processing logic branch is merged.
-
 
 
       // Update - MP: 7-Nov-22:
@@ -327,8 +335,7 @@ class ObjectBuilder(
                // Don't attempt to populate fields with ConditionalAccessor here.
                // The TypedObjectFactory has the expression evaluation logic,
                // so leave the value as un-populated.
-            }
-            else {
+            } else {
                // We need to pass parent facts around, so that when constructing nested objects, children fields have reference to parent facts.
                val theseFacts = FieldAndFactBag(populatedValues, emptyList(), context.schema).merge(facts)
 
@@ -413,16 +420,16 @@ class ObjectBuilder(
       val typedObject = typedInstance as TypedObject
       typedObject[sourcedBy.attributeName].let { source ->
          source.value?.let { _ ->
-              ObjectBuilder(
-                 this.queryEngine,
-                 this.context.only(source),
-                 this.context.schema.type(sourcedBy.attributeType),
-                 functionRegistry = functionRegistry,
-                 formatSpecs = formatSpecs
-              )
-                 .build()?.let {
-                    return attributeName to it
-                 }
+            ObjectBuilder(
+               this.queryEngine,
+               this.context.only(source),
+               this.context.schema.type(sourcedBy.attributeType),
+               functionRegistry = functionRegistry,
+               formatSpecs = formatSpecs
+            )
+               .build()?.let {
+                  return attributeName to it
+               }
          }
       }
       return null
