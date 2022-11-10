@@ -1,6 +1,7 @@
 package io.vyne.models
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.base.Stopwatch
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
 import io.vyne.models.facts.*
 import io.vyne.models.format.FormatDetector
@@ -15,6 +16,8 @@ import io.vyne.schemas.Field
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import io.vyne.utils.StrategyPerformanceProfiler
+import io.vyne.utils.timed
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.accessors.Accessor
@@ -24,6 +27,7 @@ import lang.taxi.expressions.Expression
 import lang.taxi.types.FormatsAndZoneOffset
 import mu.KotlinLogging
 import org.apache.commons.csv.CSVRecord
+import kotlin.streams.toList
 
 /**
  * Constructs a TypedObject
@@ -94,10 +98,12 @@ class TypedObjectFactory(
    private val fieldInitializers: Map<AttributeName, Lazy<TypedInstance>> by lazy {
       attributesToMap.map { (attributeName, field) ->
          attributeName to lazy {
-            val fieldValue = buildField(field, attributeName)
+
+            val fieldValue =
+               timed("build field $attributeName ${field.typeDisplayName}") { buildField(field, attributeName) }
             if (field.fieldProjection != null) {
 //               val sw = Stopwatch.createStarted()
-               val projection = projectField(field, attributeName, fieldValue)
+               val projection = timed("Project field $attributeName") { projectField(field, attributeName, fieldValue) }
 //               logger.debug { "Projection to ${projection.type.name.shortDisplayName} took ${sw.elapsed().toMillis()}ms" }
                projection
 
@@ -122,10 +128,13 @@ class TypedObjectFactory(
       val projectedType = schema.type(field.fieldProjection!!.projectedType)
       val projectedFieldValue = if (fieldValue is TypedCollection && projectedType.isCollection) {
          // Project each member of the collection seperately
-         fieldValue.map { collectionMember ->
-            newFactory(projectedType.collectionType!!, collectionMember)
-               .build()
-         }.let { projectedCollection -> TypedCollection.from(projectedCollection, source) }
+         fieldValue
+            .parallelStream()
+            .map { collectionMember ->
+               newFactory(projectedType.collectionType!!, collectionMember)
+                  .build()
+            }.toList()
+            .let { projectedCollection -> TypedCollection.from(projectedCollection, source) }
       } else {
          newFactory(projectedType, fieldValue).build()
       }
@@ -404,8 +413,23 @@ class TypedObjectFactory(
       return accessorReader.read(value, type, accessor, schema, source = source, format = format)
    }
 
-   override fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean, format: FormatsAndZoneOffset?): TypedInstance {
-      return accessorReader.read(value, type, accessor, schema, nullValues, source = source, nullable = nullable, allowContextQuerying = true, format = format)
+   override fun readAccessor(
+      type: QualifiedName,
+      accessor: Accessor,
+      nullable: Boolean,
+      format: FormatsAndZoneOffset?
+   ): TypedInstance {
+      return accessorReader.read(
+         value,
+         type,
+         accessor,
+         schema,
+         nullValues,
+         source = source,
+         nullable = nullable,
+         allowContextQuerying = true,
+         format = format
+      )
    }
 
    fun evaluateExpressionType(expressionType: Type, format: FormatsAndZoneOffset?): TypedInstance {
@@ -414,7 +438,15 @@ class TypedObjectFactory(
    }
 
    fun evaluateExpression(expression: Expression): TypedInstance {
-      return accessorReader.evaluate(value, schema.type(expression.returnType), expression, schema, nullValues, source, null)
+      return accessorReader.evaluate(
+         value,
+         schema.type(expression.returnType),
+         expression,
+         schema,
+         nullValues,
+         source,
+         null
+      )
    }
 
    private fun evaluateExpressionType(typeName: QualifiedName): TypedInstance {
@@ -452,7 +484,7 @@ class TypedObjectFactory(
       return when {
          // Cheaper readers first
          value is CSVRecord && field.accessor is ColumnAccessor && considerAccessor -> {
-            readAccessor(fieldTypeName, field.accessor, field.nullable,field.format)
+            readAccessor(fieldTypeName, field.accessor, field.nullable, field.format)
          }
 
          // ValueReader can be expensive if the value is an object,
@@ -478,7 +510,7 @@ class TypedObjectFactory(
          ) -> readWithValueReader(attributeName, fieldType, field.format)
 
          considerAccessor -> {
-            readAccessor(fieldTypeName, field.accessor!!, field.nullable,field.format)
+            readAccessor(fieldTypeName, field.accessor!!, field.nullable, field.format)
          }
 
          evaluateTypeExpression -> {
@@ -574,7 +606,11 @@ class TypedObjectFactory(
    }
 
 
-   private fun readWithValueReader(attributeName: AttributeName, type: Type, format: FormatsAndZoneOffset?): TypedInstance {
+   private fun readWithValueReader(
+      attributeName: AttributeName,
+      type: Type,
+      format: FormatsAndZoneOffset?
+   ): TypedInstance {
       val attributeValue = valueReader.read(value, attributeName)
       return if (attributeValue == null) {
          TypedNull.create(type, source)
