@@ -47,14 +47,7 @@ class ObjectBuilder(
    private val logger = KotlinLogging.logger {}
    private val id = UUID.randomUUID().toString()
    private val buildSpecProvider = TypedInstancePredicateFactory()
-   private val originalContext = if (context.isProjecting) context
-      .facts
-      .firstOrNull { it is TypedObject }
-      ?.let {
-         val ctx = context.only(it)
-         ctx.isProjecting = true
-         ctx
-      } else null
+
 
    private val accessorReaders: List<AccessorHandler<out Accessor>> = listOf(
       CollectionProjectionBuilder(context)
@@ -278,12 +271,6 @@ class ObjectBuilder(
       // With this fix projection time of 1000 items was reduced from 37seconds to 650ms!
       // Enum filtering will be removed once the updated enum processing logic branch is merged.
 
-
-      // Update - MP: 7-Nov-22:
-      // This code was iterating all attributes in an object, to copy across.
-      // The approach (should be) broadly redundant, since that's what happens in the TypedObjectFactory.
-      // However, need to regression test this.  if you're seeing this comment from a green build,
-      // it suggests the tests passed, and we can delete the below.
 
       if (targetType.taxiType is ObjectType && context.facts.filter { !it.type.isEnum }.size == 1) {
          val sourceObjectType = context.facts.filter { !it.type.isEnum }.iterator().next()
