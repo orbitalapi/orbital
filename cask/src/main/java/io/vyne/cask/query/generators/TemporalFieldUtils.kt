@@ -48,7 +48,7 @@ object TemporalFieldUtils {
       name = name,
       constraints = listOf())
 
-   fun parameterType(field: Field) = field.type.formattedInstanceOfType ?: field.type
+   fun parameterType(field: Field) = field.type
 
    fun collectionTypeOf(type: Type) = ArrayType(type = type, source = CompilationUnit.unspecified())
 
