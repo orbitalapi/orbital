@@ -1,7 +1,6 @@
 package io.vyne.models
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.common.base.Stopwatch
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
 import io.vyne.models.facts.*
 import io.vyne.models.format.FormatDetector
@@ -16,8 +15,8 @@ import io.vyne.schemas.Field
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
-import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.timed
+import io.vyne.utils.xtimed
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.accessors.Accessor
@@ -100,7 +99,7 @@ class TypedObjectFactory(
          attributeName to lazy {
 
             val fieldValue =
-               timed("build field $attributeName ${field.typeDisplayName}") { buildField(field, attributeName) }
+               xtimed("build field $attributeName ${field.typeDisplayName}") { buildField(field, attributeName) }
             if (field.fieldProjection != null) {
 //               val sw = Stopwatch.createStarted()
                val projection = timed("Project field $attributeName") { projectField(field, attributeName, fieldValue) }
@@ -556,10 +555,39 @@ class TypedObjectFactory(
                   strategy = searchStrategy
                )
             )
-            searchedValue ?: queryForResult(field, fieldType, attributeName, fieldTypeName)
+            searchedValue ?: attemptToBuildFieldObject(field,fieldType,attributeName,fieldTypeName) ?: queryForResult(field, fieldType, attributeName, fieldTypeName)
          }
 
          else -> queryForResult(field, fieldType, attributeName, fieldTypeName)
+      }
+   }
+
+   /**
+    * HACK.
+    * If we're building a field, and the field is an anonymous object, and we couldn't
+    * find a match directly in the facts (which we almost never would, b/c it's an anonymous inlined typed),
+    * then we need to build the object.
+    *
+    * This is a hack, because "build an object" is already handled by the ObjectBuilder.
+    * We should be calling out to that to perform this task.
+    *
+    * That creates challenges, as we need to pass the ObjectBuilder in the TypedObjectFactory,
+    * which becomes recursive.
+    */
+   private fun attemptToBuildFieldObject(
+      field: Field,
+      fieldType: Type,
+      attributeName: AttributeName,
+      fieldTypeName: QualifiedName
+   ):TypedInstance? {
+      if (type.isScalar) {
+         return null
+      }
+      val result = newFactory(fieldType, this.value).build()
+      return if (result is TypedNull) {
+         null
+      } else {
+         result
       }
    }
 
