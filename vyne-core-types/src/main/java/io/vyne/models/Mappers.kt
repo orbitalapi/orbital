@@ -2,6 +2,7 @@ package io.vyne.models
 
 import io.vyne.utils.log
 import lang.taxi.Operator
+import mu.KotlinLogging
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -11,8 +12,16 @@ import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.TemporalAccessor
 
 private object TypeFormatter {
+   private val logger = KotlinLogging.logger {}
    val UtcZoneId = ZoneId.of("UTC")
    fun applyFormat(typedInstance: TypedInstance): String? {
+      if (typedInstance.value == null) {
+         return null
+      }
+      if (typedInstance.value !is TemporalAccessor) {
+         logger.error { "Expected to find a Date (TemporalAccessor) value in type ${typedInstance.type.qualifiedName.shortDisplayName}, but found an instance of ${typedInstance.value!!::class.simpleName}.  Returning as a string, and not applying the format" }
+         return typedInstance.value.toString()
+      }
       require(typedInstance.value is TemporalAccessor) { "Formatted types only supported on TemporalAccessors currently.  If you're seeing this error, time to do some work!" }
       require(typedInstance is TypedValue) { "Formatted types are only applicable to scalar TypedValues at present"}
       val instant = typedInstance.value as TemporalAccessor
