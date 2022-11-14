@@ -45,7 +45,7 @@
       <swagger.springfox.version>3.0.0</swagger.springfox.version>
       <http4k.version>4.33.3.0</http4k.version>
       <hazelcast-jet.version>4.5</hazelcast-jet.version>
-      <hazelcast.version>5.1.4</hazelcast.version>
+      <hazelcast.version>5.2.1</hazelcast.version>
       <testcontainers.version>1.16.2</testcontainers.version>
       <h2.version>2.1.214</h2.version>
       <reactor-bom.version>2020.0.24</reactor-bom.version>
