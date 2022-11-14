@@ -19,6 +19,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.log
+import io.vyne.utils.timed
 import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.ColumnAccessor
 import lang.taxi.accessors.ConditionalAccessor
@@ -289,11 +290,11 @@ class AccessorReader(
          is FieldSourceAccessor -> TypedNull.create(targetType, source)
          is LambdaExpression -> DeferredTypedInstance(accessor, schema, source)
          is OperatorExpression -> evaluateOperatorExpression(targetType, accessor, schema, value, nullValues, source, format)
-         is FieldReferenceExpression -> evaluateFieldReference(
+         is FieldReferenceExpression -> timed("evaluate field reference ${accessor.asTaxi()}") { evaluateFieldReference(
             targetType,
             accessor.selectors,
             source
-         )
+         )}
 
          is LiteralExpression -> read(
             value,
@@ -320,7 +321,7 @@ class AccessorReader(
          )
 
          is TypeExpression -> readTypeExpression(accessor, allowContextQuerying)
-         is ModelAttributeReferenceSelector -> readModelAttributeSelector(accessor, allowContextQuerying, schema)
+         is ModelAttributeReferenceSelector -> timed("read model Attribute ${accessor.asTaxi()}") { readModelAttributeSelector(accessor, allowContextQuerying, schema) }
          else -> {
             TODO("Support for accessor not implemented with type $accessor")
          }
@@ -332,8 +333,9 @@ class AccessorReader(
       allowContextQuerying: Boolean,
       schema: Schema
    ): TypedInstance {
-      val source =
+      val source = timed("source value lookup") {
          objectFactory.getValue(accessor.memberSource.toVyneQualifiedName(), queryIfNotFound = allowContextQuerying)
+      }
       val requestedType = schema.type(accessor.targetType)
       val accessorReturnType = schema.type(accessor.returnType.toVyneQualifiedName())
       val discoveryStrategy = // If the accessor is looking for a collection of the requestedType
@@ -353,8 +355,8 @@ class AccessorReader(
          } else {
             FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE
          }
-      val fact = FactBag.of(listOf(source), schema)
-         .getFactOrNull(requestedType, discoveryStrategy)
+      val fact = timed("Fact bag search") { FactBag.of(listOf(source), schema)
+         .getFactOrNull(requestedType, discoveryStrategy) }
       return fact ?: TypedNull.create(
          requestedType,
          FailedEvaluatedExpression(
@@ -456,19 +458,20 @@ class AccessorReader(
          error("Function ${function.qualifiedName} expects ${function.parameters.size} arguments, but only ${accessor.inputs.size} were provided")
       }
 
-      val declaredInputs = function.parameters.filter { !it.isVarArg }.mapIndexed { index, parameter ->
-         require(index < accessor.inputs.size) { "Cannot read parameter ${parameter.description} as no input was provided at index $index" }
-         val parameterInputAccessor = accessor.inputs[index]
-         val targetParameterType = if (parameter.type is LambdaExpressionType) {
-            schema.type((parameter.type as LambdaExpressionType).returnType)
-         } else {
-            schema.type(parameter.type)
-         }
+      val declaredInputs = timed("lookup inputs for function eval") {
+         function.parameters.filter { !it.isVarArg }.mapIndexed { index, parameter ->
+            require(index < accessor.inputs.size) { "Cannot read parameter ${parameter.description} as no input was provided at index $index" }
+            val parameterInputAccessor = accessor.inputs[index]
+            val targetParameterType = if (parameter.type is LambdaExpressionType) {
+               schema.type((parameter.type as LambdaExpressionType).returnType)
+            } else {
+               schema.type(parameter.type)
+            }
 
-         // This doesn't feel like the right place to do this, it's really
-         // treating this as an edge case, and we shouldn't be.
-         // Here, we're saying "if the thing we're trying to build is actually the input into the function, then it's ok to search".
-         // No real logic behind that, other than it's what I need to make my test pass.
+            // This doesn't feel like the right place to do this, it's really
+            // treating this as an edge case, and we shouldn't be.
+            // Here, we're saying "if the thing we're trying to build is actually the input into the function, then it's ok to search".
+            // No real logic behind that, other than it's what I need to make my test pass.
 
 //         val queryIfNotFound = if (targetType.hasExpression && targetType.expression!! is LambdaExpression) {
 //            val lambdaExpression = targetType.expression as LambdaExpression
@@ -479,35 +482,35 @@ class AccessorReader(
 //            false
 //         }
 
-         // MP, 2-Nov-21: Modifying the rules here where types that are inputs to an expression can be
-         // searched for, regardless.  I suspect this will break some stuff.
-         // I think the ACTUAL approach to use here is to introduce an operator that indicates "Search for this thing".
-         // Also, our search scope should (by default) consider the typed objects in our hand, where at the moment, it doesn't
-         // eg: Currently
-         // find { Foo } as {
-         // ... <- Here, the attributes of Foo aren't available by default, but they should be.
-         // nested1 : {
-         // ... <-- Here, the attributes one layer up aren't available, but they should be.
-         // }
-         //}
-         // MP 8-Nov-22: One year later...
-         // We had swapped back to the above logic, but without documenting why.
-         // I'd like to be able to discover expression params from services, so re-enabling this.
-         // If we revert, document the reason.
-         val queryIfNotFound = true
+            // MP, 2-Nov-21: Modifying the rules here where types that are inputs to an expression can be
+            // searched for, regardless.  I suspect this will break some stuff.
+            // I think the ACTUAL approach to use here is to introduce an operator that indicates "Search for this thing".
+            // Also, our search scope should (by default) consider the typed objects in our hand, where at the moment, it doesn't
+            // eg: Currently
+            // find { Foo } as {
+            // ... <- Here, the attributes of Foo aren't available by default, but they should be.
+            // nested1 : {
+            // ... <-- Here, the attributes one layer up aren't available, but they should be.
+            // }
+            //}
+            // MP 8-Nov-22: One year later...
+            // We had swapped back to the above logic, but without documenting why.
+            // I'd like to be able to discover expression params from services, so re-enabling this.
+            // If we revert, document the reason.
+            val queryIfNotFound = true
 
-         read(
-            value,
-            targetParameterType,
-            parameterInputAccessor,
-            schema,
-            nullValues,
-            source,
-            allowContextQuerying = queryIfNotFound,
-            format = format
-         )
+            read(
+               value,
+               targetParameterType,
+               parameterInputAccessor,
+               schema,
+               nullValues,
+               source,
+               allowContextQuerying = queryIfNotFound,
+               format = format
+            )
+         }
       }
-
       val declaredVarArgs = if (function.parameters.isNotEmpty() && function.parameters.last().isVarArg) {
          val varargFrom = function.parameters.size - 1
          val varargParam = function.parameters.last()

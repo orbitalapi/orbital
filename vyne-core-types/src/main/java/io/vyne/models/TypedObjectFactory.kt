@@ -26,6 +26,7 @@ import lang.taxi.expressions.Expression
 import lang.taxi.types.FormatsAndZoneOffset
 import mu.KotlinLogging
 import org.apache.commons.csv.CSVRecord
+import java.util.stream.Collectors
 import kotlin.streams.toList
 
 /**
@@ -98,11 +99,11 @@ class TypedObjectFactory(
       attributesToMap.map { (attributeName, field) ->
          attributeName to lazy {
 
-            val fieldValue =
-               xtimed("build field $attributeName ${field.typeDisplayName}") { buildField(field, attributeName) }
+            val fieldValue = xtimed("build field $attributeName ${field.typeDisplayName}") { buildField(field, attributeName) }
+
             if (field.fieldProjection != null) {
 //               val sw = Stopwatch.createStarted()
-               val projection = timed("Project field $attributeName") { projectField(field, attributeName, fieldValue) }
+               val projection = xtimed("Project field $attributeName") { projectField(field, attributeName, fieldValue) }
 //               logger.debug { "Projection to ${projection.type.name.shortDisplayName} took ${sw.elapsed().toMillis()}ms" }
                projection
 
@@ -132,7 +133,7 @@ class TypedObjectFactory(
             .map { collectionMember ->
                newFactory(projectedType.collectionType!!, collectionMember)
                   .build()
-            }.toList()
+            }.collect(Collectors.toList())
             .let { projectedCollection -> TypedCollection.from(projectedCollection, source) }
       } else {
          newFactory(projectedType, fieldValue).build()
@@ -208,6 +209,10 @@ class TypedObjectFactory(
    }
 
    fun build(decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
+    return timed("Build ${this.type.name.shortDisplayName}") { doBuild(decorator) }
+   }
+
+   private fun doBuild(decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
       val metadataAndFormat = formatDetector.getFormatType(type)
       if (metadataAndFormat != null) {
          // now what?
@@ -264,10 +269,11 @@ class TypedObjectFactory(
       val mappedAttributes = attributesToMap.map { (attributeName) ->
          // The value may have already been populated on-demand from a conditional
          // field set evaluation block, prior to the iterator hitting the field
-         attributeName to getOrBuild(attributeName)
+         attributeName to xtimed("build attribute $attributeName") { getOrBuild(attributeName) }
       }.toMap()
 
-      return TypedObject(type, decorator(mappedAttributes), source)
+      val decorated = xtimed("apply decorator") { decorator(mappedAttributes) }
+      return TypedObject(type, decorated, source)
    }
 
    private fun getOrBuild(attributeName: AttributeName, allowAccessorEvaluation: Boolean = true): TypedInstance {
