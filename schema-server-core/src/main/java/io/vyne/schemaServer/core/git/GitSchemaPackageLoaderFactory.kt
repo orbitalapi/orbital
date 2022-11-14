@@ -27,7 +27,7 @@ class GitSchemaPackageLoaderFactory(
       logger.info { "Building a git package loader for git repo at  ${spec.uri} checking out to $workingDir, polling ${config.pollFrequency}" }
 
       val fileMonitor = when (changeDetectionMethod) {
-         FileChangeDetectionMethod.WATCH -> ReactiveWatchingFileSystemMonitor(workingDir, listOf(".git/"))
+         FileChangeDetectionMethod.WATCH -> ReactiveWatchingFileSystemMonitor(workingDir, listOf(".git"))
          FileChangeDetectionMethod.POLL -> ReactivePollingFileSystemMonitor(workingDir, pollFrequency)
       }
       return GitSchemaPackageLoader(

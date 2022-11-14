@@ -37,9 +37,11 @@ class GitOperations(val workingDir: File, private val config: GitRepositoryConfi
    private val logger = KotlinLogging.logger {}
 
    init {
-      transportConfigCallback = if (!config.sshPrivateKeyPath.isNullOrEmpty()) {
-         SshTransportConfigCallback(config.sshPrivateKeyPath, config.sshPassPhrase)
-      } else {
+      transportConfigCallback = if (config.sshAuth != null) {
+         SshTransportConfigCallback(config.sshAuth)
+      } else if(config.credentials != null) {
+         CredentialsTransportConfigCallback(config.credentials)
+      }else {
          null
       }
       val repoBuilder = FileRepositoryBuilder()
@@ -66,7 +68,7 @@ class GitOperations(val workingDir: File, private val config: GitRepositoryConfi
       return if (existsLocally()) {
          checkout()
          val pullResult = pull()
-         pullResult.mergeResult.mergedCommits.isNotEmpty()
+         pullResult.mergeResult?.mergedCommits?.isNotEmpty() ?: false
       } else {
          val workingDirPath = workingDir.toPath()
          if (!Files.exists(workingDirPath.parent)) {

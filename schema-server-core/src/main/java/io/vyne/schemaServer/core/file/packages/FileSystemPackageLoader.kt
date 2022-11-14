@@ -21,7 +21,7 @@ import kotlin.io.path.readBytes
 class FileSystemPackageLoader(
    private val config: FileSystemPackageSpec,
    private val adaptor: SchemaSourcesAdaptor,
-   private val fileMontitor: ReactiveFileSystemMonitor,
+   private val fileMonitor: ReactiveFileSystemMonitor,
    private val eventThrottleSize: Int = 100,
    private val eventThrottleDuration: Duration = Duration.ofMillis(50),
 
@@ -32,7 +32,7 @@ class FileSystemPackageLoader(
 ) : SchemaPackageTransport {
 
    private val logger = KotlinLogging.logger {}
-   private val fileEvents: Flux<List<FileSystemChangeEvent>> = fileMontitor.startWatching()
+   private val fileEvents: Flux<List<FileSystemChangeEvent>> = fileMonitor.startWatching()
 
    private val sink = Sinks.many().replay().latest<SourcePackage>()
 

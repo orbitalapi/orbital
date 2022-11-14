@@ -22,7 +22,7 @@ class GitSchemaPackageLoader(
    private val config: GitRepositoryConfig,
    adaptor: SchemaSourcesAdaptor,
    // visible for testing
-   val fileMonitor: ReactiveFileSystemMonitor = ReactiveWatchingFileSystemMonitor(workingDir),
+   val fileMonitor: ReactiveFileSystemMonitor = ReactiveWatchingFileSystemMonitor(workingDir, listOf(".git")),
    val gitPollFrequency: Duration = Duration.ofSeconds(30),
 ) : SchemaPackageTransport {
 
@@ -45,7 +45,7 @@ class GitSchemaPackageLoader(
             pathWithGitRepo, config.loader
          ),
          adaptor = adaptor,
-         fileMontitor = fileMonitor,
+         fileMonitor = fileMonitor,
          transportDecorator = this
       )
    }

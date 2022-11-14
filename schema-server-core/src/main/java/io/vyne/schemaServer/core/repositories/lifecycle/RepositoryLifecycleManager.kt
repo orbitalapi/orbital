@@ -77,8 +77,6 @@ class RepositoryLifecycleManager(
    override fun gitRepositorySpecAdded(spec: GitSpecAddedEvent) {
       gitSpecAddedSink.emitNext(spec, emitFailureHandler)
    }
-
-
 }
 
 
