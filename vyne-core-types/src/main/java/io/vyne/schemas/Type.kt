@@ -311,13 +311,6 @@ data class Type(
       return this.attributes.filter { (name, field) -> field.hasMetadata(annotationName) }
    }
 
-   init {
-      if (this.isCollection && this.taxiType.toQualifiedName().parameterizedName == "lang.taxi.Array<lang.taxi.Any>") {
-         log().info("")
-      }
-   }
-
-
    // Note : Lazy evaluation to work around that aliases are partiall populated during
    // construction.
    // If changing, make sure tests pass.

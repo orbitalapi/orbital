@@ -248,7 +248,7 @@ class TypedObjectFactory(
          )
       }
 
-      if (type.isCollection) {
+      if (type.isCollection && CollectionReader.canRead(type, value)) {
          return CollectionReader.readCollectionFromNonTypedCollectionValue(
             type,
             value,
