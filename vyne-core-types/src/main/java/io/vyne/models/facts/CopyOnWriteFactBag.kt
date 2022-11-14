@@ -15,7 +15,7 @@ import mu.KotlinLogging
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.streams.toList
+import java.util.stream.Collectors
 
 
 open class CopyOnWriteFactBag(
@@ -98,7 +98,8 @@ open class CopyOnWriteFactBag(
          override fun load(key: FactMapTraversalStrategy): List<TypedInstance> {
             val navigator = TreeNavigator(key.predicate)
             val treeDef: TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
-            val list = TreeStream.breadthFirst(treeDef, dataTreeRoot()).toList()
+            val list = TreeStream.breadthFirst(treeDef, dataTreeRoot())
+               .collect(Collectors.toList())
             return list
          }
 
