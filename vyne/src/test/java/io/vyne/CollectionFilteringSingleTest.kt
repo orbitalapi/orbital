@@ -1,5 +1,7 @@
 package io.vyne
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.winterbe.expekt.should
 import io.vyne.models.TypedObject
 import io.vyne.models.json.parseJson
@@ -38,6 +40,7 @@ class CollectionFilteringSingleTest {
 
    @Test
    fun `can filter a list of types to a single from a property on the projected type`():Unit = runBlocking{
+      jacksonObjectMapper().readValue<Map<String,Any>>("")
       val (vyne,stub) = testVyne(schema)
       stub.addResponse("getAll", vyne.parseJson("Movie[]", movieJson))
       val results = vyne.query("""find { Movie[] } as {

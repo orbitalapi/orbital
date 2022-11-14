@@ -9,7 +9,11 @@ import io.vyne.schemas.Type
 
 class EmptyFactBag(private val list: List<TypedInstance> = emptyList()) : FactBag, Collection<TypedInstance> by list {
    private fun notSupported(): Nothing = throw RuntimeException("Not supported on an EmptyFactBag")
-   override fun breadthFirstFilter(strategy: FactDiscoveryStrategy, predicate: (TypedInstance) -> Boolean): List<TypedInstance> = emptyList()
+   override fun breadthFirstFilter(
+      strategy: FactDiscoveryStrategy,
+      shouldGoDeeperPredicate: FactMapTraversalStrategy,
+      matchingPredicate: (TypedInstance) -> Boolean
+   ): List<TypedInstance> = emptyList()
 
    override fun rootFacts(): List<TypedInstance> = emptyList()
 
@@ -96,7 +100,7 @@ interface FactBag : Collection<TypedInstance> {
 
    //   fun firstOrNull(predicate: (TypedInstance) -> Boolean): TypedInstance?
 //   fun filter(predicate: (TypedInstance) -> Boolean): List<TypedInstance>
-   fun breadthFirstFilter(strategy: FactDiscoveryStrategy, predicate: (TypedInstance) -> Boolean): List<TypedInstance>
+   fun breadthFirstFilter(strategy: FactDiscoveryStrategy, shouldGoDeeperPredicate: FactMapTraversalStrategy,  matchingPredicate: (TypedInstance) -> Boolean): List<TypedInstance>
 
    /**
     * A mutating operation.  Adds a fact to the current fact bag.

@@ -3,13 +3,13 @@ package io.vyne.models.facts
 import com.diffplug.common.base.TreeDef
 import com.diffplug.common.base.TreeStream
 import com.google.common.annotations.VisibleForTesting
-import com.google.common.base.Stopwatch
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
 import io.vyne.models.*
 import io.vyne.query.AlwaysGoodSpec
 import io.vyne.query.TypedInstanceValidPredicate
 import io.vyne.schemas.*
 import io.vyne.utils.ImmutableEquality
-import io.vyne.utils.cached
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 import java.util.*
@@ -59,7 +59,7 @@ open class CopyOnWriteFactBag(
 
    override fun addFact(fact: TypedInstance): CopyOnWriteFactBag {
       this.facts.add(fact)
-      this.modelTree.invalidate()
+      this.modelTreeCache.invalidateAll()
       // Now that we have a new fact, invalidate queries where we had asked for a fact
       // previously, and had returned null.
       // This allows new queries to discover new values.
@@ -92,18 +92,31 @@ open class CopyOnWriteFactBag(
       return TypedCollection.arrayOf(anyArrayType, facts.toList(), source = MixedSources)
    }
 
-   private val modelTree = cached<List<TypedInstance>> {
-      val navigator = TreeNavigator()
-      val treeDef: TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
-      val list = TreeStream.breadthFirst(treeDef, dataTreeRoot()).toList()
-      list
-   }
+   private val modelTreeCache = CacheBuilder
+      .newBuilder()
+      .build<FactMapTraversalStrategy, List<TypedInstance>>(object : CacheLoader<FactMapTraversalStrategy, List<TypedInstance>>() {
+         override fun load(key: FactMapTraversalStrategy): List<TypedInstance> {
+            val navigator = TreeNavigator(key.predicate)
+            val treeDef: TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
+            val list = TreeStream.breadthFirst(treeDef, dataTreeRoot()).toList()
+            return list
+         }
+
+      })
+
+//   private val modelTree = cached<List<TypedInstance>> {
+//      val navigator = TreeNavigator()
+//      val treeDef: TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
+//      val list = TreeStream.breadthFirst(treeDef, dataTreeRoot()).toList()
+//      list
+//   }
 
    override fun breadthFirstFilter(
       strategy: FactDiscoveryStrategy,
-      predicate: (TypedInstance) -> Boolean
+      shouldGoDeeperPredicate: FactMapTraversalStrategy,
+      matchingPredicate: (TypedInstance) -> Boolean
    ): List<TypedInstance> {
-      return modelTree().filter(predicate)
+      return modelTree(shouldGoDeeperPredicate).filter(matchingPredicate)
    }
 
    /**
@@ -111,11 +124,13 @@ open class CopyOnWriteFactBag(
     * Use breadth-first, as we want to favour nodes closer to the root.
     * Deeply nested children are less likely to be relevant matches.
     */
-   private fun modelTree(): List<TypedInstance> {
+   private fun modelTree(shouldGoDeeperPredicate: FactMapTraversalStrategy): List<TypedInstance> {
+      return modelTreeCache.get(shouldGoDeeperPredicate)
+
       // TODO : MP - Investigating the performance implications of caching the tree.
       // If this turns out to be faster, we should refactor the api to be List<TypedInstance>, since
       // the stream indicates deferred evaluation, and it's not anymore.
-      return modelTree.get()
+//      return modelTree.get()
    }
 
    private data class GetFactOrNullCacheKey(
@@ -235,7 +250,7 @@ open class CopyOnWriteFactBag(
 
 }
 
-private class TreeNavigator {
+private class TreeNavigator(val shouldGoDeeperPredicate: (TypedInstance) -> Boolean) {
    private val visitedNodes = mutableSetOf<TypedInstance>()
 
    fun visit(instance: TypedInstance): List<TypedInstance> {
@@ -243,7 +258,7 @@ private class TreeNavigator {
          return emptyList()
       } else {
          visitedNodes.add(instance)
-         TypedInstanceTree.visit(instance)
+         TypedInstanceTree.visit(instance, shouldGoDeeperPredicate)
       }
    }
 }
@@ -254,9 +269,12 @@ private object TypedInstanceTree {
     * Function which defines how to convert a TypedInstance into a tree, for traversal
     */
 
-   fun visit(instance: TypedInstance): List<TypedInstance> {
+   fun visit(instance: TypedInstance, shouldGoDeeperPredicate: (TypedInstance) -> Boolean): List<TypedInstance> {
 
       if (instance.type.isClosed) {
+         return emptyList()
+      }
+      if (!shouldGoDeeperPredicate(instance)) {
          return emptyList()
       }
 

@@ -58,10 +58,14 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
       return CascadingFactBag(this.primary.excluding(facts), this.secondary.excluding(facts))
    }
 
-   override fun breadthFirstFilter(strategy: FactDiscoveryStrategy, predicate: (TypedInstance) -> Boolean): List<TypedInstance> {
-      val fromPrimary = primary.breadthFirstFilter(strategy, predicate)
+   override fun breadthFirstFilter(
+      strategy: FactDiscoveryStrategy,
+      shouldGoDeeperPredicate: FactMapTraversalStrategy,
+      matchingPredicate: (TypedInstance) -> Boolean
+   ): List<TypedInstance> {
+      val fromPrimary = primary.breadthFirstFilter(strategy, shouldGoDeeperPredicate, matchingPredicate)
       val fromSecondary = if (strategy == FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) {
-         secondary.breadthFirstFilter(strategy, predicate)
+         secondary.breadthFirstFilter(strategy, shouldGoDeeperPredicate, matchingPredicate)
       } else {
          emptyList()
       }

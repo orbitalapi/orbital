@@ -4,6 +4,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.Equality
 import lang.taxi.utils.takeHead
+import mu.KotlinLogging
 
 
 data class TypedCollection(
@@ -12,6 +13,7 @@ data class TypedCollection(
    override val source: DataSource = MixedSources
 ) : List<TypedInstance> by value, TypedInstance {
    private val equality = Equality(this, TypedCollection::type, TypedCollection::value)
+
    override fun toString(): String {
       return "TypedCollection(type=${type.qualifiedName.longDisplayName}, value=$value)"
    }
@@ -46,6 +48,7 @@ data class TypedCollection(
       }
 
    companion object {
+      private val logger = KotlinLogging.logger {}
       fun arrayOf(
          collectionType: Type,
          value: List<TypedInstance>,

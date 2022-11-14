@@ -16,6 +16,7 @@ import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.*
+import lang.taxi.utils.log
 import lang.taxi.utils.takeHead
 import mu.KotlinLogging
 
@@ -309,6 +310,13 @@ data class Type(
    fun getAttributesWithAnnotation(annotationName: QualifiedName): Map<AttributeName, Field> {
       return this.attributes.filter { (name, field) -> field.hasMetadata(annotationName) }
    }
+
+   init {
+      if (this.isCollection && this.taxiType.toQualifiedName().parameterizedName == "lang.taxi.Array<lang.taxi.Any>") {
+         log().info("")
+      }
+   }
+
 
    // Note : Lazy evaluation to work around that aliases are partiall populated during
    // construction.

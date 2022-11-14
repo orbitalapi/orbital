@@ -149,7 +149,7 @@ enum class FactDiscoveryStrategy {
          search: FactSearch
       ): TypedInstance? {
          val matches = facts
-            .breadthFirstFilter(ANY_DEPTH_EXPECT_ONE) { search.filterPredicate.predicate(it) }
+            .breadthFirstFilter(ANY_DEPTH_EXPECT_ONE, FactMapTraversalStrategy.enterIfHasFieldOfType(search.targetType)) { search.filterPredicate.predicate(it) }
             .toList()
          return when {
             matches.isEmpty() -> null
@@ -175,7 +175,7 @@ enum class FactDiscoveryStrategy {
          search: FactSearch
       ): TypedInstance? {
          val matches = facts
-            .breadthFirstFilter(ANY_DEPTH_EXPECT_ONE) { search.filterPredicate.predicate(it) }
+            .breadthFirstFilter(ANY_DEPTH_EXPECT_ONE, FactMapTraversalStrategy.enterIfHasFieldOfType(search.targetType)) { search.filterPredicate.predicate(it) }
             .distinct()
             .toList()
          return when {
@@ -212,7 +212,7 @@ enum class FactDiscoveryStrategy {
          search: FactSearch
       ): TypedCollection? {
          val matches = factBag
-            .breadthFirstFilter(ANY_DEPTH_ALLOW_MANY) { search.filterPredicate.predicate(it) }
+            .breadthFirstFilter(ANY_DEPTH_ALLOW_MANY, FactMapTraversalStrategy.enterIfHasFieldOfType(search.targetType)) { search.filterPredicate.predicate(it) }
             .distinct()
             .toList()
          return when {
