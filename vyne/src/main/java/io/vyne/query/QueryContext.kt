@@ -10,6 +10,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.facts.CopyOnWriteFactBag
 import io.vyne.models.facts.FactBag
 import io.vyne.models.facts.FactDiscoveryStrategy
+import io.vyne.models.facts.ScopedFact
 import io.vyne.models.functions.FunctionResultCacheKey
 import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.query.graph.ServiceParams
@@ -20,6 +21,7 @@ import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.Serializable
+import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.policies.Instruction
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
@@ -159,6 +161,9 @@ data class QueryContext(
    var projectResultsTo: Type? = null
       private set
 
+   var projectionScope: ProjectionFunctionScope? = null
+      private set
+
    var responseType: String? = null
       private set
 
@@ -240,13 +245,13 @@ data class QueryContext(
     * Returns a QueryContext, with only the provided fact.
     * All other parameters (queryEngine, schema, etc) are retained
     */
-   fun only(fact: TypedInstance): QueryContext {
-      return only(listOf(fact))
-
+   fun only(fact: TypedInstance, scopedFacts: List<ScopedFact> = emptyList()): QueryContext {
+      return only(listOf(fact), scopedFacts)
    }
-   fun only(facts:List<TypedInstance>): QueryContext {
+
+   fun only(facts:List<TypedInstance>, scopedFacts: List<ScopedFact> = emptyList()): QueryContext {
       val copied = this.copy(
-         facts = CopyOnWriteFactBag(facts, schema),
+         facts = CopyOnWriteFactBag(CopyOnWriteArrayList(facts), scopedFacts, schema),
          parent = this,
          vyneQueryStatistics = VyneQueryStatistics()
       )
@@ -268,8 +273,8 @@ data class QueryContext(
       return this
    }
 
-   fun projectResultsTo(projectedTaxiType: lang.taxi.types.Type): QueryContext {
-      return projectResultsTo(ProjectionAnonymousTypeProvider.projectedTo(projectedTaxiType,schema))
+   fun projectResultsTo(projectedTaxiType: lang.taxi.types.Type, scope:ProjectionFunctionScope?): QueryContext {
+      return projectResultsTo(ProjectionAnonymousTypeProvider.projectedTo(projectedTaxiType,schema), scope)
    }
 
    override suspend fun findType(type: Type): Flow<TypedInstance> {
@@ -277,8 +282,9 @@ data class QueryContext(
          .results
    }
 
-   private fun projectResultsTo(targetType: Type): QueryContext {
+   private fun projectResultsTo(targetType: Type, scope:ProjectionFunctionScope?): QueryContext {
       projectResultsTo = targetType
+      projectionScope = scope
       return this
    }
 

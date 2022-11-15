@@ -79,7 +79,7 @@ class ObjectBuilderStrategy(val formatSpecs: List<ModelFormatSpec> = emptyList()
          context,
          target.first().type,
          functionRegistry = context.schema.functionRegistry,
-         formatSpecs = formatSpecs
+         formatSpecs = formatSpecs,
       ).build()
       return when {
          match != null && match is TypedNull -> QueryStrategyResult.searchFailed()

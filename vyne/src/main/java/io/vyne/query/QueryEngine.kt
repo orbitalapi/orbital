@@ -268,7 +268,7 @@ class StatefulQueryEngine(
       context,
       targetType,
       functionRegistry = this.schema.functionRegistry,
-      formatSpecs = formatSpecs
+      formatSpecs = formatSpecs,
    )
 
    // TODO investigate why in tests got throught this method (there are two facts of TypedCollection), looks like this is only in tests

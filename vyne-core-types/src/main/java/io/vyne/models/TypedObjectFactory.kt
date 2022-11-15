@@ -22,12 +22,13 @@ import kotlinx.coroutines.runBlocking
 import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.ColumnAccessor
 import lang.taxi.accessors.JsonPathAccessor
+import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.expressions.Expression
 import lang.taxi.types.FormatsAndZoneOffset
 import mu.KotlinLogging
 import org.apache.commons.csv.CSVRecord
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.stream.Collectors
-import kotlin.streams.toList
 
 /**
  * Constructs a TypedObject
@@ -99,11 +100,19 @@ class TypedObjectFactory(
       attributesToMap.map { (attributeName, field) ->
          attributeName to lazy {
 
-            val fieldValue = xtimed("build field $attributeName ${field.typeDisplayName}") { buildField(field, attributeName) }
+            val fieldValue =
+               xtimed("build field $attributeName ${field.typeDisplayName}") { buildField(field, attributeName) }
 
             if (field.fieldProjection != null) {
 //               val sw = Stopwatch.createStarted()
-               val projection = xtimed("Project field $attributeName") { projectField(field, attributeName, fieldValue) }
+               val projection = xtimed("Project field $attributeName") {
+                  projectField(
+                     field,
+                     attributeName,
+                     fieldValue,
+                     field.fieldProjection.projectionFunctionScope
+                  )
+               }
 //               logger.debug { "Projection to ${projection.type.name.shortDisplayName} took ${sw.elapsed().toMillis()}ms" }
                projection
 
@@ -120,7 +129,12 @@ class TypedObjectFactory(
     *    a : A, b: B
     * }
     */
-   private fun projectField(field: Field, attributeName: AttributeName, fieldValue: TypedInstance): TypedInstance {
+   private fun projectField(
+      field: Field,
+      attributeName: AttributeName,
+      fieldValue: TypedInstance,
+      projectionScope: ProjectionFunctionScope
+   ): TypedInstance {
       if (fieldValue is TypedNull) {
          // Don't attempt to project nulls
          return TypedNull.create(schema.type(field.type), fieldValue.source)
@@ -131,12 +145,12 @@ class TypedObjectFactory(
          fieldValue
             .parallelStream()
             .map { collectionMember ->
-               newFactory(projectedType.collectionType!!, collectionMember)
+               newFactory(projectedType.collectionType!!, collectionMember, scope = projectionScope)
                   .build()
             }.collect(Collectors.toList())
             .let { projectedCollection -> TypedCollection.from(projectedCollection, source) }
       } else {
-         newFactory(projectedType, fieldValue).build()
+         newFactory(projectedType, fieldValue, scope = projectionScope).build()
       }
       return projectedFieldValue
    }
@@ -148,16 +162,33 @@ class TypedObjectFactory(
    private fun newFactory(
       type: Type,
       newValue: Any,
-      factsToExclude: Set<TypedInstance> = emptySet()
+      factsToExclude: Set<TypedInstance> = emptySet(),
+      scope: ProjectionFunctionScope?
    ): TypedObjectFactory {
 
       val newMergedValue = when {
-         this.value is FactBag && newValue is TypedInstance -> CascadingFactBag(
-            CopyOnWriteFactBag(newValue, schema),
-            this.value
-         )
+         this.value is FactBag && newValue is TypedInstance -> {
+            if (scope != null) {
+               CascadingFactBag(
+                  CopyOnWriteFactBag(CopyOnWriteArrayList(), listOf(ScopedFact(scope, newValue)), schema),
+                  this.value
+               )
+            } else {
+               CascadingFactBag(CopyOnWriteFactBag(newValue, schema), this.value)
+            }
+         }
 
-         this.value is FactBag && newValue is FactBag -> CascadingFactBag(newValue, this.value)
+         this.value is FactBag && newValue is FactBag -> {
+            // Validate that the factbag has correctly defined it's scope.
+            if (scope != null) {
+               require(newValue.scopedFacts.any { it.scope == scope }) {
+                  "The new factbag has been prepared incorrectly, as it doesn't contain a scoped value matching the provided scope"
+               }
+            }
+            CascadingFactBag(newValue, this.value)
+
+         }
+
          this.value !is FactBag && factsToExclude.isNotEmpty() -> error("Cannot exclude facts when the source of facts is not a FactBag")
          else -> newValue
       }
@@ -209,7 +240,7 @@ class TypedObjectFactory(
    }
 
    fun build(decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
-    return timed("Build ${this.type.name.shortDisplayName}") { doBuild(decorator) }
+      return xtimed("Build ${this.type.name.shortDisplayName}") { doBuild(decorator) }
    }
 
    private fun doBuild(decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
@@ -231,6 +262,9 @@ class TypedObjectFactory(
                parsingErrorBehaviour = parsingErrorBehaviour
             )
          }
+      }
+      if (value is FactBag && value.hasFactOfType(type, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)) {
+         return value.getFact(type, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
       }
       if (isJson(value)) {
          val jsonParsedStructure = JsonParsedStructure.from(value as String, objectMapper)
@@ -291,6 +325,14 @@ class TypedObjectFactory(
 
       accessorEvaluationSupressed = accessorEvaluationWasSupressed
       return value
+   }
+
+   override fun getScopedFact(scope: ProjectionFunctionScope): TypedInstance {
+      if (value is FactBag) {
+         return value.getScopedFact(scope).fact
+      } else {
+         error("No scope of ${scope.name} exists on the provided value. (Was passed a value of type ${value::class.simpleName})")
+      }
    }
 
    /**
@@ -561,7 +603,8 @@ class TypedObjectFactory(
                   strategy = searchStrategy
                )
             )
-            searchedValue ?: attemptToBuildFieldObject(field,fieldType,attributeName,fieldTypeName) ?: queryForResult(field, fieldType, attributeName, fieldTypeName)
+            searchedValue ?: attemptToBuildFieldObject(field, fieldType, attributeName, fieldTypeName)
+            ?: queryForResult(field, fieldType, attributeName, fieldTypeName)
          }
 
          else -> queryForResult(field, fieldType, attributeName, fieldTypeName)
@@ -585,11 +628,13 @@ class TypedObjectFactory(
       fieldType: Type,
       attributeName: AttributeName,
       fieldTypeName: QualifiedName
-   ):TypedInstance? {
+   ): TypedInstance? {
       if (type.isScalar) {
          return null
       }
-      val result = newFactory(fieldType, this.value).build()
+      // TODO : Is the scope of Null correct here?
+      // Not sure where else it can come from.
+      val result = newFactory(fieldType, this.value, scope = null).build()
       return if (result is TypedNull) {
          null
       } else {

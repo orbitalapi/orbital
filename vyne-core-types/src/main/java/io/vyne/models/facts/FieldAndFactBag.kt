@@ -13,30 +13,32 @@ import java.util.concurrent.CopyOnWriteArrayList
 class FieldAndFactBag(
    private val fields: Map<AttributeName, TypedInstance>,
    private val otherFacts: List<TypedInstance>,
+   scopedFacts: List<ScopedFact>,
    private val schema: Schema
 ) :
    Map<AttributeName, TypedInstance> by fields,
    CopyOnWriteFactBag(
       facts = CopyOnWriteArrayList(fields.values + otherFacts),
+      scopedFacts = scopedFacts,
       schema = schema
    ) {
 
    override fun merge(other: FactBag): FactBag {
       return if (other is FieldAndFactBag) {
-         FieldAndFactBag(this.fields + other.fields, this.otherFacts + other.otherFacts, schema)
+         FieldAndFactBag(this.fields + other.fields, this.otherFacts + other.otherFacts, this.scopedFacts + other.scopedFacts, schema)
       } else {
-         FieldAndFactBag(this.fields, this.otherFacts + other.toList(), schema)
+         FieldAndFactBag(this.fields, this.otherFacts + other.toList(), this.scopedFacts + other.scopedFacts, schema)
       }
    }
 
    override fun merge(fact: TypedInstance): FactBag {
       return FieldAndFactBag(
-         this.fields, this.otherFacts + fact, schema
+         this.fields, this.otherFacts + fact, scopedFacts, schema
       )
    }
 
    override fun copy(): FieldAndFactBag {
-      return FieldAndFactBag(fields.toMap(), otherFacts.toList(), schema)
+      return FieldAndFactBag(fields.toMap(), otherFacts.toList(), scopedFacts, schema)
    }
 
    override fun excluding(facts: Set<TypedInstance>): FactBag {
@@ -52,6 +54,7 @@ class FieldAndFactBag(
       return FieldAndFactBag(
          filteredFields,
          filteredFacts,
+         scopedFacts,
          schema
       )
    }

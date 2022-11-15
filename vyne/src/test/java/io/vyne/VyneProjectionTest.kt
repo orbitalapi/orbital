@@ -2703,4 +2703,52 @@ service Broker1Service {
          )
       )
    }
+
+   @Test
+   fun `can project the result of an expression as a property from the result`() :Unit = runBlocking{
+      val (vyne, stub) = testVyne(
+         """
+         model Actor {
+              actorId : ActorId inherits Int
+              name : ActorName inherits String
+            }
+            model Film {
+               title : FilmTitle inherits String
+               headliner : ActorId
+               cast: Actor[]
+            }
+            service DataService {
+               operation getFilms():Film[]
+            }
+      """.trimIndent()
+      )
+      stub.addResponse(
+         "getFilms", vyne.parseJson(
+            "Film[]", """[
+         |{
+         |  "title" : "Star Wars",
+         |  "headliner" : 1 ,
+         |  "cast": [
+         |     { "actorId" : 1 , "name" : "Mark Hamill" },
+         |     { "actorId" : 2 , "name" : "Carrie Fisher" }
+         |     ]
+         |  }
+         |]
+      """.trimMargin()
+         )
+      )
+      val result = vyne.query(
+         """
+         find { Film[] } as (film:Film) -> {
+               title : FilmTitle
+               // This is the test...
+               // using "as" to project Actor to ActorName
+               star : singleBy(film.cast, (Actor) -> Actor::ActorId, film.headliner) as ActorName
+            }[]
+      """.trimMargin()
+      )
+         .firstTypedObject()
+      result.should.not.be.`null`
+//      result.should.equal(mapOf("title" to "Star Wars", "star" to "Mark Hamill"))
+   }
 }

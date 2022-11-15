@@ -20,16 +20,8 @@ import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.log
 import io.vyne.utils.timed
-import lang.taxi.accessors.Accessor
-import lang.taxi.accessors.ColumnAccessor
-import lang.taxi.accessors.ConditionalAccessor
-import lang.taxi.accessors.DestructuredAccessor
-import lang.taxi.accessors.FieldSourceAccessor
-import lang.taxi.accessors.JsonPathAccessor
-import lang.taxi.accessors.LiteralAccessor
-import lang.taxi.accessors.ReadFunction
-import lang.taxi.accessors.ReadFunctionFieldAccessor
-import lang.taxi.accessors.XpathAccessor
+import io.vyne.utils.xtimed
+import lang.taxi.accessors.*
 import lang.taxi.expressions.Expression
 import lang.taxi.expressions.FieldReferenceExpression
 import lang.taxi.expressions.FunctionExpression
@@ -112,6 +104,10 @@ class FactBagValueSupplier(
       return thisScopeValueSupplier.getValue(attributeName)
    }
 
+   override fun getScopedFact(scope: ProjectionFunctionScope): TypedInstance {
+      return facts.getScopedFact(scope).fact
+   }
+
    override fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance {
       TODO("Not yet implemented")
    }
@@ -132,6 +128,7 @@ interface EvaluationValueSupplier {
       allowAccessorEvaluation: Boolean = true
    ): TypedInstance
 
+   fun getScopedFact(scope: ProjectionFunctionScope): TypedInstance
    fun getValue(attributeName: AttributeName): TypedInstance
    fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance
    fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean, format: FormatsAndZoneOffset?): TypedInstance
@@ -322,18 +319,21 @@ class AccessorReader(
 
          is TypeExpression -> readTypeExpression(accessor, allowContextQuerying)
          is ModelAttributeReferenceSelector -> timed("read model Attribute ${accessor.asTaxi()}") { readModelAttributeSelector(accessor, allowContextQuerying, schema) }
+         is ScopedReferenceSelector -> readScopedReferenceSelector(accessor)
          else -> {
             TODO("Support for accessor not implemented with type $accessor")
          }
       }
    }
 
+
+
    private fun readModelAttributeSelector(
       accessor: ModelAttributeReferenceSelector,
       allowContextQuerying: Boolean,
       schema: Schema
    ): TypedInstance {
-      val source = timed("source value lookup") {
+      val source = xtimed("source value lookup") {
          objectFactory.getValue(accessor.memberSource.toVyneQualifiedName(), queryIfNotFound = allowContextQuerying)
       }
       val requestedType = schema.type(accessor.targetType)
@@ -355,7 +355,7 @@ class AccessorReader(
          } else {
             FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE
          }
-      val fact = timed("Fact bag search") { FactBag.of(listOf(source), schema)
+      val fact = xtimed("Fact bag search") { FactBag.of(listOf(source), schema)
          .getFactOrNull(requestedType, discoveryStrategy) }
       return fact ?: TypedNull.create(
          requestedType,
@@ -395,6 +395,15 @@ class AccessorReader(
       }
    }
 
+   private fun readScopedReferenceSelector(accessor: ScopedReferenceSelector): TypedInstance {
+      val scopedInstance = objectFactory.getScopedFact(accessor.scope)
+      val result =  if (accessor.selectors.isNotEmpty()) {
+         readFieldSelectorsAgainstObject(accessor.selectors, scopedInstance, schema.type(accessor.returnType), accessor.path)
+      } else {
+         scopedInstance
+      }
+      return result
+   }
    private fun evaluateFieldReference(
       targetType: Type,
       selectors: List<FieldReferenceSelector>,
@@ -402,40 +411,49 @@ class AccessorReader(
    ): TypedInstance {
       val (firstFieldRef, remainingFields) = selectors.takeHead()
       val firstObject = objectFactory.getValue(firstFieldRef.fieldName)
+      return readFieldSelectorsAgainstObject(remainingFields, firstObject, targetType, selectors.joinToString(".") { it.fieldName})
+   }
+
+   private fun readFieldSelectorsAgainstObject(
+      remainingFields: List<FieldReferenceSelector>,
+      firstObject: TypedInstance,
+      targetType: Type,
+      fullPath: String
+   ): TypedInstance {
       var errorMessage: String? = null
       val value = remainingFields
          .asSequence()
          .takeWhile { errorMessage == null }
          .fold(firstObject as TypedInstance?) { lastObject, fieldReference ->
-            val result = when {
-               lastObject is TypedNull -> {
-                  errorMessage =
-                     "Evaluation returned null where a ${lastObject.type.qualifiedName.shortDisplayName} was expected"
-                  null
-               }
+               val result = when {
+                  lastObject is TypedNull -> {
+                     errorMessage =
+                        "Evaluation returned null where a ${lastObject.type.qualifiedName.shortDisplayName} was expected"
+                     null
+                  }
 
-               lastObject !is TypedObject -> {
-                  errorMessage =
-                     "Evaluation returned a type of ${lastObject!!.type.qualifiedName.shortDisplayName} which doesn't have properties"
-                  null
-               }
+                  lastObject !is TypedObject -> {
+                     errorMessage =
+                        "Evaluation returned a type of ${lastObject!!.type.qualifiedName.shortDisplayName} which doesn't have properties"
+                     null
+                  }
 
-               !lastObject.hasAttribute(fieldReference.fieldName) -> {
-                  errorMessage =
-                     "Evaluation returned a type of ${lastObject.type.qualifiedName.shortDisplayName} which doesn't have a property named ${fieldReference.fieldName}"
-                  null
-               }
+                  !lastObject.hasAttribute(fieldReference.fieldName) -> {
+                     errorMessage =
+                        "Evaluation returned a type of ${lastObject.type.qualifiedName.shortDisplayName} which doesn't have a property named ${fieldReference.fieldName}"
+                     null
+                  }
 
-               else -> {
-                  lastObject.get(fieldReference.fieldName)
+                  else -> {
+                     lastObject.get(fieldReference.fieldName)
+                  }
                }
-            }
-            result
+               result
          }
       return if (errorMessage != null) {
          TypedNull.create(
             targetType,
-            FailedEvaluatedExpression(selectors.joinToString(".") { it.fieldName }, listOf(firstObject), errorMessage!!)
+               FailedEvaluatedExpression(fullPath, listOf(firstObject), errorMessage!!)
          )
       } else {
          value!!

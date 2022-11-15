@@ -6,6 +6,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.TypedInstanceValidPredicate
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import lang.taxi.accessors.ProjectionFunctionScope
 
 /**
  * Allows for segreated searches of facts.
@@ -37,6 +38,17 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
        * Only call the secondary if primary fails.
        */
       Cascade
+   }
+
+   override val scopedFacts: List<ScopedFact> = primary.scopedFacts + secondary.scopedFacts
+
+   override fun getScopedFact(scope: ProjectionFunctionScope): ScopedFact {
+      return getScopedFactOrNull(scope) ?:
+         error("No scope of ${scope.name} exists in this CascadingFactBag")
+   }
+
+   override fun getScopedFactOrNull(scope: ProjectionFunctionScope): ScopedFact? {
+      return primary.getScopedFactOrNull(scope) ?: secondary.getScopedFactOrNull(scope)
    }
 
    /**

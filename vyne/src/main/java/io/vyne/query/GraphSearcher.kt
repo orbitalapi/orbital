@@ -249,7 +249,7 @@ class GraphSearcher(
       // Note - in the old code, this called queryContext..getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
       // But, I want to understand why that's nessecary.
       // Investigate if we hit this point
-      error("Unable to select result of ${targetType} from graph search - expected the last edge result to match, but it didn't.")
+      error("Unable to select result of ${targetType.longDisplayName} from graph search - expected the last edge result to match, but it didn't.")
 
    }
 

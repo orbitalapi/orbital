@@ -10,6 +10,7 @@ import io.vyne.query.AlwaysGoodSpec
 import io.vyne.query.TypedInstanceValidPredicate
 import io.vyne.schemas.*
 import io.vyne.utils.ImmutableEquality
+import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 import java.util.*
@@ -20,15 +21,16 @@ import java.util.stream.Collectors
 
 open class CopyOnWriteFactBag(
    private val facts: CopyOnWriteArrayList<TypedInstance>,
+   override val scopedFacts: List<ScopedFact>,
    private val schema: Schema
 ) : FactBag, Collection<TypedInstance> by facts {
    private val logger = KotlinLogging.logger {}
 
-   constructor(facts: Collection<TypedInstance>, schema: Schema) : this(CopyOnWriteArrayList(facts), schema)
+   constructor(facts: Collection<TypedInstance>, schema: Schema) : this(CopyOnWriteArrayList(facts), emptyList(),  schema)
    constructor(fact: TypedInstance, schema: Schema) : this(listOf(fact), schema)
 
    override fun rootFacts(): List<TypedInstance> {
-      return facts
+      return facts + scopedFacts.map { it.fact }
    }
 
    open fun copy(): CopyOnWriteFactBag {
@@ -37,7 +39,8 @@ open class CopyOnWriteFactBag(
 
    override fun merge(other: FactBag): FactBag {
       return CopyOnWriteFactBag(
-         this.facts + other.toList(),
+         CopyOnWriteArrayList(this.facts + other.toList()),
+         this.scopedFacts + other.scopedFacts,
          schema
       )
    }
@@ -89,7 +92,7 @@ open class CopyOnWriteFactBag(
 
    // Wraps all the known facts under a root node, turning it into a tree
    private fun dataTreeRoot(): TypedInstance {
-      return TypedCollection.arrayOf(anyArrayType, facts.toList(), source = MixedSources)
+      return TypedCollection.arrayOf(anyArrayType, rootFacts(), source = MixedSources)
    }
 
    private val modelTreeCache = CacheBuilder

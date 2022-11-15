@@ -2,6 +2,7 @@ package io.vyne.query.projection
 
 import io.vyne.models.TypedInstance
 import io.vyne.models.facts.FactBag
+import io.vyne.models.facts.ScopedFact
 import io.vyne.query.QueryContext
 import io.vyne.query.VyneQueryStatistics
 import io.vyne.schemas.Type
@@ -57,7 +58,20 @@ class LocalProjectionProvider : ProjectionProvider {
                   cancel()
                }
                val projectionType = selectProjectionType(context.projectResultsTo!!)
-               val projectionContext = context.only(globalFacts.rootFacts() + it.value)
+               val scopedFact: ScopedFact? = context.projectionScope?.let { scope -> ScopedFact(scope, it.value) }
+
+               // If the projection scope was explicitly defined,
+               // add the thing we're projecting as a specific scoped fact.
+               // This makes it available for both type-based-searches (standard),
+               // and when searching by scope.
+               // Otherwise, just add it as a normal fact at the root.
+               // Note: In time, we should probably refactor so that there's ALWAYS a root
+               // scope, with a name of "this" if not otherwise specified.
+               val projectionContext = if (scopedFact == null) {
+                  context.only(globalFacts.rootFacts() + it.value)
+               } else {
+                  context.only(globalFacts.rootFacts(), scopedFacts = listOf(scopedFact))
+               }
                val buildResult = projectionContext.build(projectionType.qualifiedName)
                buildResult.results.map { it to projectionContext.vyneQueryStatistics }
             }

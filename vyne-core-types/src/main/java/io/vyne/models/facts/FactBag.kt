@@ -1,62 +1,11 @@
 package io.vyne.models.facts
 
 import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
 import io.vyne.query.AlwaysGoodSpec
 import io.vyne.query.TypedInstanceValidPredicate
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
-
-class EmptyFactBag(private val list: List<TypedInstance> = emptyList()) : FactBag, Collection<TypedInstance> by list {
-   private fun notSupported(): Nothing = throw RuntimeException("Not supported on an EmptyFactBag")
-   override fun breadthFirstFilter(
-      strategy: FactDiscoveryStrategy,
-      shouldGoDeeperPredicate: FactMapTraversalStrategy,
-      matchingPredicate: (TypedInstance) -> Boolean
-   ): List<TypedInstance> = emptyList()
-
-   override fun rootFacts(): List<TypedInstance> = emptyList()
-
-   override fun addFact(fact: TypedInstance): FactBag = notSupported()
-
-   override fun addFacts(facts: Collection<TypedInstance>): FactBag = notSupported()
-
-   override fun hasFactOfType(type: Type, strategy: FactDiscoveryStrategy, spec: TypedInstanceValidPredicate): Boolean =
-      false
-
-   override fun getFact(type: Type, strategy: FactDiscoveryStrategy, spec: TypedInstanceValidPredicate): TypedInstance =
-      TypedNull.create(type)
-
-   override fun getFactOrNull(
-      type: Type,
-      strategy: FactDiscoveryStrategy,
-      spec: TypedInstanceValidPredicate
-   ): TypedInstance? = null
-
-   override fun getFactOrNull(search: FactSearch): TypedInstance? = null
-
-   override fun hasFact(search: FactSearch): Boolean = false
-
-   override fun merge(other: FactBag): FactBag {
-      return if (other is EmptyFactBag) {
-         this
-      } else {
-         // I suspect I'll regret this...
-         other.merge(this)
-      }
-   }
-
-   override fun merge(fact: TypedInstance): FactBag {
-      // Hmm... not sure how to do this, since constructing a FactBag
-      // requires a schema.
-      // We
-      TODO("This isn't implemented, as we need a Schema instance.")
-   }
-
-   override fun excluding(facts: Set<TypedInstance>): FactBag {
-      TODO("Not yet implemented")
-   }
-}
+import lang.taxi.accessors.ProjectionFunctionScope
 
 /**
  * A FactBag is a collection of Facts (ie., TypedInstances) for search purposes.
@@ -72,6 +21,22 @@ interface FactBag : Collection<TypedInstance> {
       fun empty(): FactBag {
          return EmptyFactBag()
       }
+   }
+
+   /**
+    * Exposes facts that were defined with a specific declared scope.
+    * Normally, this is at the start of a projection
+    * (eg:
+    * find { Foo } as (foo:Foo) { <------ That's a scope.
+    */
+   val scopedFacts: List<ScopedFact>
+
+   fun getScopedFact(scope: ProjectionFunctionScope):ScopedFact {
+      return getScopedFactOrNull(scope) ?: error("No scope of ${scope.name} exists in this FactBag")
+   }
+
+   fun getScopedFactOrNull(scope: ProjectionFunctionScope): ScopedFact? {
+      return scopedFacts.firstOrNull { it.scope == scope }
    }
 
    /**

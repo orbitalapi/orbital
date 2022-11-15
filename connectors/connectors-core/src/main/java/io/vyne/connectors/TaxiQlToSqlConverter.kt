@@ -23,7 +23,7 @@ class TaxiQlToSqlConverter(private val schema: TaxiDocument, private val quoteCo
    fun toSql(query: TaxiQlQuery, tableNameProvider: (type: Type) -> String): Pair<String, List<SqlTemplateParameter>> {
       val typesToFind = query.typesToFind
          .map { discoveryType ->
-            val collectionType = collectionTypeOrType(schema.type(discoveryType.type)) as ObjectType
+            val collectionType = collectionTypeOrType(schema.type(discoveryType.typeName)) as ObjectType
             collectionType to discoveryType
          }
       val tableNames: Map<Type, AliasedTableName> = typesToFind.mapIndexed { index, (type, _) ->

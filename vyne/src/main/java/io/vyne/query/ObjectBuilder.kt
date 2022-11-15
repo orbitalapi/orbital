@@ -1,29 +1,15 @@
 package io.vyne.query
 
-import io.vyne.models.AccessorHandler
-import io.vyne.models.DataSource
+import io.vyne.models.*
 import io.vyne.models.facts.FactBag
 import io.vyne.models.facts.FactDiscoveryStrategy
-import io.vyne.models.FailedSearch
 import io.vyne.models.facts.FieldAndFactBag
-import io.vyne.models.MixedSources
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedObjectFactory
-import io.vyne.models.TypedValue
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.query.ExcludeQueryStrategyKlassPredicate.Companion.ExcludeObjectBuilderPredicate
-import io.vyne.models.TypedInstancePredicateFactory
 import io.vyne.query.collections.CollectionBuilder
 import io.vyne.query.collections.CollectionProjectionBuilder
-import io.vyne.schemas.AttributeName
-import io.vyne.schemas.Field
-import io.vyne.schemas.FieldSource
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
 import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
@@ -42,7 +28,7 @@ class ObjectBuilder(
    val context: QueryContext,
    private val rootTargetType: Type,
    private val functionRegistry: FunctionRegistry = FunctionRegistry.default,
-   private val formatSpecs: List<ModelFormatSpec>
+   private val formatSpecs: List<ModelFormatSpec>,
 ) {
    private val logger = KotlinLogging.logger {}
    private val id = UUID.randomUUID().toString()
@@ -324,7 +310,7 @@ class ObjectBuilder(
                // so leave the value as un-populated.
             } else {
                // We need to pass parent facts around, so that when constructing nested objects, children fields have reference to parent facts.
-               val theseFacts = FieldAndFactBag(populatedValues, emptyList(), context.schema).merge(facts)
+               val theseFacts = FieldAndFactBag(populatedValues, emptyList(), context.scopedFacts, context.schema).merge(facts)
 
                // When building a field, populate the source (unprojected) type.
                // When we go to construct the final object (In TypedObjectFactory), this source
@@ -346,7 +332,7 @@ class ObjectBuilder(
       // objects.
       // So, trying with a special type of FactBag.
       // We needed a new FactBag type here, as we need to retain the field name information.
-      val searchableFacts = FieldAndFactBag(populatedValues, context.facts.toList(), context.schema)
+      val searchableFacts = FieldAndFactBag(populatedValues, context.facts.toList(), context.scopedFacts, context.schema)
       val searchableWithParentFacts = searchableFacts.merge(facts)
       return TypedObjectFactory(
          targetType,
@@ -412,7 +398,7 @@ class ObjectBuilder(
                this.context.only(source),
                this.context.schema.type(sourcedBy.attributeType),
                functionRegistry = functionRegistry,
-               formatSpecs = formatSpecs
+               formatSpecs = formatSpecs,
             )
                .build()?.let {
                   return attributeName to it

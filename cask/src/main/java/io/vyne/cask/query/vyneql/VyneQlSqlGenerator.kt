@@ -188,10 +188,10 @@ class VyneQlSqlGenerator(
 
    private fun assertIsArrayType(discoveryType: DiscoveryType): Pair<QualifiedName, DiscoveryType> {
 
-      if (!ArrayType.isTypedCollection(discoveryType.type) && !StreamType.isStreamTypeName(discoveryType.type)) {
-         val typeName = discoveryType.type.fullyQualifiedName
+      if (!ArrayType.isTypedCollection(discoveryType.typeName) && !StreamType.isStreamTypeName(discoveryType.typeName)) {
+         val typeName = discoveryType.typeName.fullyQualifiedName
          throw CaskBadRequestException("VyneQl queries must be for array types - found $typeName, try $typeName[] ")
       }
-      return discoveryType.type.parameters[0] to discoveryType
+      return discoveryType.typeName.parameters[0] to discoveryType
    }
 }

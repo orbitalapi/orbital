@@ -104,7 +104,7 @@ class Vyne(
       return taxiQl.projectedType?.let { projectedType ->
          val type = ProjectionAnonymousTypeProvider.projectedTo(projectedType, schema)
          type.collectionType?.fullyQualifiedName ?: type.fullyQualifiedName
-      } ?: taxiQl.typesToFind.first().type.firstTypeParameterOrSelf
+      } ?: taxiQl.typesToFind.first().typeName.firstTypeParameterOrSelf
    }
 
    @VisibleForTesting
@@ -130,7 +130,7 @@ class Vyne(
       )
          .responseType(deriveResponseType(taxiQl))
       queryContext = taxiQl.projectedType?.let {
-         queryContext.projectResultsTo(it) // Merge conflict, was : it.toVyneQualifiedName()
+         queryContext.projectResultsTo(it, taxiQl.projectionScope) // Merge conflict, was : it.toVyneQualifiedName()
       } ?: queryContext
 
       val constraintProvider = TaxiConstraintConverter(this.schema)
@@ -139,12 +139,12 @@ class Vyne(
             ProjectionAnonymousTypeProvider
                .toVyneAnonymousType(discoveryType.anonymousType!!, schema)
          }
-            ?: schema.type(discoveryType.type.toVyneQualifiedName())
+            ?: schema.type(discoveryType.typeName.toVyneQualifiedName())
          val expression = if (discoveryType.constraints.isNotEmpty()) {
             val constraints = constraintProvider.buildOutputConstraints(targetType, discoveryType.constraints)
             ConstrainedTypeNameQueryExpression(targetType.name.parameterizedName, constraints)
          } else {
-            TypeNameQueryExpression(discoveryType.type.toVyneQualifiedName().parameterizedName)
+            TypeNameQueryExpression(discoveryType.typeName.toVyneQualifiedName().parameterizedName)
          }
 
          expression
