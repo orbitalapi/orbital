@@ -12,7 +12,7 @@ import { SearchService } from './search/search.service';
 import { VyneModule } from './vyne/vyne.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthService } from './auth/auth.service';
-import { TuiLinkModule, TuiRootModule } from '@taiga-ui/core';
+import { TuiButtonModule, TuiDialogModule, TuiLinkModule, TuiRootModule } from '@taiga-ui/core';
 import { LandingPageModule } from './landing-page/landing-page.module';
 import { VYNE_ROUTES } from 'src/app/vyne.routes';
 import { ConfirmationDialogModule } from 'src/app/confirmation-dialog/confirmation-dialog.module';
@@ -20,6 +20,7 @@ import { LANGUAGE_SERVER_WS_ADDRESS_TOKEN } from 'src/app/code-editor/code-edito
 import { WebsocketService } from 'src/app/services/websocket.service';
 import { environment } from 'src/environments/environment';
 import { ENVIRONMENT } from 'src/app/services/environment';
+import { TuiInputModule } from '@taiga-ui/kit';
 
 
 const oauth2OidcModule = [AuthModule];
@@ -43,6 +44,9 @@ const oauth2OidcModule = [AuthModule];
     ...oauth2OidcModule,
     TuiRootModule,
     TuiLinkModule,
+    TuiDialogModule,
+    TuiInputModule,
+    TuiButtonModule,
     LandingPageModule,
     ConfirmationDialogModule
   ],
@@ -56,10 +60,10 @@ const oauth2OidcModule = [AuthModule];
     },
     {
       provide: ENVIRONMENT,
-      useValue: environment
-    }
+      useValue: environment,
+    },
   ],
-  entryComponents: [AppComponent]
+  entryComponents: [AppComponent],
 })
 export class AppModule implements DoBootstrap {
   constructor(@Optional() private authService: AuthService) {

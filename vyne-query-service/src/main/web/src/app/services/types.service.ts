@@ -1,35 +1,62 @@
-import { Inject, Injectable } from '@angular/core';
-import {Observable, ReplaySubject, Subject} from 'rxjs/index';
+import { Inject, Injectable, Injector } from '@angular/core';
+import { BehaviorSubject, Observable, of, ReplaySubject, Subject } from 'rxjs';
 
 import * as _ from 'lodash';
-import {HttpClient} from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 
-import {concatAll, map, shareReplay} from 'rxjs/operators';
-import {Policy} from '../policy-manager/policies';
+import { concatAll, map, shareReplay, switchMap, tap } from 'rxjs/operators';
+import { Policy } from '../policy-manager/policies';
 import {
   CompilationMessage,
-  Message, Metadata, Operation,
-  ParsedSource, PartialSchema,
+  Message,
+  Metadata,
+  Operation,
+  ParsedSource,
+  PartialSchema,
   QualifiedName,
   Schema,
   SchemaGraph,
-  SchemaGraphNode, SchemaMember, SchemaNodeSet,
-  SchemaSpec, Service,
+  SchemaGraphNode,
+  SchemaMember,
+  SchemaSpec,
+  Service,
   Type,
   TypedInstance,
   TypeNamedInstance,
-  VersionedSource
+  VersionedSource,
 } from './schema';
-import {VyneServicesModule} from './vyne-services.module';
-import {SchemaNotificationService, SchemaUpdatedNotification} from './schema-notification.service';
-import {ValueWithTypeName} from './models';
-import {VyneUser} from './user-info.service';
+import { SchemaNotificationService, SchemaUpdatedNotification } from './schema-notification.service';
+import { ValueWithTypeName } from './models';
+import { VyneUser } from './user-info.service';
 import { ENVIRONMENT, Environment } from './environment';
+import { TuiDialogService } from '@taiga-ui/core';
+import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
+import { ChangesetNameDialogComponent } from '../changeset-name-dialog/changeset-name-dialog.component';
+
+// TODO How to generate this?
+export const fakePackageIdentifier = {
+  organisation: 'io.vyne',
+  name: 'films',
+  version: 'next-minor',
+};
+
+export const mainBranchName = 'main';
+
+// TODO The DI has been set up weirdly so that a new instance of the service is created for each module/component that injects it.
+// TODO Cannot default to main..
+(window as any)._activeChangeset$ = new BehaviorSubject<Changeset>({ name: mainBranchName, isActive: true });
+(window as any)._availableChangesets$ = new BehaviorSubject<Changeset[]>([]);
 
 @Injectable({
-  providedIn: VyneServicesModule
+  providedIn: 'root',
 })
 export class TypesService {
+  get activeChangeset$(): BehaviorSubject<Changeset> {
+    return (window as any)._activeChangeset$;
+  }
+  get availableChangesets$(): BehaviorSubject<Changeset[]> {
+    return (window as any)._availableChangesets$;
+  }
 
   private schema: Schema;
   private schemaSubject: Subject<Schema> = new ReplaySubject(1);
@@ -37,18 +64,35 @@ export class TypesService {
 
   constructor(
     @Inject(ENVIRONMENT) private environment: Environment,
-    private http: HttpClient, private schemaNotificationService: SchemaNotificationService) {
+    @Inject(TuiDialogService) private readonly dialogService: TuiDialogService,
+    @Inject(Injector) private readonly injector: Injector,
+    private http: HttpClient,
+    private schemaNotificationService: SchemaNotificationService) {
+
+    this.updateChangelogs();
+
     this.getTypes().subscribe(schema => {
       this.schema = schema;
     });
+
     this.schemaNotificationService.createSchemaNotificationsSubscription()
       .subscribe(() => {
         this.getTypes(true)
           .subscribe(schema => {
-            console.log('updating typeService schema');
             this.schema = schema;
           });
       });
+  }
+
+  private updateChangelogs() {
+    this.getAvailableChangesets().pipe(
+      map(changesets => {
+        return changesets.find(changeset => changeset.isActive)!!;
+      }),
+    ).subscribe(value => this.activeChangeset$.next(value));
+
+    this.getAvailableChangesets()
+      .subscribe(value => this.availableChangesets$.next(value));
   }
 
   validateSchema(schema: string): Observable<Type[]> {
@@ -58,7 +102,7 @@ export class TypesService {
   getRawSchema = (): Observable<string> => {
     return this.http
       .get<string>(`${this.environment.serverUrl}/api/schemas/raw`);
-  }
+  };
 
   getSchemaSummary(): Observable<SchemaUpdatedNotification> {
     return this.http.get<SchemaUpdatedNotification>(`${this.environment.serverUrl}/api/schemas/summary`);
@@ -75,22 +119,22 @@ export class TypesService {
   getLinksForNode = (node: SchemaGraphNode): Observable<SchemaGraph> => {
     return this.http
       .get<SchemaGraph>(`${this.environment.serverUrl}/api/nodes/${node.type}/${node.nodeId}/links`);
-  }
+  };
 
   getLinks = (typeName: string): Observable<SchemaGraph> => {
     return this.http
       .get<SchemaGraph>(`${this.environment.serverUrl}/api/types/${typeName}/links`);
-  }
+  };
 
   getTypeLineage(typeName: string): Observable<SchemaGraph> {
     return this.http.get<SchemaGraph>(
-      `${this.environment.serverUrl}/api/types/${typeName}/lineage`
+      `${this.environment.serverUrl}/api/types/${typeName}/lineage`,
     );
   }
 
   getServiceLineage(serviceName: string): Observable<SchemaGraph> {
     return this.http.get<SchemaGraph>(
-      `${this.environment.serverUrl}/api/services/${serviceName}/lineage`
+      `${this.environment.serverUrl}/api/services/${serviceName}/lineage`,
     );
   }
 
@@ -156,7 +200,7 @@ export class TypesService {
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     const request: ContentWithSchemaParseRequest = {
       content: content,
-      schema: schema
+      schema: schema,
     };
     return this.http.post<ContentWithSchemaParseResponse>(
       // eslint-disable-next-line max-len
@@ -169,7 +213,7 @@ export class TypesService {
                                          schema: string): Observable<ContentWithSchemaParseResponse> {
     const request: ContentWithSchemaParseRequest = {
       content: content,
-      schema: schema
+      schema: schema,
     };
     return this.http.post<ContentWithSchemaParseResponse>(
       // eslint-disable-next-line max-len
@@ -189,19 +233,19 @@ export class TypesService {
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     const request: ContentWithSchemaParseRequest = {
       content: content,
-      schema: schema
+      schema: schema,
     };
     return this.http.post<ValueWithTypeName[]>(
       // eslint-disable-next-line max-len
       `${this.environment.serverUrl}/api/csvAndSchema/project?type=${parseType}&targetType=${projectionType}&clientQueryId=${queryId}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
-      request
+      request,
     ).pipe(
       // the legaacy (blocking) endpoint returns a ValueWithTypeName[].
       // however, we want to unpack that to multiple emitted items on our observable
       // therefore, concatAll() seems to do this.
       // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
       concatAll(),
-      shareReplay({bufferSize: 500, refCount: false}),
+      shareReplay({ bufferSize: 500, refCount: false }),
     );
 
   }
@@ -221,10 +265,10 @@ export class TypesService {
     const idx = separators
       .map((separator) => input.indexOf(separator))
       .reduce((prev, cur) =>
-        prev === -1 || (cur !== -1 && cur < prev) ? cur : prev
+        prev === -1 || (cur !== -1 && cur < prev) ? cur : prev,
       );
     return (input[idx] || ',');
-  }
+  };
 
   getTypes(refresh: boolean = false): Observable<Schema> {
     if (refresh || !this.schemaRequest) {
@@ -233,12 +277,12 @@ export class TypesService {
         .pipe(
           map(schema => {
               return prepareSchema(schema);
-            }
-          )
+            },
+          ),
         );
       this.schemaRequest.subscribe(
         result => this.schemaSubject.next(result),
-        err => this.schemaSubject.next(err)
+        err => this.schemaSubject.next(err),
       );
     }
     return this.schemaSubject.asObservable();
@@ -248,19 +292,32 @@ export class TypesService {
     const spec: SchemaSpec = {
       name: `${typeName.fullyQualifiedName}.${typeName.name}${schemaNameSuffix}`,
       version: 'next-minor',
-      defaultNamespace: typeName.namespace
+      defaultNamespace: typeName.namespace,
     };
     const request = new SchemaImportRequest(
-      spec, 'taxi', schemaText
+      spec, 'taxi', schemaText,
     );
 
     return this.submitSchema(request);
   }
 
+  ensureChangesetExists(): Observable<string> {
+    if (this.activeChangeset$.value.name !== mainBranchName) {
+      return of(this.activeChangeset$.value.name);
+    }
+
+    return this.dialogService
+      .open<string | null>(new PolymorpheusComponent(ChangesetNameDialogComponent, this.injector));
+  }
+
+  sanitizeChangesetName(name: string): string {
+    return name.replaceAll(' ', '-').replace(/\W/g, '').toLowerCase();
+  }
+
   createSchemaPreview(request: SchemaPreviewRequest): Observable<SchemaPreview> {
     return this.http.post<SchemaPreview>(
       `${this.environment.serverUrl}/api/schemas/preview`,
-      request
+      request,
     );
   }
 
@@ -271,8 +328,57 @@ export class TypesService {
   submitSchema(request: SchemaImportRequest): Observable<VersionedSource> {
     return this.http.post<VersionedSource>(
       `${this.environment.serverUrl}/api/schemas`,
-      request
+      request,
     );
+  }
+
+  createChangeset(name: string): Observable<any> { // TODO Typing
+    const sanitizedName = this.sanitizeChangesetName(name);
+    return this.http.post<any>(
+      `${this.environment.serverUrl}/api/repository/changeset/create`,
+      { changesetName: sanitizedName, packageIdentifier: fakePackageIdentifier },
+    ).pipe(tap(() => {
+      this.updateChangelogs();
+      console.log('changeset created', sanitizedName);
+    }));
+  }
+
+  addChangesToChangeset(typeName: QualifiedName, schemaNameSuffix: string, schemaText: string): Observable<VersionedSource> {
+    return this.ensureChangesetExists()
+      .pipe(
+        switchMap(changesetName => {
+          const request: AddChangesToChangesetRequest = {
+            edits: [
+              {
+                // TODO Add typeName.namespace below ??
+                name: `${typeName.fullyQualifiedName}.${typeName.name}${schemaNameSuffix}`,
+                content: schemaText,
+                version: 'next-minor',
+              },
+            ],
+            packageIdentifier: fakePackageIdentifier,
+            changesetName: changesetName,
+          };
+          return this.http.post<VersionedSource>(
+            `${this.environment.serverUrl}/api/repository/changeset/add`,
+            request,
+          );
+
+        }));
+  }
+
+  finalizeChangeset(): Observable<FinalizeChangesetResponse> {
+    return this.ensureChangesetExists()
+      .pipe(
+        switchMap(changesetName => {
+          const body: FinalizeChangesetRequest = { changesetName, packageIdentifier: fakePackageIdentifier };
+          return this.http.post<FinalizeChangesetResponse>(
+            `${this.environment.serverUrl}/api/repository/changeset/finalize`,
+            body,
+          );
+        }),
+        tap(() => this.activeChangeset$.next({ name: 'main', isActive: true })),
+      );
   }
 
   getAllMetadata(): Observable<QualifiedName[]> {
@@ -280,20 +386,30 @@ export class TypesService {
   }
 
   setTypeDataOwner(type: Type, owner: VyneUser): Observable<Type> {
-    return this.http.post<Type>(`${this.environment.serverUrl}/api/types/${type.name.fullyQualifiedName}/owner`,
-      {
-        id: owner.userId,
-        name: owner.name
-      } as UpdateDataOwnerRequest
-    );
+    return this.ensureChangesetExists()
+      .pipe(
+        switchMap(() => this.http.post<Type>(`${this.environment.serverUrl}/api/types/${type.name.fullyQualifiedName}/owner`,
+          {
+            id: owner.userId,
+            name: owner.name,
+            changesetName: this.activeChangeset$.value.name,
+          } as UpdateDataOwnerRequest,
+        )),
+        tap(() => this.updateChangelogs()),
+      );
   }
 
   setTypeMetadata(type: Type, metadata: Metadata[]): Observable<Type> {
-    return this.http.post<Type>(`${this.environment.serverUrl}/api/types/${type.name.fullyQualifiedName}/annotations`,
-      {
-        annotations: metadata
-      }
-    );
+    return this.ensureChangesetExists()
+      .pipe(
+        switchMap(() => this.http.post<Type>(`${this.environment.serverUrl}/api/types/${type.name.fullyQualifiedName}/annotations`,
+          {
+            changesetName: this.activeChangeset$.value.name,
+            annotations: metadata,
+          },
+        )),
+        tap(() => this.updateChangelogs()),
+      );
   }
 
   /**
@@ -311,6 +427,28 @@ export class TypesService {
   validateTaxi(taxi: string): Observable<SchemaSubmissionResult> {
     return this.http.post<SchemaSubmissionResult>(`${this.environment.serverUrl}/api/schema/taxi?validate=true`, taxi);
   }
+
+  getAvailableChangesets(): Observable<Changeset[]> {
+    return this.http.post<ChangesetResponse>(`${this.environment.serverUrl}/api/repository/changesets`, { packageIdentifier: fakePackageIdentifier })
+      .pipe(map(response => response.changesets));
+  }
+
+  setActiveChangeset(changeset: Changeset): Observable<void> {
+    return this.http.post<void>(`${this.environment.serverUrl}/api/repository/changesets/active`, {
+      packageIdentifier: fakePackageIdentifier,
+      changesetName: changeset.name,
+    }).pipe(tap(() => this.activeChangeset$.next({ name: changeset.name, isActive: true })));
+  }
+}
+
+// TODO Make a separate type for the Changeset the consumers care about which does not include e.g. isActive
+export interface Changeset {
+  name: string;
+  isActive: boolean;
+}
+
+export interface ChangesetResponse {
+  changesets: Changeset[];
 }
 
 export class SchemaPreviewRequest {
@@ -321,6 +459,31 @@ export class SchemaPreviewRequest {
 export class SchemaImportRequest {
   constructor(readonly spec: SchemaSpec, readonly format: string, readonly content: string) {
   }
+}
+
+export interface SchemaEditRequest {
+  packageIdentifier: any;
+  edits: VersionedSource[];
+}
+
+export interface CreateChangesetRequest {
+  changesetName: string;
+  packageIdentifier: any;
+}
+
+export interface AddChangesToChangesetRequest {
+  changesetName: string;
+  packageIdentifier: any;
+  edits: VersionedSource[];
+}
+
+export interface FinalizeChangesetRequest {
+  changesetName: string;
+  packageIdentifier: any;
+}
+
+export interface FinalizeChangesetResponse {
+  link: string | null;
 }
 
 export interface SchemaPreview {

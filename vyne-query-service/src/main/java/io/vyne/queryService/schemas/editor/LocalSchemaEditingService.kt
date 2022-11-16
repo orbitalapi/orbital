@@ -18,9 +18,19 @@ import io.vyne.queryService.utils.handleFeignErrors
 
 import io.vyne.schema.api.SchemaValidator
 import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.publisher.loaders.AddChangesToChangesetResponse
+import io.vyne.schema.publisher.loaders.AvailableChangesetsResponse
+import io.vyne.schema.publisher.loaders.CreateChangesetResponse
+import io.vyne.schema.publisher.loaders.FinalizeChangesetResponse
+import io.vyne.schema.publisher.loaders.SetActiveChangesetResponse
+import io.vyne.schemaServer.editor.AddChangesToChangesetRequest
+import io.vyne.schemaServer.editor.FinalizeChangesetRequest
+import io.vyne.schemaServer.editor.GetAvailableChangesetsRequest
 import io.vyne.schemaServer.editor.SchemaEditRequest
 import io.vyne.schemaServer.editor.SchemaEditResponse
 import io.vyne.schemaServer.editor.SchemaEditorApi
+import io.vyne.schemaServer.editor.SetActiveChangesetRequest
+import io.vyne.schemaServer.editor.StartChangesetRequest
 import io.vyne.schemaServer.editor.UpdateDataOwnerRequest
 import io.vyne.schemaServer.editor.UpdateTypeAnnotationRequest
 import io.vyne.schemaStore.TaxiSchemaValidator
@@ -45,10 +55,10 @@ import lang.taxi.types.ImportableToken
 import lang.taxi.types.ObjectType
 import lang.taxi.types.Type
 import mu.KotlinLogging
-import org.springframework.context.annotation.Profile
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -70,7 +80,7 @@ class LocalSchemaEditingService(
    fun updateDataOwner(
       @PathVariable typeName: String,
       @RequestBody request: UpdateDataOwnerRequest
-   ): Mono<SchemaEditResponse> {
+   ): Mono<AddChangesToChangesetResponse> {
       return handleFeignErrors { schemaEditorApi.updateDataOwnerOnType(typeName, request) }
    }
 
@@ -78,8 +88,43 @@ class LocalSchemaEditingService(
    fun updateAnnotationsOnType(
       @PathVariable typeName: String,
       @RequestBody request: UpdateTypeAnnotationRequest
-   ): Mono<SchemaEditResponse> {
+   ): Mono<AddChangesToChangesetResponse> {
       return handleFeignErrors { schemaEditorApi.updateAnnotationsOnType(typeName, request) }
+   }
+
+   @PostMapping("/api/repository/changeset/create")
+   fun createChangeset(
+      @RequestBody request: StartChangesetRequest
+   ): Mono<CreateChangesetResponse> {
+      return handleFeignErrors { schemaEditorApi.createChangeset(request) }
+   }
+
+   @PostMapping("/api/repository/changeset/add")
+   fun addChangesToChangeset(
+      @RequestBody request: AddChangesToChangesetRequest
+   ): Mono<AddChangesToChangesetResponse> {
+      return handleFeignErrors { schemaEditorApi.addChangesToChangeset(request) }
+   }
+
+   @PostMapping("/api/repository/changeset/finalize")
+   fun finalizeChangeset(
+      @RequestBody request: FinalizeChangesetRequest
+   ): Mono<FinalizeChangesetResponse> {
+      return handleFeignErrors { schemaEditorApi.finalizeChangeset(request) }
+   }
+
+   @PostMapping("/api/repository/changesets")
+   fun getAvailableChangesets(
+      @RequestBody request: GetAvailableChangesetsRequest
+   ): Mono<AvailableChangesetsResponse> {
+      return handleFeignErrors { schemaEditorApi.getAvailableChangesets(request) }
+   }
+
+   @PostMapping("/api/repository/changesets/active")
+   fun setActiveChangeset(
+      @RequestBody request: SetActiveChangesetRequest
+   ): Mono<SetActiveChangesetResponse> {
+      return handleFeignErrors { schemaEditorApi.setActiveChangeset(request) }
    }
 
    /**
@@ -143,7 +188,10 @@ class LocalSchemaEditingService(
     *
     * The updated Vyne types containing in the Taxi string are returned.
     */
-   @PostMapping("/api/schema/taxi/{packageIdentifier}", consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE])
+   @PostMapping(
+      "/api/schema/taxi/{packageIdentifier}",
+      consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE]
+   )
    fun submit(
       @RequestBody taxi: String,
       @RequestParam("validate", required = false) validateOnly: Boolean = false,
@@ -175,11 +223,16 @@ class LocalSchemaEditingService(
       }
    }
 
-   fun submitEdits(versionedSources: List<VersionedSource>, packageIdentifier: PackageIdentifier): Mono<SchemaEditResponse> {
+   fun submitEdits(
+      versionedSources: List<VersionedSource>,
+      packageIdentifier: PackageIdentifier
+   ): Mono<SchemaEditResponse> {
       log().info("Submitting edit requests to schema server for files ${versionedSources.joinToString(", ") { it.name }}")
-      return handleFeignErrors { schemaEditorApi.submitEdits(
-         SchemaEditRequest(packageIdentifier, versionedSources)
-      ) }
+      return handleFeignErrors {
+         schemaEditorApi.submitEdits(
+            SchemaEditRequest(packageIdentifier, versionedSources)
+         )
+      }
 
    }
 

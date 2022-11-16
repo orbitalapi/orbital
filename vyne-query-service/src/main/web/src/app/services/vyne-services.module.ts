@@ -1,4 +1,5 @@
 import { NgModule } from '@angular/core';
+import { TypesService } from './types.service';
 
 @NgModule({
   imports: [],

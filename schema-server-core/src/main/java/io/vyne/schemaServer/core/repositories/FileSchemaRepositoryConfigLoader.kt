@@ -19,12 +19,10 @@ import io.vyne.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleE
 import io.vyne.utils.concat
 import lang.taxi.packages.ProjectName
 import lang.taxi.packages.TaxiPackageProject
-import lang.taxi.writers.ConfigWriter
 import mu.KotlinLogging
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
-import kotlin.io.path.writeText
 
 class FileSchemaRepositoryConfigLoader(
    private val configFilePath: Path,
@@ -128,8 +126,8 @@ class FileSchemaRepositoryConfigLoader(
             version = packageIdentifier.version,
             sourceRoot = "src/"
          )
-         val taxiConf = ConfigWriter().writeMinimal(project)
-         taxiConfPath.writeText(taxiConf)
+//         val taxiConf = ConfigWriter().writeMinimal(project)
+//         taxiConfPath.writeText(taxiConf)
          path.resolve(project.sourceRoot).createDirectories()
       }
 

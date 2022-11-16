@@ -22,7 +22,9 @@ import { FormBuilder } from '@angular/forms';
                      class="local-material"
                      addTagText="Create a new tag"
                      [(ngModel)]="selectedTags"
-                     [multiple]="true" placeholder="Select tags" [items]="availableTags">
+                     [multiple]="true"
+                     placeholder="Select tags"
+                     [items]="availableTags">
           </ng-select>
         </div>
       </div>

@@ -26,7 +26,7 @@ class SchemaEditorServiceTest {
    fun `can submit annotations to type`() {
       val projectPath = projectHome.deployProject("sample-project")
 
-      val repositoryManager = ReactiveRepositoryManager.testWithFileRepo(projectPath, editable = true)
+      val repositoryManager = ReactiveRepositoryManager.testWithFileRepo(projectPath, isEditable = true)
       val schema = TaxiSchema.compiled("namespace com.foo { model Bar{} }").second
       val editor = SchemaEditorService(repositoryManager, SimpleSchemaStore(SchemaSet.from(schema, 0)))
       editor.updateAnnotationsOnType(
@@ -53,7 +53,7 @@ type extension Bar {}""".withoutWhitespace()
    @Test
    fun `can submit annotations to enum`() {
       val projectPath = projectHome.deployProject("sample-project")
-      val repositoryManager = ReactiveRepositoryManager.testWithFileRepo(projectPath, editable = true)
+      val repositoryManager = ReactiveRepositoryManager.testWithFileRepo(projectPath, isEditable = true)
 
       val schema = TaxiSchema.compiled("namespace com.foo { enum Bar{} }").second
       val editor = SchemaEditorService(repositoryManager, SimpleSchemaStore(SchemaSet.from(schema, 0)))

@@ -1,30 +1,34 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {OperationQueryResult, TypesService} from '../services/types.service';
-import {ActivatedRoute, ParamMap} from '@angular/router';
-import {filter, map} from 'rxjs/operators';
-import {Schema, Type} from '../services/schema';
+import { Component, Input, OnInit } from '@angular/core';
+import { mainBranchName, OperationQueryResult, TypesService } from '../services/types.service';
+import { ActivatedRoute, ParamMap } from '@angular/router';
+import { filter, map } from 'rxjs/operators';
+import { Schema, Type } from '../services/schema';
 import { buildInheritable, Inheritable } from '../inheritence-graph/inheritance-graph.component';
 import { Observable } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-type-viewer-container',
   styleUrls: ['./type-viewer-container.component.scss'],
   template: `
     <app-header-bar title="Catalog">
+      <button tuiButton size="m" (click)="commitChanges()" *ngIf="hasUncommittedChanges()">Propose this draft</button>
+      <app-changeset-selector></app-changeset-selector>
     </app-header-bar>
     <app-type-viewer [type]="type"
                      [schema]="schema"
                      [schema$]="schema$"
                      class="page-content"
-                     [inheritanceView]="inheritenceView"
+                     [inheritanceView]="inheritanceView"
                      [typeUsages]="typeUsages"
                      [showAttributes]="showAttributes"
                      [showDocumentation]="showDocumentation"
+                     [editable]="true"
                      [showTags]="showTags"
                      [showTaxi]="showTaxi"
                      [showUsages]="showUsages"
                      [showInheritanceGraph]="showInheritanceGraph"
-    ></app-type-viewer>`
+    ></app-type-viewer>`,
 })
 export class TypeViewerContainerComponent implements OnInit {
   typeUsages: OperationQueryResult;
@@ -32,7 +36,11 @@ export class TypeViewerContainerComponent implements OnInit {
 
   schema$: Observable<Schema>;
 
-  constructor(private typeService: TypesService, private activeRoute: ActivatedRoute) {
+  constructor(
+    private typeService: TypesService,
+    private activeRoute: ActivatedRoute,
+    private snackBar: MatSnackBar,
+  ) {
     this.schema$ = typeService.getTypes();
     typeService.getTypes()
       .subscribe(schema => this.schema = schema);
@@ -40,7 +48,7 @@ export class TypeViewerContainerComponent implements OnInit {
 
   private typeName: string;
   type: Type;
-  inheritenceView: Inheritable;
+  inheritanceView: Inheritable;
 
   @Input()
   showAttributes = true;
@@ -62,7 +70,7 @@ export class TypeViewerContainerComponent implements OnInit {
 
   ngOnInit() {
     this.activeRoute.paramMap.pipe(
-      map((params: ParamMap) => params.get('typeName'))
+      map((params: ParamMap) => params.get('typeName')),
     ).subscribe(typeName => {
       this.typeName = typeName;
       this.typeService
@@ -71,7 +79,7 @@ export class TypeViewerContainerComponent implements OnInit {
         .subscribe(type => {
           this.type = type;
           this.typeService.getTypes().subscribe(schema => {
-            this.inheritenceView = buildInheritable(this.type, schema);
+            this.inheritanceView = buildInheritable(this.type, schema);
           });
         });
 
@@ -80,6 +88,28 @@ export class TypeViewerContainerComponent implements OnInit {
         .subscribe(usages => {
           this.typeUsages = usages;
         });
+    });
+  }
+
+  hasUncommittedChanges() {
+    return this.typeService.activeChangeset$.value.name !== mainBranchName;
+  }
+
+  commitChanges() {
+    this.typeService.finalizeChangeset().subscribe((response) => {
+      this.snackBar.open('Changes pushed', 'Dismiss', { duration: 10000 });
+      if (response.link !== null) {
+        const didTabOpenSuccessfully = window.open(response.link, '_blank');
+        if (didTabOpenSuccessfully !== null) {
+          didTabOpenSuccessfully.focus();
+        } else {
+          this.snackBar.open(
+            'Failed to open the PR. You can find it on this link: ' + response.link,
+            'Dismiss',
+            { duration: 30000 },
+          );
+        }
+      }
     });
   }
 }

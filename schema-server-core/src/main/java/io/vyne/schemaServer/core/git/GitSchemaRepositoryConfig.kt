@@ -21,12 +21,19 @@ data class GitSshAuth(
    val passphrase: String? = null,
 )
 
+data class GitUpdateFlowConfig(
+   val branchPrefix: String = "schema-updates/",
+   val repoName: String = "RoopeHakulinen/taxonomy-test" // TODO
+)
+
 data class GitRepositoryConfig(
    val name: String,
    val uri: String,
    val branch: String,
    val sshAuth: GitSshAuth? = null,
    val credentials: GitCredentials? = null,
+   val isEditable: Boolean = true,
+   val updateFlowConfig : GitUpdateFlowConfig? = GitUpdateFlowConfig(), // TODO Set to null
    /**
     * The Path within the repository
     */
