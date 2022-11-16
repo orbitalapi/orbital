@@ -2752,8 +2752,5 @@ service Broker1Service {
 //      result.should.equal(mapOf("title" to "Star Wars", "star" to "Mark Hamill"))
    }
 
-   @Test
-   fun `does not attempt to build closed objects`() {
 
-   }
 }

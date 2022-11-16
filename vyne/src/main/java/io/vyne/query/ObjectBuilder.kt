@@ -128,16 +128,17 @@ class ObjectBuilder(
       } else if (targetType.isCollection) {
          buildCollection(targetType, spec)
       } else {
-         buildObjectInstance(targetType, spec, facts)
+         findOrBuildObjectInstance(targetType, spec, facts)
       }
    }
 
    private suspend fun searchForType(
       targetType: Type,
-      spec: TypedInstanceValidPredicate
+      spec: TypedInstanceValidPredicate,
+      facts: FactBag = FactBag.empty()
    ): TypedInstance? {
       var failedAttempts: List<DataSource>? = null
-      return findScalarInstance(targetType, spec)
+      return findInstance(targetType, spec, facts)
          .catch { exception ->
             when (exception) {
                is SearchFailedException -> {
@@ -239,6 +240,28 @@ class ObjectBuilder(
       }
    }
 
+   private suspend fun findOrBuildObjectInstance(
+      targetType: Type,
+      spec: TypedInstanceValidPredicate,
+      // Passing facts here allows for reference to data from parent objects when constructing child objects
+      facts: FactBag = FactBag.empty()
+   ): TypedInstance {
+      val result = searchForType(targetType, spec, facts)
+      val searchFailed = result == null || result is TypedNull && result.source is FailedSearch
+      return if (searchFailed) {
+         if (!targetType.isClosed) {
+            buildObjectInstance(targetType, spec, facts)
+         } else {
+            TypedNull.create(
+               targetType,
+               FailedSearch("Unable to find a data source for ${targetType.qualifiedName.shortDisplayName} and building is not permitted because the type is closed")
+            )
+         }
+      } else {
+         result!!
+      }
+   }
+
    private suspend fun buildObjectInstance(
       targetType: Type,
       spec: TypedInstanceValidPredicate,
@@ -310,7 +333,8 @@ class ObjectBuilder(
                // so leave the value as un-populated.
             } else {
                // We need to pass parent facts around, so that when constructing nested objects, children fields have reference to parent facts.
-               val theseFacts = FieldAndFactBag(populatedValues, emptyList(), context.scopedFacts, context.schema).merge(facts)
+               val theseFacts =
+                  FieldAndFactBag(populatedValues, emptyList(), context.scopedFacts, context.schema).merge(facts)
 
                // When building a field, populate the source (unprojected) type.
                // When we go to construct the final object (In TypedObjectFactory), this source
@@ -332,7 +356,8 @@ class ObjectBuilder(
       // objects.
       // So, trying with a special type of FactBag.
       // We needed a new FactBag type here, as we need to retain the field name information.
-      val searchableFacts = FieldAndFactBag(populatedValues, context.facts.toList(), context.scopedFacts, context.schema)
+      val searchableFacts =
+         FieldAndFactBag(populatedValues, context.facts.toList(), context.scopedFacts, context.schema)
       val searchableWithParentFacts = searchableFacts.merge(facts)
       return TypedObjectFactory(
          targetType,
@@ -408,10 +433,16 @@ class ObjectBuilder(
       return null
    }
 
-   private suspend fun findScalarInstance(targetType: Type, spec: TypedInstanceValidPredicate): Flow<TypedInstance> {
+   private suspend fun findInstance(
+      targetType: Type,
+      spec: TypedInstanceValidPredicate,
+      facts: FactBag,
+   ): Flow<TypedInstance> {
       // Try searching for it.
       //log().debug("Trying to find instance of ${targetType.fullyQualifiedName}")
       val result = try {
+//         val queryContext = context.copy()
+//         queryContext.addFacts(facts.rootAndScopedFacts())
          queryEngine.find(targetType, context, spec, ExcludeObjectBuilderPredicate)
       } catch (e: QueryCancelledException) {
          throw e

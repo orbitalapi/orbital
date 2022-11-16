@@ -41,7 +41,7 @@ private data class StrategyInvocationCacheKey(
    val invocationConstraints: InvocationConstraints,
    val coroutineContext: CoroutineScope,
 ) {
-   val facts = context.facts.rootAndScopedFacts()
+   val facts = context.rootAndScopedFacts()
    private val equality = ImmutableEquality(
       this,
       StrategyInvocationCacheKey::facts,
@@ -131,7 +131,7 @@ class HipsterDiscoverGraphQueryStrategy(
       )
 
 //      return invocationCache.get(cacheKey).await()
-      if (context.facts.isEmpty()) {
+      if (context.rootAndScopedFacts().isEmpty()) {
          logger.debug { "[${context.queryId}] Cannot perform a graph search, as no facts provided to serve as starting point. " }
          return QueryStrategyResult.searchFailed()
       }
@@ -149,7 +149,7 @@ class HipsterDiscoverGraphQueryStrategy(
       invocationConstraints: InvocationConstraints
    ): QueryStrategyResult {
       val failedAttempts = mutableListOf<DataSource>()
-      val ret = context.facts
+      val ret = context.rootAndScopedFacts()
          .asFlow()
 
          //    .filter { it is TypedObject }
@@ -175,7 +175,7 @@ class HipsterDiscoverGraphQueryStrategy(
             )
             val evaluatedPathTempMap = mutableListOf<PathEvaluation>()
             val searchResult = searcher.search(
-               context.facts,
+               context.rootAndScopedFacts(),
                context.excludedServices.toSet(),
                invocationConstraints.excludedOperations.plus(context.excludedOperations.map {
                   SearchGraphExclusion(

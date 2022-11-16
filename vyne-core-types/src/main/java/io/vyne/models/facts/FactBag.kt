@@ -31,7 +31,7 @@ interface FactBag : Collection<TypedInstance> {
     */
    val scopedFacts: List<ScopedFact>
 
-   fun getScopedFact(scope: ProjectionFunctionScope):ScopedFact {
+   fun getScopedFact(scope: ProjectionFunctionScope): ScopedFact {
       return getScopedFactOrNull(scope) ?: error("No scope of ${scope.name} exists in this FactBag")
    }
 
@@ -39,15 +39,25 @@ interface FactBag : Collection<TypedInstance> {
       return scopedFacts.firstOrNull { it.scope == scope }
    }
 
-   fun rootAndScopedFacts():List<TypedInstance> {
+   fun rootAndScopedFacts(): List<TypedInstance> {
       return rootFacts() + scopedFacts.map { it.fact }
+   }
+
+   override fun isEmpty(): Boolean = rootAndScopedFacts().isEmpty()
+   override val size: Int
+      get() {
+         return rootAndScopedFacts().size
+      }
+
+   override fun iterator(): Iterator<TypedInstance> {
+      return rootAndScopedFacts().iterator()
    }
 
    /**
     * Returns the facts that were provided top-level only.
     * Other facts may be available by traversing the trees of these facts
     */
-   fun rootFacts():List<TypedInstance>
+   fun rootFacts(): List<TypedInstance>
 
    fun merge(other: FactBag): FactBag
 
@@ -65,11 +75,15 @@ interface FactBag : Collection<TypedInstance> {
     *
     * The current instance is unchanged
     */
-   fun excluding(facts:Set<TypedInstance>): FactBag
+   fun excluding(facts: Set<TypedInstance>): FactBag
 
    //   fun firstOrNull(predicate: (TypedInstance) -> Boolean): TypedInstance?
 //   fun filter(predicate: (TypedInstance) -> Boolean): List<TypedInstance>
-   fun breadthFirstFilter(strategy: FactDiscoveryStrategy, shouldGoDeeperPredicate: FactMapTraversalStrategy,  matchingPredicate: (TypedInstance) -> Boolean): List<TypedInstance>
+   fun breadthFirstFilter(
+      strategy: FactDiscoveryStrategy,
+      shouldGoDeeperPredicate: FactMapTraversalStrategy,
+      matchingPredicate: (TypedInstance) -> Boolean
+   ): List<TypedInstance>
 
    /**
     * A mutating operation.  Adds a fact to the current fact bag.
