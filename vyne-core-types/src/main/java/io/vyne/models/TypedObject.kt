@@ -18,7 +18,8 @@ import lang.taxi.types.AttributePath
 data class TypedObject(
    override val type: Type,
    private val suppliedValue: Map<String, TypedInstance>,
-   override val source: DataSource) : TypedInstance, Map<String, TypedInstance>  {
+   override val source: DataSource
+) : TypedInstance, Map<String, TypedInstance> {
 
    private val combinedValues: Map<String, TypedInstance> = type.defaultValues?.plus(suppliedValue) ?: suppliedValue
 
@@ -27,13 +28,20 @@ data class TypedObject(
 
 
    private val equality = Equality(this, TypedObject::type, TypedObject::value)
-   private val hash:Int by lazy { equality.hash() }
+   private val hash: Int by lazy { equality.hash() }
+
    companion object {
-      fun fromValue(typeName: String, value: Any, schema: Schema, source:DataSource): TypedInstance {
+      fun fromValue(typeName: String, value: Any, schema: Schema, source: DataSource): TypedInstance {
          return fromValue(schema.type(typeName), value, schema, source = source)
       }
 
-      fun fromAttributes(typeName: String, attributes: Map<String, Any>, schema: Schema, performTypeConversions: Boolean = true, source:DataSource): TypedObject {
+      fun fromAttributes(
+         typeName: String,
+         attributes: Map<String, Any>,
+         schema: Schema,
+         performTypeConversions: Boolean = true,
+         source: DataSource
+      ): TypedObject {
          return fromAttributes(schema.type(typeName), attributes, schema, performTypeConversions, source)
       }
 
@@ -91,6 +99,7 @@ data class TypedObject(
    override fun toString(): String {
       return "TypedObject(type=${type.qualifiedName.longDisplayName}, value=$suppliedValue)"
    }
+
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
    override fun hashCode(): Int = hash
 
@@ -120,7 +129,10 @@ data class TypedObject(
    fun getAttribute(propertyIdentifier: PropertyIdentifier, schema: Schema): TypedInstance {
       return when (propertyIdentifier) {
          is PropertyFieldNameIdentifier -> get(propertyIdentifier.name)
-         is PropertyTypeIdentifier -> getAttributeIdentifiedByType(propertyIdentifier.type.toVyneQualifiedName(), schema)
+         is PropertyTypeIdentifier -> getAttributeIdentifiedByType(
+            propertyIdentifier.type.toVyneQualifiedName(),
+            schema
+         )
       }
    }
 
@@ -131,7 +143,13 @@ data class TypedObject(
    fun getAttributeIdentifiedByType(type: Type, returnNull: Boolean = false): TypedInstance {
       val candidates = this.value.filter { (_, value) -> value.type.isAssignableTo(type) }
       return when {
-         candidates.isEmpty() && returnNull -> TypedNull.create(type, source = ValueLookupReturnedNull("Lookup for type ${type.name.parameterizedName} returned null", requestedTypeName = type.name)) // sometimes i want to allow null values
+         candidates.isEmpty() && returnNull -> TypedNull.create(
+            type,
+            source = ValueLookupReturnedNull(
+               "Lookup for type ${type.name.parameterizedName} returned null",
+               requestedTypeName = type.name
+            )
+         ) // sometimes i want to allow null values
          candidates.isEmpty() -> error("No properties on type ${this.type.name.parameterizedName} have type ${type.name.parameterizedName}")
          candidates.size > 1 -> TypedInstanceCandidateFilter.resolve(candidates.values, type)
          else -> candidates.values.first()
@@ -153,12 +171,35 @@ data class TypedObject(
          attributeValue
       } else {
          val remainingAccessor = parts.joinToString(".")
-         if (attributeValue is TypedObject) {
-            attributeValue[remainingAccessor]
-         } else if (attributeValue is TypedCollection) {
-            attributeValue[remainingAccessor]
-         } else {
-            throw IllegalArgumentException("Cannot evaluate an accessor ($remainingAccessor) as value is not an object with fields (${attributeValue.type.name})")
+         when (attributeValue) {
+            is TypedObject -> attributeValue[remainingAccessor]
+            is TypedCollection -> attributeValue[remainingAccessor]
+            else -> throw IllegalArgumentException("Cannot evaluate an accessor ($remainingAccessor) as value is not an object with fields (${attributeValue.type.name})")
+         }
+      }
+   }
+
+   fun getAllAtPath(path: String): List<TypedInstance> {
+      val parts = path.split(".").toMutableList()
+      val thisFieldName = parts.removeAt(0)
+      val attributeValue = this.value[thisFieldName]
+         ?: error("No attribute named $thisFieldName found on this type (${type.name})")
+
+      return if (parts.isEmpty()) {
+         listOf(attributeValue)
+      } else {
+         val remainingAccessor = parts.joinToString(".")
+         when (attributeValue) {
+            is TypedObject -> attributeValue.getAllAtPath(remainingAccessor)
+            is TypedCollection -> attributeValue.flatMap { member ->
+               when (member) {
+                  is TypedObject -> member.getAllAtPath(remainingAccessor)
+                  else -> error("Unhandled branch in navigating a collection - got a member type of ${member::class.simpleName}")
+               }
+
+            }
+
+            else -> throw IllegalArgumentException("Cannot evaluate an accessor ($remainingAccessor) as value is not an object with fields (${attributeValue.type.name})")
          }
       }
    }

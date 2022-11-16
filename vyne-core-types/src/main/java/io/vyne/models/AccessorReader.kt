@@ -287,7 +287,7 @@ class AccessorReader(
          is FieldSourceAccessor -> TypedNull.create(targetType, source)
          is LambdaExpression -> DeferredTypedInstance(accessor, schema, source)
          is OperatorExpression -> evaluateOperatorExpression(targetType, accessor, schema, value, nullValues, source, format)
-         is FieldReferenceExpression -> timed("evaluate field reference ${accessor.asTaxi()}") { evaluateFieldReference(
+         is FieldReferenceExpression -> xtimed("evaluate field reference ${accessor.asTaxi()}") { evaluateFieldReference(
             targetType,
             accessor.selectors,
             source
@@ -355,7 +355,7 @@ class AccessorReader(
          } else {
             FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE
          }
-      val fact = xtimed("Fact bag search") { FactBag.of(listOf(source), schema)
+      val fact = timed("readModelAttributeSelector - fact bag search against ${source.type.qualifiedName.shortDisplayName}") { FactBag.of(listOf(source), schema)
          .getFactOrNull(requestedType, discoveryStrategy) }
       return fact ?: TypedNull.create(
          requestedType,
@@ -476,7 +476,7 @@ class AccessorReader(
          error("Function ${function.qualifiedName} expects ${function.parameters.size} arguments, but only ${accessor.inputs.size} were provided")
       }
 
-      val declaredInputs = timed("lookup inputs for function eval") {
+      val declaredInputs = xtimed("lookup inputs for function eval") {
          function.parameters.filter { !it.isVarArg }.mapIndexed { index, parameter ->
             require(index < accessor.inputs.size) { "Cannot read parameter ${parameter.description} as no input was provided at index $index" }
             val parameterInputAccessor = accessor.inputs[index]

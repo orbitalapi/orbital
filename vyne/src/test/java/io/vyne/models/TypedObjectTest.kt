@@ -6,6 +6,7 @@ import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.firstTypedObject
 import io.vyne.models.json.JsonModelParser
+import io.vyne.models.json.parseJson
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
@@ -202,5 +203,43 @@ class TypedObjectTest {
       }
    }
 
+
+   @Test
+   fun `calling getAll with a path that includes a collection returns all matching elements from within collection`() {
+      val (vyne, _) = testVyne(
+         """
+         model Film {
+            title : String
+            cast : Actor[]
+         }
+         model Actor {
+            name : String
+         }
+      """.trimIndent()
+      )
+      val instance = vyne.parseJson(
+         "Film", """{
+         |  "title" : "Star Wars",
+         |  "cast" : [
+         |     {"name" : "Mark" },
+         |     {"name" : "Carrie" }
+         |  ]
+         |}
+      """.trimMargin()
+      ) as TypedObject
+      val result = instance.getAllAtPath("cast.name")
+         .map { it.value!!.toString() }
+      result.should.contain.elements("Mark", "Carrie")
+
+      val collections = instance.getAllAtPath("cast").map { it.toRawObject() }
+      collections.should.equal(
+         listOf(
+            listOf(
+               mapOf("name" to "Mark"),
+               mapOf("name" to "Carrie"),
+            )
+         )
+      )
+   }
 
 }

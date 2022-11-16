@@ -16,6 +16,8 @@ import io.vyne.query.projection.ProjectionProvider
 import io.vyne.schemas.*
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.log
+import io.vyne.utils.timeBucket
+import io.vyne.utils.timed
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
@@ -585,7 +587,7 @@ class StatefulQueryEngine(
       target: QuerySpecTypeNode,
       invocationConstraints: InvocationConstraints
    ): QueryStrategyResult {
-      return queryStrategy.invoke(setOf(target), context, invocationConstraints)
+      return timeBucket("Call ${queryStrategy::class.simpleName} for target ${target.type.name.shortDisplayName}") { queryStrategy.invoke(setOf(target), context, invocationConstraints) }
    }
 }
 

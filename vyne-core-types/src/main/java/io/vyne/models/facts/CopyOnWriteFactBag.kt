@@ -10,7 +10,6 @@ import io.vyne.query.AlwaysGoodSpec
 import io.vyne.query.TypedInstanceValidPredicate
 import io.vyne.schemas.*
 import io.vyne.utils.ImmutableEquality
-import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 import java.util.*
@@ -203,8 +202,6 @@ open class CopyOnWriteFactBag(
       spec: TypedInstanceValidPredicate
    ): TypedInstance? {
       val searchCacheKey = getFactOrNullCacheKey(strategy, type, spec)
-
-
       return fromFactCache(searchCacheKey)
    }
 
@@ -254,7 +251,7 @@ open class CopyOnWriteFactBag(
 
 }
 
-private class TreeNavigator(val shouldGoDeeperPredicate: (TypedInstance) -> Boolean) {
+private class TreeNavigator(val shouldGoDeeperPredicate: (TypedInstance) -> TreeNavigationInstruction) {
    private val visitedNodes = mutableSetOf<TypedInstance>()
 
    fun visit(instance: TypedInstance): List<TypedInstance> {
@@ -268,22 +265,31 @@ private class TreeNavigator(val shouldGoDeeperPredicate: (TypedInstance) -> Bool
 }
 
 
+
 private object TypedInstanceTree {
    /**
     * Function which defines how to convert a TypedInstance into a tree, for traversal
     */
 
-   fun visit(instance: TypedInstance, shouldGoDeeperPredicate: (TypedInstance) -> Boolean): List<TypedInstance> {
+   fun visit(instance: TypedInstance, navigationPredicate: (TypedInstance) -> TreeNavigationInstruction): List<TypedInstance> {
 
       if (instance.type.isClosed) {
          return emptyList()
       }
-      if (!shouldGoDeeperPredicate(instance)) {
+      val navigationInstruction = navigationPredicate(instance)
+      if (navigationInstruction == IgnoreThisElement) {
          return emptyList()
       }
 
       return when (instance) {
-         is TypedObject -> instance.values.toList()
+         is TypedObject -> {
+            when (navigationInstruction) {
+               is FullScan -> instance.values.toList()
+               is EvaluateSpecificFields -> navigationInstruction.filter(instance)
+               else -> error("Unhandled branch for navigation instructionof type ${navigationInstruction::class.simpleName}")
+            }
+
+         }
          is TypedEnumValue -> {
             instance.synonyms
          }

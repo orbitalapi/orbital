@@ -1,21 +1,48 @@
 package io.vyne.models.facts
 
-import com.google.common.cache.CacheBuilder
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
 import io.vyne.schemas.Type
 import io.vyne.utils.ImmutableEquality
-import io.vyne.utils.timed
 import io.vyne.utils.xtimed
 import lang.taxi.types.ArrayType
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import java.util.concurrent.TimeUnit
 
+
+sealed class TreeNavigationInstruction {
+   fun combine(other: TreeNavigationInstruction): TreeNavigationInstruction {
+      if (this is FullScan || other is FullScan) {
+         return FullScan
+      }
+      return when {
+         this is IgnoreThisElement && other is IgnoreThisElement -> IgnoreThisElement
+         this is IgnoreThisElement && other is EvaluateSpecificFields -> other
+         this is EvaluateSpecificFields && other is IgnoreThisElement -> this
+         this is EvaluateSpecificFields && other is EvaluateSpecificFields -> this.plus(other)
+         else -> error("Unhandled TreeNavigation comparison : ${this::class.simpleName} vs ${other::class.simpleName}")
+      }
+   }
+}
+
+
+object IgnoreThisElement : TreeNavigationInstruction()
+data class EvaluateSpecificFields(val fieldNames: Set<String>) : TreeNavigationInstruction() {
+   fun plus(other:EvaluateSpecificFields) = EvaluateSpecificFields(this.fieldNames + other.fieldNames)
+   fun filter(instance: TypedObject): List<TypedInstance> {
+      val result = fieldNames.flatMap { instance.getAllAtPath(it) }
+      return result
+   }
+}
+
+object FullScan : TreeNavigationInstruction()
+
 /**
  * Strategies that determine if a search in a fact bag should
  * interrogate an object any further
  */
-data class FactMapTraversalStrategy(val name: String, val predicate: (TypedInstance) -> Boolean) {
+data class FactMapTraversalStrategy(val name: String, val predicate: (TypedInstance) -> TreeNavigationInstruction) {
    private val equality = ImmutableEquality(
       this,
       FactMapTraversalStrategy::name
@@ -30,7 +57,6 @@ data class FactMapTraversalStrategy(val name: String, val predicate: (TypedInsta
    }
 
 
-
    companion object {
 
       /**
@@ -40,7 +66,7 @@ data class FactMapTraversalStrategy(val name: String, val predicate: (TypedInsta
       fun enterIfHasFieldOfType(searchType: Type): FactMapTraversalStrategy {
          val searchTaxiType = searchType.taxiType
 
-         val predicate : (TypedInstance) -> Boolean = { instance ->
+         val predicate: (TypedInstance) -> TreeNavigationInstruction = { instance ->
             xtimed("enterIfHasFieldOfType ${searchType.longDisplayName}", timeUnit = TimeUnit.NANOSECONDS) {
                if (searchType.isCollection) {
                   // Our search implementation can treat searching for an array in two different ways:
@@ -50,24 +76,37 @@ data class FactMapTraversalStrategy(val name: String, val predicate: (TypedInsta
                   enterIfHasFieldOfType(
                      searchTaxiType,
                      instance.type.taxiType
-                  ) || enterIfHasFieldOfType((searchTaxiType as ArrayType).memberType, instance.type.taxiType)
+                  ).combine(enterIfHasFieldOfType((searchTaxiType as ArrayType).memberType, instance.type.taxiType))
                } else {
                   enterIfHasFieldOfType(searchTaxiType, instance.type.taxiType)
                }
             }
          }
-         return FactMapTraversalStrategy("Enter if has field of type ${searchType.longDisplayName}",predicate)
+         return FactMapTraversalStrategy("Enter if has field of type ${searchType.longDisplayName}", predicate)
       }
 
-      private fun enterIfHasFieldOfType(searchType: lang.taxi.types.Type, instanceType: lang.taxi.types.Type): Boolean {
+      private fun enterIfHasFieldOfType(
+         searchType: lang.taxi.types.Type,
+         instanceType: lang.taxi.types.Type
+      ): TreeNavigationInstruction {
          return when {
 //            instanceType.isAssignableTo(searchType) -> true
-            instanceType is ObjectType -> instanceType.hasDescendantWithType(searchType)
+            instanceType is ObjectType -> {
+               val paths = instanceType.getDescendantPathsOfType(searchType).toSet()
+               if (paths.isEmpty()) {
+                  IgnoreThisElement
+               } else {
+                  EvaluateSpecificFields(paths)
+               }
+
+//               instanceType.hasDescendantWithType(searchType)
+            }
+
             instanceType is ArrayType -> {
                val memberType = instanceType.memberType
                if (memberType == PrimitiveType.ANY) {
                   // A collection of Any must be traversed
-                  true
+                  FullScan
                } else {
                   enterIfHasFieldOfType(searchType, instanceType.memberType)
                }
@@ -76,7 +115,7 @@ data class FactMapTraversalStrategy(val name: String, val predicate: (TypedInsta
                val memberType = taxiType.memberType as ObjectType
                memberType.isAssignableTo(searchTaxiType) || memberType.hasDescendantWithType(searchTaxiType)
             } */
-            else -> false
+            else -> IgnoreThisElement
          }
       }
    }
