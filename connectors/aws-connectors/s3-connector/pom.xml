@@ -93,7 +93,7 @@
          <groupId>org.testcontainers</groupId>
          <artifactId>junit-jupiter</artifactId>
          <scope>test</scope>
-         <version>1.17.5</version>
+         <version>1.17.6</version>
       </dependency>
 
       <!-- dependency needed as localstack still used old sdk v1 jar -->
