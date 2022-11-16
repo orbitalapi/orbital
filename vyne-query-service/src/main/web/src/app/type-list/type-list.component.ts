@@ -1,20 +1,21 @@
-import {Component, OnInit} from '@angular/core';
-import {TypesService} from '../services/types.service';
+import { Component, OnInit } from '@angular/core';
+import { TypesService } from '../services/types.service';
 import * as _ from 'lodash';
-import {Router} from '@angular/router';
-import {Schema, SchemaMember, SchemaMemberType, Service, Type} from '../services/schema';
-import {TypeFilter, TypeFilterParams} from './filter-types/filter-types.component';
-import {SchemaNotificationService} from '../services/schema-notification.service';
+import { Router } from '@angular/router';
+import { Schema, SchemaMember, SchemaMemberType, Service, Type } from '../services/schema';
+import { TypeFilter, TypeFilterParams } from './filter-types/filter-types.component';
+import { SchemaNotificationService } from '../services/schema-notification.service';
 
 @Component({
   selector: 'app-type-list',
   templateUrl: './type-list.component.html',
-  styleUrls: ['./type-list.component.scss']
+  styleUrls: ['./type-list.component.scss'],
 })
 export class TypeListComponent implements OnInit {
 
-  constructor(private typeService: TypesService,
-              private router: Router) {
+  constructor(
+    private typeService: TypesService,
+    private router: Router) {
   }
 
   schema: Schema;
@@ -34,7 +35,7 @@ export class TypeListComponent implements OnInit {
     this.typeService.getTypes(refresh).subscribe(schema => {
         this.schema = schema;
         this.applyFilter();
-      }, error => console.log('error : ' + error)
+      }, error => console.log('error : ' + error),
     );
   }
 
@@ -71,7 +72,7 @@ export class TypeListComponent implements OnInit {
 
   startNewQuery(member: SchemaMember) {
     this.router.navigate(['/query-wizard'], {
-      queryParams: {'types': [member.name.fullyQualifiedName]}
+      queryParams: { 'types': [member.name.fullyQualifiedName] },
     });
   }
 

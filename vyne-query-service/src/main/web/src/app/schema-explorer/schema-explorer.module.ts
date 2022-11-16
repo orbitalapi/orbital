@@ -28,6 +28,7 @@ import { VynePrivileges } from 'src/app/services/user-info.service';
 import { TuiTabsModule } from '@taiga-ui/kit';
 import { SchemaExplorerTableModule } from 'src/app/schema-explorer-table/schema-explorer-table.module';
 import { SchemaImporterModule } from 'src/app/schema-importer/schema-importer.module';
+import { ChangesetSelectorModule } from '../changeset-selector/changeset-selector.module';
 
 
 @NgModule({
@@ -68,6 +69,7 @@ import { SchemaImporterModule } from 'src/app/schema-importer/schema-importer.mo
       },
     ]),
     TuiTabsModule,
+    ChangesetSelectorModule
   ],
   exports: [SchemaExplorerComponent],
   declarations: [SchemaExplorerComponent, SchemaExplorerContainerComponent, SchemaSummaryViewComponent],

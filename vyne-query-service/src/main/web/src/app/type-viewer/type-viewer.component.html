@@ -1,6 +1,7 @@
 <div class="documentation" *ngIf="type">
   <div class="type-name">
     <h1>{{type?.name?.name}}</h1>
+    <p class="last-edited">Last edited by Michael Stone 34 minutes ago. See all edits <a href="https://github.com">here</a>.</p>
     <div class="types-row">
       <span class="mono-badge">{{type?.name?.fullyQualifiedName}}</span>
       <app-inherits-from [type]="type" [editable]="editable"
