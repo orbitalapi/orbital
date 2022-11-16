@@ -5,7 +5,7 @@ import es.usc.citius.hipster.graph.HashBasedHipsterDirectedGraph
 import es.usc.citius.hipster.model.Transition
 import es.usc.citius.hipster.model.impl.WeightedNode
 import es.usc.citius.hipster.model.problem.ProblemBuilder
-import io.vyne.query.EvaluatedPathSet
+import io.vyne.query.graph.EvaluatedPathSet
 import io.vyne.query.graph.Element
 import io.vyne.query.graph.pathHashExcludingWeights
 import io.vyne.schemas.Relationship

@@ -15,7 +15,8 @@ import io.vyne.schemas.Field
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
-import io.vyne.utils.timed
+import io.vyne.utils.timeBucket
+import io.vyne.utils.timeBucketAsync
 import io.vyne.utils.xtimed
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -240,7 +241,9 @@ class TypedObjectFactory(
    }
 
    fun build(decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
-      return xtimed("Build ${this.type.name.shortDisplayName}") { doBuild(decorator) }
+      return timeBucket("Build ${this.type.name.shortDisplayName}") {
+         doBuild(decorator)
+      }
    }
 
    private fun doBuild(decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {

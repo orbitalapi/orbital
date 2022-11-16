@@ -39,6 +39,10 @@ interface FactBag : Collection<TypedInstance> {
       return scopedFacts.firstOrNull { it.scope == scope }
    }
 
+   fun rootAndScopedFacts():List<TypedInstance> {
+      return rootFacts() + scopedFacts.map { it.fact }
+   }
+
    /**
     * Returns the facts that were provided top-level only.
     * Other facts may be available by traversing the trees of these facts

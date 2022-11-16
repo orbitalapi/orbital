@@ -1,13 +1,10 @@
-package io.vyne.query
+package io.vyne.query.graph
 
 import es.usc.citius.hipster.model.impl.WeightedNode
-import io.vyne.query.graph.Element
-import io.vyne.query.graph.ElementType
-import io.vyne.query.graph.SimplifiedPath
+import io.vyne.query.PenaliseOperationAndProvidedInstanceMember
+import io.vyne.query.SearchPenaltyProvider
 import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.query.graph.edges.PathEvaluation
-import io.vyne.query.graph.pathHashExcludingWeights
-import io.vyne.query.graph.simplifyPath
 import io.vyne.schemas.Relationship
 import io.vyne.utils.ImmutableEquality
 
@@ -19,12 +16,12 @@ import io.vyne.utils.ImmutableEquality
  * the same path.
  */
 data class EvaluatedPathSet(
-   private val proposedPaths: MutableMap<Int, WeightedNode<Relationship, Element, Double>> = mutableMapOf(),
-   private val evaluatedPaths: MutableMap<Int, List<PathEvaluation>> = mutableMapOf(),
-   private val evaluatedOperations: MutableList<EvaluatedEdge> = mutableListOf(),
-   private val transitionCount: MutableMap<HashableTransition, Int> = mutableMapOf(),
-   private val penalisedEdges: MutableList<PenalizedEdge> = mutableListOf(),
-   private val simplifiedPaths: MutableMap<Int, Pair<SimplifiedPath, WeightedNode<Relationship, Element, Double>>> = mutableMapOf()
+    private val proposedPaths: MutableMap<Int, WeightedNode<Relationship, Element, Double>> = mutableMapOf(),
+    private val evaluatedPaths: MutableMap<Int, List<PathEvaluation>> = mutableMapOf(),
+    private val evaluatedOperations: MutableList<EvaluatedEdge> = mutableListOf(),
+    private val transitionCount: MutableMap<HashableTransition, Int> = mutableMapOf(),
+    private val penalisedEdges: MutableList<PenalizedEdge> = mutableListOf(),
+    private val simplifiedPaths: MutableMap<Int, Pair<SimplifiedPath, WeightedNode<Relationship, Element, Double>>> = mutableMapOf()
 ) {
    /**
     * There are 2 concrete implementations for SearchPenaltyProvider

@@ -1,4 +1,4 @@
-package io.vyne.query
+package io.vyne.query.graph
 
 import com.google.common.base.Stopwatch
 import es.usc.citius.hipster.model.impl.WeightedNode
@@ -6,17 +6,15 @@ import io.vyne.SchemaPathFindingGraph
 import io.vyne.models.DataSource
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
-import io.vyne.query.SearchResult.Companion.noPath
-import io.vyne.query.graph.Element
+import io.vyne.query.InvocationConstraints
+import io.vyne.query.PathExclusionCalculator
+import io.vyne.query.SearchGraphExclusion
+import io.vyne.query.excludedValues
+import io.vyne.query.graph.SearchResult.Companion.noPath
 import io.vyne.query.graph.edges.EvaluatableEdge
-import io.vyne.query.graph.VyneGraphBuilder
-import io.vyne.query.graph.describePath
 import io.vyne.query.graph.display.displayGraphJson
 import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.query.graph.edges.PathEvaluation
-import io.vyne.query.graph.pathDescription
-import io.vyne.query.graph.pathHashExcludingWeights
-import io.vyne.schemas.Operation
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.RemoteOperation
@@ -63,11 +61,11 @@ class GraphSearcher(
    }
 
    suspend fun search(
-      knownFacts: Collection<TypedInstance>,
-      excludedServices: Set<SearchGraphExclusion<QualifiedName>>,
-      excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
-      queryId: String,
-      evaluator: PathEvaluator
+       knownFacts: Collection<TypedInstance>,
+       excludedServices: Set<SearchGraphExclusion<QualifiedName>>,
+       excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
+       queryId: String,
+       evaluator: PathEvaluator
    ): SearchResult {
 
       // TODO : EEEK!  We should be adding the instances, not the types.

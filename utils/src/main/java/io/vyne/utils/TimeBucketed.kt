@@ -22,8 +22,15 @@ class TimeBucketed {
 }
 
 
+fun <T> timeBucket(name: String, bucket:TimeBucketed = TimeBucketed.DEFAULT, lambda: () -> T):T {
+   val sw = Stopwatch.createStarted()
+   val result = lambda()
+   bucket.addActivity(name, sw.elapsed())
+   return result
+}
 
-suspend fun <T> timeBucket(name: String, bucket:TimeBucketed = TimeBucketed.DEFAULT, lambda: suspend () -> T):T {
+
+suspend fun <T> timeBucketAsync(name: String, bucket:TimeBucketed = TimeBucketed.DEFAULT, lambda: suspend () -> T):T {
    val sw = Stopwatch.createStarted()
    val result = lambda()
    bucket.addActivity(name, sw.elapsed())

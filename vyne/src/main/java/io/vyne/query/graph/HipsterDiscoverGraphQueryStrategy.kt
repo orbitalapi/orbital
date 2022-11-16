@@ -1,57 +1,59 @@
 @file:Suppress("unused")
 
-package io.vyne.query
+package io.vyne.query.graph
 
-import com.google.common.base.Stopwatch
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
+import com.google.common.cache.LoadingCache
 import es.usc.citius.hipster.algorithm.Algorithm
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
 import io.vyne.VyneCacheConfiguration
 import io.vyne.models.DataSource
 import io.vyne.models.TypedInstance
-import io.vyne.query.graph.Element
-import io.vyne.query.graph.ElementType
+import io.vyne.query.*
 import io.vyne.query.graph.edges.EvaluatableEdge
-import io.vyne.query.graph.VyneGraphBuilder
-import io.vyne.query.graph.edges.EdgeEvaluator
 import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.query.graph.edges.PathEvaluation
 import io.vyne.query.graph.edges.StartingEdge
-import io.vyne.query.graph.providedInstance
-import io.vyne.query.graph.type
-import io.vyne.schemas.Link
-import io.vyne.schemas.Path
-import io.vyne.schemas.Relationship
-import io.vyne.schemas.Schema
-import io.vyne.schemas.describe
+import io.vyne.schemas.*
 import io.vyne.utils.ImmutableEquality
-import io.vyne.utils.StrategyPerformanceProfiler
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.*
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
 
-class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
-   private val evaluators = linkEvaluators.associateBy { it.relationship }
 
-   suspend fun evaluate(edge: EvaluatableEdge, queryContext: QueryContext): EvaluatedEdge {
-      val relationship = edge.relationship
-      val evaluator = evaluators[relationship]
-         ?: error("No LinkEvaluator provided for relationship ${relationship.name}")
-      val sw = Stopwatch.createStarted()
-      val evaluationResult = evaluator.evaluate(edge, queryContext)
-      StrategyPerformanceProfiler.record("Hipster.evaluate.${evaluator.relationship}", sw.elapsed())
-      return evaluationResult
-   }
+private data class SearchPathExclusionKey(val startInstanceType: TypedInstance, val target: Element) {
+   private val equality =
+      ImmutableEquality(this, SearchPathExclusionKey::startInstanceType, SearchPathExclusionKey::target)
+
+   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
+   override fun hashCode(): Int = equality.hash()
 }
 
-class SearchPathExclusionsMap<K, V>(private val maxEntries: Int) : LinkedHashMap<K, V>() {
-   override fun removeEldestEntry(eldest: MutableMap.MutableEntry<K, V>?): Boolean {
-      return this.size > maxEntries
+private data class StrategyInvocationCacheKey(
+   val context: QueryContext,
+   val target: QuerySpecTypeNode,
+   val invocationConstraints: InvocationConstraints,
+   val coroutineContext: CoroutineScope,
+) {
+   val facts = context.facts.rootAndScopedFacts()
+   private val equality = ImmutableEquality(
+      this,
+      StrategyInvocationCacheKey::facts,
+      StrategyInvocationCacheKey::target
+   )
+
+   override fun hashCode(): Int {
+      return equality.hash()
+   }
+
+   override fun equals(other: Any?): Boolean {
+      return equality.isEqualTo(other)
    }
 }
 
@@ -59,6 +61,7 @@ class HipsterDiscoverGraphQueryStrategy(
    private val edgeEvaluator: EdgeNavigator,
    vyneCacheConfigration: VyneCacheConfiguration
 ) : QueryStrategy {
+
    private val searchPathExclusionsCacheSize =
       vyneCacheConfigration.vyneDiscoverGraphQuery.searchPathExclusionsCacheSize
 
@@ -78,14 +81,39 @@ class HipsterDiscoverGraphQueryStrategy(
       .build<SearchPathExclusionKey, SearchPathExclusionKey>()
       .asMap()
 
+   private val searchExecutingCacheLoader =
+      object : CacheLoader<StrategyInvocationCacheKey, Deferred<QueryStrategyResult>>() {
+         override fun load(key: StrategyInvocationCacheKey): Deferred<QueryStrategyResult> {
+            return key.coroutineContext.async {
+               logger.info { "Invoking search for type ${key.target.type.qualifiedName.shortDisplayName} with ${key.facts.size} provided facts" }
 
-   data class SearchPathExclusionKey(val startInstanceType: TypedInstance, val target: Element) {
-      private val equality =
-         ImmutableEquality(this, SearchPathExclusionKey::startInstanceType, SearchPathExclusionKey::target)
+               // MP: 23-Sep-22: We have removed the concept of findOne / findAll, and now only support find.
+               // Having made that change, EsgTest started failing, as the below wasn't being invoked.
+               // Not sure why we didn't use GraphSearch when doing DISCOVER (which related to findOne).
+               //
+               // Have excluded this, as I suspect the check is legacy.
+               // All tests passed after I did that, but...well... I'm worried.
+               // If stuff starts breaking, this could be the cause.
+//      if (firstTarget.mode != QueryMode.DISCOVER) {
+//         return QueryStrategyResult.searchFailed()
+//      }
+               val context = key.context
+               if (context.facts.isEmpty()) {
+                  logger.debug { "[${context.queryId}] Cannot perform a graph search, as no facts provided to serve as starting point. " }
+                  return@async QueryStrategyResult.searchFailed()
+               }
 
-      override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
-      override fun hashCode(): Int = equality.hash()
-   }
+               val targetElement = type(key.target.type)
+
+               // search from every fact in the context
+               find(targetElement, context, key.invocationConstraints)
+            }
+         }
+      }
+
+   private val invocationCache: LoadingCache<StrategyInvocationCacheKey, Deferred<QueryStrategyResult>> = CacheBuilder
+      .newBuilder()
+      .build(searchExecutingCacheLoader)
 
    override suspend fun invoke(
       target: Set<QuerySpecTypeNode>,
@@ -95,16 +123,14 @@ class HipsterDiscoverGraphQueryStrategy(
       if (target.size != 1) TODO("Support for target sets not yet built")
       val firstTarget = target.first()
 
-      // MP: 23-Sep-22: We have removed the concept of findOne / findAll, and now only support find.
-      // Having made that change, EsgTest started failing, as the below wasn't being invoked.
-      // Not sure why we didn't use GraphSearch when doing DISCOVER (which related to findOne).
-      //
-      // Have excluded this, as I suspect the check is legacy.
-      // All tests passed after I did that, but...well... I'm worried.
-      // If stuff starts breaking, this could be the cause.
-//      if (firstTarget.mode != QueryMode.DISCOVER) {
-//         return QueryStrategyResult.searchFailed()
-//      }
+      val cacheKey = StrategyInvocationCacheKey(
+         context = context,
+         target = firstTarget,
+         invocationConstraints,
+         CoroutineScope(currentCoroutineContext())
+      )
+
+//      return invocationCache.get(cacheKey).await()
       if (context.facts.isEmpty()) {
          logger.debug { "[${context.queryId}] Cannot perform a graph search, as no facts provided to serve as starting point. " }
          return QueryStrategyResult.searchFailed()
@@ -115,6 +141,7 @@ class HipsterDiscoverGraphQueryStrategy(
       // search from every fact in the context
       return find(targetElement, context, invocationConstraints)
    }
+
 
    internal suspend fun find(
       targetElement: Element,

@@ -5,7 +5,7 @@ import es.usc.citius.hipster.model.HeuristicNode
 import es.usc.citius.hipster.model.function.NodeExpander
 import es.usc.citius.hipster.model.problem.SearchProblem
 import es.usc.citius.hipster.util.Predicate
-import io.vyne.query.EvaluatedPathSet
+import io.vyne.query.graph.EvaluatedPathSet
 import mu.KotlinLogging
 import java.util.PriorityQueue
 import java.util.Queue
@@ -75,7 +75,8 @@ class VyneGraphSearchAlgorithm<A, S, C : Comparable<C>, N : HeuristicNode<A, S, 
     * minCost to implement AStar.
     */
    inner class Iterator(private val scoreFunc: (currentScore: C, successorScore: C) -> Boolean,
-                        private val evaluatedEdges: EvaluatedPathSet) : MutableIterator<N> {
+                        private val evaluatedEdges: EvaluatedPathSet
+   ) : MutableIterator<N> {
       private val open: MutableMap<S, N> = mutableMapOf()
       private val closed: MutableMap<S, N> = mutableMapOf()
       private val queue: Queue<N> = PriorityQueue()
