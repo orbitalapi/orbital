@@ -290,7 +290,7 @@ terraform-validate:
 build-helm:
    stage: build
    image:
-      name: alpine/helm:3.10.1
+      name: alpine/helm:3.10.2
       entrypoint: [ "" ]
    script:
       - cd ${CI_PROJECT_DIR}/infra/helm/vyne-helm
