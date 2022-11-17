@@ -149,7 +149,10 @@ class TypedObjectFactory(
                newFactory(projectedType.collectionType!!, collectionMember, scope = projectionScope)
                   .build()
             }.collect(Collectors.toList())
-            .let { projectedCollection -> TypedCollection.from(projectedCollection, source) }
+            .let { projectedCollection ->
+               // Use arrayOf (instead of from), as the collection may be empty, so we want to be explicit about it's type
+               TypedCollection.arrayOf(projectedType.collectionType!!, projectedCollection, source)
+            }
       } else {
          newFactory(projectedType, fieldValue, scope = projectionScope).build()
       }
@@ -651,6 +654,9 @@ class TypedObjectFactory(
       fieldTypeName: QualifiedName,
       message: String = "Can't populate attribute $attributeName on type ${type.name} as no attribute or expression was found on the supplied value of type ${value::class.simpleName}"
    ): TypedNull {
+      if (attributeName == "security") {
+         println()
+      }
       return TypedNull.create(
          fieldType,
          ValueLookupReturnedNull(

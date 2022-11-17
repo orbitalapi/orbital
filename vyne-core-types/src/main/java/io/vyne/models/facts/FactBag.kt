@@ -32,7 +32,8 @@ interface FactBag : Collection<TypedInstance> {
    val scopedFacts: List<ScopedFact>
 
    fun getScopedFact(scope: ProjectionFunctionScope): ScopedFact {
-      return getScopedFactOrNull(scope) ?: error("No scope of ${scope.name} exists in this FactBag")
+      return getScopedFactOrNull(scope) ?:
+         error("No scope of ${scope.name} exists in this FactBag")
    }
 
    fun getScopedFactOrNull(scope: ProjectionFunctionScope): ScopedFact? {

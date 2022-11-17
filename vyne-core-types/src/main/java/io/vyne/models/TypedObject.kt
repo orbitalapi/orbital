@@ -13,6 +13,7 @@ import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.AttributePath
+import mu.KotlinLogging
 
 
 data class TypedObject(
@@ -31,6 +32,7 @@ data class TypedObject(
    private val hash: Int by lazy { equality.hash() }
 
    companion object {
+      private val logger = KotlinLogging.logger {}
       fun fromValue(typeName: String, value: Any, schema: Schema, source: DataSource): TypedInstance {
          return fromValue(schema.type(typeName), value, schema, source = source)
       }
@@ -196,7 +198,10 @@ data class TypedObject(
                   is TypedObject -> member.getAllAtPath(remainingAccessor)
                   else -> error("Unhandled branch in navigating a collection - got a member type of ${member::class.simpleName}")
                }
-
+            }
+            is TypedNull -> {
+               logger.warn { "Reading path of $path against instance of ${this.type.qualifiedName.shortDisplayName} found null value $thisFieldName.  Returning the null value" }
+               listOf(attributeValue)
             }
 
             else -> throw IllegalArgumentException("Cannot evaluate an accessor ($remainingAccessor) as value is not an object with fields (${attributeValue.type.name})")

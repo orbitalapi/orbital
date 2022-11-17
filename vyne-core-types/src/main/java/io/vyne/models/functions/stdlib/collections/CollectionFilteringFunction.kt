@@ -32,19 +32,30 @@ open class CollectionFilteringFunction {
        objectFactory: EvaluationValueSupplier,
        rawMessageBeingParsed: Any?
    ): Either<TypedNull, List<TypedInstance>> {
-      val collection = inputValues[0] as TypedCollection
+      fun createTypeNullFailure(message:String):TypedNull {
+         return TypedNull.create(
+            returnType,
+            FailedEvaluatedExpression(
+               function.asTaxi(),
+               inputValues,
+               message
+            )
+         )
+      }
+
+      val collection =  when (val collection =  inputValues[0]) {
+         is TypedNull -> {
+            return createTypeNullFailure("Expected a collection in param 0, but got null.").left()
+         }
+         is TypedCollection -> collection
+         else -> error("Expected either a TypedNull or a TypedCollection in param 0.  Got a ${collection::class.simpleName}")
+      }
+
       val deferredInstance = inputValues[1] as DeferredTypedInstance
       val expressionReturnType = schema.type(deferredInstance.expression.returnType)
 
       if (expressionReturnType.basePrimitiveTypeName?.parameterizedName != PrimitiveType.BOOLEAN.qualifiedName) {
-         return TypedNull.create(
-             returnType,
-             FailedEvaluatedExpression(
-                 function.asTaxi(),
-                 inputValues,
-                 "Expected a predicate that returned a boolean, but the returning type was ${expressionReturnType.qualifiedName.parameterizedName}"
-             )
-         )
+         return createTypeNullFailure("Expected a predicate that returned a boolean, but the returning type was ${expressionReturnType.qualifiedName.parameterizedName}")
             .left()
       }
       val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
