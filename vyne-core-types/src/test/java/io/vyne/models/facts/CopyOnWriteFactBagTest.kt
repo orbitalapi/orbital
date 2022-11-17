@@ -12,7 +12,9 @@ class CopyOnWriteFactBagTest  {
       model Person {
          name : FirstName inherits String
       }
-      model Actor inherits Person
+      model Actor inherits Person {
+         agentName : AgentName inherits String
+      }
 
       model Film {
         cast : Actor[]
@@ -36,6 +38,30 @@ class CopyOnWriteFactBagTest  {
    }
 
    @Test
+   fun `can find a collection of properties from within a collection`() {
+      val catalog = TypedInstance.from(schema.type("Catalog"), """
+         {
+            "films" : [
+               { "cast" : [
+                  { "name" : "Mark" , "agentName" : "Jenny" },
+                  { "name" : "Carrie" , "agentName" : "Amanda" }
+                 ]
+               },
+               { "cast" : [
+                  { "name" : "George" , "agentName" : "Sophie" },
+                  { "name" : "Hamish" , "agentName" : "Leslie" }
+                 ]
+               }
+            ]
+         }
+      """.trimIndent(), schema)
+      val factBag = CopyOnWriteFactBag(catalog, schema)
+      val collection = factBag.getFact(schema.type("AgentName"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
+      collection.should.have.size(4)
+
+   }
+
+   @Test
    fun `two searches are considered equal`() {
       val person = TypedInstance.from(schema.type("Person"), """ { "name" : "Jimmy" }""", schema)
       val actor = TypedInstance.from(schema.type("Actor"), """ { "name" : "Jack" }""", schema)
@@ -46,7 +72,7 @@ class CopyOnWriteFactBagTest  {
    }
 
    @Test
-   fun `querying allow all for collections returns a flattened colelction`() {
+   fun `querying allow all for collections returns a flattened collection`() {
       val film = TypedInstance.from(schema.type("Film"), """{
          "cast": [   { "name" : "Jack" } , { "name" : "Jimmy" } ],
          "crew" : [ { "name" : "Pete" } , { "name" : "Paul" } ]
