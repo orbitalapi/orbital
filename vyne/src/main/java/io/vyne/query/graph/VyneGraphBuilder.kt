@@ -291,7 +291,7 @@ class VyneGraphBuilder(
             addConnection(unformattedTypeNode, typeNode, Relationship.CAN_POPULATE)
          }
 
-         if (!type.isClosed) {
+         //if (!type.isClosed) {
             type.attributes.map { (attributeName, attributeType) ->
                val attributeQualifiedName = attributeFqn(typeFullyQualifiedName, attributeName)
                val attributeNode = member(attributeQualifiedName)
@@ -307,7 +307,7 @@ class VyneGraphBuilder(
                // migrating this relationship to an INSTNACE_OF node.
 //            builder.connect(attributeTypeNode).to(attributeNode).withEdge(Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE)
             }
-         }
+         //}
 
 //         log().debug("Added attribute ${type.name} to graph")
       }

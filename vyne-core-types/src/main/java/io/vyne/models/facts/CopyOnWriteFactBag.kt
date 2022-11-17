@@ -91,7 +91,11 @@ open class CopyOnWriteFactBag(
 
    // Wraps all the known facts under a root node, turning it into a tree
    private fun dataTreeRoot(): TypedInstance {
-      return TypedCollection.arrayOf(anyArrayType, rootFacts(), source = MixedSources)
+      // MP: 17-Nov-22
+      // This used to only be root facts.
+      // But that was causing lookups-by-type to incorrectly ignore things that have been scoped
+      // (eg., when projecting an object, the projected element is scoped, and ignored for lookup-by-type)
+      return TypedCollection.arrayOf(anyArrayType, rootAndScopedFacts().distinct(), source = MixedSources)
    }
 
    private val modelTreeCache = CacheBuilder
