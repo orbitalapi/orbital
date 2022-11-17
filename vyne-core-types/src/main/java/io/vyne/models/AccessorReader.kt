@@ -105,7 +105,12 @@ class FactBagValueSupplier(
    }
 
    override fun getScopedFact(scope: ProjectionFunctionScope): TypedInstance {
-      return facts.getScopedFact(scope).fact
+      // MP: 17-Nov-22
+      // was:
+      // return facts.getScopedFact(scope).fact
+      // but this was causing exceptions.
+      // Looks like we should be using thisScopeValueSupplier
+      return thisScopeValueSupplier.getScopedFact(scope)
    }
 
    override fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance {
