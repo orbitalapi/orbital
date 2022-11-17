@@ -130,7 +130,8 @@ class HipsterDiscoverGraphQueryStrategy(
          CoroutineScope(currentCoroutineContext())
       )
 
-//      return invocationCache.get(cacheKey).await()
+      return invocationCache.get(cacheKey).await()
+      /*
       if (context.rootAndScopedFacts().isEmpty()) {
          logger.debug { "[${context.queryId}] Cannot perform a graph search, as no facts provided to serve as starting point. " }
          return QueryStrategyResult.searchFailed()
@@ -140,6 +141,7 @@ class HipsterDiscoverGraphQueryStrategy(
 
       // search from every fact in the context
       return find(targetElement, context, invocationConstraints)
+       */
    }
 
 
