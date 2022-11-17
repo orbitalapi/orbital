@@ -410,3 +410,36 @@ e2e-tests-other-branches:
       - publish-schema-server-to-gitlab-container-registry
    dependencies:
       - build-jvm-branch
+
+snyk:
+   stage: verify
+   image: snyk/snyk:maven-3-jdk-11
+   variables:
+      DOCKER_HOST: tcp://docker:2375/
+      DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
+      DOCKER_DRIVER: overlay2
+      DOCKER_BUILDKIT: 1
+      BUILDKIT_PROGRESS: plain
+      PROGRESS_NO_TRUNC: 1
+      SNYK_AUTH: $SNYK_AUTH
+   services:
+      -  name: docker:20.10.21-dind
+         command: [ "--tls=false" ]
+   before_script:
+      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+      - PROJECT_VERSION=$(cat build-version.txt)
+      - |
+         if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
+           tag="latest"
+           versionTag="$PROJECT_VERSION"
+         elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
+            tag="latest-preview"
+            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
+         else
+            tag="$CI_COMMIT_BRANCH"
+            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
+         fi
+         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+         echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
+   script:
+      - snyk test --docker ${CI_REGISTRY_IMAGE}/schema-server:$versionTag
