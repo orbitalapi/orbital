@@ -4,7 +4,7 @@ import { ActivatedRoute, ParamMap } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
 import { Schema, Type } from '../services/schema';
 import { buildInheritable, Inheritable } from '../inheritence-graph/inheritance-graph.component';
-import { Observable } from 'rxjs';
+import { combineLatest, Observable } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
@@ -69,9 +69,10 @@ export class TypeViewerContainerComponent implements OnInit {
   showTaxi = true;
 
   ngOnInit() {
-    this.activeRoute.paramMap.pipe(
+    const typeName$ = this.activeRoute.paramMap.pipe(
       map((params: ParamMap) => params.get('typeName')),
-    ).subscribe(typeName => {
+    );
+    combineLatest([typeName$, this.schema$]).subscribe(([typeName]) => {
       this.typeName = typeName;
       this.typeService
         .getType(this.typeName)
