@@ -189,7 +189,7 @@ class RestTemplateInvoker(
                   .map { responseBody ->
                      val remoteCall = remoteCall(responseBody = responseBody, failed = true)
                      throw OperationInvocationException(
-                        "Http error ${clientResponse.statusCode()} from url $expandedUri",
+                        "http error ${clientResponse.statusCode()} from url $expandedUri - $responseBody",
                         clientResponse.statusCode().value(),
                         remoteCall,
                         parameters

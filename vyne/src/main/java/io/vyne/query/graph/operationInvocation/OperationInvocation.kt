@@ -19,6 +19,7 @@ import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
 import io.vyne.schemas.fqn
 import io.vyne.utils.StrategyPerformanceProfiler
+import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
 import mu.KotlinLogging
@@ -55,7 +56,12 @@ class DefaultOperationInvocationService(
          ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
 
       val paramStart = Instant.now()
-      val parameters = gatherParameters(operation.parameters, preferredParams, context, providedParamValues)
+      val parameters = try {
+         gatherParameters(operation.parameters, preferredParams, context, providedParamValues)
+      } catch (e:Exception) {
+         log().error("Gather params failed", e)
+         throw e
+      }
       val resolvedParams = ensureParametersSatisfyContracts(parameters, context)
       val validatedParams = resolvedParams
       StrategyPerformanceProfiler.record(
@@ -280,7 +286,7 @@ class OperationInvocationEvaluator(
       operation: RemoteOperation,
       edge: EvaluatableEdge,
       context: QueryContext
-   ) = operation.parameters.map { requiredParam ->
+   ):List<TypedInstance> = operation.parameters.mapNotNull { requiredParam ->
 
       try {
          // Note: We can't always assume that the inbound relationship has taken care of this
@@ -291,7 +297,7 @@ class OperationInvocationEvaluator(
          }
       } catch (e: Exception) {
          logger.warn { "Failed to discover param of type ${requiredParam.type.fullyQualifiedName} for operation ${operation.qualifiedName} - ${e::class.simpleName} ${e.message}" }
-         edge.failure(null)
+         null
       }
    }
 
