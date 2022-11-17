@@ -128,6 +128,8 @@ class GitSchemaPackageLoader(
    }
 
    override fun finalizeChangeset(name: String): Mono<FinalizeChangesetResponse> {
+      // TODO Access the user information from the authentication
+      // TODO Allow specifying a description
       return mono { GitOperations(workingDir.toFile(), config).raisePr(name, "", "Martin Pitt") }
          .map { FinalizeChangesetResponse(it) }
    }
