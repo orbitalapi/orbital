@@ -3,7 +3,7 @@
 package io.vyne.models
 
 import io.vyne.schemas.Type
-import lang.taxi.Equality
+import lang.taxi.ImmutableEquality
 import lang.taxi.jvm.common.PrimitiveTypes
 import lang.taxi.types.FormatsAndZoneOffset
 import mu.KotlinLogging
@@ -57,7 +57,7 @@ data class TypedValue private constructor(
    override val source: DataSource,
    val format: FormatsAndZoneOffset? = null
 ) : TypedInstance {
-   private val equality = Equality(this, TypedValue::type, TypedValue::value)
+   private val equality = ImmutableEquality(this, TypedValue::type, TypedValue::value)
    private val hash: Int by lazy { equality.hash() }
    override fun toString(): String {
       return "TypedValue(type=${type.qualifiedName.longDisplayName}, value=$value)"
@@ -131,7 +131,18 @@ data class TypedValue private constructor(
       return TypedValue(typeAlias, value, source)
    }
 
-   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
+   override fun equals(other: Any?): Boolean {
+      // Don't call equality.equals() here, as it's too slow.
+      // We need a fast, non-reflection based implementation.
+      if (this === other) return true
+      if (other == null) return false
+      if (this.javaClass !== other.javaClass) return false
+      val otherTypedValue = other as TypedValue
+      // Type uses a fast interned check, so should be fine.
+      // value could be slow, but not much we can do here.
+      return this.type == otherTypedValue.type && this.value == other.value
+
+   }
    override fun hashCode(): Int = hash
 
    /**

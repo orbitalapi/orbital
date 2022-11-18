@@ -5,12 +5,7 @@ import com.google.common.base.Stopwatch
 import io.vyne.*
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.schemas.*
-import lang.taxi.CompilationError
-import lang.taxi.CompilationException
-import lang.taxi.Compiler
-import lang.taxi.Equality
-import lang.taxi.TaxiDocument
-import lang.taxi.errors
+import lang.taxi.*
 import lang.taxi.messages.Severity
 import lang.taxi.packages.TaxiSourcesLoader
 import lang.taxi.types.Annotation
@@ -35,7 +30,7 @@ class TaxiSchema(
    @get:JsonIgnore
    override val sources: List<VersionedSource> = packages.flatMap { it.sourcesWithPackageIdentifier }
 
-   private val equality = Equality(this, TaxiSchema::document, TaxiSchema::sources)
+   private val equality = ImmutableEquality(this, TaxiSchema::document, TaxiSchema::sources)
    override fun equals(other: Any?): Boolean {
       return equality.isEqualTo(other)
    }
@@ -86,7 +81,7 @@ class TaxiSchema(
    private fun parsePolicies(document: TaxiDocument): Set<Policy> {
       return document.policies.map { taxiPolicy ->
          Policy(
-            QualifiedName(taxiPolicy.qualifiedName),
+            QualifiedName.from(taxiPolicy.qualifiedName),
             this.type(taxiPolicy.targetType.toVyneQualifiedName()),
             taxiPolicy.ruleSets
          )
@@ -103,12 +98,12 @@ class TaxiSchema(
             val metadata = parseAnnotationsToMetadata(taxiServiceLineage.annotations)
             ServiceLineage(
                consumes = consumes,
-               stores = taxiServiceLineage.stores.map { QualifiedName(it.fullyQualifiedName) },
+               stores = taxiServiceLineage.stores.map { QualifiedName.from(it.fullyQualifiedName) },
                metadata = metadata
             )
          }
          Service(
-            QualifiedName(taxiService.qualifiedName),
+            QualifiedName.from(taxiService.qualifiedName),
             queryOperations = taxiService.queryOperations.map { queryOperation ->
                val returnType = this.type(queryOperation.returnType.toVyneQualifiedName())
                QueryOperation(
@@ -390,7 +385,7 @@ fun List<lang.taxi.types.FieldModifier>.toVyneFieldModifiers(): List<FieldModifi
 }
 
 private fun lang.taxi.types.QualifiedName.toVyneQualifiedName(): QualifiedName {
-   return QualifiedName(this.toString(), this.parameters.map { it.toVyneQualifiedName() })
+   return QualifiedName.from(this.toString(), this.parameters.map { it.toVyneQualifiedName() })
 }
 
 fun lang.taxi.types.Type.toVyneQualifiedName(): QualifiedName {

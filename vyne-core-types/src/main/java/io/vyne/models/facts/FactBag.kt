@@ -44,6 +44,14 @@ interface FactBag : Collection<TypedInstance> {
       return rootFacts() + scopedFacts.map { it.fact }
    }
 
+   override fun contains(element: TypedInstance): Boolean {
+      return rootFacts().contains(element) || scopedFacts.any { it.fact == element }
+   }
+
+   override fun containsAll(elements: Collection<TypedInstance>): Boolean {
+      return elements.all { contains(it) }
+   }
+
    override fun isEmpty(): Boolean = rootAndScopedFacts().isEmpty()
    override val size: Int
       get() {

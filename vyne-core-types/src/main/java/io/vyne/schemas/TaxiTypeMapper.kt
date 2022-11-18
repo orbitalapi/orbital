@@ -17,7 +17,7 @@ object TaxiTypeMapper {
    fun fromTaxiType(taxiType: lang.taxi.types.Type, schema: Schema, typeCache: TypeCache = schema.typeCache): Type {
       return when (taxiType) {
          is ObjectType -> {
-            val typeName = QualifiedName(taxiType.qualifiedName)
+            val typeName = QualifiedName.from(taxiType.qualifiedName)
             val fields = taxiType.allFields.map { field ->
                when (field.type) {
                   is ArrayType -> field.name to Field(
@@ -75,7 +75,7 @@ object TaxiTypeMapper {
 
          is TypeAlias -> {
             Type(
-               QualifiedName(taxiType.qualifiedName),
+               QualifiedName.from(taxiType.qualifiedName),
                metadata = parseAnnotationsToMetadata(taxiType.annotations),
                aliasForTypeName = taxiType.aliasType!!.toQualifiedName().toVyneQualifiedName(),
                sources = taxiType.compilationUnits.toVyneSources(),
@@ -88,7 +88,7 @@ object TaxiTypeMapper {
          is EnumType -> {
             val enumValues = taxiType.values.map { EnumValue(it.name, it.value, it.synonyms, it.typeDoc) }
             Type(
-               QualifiedName(taxiType.qualifiedName),
+               QualifiedName.from(taxiType.qualifiedName),
                modifiers = parseModifiers(taxiType),
                metadata = parseAnnotationsToMetadata(taxiType.annotations),
                enumValues = enumValues,
@@ -106,7 +106,7 @@ object TaxiTypeMapper {
          }
 
          else -> Type(
-            QualifiedName(taxiType.qualifiedName),
+            QualifiedName.from(taxiType.qualifiedName),
             modifiers = parseModifiers(taxiType),
             sources = taxiType.compilationUnits.toVyneSources(),
             taxiType = taxiType,

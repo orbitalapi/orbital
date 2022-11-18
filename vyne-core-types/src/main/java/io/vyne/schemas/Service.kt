@@ -129,7 +129,7 @@ data class Operation(
    override val typeDoc: String? = null
 ) : MetadataTarget, SchemaMember, RemoteOperation, PartialOperation {
    private val equality =
-      Equality(this, Operation::qualifiedName, Operation::returnType, Operation::parameters, Operation::metadata)
+      ImmutableEquality(this, Operation::qualifiedName, Operation::returnType, Operation::parameters, Operation::metadata)
 
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
    override fun hashCode(): Int {

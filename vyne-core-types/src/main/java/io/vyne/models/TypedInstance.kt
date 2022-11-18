@@ -7,6 +7,7 @@ import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.json.isJson
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.log
 import lang.taxi.Equality
 import lang.taxi.accessors.NullValue
@@ -28,7 +29,7 @@ interface TypedInstance {
     */
    val hashCodeWithDataSource: Int
       get() {
-         return Equality(this, TypedInstance::typeName, TypedInstance::value, TypedInstance::source).hash()
+         return ImmutableEquality(this, TypedInstance::typeName, TypedInstance::value, TypedInstance::source).hash()
       }
 
    val typeName: String

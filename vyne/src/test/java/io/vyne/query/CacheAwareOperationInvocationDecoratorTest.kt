@@ -56,11 +56,11 @@ class CacheAwareOperationInvocationDecoratorTest {
       val cacheAware = CacheAwareOperationInvocationDecorator(mockOperationInvoker)
 
       val type =
-         Type(name = QualifiedName("type1"), sources = listOf(), taxiType = PrimitiveType.STRING, typeDoc = null)
+         Type(name = QualifiedName.from("type1"), sources = listOf(), taxiType = PrimitiveType.STRING, typeDoc = null)
       val mockedTypeInstance = mock<TypedInstance>()
-      val service = Service(QualifiedName("srv1"), listOf(), listOf(), listOf(), listOf(), listOf(), listOf())
+      val service = Service(QualifiedName.from("srv1"), listOf(), listOf(), listOf(), listOf(), listOf(), listOf())
       val operation = Operation(
-         qualifiedName = QualifiedName("op1@@op1"),
+         qualifiedName = QualifiedName.from("op1@@op1"),
          returnType = type,
          parameters = listOf(),
          sources = listOf()

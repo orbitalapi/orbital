@@ -9,6 +9,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.toVyneQualifiedName
 import lang.taxi.Equality
+import lang.taxi.ImmutableEquality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
@@ -24,11 +25,17 @@ data class TypedObject(
 
    private val combinedValues: Map<String, TypedInstance> = type.defaultValues?.plus(suppliedValue) ?: suppliedValue
 
+   private val stringifiedValueValueMap by lazy {
+      suppliedValue.map { (k,v) -> "$k-${v.type.paramaterizedName}-${v}" }
+         .joinToString(" - ")
+         .hashCode()
+   }
+
    override val value: Map<String, TypedInstance>
       get() = combinedValues
 
 
-   private val equality = Equality(this, TypedObject::type, TypedObject::value)
+   private val equality = ImmutableEquality(this, TypedObject::type, TypedObject::value)
    private val hash: Int by lazy { equality.hash() }
 
    companion object {
@@ -102,7 +109,21 @@ data class TypedObject(
       return "TypedObject(type=${type.qualifiedName.longDisplayName}, value=$suppliedValue)"
    }
 
-   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
+   override fun equals(other: Any?): Boolean {
+      // Don't call equality.equals() here, as it's too slow.
+      // We need a fast, non-reflection based implementation.
+      // Bascially, two types are equal if their parameterizedName (which has been interned)
+      // are the same
+      if (this === other) return true
+      if (other == null) return false
+      if (this.javaClass !== other.javaClass) return false
+      val otherObject = other as TypedObject
+      if (this.type != other.type) return false
+      if (this.hashCode() != other.hashCode()) return false
+      return this.stringifiedValueValueMap == other.stringifiedValueValueMap
+//      return  this.value == otherObject.value
+   }
+
    override fun hashCode(): Int = hash
 
    fun hasAttribute(name: String): Boolean {
@@ -199,6 +220,7 @@ data class TypedObject(
                   else -> error("Unhandled branch in navigating a collection - got a member type of ${member::class.simpleName}")
                }
             }
+
             is TypedNull -> {
                logger.warn { "Reading path of $path against instance of ${this.type.qualifiedName.shortDisplayName} found null value $thisFieldName.  Returning the null value" }
                listOf(attributeValue)

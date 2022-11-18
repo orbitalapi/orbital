@@ -136,6 +136,10 @@ class StatefulQueryEngine(
 ) :
    QueryEngine,
    ModelContainer {
+
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
    private val factSets: FactSetMap = FactSetMap.create()
 
 
@@ -281,7 +285,7 @@ class StatefulQueryEngine(
          targetType
       }
 
-      log().info("Mapping collections to collection of type ${targetCollectionType.qualifiedName} ")
+      logger.info("Mapping collections to collection of type ${targetCollectionType.qualifiedName} ")
       val transformed = context.facts
          .filterIsInstance<TypedCollection>()
          .flatMap { deeplyFlatten(it) }
@@ -320,11 +324,11 @@ class StatefulQueryEngine(
          require(results.size == 1) { "Expected only a single transformation result" }
          val result = results.first()
          if (result == null) {
-            log().warn("Transformation from $typedInstance to instance of ${targetType.fullyQualifiedName} was reported as sucessful, but result was null")
+            logger.warn("Transformation from $typedInstance to instance of ${targetType.fullyQualifiedName} was reported as sucessful, but result was null")
          }
          result
       } else {
-         log().warn("Failed to transform from $typedInstance to instance of ${targetType.fullyQualifiedName}")
+         logger.warn("Failed to transform from $typedInstance to instance of ${targetType.fullyQualifiedName}")
          null
       }
    }
@@ -370,10 +374,10 @@ class StatefulQueryEngine(
       try {
          return doFind(target, context, spec, applicableStrategiesPredicate)
       } catch (e: QueryCancelledException) {
-         log().info("QueryCancelled. Coroutine active state: ${currentCoroutineContext().isActive}")
+         logger.info("QueryCancelled. Coroutine active state: ${currentCoroutineContext().isActive}")
          throw e
       } catch (e: Exception) {
-         log().error("Search failed with exception:", e)
+         logger.error("Search failed with exception:", e)
          throw SearchRuntimeException(e, context.profiler.root)
       }
    }
@@ -390,7 +394,7 @@ class StatefulQueryEngine(
       } catch (e: QueryCancelledException) {
          throw e
       } catch (e: Exception) {
-         log().error("Search failed with exception:", e)
+         logger.error("Search failed with exception:", e)
          throw SearchRuntimeException(e, context.profiler.root)
       }
    }
@@ -490,7 +494,7 @@ class StatefulQueryEngine(
                      emitTypedInstances(valueAsCollection, !isActive, failedAttempts) { instance -> send(instance) }
                   }
             } else {
-               log().debug("Strategy ${queryStrategy::class.simpleName} failed to resolve ${target.description}")
+               logger.debug("Strategy ${queryStrategy::class.simpleName} failed to resolve ${target.description}")
                StrategyPerformanceProfiler.record(queryStrategy::class.simpleName!!, stopwatch.elapsed())
             }
          }

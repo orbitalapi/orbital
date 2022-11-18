@@ -29,7 +29,10 @@ class ImmutableEquality<T : Any>(val target: T, vararg val properties: T.() -> A
       if (other == null) return false
       if (other === this) return true
       if (other.javaClass != target.javaClass) return false
-      return this.hash() == other.hashCode()
+      return properties.all { it.invoke(target) == it.invoke(other as T) }
+      // Don't do this.
+      // It can lead to false equality passing true.
+//      return this.hash() == other.hashCode()
    }
 
    fun hash(): Int {

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.common.cache.CacheBuilder
+import com.google.common.collect.Interners
 import io.vyne.VersionedSource
 import io.vyne.models.DataSource
 import io.vyne.models.DefinedInSchema
@@ -105,23 +106,47 @@ data class Type(
          typeCache = typeCache
       )
 
+
+   companion object {
+      private val internedParameterizedNames = Interners.newStrongInterner<String>()
+   }
+
+   // Interned, so that can be used for equality checks
+   val paramaterizedName: String = internedParameterizedNames.intern(qualifiedName.parameterizedName)
+
+
    // Intentionally excluded from equality:
    // taxiType - the antlr classes make equailty hard, and not meaningful in this context
    // typeCache - screws with equality, and not meaningful
    private val equality = ImmutableEquality(
       this,
-      Type::name,
+      Type::paramaterizedName,
+      // Below tanked performance.  Call isDefinedSameAs() instead
       // 11-Aug-22: Added attributes and docs as needed for diffing.
       // However, if this trashes performance, we can revert,and we'll find another way.
-      Type::attributes,
-      Type::typeDoc
+//      Type::attributes,
+//      Type::typeDoc
    )
 
-   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
+
+   fun isDefinedSameAs(other: Type): Boolean {
+      return this.name == other.name && this.attributes == other.attributes && this.typeDoc == other.typeDoc
+   }
+
+   override fun equals(other: Any?): Boolean {
+      // Don't call equality.equals() here, as it's too slow.
+      // We need a fast, non-reflection based implementation.
+      // Bascially, two types are equal if their parameterizedName (which has been interned)
+      // are the same
+      if (this === other) return true
+      if (other == null) return false
+      if (this.javaClass !== other.javaClass) return false
+      return this.paramaterizedName === (other as Type).paramaterizedName
+   }
+
    override fun hashCode(): Int = equality.hash()
 
    private val resolvedAlias: Type
-
 
 
    val isTypeAlias = aliasForTypeName != null
@@ -265,7 +290,7 @@ data class Type(
 
    @get:JsonIgnore
    val qualifiedName: QualifiedName
-      get() = QualifiedName(fullyQualifiedName, typeParametersTypeNames)
+      get() = QualifiedName.from(fullyQualifiedName, typeParametersTypeNames)
 
    val longDisplayName: String = qualifiedName.longDisplayName
 
@@ -582,7 +607,7 @@ data class Type(
    }
 
    fun asArrayType(): Type {
-      return this.typeCache.type(QualifiedName("lang.taxi.Array", listOf(this.name.parameterizedName.fqn())))
+      return this.typeCache.type(QualifiedName.from("lang.taxi.Array", listOf(this.name.parameterizedName.fqn())))
    }
 
    /**

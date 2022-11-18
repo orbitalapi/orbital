@@ -18,9 +18,7 @@ import io.vyne.schemas.*
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.toVyneQualifiedName
-import io.vyne.utils.log
-import io.vyne.utils.timed
-import io.vyne.utils.xtimed
+import io.vyne.utils.*
 import lang.taxi.accessors.*
 import lang.taxi.expressions.Expression
 import lang.taxi.expressions.FieldReferenceExpression
@@ -481,7 +479,7 @@ class AccessorReader(
          error("Function ${function.qualifiedName} expects ${function.parameters.size} arguments, but only ${accessor.inputs.size} were provided")
       }
 
-      val declaredInputs = xtimed("lookup inputs for function eval") {
+      val declaredInputs = timeBucket("lookup inputs for function ${accessor.function.qualifiedName}") {
          function.parameters.filter { !it.isVarArg }.mapIndexed { index, parameter ->
             require(index < accessor.inputs.size) { "Cannot read parameter ${parameter.description} as no input was provided at index $index" }
             val parameterInputAccessor = accessor.inputs[index]
@@ -522,7 +520,7 @@ class AccessorReader(
             // If we revert, document the reason.
             val queryIfNotFound = true
 
-            read(
+            timeBucket("read function accessor ${accessor.function.qualifiedName}") { read(
                value,
                targetParameterType,
                parameterInputAccessor,
@@ -531,7 +529,7 @@ class AccessorReader(
                source,
                allowContextQuerying = queryIfNotFound,
                format = format
-            )
+            ) }
          }
       }
       val declaredVarArgs = if (function.parameters.isNotEmpty() && function.parameters.last().isVarArg) {

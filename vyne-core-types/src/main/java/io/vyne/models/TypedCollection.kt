@@ -2,7 +2,7 @@ package io.vyne.models
 
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
-import lang.taxi.Equality
+import lang.taxi.ImmutableEquality
 import lang.taxi.utils.takeHead
 import mu.KotlinLogging
 
@@ -12,7 +12,7 @@ data class TypedCollection(
    override val value: List<TypedInstance>,
    override val source: DataSource = MixedSources
 ) : List<TypedInstance> by value, TypedInstance {
-   private val equality = Equality(this, TypedCollection::type, TypedCollection::value)
+   private val equality = ImmutableEquality(this, TypedCollection::type, TypedCollection::value)
 
    override fun toString(): String {
       return "TypedCollection(type=${type.qualifiedName.longDisplayName}, value=$value)"
@@ -131,6 +131,16 @@ data class TypedCollection(
       return schema.type("lang.taxi.Array<${type.name.parameterizedName}>")
    }
 
-   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
+   override fun equals(other: Any?): Boolean {
+      // Don't call equality.equals() here, as it's too slow.
+      // We need a fast, non-reflection based implementation.
+      if (this === other) return true
+      if (other == null) return false
+      if (this.javaClass !== other.javaClass) return false
+      val otherCollection = other as TypedCollection
+      // It's cheap to check the hashcodes
+      if (this.hashCode() != other.hashCode()) return false
+      return this.value == otherCollection.value
+   }
    override fun hashCode(): Int = equality.hash()
 }

@@ -386,7 +386,7 @@ data class QueryContext(
                   excludedServices.add(
                      SearchGraphExclusion(
                         "Exclude already invoked @DataSource annotated services from discovery searches",
-                        QualifiedName(serviceToExclude)
+                        QualifiedName.from(serviceToExclude)
                      )
                   )
                }

@@ -68,7 +68,6 @@ class TypedObjectTest {
       val raw = trader.toRawObject()
       val rawJson = jacksonObjectMapper().writeValueAsString(raw)
       JSONAssert.assertEquals(traderJson, rawJson, false);
-
    }
 
    @Test

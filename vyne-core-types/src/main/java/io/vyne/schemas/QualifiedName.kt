@@ -1,14 +1,22 @@
 package io.vyne.schemas
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.common.collect.Interners
 import lang.taxi.types.ArrayType
 import lang.taxi.types.QualifiedNameParser
 import java.io.Serializable
 
 @kotlinx.serialization.Serializable
-data class QualifiedName(val fullyQualifiedName: String, val parameters: List<QualifiedName> = emptyList()) :
+data class QualifiedName private constructor(val fullyQualifiedName: String, val parameters: List<QualifiedName> = emptyList()) :
    Serializable {
 
+   companion object {
+      private val POOL = Interners.newStrongInterner<QualifiedName>()
+      fun from(fullyQualifiedName: String, parameters: List<QualifiedName> = emptyList()): QualifiedName {
+         return POOL.intern(QualifiedName(fullyQualifiedName, parameters))
+      }
+   }
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val name: String
       get() = fullyQualifiedName.split(".").last()
@@ -86,13 +94,13 @@ fun QualifiedName.toTaxiQualifiedName(): lang.taxi.types.QualifiedName {
 fun String.fqn(): QualifiedName {
 
    return when {
-      OperationNames.isName(this) -> QualifiedName(this, emptyList())
-      ParamNames.isParamName(this) -> QualifiedName(
+      OperationNames.isName(this) -> QualifiedName.from(this, emptyList())
+      ParamNames.isParamName(this) -> QualifiedName.from(
          "param/" + ParamNames.typeNameInParamName(this).fqn().parameterizedName
       )
       else -> {
          val taxiQualifiedName = QualifiedNameParser.parse(this)
-         QualifiedName(
+         QualifiedName.from(
             taxiQualifiedName.fullyQualifiedName,
             taxiQualifiedName.parameters.map { it.toVyneQualifiedName() }
          )

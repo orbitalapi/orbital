@@ -28,7 +28,7 @@ object TypeInstancePolicyProcessors {
       .associateBy { it.qualifiedName }
 
    fun get(name: String): TypeInstancePolicyProcessor {
-      return get(QualifiedName(name))
+      return get(QualifiedName.from(name))
    }
 
    fun get(name: QualifiedName): TypeInstancePolicyProcessor {
@@ -40,7 +40,7 @@ class StringMaskingProcessor : TypeInstancePolicyProcessor {
    companion object {
        const val MASKED_VALUE = "******"
    }
-   override val qualifiedName: QualifiedName = QualifiedName("vyne.StringMasker")
+   override val qualifiedName: QualifiedName = QualifiedName.from("vyne.StringMasker")
 
    override fun process(input: TypedInstance, args: List<Any>): TypedInstance {
 

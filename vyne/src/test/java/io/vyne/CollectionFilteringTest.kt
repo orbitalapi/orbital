@@ -11,11 +11,11 @@ import org.junit.Test
 class CollectionFilteringTest {
    val schema = TaxiSchema.from(
       """
-       model Person {
+       closed model Person {
            id : PersonId inherits Int
            name : PersonName inherits String
           }
-          model Movie {
+          closed model Movie {
             cast : Person[]
          }
           service PersonService {

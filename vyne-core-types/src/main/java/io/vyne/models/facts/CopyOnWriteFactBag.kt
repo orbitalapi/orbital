@@ -10,6 +10,7 @@ import io.vyne.query.AlwaysGoodSpec
 import io.vyne.query.TypedInstanceValidPredicate
 import io.vyne.schemas.*
 import io.vyne.utils.ImmutableEquality
+import io.vyne.utils.timeBucket
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 import java.util.*
@@ -22,14 +23,15 @@ open class CopyOnWriteFactBag(
    private val facts: CopyOnWriteArrayList<TypedInstance>,
    override val scopedFacts: List<ScopedFact>,
    private val schema: Schema
-) : FactBag, Collection<TypedInstance> by facts {
+) : FactBag {
    private val logger = KotlinLogging.logger {}
 
    constructor(facts: Collection<TypedInstance>, schema: Schema) : this(CopyOnWriteArrayList(facts), emptyList(),  schema)
    constructor(fact: TypedInstance, schema: Schema) : this(listOf(fact), schema)
 
    override fun rootFacts(): List<TypedInstance> {
-      return facts + scopedFacts.map { it.fact }
+      // Exclude scopedFacts. They're included by calling rootAndScopedFacts()
+      return facts
    }
 
    open fun copy(): CopyOnWriteFactBag {
@@ -100,7 +102,7 @@ open class CopyOnWriteFactBag(
 
    private val modelTreeCache = CacheBuilder
       .newBuilder()
-      .build<FactMapTraversalStrategy, List<TypedInstance>>(object : CacheLoader<FactMapTraversalStrategy, List<TypedInstance>>() {
+      .build(object : CacheLoader<FactMapTraversalStrategy, List<TypedInstance>>() {
          override fun load(key: FactMapTraversalStrategy): List<TypedInstance> {
             val navigator = TreeNavigator(key.predicate)
             val treeDef: TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
@@ -192,7 +194,7 @@ open class CopyOnWriteFactBag(
 
       val optionalVal = factSearchCache.getOrPut(key) {
 //         val stopwatch = Stopwatch.createStarted()
-         val result = Optional.ofNullable(key.search.strategy.getFact(this, key.search))
+         val result = timeBucket("FactBag search for ${key.search.name}") { Optional.ofNullable(key.search.strategy.getFact(this, key.search)) }
 //         val found = if (result.isPresent) "DID" else "did NOT"
 //         logger.debug { "CopyOnWriteFactBag search ${key.search.name} took ${stopwatch.elapsed().toMillis()}ms and $found return a result" }
          result
@@ -263,7 +265,8 @@ private class TreeNavigator(val shouldGoDeeperPredicate: (TypedInstance) -> Tree
          return emptyList()
       } else {
          visitedNodes.add(instance)
-         TypedInstanceTree.visit(instance, shouldGoDeeperPredicate)
+         val next = TypedInstanceTree.visit(instance, shouldGoDeeperPredicate)
+         next
       }
    }
 }
@@ -277,9 +280,9 @@ private object TypedInstanceTree {
 
    fun visit(instance: TypedInstance, navigationPredicate: (TypedInstance) -> TreeNavigationInstruction): List<TypedInstance> {
 
-      if (instance.type.isClosed) {
-         return emptyList()
-      }
+//      if (instance.type.isClosed) {
+//         return emptyList()
+//      }
       val navigationInstruction = navigationPredicate(instance)
       if (navigationInstruction == IgnoreThisElement) {
          return emptyList()
