@@ -22,10 +22,7 @@ import io.vyne.search.embedded.EnableVyneEmbeddedSearch
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
-import io.vyne.spring.config.DiscoveryClientConfig
-import io.vyne.spring.config.VyneSpringCacheConfiguration
-import io.vyne.spring.config.VyneSpringHazelcastConfiguration
-import io.vyne.spring.config.VyneSpringProjectionConfiguration
+import io.vyne.spring.config.*
 import io.vyne.spring.http.auth.HttpAuthConfig
 import io.vyne.spring.projection.ApplicationContextProvider
 import io.vyne.utils.log
@@ -38,7 +35,7 @@ import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilde
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
-import org.springframework.cloud.client.loadbalancer.LoadBalanced
+import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -116,10 +113,13 @@ class QueryServiceApp {
       }
    }
 
-   @LoadBalanced
+   //   @LoadBalanced
    @Bean
-   fun webClientFactory(): WebClient.Builder {
+   fun webClientFactory(loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction): WebClient.Builder {
       return WebClient.builder()
+         .filter(
+            ConditionallyLoadBalancedExchangeFilterFunction.permitLocalhost(loadBalancingFilterFunction)
+         )
    }
 
    @Autowired

@@ -24,6 +24,14 @@ class FileBasedDiscoveryClient(private val configRepository: ServicesConfigRepos
       const val urlParameter = "url"
       private val logger = KotlinLogging.logger {}
 
+      private val LOCALHOST:DefaultServiceInstance = DefaultServiceInstance(
+         "localhost",
+         "localhost",
+         "localhost",
+         0,
+         false
+      )
+
       fun serviceInstance(serviceId: String, serviceConfiguration: Map<String, String>): DefaultServiceInstance {
          val url = serviceConfiguration[urlParameter]
          if (url == null) {
