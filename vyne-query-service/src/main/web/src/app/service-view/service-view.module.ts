@@ -12,6 +12,7 @@ import { SchemaDiagramModule } from '../schema-diagram/schema-diagram.module';
 import { AuthGuard } from 'src/app/services/auth.guard';
 import { VynePrivileges } from 'src/app/services/user-info.service';
 import { OperationViewContainerComponent } from 'src/app/operation-view/operation-view-container.component';
+import { OperationViewModule } from 'src/app/operation-view/operation-view.module';
 
 @NgModule({
   imports: [
@@ -22,6 +23,7 @@ import { OperationViewContainerComponent } from 'src/app/operation-view/operatio
     RouterModule,
     LineageGraphModule,
     SchemaDiagramModule,
+    OperationViewModule,
     RouterModule.forChild([
       {
         path: ':serviceName',
