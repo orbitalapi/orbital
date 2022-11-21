@@ -1,3 +1,50 @@
+<form [formGroup]="formGroup">
+  <div
+    tuiGroup
+    class="group"
+    [collapsed]="true"
+  >
+    <tui-checkbox-block
+      i18n
+      contentAlign="right"
+      formControlName="showTypes"
+      size="m"
+    >
+      Data models
+    </tui-checkbox-block>
+    <tui-checkbox-block
+      contentAlign="right"
+      formControlName="showServices"
+      size="m"
+    >
+      Services
+    </tui-checkbox-block>
+    <tui-checkbox-block
+      contentAlign="right"
+      formControlName="showOperations"
+      size="m"
+    >
+      Operations
+    </tui-checkbox-block>
+  </div>
+  <tui-input
+    tuiTextfieldSize="m"
+    formControlName="filter"
+    [tuiTextfieldCleaner]="true"
+    [tuiTextfieldLabelOutside]="true"
+    tuiTextfieldIconLeft="tuiIconSearchLarge"
+  >
+    Filter
+    <input
+      size="m"
+      tuiTextfield
+    />
+  </tui-input>
+</form>
+
+
+<!--
+
 <div class="code-container">
   <div class="title-bar" (click)="toggleVisibility()">
     <img src="assets/img/filter.svg" class="filterIcon">
@@ -41,3 +88,5 @@
     </div>
   </div>
 </div>
+
+-->

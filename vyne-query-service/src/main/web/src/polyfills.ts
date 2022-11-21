@@ -1,5 +1,5 @@
 
-
+import '@angular/localize/init';
 
 /**
  * Web Animations `@angular/platform-browser/animations`

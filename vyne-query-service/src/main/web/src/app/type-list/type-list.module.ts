@@ -16,6 +16,8 @@ import {MatIconModule} from '@angular/material/icon';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { ScrollingModule as ExperimentalScrollingModule } from '@angular/cdk-experimental/scrolling';
+import { TuiGroupModule, TuiTextfieldControllerModule } from '@taiga-ui/core';
+import { TuiCheckboxBlockModule, TuiInputModule } from '@taiga-ui/kit';
 
 @NgModule({
   imports: [
@@ -33,9 +35,13 @@ import { ScrollingModule as ExperimentalScrollingModule } from '@angular/cdk-exp
     MatIconModule,
     HeaderBarModule,
     ScrollingModule,
-    ExperimentalScrollingModule
+    ExperimentalScrollingModule,
+    TuiGroupModule,
+    TuiCheckboxBlockModule,
+    TuiInputModule,
+    TuiTextfieldControllerModule
   ],
-  exports: [TypeListComponent],
+  exports: [TypeListComponent, FilterTypesComponent],
   declarations: [TypeListComponent, FilterTypesComponent],
   providers: [],
 })
