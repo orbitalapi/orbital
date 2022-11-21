@@ -1,11 +1,11 @@
 package io.vyne.schema.api
 
+import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.winterbe.expekt.should
-import io.vyne.PackageIdentifier
-import io.vyne.PackageMetadata
-import io.vyne.ParsedPackage
-import io.vyne.SourcePackage
-import org.junit.Assert.*
+import io.vyne.*
+import io.vyne.serde.TaxiJacksonModule
 import org.junit.Test
 
 class SchemaSetTest {
@@ -73,6 +73,54 @@ class SchemaSetTest {
       )
 
    }
+
+   @Test
+   fun `can read and write a schemaset to-from json`() {
+      val schemaSet = SchemaSet.fromParsed(
+         listOf(
+            ParsedPackage(PackageMetadata.from("com.acme", "films", "1.0.0"),listOf(ParsedSource(VersionedSource.sourceOnly(
+               """model HelloWorld {
+                  | firstName : String
+                  | lastName : String
+                  | fullName : concat(this.firstName, this.lastName)
+                  |}
+               """.trimMargin()
+            )))),
+         ),
+         generation = 1
+      )
+
+      val jackson = jacksonObjectMapper()
+         .findAndRegisterModules()
+         .registerModule(TaxiJacksonModule)
+      val json = jackson.writerWithDefaultPrettyPrinter().writeValueAsString(schemaSet)
+      val fromJson = jackson.readValue<SchemaSet>(json)
+      fromJson.schema.taxi.should.equal(schemaSet.schema.taxi)
+   }
+
+   @Test
+   fun `can read and write a schemaset to-from cbor`() {
+      val schemaSet = SchemaSet.fromParsed(
+         listOf(
+            ParsedPackage(PackageMetadata.from("com.acme", "films", "1.0.0"),listOf(ParsedSource(VersionedSource.sourceOnly(
+               """model HelloWorld {
+                  | firstName : String
+                  | lastName : String
+                  | fullName : concat(this.firstName, this.lastName)
+                  |}
+               """.trimMargin()
+            )))),
+         ),
+         generation = 1
+      )
+
+      val mapper = CBORMapper.builder().findAndAddModules().build()
+      val cbor = mapper.writeValueAsBytes(schemaSet)
+      val fromCbor = mapper.readValue<SchemaSet>(cbor)
+      fromCbor.schema.taxi.should.equal(schemaSet.schema.taxi)
+   }
+
+
 
    private fun List<SourcePackage>.shouldContainExactly(vararg identifiers: PackageIdentifier) {
       this.size.should.equal(identifiers.size)

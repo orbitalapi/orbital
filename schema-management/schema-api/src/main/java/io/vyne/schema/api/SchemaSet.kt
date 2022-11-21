@@ -1,5 +1,6 @@
 package io.vyne.schema.api
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.*
 import io.vyne.schemas.CompositeSchema
@@ -13,9 +14,16 @@ data class SchemaSet private constructor(
    val parsedPackages: List<ParsedPackage>,
    val generation: Int,
    @Transient
+   @field:JsonIgnore
+   @get:JsonIgnore
    private var _taxiSchemas: List<TaxiSchema>? = null
 
 ) : Serializable {
+
+   // This constructor exists for Jackson
+   @JsonCreator
+   private constructor(parsedPackages: List<ParsedPackage>,
+                          generation: Int) : this(parsedPackages, generation, null)
    val id: Int = parsedPackages.hashCode()
 
    init {

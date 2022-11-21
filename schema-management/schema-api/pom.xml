@@ -17,6 +17,11 @@
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
       </dependency>
+      <dependency>
+         <groupId>com.fasterxml.jackson.dataformat</groupId>
+         <artifactId>jackson-dataformat-cbor</artifactId>
+         <scope>test</scope>
+      </dependency>
    </dependencies>
 
 </project>
