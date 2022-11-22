@@ -58,7 +58,7 @@ interface SchemaProvider : SchemaSourceProvider {
 }
 
 /**
- * Combines the responsibilities of exposing indvidual taxi source code to the system,
+ * Combines the responsibilities of exposing individual taxi source code to the system,
  * along with providing a schema, compiled of multiple sources
  *
  * A SchemaStore will then hold the state of all the individual sources (published by SchemaSourceProviders)
@@ -83,3 +83,7 @@ interface SchemaProvider : SchemaSourceProvider {
 
 
 data class ControlSchemaPollEvent(val poll: Boolean)
+
+interface EditableSchemaProvider : SchemaProvider {
+   fun updateSchema(schema: Schema)
+}

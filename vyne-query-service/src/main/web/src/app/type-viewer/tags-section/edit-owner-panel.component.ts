@@ -31,7 +31,7 @@ import {VyneUser} from '../../services/user-info.service';
       <div class="form-buttons">
         <button mat-stroked-button (click)="cancel.emit()">Cancel</button>
         <div class="spacer"></div>
-        <button mat-flat-button color="primary" (click)="save.emit(selectedOwner)">Save tags
+        <button mat-flat-button color="primary" (click)="save.emit(selectedOwner)">Save owner
         </button>
       </div>
     </div>

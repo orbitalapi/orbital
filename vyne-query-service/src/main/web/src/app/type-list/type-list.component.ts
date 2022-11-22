@@ -9,12 +9,13 @@ import { SchemaNotificationService } from '../services/schema-notification.servi
 @Component({
   selector: 'app-type-list',
   templateUrl: './type-list.component.html',
-  styleUrls: ['./type-list.component.scss']
+  styleUrls: ['./type-list.component.scss'],
 })
 export class TypeListComponent implements OnInit {
 
-  constructor(private typeService: TypesService,
-              private router: Router) {
+  constructor(
+    private typeService: TypesService,
+    private router: Router) {
   }
 
   schema: Schema;
@@ -35,7 +36,7 @@ export class TypeListComponent implements OnInit {
         this.schema = schema;
         this.members = this.buildUnfilteredMembers(schema);
         this.applyFilter();
-      }, error => console.log('error : ' + error)
+      }, error => console.log('error : ' + error),
     );
   }
 
@@ -71,7 +72,7 @@ export class TypeListComponent implements OnInit {
 
   startNewQuery(member: SchemaMember) {
     this.router.navigate(['/query-wizard'], {
-      queryParams: { 'types': [member.name.fullyQualifiedName] }
+      queryParams: { 'types': [member.name.fullyQualifiedName] },
     });
   }
 

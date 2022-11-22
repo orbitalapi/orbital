@@ -2,10 +2,17 @@ package io.vyne.schemaServer.core.file.packages
 
 import io.vyne.PackageIdentifier
 import io.vyne.SourcePackage
+import io.vyne.VersionedSource
+import io.vyne.schema.publisher.loaders.AddChangesToChangesetResponse
+import io.vyne.schema.publisher.loaders.AvailableChangesetsResponse
+import io.vyne.schema.publisher.loaders.CreateChangesetResponse
+import io.vyne.schema.publisher.loaders.FinalizeChangesetResponse
 import io.vyne.schema.publisher.loaders.SchemaPackageTransport
 import io.vyne.schema.publisher.loaders.SchemaSourcesAdaptor
+import io.vyne.schema.publisher.loaders.SetActiveChangesetResponse
 import io.vyne.schemaServer.core.adaptors.taxi.TaxiSchemaSourcesAdaptor
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
+import io.vyne.schemaServer.editor.SchemaEditResponse
 import lang.taxi.packages.TaxiPackageProject
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
@@ -21,7 +28,7 @@ import kotlin.io.path.readBytes
 class FileSystemPackageLoader(
    private val config: FileSystemPackageSpec,
    private val adaptor: SchemaSourcesAdaptor,
-   private val fileMontitor: ReactiveFileSystemMonitor,
+   private val fileMonitor: ReactiveFileSystemMonitor,
    private val eventThrottleSize: Int = 100,
    private val eventThrottleDuration: Duration = Duration.ofMillis(50),
 
@@ -32,11 +39,9 @@ class FileSystemPackageLoader(
 ) : SchemaPackageTransport {
 
    private val logger = KotlinLogging.logger {}
-   private val fileEvents: Flux<List<FileSystemChangeEvent>> = fileMontitor.startWatching()
+   private val fileEvents: Flux<List<FileSystemChangeEvent>> = fileMonitor.startWatching()
 
    private val sink = Sinks.many().replay().latest<SourcePackage>()
-
-   val editable = config.editable
 
    init {
       this.fileEvents
@@ -48,7 +53,7 @@ class FileSystemPackageLoader(
    }
 
    private var _packageIdentifier: PackageIdentifier? = null
-   val packageIdentifier: PackageIdentifier
+   override val packageIdentifier: PackageIdentifier
       get() {
          return synchronized(this) {
             if (_packageIdentifier == null) {
@@ -112,5 +117,33 @@ class FileSystemPackageLoader(
       return Mono.create { sink ->
          sink.success(Paths.get(uri).readBytes())
       }
+   }
+
+   override fun isEditable(): Boolean {
+      return config.isEditable
+   }
+
+   override fun createChangeset(name: String): Mono<CreateChangesetResponse> {
+      TODO("Not yet implemented")
+   }
+
+   override fun addChangesToChangeset(name: String, edits: List<VersionedSource>): Mono<AddChangesToChangesetResponse> {
+      val writer = FileSystemPackageWriter()
+      return writer.writeSources(this, edits)
+         .map {
+            AddChangesToChangesetResponse()
+         }
+   }
+
+   override fun finalizeChangeset(name: String): Mono<FinalizeChangesetResponse> {
+      TODO("Not yet implemented")
+   }
+
+   override fun getAvailableChangesets(): Mono<AvailableChangesetsResponse> {
+      TODO("Not yet implemented")
+   }
+
+   override fun setActiveChangeset(branchName: String): Mono<SetActiveChangesetResponse> {
+      TODO("Not yet implemented")
    }
 }

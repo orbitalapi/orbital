@@ -43,7 +43,7 @@ export class TypeViewerComponent {
   @Input()
   commitMode: CommitMode = 'immediate';
 
-  private _editable: boolean = false;
+  private _editable = false;
 
   @Output()
   typeUpdated: EventEmitter<Type> = new EventEmitter<Type>();
@@ -57,9 +57,6 @@ export class TypeViewerComponent {
   }
 
   set editable(value: boolean) {
-    if (this.editable === value) {
-      return;
-    }
     this._editable = value;
     if (this.editable) {
       // When editable has been changed to true, update the type to
@@ -69,7 +66,7 @@ export class TypeViewerComponent {
   }
 
   // Set this if we're viewing a type where the
-  // attriubtes might not exist in the schema ye.
+  // attributes might not exist in the schema ye.
   // eg - when we're importing new types.
   @Input()
   anonymousTypes: Type[] = [];

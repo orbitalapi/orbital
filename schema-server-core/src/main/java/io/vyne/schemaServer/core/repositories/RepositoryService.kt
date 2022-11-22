@@ -8,6 +8,7 @@ import io.vyne.schemaServer.repositories.RepositoryServiceApi
 import io.vyne.spring.http.BadRequestException
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
+import reactor.core.publisher.Mono
 import java.nio.file.Paths
 
 @RestController
@@ -23,10 +24,10 @@ class RepositoryService(private val configRepo: SchemaRepositoryConfigLoader) : 
    }
 
 
-   override fun createFileRepository(request: CreateFileRepositoryRequest) {
+   override fun createFileRepository(request: CreateFileRepositoryRequest): Mono<Unit> {
       val fileSpec = FileSystemPackageSpec(
          Paths.get(request.path),
-         editable = request.editable,
+         isEditable = request.editable,
          packageIdentifier = request.packageIdentifier
       )
       try {
@@ -34,10 +35,10 @@ class RepositoryService(private val configRepo: SchemaRepositoryConfigLoader) : 
       } catch (e: IllegalArgumentException) {
          throw BadRequestException(e.message!!)
       }
-
+      return Mono.empty()
    }
 
-   override fun createGitRepository(request: GitRepositoryChangeRequest) {
+   override fun createGitRepository(request: GitRepositoryChangeRequest): Mono<Unit> {
       val config = GitRepositoryConfig(
          request.name,
          request.uri,
@@ -49,6 +50,7 @@ class RepositoryService(private val configRepo: SchemaRepositoryConfigLoader) : 
       } catch (e: IllegalStateException) {
          throw BadRequestException(e.message!!)
       }
+      return Mono.empty()
    }
 
 }

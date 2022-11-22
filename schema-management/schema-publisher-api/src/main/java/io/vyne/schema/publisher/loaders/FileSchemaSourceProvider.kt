@@ -37,7 +37,7 @@ class FileSchemaSourceProvider(private val resourcePath: Path) : SchemaProvider 
       } else {
          logger.warn { "It is invalid to use a Taxi File loader, without a taxi.conf file.  A synthetic one has been created, but this will become a problem.  Define a taxi.conf file at $resourcePath" }
          // We weren't given a taxi project file.
-         // Create a syntetic one, but tell the user off.
+         // Create a synthetic one, but tell the user off.
          val tempProject = TaxiPackageProject(
             name = ProjectName("com.fakeproject", Ids.id("project-")).id,
             version = "0.0.0",

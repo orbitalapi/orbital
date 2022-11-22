@@ -1,6 +1,7 @@
 package io.vyne.schemaServer.core.repositories.lifecycle
 
 import io.vyne.PackageIdentifier
+import io.vyne.schema.publisher.loaders.SchemaPackageTransport
 import io.vyne.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
 import io.vyne.schemaServer.core.adaptors.taxi.TaxiSchemaSourcesAdaptor
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
@@ -20,12 +21,12 @@ class ReactiveRepositoryManager(
    private val eventSource: RepositorySpecLifecycleEventSource,
    private val eventDispatcher: RepositoryLifecycleEventDispatcher
 ) {
-   fun getLoader(packageIdentifier: PackageIdentifier): FileSystemPackageLoader {
-      val loader = fileLoaders
+   fun getLoader(packageIdentifier: PackageIdentifier): SchemaPackageTransport {
+      val loader = loaders
          .firstOrNull { it.packageIdentifier.unversionedId == packageIdentifier.unversionedId }
          ?: error("No file loader exists for package ${packageIdentifier.unversionedId}")
 
-      if (!loader.editable) {
+      if (!loader.isEditable()) {
          error("Package ${packageIdentifier.unversionedId} is not editable")
       }
       return loader
@@ -34,7 +35,7 @@ class ReactiveRepositoryManager(
    companion object {
       fun testWithFileRepo(
          projectPath: Path? = null,
-         editable: Boolean = false,
+         isEditable: Boolean = false,
          eventSource: RepositoryLifecycleManager = RepositoryLifecycleManager()
       ): ReactiveRepositoryManager {
          val manager = ReactiveRepositoryManager(
@@ -46,7 +47,7 @@ class ReactiveRepositoryManager(
          if (projectPath != null) {
             manager._fileLoaders.add(
                FileSystemPackageLoader(
-                  FileSystemPackageSpec(projectPath, editable = editable),
+                  FileSystemPackageSpec(projectPath, isEditable = isEditable),
                   TaxiSchemaSourcesAdaptor(),
                   ReactiveWatchingFileSystemMonitor(projectPath)
                )
@@ -56,10 +57,12 @@ class ReactiveRepositoryManager(
       }
    }
 
-   private val logger = KotlinLogging.logger {}
    private val _fileLoaders = mutableListOf<FileSystemPackageLoader>()
 
    private val _gitLoaders = mutableListOf<GitSchemaPackageLoader>()
+
+   val loaders: List<SchemaPackageTransport>
+      get() = _fileLoaders + _gitLoaders
    val fileLoaders: List<FileSystemPackageLoader>
       get() {
          return _fileLoaders.toList()
@@ -96,6 +99,6 @@ class ReactiveRepositoryManager(
 
    val editableLoaders: List<FileSystemPackageLoader>
       get() {
-         return _fileLoaders.filter { it.editable }
+         return _fileLoaders.filter { it.isEditable() }
       }
 }

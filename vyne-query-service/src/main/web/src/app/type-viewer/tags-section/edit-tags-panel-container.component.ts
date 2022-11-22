@@ -38,13 +38,11 @@ export class EditTagsPanelContainerComponent {
 
 
   saveTags($event: Metadata[]) {
+    this.dialogRef.close(this.params.type);
     this.updateMetadataOnType($event);
     if (this.params.commitMode === 'immediate') {
       this.commitTags($event);
-    } else {
-      this.dialogRef.close(this.params.type);
     }
-
   }
 
   private updateMetadataOnType($event: Metadata[]) {

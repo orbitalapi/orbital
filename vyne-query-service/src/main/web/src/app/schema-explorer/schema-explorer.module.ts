@@ -29,6 +29,7 @@ import {
   OrbitalSchemaExplorerContainerComponent
 } from 'src/app/schema-explorer/orbital-schema-explorer-container.component';
 import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
+import { ChangesetSelectorModule } from '../changeset-selector/changeset-selector.module';
 
 
 @NgModule({
@@ -70,6 +71,7 @@ import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
       },
     ]),
     TuiTabsModule,
+    ChangesetSelectorModule
   ],
   exports: [SchemaExplorerComponent],
   declarations: [SchemaExplorerComponent, SchemaExplorerContainerComponent, SchemaSummaryViewComponent, OrbitalSchemaExplorerContainerComponent],

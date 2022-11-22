@@ -47,7 +47,7 @@ class RepositoryServiceTest {
 
       val fileRepoPath = repositoryConfig.file!!.projects.single()
       fileRepoPath.path.toFile().canonicalPath.should.equal(folder.canonicalPath)
-      fileRepoPath.editable.should.be.`true`
+      fileRepoPath.isEditable.should.be.`true`
    }
 
    @Test

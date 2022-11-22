@@ -15,7 +15,6 @@ class FileSystemPackageWriter {
    }
 
    fun writeSources(loader: FileSystemPackageLoader, changed: List<VersionedSource>): Mono<List<VersionedSource>> {
-
       return loader.loadTaxiProject()
          .map { (taxiConfPath, taxiProject) ->
             if (taxiProject == null) {

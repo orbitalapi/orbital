@@ -51,7 +51,7 @@ abstract class BaseSchemaConverterServiceTest {
       val schemaEditorService = SchemaEditorService(
          ReactiveRepositoryManager.testWithFileRepo(
             tempFolder.root.toPath(),
-            editable = true
+            isEditable = true
          ),
          schemaStore
       )

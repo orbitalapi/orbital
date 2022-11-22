@@ -18,6 +18,7 @@ import io.vyne.queryService.security.VyneUserConfig
 import io.vyne.schemaServer.changelog.ChangelogApi
 import io.vyne.schemaServer.editor.SchemaEditorApi
 import io.vyne.schemaServer.packages.PackagesServiceApi
+import io.vyne.schemaServer.repositories.RepositoryServiceApi
 import io.vyne.search.embedded.EnableVyneEmbeddedSearch
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
@@ -248,6 +249,7 @@ class PipelineConfig {
       PipelineApi::class,
       SchemaEditorApi::class,
       PackagesServiceApi::class,
+      RepositoryServiceApi::class,
       ChangelogApi::class
    ]
 )

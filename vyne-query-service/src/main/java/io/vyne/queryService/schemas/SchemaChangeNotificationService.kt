@@ -63,7 +63,7 @@ class SchemaChangeNotificationService(
 }
 
 /**
- * Lighweight notification sent to the UI when the
+ * Lightweight notification sent to the UI when the
  * schemaset changes
  */
 data class SchemaUpdatedNotification(

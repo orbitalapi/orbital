@@ -15,7 +15,7 @@
     </button>
   </tui-tabs>
 </div>
-<app-schema-explorer-table *ngIf="activeTabIndex == 0" [partialSchema$]="partialSchema$" [editable]="false"
+<app-schema-explorer-table *ngIf="activeTabIndex == 0" [partialSchema$]="partialSchema$" [editable]="true"
                            [schema]="schema"
                            [allowTryItOut]="true"></app-schema-explorer-table>
 <app-changelog-list *ngIf="activeTabIndex == 1" [changeLogEntries]="changelogEntries | async"></app-changelog-list>

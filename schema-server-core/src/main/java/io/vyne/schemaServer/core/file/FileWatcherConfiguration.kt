@@ -3,9 +3,6 @@ package io.vyne.schemaServer.core.file
 import io.vyne.PackageIdentifier
 import io.vyne.schemaServer.core.adaptors.PackageLoaderSpec
 import io.vyne.schemaServer.core.adaptors.taxi.TaxiPackageLoaderSpec
-import mu.KotlinLogging
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
 import java.nio.file.Path
 import java.time.Duration
 
@@ -19,7 +16,7 @@ import java.time.Duration
 data class FileSystemPackageSpec(
    val path: Path,
    val loader: PackageLoaderSpec = TaxiPackageLoaderSpec,
-   val editable: Boolean = false,
+   val isEditable: Boolean = false,
    val packageIdentifier: PackageIdentifier? = null
 )
 

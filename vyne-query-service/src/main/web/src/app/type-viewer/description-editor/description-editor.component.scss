@@ -1,4 +1,5 @@
 @import "src/theme";
+@import "src/utils";
 
 .wrapper {
   padding: 10px;
@@ -41,5 +42,16 @@
   markdown > p {
     // TODO : I suspect this will look naff when there are multiple paragraphs
     margin: 0;
+  }
+}
+
+.title-row {
+  @extend .edit-on-hover;
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+
+  h4 {
+    margin-bottom: 0;
   }
 }

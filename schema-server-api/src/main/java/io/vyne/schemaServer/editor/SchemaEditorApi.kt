@@ -2,6 +2,11 @@ package io.vyne.schemaServer.editor
 
 import io.vyne.PackageIdentifier
 import io.vyne.VersionedSource
+import io.vyne.schema.publisher.loaders.AddChangesToChangesetResponse
+import io.vyne.schema.publisher.loaders.AvailableChangesetsResponse
+import io.vyne.schema.publisher.loaders.CreateChangesetResponse
+import io.vyne.schema.publisher.loaders.FinalizeChangesetResponse
+import io.vyne.schema.publisher.loaders.SetActiveChangesetResponse
 import io.vyne.schemas.Metadata
 import lang.taxi.CompilationMessage
 import org.springframework.web.bind.annotation.GetMapping
@@ -13,6 +18,33 @@ import reactor.core.publisher.Mono
 
 @ReactiveFeignClient("\${vyne.schema-server.name:schema-server}", qualifier = "schemaEditorFeignClient")
 interface SchemaEditorApi {
+
+   @PostMapping("/api/repository/changeset/create")
+   fun createChangeset(
+      @RequestBody request: StartChangesetRequest
+   ): Mono<CreateChangesetResponse>
+
+   @PostMapping("/api/repository/changeset/add")
+   fun addChangesToChangeset(
+      @RequestBody request: AddChangesToChangesetRequest
+   ): Mono<AddChangesToChangesetResponse>
+
+   @PostMapping("/api/repository/changeset/finalize")
+   fun finalizeChangeset(
+      @RequestBody request: FinalizeChangesetRequest
+   ): Mono<FinalizeChangesetResponse>
+
+   // TODO Should be a GET request but as the package identifier is an object this was quicker..
+   @PostMapping("/api/repository/changesets")
+   fun getAvailableChangesets(
+      @RequestBody request: GetAvailableChangesetsRequest
+   ): Mono<AvailableChangesetsResponse>
+
+   @PostMapping("/api/repository/changesets/active")
+   fun setActiveChangeset(
+      @RequestBody request: SetActiveChangesetRequest
+   ): Mono<SetActiveChangesetResponse>
+
    @PostMapping("/api/repository/editable/sources")
    fun submitEdits(
       @RequestBody request: SchemaEditRequest
@@ -22,14 +54,14 @@ interface SchemaEditorApi {
    fun updateAnnotationsOnType(
       @PathVariable typeName: String,
       @RequestBody request: UpdateTypeAnnotationRequest
-   ): Mono<SchemaEditResponse>
+   ): Mono<AddChangesToChangesetResponse>
 
    // As per below - shouldn't be part of the Schema editing API
    @PostMapping(path = ["/api/repository/types/{typeName}/owner"])
    fun updateDataOwnerOnType(
       @PathVariable typeName: String,
       @RequestBody request: UpdateDataOwnerRequest
-   ): Mono<SchemaEditResponse>
+   ): Mono<AddChangesToChangesetResponse>
 
    @GetMapping("/api/repository/editable")
    fun getEditorConfig(): Mono<EditableRepositoryConfig>
@@ -38,7 +70,7 @@ interface SchemaEditorApi {
 
 /**
  * Provides the details of repositories that are
- * editablele (described by the package Ids of those
+ * editable (described by the package Ids of those
  * repositories).
  *
  */
@@ -53,7 +85,7 @@ data class EditableRepositoryConfig(
    // and edit requests will have to tell us which package the
    // edit should go to.
 
-   fun getDefaultEditorPackage():PackageIdentifier {
+   fun getDefaultEditorPackage(): PackageIdentifier {
       return when (editablePackages.size) {
          0 -> error("There are no packages configured to be editable")
          1 -> editablePackages.single()
@@ -62,9 +94,35 @@ data class EditableRepositoryConfig(
    }
 }
 
+
+data class StartChangesetRequest(
+   val changesetName: String,
+   val packageIdentifier: PackageIdentifier
+)
+
+data class AddChangesToChangesetRequest(
+   val changesetName: String,
+   val packageIdentifier: PackageIdentifier,
+   val edits: List<VersionedSource>
+)
+
 data class SchemaEditRequest(
    val packageIdentifier: PackageIdentifier,
    val edits: List<VersionedSource>
+)
+
+data class FinalizeChangesetRequest(
+   val changesetName: String,
+   val packageIdentifier: PackageIdentifier
+)
+
+data class GetAvailableChangesetsRequest(
+   val packageIdentifier: PackageIdentifier
+)
+
+data class SetActiveChangesetRequest(
+   val packageIdentifier: PackageIdentifier,
+   val changesetName: String
 )
 
 data class SchemaEditResponse(
@@ -74,7 +132,8 @@ data class SchemaEditResponse(
 
 
 data class UpdateTypeAnnotationRequest(
-   val annotations: List<Metadata>
+   val annotations: List<Metadata>,
+   val changesetName: String
 )
 
 
@@ -82,4 +141,4 @@ data class UpdateTypeAnnotationRequest(
  * This shouldn't be part of the schema server, since these are just annotations.
  * But the API for mutating annotations is too compelx to build right now
  */
-data class UpdateDataOwnerRequest(val id: String, val name: String)
+data class UpdateDataOwnerRequest(val id: String, val name: String, val changesetName: String)

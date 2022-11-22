@@ -97,7 +97,7 @@ class SchemaServerSourceManager(
       val oldSchema = validatingStore.schemaSet.schema
       val result = validatingStore.submitUpdates(updates)
       // Always send the notification, even if the current state is broken.
-      // Previously, we only used to send if the state was valid, but this means that broken schemas arent
+      // Previously, we only used to send if the state was valid, but this means that broken schemas aren't
       // visible in the UI
       schemaUpdateNotifier.emitCurrentSchemaSet()
       schemaUpdateNotifier.buildAndSendSchemaUpdated(updates, oldSchema)

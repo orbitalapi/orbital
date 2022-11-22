@@ -10,16 +10,30 @@ data class GitSchemaRepositoryConfig(
    val checkoutRoot: Path? = null,
    val pollFrequency: Duration = Duration.ofSeconds(30),
    val repositories: List<GitRepositoryConfig> = emptyList(),
-) {
+)
 
-}
+data class GitCredentials(
+   val username: String,
+   val password: String,
+)
+data class GitSshAuth(
+   val privateKeyPath: String,
+   val passphrase: String? = null,
+)
+
+data class GitUpdateFlowConfig(
+   val branchPrefix: String = "schema-updates/",
+   val repoName: String = "RoopeHakulinen/taxonomy-test" // TODO
+)
 
 data class GitRepositoryConfig(
    val name: String,
    val uri: String,
    val branch: String,
-   val sshPrivateKeyPath: String? = null,
-   val sshPassPhrase: String? = null,
+   val sshAuth: GitSshAuth? = null,
+   val credentials: GitCredentials? = null,
+   val isEditable: Boolean = true,
+   val updateFlowConfig : GitUpdateFlowConfig? = GitUpdateFlowConfig(), // TODO Set to null
    /**
     * The Path within the repository
     */

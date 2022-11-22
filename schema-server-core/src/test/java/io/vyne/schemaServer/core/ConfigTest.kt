@@ -38,7 +38,7 @@ class ConfigTest {
             projects = listOf(
                FileSystemPackageSpec(
                   path = Paths.get("/a/b/c/project"),
-                  editable = true
+                  isEditable = true
                )
 
             )
