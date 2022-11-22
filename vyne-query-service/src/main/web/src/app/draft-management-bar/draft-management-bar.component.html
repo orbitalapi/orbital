@@ -1,0 +1,34 @@
+<ng-container *ngIf="changesetService.isCustomChangesetSelected() | async">
+  <mat-toolbar class="bottom" color="primary">
+    <div class="left">
+      <button
+        appearance="outline"
+        iconRight="tuiIconRotate"
+        size="m"
+        tuiButton>Draft
+      </button>
+    </div>
+    <div class="center">
+      <div (click)="changesetService.rename().subscribe()" class="title">
+        {{(changesetService.activeChangeset$ | async).name}}
+        <mat-icon [matTooltip]="'Change the name of the draft'">edit</mat-icon>
+      </div>
+      <div class="description subtle">Created <i>just now</i> by <a>you</a></div>
+    </div>
+    <div class="right">
+      <button
+        (click)="commitChanges()"
+        class="tui-space_right-3"
+        size="m"
+        tuiButton>Propose this draft
+      </button>
+      <button
+        (click)="backToMain()"
+        [matTooltip]="'Move back to the published version'"
+        appearance="flat"
+        icon="tuiIconClose"
+        size="m"
+        tuiIconButton></button>
+    </div>
+  </mat-toolbar>
+</ng-container>

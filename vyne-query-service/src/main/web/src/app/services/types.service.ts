@@ -1,15 +1,14 @@
 import { Inject, Injectable, Injector } from '@angular/core';
-import { BehaviorSubject, Observable, of, ReplaySubject, Subject } from 'rxjs';
+import { Observable, ReplaySubject, Subject } from 'rxjs';
 
 import * as _ from 'lodash';
 import { HttpClient } from '@angular/common/http';
 
-import { concatAll, map, shareReplay, switchMap, tap } from 'rxjs/operators';
+import { concatAll, map, shareReplay } from 'rxjs/operators';
 import { Policy } from '../policy-manager/policies';
 import {
   CompilationMessage,
   Message,
-  Metadata,
   Operation,
   ParsedSource,
   PartialSchema,
@@ -27,15 +26,9 @@ import {
 } from './schema';
 import { SchemaNotificationService, SchemaUpdatedNotification } from './schema-notification.service';
 import { ValueWithTypeName } from './models';
-import { VyneUser } from './user-info.service';
 import { ENVIRONMENT, Environment } from './environment';
 import { TuiDialogService } from '@taiga-ui/core';
-import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
-import { ChangesetNameDialogComponent } from '../changeset-name-dialog/changeset-name-dialog.component';
-import { PackageIdentifier, PackagesService } from 'src/app/package-viewer/packages.service';
-import { Changeset } from 'src/app/services/changeset.service';
 
-export const mainBranchName = 'main';
 
 @Injectable({
   providedIn: 'root',
@@ -67,6 +60,10 @@ export class TypesService {
       });
   }
 
+  // From merge conflict:
+  //  ensureChangesetExists(): Observable<string> {
+  //     return this.openNameDialog(false, name => this.createChangeset(name));
+  //   }
 
   validateSchema(schema: string): Observable<Type[]> {
     return this.http.post<Type[]>(`${this.environment.serverUrl}/api/schemas/taxi/validate`, schema);
@@ -274,6 +271,7 @@ export class TypesService {
     return this.submitSchema(request);
   }
 
+
   createSchemaPreview(request: SchemaPreviewRequest): Observable<SchemaPreview> {
     return this.http.post<SchemaPreview>(
       `${this.environment.serverUrl}/api/schemas/preview`,
@@ -313,6 +311,7 @@ export class TypesService {
   validateTaxi(taxi: string): Observable<SchemaSubmissionResult> {
     return this.http.post<SchemaSubmissionResult>(`${this.environment.serverUrl}/api/schema/taxi?validate=true`, taxi);
   }
+
 }
 
 export class SchemaPreviewRequest {
@@ -330,26 +329,7 @@ export interface SchemaEditRequest {
   edits: VersionedSource[];
 }
 
-export interface CreateChangesetRequest {
-  changesetName: string;
-  packageIdentifier: any;
-}
 
-export interface AddChangesToChangesetRequest {
-  changesetName: string;
-  packageIdentifier: any;
-  edits: VersionedSource[];
-}
-
-export interface FinalizeChangesetRequest {
-  changesetName: string;
-  packageIdentifier: any;
-}
-
-export interface FinalizeChangesetResponse {
-  link: string | null;
-  changeset: Changeset;
-}
 
 export interface SchemaPreview {
   spec: SchemaSpec;

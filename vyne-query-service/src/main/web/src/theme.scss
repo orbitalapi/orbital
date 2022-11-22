@@ -76,6 +76,11 @@ $toolbar-height: 5rem;
     color: $dark-grey-3;
     border-bottom: 1px solid rgba($midnight-grey, 0.15);
 
+    &.bottom {
+      border-bottom-width: 0;
+      border-top: 1px solid rgba($midnight-grey, 0.15);
+    }
+
     span {
       font-size: 1rem;
     }

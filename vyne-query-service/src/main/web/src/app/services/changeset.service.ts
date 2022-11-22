@@ -3,18 +3,17 @@ import { Environment, ENVIRONMENT } from 'src/app/services/environment';
 import { TuiDialogService } from '@taiga-ui/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, merge, of } from 'rxjs';
-import {
-  AddChangesToChangesetRequest,
-  FinalizeChangesetRequest,
-  FinalizeChangesetResponse,
-  mainBranchName
-} from 'src/app/services/types.service';
 import { PackageIdentifier, PackagesService, SourcePackageDescription } from 'src/app/package-viewer/packages.service';
-import { filter, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
+import { filter, map, mapTo, share, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 import { Observable } from 'rxjs/internal/Observable';
 import { QualifiedName, VersionedSource } from 'src/app/services/schema';
 import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
-import { ChangesetNameDialogComponent } from 'src/app/changeset-name-dialog/changeset-name-dialog.component';
+import {
+  ChangesetNameDialogComponent,
+  ChangesetNameDialogSaveHandler
+} from 'src/app/changeset-name-dialog/changeset-name-dialog.component';
+
+export const defaultChangesetName = 'main';
 
 @Injectable({
   providedIn: 'root',
@@ -76,12 +75,14 @@ export class ChangesetService {
       )
   }
 
+
   getAvailableChangesets(packageIdentifier: PackageIdentifier): Observable<Changeset[]> {
     return this.http.post<ChangesetResponse>(`${this.environment.serverUrl}/api/repository/changesets`, { packageIdentifier: packageIdentifier })
       .pipe(map(response => {
         return response.changesets
       }));
   }
+
 
   setActiveChangeset(changeset: Changeset): Observable<SetActiveChangesetResponse> {
     return this.http.post<SetActiveChangesetResponse>(`${this.environment.serverUrl}/api/repository/changesets/active`, {
@@ -155,7 +156,7 @@ export class ChangesetService {
       .pipe(
         take(1),
         switchMap(changeset => {
-          if (changeset.name !== mainBranchName) {
+          if (changeset.name !== defaultChangesetName) {
             return of(changeset)
           } else {
             return this.dialogService
@@ -170,6 +171,66 @@ export class ChangesetService {
   sanitizeChangesetName(name: string): string {
     // @ts-ignore
     return name.replaceAll(' ', '-').replace(/\W/g, '').toLowerCase();
+  }
+
+
+  openNameDialog(forceOpen: boolean, saveHandler: ChangesetNameDialogSaveHandler): Observable<string> {
+    return this.activeChangeset$.pipe(
+      take(1),
+      switchMap(changeset => {
+        if (!forceOpen && changeset.name !== defaultChangesetName) {
+          return of(changeset.name);
+        } else {
+          return this.dialogService
+            .open<string | null>(new PolymorpheusComponent(ChangesetNameDialogComponent, this.injector), {
+              data: {
+                name: changeset.name,
+                saveHandler: saveHandler,
+              },
+            });
+        }
+      })
+    )
+
+
+  }
+
+
+  isCustomChangesetSelected(): Observable<boolean> {
+    return this.activeChangeset$.pipe(
+      take(1),
+      map(changeset => changeset.name !== defaultChangesetName)
+    )
+  }
+
+  rename(): Observable<void> {
+    return this.openNameDialog(true, changesetName => this.updateChangeset(changesetName)).pipe(mapTo(void 0));
+  }
+
+  private updateChangeset(changesetName: string): Observable<Changeset> {
+    return this.activeChangeset$.pipe(
+      take(1),
+      switchMap(changeset => {
+        return this.http.put<Changeset>(`${this.environment.serverUrl}/api/repository/changeset/update`, {
+          packageIdentifier: changeset.packageIdentifier,
+          changesetName: changeset.name,
+          newChangesetName: changesetName,
+        })
+      }),
+      tap((changeset) => this.activeChangesetLocalUpdates$.next(changeset)),
+    );
+  }
+
+
+  selectDefaultChangeset() {
+    this.availableChangesets$
+      .pipe(
+        take(1),
+        switchMap(changesets => {
+          const defaultChangeset = changesets.find(c => c.name === defaultChangesetName)
+          return this.setActiveChangeset(defaultChangeset)
+        })
+      ).subscribe()
   }
 
 }
@@ -193,4 +254,20 @@ export interface Changeset {
 
 export interface ChangesetResponse {
   changesets: Changeset[];
+}
+
+export interface AddChangesToChangesetRequest {
+  changesetName: string;
+  packageIdentifier: any;
+  edits: VersionedSource[];
+}
+
+export interface FinalizeChangesetRequest {
+  changesetName: string;
+  packageIdentifier: any;
+}
+
+export interface FinalizeChangesetResponse {
+  link: string | null;
+  changeset: Changeset;
 }

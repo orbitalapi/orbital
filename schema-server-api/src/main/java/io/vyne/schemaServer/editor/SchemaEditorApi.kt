@@ -2,12 +2,19 @@ package io.vyne.schemaServer.editor
 
 import io.vyne.PackageIdentifier
 import io.vyne.VersionedSource
+import io.vyne.schema.publisher.loaders.AddChangesToChangesetResponse
+import io.vyne.schema.publisher.loaders.AvailableChangesetsResponse
+import io.vyne.schema.publisher.loaders.CreateChangesetResponse
+import io.vyne.schema.publisher.loaders.FinalizeChangesetResponse
+import io.vyne.schema.publisher.loaders.SetActiveChangesetResponse
+import io.vyne.schema.publisher.loaders.UpdateChangesetResponse
 import io.vyne.schema.publisher.loaders.*
 import io.vyne.schemas.Metadata
 import lang.taxi.CompilationMessage
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import reactivefeign.spring.config.ReactiveFeignClient
 import reactor.core.publisher.Mono
@@ -29,6 +36,11 @@ interface SchemaEditorApi {
    fun finalizeChangeset(
       @RequestBody request: FinalizeChangesetRequest
    ): Mono<FinalizeChangesetResponse>
+
+   @PutMapping("/api/repository/changeset/update")
+   fun updateChangeset(
+      @RequestBody request: UpdateChangesetRequest
+   ): Mono<UpdateChangesetResponse>
 
    // TODO Should be a GET request but as the package identifier is an object this was quicker..
    @PostMapping("/api/repository/changesets")
@@ -109,6 +121,12 @@ data class SchemaEditRequest(
 
 data class FinalizeChangesetRequest(
    val changesetName: String,
+   val packageIdentifier: PackageIdentifier
+)
+
+data class UpdateChangesetRequest(
+   val changesetName: String,
+   val newChangesetName: String,
    val packageIdentifier: PackageIdentifier
 )
 

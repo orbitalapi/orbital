@@ -1,17 +1,17 @@
-import {Component, Inject, OnInit} from '@angular/core';
-import {findType, QualifiedName, setOrReplaceMetadata, Type} from '../../services/schema';
-import {TypesService} from '../../services/types.service';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
-import {UserInfoService, VyneUser} from '../../services/user-info.service';
+import { Component, Inject } from '@angular/core';
+import { QualifiedName, setOrReplaceMetadata, Type } from '../../services/schema';
+import { TypesService } from '../../services/types.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { UserInfoService, VyneUser } from '../../services/user-info.service';
 import {
   DATA_OWNER_FQN,
   DATA_OWNER_TAG_OWNER_NAME,
   DATA_OWNER_TAG_OWNER_USER_ID,
-  findDataOwner
+  findDataOwner,
 } from '../../data-catalog/data-catalog.models';
-import {isNullOrUndefined} from 'util';
-import {CommitMode} from '../type-viewer.component';
+import { isNullOrUndefined } from 'util';
+import { CommitMode } from '../type-viewer.component';
 import { TypeEditorService } from 'src/app/services/type-editor.service';
 
 
@@ -57,13 +57,11 @@ export class EditOwnerPanelContainerComponent {
   }
 
   saveUser(user: VyneUser) {
+    this.dialogRef.close(this.params.type);
     this.updateUserOnType(user);
     if (this.params.commitMode === 'immediate') {
       this.commitUser(user);
-    } else {
-      this.dialogRef.close(this.params.type);
     }
-
   }
 
   private commitUser(user: VyneUser) {

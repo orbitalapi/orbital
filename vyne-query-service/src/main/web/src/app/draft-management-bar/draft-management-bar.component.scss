@@ -1,0 +1,23 @@
+@import "src/theme";
+@import "src/toolbar";
+@import "src/utils";
+
+mat-toolbar {
+  justify-content: space-between;
+  bottom: 0;
+
+  .center {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 70%;
+
+    .title {
+      @extend .edit-on-hover;
+      display: flex;
+
+      mat-icon {
+        margin-left: 0.5rem;
+      }
+    }
+  }
+}

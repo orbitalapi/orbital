@@ -24,9 +24,7 @@ export class ChangesetSelectorComponent implements OnInit {
 
   selectChangeset(changeset: Changeset): void {
     this.changesetService.setActiveChangeset(changeset)
-      .subscribe(() =>
-        location.reload() // TODO This is only needed due to the fact that schema updates are not reflected on the page
-      );
+      .subscribe();
 
   }
 }

@@ -12,6 +12,7 @@ import io.vyne.schema.publisher.loaders.FinalizeChangesetResponse
 import io.vyne.schema.publisher.loaders.SchemaPackageTransport
 import io.vyne.schema.publisher.loaders.SchemaSourcesAdaptor
 import io.vyne.schema.publisher.loaders.SetActiveChangesetResponse
+import io.vyne.schema.publisher.loaders.UpdateChangesetResponse
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageLoader
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageWriter
@@ -132,8 +133,18 @@ class GitSchemaPackageLoader(
    }
 
    override fun finalizeChangeset(name: String): Mono<FinalizeChangesetResponse> {
+      // TODO Access the user information from the authentication
+      // TODO Allow specifying a description
       return mono { GitOperations(workingDir.toFile(), config).raisePr(name, "", "Martin Pitt") }
          .map { link -> FinalizeChangesetResponse(link, Changeset(name, true, packageIdentifier)) }
+   }
+
+   override fun updateChangeset(name: String, newName: String): Mono<UpdateChangesetResponse> {
+      return mono {
+         GitOperations(workingDir.toFile(), config).renameCurrentBranch(newName)
+         currentBranch = newName
+      }
+         .map { UpdateChangesetResponse() }
    }
 
    override fun getAvailableChangesets(): Mono<AvailableChangesetsResponse> {

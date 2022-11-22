@@ -48,7 +48,7 @@ const oauth2OidcModule = [AuthModule];
     TuiInputModule,
     TuiButtonModule,
     LandingPageModule,
-    ConfirmationDialogModule
+    ConfirmationDialogModule,
   ],
   providers: [
     TypesService,
