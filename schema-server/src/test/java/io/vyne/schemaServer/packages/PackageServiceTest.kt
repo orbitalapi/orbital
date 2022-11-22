@@ -37,7 +37,7 @@ class PackageServiceTest {
             )
          )
       )
-      val packageService = PackageService(mock { }, schemaStore)
+      val packageService = PackageService(mock { }, schemaStore, mock {  })
       val schema = packageService.getPartialSchemaForPackage(packageMetadata.identifier.uriSafeId).block()!!
 
       val json = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(schema)
@@ -84,7 +84,7 @@ class PackageServiceTest {
             )
          )
       )
-      val packageService = PackageService(mock { }, schemaStore)
+      val packageService = PackageService(mock { }, schemaStore, mock {  })
       val schema = packageService.getPartialSchemaForPackage(actorsPackage.identifier.uriSafeId).block()!!
 
       schema.services.map { it.name.name }.should.contain("ActorService")

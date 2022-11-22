@@ -2,11 +2,7 @@ package io.vyne.schemaServer.editor
 
 import io.vyne.PackageIdentifier
 import io.vyne.VersionedSource
-import io.vyne.schema.publisher.loaders.AddChangesToChangesetResponse
-import io.vyne.schema.publisher.loaders.AvailableChangesetsResponse
-import io.vyne.schema.publisher.loaders.CreateChangesetResponse
-import io.vyne.schema.publisher.loaders.FinalizeChangesetResponse
-import io.vyne.schema.publisher.loaders.SetActiveChangesetResponse
+import io.vyne.schema.publisher.loaders.*
 import io.vyne.schemas.Metadata
 import lang.taxi.CompilationMessage
 import org.springframework.web.bind.annotation.GetMapping
@@ -133,7 +129,7 @@ data class SchemaEditResponse(
 
 data class UpdateTypeAnnotationRequest(
    val annotations: List<Metadata>,
-   val changesetName: String
+   val changeset: Changeset
 )
 
 
@@ -141,4 +137,8 @@ data class UpdateTypeAnnotationRequest(
  * This shouldn't be part of the schema server, since these are just annotations.
  * But the API for mutating annotations is too compelx to build right now
  */
-data class UpdateDataOwnerRequest(val id: String, val name: String, val changesetName: String)
+data class UpdateDataOwnerRequest(
+   val id: String,
+   val name: String,
+   val changeset: Changeset
+)

@@ -27,11 +27,11 @@ export class TypeEditorService {
   setTypeDataOwner(type: Type, owner: VyneUser): Observable<Type> {
     return this.changeSetService.ensureChangesetExists()
       .pipe(
-        switchMap(changeSetName => this.http.post<Type>(`${this.environment.serverUrl}/api/types/${type.name.fullyQualifiedName}/owner`,
+        switchMap(changeset => this.http.post<Type>(`${this.environment.serverUrl}/api/types/${type.name.fullyQualifiedName}/owner`,
           {
             id: owner.userId,
             name: owner.name,
-            changesetName: changeSetName
+            changeset: changeset
           } as UpdateDataOwnerRequest,
         )),
         // tap(() => this.updateChangesets()),
@@ -41,9 +41,9 @@ export class TypeEditorService {
   setTypeMetadata(type: Type, metadata: Metadata[]): Observable<Type> {
     return this.changeSetService.ensureChangesetExists()
       .pipe(
-        switchMap(changeSetName => this.http.post<Type>(`${this.environment.serverUrl}/api/types/${type.name.fullyQualifiedName}/annotations`,
+        switchMap(changeset => this.http.post<Type>(`${this.environment.serverUrl}/api/types/${type.name.fullyQualifiedName}/annotations`,
           {
-            changesetName: changeSetName,
+            changeset: changeset,
             annotations: metadata,
           },
         )),

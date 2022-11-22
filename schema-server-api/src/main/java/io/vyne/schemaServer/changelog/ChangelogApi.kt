@@ -38,6 +38,8 @@ enum class DiffKind {
    ModelAdded,
    ModelRemoved,
    ModelChanged,
+   MetadataChanged,
+
    DocumentationChanged,
    FieldAddedToModel,
    FieldRemovedFromModel,
