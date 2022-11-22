@@ -4,11 +4,7 @@ import io.vyne.PackageIdentifier
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.schema.consumer.SchemaStore
-import io.vyne.schema.publisher.loaders.AddChangesToChangesetResponse
-import io.vyne.schema.publisher.loaders.AvailableChangesetsResponse
-import io.vyne.schema.publisher.loaders.CreateChangesetResponse
-import io.vyne.schema.publisher.loaders.FinalizeChangesetResponse
-import io.vyne.schema.publisher.loaders.SetActiveChangesetResponse
+import io.vyne.schema.publisher.loaders.*
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageLoader
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageWriter
 import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
@@ -123,7 +119,7 @@ class SchemaEditorService(
 
       val name = QualifiedName.from(typeName)
       val annotations = request.annotations.joinToString("\n") { it.asTaxi() }
-      return generateAnnotationExtension(request.changesetName, name, annotations, FileContentType.Annotations)
+      return generateAnnotationExtension(request.changeset, name, annotations, FileContentType.Annotations)
    }
 
    override fun updateDataOwnerOnType(
@@ -131,11 +127,11 @@ class SchemaEditorService(
    ): Mono<AddChangesToChangesetResponse> {
       val name = QualifiedName.from(typeName)
       val annotation = """@io.vyne.catalog.DataOwner( id = ${request.id.quoted()} , name = ${request.name.quoted()} )"""
-      return generateAnnotationExtension(request.changesetName, name, annotation, FileContentType.DataOwner)
+      return generateAnnotationExtension(request.changeset, name, annotation, FileContentType.DataOwner)
    }
 
    private fun generateAnnotationExtension(
-      changesetName: String, typeName: QualifiedName, annotationSource: String, contentType: FileContentType
+      changeset: Changeset, typeName: QualifiedName, annotationSource: String, contentType: FileContentType
    ): Mono<AddChangesToChangesetResponse> {
       val type = schemaProvider.schemaSet.schema.type(typeName.toVyneQualifiedName())
       val tokenType = when {
@@ -157,9 +153,9 @@ $tokenType extension ${typeName.typeName} {}
       val filename = typeName.toFilename(contentType = contentType)
       return addChangesToChangeset(
          AddChangesToChangesetRequest(
-            changesetName, PackageIdentifier(
-               "io.vyne", "films", "next-minor"
-            ), listOf(VersionedSource.unversioned(filename, annotationSpec))
+            changeset.name,
+            changeset.packageIdentifier,
+            listOf(VersionedSource.unversioned(filename, annotationSpec))
          )
       )
    }

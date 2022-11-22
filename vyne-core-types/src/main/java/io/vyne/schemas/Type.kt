@@ -78,7 +78,7 @@ data class Type(
 
    @JsonIgnore
    val typeCache: TypeCache = EmptyTypeCache
-) : SchemaMember, PartialType {
+) : SchemaMember, PartialType, CompareByDefinition<Type> {
    constructor(
       name: String,
       attributes: Map<AttributeName, Field> = emptyMap(),
@@ -129,7 +129,7 @@ data class Type(
    )
 
 
-   fun isDefinedSameAs(other: Type): Boolean {
+   override fun isDefinedSameAs(other: Type): Boolean {
       return this.name == other.name && this.attributes == other.attributes && this.typeDoc == other.typeDoc
    }
 

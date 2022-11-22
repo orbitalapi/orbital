@@ -132,6 +132,43 @@ class ChangeLogServiceTest {
    }
 
    @Test
+   fun `verify changelog entry when documentation added to model`() {
+      submitSource(
+         """type FirstName inherits String
+         |type LastName inherits String
+         |model Person {
+         |  firstName : FirstName
+         |}
+      """.trimMargin(), "Names"
+      )
+      val changeLogEntry = submitSource(
+         """type FirstName inherits String
+         |type LastName inherits String
+         |[[ A person. Soft and squishy ]]
+         |model Person {
+         |  firstName : FirstName
+         |}
+      """.trimMargin(), packageName = "Names"
+      )!!
+      val expected = ChangeLogDiffEntry(
+         displayName = "Person",
+         kind = DiffKind.ModelChanged,
+         schemaMember = "Person".fqn(),
+         children = listOf(
+            ChangeLogDiffEntry(
+               displayName = "Person",
+               kind = DiffKind.DocumentationChanged,
+               schemaMember = "Person".fqn(),
+               oldDetails = "",
+               newDetails = "A person. Soft and squishy"
+            )
+         )
+      )
+      changeLogEntry.diffs.single().should.equal(expected)
+   }
+
+
+   @Test
    fun `verify changelog entry when field removed from model`() {
       submitSource(
          """type FirstName inherits String
@@ -435,8 +472,18 @@ class ChangeLogServiceTest {
                   "findPerson",
                   DiffKind.OperationMetadataChanged,
                   OperationNames.qualifiedName("People", "findPerson"),
-                  oldDetails = listOf(Metadata(name = "HttpOperation".fqn(), params = mapOf("url" to "http://localhost/foo", "method" to "POST"))),
-                  newDetails = listOf(Metadata(name = "HttpOperation".fqn(), params = mapOf("url" to "http://localhost/bar", "method" to "GET")))
+                  oldDetails = listOf(
+                     Metadata(
+                        name = "HttpOperation".fqn(),
+                        params = mapOf("url" to "http://localhost/foo", "method" to "POST")
+                     )
+                  ),
+                  newDetails = listOf(
+                     Metadata(
+                        name = "HttpOperation".fqn(),
+                        params = mapOf("url" to "http://localhost/bar", "method" to "GET")
+                     )
+                  )
                )
             )
          )

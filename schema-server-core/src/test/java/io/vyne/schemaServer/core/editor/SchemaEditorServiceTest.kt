@@ -1,7 +1,9 @@
 package io.vyne.schemaServer.core.editor
 
 import com.winterbe.expekt.should
+import io.vyne.PackageIdentifier
 import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.publisher.loaders.Changeset
 import io.vyne.schemaServer.core.file.deployProject
 import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
 import io.vyne.schemaServer.editor.UpdateTypeAnnotationRequest
@@ -32,7 +34,7 @@ class SchemaEditorServiceTest {
       editor.updateAnnotationsOnType(
          "com.foo.Bar", UpdateTypeAnnotationRequest(
             listOf(Metadata("Documented".fqn()), Metadata("com.foo.Sensitive".fqn())),
-            "test"
+            Changeset("",true, PackageIdentifier.fromId("taxi/sample"))
          )
       ).block(Duration.ofMillis(1000))
 
@@ -61,7 +63,7 @@ type extension Bar {}""".withoutWhitespace()
       editor.updateAnnotationsOnType(
          "com.foo.Bar", UpdateTypeAnnotationRequest(
             listOf(Metadata("Documented".fqn()), Metadata("com.foo.Sensitive".fqn())),
-            "test"
+            Changeset("",true, PackageIdentifier.fromId("taxi/sample"))
          )
       ).block()
 

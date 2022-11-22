@@ -14,6 +14,7 @@ class ChangeLogDiffFactory(
 ) {
 
    private val logger = KotlinLogging.logger {}
+
    companion object {
       val DEFAULT_EXCLUDED_NAMESPACES = listOf("lang.taxi", "io.vyne")
    }
@@ -44,9 +45,13 @@ class ChangeLogDiffFactory(
       removedFactory: (T) -> List<ChangeLogDiffEntry>,
       changedFactory: (T, T) -> List<ChangeLogDiffEntry>
    ): List<ChangeLogDiffEntry> {
-      if (oldMembers == newMembers) {
-         return emptyList()
-      }
+      // We can't rely on equality checks here.
+      // Equals of types is specifically designed to be fast,
+      // but not deep.  So two types will return equal based only on
+      // their name
+//      if (oldMembers == newMembers) {
+//         return emptyList()
+//      }
       val typesAdded = newMembers.membersNotPresentByNameIn(oldMembers)
          .excludingInternalMembers()
          .flatMap { addedFactory(it) }
@@ -57,7 +62,7 @@ class ChangeLogDiffFactory(
          .excludingInternalMembers()
          .mapNotNull { newType ->
             val oldType = oldMembers.findByName(newType)
-            if (oldType != null && oldType != newType) {
+            if (oldType != null && !compareEqual(oldType, newType)) {
                oldType to newType
             } else {
                null
@@ -65,6 +70,14 @@ class ChangeLogDiffFactory(
          }.flatMap { (oldType, newType) -> changedFactory(oldType, newType) }
 
       return typesAdded + typesRemoved + typesChanged
+   }
+
+   private fun <T : SchemaMember> compareEqual(oldType: T, newType: T): Boolean {
+      return if (oldType is CompareByDefinition<*>) {
+         (oldType as CompareByDefinition<T>).isDefinedSameAs(newType)
+      } else {
+         oldType == newType
+      }
    }
 
 
@@ -91,12 +104,35 @@ class ChangeLogDiffFactory(
 
       val fieldsAdded = createDiffEntries(fieldDifferences.entriesOnlyOnRight(), DiffKind.FieldAddedToModel)
       val fieldsRemoved = createDiffEntries(fieldDifferences.entriesOnlyOnLeft(), DiffKind.FieldRemovedFromModel)
+
+      val docsChanges = listOfNotNull(
+         if (oldType.typeDoc != newType.typeDoc) {
+            ChangeLogDiffEntry(
+               newType.name.shortDisplayName,
+               DiffKind.DocumentationChanged,
+               newType.name,
+               oldDetails = oldType.typeDoc,
+               newDetails = newType.typeDoc
+            )
+         } else null
+      )
+
+      val annotationDiff = if (oldType.metadata != newType.metadata) {
+         listOf(ChangeLogDiffEntry(
+            newType.name.shortDisplayName,
+            DiffKind.MetadataChanged,
+            newType.name,
+            oldDetails = oldType.metadata,
+            newDetails = newType.metadata
+         )   )
+      } else emptyList()
+
       return listOf(
          ChangeLogDiffEntry(
             newType.name.shortDisplayName,
             DiffKind.ModelChanged,
             newType.name,
-            fieldsAdded + fieldsRemoved
+            fieldsAdded + fieldsRemoved + docsChanges + annotationDiff
          )
       )
    }
