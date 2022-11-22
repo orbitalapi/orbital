@@ -22,7 +22,7 @@ export class ChangesetSelectorComponent implements OnInit {
   }
 
   selectChangeset(changeset: Changeset): void {
-    this.typesService.setActiveChangeset(changeset)
+    this.typesService.setActiveChangeset(changeset.name)
       .subscribe();
 
   }

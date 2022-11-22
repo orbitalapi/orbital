@@ -21,6 +21,10 @@ data class FinalizeChangesetResponse(
    val link: String? = null
 )
 
+data class UpdateChangesetResponse(
+   val errors: List<String> = emptyList()
+)
+
 data class AvailableChangesetsResponse(
    val changesets: List<Changeset>
 )
@@ -59,6 +63,9 @@ interface SchemaPackageTransport {
    fun addChangesToChangeset(name: String, edits: List<VersionedSource>): Mono<AddChangesToChangesetResponse>
 
    fun finalizeChangeset(name: String): Mono<FinalizeChangesetResponse>
+
+   fun updateChangeset(name: String, newName: String): Mono<UpdateChangesetResponse>
+
    fun getAvailableChangesets(): Mono<AvailableChangesetsResponse>
    fun setActiveChangeset(branchName: String): Mono<SetActiveChangesetResponse>
 

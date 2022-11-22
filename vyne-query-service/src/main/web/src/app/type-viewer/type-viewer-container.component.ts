@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { mainBranchName, OperationQueryResult, TypesService } from '../services/types.service';
+import { OperationQueryResult, TypesService } from '../services/types.service';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
 import { Schema, Type } from '../services/schema';
@@ -12,7 +12,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   styleUrls: ['./type-viewer-container.component.scss'],
   template: `
     <app-header-bar title="Catalog">
-      <button tuiButton size="m" (click)="commitChanges()" *ngIf="hasUncommittedChanges()">Propose this draft</button>
       <app-changeset-selector></app-changeset-selector>
     </app-header-bar>
     <app-type-viewer [type]="type"
@@ -89,28 +88,6 @@ export class TypeViewerContainerComponent implements OnInit {
         .subscribe(usages => {
           this.typeUsages = usages;
         });
-    });
-  }
-
-  hasUncommittedChanges() {
-    return this.typeService.activeChangeset$.value.name !== mainBranchName;
-  }
-
-  commitChanges() {
-    this.typeService.finalizeChangeset().subscribe((response) => {
-      this.snackBar.open('Changes pushed', 'Dismiss', { duration: 10000 });
-      if (response.link !== null) {
-        const didTabOpenSuccessfully = window.open(response.link, '_blank');
-        if (didTabOpenSuccessfully !== null) {
-          didTabOpenSuccessfully.focus();
-        } else {
-          this.snackBar.open(
-            'Failed to open the PR. You can find it on this link: ' + response.link,
-            'Dismiss',
-            { duration: 30000 },
-          );
-        }
-      }
     });
   }
 }

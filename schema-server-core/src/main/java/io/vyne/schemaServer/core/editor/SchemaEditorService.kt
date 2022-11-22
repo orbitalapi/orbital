@@ -9,6 +9,7 @@ import io.vyne.schema.publisher.loaders.AvailableChangesetsResponse
 import io.vyne.schema.publisher.loaders.CreateChangesetResponse
 import io.vyne.schema.publisher.loaders.FinalizeChangesetResponse
 import io.vyne.schema.publisher.loaders.SetActiveChangesetResponse
+import io.vyne.schema.publisher.loaders.UpdateChangesetResponse
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageLoader
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageWriter
 import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
@@ -19,6 +20,7 @@ import mu.KotlinLogging
 import org.http4k.quoted
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
@@ -74,6 +76,16 @@ class SchemaEditorService(
       logger.info { "Received request to finalize the changeset with name ${request.changesetName}" }
       val loader = repositoryManager.getLoader(request.packageIdentifier)
       return loader.finalizeChangeset(request.changesetName)
+   }
+
+
+   @PutMapping("/api/repository/changeset/update")
+   override fun updateChangeset(
+      @RequestBody request: UpdateChangesetRequest
+   ): Mono<UpdateChangesetResponse> {
+      logger.info { "Received request to update the changeset with name ${request.changesetName}" }
+      val loader = repositoryManager.getLoader(request.packageIdentifier)
+      return loader.updateChangeset(request.changesetName, request.newChangesetName)
    }
 
    @PostMapping("/api/repository/changesets")

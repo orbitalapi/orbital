@@ -4,7 +4,7 @@ import { BehaviorSubject, Observable, of, ReplaySubject, Subject } from 'rxjs';
 import * as _ from 'lodash';
 import { HttpClient } from '@angular/common/http';
 
-import { concatAll, map, shareReplay, switchMap, tap } from 'rxjs/operators';
+import { concatAll, map, mapTo, share, shareReplay, switchMap, tap } from 'rxjs/operators';
 import { Policy } from '../policy-manager/policies';
 import {
   CompilationMessage,
@@ -31,7 +31,7 @@ import { VyneUser } from './user-info.service';
 import { ENVIRONMENT, Environment } from './environment';
 import { TuiDialogService } from '@taiga-ui/core';
 import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
-import { ChangesetNameDialogComponent } from '../changeset-name-dialog/changeset-name-dialog.component';
+import { ChangesetNameDialogComponent, ChangesetNameDialogSaveHandler } from '../changeset-name-dialog/changeset-name-dialog.component';
 
 // TODO How to generate this?
 export const fakePackageIdentifier = {
@@ -40,23 +40,14 @@ export const fakePackageIdentifier = {
   version: 'next-minor',
 };
 
-export const mainBranchName = 'main';
-
-// TODO The DI has been set up weirdly so that a new instance of the service is created for each module/component that injects it.
-// TODO Cannot default to main..
-(window as any)._activeChangeset$ = new BehaviorSubject<Changeset>({ name: mainBranchName, isActive: true });
-(window as any)._availableChangesets$ = new BehaviorSubject<Changeset[]>([]);
+export const defaultChangesetName = 'main';
 
 @Injectable({
   providedIn: 'root',
 })
 export class TypesService {
-  get activeChangeset$(): BehaviorSubject<Changeset> {
-    return (window as any)._activeChangeset$;
-  }
-  get availableChangesets$(): BehaviorSubject<Changeset[]> {
-    return (window as any)._availableChangesets$;
-  }
+  activeChangeset$ = new BehaviorSubject<Changeset>({ name: defaultChangesetName, isActive: true });
+  availableChangesets$ = new BehaviorSubject<Changeset[]>([]);
 
   private schema: Schema;
   private schemaSubject: Subject<Schema> = new ReplaySubject(1);
@@ -84,15 +75,8 @@ export class TypesService {
       });
   }
 
-  private updateChangelogs() {
-    this.getAvailableChangesets().pipe(
-      map(changesets => {
-        return changesets.find(changeset => changeset.isActive)!!;
-      }),
-    ).subscribe(value => this.activeChangeset$.next(value));
-
-    this.getAvailableChangesets()
-      .subscribe(value => this.availableChangesets$.next(value));
+  ensureChangesetExists(): Observable<string> {
+    return this.openNameDialog(false, name => this.createChangeset(name));
   }
 
   validateSchema(schema: string): Observable<Type[]> {
@@ -301,17 +285,24 @@ export class TypesService {
     return this.submitSchema(request);
   }
 
-  ensureChangesetExists(): Observable<string> {
-    if (this.activeChangeset$.value.name !== mainBranchName) {
+  openNameDialog(forceOpen: boolean, saveHandler: ChangesetNameDialogSaveHandler): Observable<string> {
+    if (!forceOpen && this.activeChangeset$.value.name !== defaultChangesetName) {
       return of(this.activeChangeset$.value.name);
     }
-
     return this.dialogService
-      .open<string | null>(new PolymorpheusComponent(ChangesetNameDialogComponent, this.injector));
+      .open<string | null>(new PolymorpheusComponent(ChangesetNameDialogComponent, this.injector), {
+        data: {
+          name: this.activeChangeset$.value.name,
+          saveHandler: saveHandler,
+        },
+      });
   }
 
-  sanitizeChangesetName(name: string): string {
-    return name.replaceAll(' ', '-').replace(/\W/g, '').toLowerCase();
+  setActiveChangeset(changesetName: string): Observable<void> {
+    return this.http.post<void>(`${this.environment.serverUrl}/api/repository/changesets/active`, {
+      packageIdentifier: fakePackageIdentifier,
+      changesetName: changesetName,
+    }).pipe(tap(() => this.activeChangeset$.next({ name: changesetName, isActive: true })));
   }
 
   createSchemaPreview(request: SchemaPreviewRequest): Observable<SchemaPreview> {
@@ -433,11 +424,44 @@ export class TypesService {
       .pipe(map(response => response.changesets));
   }
 
-  setActiveChangeset(changeset: Changeset): Observable<void> {
-    return this.http.post<void>(`${this.environment.serverUrl}/api/repository/changesets/active`, {
+  isCustomChangesetSelected(): boolean {
+    return this.activeChangeset$.value.name !== defaultChangesetName;
+  }
+
+  rename(): Observable<void> {
+    return this.openNameDialog(true, changesetName => this.updateChangeset(changesetName)).pipe(mapTo(void 0));
+  }
+
+  selectDefaultChangeset() {
+    this.setActiveChangeset(defaultChangesetName).subscribe();
+  }
+
+  private updateChangelogs() {
+    const availableChangesets$ = this.getAvailableChangesets().pipe(share());
+
+    availableChangesets$.pipe(
+      map(changesets => {
+        return changesets.find(changeset => changeset.isActive)!!;
+      }),
+    ).subscribe(value => this.activeChangeset$.next(value));
+
+    availableChangesets$
+      .subscribe(value => this.availableChangesets$.next(value));
+  }
+
+  private updateChangeset(changesetName: string): Observable<void> {
+    return this.http.put<void>(`${this.environment.serverUrl}/api/repository/changeset/update`, {
       packageIdentifier: fakePackageIdentifier,
-      changesetName: changeset.name,
-    }).pipe(tap(() => this.activeChangeset$.next({ name: changeset.name, isActive: true })));
+      changesetName: this.activeChangeset$.value.name,
+      newChangesetName: changesetName,
+    }).pipe(
+      tap(() => this.activeChangeset$.next({ name: changesetName, isActive: true })),
+      tap(() => this.updateChangelogs()),
+    );
+  }
+
+  private sanitizeChangesetName(name: string): string {
+    return name.replaceAll(' ', '-').replace(/\W/g, '').toLowerCase();
   }
 }
 

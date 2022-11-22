@@ -7,7 +7,10 @@ import { MatListModule } from '@angular/material/list';
 import { RouterModule } from '@angular/router';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { SystemAlertModule } from '../system-alert/system-alert.module';
-import { TuiRootModule } from '@taiga-ui/core';
+import { TuiButtonModule, TuiRootModule } from '@taiga-ui/core';
+import { DraftManagementBarComponent } from '../draft-management-bar/draft-management-bar.component';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatIconModule } from '@angular/material/icon';
 
 @NgModule({
   imports: [
@@ -17,11 +20,14 @@ import { TuiRootModule } from '@taiga-ui/core';
     MatListModule,
     RouterModule,
     MatSnackBarModule,
+    MatTooltipModule,
+    MatIconModule,
     SystemAlertModule,
-    TuiRootModule
+    TuiRootModule,
+    TuiButtonModule,
   ],
   exports: [VyneComponent],
-  declarations: [VyneComponent],
+  declarations: [VyneComponent, DraftManagementBarComponent],
   providers: [DatePipe],
 })
 export class VyneModule {

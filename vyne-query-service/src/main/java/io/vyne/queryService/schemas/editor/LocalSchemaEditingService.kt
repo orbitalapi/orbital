@@ -15,7 +15,6 @@ import io.vyne.queryService.schemas.editor.generator.VyneSchemaToTaxiGenerator
 import io.vyne.queryService.schemas.editor.splitter.SingleTypePerFileSplitter
 import io.vyne.queryService.schemas.editor.splitter.SourceSplitter
 import io.vyne.queryService.utils.handleFeignErrors
-
 import io.vyne.schema.api.SchemaValidator
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.publisher.loaders.AddChangesToChangesetResponse
@@ -23,6 +22,7 @@ import io.vyne.schema.publisher.loaders.AvailableChangesetsResponse
 import io.vyne.schema.publisher.loaders.CreateChangesetResponse
 import io.vyne.schema.publisher.loaders.FinalizeChangesetResponse
 import io.vyne.schema.publisher.loaders.SetActiveChangesetResponse
+import io.vyne.schema.publisher.loaders.UpdateChangesetResponse
 import io.vyne.schemaServer.editor.AddChangesToChangesetRequest
 import io.vyne.schemaServer.editor.FinalizeChangesetRequest
 import io.vyne.schemaServer.editor.GetAvailableChangesetsRequest
@@ -31,6 +31,7 @@ import io.vyne.schemaServer.editor.SchemaEditResponse
 import io.vyne.schemaServer.editor.SchemaEditorApi
 import io.vyne.schemaServer.editor.SetActiveChangesetRequest
 import io.vyne.schemaServer.editor.StartChangesetRequest
+import io.vyne.schemaServer.editor.UpdateChangesetRequest
 import io.vyne.schemaServer.editor.UpdateDataOwnerRequest
 import io.vyne.schemaServer.editor.UpdateTypeAnnotationRequest
 import io.vyne.schemaStore.TaxiSchemaValidator
@@ -58,7 +59,7 @@ import mu.KotlinLogging
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -111,6 +112,13 @@ class LocalSchemaEditingService(
       @RequestBody request: FinalizeChangesetRequest
    ): Mono<FinalizeChangesetResponse> {
       return handleFeignErrors { schemaEditorApi.finalizeChangeset(request) }
+   }
+
+   @PutMapping("/api/repository/changeset/update")
+   fun updateChangeset(
+      @RequestBody request: UpdateChangesetRequest
+   ): Mono<UpdateChangesetResponse> {
+      return handleFeignErrors { schemaEditorApi.updateChangeset(request) }
    }
 
    @PostMapping("/api/repository/changesets")

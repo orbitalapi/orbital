@@ -11,6 +11,7 @@ import io.vyne.schema.publisher.loaders.FinalizeChangesetResponse
 import io.vyne.schema.publisher.loaders.SchemaPackageTransport
 import io.vyne.schema.publisher.loaders.SchemaSourcesAdaptor
 import io.vyne.schema.publisher.loaders.SetActiveChangesetResponse
+import io.vyne.schema.publisher.loaders.UpdateChangesetResponse
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageLoader
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageWriter
@@ -134,13 +135,23 @@ class GitSchemaPackageLoader(
          .map { FinalizeChangesetResponse(it) }
    }
 
+   override fun updateChangeset(name: String, newName: String): Mono<UpdateChangesetResponse> {
+      return mono {
+         GitOperations(workingDir.toFile(), config).renameCurrentBranch(newName)
+         currentBranch = newName
+      }
+         .map { UpdateChangesetResponse() }
+   }
+
    override fun getAvailableChangesets(): Mono<AvailableChangesetsResponse> {
       return mono { GitOperations(workingDir.toFile(), config).getBranches() }
-         .map { branchNames -> AvailableChangesetsResponse(branchNames
-            .map {
-               val prefix = config.updateFlowConfig?.branchPrefix ?: ""
-               val branchName = if (currentBranch == "main") currentBranch else currentBranch.substringAfter(prefix)
-               Changeset(it, branchName == it) })
+         .map { branchNames ->
+            AvailableChangesetsResponse(branchNames
+               .map {
+                  val prefix = config.updateFlowConfig?.branchPrefix ?: ""
+                  val branchName = if (currentBranch == "main") currentBranch else currentBranch.substringAfter(prefix)
+                  Changeset(it, branchName == it)
+               })
          }
    }
 

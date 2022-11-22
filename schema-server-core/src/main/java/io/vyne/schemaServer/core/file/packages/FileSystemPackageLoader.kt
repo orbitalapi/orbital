@@ -10,9 +10,9 @@ import io.vyne.schema.publisher.loaders.FinalizeChangesetResponse
 import io.vyne.schema.publisher.loaders.SchemaPackageTransport
 import io.vyne.schema.publisher.loaders.SchemaSourcesAdaptor
 import io.vyne.schema.publisher.loaders.SetActiveChangesetResponse
+import io.vyne.schema.publisher.loaders.UpdateChangesetResponse
 import io.vyne.schemaServer.core.adaptors.taxi.TaxiSchemaSourcesAdaptor
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
-import io.vyne.schemaServer.editor.SchemaEditResponse
 import lang.taxi.packages.TaxiPackageProject
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
@@ -136,6 +136,10 @@ class FileSystemPackageLoader(
    }
 
    override fun finalizeChangeset(name: String): Mono<FinalizeChangesetResponse> {
+      TODO("Not yet implemented")
+   }
+
+   override fun updateChangeset(name: String, newName: String): Mono<UpdateChangesetResponse> {
       TODO("Not yet implemented")
    }
 
