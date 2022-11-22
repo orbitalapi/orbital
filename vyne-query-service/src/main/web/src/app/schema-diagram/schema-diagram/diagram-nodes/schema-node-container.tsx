@@ -4,6 +4,7 @@ import { colors } from '../tailwind.colors';
 const tableInnerBorderColor = colors.slate['300'];
 export const modelNodeBorderColor = colors.lime['500'];
 export const serviceNodeBorderColor = colors.sky['400'];
+export const lineageDependencyColor = colors.yellow['500'];
 
 export const SchemaNodeContainer = styled.div`
   box-shadow: rgb(0 0 0 / 10%) 0 2px 5px 0;

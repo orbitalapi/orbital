@@ -137,7 +137,14 @@ function ApiNode(node: Node<MemberWithLinks>) {
           <th colSpan={3}>{service.serviceKind || 'Service'}</th>
         </tr>
         <tr className={'member-name'}>
-          <th colSpan={3}>{node.data.member.name.shortDisplayName}</th>
+          <th colSpan={3}>
+            <div className={'handle-container'}>
+              {/*For services, there's really only inbound links when we're mapping lineage*/}
+              <LinkHandle node={node} links={node.data.links.inputs} position={Position.Left} allowConnectionToFloat></LinkHandle>
+              {node.data.member.name.shortDisplayName}
+              <LinkHandle node={node} links={node.data.links.inputs} position={Position.Right}  allowConnectionToFloat></LinkHandle>
+            </div>
+          </th>
         </tr>
         <VersionTags></VersionTags>
 

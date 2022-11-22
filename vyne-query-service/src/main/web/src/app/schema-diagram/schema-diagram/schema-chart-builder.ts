@@ -14,7 +14,7 @@ import { Edge, Node, Position, XYPosition } from 'reactflow';
 import { splitOperationQualifiedName } from '../../service-view/service-view.component';
 import { CSSProperties } from 'react';
 
-function getNodeKind(member: SchemaMember): NodeType {
+export function getNodeKind(member: SchemaMember): NodeType {
   if (member.kind === 'TYPE') {
     return 'Model';
   } else if (member.kind === 'SERVICE') {
@@ -106,7 +106,7 @@ export function collectionOperations(schema: Schema): ServiceMember[] {
   })
 }
 
-function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: ServiceMember[], parent: { name: QualifiedName, nodeId: string, field: string } | null): Links {
+export function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: ServiceMember[], parent: { name: QualifiedName, nodeId: string, field: string } | null): Links {
   const typeNodeId = getNodeId('TYPE', typeName)
   const consumingOperations: Link[] = [];
 
@@ -137,7 +137,10 @@ function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: 
         targetNodeId: getNodeId('SERVICE', QualifiedName.from(nameParts.serviceName)),
         targetHandleId: HandleIds.serviceOperationInbound(QualifiedName.from(nameParts.serviceName), QualifiedName.from(nameParts.operationName)),
         targetNodeName: QualifiedName.from(nameParts.serviceName),
-        targetMemberType: 'OPERATION'
+        targetMemberType: 'OPERATION',
+
+        linkKind: 'entity'
+
       })
     }
   })
@@ -159,6 +162,8 @@ function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: 
         targetHandleId: HandleIds.modelInbound(typeName),
         targetNodeName: typeName,
         targetMemberType: 'TYPE',
+
+        linkKind: 'entity'
       })
     }
   })
@@ -189,7 +194,9 @@ function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: 
             targetNodeId: getNodeId('TYPE', typeInSchema.name),
             targetNodeName: typeInSchema.name,
             targetHandleId: HandleIds.modelFieldInbound(typeInSchema.name, fieldName),
-            targetMemberType: 'TYPE'
+            targetMemberType: 'TYPE',
+
+            linkKind: 'entity'
           } as Link;
           // We want an id where source -> destination and destination -> source provide the same id.
           // This is to prevent duplicate linkes
@@ -236,12 +243,28 @@ export class ServiceLinks implements HasChildLinks {
 
 function buildServiceLinks(service: Service, schema: Schema, operations: ServiceMember[]): ServiceLinks {
   const operationLinks: { [key: string]: Links } = {};
+
+  const consumedOperations = service.lineage?.consumes || [];
+  const serviceInboundLinks = consumedOperations.map(consumedOperation => {
+    const serviceQualifiedName = QualifiedName.from(consumedOperation.serviceName);
+    return {
+      sourceNodeId: getNodeId('SERVICE', serviceQualifiedName),
+      sourceHandleId: HandleIds.serviceOperationOutbound(serviceQualifiedName, QualifiedName.from(consumedOperation.operationName)),
+      sourceMemberType: 'OPERATION',
+
+      targetNodeId: getNodeId('SERVICE', service.name),
+      targetHandleId: HandleIds.serviceInbound(service.name),
+      targetMemberType: 'SERVICE',
+      linkKind: 'lineage'
+    } as Link
+  })
+
   collectAllServiceOperations(service)
     .forEach(serviceMember => {
       operationLinks[serviceMember.name] = buildOperationLinks(serviceMember, service)
     })
   return new ServiceLinks(
-    [],
+    serviceInboundLinks,
     [],
     operationLinks)
 }
@@ -261,6 +284,7 @@ export interface Link {
 
   // Optional, as we only set it if we wish to check for duplicates
   linkId?: string;
+  linkKind: 'entity' | 'lineage';
 }
 
 function buildOperationLinks(operation: ServiceMember, service: Service): Links {
@@ -278,8 +302,7 @@ function buildOperationLinks(operation: ServiceMember, service: Service): Links 
       targetHandleId: HandleIds.serviceOperationInbound(QualifiedName.from(nameParts.serviceName), QualifiedName.from(nameParts.operationName)),
       targetNodeName: QualifiedName.from(nameParts.serviceName),
       targetMemberType: 'OPERATION'
-
-    }
+    } as Link
   });
 
   let returnTypeName = arrayMemberTypeNameOrTypeNameFromName(operation.returnTypeName);
@@ -292,7 +315,9 @@ function buildOperationLinks(operation: ServiceMember, service: Service): Links 
     targetNodeId: getNodeId('TYPE', returnTypeName),
     targetHandleId: HandleIds.modelInbound(returnTypeName),
     targetNodeName: returnTypeName,
-    targetMemberType: 'TYPE'
+    targetMemberType: 'TYPE',
+
+    linkKind: 'entity'
   }]
   // Not sure if returning operation links here is helpful.
   return {
@@ -369,6 +394,13 @@ export class HandleIds {
 
   static serviceOperationOutbound(serviceName: QualifiedName, operationName: QualifiedName): string {
     return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}-outbound`
+  }
+
+  static serviceInbound(serviceName: QualifiedName): string {
+    return `service-${serviceName.fullyQualifiedName}-inbound`
+  }
+  static serviceOutbound(serviceName: QualifiedName): string {
+    return `service-${serviceName.fullyQualifiedName}-outbound`
   }
 
   static appendPositionToHandleId(handleId: string, position: Position): string {

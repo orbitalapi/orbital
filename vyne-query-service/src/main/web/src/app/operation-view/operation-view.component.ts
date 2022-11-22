@@ -53,7 +53,7 @@ import {isNullOrUndefined} from 'util';
         <button tuiLink [pseudo]="true" (click)="selectReturnType()"
                 *ngIf="editable">{{ displayName(operation.returnTypeName, showFullTypeNames) }}</button>
         <span class="mono-badge" *ngIf="!editable"><a
-          [routerLink]="['/types', navigationTargetForType(operation.returnTypeName)]">{{operation.returnTypeName.shortDisplayName}}</a></span>
+          [routerLink]="['/catalog', navigationTargetForType(operation.returnTypeName)]">{{operation.returnTypeName.shortDisplayName}}</a></span>
       </section>
 
 

@@ -4,6 +4,7 @@ module.exports = {
     "../src/app/landing-page/*.stories.@(js|jsx|ts|tsx)",
     "../src/app/schema-diagram/*.stories.@(js|jsx|ts|tsx)",
     "../src/app/type-list/**/*.stories.@(js|jsx|ts|tsx)",
+    "../src/app/type-viewer/**/*.stories.@(js|jsx|ts|tsx)",
   ],
   "addons": [
     "@storybook/addon-links",

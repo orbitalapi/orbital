@@ -15,6 +15,7 @@ import { isUndefined } from 'util';
 import { colors } from 'src/app/schema-diagram/schema-diagram/tailwind.colors';
 import { CSSProperties } from 'react';
 import {
+  lineageDependencyColor,
   modelNodeBorderColor,
   serviceNodeBorderColor
 } from 'src/app/schema-diagram/schema-diagram/diagram-nodes/schema-node-container';
@@ -138,11 +139,22 @@ export class SchemaChartController {
     }
   }
 
-  private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, sourceSchemaKind: SchemaMemberType, targetNode: Node<MemberWithLinks>, targetHandleId: string, targetSchemaKind: SchemaMemberType, linkId?: string): Edge {
+  private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, sourceSchemaKind: SchemaMemberType, targetNode: Node<MemberWithLinks>, targetHandleId: string, targetSchemaKind: SchemaMemberType, linkId?: string, linkKind?: string): Edge {
     let label: string;
     let markerStart, markerEnd: EdgeMarkerType;
     // Default color
     let lineColor: string = colors.gray['800'];
+
+    if (linkKind === 'lineage') {
+      label = 'Is consumed by'
+      markerEnd = {
+        type: MarkerType.Arrow,
+        width: 30,
+        height: 30,
+        color: lineageDependencyColor
+      };
+      lineColor = lineageDependencyColor;
+    }
     if (sourceSchemaKind === 'OPERATION' && targetSchemaKind === 'TYPE') {
       label = 'provides';
       markerEnd = {
@@ -152,8 +164,7 @@ export class SchemaChartController {
         color: serviceNodeBorderColor
       };
       lineColor = serviceNodeBorderColor;
-    }
-    if (sourceSchemaKind === 'TYPE' && targetSchemaKind === 'OPERATION') {
+    } else if (sourceSchemaKind === 'TYPE' && targetSchemaKind === 'OPERATION') {
       label = 'Is input'
       markerEnd = {
         type: MarkerType.Arrow,
@@ -171,7 +182,7 @@ export class SchemaChartController {
     style.stroke = lineColor;
     const edgeParams: EdgeParams = {
       sourceCanFloat: sourceSchemaKind === 'TYPE',
-      targetCanFloat: targetSchemaKind === 'TYPE',
+      targetCanFloat: targetSchemaKind === 'TYPE' ,
       label
     }
 
@@ -205,7 +216,15 @@ export class SchemaChartController {
       nodeLinks.filter(link => {
         return nodes.has(link.sourceNodeId) && nodes.has(link.targetNodeId)
       }).forEach(link => {
-        const edge = this.buildEdge(nodes.get(link.sourceNodeId), link.sourceHandleId, link.sourceMemberType, nodes.get(link.targetNodeId), link.targetHandleId, link.targetMemberType, link.linkId)
+        const edge = this.buildEdge(nodes.get(link.sourceNodeId),
+          link.sourceHandleId,
+          link.sourceMemberType,
+          nodes.get(link.targetNodeId),
+          link.targetHandleId,
+          link.targetMemberType,
+          link.linkId,
+          link.linkKind
+          )
         createdEdges.set(edge.id, edge);
       });
     })

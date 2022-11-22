@@ -1,6 +1,7 @@
 import { PrimitiveTypeNames } from './taxi';
 import { isNullOrUndefined, isString } from 'util';
 import { find } from 'rxjs/operators';
+import { splitOperationQualifiedName } from 'src/app/service-view/service-view.component';
 
 export function fqn(input: string): QualifiedName {
   return QualifiedName.from(input);
@@ -208,6 +209,13 @@ export function findSchemaMember(schema: Schema, memberName: string, anonymousTy
     return SchemaMember.fromType(type)
   }
 
+  if (memberName.includes('@@')) {
+    const operationName = splitOperationQualifiedName(memberName);
+    const service = schema.services.find(s => s.qualifiedName === operationName.serviceName)
+    return SchemaMember.fromService(service)
+      .find(m => m.kind === 'SERVICE')
+  }
+
   const service = schema.services.find(service => service.qualifiedName == memberName)
   if (service) {
     return SchemaMember.fromService(service)
@@ -337,6 +345,15 @@ export interface StreamOperation extends SchemaMemberNamed {
   parameters: Parameter[];
 }
 
+export interface ConsumedOperation {
+  serviceName: string;
+  operationName: string;
+}
+export interface ServiceLineage {
+  consumes: ConsumedOperation[]
+  stores: QualifiedName[]
+  metadata: Metadata[]
+}
 export interface Service extends SchemaMemberNamed, Named, Documented {
   qualifiedName: string; // This is messy, and needs fixing up.
   operations: Operation[];
@@ -345,7 +362,7 @@ export interface Service extends SchemaMemberNamed, Named, Documented {
   streamOperations: StreamOperation[];
   metadata: Metadata[];
   sourceCode?: VersionedSource[];
-  lineage?: any;
+  lineage?: ServiceLineage | null;
 
   serviceKind?: ServiceKind;
   // Version is an array, because we support multiple version types.
@@ -454,6 +471,11 @@ export class SchemaGraph {
     graph.mergeToMap(nodes, graph.nodes);
     graph.mergeToMap(links, graph.links);
     return graph;
+  }
+
+  static fromMap(input: { nodes: { [index: string]: SchemaGraphNode }, links: { [index: number]: SchemaGraphLink } }): SchemaGraph {
+
+    return new SchemaGraph(new Map(Object.entries(input.nodes)), new Map(Object.entries(input.links)) as any as Map<number,SchemaGraphLink>);
   }
 
   constructor(

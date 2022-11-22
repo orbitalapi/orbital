@@ -61,7 +61,7 @@
       <p class="help-text">This chart shows how {{type.name.shortDisplayName}} data flows between data sources and
         systems.</p>
       <p class="help-text">{{type.name.shortDisplayName}} flows between these services outside of Vyne.</p>
-      <app-service-lineage-graph-container [type]="schemaMember"></app-service-lineage-graph-container>
+      <app-service-lineage-graph-container [type]="type"></app-service-lineage-graph-container>
     </div>
     <div class="chart-container" *ngIf="chartDisplayMode === 'links'">
       <p class="help-text">This chart shows how {{type.name.shortDisplayName}} links between data sources to make
