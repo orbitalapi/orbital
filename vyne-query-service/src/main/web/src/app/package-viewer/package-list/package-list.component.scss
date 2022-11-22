@@ -40,3 +40,16 @@
     padding-bottom: 0.4rem;
   }
 }
+
+.icon-bar {
+  margin-top: 0.7rem;
+  opacity: 0.8;
+  img {
+    margin-right: 1rem;
+  }
+  .spacer {
+    flex-grow: 1;
+  }
+  display: flex;
+  align-items: center;
+}

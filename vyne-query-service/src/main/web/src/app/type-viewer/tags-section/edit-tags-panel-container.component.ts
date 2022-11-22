@@ -4,6 +4,7 @@ import { Metadata, QualifiedName, setOrReplaceMetadata, Type } from '../../servi
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { CommitMode } from '../type-viewer.component';
+import { TypeEditorService } from 'src/app/services/type-editor.service';
 
 
 export interface EditTagsPanelParams {
@@ -26,6 +27,7 @@ export class EditTagsPanelContainerComponent {
   errorMessage: string;
 
   constructor(private typeService: TypesService,
+              private typeEditorService: TypeEditorService,
               private snackBar: MatSnackBar,
               public dialogRef: MatDialogRef<EditTagsPanelContainerComponent>,
               @Inject(MAT_DIALOG_DATA) public params: EditTagsPanelParams) {
@@ -50,7 +52,7 @@ export class EditTagsPanelContainerComponent {
   }
 
   private commitTags($event: Metadata[]) {
-    this.typeService.setTypeMetadata(this.params.type, this.params.type.metadata)
+    this.typeEditorService.setTypeMetadata(this.params.type, this.params.type.metadata)
       .subscribe(result => {
           this.snackBar.open(`Tags for ${this.params.type.name.shortDisplayName} updated successfully`, 'Dismiss', {
             duration: 5000

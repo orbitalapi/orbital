@@ -3,6 +3,7 @@ package io.vyne.schemaServer.core.file.packages
 import io.vyne.PackageIdentifier
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
+import io.vyne.schema.publisher.PublisherType
 import io.vyne.schema.publisher.loaders.AddChangesToChangesetResponse
 import io.vyne.schema.publisher.loaders.AvailableChangesetsResponse
 import io.vyne.schema.publisher.loaders.CreateChangesetResponse
@@ -12,7 +13,6 @@ import io.vyne.schema.publisher.loaders.SchemaSourcesAdaptor
 import io.vyne.schema.publisher.loaders.SetActiveChangesetResponse
 import io.vyne.schemaServer.core.adaptors.taxi.TaxiSchemaSourcesAdaptor
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
-import io.vyne.schemaServer.editor.SchemaEditResponse
 import lang.taxi.packages.TaxiPackageProject
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
@@ -38,6 +38,7 @@ class FileSystemPackageLoader(
    private val transportDecorator: SchemaPackageTransport? = null
 ) : SchemaPackageTransport {
 
+   override val publisherType: PublisherType = PublisherType.FileSystem
    private val logger = KotlinLogging.logger {}
    private val fileEvents: Flux<List<FileSystemChangeEvent>> = fileMonitor.startWatching()
 
@@ -57,8 +58,8 @@ class FileSystemPackageLoader(
       get() {
          return synchronized(this) {
             if (_packageIdentifier == null) {
-               loadNow().block()
-               _packageIdentifier!!
+               val loaded = loadNow().block()
+               _packageIdentifier ?: error("The project at ${config.path} does not have a valid taxi.conf file")
             } else {
                _packageIdentifier!!
             }

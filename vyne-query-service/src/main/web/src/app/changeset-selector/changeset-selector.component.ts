@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { TuiIdentityMatcher } from '@taiga-ui/cdk';
-import { Changeset, TypesService } from '../services/types.service';
+import { Changeset, ChangesetService } from 'src/app/services/changeset.service';
 
 @Component({
   selector: 'app-changeset-selector',
@@ -9,21 +8,22 @@ import { Changeset, TypesService } from '../services/types.service';
 })
 export class ChangesetSelectorComponent implements OnInit {
 
-  availableChangesets$ = this.typesService.availableChangesets$;
+  availableChangesets$ = this.changesetService.availableChangesets$;
 
   value: Changeset | null = null;
 
-  constructor(private typesService: TypesService) { }
+  constructor(private changesetService: ChangesetService) {
+  }
 
   ngOnInit(): void {
-    this.typesService.activeChangeset$
+    this.changesetService.activeChangeset$
       .subscribe(value => {
         this.value = value;
       });
   }
 
   selectChangeset(changeset: Changeset): void {
-    this.typesService.setActiveChangeset(changeset)
+    this.changesetService.setActiveChangeset(changeset)
       .subscribe(() =>
         location.reload() // TODO This is only needed due to the fact that schema updates are not reflected on the page
       );

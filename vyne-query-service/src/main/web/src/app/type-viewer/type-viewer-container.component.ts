@@ -6,13 +6,14 @@ import { Schema, Type } from '../services/schema';
 import { buildInheritable, Inheritable } from '../inheritence-graph/inheritance-graph.component';
 import { Observable } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { ChangesetService } from 'src/app/services/changeset.service';
 
 @Component({
   selector: 'app-type-viewer-container',
   styleUrls: ['./type-viewer-container.component.scss'],
   template: `
     <app-header-bar title="Catalog">
-      <button tuiButton size="m" (click)="commitChanges()" *ngIf="hasUncommittedChanges()">Propose this draft</button>
+      <button tuiButton size="m" (click)="commitChanges()" *ngIf="hasUncommittedChanges() | async">Propose this draft</button>
       <app-changeset-selector></app-changeset-selector>
     </app-header-bar>
     <app-type-viewer [type]="type"
@@ -39,6 +40,7 @@ export class TypeViewerContainerComponent implements OnInit {
   constructor(
     private typeService: TypesService,
     private activeRoute: ActivatedRoute,
+    private changesetService: ChangesetService,
     private snackBar: MatSnackBar,
   ) {
     this.schema$ = typeService.getTypes();
@@ -91,12 +93,14 @@ export class TypeViewerContainerComponent implements OnInit {
     });
   }
 
-  hasUncommittedChanges() {
-    return this.typeService.activeChangeset$.value.name !== mainBranchName;
+  hasUncommittedChanges():Observable<boolean> {
+    return this.changesetService.activeChangeset$.pipe(
+      map(changeset => changeset.name !== mainBranchName)
+    )
   }
 
   commitChanges() {
-    this.typeService.finalizeChangeset().subscribe((response) => {
+    this.changesetService.finalizeChangeset().subscribe((response) => {
       this.snackBar.open('Changes pushed', 'Dismiss', { duration: 10000 });
       if (response.link !== null) {
         const didTabOpenSuccessfully = window.open(response.link, '_blank');

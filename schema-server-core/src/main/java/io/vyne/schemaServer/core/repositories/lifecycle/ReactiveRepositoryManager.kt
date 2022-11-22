@@ -21,9 +21,12 @@ class ReactiveRepositoryManager(
    private val eventSource: RepositorySpecLifecycleEventSource,
    private val eventDispatcher: RepositoryLifecycleEventDispatcher
 ) {
-   fun getLoader(packageIdentifier: PackageIdentifier): SchemaPackageTransport {
-      val loader = loaders
+   fun getLoaderOrNull(packageIdentifier: PackageIdentifier): SchemaPackageTransport? {
+      return loaders
          .firstOrNull { it.packageIdentifier.unversionedId == packageIdentifier.unversionedId }
+   }
+   fun getLoader(packageIdentifier: PackageIdentifier): SchemaPackageTransport {
+      val loader = getLoaderOrNull(packageIdentifier)
          ?: error("No file loader exists for package ${packageIdentifier.unversionedId}")
 
       if (!loader.isEditable()) {

@@ -5,6 +5,8 @@ import io.vyne.ParsedPackage
 import io.vyne.UriSafePackageIdentifier
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.publisher.ExpiringSourcesStore
+import io.vyne.schema.publisher.PublisherType
+import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
 import io.vyne.schemaServer.packages.PackagesServiceApi
 import io.vyne.schemaServer.packages.SourcePackageDescription
 import io.vyne.schemas.DefaultPartialSchema
@@ -19,7 +21,8 @@ import reactor.core.publisher.Mono
 @RestController
 class PackageService(
    private val expiringSourcesStore: ExpiringSourcesStore,
-   private val schemaStore: SchemaStore
+   private val schemaStore: SchemaStore,
+   private val repositoryManager: ReactiveRepositoryManager
 ) : PackagesServiceApi {
 
    @GetMapping("/api/packages/{packageUri}")
@@ -33,12 +36,18 @@ class PackageService(
    @GetMapping("/api/packages")
    override fun listPackages(): Mono<List<SourcePackageDescription>> {
       val packages = schemaStore.schemaSet.parsedPackages.map { parsedPackage ->
+         val loader = repositoryManager.getLoaderOrNull(parsedPackage.identifier)
+         val publisherType = loader?.publisherType ?: PublisherType.Pushed
+         val editable = loader?.isEditable() ?: false
+
          SourcePackageDescription(
             parsedPackage.identifier,
             expiringSourcesStore.getPublisherHealth(parsedPackage.identifier),
             parsedPackage.sources.size,
             0, // TODO : Warning count
             parsedPackage.sourcesWithErrors.size,
+            publisherType,
+            editable
          )
       }
       return Mono.just(packages)

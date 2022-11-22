@@ -3,7 +3,8 @@ import { TuiDialogContext } from '@taiga-ui/core';
 import { POLYMORPHEUS_CONTEXT } from '@tinkoff/ng-polymorpheus';
 import { FormControl } from '@angular/forms';
 import { map } from 'rxjs/operators';
-import { fakePackageIdentifier, TypesService } from '../services/types.service';
+import { Changeset, ChangesetService } from 'src/app/services/changeset.service';
+import { PackageIdentifier } from 'src/app/package-viewer/packages.service';
 
 @Component({
   selector: 'app-changeset-name-dialog',
@@ -13,24 +14,27 @@ import { fakePackageIdentifier, TypesService } from '../services/types.service';
 export class ChangesetNameDialogComponent {
 
   nameControl = new FormControl();
-  hasError = false;
+  errorMessage: string | null = null;
 
   constructor(
     @Inject(POLYMORPHEUS_CONTEXT)
-    public context: TuiDialogContext<string, void>,
-    private typesService: TypesService,
-    ) { }
+    public context: TuiDialogContext<Changeset, PackageIdentifier>,
+    private changesetServoce: ChangesetService,
+  ) {
+  }
 
   ngOnInit(): void {
-    this.nameControl.valueChanges.subscribe(() => this.hasError = false);
+    this.nameControl.valueChanges.subscribe(() => this.errorMessage = null);
   }
 
   save(name: string) {
-    this.typesService
-      .createChangeset(name)
+    this.changesetServoce
+      .createChangeset(name, this.context.data)
       .subscribe(
-        () => this.context.completeWith(name),
-        error => this.hasError = true // TODO Deduce what was wrong instead of defaulting to "name already exists"
+        changesetResponse => this.context.completeWith(changesetResponse.changeset),
+        error => {
+          this.errorMessage = error.error.message
+        }
       );
   }
 }

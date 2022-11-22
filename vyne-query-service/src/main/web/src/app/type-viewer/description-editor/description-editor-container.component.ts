@@ -4,6 +4,8 @@ import {TypesService} from '../../services/types.service';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {CommitMode} from '../type-viewer.component';
 import {debounceTime} from 'rxjs/operators';
+import { TypeEditorService } from 'src/app/services/type-editor.service';
+import { ChangesetService } from 'src/app/services/changeset.service';
 
 @Component({
   selector: 'app-description-editor-container',
@@ -49,7 +51,7 @@ export class DescriptionEditorContainerComponent {
 
   typeDocChangeHandler: EventEmitter<string>;
 
-  constructor(private typeService: TypesService, private snackBar: MatSnackBar) {
+  constructor(private changesetService: ChangesetService, private snackBar: MatSnackBar) {
     this.typeDocChangeHandler = new EventEmitter<string>();
     this.typeDocChangeHandler
       .pipe(
@@ -87,12 +89,12 @@ export class DescriptionEditorContainerComponent {
     console.log('Saving changes');
     // TODO :  Sanitize and escape any [[ or ]], as these are the code markers
     const typeDoc = `[[ ${newContent} ]]`;
-
+    this.type.typeDoc = newContent;
     const namespaceDeclaration = (this.type.name.namespace) ? `namespace ${this.type.name.namespace}\n\n` : '';
     // eslint-disable-next-line max-len
     const taxi = `import ${this.type.name.fullyQualifiedName}\n\n${namespaceDeclaration}${typeDoc} \ntype extension ${this.type.name.name} {}`;
     this.loading = true;
-    this.typeService.addChangesToChangeset(this.type.name, 'TypeDoc', taxi)
+    this.changesetService.addChangesToChangeset(this.type.name, 'TypeDoc', taxi)
       .subscribe(() => {
         this.loading = false;
         this.snackBar.open('Draft saved', 'Dismiss', {duration: 3000});

@@ -1,3 +1,14 @@
+@import "src/theme";
+
 .error {
-  color: red;
+  margin: 1rem 0;
+  color: $error-dark;
+}
+
+.button-bar {
+  margin-top: 1rem;
+  display: flex;
+  .spacer {
+    flex-grow: 1;
+  }
 }

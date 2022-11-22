@@ -2,6 +2,7 @@ package io.vyne.schemaServer.core.git
 
 import io.vyne.schemaServer.core.adaptors.PackageLoaderSpec
 import io.vyne.schemaServer.core.adaptors.taxi.TaxiPackageLoaderSpec
+import io.vyne.schemaServer.core.git.providers.GitHostingProvider
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
@@ -23,7 +24,7 @@ data class GitSshAuth(
 
 data class GitUpdateFlowConfig(
    val branchPrefix: String = "schema-updates/",
-   val repoName: String = "RoopeHakulinen/taxonomy-test" // TODO
+   val hostingProvider: GitHostingProvider = GitHostingProvider.Github
 )
 
 data class GitRepositoryConfig(
@@ -32,8 +33,8 @@ data class GitRepositoryConfig(
    val branch: String,
    val sshAuth: GitSshAuth? = null,
    val credentials: GitCredentials? = null,
-   val isEditable: Boolean = true,
-   val updateFlowConfig : GitUpdateFlowConfig? = GitUpdateFlowConfig(), // TODO Set to null
+   val pullRequestConfig : GitUpdateFlowConfig? = null,
+   val isEditable: Boolean = pullRequestConfig != null,
    /**
     * The Path within the repository
     */

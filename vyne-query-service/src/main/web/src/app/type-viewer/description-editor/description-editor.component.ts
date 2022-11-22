@@ -10,27 +10,29 @@ import { FormControl } from '@angular/forms';
       <div class="title-row">
         <h4>Description</h4>
         <mat-icon (click)="isEditModeOn = true" *ngIf="!isEditModeOn">edit</mat-icon>
-      </div>
-      <div class="info-warning visible-on-changes" [class.has-changes]="hasChanges">
-        <img src="assets/img/info.svg">
-        <span>You have unsaved changes</span>
+        <div class="spacer"></div>
+        <div class="info-warning visible-on-changes" [class.has-changes]="hasChanges">
+          <img src="assets/img/tabler/info-circle.svg">
+          <span>You have unsaved changes</span>
+        </div>
       </div>
       <div *ngIf="isEditModeOn">
         <tui-text-area
-            [formControl]="descriptionControl"
-            (change)="pushChange($event)"
-        >{{placeholder}}</tui-text-area>
+          [formControl]="descriptionControl"
+          (change)="pushChange($event)"
+        ></tui-text-area>
       </div>
-      <div class="button-bar visible-on-changes" [class.has-changes]="hasChanges" *ngIf="showControlBar && hasChanges">
-        <button mat-button (click)="isEditModeOn = false">Cancel</button>
+      <div class="button-bar" *ngIf="showControlBar && isEditModeOn">
+        <button mat-button (click)="cancelChanges()">Cancel</button>
         <button mat-raised-button color="primary" (click)="saveChanges()">Save changes</button>
       </div>
+      <markdown [data]="documentationSource.typeDoc" *ngIf="!isEditModeOn"></markdown>
     </div>
-    <markdown [data]="documentationSource.typeDoc" *ngIf="!editable"></markdown>
+
   `,
   styleUrls: ['./description-editor.component.scss'],
 })
-export class DescriptionEditorComponent implements OnInit, OnChanges {
+export class DescriptionEditorComponent implements OnInit {
   @Input()
   showControlBar = true;
 
@@ -62,11 +64,13 @@ export class DescriptionEditorComponent implements OnInit, OnChanges {
 
 
   get hasChanges(): boolean {
-    return this.editable && this.changes$.value !== '';
+    return this.editable && this.descriptionControl.value !== this.documentationSource.typeDoc;
   }
 
-  ngOnChanges(): void {
-    this.changes$.next('');
+  cancelChanges(): void {
+    this.changes$.next(this.documentationSource.typeDoc);
+    this.isEditModeOn = false;
+    this.descriptionControl.reset(this.documentationSource.typeDoc);
   }
 
   changes$ = new BehaviorSubject<string>('');

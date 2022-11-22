@@ -1,27 +1,31 @@
 <h2>Changeset</h2>
-<div class="error" *ngIf="hasError">
-  <span>The name you selected is already taken, please select another name.</span>
-</div>
 <tui-input [formControl]="nameControl">
   Specify a title for the changes you're proposing.
   <input
     tuiTextfield
   />
 </tui-input>
-<p>
+<div class="error-message-box" *ngIf="errorMessage">
+  {{errorMessage}}
+</div>
+
+<div class="button-bar">
   <button
     tuiButton
     type="button"
     class="tui-space_right-3"
     size="m"
+    appearance="outline"
     (click)="context.completeWith(null)">
     Cancel
   </button>
+  <span class="spacer"></span>
   <button
     tuiButton
     type="button"
     size="m"
+    appearance="primary"
     (click)="save(nameControl.value)">
     Done
   </button>
-</p>
+</div>

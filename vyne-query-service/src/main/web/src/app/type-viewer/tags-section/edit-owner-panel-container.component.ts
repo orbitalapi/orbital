@@ -12,6 +12,7 @@ import {
 } from '../../data-catalog/data-catalog.models';
 import {isNullOrUndefined} from 'util';
 import {CommitMode} from '../type-viewer.component';
+import { TypeEditorService } from 'src/app/services/type-editor.service';
 
 
 export interface EditOwnerPanelParams {
@@ -39,6 +40,7 @@ export class EditOwnerPanelContainerComponent {
 
   constructor(private typeService: TypesService,
               private userInfoService: UserInfoService,
+              private typeEditorService: TypeEditorService,
               private snackBar: MatSnackBar,
               public dialogRef: MatDialogRef<EditOwnerPanelContainerComponent>,
               @Inject(MAT_DIALOG_DATA) public params: EditOwnerPanelParams) {
@@ -65,7 +67,7 @@ export class EditOwnerPanelContainerComponent {
   }
 
   private commitUser(user: VyneUser) {
-    this.typeService.setTypeDataOwner(this.params.type, user)
+    this.typeEditorService.setTypeDataOwner(this.params.type, user)
       .subscribe(result => {
           this.snackBar.open(`Data owner for ${this.params.type.name.shortDisplayName} updated successfully`, 'Dismiss', {
             duration: 5000

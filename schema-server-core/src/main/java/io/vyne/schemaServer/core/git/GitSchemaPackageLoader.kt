@@ -3,6 +3,7 @@ package io.vyne.schemaServer.core.git
 import io.vyne.PackageIdentifier
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
+import io.vyne.schema.publisher.PublisherType
 import io.vyne.schema.publisher.loaders.AddChangesToChangesetResponse
 import io.vyne.schema.publisher.loaders.AvailableChangesetsResponse
 import io.vyne.schema.publisher.loaders.Changeset
@@ -20,6 +21,7 @@ import kotlinx.coroutines.reactor.mono
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 import java.net.URI
 import java.nio.file.FileSystems
 import java.nio.file.Path
@@ -35,6 +37,8 @@ class GitSchemaPackageLoader(
    val fileMonitor: ReactiveFileSystemMonitor = ReactiveWatchingFileSystemMonitor(workingDir, listOf(".git")),
    val gitPollFrequency: Duration = Duration.ofSeconds(30),
 ) : SchemaPackageTransport {
+
+   override val publisherType: PublisherType = PublisherType.GitRepo
 
    object PollEvent
 
@@ -85,7 +89,7 @@ class GitSchemaPackageLoader(
 
    // TODO Remove this function and replace its usage with ${config.description}
    private fun getDescriptionText(): String {
-      return "$config.name - $config.uri / $currentBranch"
+      return "${config.name} - ${config.uri} / $currentBranch"
    }
 
    override fun listUris(): Flux<URI> {
@@ -113,10 +117,10 @@ class GitSchemaPackageLoader(
 
    override fun createChangeset(name: String): Mono<CreateChangesetResponse> {
       return mono {
-         currentBranch = name
-         GitOperations(workingDir.toFile(), config).createBranch(name)
+         val createdBranchName = GitOperations(workingDir.toFile(), config).createBranch(name)
+         currentBranch = createdBranchName
       }
-         .map { CreateChangesetResponse(it) }
+         .map { CreateChangesetResponse(Changeset(name, true, packageIdentifier)) }
    }
 
    override fun addChangesToChangeset(name: String, edits: List<VersionedSource>): Mono<AddChangesToChangesetResponse> {
@@ -129,26 +133,29 @@ class GitSchemaPackageLoader(
 
    override fun finalizeChangeset(name: String): Mono<FinalizeChangesetResponse> {
       return mono { GitOperations(workingDir.toFile(), config).raisePr(name, "", "Martin Pitt") }
-         .map { FinalizeChangesetResponse(it) }
+         .map { link -> FinalizeChangesetResponse(link, Changeset(name, true, packageIdentifier)) }
    }
 
    override fun getAvailableChangesets(): Mono<AvailableChangesetsResponse> {
       return mono { GitOperations(workingDir.toFile(), config).getBranches() }
-         .map { branchNames -> AvailableChangesetsResponse(branchNames
-            .map {
-               val prefix = config.updateFlowConfig?.branchPrefix ?: ""
-               val branchName = if (currentBranch == "main") currentBranch else currentBranch.substringAfter(prefix)
-               Changeset(it, branchName == it) })
+         .map { branchNames ->
+            AvailableChangesetsResponse(branchNames
+               .map { branchName ->
+                  val prefix = config.pullRequestConfig?.branchPrefix ?: ""
+                  val changesetBranch = if (currentBranch == "main") currentBranch else currentBranch.substringAfter(prefix)
+                  Changeset(branchName, changesetBranch == branchName, packageIdentifier = packageIdentifier)
+               })
          }
    }
 
    override fun setActiveChangeset(branchName: String): Mono<SetActiveChangesetResponse> {
       return mono {
-         val resolvedBranchName = if (branchName == config.branch) config.branch else config.updateFlowConfig?.branchPrefix + branchName
+         val resolvedBranchName =
+            if (branchName == config.branch) config.branch else config.pullRequestConfig?.branchPrefix + branchName
          currentBranch = resolvedBranchName
          syncNow()
       }
-         .map { SetActiveChangesetResponse(true) }
+         .map { SetActiveChangesetResponse(Changeset(branchName, true, packageIdentifier)) }
    }
 
    override val packageIdentifier: PackageIdentifier

@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 
 private val logger = KotlinLogging.logger {}
 
@@ -49,9 +50,13 @@ class SchemaEditorService(
    override fun createChangeset(
       @RequestBody request: StartChangesetRequest
    ): Mono<CreateChangesetResponse> {
-      logger.info { "Received request to start a changeset with name ${request.changesetName}" }
-      val loader = repositoryManager.getLoader(request.packageIdentifier)
-      return loader.createChangeset(request.changesetName)
+      return Mono.just(request)
+         .subscribeOn(Schedulers.boundedElastic())
+         .flatMap {
+            logger.info { "Received request to start a changeset with name ${request.changesetName}" }
+            val loader = repositoryManager.getLoader(request.packageIdentifier)
+            loader.createChangeset(request.changesetName)
+         }
    }
 
    @PostMapping("/api/repository/changeset/add")

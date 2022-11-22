@@ -31,7 +31,8 @@ class SchemaEditorServiceTest {
       val editor = SchemaEditorService(repositoryManager, SimpleSchemaStore(SchemaSet.from(schema, 0)))
       editor.updateAnnotationsOnType(
          "com.foo.Bar", UpdateTypeAnnotationRequest(
-            listOf(Metadata("Documented".fqn()), Metadata("com.foo.Sensitive".fqn()))
+            listOf(Metadata("Documented".fqn()), Metadata("com.foo.Sensitive".fqn())),
+            "test"
          )
       ).block(Duration.ofMillis(1000))
 
@@ -59,7 +60,8 @@ type extension Bar {}""".withoutWhitespace()
       val editor = SchemaEditorService(repositoryManager, SimpleSchemaStore(SchemaSet.from(schema, 0)))
       editor.updateAnnotationsOnType(
          "com.foo.Bar", UpdateTypeAnnotationRequest(
-            listOf(Metadata("Documented".fqn()), Metadata("com.foo.Sensitive".fqn()))
+            listOf(Metadata("Documented".fqn()), Metadata("com.foo.Sensitive".fqn())),
+            "test"
          )
       ).block()
 

@@ -1,4 +1,4 @@
-<mat-form-field appearance="fill">
+<mat-form-field appearance="fill" *ngIf="(availableChangesets$ | async)?.length > 0">
   <mat-label>Draft</mat-label>
   <mat-select [value]="value.name">
     <mat-option

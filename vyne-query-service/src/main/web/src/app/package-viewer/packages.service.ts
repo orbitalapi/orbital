@@ -37,6 +37,8 @@ export interface PackageMetadata {
   dependencies: PackageIdentifier[];
 }
 
+export type PublisherType = 'GitRepo' | 'FileSystem' | 'Pushed';
+
 export interface SourcePackageDescription {
   identifier: PackageIdentifier;
   health: PublisherHealth;
@@ -45,7 +47,8 @@ export interface SourcePackageDescription {
   errorCount: number;
 
   uriPath: string;
-
+  editable: boolean;
+  publisherType: PublisherType
 }
 
 export interface PublisherHealth {

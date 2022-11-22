@@ -4,13 +4,14 @@ import io.vyne.PackageIdentifier
 import io.vyne.PackageMetadata
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
+import io.vyne.schema.publisher.PublisherType
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.net.URI
 
 
 data class CreateChangesetResponse(
-   val success: Boolean
+   val changeset: Changeset
 )
 
 data class AddChangesToChangesetResponse(
@@ -18,7 +19,8 @@ data class AddChangesToChangesetResponse(
 )
 
 data class FinalizeChangesetResponse(
-   val link: String? = null
+   val link: String? = null,
+   val changeset: Changeset
 )
 
 data class AvailableChangesetsResponse(
@@ -27,11 +29,12 @@ data class AvailableChangesetsResponse(
 
 data class Changeset(
    val name: String,
-   val isActive: Boolean
+   val isActive: Boolean,
+   val packageIdentifier: PackageIdentifier
 )
 
 data class SetActiveChangesetResponse(
-   val success: Boolean
+   val changeset: Changeset
 )
 
 /**
@@ -63,6 +66,8 @@ interface SchemaPackageTransport {
    fun setActiveChangeset(branchName: String): Mono<SetActiveChangesetResponse>
 
    val packageIdentifier: PackageIdentifier
+
+   val publisherType: PublisherType
 }
 
 interface SchemaSourcesAdaptor {

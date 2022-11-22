@@ -4,6 +4,7 @@ import io.vyne.PackageIdentifier
 import io.vyne.ParsedPackage
 import io.vyne.UriSafePackageIdentifier
 import io.vyne.schema.publisher.PublisherHealth
+import io.vyne.schema.publisher.PublisherType
 import io.vyne.schemas.DefaultPartialSchema
 import io.vyne.schemas.PartialSchema
 import org.springframework.web.bind.annotation.GetMapping
@@ -17,11 +18,11 @@ data class SourcePackageDescription(
    val sourceCount: Int,
    val warningCount: Int,
    val errorCount: Int,
+   val publisherType: PublisherType,
+   val editable: Boolean
    // TODO : Other things for visualisation
 ) {
    val uriPath: String = PackageIdentifier.toUriSafeId(identifier)
-
-
 }
 
 

@@ -32,32 +32,15 @@ import { ENVIRONMENT, Environment } from './environment';
 import { TuiDialogService } from '@taiga-ui/core';
 import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
 import { ChangesetNameDialogComponent } from '../changeset-name-dialog/changeset-name-dialog.component';
-
-// TODO How to generate this?
-export const fakePackageIdentifier = {
-  organisation: 'io.vyne',
-  name: 'films',
-  version: 'next-minor',
-};
+import { PackageIdentifier, PackagesService } from 'src/app/package-viewer/packages.service';
+import { Changeset } from 'src/app/services/changeset.service';
 
 export const mainBranchName = 'main';
-
-// TODO The DI has been set up weirdly so that a new instance of the service is created for each module/component that injects it.
-// TODO Cannot default to main..
-(window as any)._activeChangeset$ = new BehaviorSubject<Changeset>({ name: mainBranchName, isActive: true });
-(window as any)._availableChangesets$ = new BehaviorSubject<Changeset[]>([]);
 
 @Injectable({
   providedIn: 'root',
 })
 export class TypesService {
-  get activeChangeset$(): BehaviorSubject<Changeset> {
-    return (window as any)._activeChangeset$;
-  }
-  get availableChangesets$(): BehaviorSubject<Changeset[]> {
-    return (window as any)._availableChangesets$;
-  }
-
   private schema: Schema;
   private schemaSubject: Subject<Schema> = new ReplaySubject(1);
   private schemaRequest: Observable<Schema>;
@@ -67,9 +50,9 @@ export class TypesService {
     @Inject(TuiDialogService) private readonly dialogService: TuiDialogService,
     @Inject(Injector) private readonly injector: Injector,
     private http: HttpClient,
-    private schemaNotificationService: SchemaNotificationService) {
+    private schemaNotificationService: SchemaNotificationService,
 
-    this.updateChangelogs();
+    ) {
 
     this.getTypes().subscribe(schema => {
       this.schema = schema;
@@ -84,16 +67,6 @@ export class TypesService {
       });
   }
 
-  private updateChangelogs() {
-    this.getAvailableChangesets().pipe(
-      map(changesets => {
-        return changesets.find(changeset => changeset.isActive)!!;
-      }),
-    ).subscribe(value => this.activeChangeset$.next(value));
-
-    this.getAvailableChangesets()
-      .subscribe(value => this.availableChangesets$.next(value));
-  }
 
   validateSchema(schema: string): Observable<Type[]> {
     return this.http.post<Type[]>(`${this.environment.serverUrl}/api/schemas/taxi/validate`, schema);
@@ -301,19 +274,6 @@ export class TypesService {
     return this.submitSchema(request);
   }
 
-  ensureChangesetExists(): Observable<string> {
-    if (this.activeChangeset$.value.name !== mainBranchName) {
-      return of(this.activeChangeset$.value.name);
-    }
-
-    return this.dialogService
-      .open<string | null>(new PolymorpheusComponent(ChangesetNameDialogComponent, this.injector));
-  }
-
-  sanitizeChangesetName(name: string): string {
-    return name.replaceAll(' ', '-').replace(/\W/g, '').toLowerCase();
-  }
-
   createSchemaPreview(request: SchemaPreviewRequest): Observable<SchemaPreview> {
     return this.http.post<SchemaPreview>(
       `${this.environment.serverUrl}/api/schemas/preview`,
@@ -332,85 +292,11 @@ export class TypesService {
     );
   }
 
-  createChangeset(name: string): Observable<any> { // TODO Typing
-    const sanitizedName = this.sanitizeChangesetName(name);
-    return this.http.post<any>(
-      `${this.environment.serverUrl}/api/repository/changeset/create`,
-      { changesetName: sanitizedName, packageIdentifier: fakePackageIdentifier },
-    ).pipe(tap(() => {
-      this.updateChangelogs();
-      console.log('changeset created', sanitizedName);
-    }));
-  }
-
-  addChangesToChangeset(typeName: QualifiedName, schemaNameSuffix: string, schemaText: string): Observable<VersionedSource> {
-    return this.ensureChangesetExists()
-      .pipe(
-        switchMap(changesetName => {
-          const request: AddChangesToChangesetRequest = {
-            edits: [
-              {
-                // TODO Add typeName.namespace below ??
-                name: `${typeName.fullyQualifiedName}.${typeName.name}${schemaNameSuffix}`,
-                content: schemaText,
-                version: 'next-minor',
-              },
-            ],
-            packageIdentifier: fakePackageIdentifier,
-            changesetName: changesetName,
-          };
-          return this.http.post<VersionedSource>(
-            `${this.environment.serverUrl}/api/repository/changeset/add`,
-            request,
-          );
-
-        }));
-  }
-
-  finalizeChangeset(): Observable<FinalizeChangesetResponse> {
-    return this.ensureChangesetExists()
-      .pipe(
-        switchMap(changesetName => {
-          const body: FinalizeChangesetRequest = { changesetName, packageIdentifier: fakePackageIdentifier };
-          return this.http.post<FinalizeChangesetResponse>(
-            `${this.environment.serverUrl}/api/repository/changeset/finalize`,
-            body,
-          );
-        }),
-        tap(() => this.activeChangeset$.next({ name: 'main', isActive: true })),
-      );
-  }
 
   getAllMetadata(): Observable<QualifiedName[]> {
     return this.http.get<QualifiedName[]>(`${this.environment.serverUrl}/api/schema/annotations`);
   }
 
-  setTypeDataOwner(type: Type, owner: VyneUser): Observable<Type> {
-    return this.ensureChangesetExists()
-      .pipe(
-        switchMap(() => this.http.post<Type>(`${this.environment.serverUrl}/api/types/${type.name.fullyQualifiedName}/owner`,
-          {
-            id: owner.userId,
-            name: owner.name,
-            changesetName: this.activeChangeset$.value.name,
-          } as UpdateDataOwnerRequest,
-        )),
-        tap(() => this.updateChangelogs()),
-      );
-  }
-
-  setTypeMetadata(type: Type, metadata: Metadata[]): Observable<Type> {
-    return this.ensureChangesetExists()
-      .pipe(
-        switchMap(() => this.http.post<Type>(`${this.environment.serverUrl}/api/types/${type.name.fullyQualifiedName}/annotations`,
-          {
-            changesetName: this.activeChangeset$.value.name,
-            annotations: metadata,
-          },
-        )),
-        tap(() => this.updateChangelogs()),
-      );
-  }
 
   /**
    * Returns ModelFormatSpec metadata for the given type.
@@ -427,28 +313,6 @@ export class TypesService {
   validateTaxi(taxi: string): Observable<SchemaSubmissionResult> {
     return this.http.post<SchemaSubmissionResult>(`${this.environment.serverUrl}/api/schema/taxi?validate=true`, taxi);
   }
-
-  getAvailableChangesets(): Observable<Changeset[]> {
-    return this.http.post<ChangesetResponse>(`${this.environment.serverUrl}/api/repository/changesets`, { packageIdentifier: fakePackageIdentifier })
-      .pipe(map(response => response.changesets));
-  }
-
-  setActiveChangeset(changeset: Changeset): Observable<void> {
-    return this.http.post<void>(`${this.environment.serverUrl}/api/repository/changesets/active`, {
-      packageIdentifier: fakePackageIdentifier,
-      changesetName: changeset.name,
-    }).pipe(tap(() => this.activeChangeset$.next({ name: changeset.name, isActive: true })));
-  }
-}
-
-// TODO Make a separate type for the Changeset the consumers care about which does not include e.g. isActive
-export interface Changeset {
-  name: string;
-  isActive: boolean;
-}
-
-export interface ChangesetResponse {
-  changesets: Changeset[];
 }
 
 export class SchemaPreviewRequest {
@@ -484,6 +348,7 @@ export interface FinalizeChangesetRequest {
 
 export interface FinalizeChangesetResponse {
   link: string | null;
+  changeset: Changeset;
 }
 
 export interface SchemaPreview {

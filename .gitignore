@@ -172,6 +172,7 @@ roles.conf
 license.json
 services.conf
 ./config/
+gitWorkingDir/
 
 /search/
 /schemas/
