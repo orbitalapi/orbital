@@ -1,12 +1,13 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, ViewChild } from '@angular/core';
 import { findSchemaMember, Schema, Service } from 'src/app/services/schema';
 import { Observable } from 'rxjs/internal/Observable';
+import { SchemaDiagramComponent } from 'src/app/schema-diagram/schema-diagram/schema-diagram.component';
 
 @Component({
   selector: 'app-lineage-node-diagram',
   styleUrls: ['./lineage-node-diagram.component.scss'],
   template: `
-    <app-schema-diagram [title]="title" [schema$]="schema$" [displayedMembers]="displayedServices"></app-schema-diagram>
+    <app-schema-diagram #diagramComponent [title]="title" [schema$]="schema$" [displayedMembers]="displayedServices"></app-schema-diagram>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -24,7 +25,8 @@ export class LineageNodeDiagramComponent {
 
   private _schema$: Observable<Schema>;
 
-
+  @ViewChild('diagramComponent')
+  private diagramComponent: SchemaDiagramComponent;
 
   displayedServices: string[]
 
@@ -48,6 +50,9 @@ export class LineageNodeDiagramComponent {
   resetComponent() {
     if (!this.initialServices || !this.schema$) {
       return;
+    }
+    if (this.diagramComponent) {
+      this.diagramComponent.resetComponent();
     }
     this.schema$.subscribe(schema => {
       const servicesWithDependencies = this.initialServices.flatMap(serviceName => {

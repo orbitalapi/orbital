@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, ViewChild } from '@angular/core';
 import { TypesService } from '../../services/types.service';
 import {
   arrayMemberTypeNameOrTypeNameFromName,
@@ -15,12 +15,14 @@ import {
   collectionOperations,
   collectLinks
 } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
+import {
+  LineageNodeDiagramComponent
+} from 'src/app/type-viewer/lineage-graph/lineage-node-diagram/lineage-node-diagram.component';
 
 @Component({
   selector: 'app-service-lineage-graph-container',
   template: `
-    <app-lineage-node-diagram [schema$]="schema$" [initialServices]="displayedMembers"></app-lineage-node-diagram>
-    <!--      <app-service-lineage-graph [schemaGraph$]="schemaGraph"></app-service-lineage-graph>-->
+    <app-lineage-node-diagram #diagramComponent [schema$]="schema$" [initialServices]="displayedMembers"></app-lineage-node-diagram>
   `,
   styleUrls: ['./service-lineage-graph-container.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -43,6 +45,9 @@ export class ServiceLineageGraphContainerComponent {
         })
       )
   }
+
+  @ViewChild('diagramComponent')
+  diagramComponent: LineageNodeDiagramComponent
 
   @Input()
   get serviceName(): QualifiedName {
@@ -68,6 +73,9 @@ export class ServiceLineageGraphContainerComponent {
       return;
     }
     this._type = value;
+    if (this.diagramComponent) {
+      this.diagramComponent.resetComponent();
+    }
     this.buildDependenciesForType();
   }
 

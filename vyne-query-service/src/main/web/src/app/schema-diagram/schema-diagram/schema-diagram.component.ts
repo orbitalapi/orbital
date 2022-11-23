@@ -6,6 +6,7 @@ import { isNullOrUndefined } from 'util';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { toPng } from 'html-to-image';
+import { arraysEqual } from 'src/app/utils/arrays';
 
 @Component({
   selector: 'app-schema-diagram',
@@ -33,8 +34,16 @@ export class SchemaDiagramComponent {
   }
 
   set displayedMembers(value: string[] | 'everything' | 'services') {
+    if (this._displayedMembers === value) {
+      return
+    }
+    if (Array.isArray(value) && Array.isArray(this._displayedMembers) && arraysEqual(value, this._displayedMembers)) {
+      return
+    }
     this._displayedMembers = value;
+    // When the displayed members reference has changed, destroy and rebuild the whole thing
     this.resetComponent();
+    this.updateComponent();
   }
 
   private _schema$: Observable<Schema>;
@@ -51,7 +60,7 @@ export class SchemaDiagramComponent {
       return;
     }
     this._schema$ = value;
-    this.resetComponent();
+    this.updateComponent();
   }
 
   private lastMeasureEvent: ResizedEvent | null = null;
@@ -66,7 +75,7 @@ export class SchemaDiagramComponent {
     this.containerRef.nativeElement.width = event.newRect.width;
     this.containerRef.nativeElement.height = event.newRect.height;
 
-    this.resetComponent();
+    this.updateComponent();
   }
 
   // Added this, as was getting lots of resize events from flex layout algos when the
@@ -94,10 +103,17 @@ export class SchemaDiagramComponent {
       return;
     }
     this._containerRef = value;
-    this.resetComponent();
+    this.updateComponent();
   }
 
   resetComponent() {
+    console.log('Destroying and rebuilding schema diagram')
+    if (this.containerRef && this.containerRef.nativeElement)  {
+      SchemaFlowWrapper.destroy(this.containerRef);
+    }
+  }
+
+  private updateComponent() {
     if (!this.schema$ || !this.displayedMembers || !this.containerRef || !this.lastMeasureEvent) {
       return;
     }

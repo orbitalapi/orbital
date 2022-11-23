@@ -224,6 +224,11 @@ export interface AppendLinksProps {
 }
 
 export class SchemaFlowWrapper {
+  static destroy(
+    elementRef: ElementRef
+  ) {
+    ReactDOM.unmountComponentAtNode(elementRef.nativeElement)
+  }
   static initialize(
     elementRef: ElementRef,
     requiredMembers$: Observable<RequiredMembersProps>,
