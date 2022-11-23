@@ -16,7 +16,7 @@ import ApiNode from './diagram-nodes/api-service-node';
 import { SchemaChartController } from './schema-chart.controller';
 import { arrayMemberTypeNameOrTypeNameFromName, emptySchema, Schema } from '../../services/schema';
 import { Observable } from 'rxjs';
-import { Link, MemberWithLinks } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
+import { Link, LinkKind, MemberWithLinks } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
 import { applyElkLayout } from 'src/app/schema-diagram/schema-diagram/elk-chart-layout';
 import FloatingEdge from 'src/app/schema-diagram/schema-diagram/diagram-nodes/floating-edge';
 import { isNullOrUndefined } from 'util';
@@ -44,6 +44,7 @@ interface SchemaFlowDiagramProps {
   requiredMembers$: Observable<RequiredMembersProps>;
   width: number;
   height: number;
+  linkKinds: LinkKind[]
 }
 
 export interface RequiredMembersProps {
@@ -125,7 +126,9 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
       })
     setNodes(buildResult.nodes);
     buildResult.nodesRequiringUpdate.forEach(node => updateNodeInternals(node.id));
-    setEdges(buildResult.edges);
+    setEdges(buildResult.edges.filter(edge => {
+      return props.linkKinds.includes(edge.data.linkKind)
+    }));
 
     console.log('Requesting layout');
     setAwaitingLayout(true);
@@ -234,7 +237,8 @@ export class SchemaFlowWrapper {
     requiredMembers$: Observable<RequiredMembersProps>,
     schema$: Observable<Schema>,
     width: number = 1800,
-    height: number = 1200
+    height: number = 1200,
+    linkKinds: LinkKind[] = ['entity']
   ) {
 
     ReactDOM.render(
@@ -242,7 +246,8 @@ export class SchemaFlowWrapper {
         schema$,
         requiredMembers$,
         width,
-        height
+        height,
+        linkKinds
       } as SchemaFlowDiagramProps),
       elementRef.nativeElement
     )

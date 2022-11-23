@@ -9,7 +9,7 @@ import {
   Link, edgeSourceAndTargetExist,
   MemberWithLinks,
   ModelLinks,
-  ServiceLinks
+  ServiceLinks, LinkKind
 } from './schema-chart-builder';
 import { isUndefined } from 'util';
 import { colors } from 'src/app/schema-diagram/schema-diagram/tailwind.colors';
@@ -139,7 +139,7 @@ export class SchemaChartController {
     }
   }
 
-  private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, sourceSchemaKind: SchemaMemberType, targetNode: Node<MemberWithLinks>, targetHandleId: string, targetSchemaKind: SchemaMemberType, linkId?: string, linkKind?: string): Edge {
+  private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, sourceSchemaKind: SchemaMemberType, targetNode: Node<MemberWithLinks>, targetHandleId: string, targetSchemaKind: SchemaMemberType, linkKind: LinkKind, linkId?: string): Edge {
     let label: string;
     let markerStart, markerEnd: EdgeMarkerType;
     // Default color
@@ -183,7 +183,8 @@ export class SchemaChartController {
     const edgeParams: EdgeParams = {
       sourceCanFloat: sourceSchemaKind === 'TYPE',
       targetCanFloat: targetSchemaKind === 'TYPE' ,
-      label
+      label,
+      linkKind: linkKind
     }
 
 
@@ -216,15 +217,7 @@ export class SchemaChartController {
       nodeLinks.filter(link => {
         return nodes.has(link.sourceNodeId) && nodes.has(link.targetNodeId)
       }).forEach(link => {
-        const edge = this.buildEdge(nodes.get(link.sourceNodeId),
-          link.sourceHandleId,
-          link.sourceMemberType,
-          nodes.get(link.targetNodeId),
-          link.targetHandleId,
-          link.targetMemberType,
-          link.linkId,
-          link.linkKind
-          )
+        const edge = this.buildEdge(nodes.get(link.sourceNodeId), link.sourceHandleId, link.sourceMemberType, nodes.get(link.targetNodeId), link.targetHandleId, link.targetMemberType, link.linkKind, link.linkId)
         createdEdges.set(edge.id, edge);
       });
     })

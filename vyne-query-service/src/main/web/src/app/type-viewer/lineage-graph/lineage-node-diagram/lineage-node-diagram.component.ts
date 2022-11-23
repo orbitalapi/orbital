@@ -2,16 +2,21 @@ import { ChangeDetectionStrategy, Component, Input, ViewChild } from '@angular/c
 import { findSchemaMember, Schema, Service } from 'src/app/services/schema';
 import { Observable } from 'rxjs/internal/Observable';
 import { SchemaDiagramComponent } from 'src/app/schema-diagram/schema-diagram/schema-diagram.component';
+import { LinkKind } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
 
 @Component({
   selector: 'app-lineage-node-diagram',
   styleUrls: ['./lineage-node-diagram.component.scss'],
   template: `
-    <app-schema-diagram #diagramComponent [title]="title" [schema$]="schema$" [displayedMembers]="displayedServices"></app-schema-diagram>
+    <app-schema-diagram #diagramComponent [title]="title"
+                        [visibleLinkKinds]="linkKinds"
+                        [schema$]="schema$" [displayedMembers]="displayedServices"></app-schema-diagram>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LineageNodeDiagramComponent {
+  linkKinds:LinkKind[] = ['lineage','entity']
+
   private _initialServices: string[]
   @Input()
   get initialServices(): string[] {

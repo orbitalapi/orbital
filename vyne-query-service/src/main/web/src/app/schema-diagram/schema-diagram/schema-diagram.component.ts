@@ -7,6 +7,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { toPng } from 'html-to-image';
 import { arraysEqual } from 'src/app/utils/arrays';
+import { LinkKind } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
 
 @Component({
   selector: 'app-schema-diagram',
@@ -23,7 +24,23 @@ import { arraysEqual } from 'src/app/utils/arrays';
 })
 export class SchemaDiagramComponent {
 
+  private _visibleLinkKinds: LinkKind[] = ['entity'];
+  @Input()
+  get visibleLinkKinds(): LinkKind[] {
+    return this._visibleLinkKinds;
+  }
+
+  set visibleLinkKinds(value: LinkKind[]) {
+    if (arraysEqual(this._visibleLinkKinds, value)) {
+      return;
+    }
+    this._visibleLinkKinds = value;
+    this.resetComponent();
+  }
+
   private _displayedMembers: string[] | 'everything' | 'services';
+
+
 
   @Input()
   title: string;
@@ -144,7 +161,8 @@ export class SchemaDiagramComponent {
       membersToDisplay,
       this.schema$,
       this.lastMeasureEvent.newRect.width,
-      this.lastMeasureEvent.newRect.height
+      this.lastMeasureEvent.newRect.height,
+      this.visibleLinkKinds
     )
   }
 }

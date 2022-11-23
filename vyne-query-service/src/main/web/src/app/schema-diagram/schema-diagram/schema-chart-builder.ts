@@ -26,6 +26,7 @@ export interface EdgeParams {
   sourceCanFloat: boolean;
   targetCanFloat: boolean;
   label: string;
+  linkKind: LinkKind
 }
 
 export interface Links {
@@ -269,6 +270,7 @@ function buildServiceLinks(service: Service, schema: Schema, operations: Service
     operationLinks)
 }
 
+export type LinkKind = 'entity' | 'lineage';
 export interface Link {
   sourceNodeName: QualifiedName;
   sourceNodeId: string;
@@ -284,7 +286,7 @@ export interface Link {
 
   // Optional, as we only set it if we wish to check for duplicates
   linkId?: string;
-  linkKind: 'entity' | 'lineage';
+  linkKind: LinkKind;
 }
 
 function buildOperationLinks(operation: ServiceMember, service: Service): Links {
