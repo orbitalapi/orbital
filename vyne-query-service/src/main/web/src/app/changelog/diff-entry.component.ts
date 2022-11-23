@@ -15,17 +15,20 @@ import { ChangeLogDiffEntry, DiffKind } from './changelog.service';
                        [oldValue]="diff.oldDetails"
                        [newValue]="diff.newDetails"></app-type-change>
       <app-input-params-change class="details-block" *ngIf="diff.kind === 'OperationParametersChanged'"
-        [oldValue]="diff.oldDetails"
-        [newValue]="diff.newDetails"
-      >
-
-      </app-input-params-change>
-      <app-metadata-change class="details-block" *ngIf="diff.kind === 'OperationMetadataChanged'"
                                [oldValue]="diff.oldDetails"
                                [newValue]="diff.newDetails"
       >
 
+      </app-input-params-change>
+      <app-metadata-change class="details-block" *ngIf="diff.kind === 'OperationMetadataChanged'"
+                           [oldValue]="diff.oldDetails!"
+                           [newValue]="diff.newDetails!"
+      >
       </app-metadata-change>
+      <app-documentation-change class="details-block" *ngIf="diff.kind === 'DocumentationChanged'"
+                                [oldValue]="diff.oldDetails!"
+                                [newValue]="diff.newDetails!"></app-documentation-change>
+
     </div>
     <div>
 

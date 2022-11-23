@@ -1,0 +1,19 @@
+@import "src/tables";
+:host {
+  display: flex;
+  width: 100%;
+}
+
+table {
+  @include vyne-table();
+  td, th {
+    padding-right: 1rem;
+  }
+}
+.col {
+  margin-right: 3rem;
+}
+
+h4 {
+  text-transform: none;
+}

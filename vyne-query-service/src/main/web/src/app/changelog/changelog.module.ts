@@ -8,6 +8,7 @@ import { TuiSvgModule, TuiTableModeModule } from '@taiga-ui/core';
 import { TypeChangeComponent } from './type-change.component';
 import { InputParamsChangeComponent } from './input-params-change.component';
 import { MetadataChangeComponent } from './metadata-change.component';
+import { DocumentationChangeComponent } from './documentation-change.component';
 
 
 
@@ -18,7 +19,8 @@ import { MetadataChangeComponent } from './metadata-change.component';
     DiffKindPipe,
     TypeChangeComponent,
     InputParamsChangeComponent,
-    MetadataChangeComponent
+    MetadataChangeComponent,
+    DocumentationChangeComponent
   ],
   exports: [
     ChangelogListComponent,

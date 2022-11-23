@@ -37,7 +37,7 @@ export interface ChangeLogDiffEntry {
   newDetails: ChangeLogDiffEntryDetails | null;
 }
 
-export type ChangeLogDiffEntryDetails = QualifiedName | ParameterDiff[] | Metadata[];
+export type ChangeLogDiffEntryDetails = QualifiedName | ParameterDiff[] | Metadata[] | string;
 
 export type DiffKind =
   'TypeAdded' |
