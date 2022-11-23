@@ -13,7 +13,6 @@ import { ChangesetService } from 'src/app/services/changeset.service';
   styleUrls: ['./type-viewer-container.component.scss'],
   template: `
     <app-header-bar title="Catalog">
-      <app-changeset-selector></app-changeset-selector>
     </app-header-bar>
     <app-type-viewer [type]="type"
                      [schema]="schema"

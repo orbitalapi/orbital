@@ -51,7 +51,6 @@ export class BaseSchemaExplorerContainer {
           <!--<button mat-menu-item (click)="createNewSchema()">Add schema directly</button>-->
         </mat-menu>
       </div>
-      <app-changeset-selector></app-changeset-selector>
     </app-header-bar>
     <div class="container">
       <app-package-list [packages]="packages | async" (packageClicked)="navigateToPackage($event)"></app-package-list>

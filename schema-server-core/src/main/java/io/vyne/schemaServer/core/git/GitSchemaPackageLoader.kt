@@ -144,7 +144,15 @@ class GitSchemaPackageLoader(
          GitOperations(workingDir.toFile(), config).renameCurrentBranch(newName)
          currentBranch = newName
       }
-         .map { UpdateChangesetResponse() }
+         .map {
+            UpdateChangesetResponse(
+               Changeset(
+                  newName,
+                  true,
+                  packageIdentifier
+               )
+            )
+         }
    }
 
    override fun getAvailableChangesets(): Mono<AvailableChangesetsResponse> {
@@ -153,7 +161,8 @@ class GitSchemaPackageLoader(
             AvailableChangesetsResponse(branchNames
                .map { branchName ->
                   val prefix = config.pullRequestConfig?.branchPrefix ?: ""
-                  val changesetBranch = if (currentBranch == "main") currentBranch else currentBranch.substringAfter(prefix)
+                  val changesetBranch =
+                     if (currentBranch == "main") currentBranch else currentBranch.substringAfter(prefix)
                   Changeset(branchName, changesetBranch == branchName, packageIdentifier = packageIdentifier)
                })
          }

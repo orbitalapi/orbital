@@ -209,7 +209,9 @@ class GitOperations(val workingDir: File, private val config: GitRepositoryConfi
    }
 
    fun renameCurrentBranch(newName: String) {
-      git.branchRename().setNewName(withPrefix(newName)).call()
+      val prefixedName = withPrefix(newName)
+      logger.info { "Renaming active branch to $prefixedName" }
+      git.branchRename().setNewName(prefixedName).call()
       pushToRemote()
    }
 

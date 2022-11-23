@@ -24,6 +24,7 @@ data class FinalizeChangesetResponse(
 )
 
 data class UpdateChangesetResponse(
+   val changeset: Changeset,
    val errors: List<String> = emptyList()
 )
 

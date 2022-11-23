@@ -95,14 +95,16 @@ export class ChangesetService {
     })));
   }
 
-  createChangeset(name: string, packageIdentifier: PackageIdentifier): Observable<CreateChangesetResponse> { // TODO Typing
+  createChangeset(name: string, packageIdentifier: PackageIdentifier): Observable<Changeset> { // TODO Typing
     const sanitizedName = this.sanitizeChangesetName(name);
     return this.http.post<CreateChangesetResponse>(
       `${this.environment.serverUrl}/api/repository/changeset/create`,
       { changesetName: sanitizedName, packageIdentifier: packageIdentifier },
-    ).pipe(tap((changesetResponse) => {
-      this.activeChangesetLocalUpdates$.next(changesetResponse.changeset)
-    }));
+    ).pipe(
+      map(response => response.changeset),
+      tap((changeset) => {
+        this.activeChangesetLocalUpdates$.next(changeset)
+      }));
   }
 
   addChangesToChangeset(typeName: QualifiedName, schemaNameSuffix: string, schemaText: string): Observable<VersionedSource> {
@@ -152,20 +154,7 @@ export class ChangesetService {
 
 
   ensureChangesetExists(): Observable<Changeset> {
-    return this.activeChangeset$
-      .pipe(
-        take(1),
-        switchMap(changeset => {
-          if (changeset.name !== defaultChangesetName) {
-            return of(changeset)
-          } else {
-            return this.dialogService
-              .open<Changeset>(new PolymorpheusComponent(ChangesetNameDialogComponent, this.injector), {
-                data: changeset.packageIdentifier
-              });
-          }
-        })
-      )
+    return this.openNameDialog(false, (name, packageIdentifier) => this.createChangeset(name, packageIdentifier));
   }
 
   sanitizeChangesetName(name: string): string {
@@ -174,17 +163,17 @@ export class ChangesetService {
   }
 
 
-  openNameDialog(forceOpen: boolean, saveHandler: ChangesetNameDialogSaveHandler): Observable<string> {
+  openNameDialog(forceOpen: boolean, saveHandler: ChangesetNameDialogSaveHandler): Observable<Changeset> {
     return this.activeChangeset$.pipe(
       take(1),
       switchMap(changeset => {
         if (!forceOpen && changeset.name !== defaultChangesetName) {
-          return of(changeset.name);
+          return of(changeset);
         } else {
           return this.dialogService
-            .open<string | null>(new PolymorpheusComponent(ChangesetNameDialogComponent, this.injector), {
+            .open<Changeset>(new PolymorpheusComponent(ChangesetNameDialogComponent, this.injector), {
               data: {
-                name: changeset.name,
+                changeset,
                 saveHandler: saveHandler,
               },
             });

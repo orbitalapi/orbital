@@ -1,11 +1,12 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { TuiDialogContext } from '@taiga-ui/core';
 import { POLYMORPHEUS_CONTEXT } from '@tinkoff/ng-polymorpheus';
 import { FormControl } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { Changeset } from 'src/app/services/changeset.service';
+import { PackageIdentifier } from 'src/app/package-viewer/packages.service';
 
-export type ChangesetNameDialogSaveHandler = (name: string) => Observable<Changeset>;
+export type ChangesetNameDialogSaveHandler = (name: string, packageIdentifer: PackageIdentifier) => Observable<Changeset>;
 
 export interface ChangesetNameDialogData {
   changeset: Changeset | null;
@@ -17,7 +18,7 @@ export interface ChangesetNameDialogData {
   templateUrl: './changeset-name-dialog.component.html',
   styleUrls: ['./changeset-name-dialog.component.scss'],
 })
-export class ChangesetNameDialogComponent {
+export class ChangesetNameDialogComponent implements OnInit {
   nameControl!: FormControl;
   errorMessage: string | null = null;
 
@@ -36,7 +37,7 @@ export class ChangesetNameDialogComponent {
     // Merge conflict - was:
     //    this.changesetServoce
     //       .createChangeset(name, this.context.data)
-    this.context.data.saveHandler(name)
+    this.context.data.saveHandler(name, this.context.data.changeset.packageIdentifier)
       .subscribe(
         changesetResponse => this.context.completeWith(changesetResponse),
         error => {
