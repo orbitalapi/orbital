@@ -175,7 +175,8 @@ open class CopyOnWriteFactBag(
       spec: TypedInstanceValidPredicate
    ): TypedInstance {
       // This could be optimized, as we're searching twice for everything, and not caching anything
-      return getFactOrNull(type, strategy, spec)!!
+      return getFactOrNull(type, strategy, spec)
+         ?: error("Failed to resolve type ${type.name.shortDisplayName} using strategy $strategy")
    }
 
 
@@ -224,7 +225,9 @@ open class CopyOnWriteFactBag(
       // We're using the  ALLOW_MANY / ALLOW_ONE heuristic to determine how we search.
       // Not sure this is correct.  See CopyOnWriteFactBagTest for tests that explore this with use-cases.
       val predicate = if (strategy == FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) {
-         TypeMatchingStrategy.MATCH_ON_COLLECTION_TYPE.or(TypeMatchingStrategy.ALLOW_INHERITED_TYPES)
+         TypeMatchingStrategy.MATCH_ON_COLLECTION_TYPE
+            .or(TypeMatchingStrategy.MATCH_ON_COLLECTION_OF_TYPE)
+            .or(TypeMatchingStrategy.ALLOW_INHERITED_TYPES)
       } else {
          TypeMatchingStrategy.ALLOW_INHERITED_TYPES // default
       }
