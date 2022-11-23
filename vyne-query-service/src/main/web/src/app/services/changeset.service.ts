@@ -180,15 +180,14 @@ export class ChangesetService {
         }
       })
     )
-
-
   }
 
 
   isCustomChangesetSelected(): Observable<boolean> {
     return this.activeChangeset$.pipe(
-      take(1),
-      map(changeset => changeset.name !== defaultChangesetName)
+      map(changeset => {
+        return changeset.name !== defaultChangesetName
+      })
     )
   }
 
