@@ -2,6 +2,7 @@ import {Component, Input} from '@angular/core';
 import {fqn, Operation, QualifiedName, Service, Schema} from '../services/schema';
 import {isNullOrUndefined} from 'util';
 import { TypesService } from '../services/types.service';
+import { getCatalogType } from 'src/app/operation-view/operation-view.component';
 
 export interface OperationSummary {
   name: string;
@@ -81,7 +82,7 @@ export function toOperationSummary(operation: Operation): OperationSummary {
                 </td>
                 <td><a [routerLink]="[operation.name]" data-e2e-id="operation-name">{{ operation.name }}</a></td>
                 <td>{{ operation.typeDoc }}</td>
-                <td><span class="mono-badge">{{ operation.returnType.shortDisplayName }}</span></td>
+                <td><span class="mono-badge"><a [routerLink]="['/catalog',navigationTargetForType(operation.returnType)]">{{ operation.returnType.shortDisplayName }}</a></span></td>
                 <td><span class="url">{{ operation.url }}</span></td>
               </tr>
             </table>
@@ -110,6 +111,12 @@ export class ServiceViewComponent {
   constructor(typeService:TypesService) {
     typeService.getTypes().subscribe(s => this.schema = s)
   }
+
+  navigationTargetForType(name: QualifiedName): string {
+    // Can't call directly, because function is not accessible via angular template
+    return getCatalogType(name);
+  }
+
 
   @Input()
   get service(): Service {

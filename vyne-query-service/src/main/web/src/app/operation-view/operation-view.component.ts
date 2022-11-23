@@ -118,6 +118,7 @@ import {isNullOrUndefined} from 'util';
 })
 export class OperationViewComponent extends BaseDeferredEditComponent<Operation> {
 
+
   constructor(private dialog: MatDialog) {
     super();
   }
@@ -136,6 +137,10 @@ export class OperationViewComponent extends BaseDeferredEditComponent<Operation>
     return getDisplayName(name, showFullTypeNames);
   }
 
+  navigationTargetForType(name: QualifiedName): string {
+    // Can't call directly, because function is not accessible via angular template
+    return getCatalogType(name);
+  }
 
   @Input()
   loading: boolean;
@@ -199,18 +204,6 @@ export class OperationViewComponent extends BaseDeferredEditComponent<Operation>
     this.cancel.emit({});
   }
 
-  /**
-   * Unpacks array types to return the actual member value
-   * @param typeName
-   */
-  navigationTargetForType(typeName: QualifiedName): string {
-    if (typeName.parameters && typeName.parameters.length === 1) {
-      return this.navigationTargetForType(typeName.parameters[0]);
-    } else {
-      return typeName.fullyQualifiedName;
-    }
-  }
-
   selectReturnType() {
     const dialog = openTypeSearch(this.dialog);
     dialog.afterClosed().subscribe((event) => {
@@ -235,5 +228,18 @@ export class OperationViewComponent extends BaseDeferredEditComponent<Operation>
         }
       }
     })
+  }
+}
+
+
+/**
+ * Unpacks array types to return the actual member value
+ * @param typeName
+ */
+export function getCatalogType(typeName: QualifiedName): string {
+  if (typeName.parameters && typeName.parameters.length === 1) {
+    return getCatalogType(typeName.parameters[0]);
+  } else {
+    return typeName.fullyQualifiedName;
   }
 }
