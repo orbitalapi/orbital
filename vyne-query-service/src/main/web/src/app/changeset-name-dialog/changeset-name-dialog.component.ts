@@ -40,7 +40,7 @@ export class ChangesetNameDialogComponent implements OnInit {
       currentName = changeset.name
     }
 
-    this.nameControl = new FormControl(changeset.name ?? '');
+    this.nameControl = new FormControl(currentName);
     this.nameControl.valueChanges.subscribe(() => this.errorMessage = null);
   }
 
