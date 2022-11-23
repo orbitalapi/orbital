@@ -93,6 +93,7 @@ class SchemaServiceTest {
          )
       )
       val stores = service.lineage!!.stores.toSet()
-      stores.should.equal(setOf(QualifiedName("Order"), QualifiedName("Trade")))
+      stores.should.equal(setOf(QualifiedName.from("Order"), QualifiedName.from(
+         "Trade")))
    }
 }
