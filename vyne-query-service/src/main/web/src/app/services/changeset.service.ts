@@ -71,7 +71,8 @@ export class ChangesetService {
 
     this.activeChangeset$ = merge(this.activeChangesetServerUpdate$, this.activeChangesetLocalUpdates$)
       .pipe(
-        filter(changeset => changeset !== null && changeset !== undefined)
+        filter(changeset => changeset !== null && changeset !== undefined),
+        shareReplay(1)
       )
   }
 
