@@ -14,6 +14,7 @@ import org.eclipse.jgit.treewalk.AbstractTreeIterator
 import org.eclipse.jgit.treewalk.CanonicalTreeParser
 import java.io.File
 import java.nio.file.Files
+import java.util.*
 
 
 enum class OperationResult {
@@ -162,6 +163,10 @@ class GitOperations(
    fun getBranchOverview(branchName: String): BranchOverview {
       val oldTreeIterator = prepareTreeParser(branchName)
       val newTreeParser = prepareTreeParser(config.branch)
+      if (oldTreeIterator == null || newTreeParser == null) {
+         logger.error { "Failed to obtain the iterator for $branchName or ${config.branch}. Defaulting to an empty branch overview" }
+         return BranchOverview(0, 0, 0, "", "", Date())
+      }
       var additions = 0
       var changedFiles = 0
       var deletions = 0
@@ -182,8 +187,11 @@ class GitOperations(
       return BranchOverview(additions, changedFiles, deletions, author, description, lastUpdated)
    }
 
-   private fun prepareTreeParser(ref: String): AbstractTreeIterator {
-      val head = git.repository.findRef("refs/heads/$ref")
+   private fun prepareTreeParser(ref: String): AbstractTreeIterator? {
+      val head = git.repository.findRef("refs/heads/${withPrefix(ref)}")
+      if (head == null) {
+         return null
+      }
       val walk = RevWalk(git.repository)
       val commit = walk.parseCommit(head.objectId)
       val tree = walk.parseTree(commit.tree.id)
