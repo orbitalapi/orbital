@@ -16,6 +16,7 @@ export class ChangesetSelectorComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // TODO Don't subscribe here but rather connect the two observables
     this.changesetService.activeChangeset$
       .subscribe(value => {
         this.value = value;

@@ -2,15 +2,15 @@ import { Inject, Injectable, Injector } from '@angular/core';
 import { Environment, ENVIRONMENT } from 'src/app/services/environment';
 import { TuiDialogService } from '@taiga-ui/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, merge, of } from 'rxjs';
+import { BehaviorSubject, combineLatest, merge, of } from 'rxjs';
 import { PackageIdentifier, PackagesService, SourcePackageDescription } from 'src/app/package-viewer/packages.service';
-import { filter, map, mapTo, share, shareReplay, switchMap, take, tap } from 'rxjs/operators';
+import { filter, map, mapTo, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 import { Observable } from 'rxjs/internal/Observable';
 import { QualifiedName, VersionedSource } from 'src/app/services/schema';
 import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
 import {
   ChangesetNameDialogComponent,
-  ChangesetNameDialogSaveHandler
+  ChangesetNameDialogSaveHandler,
 } from 'src/app/changeset-name-dialog/changeset-name-dialog.component';
 
 export const defaultChangesetName = 'main';
@@ -20,18 +20,21 @@ export const defaultChangesetName = 'main';
 })
 export class ChangesetService {
   editablePackage$: Observable<SourcePackageDescription | null>;
-  availableChangesets$: Observable<Changeset[]>
-  activeChangeset$: Observable<Changeset>
+  activeChangeset$: Observable<Changeset>;
+
+  availableChangesets$: Observable<Changeset[]>;
 
   private activeChangesetServerUpdate$: Observable<Changeset>;
-  private activeChangesetLocalUpdates$ = new BehaviorSubject<Changeset>(null);
+  private activeChangesetLocalUpdate$ = new BehaviorSubject<Changeset>(null);
+  private availableChangesetsByServer$: Observable<Changeset[]>;
+  private availableChangesetsLocalUpdate$ = new BehaviorSubject<Changeset[]>([]);
 
   constructor(
     @Inject(ENVIRONMENT) private environment: Environment,
     @Inject(TuiDialogService) private readonly dialogService: TuiDialogService,
     @Inject(Injector) private readonly injector: Injector,
     private packageService: PackagesService,
-    private http: HttpClient
+    private http: HttpClient,
   ) {
 
     // ... check for the current list of packages....
@@ -39,48 +42,51 @@ export class ChangesetService {
       .pipe(
         // ... and find the one that's editable ...
         map((packages: SourcePackageDescription[]) => {
-          const editable = packages.filter(sourcePackage => sourcePackage.editable)
+          const editable = packages.filter(sourcePackage => sourcePackage.editable);
           if (editable.length === 0) {
-            console.error('There are no editable packages configured - editing will fail')
+            console.error('There are no editable packages configured - editing will fail');
             return null;
           } else if (editable.length > 1) {
-            console.error('There are multiple editable packages configured - editing will fail')
+            console.error('There are multiple editable packages configured - editing will fail');
             return null;
           }
           return editable[0];
         }),
-        shareReplay(1)
-      )
+        shareReplay(1),
+      );
 
     // All known changesets.  Triggered off the list of all editable packages
-    this.availableChangesets$ = this.editablePackage$
+    this.availableChangesetsByServer$ = this.editablePackage$
       .pipe(
-        switchMap(packageDescription => {
-          return this.getAvailableChangesets(packageDescription.identifier);
-        }),
-        shareReplay(1)
-      )
+        switchMap(packageDescription => this.getAvailableChangesets(packageDescription.identifier)),
+        shareReplay(1),
+      );
 
-    this.activeChangesetServerUpdate$ = this.availableChangesets$
+    this.activeChangesetServerUpdate$ = this.availableChangesetsByServer$
       .pipe(
-        map(changesets => {
-          return changesets.find(c => c.isActive);
-        }),
-        filter(changeset => changeset !== null && changeset !== undefined)
-      )
+        map(changesets => changesets.find(c => c.isActive) ?? null),
+        filter(changeset => changeset !== null),
+      );
 
-    this.activeChangeset$ = merge(this.activeChangesetServerUpdate$, this.activeChangesetLocalUpdates$)
+    this.activeChangeset$ = merge(this.activeChangesetServerUpdate$, this.activeChangesetLocalUpdate$)
       .pipe(
-        filter(changeset => changeset !== null && changeset !== undefined),
-        shareReplay(1)
-      )
+        filter(changeset => changeset !== null),
+        shareReplay(1),
+      );
+
+    this.availableChangesets$ = combineLatest([this.availableChangesetsByServer$, this.availableChangesetsLocalUpdate$])
+      .pipe(
+        map(([serverChangesets, localChangesets]) => [...serverChangesets, ...localChangesets]),
+        filter(changeset => changeset !== null),
+        shareReplay(1),
+      );
   }
 
 
   getAvailableChangesets(packageIdentifier: PackageIdentifier): Observable<Changeset[]> {
     return this.http.post<ChangesetResponse>(`${this.environment.serverUrl}/api/repository/changesets`, { packageIdentifier: packageIdentifier })
       .pipe(map(response => {
-        return response.changesets
+        return response.changesets;
       }));
   }
 
@@ -89,10 +95,10 @@ export class ChangesetService {
     return this.http.post<SetActiveChangesetResponse>(`${this.environment.serverUrl}/api/repository/changesets/active`, {
       packageIdentifier: changeset.packageIdentifier,
       changesetName: changeset.name,
-    }).pipe(tap(() => this.activeChangesetLocalUpdates$.next({
+    }).pipe(tap(() => this.activeChangesetLocalUpdate$.next({
       name: changeset.name,
       isActive: true,
-      packageIdentifier: changeset.packageIdentifier
+      packageIdentifier: changeset.packageIdentifier,
     })));
   }
 
@@ -104,7 +110,8 @@ export class ChangesetService {
     ).pipe(
       map(response => response.changeset),
       tap((changeset) => {
-        this.activeChangesetLocalUpdates$.next(changeset)
+        this.activeChangesetLocalUpdate$.next(changeset);
+        this.availableChangesetsLocalUpdate$.next([...this.availableChangesetsLocalUpdate$.value, changeset]);
       }));
   }
 
@@ -138,17 +145,17 @@ export class ChangesetService {
         switchMap(changeset => {
           const body: FinalizeChangesetRequest = {
             changesetName: changeset.name,
-            packageIdentifier: changeset.packageIdentifier
+            packageIdentifier: changeset.packageIdentifier,
           };
           return this.http.post<FinalizeChangesetResponse>(
             `${this.environment.serverUrl}/api/repository/changeset/finalize`,
             body,
           );
         }),
-        tap(response => this.activeChangesetLocalUpdates$.next({
+        tap(response => this.activeChangesetLocalUpdate$.next({
           name: 'main',
           isActive: true,
-          packageIdentifier: response.changeset.packageIdentifier
+          packageIdentifier: response.changeset.packageIdentifier,
         })),
       );
   }
@@ -179,49 +186,58 @@ export class ChangesetService {
               },
             });
         }
-      })
-    )
+      }),
+    );
   }
 
 
   isCustomChangesetSelected(): Observable<boolean> {
     return this.activeChangeset$.pipe(
       map(changeset => {
-        return changeset.name !== defaultChangesetName
-      })
-    )
+        return changeset.name !== defaultChangesetName;
+      }),
+    );
   }
 
   rename(): Observable<void> {
     return this.openNameDialog(true, changesetName => this.updateChangeset(changesetName)).pipe(mapTo(void 0));
   }
 
+  selectDefaultChangeset() {
+    this.availableChangesetsByServer$
+      .pipe(
+        take(1),
+        switchMap(changesets => {
+          const defaultChangeset = changesets.find(c => c.name === defaultChangesetName);
+          return this.setActiveChangeset(defaultChangeset);
+        }),
+      ).subscribe();
+  }
+
   private updateChangeset(changesetName: string): Observable<Changeset> {
     return this.activeChangeset$.pipe(
       take(1),
       switchMap(changeset => {
-        return this.http.put<Changeset>(`${this.environment.serverUrl}/api/repository/changeset/update`, {
+        return this.http.put<UpdateChangesetResponse>(`${this.environment.serverUrl}/api/repository/changeset/update`, {
           packageIdentifier: changeset.packageIdentifier,
           changesetName: changeset.name,
           newChangesetName: changesetName,
-        })
+        });
       }),
-      tap((changeset) => this.activeChangesetLocalUpdates$.next(changeset)),
+      map(response => response.changeset),
+      tap((changeset) => {
+        const existingWithoutNew = this.availableChangesetsLocalUpdate$.value
+          .filter(availableChangeset => availableChangeset.name !== this.activeChangesetLocalUpdate$.value.name);
+        this.availableChangesetsLocalUpdate$.next([...existingWithoutNew, changeset]);
+        this.activeChangesetLocalUpdate$.next(changeset);
+      }),
     );
   }
 
+}
 
-  selectDefaultChangeset() {
-    this.availableChangesets$
-      .pipe(
-        take(1),
-        switchMap(changesets => {
-          const defaultChangeset = changesets.find(c => c.name === defaultChangesetName)
-          return this.setActiveChangeset(defaultChangeset)
-        })
-      ).subscribe()
-  }
-
+interface UpdateChangesetResponse {
+  changeset: Changeset;
 }
 
 export interface ChangesetUpdateResponse {
