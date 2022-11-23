@@ -188,7 +188,8 @@ class GitOperations(
    }
 
    private fun prepareTreeParser(ref: String): AbstractTreeIterator? {
-      val head = git.repository.findRef("refs/heads/${withPrefix(ref)}")
+      val branchName = if (ref == "main") ref else "schema-updates/$ref"
+      val head = git.repository.findRef("refs/heads/$branchName")
       if (head == null) {
          return null
       }
