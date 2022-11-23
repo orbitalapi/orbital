@@ -26,7 +26,7 @@ import { FormControl } from '@angular/forms';
         <button mat-button (click)="cancelChanges()">Cancel</button>
         <button mat-raised-button color="primary" (click)="saveChanges()">Save changes</button>
       </div>
-      <markdown [data]="documentationSource.typeDoc" *ngIf="!isEditModeOn"></markdown>
+      <markdown [data]="_documentationSource.typeDoc" *ngIf="!isEditModeOn"></markdown>
     </div>
 
   `,
@@ -39,8 +39,20 @@ export class DescriptionEditorComponent implements OnInit {
   @Input()
   editable: boolean;
 
+  private _documentationSource: Documented;
+
   @Input()
-  documentationSource: Documented;
+  get documentationSource(): Documented {
+    return this._documentationSource;
+  }
+
+  set documentationSource(value: Documented) {
+    if (this._documentationSource === value) {
+      return;
+    }
+    this._documentationSource = value;
+    this.descriptionControl.reset(this._documentationSource.typeDoc);
+  }
 
   @Input()
   placeholder: string;
@@ -59,18 +71,18 @@ export class DescriptionEditorComponent implements OnInit {
     this.changes$.subscribe(value => {
       this.valueChanged.emit(value);
     });
-    this.descriptionControl = new FormControl(this.documentationSource?.typeDoc)
+    this.descriptionControl = new FormControl(this._documentationSource?.typeDoc)
   }
 
 
   get hasChanges(): boolean {
-    return this.editable && this.descriptionControl.value !== this.documentationSource.typeDoc;
+    return this.editable && this.descriptionControl.value !== this._documentationSource.typeDoc;
   }
 
   cancelChanges(): void {
-    this.changes$.next(this.documentationSource.typeDoc);
+    this.changes$.next(this._documentationSource.typeDoc);
     this.isEditModeOn = false;
-    this.descriptionControl.reset(this.documentationSource.typeDoc);
+    this.descriptionControl.reset(this._documentationSource.typeDoc);
   }
 
   changes$ = new BehaviorSubject<string>('');
