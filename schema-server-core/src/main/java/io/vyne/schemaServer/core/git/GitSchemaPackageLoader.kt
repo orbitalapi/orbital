@@ -22,7 +22,6 @@ import kotlinx.coroutines.reactor.mono
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.kotlin.core.publisher.toMono
 import java.net.URI
 import java.nio.file.FileSystems
 import java.nio.file.Path
@@ -128,7 +127,8 @@ class GitSchemaPackageLoader(
       val writer = FileSystemPackageWriter()
       return writer.writeSources(filePackageLoader, edits).map {
          GitOperations(workingDir.toFile(), config).commitAndPush(name)
-         AddChangesToChangesetResponse()
+         val branchOverview = GitOperations(workingDir.toFile(), config).getBranchOverview(name)
+         AddChangesToChangesetResponse(branchOverview)
       }
    }
 
@@ -136,7 +136,13 @@ class GitSchemaPackageLoader(
       // TODO Access the user information from the authentication
       // TODO Allow specifying a description
       return mono { GitOperations(workingDir.toFile(), config).raisePr(name, "", "Martin Pitt") }
-         .map { link -> FinalizeChangesetResponse(link, Changeset(name, true, packageIdentifier)) }
+         .map { (pullRequestOverview, link) ->
+            FinalizeChangesetResponse(
+               pullRequestOverview,
+               Changeset(name, true, packageIdentifier),
+               link
+            )
+         }
    }
 
    override fun updateChangeset(name: String, newName: String): Mono<UpdateChangesetResponse> {
@@ -174,8 +180,9 @@ class GitSchemaPackageLoader(
             if (branchName == config.branch) config.branch else config.pullRequestConfig?.branchPrefix + branchName
          currentBranch = resolvedBranchName
          syncNow()
+         val branchOverview = GitOperations(workingDir.toFile(), config).getBranchOverview(resolvedBranchName)
+         SetActiveChangesetResponse(Changeset(branchName, true, packageIdentifier), branchOverview)
       }
-         .map { SetActiveChangesetResponse(Changeset(branchName, true, packageIdentifier)) }
    }
 
    override val packageIdentifier: PackageIdentifier
