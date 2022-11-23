@@ -23,6 +23,10 @@ import { ChangeLogDiffEntry, DiffKind } from './changelog.service';
       <app-metadata-change class="details-block" *ngIf="diff.kind === 'OperationMetadataChanged'"
                            [oldValue]="diff.oldDetails!"
                            [newValue]="diff.newDetails!"
+      ></app-metadata-change>
+      <app-metadata-change class="details-block" *ngIf="diff.kind === 'MetadataChanged'"
+                           [oldValue]="diff.oldDetails!"
+                           [newValue]="diff.newDetails!"
       >
       </app-metadata-change>
       <app-documentation-change class="details-block" *ngIf="diff.kind === 'DocumentationChanged'"

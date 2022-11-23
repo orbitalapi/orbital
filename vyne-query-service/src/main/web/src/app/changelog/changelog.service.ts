@@ -45,6 +45,7 @@ export type DiffKind =
   'ModelAdded' |
   'ModelRemoved' |
   'ModelChanged' |
+  'MetadataChanged' |
   'DocumentationChanged' |
   'FieldAddedToModel' |
   'FieldRemovedFromModel' |
