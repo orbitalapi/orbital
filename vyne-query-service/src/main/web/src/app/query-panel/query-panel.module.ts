@@ -41,6 +41,8 @@ import { CovalentFileModule } from '@covalent/core/file';
 import { ExpandingPanelSetModule } from '../expanding-panelset/expanding-panel-set.module';
 import { TuiButtonModule } from '@taiga-ui/core';
 import { ResultsDownloadModule } from 'src/app/results-download/results-download.module';
+import { MatMenuModule } from '@angular/material/menu';
+import { ClipboardModule } from '@angular/cdk/clipboard';
 
 @NgModule({
   imports: [
@@ -77,7 +79,9 @@ import { ResultsDownloadModule } from 'src/app/results-download/results-download
     MatSortModule,
     ExpandingPanelSetModule,
     TuiButtonModule,
-    ResultsDownloadModule
+    ResultsDownloadModule,
+    MatMenuModule,
+    ClipboardModule
   ],
   exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent,
     ErrorPanelComponent],

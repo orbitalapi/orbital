@@ -39,6 +39,8 @@ import { Router } from '@angular/router';
 import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
 import { ExportFormat, ResultsDownloadService } from 'src/app/results-download/results-download.service';
+import { copyQueryAs, CopyQueryFormat } from 'src/app/query-panel/query-editor/QueryFormatter';
+import {Clipboard} from '@angular/cdk/clipboard';
 
 declare const monaco: any; // monaco
 @Component({
@@ -105,7 +107,8 @@ export class QueryEditorComponent implements OnInit {
               private activeQueryNotificationService: ActiveQueriesNotificationService,
               private typeService: TypesService,
               private router: Router,
-              private changeDetector: ChangeDetectorRef
+              private changeDetector: ChangeDetectorRef,
+              private clipboard: Clipboard
   ) {
 
     this.initialQuery = this.router.getCurrentNavigation()?.extras?.state?.query;
@@ -289,5 +292,9 @@ export class QueryEditorComponent implements OnInit {
 
     this.queryProfileData$ = this.queryService.getQueryProfileFromClientId(this.queryClientId);
     this.changeDetector.detectChanges();
+  }
+
+  copyQuery($event: CopyQueryFormat) {
+    copyQueryAs(this.query, this.queryService.queryEndpoint, $event, this.clipboard);
   }
 }

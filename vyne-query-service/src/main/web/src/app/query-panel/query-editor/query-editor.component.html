@@ -10,6 +10,7 @@
               [error]="lastErrorMessage"
               [runningQueryStatus]="queryMetadata$ | async"
               (cancelQuery)="cancelQuery()"
+              (copyQuery)="copyQuery($event)"
             >
             </app-query-editor-bottom-bar>
           </app-panel-header>

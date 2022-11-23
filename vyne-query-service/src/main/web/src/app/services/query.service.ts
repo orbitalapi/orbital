@@ -38,6 +38,10 @@ export class QueryService {
 
   }
 
+  get queryEndpoint(): string {
+    return `${window.location.protocol}${environment.serverUrl}/api/taxiql`;
+  }
+
   submitQuery(query: Query, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<ValueWithTypeName> {
     // TODO :  I suspect the return type here is actually ValueWithTypeName | ValueWithTypeName[]
     return this.http.post<ValueWithTypeName[]>(`${environment.serverUrl}/api/query?resultMode=${resultMode}&clientQueryId=${clientQueryId}`, query, this.httpOptions)
