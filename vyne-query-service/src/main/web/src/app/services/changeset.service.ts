@@ -28,6 +28,7 @@ export class ChangesetService {
   private activeChangesetLocalUpdate$ = new BehaviorSubject<Changeset>(null);
   private availableChangesetsByServer$: Observable<Changeset[]>;
   private availableChangesetsLocalUpdate$ = new BehaviorSubject<Changeset[]>([]);
+  activeBranchOverview: BranchOverview | null = null;
 
   constructor(
     @Inject(ENVIRONMENT) private environment: Environment,
@@ -95,11 +96,14 @@ export class ChangesetService {
     return this.http.post<SetActiveChangesetResponse>(`${this.environment.serverUrl}/api/repository/changesets/active`, {
       packageIdentifier: changeset.packageIdentifier,
       changesetName: changeset.name,
-    }).pipe(tap(() => this.activeChangesetLocalUpdate$.next({
-      name: changeset.name,
-      isActive: true,
-      packageIdentifier: changeset.packageIdentifier,
-    })));
+    }).pipe(
+      tap(() => this.activeChangesetLocalUpdate$.next({
+        name: changeset.name,
+        isActive: true,
+        packageIdentifier: changeset.packageIdentifier,
+      })),
+      tap(response => this.activeBranchOverview = response.branchOverview),
+    );
   }
 
   createChangeset(name: string, packageIdentifier: PackageIdentifier): Observable<Changeset> { // TODO Typing
@@ -109,6 +113,7 @@ export class ChangesetService {
       { changesetName: sanitizedName, packageIdentifier: packageIdentifier },
     ).pipe(
       map(response => response.changeset),
+      switchMap(response => this.setActiveChangeset(response).pipe(map(response => response.changeset))),
       tap((changeset) => {
         this.activeChangesetLocalUpdate$.next(changeset);
         this.availableChangesetsLocalUpdate$.next([...this.availableChangesetsLocalUpdate$.value, changeset]);
@@ -245,6 +250,7 @@ export interface ChangesetUpdateResponse {
 }
 
 export interface SetActiveChangesetResponse extends ChangesetUpdateResponse {
+  branchOverview: BranchOverview;
 }
 
 export interface CreateChangesetResponse extends ChangesetUpdateResponse {
@@ -272,7 +278,17 @@ export interface FinalizeChangesetRequest {
   packageIdentifier: any;
 }
 
+export interface BranchOverview {
+  additions: number;
+  changedFiles: number;
+  deletions: number;
+  author: string;
+  description: string;
+  lastUpdated: string;
+}
+
 export interface FinalizeChangesetResponse {
+  pullRequestOverview: BranchOverview;
   link: string | null;
   changeset: Changeset;
 }

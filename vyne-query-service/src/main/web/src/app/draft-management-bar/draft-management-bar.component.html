@@ -13,7 +13,13 @@
         {{(changesetService.activeChangeset$ | async).name}}
         <mat-icon [matTooltip]="'Change the name of the draft'">edit</mat-icon>
       </div>
-      <div class="description subtle">Created <i>just now</i> by <a>you</a></div>
+      <div class="description subtle">
+        Created <i>{{getCreatedAtString()}}</i> by <a>you</a>
+        <span
+          *ngIf="changesetService.activeBranchOverview !== null"> • {{changesetService.activeBranchOverview.additions}}
+          additions, {{changesetService.activeBranchOverview.changedFiles}}
+          changes, {{changesetService.activeBranchOverview.deletions}} deletions</span>
+      </div>
     </div>
     <div class="right">
       <button

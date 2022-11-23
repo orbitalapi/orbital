@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { TypesService } from '../services/types.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ChangesetService } from 'src/app/services/changeset.service';
+import * as moment from 'moment';
 
 @Component({
   selector: 'app-draft-management-bar',
@@ -19,9 +19,7 @@ export class DraftManagementBarComponent implements OnInit {
   commitChanges() {
     this.changesetService.finalizeChangeset().subscribe((response) => {
       this.snackBar.open('Changes pushed', 'Dismiss', { duration: 10000 });
-      if (response.link !== null) {
-        this.openPr(response.link);
-      }
+      this.openPullRequest(response.link);
     });
   }
 
@@ -29,7 +27,21 @@ export class DraftManagementBarComponent implements OnInit {
     this.changesetService.selectDefaultChangeset();
   }
 
-  private openPr(link: string): void {
+  getCreatedAtString() {
+    const lastUpdatedString = this.changesetService.activeBranchOverview?.lastUpdated;
+    if (!lastUpdatedString) {
+      return '';
+    }
+    const lastUpdated = moment(Date.parse(lastUpdatedString));
+    const now = moment(new Date());
+    if (moment.duration(now.diff(lastUpdated)).asMinutes() < 15) {
+      return 'Just now';
+    } else {
+      return lastUpdated.format('DD/MM/YYYY HH:mm');
+    }
+  }
+
+  private openPullRequest(link: string): void {
     const didTabOpenSuccessfully = window.open(link, '_blank');
     if (didTabOpenSuccessfully !== null) {
       didTabOpenSuccessfully.focus();

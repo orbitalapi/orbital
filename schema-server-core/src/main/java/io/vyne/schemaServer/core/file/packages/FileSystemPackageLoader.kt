@@ -133,7 +133,7 @@ class FileSystemPackageLoader(
       val writer = FileSystemPackageWriter()
       return writer.writeSources(this, edits)
          .map {
-            AddChangesToChangesetResponse()
+            AddChangesToChangesetResponse(null)
          }
    }
 

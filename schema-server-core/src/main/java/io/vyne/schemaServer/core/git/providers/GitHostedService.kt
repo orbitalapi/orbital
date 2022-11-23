@@ -1,9 +1,15 @@
 package io.vyne.schemaServer.core.git.providers
 
+import io.vyne.schema.publisher.loaders.BranchOverview
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
 
 interface GitHostedService {
-   fun raisePr(config: GitRepositoryConfig, branchName: String, description: String, author: String): String
+   fun raisePr(
+      config: GitRepositoryConfig,
+      branchName: String,
+      description: String,
+      author: String
+   ): Pair<BranchOverview, String>
 }
 
 enum class GitHostingProvider {

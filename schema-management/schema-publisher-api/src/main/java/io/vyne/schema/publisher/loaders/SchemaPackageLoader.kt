@@ -8,6 +8,7 @@ import io.vyne.schema.publisher.PublisherType
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.net.URI
+import java.util.*
 
 
 data class CreateChangesetResponse(
@@ -15,22 +16,32 @@ data class CreateChangesetResponse(
 )
 
 data class AddChangesToChangesetResponse(
-   val errors: List<String> = emptyList()
+   val branchOverview: BranchOverview?
 )
 
 data class FinalizeChangesetResponse(
+   val branchOverview: BranchOverview,
+   val changeset: Changeset,
    val link: String? = null,
-   val changeset: Changeset
 )
 
 data class UpdateChangesetResponse(
    val changeset: Changeset,
-   val errors: List<String> = emptyList()
 )
 
 data class AvailableChangesetsResponse(
    val changesets: List<Changeset>
 )
+
+data class BranchOverview(
+   val additions: Int,
+   val changedFiles: Int,
+   val deletions: Int,
+   val author: String,
+   val description: String,
+   val lastUpdated: Date
+)
+
 
 data class Changeset(
    val name: String,
@@ -39,7 +50,8 @@ data class Changeset(
 )
 
 data class SetActiveChangesetResponse(
-   val changeset: Changeset
+   val changeset: Changeset,
+   val branchOverview: BranchOverview?
 )
 
 /**
