@@ -50,7 +50,7 @@ snyk:
    stage: verify
    image:
       name: snyk/snyk:maven-3-jdk-11
-      entrypoint: [ "/bin/sh", "-c" ]
+      entrypoint: [ "" ]
    variables:
       DOCKER_HOST: tcp://docker:2375/
       DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
@@ -63,7 +63,9 @@ snyk:
       -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
          alias: docker
          command: [ "--tls=false" ]
-   before_script:
-      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+   #   before_script:
+   #      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
    script:
+      - "echo $SNYK_AUTH"
+      - snyk auth $SNYK_AUTH
       - "snyk container test ${CI_REGISTRY_IMAGE}/schema-server:0.22.0-SNAPSHOT-BETA-693d6f62"
