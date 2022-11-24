@@ -38,7 +38,7 @@ default:
    tags:
       - docker-heavy
    services:
-      -  name: docker:20.10.21-dind
+      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
          command: [ "--tls=false" ]
    variables:
       # Instruct Testcontainers to use the daemon of DinD.
@@ -184,7 +184,7 @@ regression-test:
       BUILDKIT_PROGRESS: plain
       PROGRESS_NO_TRUNC: 1
    services:
-      -  name: docker:20.10.21-dind
+      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
          command: [ "--tls=false" ]
    script:
       - PROJECT_VERSION=$(cat build-version.txt)
@@ -290,7 +290,7 @@ terraform-validate:
 build-helm:
    stage: build
    image:
-      name: alpine/helm:3.10.2
+      name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/alpine/helm:3.10.2
       entrypoint: [ "" ]
    script:
       - cd ${CI_PROJECT_DIR}/infra/helm/vyne-helm
@@ -333,7 +333,7 @@ terraform-deploy-prod:
 
 .e2e-tests:
    stage: verify
-   image: docker:20.10.21-dind
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
    variables:
       DOCKER_HOST: tcp://docker:2375/
       DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
@@ -342,7 +342,7 @@ terraform-deploy-prod:
       BUILDKIT_PROGRESS: plain
       PROGRESS_NO_TRUNC: 1
    services:
-      -  name: docker:20.10.21-dind
+      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
          command: [ "--tls=false" ]
    retry: 2
    before_script:
