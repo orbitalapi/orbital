@@ -2,12 +2,12 @@ package io.vyne.connectors.aws.s3
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Stopwatch
-import io.vyne.connectors.TaxiQlToSqlConverter
 import io.vyne.connectors.aws.core.AwsConnectionConnectorConfiguration
 import io.vyne.connectors.aws.core.region
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.connectors.calcite.VyneCalciteDataSource
 import io.vyne.connectors.convertToTypedInstances
+import io.vyne.connectors.jdbc.sql.dml.SelectStatementGenerator
 import io.vyne.connectors.resultType
 import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
@@ -65,7 +65,7 @@ class S3Invoker(
       val taxiSchema = schema.taxi
       val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
       val query = Compiler(taxiQuery, importSources = listOf(taxiSchema)).queries().first()
-      val (sql, paramList) = TaxiQlToSqlConverter(taxiSchema, quoteColumns = true).toSql(query) { type -> type.toQualifiedName().typeName.toUpperCase()}
+      val (sql, paramList) = SelectStatementGenerator(taxiSchema).toSql(query) { type -> type.toQualifiedName().typeName.toUpperCase()}
       val paramMap = paramList.associate { param -> param.nameUsedInTemplate to param.value }
       val resultTypeQualifiedName = query.resultType()
       val resultType = schema.type(resultTypeQualifiedName.toVyneQualifiedName())

@@ -1,9 +1,7 @@
 package io.vyne.connectors.jdbc.sql.dml
 
 import io.vyne.connectors.collectionTypeOrType
-import io.vyne.connectors.jdbc.JdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.SqlUtils
-import io.vyne.connectors.jdbc.sqlBuilder
 import io.vyne.schemas.Schema
 import lang.taxi.TaxiDocument
 import lang.taxi.expressions.LiteralExpression
@@ -26,29 +24,45 @@ import org.jooq.impl.DSL.table
  */
 // TODO :  Replace this with a jooq powered generator in sql.dml
 class SelectStatementGenerator(private val taxiSchema: TaxiDocument) {
-   constructor(schema: Schema) : this (schema.taxi)
-   fun generateSelect(query: TaxiQlQuery, connection: JdbcConnectionConfiguration): Select<Record> {
-      return generateSelect(query, connection.sqlBuilder())
+   constructor(schema: Schema) : this(schema.taxi)
+
+   /**
+    * Generates a SELECT statement using a default SQL dialect
+    */
+   fun generateGenericSelect(query: TaxiQlQuery): Select<Record> {
+      return generateSelect(query, DSL.using(SQLDialect.DEFAULT))
    }
 
+   /**
+    * Generates a SELECT statement using the dialect configured in the DSL Context
+    */
    fun generateSelect(query: TaxiQlQuery, sqlDsl: DSLContext): Select<Record> {
       val typesToFind = getTypesToFind(query)
       val tableNamesFromType: Map<Type, AliasedTableName> = getTableNames(typesToFind)
       if (tableNamesFromType.size > 1) {
          error("Joins are not yet supported - can only select from a single table")
       }
-      val sqlTablesByType =  tableNamesFromType.values.map { tableName ->
+      val sqlTablesByType = tableNamesFromType.values.map { tableName ->
          tableName.type to table(tableName.tableName).`as`(tableName.alias)
       }.toMap()
       val sqlTable = sqlDsl.select().from(sqlTablesByType.values)
-      val conditions = buildWhereClause(typesToFind,sqlTablesByType)
+      val conditions = buildWhereClause(typesToFind, sqlTablesByType)
       return sqlTable.where(conditions)
    }
 
-   @Deprecated("use generateSelect()")
-   fun toSql(query: TaxiQlQuery, connection: JdbcConnectionConfiguration, tableNameProvider: (type: Type) -> String): Pair<String, List<SqlTemplateParameter>> {
-      val select = generateSelect(query,connection)
-      return select.sql to select.params.map { (key,param) -> SqlTemplateParameter(key, param.value as Any) }
+   @Deprecated("use generateSelect(), as it provides richer support for different dialects")
+   fun toSql(
+      query: TaxiQlQuery,
+      sqlDsl: DSLContext,
+      tableNameProvider: (type: Type) -> String
+   ): Pair<String, List<SqlTemplateParameter>> {
+      val select = generateSelect(query, sqlDsl)
+      return select.sql to select.params.map { (key, param) -> SqlTemplateParameter(key, param.value as Any) }
+   }
+
+   @Deprecated("use generateSelect(), as it provides richer support for different dialects")
+   fun toSql(query: TaxiQlQuery, tableNameProvider: (type: Type) -> String): Pair<String, List<SqlTemplateParameter>> {
+      return toSql(query, DSL.using(SQLDialect.DEFAULT), tableNameProvider)
    }
 
    private fun getTableNames(
@@ -68,8 +82,8 @@ class SelectStatementGenerator(private val taxiSchema: TaxiDocument) {
    private fun getTypesToFind(query: TaxiQlQuery): List<Pair<ObjectType, DiscoveryType>> {
       val typesToFind = query.typesToFind
          .map { discoveryType ->
-               val collectionType = collectionTypeOrType(taxiSchema.type(discoveryType.typeName)) as ObjectType
-               collectionType to discoveryType
+            val collectionType = collectionTypeOrType(taxiSchema.type(discoveryType.typeName)) as ObjectType
+            collectionType to discoveryType
          }
       return typesToFind
    }
@@ -79,18 +93,18 @@ class SelectStatementGenerator(private val taxiSchema: TaxiDocument) {
       tableNames: Map<Type, Table<Record>>
    ): List<Condition> {
       return typesToFind.filter { (_, discoveryType) -> discoveryType.constraints.isNotEmpty() }
-            .flatMap { (type, discoveryType) ->
-               val sqlTable = tableNames[type]!!
-               discoveryType.constraints.mapIndexed { index, constraint ->
-                  buildSqlConstraint(
-                     discoveryType,
-                     type,
-                     sqlTable,
-                     constraint,
-                     index
-                  )
-               }
+         .flatMap { (type, discoveryType) ->
+            val sqlTable = tableNames[type]!!
+            discoveryType.constraints.mapIndexed { index, constraint ->
+               buildSqlConstraint(
+                  discoveryType,
+                  type,
+                  sqlTable,
+                  constraint,
+                  index
+               )
             }
+         }
    }
 
    private fun buildSqlConstraint(
@@ -108,6 +122,7 @@ class SelectStatementGenerator(private val taxiSchema: TaxiDocument) {
             constraint,
             constraintIndex
          )
+
          else -> error("Sql constraints not supported for constraint type ${constraint::class.simpleName}")
       }
    }
@@ -120,7 +135,7 @@ class SelectStatementGenerator(private val taxiSchema: TaxiDocument) {
       constraintIndex: Int
    ): Condition {
       return when (val expression = constraint.expression) {
-         is OperatorExpression -> buildSqlConstraintFromOperatorExpression(discoveryType,type,sqlTable,expression)
+         is OperatorExpression -> buildSqlConstraintFromOperatorExpression(discoveryType, type, sqlTable, expression)
          else -> error("Unsupported expression type: ${expression::class.simpleName}")
       }
    }
@@ -166,9 +181,16 @@ class SelectStatementGenerator(private val taxiSchema: TaxiDocument) {
             if (reference.path.size == 1) {
                reference
             } else {
-               error("${fieldType.qualifiedName} is only accessible on ${sourceType} via a nested property (${reference.path.joinToString(".")}), which is not supported in SQL statements")
+               error(
+                  "${fieldType.qualifiedName} is only accessible on ${sourceType} via a nested property (${
+                     reference.path.joinToString(
+                        "."
+                     )
+                  }), which is not supported in SQL statements"
+               )
             }
          }
+
          else -> error("Field ${fieldType.qualifiedName} is ambiguous on type ${sourceType.qualifiedName} - expected a single match, but found ${references.joinToString { it.description }}")
       }
    }

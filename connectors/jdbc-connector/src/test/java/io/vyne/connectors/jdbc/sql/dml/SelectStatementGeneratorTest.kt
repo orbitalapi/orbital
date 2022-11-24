@@ -5,6 +5,7 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.JdbcUrlAndCredentials
 import io.vyne.connectors.jdbc.JdbcUrlCredentialsConnectionConfiguration
+import io.vyne.connectors.jdbc.sqlBuilder
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
 import lang.taxi.query.TaxiQlQuery
@@ -29,7 +30,7 @@ class SelectStatementGeneratorTest : DescribeSpec({
             title : MovieTitle by column("title")
          }""".compiled()
          val query = """find { Movie[] }""".query(taxi)
-         val (sql, params) = SelectStatementGenerator(taxi).toSql(query, connectionDetails) { type -> type.qualifiedName.toQualifiedName().typeName }
+         val (sql, params) = SelectStatementGenerator(taxi).toSql(query, connectionDetails.sqlBuilder()) { type -> type.qualifiedName.toQualifiedName().typeName }
          sql.should.equal("""select * from movie as "t0"""")
          params.should.be.empty
       }
@@ -44,7 +45,7 @@ class SelectStatementGeneratorTest : DescribeSpec({
             title : MovieTitle
          }""".compiled()
          val query = """find { Movie[]( MovieTitle == 'Hello' ) }""".query(taxi)
-         val selectStatement = SelectStatementGenerator(taxi).generateSelect(query, connectionDetails)
+         val selectStatement = SelectStatementGenerator(taxi).generateSelect(query, connectionDetails.sqlBuilder())
          val sql = selectStatement.sql
 
          val expected = """select * from movie as "t0" where "t0"."title" = ?"""

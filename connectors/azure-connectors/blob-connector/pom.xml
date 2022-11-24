@@ -12,6 +12,11 @@
    <artifactId>blob-connector</artifactId>
    <dependencies>
       <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>jdbc-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>com.azure</groupId>
          <artifactId>azure-storage-blob</artifactId>
          <version>12.20.0</version>

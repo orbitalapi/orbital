@@ -51,7 +51,7 @@ class JdbcInvoker(
       val taxiSchema = schema.taxi
       val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
       val query = Compiler(taxiQuery, importSources = listOf(taxiSchema)).queries().first()
-      val (sql, paramList) = SelectStatementGenerator(taxiSchema).toSql(query, connectionConfig) { type -> SqlUtils.tableNameOrTypeName(type)}
+      val (sql, paramList) = SelectStatementGenerator(taxiSchema).toSql(query, connectionConfig.sqlBuilder()) { type -> SqlUtils.tableNameOrTypeName(type)}
       val paramMap = paramList.associate { param -> param.nameUsedInTemplate to param.value }
 
       val stopwatch = Stopwatch.createStarted()
