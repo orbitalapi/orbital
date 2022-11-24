@@ -48,15 +48,21 @@ default:
       PROGRESS_NO_TRUNC: 1
       registry: $CI_REGISTRY_IMAGE
 
-publish-snyk-to-docker-hub:
+publish-snyk-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
    script:
+      - cd snyk/
+      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
       - docker build -t "${registry}/snyk:latest" .
       - docker push ${registry}/snyk:latest
 
 snyk:
    stage: verify
    image: $CI_REGISTRY_IMAGE/snyk:latest
+   services:
+      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
+         alias: docker
+         command: [ "--tls=false" ]
    variables:
       DOCKER_HOST: tcp://docker:2375/
       DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
@@ -64,8 +70,9 @@ snyk:
       DOCKER_BUILDKIT: 1
       BUILDKIT_PROGRESS: plain
       PROGRESS_NO_TRUNC: 1
+      SNYK_TOKEN: ea48d8a0-a809-4381-97cb-e54c20a21ad1
    before_script:
       - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+      - snyk auth $SNYK_TOKEN
    script:
-      - snyk auth
-      - "snyk container test ${CI_REGISTRY_IMAGE}/schema-server:0.22.0-SNAPSHOT-BETA-693d6f62"
+      - snyk container test --app-vulns ${CI_REGISTRY_IMAGE}/schema-server:0.22.0-SNAPSHOT-BETA-693d6f62 --severity-threshold=high
