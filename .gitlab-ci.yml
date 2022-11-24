@@ -32,20 +32,6 @@ default:
    tags:
       - docker
 
-foo:
-   image: maven:3-jdk-11
-   variables:
-      SNYK_AUTH: $SNYK_AUTH
-   stage: verify
-   script:
-      - curl -sL https://deb.nodesource.com/setup_10.x | bash -
-      - apt-get -y upgrade
-      - apt-get -y install nodejs
-      - apt-get -y install npm
-      - npm install -g snyk snyk-to-html
-      - snyk auth $SNYK_AUTH
-      - snyk container test ${CI_REGISTRY_IMAGE}/schema-server:0.22.0-SNAPSHOT-BETA-693d6f62 --json | snyk-to-html -o snyk_results.html
-
 snyk:
    stage: verify
    image:
@@ -58,7 +44,7 @@ snyk:
       DOCKER_BUILDKIT: 1
       BUILDKIT_PROGRESS: plain
       PROGRESS_NO_TRUNC: 1
-      SNYK_AUTH: $SNYK_AUTH
+      SNYK_TOKEN: $SNYK_TOKEN
    services:
       -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
          alias: docker
@@ -66,6 +52,5 @@ snyk:
    #   before_script:
    #      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
    script:
-      - "echo \"$SNYK_AUTH\""
-      - snyk auth $SNYK_AUTH
+      - snyk auth
       - "snyk container test ${CI_REGISTRY_IMAGE}/schema-server:0.22.0-SNAPSHOT-BETA-693d6f62"
