@@ -321,7 +321,7 @@ class AccessorReader(
          )
 
          is TypeExpression -> readTypeExpression(accessor, allowContextQuerying)
-         is ModelAttributeReferenceSelector -> timed("read model Attribute ${accessor.asTaxi()}") { readModelAttributeSelector(accessor, allowContextQuerying, schema) }
+         is ModelAttributeReferenceSelector -> xtimed("read model Attribute ${accessor.asTaxi()}") { readModelAttributeSelector(accessor, allowContextQuerying, schema) }
          is ScopedReferenceSelector -> readScopedReferenceSelector(accessor)
          else -> {
             TODO("Support for accessor not implemented with type $accessor")
@@ -358,7 +358,7 @@ class AccessorReader(
          } else {
             FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE
          }
-      val fact = timed("readModelAttributeSelector - fact bag search against ${source.type.qualifiedName.shortDisplayName}") { FactBag.of(listOf(source), schema)
+      val fact = xtimed("readModelAttributeSelector - fact bag search against ${source.type.qualifiedName.shortDisplayName}") { FactBag.of(listOf(source), schema)
          .getFactOrNull(requestedType, discoveryStrategy) }
       return fact ?: TypedNull.create(
          requestedType,
