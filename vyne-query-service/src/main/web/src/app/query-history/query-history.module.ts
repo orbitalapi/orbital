@@ -24,9 +24,11 @@ import { ExpandingPanelSetModule } from '../expanding-panelset/expanding-panel-s
 import { TuiButtonModule } from '@taiga-ui/core';
 import { RouterModule } from '@angular/router';
 import { ResultsDownloadModule } from 'src/app/results-download/results-download.module';
+import { TruncatePipeModule } from 'src/app/truncate-pipe/truncate-pipe.module';
 
 @NgModule({
   imports: [
+    TruncatePipeModule,
     CommonModule,
     SearchModule,
     MatButtonModule,

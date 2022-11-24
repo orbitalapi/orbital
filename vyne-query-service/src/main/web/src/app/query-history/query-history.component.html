@@ -3,18 +3,6 @@
     <button mat-stroked-button (click)="loadQuerySummaries()">Refresh</button>
   </span>
 </app-header-bar>
-<!--<mat-sidenav-container [hasBackdrop]="true">-->
-<!--  <mat-drawer #drawer mode="over" position="end" [(opened)]="showSidePanel && this.shouldTypedInstancePanelBeVisible">-->
-<!--    <div class="drawer-content">-->
-<!--      <app-typed-instance-panel-container-->
-<!--        [instance]="selectedTypeInstance"-->
-<!--        (hasTypedInstanceDrawerClosed)="onCloseTypedInstanceDrawer($event)"-->
-<!--        [type]="selectedTypeInstanceType"-->
-<!--        [dataSource]="selectedTypeInstanceDataSource"-->
-<!--        [instanceQueryCoordinates]="selectedInstanceQueryCoordinates"-->
-<!--      ></app-typed-instance-panel-container>-->
-<!--    </div>-->
-<!--  </mat-drawer>-->
 <div class="container">
   <app-query-list [historyRecords]="history"
                   [activeQueries]="activeQueries"
