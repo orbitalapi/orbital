@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
+import org.springframework.boot.actuate.metrics.web.reactive.client.MetricsWebClientCustomizer
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
 import org.springframework.boot.context.properties.ConfigurationProperties
@@ -116,11 +117,15 @@ class QueryServiceApp {
 
    //   @LoadBalanced
    @Bean
-   fun webClientFactory(loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction): WebClient.Builder {
-      return WebClient.builder()
+   fun webClientFactory(loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction,
+                        metricsCustomizer: MetricsWebClientCustomizer
+   ): WebClient.Builder {
+      val builder = WebClient.builder()
          .filter(
             ConditionallyLoadBalancedExchangeFilterFunction.permitLocalhost(loadBalancingFilterFunction)
          )
+      metricsCustomizer.customize(builder)
+      return builder
    }
 
    @Autowired
