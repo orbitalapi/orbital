@@ -333,7 +333,7 @@ terraform-deploy-prod:
 
 .e2e-tests:
    stage: verify
-   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
+   image: docker:20.10.21-dind
    variables:
       DOCKER_HOST: tcp://docker:2375/
       DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
