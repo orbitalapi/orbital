@@ -39,6 +39,7 @@ default:
       - docker-heavy
    services:
       -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
+         alias: docker
          command: [ "--tls=false" ]
    variables:
       # Instruct Testcontainers to use the daemon of DinD.
@@ -184,7 +185,8 @@ regression-test:
       BUILDKIT_PROGRESS: plain
       PROGRESS_NO_TRUNC: 1
    services:
-      -  name: docker:20.10.21-dind
+      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
+         alias: docker
          command: [ "--tls=false" ]
    script:
       - PROJECT_VERSION=$(cat build-version.txt)
@@ -333,7 +335,7 @@ terraform-deploy-prod:
 
 .e2e-tests:
    stage: verify
-   image: docker:20.10.21-dind
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
    variables:
       DOCKER_HOST: tcp://docker:2375/
       DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
@@ -343,6 +345,7 @@ terraform-deploy-prod:
       PROGRESS_NO_TRUNC: 1
    services:
       -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
+         alias: docker
          command: [ "--tls=false" ]
    retry: 2
    before_script:
