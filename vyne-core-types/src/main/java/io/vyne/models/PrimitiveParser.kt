@@ -18,7 +18,7 @@ class PrimitiveParser(private val conversionService: ConversionService = Convers
       if (targetType.isEnum) {
          return parseEnum(value, targetType, source)
       }
-      return TypedValue.from(targetType, value, conversionService, source, parsingErrorBehaviour)
+      return TypedValue.from(targetType, value, conversionService, source, parsingErrorBehaviour, targetType.formatAndZoneOffset)
    }
 
    private fun parseEnum(value: Any, targetType: Type, source: DataSource): TypedInstance {

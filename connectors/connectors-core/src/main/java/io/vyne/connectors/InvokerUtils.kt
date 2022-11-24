@@ -9,7 +9,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flowOn
 import lang.taxi.query.TaxiQlQuery
+import lang.taxi.types.ArrayType
 import lang.taxi.types.QualifiedName
+import lang.taxi.types.Type
 
 fun TaxiQlQuery.resultType(): QualifiedName {
    return when {
@@ -38,4 +40,13 @@ fun List<MutableMap<String, Any>>.convertToTypedInstances(
          )
       }
    return typedInstances.asFlow().flowOn(dispatcher)
+}
+
+
+fun collectionTypeOrType(type: Type): Type {
+   return if (type is ArrayType) {
+      type.parameters[0]
+   } else {
+      type
+   }
 }

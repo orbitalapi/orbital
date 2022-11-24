@@ -104,7 +104,7 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
       optionalFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
    ): D {
       require(format != null) {
-         "Formats are expected for Date types"
+         " Formats are expected for Date types"
       }
       // Note - using US Locale so that AM PM in uppercase is supported
       val locale = when {

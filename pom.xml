@@ -50,6 +50,7 @@
       <hazelcast.version>5.1.4</hazelcast.version>
       <testcontainers.version>1.16.2</testcontainers.version>
       <h2.version>2.1.214</h2.version>
+      <kotest.version>5.5.1</kotest.version>
 
       <!-- reactor-netty.version is overridden because of a dns udp bug that appears on M1 Macbook pros.
        https://github.com/netty/netty/issues/8261
@@ -210,6 +211,18 @@
       <dependency>
          <groupId>com.h2database</groupId>
          <artifactId>h2</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.kotest</groupId>
+         <artifactId>kotest-runner-junit5-jvm</artifactId>
+         <version>${kotest.version}</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.kotest</groupId>
+         <artifactId>kotest-assertions-core-jvm</artifactId>
+         <version>${kotest.version}</version>
          <scope>test</scope>
       </dependency>
    </dependencies>
