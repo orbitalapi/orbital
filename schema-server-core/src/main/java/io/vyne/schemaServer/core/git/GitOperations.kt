@@ -164,7 +164,7 @@ class GitOperations(
       val oldTreeIterator = prepareTreeParser(branchName)
       val newTreeParser = prepareTreeParser(config.branch)
       if (oldTreeIterator == null || newTreeParser == null) {
-         logger.error { "Failed to obtain the iterator for $branchName or ${config.branch}. Defaulting to an empty branch overview" }
+         logger.error { "Failed to obtain the iterator for $branchName or ${config.branch}. Defaulting to an empty branch overview. " }
          return BranchOverview(0, 0, 0, "", "", Date())
       }
       var additions = 0
@@ -189,10 +189,7 @@ class GitOperations(
 
    private fun prepareTreeParser(ref: String): AbstractTreeIterator? {
       val branchName = if (ref == "main") ref else "schema-updates/$ref"
-      val head = git.repository.findRef("refs/heads/$branchName")
-      if (head == null) {
-         return null
-      }
+      val head = git.repository.findRef("refs/heads/$branchName") ?: return null
       val walk = RevWalk(git.repository)
       val commit = walk.parseCommit(head.objectId)
       val tree = walk.parseTree(commit.tree.id)
