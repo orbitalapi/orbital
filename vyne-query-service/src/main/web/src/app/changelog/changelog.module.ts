@@ -9,6 +9,8 @@ import { TypeChangeComponent } from './type-change.component';
 import { InputParamsChangeComponent } from './input-params-change.component';
 import { MetadataChangeComponent } from './metadata-change.component';
 import { DocumentationChangeComponent } from './documentation-change.component';
+import { DiffListComponent } from './diff-list.component';
+import { TuiPaginationModule } from '@taiga-ui/kit';
 
 
 
@@ -20,16 +22,18 @@ import { DocumentationChangeComponent } from './documentation-change.component';
     TypeChangeComponent,
     InputParamsChangeComponent,
     MetadataChangeComponent,
-    DocumentationChangeComponent
+    DocumentationChangeComponent,
+    DiffListComponent
   ],
   exports: [
     ChangelogListComponent,
     InputParamsChangeComponent
   ],
-  imports: [
-    CommonModule,
-    MomentModule,
-    TuiSvgModule,
-  ]
+    imports: [
+        CommonModule,
+        MomentModule,
+        TuiSvgModule,
+        TuiPaginationModule,
+    ]
 })
 export class ChangelogModule { }
