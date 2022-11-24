@@ -59,6 +59,7 @@ export class ChangesetService {
     // All known changesets.  Triggered off the list of all editable packages
     this.availableChangesetsByServer$ = this.editablePackage$
       .pipe(
+        filter(packageDescription => packageDescription != null),
         switchMap(packageDescription => this.getAvailableChangesets(packageDescription.identifier)),
         shareReplay(1),
       );
