@@ -222,7 +222,7 @@ data class TypedObject(
             }
 
             is TypedNull -> {
-               logger.warn { "Reading path of $path against instance of ${this.type.qualifiedName.shortDisplayName} found null value $thisFieldName.  Returning the null value" }
+               logger.debug { "Reading path of $path against instance of ${this.type.qualifiedName.shortDisplayName} found null value $thisFieldName.  Returning the null value" }
                listOf(attributeValue)
             }
 
