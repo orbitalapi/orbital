@@ -11,7 +11,7 @@
 
    <artifactId>jdbc-connector</artifactId>
    <properties>
-      <schemacrawler.version>16.18.2</schemacrawler.version>
+      <schemacrawler.version>16.19.1</schemacrawler.version>
    </properties>
 
    <dependencies>
@@ -142,7 +142,7 @@
       <dependency>
          <groupId>net.snowflake</groupId>
          <artifactId>snowflake-jdbc</artifactId>
-         <version>3.13.24</version>
+         <version>3.13.25</version>
       </dependency>
       <dependency>
          <groupId>com.amazon.redshift</groupId>

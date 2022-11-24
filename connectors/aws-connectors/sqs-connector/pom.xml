@@ -85,7 +85,7 @@
          <groupId>org.testcontainers</groupId>
          <artifactId>junit-jupiter</artifactId>
          <scope>test</scope>
-         <version>1.17.5</version>
+         <version>1.17.6</version>
       </dependency>
 
       <dependency>
@@ -98,7 +98,7 @@
       <dependency>
          <groupId>com.amazonaws</groupId>
          <artifactId>aws-java-sdk-s3</artifactId>
-         <version>1.12.341</version>
+         <version>1.12.348</version>
          <scope>test</scope>
       </dependency>
    </dependencies>
