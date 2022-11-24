@@ -184,7 +184,7 @@ regression-test:
       BUILDKIT_PROGRESS: plain
       PROGRESS_NO_TRUNC: 1
    services:
-      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
+      -  name: docker:20.10.21-dind
          command: [ "--tls=false" ]
    script:
       - PROJECT_VERSION=$(cat build-version.txt)
