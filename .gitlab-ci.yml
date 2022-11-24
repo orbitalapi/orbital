@@ -66,6 +66,6 @@ snyk:
    #   before_script:
    #      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
    script:
-      - "echo $SNYK_AUTH"
+      - "echo \"$SNYK_AUTH\""
       - snyk auth $SNYK_AUTH
       - "snyk container test ${CI_REGISTRY_IMAGE}/schema-server:0.22.0-SNAPSHOT-BETA-693d6f62"
