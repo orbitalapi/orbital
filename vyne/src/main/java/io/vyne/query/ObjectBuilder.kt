@@ -250,6 +250,7 @@ class ObjectBuilder(
       val searchFailed = result == null || result is TypedNull && result.source is FailedSearch
       return if (searchFailed) {
          if (!targetType.isClosed) {
+            logger.debug { "Search for object ${targetType.qualifiedName.shortDisplayName} failed, so initiating building one" }
             buildObjectInstance(targetType, spec, facts)
          } else {
             TypedNull.create(

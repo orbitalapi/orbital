@@ -116,22 +116,22 @@ class Vyne(
    ): Pair<QueryContext, QueryExpression> {
       val additionalFacts = taxiQl.facts.map { variable ->
          TypedInstance.from(
-            schema.type(variable.value.fqn.fullyQualifiedName),
-            variable.value.value,
+            schema.type(variable.value.typedValue.fqn.fullyQualifiedName),
+            variable.value.typedValue.value,
             schema,
             source = Provided
          )
       }.toSet()
-      var queryContext = query(
+      val queryContext = query(
          additionalFacts = additionalFacts,
          queryId = queryId,
          clientQueryId = clientQueryId,
          eventBroker = eventBroker
       )
          .responseType(deriveResponseType(taxiQl))
-      queryContext = taxiQl.projectedType?.let {
-         queryContext.projectResultsTo(it, taxiQl.projectionScope) // Merge conflict, was : it.toVyneQualifiedName()
-      } ?: queryContext
+//      queryContext = taxiQl.projectedType?.let {
+//         queryContext.projectResultsTo(it, taxiQl.projectionScope) // Merge conflict, was : it.toVyneQualifiedName()
+//      } ?: queryContext
 
       val constraintProvider = TaxiConstraintConverter(this.schema)
       val queryExpressions = taxiQl.typesToFind.map { discoveryType ->
@@ -140,6 +140,7 @@ class Vyne(
                .toVyneAnonymousType(discoveryType.anonymousType!!, schema)
          }
             ?: schema.type(discoveryType.typeName.toVyneQualifiedName())
+
          val expression = if (discoveryType.constraints.isNotEmpty()) {
             val constraints = constraintProvider.buildOutputConstraints(targetType, discoveryType.constraints)
             ConstrainedTypeNameQueryExpression(targetType.name.parameterizedName, constraints)
@@ -153,7 +154,14 @@ class Vyne(
       if (queryExpressions.size > 1) {
          TODO("Handle multiple target types in VyneQL")
       }
-      val expression = queryExpressions.first()
+      val expression = queryExpressions.first().let { expression ->
+         if (taxiQl.projectedType != null) {
+            ProjectedExpression(expression, Projection(ProjectionAnonymousTypeProvider.projectedTo(taxiQl.projectedType!!,schema), taxiQl.projectionScope))
+         } else {
+            expression
+         }
+      }
+
       return Pair(queryContext, expression)
    }
 

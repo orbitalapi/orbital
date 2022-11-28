@@ -74,6 +74,11 @@ class ObjectBuilderStrategy(val formatSpecs: List<ModelFormatSpec> = emptyList()
          return QueryStrategyResult.searchFailed()
       }
 
+      // Don't try to build objects that are closed
+      if (target.any { it.type.isClosed }) {
+         return QueryStrategyResult.searchFailed()
+      }
+
       val match = ObjectBuilder(
          context.queryEngine,
          context,

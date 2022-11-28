@@ -27,6 +27,8 @@ import io.vyne.query.QuerySpecTypeNode
 import io.vyne.query.TypeNameQueryExpression
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
+import io.vyne.query.projection.LocalProjectionProvider
+import io.vyne.query.projection.ProjectionProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.TaxiSchema
@@ -90,10 +92,10 @@ service ClientService {
       vyne().queryEngine().queryContext(queryId = queryId, clientQueryId = null)
 }
 
-fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
+fun testVyne(schema: TaxiSchema, projectionProvider: ProjectionProvider = LocalProjectionProvider()): Pair<Vyne, StubService> {
    val stubService = StubService(schema = schema)
    val queryEngineFactory =
-      QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubService)
+      QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), formatSpecs = emptyList(), invokers = listOf(stubService),projectionProvider = projectionProvider)
    val vyne = Vyne(listOf(schema), queryEngineFactory)
    return vyne to stubService
 }
@@ -155,8 +157,8 @@ fun testVyneWithStub(schema: String, invokers: List<OperationInvoker>): Pair<Vyn
    return testVyneWithStub(TaxiSchema.from(schema), invokers)
 }
 
-fun testVyne(schema: String, functionRegistry: FunctionRegistry = FunctionRegistry.default) =
-   testVyne(TaxiSchema.compileOrFail(schema, functionRegistry = functionRegistry))
+fun testVyne(schema: String, functionRegistry: FunctionRegistry = FunctionRegistry.default, projectionProvider: ProjectionProvider = LocalProjectionProvider()) =
+   testVyne(TaxiSchema.compileOrFail(schema, functionRegistry = functionRegistry), projectionProvider = projectionProvider)
 
 @ExperimentalTime
 @ExperimentalCoroutinesApi

@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import app.cash.turbine.testIn
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.base.Stopwatch
+import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.EvaluatedExpression
@@ -15,15 +16,23 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
+import io.vyne.models.facts.FactBag
 import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonCollection
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
+import io.vyne.query.Projection
+import io.vyne.query.QueryContext
+import io.vyne.query.VyneQueryStatistics
+import io.vyne.query.projection.ProjectionProvider
+import io.vyne.schemas.OperationInvocationException
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.Benchmark
 import io.vyne.utils.StrategyPerformanceProfiler
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -1378,7 +1387,7 @@ service Broker1Service {
       val (vyne, stubService) = testVyne(
          """
          model InputModel {
-          @format( "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+          @Format( "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
            inputField: Instant
          }
 
@@ -2702,6 +2711,48 @@ service Broker1Service {
 
          )
       )
+   }
+
+   @Test
+   fun `when the initial query fails vyne doesnt attempt to perform a projection`() : Unit = runBlocking{
+      val explodingProjectionProvider:ProjectionProvider = object : ProjectionProvider {
+         override fun project(
+            results: Flow<TypedInstance>,
+            projection: Projection,
+            context: QueryContext,
+            globalFacts: FactBag
+         ): Flow<Pair<TypedInstance, VyneQueryStatistics>> {
+            return results.map { typedInstance ->
+               error("THis shouldn't have been called!! $typedInstance")
+            }
+
+         }
+
+      }
+      val (vyne,stub) = testVyne(
+         """
+            model Person {
+               name : FullName inherits String
+            }
+            parameter model LookupRequest {
+               apiKey : ApiKey inherits String
+            }
+            service DataService {
+               operation findPeople(apiKey:ApiKey):Person[]
+            }
+         """.trimIndent(),
+         projectionProvider = explodingProjectionProvider
+      )
+      stub.addResponse("findPeople") { _, _ ->
+         throw OperationInvocationException("This service call failed", 503, mock {  }, emptyList())
+      }
+      vyne.query("""
+         |given { apiKey : ApiKey = 'jimmy' }
+         |find { Person[] } as {
+         | nope : FullName
+         |}[]
+      """.trimMargin())
+         .rawObjects()
    }
 
    @Test

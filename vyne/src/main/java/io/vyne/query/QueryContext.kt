@@ -1,6 +1,5 @@
 package io.vyne.query
 
-import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
 import com.google.common.collect.HashMultimap
@@ -17,13 +16,13 @@ import io.vyne.query.graph.ServiceParams
 import io.vyne.query.graph.edges.EvaluatableEdge
 import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.schemas.*
+import io.vyne.utils.Ids
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.Serializable
 import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.policies.Instruction
-import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
@@ -31,40 +30,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 
-
-/**
- * Defines a node within a QuerySpec that
- * describes the expected return type.
- * eg:
- * Given
- * {
- *    Client {  // <---QuerySpecTypeNode
- *       ClientId, ClientFirstName, ClientLastName // <--- 3 Children, all QuerySpecTypeNode's too!
- *    }
- * }
- *
- */
-// TODO : Why isn't the type enough, given that has children?  Why do I need to explicitly list the children I want?
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class QuerySpecTypeNode(
-   val type: Type,
-   @Deprecated("Not used, not required")
-   val children: Set<QuerySpecTypeNode> = emptySet(),
-   val mode: QueryMode = QueryMode.DISCOVER,
-   // Note: Not really convinced these need to be OutputCOnstraints (vs Constraints).
-   // Revisit later
-   val dataConstraints: List<OutputConstraint> = emptyList()
-) {
-   companion object {
-      private val logger = KotlinLogging.logger {}
-   }
-   init {
-      if (type.isCollection && type.collectionTypeName!!.fullyQualifiedName == PrimitiveType.ANY.qualifiedName) {
-         logger.warn { "Performing a search for Any[] is likely a bug" }
-      }
-   }
-   val description = type.longDisplayName
-}
 
 class QueryResultResultsAttributeKeyDeserialiser : KeyDeserializer() {
    override fun deserializeKey(p0: String?, p1: DeserializationContext?): Any? {
@@ -158,8 +123,8 @@ data class QueryContext(
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
    var isProjecting = false
-   var projectResultsTo: Type? = null
-      private set
+//   var projectResultsTo: Type? = null
+//      private set
 
    var projectionScope: ProjectionFunctionScope? = null
       private set
@@ -200,21 +165,21 @@ data class QueryContext(
    override fun toString() = "# of facts=${facts.size} #schema types=${schema.types.size}"
    suspend fun find(typeName: String): QueryResult = find(TypeNameQueryExpression(typeName))
 
-   suspend fun find(queryString: QueryExpression): QueryResult = queryEngine.find(queryString, this)
-   suspend fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this)
-   suspend fun find(target: Set<QuerySpecTypeNode>): QueryResult = queryEngine.find(target, this)
+   suspend fun find(queryString: QueryExpression): QueryResult = queryEngine.find(queryString, this.newSearchContext())
+   suspend fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this.newSearchContext())
+   suspend fun find(target: Set<QuerySpecTypeNode>): QueryResult = queryEngine.find(target, this.newSearchContext())
    suspend fun find(target: QuerySpecTypeNode, excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>): QueryResult =
-      queryEngine.find(target, this, excludedOperations)
+      queryEngine.find(target, this.newSearchContext(), excludedOperations)
 
    suspend fun build(typeName: QualifiedName): QueryResult = build(typeName.parameterizedName)
-   suspend fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this)
+   suspend fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this.newSearchContext())
    suspend fun build(expression: QueryExpression): QueryResult =
       //timed("QueryContext.build") {
-      queryEngine.build(expression, this)
+      queryEngine.build(expression, this.newSearchContext())
    //}
 
    suspend fun findAll(typeName: String): QueryResult = findAll(TypeNameQueryExpression(typeName))
-   suspend fun findAll(queryString: QueryExpression): QueryResult = queryEngine.findAll(queryString, this)
+   suspend fun findAll(queryString: QueryExpression): QueryResult = queryEngine.findAll(queryString, this.newSearchContext())
 
    fun parseQuery(typeName: String) = queryEngine.parse(TypeNameQueryExpression(typeName))
    fun parseQuery(expression: QueryExpression) = queryEngine.parse(expression)
@@ -241,6 +206,15 @@ data class QueryContext(
       }
    }
 
+   private fun newSearchContext(clientQueryId: String? = Ids.id(prefix = "clientQueryId", size = 8)):QueryContext {
+      return this
+      val clone = this.copy(
+         clientQueryId = clientQueryId,
+         queryId = Ids.id("query")
+      )
+      clone.projectionScope = null
+      return clone
+   }
    /**
     * Returns a QueryContext, with only the provided fact.
     * All other parameters (queryEngine, schema, etc) are retained
@@ -250,7 +224,7 @@ data class QueryContext(
    }
 
    fun only(facts:List<TypedInstance>, scopedFacts: List<ScopedFact> = emptyList()): QueryContext {
-      val copied = this.copy(
+      val copied = this.newSearchContext().copy(
          facts = CopyOnWriteFactBag(CopyOnWriteArrayList(facts), scopedFacts, schema),
          parent = this,
          vyneQueryStatistics = VyneQueryStatistics()
@@ -261,7 +235,7 @@ data class QueryContext(
    }
 
    fun only(): QueryContext {
-      val copied = this.copy()
+      val copied = this.newSearchContext()
       copied.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
       copied.excludedServices.addAll(this.excludedServices)
       return copied
@@ -273,20 +247,20 @@ data class QueryContext(
       return this
    }
 
-   fun projectResultsTo(projectedTaxiType: lang.taxi.types.Type, scope:ProjectionFunctionScope?): QueryContext {
-      return projectResultsTo(ProjectionAnonymousTypeProvider.projectedTo(projectedTaxiType,schema), scope)
-   }
+//   fun projectResultsTo(projectedTaxiType: lang.taxi.types.Type, scope:ProjectionFunctionScope?): QueryContext {
+//      return projectResultsTo(ProjectionAnonymousTypeProvider.projectedTo(projectedTaxiType,schema), scope)
+//   }
 
    override suspend fun findType(type: Type): Flow<TypedInstance> {
       return this.find(type.qualifiedName.parameterizedName)
          .results
    }
 
-   private fun projectResultsTo(targetType: Type, scope:ProjectionFunctionScope?): QueryContext {
-      projectResultsTo = targetType
-      projectionScope = scope
-      return this
-   }
+//   private fun projectResultsTo(targetType: Type, scope:ProjectionFunctionScope?): QueryContext {
+//      projectResultsTo = targetType
+//      projectionScope = scope
+//      return this
+//   }
 
 
    fun addEvaluatedEdge(evaluatedEdge: EvaluatedEdge) = this.evaluatedEdges.add(evaluatedEdge)

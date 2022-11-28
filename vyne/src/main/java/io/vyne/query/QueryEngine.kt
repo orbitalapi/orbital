@@ -439,6 +439,7 @@ class StatefulQueryEngine(
       excludedOperations: Set<SearchGraphExclusion<RemoteOperation>> = emptySet(),
       applicableStrategiesPredicate: QueryStrategyValidPredicate
    ): QueryResult {
+      logger.debug { "Initiating find for ${target.description}" }
       if (context.cancelRequested) {
          throw QueryCancelledException()
       }
@@ -482,6 +483,10 @@ class StatefulQueryEngine(
                   .takeWhile { !context.cancelRequested }
                   .collectIndexed { _, value ->
                      resultsReceivedFromStrategy = true
+                     if (value.type != target.type) {
+                        logger.warn { "Query strategy ${queryStrategy::class.simpleName} yeilded type ${value.type.qualifiedName.shortDisplayName} but was searching for ${target.type.qualifiedName.shortDisplayName}" }
+                     }
+
                      // We may have received a TypedCollection upstream (ie., from a service
                      // that returns Foo[]).  Given we treat everything as a flow of results,
                      // we don't want consumers to receive a result that is a collection (as it makes the
@@ -491,7 +496,10 @@ class StatefulQueryEngine(
                      } else {
                         listOf(value)
                      }
-                     emitTypedInstances(valueAsCollection, !isActive, failedAttempts) { instance -> send(instance) }
+                     emitTypedInstances(valueAsCollection, !isActive, failedAttempts) { instance ->
+                        logger.debug { "Emitting instance of type ${instance.type.qualifiedName.shortDisplayName} produced from strategy ${queryStrategy::class.simpleName} in search for ${target.description}" }
+                        send(instance)
+                     }
                   }
             } else {
                logger.debug("Strategy ${queryStrategy::class.simpleName} failed to resolve ${target.description}")
@@ -528,7 +536,7 @@ class StatefulQueryEngine(
          }
       }
 
-      val results: Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (context.projectResultsTo) {
+      val results: Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (target.projection) {
          null -> resultsFlow.map { it to context.vyneQueryStatistics }
          else -> {
             // Pick the facts that we want to make available during projection.
@@ -537,12 +545,12 @@ class StatefulQueryEngine(
             // The projection provider handles picking the correct entity to project,
             // so we don't need to consdier that here.
             val factsToPropagate = initialState.toFactBag(schema)
-            projectionProvider.project(resultsFlow, context, factsToPropagate)
+            projectionProvider.project(resultsFlow, target.projection, context, factsToPropagate)
          }
       }
 
-      val querySpecTypeNode = if (context.projectResultsTo != null) {
-         QuerySpecTypeNode(context.projectResultsTo!!, emptySet(), QueryMode.DISCOVER)
+      val querySpecTypeNode = if (target.projection != null) {
+         QuerySpecTypeNode(target.projection.type, emptySet(), QueryMode.DISCOVER)
       } else {
          target
       }

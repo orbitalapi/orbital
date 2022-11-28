@@ -108,6 +108,8 @@ data class SchemaSet private constructor(
          return this._compositeSchema ?: error("SchemaSet failed to initialize")
       }
 
+   // TODO : This method can take a very long time, and blocks
+   // the thread as it compiles the schema.  We should find a way to initialize (and compile) async
    private fun init() {
       log().info("Initializing schema set with generation $generation")
       if (this.parsedPackages.isEmpty()) {

@@ -341,7 +341,7 @@ namespace vyne {
             @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/people")
             operation findPeople():Person[]
             @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/country/{id}")
-            operation findCountry(@PathVariable("id") id : CountryId):Country
+            operation findCountry(@PathVariable id : CountryId):Country
          }
       """, Invoker.RestTemplateWithCache
             )
@@ -729,5 +729,64 @@ namespace vyne {
       logger.warn("Perf test of $recordCount completed")
       logger.warn("Stats:\n ${jackson.writerWithDefaultPrettyPrinter().writeValueAsString(stats)}")
    }
+
+   @Test
+   fun `can resolve queryString parameters from facts`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
+         type ApiKey inherits String
+         model Person {
+            name : Name inherits String
+         }
+         service PersonService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people?apiKey={apiKey}")
+            operation listPeople(apiKey:ApiKey):Person[]
+          }
+      """, invoker = Invoker.RestTemplate
+      )
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""[ { "name" : "Jimmy" }]""")
+      }
+      vyne.query("""given { key : ApiKey = "hello" } find { Person[] }""")
+         .rawObjects()
+
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals("/people?apiKey=hello", request.path)
+         assertEquals(HttpMethod.GET.name, request.method)
+      }
+   }
+
+   @Test
+   fun `can resolve path variables from facts`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
+         type ApiKey inherits String
+         model Person {
+            name : Name inherits String
+         }
+         service PersonService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/{apiKey}/people")
+            operation listPeople(apiKey:ApiKey):Person[]
+          }
+      """, invoker = Invoker.RestTemplate
+      )
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""[ { "name" : "Jimmy" }]""")
+      }
+      vyne.query("""given { key : ApiKey = "hello" } find { Person[] }""")
+         .rawObjects()
+
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals("/hello/people", request.path)
+         assertEquals(HttpMethod.GET.name, request.method)
+      }
+   }
+
 
 }

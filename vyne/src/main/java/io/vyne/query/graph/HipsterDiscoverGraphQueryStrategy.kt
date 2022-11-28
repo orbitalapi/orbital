@@ -234,6 +234,9 @@ class HipsterDiscoverGraphQueryStrategy(
          .firstOrNull()
 
       return if (ret != null) {
+         if (targetElement.valueAsQualifiedName() != (ret as TypedInstance).type.qualifiedName) {
+            logger.warn { "This doesn't look right - return value doesn't match the requested type" }
+         }
          QueryStrategyResult.from(ret, failedAttempts)
       } else {
          QueryStrategyResult.searchFailed(failedAttempts)
