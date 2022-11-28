@@ -5,6 +5,7 @@ import es.usc.citius.hipster.graph.HashBasedHipsterDirectedGraph
 import es.usc.citius.hipster.model.Transition
 import es.usc.citius.hipster.model.impl.WeightedNode
 import es.usc.citius.hipster.model.problem.ProblemBuilder
+import io.vyne.models.facts.FactBag
 import io.vyne.query.graph.EvaluatedPathSet
 import io.vyne.query.graph.Element
 import io.vyne.query.graph.pathHashExcludingWeights
@@ -29,7 +30,8 @@ class SchemaPathFindingGraph(connections: HashMap<Element, Set<GraphEdge<Element
    private data class SearchCacheKey(
       val startFact: Element,
       val targetFact: Element,
-      val evaluatedEdges: EvaluatedPathSet
+      val evaluatedEdges: EvaluatedPathSet,
+      val facts: FactBag
    ) {
       val equality =
          ImmutableEquality(this, SearchCacheKey::startFact, SearchCacheKey::targetFact, SearchCacheKey::evaluatedEdges)
@@ -58,7 +60,7 @@ class SchemaPathFindingGraph(connections: HashMap<Element, Set<GraphEdge<Element
             }
          }
          .useCostFunction { transition ->
-            key.evaluatedEdges.calculateTransitionCost(transition.fromState, transition.action, transition.state)
+            key.evaluatedEdges.calculateTransitionCost(transition.fromState, transition.action, transition.state, key.facts)
          }
          .build()
 
@@ -88,9 +90,10 @@ class SchemaPathFindingGraph(connections: HashMap<Element, Set<GraphEdge<Element
    fun findPath(
       startFact: Element,
       targetFact: Element,
-      evaluatedEdges: EvaluatedPathSet
+      evaluatedEdges: EvaluatedPathSet,
+      facts: FactBag
    ): WeightedNode<Relationship, Element, Double>? {
-      val key = SearchCacheKey(startFact, targetFact, evaluatedEdges)
+      val key = SearchCacheKey(startFact, targetFact, evaluatedEdges, facts)
       return searchCache.get(key)
 
    }

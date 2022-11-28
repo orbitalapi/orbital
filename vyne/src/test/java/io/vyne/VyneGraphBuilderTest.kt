@@ -8,6 +8,7 @@ import io.vyne.query.graph.type
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Relationship.REQUIRES_PARAMETER
+import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
@@ -47,9 +48,11 @@ class VyneGraphBuilderTest {
    }
       """.trimIndent()
 
+      val taxiSchema = TaxiSchema.from(taxiDef)
+      val (service,operation) = taxiSchema.operation(OperationNames.name("CustomerService", "getCustomerByEmail").fqn())
       val graph =
-         VyneGraphBuilder(TaxiSchema.from(taxiDef), VyneGraphBuilderCacheSettings(100L, 100L, 100L)).buildDisplayGraph()
-      val edges = graph.outgoingEdgesOf(operation(OperationNames.name("CustomerService", "getCustomerByEmail")))
+         VyneGraphBuilder(taxiSchema, VyneGraphBuilderCacheSettings(100L, 100L, 100L)).buildDisplayGraph()
+      val edges = graph.outgoingEdgesOf(operation(service, operation))
 
       edges.shouldContain(REQUIRES_PARAMETER, type("CustomerEmailAddress"))
 

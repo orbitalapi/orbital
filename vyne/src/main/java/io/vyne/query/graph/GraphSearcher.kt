@@ -6,6 +6,7 @@ import io.vyne.SchemaPathFindingGraph
 import io.vyne.models.DataSource
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
+import io.vyne.models.facts.FactBag
 import io.vyne.query.InvocationConstraints
 import io.vyne.query.PathExclusionCalculator
 import io.vyne.query.SearchGraphExclusion
@@ -264,7 +265,7 @@ class GraphSearcher(
          | ========================================================
       """.trimMargin() }
       return StrategyPerformanceProfiler.profiled("findPath") {
-         val result = findPath(graphBuildResult.graph, previouslyEvaluatedPaths)
+         val result = findPath(graphBuildResult.graph, previouslyEvaluatedPaths, FactBag.of(facts.toList(), graphBuilder.schema))
          result
       }
 
@@ -272,9 +273,10 @@ class GraphSearcher(
 
    private fun findPath(
       graph: SchemaPathFindingGraph,
-      evaluatedEdges: EvaluatedPathSet
+      evaluatedEdges: EvaluatedPathSet,
+      facts: FactBag
    ): WeightedNode<Relationship, Element, Double>? {
-      return graph.findPath(startFact, targetFact, evaluatedEdges)
+      return graph.findPath(startFact, targetFact, evaluatedEdges, facts)
    }
 
    private fun <R> logTimeTo(timeCollection: MutableList<Long>, operation: () -> R): R {

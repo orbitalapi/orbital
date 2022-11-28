@@ -5,13 +5,22 @@ import io.vyne.query.graph.edges.EvaluatedEdge
 /**
  * See SimplifiedSearchPaths for a description of why this is needed
  */
-enum class LinkType {
-   START_POINT,
-   OBJECT_NAVIGATION,
-   PARAM_POPULATION,
-   OPERATION_INVOCATION
+enum class LinkType(val defaultCost: Double) {
+   START_POINT(defaultCost = 0.0),
+   OBJECT_NAVIGATION(defaultCost = 0.01),
+   PARAM_POPULATION(defaultCost = 0.01),
+   OPERATION_INVOCATION(defaultCost = 5.0)
 }
-enum class Relationship(val description: String, val linkType: LinkType) {
+
+enum class Relationship(
+   val description: String,
+   val linkType: LinkType,
+   val defaultCost: Double = linkType.defaultCost,
+
+   // Defines how much each edge is penalized for having been evaluated
+   // previously, but not provided a result.
+   val defaultIncrementalCost:Double = defaultCost
+) {
    IS_ATTRIBUTE_OF("Is an attribute of", LinkType.OBJECT_NAVIGATION),
    HAS_ATTRIBUTE("Has attribute", LinkType.OBJECT_NAVIGATION),
    IS_TYPE_OF("Is type of", LinkType.OBJECT_NAVIGATION),
@@ -38,12 +47,16 @@ enum class Relationship(val description: String, val linkType: LinkType) {
    TYPE_PRESENT_AS_ATTRIBUTE_TYPE("Is used as attribute type", LinkType.OBJECT_NAVIGATION),
    INSTANCE_HAS_ATTRIBUTE("Instance has attribute", LinkType.OBJECT_NAVIGATION),
    REQUIRES_PARAMETER("Requires parameter", LinkType.PARAM_POPULATION),
-   IS_PARAMETER_ON("Is parameter on", LinkType.PARAM_POPULATION),
+   // We don't penalize Is Parameter On, as we want to try the same value on different services.
+   // Penalizing this edge will discourage repeat attempts to use the same value in different places
+   IS_PARAMETER_ON("Is parameter on", LinkType.PARAM_POPULATION, defaultIncrementalCost = 0.0),
    CAN_CONSTRUCT_QUERY("Can construct query", LinkType.PARAM_POPULATION),
    IS_INSTANCE_OF("Is instanceOfType of", LinkType.OBJECT_NAVIGATION),
    PROVIDES("provides", LinkType.OPERATION_INVOCATION),
    EXTENDS_TYPE("extends", LinkType.OBJECT_NAVIGATION),
-   CAN_POPULATE("can populate", LinkType.OBJECT_NAVIGATION),
+   // We don't penalize Is Can Populate, as we want to try the same value on different services.
+   // Penalizing this edge will discourage repeat attempts to use the same value in different places
+   CAN_POPULATE("can populate", LinkType.OBJECT_NAVIGATION, defaultIncrementalCost = 0.0),
    IS_SYNONYM_OF("is synonym of", LinkType.OBJECT_NAVIGATION),
    CAN_ARRAY_MAP_TO("can iterate and map to", LinkType.OBJECT_NAVIGATION);
 
@@ -66,10 +79,10 @@ data class Path(val start: QualifiedName, val target: QualifiedName, val links: 
    override fun toString(): String = description
 }
 
-fun List<EvaluatedEdge>.description():String {
+fun List<EvaluatedEdge>.description(): String {
    return this.joinToString("\n") { it.description }
 }
 
-fun List<Link>.describe():String {
+fun List<Link>.describe(): String {
    return this.joinToString("\n") { it.toString() }
 }

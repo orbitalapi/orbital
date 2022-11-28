@@ -201,59 +201,10 @@ class VyneServiceInvocationTest {
          args[0].type.longDisplayName.should.equal("RequestObject")
          args[0].toRawObject().should.equal(
             mapOf(
+               "personId" to "1",
                "authKey" to "123",
                "secret" to "234"
             )
          )
       }
-
-   @Test
-   fun `if a service throws an error its value is not used in future calls`(): Unit = runBlocking {
-      val (vyne, stub) = testVyne(
-         """
-         model Person {
-            personId: PersonId inherits String
-         }
-         model PersonDetails {
-            name : PersonName inherits String
-         }
-
-         model IdResolution {
-            personId : PersonId
-            internalId : InternalId inherits String
-         }
-
-         service Peeps {
-            operation findPeople() : Person[]
-            operation getInternalId(PersonId):IdResolution
-            operation findPersonDetails(InternalId):PersonDetails
-         }
-      """.trimIndent()
-      )
-      stub.addResponse("findPeople", vyne.parseJson("Person[]", """[
-         | { "personId" : 1 },
-         | { "personId" : 2 },
-         | { "personId" : 3 },
-         | { "personId" : 4 }
-         |]""".trimMargin()))
-      stub.addResponse("findPersonDetails", vyne.parseJson("PersonDetails", """{ "name" : "Jimmy"  }"""))
-      val result = vyne.query(
-         """find { Person[] } as {
-         |  id : PersonId
-         |  name : PersonName
-         |}[]
-      """.trimMargin()
-      )
-         .rawObjects()
-      result.single().should.equal(mapOf("id" to "1", "name" to "Jimmy"))
-      val args = stub.invocations["findPersonDetails"]!!
-      args.should.have.size(1)
-      args[0].type.longDisplayName.should.equal("RequestObject")
-      args[0].toRawObject().should.equal(
-         mapOf(
-            "authKey" to "123",
-            "secret" to "234"
-         )
-      )
-   }
 }

@@ -108,7 +108,6 @@ data class Element(val value: Any, val elementType: ElementType, val instanceVal
 }
 
 fun Type.asElement(): Element = type(this)
-fun Operation.asElement(): Element = operation(this.qualifiedName.fullyQualifiedName)
 fun type(name: String) = Element(name, ElementType.TYPE)
 fun type(type: Type): Element {
    return type(type.qualifiedName.parameterizedName)
@@ -121,10 +120,10 @@ fun querySpec(operation: QueryOperation) =
 fun parameter(paramTypeFqn: String) = Element(ParamNames.toParamName(paramTypeFqn), ElementType.PARAMETER)
 fun operation(service: Service, operation: RemoteOperation): Element {
    val operationReference = OperationNames.name(service.qualifiedName, operation.name)
-   return operation(operationReference)
+   return operation(operationReference, operation)
 }
 
-fun operation(name: String) = Element(name, ElementType.OPERATION)
+fun operation(name: String, operation: RemoteOperation?) = Element(name, ElementType.OPERATION, instanceValue = operation)
 fun providedInstance(typedInstance: TypedInstance): Element {
    val instanceHash = typedInstance.value?.hashCode() ?: -1
    val nodeId = typedInstance.typeName + "@$instanceHash"
@@ -159,7 +158,7 @@ private data class GraphWithFactInstancesCacheKey(
 )
 
 class VyneGraphBuilder(
-   private val schema: Schema,
+   val schema: Schema,
    vyneGraphBuilderCache: VyneGraphBuilderCacheSettings = VyneGraphBuilderCacheSettings()
 ) {
    companion object {

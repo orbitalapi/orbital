@@ -1,11 +1,15 @@
 package io.vyne.query.graph
 
 import es.usc.citius.hipster.model.impl.WeightedNode
+import io.vyne.models.facts.FactBag
 import io.vyne.query.PenaliseOperationAndProvidedInstanceMember
 import io.vyne.query.SearchPenaltyProvider
 import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.query.graph.edges.PathEvaluation
+import io.vyne.schemas.LinkType
+import io.vyne.schemas.Operation
 import io.vyne.schemas.Relationship
+import io.vyne.schemas.RemoteOperation
 import io.vyne.utils.ImmutableEquality
 
 
@@ -16,12 +20,12 @@ import io.vyne.utils.ImmutableEquality
  * the same path.
  */
 data class EvaluatedPathSet(
-    private val proposedPaths: MutableMap<Int, WeightedNode<Relationship, Element, Double>> = mutableMapOf(),
-    private val evaluatedPaths: MutableMap<Int, List<PathEvaluation>> = mutableMapOf(),
-    private val evaluatedOperations: MutableList<EvaluatedEdge> = mutableListOf(),
-    private val transitionCount: MutableMap<HashableTransition, Int> = mutableMapOf(),
-    private val penalisedEdges: MutableList<PenalizedEdge> = mutableListOf(),
-    private val simplifiedPaths: MutableMap<Int, Pair<SimplifiedPath, WeightedNode<Relationship, Element, Double>>> = mutableMapOf()
+   private val proposedPaths: MutableMap<Int, WeightedNode<Relationship, Element, Double>> = mutableMapOf(),
+   private val evaluatedPaths: MutableMap<Int, List<PathEvaluation>> = mutableMapOf(),
+   private val evaluatedOperations: MutableList<EvaluatedEdge> = mutableListOf(),
+   private val transitionCount: MutableMap<HashableTransition, Double> = mutableMapOf(),
+   private val penalisedEdges: MutableList<PenalizedEdge> = mutableListOf(),
+   private val simplifiedPaths: MutableMap<Int, Pair<SimplifiedPath, WeightedNode<Relationship, Element, Double>>> = mutableMapOf()
 ) {
    /**
     * There are 2 concrete implementations for SearchPenaltyProvider
@@ -51,7 +55,7 @@ data class EvaluatedPathSet(
          .map { HashableTransition(it.previousNode().state(), it.action(), it.state()) }
          .forEach { transition ->
             transitionCount.compute(transition) { _, currentCount ->
-               currentCount?.plus(1) ?: 1
+               currentCount?.plus(transition.relationship.defaultIncrementalCost) ?: transition.relationship.defaultCost
             }
          }
    }
@@ -78,11 +82,16 @@ data class EvaluatedPathSet(
     * from another transition.
     * In future, we can tweak this weighting based on action and the outcome of the evaluation
     */
-   private fun visitedCountAsCost(fromState: Element, action: Relationship, toState: Element): Double {
+   private fun visitedCountAsCost(
+      fromState: Element,
+      action: Relationship,
+      toState: Element,
+      baselineCost: () -> Double
+   ): Double {
       val transition = HashableTransition(fromState, action, toState)
-      val travsersedCount = transitionCount.getOrDefault(transition, 0)
+      val travsersedCount = transitionCount.getOrElse(transition, baselineCost)
       // Add one, as this visit, if performed, will be previous number of visits + 1.
-      return (travsersedCount + 1) * 1.0
+      return travsersedCount + action.defaultIncrementalCost
    }
 
    /**
@@ -90,16 +99,38 @@ data class EvaluatedPathSet(
     * returns a higher weighting, because it's been a bad transition. BAD BAD TRANSITION!
     * GO TO YOUR ROOM.
     */
-   fun calculateTransitionCost(fromState: Element, action: Relationship, toState: Element): Double {
-      // If we haven't done anything before, everything is equal
-      if (evaluatedPaths.isEmpty()) {
-         return 1.0
-      }
-
-
+   fun calculateTransitionCost(fromState: Element, action: Relationship, toState: Element, facts: FactBag): Double {
       val penalizedEdge: PenalizedEdge? = this.penalisedEdges.filter {
          it.matches(fromState, action, toState)
       }.maxByOrNull { it.penalty }
+
+      val baselineCostProvider: () -> Double = {
+         when (action.linkType) {
+            LinkType.OPERATION_INVOCATION -> {
+               // For Operations, we introduce a penalty for any parameters we don't currently
+               // have a value for, since we'll have to discover them.
+               // Discovery paths aren't currently included in edge costs, so we
+               // add a flat cost-per-discovery here.
+               // TODO : We should work out the actual discovery cost.
+               // We're working on an assumption of 1-hop per param, which often isn't the case.
+               val operation = fromState.instanceValue as RemoteOperation?
+               if (operation == null) {
+                  action.defaultCost
+               } else {
+                  val parametersNotCurrentlyKnown = operation.parameters.filter { parameter -> !facts.hasFactOfType(parameter.type) }
+                  parametersNotCurrentlyKnown.size * LinkType.OPERATION_INVOCATION.defaultCost
+               }
+            }
+
+            else -> action.defaultCost
+         }
+      }
+
+      // If we haven't done anything before, everything is equal
+      if (evaluatedPaths.isEmpty()) {
+         return baselineCostProvider()
+      }
+
 
 
       return penalizedEdge?.penalty
@@ -112,7 +143,7 @@ data class EvaluatedPathSet(
          // For example - For a service that returned a value with two matching
          // fields, this ensures that the path selector to both fields gets given a chance
          // to be evaluated
-         visitedCountAsCost(fromState, action, toState)
+         visitedCountAsCost(fromState, action, toState, baselineCostProvider)
 
       // Design note:
       // TEST: // This is tested using VyneTest.when one operation failed but another path is present with different inputs then the different path is tried
@@ -160,7 +191,7 @@ data class EvaluatedPathSet(
    }
 
    fun printCurrentEdgeCosts(): String {
-      val penalties =  this.penalisedEdges.map { edge -> "${edge.evaluatedEdge} (Cost ${edge.penalty})" }
+      val penalties = this.penalisedEdges.map { edge -> "${edge.evaluatedEdge} (Cost ${edge.penalty})" }
       val transitionCounts = this.transitionCount.map { entry ->
          "${entry.key.from} --- ${entry.key.relationship} -- ${entry.key.to} (Cost ${entry.value})"
       }

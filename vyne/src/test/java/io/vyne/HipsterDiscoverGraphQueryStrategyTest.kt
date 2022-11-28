@@ -3,6 +3,9 @@ package io.vyne
 import app.cash.turbine.test
 import app.cash.turbine.testIn
 import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonModel
@@ -522,4 +525,59 @@ class HipsterDiscoverGraphQueryStrategyTest {
             turbine.awaitComplete()
          }
       }
+
+   @Test
+   fun `where two operations exist and facts are known for one of them do not invoke the other`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         model ComplexFilmDetails {
+         // This deeply nested path exists to make the transition cost higher than for SimpleFilmDetails
+            screenDate : ScreenDate inherits Date
+            filmDetails : {
+               filmName : {
+                  english : {
+                     title : FilmTitle inherits String
+                  }
+               }
+            }
+         }
+         model SimpleFilmDetails {
+            title : FilmTitle
+         }
+         type ApiKey inherits String
+         service FilmService2 {
+            operation lookupTodaysFilms(ApiKey):ComplexFilmDetails
+         }
+
+         service FilmService1 {
+            operation lookupFilmsForDate(ApiKey, ScreenDate):SimpleFilmDetails
+         }
+
+
+      """.trimIndent()
+      )
+
+      stub.addResponse("lookupFilmsForDate") { _, _ -> error("This shouldn't be called") }
+      stub.addResponse(
+         "lookupTodaysFilms", vyne.parseJson(
+            "ComplexFilmDetails", """{ "screenDate" : "2022-11-28",
+         | "filmDetails" : {
+         |     "filmName" : {
+         |        "english" : {
+         |           "title" : "A New Hope"
+      |             }
+   |             }
+|             }
+|             }""".trimMargin()
+         )
+      )
+      val result = vyne.query("""given { apiKey : ApiKey = "123" } find { title: FilmTitle }""")
+         .firstRawObject()
+
+      result.shouldNotBeNull()
+      result.should.equal(mapOf("title" to "A New Hope"))
+
+      // We should not have called this service
+      stub.invocations["lookupFilmsForDate"]?.shouldBeNull()
+   }
 }
