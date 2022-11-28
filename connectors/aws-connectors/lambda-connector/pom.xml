@@ -85,7 +85,7 @@
      <dependency>
         <groupId>com.amazonaws</groupId>
         <artifactId>aws-java-sdk-lambda</artifactId>
-        <version>1.12.348</version>
+        <version>1.12.349</version>
         <scope>test</scope>
      </dependency>
 
