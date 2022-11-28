@@ -61,7 +61,7 @@ class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = DEF
                val valueFromMap = valueMap[attributePath]
                val attributeType = schema.type(field.type.parameterizedName)
                if (valueFromMap != null) {
-                  attributeName to doParse(attributeType, mapOf(attributeName to valueFromMap), schema.type(field.type).isCollection, conversionService, source = source, format = format)
+                  attributeName to doParse(attributeType, mapOf(attributeName to valueFromMap), schema.type(field.type).isCollection, conversionService, source = source, format = field.format ?: attributeType.formatAndZoneOffset)
                } else {
                   attributeName to TypedNull.create(attributeType)
                }
