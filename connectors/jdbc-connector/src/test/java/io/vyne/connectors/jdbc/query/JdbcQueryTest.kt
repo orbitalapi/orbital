@@ -49,16 +49,6 @@ class JdbcQueryTest {
    }
 
    @Test
-   fun canStart() {
-      val movie = Movie("1", "A New Hope")
-      movieRepository.save(
-         movie
-      )
-
-      movieRepository.count().should.equal(1)
-   }
-
-   @Test
    fun `can use a TaxiQL statement to query a db`(): Unit = runBlocking {
       movieRepository.save(
          Movie("1", "A New Hope")
@@ -75,8 +65,8 @@ class JdbcQueryTest {
 
          @Table(connection = "movies", schema = "public", table = "movie")
          model Movie {
-            id : MovieId
-            title : MovieTitle
+            ID : MovieId
+            TITLE : MovieTitle
          }
 
          @DatabaseService( connection = "movies" )
@@ -94,7 +84,7 @@ class JdbcQueryTest {
          .typedObjects()
       result.should.have.size(1)
       result.first().toRawObject()
-         .should.equal(mapOf("title" to "A New Hope", "id" to 1))
+         .should.equal(mapOf("TITLE" to "A New Hope", "ID" to 1))
    }
 
    @Test
@@ -114,8 +104,8 @@ class JdbcQueryTest {
          type AvailableCopyCount inherits Int
          @Table(connection = "movies", table = "movie", schema = "public")
          model Movie {
-            id : MovieId
-            title : MovieTitle
+             ID : MovieId
+            TITLE : MovieTitle
          }
 
          service ApiService {
@@ -174,8 +164,8 @@ class JdbcQueryTest {
          @Table(connection = "movies", table = "movie", schema = "public")
          model Movie {
             @Id
-            id : MovieId
-            title : MovieTitle
+              ID : MovieId
+            TITLE : MovieTitle
          }
 
          model NewRelease {
@@ -245,8 +235,8 @@ class JdbcQueryTest {
          @Table(connection = "movies", table = "movie", schema = "public")
          model Movie {
             @Id
-            id : MovieId by column("movie id")
-            title : MovieTitle by column("movie title")
+            ID : MovieId by column("movie id")
+            TITLE : MovieTitle by column("movie title")
          }
 
          model NewRelease {

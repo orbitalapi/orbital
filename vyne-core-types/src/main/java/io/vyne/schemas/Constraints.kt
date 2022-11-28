@@ -6,6 +6,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
 import lang.taxi.Operator
+import lang.taxi.expressions.Expression
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
@@ -134,6 +135,7 @@ data class ReturnValueDerivedFromParameterConstraint(val propertyIdentifier: Pro
    constructor(attributePath: AttributePath) : this(PropertyFieldNameIdentifier(attributePath))
 }
 
+@Deprecated("Migrate to using ExpressionConstraint instead, which is the more generic form of this concept.  It's not implemented yet, but it's the direction of travel")
 class PropertyToParameterConstraint(propertyIdentifier: PropertyIdentifier,
                                     operator: Operator = Operator.EQUAL,
                                     expectedValue: ValueExpression) : lang.taxi.services.operations.constraints.PropertyToParameterConstraint(
@@ -182,6 +184,13 @@ class PropertyToParameterConstraint(propertyIdentifier: PropertyIdentifier,
             }
          }
       }
+   }
+
+}
+
+data class ExpressionConstraint(private val expression: Expression): OutputConstraint, InputConstraint {
+   override fun evaluate(argumentType: Type, value: TypedInstance, schema: Schema): ConstraintEvaluation {
+      TODO("Not yet implemented")
    }
 
 }

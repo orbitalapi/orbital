@@ -29,14 +29,14 @@ class SelectStatementGenerator(private val taxiSchema: TaxiDocument) {
    /**
     * Generates a SELECT statement using a default SQL dialect
     */
-   fun generateGenericSelect(query: TaxiQlQuery): Select<Record> {
+   fun generateGenericSelect(query: TaxiQlQuery): Pair<Select<Record>, List<SqlTemplateParameter>> {
       return generateSelect(query, DSL.using(SQLDialect.DEFAULT))
    }
 
    /**
     * Generates a SELECT statement using the dialect configured in the DSL Context
     */
-   fun generateSelect(query: TaxiQlQuery, sqlDsl: DSLContext): Select<Record> {
+   fun generateSelect(query: TaxiQlQuery, sqlDsl: DSLContext): Pair<Select<Record>, List<SqlTemplateParameter>> {
       val typesToFind = getTypesToFind(query)
       val tableNamesFromType: Map<Type, AliasedTableName> = getTableNames(typesToFind)
       if (tableNamesFromType.size > 1) {
@@ -46,8 +46,16 @@ class SelectStatementGenerator(private val taxiSchema: TaxiDocument) {
          tableName.type to table(tableName.tableName).`as`(tableName.alias)
       }.toMap()
       val sqlTable = sqlDsl.select().from(sqlTablesByType.values)
-      val conditions = buildWhereClause(typesToFind, sqlTablesByType)
-      return sqlTable.where(conditions)
+      val conditionsAndParams = buildWhereClause(typesToFind, sqlTablesByType)
+      val conditions = conditionsAndParams.map { it.first }
+      val params = conditionsAndParams.map { it.second }
+      return sqlTable.where(conditions) to params
+   }
+
+   fun generateSelectSql(query: TaxiQlQuery, sqlDsl: DSLContext): Pair<String, List<SqlTemplateParameter>> {
+      val (select,params) = generateSelect(query, sqlDsl)
+      val sql = sqlDsl.renderNamedParams(select)
+      return sql to params
    }
 
    @Deprecated("use generateSelect(), as it provides richer support for different dialects")
@@ -56,8 +64,9 @@ class SelectStatementGenerator(private val taxiSchema: TaxiDocument) {
       sqlDsl: DSLContext,
       tableNameProvider: (type: Type) -> String
    ): Pair<String, List<SqlTemplateParameter>> {
-      val select = generateSelect(query, sqlDsl)
-      return select.sql to select.params.map { (key, param) -> SqlTemplateParameter(key, param.value as Any) }
+      val (select,params) = generateSelect(query, sqlDsl)
+      val sql = sqlDsl.renderNamedParams(select)
+      return sql to params
    }
 
    @Deprecated("use generateSelect(), as it provides richer support for different dialects")
@@ -91,7 +100,7 @@ class SelectStatementGenerator(private val taxiSchema: TaxiDocument) {
    private fun buildWhereClause(
       typesToFind: List<Pair<ObjectType, DiscoveryType>>,
       tableNames: Map<Type, Table<Record>>
-   ): List<Condition> {
+   ): List<Pair<Condition,SqlTemplateParameter>> {
       return typesToFind.filter { (_, discoveryType) -> discoveryType.constraints.isNotEmpty() }
          .flatMap { (type, discoveryType) ->
             val sqlTable = tableNames[type]!!
@@ -113,7 +122,7 @@ class SelectStatementGenerator(private val taxiSchema: TaxiDocument) {
       sqlTable: Table<Record>,
       constraint: Constraint,
       constraintIndex: Int
-   ): Condition {
+   ): Pair<Condition,SqlTemplateParameter> {
       return when (constraint) {
          is ExpressionConstraint -> buildSqlConstraint(
             discoveryType,
@@ -133,9 +142,9 @@ class SelectStatementGenerator(private val taxiSchema: TaxiDocument) {
       sqlTable: Table<Record>,
       constraint: ExpressionConstraint,
       constraintIndex: Int
-   ): Condition {
+   ): Pair<Condition, SqlTemplateParameter> {
       return when (val expression = constraint.expression) {
-         is OperatorExpression -> buildSqlConstraintFromOperatorExpression(discoveryType, type, sqlTable, expression)
+         is OperatorExpression -> buildSqlConstraintFromOperatorExpression(discoveryType, type, sqlTable, expression, constraintIndex)
          else -> error("Unsupported expression type: ${expression::class.simpleName}")
       }
    }
@@ -144,8 +153,9 @@ class SelectStatementGenerator(private val taxiSchema: TaxiDocument) {
       discoveryType: DiscoveryType,
       type: ObjectType,
       sqlTable: Table<Record>,
-      expression: OperatorExpression
-   ): Condition {
+      expression: OperatorExpression,
+      constraintIndex: Int
+   ): Pair<Condition, SqlTemplateParameter> {
       if (expression.lhs !is TypeExpression) {
          error("${expression::class.simpleName} expressions are not yet supported on the lhs of a SQL expression")
       }
@@ -159,17 +169,20 @@ class SelectStatementGenerator(private val taxiSchema: TaxiDocument) {
          error("${expression::class.simpleName} expressions are not yet supported on the rhs of a SQL expression")
       }
       val literal = expression.rhs as LiteralExpression
+      val sqlParameterName = "${field.name}$constraintIndex"
+      val sqlParam = SqlTemplateParameter(sqlParameterName, literal.value)
 
-      return when (expression.operator) {
-         FormulaOperator.Equal -> field.eq(literal.value)
-         FormulaOperator.NotEqual -> field.ne(literal.value)
-         FormulaOperator.LessThan -> field.lessThan(literal.value)
-         FormulaOperator.LessThanOrEqual -> field.lessOrEqual(literal.value)
-         FormulaOperator.GreaterThan -> field.greaterThan(literal.value)
-         FormulaOperator.GreaterThanOrEqual -> field.greaterOrEqual(literal.value)
+      val condition =  when (expression.operator) {
+         FormulaOperator.Equal -> field.eq(DSL.param(sqlParameterName))
+         FormulaOperator.NotEqual -> field.ne(DSL.param(sqlParameterName))
+         FormulaOperator.LessThan -> field.lessThan(DSL.param(sqlParameterName))
+         FormulaOperator.LessThanOrEqual -> field.lessOrEqual(DSL.param(sqlParameterName))
+         FormulaOperator.GreaterThan -> field.greaterThan(DSL.param(sqlParameterName))
+         FormulaOperator.GreaterThanOrEqual -> field.greaterOrEqual(DSL.param(sqlParameterName))
          else -> error("${expression.operator} is not yet supported in SQL clauses")
       }
 
+      return condition to sqlParam
    }
 
    private fun getSingleField(sourceType: ObjectType, fieldType: Type): FieldReference {

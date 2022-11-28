@@ -1,6 +1,8 @@
 package io.vyne.schemas.taxi
 
 import io.vyne.schemas.*
+import lang.taxi.expressions.Expression
+import lang.taxi.query.convertToPropertyConstraint
 import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
 import lang.taxi.services.operations.constraints.ReturnValueDerivedFromParameterConstraint
 
@@ -14,7 +16,8 @@ class TaxiConstraintConverter(val schema: Schema) {
 //      AttributeConstantConstraintProvider(),
 //      AttributeValueFromParameterConstraintProvider(),
       PropertyToParameterConstraintProvider(),
-      ReturnValueDerivedFromParameterConstraintProvider()
+      ReturnValueDerivedFromParameterConstraintProvider(),
+      ExpressionConstraintProvider()
    )
 
    fun buildConstraints(type: Type, constraint: TaxiConstraint): InputConstraint {
@@ -55,7 +58,7 @@ class TaxiConstraintConverter(val schema: Schema) {
    }
 
    fun buildContract(returnType: Type, source: List<TaxiConstraint>): OperationContract {
-      val constraints = buildOutputConstraints(returnType,source)
+      val constraints = buildOutputConstraints(returnType, source)
       return OperationContract(returnType, constraints)
    }
 
@@ -66,6 +69,19 @@ class TaxiConstraintConverter(val schema: Schema) {
 
    }
 }
+
+class ExpressionConstraintProvider : ContractConstraintProvider {
+   private val constraintProvider = PropertyToParameterConstraintProvider()
+   override fun applies(constraint: TaxiConstraint): Boolean {
+      return constraint is lang.taxi.services.operations.constraints.ExpressionConstraint
+   }
+
+   override fun build(constrainedType: Type, constraint: TaxiConstraint, schema: Schema): OutputConstraint {
+      val taxiConstraint = (constraint as lang.taxi.services.operations.constraints.ExpressionConstraint)
+      return constraintProvider.build(constrainedType, taxiConstraint.convertToPropertyConstraint(), schema)
+   }
+}
+
 
 class PropertyToParameterConstraintProvider : ContractConstraintProvider {
    override fun applies(constraint: TaxiConstraint): Boolean {

@@ -55,7 +55,7 @@ class JdbcInvoker(
       val paramMap = paramList.associate { param -> param.nameUsedInTemplate to param.value }
 
       val stopwatch = Stopwatch.createStarted()
-      val resultList = jdbcTemplate.jdbcOperations.queryForList(sql, paramMap.values) //jdbcTemplate.queryForList(sql, paramMap)
+      val resultList = jdbcTemplate.queryForList(sql, paramMap)
       val elapsed = stopwatch.elapsed()
       val datasource = buildDataSource(
          service,
