@@ -33,7 +33,7 @@
       <reactive-feign.version>3.2.6</reactive-feign.version>
 
       <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
-      <kotlin.version>1.7.20</kotlin.version>
+      <kotlin.version>1.7.21</kotlin.version>
       <kotlin.coroutines.version>1.6.4</kotlin.coroutines.version>
       <!-- Kotlin serialization is currently fixed to the version supported by spring -->
       <kotlin.serialization.version>1.3.2</kotlin.serialization.version>
