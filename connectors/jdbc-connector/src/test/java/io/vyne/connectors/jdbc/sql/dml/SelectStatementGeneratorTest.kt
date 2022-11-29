@@ -53,9 +53,49 @@ class SelectStatementGeneratorTest : DescribeSpec({
 
          // The odd cast expression here is JOOQ doing it's thing.
          // CAn't work out how to supress it
-         val expected = """select * from movie as "t0" where "t0"."title" = cast(:title0 as varchar)"""
+         val expected = """select * from movie as "t0" where "t0"."title" = :title0"""
          sql.should.equal(expected)
          params.should.equal(listOf(SqlTemplateParameter("title0", "Hello")))
+      }
+
+      it("generates simple select from table with simple where clause using int type") {
+         val taxi = """
+         type MovieId inherits Int
+         type MovieTitle inherits String
+
+         model Movie {
+            id : MovieId
+            title : MovieTitle
+         }""".compiled()
+         val query = """find { Movie[]( MovieId == 123 ) }""".query(taxi)
+         val selectStatement = SelectStatementGenerator(taxi).generateSelectSql(query, connectionDetails.sqlBuilder())
+         val (sql, params) = selectStatement
+
+         // The odd cast expression here is JOOQ doing it's thing.
+         // CAn't work out how to supress it
+         val expected = """select * from movie as "t0" where "t0"."id" = :id0"""
+         sql.should.equal(expected)
+         params.should.equal(listOf(SqlTemplateParameter("id0", 123)))
+      }
+
+      it("generates simple select from table with simple where clause using String type for Id") {
+         val taxi = """
+         type MovieId inherits String
+         type MovieTitle inherits String
+
+         model Movie {
+            id : MovieId
+            title : MovieTitle
+         }""".compiled()
+         val query = """find { Movie[]( MovieId == '123' ) }""".query(taxi)
+         val selectStatement = SelectStatementGenerator(taxi).generateSelectSql(query, connectionDetails.sqlBuilder())
+         val (sql, params) = selectStatement
+
+         // The odd cast expression here is JOOQ doing it's thing.
+         // CAn't work out how to supress it
+         val expected = """select * from movie as "t0" where "t0"."id" = :id0"""
+         sql.should.equal(expected)
+         params.should.equal(listOf(SqlTemplateParameter("id0", "123")))
       }
    }
 

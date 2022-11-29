@@ -7,6 +7,7 @@ import lang.taxi.TaxiDocument
 import lang.taxi.expressions.LiteralExpression
 import lang.taxi.expressions.OperatorExpression
 import lang.taxi.expressions.TypeExpression
+import lang.taxi.jvm.common.PrimitiveTypes
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.services.operations.constraints.*
 import lang.taxi.services.operations.constraints.Constraint
@@ -162,8 +163,9 @@ class SelectStatementGenerator(private val taxiSchema: TaxiDocument) {
 
       val fieldReference = getSingleField(type, (expression.lhs as TypeExpression).type)
       val fieldName = fieldReference.path.single().name
-
-      val field = field(DSL.name(sqlTable.name, fieldName), Any::class.java)
+      val taxiField = fieldReference.baseType.field(fieldName)
+      val primitiveType = PrimitiveTypes.getJavaType(taxiField.type.basePrimitive!!) as Class<Any>
+      val field = field(DSL.name(sqlTable.name, fieldName), primitiveType)
 
       if (expression.rhs !is LiteralExpression) {
          error("${expression::class.simpleName} expressions are not yet supported on the rhs of a SQL expression")
@@ -173,12 +175,12 @@ class SelectStatementGenerator(private val taxiSchema: TaxiDocument) {
       val sqlParam = SqlTemplateParameter(sqlParameterName, literal.value)
 
       val condition =  when (expression.operator) {
-         FormulaOperator.Equal -> field.eq(DSL.param(sqlParameterName))
-         FormulaOperator.NotEqual -> field.ne(DSL.param(sqlParameterName))
-         FormulaOperator.LessThan -> field.lessThan(DSL.param(sqlParameterName))
-         FormulaOperator.LessThanOrEqual -> field.lessOrEqual(DSL.param(sqlParameterName))
-         FormulaOperator.GreaterThan -> field.greaterThan(DSL.param(sqlParameterName))
-         FormulaOperator.GreaterThanOrEqual -> field.greaterOrEqual(DSL.param(sqlParameterName))
+         FormulaOperator.Equal -> field.eq(DSL.param(sqlParameterName, primitiveType))
+         FormulaOperator.NotEqual -> field.ne(DSL.param(sqlParameterName, primitiveType))
+         FormulaOperator.LessThan -> field.lessThan(DSL.param(sqlParameterName, primitiveType))
+         FormulaOperator.LessThanOrEqual -> field.lessOrEqual(DSL.param(sqlParameterName, primitiveType))
+         FormulaOperator.GreaterThan -> field.greaterThan(DSL.param(sqlParameterName, primitiveType))
+         FormulaOperator.GreaterThanOrEqual -> field.greaterOrEqual(DSL.param(sqlParameterName, primitiveType))
          else -> error("${expression.operator} is not yet supported in SQL clauses")
       }
 
