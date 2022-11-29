@@ -1436,7 +1436,8 @@ service Broker1Service {
          }
 
          model OutputModel {
-            myField : Instant( @offset = 60 )
+         @Format(offset = 60)
+            myField : Instant
          }
 
          @Datasource
@@ -1739,6 +1740,7 @@ service Broker1Service {
    }
 
    @Test
+   @Ignore("this feature is currently disabled - add this test back if reintroducing")
    fun `should project to anonymous type extending discovery type`(): Unit = runBlocking {
       val (vyne, stubService) = testVyne(
          """
@@ -1848,6 +1850,7 @@ service Broker1Service {
    }
 
    @Test
+   @Ignore("this feature is currently disabled - add this test back if reintroducing")
    fun `should project to anonymous extending the projectiont target type and containing an anonymously typed field`(): Unit =
       runBlocking {
          val (vyne, stubService) = testVyne(

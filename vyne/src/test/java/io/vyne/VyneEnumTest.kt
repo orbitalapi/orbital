@@ -2,6 +2,7 @@ package io.vyne
 
 import app.cash.turbine.test
 import com.winterbe.expekt.should
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.vyne.models.EnumValueKind
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.addJson
@@ -80,9 +81,10 @@ class VyneEnumTest {
 
       // Given
       val (vyne, stubService) = testVyne(enumSchema())
-      vyne.addJson(
+      val parsed = vyne.addJson(
          "BankX.BankOrder", """ { "buySellIndicator" : "buy" } """
       )
+      parsed.shouldNotBeNull()
 
       // When
       val queryResult = vyne.query().build("common.CommonOrder")

@@ -68,7 +68,17 @@ data class FactMapTraversalStrategy(val name: String, val predicate: (TypedInsta
 
          val predicate: (TypedInstance) -> TreeNavigationInstruction = { instance ->
             xtimed("enterIfHasFieldOfType ${searchType.longDisplayName}", timeUnit = TimeUnit.NANOSECONDS) {
-               if (searchType.isCollection) {
+               if (searchType.isEnum) {
+                  // TODO : This needs to be optimized.
+                  // We can't use simple "path to value" semantics here,
+                  // as we need to support synonym matching.
+                  // So, for now we use a FullScan.
+                  // However, this can be improved by:
+                  // * Checking the schema to see which enums have valid synonyms for the requested type (considering transitive synonyms)
+                  // * Scanning for each of the possible enum types.
+                  // Will consider this in a future release
+                  FullScan
+               } else if (searchType.isCollection) {
                   // Our search implementation can treat searching for an array in two different ways:
                   // - Find all things of T, and collect into an array
                   // - Find all collections of T
