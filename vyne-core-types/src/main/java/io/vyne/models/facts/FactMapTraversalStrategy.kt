@@ -68,7 +68,10 @@ data class FactMapTraversalStrategy(val name: String, val predicate: (TypedInsta
 
          val predicate: (TypedInstance) -> TreeNavigationInstruction = { instance ->
             xtimed("enterIfHasFieldOfType ${searchType.longDisplayName}", timeUnit = TimeUnit.NANOSECONDS) {
-               if (searchType.isEnum) {
+               if (searchTaxiType == PrimitiveType.ANY) {
+                  // If someone asks for Any, we go the full depth
+                  FullScan
+               } else if (searchType.isEnum) {
                   // TODO : This needs to be optimized.
                   // We can't use simple "path to value" semantics here,
                   // as we need to support synonym matching.

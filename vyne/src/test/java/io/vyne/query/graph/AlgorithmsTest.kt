@@ -213,7 +213,7 @@ class AlgorithmsTest {
              [
                {
                  "first": "START_POINT",
-                 "second": "Order@1243058020"
+                 "second": "Order@-141192964"
                },
                {
                  "first": "OBJECT_NAVIGATION",
@@ -259,7 +259,7 @@ class AlgorithmsTest {
     [
       {
         "first": "START_POINT",
-        "second": "Employee@1927049369"
+        "second": "Employee@-1779321591"
       },
       {
         "first": "OBJECT_NAVIGATION",
@@ -333,7 +333,7 @@ class AlgorithmsTest {
                [
                  {
                    "first": "START_POINT",
-                   "second": "Trader@1927049369"
+                   "second": "Trader@-1779321591"
                  },
                  {
                    "first": "OBJECT_NAVIGATION",

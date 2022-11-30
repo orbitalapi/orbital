@@ -14,13 +14,10 @@ import io.vyne.schemas.Field
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flatMapConcat
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
 import lang.taxi.types.PrimitiveType
+import lang.taxi.types.TypedValue
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -110,8 +107,8 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
             }
             val collectionOfFactsWithCommonBaseType = queryContext.getFactOrNull(
                FactSearch(
-                  "Collection of @Id annotated values",
-                  targetMemberType,
+                  "Collection types that inherit from ${baseType.qualifiedName.shortDisplayName}",
+                  queryEngine.schema.type(PrimitiveType.ANY),
                   FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY,
                   filterPredicateStrategy
                )
@@ -146,26 +143,30 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
       // what we're looking for.
       // TODO : This search can be cached.
       val modelsWithIds = findModelsWithIdFields()
+
+      // 30-Nov-22 : This *used* to be a collection-of-collections (List<List<Id>>), but after refactoring
+      // it now returns a List<Id>, and I'm not sure why.
+      // However, all the tests pass.
+      // There could be unforeseen consequences of the changes made here.
+      //
+      // Old comment:
       // This is a collection of collections of Id's.  ie: List<List<Id>>, as there could be multiple Id collections
       // in our set of facts, and we don't yet know which one would yeild the data we're after
       val collectionOfIdCollections = findCollectionsOfIdValues(modelsWithIds)
 
       if (collectionOfIdCollections != null && collectionOfIdCollections is TypedCollection) {
-         val idCollections = collectionOfIdCollections.value as List<TypedCollection>
-         val builtInstances: TypedCollection? = idCollections
+         val idCollections = collectionOfIdCollections.value as List<TypedInstance>
+         val builtInstances: TypedCollection = idCollections
             .asFlow()
-            .map { idCollection ->
-               idCollection.map { idValue ->
+            .map { idValue ->
                   withContext(Dispatchers.IO) {
                      val built =
                         queryContext.only(idValue).build(targetType.qualifiedName).results.toList().firstOrNull()
                      built
                   }
-               }
             }
-            .map { typedInstances -> typedInstances.filterNotNull() }
-            .firstOrNull { typedInstances -> typedInstances.isNotEmpty() }
-            ?.let { TypedCollection.from(it, MixedSources.singleSourceOrMixedSources(it)) }
+            .filterNotNull()
+            .toList().let {  TypedCollection.from(it, MixedSources.singleSourceOrMixedSources(it)) }
          return builtInstances
       } else {
          return null

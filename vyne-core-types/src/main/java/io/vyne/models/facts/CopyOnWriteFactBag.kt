@@ -283,6 +283,10 @@ private object TypedInstanceTree {
 
    fun visit(instance: TypedInstance, navigationPredicate: (TypedInstance) -> TreeNavigationInstruction): List<TypedInstance> {
 
+      // We've changed the semantics of closed.
+      // It now means "don't attempt to construct this from other things",
+      // where it used to mean "Don't attempt to deconstruct this".
+      // We need a new term for that - probably sealed
 //      if (instance.type.isClosed) {
 //         return emptyList()
 //      }

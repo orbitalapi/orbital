@@ -7,6 +7,7 @@ import com.google.common.base.Stopwatch
 import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.vyne.models.EvaluatedExpression
 import io.vyne.models.FailedEvaluatedExpression
 import io.vyne.models.MappedSynonym
@@ -1463,8 +1464,9 @@ service Broker1Service {
          """.trimIndent()
          )
       )
-      val result = vyne.query("""find { InputModel[] } as OutputModel[]""".trimIndent())
-      result.rawObjects().should.be.equal(
+      val result = vyne.query("""find { InputModel[] } as OutputModel[]""".trimIndent()).rawObjects()
+      result.shouldNotBeNull()
+      result.should.be.equal(
          listOf(
             mapOf("myField" to outputInstant1),
             mapOf("myField" to outputInstant2)
