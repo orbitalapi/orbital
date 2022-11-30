@@ -26,7 +26,7 @@ data class TypedObject(
    private val combinedValues: Map<String, TypedInstance> = type.defaultValues?.plus(suppliedValue) ?: suppliedValue
 
    private val stringifiedValueValueMap by lazy {
-      suppliedValue.map { (k,v) -> "$k-${v.type.paramaterizedName}-${v}" }
+      suppliedValue.map { (k, v) -> "$k-${v.type.paramaterizedName}-${v}" }
          .joinToString(" - ")
          .hashCode()
    }
@@ -164,7 +164,9 @@ data class TypedObject(
    }
 
    fun getAttributeIdentifiedByType(type: Type, returnNull: Boolean = false): TypedInstance {
-      val candidates = this.value.filter { (_, value) -> value.type.isAssignableTo(type) }
+      val candidates = this.value.filter { (_, value) ->
+         value.type.isAssignableTo(type)
+      }
       return when {
          candidates.isEmpty() && returnNull -> TypedNull.create(
             type,

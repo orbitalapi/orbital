@@ -2,6 +2,7 @@ package io.vyne.models
 
 import io.vyne.utils.log
 import lang.taxi.Operator
+import lang.taxi.types.isNullOrEmpty
 import mu.KotlinLogging
 import java.time.LocalDate
 import java.time.LocalTime
@@ -116,7 +117,7 @@ object RawObjectMapper : TypedInstanceMapper {
       if (typedInstance.value == null) {
          return typedInstance.value
       }
-      return if (typedInstance is TypedValue && typedInstance.format != null) {
+      return if (typedInstance is TypedValue && !typedInstance.format.isNullOrEmpty()) {
          TypeFormatter.applyFormat(typedInstance)
       } else {
          typedInstance.value

@@ -51,6 +51,18 @@ class CopyOnWriteFactBagTest {
       collection.should.have.size(2)
    }
 
+   @Test
+   fun `does not return invalid type`() {
+      val schema = TaxiSchema.from("""
+         type Age inherits Int
+         type Id inherits Int
+
+         model Person {
+            id : Id
+         }
+      """.trimIndent())
+   }
+
 
    @Test
    fun `can find a collection of properties from within a collection`() {

@@ -506,6 +506,10 @@ data class Type(
 
    // Don't call this directly, use resolveAliases()
    private fun resolveUnderlyingFormattedType(): Type {
+
+      // This isn't needed anymore, since formatted types aren't a thing.
+      // Waiting for green tests, then can remove.
+      return this
       if (this.format == null && this.offset == null) {
          return this
       }

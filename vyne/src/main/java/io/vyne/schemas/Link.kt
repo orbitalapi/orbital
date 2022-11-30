@@ -22,7 +22,9 @@ enum class Relationship(
    val defaultIncrementalCost:Double = defaultCost
 ) {
    IS_ATTRIBUTE_OF("Is an attribute of", LinkType.OBJECT_NAVIGATION),
-   HAS_ATTRIBUTE("Has attribute", LinkType.OBJECT_NAVIGATION),
+   // If we've used an attribute in a path before, we want to penalize it, to allow other unused attributes to become
+   // more viable
+   HAS_ATTRIBUTE("Has attribute", LinkType.OBJECT_NAVIGATION, defaultIncrementalCost = 0.5),
    IS_TYPE_OF("Is type of", LinkType.OBJECT_NAVIGATION),
 
    // TODO : I keep flip-flopping on why I need this.

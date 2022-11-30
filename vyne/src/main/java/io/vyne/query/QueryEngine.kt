@@ -483,9 +483,6 @@ class StatefulQueryEngine(
                   .takeWhile { !context.cancelRequested }
                   .collectIndexed { _, value ->
                      resultsReceivedFromStrategy = true
-                     if (value.type != target.type) {
-                        logger.warn { "Query strategy ${queryStrategy::class.simpleName} yeilded type ${value.type.qualifiedName.shortDisplayName} but was searching for ${target.type.qualifiedName.shortDisplayName}" }
-                     }
 
                      // We may have received a TypedCollection upstream (ie., from a service
                      // that returns Foo[]).  Given we treat everything as a flow of results,

@@ -85,7 +85,7 @@ class HipsterDiscoverGraphQueryStrategy(
       object : CacheLoader<StrategyInvocationCacheKey, Deferred<QueryStrategyResult>>() {
          override fun load(key: StrategyInvocationCacheKey): Deferred<QueryStrategyResult> {
             return key.coroutineContext.async {
-               logger.info { "Invoking search for type ${key.target.type.qualifiedName.shortDisplayName} with ${key.facts.size} provided facts" }
+               logger.info { "Invoking search for type ${key.target.type.qualifiedName.shortDisplayName} with ${key.facts.size} provided facts: ${key.facts.joinToString { it.type.qualifiedName.shortDisplayName }}" }
 
                // MP: 23-Sep-22: We have removed the concept of findOne / findAll, and now only support find.
                // Having made that change, EsgTest started failing, as the below wasn't being invoked.

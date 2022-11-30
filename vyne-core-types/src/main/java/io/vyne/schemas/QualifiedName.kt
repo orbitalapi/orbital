@@ -40,35 +40,35 @@ data class QualifiedName private constructor(val fullyQualifiedName: String, val
 
    // Convenience for the UI
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
-   val longDisplayName: String
-      get() {
-         val longTypeName = this.parameterizedName.replace("@@", " / ")
-         return when {
-            this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1 -> parameters[0].fullyQualifiedName + "[]"
-            this.parameters.isNotEmpty() -> longTypeName + this.parameters.joinToString(
-               ",",
-               prefix = "<",
-               postfix = ">"
-            ) { it.longDisplayName }
-            else -> longTypeName
-         }
+   val longDisplayName: String by lazy {
+      val longTypeName = this.parameterizedName.replace("@@", " / ")
+      when {
+         this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1 -> parameters[0].fullyQualifiedName + "[]"
+         this.parameters.isNotEmpty() -> longTypeName + this.parameters.joinToString(
+            ",",
+            prefix = "<",
+            postfix = ">"
+         ) { it.longDisplayName }
+
+         else -> longTypeName
       }
+   }
 
    // Convenience for the UI
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
-   val shortDisplayName: String
-      get() {
-         val shortTypeName = this.name.split("@@").last()
-         return when {
-            this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1 -> parameters[0].shortDisplayName + "[]"
-            this.parameters.isNotEmpty() -> shortTypeName + this.parameters.joinToString(
-               ",",
-               prefix = "<",
-               postfix = ">"
-            ) { it.shortDisplayName }
-            else -> shortTypeName
-         }
+   val shortDisplayName: String by lazy {
+      val shortTypeName = this.name.split("@@").last()
+      when {
+         this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1 -> parameters[0].shortDisplayName + "[]"
+         this.parameters.isNotEmpty() -> shortTypeName + this.parameters.joinToString(
+            ",",
+            prefix = "<",
+            postfix = ">"
+         ) { it.shortDisplayName }
+
+         else -> shortTypeName
       }
+   }
 
    override fun toString(): String = parameterizedName
    override fun equals(other: Any?): Boolean {
