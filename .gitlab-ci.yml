@@ -279,6 +279,12 @@ publish-schema-server-to-gitlab-container-registry:
       projectDir: schema-server
       microservice: schema-server
 
+publish-pipelines-to-gitlab-container-registry:
+   extends: .publish-to-gitlab-container-registry
+   variables:
+      projectDir: pipelines/pipeline-jet
+      microservice: pipeline
+
 terraform-fmt:
    extends: .terraform:fmt
    needs: [ ]
@@ -413,3 +419,73 @@ e2e-tests-other-branches:
       - publish-schema-server-to-gitlab-container-registry
    dependencies:
       - build-jvm-branch
+
+publish-snyk-to-gitlab-container-registry:
+   extends: .publish-to-gitlab-container-registry
+   script:
+      - cd snyk/
+      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+      - docker build -t "${registry}/snyk:latest" .
+      - docker push ${registry}/snyk:latest
+
+.snyk:
+   stage: verify
+   image: $CI_REGISTRY_IMAGE/snyk:latest
+   only:
+      - develop
+   allow_failure: true
+   services:
+      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
+         alias: docker
+         command: [ "--tls=false" ]
+   variables:
+      DOCKER_HOST: tcp://docker:2375/
+      DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
+      DOCKER_DRIVER: overlay2
+      DOCKER_BUILDKIT: 1
+      BUILDKIT_PROGRESS: plain
+      PROGRESS_NO_TRUNC: 1
+      SNYK_TOKEN: ea48d8a0-a809-4381-97cb-e54c20a21ad1 # TODO This won't be picked up unless explicitly specified here?
+   before_script:
+      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+      - snyk auth $SNYK_TOKEN
+      - PROJECT_VERSION=$(cat build-version.txt)
+      - |
+         if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
+           tag="latest"
+           versionTag="$PROJECT_VERSION"
+         elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
+            tag="latest-preview"
+            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
+         else
+            tag="$CI_COMMIT_BRANCH"
+            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
+         fi
+         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+         echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
+   script:
+      - snyk container test --app-vulns ${CI_REGISTRY_IMAGE}/$image:$versionTag --severity-threshold=high
+
+snyk-schema-server:
+   extends: .snyk
+   dependencies:
+      - publish-schema-server-to-gitlab-container-registry
+      - build-jvm-develop
+   variables:
+      image: schema-server
+
+snyk-query-server:
+   extends: .snyk
+   dependencies:
+      - publish-vyne-to-gitlab-container-registry
+      - build-jvm-develop
+   variables:
+      image: vyne
+
+snyk-pipelines:
+   extends: .snyk
+   dependencies:
+      - publish-pipelines-to-gitlab-container-registry
+      - build-jvm-develop
+   variables:
+      image: pipeline
