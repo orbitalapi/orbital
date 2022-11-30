@@ -86,7 +86,7 @@ data class FactMapTraversalStrategy(val name: String, val predicate: (TypedInsta
                   enterIfHasFieldOfType(
                      searchTaxiType,
                      instance.type.taxiType
-                  ).combine(enterIfHasFieldOfType((searchTaxiType as ArrayType).memberType, instance.type.taxiType))
+                  ).combine(enterIfHasFieldOfType(searchType.collectionType!!.taxiType, instance.type.taxiType))
                } else {
                   enterIfHasFieldOfType(searchTaxiType, instance.type.taxiType)
                }

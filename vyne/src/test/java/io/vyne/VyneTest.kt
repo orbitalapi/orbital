@@ -92,10 +92,18 @@ service ClientService {
       vyne().queryEngine().queryContext(queryId = queryId, clientQueryId = null)
 }
 
-fun testVyne(schema: TaxiSchema, projectionProvider: ProjectionProvider = LocalProjectionProvider()): Pair<Vyne, StubService> {
+fun testVyne(
+   schema: TaxiSchema,
+   projectionProvider: ProjectionProvider = LocalProjectionProvider()
+): Pair<Vyne, StubService> {
    val stubService = StubService(schema = schema)
    val queryEngineFactory =
-      QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), formatSpecs = emptyList(), invokers = listOf(stubService),projectionProvider = projectionProvider)
+      QueryEngineFactory.withOperationInvokers(
+         VyneCacheConfiguration.default(),
+         formatSpecs = emptyList(),
+         invokers = listOf(stubService),
+         projectionProvider = projectionProvider
+      )
    val vyne = Vyne(listOf(schema), queryEngineFactory)
    return vyne to stubService
 }
@@ -157,8 +165,15 @@ fun testVyneWithStub(schema: String, invokers: List<OperationInvoker>): Pair<Vyn
    return testVyneWithStub(TaxiSchema.from(schema), invokers)
 }
 
-fun testVyne(schema: String, functionRegistry: FunctionRegistry = FunctionRegistry.default, projectionProvider: ProjectionProvider = LocalProjectionProvider()) =
-   testVyne(TaxiSchema.compileOrFail(schema, functionRegistry = functionRegistry), projectionProvider = projectionProvider)
+fun testVyne(
+   schema: String,
+   functionRegistry: FunctionRegistry = FunctionRegistry.default,
+   projectionProvider: ProjectionProvider = LocalProjectionProvider()
+) =
+   testVyne(
+      TaxiSchema.compileOrFail(schema, functionRegistry = functionRegistry),
+      projectionProvider = projectionProvider
+   )
 
 @ExperimentalTime
 @ExperimentalCoroutinesApi
@@ -681,10 +696,12 @@ class VyneTest {
 
 
    @Test
-   fun `can evaluate arbitary taxi expressions`():Unit = runBlocking {
-      val (vyne, _) = testVyne("""
+   fun `can evaluate arbitary taxi expressions`(): Unit = runBlocking {
+      val (vyne, _) = testVyne(
+         """
          type Foo
-      """.trimIndent())
+      """.trimIndent()
+      )
       vyne.evaluate("1 < 2", vyne.type("Boolean"))
          .value!!.should.equal(true)
       vyne.evaluate("1 > 2", vyne.type("Boolean"))
@@ -1175,7 +1192,7 @@ service Broker2Service {
 
          collected.should.contain.all.elements(
             mapOf("broker1ID" to "Broker1Order1"),
-            mapOf("broker2ID" to "Broker2Order1", "broker2Date" to "2020-01-01")
+            mapOf("broker2ID" to "Broker2Order1", "broker2Date" to LocalDate.parse("2020-01-01"))
          )
       }
    }
@@ -1185,10 +1202,12 @@ service Broker2Service {
       val schema = """
          type EventDate inherits Instant
          model Source {
-            eventDate : EventDate( @format = "MM/dd/yy'T'HH:mm:ss.SSSX" )
+            @Format ( "MM/dd/yy'T'HH:mm:ss.SSSX" )
+            eventDate : EventDate
          }
          model Target {
-            eventDate : EventDate( @format = "yyyy-MM-dd'T'HH:mm:ss.SSSX" )
+            @Format( "yyyy-MM-dd'T'HH:mm:ss.SSSX" )
+            eventDate : EventDate
          }
       """.trimIndent()
       val (vyne, _) = testVyne(schema)
@@ -1205,10 +1224,12 @@ service Broker2Service {
       val schema = """
          type EventDate inherits Instant
          model Source {
-            eventDate : EventDate( @format = "MM/dd/yy'T'HH:mm:ss.SSSX" )
+            @Format( "MM/dd/yy'T'HH:mm:ss.SSSX" )
+            eventDate : EventDate
          }
          model Target {
-            eventDate : EventDate( @format = "MM-dd-yy'T'HH:mm:ss.SSSX" )
+         @Format( "MM-dd-yy'T'HH:mm:ss.SSSX" )
+            eventDate : EventDate
          }
       """.trimIndent()
       val (vyne, _) = testVyne(schema)
@@ -1225,10 +1246,12 @@ service Broker2Service {
       val schema = """
          type EventDate inherits Instant
          model Source {
-            eventDate : EventDate( @format = "MM/dd/yy'T'HH:mm:ss.SSSX" )
+            @Format ( "MM/dd/yy'T'HH:mm:ss.SSSX")
+            eventDate : EventDate
          }
          model Target {
-            eventDate : EventDate( @format = "MM-dd-yy'T'HH:mm:ss.SSSX" )
+            @Format("MM-dd-yy'T'HH:mm:ss.SSSX")
+            eventDate : EventDate
          }
       """.trimIndent()
       val (vyne, _) = testVyne(schema)
@@ -1775,7 +1798,8 @@ service ClientService {
             symbol : Symbol by xpath("/symbol")
             // 2019-12-03 16:07:59.7980000
             @Between
-            orderDateTime : TransactionEventDateTime( @format = "yyyy-MM-dd HH:mm:ss.SSSSSSS") by xpath("/eventDate")
+            @Format( "yyyy-MM-dd HH:mm:ss.SSSSSSS" )
+            orderDateTime : TransactionEventDateTime by xpath("/eventDate")
          }
 
          service CacheService {

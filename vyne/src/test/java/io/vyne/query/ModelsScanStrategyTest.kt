@@ -63,10 +63,11 @@ class ModelsScanStrategyTest {
       vyne.addJsonModel("vyne.example.Client", json)
       vyne.queryEngine()
       val result = ModelsScanStrategy().invoke(
-         TestSchema.typeNode("vyne.example.ClientId"),
-         vyne.query(),
-         InvocationConstraints.withAlwaysGoodPredicate
+         target = TestSchema.typeNode("vyne.example.ClientId"),
+         context = vyne.query(),
+         invocationConstraints = InvocationConstraints.withAlwaysGoodPredicate
       )
+      // TODO : This test is old. Why are we returning emptyList here, rather than TypedNull?
       expect(result.matchedNodes.toList()).to.be.empty
    }
 

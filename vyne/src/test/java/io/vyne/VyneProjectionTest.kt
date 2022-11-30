@@ -23,6 +23,7 @@ import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.query.Projection
 import io.vyne.query.QueryContext
+import io.vyne.query.UnresolvedTypeInQueryException
 import io.vyne.query.VyneQueryStatistics
 import io.vyne.query.projection.ProjectionProvider
 import io.vyne.schemas.OperationInvocationException
@@ -42,6 +43,7 @@ import org.junit.Ignore
 import org.junit.Test
 import java.math.BigDecimal
 import java.util.concurrent.TimeUnit
+import kotlin.test.assertFailsWith
 import kotlin.test.fail
 import kotlin.time.ExperimentalTime
 
@@ -1432,7 +1434,7 @@ service Broker1Service {
          """
          model InputModel {
            @Format( "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-           inputField: Instant(
+           inputField: Instant
          }
 
          model OutputModel {
@@ -2717,8 +2719,8 @@ service Broker1Service {
    }
 
    @Test
-   fun `when the initial query fails vyne doesnt attempt to perform a projection`() : Unit = runBlocking{
-      val explodingProjectionProvider:ProjectionProvider = object : ProjectionProvider {
+   fun `when the initial query fails vyne doesnt attempt to perform a projection`(): Unit = runBlocking {
+      val explodingProjectionProvider: ProjectionProvider = object : ProjectionProvider {
          override fun project(
             results: Flow<TypedInstance>,
             projection: Projection,
@@ -2732,7 +2734,7 @@ service Broker1Service {
          }
 
       }
-      val (vyne,stub) = testVyne(
+      val (vyne, stub) = testVyne(
          """
             model Person {
                name : FullName inherits String
@@ -2747,19 +2749,23 @@ service Broker1Service {
          projectionProvider = explodingProjectionProvider
       )
       stub.addResponse("findPeople") { _, _ ->
-         throw OperationInvocationException("This service call failed", 503, mock {  }, emptyList())
+         throw OperationInvocationException("This service call failed", 503, mock { }, emptyList())
       }
-      vyne.query("""
+      assertFailsWith<UnresolvedTypeInQueryException> {
+         vyne.query(
+            """
          |given { apiKey : ApiKey = 'jimmy' }
          |find { Person[] } as {
          | nope : FullName
          |}[]
-      """.trimMargin())
-         .rawObjects()
+      """.trimMargin()
+         )
+            .rawObjects()
+      }
    }
 
    @Test
-   fun `can project the result of an expression as a property from the result`() :Unit = runBlocking{
+   fun `can project the result of an expression as a property from the result`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """
          model Actor {

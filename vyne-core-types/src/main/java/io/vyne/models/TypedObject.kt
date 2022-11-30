@@ -206,7 +206,13 @@ data class TypedObject(
       val parts = path.split(".").toMutableList()
       val thisFieldName = parts.removeAt(0)
       val attributeValue = this.value[thisFieldName]
-         ?: error("No attribute named $thisFieldName found on this type (${type.name})")
+         ?: if (this.type.hasAttribute(thisFieldName)) {
+            // Should we create a typedNull here?
+            // Current tests expect an empty list, but I think a TypedNull is more appropriate
+            return emptyList()
+         } else {
+            error("No attribute named $thisFieldName found on this type (${type.name})")
+         }
 
       return if (parts.isEmpty()) {
          listOf(attributeValue)
