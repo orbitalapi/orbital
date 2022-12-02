@@ -1,8 +1,10 @@
 package io.vyne.schemas
 
 import io.vyne.models.TypedInstance
+import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.log
 import io.vyne.utils.orElse
+import lang.taxi.TaxiDocument
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier

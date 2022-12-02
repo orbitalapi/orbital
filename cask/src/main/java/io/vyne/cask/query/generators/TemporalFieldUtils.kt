@@ -35,7 +35,7 @@ object TemporalFieldUtils {
 
    fun constraintFor(inheritedType: Type, op: Operator, path: String): PropertyToParameterConstraint{
       return PropertyToParameterConstraint(
-         propertyIdentifier = PropertyTypeIdentifier(inheritedType.toQualifiedName()),
+         propertyIdentifier = PropertyTypeIdentifier(inheritedType),
          operator = op,
          expectedValue = RelativeValueExpression(AttributePath.from(path)),
          compilationUnits = listOf(CompilationUnit.unspecified())

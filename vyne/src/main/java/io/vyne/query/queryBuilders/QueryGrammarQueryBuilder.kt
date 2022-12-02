@@ -3,6 +3,7 @@ package io.vyne.query.queryBuilders
 import io.vyne.models.TypedInstance
 import io.vyne.query.QuerySpecTypeNode
 import io.vyne.schemas.*
+import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.asA
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier

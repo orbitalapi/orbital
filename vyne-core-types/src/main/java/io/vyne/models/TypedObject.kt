@@ -7,6 +7,7 @@ import io.vyne.schemas.AttributeName
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.schemas.toVyneQualifiedName
 import lang.taxi.Equality
 import lang.taxi.ImmutableEquality

@@ -11,6 +11,7 @@ import io.vyne.models.DefinedInSchema
 import io.vyne.models.EnumValueKind
 import io.vyne.models.TypedEnumValue
 import io.vyne.models.TypedInstance
+import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.ImmutableEquality
 import lang.taxi.expressions.Expression
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier

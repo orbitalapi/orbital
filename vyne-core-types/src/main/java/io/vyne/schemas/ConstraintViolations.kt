@@ -2,11 +2,13 @@ package io.vyne.schemas
 
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
+import lang.taxi.TaxiDocument
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.RelativeValueExpression
 import lang.taxi.services.operations.constraints.ValueExpression
+import lang.taxi.types.ObjectType
 
 object ReplaceValueUpdater : ConstraintViolationValueUpdater {
    override fun resolveWithUpdatedValue(updatedValue: TypedInstance): TypedInstance = updatedValue
@@ -50,14 +52,19 @@ data class ExpectedConstantValueMismatch(private val evaluatedInstance: TypedIns
       var resolutionAdvice: ResolutionAdvice? = null
 
       if (contract.returnType.fullyQualifiedName == this.requiredType.fullyQualifiedName
+         && contract.returnType.taxiType is ObjectType
          && contract.containsConstraint(ReturnValueDerivedFromParameterConstraint::class.java)
          && contract.containsConstraint(PropertyToParameterConstraint::class.java) {
-            it.propertyIdentifier == this.property
+            contract.returnType
+            val matches = it.propertyIdentifier.resolvesTheSameAs(this.property, contract.returnType.taxiType)
+            matches
          }
       ) {
 
          val constraintViolatingParam = contract.constraint(ReturnValueDerivedFromParameterConstraint::class.java).propertyIdentifier to evaluatedInstance
-         val paramToAdjustViolatingField = contract.constraint(PropertyToParameterConstraint::class.java) { it.propertyIdentifier == this.property }.expectedValue.asParameterIdentifier() to expectedValue
+         val paramToAdjustViolatingField = contract.constraint(PropertyToParameterConstraint::class.java) { parameterConstraint ->
+            parameterConstraint.propertyIdentifier.resolvesTheSameAs(this.property, contract.returnType.taxiType)
+         }.expectedValue.asParameterIdentifier() to expectedValue
 
          resolutionAdvice = ResolutionAdvice(operation, mapOf(constraintViolatingParam, paramToAdjustViolatingField))
       }

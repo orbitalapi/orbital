@@ -2,12 +2,7 @@ package io.vyne.query.graph.operationInvocation
 
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
-import io.vyne.schemas.ConstraintEvaluation
-import io.vyne.schemas.ConstraintEvaluations
-import io.vyne.schemas.Operation
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.ResolutionAdvice
-import io.vyne.schemas.Service
+import io.vyne.schemas.*
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.filter
@@ -65,7 +60,7 @@ class ConstraintViolationResolver {
          .asFlow()
          .filter { !it.isValid }
          .map { failedEvaluation ->
-            val invocationContext = findServiceToResolveConstraint(param, failedEvaluation, services)
+            val invocationContext = findServiceToResolveConstraint(param, failedEvaluation, services, queryContext.schema)
                ?: throw UnresolvedOperationParametersException(
                   "Param ${param.type.fullyQualifiedName} failed an evaluation $failedEvaluation, but no resolution strategy was found",
                   queryContext.evaluatedPath(),
@@ -88,7 +83,8 @@ class ConstraintViolationResolver {
    private fun findServiceToResolveConstraint(
       param: Parameter,
       evaluation: ConstraintEvaluation,
-      services: Set<Service>
+      services: Set<Service>,
+      schema: Schema
    ): OperationInvocationContext? {
       val operationContexts = services.flatMap { service ->
          service.operations.map { operation -> service to operation }
