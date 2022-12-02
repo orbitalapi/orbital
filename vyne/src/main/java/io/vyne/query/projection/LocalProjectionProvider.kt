@@ -18,11 +18,13 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
 import lang.taxi.accessors.CollectionProjectionExpressionAccessor
 import lang.taxi.types.ArrayType
+import lang.taxi.types.StreamType
 import mu.KotlinLogging
 import java.util.concurrent.Executors
 
 private val projectingDispatcher = Executors.newFixedThreadPool(16).asCoroutineDispatcher()
 private val logger = KotlinLogging.logger {}
+
 @OptIn(FlowPreview::class)
 class LocalProjectionProvider : ProjectionProvider {
 
@@ -52,7 +54,7 @@ class LocalProjectionProvider : ProjectionProvider {
          .filter { !context.cancelRequested }
          .distinctUntilChanged()
          .map { emittedResult ->
-            logger.info { "Starting to project instance of ${emittedResult.value.type.qualifiedName.shortDisplayName} (index ${emittedResult.index}) to instance of ${projection.type.qualifiedName.shortDisplayName}" }
+            logger.debug { "Starting to project instance of ${emittedResult.value.type.qualifiedName.shortDisplayName} (index ${emittedResult.index}) to instance of ${projection.type.qualifiedName.shortDisplayName}" }
 
             projectingScope.async {
                if (!isActive) {
@@ -67,10 +69,10 @@ class LocalProjectionProvider : ProjectionProvider {
                   // It's an upstream problbem, but if we let it flow any further, we spend huge CPU cycles
                   // trying to project the wrong source type.
                   // TODO : Investigate the cause - I suspect it's coming from the Graph search strategy, when service invocation fails.
-                  val isProjectable = if (scope.type is ArrayType) {
-                     (scope.type as ArrayType).memberType.isAssignableTo(emittedType.taxiType)
-                  } else {
-                     scope.type.isAssignableTo(emittedType.taxiType)
+                  val isProjectable = when (scope.type) {
+                     is ArrayType -> (scope.type as ArrayType).memberType.isAssignableTo(emittedType.taxiType)
+                     is StreamType -> (scope.type as StreamType).type.isAssignableTo(emittedType.taxiType)
+                     else -> scope.type.isAssignableTo(emittedType.taxiType)
                   }
                   if (!isProjectable) {
                      val message =
