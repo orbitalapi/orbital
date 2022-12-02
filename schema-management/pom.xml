@@ -25,6 +25,7 @@
       <module>schema-rsocket-publisher</module>
       <module>schema-spring</module>
       <module>schema-http-common</module>
+       <module>schema-publisher-cli</module>
    </modules>
 
 </project>

@@ -22,7 +22,6 @@ import java.time.Duration
 private val logger = KotlinLogging.logger {}
 
 class HttpSchemaPublisher(
-   private val publisherConfiguration: PublisherConfiguration,
    private val httpSchemaSubmitter: HttpSchemaSubmitter,
    @Value("\${vyne.schema.publishRetryInterval:3s}") private val publishRetryInterval: Duration
 ) :
