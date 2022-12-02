@@ -21,6 +21,7 @@ import io.vyne.utils.xtimed
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.accessors.Accessor
+import lang.taxi.accessors.Argument
 import lang.taxi.accessors.ColumnAccessor
 import lang.taxi.accessors.JsonPathAccessor
 import lang.taxi.accessors.ProjectionFunctionScope
@@ -333,7 +334,7 @@ class TypedObjectFactory(
       return value
    }
 
-   override fun getScopedFact(scope: ProjectionFunctionScope): TypedInstance {
+   override fun getScopedFact(scope: Argument): TypedInstance {
       if (value is FactBag) {
          return value.getScopedFact(scope).fact
       } else {

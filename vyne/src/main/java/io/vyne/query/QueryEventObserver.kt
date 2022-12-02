@@ -2,7 +2,7 @@ package io.vyne.query
 
 import io.vyne.models.TypedInstance
 import io.vyne.schemas.Type
-import lang.taxi.types.TaxiQLQueryString
+import lang.taxi.query.TaxiQLQueryString
 import java.time.Instant
 
 interface QueryEventConsumer : RemoteCallOperationResultHandler {

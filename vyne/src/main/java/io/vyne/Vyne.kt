@@ -17,8 +17,8 @@ import io.vyne.utils.log
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.job
 import lang.taxi.Compiler
+import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
-import lang.taxi.types.TaxiQLQueryString
 import java.util.*
 
 enum class NodeTypes {
@@ -93,9 +93,9 @@ class Vyne(
       val queryCanceller = QueryCanceller(queryContext, currentJob)
       eventBroker.addHandler(queryCanceller)
       return when (taxiQl.queryMode) {
-         lang.taxi.types.QueryMode.FIND_ALL -> queryContext.findAll(expression)
-         lang.taxi.types.QueryMode.FIND_ONE -> queryContext.find(expression)
-         lang.taxi.types.QueryMode.STREAM -> queryContext.findAll(expression)
+         lang.taxi.query.QueryMode.FIND_ALL -> queryContext.findAll(expression)
+         lang.taxi.query.QueryMode.FIND_ONE -> queryContext.find(expression)
+         lang.taxi.query.QueryMode.STREAM -> queryContext.findAll(expression)
       }
    }
 

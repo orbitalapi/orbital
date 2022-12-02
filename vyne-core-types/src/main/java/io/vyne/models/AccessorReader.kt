@@ -102,7 +102,7 @@ class FactBagValueSupplier(
       return thisScopeValueSupplier.getValue(attributeName)
    }
 
-   override fun getScopedFact(scope: ProjectionFunctionScope): TypedInstance {
+   override fun getScopedFact(scope: Argument): TypedInstance {
       // MP: 17-Nov-22
       // was:
       // return facts.getScopedFact(scope).fact
@@ -131,7 +131,7 @@ interface EvaluationValueSupplier {
       allowAccessorEvaluation: Boolean = true
    ): TypedInstance
 
-   fun getScopedFact(scope: ProjectionFunctionScope): TypedInstance
+   fun getScopedFact(scope: Argument): TypedInstance
    fun getValue(attributeName: AttributeName): TypedInstance
    fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance
    fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean, format: FormatsAndZoneOffset?): TypedInstance
@@ -322,7 +322,7 @@ class AccessorReader(
 
          is TypeExpression -> readTypeExpression(accessor, allowContextQuerying)
          is ModelAttributeReferenceSelector -> xtimed("read model Attribute ${accessor.asTaxi()}") { readModelAttributeSelector(accessor, allowContextQuerying, schema) }
-         is ScopedReferenceSelector -> readScopedReferenceSelector(accessor)
+         is ArgumentSelector -> readScopedReferenceSelector(accessor)
          else -> {
             TODO("Support for accessor not implemented with type $accessor")
          }
@@ -398,7 +398,7 @@ class AccessorReader(
       }
    }
 
-   private fun readScopedReferenceSelector(accessor: ScopedReferenceSelector): TypedInstance {
+   private fun readScopedReferenceSelector(accessor: ArgumentSelector): TypedInstance {
       val scopedInstance = objectFactory.getScopedFact(accessor.scope)
       val result =  if (accessor.selectors.isNotEmpty()) {
          readFieldSelectorsAgainstObject(accessor.selectors, scopedInstance, schema.type(accessor.returnType), accessor.path)

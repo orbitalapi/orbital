@@ -291,7 +291,7 @@ Date|Symbol|Open|High|Low|Close
       }.subscribe()
 
       StepVerifier
-         .create(output.take(1).timeout(Duration.ofSeconds(10000)))
+         .create(output.take(1).timeout(Duration.ofSeconds(5)))
          .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
          .verifyComplete()
          .run { wsConnection.dispose() }
