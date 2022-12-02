@@ -5,6 +5,7 @@ import io.vyne.query.AlwaysGoodSpec
 import io.vyne.query.TypedInstanceValidPredicate
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import lang.taxi.accessors.Argument
 import lang.taxi.accessors.ProjectionFunctionScope
 
 /**
@@ -31,12 +32,12 @@ interface FactBag : Collection<TypedInstance> {
     */
    val scopedFacts: List<ScopedFact>
 
-   fun getScopedFact(scope: ProjectionFunctionScope): ScopedFact {
+   fun getScopedFact(scope: Argument): ScopedFact {
       return getScopedFactOrNull(scope) ?:
          error("No scope of ${scope.name} exists in this FactBag")
    }
 
-   fun getScopedFactOrNull(scope: ProjectionFunctionScope): ScopedFact? {
+   fun getScopedFactOrNull(scope: Argument): ScopedFact? {
       return scopedFacts.firstOrNull { it.scope == scope }
    }
 

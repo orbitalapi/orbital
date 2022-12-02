@@ -8,6 +8,7 @@ import lang.taxi.expressions.LiteralExpression
 import lang.taxi.expressions.OperatorExpression
 import lang.taxi.expressions.TypeExpression
 import lang.taxi.jvm.common.PrimitiveTypes
+import lang.taxi.query.DiscoveryType
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.services.operations.constraints.*
 import lang.taxi.services.operations.constraints.Constraint

@@ -5,9 +5,9 @@ import io.vyne.schemas.*
 import lang.taxi.TaxiParser.*
 import lang.taxi.lsp.CompilationResult
 import lang.taxi.lsp.completion.*
+import lang.taxi.query.QueryMode
 import lang.taxi.searchUpForRule
 import lang.taxi.types.QualifiedName
-import lang.taxi.types.QueryMode
 import lang.taxi.types.Type
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.Token

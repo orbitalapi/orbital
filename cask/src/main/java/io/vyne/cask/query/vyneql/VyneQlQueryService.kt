@@ -10,7 +10,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.reactive.asFlow
-import lang.taxi.types.TaxiQLQueryString
+import lang.taxi.query.TaxiQLQueryString
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.jdbc.core.ColumnMapRowMapper

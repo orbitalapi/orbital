@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
-import lang.taxi.types.TaxiQLQueryString
+import lang.taxi.query.TaxiQLQueryString
 import mu.KotlinLogging
 import java.time.Duration
 import java.time.Instant

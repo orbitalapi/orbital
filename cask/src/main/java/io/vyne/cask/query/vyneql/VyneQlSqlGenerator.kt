@@ -10,19 +10,15 @@ import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Schema
 import lang.taxi.Compiler
-import lang.taxi.services.operations.constraints.ConstantValueExpression
-import lang.taxi.services.operations.constraints.Constraint
-import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
-import lang.taxi.services.operations.constraints.PropertyIdentifier
-import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
-import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
+import lang.taxi.query.DiscoveryType
+import lang.taxi.query.convertToPropertyConstraint
+import lang.taxi.services.operations.constraints.*
 import lang.taxi.types.ArrayType
-import lang.taxi.types.DiscoveryType
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.StreamType
-import lang.taxi.types.TaxiQLQueryString
+import lang.taxi.query.TaxiQLQueryString
 import org.springframework.stereotype.Component
 
 data class SqlStatement(val sql: String, val params: List<Any>)
@@ -122,6 +118,7 @@ class VyneQlSqlGenerator(
    private fun constraintToCriteria(constraint: Constraint, collectionType: ObjectType, schema: Schema): SqlStatement {
       return when (constraint) {
          is PropertyToParameterConstraint -> buildPropertyConstraintClause(constraint, collectionType, schema)
+         is ExpressionConstraint -> buildPropertyConstraintClause(constraint.convertToPropertyConstraint(), collectionType, schema)
          else -> error("Error building sql clause for type ${collectionType.qualifiedName} - support for constraint types ${constraint::class.simpleName} is not yet implemented")
       }
    }
@@ -141,14 +138,14 @@ class VyneQlSqlGenerator(
    private fun propertyIdentifierToColumnName(propertyIdentifier: PropertyIdentifier, collectionType: ObjectType, schema: Schema): Pair<ColumnName, Field> {
       return when (propertyIdentifier) {
          is PropertyTypeIdentifier -> {
-            val fields = collectionType.fieldsWithType(propertyIdentifier.type)
+            val fields = collectionType.fieldReferencesAssignableTo(propertyIdentifier.type)
             when (fields.size) {
                0 -> {
                   val fieldName = fieldsWithTypeConsideringFullInheritanceGraph(collectionType, propertyIdentifier, schema)
                   fieldName to  collectionType.field(fieldName)
                }
-               1 ->  fields.first().name to fields.first()
-               else -> throw CaskBadRequestException("Type ${propertyIdentifier.type} is ambiguous on type ${collectionType.qualifiedName} - there are multiple fields with this type: ${fields.joinToString { it.name }}")
+               1 ->  fields.first().path.single().name to fields.first().path.single()
+               else -> throw CaskBadRequestException("Type ${propertyIdentifier.type} is ambiguous on type ${collectionType.qualifiedName} - there are multiple fields with this type: ${fields.joinToString { it.description }}")
             }
          }
          is PropertyFieldNameIdentifier -> {

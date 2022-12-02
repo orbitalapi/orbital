@@ -3,7 +3,7 @@ package io.vyne.cask.query.vyneql
 import io.vyne.cask.services.QueryMonitor
 import io.vyne.http.HttpHeaders
 import kotlinx.coroutines.reactor.asFlux
-import lang.taxi.types.TaxiQLQueryString
+import lang.taxi.query.TaxiQLQueryString
 import mu.KotlinLogging
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
