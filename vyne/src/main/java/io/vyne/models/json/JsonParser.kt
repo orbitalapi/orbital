@@ -16,6 +16,11 @@ object RelaxedJsonMapper {
       .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
 }
 
+/**
+ * Be careful when calling addJson(), and using projections.
+ * Objects added here are "globally scoped", and can accidentally be pulled into projections.
+ * Oftentimes it's better to stub a service, which is more closely aligned with actual production code.
+ */
 fun ModelContainer.addJson(typeName: String, json: String, source:DataSource = Provided): TypedInstance {
    val instance = TypedInstance.from(this.getType(typeName), json, this.schema, source = source)
    addModel(instance)

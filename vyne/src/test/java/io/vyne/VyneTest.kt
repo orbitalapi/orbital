@@ -1471,12 +1471,40 @@ service Broker2Service {
    @Test
    fun `should build by using synonyms with vyneql`() {
 
+      val schema = TaxiSchema.from(
+         """
+                namespace common {
+                   enum LongBankDirection {
+                     BankBuys("bankbuys"),
+                     BankSells("banksell")
+                   }
+
+                   model CommonOrder {
+                      direction: LongBankDirection
+                   }
+
+                }
+                namespace BankX {
+                   enum ShortBankDirection {
+                        BUY("buy") synonym of common.LongBankDirection.BankBuys,
+                        SELL("sell") synonym of common.LongBankDirection.BankSells
+                   }
+                   model BankOrder {
+                      buySellIndicator: ShortBankDirection
+                   }
+                   service DataService {
+                     operation findOrders(): BankOrder[]
+                  }
+                }
+
+      """)
       // Given
-      val (vyne, stubService) = testVyne(enumSchema)
-      vyne.addJson(
+      val (vyne, stub) = testVyne(schema)
+      stub.addResponse("findOrders", vyne.parseJson(
          "BankX.BankOrder[]",
          """ [ { "buySellIndicator" : "BUY" }, { "buySellIndicator" : "SELL" } ] """.trimIndent()
-      )
+      ))
+
 
       // When
       runBlocking {
