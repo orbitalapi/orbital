@@ -26,7 +26,8 @@ class SerializableTypedInstanceTest {
             transactionDate : TransactionDateTime
          }
          model TargetType {
-            transactionDate : TransactionDateTime(@format = "dd-MMM-yy")
+            @Format("dd-MMM-yy")
+            transactionDate : TransactionDateTime
          }
       """
       )
