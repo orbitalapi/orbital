@@ -163,7 +163,7 @@ data class Type(
     * Indicates if a format is present on this type, or
     * any of it's inherited types
     */
-   val hasFormat = format != null
+   val hasFormat = !format.isNullOrEmpty()
 
    /**
     * Indicates that this type (not an inherited type)
