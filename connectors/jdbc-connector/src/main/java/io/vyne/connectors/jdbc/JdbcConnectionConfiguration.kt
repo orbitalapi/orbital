@@ -5,6 +5,7 @@ import io.vyne.connectors.IConnectionParameter
 import io.vyne.connectors.registry.ConnectorConfiguration
 import io.vyne.connectors.registry.ConnectorType
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import java.sql.DatabaseMetaData
 
 
 /**
@@ -82,8 +83,15 @@ data class NamedTemplateConnection(
    val template: NamedParameterJdbcTemplate,
    override val jdbcDriver: JdbcDriver = JdbcDriver.H2
 ) : JdbcConnectionConfiguration {
+   private val metadata: DatabaseMetaData by lazy {
+
+      // Be careful with the connection - if we dont close it, we'll exhaust the connection pool
+      template.jdbcTemplate.dataSource.connection.use {
+         it.metaData
+      }
+   }
+
    override fun buildUrlAndCredentials(): JdbcUrlAndCredentials {
-      val metadata = template.jdbcTemplate.dataSource.connection.metaData
       return JdbcUrlAndCredentials(
          metadata.url,
          metadata.userName,
