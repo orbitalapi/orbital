@@ -56,6 +56,12 @@
             </exclusion>
          </exclusions>
       </dependency>
+      <!-- Needed due to spring-cloud-starter-netflix-eureka-client pulling 1.4.18 which has a high severity vulnerability -->
+      <dependency>
+         <groupId>com.thoughtworks.xstream</groupId>
+         <artifactId>xstream</artifactId>
+         <version>1.4.19</version>
+      </dependency>
       <dependency>
          <groupId>org.springframework.cloud</groupId>
          <artifactId>spring-cloud-starter-config</artifactId>
