@@ -65,9 +65,27 @@ default:
       # already completed, so that when we try to grep the output string, we get a tidy predictable output
       - mvn --non-recursive help:evaluate -Dexpression=project.version
       - mvn --non-recursive help:evaluate -Dexpression=project.version | grep -v '\[.*' > build-version.txt
+      - |
+         PROJECT_VERSION=$(cat build-version.txt)
+         if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
+           tag="latest"
+           versionTag="$PROJECT_VERSION"
+         elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
+            tag="latest-preview"
+            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
+         else
+            tag="$CI_COMMIT_BRANCH"
+            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
+         fi
+         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+         echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
+         echo $tag > tag.txt
+         echo $versionTag > version-tag.txt
    artifacts:
       paths:
          - build-version.txt
+         - tag.txt
+         - version-tag.txt
 
          # Be careful!  The each of these jar files can get big.
          # If the total size of all jar files being stored in artifacts
@@ -189,24 +207,10 @@ regression-test:
          alias: docker
          command: [ "--tls=false" ]
    script:
-      - PROJECT_VERSION=$(cat build-version.txt)
-      - docker info
       - docker buildx create --use
       - docker run --privileged --rm tonistiigi/binfmt --install all # Install the required emulators in order to build ARM images
-      - docker buildx ls
-      - |
-         if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
-           tag="latest"
-           versionTag="$PROJECT_VERSION"
-         elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
-            tag="latest-preview"
-            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
-         else
-            tag="$CI_COMMIT_BRANCH"
-            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
-         fi
-         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
-         echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
+      - tag = $(cat tag.txt)
+      - versionTag = $(cat version-tag.txt)
       - cd $projectDir
       - pwd
       - >
@@ -356,20 +360,6 @@ terraform-deploy-prod:
    retry: 2
    before_script:
       - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-      - PROJECT_VERSION=$(cat build-version.txt)
-      - |
-         if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
-           tag="latest"
-           versionTag="$PROJECT_VERSION"
-         elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
-            tag="latest-preview"
-            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
-         else
-            tag="$CI_COMMIT_BRANCH"
-            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
-         fi
-         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
-         echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
       - cd e2e-tests/
       - docker build -t e2e .
    script:
@@ -450,19 +440,7 @@ publish-snyk-to-gitlab-container-registry:
       - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
       - snyk auth $SNYK_TOKEN
       - PROJECT_VERSION=$(cat build-version.txt)
-      - |
-         if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
-           tag="latest"
-           versionTag="$PROJECT_VERSION"
-         elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
-            tag="latest-preview"
-            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
-         else
-            tag="$CI_COMMIT_BRANCH"
-            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
-         fi
-         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
-         echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
+      - versionTag = $(cat version-tag.txt)
    script:
       - snyk container test --app-vulns ${CI_REGISTRY_IMAGE}/$image:$versionTag --severity-threshold=high
 
