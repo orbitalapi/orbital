@@ -17,6 +17,12 @@
          <artifactId>calcite-core</artifactId>
          <version>1.32.0</version>
       </dependency>
+      <!-- TODO Remove once calcite-core is not depending on an earlier version with a vulnerability -->
+      <dependency>
+         <groupId>com.google.protobuf</groupId>
+         <artifactId>protobuf-java</artifactId>
+         <version>3.18.2</version>
+      </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-core-types</artifactId>
