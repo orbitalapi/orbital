@@ -133,6 +133,12 @@
          <artifactId>durian</artifactId>
          <version>3.4.0</version>
       </dependency>
+      <!-- TODO Remove once Spring Boot depends on a later version of snakeyaml as 1.30 has a vulnerability -->
+      <dependency>
+         <groupId>org.yaml</groupId>
+         <artifactId>snakeyaml</artifactId>
+         <version>1.31</version>
+      </dependency>
       <dependency>
          <groupId>junit</groupId>
          <artifactId>junit</artifactId>
