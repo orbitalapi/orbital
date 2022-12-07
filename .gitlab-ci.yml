@@ -433,6 +433,7 @@ publish-snyk-to-gitlab-container-registry:
    image: $CI_REGISTRY_IMAGE/snyk:latest
    only:
       - develop
+   when: manual
    allow_failure: true
    services:
       -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
