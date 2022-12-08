@@ -224,7 +224,7 @@ class VyneGraphBuilder(
       return graphCache.get(filteredFacts) {
          StrategyPerformanceProfiler.profiled("buildGraph") {
             val graph = createCachingGraph(filteredFacts)
-            // TODO : Waiting to see if we actually use GraphBuildResult anymore, if not, just reutnr the graph here.
+            // TODO : Waiting to see if we actually use GraphBuildResult anymore, if not, just return the graph here.
             GraphBuildResult(graph, emptyList(), emptyList())
          }
       }

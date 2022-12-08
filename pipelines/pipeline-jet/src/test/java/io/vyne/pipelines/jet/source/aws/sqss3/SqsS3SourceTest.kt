@@ -78,17 +78,20 @@ type OrderWindowSummary {
     // Changed column
     close : Price by column("Close")
 }""".trimIndent()
-      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val testSetup = jetWithSpringAndVyne(
          coinBaseSchema,
          emptyList(),
          listOf(localstack.awsConnection()),
          UTCClockProvider::class.java
       )
-      applicationContext.getBean(AwsConnectionRegistry::class.java).register(localstack.awsConnection())
+      testSetup.applicationContext.getBean(AwsConnectionRegistry::class.java).register(localstack.awsConnection())
       // Register the connection so we can look it up later
-      val connectionRegistry = applicationContext.getBean(JdbcConnectionRegistry::class.java)
+      val connectionRegistry = testSetup.applicationContext.getBean(JdbcConnectionRegistry::class.java)
       connectionRegistry.register(postgresSQLContainerFacade.connection)
-      val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "OrderWindowSummary")
+      val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(
+         testSetup.applicationContext,
+         targetType = "OrderWindowSummary"
+      )
       val pipelineSpec = PipelineSpec(
          name = "aws-s3-source",
          input = AwsSqsS3TransportInputSpec(
@@ -105,18 +108,17 @@ type OrderWindowSummary {
          )
       )
 
-      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
+      startPipeline(testSetup.hazelcastInstance, testSetup.vyneClient, pipelineSpec)
 
-      val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
-      val vyne = vyneProvider.createVyne()
+      val connectionFactory = testSetup.applicationContext.getBean(JdbcConnectionFactory::class.java)
 
       waitForRowCount(
          connectionFactory.dsl(postgresSQLContainerFacade.connection),
-         vyne.type("OrderWindowSummary"),
+         testSetup.schema.type("OrderWindowSummary"),
          1,
          duration = Duration.ofSeconds(30)
       )
-      symbols(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("OrderWindowSummary"))
+      symbols(connectionFactory.dsl(postgresSQLContainerFacade.connection), testSetup.schema.type("OrderWindowSummary"))
          .should.elements("BTCUSD", "")
    }
 

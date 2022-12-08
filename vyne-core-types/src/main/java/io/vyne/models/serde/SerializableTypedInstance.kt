@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalSerializationApi::class)
 
-package io.vyne.spring.projection.serde
+package io.vyne.models.serde
 
 import io.vyne.models.*
 import io.vyne.schemas.Schema
@@ -24,14 +24,14 @@ import java.time.temporal.Temporal
 /**
  * This class exists to aid with serialization and deserialization of TypedInstances
  * when passing across the wire - including writing to Bytes, and then converting the
- * serialzied / deserialzied value back into a TypedInstance (via the .toTypedInstance(schema) method)
+ * serialized / deserialized value back into a TypedInstance (via the .toTypedInstance(schema) method)
  *
  * Types are not serialized, only their name.  It is expected that both serializer and
  * deserializer are working against the same schema, or differences will result in the deserialized value.
  *
  * The value from this serialization is more descriptive than a TypeNamedInstance, as
  * we include the Taxi type data all the way down the chain.   However, in order to support
- * deserialzation, we need to handle polymorphic type references.
+ * deserialization, we need to handle polymorphic type references.
  * Specific challenges are ensuring the following references are resolved in a compile constant way:
  *  - The T of List<T>
  *  - The T of Map<String,T>
@@ -98,7 +98,7 @@ data class SerializableTypedInstance(
 
    companion object {
       fun fromBytes(byteArray: ByteArray): SerializableTypedInstance {
-         return CborSerializer.serializer.decodeFromByteArray<SerializableTypedInstance>(byteArray)
+         return CborSerializer.serializer.decodeFromByteArray(byteArray)
       }
    }
 }
@@ -144,7 +144,7 @@ sealed class SerializableTypedValue
 object SerializedNull : SerializableTypedValue()
 
 @Serializable
-sealed class SerializableTypedValueWrapper<T>() : SerializableTypedValue() {
+sealed class SerializableTypedValueWrapper<T> : SerializableTypedValue() {
    abstract val value: T
 }
 
@@ -192,7 +192,7 @@ object SerializableTypeConverter {
  * type of the value known at compilation time
  */
 object SerializableTypeMapper : TypedInstanceMapper {
-   override fun handleUnwrapped(original: TypedInstance, value: Any?): Any? {
+   override fun handleUnwrapped(original: TypedInstance, value: Any?): Any {
       val wrappedMap = MapWrapper(value as Map<String, SerializableTypedInstance>)
       return SerializableTypedInstance(
          original.typeName,
@@ -201,7 +201,7 @@ object SerializableTypeMapper : TypedInstanceMapper {
       )
    }
 
-   override fun handleUnwrappedCollection(original: TypedInstance, value: Any?): Any? {
+   override fun handleUnwrappedCollection(original: TypedInstance, value: Any?): Any {
       return SerializableTypedInstance(
          original.typeName,
          ListWrapper(value as List<SerializableTypedInstance>),
@@ -209,8 +209,7 @@ object SerializableTypeMapper : TypedInstanceMapper {
       )
    }
 
-   override fun map(typedInstance: TypedInstance): SerializableTypedValue? {
-//      val formattedValue = TypeNamedInstanceMapper.formatValue(typedInstance)
+   override fun map(typedInstance: TypedInstance): SerializableTypedValue {
       val serializableValue = when (val formattedValue = typedInstance.value) {
          null -> SerializedNull
          is String -> StringWrapper(formattedValue)

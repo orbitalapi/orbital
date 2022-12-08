@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit
 class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
    @Test
    fun `poll the query and return values`() {
-      val (hazelcastInstance, applicationContext, vyneProvider, stub) = jetWithSpringAndVyne(
+      val testSetup = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -31,12 +31,11 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
       """
       )
 
-      val vyne = vyneProvider.createVyne()
-      stub.addResponseFlow("getAll") { _, _ ->
+      testSetup.stubService.addResponseFlow("getAll") { _, _ ->
          flowOf(
-            vyne.parseJson("Person", """{ "firstName": "Jimmy", "lastName": "Fallon" }"""),
-            vyne.parseJson("Person", """{ "firstName": "Conan", "lastName": "O'Brien" }"""),
-            vyne.parseJson("Person", """{ "firstName": "Jimmy", "lastName": "Kimmel" }"""),
+            parseJson(testSetup.schema, "Person", """{ "firstName": "Jimmy", "lastName": "Fallon" }"""),
+            parseJson(testSetup.schema, "Person", """{ "firstName": "Conan", "lastName": "O'Brien" }"""),
+            parseJson(testSetup.schema, "Person", """{ "firstName": "Jimmy", "lastName": "Kimmel" }"""),
          )
       }
 
@@ -44,14 +43,14 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
          find { Person[] }
       """
 
-      val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "Person")
+      val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(testSetup.applicationContext, targetType = "Person")
       val pipelineSpec = PipelineSpec(
          name = "test-query-poll",
          input = PollingQueryInputSpec(query, CronExpressions.EVERY_SECOND),
          outputs = listOf(outputSpec)
       )
 
-      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
+      startPipeline(testSetup.hazelcastInstance, testSetup.vyneClient, pipelineSpec)
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
          listSinkTarget.list.size == 3
       }
@@ -70,7 +69,7 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
    fun `poll the query with preventConcurrentExecution delay`() {
       val pipelineManagerLogCaptor = LogCaptor.forClass(PipelineManager::class.java)
       pipelineManagerLogCaptor.setLogLevelToTrace()
-      val (hazelcastInstance, applicationContext, vyneProvider, stub) = jetWithSpringAndVyne(
+      val testSetup = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -82,13 +81,12 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
       """
       )
 
-      val vyne = vyneProvider.createVyne()
-      stub.addResponseFlow("getAll") { _, _ ->
+      testSetup.stubService.addResponseFlow("getAll") { _, _ ->
          flow {
             delay(10000L)
-            emit(vyne.parseJson("Person", """{ "firstName": "Jimmy", "lastName": "Fallon" }"""))
-            emit(vyne.parseJson("Person", """{ "firstName": "Conan", "lastName": "O'Brien" }"""))
-            emit(vyne.parseJson("Person", """{ "firstName": "Jimmy", "lastName": "Kimmel" }"""))
+            emit(parseJson(testSetup.schema, "Person", """{ "firstName": "Jimmy", "lastName": "Fallon" }"""))
+            emit(parseJson(testSetup.schema, "Person", """{ "firstName": "Conan", "lastName": "O'Brien" }"""))
+            emit(parseJson(testSetup.schema, "Person", """{ "firstName": "Jimmy", "lastName": "Kimmel" }"""))
          }
       }
 
@@ -96,7 +94,7 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
          find { Person[] }
       """
 
-      val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "Person")
+      val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(testSetup.applicationContext, targetType = "Person")
       val pipelineSpec = PipelineSpec(
          name = "test-query-poll",
          input = PollingQueryInputSpec(
@@ -106,7 +104,7 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
          outputs = listOf(outputSpec)
       )
 
-      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
+      startPipeline(testSetup.hazelcastInstance, testSetup.vyneClient, pipelineSpec)
       Awaitility.await().atMost(30, TimeUnit.SECONDS).until {
          listSinkTarget.list.size == 3 && pipelineManagerLogCaptor.traceLogs.any { traceLog ->
             traceLog.contains("Skipping pipeline \"test-query-poll\" as it is input spec set as fixedDelay, and there is an active job")

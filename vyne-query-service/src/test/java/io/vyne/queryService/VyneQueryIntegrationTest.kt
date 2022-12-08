@@ -5,18 +5,17 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.should
 import io.vyne.StubService
 import io.vyne.Vyne
+import io.vyne.VyneProvider
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.json.parseJsonModel
 import io.vyne.schema.api.SchemaProvider
-import io.vyne.schema.api.SchemaSourceProvider
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleVyneProvider
-import io.vyne.spring.VyneProvider
 import io.vyne.spring.config.TestDiscoveryClientConfig
 import io.vyne.testVyne
 import org.junit.Test
@@ -33,7 +32,6 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
-import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import java.nio.charset.StandardCharsets
 import kotlin.test.assertEquals
@@ -52,7 +50,7 @@ import kotlin.test.assertEquals
 class VyneQueryIntegrationTest {
 
    @Autowired
-   private lateinit var restTemplate: TestRestTemplate;
+   private lateinit var restTemplate: TestRestTemplate
 
    @LocalServerPort
    val randomServerPort = 0
@@ -100,7 +98,7 @@ class VyneQueryIntegrationTest {
        * Stub Vyne with a stub service
        */
       fun pipelineTestVyne(): Pair<Vyne, StubService> {
-         val src = UserSchema.source.trimIndent()
+         val src = source.trimIndent()
 
          return testVyne(src)
       }

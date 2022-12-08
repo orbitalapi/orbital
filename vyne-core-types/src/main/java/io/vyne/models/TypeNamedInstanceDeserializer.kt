@@ -13,12 +13,11 @@ open class TypeNamedInstanceDeserializer : JsonDeserializer<TypeNamedInstance>()
          is List<*> -> {
             // Currently, type data of the list itself isn't written (ie., List<T>)
             // only the values of the list.
-            // When this list is converted to a TypedInstance, we acutally look up the
+            // When this list is converted to a TypedInstance, we actually look up the
             // collection type from the schema.
             // However, it's a bit nasty, and we should try to find a better solution.
             val collectionValue = rawMap.map { deserializeValue(it as Any) }
             TypeNamedInstance("vyne.deserialization.UnknownCollectionType", collectionValue, UndefinedSource)
-
          }
          else -> error("Unhandled scenario deserializing top level entry - expected either a map or a list, found ${rawMap::class.simpleName}")
       }

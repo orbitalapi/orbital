@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit
 class BatchSourceToStreamSinkTest : BaseJetIntegrationTest() {
    @Test
    fun `combining a batch source and streamed sink works`() {
-      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneClient) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -35,7 +35,7 @@ class BatchSourceToStreamSinkTest : BaseJetIntegrationTest() {
 
       startPipeline(
          hazelcastInstance,
-         vyneProvider,
+         vyneClient,
          pipelineSpec,
          validateJobStatusIsRunningEventually = false // Status is already completed when checking it
       )

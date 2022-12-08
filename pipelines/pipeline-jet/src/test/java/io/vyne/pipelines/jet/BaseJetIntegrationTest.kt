@@ -10,11 +10,14 @@ import com.mercateo.test.clock.TestClock
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.StubService
+import io.vyne.VyneClient
+import io.vyne.VyneClientWithSchema
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import io.vyne.connectors.jdbc.JdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.connectors.kafka.registry.InMemoryKafkaConnectorRegistry
+import io.vyne.embedded.EmbeddedVyneClientWithSchema
 import io.vyne.pipelines.jet.api.SubmittedPipeline
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.pipelines.PipelineFactory
@@ -31,10 +34,10 @@ import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDeco
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleVyneProvider
-import io.vyne.spring.VyneProvider
 import io.vyne.spring.invokers.RestTemplateInvoker
 import io.vyne.spring.invokers.ServiceUrlResolver
 import io.vyne.testVyne
@@ -45,12 +48,14 @@ import org.springframework.context.support.GenericApplicationContext
 import org.springframework.web.reactive.function.client.WebClient
 import java.time.Duration
 import java.util.*
+import java.util.function.Supplier
 
 data class JetTestSetup(
    val hazelcastInstance: HazelcastInstance,
    val applicationContext: ApplicationContext,
-   val vyneProvider: VyneProvider,
+   val vyneClient: VyneClientWithSchema,
    val stubService: StubService,
+   val schema: Schema,
    val meterRegistry: MeterRegistry
 )
 
@@ -82,6 +87,9 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
 
       val springApplicationContext = AnnotationConfigApplicationContext()
       springApplicationContext.registerBean(SimpleVyneProvider::class.java, vyne)
+      springApplicationContext.registerBean(Schema::class.java, Supplier { vyne.schema })
+      springApplicationContext.registerBean(SimpleSchemaStore::class.java, SchemaSet.from(vyne.schema, 1))
+      springApplicationContext.register(EmbeddedVyneClientWithSchema::class.java)
       springApplicationContext.registerBean(
          "jdbcConnectionRegistry",
          InMemoryJdbcConnectionRegistry::class.java,
@@ -112,9 +120,10 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       hazelcastConfig.jetConfig.isEnabled = true
       hazelcastConfig.managedContext = SpringManagedContext(springApplicationContext)
       val hazelcastInstance = createHazelcastInstance(hazelcastConfig)
-      val vyneProvider = springApplicationContext.getBean(VyneProvider::class.java)
+      val vyneClient = springApplicationContext.getBean(VyneClientWithSchema::class.java)
+      val schema = springApplicationContext.getBean(Schema::class.java)
       val meterRegistry = springApplicationContext.getBean(MeterRegistry::class.java)
-      return JetTestSetup(hazelcastInstance, springApplicationContext, vyneProvider, stub, meterRegistry)
+      return JetTestSetup(hazelcastInstance, springApplicationContext, vyneClient, stub, schema, meterRegistry)
    }
 
    /**
@@ -127,7 +136,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       awsConnections: List<AwsConnectionConfiguration> = emptyList(),
       testClockConfiguration: Class<*> = TestClockProvider::class.java,
       contextConfig: (GenericApplicationContext) -> Unit = {},
-   ): Triple<HazelcastInstance, ApplicationContext, VyneProvider> {
+   ): Triple<HazelcastInstance, ApplicationContext, VyneClient> {
       val vyne = testVyne(
          schema, listOf(
             CacheAwareOperationInvocationDecorator(
@@ -164,8 +173,8 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       val hazelcastConfig = Config()
       hazelcastConfig.managedContext = SpringManagedContext(springApplicationContext)
       val hazelcastInstance = createHazelcastInstance(hazelcastConfig)
-      val vyneProvider = springApplicationContext.getBean(VyneProvider::class.java)
-      return Triple(hazelcastInstance, springApplicationContext, vyneProvider)
+      val vyneClient = springApplicationContext.getBean(VyneClient::class.java)
+      return Triple(hazelcastInstance, springApplicationContext, vyneClient)
    }
 
    fun listSinkTargetAndSpec(
@@ -204,13 +213,13 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
 
    fun startPipeline(
       hazelcastInstance: HazelcastInstance,
-      vyneProvider: VyneProvider,
+      vyneClient: VyneClientWithSchema,
       pipelineSpec: PipelineSpec<*, *>,
       sourceProvider: PipelineSourceProvider = pipelineSourceProvider,
       sinkProvider: PipelineSinkProvider = pipelineSinkProvider,
       validateJobStatusIsRunningEventually: Boolean = true
    ): Triple<SubmittedPipeline, Job?, PipelineManager> {
-      val manager = pipelineManager(hazelcastInstance, vyneProvider, sourceProvider, sinkProvider)
+      val manager = pipelineManager(hazelcastInstance, vyneClient, sourceProvider, sinkProvider)
       Timer().scheduleAtFixedRate(
          object : TimerTask() {
             override fun run() {
@@ -232,12 +241,12 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
 
    fun pipelineManager(
       hazelcastInstance: HazelcastInstance,
-      vyneProvider: VyneProvider,
+      vyneClient: VyneClientWithSchema,
       sourceProvider: PipelineSourceProvider = pipelineSourceProvider,
       sinkProvider: PipelineSinkProvider = pipelineSinkProvider,
    ): PipelineManager {
       return PipelineManager(
-         PipelineFactory(vyneProvider, sourceProvider, sinkProvider),
+         PipelineFactory(vyneClient, sourceProvider, sinkProvider),
          hazelcastInstance
       )
    }

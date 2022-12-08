@@ -32,7 +32,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
 import org.springframework.boot.web.client.RestTemplateBuilder
-import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
@@ -50,7 +49,6 @@ import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.scheduling.annotation.EnableAsync
-import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.web.reactive.HandlerMapping
 import org.springframework.web.reactive.config.EnableWebFlux
 import org.springframework.web.reactive.config.WebFluxConfigurer
@@ -199,7 +197,7 @@ class SqlTimeStampSerialiser: StdSerializer<Timestamp>(Timestamp::class.java) {
       instantSerialiser.serialize(value.toInstant(), generator, p2)
    }
 }
-// Marker configration classes, to make app more testable
+// Marker configuration classes, to make app more testable
 
 @Configuration
 @Import(DiscoveryClientConfig::class)

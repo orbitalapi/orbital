@@ -50,7 +50,6 @@ import org.springframework.http.converter.HttpMessageConverter
 import org.springframework.http.converter.json.KotlinSerializationJsonHttpMessageConverter
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.stereotype.Component
-import org.springframework.web.reactive.config.WebFluxConfigurationSupport
 import org.springframework.web.reactive.config.WebFluxConfigurer
 import org.springframework.web.server.ServerWebExchange
 import org.springframework.web.server.WebFilter
@@ -60,7 +59,7 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import reactivefeign.spring.config.EnableReactiveFeignClients
 import reactor.core.publisher.Mono
-import java.util.Collections
+import java.util.*
 
 
 @SpringBootApplication
@@ -152,7 +151,7 @@ class QueryServiceApp {
          val executor = ThreadPoolTaskExecutor()
          executor.corePoolSize = corePoolSize
          executor.maxPoolSize = maxPoolSize // maximum number of concurrent running threads when queue size is full
-         executor.setQueueCapacity(queueCapacity)
+         executor.queueCapacity = queueCapacity
          executor.threadNamePrefix = "vyne-query-executor"
          executor.initialize()
          configurer.setTaskExecutor(executor)
@@ -238,7 +237,7 @@ class WebFluxWebConfig(private val objectMapper: ObjectMapper) : WebFluxConfigur
    override fun configureHttpMessageCodecs(configurer: ServerCodecConfigurer) {
       val defaults: ServerCodecConfigurer.ServerDefaultCodecs = configurer.defaultCodecs()
       defaults.jackson2JsonDecoder(Jackson2JsonDecoder(objectMapper, MediaType.APPLICATION_JSON))
-      // SPring Boot Admin 2.x
+      // Spring Boot Admin 2.x
       // checks for the content-type application/vnd.spring-boot.actuator.v2.
       // If this content-type is absent, the application is considered to be a Spring Boot 1 application.
       // Spring Boot Admin can't display the metrics with Metrics are not supported for Spring Boot 1.x applications.
