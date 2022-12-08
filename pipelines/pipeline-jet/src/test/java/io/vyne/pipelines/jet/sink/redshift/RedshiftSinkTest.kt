@@ -83,31 +83,30 @@ class RedshiftSinkTest : BaseJetIntegrationTest() {
             givenName : FirstName
          }
       """
-       val (hazelcastInstance, _, vyneProvider) = jetWithSpringAndVyne(
-          schemaSource, listOf(connection)
-       )
-       val pipelineSpec = PipelineSpec(
-           name = "test-http-poll",
-           input = FixedItemsSourceSpec(
-               items = queueOf("""{ "firstName" : "jimmy", "lastName" : "Schmitt" }"""),
-               typeName = "Person".fqn()
-           ),
-           outputs = listOf(
-               RedshiftTransportOutputSpec(
-                   "test-connection",
-                   "Target"
-               )
-           )
-       )
-      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
+      val testSetup = jetWithSpringAndVyne(
+         schemaSource, listOf(connection)
+      )
+      val pipelineSpec = PipelineSpec(
+         name = "test-http-poll",
+         input = FixedItemsSourceSpec(
+            items = queueOf("""{ "firstName" : "jimmy", "lastName" : "Schmitt" }"""),
+            typeName = "Person".fqn()
+         ),
+         outputs = listOf(
+            RedshiftTransportOutputSpec(
+               "test-connection",
+               "Target"
+            )
+         )
+      )
+      startPipeline(testSetup.hazelcastInstance, testSetup.vyneClient, pipelineSpec)
 
-       Thread.sleep(10000)
+      Thread.sleep(10000)
 
-       val postgresDdlGenerator = PostgresDdlGenerator()
-       val schema = vyneProvider.createVyne().schema
+      val postgresDdlGenerator = PostgresDdlGenerator()
        val targetTable = postgresDdlGenerator.generateDdl(
-           schema.versionedType(pipelineSpec.outputs.first().targetType.typeName),
-           schema
+          testSetup.schema.versionedType(pipelineSpec.outputs.first().targetType.typeName),
+          testSetup.schema
        )
 
        val urlCredentials = connection.buildUrlAndCredentials()

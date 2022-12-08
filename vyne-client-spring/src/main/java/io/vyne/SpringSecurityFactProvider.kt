@@ -9,7 +9,8 @@ interface AuthenticationFactConverter {
    fun getUserFact(authentication: Authentication): Fact
 }
 
-class SpringSecurityFactProvider(private val factConverter: AuthenticationFactConverter = SpringUserDetailsFactConverter()) : FactProvider {
+class SpringSecurityFactProvider(private val factConverter: AuthenticationFactConverter = SpringUserDetailsFactConverter()) :
+   FactProvider {
    override fun provideFacts(currentFacts: List<Fact>): List<Fact> {
       val context = SecurityContextHolder.getContext()
       val auth = context.authentication

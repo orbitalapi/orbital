@@ -54,16 +54,15 @@ class SqsS3SourceJdbcSinkIntegrationTest : BaseJetIntegrationTest() {
 
    @Test
    fun `s3sqs source and jdbc postgres sink`() {
-      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val testSetup = jetWithSpringAndVyne(
          RatingReport.ratingsSchema("@io.vyne.formats.Csv"),
          listOf(postgresSQLContainerFacade.connection),
          listOf(localstack.awsConnection())
       )
       // Register the connection so we can look it up later
-      val connectionRegistry = applicationContext.getBean(JdbcConnectionRegistry::class.java)
+      val connectionRegistry = testSetup.applicationContext.getBean(JdbcConnectionRegistry::class.java)
       connectionRegistry.register(postgresSQLContainerFacade.connection)
-      applicationContext.getBean(AwsConnectionRegistry::class.java).register(localstack.awsConnection())
-      val vyne = vyneProvider.createVyne()
+      testSetup.applicationContext.getBean(AwsConnectionRegistry::class.java).register(localstack.awsConnection())
 
       // create the pipeline
       val pipelineSpec = PipelineSpec(
@@ -82,9 +81,9 @@ class SqsS3SourceJdbcSinkIntegrationTest : BaseJetIntegrationTest() {
          )
       )
 
-      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
-      val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
-      val type = vyne.type(RatingReport.typeName)
+      startPipeline(testSetup.hazelcastInstance, testSetup.vyneClient, pipelineSpec)
+      val connectionFactory = testSetup.applicationContext.getBean(JdbcConnectionFactory::class.java)
+      val type = testSetup.schema.type(RatingReport.typeName)
 
       postgresSQLContainerFacade.waitForRowCount(
          connectionFactory.dsl(postgresSQLContainerFacade.connection),

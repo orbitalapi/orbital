@@ -1,7 +1,6 @@
 package io.vyne
 
 import com.google.common.annotations.VisibleForTesting
-import io.vyne.models.FactBag
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObjectFactory
@@ -10,17 +9,13 @@ import io.vyne.query.*
 import io.vyne.query.graph.Algorithms
 import io.vyne.schemas.*
 import io.vyne.schemas.taxi.TaxiConstraintConverter
-import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.schemas.taxi.TaxiSchemaAggregator
 import io.vyne.schemas.taxi.compileExpression
 import io.vyne.utils.Ids
 import io.vyne.utils.log
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.job
-import lang.taxi.CompilationException
 import lang.taxi.Compiler
-import lang.taxi.errors
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.types.TaxiQLQueryString
 import java.util.*
@@ -46,8 +41,7 @@ interface ModelContainer : SchemaContainer {
 
 class Vyne(
    schemas: List<Schema>,
-   private val queryEngineFactory: QueryEngineFactory,
-   private val compositeSchemaBuilder: CompositeSchemaBuilder = CompositeSchemaBuilder()
+   private val queryEngineFactory: QueryEngineFactory
 ) : ModelContainer {
 
    init {
@@ -60,8 +54,8 @@ class Vyne(
 
    override var schema: Schema = schemas.firstOrNull() ?: SimpleSchema.EMPTY
       // Setter only for legacy purposes, used in tests we need to migrate.
-      // schema is immuable now.
-      private set;
+      // schema is immutable now.
+      private set
 
    fun queryEngine(
       factSetIds: Set<FactSetId> = setOf(FactSets.ALL),

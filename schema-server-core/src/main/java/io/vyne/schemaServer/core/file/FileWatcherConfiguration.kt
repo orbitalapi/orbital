@@ -1,6 +1,5 @@
 package io.vyne.schemaServer.core.file
 
-import io.vyne.schemaServer.core.editor.ApiEditorRepository
 import io.vyne.schemaServer.core.editor.DefaultApiEditorRepository
 import io.vyne.schemaServer.core.editor.EditingDisabledRepository
 import mu.KotlinLogging
@@ -24,15 +23,15 @@ class FileWatcherBuilders {
       config: FileSystemSchemaRepositoryConfig?,
       repositories: List<FileSystemSchemaRepository>?,
    ): List<FileSystemMonitor> {
-      if (config == null || repositories == null || repositories.isEmpty()) {
+      if (config == null || repositories.isNullOrEmpty()) {
          return emptyList()
       }
-      val paths = (config.paths + config.apiEditorProjectPath).filterNotNull().distinct()
       val watchers = when (config.changeDetectionMethod) {
          FileChangeDetectionMethod.POLL -> repositories.map { repository ->
             logger.info { "Configuring FilePoller at ${repository.projectPath}" }
             FilePoller(repository, config.pollFrequency)
          }
+
          FileChangeDetectionMethod.WATCH -> repositories.map { repository ->
             logger.info { "Configuring FileWatcher at ${repository.projectPath}" }
             FileWatcher(repository, config.recompilationFrequencyMillis)
@@ -48,21 +47,21 @@ class FileWatcherBuilders {
    ): io.vyne.schemaServer.core.editor.ApiEditorRepository {
       if (config?.apiEditorProjectPath == null) {
          logger.info { "No apiEditorProjectPath is defined, so edits via the REST API are disabled" }
-         return io.vyne.schemaServer.core.editor.EditingDisabledRepository
+         return EditingDisabledRepository
       }
       if (repositories == null) {
          logger.info { "No repositories are defined, so edits via the REST API are disabled" }
-         return io.vyne.schemaServer.core.editor.EditingDisabledRepository
+         return EditingDisabledRepository
       }
       // By ensuring the apiEditorProjectPath is also a configured project path, it means that a watcher
       // has already been set up, and we don't have to do much work
       if (repositories.none { it.projectPath == config.apiEditorProjectPath }) {
          logger.error { "apiEditorProjectPath has been defined, but it's path is not in the list of project paths.  Add the apiEditorProjectPath to the list of configured paths.  Edits via the REST API are disabled" }
-         return io.vyne.schemaServer.core.editor.EditingDisabledRepository
+         return EditingDisabledRepository
       }
       val repository = repositories.first { it.projectPath == config.apiEditorProjectPath }
       logger.info { "Project at path ${repository.projectPath.toAbsolutePath()} is configured to accept changes from the REST API" }
-      return io.vyne.schemaServer.core.editor.DefaultApiEditorRepository(repository)
+      return DefaultApiEditorRepository(repository)
    }
 
    @Bean

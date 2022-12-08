@@ -15,19 +15,25 @@ import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.schema.api.SchemaProvider
-import io.vyne.schemas.*
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import lang.taxi.Compiler
 import lang.taxi.query.TaxiQlQuery
+import org.postgresql.jdbc.PgArray
+import org.postgresql.util.PGobject
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import org.springframework.util.LinkedCaseInsensitiveMap
 import java.time.Duration
 import java.time.Instant
 
 /**
  * An invoker capable of invoking VyneQL queries in a graph search
- * It's expected that the input to this (ie., the invoker), is the result of a QueryBuildingEvaluator,
- * where we're recieving a TypedInstance containing the VyneQL query, along with a datasource of ConstructedQuery.
+ * It's expected that the input to this (i.e. the invoker), is the result of a QueryBuildingEvaluator,
+ * where we're receiving a TypedInstance containing the VyneQL query, along with a datasource of ConstructedQuery.
  */
 class JdbcInvoker(
     private val connectionFactory: JdbcConnectionFactory,
@@ -114,13 +120,30 @@ class JdbcInvoker(
          .map { columnMap ->
             TypedInstance.from(
                schema.type(resultTaxiType),
-               columnMap,
+               convertColumnMapToGeneralPurposeTypes(columnMap),
                schema,
                source = datasource,
                evaluateAccessors = false
             )
          }
       return typedInstances.asFlow()
+   }
+
+   /**
+    * TODO This shouldn't be needed..
+    * The TypedInstance generation relies on the map being an insensitive one, so we need to utilize LinkedCaseInsensitiveMap.
+    */
+   private fun convertColumnMapToGeneralPurposeTypes(columnMap: Map<String, Any>): LinkedCaseInsensitiveMap<Any> {
+      val result = LinkedCaseInsensitiveMap<Any>()
+      columnMap.forEach {
+         val value = when (it.value) {
+            is PGobject -> it.value.toString()
+            is PgArray -> ((it.value as PgArray).array as Array<String>).toList()
+            else -> it.value
+         }
+         result[it.key] = value
+      }
+      return result
    }
 
    private fun getConnectionNameAndTemplate(service: Service): Pair<String, NamedParameterJdbcTemplate> {

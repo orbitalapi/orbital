@@ -6,11 +6,11 @@ import arrow.core.right
 import com.hazelcast.jet.pipeline.ServiceFactory
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
+import io.vyne.embedded.EmbeddedVyneClientWithSchema
 import io.vyne.models.TypedCollection
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.schemas.QualifiedName
-import io.vyne.spring.VyneProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.toList
@@ -35,16 +35,15 @@ internal object VyneTransformationScope : CoroutineScope {
 }
 
 
-
 /**
- * A HazelcastJet service which wraps the Vyne transformation phase of a pipeline.
- * As per the Jet API's, must return a CompletableFuture<>.  So, this class does some
- * framework hopping to link the CompletableFuture<> API's with our Kotlin Coroutine APIs.
+ * A Hazelcast Jet service which wraps the Vyne transformation phase of a pipeline.
+ * As per the Jet APIs, must return a CompletableFuture<>.  So, this class does some
+ * framework hopping to link the CompletableFuture<> APIs with our Kotlin Coroutine APIs.
  *
  * Loggers are Jet loggers, to ensure context is correctly captured.
  */
 class VyneTransformationService(
-   val vyneProvider: VyneProvider,
+   val vyneClient: EmbeddedVyneClientWithSchema,
    val logger: ILogger
 ) {
    companion object {
@@ -52,7 +51,7 @@ class VyneTransformationService(
          return ServiceFactory.withCreateContextFn { context ->
             VyneStageContext()
          }.withCreateServiceFn { context, vyneStageContext ->
-            VyneTransformationService(vyneStageContext.vyneProvider, context.logger())
+            VyneTransformationService(vyneStageContext.vyneClient, context.logger())
          }
       }
    }
@@ -62,9 +61,8 @@ class VyneTransformationService(
       inputType: QualifiedName,
       outputType: QualifiedName
    ): CompletableFuture<TypedInstanceContentProvider> {
-      val vyne = vyneProvider.createVyne()
       val input = try {
-         messageContentProvider.readAsTypedInstance(vyne.schema.type(inputType), vyne.schema)
+         messageContentProvider.readAsTypedInstance(vyneClient.schema.type(inputType), vyneClient.schema)
       } catch (e: Exception) {
          logger.severe("Failed to read inbound message as type ${inputType.longDisplayName} - ${e.message}", e)
          return CompletableFuture.failedFuture(e)
@@ -72,7 +70,14 @@ class VyneTransformationService(
 
       val futureContentProvider: CompletableFuture<TypedInstanceContentProvider> = VyneTransformationScope.future {
          val transformationResult = try {
-            vyne.from(input)
+            /**
+             * TODO
+             * Move to use remote Vyne client over the embedded one as soon as we support passing input
+             * as part of the request. Currently it is not possible to send the data (i.e. "given { <data here> }")
+             * as part of the request, so we have to use the embedded client which means the transformation happens on
+             * the pipelines instance and not in query server which is suboptimal.
+             */
+            vyneClient.from(input)
                .build(outputType.parameterizedName)
                .results.toList()
          } catch (e: Exception) {
@@ -86,7 +91,7 @@ class VyneTransformationService(
          logger.info("Transforming input message of type ${inputType.longDisplayName} to ${outputType.longDisplayName} completed with ${transformationResult.size} results")
 
          val typedInstance = when {
-            transformationResult.isEmpty() -> TypedCollection.empty(vyne.schema.type(outputType))
+            transformationResult.isEmpty() -> TypedCollection.empty(vyneClient.schema.type(outputType))
             transformationResult.size == 1 -> transformationResult.first()
             else -> TypedCollection.from(transformationResult)
          }
@@ -106,5 +111,5 @@ class VyneTransformationService(
 @SpringAware
 class VyneStageContext {
    @Resource
-   lateinit var vyneProvider: VyneProvider
+   lateinit var vyneClient: EmbeddedVyneClientWithSchema
 }

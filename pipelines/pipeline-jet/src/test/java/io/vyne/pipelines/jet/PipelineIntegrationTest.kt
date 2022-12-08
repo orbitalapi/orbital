@@ -15,7 +15,7 @@ class PipelineIntegrationTest : BaseJetIntegrationTest() {
 
    @Test
    fun pipelineHelloWorldTest() {
-      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneClient) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -28,7 +28,7 @@ class PipelineIntegrationTest : BaseJetIntegrationTest() {
       )
       val manager = PipelineManager(
          PipelineFactory(
-            vyneProvider,
+            vyneClient,
             pipelineSourceProvider,
             pipelineSinkProvider,
          ),

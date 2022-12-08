@@ -28,22 +28,21 @@ annotation class EnableVyne
 class EnableVyneConfiguration {
    @Bean
    fun vyneFactory(
-       schemaStore: SchemaStore,
-       operationInvokers: List<OperationInvoker>,
-       vyneCacheConfiguration: VyneCacheConfiguration,
-       vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
+      schemaStore: SchemaStore,
+      operationInvokers: List<OperationInvoker>,
+      vyneCacheConfiguration: VyneCacheConfiguration,
+      vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
    ): VyneFactory {
       return VyneFactory(schemaStore, operationInvokers, vyneCacheConfiguration, vyneSpringProjectionConfiguration)
    }
 
-
    @Bean
    fun restTemplateOperationInvoker(
-       schemaStore: SchemaStore,
-       webClientBuilder: WebClient.Builder,
-       serviceUrlResolvers: List<ServiceUrlResolver>,
-       authTokenRepository: AuthTokenRepository,
-       meterRegistry: MeterRegistry
+      schemaStore: SchemaStore,
+      webClientBuilder: WebClient.Builder,
+      serviceUrlResolvers: List<ServiceUrlResolver>,
+      authTokenRepository: AuthTokenRepository,
+      meterRegistry: MeterRegistry
    ): RestTemplateInvoker {
       val requestFactory = AuthTokenInjectingRequestFactory(
          DefaultRequestFactory(),

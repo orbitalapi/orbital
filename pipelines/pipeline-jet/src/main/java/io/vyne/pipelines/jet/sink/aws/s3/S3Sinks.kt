@@ -29,13 +29,13 @@ import com.hazelcast.jet.pipeline.SinkBuilder
 import com.hazelcast.logging.ILogger
 import com.hazelcast.memory.MemoryUnit
 import com.hazelcast.spring.context.SpringAware
+import io.vyne.VyneClientWithSchema
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedObject
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineAwareVariableProvider
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.schemas.Schema
-import io.vyne.spring.VyneProvider
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
@@ -139,10 +139,10 @@ object S3Sinks {
       lateinit var variableProvider: PipelineAwareVariableProvider
 
       @Resource
-      lateinit var vyneProvider: VyneProvider
+      lateinit var vyneClient: VyneClientWithSchema
 
       fun schema(): Schema {
-         return vyneProvider.createVyne().schema
+         return vyneClient.schema
       }
 
       private val name: String

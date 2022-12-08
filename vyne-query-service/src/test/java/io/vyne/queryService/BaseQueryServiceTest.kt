@@ -6,6 +6,7 @@ import com.nhaarman.mockito_kotlin.mock
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.StubService
 import io.vyne.Vyne
+import io.vyne.VyneProvider
 import io.vyne.history.QueryEventObserver
 import io.vyne.history.db.QueryHistoryDbWriter
 import io.vyne.models.TypedInstance
@@ -24,7 +25,6 @@ import io.vyne.queryService.query.QueryResponseFormatter
 import io.vyne.queryService.query.QueryService
 import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.spring.SimpleVyneProvider
-import io.vyne.spring.VyneProvider
 import io.vyne.spring.config.TestDiscoveryClientConfig
 import io.vyne.testVyne
 import org.springframework.boot.test.context.TestConfiguration

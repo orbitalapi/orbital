@@ -11,7 +11,6 @@ import io.vyne.query.ResultMode
 import io.vyne.query.SearchFailedException
 import io.vyne.queryService.csv.toCsv
 import io.vyne.schema.api.SchemaProvider
-import io.vyne.schema.api.SchemaSourceProvider
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
@@ -98,12 +97,14 @@ class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private va
    }
 
    private fun buildSerializer(resultMode: ResultMode, queryResponse: QueryResult, contentType: String?): QueryResultSerializer {
-      logger.info { "Building serializer for Query Response Type ${queryResponse.responseType} " +
-         "with Accept header value $contentType and result mode $this" }
+      logger.info {
+         "Building serializer for Query Response Type ${queryResponse.responseType} " +
+            "with ContentSerializationFormat header value $contentType and result mode $this"
+      }
       return when (resultMode) {
          ResultMode.RAW -> RawResultsSerializer
          ResultMode.SIMPLE, ResultMode.TYPED -> FirstEntryMetadataResultSerializer.forQueryResult(queryResponse)
-         ResultMode.VERBOSE -> TypeNamedInstanceSerializer
+         ResultMode.VERBOSE -> SerializedTypedInstanceSerializer(contentType)
       }
    }
 

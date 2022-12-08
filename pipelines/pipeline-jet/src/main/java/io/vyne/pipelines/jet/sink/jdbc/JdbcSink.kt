@@ -6,6 +6,7 @@ import com.hazelcast.jet.pipeline.Sink
 import com.hazelcast.jet.pipeline.SinkBuilder
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
+import io.vyne.VyneClientWithSchema
 import io.vyne.connectors.jdbc.DatabaseMetadataService
 import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.SqlUtils
@@ -21,7 +22,6 @@ import io.vyne.pipelines.jet.api.transport.jdbc.WriteDisposition
 import io.vyne.pipelines.jet.sink.WindowingPipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
-import io.vyne.spring.VyneProvider
 import mu.KotlinLogging
 import org.jooq.DSLContext
 import org.springframework.jdbc.core.JdbcTemplate
@@ -166,7 +166,7 @@ class JdbcSinkContext(
       }
 
    @Resource
-   lateinit var vyneProvider: VyneProvider
+   lateinit var vyneClient: VyneClientWithSchema
 
    @Resource
    lateinit var connectionFactory: JdbcConnectionFactory
@@ -185,7 +185,7 @@ class JdbcSinkContext(
    }
 
    fun schema(): Schema {
-      return vyneProvider.createVyne().schema
+      return vyneClient.schema
    }
 }
 
