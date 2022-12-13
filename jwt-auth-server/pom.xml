@@ -12,7 +12,7 @@
    <artifactId>jwt-auth-server</artifactId>
 
    <properties>
-      <keycloak.version>11.0.3</keycloak.version>
+      <keycloak.version>20.0.2</keycloak.version>
       <!-- these should be updated together with Keycloak -->
       <!-- check keycloak-dependencies-server-all effective pom -->
       <infinispan.version>10.1.8.Final</infinispan.version>
