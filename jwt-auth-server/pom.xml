@@ -16,7 +16,7 @@
       <!-- these should be updated together with Keycloak -->
       <!-- check keycloak-dependencies-server-all effective pom -->
       <infinispan.version>10.1.8.Final</infinispan.version>
-      <resteasy.version>3.15.3.Final</resteasy.version>
+      <resteasy.version>6.2.2.Final</resteasy.version>
    </properties>
    <dependencies>
       <dependency>
