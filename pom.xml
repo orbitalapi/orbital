@@ -48,7 +48,7 @@
       <hazelcast.version>5.2.1</hazelcast.version>
       <testcontainers.version>1.16.2</testcontainers.version>
       <h2.version>2.1.214</h2.version>
-      <reactor-bom.version>2020.0.25</reactor-bom.version>
+      <reactor-bom.version>2020.0.26</reactor-bom.version>
       <netty.version>4.1.75.Final</netty.version>
       <!-- CVE-2022-31692  -->
       <spring-security.version>5.7.5</spring-security.version>
