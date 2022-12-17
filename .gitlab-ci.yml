@@ -38,7 +38,7 @@ default:
    tags:
       - docker-heavy
    services:
-      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
+      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.22-dind
          alias: docker
          command: [ "--tls=false" ]
    variables:
@@ -185,7 +185,7 @@ regression-test:
       BUILDKIT_PROGRESS: plain
       PROGRESS_NO_TRUNC: 1
    services:
-      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
+      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.22-dind
          alias: docker
          command: [ "--tls=false" ]
    script:
@@ -341,7 +341,7 @@ terraform-deploy-prod:
 
 .e2e-tests:
    stage: verify
-   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.22-dind
    variables:
       DOCKER_HOST: tcp://docker:2375/
       DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
@@ -350,7 +350,7 @@ terraform-deploy-prod:
       BUILDKIT_PROGRESS: plain
       PROGRESS_NO_TRUNC: 1
    services:
-      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
+      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.22-dind
          alias: docker
          command: [ "--tls=false" ]
    retry: 2
@@ -435,7 +435,7 @@ publish-snyk-to-gitlab-container-registry:
       - develop
    when: manual
    services:
-      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.21-dind
+      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.22-dind
          alias: docker
          command: [ "--tls=false" ]
    variables:
