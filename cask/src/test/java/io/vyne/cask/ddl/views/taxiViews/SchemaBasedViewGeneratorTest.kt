@@ -187,7 +187,8 @@ class SchemaBasedViewGeneratorTest {
          @Generated
          model OrderView inherits OrderEvent {
             orderId : SentOrderId?
-            orderDateTime : OrderEventDateTime?( @format = "MM/dd/yy HH:mm:ss" )
+            @Format ("MM/dd/yy HH:mm:ss" )
+            orderDateTime : OrderEventDateTime?
             orderType : OrderType?
             subSecurityType : SecurityDescription?
             requestedQuantity : RequestedQuantity?
@@ -298,7 +299,8 @@ class SchemaBasedViewGeneratorTest {
             @Id
             sentOrderId : SentOrderId
             @Between
-		      orderDateTime: OrderEventDateTime( @format = "MM/dd/yy HH:mm:ss") by column("Time Submitted")
+            @Format ( "MM/dd/yy HH:mm:ss")
+		      orderDateTime: OrderEventDateTime by column("Time Submitted")
             orderType: OrderType by default("Market")
             subSecurityType: SecurityDescription? by column("Instrument Desc")
             requestedQuantity: RequestedQuantity? by column("Size")
@@ -349,7 +351,8 @@ class SchemaBasedViewGeneratorTest {
             @Id
             sentOrderId : SentOrderId
             @Between
-		      orderDateTime: OrderEventDateTime( @format = "MM/dd/yy HH:mm:ss") by column("Time Submitted")
+            @Format( "MM/dd/yy HH:mm:ss" )
+		      orderDateTime: OrderEventDateTime by column("Time Submitted")
             orderType: OrderType by default("Market")
             subSecurityType: SecurityDescription? by column("Instrument Desc")
             requestedQuantity: RequestedQuantity? by column("Size")
@@ -376,7 +379,8 @@ class SchemaBasedViewGeneratorTest {
          view OrderView inherits OrderEvent with query {
             find { OrderSent[] } as {
               orderId: OrderSent::SentOrderId
-              orderDateTime: OrderSent::OrderEventDateTime( @format = "MM/dd/yy HH:mm:ss")
+              @Format( "MM/dd/yy HH:mm:ss")
+              orderDateTime: OrderSent::OrderEventDateTime
               orderType: OrderSent::OrderType
               subSecurityType: OrderSent::SecurityDescription
               requestedQuantity: OrderSent::RequestedQuantity

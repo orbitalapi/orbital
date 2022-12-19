@@ -215,8 +215,8 @@ class AccessorReader(
       }
       return when (accessor) {
          // TODO : Gradually move these accessors out to individual classes to enable better injection / pluggability
-         is JsonPathAccessor -> parseJson(value, targetType, schema, accessor, source)
-         is XpathAccessor -> parseXml(value, targetType, schema, accessor, source, nullable)
+         is JsonPathAccessor -> parseJson(value, targetType, schema, accessor, source, format)
+         is XpathAccessor -> parseXml(value, targetType, schema, accessor, source, nullable, format)
          is DestructuredAccessor -> parseDestructured(value, targetType, schema, accessor, source, format)
          is ColumnAccessor -> {
             if (accessor.index == null && accessor.defaultValue != null) {
@@ -224,7 +224,7 @@ class AccessorReader(
                // Default values (defined as by default("foo") turn up as ColumnAccessors.
                readWithDefaultValue(value, targetType, schema, accessor, nullValues, source, nullable)
             } else {
-               parseColumnData(value, targetType, schema, accessor, nullValues, source, nullable)
+               parseColumnData(value, targetType, schema, accessor, nullValues, source, nullable, format)
             }
 
          }
@@ -236,7 +236,8 @@ class AccessorReader(
             schema,
             accessor,
             nullValues,
-            source
+            source,
+            format
          )
 
          is FunctionAccessor -> evaluateFunctionAccessor(
@@ -608,7 +609,8 @@ class AccessorReader(
       schema: Schema,
       accessor: ReadFunctionFieldAccessor,
       nullValues: Set<String>,
-      source: DataSource
+      source: DataSource,
+      format: FormatsAndZoneOffset?
    ): TypedInstance {
       if (accessor.readFunction != ReadFunction.CONCAT) {
          error("Only concat is allowed")
@@ -616,7 +618,15 @@ class AccessorReader(
 
       val arguments = accessor.arguments.mapNotNull { readFunctionArgument ->
          if (readFunctionArgument.columnAccessor != null) {
-            parseColumnData(value, targetType, schema, readFunctionArgument.columnAccessor!!, nullValues, source).value
+            parseColumnData(
+               value,
+               targetType,
+               schema,
+               readFunctionArgument.columnAccessor!!,
+               nullValues,
+               source,
+               format = format
+            ).value
          } else {
             readFunctionArgument.value
          }
@@ -645,19 +655,21 @@ class AccessorReader(
       accessor: ColumnAccessor,
       nullValues: Set<String> = emptySet(),
       source: DataSource,
-      nullable: Boolean = false
+      nullable: Boolean = false,
+      format: FormatsAndZoneOffset?
    ): TypedInstance {
       // TODO : We should really support parsing from a stream, to avoid having to load large sets in memory
       return when {
-         value is String -> csvParser.parse(value, targetType, accessor, schema, source, nullable)
+         value is String -> csvParser.parse(value, targetType, accessor, schema, source, nullable, format)
          // Efficient parsing where we've already parsed the record once (eg., streaming from disk).
-         value is CSVRecord -> csvParser.parseToType(targetType, accessor, value, schema, nullValues, source, nullable)
+         value is CSVRecord -> csvParser.parseToType(targetType, accessor, value, schema, nullValues, source, nullable, format)
          accessor.defaultValue != null -> TypedInstance.from(
             targetType,
             accessor.defaultValue.toString(),
             schema,
             nullValues = nullValues,
-            source = source
+            source = source,
+            format = format
          )
 
          else -> {
@@ -692,11 +704,12 @@ class AccessorReader(
       schema: Schema,
       accessor: XpathAccessor,
       source: DataSource,
-      nullable: Boolean
+      nullable: Boolean,
+      format: FormatsAndZoneOffset?
    ): TypedInstance {
       // TODO : We should really support parsing from a stream, to avoid having to load large sets in memory
       return when (value) {
-         is String -> xmlParser.parse(value, targetType, accessor, schema, source, nullable)
+         is String -> xmlParser.parse(value, targetType, accessor, schema, source, nullable, format)
          // Strictly speaking, we shouldn't be getting maps here.
          // But it's a legacy thing, from when we used xpath(...) all over the shop, even in non xml types
          is Map<*, *> -> TypedInstance.from(
@@ -706,7 +719,7 @@ class AccessorReader(
             source = source
          )
 
-         is Document -> xmlParser.parse(value, targetType, accessor, schema, source, nullable)
+         is Document -> xmlParser.parse(value, targetType, accessor, schema, source, nullable, format)
          else -> TODO("Value=${value} targetType=${targetType} accessor={$accessor} not supported!")
       }
    }
@@ -716,11 +729,12 @@ class AccessorReader(
       targetType: Type,
       schema: Schema,
       accessor: JsonPathAccessor,
-      source: DataSource
+      source: DataSource,
+      format: FormatsAndZoneOffset?
    ): TypedInstance {
       return when (value) {
-         is ObjectNode -> jsonParser.parseToType(targetType, accessor, value, schema, source)
-         is Map<*, *> -> jsonParser.parseToType(targetType, accessor, value, schema, source)
+         is ObjectNode -> jsonParser.parseToType(targetType, accessor, value, schema, source, format)
+         is Map<*, *> -> jsonParser.parseToType(targetType, accessor, value, schema, source, format)
          else -> TODO("Value=${value} targetType=${targetType} accessor={$accessor} not supported!")
       }
    }
@@ -730,7 +744,8 @@ class AccessorReader(
       accessor: JsonPathAccessor,
       value: Map<*, *>,
       schema: Schema,
-      source: DataSource
+      source: DataSource,
+      format: FormatsAndZoneOffset?
    ): TypedInstance {
       // Strictly speaking, we shouldn't be getting maps here.
       // But it's a legacy thing, from when we used xpath(...) all over the shop, even in non xml types
@@ -738,7 +753,7 @@ class AccessorReader(
       return when {
          expression.startsWith("$") -> {
             val valueAtJsonPath = try {
-               jsonParser.parseToType(targetType, accessor, value, schema, source)
+               jsonParser.parseToType(targetType, accessor, value, schema, source, format)
                JsonPath.parse(value).read<Any>(expression)
             } catch (e: PathNotFoundException) {
                null

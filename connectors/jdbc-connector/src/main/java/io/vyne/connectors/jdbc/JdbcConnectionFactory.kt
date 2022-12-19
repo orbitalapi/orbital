@@ -88,7 +88,7 @@ class SimpleJdbcConnectionFactory() : JdbcConnectionFactory {
 
    override fun dataSource(connectionConfiguration: JdbcConnectionConfiguration): DataSource {
       val connectionParams = connectionConfiguration.buildUrlAndCredentials()
-      return DriverManagerDataSource(connectionParams.url, connectionParams.username, connectionParams.password)
+      return DriverManagerDataSource(connectionParams.url, connectionParams.username!!, connectionParams.password!!)
    }
 
    override fun jdbcTemplate(connectionName: String): NamedParameterJdbcTemplate {

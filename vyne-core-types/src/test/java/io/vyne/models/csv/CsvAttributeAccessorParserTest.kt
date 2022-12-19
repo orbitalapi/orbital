@@ -39,13 +39,16 @@ class CsvAttributeAccessorParserTest {
 
 
       val parser = CsvAttributeAccessorParser()
-      val result = parser.parseToType(typeCountry,
-         ColumnAccessor("country", null, typeCountry.taxiType),
-         targetCsvRecord,
-         schema,
-         emptySet(),
-         Provided,
-         true)
+      val result = parser.parseToType(
+          typeCountry,
+          ColumnAccessor("country", null, typeCountry.taxiType),
+          targetCsvRecord,
+          schema,
+          emptySet(),
+          Provided,
+          true,
+          null
+      )
 
       result.should.equal(TypedNull.create(typeCountry, UndefinedSource))
       result.source.should.be.instanceof(FailedParsingSource::class.java)

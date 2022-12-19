@@ -39,8 +39,10 @@ class CaskViewBuilderFactoryTest {
          type Order {
             @Id
             id : OrderId as String
-            lastTradeDate : TradeDate( @format = "YYYYDDTHH:nn:ss" )
-            lastTradeTime : TradeTime( @format = "HH:nn:ss" )
+            @Format( "YYYYDDTHH:nn:ss" )
+            lastTradeDate : TradeDate
+            @Format( "HH:nn:ss" )
+            lastTradeTime : TradeTime
             timestampt : TradeTimestamp by ( this.lastTradeDate + this.lastTradeTime )
             tradeStatus : TradeStatus as String
             notionalRequired : NotionalQuantityRequired by (QuantityRequired * UnitMultiplier)
@@ -100,8 +102,10 @@ class CaskViewBuilderFactoryTest {
    @Generated
    model OrderEvent inherits TransactionEvent {
       @Id order_Id : OrderId
-      order_LastTradeDate : TradeDate( @format = "YYYYDDTHH:nn:ss" )
-      order_LastTradeTime : TradeTime( @format = "HH:nn:ss" )
+      @Format( "YYYYDDTHH:nn:ss" )
+      order_LastTradeDate : TradeDate
+      @Format( "HH:nn:ss" )
+      order_LastTradeTime : TradeTime
       order_Timestampt : TradeTimestamp  by this.order_LastTradeDate + this.order_LastTradeTime
       order_TradeStatus : TradeStatus
       trade_Id : TradeId

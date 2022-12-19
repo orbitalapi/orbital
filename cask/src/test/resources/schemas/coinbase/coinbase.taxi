@@ -2,7 +2,8 @@ type alias Price as Decimal
 type alias Symbol as String
 
 type OrderWindowSummaryCsv {
-    orderDate : DateTime( @format = 'yyyy-MM-dd hh-a' ) by column(1)
+    @Format( 'yyyy-MM-dd hh-a' )
+    orderDate : DateTime by column(1)
     symbol : Symbol by column(2)
     open : Price by column(3)
     close : Price by column(4)

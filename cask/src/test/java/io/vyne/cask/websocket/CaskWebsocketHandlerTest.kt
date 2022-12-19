@@ -274,7 +274,7 @@ class CaskWebsocketHandlerTest {
          // This test is flakey.  I've added a timeout here to see if there's some async stuff causing occasional failures.
          verify(ingestionErrorRepository, timeout(5000).times(1)).save(capture())
          allValues.size.should.equal(1)
-         firstValue.error.should.equal("""Failed to parse value ??6300USD to type Price - Unparseable number: "??6300USD"""")
+         firstValue.error.should.equal("""Failed to parse value ??6300USD to type Price (no formats were supplied) - Unparseable number: "??6300USD"""")
       }
    }
 

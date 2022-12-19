@@ -38,39 +38,46 @@ class VyneQLContinuousQueryService(
       const val REST_CONTINUOUS_QUERY = "/api/continuous/vyneQl"
    }
 
-   @PostMapping(value = [REST_CONTINUOUS_QUERY], produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+   /**
+    * This feature was built for a specific request for a client.
+    * They don't use it, and I think the implementation (if required) would be better suited
+    * using Change log capture.
+    */
+//   @PostMapping(value = [REST_CONTINUOUS_QUERY], produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
    suspend fun submitVyneQlContinousQuery(@RequestBody query: TaxiQLQueryString): ResponseEntity<Flux<Map<String, Any>>> {
-
-      val resultsDeferred = resultStreamAsync(sqlGenerator.generateSql(query))
-      var primaryKeyColumn = ""
-      val meta = jdbcTemplate.dataSource.connection.metaData
-      val primaryKeyResults = meta.getPrimaryKeys(null, null, sqlGenerator.toCaskTableName(query))
-
-      while (primaryKeyResults.next()) {
-         val columnName: String = primaryKeyResults.getString("COLUMN_NAME")
-         primaryKeyColumn = columnName
-      }
-
-      val initialResultsFlow = resultsDeferred.toFlux()
-
-      return ResponseEntity
-         .ok()
-         .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-         .body(initialResultsFlow
-            .concatWith(
-               queryMonitor
-                  .registerCaskMonitor(sqlGenerator.toCaskTableName(query))
-                  .asFlux()
-                  .bufferTimeout(50, Duration.ofMillis(2000))
-                  .filter { it.isNotEmpty() }
-                  .concatMap {
-                     val join = it.map { "'${it[primaryKeyColumn]}'" }.joinToString(",")
-                     val filter = "\"$primaryKeyColumn\" in ( $join )"
-                     val querySql = sqlGenerator.generateSql(query, filter)
-                     resultStreamAsync(querySql).toFlux()
-                  }
-            )
-         )
+      throw NotImplementedError("Continuous Queries not currently supported")
+//      val resultsDeferred = resultStreamAsync(sqlGenerator.generateSql(query))
+//      sqlGenerator.
+//      val meta = jdbcTemplate.dataSource.connection.metaData
+//      val primaryKeyResults = meta.getPrimaryKeys(null, null, sqlGenerator.toCaskTableName(query)).let {resultSet ->
+//      }
+//
+//      while (primaryKeyResults.next()) {
+//         val columnName: String = primaryKeyResults.getString("COLUMN_NAME")
+//         primaryKeyColumn = columnName
+//      }
+//
+//      val initialResultsFlow = resultsDeferred.toFlux()
+//
+//      return ResponseEntity
+//         .ok()
+//         .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
+//         .body(initialResultsFlow
+//            .concatWith(
+//               queryMonitor
+//                  .registerCaskMonitor(sqlGenerator.toCaskTableName(query))
+//                  .asFlux()
+//                  .bufferTimeout(50, Duration.ofMillis(2000))
+//                  .filter { it.isNotEmpty() }
+//                  .concatMap {
+//
+//                     val join = it.map { "'${it[primaryKeyColumn]}'" }.joinToString(",")
+//                     val filter = "\"$primaryKeyColumn\" in ( $join )"
+//                     val querySql = sqlGenerator.generateSql(query, filter)
+//                     resultStreamAsync(querySql).toFlux()
+//                  }
+//            )
+//         )
    }
 
    fun resultStreamAsync(statement: SqlStatement): Stream<Map<String, Any>> {

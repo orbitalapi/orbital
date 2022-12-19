@@ -684,7 +684,8 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
          CoinbaseJsonOrderSchema.sourceV1.plus(
             """
             model RfqDateModel {
-                changeDateTime : Instant? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'") by column(1)
+                @Format ( "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'")
+                changeDateTime : Instant?  by column(1)
             }
          """.trimIndent()
          ).asSourcePackage()

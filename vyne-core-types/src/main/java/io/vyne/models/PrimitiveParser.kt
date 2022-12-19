@@ -1,6 +1,7 @@
 package io.vyne.models
 
 import io.vyne.schemas.Type
+import lang.taxi.types.FormatsAndZoneOffset
 
 /**
  * Responsible for simple conversions between primitives.
@@ -13,12 +14,13 @@ class PrimitiveParser(private val conversionService: ConversionService = Convers
       value: Any,
       targetType: Type,
       source: DataSource,
-      parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException
+      parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
+      format: FormatsAndZoneOffset?
    ): TypedInstance {
       if (targetType.isEnum) {
          return parseEnum(value, targetType, source)
       }
-      return TypedValue.from(targetType, value, conversionService, source, parsingErrorBehaviour, targetType.formatAndZoneOffset)
+      return TypedValue.from(targetType, value, conversionService, source, parsingErrorBehaviour, format)
    }
 
    private fun parseEnum(value: Any, targetType: Type, source: DataSource): TypedInstance {

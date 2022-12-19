@@ -73,9 +73,11 @@ namespace demo {
 	  lastName : LastName by column("lastName")
 
 	  @Between
-	  logDate : LogDate( @format ="dd/MMM/yyyy") by column("logDate")
+    @Format ("dd/MMM/yyyy")
+	  logDate : LogDate by column("logDate")
 
-	  logTime: LogTime( @format = "HH:mm:ss.SSS") by column("logTime")
+    @Format( "HH:mm:ss.SSS")
+	  logTime: LogTime by column("logTime")
    }
 }""".trimIndent()
 

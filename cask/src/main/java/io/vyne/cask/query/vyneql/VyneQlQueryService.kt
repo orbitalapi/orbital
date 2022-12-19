@@ -113,9 +113,9 @@ class VyneQlQueryService(
    private fun countResultsAsync(query: TaxiQLQueryString): Deferred<Int> = CoroutineScope(vyneQlDispatcher).async {
       val statement = sqlGenerator.generateSqlCountRecords(query)
       if (statement.params.isEmpty()) {
-         jdbcTemplate.queryForObject(statement.sql, Int::class.java)
+         jdbcTemplate.queryForObject(statement.sql, Int::class.java)!!
       } else {
-         jdbcTemplate.queryForObject(statement.sql, Int::class.java, *statement.params.toTypedArray())
+         jdbcTemplate.queryForObject(statement.sql, Int::class.java, *statement.params.toTypedArray())!!
       }
    }
 

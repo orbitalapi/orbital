@@ -118,7 +118,8 @@ type OrderWindowSummaryCsv {
       type Symbol inherits String
       @ObserveChanges(writeToConnectionName = "OrderWindowSummary")
       model OrderWindowSummaryCsv {
-         orderDate : Date(@format = "dd/MM/yyyy") by column(1)
+         @Format ("dd/MM/yyyy")
+         orderDate : Date by column(1)
          @PrimaryKey
          symbol : Symbol by column(2)
          open : Price by column(3)
@@ -131,7 +132,8 @@ type OrderWindowSummaryCsv {
       type Symbol inherits String
       @ObserveChanges(writeToConnectionName = "OrderWindowSummary")
       model OrderWindowSummaryCsv {
-         orderDate : Date(@format = "dd/MM/yyyy") by column(1)
+         @Format( "dd/MM/yyyy")
+         orderDate : Date by column(1)
          symbol : Symbol by column(2)
          open : Price by column(3)
          close : Price by column(4)

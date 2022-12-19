@@ -8,6 +8,7 @@ import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
+import io.kotest.matchers.shouldBe
 import io.vyne.*
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.schema
@@ -64,7 +65,8 @@ class CaskServiceSchemaGeneratorTest {
     @Between
     @After
     @Before
-    orderDateTime : TransactionEventDateTime( @format = "yyyy-MM-dd HH:mm:ss.SSSSSSS")
+    @Format ( "yyyy-MM-dd HH:mm:ss.SSSSSSS")
+    orderDateTime : TransactionEventDateTime
 }
 
    """.trimIndent()
@@ -110,9 +112,8 @@ class CaskServiceSchemaGeneratorTest {
       // Then
       verify(schemaStoreClient, times(1)).submitPackage(schemas.capture())
       val submittedSchemas = schemas.firstValue.sources
-      submittedSchemas.size.should.equal(3)
-      submittedSchemas[2].name.should.equal("vyne.cask.OrderWindowSummaryCsv")
-      submittedSchemas[2].version.should.equal("1.1.0")
+      val schemasByName = submittedSchemas.associateBy { it.name }
+      schemasByName["vyne.cask.OrderWindowSummaryCsv"]!!.version.shouldBe("1.1.0")
       """
          namespace vyne.cask {
             type CaskInsertedAt inherits Instant
@@ -120,7 +121,7 @@ class CaskServiceSchemaGeneratorTest {
          }
       """.trimIndent()
          .withoutWhitespace()
-         .should.equal(submittedSchemas[1].content.withoutWhitespace())
+         .should.equal(schemasByName["vyne.cask.types1"]!!.content.withoutWhitespace())
       """
 import OrderWindowSummaryCsv
 import vyne.cask.CaskInsertedAt
@@ -157,7 +158,7 @@ namespace vyne.cask {
 }
 
       """.trimIndent().withoutWhitespace()
-         .should.equal(submittedSchemas[2].content.withoutWhitespace())
+         .should.equal(schemasByName["vyne.cask.OrderWindowSummaryCsv"]!!.content.withoutWhitespace())
    }
 
    @Test
@@ -176,7 +177,7 @@ namespace vyne.cask {
       // Then
       verify(schemaStoreClient, times(1)).submitPackage(schemas.capture())
       val submittedSchemas = schemas.firstValue.sources
-      submittedSchemas.size.should.equal(3)
+      val schemasByName = submittedSchemas.associateBy { it.name }
       """
 import OrderWindowSummary
 import vyne.cask.CaskInsertedAt
@@ -220,10 +221,8 @@ namespace vyne.cask {
 }
 """.trimIndent()
          .withoutWhitespace()
-         .should.equal(submittedSchemas[2].content.withoutWhitespace())
+         .should.equal(schemasByName["vyne.cask.OrderWindowSummary"]!!.content.withoutWhitespace())
 
-      submittedSchemas[2].name.should.equal("vyne.cask.OrderWindowSummary")
-      submittedSchemas[2].version.should.equal("1.1.0")
    }
 
    @Test
@@ -282,17 +281,8 @@ namespace vyne.cask {
       // Then
       verify(schemaStoreClient, times(1)).submitPackage(schemas.capture())
       val submittedSchemas = schemas.firstValue.sources
-      submittedSchemas.size.should.equal(3)
-      """
-         namespace vyne.cask {
-            type CaskInsertedAt inherits Instant
-            type CaskMessageId inherits String
-         }
-      """.trimIndent()
-         .trimMargin()
-         .withoutWhitespace()
-         .should
-         .equal(submittedSchemas[1].content.withoutWhitespace())
+      val schemasByName = submittedSchemas.associateBy { it.name }
+      submittedSchemas.size.should.equal(4)
       """
 import Simple
 import vyne.cask.CaskInsertedAt
@@ -328,9 +318,7 @@ namespace vyne.cask {
          .trimMargin()
          .withoutWhitespace()
          .should
-         .equal(submittedSchemas[2].content.withoutWhitespace())
-      submittedSchemas[2].name.should.equal("vyne.cask.Simple")
-      submittedSchemas[2].version.should.equal("1.1.0")
+         .equal(schemasByName["vyne.cask.Simple"]!!.content.withoutWhitespace())
    }
 
    @Test
@@ -393,19 +381,9 @@ namespace vyne.cask {
       // Then
       verify(schemaStoreClient, times(1)).submitPackage(schemas.capture())
       val submittedSchemas = schemas.firstValue.sources
-      submittedSchemas.size.should.equal(3)
-      """
-         namespace vyne.cask {
-            type CaskInsertedAt inherits Instant
-            type CaskMessageId inherits String
-         }
-      """.trimIndent()
-         .trimMargin()
-         .withoutWhitespace()
-         .should
-         .equal(submittedSchemas[1].content.withoutWhitespace())
-      Assertions.assertEquals(
-      """
+      val schemasByName = submittedSchemas.associateBy { it.name }
+      val actual = schemasByName["vyne.cask.SimpleView"]!!.content
+      val expected = """
 import SimpleView
 import vyne.cask.CaskInsertedAt
 
@@ -441,12 +419,9 @@ namespace vyne.cask {
          .trimMargin()
          .withoutWhitespace()
          .trim()
-         ,
-         submittedSchemas[2].content
-            .trimIndent()
-            .trimMargin()
-            .withoutWhitespace()
-            .trim())
+
+      actual.trimIndent().trimMargin().withoutWhitespace().trim()
+         .shouldBe(expected)
    }
 
    @Test
@@ -485,7 +460,8 @@ namespace vyne.cask {
       ]]
       type Symbol inherits String
       type OrderWindowSummaryCsv {
-          orderDate : DateTime( @format = 'yyyy-MM-dd hh-a' ) by column(1)
+          @Format( 'yyyy-MM-dd hh-a' )
+          orderDate : DateTime by column(1)
           @Id
           symbol : Symbol by column(2)
           open : Price by column(3)

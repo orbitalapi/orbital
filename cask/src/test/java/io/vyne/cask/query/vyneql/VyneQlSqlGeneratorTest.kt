@@ -4,6 +4,7 @@ import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
+import io.kotest.matchers.string.shouldBeEqualIgnoringCase
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.schema.spring.SimpleTaxiSchemaProvider
@@ -12,9 +13,11 @@ import org.junit.Test
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 class VyneQlSqlGeneratorTest {
-   val schemaProvider = SimpleTaxiSchemaProvider("""
+   val schemaProvider = SimpleTaxiSchemaProvider(
+      """
       type FirstName inherits String
       type Age inherits Int
       type LoginTime inherits Instant
@@ -28,7 +31,8 @@ class VyneQlSqlGeneratorTest {
          lastLogin : LastLoggedIn
          birthDate: BirthDate
       }
-   """)
+   """
+   )
 
    lateinit var caskConfigRepository: CaskConfigRepository
    lateinit var sqlGenerator: VyneQlSqlGenerator
@@ -36,12 +40,14 @@ class VyneQlSqlGeneratorTest {
    @Before
    fun setup() {
       caskConfigRepository = mock {
-         on { findAllByQualifiedTypeNameAndStatus(any(),any()) } doReturn listOf(CaskConfig(
-            tableName = "person",
-            qualifiedTypeName = "Person",
-            versionHash = "abcdef",
-            insertedAt = Instant.now()
-         ))
+         on { findAllByQualifiedTypeNameAndStatus(any(), any()) } doReturn listOf(
+            CaskConfig(
+               tableName = "person",
+               qualifiedTypeName = "Person",
+               versionHash = "abcdef",
+               insertedAt = Instant.now()
+            )
+         )
       }
       sqlGenerator = VyneQlSqlGenerator(schemaProvider, caskConfigRepository)
    }
@@ -49,70 +55,75 @@ class VyneQlSqlGeneratorTest {
    @Test
    fun generatesSqlForFindAllWithoutArgs() {
       val statement = sqlGenerator.generateSql("find { Person[] }")
-      statement.shouldEqual("SELECT * from person;", emptyList())
+      statement.shouldEqual("""select * from person as "t0"""", emptyList())
    }
 
    @Test
    fun generatesSqlForFindByStringArg() {
       val statement = sqlGenerator.generateSql("find { Person[]( FirstName == 'Jimmy' ) }")
-      statement.shouldEqual("""SELECT * from person WHERE "firstName" = ?;""", listOf("Jimmy"))
+      statement.shouldEqual("""select * from person as "t0" where "t0"."firstName" = ?""", listOf("Jimmy"))
    }
+
    @Test
    fun generatesSqlForFindByNumberArg() {
       val statement = sqlGenerator.generateSql("find { Person[]( Age == 21 ) }")
-      statement.shouldEqual("""SELECT * from person WHERE "age" = ?;""", listOf(21))
+      statement.shouldEqual("""select * from person as "t0" where "t0"."age" = ?""", listOf(21))
    }
 
    @Test
    fun generatesSqlForFindBetweenNumberArg() {
-      val statement = sqlGenerator.generateSql("find { Person[]( Age >= 21, Age < 40 ) }")
-      statement.shouldEqual("""SELECT * from person WHERE "age" >= ? AND "age" < ?;""", listOf(21, 40))
+      val statement = sqlGenerator.generateSql("find { Person[]( Age >= 21 && Age < 40 ) }")
+      statement.shouldEqual("""select * from person as "t0" where ("t0"."age" >= ? and "t0"."age" < ?)""", listOf(21, 40))
    }
 
    @Test
    fun `params that are date time strings are parsed to instant`() {
       val statement = sqlGenerator.generateSql("find { Person[]( LastLoggedIn >= '2020-11-10T15:00:00Z' ) }")
-      statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ?;""", listOf(LocalDateTime.parse("2020-11-10T15:00:00")))
+      statement.shouldEqual(
+         """select * from person as "t0" where "t0"."lastLogin" >= cast(? as timestamp with time zone)""",
+         listOf(OffsetDateTime.parse("2020-11-10T15:00:00Z"))
+      )
    }
 
    @Test
    fun `date time between params are parsed correctly`() {
       val statement =
-         sqlGenerator.generateSql("""find { Person[]( LastLoggedIn >= "2020-10-10T15:00:00Z",  LastLoggedIn < "2020-11-10T15:00:00Z"  ) }""")
-      statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ? AND "lastLogin" < ?;""", listOf(LocalDateTime.parse("2020-10-10T15:00:00"), LocalDateTime.parse("2020-11-10T15:00:00")))
+         sqlGenerator.generateSql("""find { Person[]( LastLoggedIn >= "2020-10-10T15:00:00Z" &&  LastLoggedIn < "2020-11-10T15:00:00Z"  ) }""")
+      statement.shouldEqual(
+         """select * from person as "t0" where ("t0"."lastLogin" >= cast(? as timestamp with time zone) and "t0"."lastLogin" < cast(? as timestamp with time zone))""",
+         listOf(OffsetDateTime.parse("2020-10-10T15:00:00Z"), OffsetDateTime.parse("2020-11-10T15:00:00Z"))
+      )
    }
 
    @Test
    fun `when querying using a base type, the field is resolved correctly`() {
       val statement =
-         sqlGenerator.generateSql("""find { Person[]( LoginTime >= "2020-10-10T15:00:00Z",  LoginTime < "2020-11-10T15:00:00Z"  ) }""")
-      statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ? AND "lastLogin" < ?;""", listOf(LocalDateTime.parse("2020-10-10T15:00:00"), LocalDateTime.parse("2020-11-10T15:00:00")))
+         sqlGenerator.generateSql("""find { Person[]( LoginTime >= "2020-10-10T15:00:00Z" &&  LoginTime < "2020-11-10T15:00:00Z"  ) }""")
+      statement.shouldEqual(
+         """select * from person as "t0" where ("t0"."lastLogin" >= cast(? as timestamp with time zone) and "t0"."lastLogin" < cast(? as timestamp with time zone))""",
+         listOf(OffsetDateTime.parse("2020-10-10T15:00:00Z"), OffsetDateTime.parse("2020-11-10T15:00:00Z"))
+      )
    }
 
    @Test
    fun `when querying using a grand-base type, the field is resolved correctly`() {
       val statement =
-         sqlGenerator.generateSql("""find { Person[]( BaseDate >= "2020-10-10",  BaseDate < "2020-11-10"  ) }""")
-      statement.shouldEqual("""SELECT * from person WHERE "birthDate" >= ? AND "birthDate" < ?;""", listOf(LocalDate.parse("2020-10-10"), LocalDate.parse("2020-11-10")))
+         sqlGenerator.generateSql("""find { Person[]( BaseDate >= "2020-10-10" &&  BaseDate < "2020-11-10"  ) }""")
+      statement.shouldEqual(
+         """select * from person as "t0" where ("t0"."birthDate" >= cast(? as date) and "t0"."birthDate" < cast(? as date))""",
+         listOf(LocalDate.parse("2020-10-10"), LocalDate.parse("2020-11-10"))
+      )
    }
 
+   // Jooq is adding cast syntax for timestamp values.
+   // There doesn't appear to be a way to stop it, as params have already been
+   // correctly cast to the appropriate sql type.
+   private val timestampParam = "cast(? as timestamp with time zone)"
 
-   @Test
-   fun generatesSqlForFindAllWithoutArgsWithFilterSQL() {
-      val filterSQL = "ABC in ('XYZ')"
-      val statement = sqlGenerator.generateSql("find { Person[] }", filterSQL)
-      statement.shouldEqual("SELECT * from person WHERE ABC in ('XYZ');", emptyList())
-   }
-
-   @Test
-   fun generatesSqlForFindByStringArgWithFilterSQL() {
-      val filterSQL = "ABC in ('XYZ')"
-      val statement = sqlGenerator.generateSql("find { Person[]( FirstName == 'Jimmy' ) }", filterSQL)
-      statement.shouldEqual("""SELECT * from person WHERE "firstName" = ? AND ABC in ('XYZ');""", listOf("Jimmy"))
-   }
 
    private fun SqlStatement.shouldEqual(sql: String, params: List<Any>) {
-      this.sql.should.equal(sql)
+      println(this.sql)
+      this.sql.shouldBeEqualIgnoringCase(sql)
       this.params.should.equal(params)
    }
 }

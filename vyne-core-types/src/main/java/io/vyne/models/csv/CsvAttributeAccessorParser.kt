@@ -13,6 +13,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import lang.taxi.accessors.ColumnAccessor
+import lang.taxi.types.FormatsAndZoneOffset
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVRecord
 import java.util.concurrent.TimeUnit
@@ -43,9 +44,17 @@ internal object CsvDocumentCacheBuilder {
  * Parses a single attribute, defined by a ColumnAccessor
  */
 class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = PrimitiveParser(), private val documentCache: LoadingCache<String, List<CSVRecord>> = CsvDocumentCacheBuilder.sharedDocumentCache) {
-   fun parse(content: String, type: Type, accessor: ColumnAccessor, schema: Schema, source:DataSource, nullable: Boolean): TypedInstance {
+   fun parse(content: String, type: Type, accessor: ColumnAccessor, schema: Schema, source:DataSource, nullable: Boolean, format: FormatsAndZoneOffset?): TypedInstance {
       val csvRecords = documentCache.get(content)
-      val instances = csvRecords.map { record -> parseToType(type, accessor, record, schema, source = source, nullable = nullable) }
+      val instances = csvRecords.map { record -> parseToType(
+         type,
+         accessor,
+         record,
+         schema,
+         source = source,
+         nullable = nullable,
+         format = format
+      ) }
       if (instances.isEmpty()) {
          return TypedNull.create(type)
       }
@@ -57,7 +66,16 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
 
    }
 
-   fun parseToType(type: Type, accessor: ColumnAccessor, record: CSVRecord, schema: Schema, nullValues: Set<String> = emptySet(), source: DataSource, nullable: Boolean): TypedInstance {
+   fun parseToType(
+      type: Type,
+      accessor: ColumnAccessor,
+      record: CSVRecord,
+      schema: Schema,
+      nullValues: Set<String> = emptySet(),
+      source: DataSource,
+      nullable: Boolean,
+      format: FormatsAndZoneOffset?
+   ): TypedInstance {
       val value =
          when {
             accessor.index is Int -> record.get(accessor.index!! as Int - 1)
@@ -78,7 +96,7 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
       }
 
       return try {
-         primitiveParser.parse(value!!, type, source)
+         primitiveParser.parse(value!!, type, source, format = format)
       } catch (e: Exception) {
          val message = "Failed to parse value $value from column ${accessor.index} to type ${type.name.fullyQualifiedName} - ${e.message}"
          if (nullable) {

@@ -86,7 +86,7 @@ data class NamedTemplateConnection(
    private val metadata: DatabaseMetaData by lazy {
 
       // Be careful with the connection - if we dont close it, we'll exhaust the connection pool
-      template.jdbcTemplate.dataSource.connection.use {
+      template.jdbcTemplate.dataSource!!.connection.use {
          it.metaData
       }
    }

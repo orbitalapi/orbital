@@ -14,14 +14,16 @@ type TimeTest {
 type UpsertTestNoPk {
    id: Int by column(1)
    name: String by column(2)
-   t1: DateTime (@format = "yyyy-MM-dd HH:mm:ss") by column(3)
+   @Format("yyyy-MM-dd HH:mm:ss")
+   t1: DateTime by column(3)
    v1: Decimal by column(4)
    }
 type UpsertTestSinglePk {
    @PrimaryKey
    id: Int by column(1)
    name: String by column(2)
-   t1: DateTime (@format = "yyyy-MM-dd HH:mm:ss") by column(3)
+   @Format("yyyy-MM-dd HH:mm:ss")
+   t1: DateTime  by column(3)
    v1: Decimal by column(4)
    }
 type UpsertTestMultiPk {
@@ -30,7 +32,8 @@ type UpsertTestMultiPk {
    id: Int by column(1)
    @PrimaryKey
    name: String by column(2)
-   t1: DateTime (@format = "yyyy-MM-dd HH:mm:ss") by column(3)
+   @Format("yyyy-MM-dd HH:mm:ss")
+   t1: DateTime by column(3)
    v1: Decimal by column(4)
 }""".trimIndent()
 
@@ -45,7 +48,8 @@ type UpsertTestMultiPk {
 model UpsertTestNoPk {
    id: Int by column(1)
    name: String by column(2)
-   t1: DateTime (@format = "yyyy-MM-dd HH:mm:ss") by column(3)
+   @Format( "yyyy-MM-dd HH:mm:ss")
+   t1: DateTime by column(3)
    v1: Decimal by column(4)
    }
 
@@ -54,7 +58,8 @@ model UpsertTestSinglePk {
    @PrimaryKey
    id: Int by column(1)
    name: String by column(2)
-   t1: DateTime (@format = "yyyy-MM-dd HH:mm:ss") by column(3)
+   @Format( "yyyy-MM-dd HH:mm:ss")
+   t1: DateTime by column(3)
    v1: Decimal by column(4)
    }
 
@@ -65,7 +70,8 @@ model UpsertTestMultiPk {
    id: Int by column(1)
    @PrimaryKey
    name: String by column(2)
-   t1: DateTime (@format = "yyyy-MM-dd HH:mm:ss") by column(3)
+   @Format( "yyyy-MM-dd HH:mm:ss")
+   t1: DateTime by column(3)
    v1: Decimal by column(4)
 }""".trimIndent()
 
@@ -73,8 +79,10 @@ model UpsertTestMultiPk {
 
    val temporalSchemaSource = """
       type DowncastTest {
-         dateOnly: Date(@format = "yyyy-MM-dd'T'HH:mm:ss") by column(1)
-         timeOnly: Time(@format = "yyyy-MM-dd'T'HH:mm:ss") by column(2)
+         @Format( "yyyy-MM-dd'T'HH:mm:ss")
+         dateOnly: Date by column(1)
+         @Format("yyyy-MM-dd'T'HH:mm:ss")
+         timeOnly: Time by column(2)
       }
    """.trimIndent()
 
@@ -96,7 +104,8 @@ model UpsertTestMultiPk {
 
    val instantFormatSource = """
       model InstantModel {
-        instant: Instant?(@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'") by column("ValidityPeriodDateAndTime")
+      @Format ( "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'")
+        instant: Instant? by column("ValidityPeriodDateAndTime")
       }
    """.trimIndent()
 

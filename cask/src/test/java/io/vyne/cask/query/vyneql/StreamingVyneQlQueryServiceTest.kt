@@ -112,7 +112,7 @@ class StreamingVyneQlQueryServiceTest : BaseCaskIntegrationTest() {
    @Test
    fun `can find with date between`() {
       val response =
-         runBlocking { service.submitVyneQlQueryStreamingResponse("""find { Person[]( LastLoggedIn > "2020-11-15T00:00:00Z", LastLoggedIn <= "2020-11-15T23:59:59Z" ) }""").body.asFlux() }
+         runBlocking { service.submitVyneQlQueryStreamingResponse("""find { Person[]( LastLoggedIn > "2020-11-15T00:00:00Z" && LastLoggedIn <= "2020-11-15T23:59:59Z" ) }""").body.asFlux() }
       StepVerifier.create(response.map { mapOf("firstName" to it["firstName"]) })
          .expectNext(mapOf("firstName" to "Jack"))
          .verifyComplete()
@@ -120,7 +120,7 @@ class StreamingVyneQlQueryServiceTest : BaseCaskIntegrationTest() {
    @Test
    fun `can query with an abstract property type`() {
       val response =
-         runBlocking { service.submitVyneQlQueryStreamingResponse("""find { Person[]( LoginTime > "2020-11-15T00:00:00", LoginTime <= "2020-11-15T23:59:59" ) }""").body.asFlux() }
+         runBlocking { service.submitVyneQlQueryStreamingResponse("""find { Person[]( LoginTime > "2020-11-15T00:00:00" && LoginTime <= "2020-11-15T23:59:59" ) }""").body.asFlux() }
       StepVerifier.create(response.map { mapOf("firstName" to it["firstName"]) })
          .expectNext(mapOf("firstName" to "Jack"))
          .verifyComplete()
@@ -129,7 +129,7 @@ class StreamingVyneQlQueryServiceTest : BaseCaskIntegrationTest() {
    @Test
    fun `can query date without timezone information provided`() {
       val response =
-         runBlocking { service.submitVyneQlQueryStreamingResponse("""find { Person[]( LastLoggedIn > "2020-11-15T00:00:00", LastLoggedIn <= "2020-11-15T23:59:59" ) }""").body.asFlux() }
+         runBlocking { service.submitVyneQlQueryStreamingResponse("""find { Person[]( LastLoggedIn > "2020-11-15T00:00:00" && LastLoggedIn <= "2020-11-15T23:59:59" ) }""").body.asFlux() }
       StepVerifier.create(response.map { mapOf("firstName" to it["firstName"]) })
          .expectNext(mapOf("firstName" to "Jack"))
          .verifyComplete()
@@ -138,7 +138,7 @@ class StreamingVyneQlQueryServiceTest : BaseCaskIntegrationTest() {
    @Test
    fun `can query date with zulu timezone information provided`() {
       val response =
-         runBlocking { service.submitVyneQlQueryStreamingResponse("""find { Person[]( LastLoggedIn > "2020-11-15T00:00:00Z", LastLoggedIn <= "2020-11-15T23:59:59Z" ) }""").body.asFlux() }
+         runBlocking { service.submitVyneQlQueryStreamingResponse("""find { Person[]( LastLoggedIn > "2020-11-15T00:00:00Z" && LastLoggedIn <= "2020-11-15T23:59:59Z" ) }""").body.asFlux() }
       StepVerifier.create(response.map { mapOf("firstName" to it["firstName"]) })
          .expectNext(mapOf("firstName" to "Jack"))
          .verifyComplete()
