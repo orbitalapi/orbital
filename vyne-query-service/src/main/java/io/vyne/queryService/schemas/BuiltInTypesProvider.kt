@@ -9,11 +9,11 @@ import io.vyne.connectors.jdbc.JdbcConnectorTaxi
 import io.vyne.connectors.kafka.KafkaConnectorTaxi
 import io.vyne.models.csv.CsvAnnotationSpec
 import io.vyne.query.VyneQlGrammar
+import io.vyne.queryService.ErrorType
 import io.vyne.queryService.catalog.DataOwnerAnnotations
 import io.vyne.queryService.security.VyneUser
 import io.vyne.schema.publisher.SchemaPublisherService
 import io.vyne.schemas.taxi.toMessage
-import lang.taxi.Compiler
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 
@@ -28,6 +28,7 @@ object BuiltInTypesProvider {
          "0.1.0",
          VyneUser.USERNAME_TYPEDEF
       ),
+      ErrorType.queryErrorVersionedSource,
       VersionedSource(
          "JdbcConnectors",
          "0.1.0",
@@ -74,10 +75,7 @@ object BuiltInTypesProvider {
          CsvAnnotationSpec.taxi
       )
    )
-   private val builtInTypesSource = builtInSources.joinToString("\n") { it.content }
-   private val taxiDocument = Compiler(builtInTypesSource).compile()
    val versionedSources = builtInSources
-
 }
 
 
@@ -86,7 +84,7 @@ class BuiltInTypesSubmitter(publisherService: SchemaPublisherService) {
    private val logger = KotlinLogging.logger {}
 
    init {
-      logger.info { "Publishing built-in types" }
+      logger.info { "Publishing built-in types => ${BuiltInTypesProvider.versionedSources.map { it.name }}" }
       publisherService.publish(BuiltInTypesProvider.versionedSources)
          .subscribe { response ->
             if (response.isValid) {
@@ -94,7 +92,6 @@ class BuiltInTypesSubmitter(publisherService: SchemaPublisherService) {
             } else {
                logger.warn { "Publication of built-in types was rejected: \n ${response.errors.toMessage()}" }
             }
-
          }
    }
 }
