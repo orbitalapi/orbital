@@ -168,7 +168,7 @@ class QueryServiceApp {
          val executor = ThreadPoolTaskExecutor()
          executor.corePoolSize = corePoolSize
          executor.maxPoolSize = maxPoolSize // maximum number of concurrent running threads when queue size is full
-         executor.setQueueCapacity(queueCapacity)
+         executor.queueCapacity = queueCapacity
          executor.threadNamePrefix = "vyne-query-executor"
          executor.initialize()
          configurer.setTaskExecutor(executor)
@@ -265,7 +265,7 @@ class WebFluxWebConfig(private val objectMapper: ObjectMapper) : WebFluxConfigur
    override fun configureHttpMessageCodecs(configurer: ServerCodecConfigurer) {
       val defaults: ServerCodecConfigurer.ServerDefaultCodecs = configurer.defaultCodecs()
       defaults.jackson2JsonDecoder(Jackson2JsonDecoder(objectMapper, MediaType.APPLICATION_JSON))
-      // SPring Boot Admin 2.x
+      // Spring Boot Admin 2.x
       // checks for the content-type application/vnd.spring-boot.actuator.v2.
       // If this content-type is absent, the application is considered to be a Spring Boot 1 application.
       // Spring Boot Admin can't display the metrics with Metrics are not supported for Spring Boot 1.x applications.

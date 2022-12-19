@@ -210,6 +210,7 @@ class PollingSqsOperationSourceContext(
       val s3EventNotificationAndSqsReceiptHandler = fetchSqsMessages(sqsClient)
       if (s3EventNotificationAndSqsReceiptHandler == null) {
          closeSqsClient(sqsClient)
+         isDone = true
          return
       }
 
@@ -218,8 +219,8 @@ class PollingSqsOperationSourceContext(
       s3EventNotification.records.forEach {
          val bucketName = it.s3.bucket.name
          val objectKey = it.s3.`object`.key
-         val etag = it.s3.`object`.geteTag().substring(0..12)
-         logger.log(Level.INFO, "Fetching the object \"$objectKey\" from the S3 bucket \"$bucketName\".")
+         val etag = it.s3.`object`.geteTag().replace("\"","").substring(0..11)
+         logger.log(Level.INFO, "Fetching the object \"$objectKey\" from the S3 bucket \"$bucketName\". etag => $etag")
          try {
             val getObjectRequest = GetObjectRequest.builder().bucket(bucketName).key(objectKey).build()
             val responseInputStream = s3Client.getObject(getObjectRequest)
@@ -230,7 +231,6 @@ class PollingSqsOperationSourceContext(
                linesStream.forEach { line ->
                   dataBuffer.add(Pair(StringContentProvider(line, S3SourceMetadata(etag)), clock.millis()))
                }
-               isDone = true
             }
          } catch (e: Exception) {
             logger.log(
@@ -238,6 +238,8 @@ class PollingSqsOperationSourceContext(
                "Error in retrieving the S3 object \"$objectKey\" from the bucket \"$bucketName\".",
                e
             )
+         } finally {
+            isDone = true
          }
       }
 

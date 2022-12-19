@@ -139,11 +139,11 @@ object TypeNamedInstanceMapper : TypedInstanceMapper {
       return formattedValue
    }
 
-   override fun map(typedInstance: TypedInstance): Any? {
+   override fun map(typedInstance: TypedInstance): Any {
       return TypeNamedInstance(typedInstance.type.name, formatValue(typedInstance), typedInstance.source)
    }
 
-   override fun handleUnwrapped(original: TypedInstance, value: Any?): Any? {
+   override fun handleUnwrapped(original: TypedInstance, value: Any?): Any {
       return when (value) {
          is TypeNamedInstance -> value
          else -> TypeNamedInstance(original.type.name, value, original.source)
@@ -169,7 +169,6 @@ class DataSourceMutatingMapper(val dataSource: DataSource) : TypedInstanceMapper
    override fun map(typedInstance: TypedInstance): Any {
       return DataSourceUpdater.update(typedInstance, dataSource)
    }
-
 }
 
 class TypedInstanceConverter(private val mapper: TypedInstanceMapper) {

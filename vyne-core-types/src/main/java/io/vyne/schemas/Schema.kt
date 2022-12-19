@@ -8,7 +8,6 @@ import io.vyne.models.functions.FunctionRegistry
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.assertingThat
-import io.vyne.utils.log
 import lang.taxi.TaxiDocument
 
 
@@ -213,8 +212,6 @@ interface Schema {
    }
 
    fun type(typeRef: VersionedTypeReference): Type {
-      // TODO
-      log().warn("Not validating type versions")
       return type(typeRef.typeName)
    }
 

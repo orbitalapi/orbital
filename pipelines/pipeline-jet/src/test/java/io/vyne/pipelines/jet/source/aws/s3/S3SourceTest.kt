@@ -65,12 +65,15 @@ model OrderWindowSummary {
     close : Price by column("Close")
 }""".trimIndent()
       val awsConnection = localstack.awsConnection()
-      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val testSetup = jetWithSpringAndVyne(
          coinBaseSchema,
          emptyList(),
          listOf(awsConnection)
       )
-      val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "OrderWindowSummary")
+      val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(
+         testSetup.applicationContext,
+         targetType = "OrderWindowSummary"
+      )
       val pipelineSpec = PipelineSpec(
          name = "aws-s3-source",
          input = AwsS3TransportInputSpec(
@@ -83,8 +86,8 @@ model OrderWindowSummary {
       )
 
       val (_, job) = startPipeline(
-         hazelcastInstance = hazelcastInstance,
-         vyneProvider = vyneProvider,
+         hazelcastInstance = testSetup.hazelcastInstance,
+         vyneClient = testSetup.vyneClient,
          pipelineSpec = pipelineSpec,
          validateJobStatusIsRunningEventually = false
       )

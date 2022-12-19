@@ -42,8 +42,7 @@ interface ModelContainer : SchemaContainer {
 
 class Vyne(
    schemas: List<Schema>,
-   private val queryEngineFactory: QueryEngineFactory,
-   private val compositeSchemaBuilder: CompositeSchemaBuilder = CompositeSchemaBuilder()
+   private val queryEngineFactory: QueryEngineFactory
 ) : ModelContainer {
 
    init {
@@ -56,8 +55,8 @@ class Vyne(
 
    override var schema: Schema = schemas.firstOrNull() ?: SimpleSchema.EMPTY
       // Setter only for legacy purposes, used in tests we need to migrate.
-      // schema is immuable now.
-      private set;
+      // schema is immutable now.
+      private set
 
    fun queryEngine(
       factSetIds: Set<FactSetId> = setOf(FactSets.ALL),

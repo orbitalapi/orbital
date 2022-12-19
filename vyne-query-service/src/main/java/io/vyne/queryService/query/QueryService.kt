@@ -6,6 +6,7 @@ import io.vyne.FactSetId
 import io.vyne.FactSets
 import io.vyne.Vyne
 import io.vyne.auth.authentication.VyneUser
+import io.vyne.VyneProvider
 import io.vyne.history.QueryEventObserver
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
@@ -26,9 +27,9 @@ import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.ErrorType
 import io.vyne.queryService.security.facts
 import io.vyne.queryService.security.toVyneUser
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.Schema
 import io.vyne.security.VynePrivileges
-import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
@@ -50,7 +51,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 const val TEXT_CSV = "text/csv"
 const val TEXT_CSV_UTF_8 = "$TEXT_CSV;charset=UTF-8"
@@ -85,6 +86,7 @@ private val logger = KotlinLogging.logger {}
 @FlowPreview
 @RestController
 class QueryService(
+   private val schemaStore: SchemaStore,
    val vyneProvider: VyneProvider,
    val historyWriterProvider: HistoryEventConsumerProvider,
    val objectMapper: ObjectMapper,
@@ -208,7 +210,10 @@ class QueryService(
    suspend fun submitVyneQlQueryStreamingResponse(
       @RequestBody query: TaxiQLQueryString,
       @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
-      @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
+      @RequestHeader(
+         value = "ContentSerializationFormat",
+         defaultValue = MediaType.APPLICATION_JSON_VALUE
+      ) contentType: String,
       auth: Authentication? = null,
       @RequestParam("clientQueryId", required = false) clientQueryId: String? = null
    ): Flow<Any?> {
@@ -218,7 +223,9 @@ class QueryService(
 
    /**
     * Endpoint for submitting a TaxiQL query, and receiving an event stream back.
-    * Browsers cannot submit POST requests for SSE responses (only GET), hence having the query in the queryString
+    * Browsers cannot submit POST requests for SSE responses (only GET), hence having the query in the queryString.
+    * Accept header is used for SSE (text/event-stream) so a custom header name (ContentSerializationFormat) is needed
+    * for the actual content type.
     *
     * Also, this endpoint is exposed under both /vyneql (legacy) and /taxiql (renamed).
     */
@@ -227,31 +234,42 @@ class QueryService(
    suspend fun getVyneQlQueryStreamingResponse(
       @RequestParam("query") query: TaxiQLQueryString,
       @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
-      @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
+      @RequestHeader(
+         value = "ContentSerializationFormat",
+         defaultValue = MediaType.APPLICATION_JSON_VALUE
+      ) contentType: String,
       auth: Authentication? = null,
       @RequestParam("clientQueryId", required = false) clientQueryId: String? = null
    ): Flow<Any?> {
+      if (resultMode == ResultMode.VERBOSE && !listOf(
+            MediaType.APPLICATION_JSON_VALUE,
+            MediaType.APPLICATION_CBOR_VALUE
+         ).contains(contentType)
+      ) {
+         throw IllegalArgumentException("Only JSON (application/json) & CBOR (application/cbor) are supported for streaming responses with verbose mode. ")
+      }
       val user = auth?.toVyneUser()
       val queryId = UUID.randomUUID().toString()
       return when (val queryResponse = vyneQLQuery(query, user, clientQueryId, queryId)) {
          is FailedSearchResponse -> flowOf(queryResponse)
          is QueryResult -> {
-
-            val resultSerializer = this.queryResponseFormatter.buildStreamingSerializer(resultMode, queryResponse, contentType)
+            val resultSerializer =
+               this.queryResponseFormatter.buildStreamingSerializer(resultMode, queryResponse, contentType)
             queryResponse.results
                .catch { throwable ->
                   when (throwable) {
                      is SearchFailedException -> {
-                        emit(ErrorType.error(throwable.message ?: "No message provided"))
+                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaStore))
                         logger.warn { "Query $queryId failed with a SearchFailedException. ${throwable.message!!}" }
                      }
+
                      is QueryCancelledException -> {
-                        emit(ErrorType.error(throwable.message ?: "No message provided"))
+                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaStore))
                         //emit(QueryCancelledType.cancelled(throwable.message ?: "No message provided"))
                         logger.info { "Query $queryId was cancelled" }
                      }
                      else -> {
-                        emit(ErrorType.error(throwable.message ?: "No message provided"))
+                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaStore))
                         logger.error { "Query $queryId failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}" }
                      }
                   }

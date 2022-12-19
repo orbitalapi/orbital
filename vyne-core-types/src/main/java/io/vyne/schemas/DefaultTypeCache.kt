@@ -23,7 +23,7 @@ abstract class BaseTypeCache : TypeCache {
    private val shortNames: MutableMap<String, MutableList<Type>> = mutableMapOf()
    private val anonymousTypes: MutableMap<QualifiedName, Type> = mutableMapOf()
    private val enumSynonymValues: MutableMap<EnumValueQualifiedName, CachedEnumSynonymValues> = mutableMapOf()
-   private val detectedMetadata: MutableSet<Metadata> = mutableSetOf()
+
    val types: Set<Type>
       get() {
          return this.cache.values.toSet()
@@ -186,7 +186,7 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : BaseTypeCache() {
 }
 
 /**
- * A type cache which can on-demand populate it's values
+ * A type cache which can on-demand populate its values
  * from an underlying Taxi schema
  */
 class TaxiTypeCache(private val taxi: TaxiDocument, private val schema: Schema) : BaseTypeCache() {

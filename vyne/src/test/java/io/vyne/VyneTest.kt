@@ -1073,7 +1073,7 @@ service Broker2Service {
 
       // act
       runBlocking {
-         val result = vyne.query("""find { Order[]( OrderDate >= "2020-01-01" , OrderDate < "2020-01-02" ) }""")
+         val result = vyne.query("""find { Order[]( OrderDate >= "2020-01-01" && OrderDate < "2020-01-02" ) }""")
          val resultList = result.rawResults.toList()
          resultList.should.have.size(4)
          stubService.invocations.should.have.size(2)
@@ -1861,7 +1861,7 @@ service ClientService {
          vyne.query(
             """
               find {
-                 OrderWindowSummary[] ( TransactionEventDateTime  >= "2011-12-03T10:15:30", TransactionEventDateTime < "2021-12-03T10:15:30" )
+                 OrderWindowSummary[] ( TransactionEventDateTime  >= "2011-12-03T10:15:30" && TransactionEventDateTime < "2021-12-03T10:15:30" )
               }
               """.trimIndent()
          )

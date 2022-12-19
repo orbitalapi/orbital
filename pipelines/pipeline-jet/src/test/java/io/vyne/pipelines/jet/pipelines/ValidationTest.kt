@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit
 class ValidationTest : BaseJetIntegrationTest() {
    @Test
    fun `validation is performed for the input types of messages`() {
-      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneClient) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -39,7 +39,7 @@ class ValidationTest : BaseJetIntegrationTest() {
 
       startPipeline(
          hazelcastInstance,
-         vyneProvider,
+         vyneClient,
          pipelineSpec,
          validateJobStatusIsRunningEventually = false // Status is already completed when checking it
       )

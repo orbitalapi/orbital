@@ -6,6 +6,7 @@ import com.hazelcast.jet.pipeline.Sink
 import com.hazelcast.jet.pipeline.SinkBuilder
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
+import io.vyne.VyneClientWithSchema
 import io.vyne.connectors.jdbc.DatabaseMetadataService
 import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.SqlUtils
@@ -21,7 +22,6 @@ import io.vyne.pipelines.jet.api.transport.jdbc.WriteDisposition
 import io.vyne.pipelines.jet.sink.WindowingPipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
-import io.vyne.spring.VyneProvider
 import mu.KotlinLogging
 import org.jooq.DSLContext
 import org.springframework.jdbc.core.JdbcTemplate
@@ -65,9 +65,9 @@ class JdbcSinkBuilder : WindowingPipelineSinkBuilder<JdbcTransportOutputSpec> {
             context.logger.info("${pipelineTransportSpec.targetTypeName} => Table $tableName created")
 
             if (indexStatements.isNotEmpty()) {
-               context.logger.info("${pipelineTransportSpec.targetTypeName} => Creating indexes for $tableName")
+               context.logger.fine("${pipelineTransportSpec.targetTypeName} => Creating indexes for $tableName")
                indexStatements.forEach { indexStatement ->
-                  context.logger.info("${pipelineTransportSpec.targetTypeName} => creating index => ${indexStatement.sql}")
+                  context.logger.fine("${pipelineTransportSpec.targetTypeName} => creating index => ${indexStatement.sql}")
                   indexStatement.execute()
                }
             }
@@ -159,14 +159,14 @@ class JdbcSinkContext(
 
    var tableNameSuffix: String? = tableNameSuffix
       set(value) {
-         if (tableNameSuffix != null) {
-            error("Table name suffix has been set already. ")
+         if (tableNameSuffix != null && tableNameSuffix != value) {
+            error("Table name suffix has been set already to be $tableNameSuffix. It cannot be changed to $value. ")
          }
          field = value
       }
 
    @Resource
-   lateinit var vyneProvider: VyneProvider
+   lateinit var vyneClient: VyneClientWithSchema
 
    @Resource
    lateinit var connectionFactory: JdbcConnectionFactory
@@ -185,7 +185,7 @@ class JdbcSinkContext(
    }
 
    fun schema(): Schema {
-      return vyneProvider.createVyne().schema
+      return vyneClient.schema
    }
 }
 

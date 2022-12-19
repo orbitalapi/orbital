@@ -60,6 +60,18 @@
       <dependency>
          <groupId>org.springframework.cloud</groupId>
          <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+         <exclusions>
+            <exclusion>
+               <groupId>commons-jxpath</groupId>
+               <artifactId>commons-jxpath</artifactId>
+            </exclusion>
+         </exclusions>
+      </dependency>
+      <!-- TODO Remove once spring-cloud-starter-netflix-eureka-client is updated to use at least this version (vulnerability in 1.4.18) -->
+      <dependency>
+         <groupId>com.thoughtworks.xstream</groupId>
+         <artifactId>xstream</artifactId>
+         <version>1.4.19</version>
       </dependency>
       <dependency>
          <groupId>org.springframework.cloud</groupId>
@@ -81,7 +93,7 @@
       <dependency>
          <groupId>org.eclipse.jgit</groupId>
          <artifactId>org.eclipse.jgit</artifactId>
-         <version>6.3.0.202209071007-r</version>
+         <version>6.4.0.202211300538-r</version>
       </dependency>
       <dependency>
          <groupId>commons-io</groupId>

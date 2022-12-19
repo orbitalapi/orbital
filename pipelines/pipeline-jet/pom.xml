@@ -16,13 +16,31 @@
       <maven.compiler.source>11</maven.compiler.source>
       <maven.compiler.target>11</maven.compiler.target>
       <kotlin.compiler.jvmTarget>11</kotlin.compiler.jvmTarget>
-      <hazelcast.version>5.1.4</hazelcast.version>
+      <hazelcast.version>5.2.1</hazelcast.version>
    </properties>
 
    <dependencies>
       <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-client</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.springframework.cloud</groupId>
          <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+         <exclusions>
+            <exclusion>
+               <groupId>commons-jxpath</groupId>
+               <artifactId>commons-jxpath</artifactId>
+            </exclusion>
+
+         </exclusions>
+      </dependency>
+      <!-- TODO Remove once spring-cloud-starter-netflix-eureka-client is updated to use at least this version (vulnerability in 1.4.18) -->
+      <dependency>
+         <groupId>com.thoughtworks.xstream</groupId>
+         <artifactId>xstream</artifactId>
+         <version>1.4.19</version>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
@@ -223,20 +241,20 @@
          <groupId>org.testcontainers</groupId>
          <artifactId>testcontainers</artifactId>
          <scope>test</scope>
-         <version>1.17.5</version>
+         <version>1.17.6</version>
       </dependency>
 
       <dependency>
          <groupId>org.testcontainers</groupId>
          <artifactId>testcontainers-bom</artifactId>
          <type>pom</type>
-         <version>1.17.5</version>
+         <version>1.17.6</version>
       </dependency>
 
       <dependency>
          <groupId>org.testcontainers</groupId>
          <artifactId>postgresql</artifactId>
-         <version>1.17.5</version>
+         <version>1.17.6</version>
          <scope>test</scope>
       </dependency>
 
@@ -244,13 +262,13 @@
          <groupId>org.testcontainers</groupId>
          <artifactId>junit-jupiter</artifactId>
          <scope>test</scope>
-         <version>1.17.5</version>
+         <version>1.17.6</version>
       </dependency>
 
       <dependency>
          <groupId>org.testcontainers</groupId>
          <artifactId>localstack</artifactId>
-         <version>1.17.5</version>
+         <version>1.17.6</version>
          <scope>test</scope>
       </dependency>
 
@@ -269,11 +287,57 @@
          <artifactId>sqs</artifactId>
       </dependency>
 
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-core</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-prometheus</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-influx</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-elastic</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-jmx</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-graphite</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-datadog</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-dynatrace</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-cloudwatch2</artifactId>
+      </dependency>
+
       <!-- dependency needed as localstack still used old sdk v1 jar -->
       <dependency>
          <groupId>com.amazonaws</groupId>
          <artifactId>aws-java-sdk-s3</artifactId>
-         <version>1.12.322</version>
+         <version>1.12.367</version>
          <scope>test</scope>
       </dependency>
 
@@ -282,6 +346,18 @@
          <artifactId>logcaptor</artifactId>
          <version>2.7.10</version>
          <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-client-spring</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+
+      <!-- Enforce the right dependency version as there's a dependency conflict which pulls in 1.0.1 -->
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-serialization-core-jvm</artifactId>
+         <version>${kotlin.serialization.version}</version>
       </dependency>
    </dependencies>
 
@@ -292,7 +368,7 @@
          <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>bom</artifactId>
-            <version>2.17.293</version>
+            <version>2.18.41</version>
             <type>pom</type>
             <scope>import</scope>
          </dependency>

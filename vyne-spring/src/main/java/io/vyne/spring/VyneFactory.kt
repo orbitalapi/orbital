@@ -2,6 +2,7 @@ package io.vyne.spring
 
 import io.vyne.Vyne
 import io.vyne.VyneCacheConfiguration
+import io.vyne.VyneProvider
 import io.vyne.models.DefinedInSchema
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedInstance
@@ -17,13 +18,6 @@ import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.projection.HazelcastProjectionProvider
 import org.springframework.beans.factory.FactoryBean
 
-
-// To make testing easier
-interface VyneProvider {
-   fun createVyne(facts: Set<Fact> = emptySet()): Vyne
-   fun createVyne(facts: Set<Fact> = emptySet(), schema: Schema): Vyne
-}
-
 // To make testing easier
 class SimpleVyneProvider(private val vyne: Vyne) : VyneProvider {
    override fun createVyne(facts: Set<Fact>): Vyne {
@@ -33,14 +27,13 @@ class SimpleVyneProvider(private val vyne: Vyne) : VyneProvider {
    override fun createVyne(facts: Set<Fact>, schema: Schema): Vyne {
       TODO("Not Implemented")
    }
-
 }
 
 class VyneFactory(
-    private val schemaStore: SchemaStore,
-    private val operationInvokers: List<OperationInvoker>,
-    private val vyneCacheConfiguration: VyneCacheConfiguration,
-    private val vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
+   private val schemaStore: SchemaStore,
+   private val operationInvokers: List<OperationInvoker>,
+   private val vyneCacheConfiguration: VyneCacheConfiguration,
+   private val vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
 ) : FactoryBean<Vyne>, VyneProvider {
    override fun isSingleton() = true
    override fun getObjectType() = Vyne::class.java
@@ -56,7 +49,6 @@ class VyneFactory(
    }
 
    private fun buildVyne(facts: Set<Fact> = emptySet(), schema: Schema = schemaStore.schemaSet.schema): Vyne {
-
       val projectionProvider =
          if (vyneSpringProjectionConfiguration.distributionMode == ProjectionDistribution.DISTRIBUTED)
             HazelcastProjectionProvider(
@@ -83,12 +75,6 @@ class VyneFactory(
          vyne.addModel(typedInstance, fact.factSetId)
       }
 
-//      schemaProvider.schemaStrings().forEach { schema ->
-//         // TODO :  This is all a bit much ... going to a TaxiSchema and back again.
-//         // Should really be able to do:  Vyne().addSchema(TypeSchema.from(type))
-//         log().debug("Registering schema: $schema")
-//         vyne.addSchema(TaxiSchema.from(schema))
-//      }
       return vyne
    }
 }

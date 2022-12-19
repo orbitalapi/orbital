@@ -4,13 +4,13 @@ import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.core.HazelcastInstanceAware
 import io.vyne.Vyne
 import io.vyne.models.facts.CopyOnWriteFactBag
+import io.vyne.models.serde.SerializableTypedInstance
+import io.vyne.models.serde.toSerializable
 import io.vyne.query.QueryContext
 import io.vyne.query.QueryProfiler
 import io.vyne.query.SearchGraphExclusion
 import io.vyne.query.SerializableVyneQueryStatistics
 import io.vyne.schemas.QualifiedName
-import io.vyne.spring.projection.serde.SerializableTypedInstance
-import io.vyne.spring.projection.serde.toSerializable
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.asFlow
@@ -46,24 +46,24 @@ class HazelcastProjectingTask(
 
     override fun call(): ByteArray {
 
-        val executorServiceStats = localHazelcastInstance?.getExecutorService("executorService")?.localExecutorStats
-        logger.info { "Task for queryId/segment ${queryId}/${segment} starting on node/endpoint ${localHazelcastInstance?.name}/${localHazelcastInstance?.localEndpoint} in cluster of [${localHazelcastInstance?.cluster?.members}] at time [${LocalDateTime.now()}] local executor = [${executorServiceStats}]" }
+       val executorServiceStats = localHazelcastInstance.getExecutorService("executorService").localExecutorStats
+       logger.info { "Task for queryId/segment ${queryId}/${segment} starting on node/endpoint ${localHazelcastInstance.name}/${localHazelcastInstance.localEndpoint} in cluster of [${localHazelcastInstance.cluster.members}] at time [${LocalDateTime.now()}] local executor = [${executorServiceStats}]" }
 
-        val vyne = ApplicationContextProvider!!.context()!!.getBean("vyneFactory") as Vyne
+       val vyne = ApplicationContextProvider.context()!!.getBean("vyneFactory") as Vyne
 
-        val context = QueryContext(
-            facts = CopyOnWriteFactBag(CopyOnWriteArrayList(), vyne.schema),
-            schema = vyne.schema,
-            queryId = queryId,
-            queryEngine = vyne.queryEngine(),
-            profiler =  QueryProfiler()
-        )
+       val context = QueryContext(
+          facts = CopyOnWriteFactBag(CopyOnWriteArrayList(), vyne.schema),
+          schema = vyne.schema,
+          queryId = queryId,
+          queryEngine = vyne.queryEngine(),
+          profiler = QueryProfiler()
+       )
         context.excludedServices.addAll( Cbor.decodeFromByteArray<MutableSet<SearchGraphExclusion<QualifiedName>>>(excludedServices) )
 
         val flow = input
-                .asFlow()
-                .map{ SerializableTypedInstance.fromBytes(it) }  //Deserialize from CBor
-                .map { it.toTypedInstance(vyne.schema) }
+           .asFlow()
+           .map { SerializableTypedInstance.fromBytes(it) }  // Deserialize from CBor
+           .map { it.toTypedInstance(vyne.schema) }
                 .map {
                     GlobalScope.async {
                         val projectionContext = context.only(it)
@@ -99,7 +99,7 @@ class ApplicationContextProvider : ApplicationContextAware {
 
     @Throws(BeansException::class)
     override fun setApplicationContext(springApplicationContext: ApplicationContext?) {
-        ApplicationContextProvider.applicationContext = springApplicationContext
+       applicationContext = springApplicationContext
     }
 
     companion object {

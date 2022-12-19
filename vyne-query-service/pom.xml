@@ -144,12 +144,25 @@
       <dependency>
          <groupId>org.bitbucket.b_c</groupId>
          <artifactId>jose4j</artifactId>
-         <version>0.9.0</version>
+         <version>0.9.2</version>
          <scope>test</scope>
       </dependency>
       <dependency>
          <groupId>org.springframework.cloud</groupId>
          <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+         <exclusions>
+            <exclusion>
+               <groupId>commons-jxpath</groupId>
+               <artifactId>commons-jxpath</artifactId>
+            </exclusion>
+
+         </exclusions>
+      </dependency>
+      <!-- TODO Remove once spring-cloud-starter-netflix-eureka-client is updated to use at least this version (vulnerability in 1.4.18) -->
+      <dependency>
+         <groupId>com.thoughtworks.xstream</groupId>
+         <artifactId>xstream</artifactId>
+         <version>1.4.19</version>
       </dependency>
       <dependency>
          <groupId>io.netty</groupId>
@@ -377,6 +390,12 @@
       <dependency>
          <groupId>org.jetbrains.kotlinx</groupId>
          <artifactId>kotlinx-serialization-cbor</artifactId>
+      </dependency>
+      <!-- TODO Remove once the right version is picked automatically. This was needed due to wire-compiler of protobuf-utils pulling version 1.0.1 -->
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-serialization-core-jvm</artifactId>
+         <version>${kotlin.serialization.version}</version>
       </dependency>
       <dependency>
          <groupId>junit</groupId>

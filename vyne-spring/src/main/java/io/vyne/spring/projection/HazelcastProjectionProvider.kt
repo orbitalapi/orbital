@@ -9,14 +9,13 @@ import com.spikhalskiy.futurity.Futurity
 import io.vyne.Vyne
 import io.vyne.models.TypedInstance
 import io.vyne.models.facts.FactBag
+import io.vyne.models.serde.SerializableTypedInstance
+import io.vyne.models.serde.toSerializable
 import io.vyne.query.Projection
 import io.vyne.query.QueryContext
 import io.vyne.query.SerializableVyneQueryStatistics
 import io.vyne.query.VyneQueryStatistics
 import io.vyne.query.projection.ProjectionProvider
-import io.vyne.schemas.Type
-import io.vyne.spring.projection.serde.SerializableTypedInstance
-import io.vyne.spring.projection.serde.toSerializable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.reactive.asFlow

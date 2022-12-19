@@ -5,6 +5,7 @@ import com.hazelcast.jet.pipeline.SourceBuilder
 import com.hazelcast.jet.pipeline.StreamSource
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
+import io.vyne.embedded.EmbeddedVyneClientWithSchema
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedNull
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
@@ -19,7 +20,6 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
-import io.vyne.spring.VyneProvider
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.springframework.scheduling.support.CronSequenceGenerator
@@ -79,10 +79,8 @@ private class PollingTaxiOperationSource(
    private val variableProvider = context.variableProvider.getVariableProvider(context.pipelineSpec.name)
    private val clock = context.clock
    fun doWork() {
-      val vyne = context.vyneProvider.createVyne()
-      val schema = vyne.schema
       val (service, operation) = try {
-         schema.operation(inputSpec.operationName.fqn())
+         context.vyneClient.schema.operation(inputSpec.operationName.fqn())
       } catch (e: Exception) {
          logger.severe("Failed to fetch operation ${inputSpec.operationName} from the schema. Aborting.")
          return
@@ -101,9 +99,10 @@ private class PollingTaxiOperationSource(
             // as our starter facts.
             // This will allow them to become candidates for inputs into parameters of
             // operations
-            val resolvedParameters = variableProvider.asTypedInstances(inputSpec.parameterMap, operation, vyne.schema)
+            val resolvedParameters =
+               variableProvider.asTypedInstances(inputSpec.parameterMap, operation, context.vyneClient.schema)
             val parameterValues = resolvedParameters.map { it.second }.toSet()
-            val vyneClient = vyne.from(parameterValues)
+            val vyneClient = context.vyneClient.from(parameterValues)
             // Then call the operation via Vyne
             vyneClient.invokeOperation(service, operation, parameterValues, resolvedParameters)
                .toList()
@@ -138,7 +137,7 @@ class PollingTaxiOperationSourceContext(
    val inputSpec: PollingTaxiOperationInputSpec = pipelineSpec.input
 
    @Resource
-   lateinit var vyneProvider: VyneProvider
+   lateinit var vyneClient: EmbeddedVyneClientWithSchema
 
    @Resource
    lateinit var variableProvider: PipelineAwareVariableProvider

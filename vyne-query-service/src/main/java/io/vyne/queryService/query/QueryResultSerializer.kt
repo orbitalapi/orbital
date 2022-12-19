@@ -7,10 +7,12 @@ import io.vyne.models.TypedInstanceConverter
 import io.vyne.models.format.FirstTypedInstanceInfo
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.json.Jackson
+import io.vyne.models.serde.toSerializable
 import io.vyne.query.QueryResult
 import io.vyne.query.QueryResultSerializer
 import io.vyne.query.ValueWithTypeName
 import io.vyne.schemas.Type
+import org.springframework.http.MediaType
 import io.vyne.spring.projection.serde.toSerializable
 
 object RawResultsSerializer : QueryResultSerializer {
@@ -35,11 +37,15 @@ class ModelFormatSpecSerializer(
    }
 }
 
-object TypeNamedInstanceSerializer : QueryResultSerializer {
+class SerializedTypedInstanceSerializer(private val contentType: String?) : QueryResultSerializer {
    private val converter = TypedInstanceConverter(RawObjectMapper)
    override fun serialize(item: TypedInstance): Any? {
       item.toSerializable()
-      return converter.convert(item)
+      return when (contentType) {
+         MediaType.APPLICATION_JSON_VALUE -> converter.convert(item)
+         MediaType.APPLICATION_CBOR_VALUE -> item.toSerializable().toBytes()
+         else -> throw IllegalArgumentException("Unsupported content type: $contentType")
+      }
    }
 }
 

@@ -6,7 +6,6 @@ import arrow.core.right
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.connectors.ConnectionSucceeded
 import io.vyne.connectors.jdbc.schema.JdbcTaxiSchemaGenerator
-import io.vyne.connectors.jdbc.sql.ddl.TableGenerator.TaxiTypeToJooqType.PkSuffix
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.Schema
@@ -18,6 +17,7 @@ import schemacrawler.schemacrawler.LoadOptionsBuilder
 import schemacrawler.schemacrawler.SchemaCrawlerOptionsBuilder
 import schemacrawler.schemacrawler.SchemaInfoLevelBuilder
 import schemacrawler.tools.utility.SchemaCrawlerUtility
+import java.util.*
 
 
 /**
@@ -51,15 +51,15 @@ class DatabaseMetadataService(
       val tables = catalog.tables.map { table ->
          val indexes = table.indexes.map {
             JdbcIndex(it.name,
-            it.columns.map { indexColumn ->
-               JdbcColumn(
-                  indexColumn.name,
-                  indexColumn.type.name,
-                  indexColumn.size,
-                  indexColumn.decimalDigits,
-                  indexColumn.isNullable
-               )
-            })
+               it.columns.map { indexColumn ->
+                  JdbcColumn(
+                     indexColumn.name,
+                     indexColumn.type.name,
+                     indexColumn.size,
+                     indexColumn.decimalDigits,
+                     indexColumn.isNullable
+                  )
+               })
          }
          val constraintColumns = table.primaryKey?.constrainedColumns?.map {
             JdbcColumn(
@@ -79,7 +79,7 @@ class DatabaseMetadataService(
       template.dataSource!!.connection.use { safeConnection ->
          val catalogPattern = null
          val (schemaPattern, tableNamePattern) = if (safeConnection.metaData.storesUpperCaseIdentifiers()) {
-            schemaName.toUpperCase() to tableName.toUpperCase()
+            schemaName.uppercase(Locale.getDefault()) to tableName.uppercase(Locale.getDefault())
          } else {
             schemaName to tableName
          }
@@ -126,9 +126,10 @@ class DatabaseMetadataService(
                .withSchemaInfoLevel(SchemaInfoLevelBuilder.standard())
                .toOptions()
          )
-      return template.dataSource!!.connection.use { safeConnection ->
-         SchemaCrawlerUtility.getCatalog(safeConnection, options)
-      }
+      return SchemaCrawlerUtility.getCatalog(
+         io.vyne.connectors.jdbc.schemacrawler.DataSourceConnectionSource(template.dataSource!!),
+         options
+      )
    }
 }
 
@@ -146,7 +147,7 @@ data class NewOrExistingTypeName(
 )
 
 private fun String.yesNoToBoolean(): Boolean {
-   return when (this.toLowerCase()) {
+   return when (this.lowercase(Locale.getDefault())) {
       "yes" -> true
       "no" -> false
       else -> error("$this is not a valid boolean value, expected yes/no")
@@ -157,7 +158,8 @@ data class JdbcTable(
    val schemaName: String,
    val tableName: String,
    val constrainedColumns: List<JdbcColumn> = emptyList(),
-   val indexes: List<JdbcIndex> = emptyList())
+   val indexes: List<JdbcIndex> = emptyList()
+)
 
 data class JdbcColumn(
    val columnName: String, val dataType: String, val columnSize: Int,

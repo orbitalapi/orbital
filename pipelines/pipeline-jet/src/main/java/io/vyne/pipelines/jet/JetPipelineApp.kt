@@ -42,10 +42,11 @@ import java.time.Clock
    VyneSpringProjectionConfiguration::class,
    VyneConnectionsConfig::class
 )
-@Import(HttpAuthConfig::class,
+@Import(
+   HttpAuthConfig::class,
    PipelineStateConfig::class,
    DiscoveryClientConfig::class
-   )
+)
 class JetPipelineApp {
    companion object {
       private val logger = KotlinLogging.logger {}

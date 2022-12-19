@@ -70,6 +70,12 @@ class PipelineService(
       }
    }
 
+   @PostMapping("/api/pipelines/scheduled")
+   fun triggerScheduledPipeline(@RequestBody triggerScheduledPipelineRequest: TriggerScheduledPipelineRequest): Mono<TriggerScheduledPipelineResponse> {
+      logger.info { "Received request to trigger a schedule pipeline manually => $triggerScheduledPipelineRequest" }
+      return Mono.just(TriggerScheduledPipelineResponse(pipelineManager.triggerScheduledPipeline(triggerScheduledPipelineRequest.pipelineSpecId)))
+   }
+
    @PostMapping("/api/pipelines")
    override fun submitPipeline(@RequestBody pipelineSpec: PipelineSpec<*, *>): Mono<SubmittedPipeline> {
       logger.info { "Received new pipelineSpec: \n${pipelineSpec}" }
@@ -102,3 +108,5 @@ class PipelineService(
 
 }
 
+data class TriggerScheduledPipelineRequest(val pipelineSpecId: String)
+data class TriggerScheduledPipelineResponse(val success: Boolean)

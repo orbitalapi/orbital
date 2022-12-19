@@ -16,14 +16,19 @@ fun <T : Any> T.getPrivateProperty(variableName: String): Any? {
    }
 }
 
-class VyneEnumDeserialisationModuleBeanDeserializerModifier: BeanDeserializerModifier() {
+class VyneEnumDeserializationModuleBeanDeserializerModifier : BeanDeserializerModifier() {
 
-   override fun modifyEnumDeserializer(config: DeserializationConfig?, type: JavaType, beanDesc: BeanDescription?, deserializer: JsonDeserializer<*>?): JsonDeserializer<*> {
-      return VyneEnumDeserialier(type)
+   override fun modifyEnumDeserializer(
+      config: DeserializationConfig?,
+      type: JavaType,
+      beanDesc: BeanDescription?,
+      deserializer: JsonDeserializer<*>?
+   ): JsonDeserializer<*> {
+      return VyneEnumDeserializer(type)
    }
 }
 
-class VyneEnumDeserialier(private val type: JavaType): JsonDeserializer<Enum<*>>() {
+class VyneEnumDeserializer(private val type: JavaType) : JsonDeserializer<Enum<*>>() {
    override fun deserialize(jsonParser: JsonParser, ctx: DeserializationContext): Enum<*>? {
       val enumClass = type.rawClass as Class<Enum<*>>
       val enumValues = enumClass.enumConstants as Array<Enum<*>>
@@ -32,8 +37,8 @@ class VyneEnumDeserialier(private val type: JavaType): JsonDeserializer<Enum<*>>
       val firstAttempt = enumValues.firstOrNull { it.name == serialisedValue }
       if (firstAttempt == null) {
          enumClass.declaredFields.find { field -> field.name == "value" }?.let { valueField ->
-           val fromValue =  enumValues.firstOrNull { enumValue ->
-              enumValue.getPrivateProperty("value").toString() == serialisedValue
+            val fromValue = enumValues.firstOrNull { enumValue ->
+               enumValue.getPrivateProperty("value").toString() == serialisedValue
             }
 
             if (fromValue != null) {
@@ -45,9 +50,9 @@ class VyneEnumDeserialier(private val type: JavaType): JsonDeserializer<Enum<*>>
       return firstAttempt
    }
 }
+
 fun vyneEnumDeserialisationModule(): SimpleModule {
    val module = SimpleModule()
-   module.setDeserializerModifier(VyneEnumDeserialisationModuleBeanDeserializerModifier())
+   module.setDeserializerModifier(VyneEnumDeserializationModuleBeanDeserializerModifier())
    return module
 }
-

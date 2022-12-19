@@ -38,11 +38,6 @@ eureka:
       leaseExpirationDurationInSeconds: 5
 
 vyne:
-   # Use consistent naming across all Vyne components.
-   # Check docs/content/deployment/README.mdx
-   query-service:
-      name: query-service
-      url: http://vyne
    graph:
       vyneGraphBuilderCache:
          baseSchemaCacheSize: 100
@@ -51,6 +46,8 @@ vyne:
       vyneDiscoverGraphQuery:
          schemaGraphCacheSize: 5
          searchPathExclusionsCacheSize: 200000
+   pipelines:
+      query-mode: EMBEDDED
 
 
 management:
@@ -85,4 +82,11 @@ management:
       health:
          show-components: always
          show-details: always
-
+logging:
+   level:
+      us.fatehi.utility.scheduler: WARN
+      schemacrawler.crawl: WARN
+      schemacrawler.loader.attributes: WARN
+      schemacrawler.loader.weakassociations: WARN
+      schemacrawler.loader.counts: WARN
+      schemacrawler.tools.utility: WARN

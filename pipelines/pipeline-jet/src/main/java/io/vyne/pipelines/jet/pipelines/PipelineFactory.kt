@@ -9,6 +9,9 @@ import com.hazelcast.jet.pipeline.StreamStage
 import com.hazelcast.jet.pipeline.WindowDefinition
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
+import io.vyne.VyneClientWithSchema
 import io.vyne.models.validation.MandatoryFieldNotNull
 import io.vyne.models.validation.ValidationRule
 import io.vyne.models.validation.failValidationViolationHandler
@@ -26,22 +29,20 @@ import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.pipelines.jet.source.PipelineSourceType
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
-import io.vyne.spring.VyneProvider
 import org.springframework.stereotype.Component
 import java.io.Serializable
 import javax.annotation.Resource
 
 @Component
 class PipelineFactory(
-   private val vyneProvider: VyneProvider,
+   private val vyneClient: VyneClientWithSchema,
    private val sourceProvider: PipelineSourceProvider,
    private val sinkProvider: PipelineSinkProvider
 ) {
    fun <I : PipelineTransportSpec, O : PipelineTransportSpec> createJetPipeline(pipelineSpec: PipelineSpec<I, O>): Pipeline {
       val jetPipeline = Pipeline.create()
-      val vyne = vyneProvider.createVyne()
       val sourceBuilder = sourceProvider.getPipelineSource(pipelineSpec)
-      val schema = vyne.schema
+      val schema = vyneClient.schema
       val inputTypeName = sourceBuilder.getEmittedType(pipelineSpec, schema)
       val inputType = if (inputTypeName != null) schema.type(inputTypeName) else null
 
@@ -72,7 +73,7 @@ class PipelineFactory(
    ) {
       val sinkBuilder = sinkProvider.getPipelineSink(pipelineTransportSpec)
       val outputTypeName = sinkBuilder.getRequiredType(pipelineTransportSpec, schema)
-      val jetPipelineWithValidation = buildValidationStage(inputType, jetPipelineBuilder)
+      val jetPipelineWithValidation = buildValidationStage(inputType, jetPipelineBuilder, pipelineName)
       val jetPipelineWithTransformation = buildTransformStage(inputType, outputTypeName, jetPipelineWithValidation)
       buildSink(pipelineId, pipelineName, pipelineTransportSpec, sinkBuilder, jetPipelineWithTransformation)
    }
@@ -95,22 +96,26 @@ class PipelineFactory(
    }
 
    private fun buildValidationStage(
-      inputType: QualifiedName?, jetPipelineBuilder: GeneralStage<out MessageContentProvider>
+      inputType: QualifiedName?, jetPipelineBuilder: GeneralStage<out MessageContentProvider>, pipelineName: String
    ): GeneralStage<out MessageContentProvider> {
       if (inputType == null) {
          return jetPipelineBuilder
       }
       val serviceFactory: ServiceFactory<*, ValidationFilterContext> = nonSharedService { context ->
-         context.managedContext().initialize(
+         val validationFilterContext = context.managedContext().initialize(
             ValidationFilterContext(context.logger(), inputType)
          ) as ValidationFilterContext
+
+         validationFilterContext.createMetricCounters(pipelineName)
+         validationFilterContext
       }
+
       return jetPipelineBuilder.filterUsingService(
          serviceFactory
       ) { context, message ->
-         val schema1 = context.schema()
-         val typedInstance = message.readAsTypedInstance(schema1.type(context.inputType), schema1)
-         return@filterUsingService typedInstance.validate(
+         val schema = context.schema()
+         val typedInstance = message.readAsTypedInstance(schema.type(context.inputType), schema)
+         val validationResult = typedInstance.validate(
             ValidationRule(
                MandatoryFieldNotNull, listOf(
                   noOpViolationHandler {
@@ -122,6 +127,12 @@ class PipelineFactory(
                )
             )
          )
+         if (validationResult) {
+            context.processedCounter.increment()
+         } else {
+            context.validationFailedCounter.increment()
+         }
+         return@filterUsingService validationResult
       }.setName("Validate ${inputType.shortDisplayName} has all the mandatory fields populated")
    }
 
@@ -153,11 +164,36 @@ class PipelineFactory(
 }
 
 @SpringAware
-data class ValidationFilterContext(val logger: ILogger, val inputType: QualifiedName) : Serializable {
+data class ValidationFilterContext(
+   val logger: ILogger,
+   val inputType: QualifiedName,
+) : Serializable {
    @Resource
-   lateinit var vyneProvider: VyneProvider
+   lateinit var vyneClient: VyneClientWithSchema
+
+   @Resource
+   lateinit var meterRegistry: MeterRegistry
+
+   lateinit var processedCounter: Counter
+   lateinit var validationFailedCounter: Counter
 
    fun schema(): Schema {
-      return vyneProvider.createVyne().schema
+      return vyneClient.schema
+   }
+
+   fun createMetricCounters(pipelineName: String) {
+      processedCounter = Counter
+         .builder("vyne.pipelines.processed")
+         .tag("pipeline", pipelineName)
+         .baseUnit("items")
+         .description("Count of items processed successfully as part of the pipeline execution.")
+         .register(meterRegistry)
+
+      validationFailedCounter = Counter
+         .builder("vyne.pipelines.validationFailed")
+         .tag("pipeline", pipelineName)
+         .baseUnit("items")
+         .description("Count of items for which the validation failed as part of the pipeline execution.")
+         .register(meterRegistry)
    }
 }

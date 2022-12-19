@@ -5,30 +5,27 @@ import com.hazelcast.jet.pipeline.SourceBuilder
 import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
+import io.vyne.VyneClient
+import io.vyne.models.TypedInstance
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
+import io.vyne.pipelines.jet.api.transport.MessageSourceWithGroupId
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.pipelines.jet.api.transport.query.PollingQueryInputSpec
 import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.pipelines.jet.source.PipelineSourceType
+import io.vyne.query
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
-import io.vyne.spring.VyneProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.springframework.stereotype.Component
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 import javax.annotation.PostConstruct
 import javax.annotation.Resource
-
 
 private const val CAPACITY = 1024
 
@@ -50,7 +47,7 @@ class PollingQuerySourceBuilder : PipelineSourceBuilder<PollingQueryInputSpec> {
       inputType: Type?
    ): BatchSource<MessageContentProvider> {
       return SourceBuilder.batch("query-poll") { context ->
-         PollingQuerySourceContext(context.logger(), pipelineSpec)
+         PollingQuerySourceContext(context.logger(), pipelineSpec, context.jobId())
       }
          .fillBufferFn { context: PollingQuerySourceContext, buffer: SourceBuffer<MessageContentProvider> ->
             context.fillBuffer(buffer)
@@ -66,28 +63,40 @@ class PollingQuerySourceBuilder : PipelineSourceBuilder<PollingQueryInputSpec> {
    }
 }
 
+data class PollingQuerySourceMetadata(val jobId: String) : MessageSourceWithGroupId {
+   override val groupId = jobId
+}
+
 @SpringAware
 class PollingQuerySourceContext(
    val logger: ILogger,
-   val pipelineSpec: PipelineSpec<PollingQueryInputSpec, *>
+   val pipelineSpec: PipelineSpec<PollingQueryInputSpec, *>,
+   val jobId: Long
 ) {
    @PostConstruct
    fun runQuery() {
       val scope = CoroutineScope(Dispatchers.Default)
       scope.launch {
-         val vyne = vyneProvider.createVyne()
-         vyne.query(pipelineSpec.input.query)
-            .results
-            .map { TypedInstanceContentProvider(it) }
-            .onEach { queue.add(it) }
-            .onCompletion { isDone = true }
-            .catch { isDone = true }
-            .launchIn(scope)
+         vyneClient.query<TypedInstance>(pipelineSpec.input.query)
+            .map {
+               TypedInstanceContentProvider(
+                  it,
+                  sourceMessageMetadata = PollingQuerySourceMetadata(jobId.toString())
+               )
+            }
+            .doOnComplete { isDone = true }
+            .doOnError { error ->
+               logger.severe(error.message)
+               isDone = true
+            }
+            .subscribe {
+               queue.put(it)
+            }
       }
    }
 
    @Resource
-   lateinit var vyneProvider: VyneProvider
+   lateinit var vyneClient: VyneClient
 
    private val queue: BlockingQueue<MessageContentProvider> = ArrayBlockingQueue(CAPACITY)
    private val tempBuffer: MutableList<MessageContentProvider> = mutableListOf()

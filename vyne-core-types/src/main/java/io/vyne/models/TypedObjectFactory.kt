@@ -305,7 +305,7 @@ class TypedObjectFactory(
 
       // TODO : Naieve first pass.
       // This approach won't work for nested objects.
-      // I think i need to build a hierachy of object factories, and allow nested access
+      // I think i need to build a hierarchy of object factories, and allow nested access
       // via the get() method
       val mappedAttributes = attributesToMap.map { (attributeName) ->
          // The value may have already been populated on-demand from a conditional

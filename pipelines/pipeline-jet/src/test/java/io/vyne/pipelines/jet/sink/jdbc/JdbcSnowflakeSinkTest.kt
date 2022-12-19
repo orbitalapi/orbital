@@ -80,7 +80,7 @@ class JdbcSnowflakeSinkTest : BaseJetIntegrationTest() {
             givenName : FirstName
          }
       """
-      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val testSetup = jetWithSpringAndVyne(
          schemaSource, listOf(connection)
       )
       val pipelineSpec = PipelineSpec(
@@ -96,15 +96,14 @@ class JdbcSnowflakeSinkTest : BaseJetIntegrationTest() {
             )
          )
       )
-      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
+      startPipeline(testSetup.hazelcastInstance, testSetup.vyneClient, pipelineSpec)
 
       Thread.sleep(10000)
 
       val postgresDdlGenerator = PostgresDdlGenerator()
-      val schema = vyneProvider.createVyne().schema
       val targetTable = postgresDdlGenerator.generateDdl(
-         schema.versionedType(pipelineSpec.outputs.first().targetType.typeName),
-         schema
+         testSetup.schema.versionedType(pipelineSpec.outputs.first().targetType.typeName),
+         testSetup.schema
       )
 
       val urlCredentials = connection.buildUrlAndCredentials()
