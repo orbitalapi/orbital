@@ -23,7 +23,9 @@ import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.query.MetricsEventConsumer
 import io.vyne.queryService.query.QueryResponseFormatter
 import io.vyne.queryService.query.QueryService
+import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.api.SimpleSchemaProvider
+import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.config.TestDiscoveryClientConfig
 import io.vyne.testVyne
@@ -118,7 +120,9 @@ abstract class BaseQueryServiceTest {
       }
       this.vyne = vyne
       this.meterRegistry = SimpleMeterRegistry()
+
       queryService = QueryService(
+         SimpleSchemaStore(SchemaSet.Companion.from(vyne.schema, 1)),
          SimpleVyneProvider(vyne),
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),

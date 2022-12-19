@@ -15,6 +15,8 @@ import io.vyne.queryService.query.MetricsEventConsumer
 import io.vyne.queryService.query.QueryResponseFormatter
 import io.vyne.queryService.query.QueryService
 import io.vyne.schema.api.SchemaProvider
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schemaStore.SimpleSchemaStore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -62,10 +64,10 @@ class QueryHistoryLineageTest {
 
    @Test
    fun `when query has multiple links in lineage then all are returned from history service`() {
-
       val queryId = UUID.randomUUID().toString()
       val meterRegistry = SimpleMeterRegistry()
       val queryService = QueryService(
+         SimpleSchemaStore(SchemaSet.Companion.from(schemaProvider.schema, 1)),
          vyneProvider,
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),

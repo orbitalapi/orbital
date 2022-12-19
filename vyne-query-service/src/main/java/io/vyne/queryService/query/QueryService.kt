@@ -27,6 +27,7 @@ import io.vyne.queryService.ErrorType
 import io.vyne.queryService.security.VyneUser
 import io.vyne.queryService.security.facts
 import io.vyne.queryService.security.toVyneUser
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.Schema
 import io.vyne.security.VynePrivileges
 import io.vyne.utils.log
@@ -85,6 +86,7 @@ private val logger = KotlinLogging.logger {}
 @FlowPreview
 @RestController
 class QueryService(
+   private val schemaStore: SchemaStore,
    val vyneProvider: VyneProvider,
    val historyWriterProvider: HistoryEventConsumerProvider,
    val objectMapper: ObjectMapper,
@@ -257,17 +259,17 @@ class QueryService(
                .catch { throwable ->
                   when (throwable) {
                      is SearchFailedException -> {
-                        emit(ErrorType.error(throwable.message ?: "No message provided"))
+                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaStore))
                         logger.warn { "Query $queryId failed with a SearchFailedException. ${throwable.message!!}" }
                      }
 
                      is QueryCancelledException -> {
-                        emit(ErrorType.error(throwable.message ?: "No message provided"))
+                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaStore))
                         //emit(QueryCancelledType.cancelled(throwable.message ?: "No message provided"))
                         logger.info { "Query $queryId was cancelled" }
                      }
                      else -> {
-                        emit(ErrorType.error(throwable.message ?: "No message provided"))
+                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaStore))
                         logger.error { "Query $queryId failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}" }
                      }
                   }
