@@ -20,6 +20,20 @@
 
    <dependencies>
       <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-function-adapter-aws</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.amazonaws</groupId>
+         <artifactId>aws-lambda-java-events</artifactId>
+         <version>3.11.0</version>
+      </dependency>
+      <dependency>
+         <groupId>com.amazonaws</groupId>
+         <artifactId>aws-lambda-java-core</artifactId>
+         <version>1.2.2</version>
+      </dependency>
+      <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>license-client</artifactId>
          <version>${project.version}</version>
