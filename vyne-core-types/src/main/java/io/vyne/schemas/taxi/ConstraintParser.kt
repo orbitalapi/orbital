@@ -1,7 +1,6 @@
 package io.vyne.schemas.taxi
 
 import io.vyne.schemas.*
-import lang.taxi.expressions.Expression
 import lang.taxi.query.convertToPropertyConstraint
 import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
 import lang.taxi.services.operations.constraints.ReturnValueDerivedFromParameterConstraint
