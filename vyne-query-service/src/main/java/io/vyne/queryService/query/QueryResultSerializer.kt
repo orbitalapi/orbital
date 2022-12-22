@@ -13,7 +13,6 @@ import io.vyne.query.QueryResultSerializer
 import io.vyne.query.ValueWithTypeName
 import io.vyne.schemas.Type
 import org.springframework.http.MediaType
-import io.vyne.spring.projection.serde.toSerializable
 
 object RawResultsSerializer : QueryResultSerializer {
    private val converter = TypedInstanceConverter(RawObjectMapper)

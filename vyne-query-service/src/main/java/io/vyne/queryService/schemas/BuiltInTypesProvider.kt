@@ -89,7 +89,7 @@ class BuiltInTypesSubmitter(publisherService: SchemaPublisherService) {
    private val logger = KotlinLogging.logger {}
 
    init {
-      logger.info { "Publishing built-in types => ${BuiltInTypesProvider.versionedSources.map { it.name }}" }
+      logger.info { "Publishing built-in types => ${BuiltInTypesProvider.versionedSources.sources.map { it.name }}" }
       publisherService.publish(BuiltInTypesProvider.versionedSources)
          .subscribe { response ->
             if (response.isValid) {
