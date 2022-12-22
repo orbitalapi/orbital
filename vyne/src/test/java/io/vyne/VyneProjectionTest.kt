@@ -413,7 +413,7 @@ service UserService {
       runTest {
          val query = """
          find {
-            Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30")
+            Order[](OrderDate  >= "2000-01-01" && OrderDate < "2020-12-30")
          } as CommonOrder[]""".trimIndent()
          val turbine = vyne.query(query).rawResults.testIn(this)
          val resultList = turbine.expectMany<Map<String, Any?>>(100)

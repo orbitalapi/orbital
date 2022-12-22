@@ -60,7 +60,7 @@ interface ContractConstraintProvider : ConstraintProvider<OutputConstraint>
 
 interface ConstraintProvider<out T : Constraint> {
    fun applies(constraint: TaxiConstraint): Boolean
-   fun build(constrainedType: Type, constraint: TaxiConstraint, schema: Schema): T
+   fun build(constrainedType: Type, constraint: TaxiConstraint, schema: Schema): List<T>
 }
 
 interface DeferredConstraintProvider {

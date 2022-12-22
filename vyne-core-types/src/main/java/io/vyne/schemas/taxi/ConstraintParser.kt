@@ -43,7 +43,7 @@ class TaxiConstraintConverter(val schema: Schema) {
       } else emptyList()
 
       val constraints = source
-         .map { buildConstraint(type, it) }
+         .flatMap { buildConstraint(type, it) }
          .plus(nestedConstraints)
       return constraints
          .filterIsInstance(InputConstraint::class.java)
@@ -53,7 +53,7 @@ class TaxiConstraintConverter(val schema: Schema) {
 
    fun buildOutputConstraints(type: Type, source: List<TaxiConstraint>): List<OutputConstraint> {
       return source
-         .map { buildConstraint(type, it) }
+         .flatMap { buildConstraint(type, it) }
          .filterIsInstance(OutputConstraint::class.java)
    }
 
@@ -62,7 +62,7 @@ class TaxiConstraintConverter(val schema: Schema) {
       return OperationContract(returnType, constraints)
    }
 
-   private fun buildConstraint(type: Type, constraint: TaxiConstraint): Constraint {
+   private fun buildConstraint(type: Type, constraint: TaxiConstraint): List<Constraint> {
       return constraintProviders
          .first { it.applies(constraint) }
          .build(type, constraint, schema)
@@ -76,9 +76,12 @@ class ExpressionConstraintProvider : ContractConstraintProvider {
       return constraint is lang.taxi.services.operations.constraints.ExpressionConstraint
    }
 
-   override fun build(constrainedType: Type, constraint: TaxiConstraint, schema: Schema): OutputConstraint {
+   override fun build(constrainedType: Type, constraint: TaxiConstraint, schema: Schema): List<OutputConstraint> {
       val taxiConstraint = (constraint as lang.taxi.services.operations.constraints.ExpressionConstraint)
-      return constraintProvider.build(constrainedType, taxiConstraint.convertToPropertyConstraint(), schema)
+      val propertyConstraints = taxiConstraint.convertToPropertyConstraint()
+      return propertyConstraints.flatMap { propertyConstraint ->
+         constraintProvider.build(constrainedType, propertyConstraint, schema)
+      }
    }
 }
 
@@ -88,12 +91,14 @@ class PropertyToParameterConstraintProvider : ContractConstraintProvider {
       return constraint is PropertyToParameterConstraint
    }
 
-   override fun build(constrainedType: Type, constraint: TaxiConstraint, schema: Schema): OutputConstraint {
+   override fun build(constrainedType: Type, constraint: TaxiConstraint, schema: Schema): List<OutputConstraint> {
       val taxiConstraint = constraint as PropertyToParameterConstraint
-      return io.vyne.schemas.PropertyToParameterConstraint(
-         taxiConstraint.propertyIdentifier,
-         taxiConstraint.operator,
-         taxiConstraint.expectedValue
+      return listOf(
+         PropertyToParameterConstraint(
+            taxiConstraint.propertyIdentifier,
+            taxiConstraint.operator,
+            taxiConstraint.expectedValue
+         )
       )
    }
 }
@@ -103,9 +108,9 @@ class ReturnValueDerivedFromParameterConstraintProvider : ContractConstraintProv
       return constraint is ReturnValueDerivedFromParameterConstraint
    }
 
-   override fun build(constrainedType: Type, constraint: TaxiConstraint, schema: Schema): OutputConstraint {
+   override fun build(constrainedType: Type, constraint: TaxiConstraint, schema: Schema): List<OutputConstraint> {
       val taxiConstraint = constraint as ReturnValueDerivedFromParameterConstraint
-      return io.vyne.schemas.ReturnValueDerivedFromParameterConstraint(taxiConstraint.attributePath)
+      return listOf(ReturnValueDerivedFromParameterConstraint(taxiConstraint.attributePath))
    }
 
 }
