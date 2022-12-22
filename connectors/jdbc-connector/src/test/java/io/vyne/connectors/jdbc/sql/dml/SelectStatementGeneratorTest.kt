@@ -34,7 +34,7 @@ class SelectStatementGeneratorTest : DescribeSpec({
             query,
             connectionDetails.sqlBuilder()
          )
-         sql.should.equal("""select * from movie as "t0"""")
+         sql.should.equal("""select * from Movie as "t0"""")
          params.should.be.empty
       }
 
@@ -110,8 +110,6 @@ class SelectStatementGeneratorTest : DescribeSpec({
             query.shouldBeQueryWithParams("""select * from person as "t0" where ("t0"."age" >= :age0 and "t0"."age" < :age1)""", listOf(21, 40))
          }
       }
-
-      it("generates a ")
    }
 
 
