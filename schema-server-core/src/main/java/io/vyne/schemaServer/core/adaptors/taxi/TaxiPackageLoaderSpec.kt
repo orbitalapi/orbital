@@ -15,6 +15,7 @@ import mu.KotlinLogging
 import reactor.core.publisher.Mono
 import java.io.File
 import java.nio.file.Path
+import java.time.Duration
 import java.time.Instant
 import kotlin.io.path.toPath
 
@@ -45,6 +46,9 @@ class TaxiSchemaSourcesAdaptor : SchemaSourcesAdaptor {
    fun loadTaxiProject(transport: SchemaPackageTransport): Mono<Pair<Path, TaxiPackageProject>> {
       return transport.listUris()
          .filter { File(it).name == "taxi.conf" }
+         .switchIfEmpty {
+            error("No taxi.conf file found at root of ${transport.description}")
+         }
          .next()
          .map { uri ->
             logger.info { "Reading taxi package file at $uri" }

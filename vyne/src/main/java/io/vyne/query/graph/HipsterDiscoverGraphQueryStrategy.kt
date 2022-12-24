@@ -151,7 +151,7 @@ class HipsterDiscoverGraphQueryStrategy(
       invocationConstraints: InvocationConstraints
    ): QueryStrategyResult {
       val failedAttempts = mutableListOf<DataSource>()
-      val ret = context.rootAndScopedFacts()
+      val returnValue = context.rootAndScopedFacts()
          .asFlow()
 
          //    .filter { it is TypedObject }
@@ -233,11 +233,11 @@ class HipsterDiscoverGraphQueryStrategy(
          }
          .firstOrNull()
 
-      return if (ret != null) {
-         if (targetElement.valueAsQualifiedName() != (ret as TypedInstance).type.qualifiedName) {
-            logger.warn { "This doesn't look right - return value doesn't match the requested type" }
+      return if (returnValue != null) {
+         if (!returnValue.type.isAssignableTo(targetElement.valueAsQualifiedName())) {
+            logger.warn { "Return value isn't assignable to the requested type - expected ${targetElement.valueAsQualifiedName().shortDisplayName} but got ${returnValue.type.qualifiedName.shortDisplayName}" }
          }
-         QueryStrategyResult.from(ret, failedAttempts)
+         QueryStrategyResult.from(returnValue, failedAttempts)
       } else {
          QueryStrategyResult.searchFailed(failedAttempts)
       }

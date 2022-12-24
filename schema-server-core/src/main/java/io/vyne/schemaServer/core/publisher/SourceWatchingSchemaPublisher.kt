@@ -29,7 +29,7 @@ class SourceWatchingSchemaPublisher(
          .sourcesChanged
          .publishOn(Schedulers.boundedElastic())
          .subscribe { message ->
-            logger.info { "Received source change message for packages ${message.packages.joinToString{ it.identifier.id} }" }
+            logger.info { "Received source change message for packages ${message.packages.joinToString{ it.identifier.id} } - submitting updated packages" }
             submitSources(message.packages)
          }
    }

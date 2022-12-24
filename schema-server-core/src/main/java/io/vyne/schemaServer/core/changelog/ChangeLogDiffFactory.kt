@@ -16,7 +16,7 @@ class ChangeLogDiffFactory(
    private val logger = KotlinLogging.logger {}
 
    companion object {
-      val DEFAULT_EXCLUDED_NAMESPACES = listOf("lang.taxi", "io.vyne")
+      val DEFAULT_EXCLUDED_NAMESPACES = listOf("lang.taxi", "io.vyne", "taxi.stdlib")
    }
 
    fun buildDiffs(oldSchema: Schema, schema: Schema): List<ChangeLogDiffEntry> {

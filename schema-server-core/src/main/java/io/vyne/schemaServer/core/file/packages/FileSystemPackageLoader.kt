@@ -39,6 +39,7 @@ class FileSystemPackageLoader(
    private val transportDecorator: SchemaPackageTransport? = null
 ) : SchemaPackageTransport {
 
+   override val description: String = "FileLoader at ${config.path}"
    override val publisherType: PublisherType = PublisherType.FileSystem
    private val logger = KotlinLogging.logger {}
    private val fileEvents: Flux<List<FileSystemChangeEvent>> = fileMonitor.startWatching()

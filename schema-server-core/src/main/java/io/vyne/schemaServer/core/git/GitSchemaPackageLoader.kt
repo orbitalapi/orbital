@@ -39,6 +39,7 @@ class GitSchemaPackageLoader(
 ) : SchemaPackageTransport {
 
    override val publisherType: PublisherType = PublisherType.GitRepo
+   override val description: String = "GitLoader at ${config.description}"
 
    object PollEvent
 

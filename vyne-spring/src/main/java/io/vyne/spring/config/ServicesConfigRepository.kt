@@ -26,6 +26,8 @@ class ServicesConfigRepository(
       if (!Files.exists(configFilePath) && createConfigFileIfMissing) {
          logger.info { "Using a file based service mapping, but no config file found at $path so writing a default file" }
          writeDefaultConfigFile(path)
+      } else {
+         logger.info { "Service mapping initiated at ${configFilePath}" }
       }
    }
 

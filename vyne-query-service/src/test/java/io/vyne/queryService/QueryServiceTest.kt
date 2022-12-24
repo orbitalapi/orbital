@@ -20,6 +20,7 @@ import org.junit.Ignore
 import org.junit.Test
 import org.springframework.http.MediaType
 import kotlin.test.assertEquals
+import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 @FlowPreview
@@ -160,7 +161,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
          ResultMode.RAW,
          MediaType.APPLICATION_JSON_VALUE
       )
-         .body.testIn(this)
+         .body.testIn(this, timeout = Duration.seconds(3))
       val next = turbine.awaitItem() as Map<String, Any?>
       next.should.equal(
          mapOf(

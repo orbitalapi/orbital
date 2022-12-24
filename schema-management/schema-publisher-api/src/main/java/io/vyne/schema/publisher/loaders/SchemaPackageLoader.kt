@@ -69,6 +69,8 @@ interface SchemaPackageTransport {
     */
    fun start(): Flux<SourcePackage>
 
+   val description: String
+
    fun listUris(): Flux<URI>
    fun readUri(uri: URI): Mono<ByteArray>
 
