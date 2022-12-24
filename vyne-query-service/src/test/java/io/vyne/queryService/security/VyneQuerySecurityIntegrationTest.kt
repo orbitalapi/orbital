@@ -2,7 +2,9 @@ package io.vyne.queryService.security
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.winterbe.expekt.should
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.queryService.QueryServiceApp
@@ -79,7 +81,6 @@ class VyneQuerySecurityIntegrationTest {
 
    @Autowired
    private lateinit var objectMapper: ObjectMapper
-   private val typeRef: TypeReference<Map<String, Any?>?> = object : TypeReference<Map<String, Any?>?>() {}
 
    /**
     * see "authorisation/user-role-mappings.conf" in resources.
@@ -139,8 +140,7 @@ class VyneQuerySecurityIntegrationTest {
       val token = setUpLoggedInUser(queryRunnerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = issueVyneQuery(headers)
-      val responseMap = objectMapper.readValue(response.body, typeRef)
-      responseMap!!["message"]!!.toString().should.equal("No strategy found for discovering type io.vyne.Username[]")
+      response.statusCode.is2xxSuccessful.shouldBeTrue()
    }
 
    @Test
@@ -156,8 +156,7 @@ class VyneQuerySecurityIntegrationTest {
       val token = setUpLoggedInUser(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = issueVyneQuery(headers)
-      val responseMap = objectMapper.readValue(response.body, typeRef)
-      responseMap!!["message"]!!.toString().should.equal("No strategy found for discovering type io.vyne.Username[]")
+      response.statusCode.is2xxSuccessful.shouldBeTrue()
    }
 
    /**

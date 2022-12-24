@@ -2,6 +2,7 @@ package io.vyne.queryService.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.winterbe.expekt.should
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.vyne.queryService.VyneQueryIntegrationTest
 import io.vyne.queryService.security.JWSBuilder.Companion.typeRef
 import io.vyne.queryService.security.authorisation.VyneAuthorisationConfig
@@ -93,7 +94,6 @@ class VyneQuerySecurityFirstTimeLoginIntegrationTest {
 
       val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
       logger.info { "$response" }
-      val responseMap = objectMapper.readValue(response.body, typeRef)
-      responseMap!!["message"]!!.toString().should.equal("No strategy found for discovering type io.vyne.Username[]")
+      response.statusCode.is2xxSuccessful.shouldBeTrue()
    }
 }
