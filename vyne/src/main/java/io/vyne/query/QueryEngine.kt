@@ -494,7 +494,12 @@ class StatefulQueryEngine(
                         listOf(value)
                      }
                      emitTypedInstances(valueAsCollection, !isActive, failedAttempts) { instance ->
-                        logger.debug { "Emitting instance of type ${instance.type.qualifiedName.shortDisplayName} produced from strategy ${queryStrategy::class.simpleName} in search for ${target.description}" }
+                        if (instance is TypedNull) {
+                           logger.debug { "Emitting TypedNull of type ${instance.type.qualifiedName.shortDisplayName} produced from strategy ${queryStrategy::class.simpleName} in search for ${target.description}" }
+                        } else {
+                           logger.debug { "Emitting instance of type ${instance.type.qualifiedName.shortDisplayName} produced from strategy ${queryStrategy::class.simpleName} in search for ${target.description}" }
+                        }
+
                         send(instance)
                      }
                   }

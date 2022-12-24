@@ -238,7 +238,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       results.should.have.size(1)
 
       val historyProfileData = historyService.getQueryProfileDataFromClientId(id)
-      historyProfileData.block().remoteCalls.should.have.size(4)
+      historyProfileData.block().remoteCalls.should.have.size(5)
    }
 
    @Test
