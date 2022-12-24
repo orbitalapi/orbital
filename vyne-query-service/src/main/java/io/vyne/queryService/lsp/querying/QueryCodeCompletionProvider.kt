@@ -52,7 +52,9 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
                val children = queryTypeListContext?.children ?: emptyList()
                // If the source type is a collection...
                val sourceTypeIsCollection =
-                  children.isNotEmpty() && children.filterIsInstance<TypeReferenceContext>().any { it.arrayMarker() != null }
+                  children.isNotEmpty() && children.filterIsInstance<FieldTypeDeclarationContext>().any {
+                     it.optionalTypeReference()?.typeReference()?.arrayMarker() != null
+                  }
                if (children.isNotEmpty()) {
                   buildAsCompletion(params, sourceTypeIsCollection)
                } else {
@@ -80,6 +82,10 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
             }
          }
 
+
+         is ParameterConstraintContext -> {
+            suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
+         }
          is FieldDeclarationContext,
          is TypeBodyContext,
          is IdentifierContext,
@@ -133,10 +139,11 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
       importDecorator: ImportCompletionDecorator,
       compilationResult: CompilationResult
    ): List<CompletionItem> {
-      val typeToFilterToken = contextAtCursor.searchUpForRule(TypeReferenceContext::class.java)
+      val typeToFilterToken = contextAtCursor.searchUpForRule<OptionalTypeReferenceContext>()
          ?: // Hmm... this shouldn't happen.
          return emptyList()
-      val typeToFilter = compilationResult.compiler.lookupTypeByName(typeToFilterToken as TypeReferenceContext)
+      val typeReferenceToken = typeToFilterToken.typeReference()
+      val typeToFilter = compilationResult.compiler.lookupTypeByName(typeReferenceToken)
          .toVyneQualifiedName()
       val isExposedByQueryOperations = schema.queryOperations
          .any { it.returnTypeName == typeToFilter }
