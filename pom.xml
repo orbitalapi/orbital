@@ -43,7 +43,7 @@
       <arrow.version>1.1.3</arrow.version>
       <logstash.logback.version>7.2</logstash.logback.version>
       <swagger.springfox.version>3.0.0</swagger.springfox.version>
-      <http4k.version>4.34.4.0</http4k.version>
+      <http4k.version>4.35.0.0</http4k.version>
       <hazelcast-jet.version>4.5</hazelcast-jet.version>
       <hazelcast.version>5.2.1</hazelcast.version>
       <testcontainers.version>1.16.2</testcontainers.version>
