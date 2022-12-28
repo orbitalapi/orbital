@@ -40,7 +40,7 @@
       <dependency>
          <groupId>com.thoughtworks.xstream</groupId>
          <artifactId>xstream</artifactId>
-         <version>1.4.19</version>
+         <version>1.4.20</version>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
@@ -337,7 +337,7 @@
       <dependency>
          <groupId>com.amazonaws</groupId>
          <artifactId>aws-java-sdk-s3</artifactId>
-         <version>1.12.367</version>
+         <version>1.12.373</version>
          <scope>test</scope>
       </dependency>
 
@@ -368,7 +368,7 @@
          <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>bom</artifactId>
-            <version>2.18.41</version>
+            <version>2.19.4</version>
             <type>pom</type>
             <scope>import</scope>
          </dependency>
