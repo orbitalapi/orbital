@@ -1,6 +1,6 @@
 package io.vyne.history
 
-import ch.streamly.chronicle.flux.ChronicleStore
+import io.vyne.history.chronicle.ChronicleStore
 import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.RemoteCallResponse

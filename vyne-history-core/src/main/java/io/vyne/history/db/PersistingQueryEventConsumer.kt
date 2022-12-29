@@ -7,7 +7,18 @@ import io.vyne.history.QueryResultEventMapper
 import io.vyne.history.QuerySummaryPersister
 import io.vyne.models.OperationResult
 import io.vyne.models.json.Jackson
-import io.vyne.query.*
+import io.vyne.query.QueryCompletedEvent
+import io.vyne.query.QueryEvent
+import io.vyne.query.QueryEventConsumer
+import io.vyne.query.QueryFailureEvent
+import io.vyne.query.QueryStartEvent
+import io.vyne.query.RemoteCallOperationResultHandler
+import io.vyne.query.RestfulQueryExceptionEvent
+import io.vyne.query.RestfulQueryResultEvent
+import io.vyne.query.StreamingQueryCancelledEvent
+import io.vyne.query.TaxiQlQueryExceptionEvent
+import io.vyne.query.TaxiQlQueryResultEvent
+import io.vyne.query.VyneQueryStatisticsEvent
 import io.vyne.schemas.Schema
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -68,7 +79,7 @@ class PersistingQueryEventConsumer(
    }
 
    private fun persistEvent(event: QueryStartEvent) {
-      logger.info { "Recording that query ${event.queryId} has started" }
+      logger.info { "Recording that the query ${event.queryId} has started. The query is:\n${event.taxiQuery}" }
 
       createQuerySummaryRecord(event.queryId) {
          QueryResultEventMapper.toQuerySummary(event)
