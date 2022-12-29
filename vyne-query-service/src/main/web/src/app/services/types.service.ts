@@ -60,11 +60,6 @@ export class TypesService {
       });
   }
 
-  // From merge conflict:
-  //  ensureChangesetExists(): Observable<string> {
-  //     return this.openNameDialog(false, name => this.createChangeset(name));
-  //   }
-
   validateSchema(schema: string): Observable<Type[]> {
     return this.http.post<Type[]>(`${this.environment.serverUrl}/api/schemas/taxi/validate`, schema);
   }

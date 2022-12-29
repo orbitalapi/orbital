@@ -1,6 +1,6 @@
 package io.vyne.schemaServer.core.git.providers
 
-import io.vyne.schema.publisher.loaders.BranchOverview
+import io.vyne.schema.publisher.loaders.ChangesetOverview
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
 
 interface GitHostedService {
@@ -9,7 +9,7 @@ interface GitHostedService {
       branchName: String,
       description: String,
       author: String
-   ): Pair<BranchOverview, String>
+   ): Pair<ChangesetOverview, String>
 }
 
 enum class GitHostingProvider {

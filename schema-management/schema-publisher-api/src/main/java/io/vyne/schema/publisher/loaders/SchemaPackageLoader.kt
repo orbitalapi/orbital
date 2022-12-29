@@ -16,11 +16,11 @@ data class CreateChangesetResponse(
 )
 
 data class AddChangesToChangesetResponse(
-   val branchOverview: BranchOverview?
+   val changesetOverview: ChangesetOverview?
 )
 
 data class FinalizeChangesetResponse(
-   val branchOverview: BranchOverview,
+   val changesetOverview: ChangesetOverview,
    val changeset: Changeset,
    val link: String? = null,
 )
@@ -33,7 +33,7 @@ data class AvailableChangesetsResponse(
    val changesets: List<Changeset>
 )
 
-data class BranchOverview(
+data class ChangesetOverview(
    val additions: Int,
    val changedFiles: Int,
    val deletions: Int,
@@ -46,12 +46,13 @@ data class BranchOverview(
 data class Changeset(
    val name: String,
    val isActive: Boolean,
+   val isDefault: Boolean,
    val packageIdentifier: PackageIdentifier
 )
 
 data class SetActiveChangesetResponse(
    val changeset: Changeset,
-   val branchOverview: BranchOverview?
+   val changesetOverview: ChangesetOverview?
 )
 
 /**

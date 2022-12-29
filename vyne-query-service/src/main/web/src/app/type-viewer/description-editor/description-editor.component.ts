@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { Documented } from '../../services/schema';
 import { BehaviorSubject } from 'rxjs';
 import { FormControl } from '@angular/forms';
@@ -26,33 +26,22 @@ import { FormControl } from '@angular/forms';
         <button mat-button (click)="cancelChanges()">Cancel</button>
         <button mat-raised-button color="primary" (click)="saveChanges()">Save changes</button>
       </div>
-      <markdown [data]="_documentationSource.typeDoc" *ngIf="!isEditModeOn"></markdown>
+      <markdown [data]="documentationSource.typeDoc" *ngIf="!isEditModeOn"></markdown>
     </div>
 
   `,
   styleUrls: ['./description-editor.component.scss'],
 })
-export class DescriptionEditorComponent implements OnInit {
+export class DescriptionEditorComponent implements OnInit, OnChanges {
   @Input()
   showControlBar = true;
 
   @Input()
   editable: boolean;
 
-  private _documentationSource: Documented;
 
   @Input()
-  get documentationSource(): Documented {
-    return this._documentationSource;
-  }
-
-  set documentationSource(value: Documented) {
-    if (this._documentationSource === value) {
-      return;
-    }
-    this._documentationSource = value;
-    this.descriptionControl.reset(this._documentationSource.typeDoc);
-  }
+  documentationSource: Documented;
 
   @Input()
   placeholder: string;
@@ -67,25 +56,31 @@ export class DescriptionEditorComponent implements OnInit {
 
   descriptionControl!: FormControl;
 
+  changes$ = new BehaviorSubject<string>('');
+
+  get hasChanges(): boolean {
+    return this.editable && this.descriptionControl.value !== this.documentationSource.typeDoc;
+  }
+
   ngOnInit(): void {
+    this.descriptionControl = new FormControl(this.documentationSource.typeDoc);
+
     this.changes$.subscribe(value => {
       this.valueChanged.emit(value);
     });
-    this.descriptionControl = new FormControl(this._documentationSource?.typeDoc)
   }
 
-
-  get hasChanges(): boolean {
-    return this.editable && this.descriptionControl.value !== this._documentationSource.typeDoc;
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes.documentationSource && !changes.documentationSource.firstChange && changes.documentationSource.previousValue !== changes.documentationSource.currentValue) {
+      this.descriptionControl.reset(this.documentationSource.typeDoc);
+    }
   }
 
   cancelChanges(): void {
-    this.changes$.next(this._documentationSource.typeDoc);
+    this.changes$.next(this.documentationSource.typeDoc);
     this.isEditModeOn = false;
-    this.descriptionControl.reset(this._documentationSource.typeDoc);
+    this.descriptionControl.reset(this.documentationSource.typeDoc);
   }
-
-  changes$ = new BehaviorSubject<string>('');
 
   saveChanges() {
     this.save.emit(this.changes$.value);

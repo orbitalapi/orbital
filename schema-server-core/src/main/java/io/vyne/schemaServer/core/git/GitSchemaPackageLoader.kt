@@ -49,6 +49,7 @@ class GitSchemaPackageLoader(
    private val filePackageLoader: FileSystemPackageLoader
 
    private var currentBranch = config.branch
+   private val defaultBranchName = config.branch
 
    init {
       val safePath = if (config.path.startsWith(FileSystems.getDefault().separator)) {
@@ -121,15 +122,24 @@ class GitSchemaPackageLoader(
          val createdBranchName = GitOperations(workingDir.toFile(), config).createBranch(name)
          currentBranch = createdBranchName
       }
-         .map { CreateChangesetResponse(Changeset(name, true, packageIdentifier)) }
+         .map {
+            CreateChangesetResponse(
+               Changeset(
+                  name,
+                  isActive = true,
+                  isDefault = false,
+                  packageIdentifier = packageIdentifier
+               )
+            )
+         }
    }
 
    override fun addChangesToChangeset(name: String, edits: List<VersionedSource>): Mono<AddChangesToChangesetResponse> {
       val writer = FileSystemPackageWriter()
       return writer.writeSources(filePackageLoader, edits).map {
          GitOperations(workingDir.toFile(), config).commitAndPush(name)
-         val branchOverview = GitOperations(workingDir.toFile(), config).getBranchOverview(name)
-         AddChangesToChangesetResponse(branchOverview)
+         val changesetOverview = GitOperations(workingDir.toFile(), config).getChangesetOverview(name)
+         AddChangesToChangesetResponse(changesetOverview)
       }
    }
 
@@ -137,10 +147,15 @@ class GitSchemaPackageLoader(
       // TODO Access the user information from the authentication
       // TODO Allow specifying a description
       return mono { GitOperations(workingDir.toFile(), config).raisePr(name, "", "Martin Pitt") }
-         .map { (pullRequestOverview, link) ->
+         .map { (changesetOverview, link) ->
             FinalizeChangesetResponse(
-               pullRequestOverview,
-               Changeset(name, true, packageIdentifier),
+               changesetOverview,
+               Changeset(
+                  name,
+                  isActive = true,
+                  isDefault = false,
+                  packageIdentifier = packageIdentifier
+               ),
                link
             )
          }
@@ -155,8 +170,9 @@ class GitSchemaPackageLoader(
             UpdateChangesetResponse(
                Changeset(
                   newName,
-                  true,
-                  packageIdentifier
+                  isActive = true,
+                  isDefault = false,
+                  packageIdentifier = packageIdentifier
                )
             )
          }
@@ -169,21 +185,32 @@ class GitSchemaPackageLoader(
                .map { branchName ->
                   val prefix = config.pullRequestConfig?.branchPrefix ?: ""
                   val changesetBranch =
-                     if (currentBranch == "main") currentBranch else currentBranch.substringAfter(prefix)
-                  Changeset(branchName, changesetBranch == branchName, packageIdentifier = packageIdentifier)
+                     if (currentBranch == defaultBranchName) currentBranch else currentBranch.substringAfter(prefix)
+                  Changeset(
+                     branchName,
+                     changesetBranch == branchName,
+                     changesetBranch == defaultBranchName,
+                     packageIdentifier = packageIdentifier
+                  )
                })
          }
    }
 
    override fun setActiveChangeset(branchName: String): Mono<SetActiveChangesetResponse> {
       return mono {
-         val resolvedBranchName =
-            if (branchName == config.branch) config.branch else config.pullRequestConfig?.branchPrefix + branchName
+         val resolvedBranchName = getResolvedBranchName(branchName)
          currentBranch = resolvedBranchName
          syncNow()
-         val branchOverview = GitOperations(workingDir.toFile(), config).getBranchOverview(resolvedBranchName)
-         SetActiveChangesetResponse(Changeset(branchName, true, packageIdentifier), branchOverview)
+         val changesetOverview = GitOperations(workingDir.toFile(), config).getChangesetOverview(resolvedBranchName)
+         SetActiveChangesetResponse(
+            Changeset(branchName, true, branchName == defaultBranchName, packageIdentifier),
+            changesetOverview
+         )
       }
+   }
+
+   private fun getResolvedBranchName(branchName: String): String {
+      return if (branchName == config.branch) config.branch else config.pullRequestConfig?.branchPrefix + branchName
    }
 
    override val packageIdentifier: PackageIdentifier

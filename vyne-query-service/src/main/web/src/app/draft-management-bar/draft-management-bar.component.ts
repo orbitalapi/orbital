@@ -23,12 +23,12 @@ export class DraftManagementBarComponent implements OnInit {
     });
   }
 
-  backToMain() {
-    this.changesetService.selectDefaultChangeset();
+  selectDefaultChangeset() {
+    this.changesetService.selectDefaultChangeset().subscribe();
   }
 
   getCreatedAtString() {
-    const lastUpdatedString = this.changesetService.activeBranchOverview?.lastUpdated;
+    const lastUpdatedString = this.changesetService.activeChangesetOverview?.lastUpdated;
     if (!lastUpdatedString) {
       return '';
     }
