@@ -20,8 +20,10 @@ import io.vyne.utils.withoutWhitespace
 import net.sf.jsqlparser.util.validation.Validation
 import net.sf.jsqlparser.util.validation.feature.DatabaseType
 import org.junit.Assert
+import org.junit.Ignore
 import org.junit.Test
 
+@Ignore("Views not currently supported")
 class SchemaBasedViewGeneratorTest {
     val repository: CaskConfigRepository = mock { }
 

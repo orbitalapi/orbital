@@ -19,9 +19,11 @@ import io.vyne.toParsedPackages
 import lang.taxi.types.ObjectType
 import lang.taxi.types.QualifiedName
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.jupiter.api.Assertions
 
+@Ignore("Views not currently supported")
 class CaskViewBuilderFactoryTest {
 
    lateinit var builderBuilderFactory: CaskViewBuilderFactory
