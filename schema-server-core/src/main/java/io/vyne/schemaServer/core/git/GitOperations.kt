@@ -1,6 +1,6 @@
 package io.vyne.schemaServer.core.git
 
-import io.vyne.schema.publisher.loaders.BranchOverview
+import io.vyne.schema.publisher.loaders.ChangesetOverview
 import io.vyne.schemaServer.core.git.providers.GitHostingProviderRegistry
 import mu.KotlinLogging
 import org.eclipse.jgit.api.*
@@ -155,17 +155,17 @@ class GitOperations(
       pushToRemote()
    }
 
-   fun raisePr(branchName: String, description: String, author: String): Pair<BranchOverview, String> {
+   fun raisePr(branchName: String, description: String, author: String): Pair<ChangesetOverview, String> {
       return hostingProviderRegistry.getService(config)
          .raisePr(config, branchName, description, author)
    }
 
-   fun getBranchOverview(branchName: String): BranchOverview {
+   fun getChangesetOverview(branchName: String): ChangesetOverview {
       val oldTreeIterator = prepareTreeParser(branchName)
       val newTreeParser = prepareTreeParser(config.branch)
       if (oldTreeIterator == null || newTreeParser == null) {
          logger.error { "Failed to obtain the iterator for $branchName or ${config.branch}. Defaulting to an empty branch overview. " }
-         return BranchOverview(0, 0, 0, "", "", Date())
+         return ChangesetOverview(0, 0, 0, "", "", Date())
       }
       var additions = 0
       var changedFiles = 0
@@ -184,11 +184,11 @@ class GitOperations(
       val author = ""
       val description = ""
       val lastUpdated = git.log().setMaxCount(1).call().first().authorIdent.`when`
-      return BranchOverview(additions, changedFiles, deletions, author, description, lastUpdated)
+      return ChangesetOverview(additions, changedFiles, deletions, author, description, lastUpdated)
    }
 
    private fun prepareTreeParser(ref: String): AbstractTreeIterator? {
-      val branchName = if (ref == "main") ref else "schema-updates/$ref"
+      val branchName = if (ref == config.branch) ref else "${config.pullRequestConfig!!.branchPrefix}/$ref"
       val head = git.repository.findRef("refs/heads/$branchName") ?: return null
       val walk = RevWalk(git.repository)
       val commit = walk.parseCommit(head.objectId)
@@ -218,7 +218,7 @@ class GitOperations(
       return try {
          val prefixedBranchName = "$prefix$branchName"
          logger.info { "Creating and switching to branch $prefixedBranchName" }
-         val result = git.checkout()
+         git.checkout()
             .setCreateBranch(true)
             .setName(prefixedBranchName)
             .setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK)

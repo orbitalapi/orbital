@@ -1,4 +1,4 @@
-<ng-container *ngIf="changesetService.isCustomChangesetSelected() | async">
+<ng-container *ngIf="changesetService.isCustomChangesetSelected()">
   <mat-toolbar class="bottom" color="primary">
     <div class="left">
       <button
@@ -16,9 +16,9 @@
       <div class="description subtle">
         Created <i>{{getCreatedAtString()}}</i> by <a>you</a>
         <span
-          *ngIf="changesetService.activeBranchOverview !== null"> • {{changesetService.activeBranchOverview.additions}}
-          additions, {{changesetService.activeBranchOverview.changedFiles}}
-          changes, {{changesetService.activeBranchOverview.deletions}} deletions</span>
+          *ngIf="changesetService.activeChangesetOverview !== null"> • {{changesetService.activeChangesetOverview.additions}}
+          additions, {{changesetService.activeChangesetOverview.changedFiles}}
+          changes, {{changesetService.activeChangesetOverview.deletions}} deletions</span>
       </div>
     </div>
     <div class="right">
@@ -29,7 +29,7 @@
         tuiButton>Propose this draft
       </button>
       <button
-        (click)="backToMain()"
+        (click)="selectDefaultChangeset()"
         [matTooltip]="'Move back to the published version'"
         appearance="flat"
         icon="tuiIconClose"

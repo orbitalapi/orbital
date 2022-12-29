@@ -34,7 +34,12 @@ class SchemaEditorServiceTest {
       editor.updateAnnotationsOnType(
          "com.foo.Bar", UpdateTypeAnnotationRequest(
             listOf(Metadata("Documented".fqn()), Metadata("com.foo.Sensitive".fqn())),
-            Changeset("",true, PackageIdentifier.fromId("taxi/sample/0.1.0"))
+            Changeset(
+               "",
+               isActive = true,
+               isDefault = true,
+               packageIdentifier = PackageIdentifier.fromId("taxi/sample/0.1.0")
+            )
          )
       ).block(Duration.ofMillis(1000))
 
@@ -63,7 +68,12 @@ type extension Bar {}""".withoutWhitespace()
       editor.updateAnnotationsOnType(
          "com.foo.Bar", UpdateTypeAnnotationRequest(
             listOf(Metadata("Documented".fqn()), Metadata("com.foo.Sensitive".fqn())),
-            Changeset("",true, PackageIdentifier.fromId("taxi/sample/0.1.0"))
+            Changeset(
+               "",
+               isActive = true,
+               isDefault = true,
+               packageIdentifier = PackageIdentifier.fromId("taxi/sample/0.1.0")
+            )
          )
       ).block()
 

@@ -1,6 +1,6 @@
 package io.vyne.schemaServer.core.git.providers
 
-import io.vyne.schema.publisher.loaders.BranchOverview
+import io.vyne.schema.publisher.loaders.ChangesetOverview
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
 import org.kohsuke.github.GHPullRequest
 import org.kohsuke.github.GHRepository
@@ -28,7 +28,7 @@ class GithubProvider : GitHostedService {
       branchName: String,
       description: String,
       author: String
-   ): Pair<BranchOverview, String> {
+   ): Pair<ChangesetOverview, String> {
       if (config.pullRequestConfig == null) {
          error("Don't know how to finalize changes for $branchName as there's no update flow config defined.")
       }
@@ -40,13 +40,13 @@ class GithubProvider : GitHostedService {
          config.branch,
          """$description
 
-         This PR was generated automatically by $author using Vyne"""
+         This PR was generated automatically by $author using Vyne""".trimIndent()
       )
       return buildPullRequestOverview(response) to response.htmlUrl.toString()
    }
 
-   private fun buildPullRequestOverview(pullRequest: GHPullRequest): BranchOverview {
-      return BranchOverview(
+   private fun buildPullRequestOverview(pullRequest: GHPullRequest): ChangesetOverview {
+      return ChangesetOverview(
          additions = pullRequest.additions,
          changedFiles = pullRequest.changedFiles,
          deletions = pullRequest.deletions,
