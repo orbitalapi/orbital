@@ -24,10 +24,12 @@ import { TaxiPlaygroundContainerAppComponent } from 'src/taxi-playground-app/tax
     BrowserModule,
     BrowserAnimationsModule,
     CommonModule,
-    TaxiPlaygroundModule,
     AngularSplitModule,
+
+    TaxiPlaygroundModule,
     CodeEditorModule,
     SchemaDiagramModule,
+
     HttpClientModule,
     TuiRootModule,
     TuiDialogModule,

@@ -1,6 +1,5 @@
 import {Component, Input} from '@angular/core';
-import {OperationName, splitOperationQualifiedName} from '../service-view/service-view.component';
-import {QualifiedName} from '../services/schema';
+import {QualifiedName, OperationName, splitOperationQualifiedName} from '../services/schema';
 
 @Component({
   selector: 'app-operation-badge',

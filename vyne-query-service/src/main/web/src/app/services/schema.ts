@@ -1,7 +1,6 @@
 import { PrimitiveTypeNames } from './taxi';
 import { isNullOrUndefined, isString } from 'util';
 import { find } from 'rxjs/operators';
-import { splitOperationQualifiedName } from 'src/app/service-view/service-view.component';
 
 export function fqn(input: string): QualifiedName {
   return QualifiedName.from(input);
@@ -836,4 +835,20 @@ export function getDisplayName(name: QualifiedName, showFullTypeNames: boolean):
     return null;
   }
   return (showFullTypeNames) ? name.longDisplayName : name.shortDisplayName;
+}
+
+export interface OperationName {
+  serviceName: string;
+  serviceDisplayName: string;
+  operationName: string;
+}
+
+export function splitOperationQualifiedName(name: string): OperationName {
+  const nameParts = name.split('@@');
+
+  return {
+    serviceName: nameParts[0],
+    serviceDisplayName: fqn(nameParts[0]).shortDisplayName,
+    operationName: nameParts[1]
+  };
 }

@@ -3,10 +3,10 @@ import { OperationQueryResult, TypesService } from '../services/types.service';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
 import { Schema, Type } from '../services/schema';
-import { buildInheritable, Inheritable } from '../inheritence-graph/inheritance-graph.component';
 import { combineLatest, Observable } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ChangesetService } from 'src/app/services/changeset.service';
+import { buildInheritable , Inheritable} from 'src/app/inheritence-graph/build.inheritable';
 
 @Component({
   selector: 'app-type-viewer-container',

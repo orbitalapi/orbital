@@ -5,7 +5,7 @@ import {Observable} from 'rxjs';
 import {Injectable} from '@angular/core';
 import {VyneServicesModule} from '../services/vyne-services.module';
 import {SchemaSubmissionResult} from '../services/types.service';
-import {NewTypeSpec} from '../type-editor/type-editor.component';
+import { NewTypeSpec } from 'src/app/type-editor/new-type-spec';
 
 
 export interface JdbcColumn {

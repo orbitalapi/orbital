@@ -1,12 +1,12 @@
-import {Component, OnInit} from '@angular/core';
-import {TypesService} from '../services/types.service';
-import {ActivatedRoute, ParamMap} from '@angular/router';
-import {flatMap, map} from 'rxjs/operators';
-import {findType, InstanceLike, Operation, Schema, Service, Type, TypedInstance} from '../services/schema';
-import {Fact, QueryService} from '../services/query.service';
-import {toOperationSummary} from '../service-view/service-view.component';
-import {HttpErrorResponse} from '@angular/common/http';
-import { Observable, Subject, ReplaySubject } from 'rxjs';
+import { Component, OnInit } from '@angular/core';
+import { TypesService } from '../services/types.service';
+import { ActivatedRoute, ParamMap } from '@angular/router';
+import { flatMap, map } from 'rxjs/operators';
+import { findType, InstanceLike, Operation, Schema, Type } from '../services/schema';
+import { Fact, QueryService } from '../services/query.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ReplaySubject, Subject } from 'rxjs';
+import { toOperationSummary } from 'src/app/service-view/operation-summary';
 
 @Component({
   selector: 'app-operation-view-container',

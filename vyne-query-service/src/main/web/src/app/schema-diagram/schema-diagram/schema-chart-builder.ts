@@ -6,12 +6,11 @@ import {
   SchemaMember,
   SchemaMemberType,
   Service,
-  ServiceMember,
+  ServiceMember, splitOperationQualifiedName,
   Type
 } from '../../services/schema';
 import { AppendLinksHandler, NodeType } from './schema-flow.react';
 import { Edge, Node, Position, XYPosition } from 'reactflow';
-import { splitOperationQualifiedName } from '../../service-view/service-view.component';
 import { CSSProperties } from 'react';
 
 export function getNodeKind(member: SchemaMember): NodeType {

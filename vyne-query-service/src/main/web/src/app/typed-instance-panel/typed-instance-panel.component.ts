@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {QualifiedName, Type, InstanceLike, DataSource} from '../services/schema';
-import {Inheritable} from '../inheritence-graph/inheritance-graph.component';
 import {QueryResultMemberCoordinates} from '../query-panel/instance-selected-event';
+import { Inheritable } from 'src/app/inheritence-graph/build.inheritable';
 
 @Component({
   selector: 'app-typed-instance-panel',

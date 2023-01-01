@@ -1,10 +1,10 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Schema} from '../services/schema';
 import {SchemaSubmissionResult, TypesService} from '../services/types.service';
-import {NewTypeSpec} from './type-editor.component';
 import {generateTaxi} from './taxi-generator';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {HttpErrorResponse} from '@angular/common/http';
+import { NewTypeSpec } from 'src/app/type-editor/new-type-spec';
 
 @Component({
   selector: 'app-type-editor-container',

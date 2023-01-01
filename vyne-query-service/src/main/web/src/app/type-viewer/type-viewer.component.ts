@@ -2,11 +2,11 @@ import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angu
 import { QualifiedName, Schema, SchemaMember, Type, VersionedSource } from '../services/schema';
 import { Contents } from './toc-host.directive';
 import { environment } from '../../environments/environment';
-import { Inheritable } from '../inheritence-graph/inheritance-graph.component';
 import { OperationQueryResult } from '../services/types.service';
 import { Router } from '@angular/router';
 import { isNullOrUndefined } from 'util';
 import { Observable } from 'rxjs';
+import { Inheritable } from 'src/app/inheritence-graph/build.inheritable';
 
 /**
  * Whether changes should be saved immediately, or
