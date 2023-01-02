@@ -484,9 +484,9 @@ terraform-deploy-dev-voyager:
       TF_STATE_NAME: taxi_playground_$TF_STATE_NAME_DEV
       TF_VAR_environment: $TF_STATE_NAME_DEV
       TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
-   rules:
-      -  when: manual
-      -  if: $CI_COMMIT_BRANCH == "develop"
+   only:
+      - develop
+   when: manual
 
 terraform-deploy-prod-voyager:
    extends: .terraform-deploy
@@ -498,9 +498,9 @@ terraform-deploy-prod-voyager:
       TF_STATE_NAME: taxi_playground_$TF_STATE_NAME_PROD
       TF_VAR_environment: $TF_STATE_NAME_PROD
       TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
-   rules:
-      -  when: manual
-      -  if: $CI_COMMIT_BRANCH == "develop"
+   only:
+      - develop
+   when: manual
 
 
 publish-snyk-to-gitlab-container-registry:
