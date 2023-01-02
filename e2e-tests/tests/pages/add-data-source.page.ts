@@ -6,7 +6,7 @@ export class AddDataSourcePage {
    }
 
    async goto(): Promise<void> {
-      await this.page.goto('/schema-explorer/import');
+      await this.page.goto('/schema-importer');
    }
 
    async selectTab(text: string): Promise<void> {
