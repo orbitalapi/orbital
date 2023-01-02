@@ -9,7 +9,7 @@ variable "gitlab_docker_registry_password" {
 }
 
 variable "taxi_playground_docker_image_id" {
-  type      = string
+  type = string
 }
 
 module "platform" {

@@ -35,8 +35,8 @@ resource "aws_lb_listener" "redirect_http_to_https" {
 }
 
 resource "aws_wafv2_web_acl" "external" {
-  name        = "ExternalACL_${var.environment}"
-  scope       = "REGIONAL"
+  name  = "ExternalACL_${var.environment}"
+  scope = "REGIONAL"
 
   default_action {
     allow {}
@@ -95,7 +95,7 @@ resource "aws_wafv2_web_acl" "external" {
 
 resource "aws_wafv2_web_acl_association" "acl-association" {
   resource_arn = aws_alb.main.arn
-  web_acl_arn = aws_wafv2_web_acl.external.arn
+  web_acl_arn  = aws_wafv2_web_acl.external.arn
 }
 
 resource "aws_cloudwatch_log_group" "wafv2-log-group" {
