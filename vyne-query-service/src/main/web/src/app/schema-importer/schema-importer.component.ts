@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { SchemaSubmissionResult, TypesService } from '../services/types.service';
-import { Message, Schema } from '../services/schema';
+import { Message, PartialSchema, Schema } from '../services/schema';
 import { ConnectorSummary, DbConnectionService, MappedTable } from '../db-connection-editor/db-importer.service';
 import { ConvertSchemaEvent } from './schema-importer.models';
 import { SchemaImporterService } from './schema-importer.service';
@@ -39,13 +39,13 @@ import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
         ></app-schema-explorer-table>
       </div>
     </div>`,
-  host: { 'class': appInstanceType.appType }
+  host: { 'class': appInstanceType.appType },
 })
 export class SchemaImporterComponent {
   wizardStep: 'importSchema' | 'configureTypes' = 'importSchema';
 
   @Input()
-  title = 'Add a new schema'
+  title = 'Add a new schema';
 
   connections: ConnectorSummary[];
   mappedTables$: Observable<MappedTable[]>;
@@ -84,23 +84,23 @@ export class SchemaImporterComponent {
     });
   }
 
-  saveSchema(schema: SchemaSubmissionResult) {
+  saveSchema(schema: PartialSchema) {
     this.working = true;
     this.schemaService.submitEditedSchema(schema)
-      .subscribe(result => {
+      .subscribe(() => {
           this.working = false;
           this.schemaSaveResultMessage = {
             message: 'The schema was updated successfully',
-            level: 'SUCCESS'
-          }
+            level: 'SUCCESS',
+          };
         },
         error => {
           console.error(JSON.stringify(error));
           this.schemaSaveResultMessage = {
             message: error.error?.message || 'An error occurred',
-            level: 'FAILURE'
+            level: 'FAILURE',
           };
-          this.working = false
+          this.working = false;
         },
       );
   }

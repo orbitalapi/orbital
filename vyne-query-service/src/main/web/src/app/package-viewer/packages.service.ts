@@ -2,10 +2,11 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { ParsedSource, PartialSchema, Schema } from '../services/schema';
+import { ParsedSource, PartialSchema } from '../services/schema';
+import { map, shareReplay } from 'rxjs/operators';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class PackagesService {
 
@@ -13,15 +14,35 @@ export class PackagesService {
   }
 
   loadPackage(packageUri: string): Observable<ParsedPackage> {
-    return this.httpClient.get<ParsedPackage>(`${environment.serverUrl}/api/packages/${packageUri}`)
+    return this.httpClient.get<ParsedPackage>(`${environment.serverUrl}/api/packages/${packageUri}`);
   }
 
   listPackages(): Observable<SourcePackageDescription[]> {
-    return this.httpClient.get<SourcePackageDescription[]>(`${environment.serverUrl}/api/packages`)
+    return this.httpClient.get<SourcePackageDescription[]>(`${environment.serverUrl}/api/packages`);
   }
 
   getPartialSchemaForPackage(packageUri: string): Observable<PartialSchema> {
-    return this.httpClient.get<PartialSchema>(`${environment.serverUrl}/api/packages/${packageUri}/schema`)
+    return this.httpClient.get<PartialSchema>(`${environment.serverUrl}/api/packages/${packageUri}/schema`);
+  }
+
+  getEditablePackage(): Observable<SourcePackageDescription> {
+    return this.listPackages()
+      .pipe(
+        map((packages: SourcePackageDescription[]) => this.resolveEditablePackage(packages)),
+        shareReplay(1),
+      );
+  }
+
+  private resolveEditablePackage(packages: SourcePackageDescription[]): SourcePackageDescription {
+    const editable = packages.filter(sourcePackage => sourcePackage.editable);
+    if (editable.length === 0) {
+      console.error('There are no editable packages configured - editing will fail');
+      return null;
+    } else if (editable.length > 1) {
+      console.error('There are multiple editable packages configured - editing will fail');
+      return null;
+    }
+    return editable[0];
   }
 }
 
@@ -48,7 +69,7 @@ export interface SourcePackageDescription {
 
   uriPath: string;
   editable: boolean;
-  publisherType: PublisherType
+  publisherType: PublisherType;
 }
 
 export interface PublisherHealth {

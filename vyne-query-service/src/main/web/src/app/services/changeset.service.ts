@@ -4,7 +4,7 @@ import { TuiDialogService } from '@taiga-ui/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, of } from 'rxjs';
 import { PackageIdentifier, PackagesService, SourcePackageDescription } from 'src/app/package-viewer/packages.service';
-import { filter, map, mapTo, shareReplay, switchMap, take, tap } from 'rxjs/operators';
+import { filter, map, mapTo, switchMap, take, tap } from 'rxjs/operators';
 import { Observable } from 'rxjs/internal/Observable';
 import { QualifiedName, VersionedSource } from 'src/app/services/schema';
 import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
@@ -71,28 +71,11 @@ export interface FinalizeChangesetResponse {
   changeset: Changeset;
 }
 
-function resolveEditablePackage(packages: SourcePackageDescription[]): any {
-  const editable = packages.filter(sourcePackage => sourcePackage.editable);
-  if (editable.length === 0) {
-    console.error('There are no editable packages configured - editing will fail');
-    return null;
-  } else if (editable.length > 1) {
-    console.error('There are multiple editable packages configured - editing will fail');
-    return null;
-  }
-  return editable[0];
-}
-
-
 @Injectable({
   providedIn: 'root',
 })
 export class ChangesetService {
-  editablePackage$: Observable<SourcePackageDescription | null> = this.packageService.listPackages()
-    .pipe(
-      map((packages: SourcePackageDescription[]) => resolveEditablePackage(packages)),
-      shareReplay(1),
-    );
+  editablePackage$: Observable<SourcePackageDescription | null> = this.packagesService.getEditablePackage();
   activeChangeset$ = new BehaviorSubject<Changeset | null>(null);
   availableChangesets$ = new BehaviorSubject<Changeset[]>([]);
 
@@ -102,7 +85,7 @@ export class ChangesetService {
     @Inject(ENVIRONMENT) private environment: Environment,
     @Inject(TuiDialogService) private readonly dialogService: TuiDialogService,
     @Inject(Injector) private readonly injector: Injector,
-    private packageService: PackagesService,
+    private packagesService: PackagesService,
     private http: HttpClient,
   ) {
     this.updateChangesets();

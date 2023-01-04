@@ -145,8 +145,8 @@ class LocalSchemaEditingService(
    @PostMapping("/api/schemas/edit", consumes = [MediaType.APPLICATION_JSON_VALUE])
    fun submitEditedSchema(
       @RequestBody editedSchema: EditedSchema,
+      @RequestParam("packageIdentifier") rawPackageIdentifier: String,
       @RequestParam("validate", required = false) validateOnly: Boolean = false,
-      @PathVariable("packageIdentifier") rawPackageIdentifier: String
    ): Mono<SchemaSubmissionResult> {
       logger.info { "Received request to edit schema - converting to taxi" }
       val generator = VyneSchemaToTaxiGenerator()
