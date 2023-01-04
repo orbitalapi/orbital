@@ -2,25 +2,24 @@ package io.vyne.queryService.schemas.editor
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.core.JsonToken
-import com.fasterxml.jackson.databind.DeserializationContext
-import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.VersionedSource
 import io.vyne.schemas.*
 import lang.taxi.Operator
 import lang.taxi.expressions.Expression
-import lang.taxi.services.FilterCapability
 import lang.taxi.services.QueryOperationCapability
-import lang.taxi.services.SimpleQueryCapability
 import lang.taxi.types.FormatsAndZoneOffset
+
+/**
+ * @JsonDeserialize(`as` = Void::class) makes Jackson ignore the default deserialization of each interface extended here.
+ */
 
 /**
  * Not a real schema!
  * Used to submit edits to types and services from the UI, which we then
  * convert into Taxi, and back into a real schema.
  */
+@JsonDeserialize(`as` = Void::class)
 class EditedSchema(
    @JsonDeserialize(contentAs = EditedType::class)
    override val types: Set<PartialType> = emptySet(),
@@ -43,6 +42,7 @@ class EditedSchema(
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonDeserialize(`as` = Void::class)
 data class EditedType(
    override val name: QualifiedName,
    override val attributes: Map<AttributeName, Field>,
@@ -70,6 +70,7 @@ data class EditedType(
 ) : PartialType
 
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonDeserialize(`as` = Void::class)
 data class EditedService(
    override val name: QualifiedName,
    override val operations: List<EditedOperation>,
@@ -81,6 +82,7 @@ data class EditedService(
 ) : PartialService
 
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonDeserialize(`as` = Void::class)
 data class EditedOperation(
    override val qualifiedName: QualifiedName,
    override val parameters: List<EditedOperationParameter>,
@@ -90,6 +92,7 @@ data class EditedOperation(
 ) : PartialOperation
 
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonDeserialize(`as` = Void::class)
 data class EditedOperationParameter(
    override val name: String?,
    override val typeName: QualifiedName,
@@ -97,6 +100,7 @@ data class EditedOperationParameter(
 ) : PartialParameter
 
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonDeserialize(`as` = Void::class)
 data class EditedQueryOperation(
    override val qualifiedName: QualifiedName,
    override val parameters: List<EditedOperationParameter>,

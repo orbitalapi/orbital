@@ -2,12 +2,6 @@ package io.vyne.schemaServer.editor
 
 import io.vyne.PackageIdentifier
 import io.vyne.VersionedSource
-import io.vyne.schema.publisher.loaders.AddChangesToChangesetResponse
-import io.vyne.schema.publisher.loaders.AvailableChangesetsResponse
-import io.vyne.schema.publisher.loaders.CreateChangesetResponse
-import io.vyne.schema.publisher.loaders.FinalizeChangesetResponse
-import io.vyne.schema.publisher.loaders.SetActiveChangesetResponse
-import io.vyne.schema.publisher.loaders.UpdateChangesetResponse
 import io.vyne.schema.publisher.loaders.*
 import io.vyne.schemas.Metadata
 import lang.taxi.CompilationMessage
@@ -88,8 +82,8 @@ data class EditableRepositoryConfig(
    val editingEnabled: Boolean = editablePackages.isNotEmpty()
 
    // Short term workaround...
-   // FOr now, only support editing of a single package.
-   // However, we'll need to allow mutliple editable pacakages,
+   // For now, only support editing of a single package.
+   // However, we'll need to allow multiple editable packages,
    // and edit requests will have to tell us which package the
    // edit should go to.
 
