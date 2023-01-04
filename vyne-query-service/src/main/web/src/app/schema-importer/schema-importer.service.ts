@@ -24,7 +24,7 @@ export class SchemaImporterService {
     return this.httpClient.post(`${environment.serverUrl}/api/schemas/edit`, {
       types: schema.types,
       services: schema.services,
-      packageIdentifier: 'io.vyne', // TODO Obtain from somewhere
+      packageIdentifier: 'io.vyne/films/1.0.0', // TODO Obtain from somewhere
     });
   }
 }
