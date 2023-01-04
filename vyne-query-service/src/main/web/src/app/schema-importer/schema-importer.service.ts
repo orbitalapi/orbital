@@ -1,10 +1,10 @@
-import {Injectable} from '@angular/core';
-import {VyneServicesModule} from '../services/vyne-services.module';
-import {HttpClient} from '@angular/common/http';
-import {ConvertSchemaEvent} from './schema-importer.models';
-import {environment} from '../../environments/environment';
-import {Observable} from 'rxjs/internal/Observable';
-import {SchemaSubmissionResult} from '../services/types.service';
+import { Injectable } from '@angular/core';
+import { VyneServicesModule } from '../services/vyne-services.module';
+import { HttpClient } from '@angular/common/http';
+import { ConvertSchemaEvent } from './schema-importer.models';
+import { environment } from '../../environments/environment';
+import { Observable } from 'rxjs/internal/Observable';
+import { SchemaSubmissionResult } from '../services/types.service';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -20,11 +20,12 @@ export class SchemaImporterService {
     } as SchemaConversionRequest)
   }
 
-  submitEditedSchema(schema: SchemaSubmissionResult):Observable<any> {
+  submitEditedSchema(schema: SchemaSubmissionResult): Observable<any> {
     return this.httpClient.post(`${environment.serverUrl}/api/schemas/edit`, {
       types: schema.types,
-      services: schema.services
-    })
+      services: schema.services,
+      packageIdentifier: 'io.vyne', // TODO Obtain from somewhere
+    });
   }
 }
 
