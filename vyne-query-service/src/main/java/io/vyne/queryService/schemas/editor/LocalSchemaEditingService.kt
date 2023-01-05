@@ -290,7 +290,7 @@ class LocalSchemaEditingService(
          versionedSources
       )
       val (schema, _) = schemaValidator.validate(schemaStore.schemaSet, update)
-         .getOrHandle { (errors, sources) -> throw CompilationException(errors) }
+         .getOrHandle { (errors) -> throw CompilationException(errors) }
       return schema to versionedSources
    }
 

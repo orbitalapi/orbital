@@ -4,9 +4,25 @@ import { DialogPage } from './pages/dialog.page';
 import { SchemaImporterPage } from './pages/schema-importer.page';
 import { QueryEditorPage } from './pages/query-editor.page';
 
+const useLocalHostNames = process.env.USE_LOCAL_HOSTNAMES === 'true';
+
 async function waitForSchemaUpdate(page: Page): Promise<void> {
    await page.waitForTimeout(3000);
 }
+
+const localHostnames = {
+   postgres: 'localhost',
+   kafka: 'localhost',
+   filmsApi: 'localhost:9981'
+};
+
+const dockerComposeHostnames = {
+   postgres: 'postgres',
+   kafka: 'kafka',
+   filmsApi: 'films-api'
+};
+
+const hostnames = useLocalHostNames ? localHostnames : dockerComposeHostnames;
 
 test.describe('Films demo', () => {
    test('works as described in the tutorial', async ({ page }) => {
@@ -24,7 +40,7 @@ test.describe('Films demo', () => {
       await databaseConnectionDialog.fillValue('Connection name', 'films');
       await databaseConnectionDialog.openDropdown('Connection type');
       await databaseConnectionDialog.selectDropdownOption('Postgres');
-      await databaseConnectionDialog.fillValue('host', 'postgres');
+      await databaseConnectionDialog.fillValue('host', hostnames.postgres);
       await databaseConnectionDialog.fillValue('database', 'pagila');
       await databaseConnectionDialog.fillValue('username', 'root');
       await databaseConnectionDialog.fillValue('password', 'admin');
@@ -46,7 +62,7 @@ test.describe('Films demo', () => {
       await addDataSourcePage.openDropdown('Select a schema type to import');
       await addDataSourcePage.selectDropdownOption('Swagger / OpenAPI');
       await addDataSourcePage.selectTab('Url');
-      await addDataSourcePage.fillValue('Swagger / OpenAPI URL', 'http://films-api/v2/api-docs');
+      await addDataSourcePage.fillValue('Swagger / OpenAPI URL', `http://${hostnames.filmsApi}/v2/api-docs`);
       await addDataSourcePage.fillValue('Default namespace', 'io.vyne.demo.films');
       await addDataSourcePage.clickButton('Create');
 
@@ -63,7 +79,7 @@ test.describe('Films demo', () => {
       await addDataSourcePage.openDropdown('Select a schema type to import');
       await addDataSourcePage.selectDropdownOption('Protobuf');
       await addDataSourcePage.selectTab('Url');
-      await addDataSourcePage.fillValue('Url', 'http://films-api/proto');
+      await addDataSourcePage.fillValue('Url', `http://${hostnames.filmsApi}/proto`);
       await addDataSourcePage.clickButton('Create');
 
       const protobufSchemaImporterPage = new SchemaImporterPage(page);
@@ -85,7 +101,7 @@ test.describe('Films demo', () => {
 
       const kafkaConnectionDialog = new DialogPage(page);
       await kafkaConnectionDialog.fillValue('Connection name', 'kafka');
-      await kafkaConnectionDialog.fillValue('Broker address', 'kafka:29092');
+      await kafkaConnectionDialog.fillValue('Broker address', `${hostnames.kafka}:29092`);
       await kafkaConnectionDialog.clickButton('Create');
 
       await addDataSourcePage.setKafkaTopic('releases');
