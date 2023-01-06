@@ -14,6 +14,9 @@ variables:
    MINOR_RELEASE_DIGIT: 1
    PATCH_RELEASE_DIGIT: 2
 
+#   https://docs.gitlab.com/ee/ci/large_repositories/#shallow-cloning
+   GIT_DEPTH: 10
+
    TF_ROOT_DEV: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/dev
    TF_ROOT_PROD: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/prod
    TF_STATE_NAME_DEV: dev
