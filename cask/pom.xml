@@ -343,7 +343,6 @@
                      </excludes>
                   </configuration>
                </plugin>
-
             </plugins>
          </build>
       </profile>

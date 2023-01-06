@@ -96,19 +96,19 @@ default:
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:16.14
    tags:
       - docker-heavy
-   stage: build
-   script:
-      - 'cd vyne-query-service/src/main/web'
-      - 'npm ci'
 
 build-vyne-ui:
    extends: .build-ui
    script:
+      - 'cd vyne-query-service/src/main/web'
+      - 'npm ci'
       - 'npm run-script build-prod'
 
 build-voyager-ui:
    extends: .build-ui
    script:
+      - 'cd vyne-query-service/src/main/web'
+      - 'npm ci'
       - 'npm run-script build-prod-voyager'
 
 build-jvm-branch:
@@ -120,7 +120,7 @@ build-jvm-branch:
    extends: .build-jvm
    variables:
       MAVEN_GOALS: 'clean install'
-      MAVEN_EXTRA_ARGS: "-pl !taxi-playground,!vyne-query-service"
+      MAVEN_EXTRA_ARGS: "-pl !taxi-playground,!vyne-query-service -P fastTestsOnly"
 
 build-jvm-develop:
    stage: build
