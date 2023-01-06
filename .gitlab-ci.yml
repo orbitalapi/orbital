@@ -92,11 +92,15 @@ default:
             # However, leaving this here to pick up later
             - "*/target/surefire-reports/TEST-*.xml"
 
-#build-ui:
-#   stage: build
-#   script:
-#      - 'cd vyne-query-service/src/main/web'
-#      -
+build-ui:
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:16.14
+   tags:
+      - docker-heavy
+   stage: build
+   script:
+      - 'cd vyne-query-service/src/main/web'
+      - 'npm ci'
+      - 'npm run-script build-prod'
 
 build-jvm-branch:
    stage: build
