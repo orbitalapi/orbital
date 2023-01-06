@@ -107,7 +107,7 @@ build-jvm-branch:
    extends: .build-jvm
    variables:
       MAVEN_GOALS: 'clean install'
-      MAVEN_EXTRA_ARGS: "-DskipTests -pl '!taxi-playground', '!vyne-query-service'"
+      MAVEN_EXTRA_ARGS: "-DskipTests -pl !taxi-playground,!vyne-query-service"
 
 build-jvm-develop:
    stage: build
