@@ -53,12 +53,12 @@ the Docker Compose command.
 2. The query service and schema server need to be started locally. They need a few configuration options to point to the
    right configuration files.
 
-   For query service:
+   For schema server:
    ```
    -Dvyne.repositories.config-file=<ABSOLUTE_PATH_TO_THIS_FOLDER>/local-development/vyne/schema-server/schema-server.conf
    ```
 
-   For schema server:
+   For query server:
    ```
    -Dvyne.services.config-file=<ABSOLUTE_PATH_TO_THIS_FOLDER>/local-development/vyne/config/services.conf
    -Dvyne.connections.configFile=<ABSOLUTE_PATH_TO_THIS_FOLDER>/local-development/vyne/config/connections.conf
