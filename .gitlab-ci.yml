@@ -93,6 +93,7 @@ default:
             - "*/target/surefire-reports/TEST-*.xml"
 
 .build-ui:
+   stage: build
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:16.14
    tags:
       - docker-heavy
