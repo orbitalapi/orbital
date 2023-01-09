@@ -3,8 +3,9 @@ title: Publish a taxi project to Vyne
 description: Configure a schema server with taxi projects
 ---
 
-import {Link} from 'gatsby';
-import {Callout} from '../../components/callout';
+
+import { Link } from 'gatsby';
+import { Callout } from '../../components/callout';
 
 # Overview
 Vyne's Schema Server operates as a central aggregator of multiple schema sources.
@@ -61,7 +62,7 @@ For more information, see the reference guide on <Link to="/reference/schema-ser
 
 In a production environment, it's more common to use a git repository for your taxi project, rather than using your local file system.
 
-Modify the configyuration file, adding the below section.
+Modify the configuration file, adding the below section.
 
 ```hocon
 git {
