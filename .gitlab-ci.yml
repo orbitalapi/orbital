@@ -189,11 +189,10 @@ regression-test:
          alias: docker
          command: [ "--tls=false" ]
    script:
+      - docker login -u $CI_DEPENDENCY_PROXY_USER -p $CI_DEPENDENCY_PROXY_PASSWORD $CI_DEPENDENCY_PROXY_SERVER
       - PROJECT_VERSION=$(cat build-version.txt)
-      - docker info
       - docker buildx create --use
-      - docker run --privileged --rm tonistiigi/binfmt --install all # Install the required emulators in order to build ARM images
-      - docker buildx ls
+      - docker run --privileged --rm ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/tonistiigi/binfmt --install all # Install the required emulators in order to build ARM images
       - |
          if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
            tag="latest"
@@ -208,9 +207,9 @@ regression-test:
          echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
          echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
       - cd $projectDir
-      - pwd
       - >
          docker buildx build
+         --build-arg REGISTRY=${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/
          --platform linux/arm64/v8,linux/amd64
          --push
          -t "${registry}/${microservice}:${tag}"
@@ -356,6 +355,7 @@ terraform-deploy-prod:
    retry: 2
    before_script:
       - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+      - docker login -u $CI_DEPENDENCY_PROXY_USER -p $CI_DEPENDENCY_PROXY_PASSWORD $CI_DEPENDENCY_PROXY_SERVER
       - PROJECT_VERSION=$(cat build-version.txt)
       - |
          if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
