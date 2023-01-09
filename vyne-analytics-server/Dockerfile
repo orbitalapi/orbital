@@ -1,4 +1,5 @@
-FROM eclipse-temurin:8u342-b07-jre-focal
+ARG REGISTRY
+FROM ${REGISTRY}eclipse-temurin:8u342-b07-jre-focal
 
 COPY target/vyne-analytics-server.jar /opt/service/
 
