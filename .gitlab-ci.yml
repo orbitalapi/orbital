@@ -29,10 +29,6 @@ variables:
 
 stages:
    - build
-#   the assemble-web-apps stage takes the services and npm projects
-#   built in the `build` phase, and creates spring boot jars with
-#   the js apps in the src/main/resources folder
-   - assemble-web-apps
    - publish
    - deploy
    - verify
@@ -149,21 +145,6 @@ build-jvm-branch:
       MAVEN_GOALS: 'clean install'
 #      TODO: -DskipTests here is only whilst fucking about with builds
       MAVEN_EXTRA_ARGS: "-P fastTestsOnly -DskipTests"
-
-build-jvm-webapps:
-   stage: assemble-web-apps
-   except:
-   extends: .build-jvm
-   variables:
-#      Only build the projects that serve ui's
-      MAVEN_GOALS: 'clean install -pl taxi-playground,vyne-query-service'
-#      Don't run the tests
-      MAVEN_EXTRA_ARGS: "-DskipTests"
-   artifacts:
-      paths:
-         - "vyne-query-service/target/vyne.zip"
-         - "taxi-playground/target/taxi-playground.jar"
-      expire_in: 1 hours
 
 build-jvm-develop:
    stage: build
