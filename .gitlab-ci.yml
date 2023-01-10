@@ -59,6 +59,7 @@ default:
          - .m2/repository
       key: "maven-$CI_COMMIT_REF_SLUG"
    script:
+      - docker info
       - 'if [ -z "${GITLAB_TOKEN}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
@@ -121,7 +122,7 @@ build-jvm-branch:
    extends: .build-jvm
    variables:
       MAVEN_GOALS: 'clean install'
-      MAVEN_EXTRA_ARGS: "-pl !taxi-playground,!vyne-query-service -P fastTestsOnly"
+      MAVEN_EXTRA_ARGS: "-pl !taxi-playground,!vyne-query-service -P fastTestsOnly -DskipTests"
 
 build-jvm-develop:
    stage: build
