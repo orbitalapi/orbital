@@ -29,6 +29,10 @@ variables:
 
 stages:
    - build
+#   the assemble-web-apps stage takes the services and npm projects
+#   built in the `build` phase, and creates spring boot jars with
+#   the js apps in the src/main/resources folder
+   - assemble-web-apps
    - publish
    - deploy
    - verify
@@ -85,9 +89,9 @@ default:
          - "pipelines/pipeline-jet/target/pipeline-jet.jar"
          - "schema-server/target/schema-server.jar"
          - "vyne-analytics-server/target/vyne-analytics-server.jar"
-         - "vyne-query-service/target/vyne.zip"
+#         - "vyne-query-service/target/vyne.zip"
          - "test-cli/target/*.zip"
-         - "taxi-playground/target/taxi-playground.jar"
+#         - "taxi-playground/target/taxi-playground.jar"
       expire_in: 1 hours
       reports:
          junit:
@@ -114,6 +118,10 @@ build-vyne-ui:
       - 'cd vyne-query-service/src/main/web'
       - 'npm ci'
       - 'npm run-script build-prod'
+   artifacts:
+      paths:
+         - "vyne-query-service/target/classes/static"
+      expire_in: 1 hours
 
 build-voyager-ui:
    extends: .build-ui
@@ -122,6 +130,11 @@ build-voyager-ui:
       - 'cd vyne-query-service/src/main/web'
       - 'npm ci'
       - 'npm run-script build-prod-voyager'
+   artifacts:
+      paths:
+         - "taxi-playground/target/classes/static"
+      expire_in: 1 hours
+
 
 build-jvm-branch:
    stage: build
@@ -132,7 +145,23 @@ build-jvm-branch:
    extends: .build-jvm
    variables:
       MAVEN_GOALS: 'clean install'
-      MAVEN_EXTRA_ARGS: "-pl !taxi-playground,!vyne-query-service -P fastTestsOnly -DskipTests"
+#      TODO: -DskipTests here is only whilst fucking about with builds
+      MAVEN_EXTRA_ARGS: "-P fastTestsOnly -DskipTests"
+
+build-jvm-webapps:
+   stage: assemble-web-apps
+   except:
+   extends: .build-jvm
+   variables:
+#      Only build the projects that serve ui's
+      MAVEN_GOALS: 'clean install -pl taxi-playground,vyne-query-service'
+#      Don't run the tests
+      MAVEN_EXTRA_ARGS: "-DskipTests"
+   artifacts:
+      paths:
+         - "vyne-query-service/target/vyne.zip"
+         - "taxi-playground/target/taxi-playground.jar"
+      expire_in: 1 hours
 
 build-jvm-develop:
    stage: build
