@@ -109,6 +109,7 @@ build-vyne-ui:
 build-voyager-ui:
    extends: .build-ui
    script:
+      - 'npm get cache'
       - 'cd vyne-query-service/src/main/web'
       - 'npm ci'
       - 'npm run-script build-prod-voyager'
