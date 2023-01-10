@@ -354,7 +354,7 @@ publish-schema-server-to-gitlab-container-registry:
          if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
            tag="latest"
          else
-           tag="$CI_COMMIT_REF_SLUG"docker inf
+           tag="$CI_COMMIT_REF_SLUG"
          fi
          echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
    script:
