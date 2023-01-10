@@ -1,6 +1,6 @@
 FROM eclipse-temurin:11.0.15_10-jre-focal
 RUN apt-get update
-ARG JAR_FILE=target/*.jar
+ARG JAR_FILE=tdarget/*.jar
 
 COPY ${JAR_FILE} /opt/service/app.jar
 COPY target/classes/static /opt/service/webapp

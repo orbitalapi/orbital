@@ -5,8 +5,10 @@ RUN apt-get update && apt-get install zip -y
 WORKDIR /opt/service/
 
 COPY target/vyne.zip /opt/service/
-RUN cd /opt/service && unzip vyne.zip
 COPY target/classes/static /opt/service/webapp
+
+RUN cd /opt/service && unzip vyne.zip
+
 
 WORKDIR /opt/service/
 

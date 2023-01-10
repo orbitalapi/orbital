@@ -85,9 +85,9 @@ default:
          - "pipelines/pipeline-jet/target/pipeline-jet.jar"
          - "schema-server/target/schema-server.jar"
          - "vyne-analytics-server/target/vyne-analytics-server.jar"
-#         - "vyne-query-service/target/vyne.zip"
+         - "vyne-query-service/target/vyne.zip"
          - "test-cli/target/*.zip"
-#         - "taxi-playground/target/taxi-playground.jar"
+         - "taxi-playground/target/taxi-playground.jar"
       expire_in: 1 hours
       reports:
          junit:
