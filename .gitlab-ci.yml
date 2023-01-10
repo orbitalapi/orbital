@@ -115,6 +115,7 @@ default:
 build-vyne-ui:
    extends: .build-ui
    script:
+      - export NODE_OPTIONS="--max-old-space-size=8192"
       - 'cd vyne-query-service/src/main/web'
       - 'npm ci'
       - 'npm run-script build-prod'
@@ -126,6 +127,7 @@ build-vyne-ui:
 build-voyager-ui:
    extends: .build-ui
    script:
+      - export NODE_OPTIONS="--max-old-space-size=8192"
       - 'npm get cache'
       - 'cd vyne-query-service/src/main/web'
       - 'npm ci'
@@ -371,7 +373,7 @@ publish-schema-server-to-gitlab-container-registry:
          if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
            tag="latest"
          else
-           tag="$CI_COMMIT_REF_SLUG"
+           tag="$CI_COMMIT_REF_SLUG"docker inf
          fi
          echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
    script:
