@@ -57,9 +57,11 @@ default:
    cache:
       paths:
          - .m2/repository
-      key: "maven-$CI_COMMIT_REF_SLUG"
+# Caches don't appear to be adding much value, and one contributing
+# factor is that we only cache for a branch.  Trying a more glabal
+# cache.
+#      key: "maven-$CI_COMMIT_REF_SLUG"
    script:
-      - docker info
       - 'if [ -z "${GITLAB_TOKEN}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
@@ -96,6 +98,13 @@ default:
 .build-ui:
    stage: build
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:16.14
+   before_script:
+      - 'npm config set cache .npm/cache --global'
+      - npm --global cache verify
+      - npm get cache
+   cache:
+      paths:
+         - .npm/cache
    tags:
       - docker-heavy
 
