@@ -1021,6 +1021,8 @@ object SubmitEditJson {
         "longDisplayName": "customer.CustomerService"
       },
       "operations": [],
+      "streamOperations": [],
+      "tableOperations": [],
       "queryOperations": [
         {
           "qualifiedName": {

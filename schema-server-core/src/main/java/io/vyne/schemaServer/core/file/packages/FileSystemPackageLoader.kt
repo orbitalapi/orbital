@@ -122,9 +122,10 @@ class FileSystemPackageLoader(
       }
    }
 
-   override fun isEditable(): Boolean {
-      return config.isEditable
-   }
+   override val isEditable: Boolean
+      get() {
+         return config.isEditable
+      }
 
    override fun createChangeset(name: String): Mono<CreateChangesetResponse> {
       TODO("Not yet implemented")

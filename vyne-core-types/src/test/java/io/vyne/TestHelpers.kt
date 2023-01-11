@@ -9,6 +9,12 @@ fun List<VersionedSource>.asPackage(
    version: String = "1.0.0"
 ): SourcePackage = SourcePackage(PackageMetadata.from(organisation, name, version), this)
 
+fun VersionedSource.asPackage(packageIdentifier: PackageIdentifier):SourcePackage {
+   return SourcePackage(
+      PackageMetadata.from(packageIdentifier),
+      listOf(this)
+   )
+}
 fun VersionedSource.asPackage(
    organisation: String = "com.foo",
    name: String = "test",

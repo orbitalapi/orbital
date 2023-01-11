@@ -1,8 +1,3 @@
-// This code depends on schema-server, which seems not to be allowing dependencies.
-// (Possibly because of spring boot jar rewriting)
-// Commenting out to un-break build whilst we think of a different strategy.
-//
-
 package io.vyne.queryService.schemas.editor
 
 
@@ -66,6 +61,11 @@ import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
 import kotlin.random.Random
 
+/**
+ * Service which facilitates edits by submitting changes to schema
+ * elements (services, types, etc).
+ *
+ */
 @RestController
 class LocalSchemaEditingService(
    private val schemaEditorApi: SchemaEditorApi,

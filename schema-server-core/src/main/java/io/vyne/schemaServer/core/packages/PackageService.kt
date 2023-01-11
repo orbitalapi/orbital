@@ -38,7 +38,7 @@ class PackageService(
       val packages = schemaStore.schemaSet.parsedPackages.map { parsedPackage ->
          val loader = repositoryManager.getLoaderOrNull(parsedPackage.identifier)
          val publisherType = loader?.publisherType ?: PublisherType.Pushed
-         val editable = loader?.isEditable() ?: false
+         val editable = loader?.isEditable ?: false
 
          SourcePackageDescription(
             parsedPackage.identifier,

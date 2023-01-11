@@ -113,9 +113,10 @@ class GitSchemaPackageLoader(
       return filePackageLoader.readUri(uri)
    }
 
-   override fun isEditable(): Boolean {
-      return true
-   }
+   override val isEditable: Boolean
+      get() {
+         return true
+      }
 
    override fun createChangeset(name: String): Mono<CreateChangesetResponse> {
       return mono {

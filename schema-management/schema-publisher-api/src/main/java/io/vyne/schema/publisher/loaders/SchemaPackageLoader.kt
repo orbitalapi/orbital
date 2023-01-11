@@ -75,7 +75,7 @@ interface SchemaPackageTransport {
    fun listUris(): Flux<URI>
    fun readUri(uri: URI): Mono<ByteArray>
 
-   fun isEditable(): Boolean
+   val isEditable: Boolean
    fun createChangeset(name: String): Mono<CreateChangesetResponse>
 
    // TODO Move these to the proper place (current module is called "publisher")

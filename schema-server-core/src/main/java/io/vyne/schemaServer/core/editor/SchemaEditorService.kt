@@ -13,6 +13,7 @@ import io.vyne.schema.publisher.loaders.SetActiveChangesetResponse
 import io.vyne.schema.publisher.loaders.UpdateChangesetResponse
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageLoader
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageWriter
+import io.vyne.schemaServer.core.repositories.SchemaRepositoryManager
 import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
 import io.vyne.schemaServer.editor.*
 import io.vyne.schemas.toVyneQualifiedName
@@ -35,7 +36,8 @@ private val logger = KotlinLogging.logger {}
 // break the config mechanism of HOCON we're using.
 //@ConditionalOnBean(ApiEditorRepository::class)
 class SchemaEditorService(
-   private val repositoryManager: ReactiveRepositoryManager, private val schemaProvider: SchemaStore
+   private val repositoryManager: SchemaRepositoryManager,
+   private val schemaProvider: SchemaStore
 ) : SchemaEditorApi {
 
 

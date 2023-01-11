@@ -8,7 +8,7 @@ import io.vyne.schemaServer.core.file.FileSystemPackageSpec
 import io.vyne.schemaServer.core.file.packages.*
 import io.vyne.schemaServer.core.git.GitSchemaPackageLoader
 import io.vyne.schemaServer.core.git.GitSchemaPackageLoaderFactory
-import mu.KotlinLogging
+import io.vyne.schemaServer.core.repositories.SchemaRepositoryManager
 import java.nio.file.Path
 
 /**
@@ -20,16 +20,16 @@ class ReactiveRepositoryManager(
    private val gitRepoFactory: GitSchemaPackageLoaderFactory,
    private val eventSource: RepositorySpecLifecycleEventSource,
    private val eventDispatcher: RepositoryLifecycleEventDispatcher
-) {
+) : SchemaRepositoryManager {
    fun getLoaderOrNull(packageIdentifier: PackageIdentifier): SchemaPackageTransport? {
       return loaders
          .firstOrNull { it.packageIdentifier.unversionedId == packageIdentifier.unversionedId }
    }
-   fun getLoader(packageIdentifier: PackageIdentifier): SchemaPackageTransport {
+   override fun getLoader(packageIdentifier: PackageIdentifier): SchemaPackageTransport {
       val loader = getLoaderOrNull(packageIdentifier)
          ?: error("No file loader exists for package ${packageIdentifier.unversionedId}")
 
-      if (!loader.isEditable()) {
+      if (!loader.isEditable) {
          error("Package ${packageIdentifier.unversionedId} is not editable")
       }
       return loader
@@ -100,8 +100,8 @@ class ReactiveRepositoryManager(
       }
    }
 
-   val editableLoaders: List<FileSystemPackageLoader>
+   override val editableLoaders: List<FileSystemPackageLoader>
       get() {
-         return _fileLoaders.filter { it.isEditable() }
+         return _fileLoaders.filter { it.isEditable }
       }
 }
