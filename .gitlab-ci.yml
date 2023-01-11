@@ -27,6 +27,7 @@ variables:
    git config user.name "vyne-cd"
    git config user.email vyne-cd@vyne.co
 
+
 stages:
    - build
    - publish
