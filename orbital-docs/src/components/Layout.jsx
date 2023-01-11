@@ -10,96 +10,8 @@ import {Navigation} from '@/components/Navigation'
 import {Prose} from '@/components/Prose'
 import {Search} from '@/components/Search'
 import {ThemeSelector} from '@/components/ThemeSelector'
+import {SidebarLinks} from "@/components/SidebarLinks";
 
-const navigation = [
-   {
-      title: 'Introduction',
-      links: [
-         {title: 'Quick start', href: '/'},
-         {title: 'What is Orbital?', href: '/docs/installation'},
-         {title: 'Installation', href: '/docs/installation'},
-      ],
-   },
-   {
-      title: 'Connecting data sources',
-      links: [
-         {title: 'Overview', href: '/docs/publishing-data-sources/overview'},
-         {title: 'Using Taxi', href: '/docs/publishing-data-sources/using-taxi'},
-         {title: 'Using existing API specs', href: '/docs/publishing-data-sources/existing-api-specs'},
-         {title: 'Connecting databases', href: '/docs/publishing-data-sources/connecting-databases'},
-         {title: 'Connecting message brokers', href: '/docs/publishing-data-sources/connecting-message-brokers'},
-         {title: 'Publishing from applications', href: '/docs/publishing-data-sources/publishing-from-applications'},
-      ],
-   },
-   {
-      title: 'Querying for data',
-      links: [
-         {title: 'TaxiQL tutorial', href: '/docs/sample'},
-         {
-            title: 'Importing existing API specs',
-            href: '/docs/sample',
-         },
-      ],
-   },
-   {
-      title: 'Data pipelines',
-      links: [
-         {title: 'Building a pipeline', href: '/docs/sample'},
-         {
-            title: 'Importing existing API specs',
-            href: '/docs/sample',
-         },
-      ],
-   },
-   {
-      title: 'Production',
-      links: [
-         {title: 'Production deployments', href: '/docs/sample'},
-         {title: 'Authenticating to other services', href: '/docs/sample'},
-         {
-            title: 'Authorization within Vyne',
-            href: '/docs/sample',
-         },
-         {
-            title: 'Standalone analytics server',
-            href: '/docs/sample',
-         },
-         {
-            title: 'Distributing work across a cluster',
-            href: '/docs/sample',
-         },
-      ],
-   },
-   {
-      title: 'Tutorials',
-      links: [
-         {title: 'Integrating APIs, DBs and Kafka', href: '/docs/writing-plugins'},
-         {title: 'Composing APIs', href: '/docs/writing-plugins'},
-         {title: 'Building a Datamesh', href: '/docs/writing-plugins'},
-      ],
-   },
-   {
-      title: 'Background',
-      links: [
-         {title: 'Introduction to Semantic Integration', href: '/background/intro-to-semantic-integration'},
-         {title: 'Tips on building Taxonomies', href: '/background/tips-on-taxonomies'},
-      ],
-   },
-   {
-      title: 'Troubleshooting',
-      links: [
-         {title: 'Mac M1 & Docker', href: '/troubleshooting/mac-m1-and-docker'},
-      ],
-   },
-   {
-      title: 'Release notes',
-      links: [
-         {title: 'How to contribute', href: '/docs/how-to-contribute'},
-         {title: 'Architecture guide', href: '/docs/architecture-guide'},
-         {title: 'Design principles', href: '/docs/design-principles'},
-      ],
-   },
-]
 
 function GitHubIcon(props) {
    return (
@@ -201,6 +113,8 @@ function useTableOfContents(tableOfContents) {
 
    return currentSection
 }
+
+const navigation = SidebarLinks
 
 export function Layout({children, title, tableOfContents}) {
    let router = useRouter()
