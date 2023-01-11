@@ -1,7 +1,6 @@
 package io.vyne.schemaServer.schemaStoreConfig
 
 import com.winterbe.expekt.should
-import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.asPackage
 import io.vyne.schema.publisher.SchemaPublisherTransport
@@ -18,12 +17,13 @@ import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.util.SocketUtils
 import reactor.test.StepVerifier
-import kotlin.test.fail
 
 private val logger = KotlinLogging.logger {}
 @RunWith(SpringRunner::class)
-@SpringBootTest(properties = [
-   "eureka.client.enabled=false", "vyne.schema-server.compileOnStartup=false"])
+@SpringBootTest(
+   properties = [
+      "vyne.schema-server.compileOnStartup=false"]
+)
 class SchemaStoreTest {
    private val taxiSource1 = VersionedSource("test1.taxi", "1.0.0", """
          model Foo {
