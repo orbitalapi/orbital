@@ -1,5 +1,5 @@
-import {NewTypeSpec} from './type-editor.component';
 import {QualifiedName} from '../services/schema';
+import { NewTypeSpec } from 'src/app/type-editor/new-type-spec';
 
 export function generateTaxi(spec: NewTypeSpec): string {
 

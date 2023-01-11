@@ -12,6 +12,7 @@ import io.vyne.schema.rsocket.CBORJackson
 import io.vyne.schema.rsocket.RSocketRoutes
 import io.vyne.schema.rsocket.SchemaServerRSocketFactory
 import mu.KotlinLogging
+import reactor.core.scheduler.Schedulers
 
 private val logger = KotlinLogging.logger { }
 
@@ -34,7 +35,7 @@ class RSocketSchemaStore(
             logger.info { "Received new RSocket connection, subscribing for schema updates" }
             rsocket.requestStream(
                DefaultPayload.create(EmptyByteBuf(ByteBufAllocator.DEFAULT), RSocketRoutes.schemaUpdatesRouteMetadata())
-            )
+            ).publishOn(Schedulers.boundedElastic())
                .map { payload ->
                   logger.info { "Received updated schema over RSocket connection" }
                   objectMapper.readValue<SchemaSet>(payload.data().array())

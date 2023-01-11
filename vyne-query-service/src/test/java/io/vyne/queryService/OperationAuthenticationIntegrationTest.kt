@@ -3,6 +3,7 @@ package io.vyne.queryService
 import com.google.common.io.Files
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
+import io.vyne.asPackage
 import io.vyne.http.MockWebServerRule
 import io.vyne.queryService.query.QueryService
 import io.vyne.queryService.security.AuthTokenConfigurationService
@@ -34,7 +35,6 @@ import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
-import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 
 @RunWith(SpringRunner::class)
@@ -103,7 +103,7 @@ class OperationAuthenticationIntegrationTest {
 
    @Test
    fun `calling an operation with configured query param auth includes query param name values`(): Unit = runBlocking {
-      localValidatingSchemaStoreClient.submitSchemas(taxiSchema.sources)
+      localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources.asPackage())
       val token = AuthToken(
          tokenType = AuthTokenType.QueryParam,
          value = "abc123",
@@ -127,7 +127,7 @@ class OperationAuthenticationIntegrationTest {
 
    @Test
    fun `calling a service with configured auth includes header tokens`(): Unit = runBlocking {
-      localValidatingSchemaStoreClient.submitSchemas(taxiSchema.sources)
+      localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources.asPackage())
       val token = AuthToken(
          tokenType = AuthTokenType.Header,
          value = "abc123",
@@ -142,7 +142,7 @@ class OperationAuthenticationIntegrationTest {
             """[ { "personId" : "123" } ] """
          )
       }
-      val response = queryService.submitVyneQlQuery("""findAll { Person[] } """)
+      val response = queryService.submitVyneQlQuery("""find { Person[] } """)
          .body.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION)
@@ -151,7 +151,7 @@ class OperationAuthenticationIntegrationTest {
 
    @Test
    fun `calling a service with configured query param auth includes query param name values`(): Unit = runBlocking {
-      localValidatingSchemaStoreClient.submitSchemas(taxiSchema.sources)
+      localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources.asPackage())
       val token = AuthToken(
          tokenType = AuthTokenType.QueryParam,
          value = "abc123",
@@ -165,7 +165,7 @@ class OperationAuthenticationIntegrationTest {
             """[ { "personId" : "123" } ] """
          )
       }
-      val response = queryService.submitVyneQlQuery("""findAll { Person[] } """)
+      val response = queryService.submitVyneQlQuery("""find { Person[] } """)
          .body.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION).should.be.`null`
@@ -174,7 +174,7 @@ class OperationAuthenticationIntegrationTest {
 
    @Test
    fun `calling a service with cookie auth includes relevant cookie values`(): Unit = runBlocking {
-      localValidatingSchemaStoreClient.submitSchemas(taxiSchema.sources)
+      localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources.asPackage())
       val token = AuthToken(
          tokenType = AuthTokenType.Cookie,
          value = "abc123",
@@ -189,7 +189,7 @@ class OperationAuthenticationIntegrationTest {
          )
       }
 
-      val response = queryService.submitVyneQlQuery("""findAll { Person[] } """)
+      val response = queryService.submitVyneQlQuery("""find { Person[] } """)
          .body.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.COOKIE)
@@ -198,13 +198,13 @@ class OperationAuthenticationIntegrationTest {
 
    @Test
    fun `calling a service without configured auth does not include header tokens`(): Unit = runBlocking {
-      localValidatingSchemaStoreClient.submitSchemas(taxiSchema.sources)
+      localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources.asPackage())
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(
             """[ { "postcode" : "SW11" } ] """
          )
       }
-      val response = queryService.submitVyneQlQuery("""findAll { Address[] } """)
+      val response = queryService.submitVyneQlQuery("""find { Address[] } """)
          .body.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION)

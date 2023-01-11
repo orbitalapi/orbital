@@ -24,7 +24,7 @@ class ConditionalFieldSetEvaluator(private val factory: EvaluationValueSupplier,
    fun evaluate(value:Any,readCondition: FieldSetExpression, attributeName: AttributeName?, targetType: Type, datasource:DataSource): TypedInstance {
       return try {
          when (readCondition) {
-            is WhenFieldSetCondition -> whenEvaluator.evaluate(value, readCondition,datasource, attributeName, targetType)
+            is WhenFieldSetCondition -> whenEvaluator.evaluate(value, readCondition,datasource, attributeName, targetType, null)
 //            is CalculatedFieldSetExpression -> calculatedFieldEvaluator.evaluate(readCondition, attributeName, targetType)
 //         is UnaryCalculatedFieldSetExpression -> calculatedFieldEvaluator.evaluate(readCondition, attributeName, targetType)
 //         is TerenaryFieldSetExpression -> calculatedFieldEvaluator.evaluate(readCondition, attributeName, targetType)

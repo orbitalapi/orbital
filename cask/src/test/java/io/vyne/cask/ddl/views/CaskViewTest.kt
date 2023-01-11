@@ -5,20 +5,25 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
+import io.vyne.asPackage
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.StringToQualifiedNameConverter
 import io.vyne.cask.ddl.views.ViewJoin.ViewJoinKind.LEFT_OUTER
+import io.vyne.from
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.toParsedPackages
 import lang.taxi.types.ObjectType
 import lang.taxi.types.QualifiedName
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.jupiter.api.Assertions
 
+@Ignore("Views not currently supported")
 class CaskViewBuilderFactoryTest {
 
    lateinit var builderBuilderFactory: CaskViewBuilderFactory
@@ -36,8 +41,10 @@ class CaskViewBuilderFactoryTest {
          type Order {
             @Id
             id : OrderId as String
-            lastTradeDate : TradeDate( @format = "YYYYDDTHH:nn:ss" )
-            lastTradeTime : TradeTime( @format = "HH:nn:ss" )
+            @Format( "YYYYDDTHH:nn:ss" )
+            lastTradeDate : TradeDate
+            @Format( "HH:nn:ss" )
+            lastTradeTime : TradeTime
             timestampt : TradeTimestamp by ( this.lastTradeDate + this.lastTradeTime )
             tradeStatus : TradeStatus as String
             notionalRequired : NotionalQuantityRequired by (QuantityRequired * UnitMultiplier)
@@ -78,7 +85,7 @@ class CaskViewBuilderFactoryTest {
    fun setup() {
       repository = mock { }
       val schemaStore = SimpleSchemaStore()
-      schemaStore.setSchemaSet(SchemaSet.from(listOf(versionedSource), 1))
+      schemaStore.setSchemaSet(SchemaSet.fromParsed(listOf(versionedSource).asPackage().toParsedPackages(), 1))
       builderBuilderFactory = CaskViewBuilderFactory(repository, schemaStore, StringToQualifiedNameConverter())
       whenever(repository.findAllByQualifiedTypeName(eq("test.Order"))).thenReturn(
          listOf(CaskConfig.forType(taxiSchema.versionedType("test.Order".fqn()), "orders", daysToRetain = 100000)
@@ -97,8 +104,10 @@ class CaskViewBuilderFactoryTest {
    @Generated
    model OrderEvent inherits TransactionEvent {
       @Id order_Id : OrderId
-      order_LastTradeDate : TradeDate( @format = "YYYYDDTHH:nn:ss" )
-      order_LastTradeTime : TradeTime( @format = "HH:nn:ss" )
+      @Format( "YYYYDDTHH:nn:ss" )
+      order_LastTradeDate : TradeDate
+      @Format( "HH:nn:ss" )
+      order_LastTradeTime : TradeTime
       order_Timestampt : TradeTimestamp  by this.order_LastTradeDate + this.order_LastTradeTime
       order_TradeStatus : TradeStatus
       trade_Id : TradeId

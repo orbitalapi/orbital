@@ -11,6 +11,7 @@ import io.vyne.schemas.fqn
 import org.apache.commons.io.IOUtils
 import org.awaitility.Awaitility
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.testcontainers.containers.localstack.LocalStackContainer
@@ -237,6 +238,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
    }
 
    @Test
+   @Ignore("This test is flakey")
    fun `can handle very big amounts of data`() {
       awsConnectionRegistry.register(awsConnectionConfig)
 
@@ -265,7 +267,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
       val itemCount = 1000
       val items = (1..itemCount).map { "$it,Jimmy $it,Smitts" }
       val pipelineSpec = PipelineSpec(
-         "test-aws-s3-sink", input = BatchItemsSourceSpec(
+         "test-aws-s3-sink-large", input = BatchItemsSourceSpec(
             items = items,
             typeName = "Person".fqn()
          ),

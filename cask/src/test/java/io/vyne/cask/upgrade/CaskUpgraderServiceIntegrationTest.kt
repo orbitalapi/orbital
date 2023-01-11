@@ -4,8 +4,7 @@ import com.google.common.io.Resources
 import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import io.vyne.ParsedSource
-import io.vyne.VersionedSource
+import io.vyne.*
 import io.vyne.cask.CaskService
 import io.vyne.cask.api.CaskStatus
 import io.vyne.cask.ddl.caskRecordTable
@@ -26,6 +25,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.schemas.taxi.TaxiSchema.Companion.from
 import lang.taxi.types.QualifiedName
 import org.junit.Before
 import org.junit.Test
@@ -271,6 +271,8 @@ class UpdatableSchemaProvider : SchemaSourceProvider, SchemaStore, SchemaProvide
       private set
    override var schema: TaxiSchema = TaxiSchema.empty()
       private set
+   override val packages: List<SourcePackage>
+      get() = emptyList()
 
    private lateinit var currentSchemaSet: SchemaSet
    private val schemaSetChangedEventSink = Sinks.many().multicast().directBestEffort<SchemaSetChangedEvent>()
@@ -289,7 +291,7 @@ class UpdatableSchemaProvider : SchemaSourceProvider, SchemaStore, SchemaProvide
          null
       }
       val parsedSources = this.versionedSources.map { ParsedSource(it) }
-      this.currentSchemaSet = SchemaSet.fromParsed(parsedSources, generation)
+      this.currentSchemaSet = SchemaSet.fromParsed(parsedSources.asParsedPackages(), generation)
       schemaSetChangedEventSink.tryEmitNext(SchemaSetChangedEvent(oldSchemaSet, this.currentSchemaSet))
       return this.schema
    }

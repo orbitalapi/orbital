@@ -42,7 +42,7 @@ class CsvQueryTest {
          )
       }
 
-      VyneCalciteDataSource(schema, QualifiedName(testType), typedInstanceStream).connection.use { connection ->
+      VyneCalciteDataSource(schema, QualifiedName.from(testType), typedInstanceStream).connection.use { connection ->
          val statement = connection.createStatement()
          val resultSet = statement.executeQuery("""select * from $testType t0 where t0."close" = 6235.2""")
          resultSet.next().should.be.`true`

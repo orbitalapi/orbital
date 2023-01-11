@@ -1,16 +1,14 @@
 package io.vyne.schema.publisher.http
 
 import com.winterbe.expekt.should
+import io.vyne.PackageMetadata
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.http.MockWebServerRule
-import io.vyne.schema.publisher.ExpiringSourcesStore
-import io.vyne.schema.publisher.HttpPollKeepAlive
-import io.vyne.schema.publisher.PublisherConfiguration
-import io.vyne.schema.publisher.VersionedSourceSubmission
+import io.vyne.schema.publisher.*
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.springframework.web.reactive.function.client.WebClient
@@ -33,9 +31,11 @@ class ExpiringSourcesStoreTest {
          }
       """.trimIndent()
    )
-   private val versionedSourceSubmission = VersionedSourceSubmission(
-      listOf(brokerOrderTaxi),
-      publisherConfiguration().publisherId,
+   private val sourcePackageSubmission = KeepAlivePackageSubmission(
+      SourcePackage(
+         PackageMetadata.from("com.foo", "test"),
+         listOf(brokerOrderTaxi)
+      ),
       publisherConfiguration().keepAlive
    )
 
@@ -43,7 +43,7 @@ class ExpiringSourcesStoreTest {
    fun `registration should set last heartbeat`() {
       val httpKeepALiveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(webClientBuilder = WebClient.builder())
       val store = ExpiringSourcesStore(keepAliveStrategyMonitors = listOf(httpKeepALiveStrategyMonitor))
-      store.submitSources(versionedSourceSubmission)
+      store.submitSources(sourcePackageSubmission)
       httpKeepALiveStrategyMonitor.lastPingTimes.size.should.equal(1)
    }
 
@@ -69,15 +69,16 @@ class ExpiringSourcesStoreTest {
       store.currentSources
          .test()
          .expectSubscription()
-         .then { store.submitSources(versionedSourceSubmission) }
+         .then { store.submitSources(sourcePackageSubmission) }
          .expectNextMatches { currentState ->
-            currentState.sources.should.have.size(1)
+            currentState.currentPackages.should.have.size(1)
             currentState.removedSchemaIds.isEmpty()
             true
          }
          .expectNextMatches { currentState ->
-            currentState.sources.should.be.empty
-            currentState.removedSchemaIds.should.have.size(1)
+            currentState.deltas.should.have.size(1)
+            val health = currentState.deltas.single() as PublisherHealthUpdated
+            health.health.status.should.equal(PublisherHealth.Status.Unhealthy)
             true
          }
          .thenCancel()

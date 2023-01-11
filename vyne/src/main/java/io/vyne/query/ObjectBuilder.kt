@@ -1,29 +1,16 @@
 package io.vyne.query
 
-import io.vyne.models.AccessorHandler
-import io.vyne.models.DataSource
-import io.vyne.models.FactBag
-import io.vyne.models.FactDiscoveryStrategy
-import io.vyne.models.FailedSearch
-import io.vyne.models.FieldAndFactBag
-import io.vyne.models.MixedSources
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedObjectFactory
-import io.vyne.models.TypedValue
+import io.vyne.models.*
+import io.vyne.models.facts.FactBag
+import io.vyne.models.facts.FactDiscoveryStrategy
+import io.vyne.models.facts.FieldAndFactBag
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.query.ExcludeQueryStrategyKlassPredicate.Companion.ExcludeObjectBuilderPredicate
-import io.vyne.query.build.TypedInstancePredicateFactory
 import io.vyne.query.collections.CollectionBuilder
 import io.vyne.query.collections.CollectionProjectionBuilder
-import io.vyne.schemas.AttributeName
-import io.vyne.schemas.Field
-import io.vyne.schemas.FieldSource
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
+import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -31,7 +18,9 @@ import kotlinx.coroutines.flow.firstOrNull
 import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.CollectionProjectionExpressionAccessor
 import lang.taxi.accessors.ConditionalAccessor
+import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.ObjectType
+import mu.KotlinLogging
 import java.util.*
 
 class ObjectBuilder(
@@ -39,18 +28,12 @@ class ObjectBuilder(
    val context: QueryContext,
    private val rootTargetType: Type,
    private val functionRegistry: FunctionRegistry = FunctionRegistry.default,
-   private val formatSpecs: List<ModelFormatSpec>
+   private val formatSpecs: List<ModelFormatSpec>,
 ) {
+   private val logger = KotlinLogging.logger {}
    private val id = UUID.randomUUID().toString()
    private val buildSpecProvider = TypedInstancePredicateFactory()
-   private val originalContext = if (context.isProjecting) context
-      .facts
-      .firstOrNull { it is TypedObject }
-      ?.let {
-         val ctx = context.only(it)
-         ctx.isProjecting = true
-         ctx
-      } else null
+
 
    private val accessorReaders: List<AccessorHandler<out Accessor>> = listOf(
       CollectionProjectionBuilder(context)
@@ -58,7 +41,7 @@ class ObjectBuilder(
    private val collectionBuilder = CollectionBuilder(queryEngine, context)
 
    init {
-       log().debug("[${context.queryId}] ObjectBuilder $id created to build ${rootTargetType.name.longDisplayName}")
+      log().debug("[${context.queryId}] ObjectBuilder $id created to build ${rootTargetType.name.longDisplayName}")
    }
 
    suspend fun build(
@@ -79,12 +62,20 @@ class ObjectBuilder(
          when (instance.size) {
             0 -> error("Found 0 instances of ${targetType.fullyQualifiedName}, but hasFactOfType returned true")
             1 -> {
-               val discoveredValue = instance.first()
+               // FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY always returns a collection.
+               // If we didn't request a collection, we actually want the first element.
+               // Otherwise, we want the collection itself.
+               val discoveredValue = if (targetType.isCollection) {
+                  instance
+               } else {
+                  instance.first()
+               }
                // Handle formatting
                // Choosing to copy the type, since as we got this far, we know that
                // the types are compatible.  However, this may prove to cause problems.
-               return convertValue(discoveredValue, targetType)
+               return convertValue(discoveredValue, targetType, format = null)
             }
+
             else -> {
                // last attempt
                val exactMatches = instance.filter { it.type == targetType }
@@ -98,8 +89,9 @@ class ObjectBuilder(
                }
                if (!targetType.isPrimitive) {
                   // Don't bother logging if the user searched for a primitive type, as it's kinda pointless.
-                  log().info(
-                     "Found ${instance.size} instances of ${targetType.fullyQualifiedName}. Values are ${
+                  logger.debug { "Found ${instance.size} instances of ${targetType.longDisplayName}." }
+                  logger.trace {
+                     "Found ${instance.size} instances of ${targetType.longDisplayName}. Values are ${
                         instance.map {
                            Pair(
                               it.typeName,
@@ -107,7 +99,7 @@ class ObjectBuilder(
                            )
                         }.joinToString()
                      }"
-                  )
+                  }
                }
 
                // HACK : How do we handle this?
@@ -136,22 +128,24 @@ class ObjectBuilder(
       } else if (targetType.isCollection) {
          buildCollection(targetType, spec)
       } else {
-         buildObjectInstance(targetType, spec, facts)
+         findOrBuildObjectInstance(targetType, spec, facts)
       }
    }
 
    private suspend fun searchForType(
       targetType: Type,
-      spec: TypedInstanceValidPredicate
+      spec: TypedInstanceValidPredicate,
+      facts: FactBag = FactBag.empty()
    ): TypedInstance? {
       var failedAttempts: List<DataSource>? = null
-      return findScalarInstance(targetType, spec)
+      return findInstance(targetType, spec, facts)
          .catch { exception ->
             when (exception) {
                is SearchFailedException -> {
                   log().debug(exception.message)
                   failedAttempts = exception.failedAttempts
                }
+
                else -> log().error(
                   "An exception occurred whilst searching for type ${targetType.fullyQualifiedName}",
                   exception
@@ -178,8 +172,9 @@ class ObjectBuilder(
          context.schema,
          source = MixedSources,
          inPlaceQueryEngine = context,
-         formatSpecs = formatSpecs
-      ).evaluateExpressionType(targetType) /* { // What's this do?
+         formatSpecs = formatSpecs,
+         functionResultCache = context.functionResultCache
+      ).evaluateExpressionType(targetType, null) /* { // What's this do?
          forSourceValues(sourcedByAttributes, it, targetType)
       } */
    }
@@ -201,7 +196,7 @@ class ObjectBuilder(
    /**
     * Builds collections where we're iterating another collection
     * eg:
-    *  findAll { OrderTransaction[] } as {
+    *  find { OrderTransaction[] } as {
     *   items: Thing[] by [ThingToIterate[]   with { CustomerName }]
     * }[]
     */
@@ -215,7 +210,8 @@ class ObjectBuilder(
             context.facts,
             context.schema,
             source = MixedSources,
-            inPlaceQueryEngine = context
+            inPlaceQueryEngine = context,
+            functionResultCache = context.functionResultCache
          ),
          context.schema,
          targetType,
@@ -229,14 +225,41 @@ class ObjectBuilder(
       // Passing facts here allows for reference to data from parent objects when constructing child objects
       facts: FactBag = FactBag.empty()
    ): TypedInstance? {
-      return build(context.schema.type(targetType), spec , facts)
+      return build(context.schema.type(targetType), spec, facts)
    }
 
-   private fun convertValue(discoveredValue: TypedInstance, targetType: Type): TypedInstance {
-      return if (discoveredValue is TypedValue && ((targetType.hasFormat && targetType.format != discoveredValue.type.format) || targetType.offset != discoveredValue.type.offset)) {
-         discoveredValue.copy(targetType)
+   private fun convertValue(
+      discoveredValue: TypedInstance,
+      targetType: Type,
+      format: FormatsAndZoneOffset?
+   ): TypedInstance {
+      return if (discoveredValue is TypedValue && format != null && format != discoveredValue.format) {
+         discoveredValue.copy(format = format)
       } else {
          discoveredValue
+      }
+   }
+
+   private suspend fun findOrBuildObjectInstance(
+      targetType: Type,
+      spec: TypedInstanceValidPredicate,
+      // Passing facts here allows for reference to data from parent objects when constructing child objects
+      facts: FactBag = FactBag.empty()
+   ): TypedInstance {
+      val result = searchForType(targetType, spec, facts)
+      val searchFailed = result == null || result is TypedNull && result.source is FailedSearch
+      return if (searchFailed) {
+         if (!targetType.isClosed) {
+            logger.debug { "Search for object ${targetType.qualifiedName.shortDisplayName} failed, so initiating building one" }
+            buildObjectInstance(targetType, spec, facts)
+         } else {
+            TypedNull.create(
+               targetType,
+               FailedSearch("Unable to find a data source for ${targetType.qualifiedName.shortDisplayName} and building is not permitted because the type is closed")
+            )
+         }
+      } else {
+         result!!
       }
    }
 
@@ -257,6 +280,8 @@ class ObjectBuilder(
       // If source and target types are ObjectTypes, just copy properties in one iteration
       // With this fix projection time of 1000 items was reduced from 37seconds to 650ms!
       // Enum filtering will be removed once the updated enum processing logic branch is merged.
+
+
       if (targetType.taxiType is ObjectType && context.facts.filter { !it.type.isEnum }.size == 1) {
          val sourceObjectType = context.facts.filter { !it.type.isEnum }.iterator().next()
          if (sourceObjectType is TypedObject) {
@@ -273,7 +298,7 @@ class ObjectBuilder(
                         else -> {
                            val attributeSatisfiesPredicate = fieldInstanceValidPredicate.isValid(value)
                            if (attributeSatisfiesPredicate) {
-                              populatedValues[attributeName] = convertValue(value, targetAttributeType)
+                              populatedValues[attributeName] = convertValue(value, targetAttributeType, field.format)
                            } else {
                               missingAttributes[attributeName] = field
                            }
@@ -307,14 +332,20 @@ class ObjectBuilder(
                // Don't attempt to populate fields with ConditionalAccessor here.
                // The TypedObjectFactory has the expression evaluation logic,
                // so leave the value as un-populated.
-            }
-            else {
+            } else {
                // We need to pass parent facts around, so that when constructing nested objects, children fields have reference to parent facts.
-               val theseFacts = FieldAndFactBag(populatedValues, emptyList(), context.schema).merge(facts)
-               val value = build(field.type, buildSpec, theseFacts)
+               val theseFacts =
+                  FieldAndFactBag(populatedValues, emptyList(), context.scopedFacts, context.schema).merge(facts)
+
+               // When building a field, populate the source (unprojected) type.
+               // When we go to construct the final object (In TypedObjectFactory), this source
+               // value will be projected to it's actual type.
+               val fieldBuildType = field.fieldProjection?.sourceType?.toVyneQualifiedName() ?: field.type
+               val value = build(fieldBuildType, buildSpec, theseFacts)
+
 
                if (value != null) {
-                  populatedValues[attributeName] = convertValue(value, targetAttributeType)
+                  populatedValues[attributeName] = convertValue(value, targetAttributeType, field.format)
 //                  log().debug("Object builder ${this.id} populated attribute $attributeName : ${targetAttributeType.name.longDisplayName}.  Now contains keys: ${populatedValues.keys}")
                }
             }
@@ -326,7 +357,8 @@ class ObjectBuilder(
       // objects.
       // So, trying with a special type of FactBag.
       // We needed a new FactBag type here, as we need to retain the field name information.
-      val searchableFacts = FieldAndFactBag(populatedValues, context.facts.toList(), context.schema)
+      val searchableFacts =
+         FieldAndFactBag(populatedValues, context.facts.toList(), context.scopedFacts, context.schema)
       val searchableWithParentFacts = searchableFacts.merge(facts)
       return TypedObjectFactory(
          targetType,
@@ -335,7 +367,8 @@ class ObjectBuilder(
          source = MixedSources,
          inPlaceQueryEngine = context,
          accessorHandlers = accessorReaders,
-         formatSpecs = formatSpecs
+         formatSpecs = formatSpecs,
+         functionResultCache = context.functionResultCache
       ).buildAsync {
          forSourceValues(sourcedByAttributes, it, targetType)
       }
@@ -386,25 +419,31 @@ class ObjectBuilder(
       val typedObject = typedInstance as TypedObject
       typedObject[sourcedBy.attributeName].let { source ->
          source.value?.let { _ ->
-              ObjectBuilder(
-                 this.queryEngine,
-                 this.context.only(source),
-                 this.context.schema.type(sourcedBy.attributeType),
-                 functionRegistry = functionRegistry,
-                 formatSpecs = formatSpecs
-              )
-                 .build()?.let {
-                    return attributeName to it
-                 }
+            ObjectBuilder(
+               this.queryEngine,
+               this.context.only(source),
+               this.context.schema.type(sourcedBy.attributeType),
+               functionRegistry = functionRegistry,
+               formatSpecs = formatSpecs,
+            )
+               .build()?.let {
+                  return attributeName to it
+               }
          }
       }
       return null
    }
 
-   private suspend fun findScalarInstance(targetType: Type, spec: TypedInstanceValidPredicate): Flow<TypedInstance> {
+   private suspend fun findInstance(
+      targetType: Type,
+      spec: TypedInstanceValidPredicate,
+      facts: FactBag,
+   ): Flow<TypedInstance> {
       // Try searching for it.
       //log().debug("Trying to find instance of ${targetType.fullyQualifiedName}")
       val result = try {
+//         val queryContext = context.copy()
+//         queryContext.addFacts(facts.rootAndScopedFacts())
          queryEngine.find(targetType, context, spec, ExcludeObjectBuilderPredicate)
       } catch (e: QueryCancelledException) {
          throw e

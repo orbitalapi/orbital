@@ -5,12 +5,15 @@ import io.vyne.models.EvaluatedExpression
 import io.vyne.models.EvaluationValueSupplier
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
+import io.vyne.models.functions.FunctionResultCacheKey
 import io.vyne.models.functions.NamedFunctionInvoker
 import io.vyne.models.functions.NullSafeInvoker
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import lang.taxi.functions.FunctionAccessor
+import lang.taxi.types.FormatsAndZoneOffset
+import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
 import kotlin.math.min
 
@@ -26,6 +29,7 @@ object Strings {
       Trim,
       Length,
       Find,
+      ContainsString,
       Replace,
       Coalesce
    )
@@ -39,7 +43,9 @@ object Concat : NamedFunctionInvoker {
       returnType: Type,
       function: FunctionAccessor,
       objectFactory: EvaluationValueSupplier,
-      rawMessageBeingParsed: Any?
+      returnTypeFormat: FormatsAndZoneOffset?,
+      rawMessageBeingParsed: Any?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val result = inputValues.mapNotNull { it.value }.joinToString("")
       return TypedInstance.from(
@@ -59,7 +65,9 @@ object Trim : NullSafeInvoker() {
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?
    ): TypedInstance {
       val input = inputValues[0].value.toString()
       val output = input.trim()
@@ -79,11 +87,12 @@ private fun String.substringOrTypedNull(
    returnType: Type,
    functionName: QualifiedName,
    source: DataSource,
-   schema: Schema
+   schema: Schema,
+   format: FormatsAndZoneOffset?
 ): TypedInstance {
    return try {
       val result = this.substring(startIndex, endIndex)
-      TypedInstance.from(type = returnType, value = result, schema = schema, source = source)
+      TypedInstance.from(type = returnType, value = result, schema = schema, source = source, format = format)
    } catch (boundsException: StringIndexOutOfBoundsException) {
       log().warn("Cannot invoke function $functionName as inputs are out of bounds: ${boundsException.message}")
       // TODO :  We could propigate the rror up through the source for lineage.
@@ -100,7 +109,9 @@ object Left : NullSafeInvoker() {
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?
    ): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
       val count: Int = min(inputValues[1].valueAs(), input.length)
@@ -109,7 +120,9 @@ object Left : NullSafeInvoker() {
          0, count, returnType, Mid.functionName, EvaluatedExpression(
             function.asTaxi(),
             inputValues,
-         ), schema
+         ),
+         schema,
+         format = returnTypeFormat
       )
    }
 }
@@ -122,7 +135,9 @@ object Right : NullSafeInvoker() {
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?
    ): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
       val index: Int = inputValues[1].valueAs()
@@ -131,7 +146,9 @@ object Right : NullSafeInvoker() {
          index, input.length, returnType, Mid.functionName, EvaluatedExpression(
             function.asTaxi(),
             inputValues
-         ), schema
+         ),
+         schema,
+         returnTypeFormat
       )
    }
 }
@@ -144,7 +161,9 @@ object Mid : NullSafeInvoker() {
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?
    ): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
       val start: Int = inputValues[1].valueAs()
@@ -153,7 +172,9 @@ object Mid : NullSafeInvoker() {
          start, end, returnType, functionName, EvaluatedExpression(
             function.asTaxi(),
             inputValues
-         ), schema
+         ),
+         schema,
+         returnTypeFormat
       )
    }
 }
@@ -166,7 +187,9 @@ object Uppercase : NullSafeInvoker() {
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?
    ): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
       val result = input.toUpperCase()
@@ -188,7 +211,9 @@ object Lowercase : NullSafeInvoker() {
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?
    ): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
       val result = input.toLowerCase()
@@ -209,7 +234,9 @@ object Length : NullSafeInvoker() {
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?
    ): TypedInstance {
       val input = inputValues[0].valueAs<String>()
       return TypedInstance.from(
@@ -230,7 +257,9 @@ object Find : NullSafeInvoker() {
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?
    ): TypedInstance {
       val input = inputValues[0].valueAs<String?>()
       val searchString = inputValues[1].valueAs<String>()
@@ -244,6 +273,30 @@ object Find : NullSafeInvoker() {
    }
 }
 
+object ContainsString : NullSafeInvoker() {
+   override fun doInvoke(
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?
+   ): TypedInstance {
+      val input = inputValues[0].valueAs<String>()
+      val searchString = inputValues[1].valueAs<String>()
+      val contains = input.contains(searchString)
+      return TypedInstance.from(
+         schema.type(PrimitiveType.BOOLEAN.qualifiedName), contains, schema, source = EvaluatedExpression(
+            function.asTaxi(),
+            inputValues
+         )
+      )
+   }
+
+   override val functionName: QualifiedName = lang.taxi.functions.stdlib.ContainsString.name
+}
+
 object Coalesce : NamedFunctionInvoker {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Coalesce.name
    override fun invoke(
@@ -252,7 +305,9 @@ object Coalesce : NamedFunctionInvoker {
       returnType: Type,
       function: FunctionAccessor,
       objectFactory: EvaluationValueSupplier,
-      rawMessageBeingParsed: Any?
+      returnTypeFormat: FormatsAndZoneOffset?,
+      rawMessageBeingParsed: Any?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val firstNotNull = inputValues.firstOrNull { it.value != null }
       return firstNotNull ?: TypedNull.create(returnType)
@@ -267,7 +322,9 @@ object Replace : NamedFunctionInvoker {
       returnType: Type,
       function: FunctionAccessor,
       objectFactory: EvaluationValueSupplier,
-      rawMessageBeingParsed: Any?
+      returnTypeFormat: FormatsAndZoneOffset?,
+      rawMessageBeingParsed: Any?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
 
       val input: String = inputValues[0].valueAs()

@@ -9,7 +9,6 @@ import {
   Type,
   TypedInstance
 } from '../services/schema';
-import {methodClassFromName, OperationSummary, toOperationSummary} from '../service-view/service-view.component';
 import {Fact} from '../services/query.service';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Observable} from 'rxjs';
@@ -17,6 +16,8 @@ import {BaseDeferredEditComponent} from '../type-viewer/base-deferred-edit.compo
 import {MatDialog} from '@angular/material/dialog';
 import {openTypeSearch} from '../type-viewer/model-attribute-tree-list/base-schema-member-display';
 import {isNullOrUndefined} from 'util';
+import { OperationSummary, toOperationSummary } from 'src/app/service-view/operation-summary';
+import { methodClassFromName } from 'src/app/service-view/service-view-class-utils';
 
 @Component({
   selector: 'app-operation-view',
@@ -53,7 +54,7 @@ import {isNullOrUndefined} from 'util';
         <button tuiLink [pseudo]="true" (click)="selectReturnType()"
                 *ngIf="editable">{{ displayName(operation.returnTypeName, showFullTypeNames) }}</button>
         <span class="mono-badge" *ngIf="!editable"><a
-          [routerLink]="['/types', navigationTargetForType(operation.returnTypeName)]">{{operation.returnTypeName.shortDisplayName}}</a></span>
+          [routerLink]="['/catalog', navigationTargetForType(operation.returnTypeName)]">{{operation.returnTypeName.shortDisplayName}}</a></span>
       </section>
 
 
@@ -118,6 +119,7 @@ import {isNullOrUndefined} from 'util';
 })
 export class OperationViewComponent extends BaseDeferredEditComponent<Operation> {
 
+
   constructor(private dialog: MatDialog) {
     super();
   }
@@ -136,6 +138,10 @@ export class OperationViewComponent extends BaseDeferredEditComponent<Operation>
     return getDisplayName(name, showFullTypeNames);
   }
 
+  navigationTargetForType(name: QualifiedName): string {
+    // Can't call directly, because function is not accessible via angular template
+    return getCatalogType(name);
+  }
 
   @Input()
   loading: boolean;
@@ -199,18 +205,6 @@ export class OperationViewComponent extends BaseDeferredEditComponent<Operation>
     this.cancel.emit({});
   }
 
-  /**
-   * Unpacks array types to return the actual member value
-   * @param typeName
-   */
-  navigationTargetForType(typeName: QualifiedName): string {
-    if (typeName.parameters && typeName.parameters.length === 1) {
-      return this.navigationTargetForType(typeName.parameters[0]);
-    } else {
-      return typeName.fullyQualifiedName;
-    }
-  }
-
   selectReturnType() {
     const dialog = openTypeSearch(this.dialog);
     dialog.afterClosed().subscribe((event) => {
@@ -235,5 +229,18 @@ export class OperationViewComponent extends BaseDeferredEditComponent<Operation>
         }
       }
     })
+  }
+}
+
+
+/**
+ * Unpacks array types to return the actual member value
+ * @param typeName
+ */
+export function getCatalogType(typeName: QualifiedName): string {
+  if (typeName.parameters && typeName.parameters.length === 1) {
+    return getCatalogType(typeName.parameters[0]);
+  } else {
+    return typeName.fullyQualifiedName;
   }
 }

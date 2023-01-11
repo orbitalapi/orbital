@@ -71,6 +71,7 @@ abstract class BaseQueryServiceTest {
             orderId: OrderId
             tradeId: TradeId
             instrumentName: InstrumentName
+            @FirstNotEmpty
             maturityDate: MaturityDate
             traderName : TraderName
          }
@@ -149,16 +150,17 @@ abstract class BaseQueryServiceTest {
       )
 
       val maturityDateTrade = "2026-12-01"
-      stubService.addResponse(
-         "getTrades", vyne.parseJsonModel(
-            "Trade[]", """
+      val response = vyne.parseJsonModel(
+         "Trade[]", """
                [{
                   "maturityDate": "$maturityDateTrade",
                   "orderId": "orderId_0",
                   "tradeId": "Trade_0"
                }]
             """.trimIndent()
-         ), modifyDataSource = true
+      )
+      stubService.addResponse(
+         "getTrades", response, modifyDataSource = true
       )
 
       stubService.addResponse(

@@ -1,5 +1,7 @@
 package io.vyne.cask.services
 
+import io.vyne.SourcePackage
+import io.vyne.cask.CaskSchemas
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.schema
@@ -168,9 +170,10 @@ class CaskServiceBootstrap(
                // most up-to-date OrderView will be published.
                //
                val sourcesWithout = this.schemaProvider
-                  .versionedSources
+                  .packages.filter { it.identifier.unversionedId == CaskSchemas.packageIdentifier.unversionedId }
+                  .flatMap { it.sources }
                   .filterNot { source -> source.name.startsWith("${DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE}.${caskConfig.qualifiedTypeName}") }
-               val caskSchema = caskConfig.schema(TaxiSchema.from(sourcesWithout))
+               val caskSchema = caskConfig.schema(TaxiSchema.fromPackages(listOf(SourcePackage(CaskSchemas.packageMetadata, sourcesWithout))).second)
                val type = caskSchema.versionedType(caskConfig.qualifiedTypeName.fqn())
 
                val dependencies = caskViewService

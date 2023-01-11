@@ -1,7 +1,7 @@
 package io.vyne.query.graph.edges
 
-import io.vyne.models.CopyOnWriteFactBag
-import io.vyne.models.FactDiscoveryStrategy
+import io.vyne.models.facts.CopyOnWriteFactBag
+import io.vyne.models.facts.FactDiscoveryStrategy
 import io.vyne.models.MixedSources
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
@@ -78,10 +78,6 @@ class ParameterFactory {
       val fields = paramType.attributes.map { (attributeName, field) ->
          val attributeType = context.schema.type(field.type.fullyQualifiedName)
 
-         // THIS IS WHERE I'M UP TO.
-         // Try restructing this to a strategy approach.
-         // Can we try searching within the context before we try constructing?
-         // what are the impacts?
          var attributeValue: TypedInstance? =
             context.getFactOrNull(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
 

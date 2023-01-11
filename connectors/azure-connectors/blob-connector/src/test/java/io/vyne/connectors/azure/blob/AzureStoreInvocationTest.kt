@@ -6,23 +6,16 @@ import com.winterbe.expekt.should
 import io.vyne.connectors.azure.blob.registry.AzureStorageConnectorConfiguration
 import io.vyne.connectors.azure.blob.registry.InMemoryAzureStoreConnectorRegister
 import io.vyne.connectors.azure.blob.support.AzuriteContainer
-import io.vyne.models.TypedInstance
 import io.vyne.query.VyneQlGrammar
 import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.testVyne
 import io.vyne.typedObjects
 import kotlinx.coroutines.runBlocking
-import org.apache.commons.csv.CSVFormat
-import org.apache.commons.csv.CSVPrinter
 import org.junit.jupiter.api.Test
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.io.ByteArrayInputStream
-import java.io.File
-import java.io.FileWriter
-import java.math.BigDecimal
-import java.util.UUID
-import kotlin.random.Random
+import java.util.*
 
 @Testcontainers
 class AzureStoreInvocationTest {
@@ -37,8 +30,10 @@ class AzureStoreInvocationTest {
    private val defaultEndpointsProtocol = "http"
    private val accountName = "devstoreaccount1"
    private val accountKey = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
-   private val blobEndpoint = "http://127.0.0.1:${azuriteContainer.getMappedPort(10000)}/devstoreaccount1"
-   private val connectionString = "DefaultEndpointsProtocol=$defaultEndpointsProtocol;AccountName=$accountName;AccountKey=$accountKey;BlobEndpoint=$blobEndpoint;"
+   private val blobEndpoint =
+      "http://${azuriteContainer.host}:${azuriteContainer.getMappedPort(10000)}/devstoreaccount1"
+   private val connectionString =
+      "DefaultEndpointsProtocol=$defaultEndpointsProtocol;AccountName=$accountName;AccountKey=$accountKey;BlobEndpoint=$blobEndpoint;"
 
    private val connectionRegistry = InMemoryAzureStoreConnectorRegister(
       listOf(AzureStorageConnectorConfiguration("movies", connectionString))
@@ -83,7 +78,7 @@ class AzureStoreInvocationTest {
          listOf(StoreInvoker(AzureStreamProvider(), connectionRegistry, SimpleSchemaProvider(schema)))
       }
 
-      val result = vyne.query("""findAll { Movie[]( MovieTitle == "A New Hope" ) } """)
+      val result = vyne.query("""find { Movie[]( MovieTitle == "A New Hope" ) } """)
          .typedObjects()
       result.should.have.size(1)
       result.first().toRawObject()

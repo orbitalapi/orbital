@@ -51,7 +51,7 @@ class StressRegressionTest {
       uploadFunc(dataFolder, fullyQualifiedTypeName)!!.toSet().should.equal(setOf(200))
       vyneUtil.ensureType("vyne.cask.$fullyQualifiedTypeName", 10, 5000)
       val response = TestHelper.submitVyneQl("""
-            findAll {
+            find {
               $fullyQualifiedTypeName[]
             }
         """.trimIndent())

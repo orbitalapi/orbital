@@ -1,203 +1,41 @@
 package io.vyne.query
 
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
 import com.google.common.collect.HashMultimap
-import io.vyne.models.CopyOnWriteFactBag
-import io.vyne.models.FactBag
-import io.vyne.models.FactDiscoveryStrategy
 import io.vyne.models.InPlaceQueryEngine
 import io.vyne.models.OperationResult
-import io.vyne.models.RawObjectMapper
-import io.vyne.models.TypeNamedInstanceMapper
 import io.vyne.models.TypedInstance
-import io.vyne.models.TypedInstanceConverter
-import io.vyne.query.QueryResponse.ResponseStatus
-import io.vyne.query.QueryResponse.ResponseStatus.COMPLETED
-import io.vyne.query.QueryResponse.ResponseStatus.INCOMPLETE
+import io.vyne.models.facts.CopyOnWriteFactBag
+import io.vyne.models.facts.FactBag
+import io.vyne.models.facts.FactDiscoveryStrategy
+import io.vyne.models.facts.ScopedFact
+import io.vyne.models.functions.FunctionResultCacheKey
 import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.query.graph.ServiceParams
 import io.vyne.query.graph.edges.EvaluatableEdge
 import io.vyne.query.graph.edges.EvaluatedEdge
-import io.vyne.schemas.Operation
-import io.vyne.schemas.OperationNames
-import io.vyne.schemas.OutputConstraint
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.Policy
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Service
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
+import io.vyne.utils.Ids
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
+import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.policies.Instruction
-import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 
-private val logger = KotlinLogging.logger {}
-
-/**
- * Defines a node within a QuerySpec that
- * describes the expected return type.
- * eg:
- * Given
- * {
- *    Client {  // <---QuerySpecTypeNode
- *       ClientId, ClientFirstName, ClientLastName // <--- 3 Children, all QuerySpecTypeNode's too!
- *    }
- * }
- *
- */
-// TODO : Why isn't the type enough, given that has children?  Why do I need to explicitly list the children I want?
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class QuerySpecTypeNode(
-   val type: Type,
-   @Deprecated("Not used, not required")
-   val children: Set<QuerySpecTypeNode> = emptySet(),
-   val mode: QueryMode = QueryMode.DISCOVER,
-   // Note: Not really convinced these need to be OutputCOnstraints (vs Constraints).
-   // Revisit later
-   val dataConstraints: List<OutputConstraint> = emptyList()
-) {
-   init {
-      if (type.isCollection && type.collectionTypeName!!.fullyQualifiedName == PrimitiveType.ANY.qualifiedName) {
-         logger.warn { "Performing a search for Any[] is likely a bug" }
-      }
-   }
-   val description = type.longDisplayName
-}
 
 class QueryResultResultsAttributeKeyDeserialiser : KeyDeserializer() {
    override fun deserializeKey(p0: String?, p1: DeserializationContext?): Any? {
       return null
    }
 
-}
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class QueryResult(
-   @field:JsonIgnore
-   val querySpec: QuerySpecTypeNode,
-   @field:JsonIgnore // we send a lightweight version below
-   val results: Flow<TypedInstance>,
-   @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
-   @field:JsonIgnore // this sends too much information - need to build a lightweight version
-   override val profilerOperation: ProfilerOperation? = null,
-   @Deprecated("It's no longer possible to know at the time the QueryResult is instantiated if the query has been fully resolved.  Catch the exception from the Flow<> instead.")
-   override val isFullyResolved: Boolean,
-   val anonymousTypes: Set<Type> = setOf(),
-   override val clientQueryId: String? = null,
-   override val queryId: String,
-   @field:JsonIgnore // we send a lightweight version below
-   val statistics: MutableSharedFlow<VyneQueryStatistics>? = null,
-   override val responseType: String? = null,
-
-   @field:JsonIgnore
-   private val onCancelRequestHandler: () -> Unit = {}
-) : QueryResponse {
-   override val queryResponseId: String = queryId
-   val duration = profilerOperation?.duration
-
-   @Deprecated(
-      "Now that a query only reflects a single type, this does not make sense anymore",
-      replaceWith = ReplaceWith("isFullyResolved")
-   )
-   @get:JsonIgnore // Deprecated
-   val unmatchedNodes: Set<QuerySpecTypeNode> by lazy {
-      setOf(querySpec)
-   }
-   override val responseStatus: ResponseStatus = if (isFullyResolved) COMPLETED else INCOMPLETE
-
-   // for UI
-   val searchedTypeName: QualifiedName = querySpec.type.qualifiedName
-
-   /**
-    * Returns the result stream with all type information removed.
-    */
-   @get:JsonIgnore
-   val rawResults: Flow<Any?>
-      get() {
-         val converter = TypedInstanceConverter(RawObjectMapper)
-         return results.map {
-            converter.convert(it)
-         }
-      }
-
-   /**
-    * Returns the result stream converted to TypeNamedInstances.
-    * Note that depending on the actual values provided in the results,
-    * we may emit TypeNamedInstance or TypeNamedInstace[].  Nulls
-    * present in the result stream are not filtered.
-    * For these reasons, the result is Flow<Any?>
-    *
-    */
-   @get:JsonIgnore
-   val typedNamedInstanceResults: Flow<Any?>
-      get() {
-         val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
-         return results.map { converter.convert(it) }
-      }
-
-   fun requestCancel() {
-      this.onCancelRequestHandler.invoke()
-   }
-}
-
-// Note : Also models failures, so is fairly generic
-interface QueryResponse {
-   @Serializable
-   enum class ResponseStatus {
-      UNKNOWN,
-      COMPLETED,
-      RUNNING,
-
-      // Ie., the query didn't error, but not everything was resolved
-      INCOMPLETE,
-      ERROR,
-      CANCELLED
-   }
-
-   val responseStatus: ResponseStatus
-   val queryResponseId: String
-   val clientQueryId: String?
-   val queryId: String
-
-   @get:JsonProperty("fullyResolved")
-   val isFullyResolved: Boolean
-   val profilerOperation: ProfilerOperation?
-   val remoteCalls: List<RemoteCall>
-      get() = collateRemoteCalls(this.profilerOperation)
-
-   val timings: Map<OperationType, Long>
-      get() {
-         return profilerOperation?.timings ?: emptyMap()
-      }
-
-   val vyneCost: Long
-      get() = profilerOperation?.vyneCost ?: 0L
-
-   val responseType: String?
-
-}
-
-interface FailedQueryResponse : QueryResponse {
-   val message: String
-   override val responseStatus: ResponseStatus
-      get() = ResponseStatus.ERROR
-   override val isFullyResolved: Boolean
-      get() = false
 }
 
 fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> {
@@ -250,6 +88,11 @@ object QueryCancellationRequest
 
 data class QueryContext(
    val schema: Schema,
+
+   // TODO : Facts should become "scoped", to allow us to carefully
+   // manage which facts are shared between contexts when doing things like
+   // projecting.
+   // CascadingFactBag will be useful here.
    val facts: FactBag,
    val queryEngine: QueryEngine,
    val profiler: QueryProfiler,
@@ -272,12 +115,18 @@ data class QueryContext(
 
    val vyneQueryStatistics: VyneQueryStatistics = VyneQueryStatistics(),
 
+   val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = ConcurrentHashMap()
+
    ) : ProfilerOperation by profiler, FactBag by facts, QueryContextEventDispatcher, InPlaceQueryEngine {
 
+   private val logger = KotlinLogging.logger {}
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
    var isProjecting = false
-   var projectResultsTo: Type? = null
+//   var projectResultsTo: Type? = null
+//      private set
+
+   var projectionScope: ProjectionFunctionScope? = null
       private set
 
    var responseType: String? = null
@@ -316,21 +165,21 @@ data class QueryContext(
    override fun toString() = "# of facts=${facts.size} #schema types=${schema.types.size}"
    suspend fun find(typeName: String): QueryResult = find(TypeNameQueryExpression(typeName))
 
-   suspend fun find(queryString: QueryExpression): QueryResult = queryEngine.find(queryString, this)
-   suspend fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this)
-   suspend fun find(target: Set<QuerySpecTypeNode>): QueryResult = queryEngine.find(target, this)
+   suspend fun find(queryString: QueryExpression): QueryResult = queryEngine.find(queryString, this.newSearchContext())
+   suspend fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this.newSearchContext())
+   suspend fun find(target: Set<QuerySpecTypeNode>): QueryResult = queryEngine.find(target, this.newSearchContext())
    suspend fun find(target: QuerySpecTypeNode, excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>): QueryResult =
-      queryEngine.find(target, this, excludedOperations)
+      queryEngine.find(target, this.newSearchContext(), excludedOperations)
 
    suspend fun build(typeName: QualifiedName): QueryResult = build(typeName.parameterizedName)
-   suspend fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this)
+   suspend fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this.newSearchContext())
    suspend fun build(expression: QueryExpression): QueryResult =
       //timed("QueryContext.build") {
-      queryEngine.build(expression, this)
+      queryEngine.build(expression, this.newSearchContext())
    //}
 
    suspend fun findAll(typeName: String): QueryResult = findAll(TypeNameQueryExpression(typeName))
-   suspend fun findAll(queryString: QueryExpression): QueryResult = queryEngine.findAll(queryString, this)
+   suspend fun findAll(queryString: QueryExpression): QueryResult = queryEngine.findAll(queryString, this.newSearchContext())
 
    fun parseQuery(typeName: String) = queryEngine.parse(TypeNameQueryExpression(typeName))
    fun parseQuery(expression: QueryExpression) = queryEngine.parse(expression)
@@ -357,17 +206,26 @@ data class QueryContext(
       }
    }
 
+   private fun newSearchContext(clientQueryId: String? = Ids.id(prefix = "clientQueryId", size = 8)):QueryContext {
+      return this
+      val clone = this.copy(
+         clientQueryId = clientQueryId,
+         queryId = Ids.id("query")
+      )
+      clone.projectionScope = null
+      return clone
+   }
    /**
     * Returns a QueryContext, with only the provided fact.
     * All other parameters (queryEngine, schema, etc) are retained
     */
-   fun only(fact: TypedInstance): QueryContext {
-      return only(listOf(fact))
-
+   fun only(fact: TypedInstance, scopedFacts: List<ScopedFact> = emptyList()): QueryContext {
+      return only(listOf(fact), scopedFacts)
    }
-   fun only(facts:List<TypedInstance>): QueryContext {
-      val copied = this.copy(
-         facts = CopyOnWriteFactBag(facts, schema),
+
+   fun only(facts:List<TypedInstance>, scopedFacts: List<ScopedFact> = emptyList()): QueryContext {
+      val copied = this.newSearchContext().copy(
+         facts = CopyOnWriteFactBag(CopyOnWriteArrayList(facts), scopedFacts, schema),
          parent = this,
          vyneQueryStatistics = VyneQueryStatistics()
       )
@@ -377,7 +235,7 @@ data class QueryContext(
    }
 
    fun only(): QueryContext {
-      val copied = this.copy()
+      val copied = this.newSearchContext()
       copied.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
       copied.excludedServices.addAll(this.excludedServices)
       return copied
@@ -389,19 +247,20 @@ data class QueryContext(
       return this
    }
 
-   fun projectResultsTo(projectedTaxiType: lang.taxi.types.Type): QueryContext {
-      return projectResultsTo(ProjectionAnonymousTypeProvider.projectedTo(projectedTaxiType,schema))
-   }
+//   fun projectResultsTo(projectedTaxiType: lang.taxi.types.Type, scope:ProjectionFunctionScope?): QueryContext {
+//      return projectResultsTo(ProjectionAnonymousTypeProvider.projectedTo(projectedTaxiType,schema), scope)
+//   }
 
    override suspend fun findType(type: Type): Flow<TypedInstance> {
       return this.find(type.qualifiedName.parameterizedName)
          .results
    }
 
-   private fun projectResultsTo(targetType: Type): QueryContext {
-      projectResultsTo = targetType
-      return this
-   }
+//   private fun projectResultsTo(targetType: Type, scope:ProjectionFunctionScope?): QueryContext {
+//      projectResultsTo = targetType
+//      projectionScope = scope
+//      return this
+//   }
 
 
    fun addEvaluatedEdge(evaluatedEdge: EvaluatedEdge) = this.evaluatedEdges.add(evaluatedEdge)
@@ -501,7 +360,7 @@ data class QueryContext(
                   excludedServices.add(
                      SearchGraphExclusion(
                         "Exclude already invoked @DataSource annotated services from discovery searches",
-                        QualifiedName(serviceToExclude)
+                        QualifiedName.from(serviceToExclude)
                      )
                   )
                }

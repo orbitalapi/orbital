@@ -89,7 +89,7 @@ class VyneQueryTest {
 
       val response = vyne.parseJsonModel("Trade[]", """[ { "traderId" : "jimmy" } ]""")
       stub.addResponse("tradeQuery", response)
-      val queryResult = vyne.query("findAll { Trade[]( TraderId == 'jimmy' ) }")
+      val queryResult = vyne.query("find { Trade[]( TraderId == 'jimmy' ) }")
 
       val resultList = queryResult.rawObjects()
       resultList.should.have.size(1)
@@ -99,7 +99,7 @@ class VyneQueryTest {
       invocations.should.have.size(1)
       val vyneQlQuery = invocations.first().value!! as String
 
-      val expectedVyneQl = """findAll { lang.taxi.Array<Trade>(
+      val expectedVyneQl = """find { lang.taxi.Array<Trade>(
           TraderId == "jimmy"
          )
       }"""
@@ -140,7 +140,7 @@ class VyneQueryTest {
       stub.addResponse("findName", vyne.parseKeyValuePair("PersonName", "Jimmy"))
 
       val result = vyne.query(
-         """findAll { Person[] } as { id : PersonId
+         """find { Person[] } as { id : PersonId
          | name : PersonName }[]""".trimMargin()
       )
          .results.toList()
@@ -159,7 +159,7 @@ class VyneQueryTest {
       """.trimIndent()
       )
       assertFails {
-         val result = vyne.query("findAll { Person[] }")
+         val result = vyne.query("find { Person[] }")
             .typedObjects()
       }
    }
@@ -177,7 +177,7 @@ class VyneQueryTest {
       """.trimIndent()
       )
       stub.addResponse("findPeople", emptyList())
-      val result = vyne.query("findAll { Person[] }")
+      val result = vyne.query("find { Person[] }")
          .typedObjects()
       result.should.be.empty
    }
@@ -201,7 +201,7 @@ class VyneQueryTest {
       """.trimIndent()
          )
          stub.addResponse("findBooks", emptyList())
-         val result = vyne.query("given { id:AuthorId = 1 } findOne { Book[] }")
+         val result = vyne.query("given { id:AuthorId = 1 } find {Book[] }")
             .typedObjects()
          result.should.be.empty
       }
@@ -227,7 +227,7 @@ class VyneQueryTest {
          "findBooks",
          vyne.parseJson("Book[]", """[ { "title" : "Harry Potter 1" } , { "title" : "Harry Potter 2" } ]""")
       )
-      val result = vyne.query("given { id:AuthorId = 1 } findOne { Book[] }")
+      val result = vyne.query("given { id:AuthorId = 1 } find {Book[] }")
          .typedObjects()
       result.should.have.size(2)
    }
@@ -280,7 +280,7 @@ class VyneQueryTest {
       stub.addResponse("findName", vyne.parseKeyValuePair("PersonName", "Jimmy"))
 
       val result = vyne.query(
-         """findAll { Person[] } as Result[]""".trimMargin()
+         """find { Person[] } as Result[]""".trimMargin()
       )
          .results.toList()
       result.first().toRawObject().should.equal(
@@ -339,7 +339,7 @@ class VyneQueryTest {
       stub.addResponse("findName", vyne.parseKeyValuePair("PersonName", "Jimmy"))
 
       val result = vyne.query(
-         """findAll { Person[] } as Result[]""".trimMargin()
+         """find { Person[] } as Result[]""".trimMargin()
       )
          .results.toList()
       result.first().toRawObject().should.equal(
@@ -493,7 +493,7 @@ class VyneQueryTest {
 
       val result = vyne.query(
          """
-            findAll {
+            find {
                 Isin[]
               } as Target[]
             """.trimIndent()

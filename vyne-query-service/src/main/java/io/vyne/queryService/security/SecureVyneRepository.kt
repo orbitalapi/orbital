@@ -1,5 +1,7 @@
 package io.vyne.queryService.security
 
+import io.vyne.auth.authentication.VyneUser
+import io.vyne.auth.authentication.VyneUserRepository
 import reactor.core.publisher.Flux
 
 /**

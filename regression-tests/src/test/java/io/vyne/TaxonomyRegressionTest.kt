@@ -37,7 +37,7 @@ class TaxonomyRegressionTest {
    @Test
    fun `find All nicean Orders `() {
       val response = TestHelper.submitVyneQl("""
-            findAll {
+            find {
               $niceaType[]
             }
         """.trimIndent())
@@ -47,7 +47,7 @@ class TaxonomyRegressionTest {
    @Test
    fun `find All troy Orders `() {
       val response = TestHelper.submitVyneQl("""
-            findAll {
+            find {
               $troyType[]
             }
         """.trimIndent())
@@ -57,7 +57,7 @@ class TaxonomyRegressionTest {
    @Test
    fun `find All smyrna orders`() {
       val response = TestHelper.submitVyneQl("""
-            findAll {
+            find {
               $smyrnaType[]
             }
         """.trimIndent())
@@ -67,7 +67,7 @@ class TaxonomyRegressionTest {
    @Test
    fun `find All philadelphia orders`() {
       val response = TestHelper.submitVyneQl("""
-            findAll {
+            find {
               $philadelphiaType[]
             }
         """.trimIndent())
@@ -77,7 +77,7 @@ class TaxonomyRegressionTest {
    @Test
    fun `find All magnesia orders`() {
       val response = TestHelper.submitVyneQl("""
-            findAll {
+            find {
               $magnesiaType[]
             }
         """.trimIndent())
@@ -87,7 +87,7 @@ class TaxonomyRegressionTest {
    @Test
    fun `find All knidos orders`() {
       val response = TestHelper.submitVyneQl("""
-            findAll {
+            find {
               $knidosType[]
             }
         """.trimIndent())
@@ -97,7 +97,7 @@ class TaxonomyRegressionTest {
    @Test
    fun `find All tenedos orders`() {
       val response = TestHelper.submitVyneQl("""
-            findAll {
+            find {
               $tenedosOrdersType[]
             }
         """.trimIndent())
@@ -107,7 +107,7 @@ class TaxonomyRegressionTest {
    @Test
    fun `find All tenedos trades`() {
       val response = TestHelper.submitVyneQl("""
-            findAll {
+            find {
               $tenedosTradesType[]
             }
         """.trimIndent())
@@ -117,7 +117,7 @@ class TaxonomyRegressionTest {
    @Test
    fun `find All Convertible Bond Rfqs`() {
       val response = TestHelper.submitVyneQl("""
-            findAll {
+            find {
               $rfqConvertibleBondsType[]
             }
         """.trimIndent())
@@ -127,7 +127,7 @@ class TaxonomyRegressionTest {
    @Test
    fun `find All Ird Rfqs`() {
       val response = TestHelper.submitVyneQl("""
-            findAll {
+            find {
               $rfqIrdType[]
             }
         """.trimIndent())
@@ -169,7 +169,7 @@ class TaxonomyRegressionTest {
    @Test
    fun `findAll lesbos OrderSent`() {
       val response = TestHelper.submitVyneQl("""
-            findAll {
+            find {
               $lesbosWebOrderSent[]
             }
         """.trimIndent())
@@ -180,7 +180,7 @@ class TaxonomyRegressionTest {
    @Test
    fun `findAll lesbos OrderFilled`() {
       val response = TestHelper.submitVyneQl("""
-            findAll {
+            find {
               $lesbosWebOrderFilled[]
             }
         """.trimIndent())
@@ -191,7 +191,7 @@ class TaxonomyRegressionTest {
    @Test
    fun `findAll LesbosOrderReportView`() {
       val response = TestHelper.submitVyneQl("""
-            findAll {
+            find {
               $lesbosWebOrderReportView[]
             }
         """.trimIndent())
@@ -220,7 +220,7 @@ class TaxonomyRegressionTest {
          projectedToType: String): String {
          val now = LocalDate.now()
          return """
-                findAll { $fetchType[] ( CaskInsertedAt >= "${now}T00:00:00", CaskInsertedAt < "${now.plusDays(1)}T00:00:00" ) } as $projectedToType[]
+                find { $fetchType[] ( CaskInsertedAt >= "${now}T00:00:00", CaskInsertedAt < "${now.plusDays(1)}T00:00:00" ) } as $projectedToType[]
             """.trimIndent()
       }
 

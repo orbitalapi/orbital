@@ -8,11 +8,13 @@ import io.vyne.models.FactBagValueSupplier
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
+import io.vyne.models.functions.FunctionResultCacheKey
 import io.vyne.models.functions.NamedFunctionInvoker
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeMatchingStrategy
 import lang.taxi.functions.FunctionAccessor
+import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.QualifiedName
 
 object Functional {
@@ -30,12 +32,14 @@ object Fold : NamedFunctionInvoker {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Fold.name
 
    override fun invoke(
-       inputValues: List<TypedInstance>,
-       schema: Schema,
-       returnType: Type,
-       function: FunctionAccessor,
-       objectFactory: EvaluationValueSupplier,
-       rawMessageBeingParsed: Any?
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
+      rawMessageBeingParsed: Any?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val sourceCollection = inputValues[0] as TypedCollection
       val initialValue = inputValues[1] as TypedValue
@@ -50,12 +54,13 @@ object Fold : NamedFunctionInvoker {
          val factBagValueSupplier = FactBagValueSupplier.of(
             listOf(acc,typedInstance),
             schema,
+            objectFactory,
             // Exact match so that the accumulated value (which is likely an INT) doesn't conflict with semantic subtypes.
             // We should be smarter about this.
             TypeMatchingStrategy.EXACT_MATCH
          )
          val reader = AccessorReader(factBagValueSupplier,schema.functionRegistry,schema)
-         val evaluated = reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = dataSource)
+         val evaluated = reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = dataSource, format = null)
          evaluated as TypedValue
       }
       return foldedValue
@@ -64,12 +69,14 @@ object Fold : NamedFunctionInvoker {
 
 object Reduce : NamedFunctionInvoker {
    override fun invoke(
-       inputValues: List<TypedInstance>,
-       schema: Schema,
-       returnType: Type,
-       function: FunctionAccessor,
-       objectFactory: EvaluationValueSupplier,
-       rawMessageBeingParsed: Any?
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
+      rawMessageBeingParsed: Any?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val sourceCollection = inputValues[0] as TypedCollection
       val deferredInstance = inputValues[1] as DeferredTypedInstance
@@ -81,7 +88,7 @@ object Reduce : NamedFunctionInvoker {
       )
       sourceCollection.reduce { acc, typedInstance ->
          val reader = AccessorReader.forFacts(listOf(acc, typedInstance), schema)
-         val evaluated = reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = dataSource)
+         val evaluated = reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = dataSource, format = null)
          evaluated
       }
       sourceCollection.forEach { instance ->

@@ -1,11 +1,12 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import { QualifiedName, Schema, SchemaMember, Type, VersionedSource } from '../services/schema';
 import { Contents } from './toc-host.directive';
 import { environment } from '../../environments/environment';
-import { Inheritable } from '../inheritence-graph/inheritance-graph.component';
 import { OperationQueryResult } from '../services/types.service';
 import { Router } from '@angular/router';
 import { isNullOrUndefined } from 'util';
+import { Observable } from 'rxjs';
+import { Inheritable } from 'src/app/inheritence-graph/build.inheritable';
 
 /**
  * Whether changes should be saved immediately, or
@@ -34,12 +35,15 @@ export class TypeViewerComponent {
   schema: Schema;
 
   @Input()
+  schema$: Observable<Schema>;
+
+  @Input()
   showFullTypeNames = false;
 
   @Input()
   commitMode: CommitMode = 'immediate';
 
-  private _editable: boolean = false;
+  private _editable = false;
 
   @Output()
   typeUpdated: EventEmitter<Type> = new EventEmitter<Type>();
@@ -53,9 +57,6 @@ export class TypeViewerComponent {
   }
 
   set editable(value: boolean) {
-    if (this.editable === value) {
-      return;
-    }
     this._editable = value;
     if (this.editable) {
       // When editable has been changed to true, update the type to
@@ -65,7 +66,7 @@ export class TypeViewerComponent {
   }
 
   // Set this if we're viewing a type where the
-  // attriubtes might not exist in the schema ye.
+  // attributes might not exist in the schema ye.
   // eg - when we're importing new types.
   @Input()
   anonymousTypes: Type[] = [];
@@ -100,7 +101,7 @@ export class TypeViewerComponent {
 
   constructor(private router: Router,
               private changeDetector: ChangeDetectorRef) {
-    this.showPolicyManager = environment.showPolicyManager;
+    this.showPolicyManager = false; //environment.showPolicyManager;
   }
 
   @Input()
@@ -120,6 +121,10 @@ export class TypeViewerComponent {
     return this._type;
   }
 
+  get requiredMembers(): string[] {
+    return [this.type.name.fullyQualifiedName];
+  }
+
   set type(value: Type) {
     this._type = value;
     if (this.type && this._editable) {
@@ -128,8 +133,8 @@ export class TypeViewerComponent {
     }
     if (this.type) {
       this.schemaMember = SchemaMember.fromType(this.type);
-      this.sources = this.schemaMember.sources;
-      this.sourceTaxi = this.sources.map(v => v.content)
+      this.sources = this.schemaMember.sources || [];
+      this.sourceTaxi = (this.sources).map(v => v.content)
         .join('\n');
     }
     this.changeDetector.markForCheck();

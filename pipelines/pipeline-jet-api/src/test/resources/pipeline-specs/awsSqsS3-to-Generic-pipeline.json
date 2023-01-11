@@ -7,6 +7,7 @@
     "targetTypeName" : "foo",
     "queueName" : "sqsQueueUrl",
     "pollSchedule" : "* * * * * *",
+    "preventConcurrentExecution" : false,
     "targetType" : "foo"
   },
   "outputs" : [ {

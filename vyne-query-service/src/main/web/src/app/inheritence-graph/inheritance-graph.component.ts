@@ -1,17 +1,9 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {
-  findType,
-  QualifiedName,
-  Schema,
-  SchemaGraph,
-  SchemaGraphLink,
-  SchemaGraphNode,
-  SchemaNodeSet,
-  Type
-} from '../services/schema';
-import {outerRectangle, innerRectangle} from '../type-viewer/type-link-graph/graph-utils';
+import { Component, Input } from '@angular/core';
+import { QualifiedName, SchemaGraphLink, SchemaGraphNode, SchemaNodeSet } from '../services/schema';
+import { innerRectangle, outerRectangle } from '../type-viewer/type-link-graph/graph-utils';
 import * as shape from 'd3-shape';
-import {Router} from '@angular/router';
+import { Router } from '@angular/router';
+import { Inheritable } from 'src/app/inheritence-graph/build.inheritable';
 
 @Component({
   selector: 'app-inheritance-graph',
@@ -161,27 +153,3 @@ export class InheritanceGraphComponent {
   }
 }
 
-export function buildInheritable(type: Type, schema: Schema): Inheritable {
-  if (type.inheritsFrom && type.inheritsFrom.length > 1) {
-    throw new Error('Multiple inheritance not supported');
-  }
-  let inheritsFrom: Inheritable = null;
-  if (type.inheritsFrom && type.inheritsFrom.length === 1) {
-    inheritsFrom = buildInheritable(findType(schema, type.inheritsFrom[0].fullyQualifiedName), schema);
-  }
-  let aliasFor: Inheritable = null;
-  if (type.aliasForType) {
-    aliasFor = buildInheritable(findType(schema, type.aliasForType.fullyQualifiedName), schema);
-  }
-  return {
-    name: type.name,
-    inheritsFrom,
-    aliasFor
-  };
-}
-
-export interface Inheritable {
-  name: QualifiedName;
-  inheritsFrom: Inheritable | null;
-  aliasFor: Inheritable | null;
-}

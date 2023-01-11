@@ -162,11 +162,13 @@ class LambdaInvokerTest {
          listOf(LambdaInvoker(connectionRegistry, SimpleSchemaProvider(schema)), stubService)
       }
 
-      val result = vyne.query("""findAll { Movie[] }
+      val result = vyne.query(
+         """find { Movie[] }
             as { id : MovieId
                  pricePerMonth : MonthlyPrice
                  name: StreamingProviderName
-          }[] """)
+          }[] """
+      )
          .typedObjects()
       result.should.have.size(2)
       val sortedByFilmId = result.sortedBy { typedObject ->

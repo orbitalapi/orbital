@@ -66,7 +66,7 @@ abstract class AttributeEvaluator(override val relationship: Relationship) : Edg
       val typeName = pathAttributeParts.first()
       val evaluatedToNullErrorMessage = "Attribute $attributeName on type $typeName evaluated to null"
       if (!context.schema.hasType(typeName)) {
-         return "Attribute $attributeName declared as unknown type $typeName".left()
+          return "Attribute $attributeName declared as unknown type $typeName".left()
       }
       val attributeOrError: Either<String, TypedInstance> = if (previousObject.hasAttribute(attributeName)) {
          previousObject[attributeName].rightIfNotNull { evaluatedToNullErrorMessage }

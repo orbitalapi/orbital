@@ -37,7 +37,8 @@ class TypedValueTest {
    @Test
    fun canParseDatesWithFormats() {
       val schema = TaxiSchema.from("""
-         type KiwiDate inherits Instant( @format = "dd/MM/yy'T'HH:mm:ss" )
+         @Format("dd/MM/yy'T'HH:mm:ss" )
+         type KiwiDate inherits Instant
       """.trimIndent())
       val instance = TypedInstance.from(schema.type("KiwiDate"), "28/04/19T22:00:00", schema, source = Provided)
       val instant = instance.value as Instant
@@ -50,7 +51,8 @@ class TypedValueTest {
       val schema = TaxiSchema.from("""
          type OrderEventTime inherits Time
          model TestTime {
-            orderTime: OrderEventTime ( @format = "HH.mm.s")
+            @Format("HH.mm.s")
+            orderTime: OrderEventTime
          }
 
       """.trimIndent())
@@ -111,7 +113,9 @@ class TypedValueTest {
    @Test
    fun canParseDateOnly() {
       val schema = TaxiSchema.from("""
-         type MaturityDateDate inherits Date(@format = "yyyy-MM-dd", @format = "dd/MM/yyyy HH:mm")
+         @Format("yyyy-MM-dd")
+         @Format("dd/MM/yyyy HH:mm")
+         type MaturityDateDate inherits Date
       """.trimIndent())
       val instance = TypedInstance.from(schema.type("MaturityDateDate"), "09/04/2025 00:00", schema, source = Provided)
       val date = instance.value as LocalDate
@@ -122,7 +126,8 @@ class TypedValueTest {
    @Test
    fun `Can Handle Instants with microsecond resolution`() {
       val schema = TaxiSchema.from("""
-         type KiwiDate inherits Instant(@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'")
+         @Format( "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'")
+         type KiwiDate inherits Instant
       """.trimIndent())
 
       val instance = TypedInstance.from(schema.type("KiwiDate"), 1608034621.123456, schema, source = Provided)
@@ -133,7 +138,8 @@ class TypedValueTest {
    @Test
    fun `Can Handle Instants with microsecond resolution for DateTime types`() {
       val schema = TaxiSchema.from("""
-         type KiwiDate inherits DateTime(@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'")
+         @Format("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'")
+         type KiwiDate inherits DateTime
       """.trimIndent())
 
       val instance = TypedInstance.from(schema.type("KiwiDate"), 1608034621.123456, schema, source = Provided)

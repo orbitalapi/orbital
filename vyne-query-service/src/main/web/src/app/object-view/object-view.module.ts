@@ -1,6 +1,5 @@
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
 import {ObjectViewComponent} from './object-view.component';
 import {MatButtonModule} from '@angular/material/button';
 import {MatMenuModule} from '@angular/material/menu';
@@ -14,7 +13,6 @@ import { ScrollingModule } from '@angular/cdk/scrolling';
 import { ScrollingModule as ExperimentalScrollingModule} from '@angular/cdk-experimental/scrolling';
 @NgModule({
     imports: [CommonModule,
-        BrowserModule,
         MatButtonModule,
         MatButtonToggleModule,
         MatMenuModule,

@@ -15,14 +15,14 @@ export class AppInfoService {
   private config: QueryServiceConfig;
 
   getAppInfo(actuatorEndPoint: string = '/api/actuator'): Observable<AppInfo> {
-    return this.httpClient.get<AppInfo>(`${environment.queryServiceUrl}${actuatorEndPoint}/info`);
+    return this.httpClient.get<AppInfo>(`${environment.serverUrl}${actuatorEndPoint}/info`);
   }
 
   getConfig(): Observable<QueryServiceConfig> {
     if (this.config) {
       return of(this.config);
     } else {
-      const observable = this.httpClient.get<QueryServiceConfig>(`${environment.queryServiceUrl}/api/config`);
+      const observable = this.httpClient.get<QueryServiceConfig>(`${environment.serverUrl}/api/config`);
       observable.subscribe(result => {
         this.config = result;
       });

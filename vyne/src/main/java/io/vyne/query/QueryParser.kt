@@ -14,6 +14,9 @@ class QueryParser(val schema: Schema) {
          is TypeNameListQueryExpression -> parseQueryList(query)
          is GraphQlQueryExpression -> parseQueryObject(query)
          is ConstrainedTypeNameQueryExpression -> parseQueryObject(query)
+         is ProjectedExpression -> {
+            parse(query.source).map { it.copy(projection = query.projection) }.toSet()
+         }
          else -> throw IllegalArgumentException("The query passed was neither a Json object, nor a recognized type.  Unable to proceed:  $query")
       }
    }

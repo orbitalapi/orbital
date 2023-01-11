@@ -38,14 +38,14 @@ class QueryOperationInvocationStrategyTest {
 
    @Test
    fun matchesQueryOperationForFindAll() {
-      val querySpecNode = getQuerySpecNode("findAll { Person[] }", schema)
+      val querySpecNode = getQuerySpecNode("find { Person[] }", schema)
       val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
       candidates.should.have.size(1)
    }
 
    @Test
    fun matchesQueryOperationFilteringEqualsAttributeName() {
-      val querySpecNode = getQuerySpecNode("findAll { Person[]( FirstName == 'Jimmy' ) }", schema)
+      val querySpecNode = getQuerySpecNode("find { Person[]( FirstName == 'Jimmy' ) }", schema)
       val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
       candidates.should.have.size(1)
    }
@@ -71,7 +71,7 @@ class QueryOperationInvocationStrategyTest {
          }
       """.trimIndent()
       )
-      val querySpecNode = getQuerySpecNode("findAll { Trade[]( TraderName == 'Jimmy' ) }", schema)
+      val querySpecNode = getQuerySpecNode("find { Trade[]( TraderName == 'Jimmy' ) }", schema)
       val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
       candidates.should.have.size(2)
    }
@@ -105,7 +105,7 @@ class QueryOperationInvocationStrategyTest {
          }
       """.trimIndent()
       )
-      val querySpecNode = getQuerySpecNode("findAll { Trade[]( TraderName == 'Jimmy' ) }", schema)
+      val querySpecNode = getQuerySpecNode("find { Trade[]( TraderName == 'Jimmy' ) }", schema)
       val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
       candidates.should.have.size(2)
    }
@@ -123,7 +123,7 @@ class QueryOperationInvocationStrategyTest {
          """.trimIndent()
          )
       )
-      val result = runBlocking { vyne.query("findAll { Person[]( FirstName == 'Jimmy' ) }").results.toList() }
+      val result = runBlocking { vyne.query("find { Person[]( FirstName == 'Jimmy' ) }").results.toList() }
 
       stub.invocations.should.have.size(1)
       // TODO :  Assert the vyneQl was formed correctly
@@ -163,7 +163,7 @@ class QueryOperationInvocationStrategyTest {
       )
       val result = runBlocking {
          vyne.query(
-            """findAll { Person[] } as {
+            """find { Person[] } as {
          id : PersonId
          name : PersonName
           managerName : ManagerName

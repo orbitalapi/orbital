@@ -1,8 +1,9 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {FormBuilder, FormControl, FormGroup} from '@angular/forms';
-import {Schema, SchemaMember, SchemaMemberType} from '../../services/schema';
-import {TypesService} from '../../services/types.service';
-import {ActivatedRoute, Router} from '@angular/router';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { Schema, SchemaMember, SchemaMemberType } from '../../services/schema';
+import { TypesService } from '../../services/types.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Location } from '@angular/common';
 
 export interface TypeFilterParams {
   name: string | null;
@@ -72,57 +73,58 @@ export class FilterTypesComponent {
   @Output()
   filterChanged = new EventEmitter<TypeFilterParams>();
 
+  formGroup: FormGroup;
 
-  constructor(fb: FormBuilder, private typeService: TypesService, private activatedRoute: ActivatedRoute, private router: Router) {
+
+  constructor(fb: FormBuilder, private activatedRoute: ActivatedRoute, private router: Router, private location: Location) {
+    this.formGroup = fb.group({
+      filter: fb.control(''),
+      showTypes: fb.control(true),
+      showServices: fb.control(true),
+      showOperations: fb.control(true),
+    });
+
     this.activatedRoute.queryParamMap.subscribe(queryParams => {
-      const filterFromRoute: TypeFilterParams = {
-        name: queryParams.get('name'),
-        namespace: queryParams.get('namespace'),
-        memberType: queryParams.getAll('memberType') as SchemaMemberType[]
-      };
-      this.applyFilter(filterFromRoute, false);
+      const memberTypes = (queryParams.getAll('memberType') || []) as SchemaMemberType[];
+      const memberTypesIsEmpty = memberTypes.length === 0;
+      const formValue = {
+        filter: queryParams.get('name'),
+        showTypes:  memberTypesIsEmpty || memberTypes.includes('TYPE'),
+        showServices: memberTypesIsEmpty || memberTypes.includes('SERVICE'),
+        showOperations: memberTypesIsEmpty || memberTypes.includes('OPERATION')
+      }
+      this.formGroup.setValue(formValue, { emitEvent: false});
     });
-    this.filterTypesFormGroup = fb.group({
-      name: this.name,
-      namespace: this.namespace,
-      filterType: this.filterType
-    });
-    this.expanded = false;
-  }
 
-  updateFilter() {
-    this.applyFilter(this.filter, true);
-  }
+    this.formGroup.valueChanges
+      .subscribe(result => {
+        const types: SchemaMemberType[] = [];
+        if (result['showTypes']) types.push('TYPE');
+        if (result['showServices']) types.push('SERVICE');
+        if (result['showOperations']) types.push('OPERATION');
 
+        this.applyFilter({
+          name: result['filter'],
+          memberType: types,
+          namespace: null
+        }, true)
+      })
+  }
 
   private applyFilter(filter: TypeFilterParams, updateRoute: boolean) {
-    this.filter = filter;
-    this.isFiltered = this.filter.name !== null || this.filter.namespace !== null || this.filter.memberType.length > 0;
     this.filterChanged.emit(filter);
     if (updateRoute) {
       this.setRouteFromFilter(filter);
     }
   }
 
-  clearFilter() {
-    this.applyFilter({
-      name: null,
-      memberType: [],
-      namespace: null
-    }, true);
-    this.filterTypesFormGroup.reset();
-  }
-
-  toggleVisibility() {
-    this.expanded = !this.expanded;
-  }
-
   private setRouteFromFilter(filter: TypeFilterParams) {
-    this.router.navigate(
+    const url = this.router.createUrlTree(
       [],
       {
         relativeTo: this.activatedRoute,
         queryParams: filter,
-      });
+      }).toString();
+    this.location.go(url);
   }
 }

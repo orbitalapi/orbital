@@ -18,7 +18,7 @@
 <!--   <logger level="DEBUG" name="io.vyne" />-->
 <!--   For graph viz, uncomment the following -->
   <!-- <logger level="TRACE" name="io.vyne.query.GraphSearcher" /> -->
-	<root level="WARN">
+	<root level="DEBUG">
 
 		<appender-ref ref="console" />
 	</root>

@@ -12,6 +12,12 @@
   flex-grow: 1;
 }
 
+app-filter-types {
+  margin: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid $borer-light;
+
+}
 
 ::-webkit-input-placeholder { /* Chrome/Opera/Safari */
   color: rgba($body, 0.6);

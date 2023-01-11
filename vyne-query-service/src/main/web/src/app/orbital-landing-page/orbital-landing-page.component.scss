@@ -1,0 +1,5 @@
+:host {
+  // Can't stick this on the parent, as it's a router-outlet
+  flex-grow: 1;
+  width: 100%;
+}

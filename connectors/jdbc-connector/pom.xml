@@ -27,6 +27,11 @@
          <groupId>com.zaxxer</groupId>
          <artifactId>HikariCP</artifactId>
       </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>taxi-jvm-common</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
 
       <dependency>
          <groupId>org.taxilang</groupId>
@@ -118,6 +123,14 @@
          <groupId>com.h2database</groupId>
          <artifactId>h2</artifactId>
          <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
       </dependency>
 
 

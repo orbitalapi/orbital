@@ -14,7 +14,7 @@ import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.models.csv.CsvIngestionParameters
-import io.vyne.schema.spring.FileSchemaSourceProvider
+import io.vyne.schema.publisher.loaders.FileSchemaSourceProvider
 import io.vyne.schemas.fqn
 import io.vyne.utils.Benchmark
 import org.apache.commons.csv.CSVFormat

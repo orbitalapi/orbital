@@ -9,6 +9,7 @@ import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
 import lang.taxi.functions.FunctionAccessor
+import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.QualifiedName
 
 interface NamedFunctionInvoker : FunctionInvoker {
@@ -29,13 +30,25 @@ interface FunctionInvoker {
       returnType: Type,
       function: FunctionAccessor,
       objectFactory: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
       /**
        * The raw value / message being parsed.
        * Not always present, but passed when evaluating from TypedObjectFactory
        */
-      rawMessageBeingParsed:Any? = null
+      rawMessageBeingParsed: Any? = null,
+      resultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf(),
+
    ): TypedInstance
 }
+
+data class FunctionResultCacheKey(
+   val functionName: QualifiedName,
+   /**
+    * The values to use for cache lookup.
+    * Don't pass values that change here, or you'll always get a cache miss
+    */
+   val inputValuesForCache: List<TypedInstance>
+)
 
 interface SelfDescribingFunction : NamedFunctionInvoker {
    val taxiDeclaration: String
@@ -51,7 +64,9 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?
    ): TypedInstance
 
    override fun invoke(
@@ -60,32 +75,38 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
       returnType: Type,
       function: FunctionAccessor,
       objectFactory: EvaluationValueSupplier,
-      rawMessageBeingParsed: Any?
-   ): TypedInstance {
+      returnTypeFormat: FormatsAndZoneOffset?,
+      rawMessageBeingParsed: Any?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>,
+
+      ): TypedInstance {
       return if (inputValues.any { it is TypedNull }) {
          val typedNullTypes = inputValues
             .mapIndexedNotNull { index, typedInstance ->
                if (typedInstance is TypedNull) {
-                  index to typedInstance.typeName
+                  index to typedInstance.type.qualifiedName.shortDisplayName
                } else {
                   null
                }
             }
-         val unresolvedInputs = typedNullTypes.map { (index,typeName) ->
+         val unresolvedInputs = typedNullTypes.map { (index, typeName) ->
             typeName.fqn()
          }
          val message = typedNullTypes.joinToString(
-            prefix = "Function ${this.functionName} does not permit null arguments, but received null for arguments ",
+            prefix = "Function ${this.functionName} (in statement `${function.asTaxi()}`) does not permit null arguments, but received null for arguments ",
             separator = ","
          ) { (parameterIndex, typeName) ->
             "$parameterIndex ($typeName)"
          }
          log().warn("$message.  Not invoking this function, and returning null")
 
-         TypedNull.create(returnType, FailedEvaluatedExpression(
-            function.asTaxi(), inputValues, message, unresolvedInputs))
+         TypedNull.create(
+            returnType, FailedEvaluatedExpression(
+               function.asTaxi(), inputValues, message, unresolvedInputs
+            )
+         )
       } else {
-         doInvoke(inputValues, schema, returnType, function, rawMessageBeingParsed)
+         doInvoke(inputValues, schema, returnType, function, rawMessageBeingParsed, objectFactory, returnTypeFormat)
       }
    }
 }
@@ -103,7 +124,9 @@ class InlineFunctionInvoker(override val functionName: QualifiedName, val handle
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      rawMessageBeingParsed: Any?
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?
    ): TypedInstance {
       return handler.invoke(inputValues, schema, returnType, function)
    }

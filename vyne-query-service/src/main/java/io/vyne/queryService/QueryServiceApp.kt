@@ -2,6 +2,7 @@ package io.vyne.queryService
 
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.orbital.station.OrbitalStationConfig
 import io.vyne.cask.api.CaskApi
 import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.licensing.LicenseConfig
@@ -14,15 +15,15 @@ import io.vyne.query.VyneJacksonModule
 import io.vyne.queryService.lsp.LanguageServerConfig
 import io.vyne.queryService.pipelines.PipelineConfig
 import io.vyne.queryService.security.VyneUserConfig
+import io.vyne.schemaServer.changelog.ChangelogApi
 import io.vyne.schemaServer.editor.SchemaEditorApi
+import io.vyne.schemaServer.packages.PackagesServiceApi
+import io.vyne.schemaServer.repositories.RepositoryServiceApi
 import io.vyne.search.embedded.EnableVyneEmbeddedSearch
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
-import io.vyne.spring.config.DiscoveryClientConfig
-import io.vyne.spring.config.VyneSpringCacheConfiguration
-import io.vyne.spring.config.VyneSpringHazelcastConfiguration
-import io.vyne.spring.config.VyneSpringProjectionConfiguration
+import io.vyne.spring.config.*
 import io.vyne.spring.http.auth.HttpAuthConfig
 import io.vyne.spring.projection.ApplicationContextProvider
 import io.vyne.utils.log
@@ -30,11 +31,13 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
+import org.springframework.boot.actuate.metrics.web.reactive.client.MetricsWebClientCustomizer
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
+import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -51,6 +54,7 @@ import org.springframework.http.converter.json.KotlinSerializationJsonHttpMessag
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.config.WebFluxConfigurer
+import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.server.ServerWebExchange
 import org.springframework.web.server.WebFilter
 import org.springframework.web.server.WebFilterChain
@@ -62,7 +66,7 @@ import reactor.core.publisher.Mono
 import java.util.*
 
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackageClasses = [QueryServiceApp::class, OrbitalStationConfig::class])
 @EnableConfigurationProperties(
    QueryServerConfig::class,
    VyneSpringCacheConfiguration::class,
@@ -109,6 +113,19 @@ class QueryServiceApp {
             MapperFeature.DEFAULT_VIEW_INCLUSION
          )
       }
+   }
+
+   //   @LoadBalanced
+   @Bean
+   fun webClientFactory(loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction,
+                        metricsCustomizer: MetricsWebClientCustomizer
+   ): WebClient.Builder {
+      val builder = WebClient.builder()
+         .filter(
+            ConditionallyLoadBalancedExchangeFilterFunction.permitLocalhost(loadBalancingFilterFunction)
+         )
+      metricsCustomizer.customize(builder)
+      return builder
    }
 
    @Autowired
@@ -191,9 +208,11 @@ class Html5UrlSupportFilter(
          path.startsWith("/api") -> {
             chain.filter(exchange)
          }
+
          path.startsWith(actuatorPath) -> {
             chain.filter(exchange)
          }
+
          ASSET_EXTENSIONS.any { path.endsWith(it) } -> chain.filter(exchange)
          else -> {
             // These are requests that aren't /api, and don't have an asset extension (like .js), so route it to the
@@ -229,7 +248,16 @@ class PipelineConfig {
 }
 
 @Configuration
-@EnableReactiveFeignClients(clients = [CaskApi::class, PipelineApi::class, SchemaEditorApi::class])
+@EnableReactiveFeignClients(
+   clients = [
+      CaskApi::class,
+      PipelineApi::class,
+      SchemaEditorApi::class,
+      PackagesServiceApi::class,
+      RepositoryServiceApi::class,
+      ChangelogApi::class
+   ]
+)
 class FeignConfig
 
 @Configuration
@@ -258,7 +286,6 @@ class WebFluxWebConfig(private val objectMapper: ObjectMapper) : WebFluxConfigur
       private val ActuatorV3MediaType = MediaType("application", "vnd.spring-boot.actuator.v3+json")
    }
 }
-
 
 /**
  * Workaround to Spring 5.3 ordering of codecs, to favour Jacckson over Kotlin

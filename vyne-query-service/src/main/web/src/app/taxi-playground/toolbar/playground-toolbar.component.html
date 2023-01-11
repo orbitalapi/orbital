@@ -1,0 +1,66 @@
+<img src="assets/img/taxi-icon-white.svg" class="logo">
+<span class="title">Voyager</span>
+
+<span class="nav-link">
+  <a tuiLink (click)="openNewSite('https://taxilang.org/')">
+    Docs
+  </a>
+</span>
+
+<span class="examples">Examples</span>
+<tui-select
+  tuiTextfieldSize="s"
+  [ngModel]="selectedExample"
+  (ngModelChange)="setExample($event)"
+>
+  Examples
+  <input
+    tuiTextfield
+    placeholder="Select an example"
+  />
+  <tui-data-list-wrapper
+    *tuiDataList
+    [items]="examples"
+  ></tui-data-list-wrapper>
+</tui-select>
+
+<div class="spacer"></div>
+<button tuiButton type="button" appearance="secondary" size="s" class="header-icon-spacer "
+        (click)="subscribeForUpdates()">
+  Get updates
+</button>
+<button class="header-icon-button header-icon-button-with-text header-icon-spacer "
+        tuiHintAppearance="onDark"
+        tuiHintDirection="left"
+        (click)="generateShareUrl.emit()">
+  <mat-icon svgIcon="share"></mat-icon>
+  Share
+</button>
+
+<button class="header-icon-button"
+        tuiHintAppearance="onDark"
+        tuiHintDirection="left"
+        [tuiHint]="vyneTooltip">
+  <a (click)="openNewSite('https://vyne.co')">
+    <mat-icon svgIcon="vyneDots"></mat-icon>
+  </a>
+</button>
+<button class="header-icon-button"
+        tuiHintAppearance="onDark"
+        tuiHintDirection="left"
+        [tuiHint]="githubTooltip">
+  <a (click)="openNewSite('https://github.com/vyneco/voyager')">
+    <mat-icon svgIcon="brandGitHub"></mat-icon>
+  </a>
+</button>
+<button class="header-icon-button" (click)="slackInvite()">
+  <mat-icon svgIcon="slack"></mat-icon>
+</button>
+
+<ng-template #vyneTooltip>
+  Vyne
+</ng-template>
+
+<ng-template #githubTooltip>
+  Issues & Roadmap
+</ng-template>

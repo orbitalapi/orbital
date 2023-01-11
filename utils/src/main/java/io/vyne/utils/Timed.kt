@@ -29,6 +29,7 @@ fun timed(timeUnit: TimeUnit = TimeUnit.MICROSECONDS, block: () -> Unit): Long {
    return stopwatch.elapsed(timeUnit)
 }
 
+
 fun Stopwatch.duration(timeUnit: TimeUnit): String {
     val suffix = when (timeUnit) {
         TimeUnit.SECONDS -> "s"

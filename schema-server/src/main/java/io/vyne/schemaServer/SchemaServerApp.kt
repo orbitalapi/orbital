@@ -1,14 +1,13 @@
 package io.vyne.schemaServer
 
-import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaServer.core.VersionedSourceLoader
-import io.vyne.schemaServer.core.file.FileSystemSchemaRepository
+import io.vyne.schemaServer.core.file.FileSystemPackageSpec
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
-import io.vyne.schemaServer.core.git.GitRepositorySourceLoader
-import io.vyne.schemaServer.core.git.GitSchemaRepositoryConfig
-import io.vyne.schemaServer.core.openApi.OpenApiSchemaRepositoryConfig
-import io.vyne.schemaServer.core.openApi.OpenApiVersionedSourceLoader
-import io.vyne.schemaServer.core.publisher.SourceWatchingSchemaPublisher
+import io.vyne.schemaServer.core.repositories.FileSchemaRepositoryConfigLoader
+import io.vyne.schemaServer.core.repositories.InMemorySchemaRepositoryConfigLoader
+import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfig
+import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfigLoader
+import io.vyne.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
@@ -19,7 +18,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
 import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.scheduling.annotation.EnableScheduling
 import java.nio.file.Path
@@ -43,21 +41,24 @@ class SchemaServerApp {
 
    // Place this here to allow overriding of the config loader in tests.
    @Bean
-   fun configRepoLoader(@Value("\${vyne.repositories.config-file:repositories.conf}") configFilePath: Path,
-                        @Value("\${vyne.repositories.repository-path:#{null}}") repositoryHome: Path? = null,
-                        ): io.vyne.schemaServer.core.SchemaRepositoryConfigLoader {
+   fun configRepoLoader(
+      @Value("\${vyne.repositories.config-file:repositories.conf}") configFilePath: Path,
+      @Value("\${vyne.repositories.repository-path:#{null}}") repositoryHome: Path? = null,
+      eventDispatcher: RepositorySpecLifecycleEventDispatcher
+   ): SchemaRepositoryConfigLoader {
       return if (repositoryHome != null) {
          logger.info { "vyne.repositories.repository-path was set to $repositoryHome running a file-based repository from this path, ignoring any other config from $configFilePath" }
-         return io.vyne.schemaServer.core.InMemorySchemaRepositoryConfigLoader(
-            io.vyne.schemaServer.core.SchemaRepositoryConfig(
+         return InMemorySchemaRepositoryConfigLoader(
+            SchemaRepositoryConfig(
                FileSystemSchemaRepositoryConfig(
-                  paths = listOf(repositoryHome)
+                  projects = listOf(FileSystemPackageSpec(repositoryHome))
                )
-            )
+            ),
+            eventDispatcher
          )
       } else {
          logger.info { "Using repository config file at $configFilePath" }
-         io.vyne.schemaServer.core.FileSchemaRepositoryConfigLoader(configFilePath)
+         FileSchemaRepositoryConfigLoader(configFilePath, eventDispatcher = eventDispatcher)
       }
    }
 
@@ -72,40 +73,6 @@ class SchemaServerApp {
       }
 
       logger.info { "Schema server version => $version" }
-   }
-}
-
-@Configuration
-class SchemaPublicationConfig {
-
-   // TODO : We will eventually need to defer all this stuff once we allow changing
-   // repo config at runtime (ie., via a rest service)
-
-   @Bean
-   fun gitConfig(loader: io.vyne.schemaServer.core.SchemaRepositoryConfigLoader): GitSchemaRepositoryConfig {
-      return loader.load().git ?: GitSchemaRepositoryConfig()
-   }
-
-   @Bean
-   fun openApiConfig(loader: io.vyne.schemaServer.core.SchemaRepositoryConfigLoader): OpenApiSchemaRepositoryConfig {
-      return loader.load().openApi ?: OpenApiSchemaRepositoryConfig()
-   }
-
-   @Bean
-   fun fileConfig(loader: io.vyne.schemaServer.core.SchemaRepositoryConfigLoader): FileSystemSchemaRepositoryConfig {
-      return loader.load().file ?: FileSystemSchemaRepositoryConfig()
-   }
-
-   @Bean
-   fun fileSchemaChangePublisher(
-      openApiVersionedSourceLoaders: List<OpenApiVersionedSourceLoader>,
-      gitRepositories: List<GitRepositorySourceLoader>,
-      fileRepositories: List<FileSystemSchemaRepository>,
-      schemaPublisher: SchemaPublisherTransport
-   ): SourceWatchingSchemaPublisher {
-      val loaders: List<VersionedSourceLoader> = openApiVersionedSourceLoaders + gitRepositories + fileRepositories
-      logger.info {"Detected ${loaders.size} total loaders - ${openApiVersionedSourceLoaders.size} openApi loaders, ${gitRepositories.size} gitRepository loaders, ${fileRepositories.size} fileRepository loaders"  }
-      return SourceWatchingSchemaPublisher(loaders, schemaPublisher)
    }
 }
 

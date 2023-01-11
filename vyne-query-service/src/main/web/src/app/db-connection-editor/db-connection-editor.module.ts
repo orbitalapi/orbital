@@ -2,8 +2,6 @@ import {NgModule} from '@angular/core';
 
 import {ConnectionEditorComponent} from './connection-editor.component';
 import {CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {MatCardModule} from '@angular/material/card';
 import {MatSelectModule} from '@angular/material/select';
 import {MatInputModule} from '@angular/material/input';
@@ -46,8 +44,6 @@ const appearance: MatFormFieldDefaultOptions = {
 @NgModule({
   imports: [
     CommonModule,
-    BrowserModule,
-    BrowserAnimationsModule,
     MatDialogModule,
     MatCardModule,
     MatSelectModule,

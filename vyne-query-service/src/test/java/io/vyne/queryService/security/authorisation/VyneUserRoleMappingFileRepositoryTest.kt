@@ -2,6 +2,9 @@ package io.vyne.queryService.security.authorisation
 
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
+import io.vyne.auth.authorisation.VyneConsumerType
+import io.vyne.auth.authorisation.VyneUserRoleMappingFileRepository
+import io.vyne.auth.authorisation.VyneUserRoles
 import org.apache.commons.io.FileUtils
 import org.junit.Rule
 import org.junit.Test

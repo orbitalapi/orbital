@@ -86,7 +86,7 @@ class TaxiGraphService(
       val graph = VyneGraphBuilder(schema, vyneCacheConfiguration.vyneGraphBuilderCache).buildDisplayGraph()
       val typeElement = if (typeName.contains("@@")) {
          val nodeId = OperationNames.displayNameFromOperationName(typeName.fqn())
-         operation(nodeId)
+         operation(nodeId, null)
       } else {
          schema.type(typeName).asElement()
       }

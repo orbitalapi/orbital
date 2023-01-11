@@ -1,0 +1,84 @@
+---
+title: Managing the schema with git
+description: Working with the schema stored in git with drafts and pull requests
+---
+
+Vyne allows using git to store and manage the schema.
+
+## Configuring a git repository as a source for schema
+The schema server will periodically poll the specified main branch of each git repository configured, and pull in
+any changes as they're detected.
+
+### Configuration options
+The following general configuration options are available for configuring schema server to use git:
+| Config parameter | Description                                                                                                                   | Default setting    |
+|------------------|-------------------------------------------------------------------------------------------------------------------------------|--------------------|
+| `checkoutRoot`   | The directory where to clone the git repository locally. If not set, the default is `.gitWorkingDir` on the working directory | Empty              |
+| `pollFrequency`  | The frequency for polling changes by pulling the current repository branch, if running in `POLL` mode                         | `PT5S` (5 seconds) |
+| `repositories`   | A list of git repository configurations. Structure is documented below.                                                       | Empty list         |
+
+The `repositories` configuration should be a list of objects with the following options:
+
+| Config parameter    | Description                                                                                                                                                    | Required | Default setting |
+|---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|-----------------|
+| `name`              | A user-specified name for the repository that allows identifying this specific repository.                                                                     | true     | Not specified   |
+| `uri`               | The URI for the remote git repository. This can be either an SSH or HTTPS URI. The authentication mechanism can be configured with `sshAuth` or `credentials`. | true     | Not specified   |
+| `branch`            | The main branch name to use.                                                                                                                                   | true     | Not specified   |
+| `sshAuth`           | The SSH key configuration needed to connect to the git repository. If specified, `credentials` should not be provided. Structure is documented below.          | false    | Not specified   |
+| `credentials`       | The credentials (HTTPS auth) needed to connect to the git repository. If specified, `sshAuth` should not be provided. Structure is documented below.           | false    | Not specified   |
+| `pullRequestConfig` | The configuration for submitting pull requests based on the git provider. Structure is documented below. See next section for details.                         | false    | Not specified   |
+| `path`              | The path within the repository to use as the schema source                                                                                                     | false    | /               |
+
+The `sshAuth` configuration block should be an object with the following options:
+
+| Config parameter | Description                                             | Required | Default setting |
+|------------------|---------------------------------------------------------|----------|-----------------|
+| `privateKeyPath` | The absolute path to the private key file.              | true     | Not specified   |
+| `passphrase`     | The passphrase to open the private key file, if needed. | false    | Not specified   |
+
+The `credentials` configuration block should be an object with the following options:
+
+| Config parameter | Description                                  | Required | Default setting |
+|------------------|----------------------------------------------|----------|-----------------|
+| `username`       | The username to use to authenticate.         | true     | Not specified   |
+| `password`       | The password matching the provided username. | true     | Not specified   |
+
+The `pullRequestConfig` configuration block should be an object with the following options:
+
+| Config parameter  | Description                                                                                | Required | Default setting   |
+|-------------------|--------------------------------------------------------------------------------------------|----------|-------------------|
+| `branchPrefix`    | The prefix to use for creating the branches for drafts to not pollute the whole namespace. | false    | `schema-updates/` |
+| `hostingProvider` | The hosting provider used. Currently only `Github` is supported.                           | false    | `Github`          |
+
+### Example
+```hocon
+git {
+   checkoutRoot="/my/git/root"
+   pollFrequency="PT30S"
+   repositories=[
+      {
+         name="main-schema"
+         uri="https://github.com/organization/repo.git"
+         branch="main"
+         credentials={
+            username="myuser"
+            password="mypassword"
+         }
+         pullRequestConfig={
+            branchPrefix="drafts/"
+            hostingProvider="Github"
+         }
+         path="schema"
+      }
+   ]
+}
+```
+
+
+## Schema updates with drafts
+It is possible to configure schema server to allow edits to a git-backed schema. These edits are called **drafts**. Drafts allow batching multiple changes to the schema before submitting them for peer review. Each draft is stored as a separate git branch, and can be submitted as a pull request against the configured main branch. The existing drafts are shown on the schema explorer UI and a user can choose whether they want to explore the main schema or a version based on a draft.
+
+Currently, only a single repository can be editable. This is a limitation of the current implementation, and is planned to be lifted in the future by allowing user to specify which repository they want to edit.
+
+### Draft lifecycle
+A draft can be created by editing any attribute of any type in the schema while being on the default branch specified in the configuration. Upon doing so, a new draft will be created with the name specified by the user. After this the user can continue editing the schema further, and the changes will be reflected in the draft. Once the draft is ready for submittal it can be published as a pull request against the configured main branch. Once the PR is merged the changes within it will become available on the main schema via the main branch.

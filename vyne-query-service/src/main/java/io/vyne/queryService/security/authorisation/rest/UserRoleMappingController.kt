@@ -1,23 +1,20 @@
 package io.vyne.queryService.security.authorisation.rest
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import io.vyne.queryService.security.authorisation.VyneUserAuthorisationRole
-import io.vyne.queryService.security.authorisation.VyneUserRoleDefinitionRepository
-import io.vyne.queryService.security.authorisation.VyneUserRoleMappingRepository
-import io.vyne.queryService.security.authorisation.VyneUserRoles
+import io.vyne.auth.authorisation.VyneUserAuthorisationRole
+import io.vyne.auth.authorisation.VyneUserRoleDefinitionRepository
+import io.vyne.auth.authorisation.VyneUserRoleMappingRepository
+import io.vyne.auth.authorisation.VyneUserRoles
 import io.vyne.security.VynePrivileges
 import org.springframework.security.access.prepost.PreAuthorize
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 @RestController
-class UserRoleMappingController(private val vyneUserRoleMappingRepository: VyneUserRoleMappingRepository,
-                               private val vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository) {
+class UserRoleMappingController(
+   private val vyneUserRoleMappingRepository: VyneUserRoleMappingRepository,
+   private val vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository
+) {
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewUsers}')")
    @GetMapping("/api/user/roles")

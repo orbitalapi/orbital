@@ -1,8 +1,8 @@
-import {Component, Input} from '@angular/core';
-import {VyneUser} from '../services/user-info.service';
-import {AuthService} from '../auth/auth.service';
-import {MatDialog} from '@angular/material/dialog';
-import {CaskConfirmDialogComponent} from '../cask-viewer/cask-confirm-dialog.component';
+import { Component, Input } from '@angular/core';
+import { VyneUser } from '../services/user-info.service';
+import { AuthService } from '../auth/auth.service';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmationDialogComponent } from 'src/app/confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-avatar',
@@ -38,8 +38,8 @@ export class AvatarComponent {
   user: VyneUser;
 
   logout() {
-    const dialogRef = this.dialog.open(CaskConfirmDialogComponent, {
-      data: {title: 'Logout', message: 'Are you sure?'}
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      data: { title: 'Logout', message: 'Are you sure?' }
     });
 
     dialogRef.afterClosed().subscribe(result => {

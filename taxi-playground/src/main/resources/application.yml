@@ -1,0 +1,38 @@
+server:
+   port: 9500
+   http2:
+      enabled: true
+   compression:
+      enabled: true
+      mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+      min-response-size: 1024
+
+hubspot:
+   api:
+      url: https://api.hubapi.com
+      auth-token: pat-na1-700c5c18-5253-48f2-a2ba-ae68b6dcafc3
+   subscriptions:
+      voyager-updates-id: 57677525
+      general-marketing: 58020439
+
+spring:
+   flyway:
+      enabled: true
+      url: ${spring.datasource.url}
+      user: ${spring.datasource.username}
+      password: ${spring.datasource.password}
+      locations: classpath:postgres
+
+   jpa:
+      database-platform: org.hibernate.dialect.PostgreSQL95Dialect
+      properties:
+         hibernate:
+            dialect: org.hibernate.dialect.PostgreSQL95Dialect
+
+   datasource:
+      url: "jdbc:postgresql://${DB_HOST}:${DB_PORT}/voyager"
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
+      driver: "org.postgresql.Driver"
+      driverClassName: org.postgresql.Driver
+

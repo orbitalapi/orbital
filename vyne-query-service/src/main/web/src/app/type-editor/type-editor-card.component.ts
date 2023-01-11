@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Schema} from '../services/schema';
-import {NewTypeSpec} from './type-editor.component';
+import { NewTypeSpec } from 'src/app/type-editor/new-type-spec';
 
 @Component({
   selector: 'app-type-editor-card',

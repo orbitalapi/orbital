@@ -47,8 +47,8 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
          operation currentStock(): NumberOfItems
        }
 
-       findAll { Item[] }  as {
-         isin: Isin
+       find { Item[] }  as {
+       isin: Isin
           currentStock: NumberOfItems
       }[]
 
@@ -64,7 +64,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
       return invokeOperations(operations, context, target)
    }
 
-   private fun lookForCandidateServices(
+   private fun  lookForCandidateServices(
       context: QueryContext,
       target: Set<QuerySpecTypeNode>
    ): Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>> {

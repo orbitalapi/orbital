@@ -3,7 +3,6 @@ package io.vyne.schemaServer
 import io.vyne.VersionedSource
 import io.vyne.schema.publisher.SchemaPublisherTransport
 import mu.KotlinLogging
-import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
@@ -18,6 +17,10 @@ class CompilerService(
    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
    private val schemaPublisher: SchemaPublisherTransport,
 ) {
+   init {
+       error("Is this used?")
+
+   }
    private val logger = KotlinLogging.logger {}
    @Volatile
    private var sources: ConcurrentMap<String, List<VersionedSource>> = ConcurrentHashMap()
@@ -35,14 +38,15 @@ class CompilerService(
    }
 
    private fun recompile() {
-      val allSources = sources.sortedValues().flatten()
-
-      if (allSources.isNotEmpty()) {
-         logger.info("Recompiling ${allSources.size} files")
-         schemaPublisher.submitSchemas(allSources)
-      } else {
-         logger.warn("No sources were found. I'll just wait here.")
-      }
+      TODO("Commented out, as don't think this is used")
+//      val allSources = sources.sortedValues().flatten()
+//
+//      if (allSources.isNotEmpty()) {
+//         logger.info("Recompiling ${allSources.size} files")
+//         schemaPublisher.submitPackage(allSources)
+//      } else {
+//         logger.warn("No sources were found. I'll just wait here.")
+//      }
    }
 
    private fun <K : Comparable<K>, V> Map<K, V>.sortedValues() =

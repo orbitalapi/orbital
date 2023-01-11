@@ -4,7 +4,8 @@ import {Schema} from '../services/schema';
 
 export const schemaWithNestedTypes = {
   'members': [],
-  'types': [{
+  'types': [
+    {
     'name': {
       'fullyQualifiedName': 'lang.taxi.Boolean',
       'parameters': [],
@@ -1990,6 +1991,8 @@ export const importedSchema = {
         'longDisplayName': 'actor.ActorService'
       },
       'operations': [],
+      tableOperations: [],
+      streamOperations: [],
       'queryOperations': [
         {
           'qualifiedName': {

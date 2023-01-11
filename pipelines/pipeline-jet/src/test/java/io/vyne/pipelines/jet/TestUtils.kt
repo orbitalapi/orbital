@@ -225,7 +225,8 @@ object RatingReport {
          }
          enum IvaCompanyRating inherits Rating
          type IndustryAdjustedScore inherits Decimal
-         type IvaRatingDate inherits Date(@format="yyyyMMdd")
+         @Format("yyyyMMdd")
+         type IvaRatingDate inherits Date
          type IvaIndustry inherits String
          enum IvaPreviousRating inherits Rating
          type NumericTrend inherits Int
@@ -247,7 +248,8 @@ object RatingReport {
              issuerId : IssuerId by column(2)
              isin : Isin by column(18)
              issuerCountryOfDomicile : IssuerCountryOfDomicile by column(3)
-             effectiveDate : EffectiveDate(@format = "yyyyMMdd") by column(4)
+             @Format( "yyyyMMdd")
+             effectiveDate : EffectiveDate by column(4)
              ivaCompanyRating : IvaCompanyRating by column(5)
              industryAdjustedScore : IndustryAdjustedScore by column(6)
              ivaRatingDate : IvaRatingDate by column(7)

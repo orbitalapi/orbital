@@ -2,30 +2,16 @@ package io.vyne.queryService.lsp.querying
 
 import io.vyne.query.graph.Algorithms
 import io.vyne.schemas.*
-import lang.taxi.TaxiParser.ClassOrInterfaceTypeContext
-import lang.taxi.TaxiParser.ConditionalTypeStructureDeclarationContext
-import lang.taxi.TaxiParser.FactListContext
-import lang.taxi.TaxiParser.FieldDeclarationContext
-import lang.taxi.TaxiParser.GivenBlockContext
-import lang.taxi.TaxiParser.ListTypeContext
-import lang.taxi.TaxiParser.QueryDirectiveContext
-import lang.taxi.TaxiParser.QueryTypeListContext
-import lang.taxi.TaxiParser.SingleNamespaceDocumentContext
-import lang.taxi.TaxiParser.TemporalFormatListContext
-import lang.taxi.TaxiParser.TypeBodyContext
-import lang.taxi.TaxiParser.TypeTypeContext
-import lang.taxi.TaxiParser.VariableNameContext
+import lang.taxi.TaxiParser.*
 import lang.taxi.lsp.CompilationResult
 import lang.taxi.lsp.completion.*
+import lang.taxi.query.QueryMode
 import lang.taxi.searchUpForRule
 import lang.taxi.types.QualifiedName
-import lang.taxi.types.QueryMode
 import lang.taxi.types.Type
 import org.antlr.v4.runtime.ParserRuleContext
-import org.eclipse.lsp4j.CompletionItem
-import org.eclipse.lsp4j.CompletionItemKind
-import org.eclipse.lsp4j.CompletionParams
-import org.eclipse.lsp4j.MarkupContent
+import org.antlr.v4.runtime.Token
+import org.eclipse.lsp4j.*
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -51,12 +37,33 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
       compilationResult: CompilationResult,
       params: CompletionParams,
       importDecorator: ImportCompletionDecorator,
-      contextAtCursor: ParserRuleContext?
+      contextAtCursor: ParserRuleContext?,
+      lastSuccessfulCompilation: CompilationResult?
    ): CompletableFuture<List<CompletionItem>> {
       if (contextAtCursor == null) {
          return completed(topLevelQueryCompletionItems)
       }
+
       val completions = when (contextAtCursor) {
+         is TypeProjectionContext -> {
+            if (contextAtCursor.stop.text == "as") {
+               val queryTypeListContext =
+                  contextAtCursor.searchUpForRule(QueryTypeListContext::class.java) as? ParserRuleContext?
+               val children = queryTypeListContext?.children ?: emptyList()
+               // If the source type is a collection...
+               val sourceTypeIsCollection =
+                  children.isNotEmpty() && children.filterIsInstance<FieldTypeDeclarationContext>().any {
+                     it.optionalTypeReference()?.typeReference()?.arrayMarker() != null
+                  }
+               if (children.isNotEmpty()) {
+                  buildAsCompletion(params, sourceTypeIsCollection)
+               } else {
+                  emptyList()
+               }
+            } else {
+               emptyList()
+            }
+         }
          is SingleNamespaceDocumentContext -> topLevelQueryCompletionItems
          is QueryDirectiveContext -> {
             // This is a find { ... }, possibly with a given { .. }.
@@ -74,9 +81,15 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
                   findModelsReturnableFromQueryOperations(importDecorator, queryMode)
             }
          }
+
+
+         is ParameterConstraintContext -> {
+            suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
+         }
          is FieldDeclarationContext,
          is TypeBodyContext,
-         is ClassOrInterfaceTypeContext -> {
+         is IdentifierContext,
+         is QualifiedNameContext -> {
             // In tests, it looks like we could be either declaring a filter criteria here,
             // or listing fields we want to add to the query.
             if (contextAtCursor.searchUpForRule(ConditionalTypeStructureDeclarationContext::class.java) != null) {
@@ -100,9 +113,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
          }
          is VariableNameContext -> suggestTypesAsInputs(importDecorator)
          // Filter operations - eg: find { Film( <-- here
-         is ListTypeContext,
-            // The grammar may parse an open parenthesis as a Temproal format
-         is TemporalFormatListContext -> suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
+         is ArrayMarkerContext -> suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
          else -> emptyList()
       }
       val distinctCompletions =
@@ -112,15 +123,27 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
       return completed(distinctCompletions)
    }
 
+   private fun buildAsCompletion(params: CompletionParams, sourceTypeIsCollection: Boolean): List<CompletionItem> {
+      return listOf(CompletionItem("{ ... } (Start a projection)").apply {
+         kind = CompletionItemKind.Snippet
+         insertTextFormat = InsertTextFormat.Snippet
+         insertText = "{\n\t$0\n}"
+         if (sourceTypeIsCollection) {
+            insertText += "[]"
+         }
+      })
+   }
+
    private fun suggestFilterTypes(
       contextAtCursor: ParserRuleContext,
       importDecorator: ImportCompletionDecorator,
       compilationResult: CompilationResult
    ): List<CompletionItem> {
-      val typeToFilterToken = contextAtCursor.searchUpForRule(TypeTypeContext::class.java)
+      val typeToFilterToken = contextAtCursor.searchUpForRule<OptionalTypeReferenceContext>()
          ?: // Hmm... this shouldn't happen.
          return emptyList()
-      val typeToFilter = compilationResult.compiler.lookupTypeByName(typeToFilterToken as TypeTypeContext)
+      val typeReferenceToken = typeToFilterToken.typeReference()
+      val typeToFilter = compilationResult.compiler.lookupTypeByName(typeReferenceToken)
          .toVyneQualifiedName()
       val isExposedByQueryOperations = schema.queryOperations
          .any { it.returnTypeName == typeToFilter }
@@ -211,8 +234,8 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
    ): List<QualifiedName> {
       val queryTypes = contextAtCursor.searchUpForRule(listOf(QueryTypeListContext::class.java))?.let { it ->
          val queryTypeList = it as QueryTypeListContext
-         queryTypeList.typeType()
-            .map { typeTypeContext -> compilationResult.compiler.lookupTypeByName(typeTypeContext) }
+         queryTypeList.fieldTypeDeclaration()
+            .map { fieldTypeContext -> compilationResult.compiler.lookupTypeByName(fieldTypeContext.optionalTypeReference().typeReference()) }
       } ?: emptyList()
       val factTypes = findTypesInGivenClause(contextAtCursor, compilationResult)
       return canonicalizeTypeNames(queryTypes + factTypes)
@@ -241,7 +264,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
          val givenBlock = ruleContext as GivenBlockContext
          val typesOfFacts = givenBlock.getRuleContexts(FactListContext::class.java)
             .flatMap { it.fact() }
-            .map { it.getRuleContexts(TypeTypeContext::class.java) }
+            .map { it.getRuleContexts(TypeReferenceContext::class.java) }
             .flatten()
             .map { typeTypeContext ->
                compilationResult.compiler.lookupTypeByName(typeTypeContext)
@@ -329,4 +352,44 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
    }
 
 
+   private fun searchUpForHighestRuleEndingBefore(
+      position: Position,
+      context: ParserRuleContext,
+      lastChildChecked: ParserRuleContext? = null
+   ): ParserRuleContext? {
+      // Antlr line numbers are one-based. :(
+      val oneBasedLineNumber = position.line + 1
+      if (context.parent == null) {
+         return lastChildChecked
+      }
+      val parentContext = context.parent as? ParserRuleContext? ?: return lastChildChecked
+      val parentStop = parentContext.stop
+      if (parentStop.locationIsBeforeOrEqualTo(
+            oneBasedLineNumber,
+            position.character
+         ) && parentStop.locationIsAfterOrEqualTo(context.stop.line, context.stop.charPositionInLine)
+      ) {
+         searchUpForHighestRuleEndingBefore(position, parentContext, context)
+      }
+
+      when (context) {
+      }
+      if (context.stop.line < oneBasedLineNumber) {
+         return null
+      }
+      TODO()
+   }
+
+}
+
+private fun Token.locationIsBeforeOrEqualTo(oneBasedLineNumber: Int, character: Int): Boolean {
+   return this.line <= oneBasedLineNumber && this.charPositionInLine <= character
+}
+
+private fun Token.locationIsAfterOrEqualTo(oneBasedLineNumber: Int, character: Int): Boolean {
+   return when {
+      this.line < oneBasedLineNumber -> false
+      this.line >= oneBasedLineNumber && this.charPositionInLine >= character -> true
+      else -> false
+   }
 }

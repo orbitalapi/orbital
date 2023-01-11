@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en" class="h-full bg-gray-100">
+
+<head>
+  <meta charset="utf-8">
+  <title>Orbital</title>
+  <base href="/">
+
+  <meta name="description"
+        content="Easily create diagrams that visualize the connections between microservices and data sources in your stack">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="taxi-logo-48x48.png">
+
+  <!--  <script defer data-domain="voyager.vyne.co" src="https://plausible.io/js/plausible.js"></script>-->
+
+  <style>
+    #noSupport {
+      position: relative;
+      display: none;
+      height: 100vh;
+    }
+
+    #noSupport .noSupport {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      -webkit-transform: translate(-50%, -50%);
+      -ms-transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%);
+    }
+
+    .noSupport {
+      max-width: 750px;
+      width: 100%;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .noSupport p {
+      font-size: 24px;
+      color: #000;
+      font-weight: 400;
+    }
+  </style>
+</head>
+
+<body class="h-full overflow-hidden">
+<orbital-app class="h-full" style="display: block"></orbital-app>
+</body>
+
+</html>
