@@ -1,9 +1,9 @@
-import {Injectable} from '@angular/core';
-import {HttpClient, HttpHeaders} from '@angular/common/http';
-import {BehaviorSubject, Observable, of} from 'rxjs';
+import { Inject, Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 
-import {environment} from 'src/environments/environment';
-import {map, shareReplay} from 'rxjs/operators';
+import { map, shareReplay } from 'rxjs/operators';
+import { ENVIRONMENT, Environment } from 'src/app/services/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -12,10 +12,13 @@ export class UserInfoService {
 
   readonly userInfo$: BehaviorSubject<VyneUser> = new BehaviorSubject<VyneUser>(null);
 
-  constructor(private httpClient: HttpClient) { }
+  constructor(private httpClient: HttpClient,
+              @Inject(ENVIRONMENT) private environment: Environment
+  ) {
+  }
 
   getAllUsers(): Observable<VyneUser[]> {
-    return this.httpClient.get<VyneUser[]>(`${environment.queryServiceUrl}/api/users`);
+    return this.httpClient.get<VyneUser[]>(`${this.environment.serverUrl}/api/users`);
   }
 
   /**
@@ -26,14 +29,17 @@ export class UserInfoService {
    */
   getUserInfo(refresh: boolean = false, accessToken: string | null = null): Observable<VyneUser> {
     if (refresh) {
-      console.log("fetching user data");
+      console.log('fetching user data');
       if (accessToken) {
         let header = 'Bearer ' + accessToken;
         let headers = new HttpHeaders().set('Authorization', header);
-        return this.httpClient.get<VyneUser>(`${environment.queryServiceUrl}/api/user`, {headers: headers})
-          .pipe(map(vyneUser =>  { this.userInfo$.next(vyneUser); return this.userInfo$.getValue(); }));
+        return this.httpClient.get<VyneUser>(`${this.environment.serverUrl}/api/user`, { headers: headers })
+          .pipe(map(vyneUser => {
+            this.userInfo$.next(vyneUser);
+            return this.userInfo$.getValue();
+          }));
       } else {
-        return this.httpClient.get<VyneUser>(`${environment.queryServiceUrl}/api/user`)
+        return this.httpClient.get<VyneUser>(`${this.environment.serverUrl}/api/user`)
           .pipe(map(vyneUser => {
             this.userInfo$.next(vyneUser);
             return this.userInfo$.getValue();
@@ -59,9 +65,9 @@ export interface VyneUser {
 }
 
 export const EmptyVyneUser: VyneUser = {
-  userId: "",
-  username: "",
-  email: "",
+  userId: '',
+  username: '',
+  email: '',
   profileUrl: null,
   name: null,
   grantedAuthorities: [],
@@ -69,21 +75,21 @@ export const EmptyVyneUser: VyneUser = {
 }
 
 export enum VynePrivileges {
-  RunQuery = "RunQuery",
-  CancelQuery = "CancelQuery",
-  ViewQueryHistory = "ViewQueryHistory",
-  ViewHistoricQueryResults = "ViewHistoricQueryResults",
-  BrowseCatalog = "BrowseCatalog",
-  BrowseSchema = "BrowseSchema",
-  EditSchema = "EditSchema",
-  ViewCaskDefinitions = "ViewCaskDefinitions",
-  EditCaskDefinitions = "EditCaskDefinitions",
-  ViewPipelines = "ViewPipelines",
-  EditPipelines = "EditPipelines",
-  ViewAuthenticationTokens = "ViewAuthenticationTokens",
-  EditAuthenticationTokens = "EditAuthenticationTokens",
-  ViewConnections = "ViewConnections",
-  EditConnections = "EditConnections",
-  ViewUsers = "ViewUsers",
-  EditUsers = "EditUsers"
+  RunQuery = 'RunQuery',
+  CancelQuery = 'CancelQuery',
+  ViewQueryHistory = 'ViewQueryHistory',
+  ViewHistoricQueryResults = 'ViewHistoricQueryResults',
+  BrowseCatalog = 'BrowseCatalog',
+  BrowseSchema = 'BrowseSchema',
+  EditSchema = 'EditSchema',
+  ViewCaskDefinitions = 'ViewCaskDefinitions',
+  EditCaskDefinitions = 'EditCaskDefinitions',
+  ViewPipelines = 'ViewPipelines',
+  EditPipelines = 'EditPipelines',
+  ViewAuthenticationTokens = 'ViewAuthenticationTokens',
+  EditAuthenticationTokens = 'EditAuthenticationTokens',
+  ViewConnections = 'ViewConnections',
+  EditConnections = 'EditConnections',
+  ViewUsers = 'ViewUsers',
+  EditUsers = 'EditUsers'
 }

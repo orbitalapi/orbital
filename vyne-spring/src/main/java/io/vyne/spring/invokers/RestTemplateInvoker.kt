@@ -31,11 +31,7 @@ import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
-import org.springframework.web.reactive.function.client.ClientResponse
-import org.springframework.web.reactive.function.client.ExchangeStrategies
-import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.reactive.function.client.bodyToFlux
-import org.springframework.web.reactive.function.client.bodyToMono
+import org.springframework.web.reactive.function.client.*
 import org.springframework.web.util.DefaultUriBuilderFactory
 import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Flux
@@ -48,8 +44,6 @@ import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
-private val logger = KotlinLogging.logger {}
-
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
 
 class RestTemplateInvoker(
@@ -58,7 +52,7 @@ class RestTemplateInvoker(
     private val serviceUrlResolvers: List<ServiceUrlResolver> = ServiceUrlResolver.DEFAULT,
     private val requestFactory: HttpRequestFactory = DefaultRequestFactory()
 ) : OperationInvoker {
-
+   private val logger = KotlinLogging.logger {}
 
    @Autowired
    constructor(
@@ -147,6 +141,8 @@ class RestTemplateInvoker(
          request.bodyValue(httpEntity.body)
       }
 
+      logger.debug { "[$queryId] - Performing $httpMethod to ${expandedUri.toASCIIString()}" }
+
       val remoteCallId = UUID.randomUUID().toString()
       val results = request
          .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
@@ -162,6 +158,7 @@ class RestTemplateInvoker(
                .isCompatibleWith(MediaType.TEXT_EVENT_STREAM)
             val responseMessageType = if (isEventStream) ResponseMessageType.EVENT else ResponseMessageType.FULL
 
+            logger.debug { "[$queryId] - $httpMethod to ${expandedUri.toASCIIString()} returned status ${clientResponse.statusCode()} and body length of ${clientResponse.headers().contentLength().orElse(-1)} after ${duration}ms" }
 
             fun remoteCall(responseBody: String, failed: Boolean = false): RemoteCall {
                return RemoteCall(
@@ -188,7 +185,7 @@ class RestTemplateInvoker(
                   .map { responseBody ->
                      val remoteCall = remoteCall(responseBody = responseBody, failed = true)
                      throw OperationInvocationException(
-                        "Http error ${clientResponse.statusCode()} from url $expandedUri",
+                        "http error ${clientResponse.statusCode()} from url $expandedUri - $responseBody",
                         clientResponse.statusCode().value(),
                         remoteCall,
                         parameters
@@ -260,7 +257,8 @@ class RestTemplateInvoker(
       headers: ClientResponse.Headers,
       eventDispatcher: QueryContextEventDispatcher
    ): Flux<TypedInstance> {
-      logger.debug { "Result of ${operation.name} was $result" }
+      // Logging responses in our logs is a security issue.  Let's not do this.
+//      logger.debug { "Result of ${operation.name} was $result" }
 
       val isPreparsed = headers
          .header(io.vyne.http.HttpHeaders.CONTENT_PREPARSED).let { headerValues ->

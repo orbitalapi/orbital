@@ -1,9 +1,7 @@
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
 import {MatTabsModule} from '@angular/material/tabs';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {MatSelectModule} from '@angular/material/select';
 import {MatChipsModule} from '@angular/material/chips';
 import {MatIconModule} from '@angular/material/icon';
@@ -28,8 +26,7 @@ import {MatSnackBarModule} from '@angular/material/snack-bar';
 @NgModule({
   imports: [
     CommonModule,
-    BrowserModule,
-    MatTabsModule, FormsModule, ReactiveFormsModule, BrowserAnimationsModule, MatSelectModule,
+    MatTabsModule, FormsModule, ReactiveFormsModule, MatSelectModule,
     MatChipsModule, MatIconModule, MatProgressBarModule, MatAutocompleteModule, MatInputModule,
     MatButtonModule,
     MatSnackBarModule,

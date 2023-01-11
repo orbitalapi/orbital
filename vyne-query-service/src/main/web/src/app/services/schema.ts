@@ -1,9 +1,12 @@
 import { PrimitiveTypeNames } from './taxi';
 import { isNullOrUndefined, isString } from 'util';
+import { find } from 'rxjs/operators';
 
 export function fqn(input: string): QualifiedName {
   return QualifiedName.from(input);
 }
+
+export type QualifiedNameAsString = string;
 
 export class QualifiedName {
   name: string;
@@ -190,6 +193,37 @@ export function tryFindType(schema: TypeCollection, typeName: string, anonymousT
   }
 }
 
+export function containsSchemaMember(schema: Schema, memberName: string, anonymousTypes: Type[] = []): boolean {
+  try {
+    findSchemaMember(schema, memberName, anonymousTypes)
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+export function findSchemaMember(schema: Schema, memberName: string, anonymousTypes: Type[] = []): SchemaMember {
+  const type = tryFindType(schema, memberName, anonymousTypes);
+  if (type) {
+    return SchemaMember.fromType(type)
+  }
+
+  if (memberName.includes('@@')) {
+    const operationName = splitOperationQualifiedName(memberName);
+    const service = schema.services.find(s => s.qualifiedName === operationName.serviceName)
+    return SchemaMember.fromService(service)
+      .find(m => m.kind === 'SERVICE')
+  }
+
+  const service = schema.services.find(service => service.qualifiedName == memberName)
+  if (service) {
+    return SchemaMember.fromService(service)
+      .find(m => m.kind === 'SERVICE')
+  }
+
+  throw new Error('Could not find member ' + memberName)
+}
+
 export function findType(schema: TypeCollection, typeName: string, anonymousTypes: Type[] = []): Type {
   if (schema.anonymousTypes === undefined) {
     schema.anonymousTypes = {};
@@ -222,15 +256,30 @@ export interface TypeCollection {
   anonymousTypes?: { [key: string]: Type };
 }
 
-export interface Schema extends TypeCollection {
+export interface PartialSchema {
+  types: Type[];
+  services: Service[];
+}
 
-  types: Array<Type>;
-  services: Array<Service>;
+export interface Schema extends TypeCollection, PartialSchema {
+
   operations: Array<Operation>;
+
+  hash?: number
 
   members: Array<SchemaMember>;
   // TODO : Are these still required / meaningful?
   // attributes: Set<QualifiedName>
+}
+
+export function emptySchema(): Schema {
+  return {
+    types: [],
+    services: [],
+    operations: [],
+    members: [],
+    hash: -1
+  }
 }
 
 export interface Parameter {
@@ -246,12 +295,17 @@ export interface Metadata {
   typeDoc?: string;
 }
 
-export type ServiceMember = Operation | QueryOperation;
+export type ServiceMember = Operation | QueryOperation | TableOperation | StreamOperation;
 
-export interface Operation extends SchemaMemberNamed {
+export interface Functional {
+  parameters: Parameter[];
+  returnTypeName: QualifiedName;
+}
+
+export interface Operation extends SchemaMemberNamed, Functional {
   name: string;
   qualifiedName: QualifiedName;
-  parameters: Array<Parameter>;
+  parameters: Parameter[];
   returnTypeName: QualifiedName;
   metadata: Array<Metadata>;
   contract: OperationContract;
@@ -260,14 +314,67 @@ export interface Operation extends SchemaMemberNamed {
   operationType: string | null;
 }
 
+export type ServiceKind = 'Api' | 'Database' | 'Kafka';
+
+export interface Version {
+  version: string
+  link?: string;
+  type?: VersionType
+}
+
+export type VersionType = 'SemVer' | 'git-sha';
+
+export interface TableOperation extends SchemaMemberNamed {
+  name: string;
+  qualifiedName: QualifiedName;
+  returnTypeName: QualifiedName;
+  metadata: Array<Metadata>;
+  // sources: VersionedSource[];
+  typeDoc?: string;
+  parameters: Parameter[];
+}
+
+export interface StreamOperation extends SchemaMemberNamed {
+  name: string;
+  qualifiedName: QualifiedName;
+  returnTypeName: QualifiedName;
+  metadata: Array<Metadata>;
+  // sources: VersionedSource[];
+  typeDoc?: string;
+  parameters: Parameter[];
+}
+
+export interface ConsumedOperation {
+  serviceName: string;
+  operationName: string;
+}
+export interface ServiceLineage {
+  consumes: ConsumedOperation[]
+  stores: QualifiedName[]
+  metadata: Metadata[]
+}
 export interface Service extends SchemaMemberNamed, Named, Documented {
   qualifiedName: string; // This is messy, and needs fixing up.
   operations: Operation[];
   queryOperations: QueryOperation[];
+  tableOperations: TableOperation[];
+  streamOperations: StreamOperation[];
   metadata: Metadata[];
   sourceCode?: VersionedSource[];
-  lineage?: any;
+  lineage?: ServiceLineage | null;
+
+  serviceKind?: ServiceKind;
+  // Version is an array, because we support multiple version types.
+  version?: Version[];
 }
+
+export function collectAllServiceOperations(service: Service): ServiceMember[] {
+  return (service.operations as ServiceMember[])
+    .concat(service.queryOperations)
+    .concat(service.streamOperations)
+    .concat(service.tableOperations)
+}
+
 
 export interface QueryOperation {
   name: string;
@@ -363,6 +470,11 @@ export class SchemaGraph {
     graph.mergeToMap(nodes, graph.nodes);
     graph.mergeToMap(links, graph.links);
     return graph;
+  }
+
+  static fromMap(input: { nodes: { [index: string]: SchemaGraphNode }, links: { [index: number]: SchemaGraphLink } }): SchemaGraph {
+
+    return new SchemaGraph(new Map(Object.entries(input.nodes)), new Map(Object.entries(input.links)) as any as Map<number,SchemaGraphLink>);
   }
 
   constructor(
@@ -545,6 +657,20 @@ export function getCollectionMemberType(type: Type, schema: Schema, defaultIfUnk
   }
 }
 
+/**
+ * If the qualified name is a parameterized type (ie., an Array<T> or a Stream<T>,
+ * returns T.
+ * Otherwise, returns the provided type name
+ * @param name
+ */
+export function arrayMemberTypeNameOrTypeNameFromName(name: QualifiedName): QualifiedName {
+  if (name.parameters.length === 1) {
+    return arrayMemberTypeNameOrTypeNameFromName(name.parameters[0]);
+  } else {
+    return name;
+  }
+}
+
 function collectionMemberTypeFromArray(name: QualifiedName, schema: Schema, defaultValue: () => Type): Type {
   if (name.parameters.length === 1) {
     return findType(schema, name.parameters[0].fullyQualifiedName);
@@ -661,7 +787,7 @@ export class ReferenceRepository<T extends Proxyable> {
 
   getInstance(ref: ReferenceOrInstance<T>): T {
     if (isString(ref)) {
-      return this.instances.get(ref);
+      return this.instances.get(ref as string);
     } else {
       const typedRef = ref as T;
       this.instances.set(ref['@id'], typedRef);
@@ -709,4 +835,20 @@ export function getDisplayName(name: QualifiedName, showFullTypeNames: boolean):
     return null;
   }
   return (showFullTypeNames) ? name.longDisplayName : name.shortDisplayName;
+}
+
+export interface OperationName {
+  serviceName: string;
+  serviceDisplayName: string;
+  operationName: string;
+}
+
+export function splitOperationQualifiedName(name: string): OperationName {
+  const nameParts = name.split('@@');
+
+  return {
+    serviceName: nameParts[0],
+    serviceDisplayName: fqn(nameParts[0]).shortDisplayName,
+    operationName: nameParts[1]
+  };
 }

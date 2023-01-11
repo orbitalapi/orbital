@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { TypesService } from './services/types.service';
 import { AppInfoService } from './services/app-info.service';
 
 @Component({
@@ -9,7 +8,7 @@ import { AppInfoService } from './services/app-info.service';
       <vyne-app></vyne-app>
     </tui-root>
   `,
-  providers: [TypesService, AppInfoService]
+  providers: [AppInfoService],
 })
 export class AppComponent {
 }

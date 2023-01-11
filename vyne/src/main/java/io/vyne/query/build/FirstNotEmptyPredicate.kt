@@ -1,6 +1,7 @@
 package io.vyne.query.build
 
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedInstancePredicateProvider
 import io.vyne.models.TypedNull
 import io.vyne.query.TypedInstanceValidPredicate
 import io.vyne.schemas.Field

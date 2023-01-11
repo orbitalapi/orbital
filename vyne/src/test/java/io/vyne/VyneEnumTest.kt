@@ -2,6 +2,7 @@ package io.vyne
 
 import app.cash.turbine.test
 import com.winterbe.expekt.should
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.vyne.models.EnumValueKind
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.addJson
@@ -80,9 +81,10 @@ class VyneEnumTest {
 
       // Given
       val (vyne, stubService) = testVyne(enumSchema())
-      vyne.addJson(
+      val parsed = vyne.addJson(
          "BankX.BankOrder", """ { "buySellIndicator" : "buy" } """
       )
+      parsed.shouldNotBeNull()
 
       // When
       val queryResult = vyne.query().build("common.CommonOrder")
@@ -242,7 +244,7 @@ class VyneEnumTest {
       vyne.addModel(enumsByValue)
 
       // When
-      val queryResult = vyne.query(""" findAll { BankOrder[] } as CommonOrder[] """)
+      val queryResult = vyne.query(""" find { BankOrder[] } as CommonOrder[] """)
          .typedObjects()
          .map { it.toRawObject() }
 
@@ -340,7 +342,7 @@ type typeB {
       vyne.addJsonModel("typeA", """ { "fieldA1" : "AAA2" } """.trimIndent())
 
       // When
-      val queryResult = vyne.query(""" findOne { typeA } as typeB """)
+      val queryResult = vyne.query(""" find {typeA } as typeB """)
 
       // Then
       queryResult.rawResults.test {
@@ -392,7 +394,7 @@ type typeB {
 
 
       // When - One model
-      val queryResult = vyne.query(""" findOne { typeB } as typeA """)
+      val queryResult = vyne.query(""" find {typeB } as typeA """)
 
       // Then
       //  queryResult.results.test(12.toDuration(DurationUnit.MINUTES)) {

@@ -38,7 +38,7 @@ export function authTokenTypeDisplayName(tokenType: AuthTokenType): string {
   providedIn: VyneServicesModule
 })
 export class AuthManagerService {
-  private tokensApiEndpoint = `${environment.queryServiceUrl}/api/tokens`;
+  private tokensApiEndpoint = `${environment.serverUrl}/api/tokens`;
   constructor(private http: HttpClient) {
   }
 

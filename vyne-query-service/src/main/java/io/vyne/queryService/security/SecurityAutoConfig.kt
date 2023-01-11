@@ -1,24 +1,17 @@
 package io.vyne.queryService.security
 
+import io.vyne.auth.CookieOrHeaderTokenConverter
+import io.vyne.auth.authentication.ConfigFileVyneUserRepository
+import io.vyne.auth.authentication.VyneUserRepository
+import io.vyne.auth.authorisation.*
 import io.vyne.queryService.lsp.LanguageServerConfig
-import io.vyne.queryService.schemas.BuiltInTypesProvider
 import io.vyne.queryService.security.authorisation.VyneAuthorisationConfig
-import io.vyne.queryService.security.authorisation.VyneConsumerType
 import io.vyne.queryService.security.authorisation.VyneOpenIdpConnectConfig
-import io.vyne.queryService.security.authorisation.VyneUserAuthorisationRole
-import io.vyne.queryService.security.authorisation.VyneUserRoleDefinitionFileRepository
-import io.vyne.queryService.security.authorisation.VyneUserRoleDefinitionRepository
-import io.vyne.queryService.security.authorisation.VyneUserRoleMappingFileRepository
-import io.vyne.queryService.security.authorisation.VyneUserRoleMappingRepository
-import io.vyne.queryService.security.authorisation.VyneUserRoles
-import io.vyne.schema.publisher.SchemaPublisherTransport
 import mu.KotlinLogging
 import org.apache.commons.io.IOUtils
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.boot.context.properties.EnableConfigurationProperties
-import org.springframework.context.ApplicationListener
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.convert.converter.Converter
@@ -36,7 +29,6 @@ import org.springframework.security.web.server.header.XFrameOptionsServerHttpHea
 import org.springframework.security.web.server.util.matcher.NegatedServerWebExchangeMatcher
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
 import org.springframework.web.server.ServerWebExchange
-import reactor.core.publisher.Flux
 
 private val logger = KotlinLogging.logger { }
 
@@ -233,7 +225,10 @@ class GrantedAuthoritiesExtractor(
    private fun assignDefaultRoleToApiClient(preferredUserName: String) {
       if (vyneUserRoleMappingRepository.findByUserName(preferredUserName) == null) {
          logger.info { "Api Client Preferred User Name $preferredUserName logs in as the first user, assigning ${this.defaultApiClientUserRoles}" }
-         vyneUserRoleMappingRepository.save(preferredUserName, VyneUserRoles(roles = defaultApiClientUserRoles, type = VyneConsumerType.API.name))
+         vyneUserRoleMappingRepository.save(
+            preferredUserName,
+            VyneUserRoles(roles = defaultApiClientUserRoles, type = VyneConsumerType.API.name)
+         )
       }
    }
 }

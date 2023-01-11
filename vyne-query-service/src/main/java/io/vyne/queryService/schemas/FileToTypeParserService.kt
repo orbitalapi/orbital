@@ -183,7 +183,7 @@ class FileToTypeParserService(
       // from the base schema.  But the output isn't truly a merge of both.
       // So we need to add the two docs together
       val compositeTaxiDocument = baseSchema.document.merge(compiledInputSchema.document)
-      val compositeSchema = TaxiSchema(compositeTaxiDocument, baseSchema.sources + compiledInputSchema.sources)
+      val compositeSchema = TaxiSchema(compositeTaxiDocument, baseSchema.packages + compiledInputSchema.packages)
       val typesInTempSchema = compiledInputSchema.types
          .filter { type -> type.sources.any { source -> source.name == tempSchemaName } }
       return Pair(compositeSchema, typesInTempSchema)

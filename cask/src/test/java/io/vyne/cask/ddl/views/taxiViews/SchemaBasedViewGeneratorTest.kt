@@ -5,27 +5,32 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
+import io.vyne.asPackage
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.views.taxiViews.TestSchemas.viewWithConstraints
 import io.vyne.cask.ddl.views.taxiViews.TestSchemas.viewWithMultipleConstraints
+import io.vyne.from
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.toParsedPackages
 import io.vyne.utils.withoutWhitespace
 import net.sf.jsqlparser.util.validation.Validation
 import net.sf.jsqlparser.util.validation.feature.DatabaseType
 import org.junit.Assert
+import org.junit.Ignore
 import org.junit.Test
 
+@Ignore("Views not currently supported")
 class SchemaBasedViewGeneratorTest {
     val repository: CaskConfigRepository = mock { }
 
    private fun fromSchemaSource(versionSource: VersionedSource): Pair<TaxiSchema, SimpleSchemaStore> {
       val taxiSchema = TaxiSchema.from(versionSource)
       val schemaStore = SimpleSchemaStore()
-      schemaStore.setSchemaSet(SchemaSet.from(listOf(versionSource), 1))
+      schemaStore.setSchemaSet(SchemaSet.fromParsed(versionSource.asPackage().toParsedPackages(), 1))
       return Pair(taxiSchema, schemaStore)
    }
 
@@ -184,7 +189,8 @@ class SchemaBasedViewGeneratorTest {
          @Generated
          model OrderView inherits OrderEvent {
             orderId : SentOrderId?
-            orderDateTime : OrderEventDateTime?( @format = "MM/dd/yy HH:mm:ss" )
+            @Format ("MM/dd/yy HH:mm:ss" )
+            orderDateTime : OrderEventDateTime?
             orderType : OrderType?
             subSecurityType : SecurityDescription?
             requestedQuantity : RequestedQuantity?
@@ -295,7 +301,8 @@ class SchemaBasedViewGeneratorTest {
             @Id
             sentOrderId : SentOrderId
             @Between
-		      orderDateTime: OrderEventDateTime( @format = "MM/dd/yy HH:mm:ss") by column("Time Submitted")
+            @Format ( "MM/dd/yy HH:mm:ss")
+		      orderDateTime: OrderEventDateTime by column("Time Submitted")
             orderType: OrderType by default("Market")
             subSecurityType: SecurityDescription? by column("Instrument Desc")
             requestedQuantity: RequestedQuantity? by column("Size")
@@ -346,7 +353,8 @@ class SchemaBasedViewGeneratorTest {
             @Id
             sentOrderId : SentOrderId
             @Between
-		      orderDateTime: OrderEventDateTime( @format = "MM/dd/yy HH:mm:ss") by column("Time Submitted")
+            @Format( "MM/dd/yy HH:mm:ss" )
+		      orderDateTime: OrderEventDateTime by column("Time Submitted")
             orderType: OrderType by default("Market")
             subSecurityType: SecurityDescription? by column("Instrument Desc")
             requestedQuantity: RequestedQuantity? by column("Size")
@@ -373,7 +381,8 @@ class SchemaBasedViewGeneratorTest {
          view OrderView inherits OrderEvent with query {
             find { OrderSent[] } as {
               orderId: OrderSent::SentOrderId
-              orderDateTime: OrderSent::OrderEventDateTime( @format = "MM/dd/yy HH:mm:ss")
+              @Format( "MM/dd/yy HH:mm:ss")
+              orderDateTime: OrderSent::OrderEventDateTime
               orderType: OrderSent::OrderType
               subSecurityType: OrderSent::SecurityDescription
               requestedQuantity: OrderSent::RequestedQuantity

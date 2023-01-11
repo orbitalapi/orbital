@@ -1,12 +1,13 @@
 package io.vyne.query
 
 import io.vyne.query.graph.ElementType
+import io.vyne.query.graph.PenalizedEdge
 import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.query.graph.edges.PathEvaluation
 import io.vyne.schemas.Relationship
 
 /**
- * The purpose os this interface is to encapsulate the Edge penalty cost calculation from @see io.vyne.query.EvaluatedPathSet
+ * The purpose os this interface is to encapsulate the Edge penalty cost calculation from @see io.vyne.query.graph.EvaluatedPathSet
  * so that we can try different cost calculation strategies by implementing this interface.
  */
 interface SearchPenaltyProvider {

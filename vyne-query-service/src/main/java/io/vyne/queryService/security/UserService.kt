@@ -1,8 +1,10 @@
 package io.vyne.queryService.security
 
+import io.vyne.auth.authentication.VyneUser
+import io.vyne.auth.authentication.VyneUserRepository
+import io.vyne.auth.authorisation.VyneUserRoleDefinitionRepository
+import io.vyne.auth.authorisation.VyneUserRoleMappingRepository
 import io.vyne.queryService.security.authorisation.VyneOpenIdpConnectConfig
-import io.vyne.queryService.security.authorisation.VyneUserRoleDefinitionRepository
-import io.vyne.queryService.security.authorisation.VyneUserRoleMappingRepository
 import io.vyne.security.VyneGrantedAuthorities
 import mu.KotlinLogging
 import org.springframework.http.HttpHeaders

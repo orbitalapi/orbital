@@ -7,17 +7,31 @@ package io.vyne.queryService.schemas.editor
 
 
 import arrow.core.getOrHandle
+import io.vyne.PackageIdentifier
+import io.vyne.PackageMetadata
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.queryService.schemas.editor.generator.VyneSchemaToTaxiGenerator
 import io.vyne.queryService.schemas.editor.splitter.SingleTypePerFileSplitter
 import io.vyne.queryService.schemas.editor.splitter.SourceSplitter
 import io.vyne.queryService.utils.handleFeignErrors
-
 import io.vyne.schema.api.SchemaValidator
 import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.publisher.loaders.AddChangesToChangesetResponse
+import io.vyne.schema.publisher.loaders.AvailableChangesetsResponse
+import io.vyne.schema.publisher.loaders.CreateChangesetResponse
+import io.vyne.schema.publisher.loaders.FinalizeChangesetResponse
+import io.vyne.schema.publisher.loaders.SetActiveChangesetResponse
+import io.vyne.schema.publisher.loaders.UpdateChangesetResponse
+import io.vyne.schemaServer.editor.AddChangesToChangesetRequest
+import io.vyne.schemaServer.editor.FinalizeChangesetRequest
+import io.vyne.schemaServer.editor.GetAvailableChangesetsRequest
 import io.vyne.schemaServer.editor.SchemaEditRequest
 import io.vyne.schemaServer.editor.SchemaEditResponse
 import io.vyne.schemaServer.editor.SchemaEditorApi
+import io.vyne.schemaServer.editor.SetActiveChangesetRequest
+import io.vyne.schemaServer.editor.StartChangesetRequest
+import io.vyne.schemaServer.editor.UpdateChangesetRequest
 import io.vyne.schemaServer.editor.UpdateDataOwnerRequest
 import io.vyne.schemaServer.editor.UpdateTypeAnnotationRequest
 import io.vyne.schemaStore.TaxiSchemaValidator
@@ -45,6 +59,7 @@ import mu.KotlinLogging
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -60,12 +75,13 @@ class LocalSchemaEditingService(
 
    private val logger = KotlinLogging.logger {}
 
+   fun getEditorConfig() = schemaEditorApi.getEditorConfig()
 
    @PostMapping(path = ["/api/types/{typeName}/owner"])
    fun updateDataOwner(
       @PathVariable typeName: String,
       @RequestBody request: UpdateDataOwnerRequest
-   ): Mono<SchemaEditResponse> {
+   ): Mono<AddChangesToChangesetResponse> {
       return handleFeignErrors { schemaEditorApi.updateDataOwnerOnType(typeName, request) }
    }
 
@@ -73,8 +89,50 @@ class LocalSchemaEditingService(
    fun updateAnnotationsOnType(
       @PathVariable typeName: String,
       @RequestBody request: UpdateTypeAnnotationRequest
-   ): Mono<SchemaEditResponse> {
+   ): Mono<AddChangesToChangesetResponse> {
       return handleFeignErrors { schemaEditorApi.updateAnnotationsOnType(typeName, request) }
+   }
+
+   @PostMapping("/api/repository/changeset/create")
+   fun createChangeset(
+      @RequestBody request: StartChangesetRequest
+   ): Mono<CreateChangesetResponse> {
+      return handleFeignErrors { schemaEditorApi.createChangeset(request) }
+   }
+
+   @PostMapping("/api/repository/changeset/add")
+   fun addChangesToChangeset(
+      @RequestBody request: AddChangesToChangesetRequest
+   ): Mono<AddChangesToChangesetResponse> {
+      return handleFeignErrors { schemaEditorApi.addChangesToChangeset(request) }
+   }
+
+   @PostMapping("/api/repository/changeset/finalize")
+   fun finalizeChangeset(
+      @RequestBody request: FinalizeChangesetRequest
+   ): Mono<FinalizeChangesetResponse> {
+      return handleFeignErrors { schemaEditorApi.finalizeChangeset(request) }
+   }
+
+   @PutMapping("/api/repository/changeset/update")
+   fun updateChangeset(
+      @RequestBody request: UpdateChangesetRequest
+   ): Mono<UpdateChangesetResponse> {
+      return handleFeignErrors { schemaEditorApi.updateChangeset(request) }
+   }
+
+   @PostMapping("/api/repository/changesets")
+   fun getAvailableChangesets(
+      @RequestBody request: GetAvailableChangesetsRequest
+   ): Mono<AvailableChangesetsResponse> {
+      return handleFeignErrors { schemaEditorApi.getAvailableChangesets(request) }
+   }
+
+   @PostMapping("/api/repository/changesets/active")
+   fun setActiveChangeset(
+      @RequestBody request: SetActiveChangesetRequest
+   ): Mono<SetActiveChangesetResponse> {
+      return handleFeignErrors { schemaEditorApi.setActiveChangeset(request) }
    }
 
    /**
@@ -87,7 +145,8 @@ class LocalSchemaEditingService(
    @PostMapping("/api/schemas/edit", consumes = [MediaType.APPLICATION_JSON_VALUE])
    fun submitEditedSchema(
       @RequestBody editedSchema: EditedSchema,
-      @RequestParam("validate", required = false) validateOnly: Boolean = false
+      @RequestParam("packageIdentifier") rawPackageIdentifier: String,
+      @RequestParam("validate", required = false) validateOnly: Boolean = false,
    ): Mono<SchemaSubmissionResult> {
       logger.info { "Received request to edit schema - converting to taxi" }
       val generator = VyneSchemaToTaxiGenerator()
@@ -105,7 +164,7 @@ class LocalSchemaEditingService(
          logger.info { "Generation of taxi completed - no messages or warnings were produced" }
       }
 
-      return submit(generated.concatenatedSource, validateOnly)
+      return submit(generated.concatenatedSource, validateOnly, rawPackageIdentifier)
 
    }
 
@@ -125,7 +184,7 @@ class LocalSchemaEditingService(
          serviceFilter = { service -> !serviceNames.contains(service.toQualifiedName().toVyneQualifiedName()) }
       )
       return TaxiSchema(
-         filteredTaxiDocument, taxiSchema.sources, taxiSchema.functionRegistry
+         filteredTaxiDocument, taxiSchema.packages, taxiSchema.functionRegistry
       )
    }
 
@@ -137,37 +196,51 @@ class LocalSchemaEditingService(
     *
     * The updated Vyne types containing in the Taxi string are returned.
     */
-   @PostMapping("/api/schema/taxi", consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE])
+   @PostMapping(
+      "/api/schema/taxi/{packageIdentifier}",
+      consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE]
+   )
    fun submit(
       @RequestBody taxi: String,
-      @RequestParam("validate", required = false) validateOnly: Boolean = false
+      @RequestParam("validate", required = false) validateOnly: Boolean = false,
+      @PathVariable("packageIdentifier") rawPackageIdentifier: String
    ): Mono<SchemaSubmissionResult> {
       val importRequestSourceName = "ImportRequest" + Random.nextInt()
+
+      val packageIdentifier = PackageIdentifier.fromId(rawPackageIdentifier)
+
       val (messages, compiled) = validate(taxi, importRequestSourceName)
       val typesInThisRequest = getCompiledElementsInSources(compiled.types, importRequestSourceName)
       val servicesInThisRequest = getCompiledElementsInSources(compiled.services, importRequestSourceName)
 
       val generatedThings: List<Pair<ImportableToken, List<CompilationUnit>>> =
          typesInThisRequest + servicesInThisRequest
-      val (updatedSchema, versionedSources) = toVersionedSources(generatedThings)
+      val (updatedSchema, versionedSources) = toVersionedSources(packageIdentifier, generatedThings)
       val persist = !validateOnly
       val vyneTypes = typesInThisRequest.map { (type, _) -> updatedSchema.type(type) }
       val vyneServices = servicesInThisRequest.map { (service, _) -> updatedSchema.service(service.qualifiedName) }
       val submissionResult = SchemaSubmissionResult(
-         vyneTypes, vyneServices, messages, taxi,
+         vyneTypes.toSet(), vyneServices.toSet(), messages, taxi,
          dryRun = validateOnly
       )
       return if (persist) {
-         submitEdits(versionedSources)
+         submitEdits(versionedSources, packageIdentifier)
             .map { submissionResult }
       } else {
          Mono.just(submissionResult)
       }
    }
 
-   fun submitEdits(versionedSources: List<VersionedSource>): Mono<SchemaEditResponse> {
+   fun submitEdits(
+      versionedSources: List<VersionedSource>,
+      packageIdentifier: PackageIdentifier
+   ): Mono<SchemaEditResponse> {
       log().info("Submitting edit requests to schema server for files ${versionedSources.joinToString(", ") { it.name }}")
-      return handleFeignErrors { schemaEditorApi.submitEdits(SchemaEditRequest(versionedSources)) }
+      return handleFeignErrors {
+         schemaEditorApi.submitEdits(
+            SchemaEditRequest(packageIdentifier, versionedSources)
+         )
+      }
 
    }
 
@@ -202,16 +275,22 @@ class LocalSchemaEditingService(
       return messages to compiled
    }
 
-   private fun toVersionedSources(typesAndSources: List<Pair<ImportableToken, List<CompilationUnit>>>): Pair<Schema, List<VersionedSource>> {
+   private fun toVersionedSources(
+      packageIdentifier: PackageIdentifier,
+      typesAndSources: List<Pair<ImportableToken, List<CompilationUnit>>>
+   ): Pair<Schema, List<VersionedSource>> {
       // We have to work out a Type-to-file strategy.
       // As a first pass, I'm using a separate file for each type.
       // It's a little verbose on the file system, but it's a reasonable start, as it makes managing edits easier, since
       // we don't have to worry about insertions / modification within the middle of a file.
       val splitter: SourceSplitter = SingleTypePerFileSplitter
       val versionedSources = splitter.toVersionedSources(typesAndSources)
-
-      val (schema, _) = schemaValidator.validate(schemaStore.schemaSet, versionedSources)
-         .getOrHandle { (errors, sources) -> throw CompilationException(errors) }
+      val update = SourcePackage(
+         PackageMetadata.from(packageIdentifier),
+         versionedSources
+      )
+      val (schema, _) = schemaValidator.validate(schemaStore.schemaSet, update)
+         .getOrHandle { (errors) -> throw CompilationException(errors) }
       return schema to versionedSources
    }
 
@@ -222,7 +301,6 @@ class LocalSchemaEditingService(
    ): String {
       val imports = if (type is ObjectType) {
          type.referencedTypes
-            .map { referencedType -> referencedType.formattedInstanceOfType ?: referencedType }
             .map { "import ${it.qualifiedName}" }
             .distinct()
       } else emptyList()

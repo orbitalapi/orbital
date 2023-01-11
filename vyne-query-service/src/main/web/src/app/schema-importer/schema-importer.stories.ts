@@ -46,7 +46,7 @@ storiesOf('Schema importer', module)
       <div style="padding: 40px">
       <app-schema-explorer-table
         [schema]="schema"
-      [schemaSubmissionResult]="importedSchema"></app-schema-explorer-table>
+      [partialSchema]="importedSchema"></app-schema-explorer-table>
       </div>
 
       `,

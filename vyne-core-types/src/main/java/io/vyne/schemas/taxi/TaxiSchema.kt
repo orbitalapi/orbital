@@ -1,34 +1,11 @@
 package io.vyne.schemas.taxi
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import io.vyne.VersionedSource
+import com.google.common.base.Stopwatch
+import io.vyne.*
 import io.vyne.models.functions.FunctionRegistry
-import io.vyne.schemas.ConsumedOperation
-import io.vyne.schemas.DefaultTypeCache
-import io.vyne.schemas.FieldModifier
-import io.vyne.schemas.Metadata
-import io.vyne.schemas.Operation
-import io.vyne.schemas.OperationNames
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.Policy
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.QueryOperation
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Service
-import io.vyne.schemas.ServiceLineage
-import io.vyne.schemas.TaxiTypeCache
-import io.vyne.schemas.TaxiTypeMapper
-import io.vyne.schemas.Type
-import io.vyne.schemas.TypeCache
-import io.vyne.schemas.fqn
-import io.vyne.schemas.toVyneQualifiedName
-import io.vyne.versionedSources
-import lang.taxi.CompilationError
-import lang.taxi.CompilationException
-import lang.taxi.Compiler
-import lang.taxi.Equality
-import lang.taxi.TaxiDocument
-import lang.taxi.errors
+import io.vyne.schemas.*
+import lang.taxi.*
 import lang.taxi.messages.Severity
 import lang.taxi.packages.TaxiSourcesLoader
 import lang.taxi.types.Annotation
@@ -43,14 +20,17 @@ private val logger = KotlinLogging.logger {}
 
 class TaxiSchema(
    @get:JsonIgnore val document: TaxiDocument,
-   @get:JsonIgnore override val sources: List<VersionedSource>,
+   @get:JsonIgnore override val packages: List<SourcePackage>,
    override val functionRegistry: FunctionRegistry = FunctionRegistry.default
 ) : Schema {
    override val types: Set<Type>
    override val services: Set<Service>
    override val policies: Set<Policy>
 
-   private val equality = Equality(this, TaxiSchema::document, TaxiSchema::sources)
+   @get:JsonIgnore
+   override val sources: List<VersionedSource> = packages.flatMap { it.sourcesWithPackageIdentifier }
+
+   private val equality = ImmutableEquality(this, TaxiSchema::document, TaxiSchema::sources)
    override fun equals(other: Any?): Boolean {
       return equality.isEqualTo(other)
    }
@@ -78,6 +58,7 @@ class TaxiSchema(
    private val constraintConverter = TaxiConstraintConverter(this)
 
    init {
+      val stopwatch = Stopwatch.createStarted()
       try {
          val (typeCache, types) = parseTypes(document)
          this.typeCache = typeCache
@@ -88,7 +69,10 @@ class TaxiSchema(
          logger.error(e) { "Exception occurred initializing the Taxi Schema" }
          throw e
       }
+      logger.debug { "Parsing TaxiSchema took ${stopwatch.elapsed().toMillis()}ms" }
    }
+
+   val hash = (services + types).hashCode()
 
 
    @get:JsonIgnore
@@ -97,7 +81,7 @@ class TaxiSchema(
    private fun parsePolicies(document: TaxiDocument): Set<Policy> {
       return document.policies.map { taxiPolicy ->
          Policy(
-            QualifiedName(taxiPolicy.qualifiedName),
+            QualifiedName.from(taxiPolicy.qualifiedName),
             this.type(taxiPolicy.targetType.toVyneQualifiedName()),
             taxiPolicy.ruleSets
          )
@@ -114,11 +98,12 @@ class TaxiSchema(
             val metadata = parseAnnotationsToMetadata(taxiServiceLineage.annotations)
             ServiceLineage(
                consumes = consumes,
-               stores = taxiServiceLineage.stores.map { QualifiedName(it.fullyQualifiedName) },
-               metadata = metadata)
+               stores = taxiServiceLineage.stores.map { QualifiedName.from(it.fullyQualifiedName) },
+               metadata = metadata
+            )
          }
          Service(
-            QualifiedName(taxiService.qualifiedName),
+            QualifiedName.from(taxiService.qualifiedName),
             queryOperations = taxiService.queryOperations.map { queryOperation ->
                val returnType = this.type(queryOperation.returnType.toVyneQualifiedName())
                QueryOperation(
@@ -145,6 +130,24 @@ class TaxiSchema(
                   ),
                   sources = taxiOperation.compilationUnits.toVyneSources(),
                   typeDoc = taxiOperation.typeDoc
+               )
+            },
+            tableOperations = taxiService.tables.map { taxiTable ->
+               val returnType = this.type(taxiTable.returnType.toVyneQualifiedName())
+               TableOperation(
+                  qualifiedName = OperationNames.qualifiedName(taxiService.qualifiedName, taxiTable.name),
+                  returnType = returnType,
+                  metadata = parseAnnotationsToMetadata(taxiTable.annotations),
+                  typeDoc = taxiTable.typeDoc
+               )
+            },
+            streamOperations = taxiService.streams.map { taxiStream ->
+               val returnType = this.type(taxiStream.returnType.toVyneQualifiedName())
+               StreamOperation(
+                  qualifiedName = OperationNames.qualifiedName(taxiService.qualifiedName, taxiStream.name),
+                  returnType = returnType,
+                  metadata = parseAnnotationsToMetadata(taxiStream.annotations),
+                  typeDoc = taxiStream.typeDoc
                )
             },
             metadata = parseAnnotationsToMetadata(taxiService.annotations),
@@ -178,7 +181,11 @@ class TaxiSchema(
 
 
    fun merge(schema: TaxiSchema): TaxiSchema {
-      return TaxiSchema(this.document.merge(schema.document), this.sources + schema.sources, this.functionRegistry.merge(schema.functionRegistry))
+      return TaxiSchema(
+         this.document.merge(schema.document),
+         this.packages + schema.packages,
+         this.functionRegistry.merge(schema.functionRegistry)
+      )
    }
 
    companion object {
@@ -212,22 +219,33 @@ class TaxiSchema(
       }
 
       fun forPackageAtPath(path: Path): TaxiSchema {
-         return from(TaxiSourcesLoader.loadPackage(path).versionedSources())
+         return from(TaxiSourcesLoader.loadPackage(path).asSourcePackage())
       }
 
       fun empty(): TaxiSchema {
-         return fromStrings(emptyList())
+         return fromPackages(emptyList()).second
       }
 
-      fun compiled(
-         sources: List<VersionedSource>,
+      fun fromPackages(
+         packages: List<SourcePackage>,
          imports: List<TaxiSchema> = emptyList(),
          functionRegistry: FunctionRegistry = FunctionRegistry.default
       ): Pair<List<CompilationError>, TaxiSchema> {
+         return this.compiled(packages, imports, functionRegistry)
+      }
+
+      fun compiled(
+         packages: List<SourcePackage>,
+         imports: List<TaxiSchema> = emptyList(),
+         functionRegistry: FunctionRegistry = FunctionRegistry.default
+      ): Pair<List<CompilationError>, TaxiSchema> {
+         val sources = packages.toSourcesWithPackageIdentifier()
+         val stopwatch = Stopwatch.createStarted()
          val (compilationErrors, doc) =
             Compiler(
-               sources.map { CharStreams.fromString(it.content, it.name) },
+               sources.map { CharStreams.fromString(it.content, it.packageQualifiedName) },
                imports.map { it.document }).compileWithMessages()
+         logger.debug { "Compilation of TaxiSchema took ${stopwatch.elapsed().toMillis()}ms" }
 
          // This is to prevent startup errors if there are compilation errors.
          // If we don't, then the main thread can error, causing
@@ -241,14 +259,16 @@ class TaxiSchema(
                   }"
                }
             }
+
             compilationErrors.any { it.severity == Severity.WARNING } -> {
                logger.warn { "There are ${schemaWarnings.size} warning found in the sources" }
             }
+
             compilationErrors.isNotEmpty() -> {
                logger.info { "Compiler provided the following messages: \n ${compilationErrors.toMessage()}" }
             }
          }
-         return compilationErrors to TaxiSchema(doc, sources, functionRegistry)
+         return compilationErrors to TaxiSchema(doc, packages, functionRegistry)
 
       }
 
@@ -262,11 +282,11 @@ class TaxiSchema(
        * You should consider using compiled() instead.
        */
       fun from(
-         sources: List<VersionedSource>,
+         packages: List<SourcePackage>,
          imports: List<TaxiSchema> = emptyList(),
          onErrorBehaviour: TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY
       ): TaxiSchema {
-         val (messages, schema) = compiled(sources, imports)
+         val (messages, schema) = compiled(packages, imports)
          val errors = messages.errors()
          return when {
             errors.isEmpty() -> schema
@@ -277,14 +297,17 @@ class TaxiSchema(
 
 
       fun from(
-         source: VersionedSource,
+         sourcePackage: SourcePackage,
          importSources: List<TaxiSchema> = emptyList(),
          onErrorBehaviour: TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY
       ): TaxiSchema {
 
-         return from(listOf(source), importSources, onErrorBehaviour)
+         return from(listOf(sourcePackage), importSources, onErrorBehaviour)
       }
 
+      /**
+       * This should only be used in tests
+       */
       fun fromStrings(
          vararg taxi: String,
          importSources: List<TaxiSchema> = emptyList(),
@@ -293,14 +316,22 @@ class TaxiSchema(
          return fromStrings(taxi.toList(), importSources, onErrorBehaviour)
       }
 
+      /**
+       * This should only be used in tests
+       */
       fun fromStrings(
          taxi: List<String>,
          importSources: List<TaxiSchema> = emptyList(),
-         onErrorBehaviour: TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY
+         onErrorBehaviour: TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY,
       ): TaxiSchema {
-         return from(taxi.map { VersionedSource.sourceOnly(it) }, importSources, onErrorBehaviour)
+         return from(
+            taxi.map { VersionedSource.sourceOnly(it) }.asDummySourcePackages(), importSources, onErrorBehaviour
+         )
       }
 
+      /**
+       * This should only be used in tests
+       */
       fun from(
          taxi: String,
          sourceName: String = "<unknown>",
@@ -308,7 +339,11 @@ class TaxiSchema(
          importSources: List<TaxiSchema> = emptyList(),
          onErrorBehaviour: TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY
       ): TaxiSchema {
-         return from(VersionedSource(sourceName, version, taxi), importSources, onErrorBehaviour)
+         return from(
+            listOf(VersionedSource(sourceName, version, taxi)).asDummySourcePackages(),
+            importSources,
+            onErrorBehaviour
+         )
       }
 
       fun compiled(
@@ -318,7 +353,11 @@ class TaxiSchema(
          importSources: List<TaxiSchema> = emptyList(),
          functionRegistry: FunctionRegistry = FunctionRegistry.default
       ): Pair<List<CompilationError>, TaxiSchema> {
-         return compiled(listOf(VersionedSource(sourceName, version, taxi)), importSources, functionRegistry)
+         return compiled(
+            listOf(VersionedSource(sourceName, version, taxi)).asDummySourcePackages(),
+            importSources,
+            functionRegistry
+         )
       }
 
       fun compileOrFail(
@@ -334,6 +373,10 @@ class TaxiSchema(
          }
          return schema
       }
+
+      private fun List<VersionedSource>.asDummySourcePackages(): List<SourcePackage> {
+         return listOf(SourcePackage(PackageMetadata.from("io.vyne", "dummy", "0.1.0"), this))
+      }
    }
 }
 
@@ -342,12 +385,13 @@ fun List<lang.taxi.types.FieldModifier>.toVyneFieldModifiers(): List<FieldModifi
 }
 
 private fun lang.taxi.types.QualifiedName.toVyneQualifiedName(): QualifiedName {
-   return QualifiedName(this.toString(), this.parameters.map { it.toVyneQualifiedName() })
+   return QualifiedName.from(this.toString(), this.parameters.map { it.toVyneQualifiedName() })
 }
 
 fun lang.taxi.types.Type.toVyneQualifiedName(): QualifiedName {
    return this.toQualifiedName().toVyneQualifiedName()
 }
+
 fun lang.taxi.types.Type.toVyneType(schema: Schema): Type {
    return schema.type(this.toVyneQualifiedName())
 }

@@ -6,15 +6,50 @@ import com.google.common.annotations.VisibleForTesting
 import com.google.common.hash.Hashing
 import io.vyne.utils.log
 import lang.taxi.CompilationError
+import lang.taxi.errors
 import lang.taxi.packages.TaxiPackageSources
 import lang.taxi.sources.SourceCode
 import java.io.Serializable
 import java.time.Instant
 
-data class VersionedSource(val name: String, val version: String, val content: String) : Serializable {
+
+data class VersionedSource(
+   val name: String,
+   val version: String,
+   val content: String,
+   val packageIdentifier: PackageIdentifier?
+) : Serializable {
+   constructor(
+      name: String, version: String, content: String
+   ) : this(splitPackageIdentifier(name).second, version, content, splitPackageIdentifier(name).first)
+
+   val packageQualifiedName = prependPackageIdentifier(packageIdentifier, name)
+
+
    companion object {
       const val UNNAMED = "<unknown>"
       val DEFAULT_VERSION: Version = Version.valueOf("0.0.0")
+
+      fun prependPackageIdentifier(packageIdentifier: PackageIdentifier?, sourceName: String): String {
+         if (packageIdentifier == null) {
+            return sourceName
+         }
+         val packageIdentifierPrefix = "[${packageIdentifier.id}]/"
+         return if (sourceName.startsWith(packageIdentifierPrefix)) {
+            sourceName
+         } else {
+            "$packageIdentifierPrefix$sourceName"
+         }
+      }
+
+      fun splitPackageIdentifier(name: String): Pair<PackageIdentifier?, String> {
+         return if (name.contains("]/")) {
+            val (packageIdentifier, trimmedName) = name.split("]/")
+            return PackageIdentifier.fromId(packageIdentifier.removePrefix("[")) to trimmedName
+         } else {
+            null to name
+         }
+      }
 
       @VisibleForTesting
       fun sourceOnly(content: String) = VersionedSource(UNNAMED, DEFAULT_VERSION.toString(), content)
@@ -24,17 +59,9 @@ data class VersionedSource(val name: String, val version: String, val content: S
          return VersionedSource(name, version, content)
       }
 
-      fun unversioned(name:String, content:String) = VersionedSource(name, DEFAULT_VERSION.toString(), content)
+      fun unversioned(name: String, content: String) = VersionedSource(name, DEFAULT_VERSION.toString(), content)
 
-      fun nameAndVersionFromId(id: SchemaId): Pair<String, String> {
-         val parts = id.split(":")
-         require(parts.size == 2)
-         return parts[0] to parts[1]
-      }
 
-      fun fromTaxiSourceCode(sourceCode: SourceCode, version: String = DEFAULT_VERSION.toString()): VersionedSource {
-         return VersionedSource(sourceCode.normalizedSourceName, version, sourceCode.content)
-      }
    }
 
    val id: SchemaId = "$name:$version"
@@ -64,14 +91,14 @@ data class VersionedSource(val name: String, val version: String, val content: S
 
 }
 
+@Deprecated("Use PackageIdentifier")
 typealias SchemaId = String
 
 data class ParsedSource(val source: VersionedSource, val errors: List<CompilationError> = emptyList()) : Serializable {
-   val isValid = errors.isEmpty()
+   val isValid = errors.errors().isEmpty()
 
    val name = source.name
 }
-
 
 fun TaxiPackageSources.versionedSources(): List<VersionedSource> {
    return this.sources.map { source -> source.asVersionedSource(this.project.version) }

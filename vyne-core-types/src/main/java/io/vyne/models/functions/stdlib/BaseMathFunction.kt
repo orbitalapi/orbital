@@ -8,23 +8,25 @@ import io.vyne.models.FactBagValueSupplier
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
-import io.vyne.models.functions.NamedFunctionInvoker
+import io.vyne.models.functions.NullSafeInvoker
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeMatchingStrategy
 import lang.taxi.functions.FunctionAccessor
+import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.PrimitiveType
 import java.math.BigDecimal
 
 
-abstract class MathIteratingFunction : NamedFunctionInvoker {
-   override fun invoke(
-       inputValues: List<TypedInstance>,
-       schema: Schema,
-       returnType: Type,
-       function: FunctionAccessor,
-       objectFactory: EvaluationValueSupplier,
-       rawMessageBeingParsed: Any?
+abstract class MathIteratingFunction : NullSafeInvoker() {
+   override fun doInvoke(
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?
    ): TypedInstance {
       val sourceCollection = inputValues[0] as TypedCollection
       val deferredInstance = inputValues[1] as DeferredTypedInstance
@@ -36,6 +38,7 @@ abstract class MathIteratingFunction : NamedFunctionInvoker {
          val factBagValueSupplier = FactBagValueSupplier.of(
             listOf(typedInstance),
             schema,
+            thisScopeValueSupplier,
             // Exact match so that the accumulated value (which is likely an INT) doesn't conflict with semantic subtypes.
             // We should be smarter about this.
             TypeMatchingStrategy.EXACT_MATCH
@@ -43,7 +46,7 @@ abstract class MathIteratingFunction : NamedFunctionInvoker {
          val reader = AccessorReader(factBagValueSupplier,schema.functionRegistry,schema)
          // Not sure what to pass as the data source here.  I hope that the actual expression evaluation will set the
          // data source correctly.
-         val evaluated = reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = typedInstance.source)
+         val evaluated = reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = typedInstance.source, format = null)
          inputValues.add(evaluated)
          val value = evaluated.value ?: return@fold acc ?: BigDecimal.ZERO
          val bigDecimalValue = when (value) {

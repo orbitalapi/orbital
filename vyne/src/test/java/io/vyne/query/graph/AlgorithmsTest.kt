@@ -6,6 +6,7 @@ import io.vyne.schemas.OperationNames
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
+import org.skyscreamer.jsonassert.JSONAssert
 
 class AlgorithmsTest {
    private val objectMapper = jacksonObjectMapper()
@@ -277,8 +278,8 @@ class AlgorithmsTest {
 }
       """.trimIndent()
 
-      objectMapper.readTree(expectedProductDatasetJson).should.equal(objectMapper.readTree(productDataSetJson))
-      objectMapper.readTree(expectedTradeDatasetJson).should.equal(objectMapper.readTree(tradeDatasetJson))
+      JSONAssert.assertEquals(expectedProductDatasetJson, productDataSetJson, true)
+      JSONAssert.assertEquals(expectedTradeDatasetJson, tradeDatasetJson, true)
    }
 
    @Test
@@ -351,6 +352,6 @@ class AlgorithmsTest {
            }
          ]
       """.trimIndent()
-      objectMapper.readTree(expectedpnlDatasetJson).should.equal(objectMapper.readTree(pnlDatasetJson))
+      JSONAssert.assertEquals(expectedpnlDatasetJson, pnlDatasetJson, true)
    }
 }

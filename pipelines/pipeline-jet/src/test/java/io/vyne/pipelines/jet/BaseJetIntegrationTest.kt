@@ -10,8 +10,7 @@ import com.mercateo.test.clock.TestClock
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.StubService
-import io.vyne.VyneClient
-import io.vyne.VyneClientWithSchema
+import io.vyne.*
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import io.vyne.connectors.jdbc.JdbcConnectionConfiguration
@@ -40,8 +39,6 @@ import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.invokers.RestTemplateInvoker
 import io.vyne.spring.invokers.ServiceUrlResolver
-import io.vyne.testVyne
-import io.vyne.testVyneWithStub
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.support.GenericApplicationContext
@@ -77,7 +74,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
          listOf(
             CacheAwareOperationInvocationDecorator(
                RestTemplateInvoker(
-                  SimpleSchemaStore().setSchemaSet(SchemaSet.from(taxiSchema.sources, 1)),
+                  SimpleSchemaStore().setSchemaSet(SchemaSet.fromParsed(taxiSchema.sources.asPackage().toParsedPackages(), 1)),
                   WebClient.builder(),
                   ServiceUrlResolver.DEFAULT
                )

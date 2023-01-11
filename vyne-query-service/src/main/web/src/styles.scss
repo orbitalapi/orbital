@@ -86,3 +86,11 @@ $vyne-app-theme: mat.define-light-theme($vyne-app-primary, $vyne-app-accent, $vy
 .mat-tab-link {
   font-family: $headings-font;
 }
+
+tui-dialog-host {
+  z-index: 10000;
+}
+
+tui-dropdown-box {
+  z-index: 1000000 !important;
+}

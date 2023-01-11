@@ -81,7 +81,7 @@ class CaskViewFieldFilter(private val viewName: QualifiedName, private val types
    }
 
    private fun renameFieldReferenceExpression(owningType: ObjectType, field: Field, expression: FieldReferenceExpression): FieldReferenceExpression {
-      val renamedField = renameField(owningType, expression.fieldName)
+      val renamedField = renameField(owningType, expression.path)
       val selector =  FieldReferenceSelector(renamedField, expression.returnType)
       val existingCompilationUnit = expression.compilationUnits.first()
       val compilationUnit = CompilationUnit(
@@ -89,7 +89,7 @@ class CaskViewFieldFilter(private val viewName: QualifiedName, private val types
          existingCompilationUnit.source.copy(content = "this.$renamedField"),
          existingCompilationUnit.location
       )
-      return FieldReferenceExpression(selector, listOf(compilationUnit))
+      return FieldReferenceExpression(listOf(selector), listOf(compilationUnit))
    }
 
    private fun renameConditionalAccessor(owningType: ObjectType, field: Field, accessor: ConditionalAccessor): ConditionalAccessor {

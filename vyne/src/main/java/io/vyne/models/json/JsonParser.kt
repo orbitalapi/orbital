@@ -17,6 +17,11 @@ object RelaxedJsonMapper {
       .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
 }
 
+/**
+ * Be careful when calling addJson(), and using projections.
+ * Objects added here are "globally scoped", and can accidentally be pulled into projections.
+ * Oftentimes it's better to stub a service, which is more closely aligned with actual production code.
+ */
 fun ModelContainer.addJson(typeName: String, json: String, source: DataSource = Provided): TypedInstance {
    val instance = TypedInstance.from(this.getType(typeName), json, this.schema, source = source)
    addModel(instance)
@@ -40,7 +45,7 @@ fun ModelContainer.addJsonModel(typeName: String, json: String, source: DataSour
 @Deprecated("Call TypedInstance.from() instead.  This method has bugs with nested objects, and does not handle accessors or advanced features.")
 fun ModelContainer.parseJsonModel(typeName: String, json: String, source: DataSource = Provided): TypedInstance {
    val type = this.getType(typeName.fqn().parameterizedName)
-   return jsonParser().parse(type, json, source = source)
+   return jsonParser().parse(type, json, source = source, format = null)
 }
 
 fun parseJson(
@@ -70,7 +75,7 @@ fun ModelContainer.parseJsonCollection(
    source: DataSource = Provided
 ): List<TypedInstance> {
    val typedCollection =
-      jsonParser().parse(this.getType(typeName.fqn().parameterizedName), json, source = source) as TypedCollection
+      jsonParser().parse(this.getType(typeName.fqn().parameterizedName), json, source = source, format = null) as TypedCollection
    return typedCollection.value
 }
 

@@ -10,7 +10,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.reactive.asFlow
-import lang.taxi.types.TaxiQLQueryString
+import lang.taxi.query.TaxiQLQueryString
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.jdbc.core.ColumnMapRowMapper
@@ -113,9 +113,9 @@ class VyneQlQueryService(
    private fun countResultsAsync(query: TaxiQLQueryString): Deferred<Int> = CoroutineScope(vyneQlDispatcher).async {
       val statement = sqlGenerator.generateSqlCountRecords(query)
       if (statement.params.isEmpty()) {
-         jdbcTemplate.queryForObject(statement.sql, Int::class.java)
+         jdbcTemplate.queryForObject(statement.sql, Int::class.java)!!
       } else {
-         jdbcTemplate.queryForObject(statement.sql, Int::class.java, *statement.params.toTypedArray())
+         jdbcTemplate.queryForObject(statement.sql, Int::class.java, *statement.params.toTypedArray())!!
       }
    }
 

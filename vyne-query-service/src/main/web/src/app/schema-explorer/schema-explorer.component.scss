@@ -1,40 +1,46 @@
 @import "src/theme";
 @import "src/toolbar";
+
 :host {
-  background-color: $body-bg;
   display: flex;
   flex-direction: column;
-  height: 100%;
-}
-
-
-.spacer {
   flex-grow: 1;
+  width: 10px;
+  margin-left: 1rem;
 }
+:host(.vyne) {
+  background-color: $body-bg;
+
+}
+
+:host(.orbital) {
+  margin-top: 1rem;
+}
+
+.header-bar {
+  margin-bottom: 1rem;
+  display: flex;
+}
+
 app-code-viewer {
   width: 100%;
   // Use a fixed height, seems to make flex-grow work
   height: 10px;
   flex-grow: 1;
+  border: 1px solid rgba($vyne-lilac, 0.4);
+  border-radius: 4px;
 }
 
-
-:host .drop-down-toggle {
-  .mat-button-toggle-label-content {
-    padding: 0;
-  }
-}
-
-.empty-state {
-  text-align: center;
-  width: 500px;
-  font-size: 1.4rem;
-  opacity: 0.5;
-  margin: auto;
+.tab-bar {
+  margin-bottom: 1rem;
 
   img {
-    width: 256px;
-    opacity: 0.4;
+    margin-right: 1rem;
+    opacity: 0.5;
   }
 }
 
+app-changelog-list {
+  display: block;
+  overflow: auto;
+}

@@ -6,10 +6,10 @@ import io.vyne.http.response
 import io.vyne.models.json.RelaxedJsonMapper.jackson
 import io.vyne.schema.publisher.HttpPollKeepAlive
 import io.vyne.schema.publisher.PublisherConfiguration
+import io.vyne.schema.publisher.PublisherHealth
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.springframework.web.reactive.function.client.WebClient
@@ -33,7 +33,7 @@ class HttpPollKeepAliveStrategyMonitorTest {
       val publisherWithHttpPoll = publisherConfig()
       httpPollKeepAliveStrategyMonitor.monitor(publisherWithHttpPoll)
 
-      StepVerifier.create(httpPollKeepAliveStrategyMonitor.terminatedInstances)
+      StepVerifier.create(httpPollKeepAliveStrategyMonitor.healthUpdateMessages)
          .expectSubscription()
          .expectNoEvent(Duration.ofSeconds(5L))
          .thenCancel()
@@ -50,7 +50,7 @@ class HttpPollKeepAliveStrategyMonitorTest {
       val publisherWithHttpPoll = publisherConfig()
       httpPollKeepAliveStrategyMonitor.monitor(publisherWithHttpPoll)
 
-      StepVerifier.create(httpPollKeepAliveStrategyMonitor.terminatedInstances)
+      StepVerifier.create(httpPollKeepAliveStrategyMonitor.healthUpdateMessages)
          .expectSubscription()
          .expectNoEvent(Duration.ofSeconds(5L))
          .thenCancel()
@@ -70,9 +70,12 @@ class HttpPollKeepAliveStrategyMonitorTest {
       val publisherWithHttpPoll = publisherConfig()
       httpPollKeepAliveStrategyMonitor.monitor(publisherWithHttpPoll)
 
-      StepVerifier.create(httpPollKeepAliveStrategyMonitor.terminatedInstances)
+      StepVerifier.create(httpPollKeepAliveStrategyMonitor.healthUpdateMessages)
          .expectSubscription()
-         .expectNext(publisherConfig())
+         .expectNextMatches { message ->
+            message.health.status == PublisherHealth.Status.Unhealthy
+            message.id == publisherConfig().publisherId
+         }
          .thenCancel()
          .verify()
 
@@ -97,9 +100,12 @@ class HttpPollKeepAliveStrategyMonitorTest {
       val publisherWithHttpPoll = publisherConfig()
       httpPollKeepAliveStrategyMonitor.monitor(publisherWithHttpPoll)
 
-      StepVerifier.create(httpPollKeepAliveStrategyMonitor.terminatedInstances)
+      StepVerifier.create(httpPollKeepAliveStrategyMonitor.healthUpdateMessages)
          .expectSubscription()
-         .expectNext(publisherConfig())
+         .expectNextMatches { message ->
+            message.health.status == PublisherHealth.Status.Unhealthy
+            message.id == publisherConfig().publisherId
+         }
          .thenCancel()
          .verify()
 

@@ -26,6 +26,13 @@
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>vyne-csv-utils</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -37,6 +44,11 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-server-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>auth-common</artifactId>
          <version>${project.version}</version>
       </dependency>
 
@@ -237,6 +249,11 @@
                <artifactId>spring-boot-starter-tomcat</artifactId>
             </exclusion>
          </exclusions>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-server-core</artifactId>
+         <version>0.22.0-SNAPSHOT</version>
       </dependency>
 
       <dependency>
@@ -511,7 +528,7 @@
             <version>1.12.1</version>
             <configuration>
                <workingDirectory>src/main/web/</workingDirectory>
-               <nodeVersion>v12.16.3</nodeVersion>
+               <nodeVersion>v16.14.0</nodeVersion>
             </configuration>
             <executions>
                <execution>

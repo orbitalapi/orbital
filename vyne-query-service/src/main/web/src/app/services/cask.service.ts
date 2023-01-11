@@ -17,27 +17,27 @@ export class CaskService {
   }
 
   getCasks(): Observable<CaskConfigRecord[]> {
-    return this.http.get<any>(`${environment.queryServiceUrl}/api/casks`);
+    return this.http.get<any>(`${environment.serverUrl}/api/casks`);
   }
 
   getCaskDetails(tableName: string): Observable<CaskConfigDetails> {
-    return this.http.get<any>(`${environment.queryServiceUrl}/api/casks/${tableName}/details`);
+    return this.http.get<any>(`${environment.serverUrl}/api/casks/${tableName}/details`);
   }
 
   deleteCask(tableName: string, force: boolean): Observable<CaskConfigRecord> {
-    return this.http.delete<any>(`${environment.queryServiceUrl}/api/casks/${tableName}?force=${force}`);
+    return this.http.delete<any>(`${environment.serverUrl}/api/casks/${tableName}?force=${force}`);
   }
 
   clearCask(tableName: string): Observable<HttpResponse<string>> {
-    return this.http.put<any>(`${environment.queryServiceUrl}/api/casks/${tableName}`, null);
+    return this.http.put<any>(`${environment.serverUrl}/api/casks/${tableName}`, null);
   }
 
   fetchCaskIngestionErrors(tableName: string, content: CaskIngestionErrorsRequestDto): Observable<CaskIngestionErrorDtoPage> {
-    return this.http.post<CaskIngestionErrorDtoPage>(`${environment.queryServiceUrl}/api/casks/${tableName}/errors`, content);
+    return this.http.post<CaskIngestionErrorDtoPage>(`${environment.serverUrl}/api/casks/${tableName}/errors`, content);
   }
 
   downloadIngestedMessageUrl(caskMessageId: string) {
-    return `${environment.queryServiceUrl}/api/casks/${caskMessageId}`;
+    return `${environment.serverUrl}/api/casks/${caskMessageId}`;
   }
 }
 

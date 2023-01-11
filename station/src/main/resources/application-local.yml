@@ -1,0 +1,18 @@
+management:
+   endpoint:
+      metrics:
+         enabled: true
+   endpoints:
+      web:
+         exposure:
+            include: '*'
+
+spring:
+   datasource:
+      url: "jdbc:postgresql://localhost:5432/voyager"
+      username: "vynedb"
+      password: "vynedb"
+      driver: "org.postgresql.Driver"
+      driverClassName: org.postgresql.Driver
+orbital:
+   cors.enabled: false

@@ -12,7 +12,7 @@ import {
 import {QueryService} from '../services/query.service';
 import {TypesService} from '../services/types.service';
 import {InstanceSelectedEvent, QueryResultMemberCoordinates} from './instance-selected-event';
-import {buildInheritable, Inheritable} from '../inheritence-graph/inheritance-graph.component';
+import { buildInheritable, Inheritable } from 'src/app/inheritence-graph/build.inheritable';
 
 @Directive()
 export abstract class BaseQueryResultWithSidebarComponent {

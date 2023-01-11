@@ -1,10 +1,10 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import * as HttpStatus from 'http-status-codes';
-import {Observable} from 'rxjs/index';
-import {RemoteCall} from '../../../services/query.service';
-import {HttpErrorResponse} from '@angular/common/http';
-import {OperationName, splitOperationQualifiedName} from '../../../service-view/service-view.component';
-import {statusTextClass} from './call-explorer.component';
+import { Observable } from 'rxjs';
+import { RemoteCall } from 'src/app/services/query.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { statusTextClass } from './call-explorer.component';
+import { OperationName, splitOperationQualifiedName } from 'src/app/services/schema';
 
 @Component({
   selector: 'app-call-explorer-operation-view',

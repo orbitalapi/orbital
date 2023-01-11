@@ -2,7 +2,7 @@ package io.vyne.schemaServer.schemaStoreConfig
 
 import com.winterbe.expekt.should
 import io.vyne.schema.publisher.ExpiringSourcesStore
-import io.vyne.schemaServer.schemaStoreConfig.clustered.DistributedSchemaStoreClient
+import io.vyne.schemaServer.core.schemaStoreConfig.clustered.DistributedSchemaStoreClient
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import org.junit.Test
 import org.junit.runner.RunWith

@@ -33,7 +33,7 @@ type alias ClientId as String
 
 // For demonstrating constraints on request objects
 parameter type ClientRiskRequest {
-   amount : Money(this.currency == 'GBP')
+   amount : Money(Currency == 'GBP')
    clientId : ClientId
 }
 
@@ -60,6 +60,8 @@ service MyService {
       stubService.addResponse("convertCurrency", money(2, "GBP", vyne))
       stubService.addResponse("calculateRiskForClient", vyne.parseKeyValuePair("ClientRisk", 0.5))
 
+      val operation = schema.service("MyService").operation("convertCurrency")
+      operation.contract
       val queryEngine = vyne.queryEngine()
       queryEngine.addModel(money(5, "USD", vyne))
       queryEngine.addModel(vyne.parseKeyValuePair("ClientId","1234"))

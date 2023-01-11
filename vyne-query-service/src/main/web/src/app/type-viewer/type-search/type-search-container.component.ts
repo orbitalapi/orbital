@@ -1,13 +1,14 @@
-import {Component} from '@angular/core';
-import {SearchResult, SearchService} from '../../search/search.service';
-import {CompletionObserver, Observable, zip} from 'rxjs';
-import {TypesService} from '../../services/types.service';
-import {map, tap} from 'rxjs/operators';
-import {SearchResultDocs} from './type-search.component';
-import {findType, Schema, Type} from '../../services/schema';
-import {buildInheritable} from '../../inheritence-graph/inheritance-graph.component';
-import {MatDialogRef} from '@angular/material/dialog';
-import {NewTypeSpec, qualifiedName} from '../../type-editor/type-editor.component';
+import { Component } from '@angular/core';
+import { SearchResult, SearchService } from '../../search/search.service';
+import { zip } from 'rxjs';
+import { TypesService } from '../../services/types.service';
+import { map } from 'rxjs/operators';
+import { SearchResultDocs } from './type-search.component';
+import { findType, Schema, Type } from '../../services/schema';
+import { MatDialogRef } from '@angular/material/dialog';
+import { buildInheritable } from 'src/app/inheritence-graph/build.inheritable';
+import { NewTypeSpec, qualifiedName } from 'src/app/type-editor/new-type-spec';
+import { TypeSelectedEvent } from 'src/app/type-viewer/type-search/type-selected-event';
 
 @Component({
   selector: 'app-type-search-container',
@@ -138,8 +139,3 @@ export class TypeSearchContainerComponent {
   }
 }
 
-export interface TypeSelectedEvent {
-  type: Type
-  // TODO : add something for passing in newly created types that have been created during the import process, but dom't exist in the schema yet
-  source: 'schema' | 'new';
-}

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.firstRawObject
+import io.vyne.firstTypedObject
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.testVyne
 import kotlinx.coroutines.runBlocking
@@ -147,8 +148,9 @@ type LegacyTradeNotification {
             CsvFormatSpec
          )
       )
-      val builtObject = vyne.from(typedInstance).build(targetType.qualifiedName).firstRawObject()
-      builtObject.should.equal(
+      val builtObject = vyne.from(typedInstance).build(targetType.qualifiedName).firstTypedObject()
+
+      builtObject.toRawObject().should.equal(
          mapOf(
             "personId" to 1,
             "givenName" to "Jimmy",

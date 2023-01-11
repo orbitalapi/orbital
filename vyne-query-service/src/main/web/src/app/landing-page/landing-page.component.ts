@@ -1,6 +1,9 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {Router} from '@angular/router';
-import {QueryHistorySummary} from '../services/query.service';
+import { Component, Input } from '@angular/core';
+import { Router } from '@angular/router';
+import { QueryHistorySummary } from '../services/query.service';
+import { Schema } from '../services/schema';
+import { ChangeLogEntry } from '../changelog/changelog.service';
+import { Observable } from 'rxjs';
 
 export interface LandingPageCardConfig {
   title: string;
@@ -15,50 +18,18 @@ export interface LandingPageCardConfig {
   template: `
     <app-header-bar title="">
     </app-header-bar>
-    <div class="page-content">
-      <div class="row search-row">
-        <app-landing-card [cardConfig]="catalogCardConfig" [isEmpty]="true" layout="horizontal" (emptyActionClicked)="router.navigate(['catalog'])"></app-landing-card>
-      </div>
-      <div class="row card-row">
-        <app-landing-card [cardConfig]="recentQueryCardConfig" [isEmpty]="recentQueries.length === 0" layout="vertical"
-                          (emptyActionClicked)="router.navigate(['query-wizard'])"></app-landing-card>
-        <app-landing-card [cardConfig]="dataSourcesCardConfig" [isEmpty]="dataSources.length === 0" layout="vertical"
-                          (emptyActionClicked)="router.navigate(['schema-explorer','import'])"></app-landing-card>
-      </div>
+    <div class="container content-box schema-diagram-container">
+      <app-schema-diagram title="Your services" [schema$]="schema$" displayedMembers="services"></app-schema-diagram>
     </div>
+
+
   `
 })
 export class LandingPageComponent {
-
   constructor(public readonly router: Router) {
   }
 
-  dataSources: any[] = [];
-  recentQueries: QueryHistorySummary[] = [];
+  @Input()
+  schema$: Observable<Schema>;
 
-  recentQueryCardConfig = RECENT_QUERIES;
-  dataSourcesCardConfig = DATA_SOURCES;
-  catalogCardConfig = DATA_CATALOG;
-
-}
-
-export const RECENT_QUERIES: LandingPageCardConfig = {
-  title: 'Query',
-  emptyText: `Run queries to link data from across all the registered data sources.  Get started by running your first query.`,
-  emptyActionLabel: 'Create a query',
-  emptyStateImage: 'assets/img/illustrations/search-engine.svg'
-}
-
-export const DATA_SOURCES: LandingPageCardConfig = {
-  title: 'Sources',
-  emptyText: `Data sources and schemas define the places Vyne can fetch data.  Add a data source to get started.`,
-  emptyActionLabel: 'Add a data source',
-  emptyStateImage: 'assets/img/illustrations/data-settings.svg'
-}
-
-export const DATA_CATALOG: LandingPageCardConfig = {
-  title: 'Catalog',
-  emptyText: 'A one-stop searchable catalog of all your glossary items, data models, sources and APIs registered with Vyne.',
-  emptyActionLabel: 'Search the catalog',
-  emptyStateImage: 'assets/img/illustrations/catalog.svg'
 }

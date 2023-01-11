@@ -4,3 +4,4 @@ node_modules/
 /playwright/.cache/
 demos/*
 !demos/e2e.docker-compose.yml
+local-development/*

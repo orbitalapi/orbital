@@ -1,12 +1,20 @@
-import {Component, EventEmitter, forwardRef, HostListener, Input, Output, QueryList, ViewChildren} from '@angular/core';
-import {SearchResult} from '../../search/search.service';
-import {Schema, Type} from '../../services/schema';
-import {Inheritable} from '../../inheritence-graph/inheritance-graph.component';
-import {OperationQueryResult} from '../../services/types.service';
-import {Observable} from 'rxjs/internal/Observable';
-import {ActiveDescendantKeyManager, ListKeyManager} from '@angular/cdk/a11y';
-import {TypeSearchResultComponent} from './type-search-result.component';
-import {DOWN_ARROW, ENTER, UP_ARROW} from '@angular/cdk/keycodes';
+import {
+  Component,
+  EventEmitter,
+  forwardRef,
+  HostListener,
+  Input,
+  Output,
+  QueryList,
+  ViewChildren
+} from '@angular/core';
+import { SearchResult } from '../../search/search.service';
+import { Schema, Type } from '../../services/schema';
+import { OperationQueryResult } from '../../services/types.service';
+import { ActiveDescendantKeyManager, ListKeyManager } from '@angular/cdk/a11y';
+import { TypeSearchResultComponent } from './type-search-result.component';
+import { DOWN_ARROW, ENTER, UP_ARROW } from '@angular/cdk/keycodes';
+import { Inheritable } from 'src/app/inheritence-graph/build.inheritable';
 
 @Component({
   selector: 'app-type-search',

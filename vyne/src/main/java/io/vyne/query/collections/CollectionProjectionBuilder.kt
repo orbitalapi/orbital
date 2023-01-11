@@ -3,7 +3,7 @@ package io.vyne.query.collections
 import io.vyne.models.AccessorHandler
 import io.vyne.models.DataSource
 import io.vyne.models.EvaluationValueSupplier
-import io.vyne.models.FactDiscoveryStrategy
+import io.vyne.models.facts.FactDiscoveryStrategy
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
@@ -56,7 +56,7 @@ class CollectionProjectionBuilder(val queryContext: QueryContext) :
 
       // Grab any additional scope facts that were speciied in a 'with scope' clause
       val additionalScopeFacts = accessor.projectionScope?.accessors?.map { scopeAccessor ->
-         objectFactory.readAccessor(scopeAccessor.returnType.toVyneType(schema), scopeAccessor)
+         objectFactory.readAccessor(scopeAccessor.returnType.toVyneType(schema), scopeAccessor,null /* TODO : Formats */)
       } ?: emptyList()
 
       val targetMemberType = targetType.collectionType ?: targetType

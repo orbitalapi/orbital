@@ -1,8 +1,8 @@
-import {NgModule} from '@angular/core';
-import {HttpClientModule} from '@angular/common/http';
+import { NgModule } from '@angular/core';
+import { TypesService } from './types.service';
 
 @NgModule({
-  imports: [HttpClientModule],
+  imports: [],
   exports: [],
   declarations: [],
   providers: [],

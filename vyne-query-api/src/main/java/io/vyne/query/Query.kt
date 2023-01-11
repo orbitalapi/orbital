@@ -5,7 +5,9 @@ import io.vyne.FactSetId
 import io.vyne.FactSets
 import io.vyne.schemas.OutputConstraint
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
+import lang.taxi.accessors.ProjectionFunctionScope
 import java.util.*
 
 
@@ -58,6 +60,9 @@ data class ConstrainedTypeNameQueryExpression(
 data class TypeNameQueryExpression(val typeName: String) : QueryExpression {
    val qualifiedTypeNames: QualifiedName = typeName.fqn()
 }
+data class ProjectedExpression(val source: QueryExpression, val projection: Projection) : QueryExpression
+
+data class Projection(val type: Type, val scope: ProjectionFunctionScope?)
 
 data class TypeNameListQueryExpression(val typeNames: List<String>) : QueryExpression {
    val qualifiedTypeNames = typeNames.map { it.fqn() }
@@ -72,6 +77,7 @@ enum class QueryMode {
    /**
     * Find a single value
     */
+   @Deprecated("findOne is no longer supported.  Use Gather - which is equivalent of old findAll {}, and current find {} ")
    DISCOVER,
 
    /**

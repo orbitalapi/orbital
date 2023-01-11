@@ -13,6 +13,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
+import lang.taxi.types.FormatsAndZoneOffset
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
@@ -68,25 +69,38 @@ data class SerializableTypedInstance(
    val value: SerializableTypedValue,
    val dataSourceId: String
 ) : SerializableTypedValue() {
-   fun toTypedInstance(schema: Schema): TypedInstance {
+
+   /**
+    * Converts this back to a TypedInstance, using the provided schema.
+    * Format is not encoded (since it's knowable from the schema), so deserialization needs to
+    * provide this.
+    * In practice, that means when deserializing and object with fields, grabbing the format from the field
+    */
+   fun toTypedInstance(schema: Schema, format: FormatsAndZoneOffset? = null): TypedInstance {
       val dataSource = DataSourceReference.staticSourceOrReference(dataSourceId)
+      val type = schema.type(this.typeName)
       val converted = when (this.value) {
          is MapWrapper -> {
-            val typedInstances = this.value.value.mapValues { (_, mapValue) -> mapValue.toTypedInstance(schema) }
-            TypedObject(schema.type(this.typeName), typedInstances, dataSource)
+            val typedInstances = this.value.value.mapValues { (name, mapValue) ->
+               val field = type.attribute(name)
+               mapValue.toTypedInstance(schema, field.format)
+            }
+            TypedObject(type, typedInstances, dataSource)
          }
          is ListWrapper -> {
             val typedInstances = this.value.value.map { it.toTypedInstance(schema) }
-            TypedCollection(schema.type(this.typeName), typedInstances, dataSource)
+            TypedCollection(type, typedInstances, dataSource)
          }
          is SerializableTypedValueWrapper<*> -> TypedInstance.from(
-            schema.type(this.typeName),
+            type,
             value.value,
             schema,
             source = dataSource,
-            evaluateAccessors = false
+            evaluateAccessors = false,
+            format = format
+
          )
-         is SerializedNull -> TypedNull.create(schema.type(this.typeName), dataSource)
+         is SerializedNull -> TypedNull.create(type, dataSource)
          is SerializableTypedInstance -> error("Unhandled type of SerializableTypedInstance: ${this.value::class.simpleName}")
       }
       return converted

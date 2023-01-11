@@ -41,9 +41,11 @@ class VyneCollectionDiscoveryTest {
       stub.addResponse("findAllFriends", vyne.parseJson("Friend[]", """[{ "id": 1, "name" : "Jimmy" }, {"id" : 2, "name": "Jack" }] """))
       stub.addResponse("findAllPeople", vyne.parseJson("PersonId[]", """[ 0 ]"""))
       stub.addResponse("findPerson", vyne.parseJson("Person", """[{ "id" : 0, "name" : "Doug" }]"""))
-      val results = vyne.query("""findAll { PersonId[] } as { name : PersonName
+      val results = vyne.query(
+         """find { PersonId[] } as { name : PersonName
          | friends : Friend[]
-         |}[]""".trimMargin())
+         |}[]""".trimMargin()
+      )
          .rawObjects()
       results.should.equal(listOf(
          mapOf("name" to "Doug", "friends" to listOf(
@@ -130,7 +132,7 @@ class VyneCollectionDiscoveryTest {
             listOf(actors[actorId]!!)
          }
 
-         val results = vyne.query("""findAll { Movie[] } as OutputMovie[]""").typedObjects()
+         val results = vyne.query("""find { Movie[] } as OutputMovie[]""").typedObjects()
          results.should.have.size(1)
          val result = results.first().toRawObject()
          result.should.equal(
@@ -194,7 +196,7 @@ class VyneCollectionDiscoveryTest {
          }
 
          val results = vyne.query(
-            """findAll { Movie[] } as {
+            """find { Movie[] } as {
             | movieTitle: MovieTitle
             | actors: ActorName[]
             | }[]
@@ -212,6 +214,84 @@ class VyneCollectionDiscoveryTest {
                ),
             )
          )
+      }
+
+
+   @Test
+   fun `given an operation returns a collection and each element has an array of discovered values, ids present in those arrays can build anonymous types from other types`(): Unit =
+      runBlocking {
+         val (vyne, stub) = testVyne(
+            """
+         type ActorId inherits Int
+         model Actor {
+            @Id
+            id : ActorId
+            name : ActorName inherits String
+         }
+         model Cast {
+            actors : ActorId[]
+         }
+         model Movie {
+            title : MovieTitle inherits String
+            cast : Cast
+         }
+         service MovieService {
+            operation findAllMovies():Movie[]
+            operation findActor(ActorId):Actor
+         }
+
+         model OutputMovie {
+            movieTitle: MovieTitle
+            actors: ActorName[]
+         }
+      """
+         )
+         val movies = TypedInstance.from(
+            vyne.type("Movie"), """
+         [
+          { "title" : "The ducks take Manhattan", "cast" : { "actors" : [1,2,3] } } ,
+          { "title" : "Scrooge is Dead", "cast" : { "actors" : [1,2] } }
+         ]
+      """.trimIndent(), vyne.schema, source = Provided
+         )
+         stub.addResponse("findAllMovies", movies)
+
+         val actors = mapOf(
+            1 to mapOf("id" to 1, "name" to "Mickey Mouse"),
+            2 to mapOf("id" to 2, "name" to "Donald Duck"),
+            3 to mapOf("id" to 3, "name" to "Scrooge McDuck")
+         ).mapValues { (_, value) -> TypedInstance.from(vyne.type("Actor"), value, vyne.schema, source = Provided) }
+
+         stub.addResponse("findActor") { remoteOperation, parameters ->
+            val actorId = parameters[0].second.value as Int
+            listOf(actors[actorId]!!)
+         }
+
+         val results = vyne.query(
+            """find { Movie[] } as {
+            | movieTitle: MovieTitle
+            | actors: ActorName[]
+            | }[]
+         """.trimMargin()
+         ).rawObjects()
+         results.should.have.size(2)
+         results.should.equal(listOf(
+            mapOf(
+               "movieTitle" to "The ducks take Manhattan",
+               "actors" to listOf(
+                  "Mickey Mouse",
+                  "Donald Duck",
+                  "Scrooge McDuck"
+               ),
+            ),
+            mapOf(
+               "movieTitle" to "Scrooge is Dead",
+               "actors" to listOf(
+                  "Mickey Mouse",
+                  "Donald Duck",
+               ),
+            )
+         ))
       }
 
 
@@ -262,7 +342,7 @@ class VyneCollectionDiscoveryTest {
             listOf(actors[actorId]!!)
          }
 
-         val results = vyne.query("""findAll { Movie[] } as OutputMovie[]""").typedObjects()
+         val results = vyne.query("""find { Movie[] } as OutputMovie[]""").typedObjects()
          results.should.have.size(1)
          val result = results.first().toRawObject()
          result.should.equal(
@@ -322,10 +402,12 @@ class VyneCollectionDiscoveryTest {
             )
          )
       }
-      val queryResult = vyne.query("""findAll { OrderTransaction[] } as {
+      val queryResult = vyne.query(
+         """find { OrderTransaction[] } as {
          | items: { sku: ProductSku size: ProductSize }[] by [TransactionProduct]
          | }[]
-      """.trimMargin())
+      """.trimMargin()
+      )
          .rawObjects()
       queryResult.size.should.equal(2)
       queryResult.should.equal(listOf(
@@ -369,14 +451,16 @@ class VyneCollectionDiscoveryTest {
       """.trimIndent())
       stub.addResponse("findComposer", vyne.parseJson("Composer", source))
 
-      val result = vyne.query("""findAll { Composer } as {
+      val result = vyne.query(
+         """find { Composer } as {
             results:  {
                name : ComposerName
                title : MusicalTitle
                year: YearProduced
                }[] by [Musical with ( ComposerName )]
             }
-      """).rawObjects()
+      """
+      ).rawObjects()
       result.should.have.size(1)
       // We've taken an array of [ Title, Year ], and
       // moved it up one level, combining it the ComposerName,
@@ -421,12 +505,14 @@ class VyneCollectionDiscoveryTest {
       """.trimIndent())
       stub.addResponse("findComposer", vyne.parseJson("Composer", source))
 
-      val result = vyne.query("""findAll { Composer } as {
+      val result = vyne.query(
+         """find { Composer } as {
             name : ComposerName
             title : MusicalTitle
             year: YearProduced
             }[] by [Musical with ( ComposerName )]
-      """).rawObjects()
+      """
+      ).rawObjects()
 
       val expectedJson = """[ {
   "name" : "Stephen Sondheim",
@@ -483,7 +569,7 @@ class VyneCollectionDiscoveryTest {
          )
          stub.addResponse("findAllMovies", movies)
 
-         val results = vyne.query("""findAll { ImdbMovie[] } as RottenTomatoesMovie[]""").typedObjects()
+         val results = vyne.query("""find { ImdbMovie[] } as RottenTomatoesMovie[]""").typedObjects()
          results.should.have.size(1)
          val result = results.first().toRawObject()
          result.should.equal(

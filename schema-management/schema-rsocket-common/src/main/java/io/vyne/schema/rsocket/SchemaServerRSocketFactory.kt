@@ -1,5 +1,7 @@
 package io.vyne.schema.rsocket
 
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.rsocket.RSocket
@@ -72,6 +74,9 @@ class SchemaServerRSocketFactory(
 
 object CBORJackson {
    val defaultMapper = CBORMapper()
+      .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+      .findAndRegisterModules()
       .registerKotlinModule()
 }
 

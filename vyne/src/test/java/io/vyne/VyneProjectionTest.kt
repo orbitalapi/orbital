@@ -4,8 +4,10 @@ import app.cash.turbine.test
 import app.cash.turbine.testIn
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.base.Stopwatch
+import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.vyne.models.EvaluatedExpression
 import io.vyne.models.FailedEvaluatedExpression
 import io.vyne.models.MappedSynonym
@@ -15,15 +17,24 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
+import io.vyne.models.facts.FactBag
 import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonCollection
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
+import io.vyne.query.Projection
+import io.vyne.query.QueryContext
+import io.vyne.query.UnresolvedTypeInQueryException
+import io.vyne.query.VyneQueryStatistics
+import io.vyne.query.projection.ProjectionProvider
+import io.vyne.schemas.OperationInvocationException
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.Benchmark
 import io.vyne.utils.StrategyPerformanceProfiler
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -33,6 +44,7 @@ import org.junit.Ignore
 import org.junit.Test
 import java.math.BigDecimal
 import java.util.concurrent.TimeUnit
+import kotlin.test.assertFailsWith
 import kotlin.test.fail
 import kotlin.time.ExperimentalTime
 
@@ -127,7 +139,7 @@ service Broker1Service {
       val (vyne, _) = testVyne(schema)
       val queryResult = vyne.query(
          """
-         findAll { IndexData } as {
+         find { IndexData } as {
             BENCHMARK_ID: ProviderCode}
          """.trimIndent()
       )
@@ -219,7 +231,7 @@ service Broker1Service {
       )
       val queryResult = vyne.query(
          """
-         findAll {
+         find {
             Order[]
          } as Target[]""".trimIndent()
       )
@@ -245,7 +257,7 @@ service Broker1Service {
       """.trimIndent()
       )
       vyne.addModel(vyne.parseJsonModel("Person", """{ "id" : "1" , "firstName" : "Jimmy", "lastName" : "Schmit" } """))
-      val result = vyne.query("""findOne { Person } as { first : FirstName }""")
+      val result = vyne.query("""find { Person } as { first : FirstName }""")
       val list = result.rawResults
          .test {
             expectRawMap().should.equal(mapOf("first" to "Jimmy"))
@@ -322,7 +334,7 @@ service Broker1Service {
       )
       val queryResult = vyne.query(
          """
-         findAll {
+         find {
             Order[]
          } as Target[]""".trimIndent()
       )
@@ -400,8 +412,8 @@ service UserService {
 
       runTest {
          val query = """
-         findAll {
-            Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30")
+         find {
+            Order[](OrderDate  >= "2000-01-01" && OrderDate < "2020-12-30")
          } as CommonOrder[]""".trimIndent()
          val turbine = vyne.query(query).rawResults.testIn(this)
          val resultList = turbine.expectMany<Map<String, Any?>>(100)
@@ -542,7 +554,7 @@ service InstrumentService {
 
       runTest {
          val turbine = vyne
-            .query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
+            .query("""find { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
             .rawResults
             .testIn(this)
          val resultList = turbine.expectManyRawMaps(noOfRecords)
@@ -690,7 +702,7 @@ service Broker1Service {
 
       runTest {
          val turbine = vyne
-            .query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
+            .query("""find { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
             .rawResults
             .testIn(this)
 
@@ -753,7 +765,7 @@ service Broker1Service {
 
       // act
       val result =
-         vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
+         vyne.query("""find { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
@@ -833,7 +845,7 @@ service Broker1Service {
       }
 
       val findByOrderIdResult =
-         vyne.query("""findAll { Order (OrderId = "broker1Order0") } as CommonOrder[]""".trimIndent())
+         vyne.query("""find { Order (OrderId = "broker1Order0") } as CommonOrder[]""".trimIndent())
 
       val result = findByOrderIdResult.results.toList()
       result.should.not.be.empty
@@ -887,7 +899,7 @@ service Broker1Service {
          }
       }
       // find by a non-existing order Id and project
-      val noResult = vyne.query("""findAll { Order (OrderId = "MY SPECIAL ORDER ID") } as CommonOrder[]""".trimIndent())
+      val noResult = vyne.query("""find { Order (OrderId = "MY SPECIAL ORDER ID") } as CommonOrder[]""".trimIndent())
       noResult.typedInstances().should.be.empty
       Unit
    }
@@ -929,7 +941,7 @@ service Broker1Service {
 
       // act
       val result =
-         vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
+         vyne.query("""find { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
@@ -1072,7 +1084,7 @@ service Broker1Service {
 //      }
 //
 //      // act
-//      val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
+//      val result = vyne.query("""find { Client[] } as ClientAndCountry[]""".trimIndent())
 //
 //      // assert
 //      result.rawResults.test {
@@ -1165,7 +1177,7 @@ service Broker1Service {
 //         """.trimIndent()
 //         )
 //      )
-//      val result = vyne.query("""findAll { Order[] } as Report[]""".trimIndent())
+//      val result = vyne.query("""find { Order[] } as Report[]""".trimIndent())
 //      result.isFullyResolved.should.be.`true`
 //      result.rawObjects().should.equal(
 //         listOf(
@@ -1283,7 +1295,7 @@ service Broker1Service {
       }
 
       // act
-      val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
+      val result = vyne.query("""find { Client[] } as ClientAndCountry[]""".trimIndent())
       result.rawResults.test {
          expectRawMap().should.equal(mapOf("personName" to "Jimmy", "countryName" to null))
          expectRawMap().should.equal(
@@ -1357,7 +1369,7 @@ service Broker1Service {
       }
 
       // act
-      val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
+      val result = vyne.query("""find { Client[] } as ClientAndCountry[]""".trimIndent())
       result.rawResults
          .test {
             expectRawMap().should.equal(mapOf("personName" to "Jimmy", "countryName" to null))
@@ -1378,11 +1390,13 @@ service Broker1Service {
       val (vyne, stubService) = testVyne(
          """
          model InputModel {
-           inputField: Instant( @format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+          @Format( "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+           inputField: Instant
          }
 
          model OutputModel {
-            myField : Instant( @format = ["yyyy-MM-dd'T'HH:mm:ss.SSSZ"], @offset = 60 )
+         @Format(value ="yyyy-MM-dd'T'HH:mm:ss.SSSZ", offset = 60 )
+            myField : Instant
          }
 
          @Datasource
@@ -1406,7 +1420,7 @@ service Broker1Service {
          """.trimIndent()
          )
       )
-      val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
+      val result = vyne.query("""find { InputModel[] } as OutputModel[]""".trimIndent())
       result.rawObjects().should.equal(
          listOf(
             mapOf("myField" to outputInstant1),
@@ -1420,11 +1434,13 @@ service Broker1Service {
       val (vyne, stubService) = testVyne(
          """
          model InputModel {
-           inputField: Instant( @format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+           @Format( "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+           inputField: Instant
          }
 
          model OutputModel {
-            myField : Instant( @offset = 60 )
+         @Format(offset = 60)
+            myField : Instant
          }
 
          @Datasource
@@ -1448,8 +1464,9 @@ service Broker1Service {
          """.trimIndent()
          )
       )
-      val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
-      result.rawObjects().should.be.equal(
+      val result = vyne.query("""find { InputModel[] } as OutputModel[]""".trimIndent()).rawObjects()
+      result.shouldNotBeNull()
+      result.should.be.equal(
          listOf(
             mapOf("myField" to outputInstant1),
             mapOf("myField" to outputInstant2)
@@ -1492,7 +1509,7 @@ service Broker1Service {
          """.trimIndent()
          )
       )
-      val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
+      val result = vyne.query("""find { InputModel[] } as OutputModel[]""".trimIndent())
       result.rawObjects().should.be.equal(
          listOf(
             mapOf(
@@ -1538,7 +1555,7 @@ service Broker1Service {
          )
       )
 
-      val queryResult = vyne.query("findAll { Order[] } as Output[]")
+      val queryResult = vyne.query("find { Order[] } as Output[]")
 //      val resultList = queryResult.results.toList()
 //      resultList.should.not.be.`null`
       val outputCollection = queryResult.results.test {
@@ -1604,7 +1621,7 @@ service Broker1Service {
       )
       val result = vyne.query(
          """
-            findAll {
+            find {
                 InputModel[]
               } as {
                  id
@@ -1704,7 +1721,7 @@ service Broker1Service {
 
       val result = vyne.query(
          """
-            findAll {
+            find {
                 InputModel[]
               } as {
                  id
@@ -1727,6 +1744,7 @@ service Broker1Service {
    }
 
    @Test
+   @Ignore("this feature is currently disabled - add this test back if reintroducing")
    fun `should project to anonymous type extending discovery type`(): Unit = runBlocking {
       val (vyne, stubService) = testVyne(
          """
@@ -1796,7 +1814,7 @@ service Broker1Service {
       val result =
          vyne.query(
             """
-            findAll {
+            find {
                 InputModel[]
               } as OutputModel {
                  inputId: InputId
@@ -1836,6 +1854,7 @@ service Broker1Service {
    }
 
    @Test
+   @Ignore("this feature is currently disabled - add this test back if reintroducing")
    fun `should project to anonymous extending the projectiont target type and containing an anonymously typed field`(): Unit =
       runBlocking {
          val (vyne, stubService) = testVyne(
@@ -1906,7 +1925,7 @@ service Broker1Service {
          val result =
             vyne.query(
                """
-            findAll {
+            find {
                 InputModel[]
               } as OutputModel {
                  inputId: InputId
@@ -2033,7 +2052,7 @@ service Broker1Service {
 
       val result = vyne.query(
          """
-            findAll {
+            find {
                 InputModel[]
               } as {
                  id
@@ -2127,7 +2146,7 @@ service Broker1Service {
       val result =
          vyne.query(
             """
-            findAll {
+            find {
                 InputModel[]
               } as OutputModel []
             """.trimIndent()
@@ -2208,7 +2227,7 @@ service Broker1Service {
       val result =
          vyne.query(
             """
-            findAll {
+            find {
                 InputModel[]
               } as OutputModel []
             """.trimIndent()
@@ -2287,7 +2306,7 @@ service Broker1Service {
          }
 
          // act
-         val result = vyne.query("""findAll { Input[] } as Report[]""".trimIndent())
+         val result = vyne.query("""find { Input[] } as Report[]""".trimIndent())
 
          // assert
          result.rawObjects().should.be.equal(
@@ -2355,7 +2374,7 @@ service Broker1Service {
             )
          )
 
-         val result = vyne.query("""findAll { Input[] } as Output[]""".trimIndent())
+         val result = vyne.query("""find { Input[] } as Output[]""".trimIndent())
 
          result.rawObjects().should.be.equal(
             listOf(
@@ -2439,7 +2458,7 @@ service Broker1Service {
          }
 
          // act
-         val result = vyne.query("""findAll { Input[] } as Report[]""".trimIndent())
+         val result = vyne.query("""find { Input[] } as Report[]""".trimIndent())
 
          // assert
          result.rawObjects().should.be.equal(
@@ -2481,7 +2500,7 @@ service Broker1Service {
       )
       stub.addResponse("listPeople", people, modifyDataSource = true)
       val results = vyne.query(
-         """findAll { Person[] } as {
+         """find { Person[] } as {
          | name : FirstName
          | country : Country
          | }[]
@@ -2587,7 +2606,7 @@ service Broker1Service {
          )
 
          stub.addResponse("findDirector") { _, _ -> error("This shouldn't be called ") }
-         val result = vyne.query("""findAll { Movie[] } as Output[] """)
+         val result = vyne.query("""find { Movie[] } as Output[] """)
             .typedObjects()
          result.should.have.size(1)
          stub.invocations["resolveDirectorName"]!!.should.have.size(1)
@@ -2651,7 +2670,7 @@ service Broker1Service {
       var summary: StrategyPerformanceProfiler.SearchStrategySummary? = null
       val f = Benchmark.benchmark("run concurrency test with $movieCount", warmup = 5, iterations = 5) {
          runBlocking {
-            val result = vyne.query("findAll { Movie[] } as OutputModel[]")
+            val result = vyne.query("find { Movie[] } as OutputModel[]")
                .results.toList()
             result.should.have.size(movieCount)
             val duration = start.elapsed(TimeUnit.MILLISECONDS)
@@ -2685,8 +2704,9 @@ service Broker1Service {
          )
       )
       val results = vyne.query(
-         """findAll { Transaction[] }  as { id : TransactionId
-          date : TransactionDate(@format = 'dd-MMM-yy')
+         """find { Transaction[] }  as { id : TransactionId
+          @Format( 'dd-MMM-yy')
+          date : TransactionDate
           }[]"""
       )
          .rawObjects()
@@ -2699,4 +2719,100 @@ service Broker1Service {
          )
       )
    }
+
+   @Test
+   fun `when the initial query fails vyne doesnt attempt to perform a projection`(): Unit = runBlocking {
+      val explodingProjectionProvider: ProjectionProvider = object : ProjectionProvider {
+         override fun project(
+            results: Flow<TypedInstance>,
+            projection: Projection,
+            context: QueryContext,
+            globalFacts: FactBag
+         ): Flow<Pair<TypedInstance, VyneQueryStatistics>> {
+            return results.map { typedInstance ->
+               error("THis shouldn't have been called!! $typedInstance")
+            }
+
+         }
+
+      }
+      val (vyne, stub) = testVyne(
+         """
+            model Person {
+               name : FullName inherits String
+            }
+            parameter model LookupRequest {
+               apiKey : ApiKey inherits String
+            }
+            service DataService {
+               operation findPeople(apiKey:ApiKey):Person[]
+            }
+         """.trimIndent(),
+         projectionProvider = explodingProjectionProvider
+      )
+      stub.addResponse("findPeople") { _, _ ->
+         throw OperationInvocationException("This service call failed", 503, mock { }, emptyList())
+      }
+      assertFailsWith<UnresolvedTypeInQueryException> {
+         vyne.query(
+            """
+         |given { apiKey : ApiKey = 'jimmy' }
+         |find { Person[] } as {
+         | nope : FullName
+         |}[]
+      """.trimMargin()
+         )
+            .rawObjects()
+      }
+   }
+
+   @Test
+   fun `can project the result of an expression as a property from the result`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         model Actor {
+              actorId : ActorId inherits Int
+              name : ActorName inherits String
+            }
+            model Film {
+               title : FilmTitle inherits String
+               headliner : ActorId
+               cast: Actor[]
+            }
+            service DataService {
+               operation getFilms():Film[]
+            }
+      """.trimIndent()
+      )
+      stub.addResponse(
+         "getFilms", vyne.parseJson(
+            "Film[]", """[
+         |{
+         |  "title" : "Star Wars",
+         |  "headliner" : 1 ,
+         |  "cast": [
+         |     { "actorId" : 1 , "name" : "Mark Hamill" },
+         |     { "actorId" : 2 , "name" : "Carrie Fisher" }
+         |     ]
+         |  }
+         |]
+      """.trimMargin()
+         )
+      )
+      val result = vyne.query(
+         """
+         find { Film[] } as (film:Film) -> {
+               title : FilmTitle
+               // This is the test...
+               // using "as" to project Actor to ActorName
+               star : singleBy(film.cast, (Actor) -> Actor::ActorId, film.headliner) as ActorName
+            }[]
+      """.trimMargin()
+      )
+         .firstTypedObject()
+      result.should.not.be.`null`
+//      result.should.equal(mapOf("title" to "Star Wars", "star" to "Mark Hamill"))
+   }
+
+
 }

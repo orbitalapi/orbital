@@ -16,6 +16,7 @@ import io.vyne.schemas.RemoteOperation
  */
 interface TypedInstanceValidPredicate {
    fun isValid(typedInstance:TypedInstance?):Boolean
+
 }
 
 /**

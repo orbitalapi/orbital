@@ -19,6 +19,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import lang.taxi.accessors.JsonPathAccessor
+import lang.taxi.types.FormatsAndZoneOffset
 
 /**
  * Parses a single attribute at defined xpath accessor
@@ -38,9 +39,10 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
       accessor: JsonPathAccessor,
       record: Map<*, *>,
       schema: Schema,
-      source: DataSource
+      source: DataSource,
+      format: FormatsAndZoneOffset?
    ): TypedInstance {
-      return internalParseToType(type, accessor, record, schema, source)
+      return internalParseToType(type, accessor, record, schema, source, format)
    }
 
    fun parseToType(
@@ -48,9 +50,10 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
       accessor: JsonPathAccessor,
       record: ObjectNode,
       schema: Schema,
-      source: DataSource
+      source: DataSource,
+      format: FormatsAndZoneOffset?
    ): TypedInstance {
-      return internalParseToType(type, accessor, record, schema, source)
+      return internalParseToType(type, accessor, record, schema, source, format)
    }
 
    // Internal method that relaxes type-safety around the record attribute.
@@ -62,7 +65,8 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
       accessor: JsonPathAccessor,
       record: Any,
       schema: Schema,
-      source: DataSource
+      source: DataSource,
+      format: FormatsAndZoneOffset?
    ): TypedInstance {
       val expressionValue = if (accessor.path.startsWith("/")) {
          when (record) {
@@ -80,7 +84,7 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
       return if (expressionValue === null) {
          TypedNull.create(type, source)
       } else {
-         primitiveParser.parse(expressionValue, type, source)
+         primitiveParser.parse(expressionValue, type, source, format = format)
       }
    }
 

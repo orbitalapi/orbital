@@ -9,7 +9,6 @@ import {Subscription} from 'rxjs';
 import {GridApi} from 'ag-grid-community/dist/lib/gridApi';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {validNamespace, validTypeName} from '../services/validators';
-import {NewTypeSpec} from '../type-editor/type-editor.component';
 import {
   ConfirmationAction,
   ConfirmationDialogComponent,
@@ -18,6 +17,7 @@ import {
 import {MatDialog} from '@angular/material/dialog';
 import {isNullOrUndefined} from 'util';
 import {capitalizeFirstLetter} from '../utils/strings';
+import { NewTypeSpec } from 'src/app/type-editor/new-type-spec';
 
 @Component({
   selector: 'app-table-importer',

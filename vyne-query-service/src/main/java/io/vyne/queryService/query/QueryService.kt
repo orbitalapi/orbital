@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.FactSetId
 import io.vyne.FactSets
 import io.vyne.Vyne
+import io.vyne.auth.authentication.VyneUser
 import io.vyne.VyneProvider
 import io.vyne.history.QueryEventObserver
 import io.vyne.models.Provided
@@ -24,7 +25,6 @@ import io.vyne.query.ResultMode
 import io.vyne.query.SearchFailedException
 import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.ErrorType
-import io.vyne.queryService.security.VyneUser
 import io.vyne.queryService.security.facts
 import io.vyne.queryService.security.toVyneUser
 import io.vyne.schema.consumer.SchemaStore
@@ -36,7 +36,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import lang.taxi.types.TaxiQLQueryString
+import lang.taxi.query.TaxiQLQueryString
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType

@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS QUERY_SUMMARY
    id                   SERIAL PRIMARY KEY,
    query_id             VARCHAR(255),
    client_query_id      VARCHAR(255),
-   taxi_ql              VARCHAR(5000),
+   taxi_ql              TEXT,
    query_json           CLOB(100000),
    start_time           TIMESTAMP,
    response_status      VARCHAR(255),

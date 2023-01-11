@@ -14,6 +14,8 @@ variables:
    MINOR_RELEASE_DIGIT: 1
    PATCH_RELEASE_DIGIT: 2
 
+   TF_ROOT_DEV: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/dev
+   TF_ROOT_PROD: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/prod
    TF_STATE_NAME_DEV: dev
    TF_STATE_NAME_PROD: prod
 
@@ -24,6 +26,7 @@ variables:
 
 stages:
    - build
+   - publish
    - deploy
    - verify
    - release
@@ -78,6 +81,7 @@ default:
          - "vyne-analytics-server/target/vyne-analytics-server.jar"
          - "vyne-query-service/target/vyne.zip"
          - "test-cli/target/*.zip"
+         - "taxi-playground/target/taxi-playground.jar"
       expire_in: 1 hours
       reports:
          junit:
@@ -278,6 +282,52 @@ publish-schema-server-to-gitlab-container-registry:
       projectDir: schema-server
       microservice: schema-server
 
+.publish-docker-gitlab:
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.8-0.6.3
+   stage: publish
+   except:
+      - tags
+   variables:
+      DOCKER_HOST: tcp://docker:2375/
+      # Instruct Docker not to start over TLS.
+      DOCKER_TLS_CERTDIR: ""
+      DOCKER_DRIVER: overlay2
+      DOCKER_BUILDKIT: 1
+      BUILDKIT_PROGRESS: plain
+      PROGRESS_NO_TRUNC: 1
+   services:
+      - name: docker:20.10.12-dind
+        command: [ "--tls=false" ]
+   before_script:
+      - docker info
+      - docker buildx create --use
+      - echo "$DOCKER_REGISTRY_PASS" | docker login --username $DOCKER_REGISTRY_USER --password-stdin
+      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+      - |
+         if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
+           tag="latest"
+         else
+           tag="$CI_COMMIT_REF_SLUG"
+         fi
+         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+   script:
+      - cd $projectDir
+      - pwd
+      - >
+         docker buildx build
+         --platform linux/arm64/v8,linux/amd64
+         --push
+         -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${tag}"
+         -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${CI_COMMIT_SHORT_SHA}" .
+
+publish-voyager:
+   extends: .publish-docker-gitlab
+   stage: publish
+   variables:
+      projectDir: taxi-playground
+      microservice: taxi-playground
+   when: manual
+
 publish-pipelines-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
    variables:
@@ -311,13 +361,16 @@ build-helm:
 
 .terraform-deploy:
    extends: .terraform:deploy
+   stage: deploy
    before_script:
+      - echo ${TF_ROOT}
       - cd ${TF_ROOT}
       - gitlab-terraform plan
       - gitlab-terraform plan-json
 
 terraform-deploy-dev:
    extends: .terraform-deploy
+   stage: deploy
    environment:
       name: $TF_STATE_NAME_DEV
    variables:
@@ -329,6 +382,7 @@ terraform-deploy-dev:
 
 terraform-deploy-prod:
    extends: .terraform-deploy
+   stage: deploy
    environment:
       name: $TF_STATE_NAME_PROD
    variables:
@@ -341,6 +395,8 @@ terraform-deploy-prod:
 .e2e-tests:
    stage: verify
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.22-dind
+   tags:
+      - docker-heavy
    variables:
       DOCKER_HOST: tcp://docker:2375/
       DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
@@ -419,6 +475,41 @@ e2e-tests-other-branches:
       - publish-schema-server-to-gitlab-container-registry
    dependencies:
       - build-jvm-branch
+
+terraform-deploy-dev-voyager:
+   extends: .terraform-deploy
+   stage: deploy
+   environment:
+      name: $TF_STATE_NAME_DEV
+   variables:
+      TF_ROOT: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/$TF_STATE_NAME_DEV
+      TF_STATE_NAME: taxi_playground_$TF_STATE_NAME_DEV
+      TF_VAR_environment: $TF_STATE_NAME_DEV
+      TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
+   allow_failure: true
+   rules:
+      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+         when: never
+      -  when: manual
+      -  if: $CI_COMMIT_BRANCH == "develop"
+
+terraform-deploy-prod-voyager:
+   extends: .terraform-deploy
+   stage: deploy
+   environment:
+      name: $TF_STATE_NAME_PROD
+   variables:
+      TF_ROOT: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/$TF_STATE_NAME_PROD
+      TF_STATE_NAME: taxi_playground_$TF_STATE_NAME_PROD
+      TF_VAR_environment: $TF_STATE_NAME_PROD
+      TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
+   allow_failure: true
+   rules:
+      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+         when: never
+      -  when: manual
+      -  if: $CI_COMMIT_BRANCH == "develop"
+
 
 publish-snyk-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry

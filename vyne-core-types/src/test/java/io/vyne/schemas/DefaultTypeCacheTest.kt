@@ -2,6 +2,7 @@ package io.vyne.schemas
 
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
+import io.vyne.from
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
@@ -70,3 +71,4 @@ class DefaultTypeCacheTest {
       schema.typeCache.type("PersonName[]").should.not.be.`null`
    }
 }
+

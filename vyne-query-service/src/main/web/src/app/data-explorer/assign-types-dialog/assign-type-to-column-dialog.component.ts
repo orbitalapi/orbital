@@ -1,10 +1,10 @@
 import {Component, EventEmitter, Inject, Input, Output} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {Schema, Type, VersionedSource} from '../../services/schema';
-import {buildInheritable, Inheritable} from '../../inheritence-graph/inheritance-graph.component';
 import {FormBuilder, FormControl, FormGroup} from '@angular/forms';
 import {dateTimeSymbolsExampleTableData} from './date-time-symbols-example-table-data';
 import {dateTimeSampleFormatsTableData} from './date-time-sample-formats-table-data';
+import { buildInheritable, Inheritable } from 'src/app/inheritence-graph/build.inheritable';
 
 export interface AssignedTypeData {
   targetType: any;

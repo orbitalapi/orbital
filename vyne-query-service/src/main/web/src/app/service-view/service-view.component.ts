@@ -1,48 +1,10 @@
-import {Component, Input} from '@angular/core';
-import {fqn, Operation, QualifiedName, Service} from '../services/schema';
-import {isNullOrUndefined} from 'util';
+import { Component, Input } from '@angular/core';
+import { QualifiedName, Schema, Service } from '../services/schema';
+import { TypesService } from '../services/types.service';
+import { getCatalogType } from 'src/app/operation-view/operation-view.component';
+import { OperationSummary, toOperationSummary } from 'src/app/service-view/operation-summary';
+import { methodClassFromName } from 'src/app/service-view/service-view-class-utils';
 
-export interface OperationSummary {
-  name: string;
-  typeDoc: string | null;
-  url: string;
-  method: string;
-  returnType: QualifiedName;
-  serviceName: string;
-}
-
-export interface OperationName {
-  serviceName: string;
-  serviceDisplayName: string;
-  operationName: string;
-}
-
-export function splitOperationQualifiedName(name: string): OperationName {
-  const nameParts = name.split('@@');
-
-  return {
-    serviceName: nameParts[0],
-    serviceDisplayName: fqn(nameParts[0]).shortDisplayName,
-    operationName: nameParts[1]
-  };
-}
-
-export function toOperationSummary(operation: Operation): OperationSummary {
-  const httpOperationMetadata = operation.metadata.find(metadata => metadata.name.fullyQualifiedName === 'HttpOperation');
-  const method = httpOperationMetadata ? httpOperationMetadata.params['method'] : null;
-  const url = httpOperationMetadata ? httpOperationMetadata.params['url'] : null;
-
-  const nameParts = splitOperationQualifiedName(operation.qualifiedName.fullyQualifiedName);
-  const serviceName = nameParts.serviceName;
-  return {
-    name: operation.name,
-    method: method,
-    url: url,
-    typeDoc: operation.typeDoc,
-    returnType: operation.returnTypeName,
-    serviceName
-  } as OperationSummary;
-}
 
 @Component({
   selector: 'app-service-view',
@@ -56,6 +18,9 @@ export function toOperationSummary(operation: Operation): OperationSummary {
 
         <section>
           <app-description-editor-container [type]="service"></app-description-editor-container>
+        </section>
+        <section *ngIf="service">
+          <app-schema-diagram [schema]="schema" [displayedMembers]="[service.name.parameterizedName]"></app-schema-diagram>
         </section>
 
         <section *ngIf="service">
@@ -77,7 +42,7 @@ export function toOperationSummary(operation: Operation): OperationSummary {
                 </td>
                 <td><a [routerLink]="[operation.name]" data-e2e-id="operation-name">{{ operation.name }}</a></td>
                 <td>{{ operation.typeDoc }}</td>
-                <td><span class="mono-badge">{{ operation.returnType.shortDisplayName }}</span></td>
+                <td><span class="mono-badge"><a [routerLink]="['/catalog',navigationTargetForType(operation.returnType)]">{{ operation.returnType.shortDisplayName }}</a></span></td>
                 <td><span class="url">{{ operation.url }}</span></td>
               </tr>
             </table>
@@ -102,6 +67,17 @@ export class ServiceViewComponent {
 
   operationSummaries: OperationSummary[];
 
+  schema: Schema;
+  constructor(typeService:TypesService) {
+    typeService.getTypes().subscribe(s => this.schema = s)
+  }
+
+  navigationTargetForType(name: QualifiedName): string {
+    // Can't call directly, because function is not accessible via angular template
+    return getCatalogType(name);
+  }
+
+
   @Input()
   get service(): Service {
     return this._service;
@@ -125,20 +101,3 @@ export class ServiceViewComponent {
 }
 
 
-export function methodClassFromName(method: string) {
-  if (isNullOrUndefined(method)) {
-    return null;
-  }
-  switch (method.toUpperCase()) {
-    case 'GET':
-      return 'get-method';
-    case 'POST':
-      return 'post-method';
-    case 'PUT':
-      return 'put-method';
-    case 'DELETE':
-      return 'delete-method';
-    default:
-      return 'other-method';
-  }
-}

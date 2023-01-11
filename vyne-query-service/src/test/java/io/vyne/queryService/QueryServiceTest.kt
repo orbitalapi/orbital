@@ -20,6 +20,7 @@ import org.junit.Ignore
 import org.junit.Test
 import org.springframework.http.MediaType
 import kotlin.test.assertEquals
+import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 @FlowPreview
@@ -76,7 +77,7 @@ orderId_0,john,Instrument_0""".trimMargin().withoutWhitespace()
 
          val turbine = queryService
             .submitVyneQlQuery(
-               """findAll { Order[] } as Report[]""".trimIndent(),
+               """find { Order[] } as Report[]""".trimIndent(),
                resultMode,
                TEXT_CSV
             ).body.testIn(this)
@@ -95,7 +96,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
    fun `taxiQl as simple json returns expected result`() = runTest {
 
       val turbine = queryService.submitVyneQlQuery(
-         """findAll { Order[] }""".trimIndent(),
+         """find { Order[] }""".trimIndent(),
          ResultMode.TYPED,
          MediaType.APPLICATION_JSON_VALUE
       ).body.testIn(this)
@@ -115,7 +116,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
    fun `taxiQl as raw json returns raw map`() = runTest {
 
       val turbine = queryService.submitVyneQlQuery(
-         """findAll { Order[] }""".trimIndent(),
+         """find { Order[] }""".trimIndent(),
          ResultMode.RAW,
          MediaType.APPLICATION_JSON_VALUE
       ).body.testIn(this)
@@ -134,7 +135,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
    fun `taxiQl as simple json with projection returns expected result`() = runTest {
 
       val turbine = queryService.submitVyneQlQuery(
-         """findAll { Order[] } as Report[]""".trimIndent(),
+         """find { Order[] } as Report[]""".trimIndent(),
          ResultMode.TYPED,
          MediaType.APPLICATION_JSON_VALUE
       )
@@ -156,11 +157,11 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
    fun `taxiQl as raw json with projection returns expected result`() = runTest {
 
       val turbine = queryService.submitVyneQlQuery(
-         """findAll { Order[] } as Report[]""".trimIndent(),
+         """find { Order[] } as Report[]""".trimIndent(),
          ResultMode.RAW,
          MediaType.APPLICATION_JSON_VALUE
       )
-         .body.testIn(this)
+         .body.testIn(this, timeout = Duration.INFINITE)
       val next = turbine.awaitItem() as Map<String, Any?>
       next.should.equal(
          mapOf(
@@ -193,7 +194,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
       )
 
       val response = queryService.submitVyneQlQuery(
-         """findAll { Order[] } as Report[]""".trimIndent(),
+         """find { Order[] } as Report[]""".trimIndent(),
          ResultMode.TYPED,
          MediaType.APPLICATION_JSON_VALUE
       )

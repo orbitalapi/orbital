@@ -1,8 +1,9 @@
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {Directive, Input} from '@angular/core';
 import {Schema, Type} from '../../services/schema';
-import {TypeSearchContainerComponent, TypeSelectedEvent} from '../type-search/type-search-container.component';
+import {TypeSearchContainerComponent} from '../type-search/type-search-container.component';
 import {BaseDeferredEditComponent} from '../base-deferred-edit.component';
+import { TypeSelectedEvent } from 'src/app/type-viewer/type-search/type-selected-event';
 
 // Need this since we're inherits multiple layers deep.
 // See https://github.com/angular/angular/issues/35295

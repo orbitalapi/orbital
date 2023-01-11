@@ -199,6 +199,8 @@ data class FailedEvaluatedExpression(
    val inputs: List<TypedInstance>,
    val errorMessage: String,
    val unresolvedInputs: List<QualifiedName> = emptyList(),
+   val inputInError: TypedInstance? = null,
+   val cause: DataSource? = null,
    override val id: String = UUID.randomUUID().toString(),
    override val failedAttempts: List<DataSource> = emptyList()
 ) : DataSource {

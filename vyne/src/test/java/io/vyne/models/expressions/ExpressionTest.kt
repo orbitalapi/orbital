@@ -1,6 +1,7 @@
 package io.vyne.models.expressions
 
 import com.winterbe.expekt.should
+import io.vyne.*
 import io.vyne.models.EvaluatedExpression
 import io.vyne.models.FailedEvaluatedExpression
 import io.vyne.models.OperationResult
@@ -14,10 +15,7 @@ import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.functions.functionOf
 import io.vyne.models.functions.stdlib.withoutWhitespace
 import io.vyne.models.json.parseJson
-import io.vyne.rawObjects
 import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.testVyne
-import io.vyne.typedObjects
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.time.LocalDate
@@ -195,10 +193,10 @@ class ExpressionTest {
       )
       stub.addResponse(
          "findOrders", vyne.parseJson(
-         "Order[]", """
+            "Order[]", """
          [ { "original" : 300 , "purchased" : 50 } ]
       """.trimIndent()
-      )
+         )
       )
       val result = vyne.query(
          """find { Order[] } as {
@@ -238,10 +236,10 @@ class ExpressionTest {
          )
          stub.addResponse(
             "findOrders", vyne.parseJson(
-            "Order[]", """
+               "Order[]", """
          [ { "original" : 300 , "purchased" : 50 , "remaining" : 100 } ]
       """.trimIndent()
-         )
+            )
          )
          val result = vyne.query(
             """find { Order[] } as {
@@ -596,10 +594,12 @@ class ExpressionTest {
       }
 
 
-      val queryResult = vyne.query("""
+      val queryResult = vyne.query(
+         """
           given { name: PersonName = 'Jimmy'}
           find { Person }
-      """.trimIndent())
+      """.trimIndent()
+      )
          .rawObjects()
       queryResult.should.not.be.empty
       val rawValues = queryResult.first()
@@ -630,6 +630,57 @@ class ExpressionTest {
       val expectedErrorMessage = """NumberCalculator doesn't support nulls, but some inputs were null:
 Type Width was null - No attribute with type Width is present on type Rectangle"""
       failedExpression.errorMessage.withoutWhitespace().should.equal(expectedErrorMessage.withoutWhitespace())
+   }
+
+   @Test
+   fun `can use a type reference in a model`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         model FilmCatalog {
+            films : Film[]
+         }
+         model Film {
+            filmId : FilmId inherits Int
+         }
+         model Catalog {
+            filmCatalog:FilmCatalog
+         }
+
+         service CatalogService {
+            operation load():Catalog
+         }
+      """
+      )
+      val response = vyne.parseJson(
+         "Catalog", """{
+         | "filmCatalog" : {
+         |     "films" : [
+         |        { "filmId" : 1 },
+         |        { "filmId" : 2 }
+         |      ]
+         |  }
+         |}
+      """.trimMargin()
+      )
+      stub.addResponse(
+         "load", response
+      )
+
+      // if we ask for a collection of values, we should match...
+      val positiveResult = vyne.query("""find { Catalog } as {
+         | filmIds : (FilmCatalog::FilmId)[]
+         |}
+      """.trimMargin())
+         .firstRawObject()
+      positiveResult["filmIds"].should.equal(listOf(1,2))
+
+      // ... but if we ask for an array, we shouldn't, as there is no FilmId[] present
+      val negativeResult = vyne.query("""find { Catalog } as {
+         | filmIds : FilmCatalog::FilmId[]
+         |}
+      """.trimMargin())
+         .firstRawObject()
+      negativeResult["filmIds"].should.be.`null`
    }
 
 

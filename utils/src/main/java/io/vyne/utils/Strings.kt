@@ -1,5 +1,7 @@
 package io.vyne.utils
 
+import org.apache.commons.lang3.StringUtils
+
 fun String.withoutWhitespace(): String {
    return this
       .lines()
@@ -20,4 +22,8 @@ fun String.substitute(inputs: Map<String, Any>): String {
       val (key, value) = entry
       acc.replace("{$key}", value.toString())
    }
+}
+
+fun String.abbreviate(length: Int = 50):String {
+   return StringUtils.abbreviate(this, length)
 }

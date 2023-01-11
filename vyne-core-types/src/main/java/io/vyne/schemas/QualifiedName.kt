@@ -1,14 +1,22 @@
 package io.vyne.schemas
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.common.collect.Interners
 import lang.taxi.types.ArrayType
 import lang.taxi.types.QualifiedNameParser
 import java.io.Serializable
 
 @kotlinx.serialization.Serializable
-data class QualifiedName(val fullyQualifiedName: String, val parameters: List<QualifiedName> = emptyList()) :
+data class QualifiedName private constructor(val fullyQualifiedName: String, val parameters: List<QualifiedName> = emptyList()) :
    Serializable {
 
+   companion object {
+      private val POOL = Interners.newStrongInterner<QualifiedName>()
+      fun from(fullyQualifiedName: String, parameters: List<QualifiedName> = emptyList()): QualifiedName {
+         return POOL.intern(QualifiedName(fullyQualifiedName, parameters))
+      }
+   }
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val name: String
       get() = fullyQualifiedName.split(".").last()
@@ -32,37 +40,37 @@ data class QualifiedName(val fullyQualifiedName: String, val parameters: List<Qu
 
    // Convenience for the UI
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
-   val longDisplayName: String
-      get() {
-         val longTypeName = this.parameterizedName.replace("@@", " / ")
-         return when {
-            this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1 -> parameters[0].fullyQualifiedName + "[]"
-            this.parameters.isNotEmpty() -> longTypeName + this.parameters.joinToString(
-               ",",
-               prefix = "<",
-               postfix = ">"
-            ) { it.longDisplayName }
-            else -> longTypeName
-         }
+   val longDisplayName: String by lazy {
+      val longTypeName = this.parameterizedName.replace("@@", " / ")
+      when {
+         this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1 -> parameters[0].fullyQualifiedName + "[]"
+         this.parameters.isNotEmpty() -> longTypeName + this.parameters.joinToString(
+            ",",
+            prefix = "<",
+            postfix = ">"
+         ) { it.longDisplayName }
+
+         else -> longTypeName
       }
+   }
 
    // Convenience for the UI
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
-   val shortDisplayName: String
-      get() {
-         val shortTypeName = this.name.split("@@").last()
-         return when {
-            this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1 -> parameters[0].shortDisplayName + "[]"
-            this.parameters.isNotEmpty() -> shortTypeName + this.parameters.joinToString(
-               ",",
-               prefix = "<",
-               postfix = ">"
-            ) { it.shortDisplayName }
-            else -> shortTypeName
-         }
-      }
+   val shortDisplayName: String by lazy {
+      val shortTypeName = this.name.split("@@").last()
+      when {
+         this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1 -> parameters[0].shortDisplayName + "[]"
+         this.parameters.isNotEmpty() -> shortTypeName + this.parameters.joinToString(
+            ",",
+            prefix = "<",
+            postfix = ">"
+         ) { it.shortDisplayName }
 
-   override fun toString(): String = fullyQualifiedName
+         else -> shortTypeName
+      }
+   }
+
+   override fun toString(): String = parameterizedName
    override fun equals(other: Any?): Boolean {
       if (other == null) return false
       if (other === this) return true
@@ -86,13 +94,13 @@ fun QualifiedName.toTaxiQualifiedName(): lang.taxi.types.QualifiedName {
 fun String.fqn(): QualifiedName {
 
    return when {
-      OperationNames.isName(this) -> QualifiedName(this, emptyList())
-      ParamNames.isParamName(this) -> QualifiedName(
+      OperationNames.isName(this) -> QualifiedName.from(this, emptyList())
+      ParamNames.isParamName(this) -> QualifiedName.from(
          "param/" + ParamNames.typeNameInParamName(this).fqn().parameterizedName
       )
       else -> {
          val taxiQualifiedName = QualifiedNameParser.parse(this)
-         QualifiedName(
+         QualifiedName.from(
             taxiQualifiedName.fullyQualifiedName,
             taxiQualifiedName.parameters.map { it.toVyneQualifiedName() }
          )

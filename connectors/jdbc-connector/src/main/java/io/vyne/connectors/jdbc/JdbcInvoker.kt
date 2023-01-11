@@ -2,8 +2,8 @@ package io.vyne.connectors.jdbc
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Stopwatch
-import io.vyne.connectors.TaxiQlToSqlConverter
 import io.vyne.connectors.collectionTypeOrType
+import io.vyne.connectors.jdbc.sql.dml.SelectStatementGenerator
 import io.vyne.connectors.resultType
 import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
@@ -52,12 +52,12 @@ class JdbcInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String?
    ): Flow<TypedInstance> {
-      val (connectionName, jdbcTemplate) = getConnectionNameAndTemplate(service)
+      val (connectionConfig, jdbcTemplate) = getConnectionConfigAndTemplate(service)
       val schema = schemaProvider.schema
       val taxiSchema = schema.taxi
       val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
       val query = Compiler(taxiQuery, importSources = listOf(taxiSchema)).queries().first()
-      val (sql, paramList) = TaxiQlToSqlConverter(taxiSchema).toSql(query) { type -> SqlUtils.tableNameOrTypeName(type)}
+      val (sql, paramList) = SelectStatementGenerator(taxiSchema).toSql(query, connectionConfig.sqlBuilder())
       val paramMap = paramList.associate { param -> param.nameUsedInTemplate to param.value }
 
       val stopwatch = Stopwatch.createStarted()
@@ -68,7 +68,7 @@ class JdbcInvoker(
          operation,
          constructedQueryDataSource.inputs,
          sql,
-         connectionFactory.config(connectionName).address,
+         connectionConfig.address,
          elapsed
       )
       return convertToTypedInstances(resultList, query, schema, datasource)
@@ -150,6 +150,11 @@ class JdbcInvoker(
       val connectionName =
          service.metadata(JdbcConnectorTaxi.Annotations.DatabaseOperation.NAME).params["connection"] as String
       return connectionName to connectionFactory.jdbcTemplate(connectionName)
+   }
+   private fun getConnectionConfigAndTemplate(service: Service): Pair<JdbcConnectionConfiguration, NamedParameterJdbcTemplate> {
+      val connectionName =
+         service.metadata(JdbcConnectorTaxi.Annotations.DatabaseOperation.NAME).params["connection"] as String
+      return connectionFactory.config(connectionName) to connectionFactory.jdbcTemplate(connectionName)
    }
 }
 

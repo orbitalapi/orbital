@@ -1,26 +1,21 @@
 import {
   AfterContentInit,
-  ChangeDetectionStrategy, ChangeDetectorRef,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   EventEmitter,
   Input,
-  OnInit,
   Output,
   ViewChild
 } from '@angular/core';
-import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
-import {Type, InstanceLike} from '../services/schema';
-import {Observable, Subscription, BehaviorSubject, Subject} from 'rxjs';
-import {ExportFormat} from '../services/export.file.service';
-import {ResultsTableComponent} from '../results-table/results-table.component';
-import {AppInfoService, QueryServiceConfig} from '../services/app-info.service';
-import {MatDialog} from '@angular/material/dialog';
-import {ConfigDisabledFormComponent} from '../test-pack-module/config-disabled-form.component';
-import {
-  ConfigPersistResultsDisabledFormComponent
-} from '../test-pack-module/config-persist-results-disabled-form.component';
-import {TypesService} from '../services/types.service';
-import {debounce, throttleTime} from "rxjs/operators";
+import { BaseTypedInstanceViewer } from './BaseTypedInstanceViewer';
+import { InstanceLike, Type } from '../services/schema';
+import { Observable, Subscription } from 'rxjs';
+import { ResultsTableComponent } from '../results-table/results-table.component';
+import { AppInfoService, QueryServiceConfig } from '../services/app-info.service';
+import { TypesService } from '../services/types.service';
+import { throttleTime } from 'rxjs/operators';
+import { ExportFormat } from 'src/app/results-download/results-download.service';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,

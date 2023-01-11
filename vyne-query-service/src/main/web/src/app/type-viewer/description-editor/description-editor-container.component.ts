@@ -3,8 +3,9 @@ import {NamedAndDocumented, Type} from '../../services/schema';
 import {TypesService} from '../../services/types.service';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {CommitMode} from '../type-viewer.component';
-import {ContentSupplier} from './description-editor.react';
 import {debounceTime} from 'rxjs/operators';
+import { TypeEditorService } from 'src/app/services/type-editor.service';
+import { ChangesetService } from 'src/app/services/changeset.service';
 
 @Component({
   selector: 'app-description-editor-container',
@@ -14,8 +15,7 @@ import {debounceTime} from 'rxjs/operators';
                             [editable]="editable"
                             [showControlBar]="commitMode === 'immediate'"
                             (valueChanged)="typeDocChangeHandler.next($event)"
-                            [placeholder]="'Write something great that describes ' + type.name.name"
-                            (cancelEdits)="cancelEdits()"></app-description-editor>
+                            [placeholder]="'Write something great that describes the type ' + type.name.name"></app-description-editor>
   `,
   styleUrls: ['./description-editor.component.scss']
 })
@@ -49,20 +49,20 @@ export class DescriptionEditorContainerComponent {
     this.originalTypeDoc = this.type.typeDoc || null;
   }
 
-  typeDocChangeHandler: EventEmitter<ContentSupplier>;
+  typeDocChangeHandler: EventEmitter<string>;
 
-  constructor(private typeService: TypesService, private snackBar: MatSnackBar) {
-    this.typeDocChangeHandler = new EventEmitter<ContentSupplier>();
+  constructor(private changesetService: ChangesetService, private snackBar: MatSnackBar) {
+    this.typeDocChangeHandler = new EventEmitter<string>();
     this.typeDocChangeHandler
       .pipe(
         debounceTime(350) // We're debouncing - ie., dispatching once after typing has paused for x ms.
       )
-      .subscribe(next => {
+      .subscribe(value => {
           // If we're not writing automatically to the server, then update the typeDoc
           // on the type directly, to allow saving later.
           // The serialization is expensive, so do this periodically, rather than on every keystroke.
           if (this.commitMode === 'explicit') {
-            this.type.typeDoc = next();
+            this.type.typeDoc = value;
             this.updateDeferred.emit(this.type);
             console.log(`Typedoc on type ${this.type.name.fullyQualifiedName} updated`);
           }
@@ -89,16 +89,15 @@ export class DescriptionEditorContainerComponent {
     console.log('Saving changes');
     // TODO :  Sanitize and escape any [[ or ]], as these are the code markers
     const typeDoc = `[[ ${newContent} ]]`;
-
+    this.type.typeDoc = newContent;
     const namespaceDeclaration = (this.type.name.namespace) ? `namespace ${this.type.name.namespace}\n\n` : '';
     // eslint-disable-next-line max-len
     const taxi = `import ${this.type.name.fullyQualifiedName}\n\n${namespaceDeclaration}${typeDoc} \ntype extension ${this.type.name.name} {}`;
-    console.log(taxi);
     this.loading = true;
-    this.typeService.createExtensionSchemaFromTaxi(this.type.name, 'TypeDoc', taxi)
-      .subscribe(result => {
+    this.changesetService.addChangesToChangeset(this.type.name, 'TypeDoc', taxi)
+      .subscribe(() => {
         this.loading = false;
-        this.snackBar.open('Changes saved', 'Dismiss', {duration: 3000});
+        this.snackBar.open('Draft saved', 'Dismiss', {duration: 3000});
       }, error => {
         console.log(error);
         this.loading = false;

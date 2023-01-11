@@ -7,7 +7,7 @@ import {
   OnInit,
   Output
 } from '@angular/core';
-import {filter, take, tap} from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 
 import { editor, KeyCode, KeyMod } from 'monaco-editor';
 import {
@@ -18,25 +18,29 @@ import {
   randomId,
   ResultMode,
 } from '../../services/query.service';
-import {vyneQueryLanguageConfiguration, vyneQueryLanguageTokenProvider} from './vyne-query-language.monaco';
-import {QueryState} from './bottom-bar.component';
-import {isQueryResult, QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
-import {ExportFileService, ExportFormat} from '../../services/export.file.service';
-import {MatDialog} from '@angular/material/dialog';
-import {findType, InstanceLike, Schema, Type} from '../../services/schema';
-import {BehaviorSubject, Observable, ReplaySubject, Subject} from 'rxjs';
-import {isNullOrUndefined} from 'util';
-import {ActiveQueriesNotificationService, RunningQueryStatus} from '../../services/active-queries-notification-service';
-import {TypesService} from '../../services/types.service';
+import { QueryState } from './bottom-bar.component';
+import { isQueryResult, QueryResultInstanceSelectedEvent } from '../result-display/BaseQueryResultComponent';
+import { MatDialog } from '@angular/material/dialog';
+import { findType, InstanceLike, Schema, Type } from '../../services/schema';
+import { BehaviorSubject, Observable, ReplaySubject, Subject } from 'rxjs';
+import { isNullOrUndefined } from 'util';
+import {
+  ActiveQueriesNotificationService,
+  RunningQueryStatus
+} from '../../services/active-queries-notification-service';
+import { TypesService } from '../../services/types.service';
 import {
   FailedSearchResponse,
   isFailedSearchResponse,
   isValueWithTypeName,
   StreamingQueryMessage
 } from '../../services/models';
-import {Router} from '@angular/router';
+import { Router } from '@angular/router';
 import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
+import { ExportFormat, ResultsDownloadService } from 'src/app/results-download/results-download.service';
+import { copyQueryAs, CopyQueryFormat } from 'src/app/query-panel/query-editor/QueryFormatter';
+import {Clipboard} from '@angular/cdk/clipboard';
 
 declare const monaco: any; // monaco
 @Component({
@@ -98,12 +102,13 @@ export class QueryEditorComponent implements OnInit {
   instanceSelected$ = new ReplaySubject<QueryResultInstanceSelectedEvent>(1);
 
   constructor(private queryService: QueryService,
-              private fileService: ExportFileService,
+              private fileService: ResultsDownloadService,
               private dialogService: MatDialog,
               private activeQueryNotificationService: ActiveQueriesNotificationService,
               private typeService: TypesService,
               private router: Router,
-              private changeDetector: ChangeDetectorRef
+              private changeDetector: ChangeDetectorRef,
+              private clipboard: Clipboard
   ) {
 
     this.initialQuery = this.router.getCurrentNavigation()?.extras?.state?.query;
@@ -287,5 +292,9 @@ export class QueryEditorComponent implements OnInit {
 
     this.queryProfileData$ = this.queryService.getQueryProfileFromClientId(this.queryClientId);
     this.changeDetector.detectChanges();
+  }
+
+  copyQuery($event: CopyQueryFormat) {
+    copyQueryAs(this.query, this.queryService.queryEndpoint, $event, this.clipboard);
   }
 }

@@ -1,16 +1,17 @@
 {
-  "className" : "io.vyne.query.history.VyneQlQueryHistoryRecord",
-  "query" : "findAll {\n    bank.order.Order[]\n} as bank.order.Report[]",
-  "response" : {
-    "results" : {
-      "lang.taxi.Array<bank.order.Report>" : [ {
-        "typeName" : "bank.order.Report",
-        "value" : {
-          "isin" : {
-            "typeName" : "bank.instrument.Isin",
-            "value" : "isin1"
-          },
-          "utCode" : {
+   "className": "io.vyne.query.history.VyneQlQueryHistoryRecord",
+   "query": "find {\n    bank.order.Order[]\n} as bank.order.Report[]",
+   "response": {
+      "results": {
+         "lang.taxi.Array<bank.order.Report>": [
+            {
+               "typeName": "bank.order.Report",
+               "value": {
+                  "isin": {
+                     "typeName": "bank.instrument.Isin",
+                     "value": "isin1"
+                  },
+                  "utCode": {
             "typeName" : "bank.trader.UtCode",
             "value" : "utcode1"
           },

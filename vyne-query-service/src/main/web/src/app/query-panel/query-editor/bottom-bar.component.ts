@@ -2,12 +2,20 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, Output
 import { isNullOrUndefined } from 'util';
 import { RunningQueryStatus } from '../../services/active-queries-notification-service';
 import { Observable } from 'rxjs/internal/Observable';
+import { CopyQueryFormat } from 'src/app/query-panel/query-editor/QueryFormatter';
+
+
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-query-editor-bottom-bar',
   template: `
     <span class="error-message">{{ error }}</span>
+    <button mat-flat-button class="button-small copy-menu-button" [matMenuTriggerFor]="menu">Copy</button>
+    <mat-menu #menu="matMenu">
+      <button mat-menu-item (click)="copyQuery.emit('query')">Query only</button>
+      <button mat-menu-item (click)="copyQuery.emit('curl')">As cURL statement</button>
+    </mat-menu>
     <button mat-flat-button color="accent"
             class="button-small "
             *ngIf="(currentState$ | async) !== 'Running' && (currentState$ | async) !== 'Cancelling'"
@@ -49,11 +57,16 @@ import { Observable } from 'rxjs/internal/Observable';
 })
 export class BottomBarComponent {
 
+
+
   @Input()
   currentState$: Observable<QueryState>;
 
   @Input()
   error: string;
+
+  @Output()
+  copyQuery = new EventEmitter<CopyQueryFormat>()
 
   @Output()
   executeQuery = new EventEmitter<void>();

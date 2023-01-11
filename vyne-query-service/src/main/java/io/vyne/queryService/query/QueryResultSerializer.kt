@@ -39,6 +39,7 @@ class ModelFormatSpecSerializer(
 class SerializedTypedInstanceSerializer(private val contentType: String?) : QueryResultSerializer {
    private val converter = TypedInstanceConverter(RawObjectMapper)
    override fun serialize(item: TypedInstance): Any? {
+      item.toSerializable()
       return when (contentType) {
          MediaType.APPLICATION_JSON_VALUE -> converter.convert(item)
          MediaType.APPLICATION_CBOR_VALUE -> item.toSerializable().toBytes()
