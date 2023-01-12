@@ -217,7 +217,10 @@ regression-test:
          --platform linux/arm64/v8,linux/amd64
          --push
          -t "${registry}/${microservice}:${tag}"
-         -t "${registry}/${microservice}:${versionTag}" .
+         -t "${registry}/${microservice}:${versionTag}"
+         -t "${registry2}/${microservice}:${tag}"
+         -t "${registry2}/${microservice}:${versionTag}"
+         .
 
 .publish-to-docker-hub:
    extends: .publish-docker
@@ -230,6 +233,7 @@ regression-test:
          allow_failure: true
    variables:
       registry: vyneco
+      registry2: orbitalhq
    before_script:
       - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
 
