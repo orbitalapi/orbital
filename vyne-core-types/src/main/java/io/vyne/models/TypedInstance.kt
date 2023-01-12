@@ -9,10 +9,11 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.log
-import lang.taxi.Equality
 import lang.taxi.accessors.NullValue
 import lang.taxi.types.ArrayType
 import lang.taxi.types.FormatsAndZoneOffset
+import lang.taxi.types.ObjectType
+import lang.taxi.types.isMapType
 
 
 interface TypedInstance {
@@ -189,6 +190,9 @@ interface TypedInstance {
 
             type.isEnum -> {
                type.enumTypedInstance(value, source)
+            }
+            type.taxiType is ObjectType && type.taxiType.isMapType() -> {
+               TypedMaps.parse(type, value, schema, performTypeConversions, nullValues, source, evaluateAccessors, functionRegistry, formatSpecs)
             }
 
             type.isScalar -> {
