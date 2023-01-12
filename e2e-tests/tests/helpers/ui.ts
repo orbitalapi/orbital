@@ -26,7 +26,7 @@ export async function selectOnAutoComplete(page: Page, label: string, value: str
 }
 
 export async function openAccordion(page: Page, text: string, selectorPrefix = ''): Promise<void> {
-   await page.click(`${selectorPrefix} tui-accordion-item .header:has-text("${text}")`);
+   await page.click(`${selectorPrefix} tui-accordion-item .t-header:has-text("${text}")`);
 }
 
 export async function selectTreeItem(page: Page, text: string, selectorPrefix = ''): Promise<void> {

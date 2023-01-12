@@ -1,6 +1,9 @@
 package io.vyne.schemas
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.winterbe.expekt.expect
+import io.kotest.matchers.shouldBe
 import org.junit.Test
 
 class QualifiedNameTest {
@@ -60,5 +63,14 @@ class QualifiedNameTest {
       expect(fqn.parameters).to.have.size(1)
       expect(fqn.parameters[0].fullyQualifiedName).to.equal("sample.Foo")
       expect(fqn.name).to.equal("Array")
+   }
+
+   @Test
+   fun `can read and write to json`() {
+      val jackson = jacksonObjectMapper()
+      val fqn = "sample.Foo[]".fqn()
+      val json = jackson.writeValueAsString(fqn)
+      val fromJson = jacksonObjectMapper().readValue<QualifiedName>(json)
+      fromJson.shouldBe(fqn)
    }
 }

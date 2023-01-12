@@ -8,7 +8,7 @@
 		</encoder>
 	</appender>
 
-   <logger level="INFO" name="io.vyne" />
+   <logger level="DEBUG" name="io.vyne" />
 	<root level="INFO">
 		<appender-ref ref="console" />
 	</root>

@@ -41,7 +41,7 @@ default:
 
 .build-jvm:
    stage: build
-   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.6-eclipse-temurin-11
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.7-eclipse-temurin-11
    tags:
       - docker-heavy
    services:
@@ -62,6 +62,8 @@ default:
 # factor is that we only cache for a branch.  Trying a more glabal
 # cache.
 #      key: "maven-$CI_COMMIT_REF_SLUG"
+   #   before_script:
+   #      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
    script:
       - 'if [ -z "${GITLAB_TOKEN}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
@@ -169,7 +171,7 @@ build-jvm-master:
       MAVEN_EXTRA_ARGS: '-P release -DskipTests'
 
 release-major:
-   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.6-eclipse-temurin-11
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.7-eclipse-temurin-11
    variables:
       GIT_STRATEGY: clone
    dependencies: [ ]
@@ -182,7 +184,7 @@ release-major:
    when: manual
 
 release-minor:
-   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.6-eclipse-temurin-11
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.7-eclipse-temurin-11
    variables:
       GIT_STRATEGY: clone
    dependencies: [ ]
@@ -195,7 +197,7 @@ release-minor:
    when: manual
 
 release-patch:
-   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.6-eclipse-temurin-11
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.7-eclipse-temurin-11
    variables:
       GIT_STRATEGY: clone
    dependencies: [ ]
@@ -240,11 +242,10 @@ regression-test:
          alias: docker
          command: [ "--tls=false" ]
    script:
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
       - PROJECT_VERSION=$(cat build-version.txt)
-      - docker info
       - docker buildx create --use
       - docker run --privileged --rm tonistiigi/binfmt --install all # Install the required emulators in order to build ARM images
-      - docker buildx ls
       - |
          if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
            tag="latest"
@@ -259,13 +260,15 @@ regression-test:
          echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
          echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
       - cd $projectDir
-      - pwd
       - >
          docker buildx build
          --platform linux/arm64/v8,linux/amd64
          --push
-         -t "${registry}/${microservice}:${tag}"
-         -t "${registry}/${microservice}:${versionTag}" .
+         -t "${registry_vyne}/${microservice_vyne}:${tag}"
+         -t "${registry_vyne}/${microservice_vyne}:${versionTag}"
+         -t "${registry_orbital}/${microservice_orbital}:${tag}"
+         -t "${registry_orbital}/${microservice_orbital}:${versionTag}"
+         .
 
 .publish-to-docker-hub:
    extends: .publish-docker
@@ -277,14 +280,14 @@ regression-test:
          when: manual
          allow_failure: true
    variables:
-      registry: vyneco
-   before_script:
-      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
+      registry_vyne: vyneco
+      registry_orbital: orbitalhq
 
 .publish-to-gitlab-container-registry:
    extends: .publish-docker
    variables:
-      registry: $CI_REGISTRY_IMAGE
+      registry_vyne: $CI_REGISTRY_IMAGE
+      registry_orbital: $CI_REGISTRY_IMAGE
    before_script:
       - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
 
@@ -292,43 +295,58 @@ publish-vyne-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: vyne-query-service
-      microservice: vyne
+      microservice_vyne: vyne
+      microservice_orbital: orbital-server
 
 publish-cask-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: cask
-      microservice: cask
+      microservice_vyne: cask
+      microservice_orbital: cask
 
 publish-pipeline-jet-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: pipelines/pipeline-jet
-      microservice: pipeline
+      microservice_vyne: pipeline
+      microservice_orbital: pipeline
 
 publish-schema-server-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: schema-server
-      microservice: schema-server
+      microservice_vyne: schema-server
+      microservice_orbital: schema-server
 
 publish-analytics-server-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: vyne-analytics-server
-      microservice: analytics-server
+      microservice_vyne: analytics-server
+      microservice_orbital: analytics-server
 
 publish-vyne-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
    variables:
       projectDir: vyne-query-service
-      microservice: vyne
+      microservice_vyne: vyne
+      microservice_orbital: orbital-server
 
 publish-schema-server-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
    variables:
       projectDir: schema-server
-      microservice: schema-server
+      microservice_vyne: schema-server
+      microservice_orbital: schema-server
+
+publish-voyager-to-gitlab-container-registry:
+   extends: .publish-to-gitlab-container-registry
+   variables:
+      projectDir: taxi-playground
+      microservice_vyne: taxi-playground
+      microservice_orbital: taxi-playground
+   when: manual
 
 .publish-docker-gitlab:
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.8-0.6.3
@@ -380,7 +398,8 @@ publish-pipelines-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
    variables:
       projectDir: pipelines/pipeline-jet
-      microservice: pipeline
+      microservice_vyne: pipeline
+      microservice_orbital: pipeline
 
 terraform-fmt:
    extends: .terraform:fmt
@@ -443,6 +462,8 @@ terraform-deploy-prod:
 .e2e-tests:
    stage: verify
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.22-dind
+   tags:
+      - docker-heavy
    variables:
       DOCKER_HOST: tcp://docker:2375/
       DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
@@ -456,7 +477,7 @@ terraform-deploy-prod:
          command: [ "--tls=false" ]
    retry: 2
    before_script:
-      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
       - PROJECT_VERSION=$(cat build-version.txt)
       - |
          if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
@@ -482,9 +503,7 @@ terraform-deploy-prod:
       - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/projects/taxi.conf -P vyne/schema-server/projects
       - wget https://gitlab.com/vyne/demos/-/raw/master/films/services.conf -P vyne/config
       - |
-         SCHEMA_SERVER_IMAGE=${CI_REGISTRY_IMAGE}/schema-server \
-            VYNE_IMAGE=${CI_REGISTRY_IMAGE}/vyne \
-            VYNE_VERSION=$versionTag \
+         VYNE_VERSION=$versionTag \
             docker compose -f docker-compose.yml -f e2e.docker-compose.yml up --exit-code-from e2e
 
 e2e-tests-master:
@@ -555,8 +574,8 @@ publish-snyk-to-gitlab-container-registry:
    script:
       - cd snyk/
       - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-      - docker build -t "${registry}/snyk:latest" .
-      - docker push ${registry}/snyk:latest
+      - docker build -t "${registry_orbital}/snyk:latest" .
+      - docker push ${registry_orbital}/snyk:latest
 
 .snyk:
    stage: verify

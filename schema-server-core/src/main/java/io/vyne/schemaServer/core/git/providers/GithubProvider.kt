@@ -46,6 +46,11 @@ class GithubProvider : GitHostedService {
    }
 
    private fun buildPullRequestOverview(pullRequest: GHPullRequest): ChangesetOverview {
+      /**
+       * TODO Additions and deletions refer to line counts here. The way GitHub API works is that it only provides these
+       * and changed files count on the overall PR endpoint. To get the actual files added and deleted one needs to call
+       * the endpoint for fetching details of all the files of the PR and parse that through.
+       */
       return ChangesetOverview(
          additions = pullRequest.additions,
          changedFiles = pullRequest.changedFiles,

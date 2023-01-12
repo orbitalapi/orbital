@@ -46,6 +46,8 @@ import { AwsS3OutputConfigComponent } from './pipeline-builder/aws-s3-output-con
 import { AuthGuard } from 'src/app/services/auth.guard';
 import { VynePrivileges } from 'src/app/services/user-info.service';
 import { PipelineService } from 'src/app/pipelines/pipelines.service';
+import { DbConnectionService } from 'src/app/db-connection-editor/db-importer.service';
+import { VyneServicesModule } from 'src/app/services/vyne-services.module';
 
 @NgModule({
   declarations: [
@@ -98,6 +100,7 @@ import { PipelineService } from 'src/app/pipelines/pipelines.service';
     TuiDataListModule,
     FormsModule,
     ConnectionFiltersModule,
+    VyneServicesModule,
     RouterModule.forChild([
       {
         path: '', component: PipelineManagerComponent, children: [
@@ -130,7 +133,7 @@ import { PipelineService } from 'src/app/pipelines/pipelines.service';
     PipelineViewComponent
   ],
   providers: [
-    PipelineService
+    PipelineService,
   ]
 })
 export class PipelinesModule {

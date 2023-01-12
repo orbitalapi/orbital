@@ -22,8 +22,10 @@ import kotlin.test.fail
 
 private val logger = KotlinLogging.logger {}
 @RunWith(SpringRunner::class)
-@SpringBootTest(properties = [
-   "eureka.client.enabled=false", "vyne.schema-server.compileOnStartup=false"])
+@SpringBootTest(
+   properties = [
+      "vyne.schema-server.compileOnStartup=false"]
+)
 class SchemaStoreTest {
    private val taxiSource1 = VersionedSource("test1.taxi", "1.0.0", """
          model Foo {

@@ -4,7 +4,7 @@ import { SchemaExplorerTableComponent } from 'src/app/schema-explorer-table/sche
 import { AngularSplitModule } from 'angular-split';
 import { SchemaEntryTableComponent } from 'src/app/schema-explorer-table/schema-entry-table.component';
 import { TuiAccordionModule, TuiBadgeModule, TuiTreeModule } from '@taiga-ui/kit';
-import { TuiButtonModule } from '@taiga-ui/core';
+import { TuiButtonModule, TuiNotificationModule } from '@taiga-ui/core';
 import { TypeViewerModule } from 'src/app/type-viewer/type-viewer.module';
 import { OperationViewModule } from 'src/app/operation-view/operation-view.module';
 
@@ -25,7 +25,8 @@ import { OperationViewModule } from 'src/app/operation-view/operation-view.modul
     TuiTreeModule,
     TuiButtonModule,
     TypeViewerModule,
-    OperationViewModule
+    OperationViewModule,
+    TuiNotificationModule
   ]
 })
 export class SchemaExplorerTableModule {

@@ -95,7 +95,6 @@ import javax.sql.DataSource
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
    properties = [
       "spring.main.allow-bean-definition-overriding=true",
-      "eureka.client.enabled=false",
       "vyne.schema.publisher.method=Local",
       "vyne.schema.consumer.method=Local"
    ]
@@ -959,7 +958,7 @@ Date,Symbol,Open,High,Low,Close
             .uri(url.toString())
             .handle { inbound: WebsocketInbound?, outbound: WebsocketOutbound ->
                val responseHeaders = toHttpHeaders(inbound)
-               val protocol = responseHeaders?.getFirst("Sec-WebSocket-Protocol")
+               val protocol = responseHeaders.getFirst("Sec-WebSocket-Protocol")
                val info = HandshakeInfo(url, responseHeaders, Mono.empty(), protocol)
                val factory = NettyDataBufferFactory(outbound.alloc())
                val session: WebSocketSession = ReactorNettyWebSocketSession(
