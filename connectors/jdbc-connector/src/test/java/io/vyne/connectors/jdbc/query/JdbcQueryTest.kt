@@ -71,11 +71,7 @@ class JdbcQueryTest {
 
          @DatabaseService( connection = "movies" )
          service MovieDb {
-            vyneQl query movieQuery(body:VyneQlQuery):Movie[] with capabilities {
-                  filter(==,in,like),
-                  sum,
-                  count
-               }
+            table movie : Movie[]
          }
       """
          )
@@ -114,11 +110,7 @@ class JdbcQueryTest {
 
          @DatabaseService( connection = "movies" )
          service MovieDb {
-            vyneQl query movieQuery(body:VyneQlQuery):Movie[] with capabilities {
-                  filter(==,in,like),
-                  sum,
-                  count
-               }
+            table movie : Movie[]
          }
       """
          )
@@ -179,12 +171,7 @@ class JdbcQueryTest {
 
          @DatabaseService( connection = "movies" )
          service MovieDb {
-            vyneQl query findOneMovie(body:VyneQlQuery):Movie with capabilities {
-                  filter(==,in,like),
-                  sum,
-                  count
-               }
-
+            table movie : Movie[]
          }
       """
          )
@@ -250,12 +237,7 @@ class JdbcQueryTest {
 
          @DatabaseService( connection = "movies" )
          service MovieDb {
-            vyneQl query findOneMovie(body:VyneQlQuery):Movie with capabilities {
-                  filter(==,in,like),
-                  sum,
-                  count
-               }
-
+            table movie : Movie[]
          }
       """
          )

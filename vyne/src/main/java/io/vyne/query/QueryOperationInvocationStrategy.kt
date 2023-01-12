@@ -5,7 +5,13 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.queryBuilders.QueryGrammarQueryBuilder
 import io.vyne.query.queryBuilders.VyneQlGrammarQueryBuilder
-import io.vyne.schemas.*
+import io.vyne.schemas.OutputConstraint
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.PropertyToParameterConstraint
+import io.vyne.schemas.QueryOperation
+import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import io.vyne.utils.log
 
 class QueryOperationInvocationStrategy(
@@ -41,7 +47,11 @@ class QueryOperationInvocationStrategy(
       target: QuerySpecTypeNode
    ): Map<RemoteOperation, Map<Parameter, TypedInstance>> {
       val queryOperations = schema.services
-         .flatMap { it.queryOperations }
+         .flatMap {
+            it.queryOperations + it.tableOperations.flatMap { tableOperation ->
+               tableOperation.queryOperations
+            }
+         }
          .filter { it.returnType.isAssignableTo(target.type) }
          .filter { it.hasFilterCapability }
 
@@ -103,6 +113,7 @@ class QueryOperationInvocationStrategy(
             } else {
                queryOperation.supportedFilterOperations.contains(constraint.operator)
             }
+
             else -> {
                // TODO : Implement support for the other constraints if/when they become
                log().warn("Support for data constraint of type ${constraint::class.simpleName} is not yet implemented, so query operations cannot be invoked for this query.")
@@ -112,7 +123,7 @@ class QueryOperationInvocationStrategy(
       }
    }
 
-   fun validateSupportedFilterOperations(
+   private fun validateSupportedFilterOperations(
       schema: Schema,
       propertyToParameterConstraint: PropertyToParameterConstraint,
       operationReturnType: Type

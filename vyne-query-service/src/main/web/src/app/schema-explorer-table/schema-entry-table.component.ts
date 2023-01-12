@@ -54,7 +54,7 @@ export interface ServiceAccordionEntry extends AccordionEntry {
         <ng-template tuiAccordionItemContent [tuiTreeController]="true">
           <tui-tree-item *ngFor="let service of services">{{ service.label }}
             <tui-tree-item
-              *ngFor="let operation of service.operations">
+              *ngFor="let operation of collectOperations(service.member)">
 
               <button tuiButton [appearance]="'flat'" [size]="'m'"
                       (click)="onOperationSelected(operation)">{{ operation.qualifiedName.shortDisplayName }}</button>
@@ -71,6 +71,10 @@ export interface ServiceAccordionEntry extends AccordionEntry {
 export class SchemaEntryTableComponent {
 
   constructor(private changeDetector: ChangeDetectorRef) {
+  }
+
+  collectOperations(service: Service): ServiceMember[] {
+    return [...service.operations, ...service.queryOperations, ...service.tableOperations, ...service.streamOperations];
   }
 
   private _importedSchema: Observable<PartialSchema>;

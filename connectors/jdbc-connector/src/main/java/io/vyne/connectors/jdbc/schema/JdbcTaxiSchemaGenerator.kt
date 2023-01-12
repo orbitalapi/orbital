@@ -2,9 +2,7 @@ package io.vyne.connectors.jdbc.schema
 
 import io.vyne.connectors.jdbc.JdbcConnectorTaxi
 import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
-import io.vyne.query.VyneQlGrammar
 import io.vyne.schemas.Schema
-import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.toVyneQualifiedName
 import lang.taxi.TaxiDocument
 import lang.taxi.generators.GeneratedTaxiCode
@@ -12,9 +10,6 @@ import lang.taxi.generators.Level
 import lang.taxi.generators.Message
 import lang.taxi.generators.SchemaWriter
 import lang.taxi.jvm.common.PrimitiveTypes
-import lang.taxi.services.Parameter
-import lang.taxi.services.QueryOperation
-import lang.taxi.services.QueryOperationCapability
 import lang.taxi.services.Service
 import lang.taxi.types.Annotation
 import lang.taxi.types.ArrayType
@@ -124,20 +119,15 @@ class JdbcTaxiSchemaGenerator(
    ): Set<Service> {
       return createdModels.map { (table, model) ->
          val modelNameForOperations =
-            model.toVyneQualifiedName().shortDisplayName.toTaxiConvention(firstLetterAsUppercase = true)
-         val findManyOperation = queryOperation(
-            "findMany$modelNameForOperations",
+            model.toVyneQualifiedName().shortDisplayName.toTaxiConvention(firstLetterAsUppercase = false)
+         val tableOperation = tableOperation(
+            name = modelNameForOperations,
             returnType = ArrayType.of(model),
-            schema, model
-         )
-         val findOneOperation = queryOperation(
-            "findOne$modelNameForOperations",
-            returnType = model,
             schema, model
          )
          Service(
             model.qualifiedName + "Service",
-            members = listOf(findManyOperation, findOneOperation),
+            members = listOf(tableOperation),
             annotations = listOf(
                JdbcConnectorTaxi.Annotations.databaseOperation(connectionName).asAnnotation(schema.taxi)
             ),
@@ -146,23 +136,12 @@ class JdbcTaxiSchemaGenerator(
       }.toSet()
    }
 
-   private fun queryOperation(name: String, returnType: Type, schema: Schema, model: Type): QueryOperation {
-      return QueryOperation(
+   private fun tableOperation(name: String, returnType: Type, schema: Schema, model: Type): lang.taxi.services.Table {
+      return lang.taxi.services.Table(
          name = name,
-         grammar = "vyneQl",
-         returnType = returnType,
-         capabilities = QueryOperationCapability.ALL,
-         parameters = listOf(
-            Parameter(
-               annotations = emptyList(),
-               type = schema.taxiType(VyneQlGrammar.QUERY_TYPE_NAME.fqn()),
-               constraints = emptyList(),
-               isVarArg = false,
-               name = "querySpec"
-            )
-         ),
          annotations = emptyList(),
-         compilationUnits = listOf(CompilationUnit.generatedFor(model))
+         returnType = returnType,
+         compilationUnits = listOf(CompilationUnit.Companion.generatedFor(model))
       )
    }
 
@@ -234,6 +213,7 @@ class JdbcTaxiSchemaGenerator(
             // TODO : How do we determine the inner array type?  Assume String for now
             PrimitiveType.STRING
          }
+
          JdbcTypes.contains(defaultMappedClass) -> JdbcTypes.get(defaultMappedClass)
          else -> error("Type ${type.name} default maps to ${defaultMappedClass.canonicalName} which has no taxi equivalent")
       }

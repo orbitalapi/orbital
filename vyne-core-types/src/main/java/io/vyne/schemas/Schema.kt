@@ -25,7 +25,7 @@ interface Schema {
 
    @get:JsonIgnore
    val packages: List<SourcePackage>
-   
+
    @get:JsonIgnore
    val sources: List<VersionedSource>
    val types: Set<Type>

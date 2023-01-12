@@ -3,6 +3,7 @@ package io.vyne.schemas.taxi
 import com.winterbe.expekt.should
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
+import io.vyne.query.VyneQlGrammar
 import org.junit.Test
 
 class TaxiSchemaTest {
@@ -34,15 +35,19 @@ class TaxiSchemaTest {
    fun `parses a schema with a table correctly`() {
       val service = TaxiSchema.from(
          """
-         model Person
-         service MyKafkaService {
-            table person : Person[]
+         ${VyneQlGrammar.QUERY_TYPE_TAXI}
+
+         namespace myTest {
+            model Person
+            service MyKafkaService {
+               table person : Person[]
+            }
          }
       """.trimIndent()
-      ).service("MyKafkaService")
+      ).service("myTest.MyKafkaService")
       service.tableOperations.should.have.size(1)
       val table = service.tableOperations.single()
-      table.returnType.name.parameterizedName.should.equal("lang.taxi.Array<Person>")
+      table.returnType.name.parameterizedName.should.equal("lang.taxi.Array<myTest.Person>")
    }
 
 
