@@ -16,6 +16,7 @@ import lang.taxi.services.Operation
 import lang.taxi.services.Parameter
 import lang.taxi.services.QueryOperation
 import lang.taxi.services.Service
+import lang.taxi.services.Table
 import lang.taxi.types.Annotation
 import lang.taxi.types.AnnotationType
 import lang.taxi.types.Arrays
@@ -67,16 +68,25 @@ class VyneSchemaToTaxiSchemaMapper(
    }
 
    private fun generateService(source: PartialService): Service {
+      val members = source.operations.map { generateOperation(it) } +
+         source.queryOperations.map { generateQueryOperation(it) } +
+         source.tableOperations.map { generateTableOperation(it) }
       return Service(
          source.name.fullyQualifiedName,
-         source.operations.map { generateOperation(it) } + source.queryOperations.map {
-            generateQueryOperation(
-               it,
-            )
-         },
+         members,
          convertAnnotations(source.metadata),
          listOf(CompilationUnit.Companion.generatedFor(source.name.fullyQualifiedName)),
          source.typeDoc
+      )
+   }
+
+   private fun generateTableOperation(source: PartialOperation): Table {
+      return Table(
+         name = OperationNames.operationName(source.qualifiedName),
+         annotations = convertAnnotations(source.metadata),
+         returnType = getOrCreateType(source.returnTypeName),
+         compilationUnits = listOf(CompilationUnit.Companion.generatedFor(source.qualifiedName.longDisplayName)),
+         typeDoc = source.typeDoc
       )
    }
 

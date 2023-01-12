@@ -16,6 +16,7 @@ import io.vyne.query.VyneQlGrammar
 import io.vyne.query.connectors.OperationResponseHandler
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.TableOperation
 import io.vyne.utils.withoutWhitespace
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -64,7 +65,8 @@ class VyneQueryTest {
                traderName: TraderName
                desk: TraderDeskName
              }
-         """.trimIndent())
+         """.trimIndent()
+      )
       val resultList = queryResult.rawObjects()
       resultList.should.have.size(1)
       resultList.first()["traderName"].should.equal("jimmy choo")
@@ -82,20 +84,20 @@ class VyneQueryTest {
             traderId : TraderId
          }
          service TradeService {
-            ${queryDeclaration("tradeQuery", "Trade[]")}
+            ${tableDeclaration("tradeQuery", "Trade[]")}
          }
       """.trimIndent()
       )
 
       val response = vyne.parseJsonModel("Trade[]", """[ { "traderId" : "jimmy" } ]""")
-      stub.addResponse("tradeQuery", response)
+      stub.addResponse(TableOperation.findManyOperationName("tradeQuery"), response)
       val queryResult = vyne.query("find { Trade[]( TraderId == 'jimmy' ) }")
 
       val resultList = queryResult.rawObjects()
       resultList.should.have.size(1)
       resultList.first()["traderId"].should.equal("jimmy")
 
-      val invocations = stub.invocations["tradeQuery"]!!
+      val invocations = stub.invocations[TableOperation.findManyOperationName("tradeQuery")]!!
       invocations.should.have.size(1)
       val vyneQlQuery = invocations.first().value!! as String
 
@@ -289,9 +291,10 @@ class VyneQueryTest {
    }
 
    @Test
-   fun `failures in boolean expression evalution should not terminate when condition evalutaions`(): Unit = runBlocking {
-      val (vyne, stub) = testVyne(
-         """
+   fun `failures in boolean expression evalution should not terminate when condition evalutaions`(): Unit =
+      runBlocking {
+         val (vyne, stub) = testVyne(
+            """
          type PersonName inherits String
          type Theme inherits String
          enum Sex {
@@ -325,32 +328,33 @@ class VyneQueryTest {
             operation findName(PersonId):PersonName
          }
       """.trimIndent()
-      )
-      val people = TypedInstance.from(
-         vyne.type("Person[]"),
-         """[{ "id"  : "j123", "sex": "male" }]""",
-         vyne.schema,
-         source = Provided
-      )
-      stub.addResponse(
-         "findAllPeople",
-         people
-      )
-      stub.addResponse("findName", vyne.parseKeyValuePair("PersonName", "Jimmy"))
+         )
+         val people = TypedInstance.from(
+            vyne.type("Person[]"),
+            """[{ "id"  : "j123", "sex": "male" }]""",
+            vyne.schema,
+            source = Provided
+         )
+         stub.addResponse(
+            "findAllPeople",
+            people
+         )
+         stub.addResponse("findName", vyne.parseKeyValuePair("PersonName", "Jimmy"))
 
-      val result = vyne.query(
-         """find { Person[] } as Result[]""".trimMargin()
-      )
-         .results.toList()
-      result.first().toRawObject().should.equal(
-         mapOf("id" to "j123", "name" to "Jimmy", "sex" to "male", "title" to "Unknown")
-      )
-   }
+         val result = vyne.query(
+            """find { Person[] } as Result[]""".trimMargin()
+         )
+            .results.toList()
+         result.first().toRawObject().should.equal(
+            mapOf("id" to "j123", "name" to "Jimmy", "sex" to "male", "title" to "Unknown")
+         )
+      }
 
    @Test
-   fun `when evaluating compound and boolean expressions subsequent expressions are skipped if earlier expressions evaluate to false`(): Unit = runBlocking {
-      val (vyne, _) = testVyne(
-         """
+   fun `when evaluating compound and boolean expressions subsequent expressions are skipped if earlier expressions evaluate to false`(): Unit =
+      runBlocking {
+         val (vyne, _) = testVyne(
+            """
             declare function squared(Int):Int
             type Height inherits Int
             type Area inherits Int
@@ -363,34 +367,35 @@ class VyneQueryTest {
                }
             }
          """.trimIndent()
-      )
-      var functionInvocationValue: Int? = null
-      val functionRegistry = FunctionRegistry.default.add(
-         functionOf("squared") { inputValues, _, returnType, _ ->
-            val input = inputValues.first().value as Int
-            functionInvocationValue = input
-            val squared = input * input
-            TypedValue.from(returnType, squared, source = Provided)
-         }
-      )
-      val instance = vyne.parseJson(
-         "Rectangle",
-         """{ "height" : 5 , "width" : 10 }""",
-         functionRegistry = functionRegistry
-      ) as TypedObject
-      instance.toRawObject().should.equal(
-         mapOf(
-            "height" to 5,
-            "area" to 125
          )
-      )
-      functionInvocationValue.should.be.`null`
-   }
+         var functionInvocationValue: Int? = null
+         val functionRegistry = FunctionRegistry.default.add(
+            functionOf("squared") { inputValues, _, returnType, _ ->
+               val input = inputValues.first().value as Int
+               functionInvocationValue = input
+               val squared = input * input
+               TypedValue.from(returnType, squared, source = Provided)
+            }
+         )
+         val instance = vyne.parseJson(
+            "Rectangle",
+            """{ "height" : 5 , "width" : 10 }""",
+            functionRegistry = functionRegistry
+         ) as TypedObject
+         instance.toRawObject().should.equal(
+            mapOf(
+               "height" to 5,
+               "area" to 125
+            )
+         )
+         functionInvocationValue.should.be.`null`
+      }
 
    @Test
-   fun `when evaluating compound or boolean expressions subsequent expressions are skipped if earlier expressions evaluate to false`(): Unit = runBlocking {
-      val (vyne, _) = testVyne(
-         """
+   fun `when evaluating compound or boolean expressions subsequent expressions are skipped if earlier expressions evaluate to false`(): Unit =
+      runBlocking {
+         val (vyne, _) = testVyne(
+            """
             declare function squared(Int):Int
             type Height inherits Int
             type Area inherits Int
@@ -403,29 +408,29 @@ class VyneQueryTest {
                }
             }
          """.trimIndent()
-      )
-      var functionInvocationValue: Int? = null
-      val functionRegistry = FunctionRegistry.default.add(
-         functionOf("squared") { inputValues, _, returnType, _ ->
-            val input = inputValues.first().value as Int
-            functionInvocationValue = input
-            val squared = input * input
-            TypedValue.from(returnType, squared, source = Provided)
-         }
-      )
-      val instance = vyne.parseJson(
-         "Rectangle",
-         """{ "height" : 5 , "width" : 10 }""",
-         functionRegistry = functionRegistry
-      ) as TypedObject
-      instance.toRawObject().should.equal(
-         mapOf(
-            "height" to 5,
-            "area" to 100
          )
-      )
-      functionInvocationValue.should.be.`null`
-   }
+         var functionInvocationValue: Int? = null
+         val functionRegistry = FunctionRegistry.default.add(
+            functionOf("squared") { inputValues, _, returnType, _ ->
+               val input = inputValues.first().value as Int
+               functionInvocationValue = input
+               val squared = input * input
+               TypedValue.from(returnType, squared, source = Provided)
+            }
+         )
+         val instance = vyne.parseJson(
+            "Rectangle",
+            """{ "height" : 5 , "width" : 10 }""",
+            functionRegistry = functionRegistry
+         ) as TypedObject
+         instance.toRawObject().should.equal(
+            mapOf(
+               "height" to 5,
+               "area" to 100
+            )
+         )
+         functionInvocationValue.should.be.`null`
+      }
 
    @Test
    fun `object builder populates fields with ConditionalAccessor through TypedObjectFactory`() = runBlocking {
@@ -466,24 +471,26 @@ class VyneQueryTest {
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse(
          "findIsins", vyne.parseJson(
-         "Isin[]", """
+            "Isin[]", """
          [
             "123", "345"
          ]
          """.trimIndent()
-      )
+         )
       )
 
-      val handler = object: OperationResponseHandler {
+      val handler = object : OperationResponseHandler {
          var invocationCount: Int = 0
          override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): List<TypedInstance> {
             invocationCount += 1
-            return listOf(vyne.parseJsonModel(
-               "EnhancedData",
-               """
+            return listOf(
+               vyne.parseJsonModel(
+                  "EnhancedData",
+                  """
               {"enhanced": true, "year": 2022}
          """.trimIndent()
-            ))
+               )
+            )
          }
 
       }
@@ -507,6 +514,13 @@ class VyneQueryTest {
          handler.invocationCount.should.equal(2)
       }
    }
+}
+
+fun tableDeclaration(
+   queryName: String,
+   returnTypeName: String
+): String {
+   return """table $queryName : $returnTypeName"""
 }
 
 fun queryDeclaration(

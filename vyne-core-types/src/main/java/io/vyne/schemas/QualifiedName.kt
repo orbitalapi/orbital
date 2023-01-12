@@ -1,6 +1,5 @@
 package io.vyne.schemas
 
-import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.collect.Interners
 import lang.taxi.types.ArrayType
@@ -8,18 +7,30 @@ import lang.taxi.types.QualifiedNameParser
 import java.io.Serializable
 
 @kotlinx.serialization.Serializable
-data class QualifiedName private constructor(val fullyQualifiedName: String, val parameters: List<QualifiedName> = emptyList()) :
+data class QualifiedName @Deprecated("call QualifiedName.from() instead, as it uses a pool of instances") constructor(
+   val fullyQualifiedName: String,
+   val parameters: List<QualifiedName> = emptyList()
+) :
    Serializable {
 
    companion object {
       private val POOL = Interners.newStrongInterner<QualifiedName>()
+      fun from(namespace: String, name: String, parmeters: List<QualifiedName> = emptyList()): QualifiedName {
+         return if (namespace.isNotBlank()) {
+            from("$namespace.$name", parmeters)
+         } else {
+            from(name, parmeters)
+         }
+
+      }
+
       fun from(fullyQualifiedName: String, parameters: List<QualifiedName> = emptyList()): QualifiedName {
          return POOL.intern(QualifiedName(fullyQualifiedName, parameters))
       }
    }
+
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
-   val name: String
-      get() = fullyQualifiedName.split(".").last()
+   val name: String = fullyQualifiedName.split(".").last()
 
    val parameterizedName: String = if (parameters.isEmpty()) {
       fullyQualifiedName
@@ -28,15 +39,8 @@ data class QualifiedName private constructor(val fullyQualifiedName: String, val
       "$fullyQualifiedName<$params>"
    }
 
-   fun rawTypeEquals(other: QualifiedName): Boolean {
-      return this.fullyQualifiedName == other.fullyQualifiedName
-   }
-
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
-   val namespace: String
-      get() {
-         return fullyQualifiedName.split(".").dropLast(1).joinToString(".")
-      }
+   val namespace: String = fullyQualifiedName.split(".").dropLast(1).joinToString(".")
 
    // Convenience for the UI
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
@@ -98,6 +102,7 @@ fun String.fqn(): QualifiedName {
       ParamNames.isParamName(this) -> QualifiedName.from(
          "param/" + ParamNames.typeNameInParamName(this).fqn().parameterizedName
       )
+
       else -> {
          val taxiQualifiedName = QualifiedNameParser.parse(this)
          QualifiedName.from(

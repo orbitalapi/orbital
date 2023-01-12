@@ -42,7 +42,7 @@ class EditedSchema(
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonDeserialize(`as` = Void::class)
+@JsonDeserialize(`as` = EditedType::class)
 data class EditedType(
    override val name: QualifiedName,
    override val attributes: Map<AttributeName, Field>,
@@ -75,8 +75,8 @@ data class EditedService(
    override val name: QualifiedName,
    override val operations: List<EditedOperation>,
    override val queryOperations: List<EditedQueryOperation>,
-   override val streamOperations: List<StreamOperation>,
-   override val tableOperations: List<TableOperation>,
+   override val streamOperations: List<EditedOperation>,
+   override val tableOperations: List<EditedOperation>,
    override val metadata: List<Metadata>,
    override val typeDoc: String?
 ) : PartialService
@@ -113,4 +113,5 @@ data class EditedQueryOperation(
    override val hasFilterCapability: Boolean,
    override val supportedFilterOperations: List<Operator>
 ) : PartialQueryOperation
+
 
