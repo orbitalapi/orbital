@@ -55,8 +55,8 @@ default:
       paths:
          - .m2/repository
       key: "maven-$CI_COMMIT_REF_SLUG"
-   before_script:
-      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
+   #   before_script:
+   #      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
    script:
       - 'if [ -z "${GITLAB_TOKEN}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
