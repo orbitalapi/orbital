@@ -1,5 +1,4 @@
-ARG REGISTRY
-FROM ${REGISTRY}eclipse-temurin:11.0.16.1_1-jre-focal
+FROM eclipse-temurin:11.0.16.1_1-jre-focal
 
 RUN apt-get update && apt-get install zip -y
 

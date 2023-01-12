@@ -55,6 +55,8 @@ default:
       paths:
          - .m2/repository
       key: "maven-$CI_COMMIT_REF_SLUG"
+   before_script:
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
    script:
       - 'if [ -z "${GITLAB_TOKEN}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
@@ -193,10 +195,10 @@ regression-test:
          alias: docker
          command: [ "--tls=false" ]
    script:
-      - docker login -u $CI_DEPENDENCY_PROXY_USER -p $CI_DEPENDENCY_PROXY_PASSWORD $CI_DEPENDENCY_PROXY_SERVER
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
       - PROJECT_VERSION=$(cat build-version.txt)
       - docker buildx create --use
-      - docker run --privileged --rm ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/tonistiigi/binfmt --install all # Install the required emulators in order to build ARM images
+      - docker run --privileged --rm tonistiigi/binfmt --install all # Install the required emulators in order to build ARM images
       - |
          if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
            tag="latest"
@@ -213,7 +215,6 @@ regression-test:
       - cd $projectDir
       - >
          docker buildx build
-         --build-arg REGISTRY=${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/
          --platform linux/arm64/v8,linux/amd64
          --push
          -t "${registry_vyne}/${microservice_vyne}:${tag}"
@@ -234,8 +235,6 @@ regression-test:
    variables:
       registry_vyne: vyneco
       registry_orbital: orbitalhq
-   before_script:
-      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
 
 .publish-to-gitlab-container-registry:
    extends: .publish-docker
@@ -385,8 +384,7 @@ terraform-deploy-prod:
          command: [ "--tls=false" ]
    retry: 2
    before_script:
-      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-      - docker login -u $CI_DEPENDENCY_PROXY_USER -p $CI_DEPENDENCY_PROXY_PASSWORD $CI_DEPENDENCY_PROXY_SERVER
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
       - PROJECT_VERSION=$(cat build-version.txt)
       - |
          if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
@@ -412,9 +410,7 @@ terraform-deploy-prod:
       - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/projects/taxi.conf -P vyne/schema-server/projects
       - wget https://gitlab.com/vyne/demos/-/raw/master/films/services.conf -P vyne/config
       - |
-         SCHEMA_SERVER_IMAGE=${CI_REGISTRY_IMAGE}/schema-server \
-            VYNE_IMAGE=${CI_REGISTRY_IMAGE}/vyne \
-            VYNE_VERSION=$versionTag \
+         VYNE_VERSION=$versionTag \
             docker compose -f docker-compose.yml -f e2e.docker-compose.yml up --exit-code-from e2e
 
 e2e-tests-master:
@@ -491,8 +487,8 @@ publish-snyk-to-gitlab-container-registry:
    script:
       - cd snyk/
       - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-      - docker build -t "${registry}/snyk:latest" .
-      - docker push ${registry}/snyk:latest
+      - docker build -t "${registry_orbital}/snyk:latest" .
+      - docker push ${registry_orbital}/snyk:latest
 
 .snyk:
    stage: verify
