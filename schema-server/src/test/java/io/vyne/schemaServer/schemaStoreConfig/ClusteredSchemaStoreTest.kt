@@ -15,7 +15,6 @@ import org.springframework.util.SocketUtils
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(properties = [
-   "eureka.client.enabled=false",
    "vyne.schema.server.clustered=true"
 ])
 class ClusteredSchemaStoreTest {

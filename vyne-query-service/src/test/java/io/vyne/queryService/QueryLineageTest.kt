@@ -28,9 +28,8 @@ import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
-import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
-import java.util.UUID
+import java.util.*
 import javax.sql.DataSource
 
 @RunWith(SpringRunner::class)
@@ -40,7 +39,6 @@ import javax.sql.DataSource
    properties = [
       "vyne.schema.publicationMethod=LOCAL",
       "spring.main.allow-bean-definition-overriding=true",
-      "eureka.client.enabled=false",
       "vyne.search.directory=./search/\${random.int}",
       "spring.datasource.url=jdbc:h2:mem:testdbQueryLineageTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"
    ]
