@@ -216,10 +216,10 @@ regression-test:
          --build-arg REGISTRY=${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/
          --platform linux/arm64/v8,linux/amd64
          --push
-         -t "${registry}/${microservice}:${tag}"
-         -t "${registry}/${microservice}:${versionTag}"
-         -t "${registry2}/${microservice}:${tag}"
-         -t "${registry2}/${microservice}:${versionTag}"
+         -t "${registry_vyne}/${microservice_vyne}:${tag}"
+         -t "${registry_vyne}/${microservice_vyne}:${versionTag}"
+         -t "${registry_orbital}/${microservice_orbital}:${tag}"
+         -t "${registry_orbital}/${microservice_orbital}:${versionTag}"
          .
 
 .publish-to-docker-hub:
@@ -232,15 +232,16 @@ regression-test:
          when: manual
          allow_failure: true
    variables:
-      registry: vyneco
-      registry2: orbitalhq
+      registry_vyne: vyneco
+      registry_orbital: orbitalhq
    before_script:
       - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
 
 .publish-to-gitlab-container-registry:
    extends: .publish-docker
    variables:
-      registry: $CI_REGISTRY_IMAGE
+      registry_vyne: $CI_REGISTRY_IMAGE
+      registry_orbital: $CI_REGISTRY_IMAGE
    before_script:
       - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
 
@@ -248,95 +249,65 @@ publish-vyne-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: vyne-query-service
-      microservice: vyne
+      microservice_vyne: vyne
+      microservice_orbital: orbital-server
 
 publish-cask-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: cask
-      microservice: cask
+      microservice_vyne: cask
+      microservice_orbital: cask
 
 publish-pipeline-jet-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: pipelines/pipeline-jet
-      microservice: pipeline
+      microservice_vyne: pipeline
+      microservice_orbital: pipeline
 
 publish-schema-server-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: schema-server
-      microservice: schema-server
+      microservice_vyne: schema-server
+      microservice_orbital: schema-server
 
 publish-analytics-server-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: vyne-analytics-server
-      microservice: analytics-server
+      microservice_vyne: analytics-server
+      microservice_orbital: analytics-server
 
 publish-vyne-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
    variables:
       projectDir: vyne-query-service
-      microservice: vyne
+      microservice_vyne: vyne
+      microservice_orbital: orbital-server
 
 publish-schema-server-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
    variables:
       projectDir: schema-server
-      microservice: schema-server
+      microservice_vyne: schema-server
+      microservice_orbital: schema-server
 
-.publish-docker-gitlab:
-   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.8-0.6.3
-   stage: publish
-   except:
-      - tags
-   variables:
-      DOCKER_HOST: tcp://docker:2375/
-      # Instruct Docker not to start over TLS.
-      DOCKER_TLS_CERTDIR: ""
-      DOCKER_DRIVER: overlay2
-      DOCKER_BUILDKIT: 1
-      BUILDKIT_PROGRESS: plain
-      PROGRESS_NO_TRUNC: 1
-   services:
-      - name: docker:20.10.12-dind
-        command: [ "--tls=false" ]
-   before_script:
-      - docker info
-      - docker buildx create --use
-      - echo "$DOCKER_REGISTRY_PASS" | docker login --username $DOCKER_REGISTRY_USER --password-stdin
-      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-      - |
-         if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
-           tag="latest"
-         else
-           tag="$CI_COMMIT_REF_SLUG"
-         fi
-         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
-   script:
-      - cd $projectDir
-      - pwd
-      - >
-         docker buildx build
-         --platform linux/arm64/v8,linux/amd64
-         --push
-         -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${tag}"
-         -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${CI_COMMIT_SHORT_SHA}" .
-
-publish-voyager:
-   extends: .publish-docker-gitlab
-   stage: publish
+publish-voyager-to-gitlab-container-registry:
+   extends: .publish-to-gitlab-container-registry
    variables:
       projectDir: taxi-playground
-      microservice: taxi-playground
+      microservice_vyne: taxi-playground
+      microservice_orbital: taxi-playground
    when: manual
 
 publish-pipelines-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
    variables:
       projectDir: pipelines/pipeline-jet
-      microservice: pipeline
+      microservice_vyne: pipeline
+      microservice_orbital: pipeline
 
 terraform-fmt:
    extends: .terraform:fmt
