@@ -56,17 +56,6 @@ default:
          - .m2/repository
       key: "maven-$CI_COMMIT_REF_SLUG"
    script:
-      - ls -la /dev/xvdb
-      # Enable the Docker image cache via a shared volume in the runner
-      - |
-         service docker stop
-         mkdir /etc/docker/
-         cat > /etc/docker/daemon.json << EOF
-         {
-            "data-root": "/dev/xvdb"
-         }
-         EOF
-         service docker start
       # Do the "docker login" manually as there's no Docker CLI installed on maven images
       - |
          mkdir /root/.docker/
