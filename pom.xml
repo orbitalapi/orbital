@@ -98,6 +98,7 @@
       <module>taxi-playground</module>
       <module>station</module>
       <module>auth-common</module>
+       <module>query-proxy-service</module>
    </modules>
 
    <scm>
