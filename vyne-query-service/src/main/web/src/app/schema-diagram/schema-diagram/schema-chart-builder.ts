@@ -1,6 +1,6 @@
 import {
   arrayMemberTypeNameOrTypeNameFromName,
-  collectAllServiceOperations,
+  collectAllServiceOperations, findType,
   QualifiedName,
   Schema,
   SchemaMember,
@@ -31,6 +31,13 @@ export interface EdgeParams {
 export interface Links {
   inputs: Link[];
   outputs: Link[];
+}
+
+export function emptyLinks():Links {
+  return {
+    inputs: [],
+    outputs:[]
+  }
 }
 
 export function collectLinks(links: Links | null): Link[] {
@@ -107,6 +114,10 @@ export function collectionOperations(schema: Schema): ServiceMember[] {
 }
 
 export function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: ServiceMember[], parent: { name: QualifiedName, nodeId: string, field: string } | null): Links {
+  const type = findType(schema, arrayMemberTypeNameOrTypeNameFromName(typeName).fullyQualifiedName)
+  if (type.isPrimitive) {
+    return emptyLinks();
+  }
   const typeNodeId = getNodeId('TYPE', typeName)
   const consumingOperations: Link[] = [];
 
