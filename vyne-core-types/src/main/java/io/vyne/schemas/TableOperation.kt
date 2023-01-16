@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.query.VyneQlGrammar
 import lang.taxi.services.QueryOperationCapability
+import mu.KotlinLogging
 
 /**
  * A Table operation is syntactic sugar for a query operation - it
@@ -37,6 +38,7 @@ data class TableOperation private constructor(
 
 
    companion object {
+      private val logger = KotlinLogging.logger {}
       fun findOneOperationName(operationName: String) = "${operationName}_FindOne"
       fun findManyOperationName(operationName: String) = "${operationName}_FindMany"
 
@@ -47,8 +49,17 @@ data class TableOperation private constructor(
          typeDoc: String? = null,
          schema: Schema
       ): TableOperation {
-         val tableOperationQueryParam = Parameter(schema.type(VyneQlGrammar.QUERY_TYPE_NAME), "body")
-         val queryOperations = buildQueryOperations(qualifiedName, returnType, tableOperationQueryParam)
+         val tableOperationQueryParam = try {
+            Parameter(schema.type(VyneQlGrammar.QUERY_TYPE_NAME), "body")
+         } catch (e: Exception) {
+            logger.warn { "${VyneQlGrammar.QUERY_TYPE_NAME} is not present in the current schema, so Table operations will not currently work.  If you're seeing this in production, this could cause queries to fail." }
+            null
+         }
+
+
+         val queryOperations =
+            tableOperationQueryParam?.let { queryParam -> buildQueryOperations(qualifiedName, returnType, queryParam) }
+               ?: emptyList()
          return TableOperation(
             qualifiedName, returnType, metadata, typeDoc, queryOperations
          )
