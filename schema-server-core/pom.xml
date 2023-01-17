@@ -32,6 +32,10 @@
          <artifactId>jackson-datatype-jsr310</artifactId>
       </dependency>
       <dependency>
+         <groupId>com.fasterxml.jackson.datatype</groupId>
+         <artifactId>jackson-datatype-jsr310</artifactId>
+      </dependency>
+      <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>utils</artifactId>
          <version>${project.version}</version>
@@ -50,6 +54,23 @@
          <groupId>org.taxilang</groupId>
          <artifactId>swagger2taxi</artifactId>
          <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-webflux</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-starter-config</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-configuration-processor</artifactId>
+         <optional>true</optional>
       </dependency>
       <dependency>
          <groupId>net.logstash.logback</groupId>
