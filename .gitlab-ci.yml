@@ -2,17 +2,20 @@ include:
    -  template: Terraform/Base.gitlab-ci.yml
 
 variables:
-   # This will supress any download for dependencies and plugins or upload messages which would clutter the console log.
+   # This will suppress any download for dependencies and plugins or upload messages which would clutter the console log.
    # `showDateTime` will show the passed time in milliseconds. You need to specify `--batch-mode` to make this work.
    MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true"
    # As of Maven 3.3.0 instead of this you may define these options in `.mvn/maven.config` so the same config is used
    # when running from the command line.
    # `installAtEnd` and `deployAtEnd` are only effective with recent version of the corresponding plugins.
-   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -U"
+   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -U -Dsurefire.rerunFailingTestsCount=2"
    # Used during gitflow interaction.
    MAJOR_RELEASE_DIGIT: 0
    MINOR_RELEASE_DIGIT: 1
    PATCH_RELEASE_DIGIT: 2
+
+   # https://docs.gitlab.com/ee/ci/large_repositories/#shallow-cloning
+   GIT_DEPTH: 10
 
    TF_ROOT_DEV: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/dev
    TF_ROOT_PROD: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/prod
@@ -23,6 +26,7 @@ variables:
    git remote set-url --push origin "https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
    git config user.name "vyne-cd"
    git config user.email vyne-cd@vyne.co
+
 
 stages:
    - build
@@ -40,21 +44,9 @@ default:
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.7-eclipse-temurin-11
    tags:
       - docker-heavy
-   services:
-      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.22-dind
-         alias: docker
-         command: [ "--tls=false" ]
-   variables:
-      # Instruct Testcontainers to use the daemon of DinD.
-      DOCKER_HOST: "tcp://docker:2375"
-      # Instruct Docker not to start over TLS.
-      DOCKER_TLS_CERTDIR: ""
-      # Improve performance with overlayfs.
-      DOCKER_DRIVER: overlay2
    cache:
       paths:
          - .m2/repository
-      key: "maven-$CI_COMMIT_REF_SLUG"
    script:
       # Do the "docker login" manually as there's no Docker CLI installed on maven images
       - |
@@ -74,7 +66,8 @@ default:
       - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'mvn $MAVEN_CLI_OPTS -version'
-      - 'mvn $MAVEN_CLI_OPTS -DbuildNumber=$CI_BUILD_ID $MAVEN_EXTRA_ARGS $MAVEN_GOALS'
+      - 'mvn $MAVEN_CLI_OPTS -T1.5C -DbuildNumber=$CI_BUILD_ID $MAVEN_EXTRA_ARGS -P fastTestsOnly $MAVEN_GOALS'
+      - 'mvn $MAVEN_CLI_OPTS -DbuildNumber=$CI_BUILD_ID $MAVEN_EXTRA_ARGS -pl vyne-history-core,pipelines/pipeline-jet,vyne-analytics-server test'
 
       #   Read the POM, grab the version, and set to an env variable
       #   https://stackoverflow.com/a/52241594
@@ -103,6 +96,43 @@ default:
             # However, leaving this here to pick up later
             - "*/target/surefire-reports/TEST-*.xml"
 
+.build-ui:
+   stage: build
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:16.14
+   before_script:
+      - npm config set cache .npm/cache --global
+      - npm --global cache verify
+      - npm get cache
+      - export NODE_OPTIONS="--max-old-space-size=8192"
+   cache:
+      paths:
+         - .npm/cache
+   tags:
+      - docker-heavy
+
+build-vyne-ui:
+   extends: .build-ui
+   script:
+      - cd vyne-query-service/src/main/web
+      - npm ci
+      - npm run-script build-prod
+   artifacts:
+      paths:
+         - vyne-query-service/target/classes/static
+      expire_in: 1 hours
+
+build-voyager-ui:
+   extends: .build-ui
+   script:
+      - cd vyne-query-service/src/main/web
+      - npm ci
+      - npm run-script build-prod-voyager
+   artifacts:
+      paths:
+         - "taxi-playground/target/classes/static"
+      expire_in: 1 hours
+
+
 build-jvm-branch:
    stage: build
    except:
@@ -122,7 +152,7 @@ build-jvm-develop:
    variables:
       MAVEN_GOALS: 'clean deploy'
       # We skip tests on develop and master, as the tests have already run on the branch
-      MAVEN_EXTRA_ARGS: "-P snapshot-release -DskipTests"
+      MAVEN_EXTRA_ARGS: '-P snapshot-release -DskipTests'
 
 
 build-jvm-master:
@@ -196,16 +226,9 @@ regression-test:
    stage: deploy
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.17-0.8.2
    variables:
-      DOCKER_HOST: tcp://docker:2375/
-      DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
-      DOCKER_DRIVER: overlay2
       DOCKER_BUILDKIT: 1
       BUILDKIT_PROGRESS: plain
       PROGRESS_NO_TRUNC: 1
-   services:
-      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.22-dind
-         alias: docker
-         command: [ "--tls=false" ]
    script:
       - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
       - PROJECT_VERSION=$(cat build-version.txt)
@@ -313,6 +336,45 @@ publish-voyager-to-gitlab-container-registry:
       microservice_orbital: taxi-playground
    when: manual
 
+.publish-docker-gitlab:
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.8-0.6.3
+   stage: publish
+   except:
+      - tags
+   variables:
+      DOCKER_BUILDKIT: 1
+      BUILDKIT_PROGRESS: plain
+      PROGRESS_NO_TRUNC: 1
+   before_script:
+      - docker info
+      - docker buildx create --use
+      - echo "$DOCKER_REGISTRY_PASS" | docker login --username $DOCKER_REGISTRY_USER --password-stdin
+      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+      - |
+         if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
+           tag="latest"
+         else
+           tag="$CI_COMMIT_REF_SLUG"
+         fi
+         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+   script:
+      - cd $projectDir
+      - pwd
+      - >
+         docker buildx build
+         --platform linux/arm64/v8,linux/amd64
+         --push
+         -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${tag}"
+         -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${CI_COMMIT_SHORT_SHA}" .
+
+publish-voyager:
+   extends: .publish-docker-gitlab
+   stage: publish
+   variables:
+      projectDir: taxi-playground
+      microservice: taxi-playground
+   when: manual
+
 publish-pipelines-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
    variables:
@@ -380,20 +442,9 @@ terraform-deploy-prod:
 
 .e2e-tests:
    stage: verify
-   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.22-dind
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.22
    tags:
       - docker-heavy
-   variables:
-      DOCKER_HOST: tcp://docker:2375/
-      DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
-      DOCKER_DRIVER: overlay2
-      DOCKER_BUILDKIT: 1
-      BUILDKIT_PROGRESS: plain
-      PROGRESS_NO_TRUNC: 1
-   services:
-      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.22-dind
-         alias: docker
-         command: [ "--tls=false" ]
    retry: 2
    before_script:
       - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
@@ -469,10 +520,7 @@ terraform-deploy-dev-voyager:
       TF_STATE_NAME: taxi_playground_$TF_STATE_NAME_DEV
       TF_VAR_environment: $TF_STATE_NAME_DEV
       TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
-   allow_failure: true
    rules:
-      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
-         when: never
       -  when: manual
       -  if: $CI_COMMIT_BRANCH == "develop"
 
@@ -486,10 +534,7 @@ terraform-deploy-prod-voyager:
       TF_STATE_NAME: taxi_playground_$TF_STATE_NAME_PROD
       TF_VAR_environment: $TF_STATE_NAME_PROD
       TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
-   allow_failure: true
    rules:
-      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
-         when: never
       -  when: manual
       -  if: $CI_COMMIT_BRANCH == "develop"
 
@@ -508,17 +553,7 @@ publish-snyk-to-gitlab-container-registry:
    only:
       - develop
    when: manual
-   services:
-      -  name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.22-dind
-         alias: docker
-         command: [ "--tls=false" ]
    variables:
-      DOCKER_HOST: tcp://docker:2375/
-      DOCKER_TLS_CERTDIR: "" # Instruct Docker not to start over TLS.
-      DOCKER_DRIVER: overlay2
-      DOCKER_BUILDKIT: 1
-      BUILDKIT_PROGRESS: plain
-      PROGRESS_NO_TRUNC: 1
       SNYK_TOKEN: ea48d8a0-a809-4381-97cb-e54c20a21ad1 # TODO This won't be picked up unless explicitly specified here?
    before_script:
       - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
