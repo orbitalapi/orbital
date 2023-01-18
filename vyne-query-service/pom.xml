@@ -51,14 +51,6 @@
          <artifactId>auth-common</artifactId>
          <version>${project.version}</version>
       </dependency>
-
-      <!-- use the actual dependency for tests.  at runtime, we just use the api -->
-      <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>schema-server-core</artifactId>
-         <version>${project.version}</version>
-         <scope>test</scope>
-      </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>test-utils</artifactId>
@@ -253,7 +245,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-server-core</artifactId>
-         <version>0.22.0-SNAPSHOT</version>
+         <version>${project.version}</version>
       </dependency>
 
       <dependency>
