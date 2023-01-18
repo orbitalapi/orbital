@@ -13,6 +13,7 @@ interface GitHostedService {
 }
 
 enum class GitHostingProvider {
+   Noop,
    Github,
    Gitlab
 }
@@ -21,6 +22,7 @@ class GitHostingProviderRegistry {
    fun getService(config: GitRepositoryConfig): GitHostedService {
       return when (config.pullRequestConfig?.hostingProvider) {
          null -> error("No hosting provider defined")
+         GitHostingProvider.Noop -> NoopProvider()
          GitHostingProvider.Github -> GithubProvider()
          GitHostingProvider.Gitlab -> TODO("Gitlab support not implemented")
       }
