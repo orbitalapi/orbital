@@ -1,0 +1,30 @@
+// This isn't part of the blog, it's what I used in Voyager to create the diagram
+
+// This diagram shows a collection of systems
+// which don't share any semantic typing, so have no mapped relationship to one another
+
+// Define two services which expose CustomerId information
+service ShoppingCartApi {
+    operation getCart():ShoppingCart
+}
+
+model ShoppingCart {
+    custId : String
+}
+
+service CustomerApi {
+    operation getCustomers():Customer[]
+}
+
+model Customer {
+    id : String
+}
+
+// And another which consumes it
+service CardsAPI {
+    operation lookupBalance(String): AccountBalance
+}
+
+model AccountBalance {
+    balance: Decimal
+}

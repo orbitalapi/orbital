@@ -1,0 +1,30 @@
+// This isn't part of the blog, it's what I used in Voyager to create the diagram
+
+// Define a semantic type
+type CustomerId inherits String
+
+// Define two services which expose CustomerId information
+service ShoppingCartApi {
+    operation getCart():ShoppingCart
+}
+
+model ShoppingCart {
+    custId : CustomerId
+}
+
+service CustomerApi {
+    operation getCustomers():Customer[]
+}
+
+model Customer {
+    id : CustomerId
+}
+
+// And another which consumes it
+service CardsAPI {
+    operation lookupBalance(id : CustomerId): AccountBalance
+}
+
+model AccountBalance {
+    balance: AccountBalance
+}
