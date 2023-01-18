@@ -11,7 +11,6 @@ import io.vyne.query.ResultMode
 import io.vyne.query.SearchFailedException
 import io.vyne.queryService.csv.toCsv
 import io.vyne.schema.api.SchemaProvider
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.catch
@@ -28,7 +27,6 @@ private val logger = KotlinLogging.logger {}
 @Component
 class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private val schemaProvider: SchemaProvider) {
    private val formatDetector = FormatDetector(modelFormatSpecs)
-   @FlowPreview
    fun convertToSerializedContent(
       queryResponse: QueryResponse,
       resultMode: ResultMode,
@@ -54,7 +52,6 @@ class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private va
    }
 
 
-   @FlowPreview
    private fun serialise(results: Flow<TypedInstance>, serializer: QueryResultSerializer): Flow<Any> {
       return results
          .catch { error ->
@@ -143,7 +140,6 @@ class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private va
          )
    }
 
-   @FlowPreview
    private fun convertToSerializedContentInternal(
       queryResult: QueryResult,
       resultMode: ResultMode,

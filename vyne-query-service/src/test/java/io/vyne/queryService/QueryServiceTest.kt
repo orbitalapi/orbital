@@ -9,7 +9,6 @@ import io.vyne.query.ValueWithTypeName
 import io.vyne.queryService.query.TEXT_CSV
 import io.vyne.schemas.fqn
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -23,7 +22,6 @@ import kotlin.test.assertEquals
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
-@FlowPreview
 @ExperimentalCoroutinesApi
 @ExperimentalTime
 class QueryServiceTest : BaseQueryServiceTest() {

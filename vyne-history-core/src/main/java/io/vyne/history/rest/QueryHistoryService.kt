@@ -27,7 +27,6 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
 import io.vyne.security.VynePrivileges
 import io.vyne.utils.ExceptionProvider
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.reactor.asFlux
 import mu.KotlinLogging
 import org.springframework.dao.EmptyResultDataAccessException
@@ -51,7 +50,6 @@ import java.util.concurrent.CompletableFuture
 
 private val logger = KotlinLogging.logger {}
 
-@FlowPreview
 @RestController
 class QueryHistoryService(
    private val queryHistoryRecordRepository: QueryHistoryRecordRepository,

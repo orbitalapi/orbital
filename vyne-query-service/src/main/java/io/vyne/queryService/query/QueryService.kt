@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.FactSetId
 import io.vyne.FactSets
 import io.vyne.Vyne
-import io.vyne.auth.authentication.VyneUser
 import io.vyne.VyneProvider
+import io.vyne.auth.authentication.VyneUser
 import io.vyne.history.QueryEventObserver
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
@@ -31,7 +31,6 @@ import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.Schema
 import io.vyne.security.VynePrivileges
 import io.vyne.utils.log
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOf
@@ -83,7 +82,6 @@ private val logger = KotlinLogging.logger {}
 /**
  * Main entry point for submitting queries to Vyne.
  */
-@FlowPreview
 @RestController
 class QueryService(
    private val schemaStore: SchemaStore,

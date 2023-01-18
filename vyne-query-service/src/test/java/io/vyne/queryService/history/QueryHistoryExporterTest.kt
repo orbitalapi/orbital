@@ -22,7 +22,6 @@ import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.BaseQueryServiceTest
 import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.spring.http.VyneQueryServiceExceptionProvider
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.Compiler
@@ -31,11 +30,10 @@ import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
 import org.springframework.dao.EmptyResultDataAccessException
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
-@FlowPreview
 class QueryHistoryExporterTest : BaseQueryServiceTest() {
 
    lateinit var queryExporter: QueryHistoryExporter

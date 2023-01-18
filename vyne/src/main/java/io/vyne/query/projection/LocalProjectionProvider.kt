@@ -5,16 +5,21 @@ import io.vyne.models.facts.FactBag
 import io.vyne.models.facts.ScopedFact
 import io.vyne.query.Projection
 import io.vyne.query.QueryContext
-import io.vyne.query.QueryResult
 import io.vyne.query.VyneQueryStatistics
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.toVyneQualifiedName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.flow.withIndex
 import kotlinx.coroutines.isActive
 import lang.taxi.accessors.CollectionProjectionExpressionAccessor
 import lang.taxi.types.ArrayType
@@ -25,7 +30,6 @@ import java.util.concurrent.Executors
 private val projectingDispatcher = Executors.newFixedThreadPool(16).asCoroutineDispatcher()
 private val logger = KotlinLogging.logger {}
 
-@OptIn(FlowPreview::class)
 class LocalProjectionProvider : ProjectionProvider {
 
    private val projectingScope = CoroutineScope(projectingDispatcher)
@@ -43,7 +47,7 @@ class LocalProjectionProvider : ProjectionProvider {
       }
 
       // This pattern aims to allow the concurrent execution of multiple flows.
-      // Normally, flow execution is sequential - ie., one flow must complete befre the next
+      // Normally, flow execution is sequential - i.e., one flow must complete before the next
       // item is taken.  buffer() is used here to allow up to n parallel flows to execute.
       // MP: @Anthony - please leave some comments here that describe the rationale for
       // map { async { .. } }.flatMapMerge { await }

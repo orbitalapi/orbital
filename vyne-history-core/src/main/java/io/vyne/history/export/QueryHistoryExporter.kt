@@ -3,9 +3,6 @@ package io.vyne.history.export
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.vyne.utils.ExceptionProvider
-import io.vyne.query.history.QuerySummary
-import io.vyne.query.toCsv
 import io.vyne.history.db.QueryHistoryRecordRepository
 import io.vyne.history.db.QueryResultRowRepository
 import io.vyne.models.TypeNamedInstance
@@ -14,9 +11,11 @@ import io.vyne.models.format.FirstTypedInstanceInfo
 import io.vyne.models.format.FormatDetector
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.PersistedAnonymousType
+import io.vyne.query.history.QuerySummary
+import io.vyne.query.toCsv
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Schema
-import kotlinx.coroutines.FlowPreview
+import io.vyne.utils.ExceptionProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flowOf
@@ -36,7 +35,6 @@ import reactor.kotlin.core.publisher.toFlux
  * As much as possible, we try to keep this streaming, and non-blocking
  *
  */
-@FlowPreview
 @Component
 class QueryHistoryExporter(
     injectedMapper: ObjectMapper,

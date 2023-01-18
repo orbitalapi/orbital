@@ -18,7 +18,6 @@ import io.vyne.query.HistoryEventConsumerProvider
 import io.vyne.query.history.QuerySankeyChartRow
 import io.vyne.query.history.SankeyNodeType
 import io.vyne.testVyne
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
@@ -101,7 +100,6 @@ class QueryLineageTest : BaseQueryServiceTest() {
       """
 
 
-   @FlowPreview
    @Test
    fun `creates sankey lineage chart data`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(schema.trimIndent())
