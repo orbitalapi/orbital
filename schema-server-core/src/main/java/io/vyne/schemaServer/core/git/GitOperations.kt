@@ -149,7 +149,7 @@ class GitOperations(
    }
 
    fun commitAndPush(message: String) {
-      val addResult = git.add().addFilepattern(".").call()
+      git.add().addFilepattern(".").call()
       val commitResult = git.commit().setMessage(message).setAllowEmpty(true).call()
       logger.info { "Committed ${commitResult.id.abbreviate(8).name()} on $description with message $message" }
       pushToRemote()

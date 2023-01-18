@@ -1,0 +1,234 @@
+package io.vyne.schemaServer.changesets
+
+import com.google.common.io.Resources
+import com.jayway.awaitility.Awaitility.await
+import com.jcraft.jsch.JSch
+import com.winterbe.expekt.expect
+import io.vyne.PackageIdentifier
+import io.vyne.VersionedSource
+import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schemaServer.core.file.FileChangeDetectionMethod
+import io.vyne.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
+import io.vyne.schemaServer.core.git.GitSchemaPackageLoaderFactory
+import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
+import io.vyne.schemaServer.core.repositories.lifecycle.RepositoryLifecycleEventDispatcher
+import io.vyne.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventSource
+import io.vyne.schemaServer.editor.AddChangesToChangesetRequest
+import io.vyne.schemaServer.editor.FinalizeChangesetRequest
+import io.vyne.schemaServer.editor.SchemaEditorApi
+import io.vyne.schemaServer.editor.SetActiveChangesetRequest
+import io.vyne.schemaServer.editor.StartChangesetRequest
+import io.vyne.schemaServer.editor.toFilename
+import org.apache.commons.io.FileUtils
+import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.transport.RefSpec
+import org.eclipse.jgit.transport.URIish
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
+import org.junit.ClassRule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Primary
+import org.springframework.test.context.DynamicPropertyRegistry
+import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.context.junit4.SpringRunner
+import org.testcontainers.containers.BindMode
+import org.testcontainers.containers.GenericContainer
+import org.testcontainers.junit.jupiter.Testcontainers
+import org.testcontainers.utility.DockerImageName
+import java.io.BufferedWriter
+import java.io.File
+import java.io.FileWriter
+import java.net.URI
+import java.nio.charset.StandardCharsets
+import java.util.concurrent.TimeUnit
+
+
+fun URI.copyDirectoryTo(destDirectory: File): File {
+   val source = File(this)
+   val destFile = destDirectory.resolve(source.name)
+   FileUtils.copyDirectory(source, destFile)
+   return destFile
+}
+
+const val descriptionUpdate = """namespace film.types {
+   [[ Documentation goes here ]]
+   type Description inherits String
+}"""
+
+@Testcontainers
+@RunWith(SpringRunner::class)
+@SpringBootTest(properties = ["spring.main.allow-bean-definition-overriding=true"])
+class GitChangesetsTest {
+   @Autowired
+   private lateinit var schemaEditorApi: SchemaEditorApi
+
+   @Autowired
+   private lateinit var schemaStore: SchemaStore
+   private val packageIdentifier = PackageIdentifier("io.vyne", "films", "0.1.0")
+
+   init {
+      // git server connection host key is not known so we want to allow connecting without checking the host key
+      JSch.setConfig("StrictHostKeyChecking", "no")
+   }
+
+   // Use polling over watching as the repository does not exist at the time of initialization and as such watching fails
+   @TestConfiguration
+   internal class TestConfig {
+
+      @Primary
+      @Bean
+      fun repositoryManager(
+         eventSource: RepositorySpecLifecycleEventSource,
+         eventDispatcher: RepositoryLifecycleEventDispatcher
+      ): ReactiveRepositoryManager {
+         return ReactiveRepositoryManager(
+            FileSystemPackageLoaderFactory(),
+            GitSchemaPackageLoaderFactory(changeDetectionMethod = FileChangeDetectionMethod.POLL),
+            eventSource, eventDispatcher
+         )
+      }
+   }
+
+   @Test
+   fun `changesets work with git as expected (create a changeset, add changes into it, change active changeset and finalize changeset)`() {
+      expect(schemaStore.schema().sources).to.be.empty
+      initializeSchemaToRepo()
+
+      await().atMost(10, TimeUnit.SECONDS).until<Boolean> {
+         schemaStore.schema().hasType("film.types.Description") && schemaStore.schema()
+            .type("film.types.Description").typeDoc?.isEmpty() ?: false
+      }
+
+      schemaEditorApi.createChangeset(StartChangesetRequest("test-changes", packageIdentifier)).block()
+
+      val filename = schemaStore.schema().type("film.types.Description").name.toFilename()
+      schemaEditorApi.addChangesToChangeset(
+         AddChangesToChangesetRequest(
+            "test-changes",
+            packageIdentifier,
+            listOf(VersionedSource.unversioned(filename, descriptionUpdate))
+         )
+      ).block()
+
+      await().atMost(10, TimeUnit.SECONDS).until<Boolean> {
+         schemaStore.schema().type("film.types.Description").typeDoc == "Documentation goes here"
+      }
+
+      schemaEditorApi.setActiveChangeset(SetActiveChangesetRequest("main", packageIdentifier)).block()
+
+      await().atMost(10, TimeUnit.SECONDS).until<Boolean> {
+         schemaStore.schema().hasType("film.types.Description") && schemaStore.schema()
+            .type("film.types.Description").typeDoc?.isEmpty() ?: false
+      }
+
+      schemaEditorApi.setActiveChangeset(SetActiveChangesetRequest("test-changes", packageIdentifier)).block()
+
+      await().atMost(10, TimeUnit.SECONDS).until<Boolean> {
+         schemaStore.schema().type("film.types.Description").typeDoc == "Documentation goes here"
+      }
+
+      schemaEditorApi.finalizeChangeset(FinalizeChangesetRequest("test-changes", packageIdentifier)).block()
+   }
+
+   private fun initializeSchemaToRepo() {
+      // Initialize the git repo by first fixing the permissions of the folder to be used and then creating a bare git repo
+      // ash is the sh of alpine on which the image used is based
+      gitServerContainer.execInContainer("ash", "-c", "/bin/chown -hR git:git /home/git/test-repo-remote")
+      gitServerContainer.execInContainer(
+         "ash",
+         "-c",
+         "/home/git/git-shell-commands/git-init --bare --shared=all -b main /home/git/test-repo-remote"
+      )
+
+      val tempCloneFolder = mainTempFolder.newFolder()
+      val git = Git.init()
+         .setDirectory(tempCloneFolder)
+         .setInitialBranch("main")
+         .call()
+
+
+      Resources.getResource("changesets/projects").toURI().copyDirectoryTo(tempCloneFolder)
+
+      git.add()
+         .addFilepattern(".")
+         .call()
+
+      git.commit()
+         .setMessage("Initial commit")
+         .call()
+
+      git.remoteAdd()
+         .setName("origin")
+         .setUri(URIish(gitRepoUri))
+         .call()
+
+      git.push()
+         .setRemote("origin")
+         .setPushAll()
+         .setRefSpecs(RefSpec("main:main"))
+         .setCredentialsProvider(UsernamePasswordCredentialsProvider("git", "12345"))
+         .call()
+   }
+
+   companion object {
+      private val gitServerImage = DockerImageName.parse("rockstorm/git-server").withTag("2.38")
+
+      @ClassRule
+      @JvmField
+      val mainTempFolder = TemporaryFolder()
+
+      private fun configFileInTempFolder(resourceName: String): File {
+         val folder = mainTempFolder.newFolder()
+         val file = folder.resolve("schema-server.conf")
+
+         val gitFolder = folder.resolve("git").absolutePath
+            .replace("\\", "\\\\") // Escape any singular backlashes as they're not valid inside the config file
+         val fileContents = Resources.toString(Resources.getResource(resourceName), StandardCharsets.UTF_8)
+            .replace(
+               "checkoutRoot=\"\"",
+               "checkoutRoot=\"$gitFolder\""
+            )
+            .replace(
+               "uri=\"\"",
+               "uri=\"$gitRepoUri\""
+            )
+
+         val writer = BufferedWriter(FileWriter(file))
+         writer.write(fileContents)
+         writer.close()
+
+         return file
+      }
+
+      val gitRepoUri
+         get() = "ssh://git@${gitServerContainer.host}:${gitServerContainer.firstMappedPort}/home/git/test-repo-remote"
+
+
+      private fun initializeGitServer() {
+         gitServerContainer = GenericContainer(gitServerImage)
+            .withExposedPorts(22)
+            .withFileSystemBind(
+               mainTempFolder.newFolder().absolutePath,
+               "/home/git/test-repo-remote",
+               BindMode.READ_WRITE
+            )
+            .apply {
+               start()
+            }
+      }
+
+      @JvmStatic
+      @DynamicPropertySource
+      fun registerDynamicProperties(registry: DynamicPropertyRegistry) {
+         initializeGitServer()
+         registry.add("vyne.repositories.config-file") { configFileInTempFolder("changesets/schema-server.conf").absolutePath }
+      }
+
+      lateinit var gitServerContainer: GenericContainer<*>
+   }
+}

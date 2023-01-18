@@ -135,8 +135,8 @@ data class GetAvailableChangesetsRequest(
 )
 
 data class SetActiveChangesetRequest(
-   val packageIdentifier: PackageIdentifier,
-   val changesetName: String
+   val changesetName: String,
+   val packageIdentifier: PackageIdentifier
 )
 
 data class SchemaEditResponse(
