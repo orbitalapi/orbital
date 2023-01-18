@@ -52,7 +52,7 @@ data class TableOperation private constructor(
          val tableOperationQueryParam = try {
             Parameter(schema.type(VyneQlGrammar.QUERY_TYPE_NAME), "body")
          } catch (e: Exception) {
-            logger.warn { "${VyneQlGrammar.QUERY_TYPE_NAME} is not present in the current schema, so Table operations will not currently work.  If you're seeing this in production, this could cause queries to fail." }
+            logger.warn { "${VyneQlGrammar.QUERY_TYPE_NAME} is not present in the current schema, so Table operations will not currently work.  If you're seeing this in production, this could cause queries to fail.  Ensure that a query service has published Vyne's core schema" }
             null
          }
 
