@@ -118,7 +118,10 @@ export function useTheme() {
 
   useIsomorphicLayoutEffect(() => {
     let theme = localStorage.theme
-    if (theme === 'light' || theme === 'dark') {
+    // Default to dark.
+    if (theme === null || theme === undefined) {
+      setSetting("dark")
+    } else if (theme === 'light' || theme === 'dark') {
       setSetting(theme)
     } else {
       setSetting('system')
