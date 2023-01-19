@@ -17,7 +17,7 @@ export default function Blog() {
           Latest Updates
         </h1>
         <p className="text-lg text-slate-700 dark:text-slate-400">
-          <Widont>All the latest Tailwind CSS news, straight from the team.</Widont>
+          <Widont>All the latest Orbital news, straight from our keyboards to your eyeballs.</Widont>
         </p>
         <section className="mt-3 max-w-sm sm:mx-auto sm:px-4">
           <h2 className="sr-only">Sign up for our newsletter</h2>
@@ -92,7 +92,7 @@ export default function Blog() {
 Blog.layoutProps = {
   meta: {
     title: 'Blog',
-    description: 'All the latest Tailwind CSS news, straight from the team.',
+    description: 'All the latest Orbital news, from our keyboards to your eyeballs.',
   },
 }
 

@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import NextDocument, {Html, Head, Main, NextScript} from 'next/document'
+import NextDocument, {Head, Html, Main, NextScript} from 'next/document'
 
 const FAVICON_VERSION = 3
 
@@ -23,8 +23,8 @@ export default class Document extends NextDocument {
           <link rel="manifest" href={v('/favicons/site.webmanifest')}/>
           <link rel="mask-icon" href={v('/favicons/safari-pinned-tab.svg')} color="#38bdf8"/>
           <link rel="shortcut icon" href={v('/favicons/favicon.ico')}/>
-          <meta name="apple-mobile-web-app-title" content="Tailwind CSS"/>
-          <meta name="application-name" content="Tailwind CSS"/>
+          <meta name="apple-mobile-web-app-title" content="Orbital"/>
+          <meta name="application-name" content="Orbital"/>
           <meta name="msapplication-TileColor" content="#38bdf8"/>
           <meta name="msapplication-config" content={v('/favicons/browserconfig.xml')}/>
           <meta name="theme-color" content="#f8fafc"/>

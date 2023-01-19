@@ -63,7 +63,8 @@ function Header() {
 
           </div>
           <img src={wormholeCitrus.src} className="h-[500px] rotate-[130deg] absolute top-0 right-0"/>
-          <DataPatternLight className="right-0 absolute top-[340px] w-[900px] "></DataPatternLight>
+          <DataPatternLight
+            className="right-0 absolute top-[340px] w-[900px] fill-black dark:fill-sky-100"></DataPatternLight>
 
 
         </div>
