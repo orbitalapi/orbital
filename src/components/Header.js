@@ -159,7 +159,7 @@ export function Header({hasNav = false, navIsOpen, onNavToggle, title, section})
             <div className="relative flex items-center">
               <Link href="/">
                 <a
-                  className="mr-3 flex-none w-[2.0625rem] overflow-hidden md:w-auto"
+                  className="mr-3 flex-none w-[80px] overflow-hidden md:w-auto"
                   onContextMenu={(e) => {
                     e.preventDefault()
                     Router.push('/brand')
