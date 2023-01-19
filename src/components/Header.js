@@ -127,26 +127,15 @@ export function Header({hasNav = false, navIsOpen, onNavToggle, title, section})
 
   return (
     <>
-      <div className="absolute z-20 top-0 inset-x-0 flex justify-center overflow-hidden pointer-events-none">
-        <div className="w-[108rem] flex-none flex justify-end">
+      <div
+        className="absolute -z-20 -top-[500px] inset-x-0 flex justify-center overflow-hidden pointer-events-none rotate-45 ">
+        <div className="w-[108rem] flex-none flex justify-end blur-3xl opacity-[.20]">
           <picture>
-            <source srcSet={require('@/img/beams/docs@30.avif').default.src} type="image/avif"/>
+            {/*<source srcSet={require('@/img/beams/docs@30.avif').default.src} type="image/avif"/>*/}
             <img
-              src={require('@/img/beams/docs@tinypng.png').default.src}
+              src={require('@/img/wormhole-aqua-transparent.png').default.src}
               alt=""
-              className="w-[71.75rem] flex-none max-w-none dark:hidden"
-              decoding="async"
-            />
-          </picture>
-          <picture>
-            <source
-              srcSet={require('@/img/beams/docs-dark@30.avif').default.src}
-              type="image/avif"
-            />
-            <img
-              src={require('@/img/beams/docs-dark@tinypng.png').default.src}
-              alt=""
-              className="w-[90rem] flex-none max-w-none hidden dark:block"
+              className="w-[50rem] flex-none max-w-none "
               decoding="async"
             />
           </picture>
