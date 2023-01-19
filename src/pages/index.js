@@ -12,7 +12,6 @@ import {ReactComponent as DataPatternLight} from '@/img/data-pattern.svg';
 
 function Header() {
   const [theme, setTheme] = useTheme();
-  const wormholeImg = theme === 'dark' ? wormholeCitrus.src : wormholeAqua.src
   return (
     <header className="relative">
       <div className="px-4 sm:px-6 md:px-8 dark:bg-midnight-blue">
@@ -66,7 +65,8 @@ function Header() {
             </div>
 
           </div>
-          <img src={wormholeImg} className="h-[500px] rotate-[130deg] absolute top-0 right-0"/>
+          <img src={wormholeAqua.src} className="h-[500px] rotate-[130deg] absolute top-0 right-0 dark:hidden block"/>
+          <img src={wormholeCitrus.src} className="h-[500px] rotate-[130deg] absolute top-0 right-0 hidden dark:block"/>
           <DataPatternLight
             className="right-0 absolute top-[340px] w-[900px] fill-black dark:fill-sky-100"></DataPatternLight>
 
