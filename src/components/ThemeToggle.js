@@ -112,7 +112,7 @@ function PcIcon({selected, ...props}) {
   )
 }
 
-function useTheme() {
+export function useTheme() {
   let {setting, setSetting} = useSetting()
   let initial = useRef(true)
 

@@ -113,3 +113,21 @@ components:
 </SnippetGroup>
 
 </code>
+
+#### Mermaid Diagrams
+
+Mermaid diagrams can use `<OrbitalMermaid />`. This is a small wrapper around mdx-mermaid,
+which handles theme detection on load.
+
+Note: Theme changes aren't re-rendering mermaid. This appears to be a known issue in mermaid, without a
+workaround. [0](https://github.com/mermaid-js/mermaid/issues/1544) [1](https://github.com/mermaid-js/mermaid/issues/1945)
+
+```
+import OrbitalMermaid from "@/components/OrbitalMermaid";
+
+
+<OrbitalMermaid chart={`sequenceDiagram
+    Orbital->>CustomerApi: getCustomer
+    Orbital->>CardsApi: getBalance
+    `} />
+```

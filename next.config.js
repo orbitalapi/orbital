@@ -2,6 +2,7 @@ const path = require('path')
 const {createLoader} = require('simple-functional-loader')
 const frontMatter = require('front-matter')
 const withSmartQuotes = require('@silvenon/remark-smartypants')
+const mdxMermaid = require('mdx-mermaid');
 const {withTableOfContents} = require('./remark/withTableOfContents')
 const {withSyntaxHighlighting} = require('./remark/withSyntaxHighlighting')
 const {withNextLinks} = require('./remark/withNextLinks')
@@ -180,6 +181,7 @@ module.exports = withBundleAnalyzer({
                 withSyntaxHighlighting,
                 withNextLinks,
                 withSmartQuotes,
+                mdxMermaid,
                 ...plugins,
               ],
               rehypePlugins: [withLinkRoles],
@@ -203,7 +205,7 @@ module.exports = withBundleAnalyzer({
         {
           loader: '@mdx-js/loader',
           options: {
-            remarkPlugins: [withSyntaxHighlighting],
+            remarkPlugins: [withSyntaxHighlighting, mdxMermaid],
           },
         },
       ],

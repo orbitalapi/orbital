@@ -34,9 +34,13 @@ export default class Document extends NextDocument {
                 try {
                   if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                     document.documentElement.classList.add('dark')
+                    // This is required for mdx-mermaid set the theme correctly.
+                    document.documentElement.setAttribute('data-theme', 'dark');
                     document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0B1120')
                   } else {
                     document.documentElement.classList.remove('dark')
+                    // This is required for mdx-mermaid set the theme correctly.
+                    document.documentElement.setAttribute('data-theme', 'light');
                   }
                 } catch (_) {}
               `,

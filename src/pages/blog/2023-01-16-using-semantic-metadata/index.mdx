@@ -1,9 +1,10 @@
 import {martyPitt} from '@/authors'
 import {SnippetGroup} from '@/components/SnippetGroup'
 import untypedDiagram from './untyped-diagram.png'
-import mermaidDiagram from './mermaid-diagram.png'
 import withSemanticTypes from './with-semantic-types.png'
 import {ImageWithCaption} from '@/components/ImageWithCaption'
+import OrbitalMermaid from "@/components/OrbitalMermaid";
+
 export const meta = {
   title: 'Using Semantic Metadata for easier integration',
   description: `Building and maintaining integration between microservices is painful.  In this post, we take a look at the foundations of Orbital - Semantic integration`,
@@ -179,7 +180,12 @@ find { Customer(CustomerId == '123') } as {
 
 Orbital would execute this query as follows:
 
-<ImageWithCaption src={mermaidDiagram.src} caption={`Semantic metadata tells us enough to automate the integration`} />
+
+<OrbitalMermaid chart={`sequenceDiagram
+    Orbital->>CustomerApi: getCustomer
+    Orbital->>CardsApi: getBalance
+    `}/>
+
 
 This type of declarative, semantic integration is really very powerful.  However, exploring this in detail is beyond the scope of this blog post.
 
