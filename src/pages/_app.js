@@ -1,7 +1,7 @@
 import '../css/fonts.css'
 import '../css/main.css'
 import 'focus-visible'
-import {useState, useEffect, Fragment} from 'react'
+import {Fragment, useEffect, useState} from 'react'
 import {Header} from '@/components/Header'
 import {Description, OgDescription, OgTitle, Title} from '@/components/Meta'
 import Router from 'next/router'
@@ -60,8 +60,8 @@ export default function App({Component, pageProps, router}) {
     meta.metaDescription || meta.description || 'Documentation for Orbital - automated integration.'
   let image = meta.ogImage ?? meta.image
   image = image
-    ? `https://tailwindcss.com${image.default?.src ?? image.src ?? image}`
-    : `https://tailwindcss.com/api/og?path=${router.pathname}`
+    ? `https://orbitalhq.com${image.default?.src ?? image.src ?? image}`
+    : `https://orbitalhq.com/api/og?path=${router.pathname}`
 
   if (router.pathname.startsWith('/examples/')) {
     return <Component {...pageProps} />
@@ -81,13 +81,13 @@ export default function App({Component, pageProps, router}) {
       {meta.ogDescription && <OgDescription>{meta.ogDescription}</OgDescription>}
       <Head>
         <meta key="twitter:card" name="twitter:card" content="summary_large_image"/>
-        <meta key="twitter:site" name="twitter:site" content="@tailwindcss"/>
+        <meta key="twitter:site" name="twitter:site" content="@orbitalapi"/>
         <meta key="twitter:image" name="twitter:image" content={image}/>
-        <meta key="twitter:creator" name="twitter:creator" content="@tailwindcss"/>
+        <meta key="twitter:creator" name="twitter:creator" content="@orbitalapi"/>
         <meta
           key="og:url"
           property="og:url"
-          content={`https://tailwindcss.com${router.pathname}`}
+          content={`https://orbitalhq.com${router.pathname}`}
         />
         <meta key="og:type" property="og:type" content="article"/>
         <meta key="og:image" property="og:image" content={image}/>
