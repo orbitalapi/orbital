@@ -1,4 +1,5 @@
-FROM eclipse-temurin:11.0.16.1_1-jre-focal
+ARG REGISTRY
+FROM ${REGISTRY}eclipse-temurin:18.0.2.1_1-jre-focal
 
 COPY target/pipeline-jet.jar /opt/service/
 

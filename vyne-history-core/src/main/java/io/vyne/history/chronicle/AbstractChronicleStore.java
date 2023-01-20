@@ -48,7 +48,7 @@ public abstract class AbstractChronicleStore<I, O> implements FluxStore<I, O> {
       return SingleChronicleQueueBuilder.binary(path).rollCycle(rollCycle).build();
    }
 
-   void close() {
+   public void close() {
       queue.close();
    }
 
