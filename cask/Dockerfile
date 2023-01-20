@@ -1,4 +1,5 @@
-FROM eclipse-temurin:8u342-b07-jre-focal
+ARG REGISTRY
+FROM ${REGISTRY}eclipse-temurin:18.0.2.1_1-jre-focal
 
 COPY target/cask.jar /opt/service/
 

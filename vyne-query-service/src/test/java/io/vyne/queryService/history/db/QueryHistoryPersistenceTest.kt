@@ -74,6 +74,7 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClient
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.random.Random
@@ -171,7 +172,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       updatedCount.should.equal(1)
 
       val updated = queryHistoryRecordRepository.findByQueryId(querySummary.queryId)
-      updated.endTime.should.equal(endTime)
+      updated.endTime?.truncatedTo(ChronoUnit.MILLIS).should.equal(endTime.truncatedTo(ChronoUnit.MILLIS))
       updated.responseStatus.should.equal(QueryResponse.ResponseStatus.COMPLETED)
       updated.errorMessage.should.equal("All okey dokey")
    }

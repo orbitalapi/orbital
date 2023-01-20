@@ -13,9 +13,8 @@
 
    <properties>
       <!-- Pipelines use Java 11, as we use  CompletableFuture.failedFuture(...) -->
-      <maven.compiler.source>11</maven.compiler.source>
-      <maven.compiler.target>11</maven.compiler.target>
-      <kotlin.compiler.jvmTarget>11</kotlin.compiler.jvmTarget>
+      <maven.compiler.source>18</maven.compiler.source>
+      <maven.compiler.target>18</maven.compiler.target>
       <hazelcast.version>5.2.1</hazelcast.version>
    </properties>
 

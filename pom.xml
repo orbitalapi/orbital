@@ -32,12 +32,12 @@
 
       <reactive-feign.version>3.2.6</reactive-feign.version>
 
-      <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
+      <kotlin.compiler.jvmTarget>18</kotlin.compiler.jvmTarget>
       <kotlin.version>1.8.0</kotlin.version>
       <kotlin.coroutines.version>1.6.4</kotlin.coroutines.version>
       <!-- Kotlin serialization is currently fixed to the version supported by spring -->
       <kotlin.serialization.version>1.4.1</kotlin.serialization.version>
-      <java.version>1.8</java.version>
+      <java.version>18</java.version>
       <logback.version>1.2.11</logback.version>
 
       <spring.cloud.version>2021.0.5</spring.cloud.version>
@@ -592,6 +592,21 @@
                      </goals>
                   </execution>
                </executions>
+            </plugin>
+            <!-- As JDK 17 introduced the new module system, we need to relax the access to JDK internals used by Chronicle library for tests -->
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-surefire-plugin</artifactId>
+               <configuration>
+                  <argLine>
+                     --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+                     --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
+                     --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
+                     --add-opens=jdk.compiler/com.sun.tools.javac=ALL-UNNAMED
+                     --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+                     --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED
+                  </argLine>
+               </configuration>
             </plugin>
          </plugins>
       </pluginManagement>
