@@ -5,17 +5,13 @@
 
 package io.vyne.queryService.schemas.editor
 
-
-import arrow.core.getOrHandle
+import com.google.common.collect.Sets
 import io.vyne.PackageIdentifier
-import io.vyne.PackageMetadata
-import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.queryService.schemas.editor.generator.VyneSchemaToTaxiGenerator
 import io.vyne.queryService.schemas.editor.splitter.SingleTypePerFileSplitter
 import io.vyne.queryService.schemas.editor.splitter.SourceSplitter
 import io.vyne.queryService.utils.handleFeignErrors
-import io.vyne.schema.api.SchemaValidator
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.publisher.loaders.AddChangesToChangesetResponse
 import io.vyne.schema.publisher.loaders.AvailableChangesetsResponse
@@ -34,7 +30,7 @@ import io.vyne.schemaServer.editor.StartChangesetRequest
 import io.vyne.schemaServer.editor.UpdateChangesetRequest
 import io.vyne.schemaServer.editor.UpdateDataOwnerRequest
 import io.vyne.schemaServer.editor.UpdateTypeAnnotationRequest
-import io.vyne.schemaStore.TaxiSchemaValidator
+import io.vyne.schemaServer.packages.PackagesServiceApi
 import io.vyne.schemas.PartialService
 import io.vyne.schemas.PartialType
 import io.vyne.schemas.QualifiedName
@@ -44,18 +40,18 @@ import io.vyne.schemas.taxi.filtered
 import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.spring.http.BadRequestException
-import io.vyne.utils.log
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
 import lang.taxi.errors
+import lang.taxi.generators.GeneratedTaxiCode
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Compiled
 import lang.taxi.types.ImportableToken
-import lang.taxi.types.ObjectType
 import lang.taxi.types.Type
 import mu.KotlinLogging
+import org.antlr.v4.runtime.CharStreams
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -64,13 +60,13 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
-import kotlin.random.Random
+import java.util.UUID
 
 @RestController
 class LocalSchemaEditingService(
+   private val packagesServiceApi: PackagesServiceApi,
    private val schemaEditorApi: SchemaEditorApi,
-   private val schemaStore: SchemaStore,
-   private val schemaValidator: SchemaValidator = TaxiSchemaValidator()
+   private val schemaStore: SchemaStore
 ) {
 
    private val logger = KotlinLogging.logger {}
@@ -149,23 +145,74 @@ class LocalSchemaEditingService(
       @RequestParam("validate", required = false) validateOnly: Boolean = false,
    ): Mono<SchemaSubmissionResult> {
       logger.info { "Received request to edit schema - converting to taxi" }
-      val generator = VyneSchemaToTaxiGenerator()
-      val filteredSchema = getCurrentSchemaExcluding(editedSchema.types, editedSchema.services)
-      val generated = generator.generate(editedSchema, filteredSchema)
-      if (generated.messages.isNotEmpty()) {
-         val message =
-            "Generation of taxi completed - ${generated.messages.size} messages: \n ${generated.messages.joinToString("\n")}"
-         if (generated.hasWarnings || generated.hasErrors) {
-            logger.warn { message }
+      return ensureTargetPackageIsEditable(rawPackageIdentifier).flatMap {
+         ensureSinglePackageForTypeOrService(PackageIdentifier.fromId(rawPackageIdentifier), editedSchema)
+         val generator = VyneSchemaToTaxiGenerator()
+         val existingPartialSchemaForEditedPackage = this.schemaStore.schemaSet.schema.getPartialSchemaForPackage(rawPackageIdentifier)
+            //getPartialSchemaForPackage(rawPackageIdentifier)
+         val generated = generator.generateWithPackageUpsertDelete(
+            PackageIdentifier.fromId(rawPackageIdentifier),
+            editedSchema,
+            existingPartialSchemaForEditedPackage,
+            this::getCurrentSchemaExcluding)
+         if (generated.messages.isNotEmpty()) {
+            val message =
+               "Generation of taxi completed - ${generated.messages.size} messages: \n ${generated.messages.joinToString("\n")}"
+            if (generated.hasWarnings || generated.hasErrors) {
+               logger.warn { message }
+            } else {
+               logger.info { message }
+            }
          } else {
-            logger.info { message }
+            logger.info { "Generation of taxi completed - no messages or warnings were produced" }
          }
-      } else {
-         logger.info { "Generation of taxi completed - no messages or warnings were produced" }
+         doSubmit(generated, validateOnly, rawPackageIdentifier)
+      }
+   }
+
+   // If a type has definitions across multiple packages, we should reject.
+   private fun ensureSinglePackageForTypeOrService(packageIdentifier: PackageIdentifier, editedSchema: EditedSchema) {
+      val otherPackages = schemaStore.schemaSet.packages.filter { it.identifier != packageIdentifier }.map { it.identifier }
+      val typesInOtherPackages = schemaStore
+         .schemaSet
+         .schema
+         .types.filter { it.sources.any { source -> source.packageIdentifier != null && otherPackages.contains(source.packageIdentifier) } }
+         .map { it.qualifiedName.fullyQualifiedName }
+         .toSet()
+
+      val servicesInOtherPackages = schemaStore
+         .schemaSet
+         .schema
+         .services.filter { it.sourceCode.any { source -> source.packageIdentifier != null && otherPackages.contains(source.packageIdentifier) } }
+         .map { it.qualifiedName }
+         .toSet()
+
+      val dupTypes = Sets.intersection(typesInOtherPackages, editedSchema.types.map { it.fullyQualifiedName }.toSet())
+      if (dupTypes.isNotEmpty()) {
+         val errorMessage = dupTypes.map {
+            val definitionsInExistingPackages = schemaStore.schemaSet.schema.type(it).sources.joinToString { sourceCode -> sourceCode.packageIdentifier?.id ?: "" }
+            "${QualifiedName.from(it).shortDisplayName} is defined in $definitionsInExistingPackages"
+         }
+         throw BadRequestException("Editing types with definitions in multiple packages is not supported. $errorMessage")
       }
 
-      return submit(generated.concatenatedSource, validateOnly, rawPackageIdentifier)
+      val dupServices = Sets.intersection(servicesInOtherPackages, editedSchema.services.map { it.name.fullyQualifiedName }.toSet())
+      if (dupServices.isNotEmpty()) {
+         val errorMessage = dupServices.map {
+            val definitionsInExistingPackages = schemaStore.schemaSet.schema.service(it).sourceCode.joinToString { sourceCode -> sourceCode.packageIdentifier?.id ?: "" }
+            "${QualifiedName.from(it).shortDisplayName} is defined in $definitionsInExistingPackages"
+         }
+         throw BadRequestException("Editing services with definitions in multiple packages is not supported. $errorMessage")
+      }
+   }
 
+   // Changes need to be part of an editable package
+   private fun ensureTargetPackageIsEditable(rawPackageIdentifier: String): Mono<Unit> {
+      val packageIdentifier = PackageIdentifier.fromId(rawPackageIdentifier)
+      return packagesServiceApi
+         .listPackages()
+         .map { it.firstOrNull { f -> f.identifier == packageIdentifier } }
+         .map { if (it?.editable == true) Unit else throw BadRequestException("$rawPackageIdentifier is not editable") }
    }
 
    /**
@@ -188,7 +235,6 @@ class LocalSchemaEditingService(
       )
    }
 
-
    /**
     * Submit a taxi string containing schema changes.
     * Updates are persisted to the local schema repository, and then published to
@@ -205,22 +251,44 @@ class LocalSchemaEditingService(
       @RequestParam("validate", required = false) validateOnly: Boolean = false,
       @PathVariable("packageIdentifier") rawPackageIdentifier: String
    ): Mono<SchemaSubmissionResult> {
-      val importRequestSourceName = "ImportRequest" + Random.nextInt()
+      return doSubmit(GeneratedTaxiCode(listOf(taxi), emptyList()), validateOnly, rawPackageIdentifier)
+   }
 
+   fun submitEdits(
+      versionedSources: List<VersionedSource>,
+      packageIdentifier: PackageIdentifier
+   ): Mono<SchemaEditResponse> {
+      logger.info { "Submitting edit requests to schema server for files ${versionedSources.joinToString(", ") { it.name }}" }
+      return handleFeignErrors {
+         schemaEditorApi.submitEdits(
+            SchemaEditRequest(packageIdentifier, versionedSources)
+         )
+      }
+
+   }
+
+   private fun doSubmit(
+      generatedSource: GeneratedTaxiCode,
+      validateOnly: Boolean = false,
+      rawPackageIdentifier: String
+   ): Mono<SchemaSubmissionResult> {
+      val importRequestSourceName = "ImportRequest_${UUID.randomUUID()}"
       val packageIdentifier = PackageIdentifier.fromId(rawPackageIdentifier)
-
-      val (messages, compiled) = validate(taxi, importRequestSourceName)
+      val (messages, compiled) = validate(generatedSource, importRequestSourceName)
+      val errors = messages.errors()
+      if (errors.isNotEmpty()) {
+         throw CompilationException(errors)
+      }
       val typesInThisRequest = getCompiledElementsInSources(compiled.types, importRequestSourceName)
       val servicesInThisRequest = getCompiledElementsInSources(compiled.services, importRequestSourceName)
-
       val generatedThings: List<Pair<ImportableToken, List<CompilationUnit>>> =
          typesInThisRequest + servicesInThisRequest
-      val (updatedSchema, versionedSources) = toVersionedSources(packageIdentifier, generatedThings)
+      val (updatedSchema, versionedSources) = toVersionedSourcesAndSchema(generatedThings, compiled)
       val persist = !validateOnly
       val vyneTypes = typesInThisRequest.map { (type, _) -> updatedSchema.type(type) }
       val vyneServices = servicesInThisRequest.map { (service, _) -> updatedSchema.service(service.qualifiedName) }
       val submissionResult = SchemaSubmissionResult(
-         vyneTypes.toSet(), vyneServices.toSet(), messages, taxi,
+         vyneTypes.toSet(), vyneServices.toSet(), messages, generatedSource.concatenatedSource,
          dryRun = validateOnly
       )
       return if (persist) {
@@ -231,27 +299,14 @@ class LocalSchemaEditingService(
       }
    }
 
-   fun submitEdits(
-      versionedSources: List<VersionedSource>,
-      packageIdentifier: PackageIdentifier
-   ): Mono<SchemaEditResponse> {
-      log().info("Submitting edit requests to schema server for files ${versionedSources.joinToString(", ") { it.name }}")
-      return handleFeignErrors {
-         schemaEditorApi.submitEdits(
-            SchemaEditRequest(packageIdentifier, versionedSources)
-         )
-      }
-
-   }
-
    private fun <T : Compiled> getCompiledElementsInSources(
       compiled: Set<T>,
-      sourceName: String
+      sourceNamePrefix: String
    ): List<Pair<T, List<CompilationUnit>>> {
       return compiled
          .mapNotNull { type ->
             val compilationUnitsInThisOperation =
-               type.compilationUnits.filter { compilationUnit -> compilationUnit.source.sourceName == sourceName }
+               type.compilationUnits.filter { compilationUnit -> compilationUnit.source.sourceName.startsWith(sourceNamePrefix) }
             if (compilationUnitsInThisOperation.isNotEmpty()) {
                type to compilationUnitsInThisOperation
             } else {
@@ -261,13 +316,16 @@ class LocalSchemaEditingService(
    }
 
    //
-   private fun validate(taxi: String, importRequestSourceName: String): Pair<List<CompilationError>, TaxiDocument> {
+   private fun validate(generatedSource: GeneratedTaxiCode, importRequestSourceName: String): Pair<List<CompilationError>, TaxiDocument> {
       val importSources = schemaStore.schemaSet.taxiSchemas
          .map { it.document }
 
       // First we pre-validate with the compiler.
       // We need to do this, as we want to ensure the content is valid before writing to disk as VersionedSources.
-      val (messages, compiled) = Compiler(taxi, sourceName = importRequestSourceName, importSources = importSources)
+      val charStreams = generatedSource.taxi.mapIndexed { index, s ->
+         CharStreams.fromString(s, "${importRequestSourceName}_$index")
+      }
+      val (messages, compiled) = Compiler(charStreams, importSources)
          .compileWithMessages()
       if (messages.errors().isNotEmpty()) {
          throw BadRequestException(messages.errors().joinToString("\n") { it.detailMessage })
@@ -275,43 +333,20 @@ class LocalSchemaEditingService(
       return messages to compiled
    }
 
-   private fun toVersionedSources(
-      packageIdentifier: PackageIdentifier,
-      typesAndSources: List<Pair<ImportableToken, List<CompilationUnit>>>
+   private fun toVersionedSourcesAndSchema(
+      typesAndSources: List<Pair<ImportableToken, List<CompilationUnit>>>,
+      taxiDocument: TaxiDocument
    ): Pair<Schema, List<VersionedSource>> {
+      val versionedSources = toVersionedSources(typesAndSources)
+      return  TaxiSchema(taxiDocument, listOf()) to versionedSources
+   }
+
+   private fun toVersionedSources(typesAndSources: List<Pair<ImportableToken, List<CompilationUnit>>>): List<VersionedSource> {
       // We have to work out a Type-to-file strategy.
       // As a first pass, I'm using a separate file for each type.
       // It's a little verbose on the file system, but it's a reasonable start, as it makes managing edits easier, since
       // we don't have to worry about insertions / modification within the middle of a file.
       val splitter: SourceSplitter = SingleTypePerFileSplitter
-      val versionedSources = splitter.toVersionedSources(typesAndSources)
-      val update = SourcePackage(
-         PackageMetadata.from(packageIdentifier),
-         versionedSources
-      )
-      val (schema, _) = schemaValidator.validate(schemaStore.schemaSet, update)
-         .getOrHandle { (errors) -> throw CompilationException(errors) }
-      return schema to versionedSources
-   }
-
-
-   private fun reconstructSource(
-      type: ImportableToken,
-      compilationUnits: List<CompilationUnit>
-   ): String {
-      val imports = if (type is ObjectType) {
-         type.referencedTypes
-            .map { "import ${it.qualifiedName}" }
-            .distinct()
-      } else emptyList()
-      val namespace = if (type.toQualifiedName().namespace.isNullOrEmpty()) {
-         ""
-      } else {
-         "namespace ${type.toQualifiedName().namespace}\n"
-      }
-      return """${imports.joinToString("\n")}
-$namespace
-${compilationUnits.joinToString("\n") { it.source.content }}
-""".trim()
+      return splitter.toVersionedSources(typesAndSources)
    }
 }

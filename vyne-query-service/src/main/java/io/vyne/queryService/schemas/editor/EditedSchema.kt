@@ -24,7 +24,9 @@ class EditedSchema(
    @JsonDeserialize(contentAs = EditedType::class)
    override val types: Set<PartialType> = emptySet(),
    @JsonDeserialize(contentAs = EditedService::class)
-   override val services: Set<PartialService> = emptySet()
+   override val services: Set<PartialService> = emptySet(),
+   val removedTypes: Set<QualifiedName> = emptySet(),
+   val removedServices: Set<QualifiedName> = emptySet()
 ) : PartialSchema {
    companion object {
       // used for testing

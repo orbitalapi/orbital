@@ -54,17 +54,21 @@ class VyneSchemaToTaxiSchemaMapper(
 ) {
    private val _generatedTypes = mutableMapOf<QualifiedName, Type>()
 
-   fun generate(): TaxiDocument {
+   fun generate(): List<TaxiDocument> {
       val taxiTypes = schema.types
          .filter { type -> !type.isPrimitive && type.name.namespace != "lang.taxi" }
          .map { type -> getOrCreateType(type.name) }
       val services = schema.services
          .map { generateService(it) }
 
-      return TaxiDocument(
-         taxiTypes.toSet(),
-         services.toSet()
-      )
+      val typesByNameSpace =  taxiTypes.groupBy { it.toQualifiedName().namespace }
+      val servicesByNameSpace = services.groupBy { it.toQualifiedName().namespace }
+      val uniqueNameSpaces = typesByNameSpace.keys + servicesByNameSpace.keys
+     return  uniqueNameSpaces.map { namespace ->
+         val typesForNamespace = typesByNameSpace[namespace]?.toSet() ?: setOf()
+         val servicesForNamespace = servicesByNameSpace[namespace]?.toSet() ?: setOf()
+         TaxiDocument(typesForNamespace, servicesForNamespace)
+      }
    }
 
    private fun generateService(source: PartialService): Service {
