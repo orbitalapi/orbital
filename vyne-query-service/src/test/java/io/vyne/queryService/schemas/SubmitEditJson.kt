@@ -1,1178 +1,849 @@
 package io.vyne.queryService.schemas
 
 object SubmitEditJson {
-   const val JSON = """{
+   const val JSON = """
+      {
   "types": [
     {
       "name": {
-        "fullyQualifiedName": "customer.CustomerId",
-        "parameters": [],
-        "parameterizedName": "customer.CustomerId",
-        "name": "CustomerId",
-        "namespace": "customer",
-        "shortDisplayName": "CustomerId",
-        "longDisplayName": "customer.CustomerId"
-      },
-      "attributes": {},
-      "modifiers": [],
-      "metadata": [],
-      "aliasForType": null,
-      "inheritsFrom": [
-        {
-          "fullyQualifiedName": "lang.taxi.Int",
-          "parameters": [],
-          "parameterizedName": "lang.taxi.Int",
-          "name": "Int",
-          "namespace": "lang.taxi",
-          "shortDisplayName": "Int",
-          "longDisplayName": "lang.taxi.Int"
-        }
-      ],
-      "enumValues": [],
-      "sources": [
-        {
-          "name": "customer/CustomerId.taxi",
-          "version": "0.0.0",
-          "content": "namespace customer {\n   type CustomerId inherits Int\n}",
-          "id": "customer/CustomerId.taxi:0.0.0",
-          "contentHash": "1edd44"
-        }
-      ],
-      "typeParameters": [],
-      "typeDoc": "",
-      "isTypeAlias": false,
-      "offset": null,
-      "format": null,
-      "hasFormat": false,
-      "basePrimitiveTypeName": {
-        "fullyQualifiedName": "lang.taxi.Int",
-        "parameters": [],
-        "parameterizedName": "lang.taxi.Int",
-        "name": "Int",
-        "namespace": "lang.taxi",
-        "shortDisplayName": "Int",
-        "longDisplayName": "lang.taxi.Int"
-      },
-      "hasExpression": false,
-      "unformattedTypeName": null,
-      "isParameterType": false,
-      "isClosed": false,
-      "isPrimitive": false,
-      "fullyQualifiedName": "customer.CustomerId",
-      "longDisplayName": "customer.CustomerId",
-      "memberQualifiedName": {
-        "fullyQualifiedName": "customer.CustomerId",
-        "parameters": [],
-        "parameterizedName": "customer.CustomerId",
-        "name": "CustomerId",
-        "namespace": "customer",
-        "shortDisplayName": "CustomerId",
-        "longDisplayName": "customer.CustomerId"
-      },
-      "underlyingTypeParameters": [],
-      "isCollection": false,
-      "isStream": false,
-      "collectionType": null,
-      "isScalar": true
-    },
-    {
-      "name": {
-        "fullyQualifiedName": "customer.FirstName",
-        "parameters": [],
-        "parameterizedName": "customer.FirstName",
-        "name": "FirstName",
-        "namespace": "customer",
-        "shortDisplayName": "FirstName",
-        "longDisplayName": "customer.FirstName"
-      },
-      "attributes": {},
-      "modifiers": [],
-      "metadata": [],
-      "aliasForType": null,
-      "inheritsFrom": [
-        {
-          "fullyQualifiedName": "lang.taxi.String",
-          "parameters": [],
-          "parameterizedName": "lang.taxi.String",
-          "name": "String",
-          "namespace": "lang.taxi",
-          "shortDisplayName": "String",
-          "longDisplayName": "lang.taxi.String"
-        }
-      ],
-      "enumValues": [],
-      "sources": [
-        {
-          "name": "customer/FirstName.taxi",
-          "version": "0.0.0",
-          "content": "namespace customer {\n   type FirstName inherits String\n}",
-          "id": "customer/FirstName.taxi:0.0.0",
-          "contentHash": "a4ced9"
-        }
-      ],
-      "typeParameters": [],
-      "typeDoc": "",
-      "isTypeAlias": false,
-      "offset": null,
-      "format": null,
-      "hasFormat": false,
-      "basePrimitiveTypeName": {
-        "fullyQualifiedName": "lang.taxi.String",
-        "parameters": [],
-        "parameterizedName": "lang.taxi.String",
-        "name": "String",
-        "namespace": "lang.taxi",
-        "shortDisplayName": "String",
-        "longDisplayName": "lang.taxi.String"
-      },
-      "hasExpression": false,
-      "unformattedTypeName": null,
-      "isParameterType": false,
-      "isClosed": false,
-      "isPrimitive": false,
-      "fullyQualifiedName": "customer.FirstName",
-      "longDisplayName": "customer.FirstName",
-      "memberQualifiedName": {
-        "fullyQualifiedName": "customer.FirstName",
-        "parameters": [],
-        "parameterizedName": "customer.FirstName",
-        "name": "FirstName",
-        "namespace": "customer",
-        "shortDisplayName": "FirstName",
-        "longDisplayName": "customer.FirstName"
-      },
-      "underlyingTypeParameters": [],
-      "isCollection": false,
-      "isStream": false,
-      "collectionType": null,
-      "isScalar": true
-    },
-    {
-      "name": {
-        "fullyQualifiedName": "customer.LastName",
-        "parameters": [],
-        "parameterizedName": "customer.LastName",
-        "name": "LastName",
-        "namespace": "customer",
-        "shortDisplayName": "LastName",
-        "longDisplayName": "customer.LastName"
-      },
-      "attributes": {},
-      "modifiers": [],
-      "metadata": [],
-      "aliasForType": null,
-      "inheritsFrom": [
-        {
-          "fullyQualifiedName": "lang.taxi.String",
-          "parameters": [],
-          "parameterizedName": "lang.taxi.String",
-          "name": "String",
-          "namespace": "lang.taxi",
-          "shortDisplayName": "String",
-          "longDisplayName": "lang.taxi.String"
-        }
-      ],
-      "enumValues": [],
-      "sources": [
-        {
-          "name": "customer/LastName.taxi",
-          "version": "0.0.0",
-          "content": "namespace customer {\n   type LastName inherits String\n}",
-          "id": "customer/LastName.taxi:0.0.0",
-          "contentHash": "891e4a"
-        }
-      ],
-      "typeParameters": [],
-      "typeDoc": "",
-      "isTypeAlias": false,
-      "offset": null,
-      "format": null,
-      "hasFormat": false,
-      "basePrimitiveTypeName": {
-        "fullyQualifiedName": "lang.taxi.String",
-        "parameters": [],
-        "parameterizedName": "lang.taxi.String",
-        "name": "String",
-        "namespace": "lang.taxi",
-        "shortDisplayName": "String",
-        "longDisplayName": "lang.taxi.String"
-      },
-      "hasExpression": false,
-      "unformattedTypeName": null,
-      "isParameterType": false,
-      "isClosed": false,
-      "isPrimitive": false,
-      "fullyQualifiedName": "customer.LastName",
-      "longDisplayName": "customer.LastName",
-      "memberQualifiedName": {
-        "fullyQualifiedName": "customer.LastName",
-        "parameters": [],
-        "parameterizedName": "customer.LastName",
-        "name": "LastName",
-        "namespace": "customer",
-        "shortDisplayName": "LastName",
-        "longDisplayName": "customer.LastName"
-      },
-      "underlyingTypeParameters": [],
-      "isCollection": false,
-      "isStream": false,
-      "collectionType": null,
-      "isScalar": true
-    },
-    {
-      "name": {
-        "fullyQualifiedName": "customer.Email",
-        "parameters": [],
-        "parameterizedName": "customer.Email",
-        "name": "Email",
-        "namespace": "customer",
-        "shortDisplayName": "Email",
-        "longDisplayName": "customer.Email"
-      },
-      "attributes": {},
-      "modifiers": [],
-      "metadata": [],
-      "aliasForType": null,
-      "inheritsFrom": [
-        {
-          "fullyQualifiedName": "lang.taxi.String",
-          "parameters": [],
-          "parameterizedName": "lang.taxi.String",
-          "name": "String",
-          "namespace": "lang.taxi",
-          "shortDisplayName": "String",
-          "longDisplayName": "lang.taxi.String"
-        }
-      ],
-      "enumValues": [],
-      "sources": [
-        {
-          "name": "customer/Email.taxi",
-          "version": "0.0.0",
-          "content": "namespace customer {\n   type Email inherits String\n}",
-          "id": "customer/Email.taxi:0.0.0",
-          "contentHash": "96677f"
-        }
-      ],
-      "typeParameters": [],
-      "typeDoc": "",
-      "isTypeAlias": false,
-      "offset": null,
-      "format": null,
-      "hasFormat": false,
-      "basePrimitiveTypeName": {
-        "fullyQualifiedName": "lang.taxi.String",
-        "parameters": [],
-        "parameterizedName": "lang.taxi.String",
-        "name": "String",
-        "namespace": "lang.taxi",
-        "shortDisplayName": "String",
-        "longDisplayName": "lang.taxi.String"
-      },
-      "hasExpression": false,
-      "unformattedTypeName": null,
-      "isParameterType": false,
-      "isClosed": false,
-      "isPrimitive": false,
-      "fullyQualifiedName": "customer.Email",
-      "longDisplayName": "customer.Email",
-      "memberQualifiedName": {
-        "fullyQualifiedName": "customer.Email",
-        "parameters": [],
-        "parameterizedName": "customer.Email",
-        "name": "Email",
-        "namespace": "customer",
-        "shortDisplayName": "Email",
-        "longDisplayName": "customer.Email"
-      },
-      "underlyingTypeParameters": [],
-      "isCollection": false,
-      "isStream": false,
-      "collectionType": null,
-      "isScalar": true
-    },
-    {
-      "name": {
-        "fullyQualifiedName": "customer.Activebool",
-        "parameters": [],
-        "parameterizedName": "customer.Activebool",
-        "name": "Activebool",
-        "namespace": "customer",
-        "shortDisplayName": "Activebool",
-        "longDisplayName": "customer.Activebool"
-      },
-      "attributes": {},
-      "modifiers": [],
-      "metadata": [],
-      "aliasForType": null,
-      "inheritsFrom": [
-        {
-          "fullyQualifiedName": "lang.taxi.Boolean",
-          "parameters": [],
-          "parameterizedName": "lang.taxi.Boolean",
-          "name": "Boolean",
-          "namespace": "lang.taxi",
-          "shortDisplayName": "Boolean",
-          "longDisplayName": "lang.taxi.Boolean"
-        }
-      ],
-      "enumValues": [],
-      "sources": [
-        {
-          "name": "customer/Activebool.taxi",
-          "version": "0.0.0",
-          "content": "namespace customer {\n   type Activebool inherits Boolean\n}",
-          "id": "customer/Activebool.taxi:0.0.0",
-          "contentHash": "5c3e78"
-        }
-      ],
-      "typeParameters": [],
-      "typeDoc": "",
-      "isTypeAlias": false,
-      "offset": null,
-      "format": null,
-      "hasFormat": false,
-      "basePrimitiveTypeName": {
-        "fullyQualifiedName": "lang.taxi.Boolean",
-        "parameters": [],
-        "parameterizedName": "lang.taxi.Boolean",
-        "name": "Boolean",
-        "namespace": "lang.taxi",
-        "shortDisplayName": "Boolean",
-        "longDisplayName": "lang.taxi.Boolean"
-      },
-      "hasExpression": false,
-      "unformattedTypeName": null,
-      "isParameterType": false,
-      "isClosed": false,
-      "isPrimitive": false,
-      "fullyQualifiedName": "customer.Activebool",
-      "longDisplayName": "customer.Activebool",
-      "memberQualifiedName": {
-        "fullyQualifiedName": "customer.Activebool",
-        "parameters": [],
-        "parameterizedName": "customer.Activebool",
-        "name": "Activebool",
-        "namespace": "customer",
-        "shortDisplayName": "Activebool",
-        "longDisplayName": "customer.Activebool"
-      },
-      "underlyingTypeParameters": [],
-      "isCollection": false,
-      "isStream": false,
-      "collectionType": null,
-      "isScalar": true
-    },
-    {
-      "name": {
-        "fullyQualifiedName": "customer.CreateDate",
-        "parameters": [],
-        "parameterizedName": "customer.CreateDate",
-        "name": "CreateDate",
-        "namespace": "customer",
-        "shortDisplayName": "CreateDate",
-        "longDisplayName": "customer.CreateDate"
-      },
-      "attributes": {},
-      "modifiers": [],
-      "metadata": [],
-      "aliasForType": null,
-      "inheritsFrom": [
-        {
-          "fullyQualifiedName": "lang.taxi.Date",
-          "parameters": [],
-          "parameterizedName": "lang.taxi.Date",
-          "name": "Date",
-          "namespace": "lang.taxi",
-          "shortDisplayName": "Date",
-          "longDisplayName": "lang.taxi.Date"
-        }
-      ],
-      "enumValues": [],
-      "sources": [
-        {
-          "name": "customer/CreateDate.taxi",
-          "version": "0.0.0",
-          "content": "namespace customer {\n   type CreateDate inherits Date\n}",
-          "id": "customer/CreateDate.taxi:0.0.0",
-          "contentHash": "f892f7"
-        }
-      ],
-      "typeParameters": [],
-      "typeDoc": "",
-      "isTypeAlias": false,
-      "offset": null,
-      "format": [
-        "yyyy-MM-dd"
-      ],
-      "hasFormat": true,
-      "basePrimitiveTypeName": {
-        "fullyQualifiedName": "lang.taxi.Date",
-        "parameters": [],
-        "parameterizedName": "lang.taxi.Date",
-        "name": "Date",
-        "namespace": "lang.taxi",
-        "shortDisplayName": "Date",
-        "longDisplayName": "lang.taxi.Date"
-      },
-      "hasExpression": false,
-      "unformattedTypeName": {
-        "fullyQualifiedName": "customer.CreateDate",
-        "parameters": [],
-        "parameterizedName": "customer.CreateDate",
-        "name": "CreateDate",
-        "namespace": "customer",
-        "shortDisplayName": "CreateDate",
-        "longDisplayName": "customer.CreateDate"
-      },
-      "isParameterType": false,
-      "isClosed": false,
-      "isPrimitive": false,
-      "fullyQualifiedName": "customer.CreateDate",
-      "longDisplayName": "customer.CreateDate(yyyy-MM-dd)",
-      "memberQualifiedName": {
-        "fullyQualifiedName": "customer.CreateDate",
-        "parameters": [],
-        "parameterizedName": "customer.CreateDate",
-        "name": "CreateDate",
-        "namespace": "customer",
-        "shortDisplayName": "CreateDate",
-        "longDisplayName": "customer.CreateDate"
-      },
-      "underlyingTypeParameters": [],
-      "isCollection": false,
-      "isStream": false,
-      "collectionType": null,
-      "isScalar": true
-    },
-    {
-      "name": {
-        "fullyQualifiedName": "customer.LastUpdate",
-        "parameters": [],
-        "parameterizedName": "customer.LastUpdate",
-        "name": "LastUpdate",
-        "namespace": "customer",
-        "shortDisplayName": "LastUpdate",
-        "longDisplayName": "customer.LastUpdate"
-      },
-      "attributes": {},
-      "modifiers": [],
-      "metadata": [],
-      "aliasForType": null,
-      "inheritsFrom": [
-        {
-          "fullyQualifiedName": "lang.taxi.Instant",
-          "parameters": [],
-          "parameterizedName": "lang.taxi.Instant",
-          "name": "Instant",
-          "namespace": "lang.taxi",
-          "shortDisplayName": "Instant",
-          "longDisplayName": "lang.taxi.Instant"
-        }
-      ],
-      "enumValues": [],
-      "sources": [
-        {
-          "name": "customer/LastUpdate.taxi",
-          "version": "0.0.0",
-          "content": "namespace customer {\n   type LastUpdate inherits Instant\n}",
-          "id": "customer/LastUpdate.taxi:0.0.0",
-          "contentHash": "a4a9e8"
-        }
-      ],
-      "typeParameters": [],
-      "typeDoc": "",
-      "isTypeAlias": false,
-      "offset": null,
-      "format": [
-        "yyyy-MM-dd'T'HH:mm:ss[.SSS]X"
-      ],
-      "hasFormat": true,
-      "basePrimitiveTypeName": {
-        "fullyQualifiedName": "lang.taxi.Instant",
-        "parameters": [],
-        "parameterizedName": "lang.taxi.Instant",
-        "name": "Instant",
-        "namespace": "lang.taxi",
-        "shortDisplayName": "Instant",
-        "longDisplayName": "lang.taxi.Instant"
-      },
-      "hasExpression": false,
-      "unformattedTypeName": {
-        "fullyQualifiedName": "customer.LastUpdate",
-        "parameters": [],
-        "parameterizedName": "customer.LastUpdate",
-        "name": "LastUpdate",
-        "namespace": "customer",
-        "shortDisplayName": "LastUpdate",
-        "longDisplayName": "customer.LastUpdate"
-      },
-      "isParameterType": false,
-      "isClosed": false,
-      "isPrimitive": false,
-      "fullyQualifiedName": "customer.LastUpdate",
-      "longDisplayName": "customer.LastUpdate(yyyy-MM-dd'T'HH:mm:ss[.SSS]X)",
-      "memberQualifiedName": {
-        "fullyQualifiedName": "customer.LastUpdate",
-        "parameters": [],
-        "parameterizedName": "customer.LastUpdate",
-        "name": "LastUpdate",
-        "namespace": "customer",
-        "shortDisplayName": "LastUpdate",
-        "longDisplayName": "customer.LastUpdate"
-      },
-      "underlyingTypeParameters": [],
-      "isCollection": false,
-      "isStream": false,
-      "collectionType": null,
-      "isScalar": true
-    },
-    {
-      "name": {
-        "fullyQualifiedName": "customer.Active",
-        "parameters": [],
-        "parameterizedName": "customer.Active",
-        "name": "Active",
-        "namespace": "customer",
-        "shortDisplayName": "Active",
-        "longDisplayName": "customer.Active"
-      },
-      "attributes": {},
-      "modifiers": [],
-      "metadata": [],
-      "aliasForType": null,
-      "inheritsFrom": [
-        {
-          "fullyQualifiedName": "lang.taxi.Int",
-          "parameters": [],
-          "parameterizedName": "lang.taxi.Int",
-          "name": "Int",
-          "namespace": "lang.taxi",
-          "shortDisplayName": "Int",
-          "longDisplayName": "lang.taxi.Int"
-        }
-      ],
-      "enumValues": [],
-      "sources": [
-        {
-          "name": "customer/Active.taxi",
-          "version": "0.0.0",
-          "content": "namespace customer {\n   type Active inherits Int\n}",
-          "id": "customer/Active.taxi:0.0.0",
-          "contentHash": "9233c9"
-        }
-      ],
-      "typeParameters": [],
-      "typeDoc": "",
-      "isTypeAlias": false,
-      "offset": null,
-      "format": null,
-      "hasFormat": false,
-      "basePrimitiveTypeName": {
-        "fullyQualifiedName": "lang.taxi.Int",
-        "parameters": [],
-        "parameterizedName": "lang.taxi.Int",
-        "name": "Int",
-        "namespace": "lang.taxi",
-        "shortDisplayName": "Int",
-        "longDisplayName": "lang.taxi.Int"
-      },
-      "hasExpression": false,
-      "unformattedTypeName": null,
-      "isParameterType": false,
-      "isClosed": false,
-      "isPrimitive": false,
-      "fullyQualifiedName": "customer.Active",
-      "longDisplayName": "customer.Active",
-      "memberQualifiedName": {
-        "fullyQualifiedName": "customer.Active",
-        "parameters": [],
-        "parameterizedName": "customer.Active",
-        "name": "Active",
-        "namespace": "customer",
-        "shortDisplayName": "Active",
-        "longDisplayName": "customer.Active"
-      },
-      "underlyingTypeParameters": [],
-      "isCollection": false,
-      "isStream": false,
-      "collectionType": null,
-      "isScalar": true
-    },
-    {
-      "name": {
-        "fullyQualifiedName": "customer.Customer",
-        "parameters": [],
-        "parameterizedName": "customer.Customer",
-        "name": "Customer",
-        "namespace": "customer",
-        "shortDisplayName": "Customer",
-        "longDisplayName": "customer.Customer"
+        "fullyQualifiedName": "io.vyne.demos.film.StreamingProvider",
+        "parameters": [
+
+        ],
+        "name": "StreamingProvider",
+        "parameterizedName": "io.vyne.demos.film.StreamingProvider",
+        "namespace": "io.vyne.demos.film",
+        "shortDisplayName": "StreamingProvider",
+        "longDisplayName": "io.vyne.demos.film.StreamingProvider"
       },
       "attributes": {
-        "customer_id": {
+        "name": {
           "type": {
-            "fullyQualifiedName": "customer.CustomerId",
-            "parameters": [],
-            "parameterizedName": "customer.CustomerId",
-            "name": "CustomerId",
-            "namespace": "customer",
-            "shortDisplayName": "CustomerId",
-            "longDisplayName": "customer.CustomerId"
+            "fullyQualifiedName": "lang.taxi.String",
+            "parameters": [
+
+            ],
+            "name": "String",
+            "parameterizedName": "lang.taxi.String",
+            "namespace": "lang.taxi",
+            "shortDisplayName": "String",
+            "longDisplayName": "lang.taxi.String"
           },
-          "modifiers": [],
-          "typeDoc": null,
-          "defaultValue": null,
-          "nullable": false,
-          "typeDisplayName": "customer.CustomerId",
-          "metadata": [
-            {
-              "name": {
-                "fullyQualifiedName": "Id",
-                "parameters": [],
-                "parameterizedName": "Id",
-                "name": "Id",
-                "namespace": "",
-                "shortDisplayName": "Id",
-                "longDisplayName": "Id"
-              },
-              "params": {}
-            }
+          "modifiers": [
+
           ],
-          "sourcedBy": null
-        },
-        "store_id": {
-          "type": {
-            "fullyQualifiedName": "store.StoreId",
-            "parameters": [],
-            "parameterizedName": "store.StoreId",
-            "name": "StoreId",
-            "namespace": "store",
-            "shortDisplayName": "StoreId",
-            "longDisplayName": "store.StoreId"
-          },
-          "modifiers": [],
-          "typeDoc": null,
-          "defaultValue": null,
-          "nullable": false,
-          "typeDisplayName": "store.StoreId",
-          "metadata": [],
-          "sourcedBy": null
-        },
-        "first_name": {
-          "type": {
-            "fullyQualifiedName": "customer.FirstName",
-            "parameters": [],
-            "parameterizedName": "customer.FirstName",
-            "name": "FirstName",
-            "namespace": "customer",
-            "shortDisplayName": "FirstName",
-            "longDisplayName": "customer.FirstName"
-          },
-          "modifiers": [],
-          "typeDoc": null,
-          "defaultValue": null,
-          "nullable": false,
-          "typeDisplayName": "customer.FirstName",
-          "metadata": [],
-          "sourcedBy": null
-        },
-        "last_name": {
-          "type": {
-            "fullyQualifiedName": "customer.LastName",
-            "parameters": [],
-            "parameterizedName": "customer.LastName",
-            "name": "LastName",
-            "namespace": "customer",
-            "shortDisplayName": "LastName",
-            "longDisplayName": "customer.LastName"
-          },
-          "modifiers": [],
-          "typeDoc": null,
-          "defaultValue": null,
-          "nullable": false,
-          "typeDisplayName": "customer.LastName",
-          "metadata": [],
-          "sourcedBy": null
-        },
-        "email": {
-          "type": {
-            "fullyQualifiedName": "customer.Email",
-            "parameters": [],
-            "parameterizedName": "customer.Email",
-            "name": "Email",
-            "namespace": "customer",
-            "shortDisplayName": "Email",
-            "longDisplayName": "customer.Email"
-          },
-          "modifiers": [],
           "typeDoc": null,
           "defaultValue": null,
           "nullable": true,
-          "typeDisplayName": "customer.Email",
-          "metadata": [],
-          "sourcedBy": null
+          "typeDisplayName": "lang.taxi.String",
+          "metadata": [
+
+          ],
+          "sourcedBy": null,
+          "format": null
         },
-        "address_id": {
+        "pricePerMonth": {
           "type": {
-            "fullyQualifiedName": "address.AddressId",
-            "parameters": [],
-            "parameterizedName": "address.AddressId",
-            "name": "AddressId",
-            "namespace": "address",
-            "shortDisplayName": "AddressId",
-            "longDisplayName": "address.AddressId"
+            "fullyQualifiedName": "lang.taxi.Decimal",
+            "parameters": [
+
+            ],
+            "name": "Decimal",
+            "parameterizedName": "lang.taxi.Decimal",
+            "namespace": "lang.taxi",
+            "shortDisplayName": "Decimal",
+            "longDisplayName": "lang.taxi.Decimal"
           },
-          "modifiers": [],
-          "typeDoc": null,
-          "defaultValue": null,
-          "nullable": false,
-          "typeDisplayName": "address.AddressId",
-          "metadata": [],
-          "sourcedBy": null
-        },
-        "activebool": {
-          "type": {
-            "fullyQualifiedName": "customer.Activebool",
-            "parameters": [],
-            "parameterizedName": "customer.Activebool",
-            "name": "Activebool",
-            "namespace": "customer",
-            "shortDisplayName": "Activebool",
-            "longDisplayName": "customer.Activebool"
-          },
-          "modifiers": [],
-          "typeDoc": null,
-          "defaultValue": null,
-          "nullable": false,
-          "typeDisplayName": "customer.Activebool",
-          "metadata": [],
-          "sourcedBy": null
-        },
-        "create_date": {
-          "type": {
-            "fullyQualifiedName": "customer.CreateDate",
-            "parameters": [],
-            "parameterizedName": "customer.CreateDate",
-            "name": "CreateDate",
-            "namespace": "customer",
-            "shortDisplayName": "CreateDate",
-            "longDisplayName": "customer.CreateDate"
-          },
-          "modifiers": [],
-          "typeDoc": null,
-          "defaultValue": null,
-          "nullable": false,
-          "typeDisplayName": "customer.CreateDate",
-          "metadata": [],
-          "sourcedBy": null
-        },
-        "last_update": {
-          "type": {
-            "fullyQualifiedName": "customer.LastUpdate",
-            "parameters": [],
-            "parameterizedName": "customer.LastUpdate",
-            "name": "LastUpdate",
-            "namespace": "customer",
-            "shortDisplayName": "LastUpdate",
-            "longDisplayName": "customer.LastUpdate"
-          },
-          "modifiers": [],
+          "modifiers": [
+
+          ],
           "typeDoc": null,
           "defaultValue": null,
           "nullable": true,
-          "typeDisplayName": "customer.LastUpdate",
-          "metadata": [],
-          "sourcedBy": null
-        },
-        "active": {
-          "type": {
-            "fullyQualifiedName": "customer.Active",
-            "parameters": [],
-            "parameterizedName": "customer.Active",
-            "name": "Active",
-            "namespace": "customer",
-            "shortDisplayName": "Active",
-            "longDisplayName": "customer.Active"
-          },
-          "modifiers": [],
-          "typeDoc": null,
-          "defaultValue": null,
-          "nullable": true,
-          "typeDisplayName": "customer.Active",
-          "metadata": [],
-          "sourcedBy": null
+          "typeDisplayName": "lang.taxi.Decimal",
+          "metadata": [
+
+          ],
+          "sourcedBy": null,
+          "format": null
         }
       },
-      "modifiers": [],
+      "modifiers": [
+
+      ],
       "metadata": [
-        {
-          "name": {
-            "fullyQualifiedName": "io.vyne.jdbc.Table",
-            "parameters": [],
-            "parameterizedName": "io.vyne.jdbc.Table",
-            "name": "Table",
-            "namespace": "io.vyne.jdbc",
-            "shortDisplayName": "Table",
-            "longDisplayName": "io.vyne.jdbc.Table"
-          },
-          "params": {
-            "table": "customer",
-            "schema": "public",
-            "connection": "asfdf"
-          }
-        }
+
       ],
-      "aliasForType": null,
-      "inheritsFrom": [],
-      "enumValues": [],
-      "sources": [
-        {
-          "name": "customer/Customer.taxi",
-          "version": "0.0.0",
-          "content": "import store.StoreId\nimport address.AddressId\nimport io.vyne.jdbc.Table\nnamespace customer {\n   @io.vyne.jdbc.Table(table = \"customer\" , schema = \"public\" , connection = \"asfdf\")\n         model Customer {\n            @Id customer_id : CustomerId\n            store_id : store.StoreId\n            first_name : FirstName\n            last_name : LastName\n            email : Email?\n            address_id : address.AddressId\n            activebool : Activebool\n            create_date : CreateDate\n            last_update : LastUpdate?\n            active : Active?\n         }\n}",
-          "id": "customer/Customer.taxi:0.0.0",
-          "contentHash": "df3c48"
-        }
+      "inheritsFrom": [
+
       ],
-      "typeParameters": [],
+      "enumValues": [
+
+      ],
+      "typeParameters": [
+
+      ],
       "typeDoc": "",
-      "isTypeAlias": false,
-      "offset": null,
-      "format": null,
-      "hasFormat": false,
+      "isPrimitive": false,
+      "isEnum": false,
+      "isCollection": false,
+      "isScalar": false,
+      "fullyQualifiedName": "io.vyne.demos.film.StreamingProvider",
       "basePrimitiveTypeName": null,
-      "hasExpression": false,
+      "format": [
+
+      ],
       "unformattedTypeName": null,
-      "isParameterType": false,
-      "isClosed": false,
-      "isPrimitive": false,
-      "fullyQualifiedName": "customer.Customer",
-      "longDisplayName": "customer.Customer",
-      "memberQualifiedName": {
-        "fullyQualifiedName": "customer.Customer",
-        "parameters": [],
-        "parameterizedName": "customer.Customer",
-        "name": "Customer",
-        "namespace": "customer",
-        "shortDisplayName": "Customer",
-        "longDisplayName": "customer.Customer"
-      },
-      "underlyingTypeParameters": [],
-      "isCollection": false,
-      "isStream": false,
-      "collectionType": null,
-      "isScalar": false
+      "offset": null,
+      "expression": null,
+      "declaresFormat": true,
+      "sources": [
+        {
+          "name": "io/vyne/demos/film/StreamingProvider.taxi",
+          "version": "0.0.0",
+          "content": "namespace io.vyne.demos.film {\n   model StreamingProvider {\n            name : String?\n            pricePerMonth : Decimal?\n         }\n}",
+          "packageIdentifier": {
+            "organisation": "io.vyne",
+            "name": "films",
+            "version": "0.1.0",
+            "unversionedId": "io.vyne/films",
+            "id": "io.vyne/films/0.1.0",
+            "uriSafeId": "io.vyne:films:0.1.0"
+          },
+          "packageQualifiedName": "[io.vyne/films/0.1.0]/io/vyne/demos/film/StreamingProvider.taxi",
+          "id": "io/vyne/demos/film/StreamingProvider.taxi:0.0.0",
+          "contentHash": "984f4c"
+        }
+      ],
+      "formatAndZoneOffset": {
+        "patterns": [
+
+        ],
+        "utcZoneOffsetInMinutes": null,
+        "definesPattern": false,
+        "isEmpty": true
+      }
     },
     {
       "name": {
-        "fullyQualifiedName": "store.StoreId",
-        "parameters": [],
-        "parameterizedName": "store.StoreId",
-        "name": "StoreId",
-        "namespace": "store",
-        "shortDisplayName": "StoreId",
-        "longDisplayName": "store.StoreId"
+        "fullyQualifiedName": "io.vyne.demos.film.AnonymousType_content",
+        "parameters": [
+
+        ],
+        "name": "AnonymousType_content",
+        "parameterizedName": "io.vyne.demos.film.AnonymousType_content",
+        "namespace": "io.vyne.demos.film",
+        "shortDisplayName": "AnonymousType_content",
+        "longDisplayName": "io.vyne.demos.film.AnonymousType_content"
       },
-      "attributes": {},
-      "modifiers": [],
-      "metadata": [],
-      "aliasForType": null,
-      "inheritsFrom": [
-        {
-          "fullyQualifiedName": "lang.taxi.Int",
-          "parameters": [],
-          "parameterizedName": "lang.taxi.Int",
-          "name": "Int",
-          "namespace": "lang.taxi",
-          "shortDisplayName": "Int",
-          "longDisplayName": "lang.taxi.Int"
-        }
+      "attributes": {
+
+      },
+      "modifiers": [
+
       ],
-      "enumValues": [],
+      "metadata": [
+
+      ],
+      "inheritsFrom": [
+
+      ],
+      "enumValues": [
+
+      ],
+      "typeParameters": [
+
+      ],
+      "typeDoc": "",
+      "isPrimitive": false,
+      "isEnum": false,
+      "isCollection": false,
+      "isScalar": true,
+      "fullyQualifiedName": "io.vyne.demos.film.AnonymousType_content",
+      "basePrimitiveTypeName": null,
+      "format": [
+
+      ],
+      "unformattedTypeName": null,
+      "offset": null,
+      "expression": null,
+      "declaresFormat": true,
       "sources": [
         {
-          "name": "store/StoreId.taxi",
+          "name": "io/vyne/demos/film/AnonymousType_content.taxi",
           "version": "0.0.0",
-          "content": "namespace store {\n   type StoreId inherits Int\n}",
-          "id": "store/StoreId.taxi:0.0.0",
-          "contentHash": "e1794a"
+          "content": "namespace io.vyne.demos.film {\n   type AnonymousType_content\n}",
+          "packageIdentifier": {
+            "organisation": "io.vyne",
+            "name": "films",
+            "version": "0.1.0",
+            "unversionedId": "io.vyne/films",
+            "id": "io.vyne/films/0.1.0",
+            "uriSafeId": "io.vyne:films:0.1.0"
+          },
+          "packageQualifiedName": "[io.vyne/films/0.1.0]/io/vyne/demos/film/AnonymousType_content.taxi",
+          "id": "io/vyne/demos/film/AnonymousType_content.taxi:0.0.0",
+          "contentHash": "7feb3f"
         }
       ],
-      "typeParameters": [],
-      "typeDoc": "",
-      "isTypeAlias": false,
-      "offset": null,
-      "format": null,
-      "hasFormat": false,
-      "basePrimitiveTypeName": {
-        "fullyQualifiedName": "lang.taxi.Int",
-        "parameters": [],
-        "parameterizedName": "lang.taxi.Int",
-        "name": "Int",
-        "namespace": "lang.taxi",
-        "shortDisplayName": "Int",
-        "longDisplayName": "lang.taxi.Int"
-      },
-      "hasExpression": false,
-      "unformattedTypeName": null,
-      "isParameterType": false,
-      "isClosed": false,
-      "isPrimitive": false,
-      "fullyQualifiedName": "store.StoreId",
-      "longDisplayName": "store.StoreId",
-      "memberQualifiedName": {
-        "fullyQualifiedName": "store.StoreId",
-        "parameters": [],
-        "parameterizedName": "store.StoreId",
-        "name": "StoreId",
-        "namespace": "store",
-        "shortDisplayName": "StoreId",
-        "longDisplayName": "store.StoreId"
-      },
-      "underlyingTypeParameters": [],
-      "isCollection": false,
-      "isStream": false,
-      "collectionType": null,
-      "isScalar": true
+      "formatAndZoneOffset": {
+        "patterns": [
+
+        ],
+        "utcZoneOffsetInMinutes": null,
+        "definesPattern": false,
+        "isEmpty": true
+      }
     },
     {
       "name": {
-        "fullyQualifiedName": "address.AddressId",
-        "parameters": [],
-        "parameterizedName": "address.AddressId",
-        "name": "AddressId",
-        "namespace": "address",
-        "shortDisplayName": "AddressId",
-        "longDisplayName": "address.AddressId"
+        "fullyQualifiedName": "io.vyne.demos.film.KafkaRecordMetadata",
+        "parameters": [
+
+        ],
+        "name": "KafkaRecordMetadata",
+        "parameterizedName": "io.vyne.demos.film.KafkaRecordMetadata",
+        "namespace": "io.vyne.demos.film",
+        "shortDisplayName": "KafkaRecordMetadata",
+        "longDisplayName": "io.vyne.demos.film.KafkaRecordMetadata"
       },
-      "attributes": {},
-      "modifiers": [],
-      "metadata": [],
-      "aliasForType": null,
-      "inheritsFrom": [
-        {
-          "fullyQualifiedName": "lang.taxi.Int",
-          "parameters": [],
-          "parameterizedName": "lang.taxi.Int",
-          "name": "Int",
-          "namespace": "lang.taxi",
-          "shortDisplayName": "Int",
-          "longDisplayName": "lang.taxi.Int"
+      "attributes": {
+        "offset": {
+          "type": {
+            "fullyQualifiedName": "lang.taxi.Int",
+            "parameters": [
+
+            ],
+            "name": "Int",
+            "parameterizedName": "lang.taxi.Int",
+            "namespace": "lang.taxi",
+            "shortDisplayName": "Int",
+            "longDisplayName": "lang.taxi.Int"
+          },
+          "modifiers": [
+
+          ],
+          "typeDoc": null,
+          "defaultValue": null,
+          "nullable": true,
+          "typeDisplayName": "lang.taxi.Int",
+          "metadata": [
+
+          ],
+          "sourcedBy": null,
+          "format": null
+        },
+        "partition": {
+          "type": {
+            "fullyQualifiedName": "lang.taxi.Int",
+            "parameters": [
+
+            ],
+            "name": "Int",
+            "parameterizedName": "lang.taxi.Int",
+            "namespace": "lang.taxi",
+            "shortDisplayName": "Int",
+            "longDisplayName": "lang.taxi.Int"
+          },
+          "modifiers": [
+
+          ],
+          "typeDoc": null,
+          "defaultValue": null,
+          "nullable": true,
+          "typeDisplayName": "lang.taxi.Int",
+          "metadata": [
+
+          ],
+          "sourcedBy": null,
+          "format": null
+        },
+        "timestamp": {
+          "type": {
+            "fullyQualifiedName": "lang.taxi.Int",
+            "parameters": [
+
+            ],
+            "name": "Int",
+            "parameterizedName": "lang.taxi.Int",
+            "namespace": "lang.taxi",
+            "shortDisplayName": "Int",
+            "longDisplayName": "lang.taxi.Int"
+          },
+          "modifiers": [
+
+          ],
+          "typeDoc": null,
+          "defaultValue": null,
+          "nullable": true,
+          "typeDisplayName": "lang.taxi.Int",
+          "metadata": [
+
+          ],
+          "sourcedBy": null,
+          "format": null
+        },
+        "topic": {
+          "type": {
+            "fullyQualifiedName": "lang.taxi.String",
+            "parameters": [
+
+            ],
+            "name": "String",
+            "parameterizedName": "lang.taxi.String",
+            "namespace": "lang.taxi",
+            "shortDisplayName": "String",
+            "longDisplayName": "lang.taxi.String"
+          },
+          "modifiers": [
+
+          ],
+          "typeDoc": null,
+          "defaultValue": null,
+          "nullable": true,
+          "typeDisplayName": "lang.taxi.String",
+          "metadata": [
+
+          ],
+          "sourcedBy": null,
+          "format": null
         }
+      },
+      "modifiers": [
+
       ],
-      "enumValues": [],
+      "metadata": [
+
+      ],
+      "inheritsFrom": [
+
+      ],
+      "enumValues": [
+
+      ],
+      "typeParameters": [
+
+      ],
+      "typeDoc": "",
+      "isPrimitive": false,
+      "isEnum": false,
+      "isCollection": false,
+      "isScalar": false,
+      "fullyQualifiedName": "io.vyne.demos.film.KafkaRecordMetadata",
+      "basePrimitiveTypeName": null,
+      "format": [
+
+      ],
+      "unformattedTypeName": null,
+      "offset": null,
+      "expression": null,
+      "declaresFormat": true,
       "sources": [
         {
-          "name": "address/AddressId.taxi",
+          "name": "io/vyne/demos/film/KafkaRecordMetadata.taxi",
           "version": "0.0.0",
-          "content": "namespace address {\n   type AddressId inherits Int\n}",
-          "id": "address/AddressId.taxi:0.0.0",
-          "contentHash": "0549cc"
+          "content": "namespace io.vyne.demos.film {\n   model KafkaRecordMetadata {\n            offset : Int?\n            partition : Int?\n            timestamp : Int?\n            topic : String?\n         }\n}",
+          "packageIdentifier": {
+            "organisation": "io.vyne",
+            "name": "films",
+            "version": "0.1.0",
+            "unversionedId": "io.vyne/films",
+            "id": "io.vyne/films/0.1.0",
+            "uriSafeId": "io.vyne:films:0.1.0"
+          },
+          "packageQualifiedName": "[io.vyne/films/0.1.0]/io/vyne/demos/film/KafkaRecordMetadata.taxi",
+          "id": "io/vyne/demos/film/KafkaRecordMetadata.taxi:0.0.0",
+          "contentHash": "05e6f1"
         }
       ],
-      "typeParameters": [],
-      "typeDoc": "",
-      "isTypeAlias": false,
-      "offset": null,
-      "format": null,
-      "hasFormat": false,
-      "basePrimitiveTypeName": {
-        "fullyQualifiedName": "lang.taxi.Int",
-        "parameters": [],
-        "parameterizedName": "lang.taxi.Int",
-        "name": "Int",
-        "namespace": "lang.taxi",
-        "shortDisplayName": "Int",
-        "longDisplayName": "lang.taxi.Int"
-      },
-      "hasExpression": false,
-      "unformattedTypeName": null,
-      "isParameterType": false,
-      "isClosed": false,
-      "isPrimitive": false,
-      "fullyQualifiedName": "address.AddressId",
-      "longDisplayName": "address.AddressId",
-      "memberQualifiedName": {
-        "fullyQualifiedName": "address.AddressId",
-        "parameters": [],
-        "parameterizedName": "address.AddressId",
-        "name": "AddressId",
-        "namespace": "address",
-        "shortDisplayName": "AddressId",
-        "longDisplayName": "address.AddressId"
-      },
-      "underlyingTypeParameters": [],
-      "isCollection": false,
-      "isStream": false,
-      "collectionType": null,
-      "isScalar": true
+      "formatAndZoneOffset": {
+        "patterns": [
+
+        ],
+        "utcZoneOffsetInMinutes": null,
+        "definesPattern": false,
+        "isEmpty": true
+      }
     }
   ],
   "services": [
     {
       "name": {
-        "fullyQualifiedName": "customer.CustomerService",
-        "parameters": [],
-        "parameterizedName": "customer.CustomerService",
-        "name": "CustomerService",
-        "namespace": "customer",
-        "shortDisplayName": "CustomerService",
-        "longDisplayName": "customer.CustomerService"
+        "fullyQualifiedName": "io.vyne.demos.film.KafkaTopicService",
+        "parameters": [
+
+        ],
+        "name": "KafkaTopicService",
+        "parameterizedName": "io.vyne.demos.film.KafkaTopicService",
+        "namespace": "io.vyne.demos.film",
+        "shortDisplayName": "KafkaTopicService",
+        "longDisplayName": "io.vyne.demos.film.KafkaTopicService"
       },
-      "operations": [],
-      "queryOperations": [
+      "operations": [
         {
           "qualifiedName": {
-            "fullyQualifiedName": "customer.CustomerService@@customerQuery",
-            "parameters": [],
-            "parameterizedName": "customer.CustomerService@@customerQuery",
-            "name": "CustomerService@@customerQuery",
-            "namespace": "customer",
-            "shortDisplayName": "customerQuery",
-            "longDisplayName": "customer.CustomerService / customerQuery"
+            "fullyQualifiedName": "io.vyne.demos.film.KafkaTopicService@@publishUsingPOST",
+            "parameters": [
+
+            ],
+            "name": "KafkaTopicService@@publishUsingPOST",
+            "parameterizedName": "io.vyne.demos.film.KafkaTopicService@@publishUsingPOST",
+            "namespace": "io.vyne.demos.film",
+            "shortDisplayName": "publishUsingPOST",
+            "longDisplayName": "io.vyne.demos.film.KafkaTopicService / publishUsingPOST"
           },
           "parameters": [
             {
+              "name": "content",
               "typeName": {
-                "fullyQualifiedName": "vyne.vyneQl.VyneQlQuery",
-                "parameters": [],
-                "parameterizedName": "vyne.vyneQl.VyneQlQuery",
-                "name": "VyneQlQuery",
-                "namespace": "vyne.vyneQl",
-                "shortDisplayName": "VyneQlQuery",
-                "longDisplayName": "vyne.vyneQl.VyneQlQuery"
+                "fullyQualifiedName": "io.vyne.demos.film.AnonymousType_content",
+                "parameters": [
+
+                ],
+                "name": "AnonymousType_content",
+                "parameterizedName": "io.vyne.demos.film.AnonymousType_content",
+                "namespace": "io.vyne.demos.film",
+                "shortDisplayName": "AnonymousType_content",
+                "longDisplayName": "io.vyne.demos.film.AnonymousType_content"
               },
-              "name": "querySpec",
-              "metadata": [],
-              "constraints": []
+              "metadata": [
+                {
+                  "name": {
+                    "fullyQualifiedName": "RequestBody",
+                    "parameters": [
+
+                    ],
+                    "name": "RequestBody",
+                    "parameterizedName": "RequestBody",
+                    "namespace": "",
+                    "shortDisplayName": "RequestBody",
+                    "longDisplayName": "RequestBody"
+                  },
+                  "params": {
+
+                  }
+                }
+              ]
+            },
+            {
+              "name": "topic",
+              "typeName": {
+                "fullyQualifiedName": "lang.taxi.String",
+                "parameters": [
+
+                ],
+                "name": "String",
+                "parameterizedName": "lang.taxi.String",
+                "namespace": "lang.taxi",
+                "shortDisplayName": "String",
+                "longDisplayName": "lang.taxi.String"
+              },
+              "metadata": [
+                {
+                  "name": {
+                    "fullyQualifiedName": "PathVariable",
+                    "parameters": [
+
+                    ],
+                    "name": "PathVariable",
+                    "parameterizedName": "PathVariable",
+                    "namespace": "",
+                    "shortDisplayName": "PathVariable",
+                    "longDisplayName": "PathVariable"
+                  },
+                  "params": {
+                    "value": "topic"
+                  }
+                }
+              ]
             }
           ],
+          "metadata": [
+            {
+              "name": {
+                "fullyQualifiedName": "HttpOperation",
+                "parameters": [
+
+                ],
+                "name": "HttpOperation",
+                "parameterizedName": "HttpOperation",
+                "namespace": "",
+                "shortDisplayName": "HttpOperation",
+                "longDisplayName": "HttpOperation"
+              },
+              "params": {
+                "method": "POST",
+                "url": "http://localhost:9981//kafka/{topic}"
+              }
+            }
+          ],
+          "typeDoc": null,
+          "returnTypeName": {
+            "fullyQualifiedName": "io.vyne.demos.film.KafkaRecordMetadata",
+            "parameters": [
+
+            ],
+            "name": "KafkaRecordMetadata",
+            "parameterizedName": "io.vyne.demos.film.KafkaRecordMetadata",
+            "namespace": "io.vyne.demos.film",
+            "shortDisplayName": "KafkaRecordMetadata",
+            "longDisplayName": "io.vyne.demos.film.KafkaRecordMetadata"
+          }
+        }
+      ],
+      "queryOperations": [
+
+      ],
+      "streamOperations": [
+
+      ],
+      "tableOperations": [
+
+      ],
+      "metadata": [
+
+      ],
+      "typeDoc": null
+    },
+    {
+      "name": {
+        "fullyQualifiedName": "io.vyne.demos.film.KafkaNewReleasesFilmIdService",
+        "parameters": [
+
+        ],
+        "name": "KafkaNewReleasesFilmIdService",
+        "parameterizedName": "io.vyne.demos.film.KafkaNewReleasesFilmIdService",
+        "namespace": "io.vyne.demos.film",
+        "shortDisplayName": "KafkaNewReleasesFilmIdService",
+        "longDisplayName": "io.vyne.demos.film.KafkaNewReleasesFilmIdService"
+      },
+      "operations": [
+        {
+          "qualifiedName": {
+            "fullyQualifiedName": "io.vyne.demos.film.KafkaNewReleasesFilmIdService@@publishNewReleaseAnnouncementUsingPOST",
+            "parameters": [
+
+            ],
+            "name": "KafkaNewReleasesFilmIdService@@publishNewReleaseAnnouncementUsingPOST",
+            "parameterizedName": "io.vyne.demos.film.KafkaNewReleasesFilmIdService@@publishNewReleaseAnnouncementUsingPOST",
+            "namespace": "io.vyne.demos.film",
+            "shortDisplayName": "publishNewReleaseAnnouncementUsingPOST",
+            "longDisplayName": "io.vyne.demos.film.KafkaNewReleasesFilmIdService / publishNewReleaseAnnouncementUsingPOST"
+          },
+          "parameters": [
+            {
+              "name": "filmId",
+              "typeName": {
+                "fullyQualifiedName": "lang.taxi.Int",
+                "parameters": [
+
+                ],
+                "name": "Int",
+                "parameterizedName": "lang.taxi.Int",
+                "namespace": "lang.taxi",
+                "shortDisplayName": "Int",
+                "longDisplayName": "lang.taxi.Int"
+              },
+              "metadata": [
+                {
+                  "name": {
+                    "fullyQualifiedName": "PathVariable",
+                    "parameters": [
+
+                    ],
+                    "name": "PathVariable",
+                    "parameterizedName": "PathVariable",
+                    "namespace": "",
+                    "shortDisplayName": "PathVariable",
+                    "longDisplayName": "PathVariable"
+                  },
+                  "params": {
+                    "value": "filmId"
+                  }
+                }
+              ]
+            }
+          ],
+          "metadata": [
+            {
+              "name": {
+                "fullyQualifiedName": "HttpOperation",
+                "parameters": [
+
+                ],
+                "name": "HttpOperation",
+                "parameterizedName": "HttpOperation",
+                "namespace": "",
+                "shortDisplayName": "HttpOperation",
+                "longDisplayName": "HttpOperation"
+              },
+              "params": {
+                "method": "POST",
+                "url": "http://localhost:9981//kafka/newReleases/{filmId}"
+              }
+            }
+          ],
+          "typeDoc": null,
+          "returnTypeName": {
+            "fullyQualifiedName": "io.vyne.demos.film.KafkaRecordMetadata",
+            "parameters": [
+
+            ],
+            "name": "KafkaRecordMetadata",
+            "parameterizedName": "io.vyne.demos.film.KafkaRecordMetadata",
+            "namespace": "io.vyne.demos.film",
+            "shortDisplayName": "KafkaRecordMetadata",
+            "longDisplayName": "io.vyne.demos.film.KafkaRecordMetadata"
+          }
+        }
+      ],
+      "queryOperations": [
+
+      ],
+      "streamOperations": [
+
+      ],
+      "tableOperations": [
+
+      ],
+      "metadata": [
+
+      ],
+      "typeDoc": null
+    },
+    {
+      "name": {
+        "fullyQualifiedName": "io.vyne.demos.film.ProtoService",
+        "parameters": [
+
+        ],
+        "name": "ProtoService",
+        "parameterizedName": "io.vyne.demos.film.ProtoService",
+        "namespace": "io.vyne.demos.film",
+        "shortDisplayName": "ProtoService",
+        "longDisplayName": "io.vyne.demos.film.ProtoService"
+      },
+      "operations": [
+        {
+          "qualifiedName": {
+            "fullyQualifiedName": "io.vyne.demos.film.ProtoService@@getProtoSpecUsingGET",
+            "parameters": [
+
+            ],
+            "name": "ProtoService@@getProtoSpecUsingGET",
+            "parameterizedName": "io.vyne.demos.film.ProtoService@@getProtoSpecUsingGET",
+            "namespace": "io.vyne.demos.film",
+            "shortDisplayName": "getProtoSpecUsingGET",
+            "longDisplayName": "io.vyne.demos.film.ProtoService / getProtoSpecUsingGET"
+          },
+          "parameters": [
+
+          ],
+          "metadata": [
+            {
+              "name": {
+                "fullyQualifiedName": "HttpOperation",
+                "parameters": [
+
+                ],
+                "name": "HttpOperation",
+                "parameterizedName": "HttpOperation",
+                "namespace": "",
+                "shortDisplayName": "HttpOperation",
+                "longDisplayName": "HttpOperation"
+              },
+              "params": {
+                "method": "GET",
+                "url": "http://localhost:9981//proto"
+              }
+            }
+          ],
+          "typeDoc": null,
+          "returnTypeName": {
+            "fullyQualifiedName": "lang.taxi.String",
+            "parameters": [
+
+            ],
+            "name": "String",
+            "parameterizedName": "lang.taxi.String",
+            "namespace": "lang.taxi",
+            "shortDisplayName": "String",
+            "longDisplayName": "lang.taxi.String"
+          }
+        }
+      ],
+      "queryOperations": [
+
+      ],
+      "streamOperations": [
+
+      ],
+      "tableOperations": [
+
+      ],
+      "metadata": [
+
+      ],
+      "typeDoc": null
+    },
+    {
+      "name": {
+        "fullyQualifiedName": "io.vyne.demos.film.FilmsFilmIdStreamingProvidersService",
+        "parameters": [
+
+        ],
+        "name": "FilmsFilmIdStreamingProvidersService",
+        "parameterizedName": "io.vyne.demos.film.FilmsFilmIdStreamingProvidersService",
+        "namespace": "io.vyne.demos.film",
+        "shortDisplayName": "FilmsFilmIdStreamingProvidersService",
+        "longDisplayName": "io.vyne.demos.film.FilmsFilmIdStreamingProvidersService"
+      },
+      "operations": [
+        {
+          "qualifiedName": {
+            "fullyQualifiedName": "io.vyne.demos.film.FilmsFilmIdStreamingProvidersService@@getStreamingProvidersForFilmUsingGET",
+            "parameters": [
+
+            ],
+            "name": "FilmsFilmIdStreamingProvidersService@@getStreamingProvidersForFilmUsingGET",
+            "parameterizedName": "io.vyne.demos.film.FilmsFilmIdStreamingProvidersService@@getStreamingProvidersForFilmUsingGET",
+            "namespace": "io.vyne.demos.film",
+            "shortDisplayName": "getStreamingProvidersForFilmUsingGET",
+            "longDisplayName": "io.vyne.demos.film.FilmsFilmIdStreamingProvidersService / getStreamingProvidersForFilmUsingGET"
+          },
+          "parameters": [
+            {
+              "name": "filmId",
+              "typeName": {
+                "fullyQualifiedName": "lang.taxi.String",
+                "parameters": [
+
+                ],
+                "name": "String",
+                "parameterizedName": "lang.taxi.String",
+                "namespace": "lang.taxi",
+                "shortDisplayName": "String",
+                "longDisplayName": "lang.taxi.String"
+              },
+              "metadata": [
+                {
+                  "name": {
+                    "fullyQualifiedName": "PathVariable",
+                    "parameters": [
+
+                    ],
+                    "name": "PathVariable",
+                    "parameterizedName": "PathVariable",
+                    "namespace": "",
+                    "shortDisplayName": "PathVariable",
+                    "longDisplayName": "PathVariable"
+                  },
+                  "params": {
+                    "value": "filmId"
+                  }
+                }
+              ]
+            }
+          ],
+          "metadata": [
+            {
+              "name": {
+                "fullyQualifiedName": "HttpOperation",
+                "parameters": [
+
+                ],
+                "name": "HttpOperation",
+                "parameterizedName": "HttpOperation",
+                "namespace": "",
+                "shortDisplayName": "HttpOperation",
+                "longDisplayName": "HttpOperation"
+              },
+              "params": {
+                "method": "GET",
+                "url": "http://localhost:9981//films/{filmId}/streamingProviders"
+              }
+            }
+          ],
+          "typeDoc": null,
           "returnTypeName": {
             "fullyQualifiedName": "lang.taxi.Array",
             "parameters": [
               {
-                "fullyQualifiedName": "customer.Customer",
-                "parameters": [],
-                "parameterizedName": "customer.Customer",
-                "name": "Customer",
-                "namespace": "customer",
-                "shortDisplayName": "Customer",
-                "longDisplayName": "customer.Customer"
+                "fullyQualifiedName": "io.vyne.demos.film.StreamingProvider",
+                "parameters": [
+
+                ],
+                "name": "StreamingProvider",
+                "parameterizedName": "io.vyne.demos.film.StreamingProvider",
+                "namespace": "io.vyne.demos.film",
+                "shortDisplayName": "StreamingProvider",
+                "longDisplayName": "io.vyne.demos.film.StreamingProvider"
               }
             ],
-            "parameterizedName": "lang.taxi.Array<customer.Customer>",
             "name": "Array",
+            "parameterizedName": "lang.taxi.Array<io.vyne.demos.film.StreamingProvider>",
             "namespace": "lang.taxi",
-            "shortDisplayName": "Customer[]",
-            "longDisplayName": "customer.Customer[]"
-          },
-          "metadata": [],
-          "grammar": "vyneQl",
-          "capabilities": [
-            "SUM",
-            "COUNT",
-            "AVG",
-            "MIN",
-            "MAX",
-            {
-              "supportedOperations": [
-                "EQUAL",
-                "NOT_EQUAL",
-                "IN",
-                "LIKE",
-                "GREATER_THAN",
-                "LESS_THAN",
-                "GREATER_THAN_OR_EQUAL_TO",
-                "LESS_THAN_OR_EQUAL_TO"
-              ]
-            }
-          ],
-          "typeDoc": null,
-          "contract": {
-            "returnType": {
-              "fullyQualifiedName": "lang.taxi.Array",
-              "parameters": [
-                {
-                  "fullyQualifiedName": "customer.Customer",
-                  "parameters": [],
-                  "parameterizedName": "customer.Customer",
-                  "name": "Customer",
-                  "namespace": "customer",
-                  "shortDisplayName": "Customer",
-                  "longDisplayName": "customer.Customer"
-                }
-              ],
-              "parameterizedName": "lang.taxi.Array<customer.Customer>",
-              "name": "Array",
-              "namespace": "lang.taxi",
-              "shortDisplayName": "Customer[]",
-              "longDisplayName": "customer.Customer[]"
-            },
-            "constraints": []
-          },
-          "operationType": null,
-          "hasFilterCapability": true,
-          "supportedFilterOperations": [
-            "EQUAL",
-            "NOT_EQUAL",
-            "IN",
-            "LIKE",
-            "GREATER_THAN",
-            "LESS_THAN",
-            "GREATER_THAN_OR_EQUAL_TO",
-            "LESS_THAN_OR_EQUAL_TO"
-          ],
-          "name": "customerQuery",
-          "memberQualifiedName": {
-            "fullyQualifiedName": "customer.CustomerService@@customerQuery",
-            "parameters": [],
-            "parameterizedName": "customer.CustomerService@@customerQuery",
-            "name": "CustomerService@@customerQuery",
-            "namespace": "customer",
-            "shortDisplayName": "customerQuery",
-            "longDisplayName": "customer.CustomerService / customerQuery"
+            "shortDisplayName": "StreamingProvider[]",
+            "longDisplayName": "io.vyne.demos.film.StreamingProvider[]"
           }
         }
+      ],
+      "queryOperations": [
+
+      ],
+      "streamOperations": [
+
+      ],
+      "tableOperations": [
+
       ],
       "metadata": [
-        {
-          "name": {
-            "fullyQualifiedName": "io.vyne.jdbc.DatabaseService",
-            "parameters": [],
-            "parameterizedName": "io.vyne.jdbc.DatabaseService",
-            "name": "DatabaseService",
-            "namespace": "io.vyne.jdbc",
-            "shortDisplayName": "DatabaseService",
-            "longDisplayName": "io.vyne.jdbc.DatabaseService"
-          },
-          "params": {
-            "connection": "asfdf"
-          }
-        }
+
       ],
-      "sourceCode": [
-        {
-          "name": "customer/CustomerService.taxi",
-          "version": "0.0.0",
-          "content": "import vyne.vyneQl.VyneQlQuery\nnamespace customer {\n   @io.vyne.jdbc.DatabaseService(connection = \"asfdf\")\n         service CustomerService {\n            vyneQl query customerQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<customer.Customer> with capabilities {\n               sum,\n               count,\n               avg,\n               min,\n               max,\n               filter(==,!=,in,like,>,<,>=,<=)\n            }\n         }\n}",
-          "id": "customer/CustomerService.taxi:0.0.0",
-          "contentHash": "24de2b"
-        }
+      "typeDoc": null
+    }
+  ],
+  "removedTypes": [
+
+  ],
+  "removedServices": [
+
+  ],
+  "typeNames": [
+    {
+      "fullyQualifiedName": "io.vyne.demos.film.StreamingProvider",
+      "parameters": [
+
       ],
-      "typeDoc": null,
-      "lineage": null,
-      "qualifiedName": "customer.CustomerService",
-      "memberQualifiedName": {
-        "fullyQualifiedName": "customer.CustomerService",
-        "parameters": [],
-        "parameterizedName": "customer.CustomerService",
-        "name": "CustomerService",
-        "namespace": "customer",
-        "shortDisplayName": "CustomerService",
-        "longDisplayName": "customer.CustomerService"
-      }
+      "name": "StreamingProvider",
+      "parameterizedName": "io.vyne.demos.film.StreamingProvider",
+      "namespace": "io.vyne.demos.film",
+      "shortDisplayName": "StreamingProvider",
+      "longDisplayName": "io.vyne.demos.film.StreamingProvider"
+    },
+    {
+      "fullyQualifiedName": "io.vyne.demos.film.AnonymousType_content",
+      "parameters": [
+
+      ],
+      "name": "AnonymousType_content",
+      "parameterizedName": "io.vyne.demos.film.AnonymousType_content",
+      "namespace": "io.vyne.demos.film",
+      "shortDisplayName": "AnonymousType_content",
+      "longDisplayName": "io.vyne.demos.film.AnonymousType_content"
+    },
+    {
+      "fullyQualifiedName": "io.vyne.demos.film.KafkaRecordMetadata",
+      "parameters": [
+
+      ],
+      "name": "KafkaRecordMetadata",
+      "parameterizedName": "io.vyne.demos.film.KafkaRecordMetadata",
+      "namespace": "io.vyne.demos.film",
+      "shortDisplayName": "KafkaRecordMetadata",
+      "longDisplayName": "io.vyne.demos.film.KafkaRecordMetadata"
     }
   ]
-}"""
+}
+   """
 }
