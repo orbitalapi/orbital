@@ -101,7 +101,7 @@ test.describe('Films demo', () => {
 
       const kafkaConnectionDialog = new DialogPage(page);
       await kafkaConnectionDialog.fillValue('Connection name', 'kafka');
-      await kafkaConnectionDialog.fillValue('Broker address', `${hostnames.kafka}:29092`);
+      await kafkaConnectionDialog.fillValue('Broker address', `${hostnames.kafka}:9092`);
       await kafkaConnectionDialog.clickButton('Create');
 
       await addDataSourcePage.setKafkaTopic('releases');
