@@ -42,7 +42,21 @@ module.exports = {
     extend: {
       colors: {
         'midnight-blue': '#12263b',
-        'citrus': '#e0ff4f',
+        'orbital-teal': '#05BCC1',
+        'citrus': {
+          DEFAULT: '#e0ff4f',
+
+          // Generated from https://colors.eva.design/
+          100: '#FBFFDB',
+          200: '#F6FFB8',
+          300: '#F0FF95',
+          400: '#EAFF7A',
+          500: '#E0FF4F',
+          600: '#BBDB39',
+          700: '#99B727',
+          800: '#779319',
+          900: '#5F7A0F'
+        },
         code: {
           highlight: 'rgb(125 211 252 / 0.1)',
         },

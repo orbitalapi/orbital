@@ -3,11 +3,62 @@ import {Footer} from '@/components/home/Footer'
 import NextLink from 'next/link'
 import Head from 'next/head'
 import {NavItems, NavPopover} from '@/components/Header'
-import {ThemeToggle, useTheme} from '@/components/ThemeToggle'
+import {useTheme} from '@/components/ThemeToggle'
 
 import wormholeCitrus from '@/img/wormhole-citrus-transparent.png';
 import wormholeAqua from '@/img/wormhole-aqua-transparent.png';
 import {ReactComponent as DataPatternLight} from '@/img/data-pattern.svg';
+import PublishYourApi from "@/components/PublishYourApi";
+
+const snippets = {
+  'taxi-simple': {
+    name: 'src/types.taxi',
+    lang: 'taxi',
+    code: `   type PersonName inherits String
+>  type CustomerId inherits String
+   type Another inherits Date`,
+  },
+  'open-api-example': {
+    name: 'customer-api.oas.yaml',
+    lang: 'yaml',
+    code: `   # An extract of an OpenAPI spec:
+   components:
+     schemas:
+       Customer:
+         properties:
+           id:
+             type: string
+>             # Embed semantic type metadata directly in OpenAPI
+>             x-taxi-type:
+>                name: CustomerId
+             `
+  },
+  'protobuf-example': {
+    name: 'customer-api.proto',
+    lang: 'protobuf',
+    code: `   import "org/taxilang/dataType.proto";
+
+   message Customer {
+      optional string customer_name = 1 [(taxi.dataType)="CustomerName"];
+>     optional int32 customer_id = 2 [(taxi.dataType)="CustomerId"];
+   }
+    `
+  },
+  'database-example': {
+    name: `database.taxi`,
+    lang: 'taxi',
+    code: `database CustomerDatabase {
+   table customers : Customer
+}
+
+model Customer {
+   id : CustomerId
+   name : CustomerName
+   ...
+}
+`
+  }
+}
 
 
 function Header() {
@@ -27,7 +78,6 @@ function Header() {
                 </ul>
               </nav>
               <div className="flex items-center border-l border-slate-200 ml-6 pl-6 dark:border-slate-800">
-                <ThemeToggle/>
                 <a
                   href="https://github.com/orbitalapi/orbital"
                   className="ml-6 block text-slate-400 hover:text-slate-500 dark:hover:text-slate-300"
@@ -58,7 +108,7 @@ function Header() {
             <div className="mt-6 sm:mt-10 flex justify-left space-x-6 text-sm">
               <NextLink href="/docs/installation">
                 <a
-                  className="bg-citrus hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50 text-midnight-blue font-semibold h-12 px-6 rounded-lg w-10 flex items-center justify-center sm:w-auto dark:bg-citrus dark:highlight-white/20 dark:hover:bg-sky-400">
+                  className="bg-citrus hover:bg-citrus-300 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50 text-midnight-blue font-semibold h-12 px-6 rounded-lg w-10 flex items-center justify-center sm:w-auto dark:bg-citrus dark:highlight-white/20 dark:hover:bg-citrus-300">
                   Get started
                 </a>
               </NextLink>
@@ -78,7 +128,7 @@ function Header() {
 }
 
 
-export default function Home() {
+export default function Home({highlightedSnippets}) {
   return (
     <>
       <Head>
@@ -110,6 +160,7 @@ export default function Home() {
         </section>
       </div>
       <div className="pt-20 mb-20 space-y-20 overflow-hidden sm:pt-32 sm:mb-32 md:pt-40 md:mb-40">
+        <PublishYourApi highlightedSnippets={highlightedSnippets} code={snippets}/>
         {/*<HowVyneWorks/>*/}
         {/*<QueryExamples/>*/}
         {/*<DebugTools/>*/}
@@ -121,8 +172,13 @@ export default function Home() {
   )
 }
 
-Home.layoutProps = {
-  meta: {
-    // ogImage: socialCardLarge.src,
-  },
+
+export function getStaticProps() {
+  let {highlightCodeSnippets} = require('@/components/Guides/Snippets.js')
+
+  return {
+    props: {
+      highlightedSnippets: highlightCodeSnippets(snippets),
+    },
+  }
 }
