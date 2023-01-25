@@ -298,7 +298,7 @@ publish-pipeline-jet-to-docker-hub:
    variables:
       projectDir: pipelines/pipeline-jet
       microservice_vyne: pipeline
-      microservice_orbital: pipeline
+      microservice_orbital: pipelines
 
 publish-schema-server-to-docker-hub:
    extends: .publish-to-docker-hub
@@ -380,7 +380,7 @@ publish-pipelines-to-gitlab-container-registry:
    variables:
       projectDir: pipelines/pipeline-jet
       microservice_vyne: pipeline
-      microservice_orbital: pipeline
+      microservice_orbital: pipelines
 
 terraform-fmt:
    extends: .terraform:fmt
@@ -538,7 +538,6 @@ terraform-deploy-prod-voyager:
       -  when: manual
       -  if: $CI_COMMIT_BRANCH == "develop"
 
-
 publish-snyk-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
    script:
@@ -597,4 +596,4 @@ snyk-pipelines:
       - publish-pipelines-to-gitlab-container-registry
       - build-jvm-develop
    variables:
-      image: pipeline
+      image: pipelines
