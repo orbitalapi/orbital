@@ -72,7 +72,7 @@ class KafkaStreamManager(
       cache.invalidate(consumerRequest)
       messageCounter.remove(consumerRequest)
       cache.cleanUp()
-      logger.debug { "Evicted connection ${consumerRequest.connectionName} / ${consumerRequest.topicName}" }
+      logger.info { "Evicted connection ${consumerRequest.connectionName} / ${consumerRequest.topicName}" }
    }
 
    private fun buildSharedFlow(request: KafkaConsumerRequest): SharedFlow<TypedInstance> {
@@ -100,7 +100,7 @@ class KafkaStreamManager(
             messageCounter[request]?.incrementAndGet()
                ?: logger.warn { "Attempt to increment message counter for consumer on Kafka topic ${request.topicName} failed - the counter was not present" }
 
-            logger.debug { "Received message on topic ${record.topic()} with offset ${record.offset()}" }
+            logger.trace { "Received message on topic ${record.topic()} with offset ${record.offset()}" }
             val messageValue = if (encoding == MessageEncodingType.BYTE_ARRAY) {
                record.value()!!
             } else {

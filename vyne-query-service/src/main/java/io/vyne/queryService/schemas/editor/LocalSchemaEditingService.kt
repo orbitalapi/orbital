@@ -144,7 +144,10 @@ class LocalSchemaEditingService(
       @RequestParam("packageIdentifier") rawPackageIdentifier: String,
       @RequestParam("validate", required = false) validateOnly: Boolean = false,
    ): Mono<SchemaSubmissionResult> {
-      logger.info { "Received request to edit schema - converting to taxi" }
+      logger.info { "Received request to edit schema: \n " +
+         "types: ${editedSchema.types.map { it.fullyQualifiedName }} \n " +
+         "services: ${editedSchema.services.map { it.name.fullyQualifiedName }}"
+      }
       return ensureTargetPackageIsEditable(rawPackageIdentifier).flatMap {
          ensureSinglePackageForTypeOrService(PackageIdentifier.fromId(rawPackageIdentifier), editedSchema)
          val generator = VyneSchemaToTaxiGenerator()
