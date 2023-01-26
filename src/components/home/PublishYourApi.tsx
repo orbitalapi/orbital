@@ -144,9 +144,7 @@ export default function PublishYourApi({ highlightedSnippets }) {
             <div className={'flex flex-col items-center'}>
               <TaxiLogo/>
               <span className="text-orbital-teal text-sm font-semibold">Taxi</span>
-
             </div>
-
           </div>
 
           <div className="col-span-2 flex flex-col items-center">
