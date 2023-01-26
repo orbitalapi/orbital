@@ -147,6 +147,7 @@ export default function PublishYourApi({ highlightedSnippets }) {
             </div>
           </div>
 
+
           <div className="col-span-2 flex flex-col items-center">
             <Paragraph className="pb-8">...and embed them in your existing API specs</Paragraph>
             <Tabs
