@@ -37,7 +37,7 @@ export class SchemaImporterPage {
       sourceType: string,
       newTypeName: string,
       newTypeBaseName: string,
-      optionString: string) {
+      optionString: string): Promise<void>  {
       await clickButton(this.page, sourceType);
       await clickButton(this.page, 'Create new');
       await this.page
@@ -50,6 +50,8 @@ export class SchemaImporterPage {
       await this.page.locator(`mat-option[role="option"]:has-text("${optionString}")`).click();
       await waitFor(this.page, 3000);
       await clickButton(this.page, 'Create type' );
+      const regexText = new RegExp(`^${newTypeName}$`);
+      await expect(this.page.locator('span', {hasText: regexText})).toBeVisible();
    }
    async expectNotification(text: string): Promise<void> {
       await expect(this.page.locator(`tui-notification:has-text("${text}")`)).toBeVisible();

@@ -13,19 +13,20 @@ async function waitForSchemaUpdate(page: Page): Promise<void> {
 
 const localHostnames = {
    postgres: 'localhost',
-   kafka: 'localhost',
+   kafka: 'localhost:9092',
    filmsApi: 'localhost:9981'
 };
 
 const dockerComposeHostnames = {
    postgres: 'postgres',
-   kafka: 'kafka',
+   kafka: 'kafka:29092',
    filmsApi: 'films-api'
 };
 
 const hostnames = useLocalHostNames ? localHostnames : dockerComposeHostnames;
 
 test.describe('Films demo', () => {
+
    test('works as described in the tutorial', async ({ page, request }) => {
       const addDataSourcePage = new AddDataSourcePage(page);
       await addDataSourcePage.goto();
@@ -106,7 +107,7 @@ test.describe('Films demo', () => {
 
       const kafkaConnectionDialog = new DialogPage(page);
       await kafkaConnectionDialog.fillValue('Connection name', 'kafka');
-      await kafkaConnectionDialog.fillValue('Broker address', `${hostnames.kafka}:9092`);
+      await kafkaConnectionDialog.fillValue('Broker address', `${hostnames.kafka}`);
       const currentEpochTime = Math.round((new Date()).getTime() / 1000);
       await kafkaConnectionDialog.fillValue('Group Id', `${currentEpochTime}`);
       await kafkaConnectionDialog.clickButton('Create');
@@ -117,6 +118,7 @@ test.describe('Films demo', () => {
       await addDataSourcePage.fillValue('Default namespace', 'io.vyne.demos.announcements');
       await addDataSourcePage.selectOnAutoComplete('Message type', 'NewFilmReleaseAnnouncement');
       await addDataSourcePage.clickButton('Create');
+
 
       const kafkaSchemaImporterPage = new SchemaImporterPage(page);
       await kafkaSchemaImporterPage.clickButton('Save');
