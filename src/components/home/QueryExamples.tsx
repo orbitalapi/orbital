@@ -41,7 +41,7 @@ as {
     }] as ExplainPlanProps[],
     lines: [
       {
-        from: () => Array.from(document.getElementsByClassName('token keyword')).filter(t => t.innerText === 'find')[0],
+        from: () => Array.from(document.getElementsByClassName('token keyword')).filter((t:HTMLElement) => t.innerText === 'find')[0],
         to: () => document.getElementById('Fetch-Plan-0').querySelector('img'),
         offset: 'find { Customer[] }'.length
       }
@@ -85,11 +85,11 @@ as {
     },] as ExplainPlanProps[],
     lines: [
       {
-        from: () => Array.from(document.getElementsByClassName('token class-name')).filter(t => t.innerText === 'CardNumber')[0],
+        from: () => Array.from(document.getElementsByClassName('token class-name')).filter((t:HTMLElement) => t.innerText === 'CardNumber')[0],
         to: () => document.getElementById('Join-Plan-0').querySelector('img'),
         offset: 'CardNumber'.length
       }, {
-        from: () => Array.from(document.getElementsByClassName('token class-name')).filter(t => t.innerText === 'AccountBalance')[0],
+        from: () => Array.from(document.getElementsByClassName('token class-name')).filter((t:HTMLElement) => t.innerText === 'AccountBalance')[0],
         to: () => document.getElementById('Join-Plan-1').querySelector('img'),
         offset: 'AccountBalance'.length
       }
@@ -150,7 +150,7 @@ as {
     } as ResultsTableProps,
     lines: [
       {
-        from: () => Array.from(document.getElementsByClassName('token class-name')).filter(t => t.innerText === 'AccountBalance')[0],
+        from: () => Array.from(document.getElementsByClassName('token class-name')).filter((t:HTMLElement) => t.innerText === 'AccountBalance')[0],
         to: () => document.getElementById('Stream-Plan-1').querySelector('img'),
         offset: 'AccountBalance'.length
       }
@@ -193,7 +193,7 @@ as {
     } as ResultsTableProps,
     // lines: [
     //     {
-    //         from: () => Array.from(document.getElementsByClassName('token class-name')).filter(t => t.innerText === 'Profit')[1],
+    //         from: () => Array.from(document.getElementsByClassName('token class-name')).filter((t:HTMLElement) => t.innerText === 'Profit')[1],
     //         to: () => document.getElementById('Expressions-Plan-0').querySelector('img'),
     //         offset: 'Profit'.length
     //     }
@@ -281,7 +281,7 @@ function QueryExamples(props: QueryExampleProps) {
     // Note: Scoping matters here, as placing this reference outside this function
     // will cause evaluation at build time (when gatsby renders the pages)
     // which will break the build
-    const LeaderLine = window.LeaderLine;
+    const LeaderLine = (window as any).LeaderLine;
 
     removeLines()
     if (tabData[tab].lines !== undefined) {

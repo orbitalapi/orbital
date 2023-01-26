@@ -80,7 +80,7 @@ const ExplainPlan = (props: ExplainPlanProps) => {
                   <h4 className="text-sky-300">INTEGRATION PLAN</h4>
                   {(props.title.length > 1) && <><span>
                                 {props.title[0]}
-                    <span className="mono"> -> </span>
+                    <span className="mono">{' -> '}</span>
                     {props.title[1]}
                                 </span></>
                   }

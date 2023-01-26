@@ -71,7 +71,7 @@
     "zustand": "^4.0.0-rc.0"
   },
   "devDependencies": {
-    "@types/react": "18.0.27",
+    "@types/react": "17.0.2",
     "@typescript-eslint/eslint-plugin": "2.x",
     "@typescript-eslint/parser": "2.x",
     "babel-eslint": "10.x",
