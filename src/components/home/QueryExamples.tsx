@@ -1,16 +1,21 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { BigText, Caption, Link, Paragraph } from '../common';
+import { BigText, Caption, Paragraph } from '@/components/home/common';
 import { Tabs } from '../Tabs';
 import { GridLockup } from '../GridLockup';
-import { AnimatePresence, motion } from 'framer-motion';
-import { CodeWindow } from '../CodeWindow';
+import { AnimatePresence } from 'framer-motion';
 import { Widont } from '../Widont';
-import ExplainPlan, { ExplainPlanProps } from './explain-plan';
-import ResultsTable, { ResultsTableProps } from './results-table';
+import ExplainPlan, { ExplainPlanProps } from './ExplainPlan';
+import { ResultsTableProps } from './ResultsTable';
 import Prism from 'prismjs';
+import { Button } from '@/components/Button';
+import { Snippet } from '@/components/Steps';
+import { CodeSnippet, CodeSnippetMap, HighlightedCodeSnippetMap } from '@/components/Guides/CodeSnippet';
 
-const paragraphClass = 'text-lg font-semibold text-indigo-600 mb-8'
+const paragraphClass = 'text-lg font-semibold text-sky-400 mb-8'
+
+export type Tabs = 'Fetch' | 'Join' | 'Stream' | 'Expressions';
+
 const tabData = {
   'Fetch': {
     query: `find { Customer[] }
@@ -22,7 +27,7 @@ as {
 }
       `,
     paragraph: () => (
-      <Paragraph className={paragraphClass}>Vyne automatically generates integration code for calling your APIs
+      <Paragraph className={paragraphClass}>Orbital automatically generates integration code for calling your APIs
       </Paragraph>
     ),
     explainPlan: [{
@@ -60,7 +65,7 @@ as {
 }
       `,
     paragraph: () => (
-      <Paragraph className={paragraphClass}>Ask for data from multiple sources, Vyne automatically links data
+      <Paragraph className={paragraphClass}>Ask for data from multiple sources, Orbital automatically links data
         sources, as required
       </Paragraph>
     ),
@@ -153,7 +158,7 @@ as {
   },
   Expressions: {
     query: `// Create simple definitions to share,
-// Vyne will find the data for you.
+// Orbital will find the data for you.
 type Profit = PurchasePrice - CostOfSale
 type CostOfSale = (PurchasePrice * AgentCommission) + UnitPrice
 // Use definitions in your queries
@@ -164,7 +169,7 @@ as {
    profit: Profit
 }`,
     paragraph: () => (
-      <Paragraph className={paragraphClass}>Define your logic once, let Vyne do the working out.
+      <Paragraph className={paragraphClass}>Define your logic once, let Orbital do the working out.
       </Paragraph>
     ),
     explainPlan: [
@@ -196,6 +201,13 @@ as {
   },
 }
 
+export const queryExampleCodeSnippets: CodeSnippetMap = Object.fromEntries(Object.entries(tabData).map(([key, value]) => {
+  return [key, {
+    lang: 'taxi',
+    name: 'query.taxi',
+    code: value.query
+  } as CodeSnippet]
+}))
 // Icons taken from:
 // https://iconpark.oceanengine.com/official
 let tabs = {
@@ -249,26 +261,13 @@ let tabs = {
 
 const lines = [];
 
-function QueryExamples() {
+export type QueryExampleProps = {
+  highlightedSnippets: HighlightedCodeSnippetMap
+}
+
+function QueryExamples(props: QueryExampleProps) {
 
   const [tab, setTab] = useState('Fetch')
-  Prism.languages.taxi = Prism.languages.extend('graphql', {
-    'comment': [
-      {
-        pattern: /(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,
-        lookbehind: true,
-        greedy: true
-      },
-      {
-        pattern: /(^|[^\\:])\/\/.*/,
-        lookbehind: true,
-        greedy: true
-      }
-    ],
-    'keyword': /\b(?:find|stream|model|type|inherits|as|namespace|import|parameter|by|when|else|closed|with|synonym|of|alias|extension|service|operation|lineage|query|)\b/,
-    'scalar': /\b(?:String|Boolean|Int|Decimal|Date|Time|DateTime|INstant|Any|Double|Void)\b/,
-
-  });
 
   function drawConnectorLines() {
     // We used to do this:
@@ -336,36 +335,30 @@ function QueryExamples() {
 
 
   return (
-    <section id="query-examples" className="relative bg-sky-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 md:py-32 py-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-          <Caption className="text-indigo-500 ">Fetch anything</Caption>
-          <BigText>
-            <Widont>All your data, exactly how you need it, one API.</Widont>
+    <section id="query-examples" className="relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+        <div className={'flex flex-col items-center'}>
+          <Caption className="text-pink-400 text-center ">Fetch anything</Caption>
+          <BigText className="text-center font-brand">
+            <Widont>All your data, linked & served exactly how you need it, one API.</Widont>
           </BigText>
           <Paragraph>
-            Ask for the data you need, and Vyne builds integrations between data sources on the fly
+            Ask for the data you need, and Orbital builds integrations between data sources on the fly
             to fetch, combine and transform the data you need.
           </Paragraph>
           <Paragraph>
-            Vyne works with databases, streaming data sources, APIs, lambdas, the lot.
+            Orbital works with databases, streaming data sources, APIs, lambdas, the lot.
           </Paragraph>
-          {/*<Paragraph>*/}
-          {/*   Utility classes help you work within the constraints of a system instead of littering your*/}
-          {/*   stylesheets with arbitrary values. They make it easy to be consistent with color choices,*/}
-          {/*   spacing, typography, shadows, and everything else that makes up a well-engineered design*/}
-          {/*   system.*/}
-          {/*</Paragraph>*/}
-          <a href="https://docs.vyne.co/querying-with-vyne/writing-queries/" color="indigo" darkColor="indigo">
+          <Button href="https://docs.vyne.co/querying-with-vyne/writing-queries/" className={'mt-8 mb-8'}>
             Learn more
-          </a>
+          </Button>
           <div className="mt-10">
             <Tabs
               tabs={tabs}
               selected={tab}
               onChange={(tab) => setTab(tab)}
-              className="text-indigo-600 "
-              iconClassName="text-indigo-500 "
+              className="text-sky-400 "
+              iconClassName="text-sky-500 "
             />
           </div>
 
@@ -375,26 +368,7 @@ function QueryExamples() {
         <GridLockup
           className="mt-10 xl:mt-2"
           left={
-            <CodeWindow>
-              <AnimatePresence initial={true} exitBeforeEnter onExitComplete={doHighlight}>
-                <motion.div
-                  key={tab}
-                  className="w-full flex-auto flex min-h-0"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <CodeWindow.Code2 lines={lineCount(tabData[tab].query)}
-                                    language="taxi"
-                  >
-                    <code className="language-taxi" style={{ 'whiteSpace': 'pre-wrap' }}>
-                      {tabData[tab].query}
-                    </code>
-
-                  </CodeWindow.Code2>
-                </motion.div>
-              </AnimatePresence>
-            </CodeWindow>
+            <Snippet highlightedCode={props.highlightedSnippets[tab]} code={queryExampleCodeSnippets[tab]}/>
           }
           right={
             <AnimatePresence initial={false} exitBeforeEnter>
@@ -422,18 +396,6 @@ function QueryExamples() {
       </div>
     </section>
   )
-}
-
-
-function highlightTokens(query: string) {
-  const languages = Object.keys(Prism.languages);
-  const grammar = Prism.languages['graphql'];
-  if (grammar === null || grammar === undefined) {
-    return ' Taxi not found - found : ' + languages;
-  }
-  const tokens = Prism.tokenize(query, grammar)
-  return JSON.stringify(tokens);
-  // return tokens;
 }
 
 function lineCount(src: string): number {

@@ -39,9 +39,12 @@ const fallbackGetStaticProps = {
 
 module.exports = withBundleAnalyzer({
   swcMinify: true,
-  pageExtensions: ['js', 'jsx', 'mdx'],
+  pageExtensions: ['js', 'jsx', 'ts','tsx','mdx'],
   experimental: {
     esmExternals: false,
+  },
+  compiler: {
+    styledComponents: true,
   },
   async redirects() {
     return require('./redirects.json')

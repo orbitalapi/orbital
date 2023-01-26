@@ -1,6 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import VyneLogo from '../../images/vyne_logo_only_white_background.png';
+
+import OribtalLogo from '@/img/wormhole-aqua-transparent.png';
 
 export interface ExplainPlanProps {
   title: string[];
@@ -40,9 +41,10 @@ const StyledExplainPlan = styled.div`
   }
 
   .method > div {
-    background-color: #BAE6FD;
+    background-color: #7dd3fc; // sky-300
     border-radius: 4px;
     padding: 4px 0.5rem;
+    color: #1e293b; // slate-800
   }
 
   td {
@@ -58,12 +60,6 @@ const StyledExplainPlan = styled.div`
     font-size: 0.8rem;
   }
 
-  .logo {
-    width: 22px;
-    height: 20px;
-    margin-right: 1rem;
-  }
-
   h4 {
     font-size: 0.7rem;
     font-weight: 200;
@@ -74,14 +70,14 @@ const ExplainPlan = (props: ExplainPlanProps) => {
   return (
     <StyledExplainPlan>
       <div>
-        <table className="drop-shadow-md border-collapse rounded-md bg-white">
+        <table className="drop-shadow-md border-collapse rounded-md bg-slate-800/75 ring-1 ring-inset ring-white/10">
           <thead>
           <tr>
             <td colSpan={3} className="border-b border-gray-200">
               <div className="flex items-center">
-                <img src={VyneLogo} className="logo"/>
-                <div>
-                  <h4 className="text-slate-600">INTEGRATION PLAN</h4>
+                <img src={OribtalLogo.src} className="mr-4 w-[45px]"/>
+                <div className='text-white'>
+                  <h4 className="text-sky-300">INTEGRATION PLAN</h4>
                   {(props.title.length > 1) && <><span>
                                 {props.title[0]}
                     <span className="mono"> -> </span>

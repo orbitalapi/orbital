@@ -8,57 +8,8 @@ import {useTheme} from '@/components/ThemeToggle'
 import wormholeCitrus from '@/img/wormhole-citrus-transparent.png';
 import wormholeAqua from '@/img/wormhole-aqua-transparent.png';
 import {ReactComponent as DataPatternLight} from '@/img/data-pattern.svg';
-import PublishYourApi from "@/components/PublishYourApi";
-
-const snippets = {
-  'taxi-simple': {
-    name: 'src/types.taxi',
-    lang: 'taxi',
-    code: `   type PersonName inherits String
->  type CustomerId inherits String
-   type Another inherits Date`,
-  },
-  'open-api-example': {
-    name: 'customer-api.oas.yaml',
-    lang: 'yaml',
-    code: `   # An extract of an OpenAPI spec:
-   components:
-     schemas:
-       Customer:
-         properties:
-           id:
-             type: string
->             # Embed semantic type metadata directly in OpenAPI
->             x-taxi-type:
->                name: CustomerId
-             `
-  },
-  'protobuf-example': {
-    name: 'customer-api.proto',
-    lang: 'protobuf',
-    code: `   import "org/taxilang/dataType.proto";
-
-   message Customer {
-      optional string customer_name = 1 [(taxi.dataType)="CustomerName"];
->     optional int32 customer_id = 2 [(taxi.dataType)="CustomerId"];
-   }
-    `
-  },
-  'database-example': {
-    name: `database.taxi`,
-    lang: 'taxi',
-    code: `database CustomerDatabase {
-   table customers : Customer
-}
-
-model Customer {
-   id : CustomerId
-   name : CustomerName
-   ...
-}
-`
-  }
-}
+import PublishYourApi, {publishYourApiCodeSnippets} from "@/components/home/PublishYourApi";
+import QueryExamples, {queryExampleCodeSnippets} from "@/components/home/QueryExamples";
 
 
 function Header() {
@@ -128,7 +79,7 @@ function Header() {
 }
 
 
-export default function Home({highlightedSnippets}) {
+export default function Home({publishYourApiHighlightedSnippets, queryExampleCodeHighlightedSnippets}) {
   return (
     <>
       <Head>
@@ -160,9 +111,9 @@ export default function Home({highlightedSnippets}) {
         </section>
       </div>
       <div className="pt-20 mb-20 space-y-20 overflow-hidden sm:pt-32 sm:mb-32 md:pt-40 md:mb-40">
-        <PublishYourApi highlightedSnippets={highlightedSnippets} code={snippets}/>
+        <PublishYourApi highlightedSnippets={publishYourApiHighlightedSnippets} />
         {/*<HowVyneWorks/>*/}
-        {/*<QueryExamples/>*/}
+        <QueryExamples highlightedSnippets={queryExampleCodeHighlightedSnippets}/>
         {/*<DebugTools/>*/}
         {/*<DataPipelines/>*/}
         {/*<FeatureArticles tag="blog" title="Latest from the blog" subtitle="From our brains to your eyeballs."/>*/}
@@ -174,11 +125,12 @@ export default function Home({highlightedSnippets}) {
 
 
 export function getStaticProps() {
-  let {highlightCodeSnippets} = require('@/components/Guides/Snippets.js')
+  let {highlightCodeSnippets} = require('@/components/Guides/Snippets')
 
   return {
     props: {
-      highlightedSnippets: highlightCodeSnippets(snippets),
+      publishYourApiHighlightedSnippets: highlightCodeSnippets(publishYourApiCodeSnippets),
+      queryExampleCodeHighlightedSnippets: highlightCodeSnippets(queryExampleCodeSnippets)
     },
   }
 }

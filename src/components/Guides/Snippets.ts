@@ -1,7 +1,8 @@
-import {highlightCode} from '../../../remark/utils'
+import { highlightCode } from '../../../remark/utils'
+import { CodeSnippetMap, HighlightedCodeSnippetMap } from '@/components/Guides/CodeSnippet';
 
 
-export function highlightCodeSnippets(codeSnippets) {
+export function highlightCodeSnippets(codeSnippets: CodeSnippetMap): HighlightedCodeSnippetMap {
   function highlight(code) {
     return code.lang && code.lang === 'terminal' ? code.code : highlightCode(code.code, code.lang)
   }
