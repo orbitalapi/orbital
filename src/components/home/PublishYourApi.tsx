@@ -143,7 +143,7 @@ export default function PublishYourApi({ highlightedSnippets }) {
               href={'https://taxilang.org'}>Taxi</a>...</Paragraph>
             <div className={'flex flex-col items-center'}>
               <TaxiLogo/>
-              <span className="text-orbital-teal text-sm font-semibold">Taxi</span>
+              <span className="text-aqua text-sm font-semibold">Taxi</span>
             </div>
           </div>
 
@@ -154,8 +154,8 @@ export default function PublishYourApi({ highlightedSnippets }) {
               tabs={languageTabs}
               selected={tab}
               onChange={(tab) => setTab(tab)}
-              className="text-orbital-teal"
-              iconClassName="text-orbital-teal"
+              className="text-aqua"
+              iconClassName="text-aqua"
             />
           </div>
 

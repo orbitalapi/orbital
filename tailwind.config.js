@@ -42,7 +42,7 @@ module.exports = {
     extend: {
       colors: {
         'midnight-blue': '#12263b',
-        'orbital-teal': '#05BCC1',
+        'aqua': '#05BCC1',
         'citrus': {
           DEFAULT: '#e0ff4f',
 
