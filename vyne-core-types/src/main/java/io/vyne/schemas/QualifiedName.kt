@@ -1,7 +1,7 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.google.common.collect.Interners
+import com.google.common.collect.MapMaker
 import lang.taxi.types.ArrayType
 import lang.taxi.types.QualifiedNameParser
 import java.io.Serializable
@@ -14,7 +14,7 @@ data class QualifiedName @Deprecated("call QualifiedName.from() instead, as it u
    Serializable {
 
    companion object {
-      private val POOL = Interners.newStrongInterner<QualifiedName>()
+      private val POOL = MapMaker().weakKeys().makeMap<String, QualifiedName>()
       fun from(namespace: String, name: String, parmeters: List<QualifiedName> = emptyList()): QualifiedName {
          return if (namespace.isNotBlank()) {
             from("$namespace.$name", parmeters)
@@ -25,54 +25,69 @@ data class QualifiedName @Deprecated("call QualifiedName.from() instead, as it u
       }
 
       fun from(fullyQualifiedName: String, parameters: List<QualifiedName> = emptyList()): QualifiedName {
-         return POOL.intern(QualifiedName(fullyQualifiedName, parameters))
+         return POOL.getOrPut(calculateParameterizedName(fullyQualifiedName, parameters)) {
+            QualifiedName(fullyQualifiedName, parameters)
+         }
       }
+
+      fun calculateParameterizedName(fullyQualifiedName: String, parameters: List<QualifiedName>): String {
+         return if (parameters.isEmpty()) {
+            fullyQualifiedName
+         } else {
+            val params = parameters.joinToString(",") { it.parameterizedName }
+            "$fullyQualifiedName<$params>"
+         }
+      }
+
    }
 
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val name: String = fullyQualifiedName.split(".").last()
 
-   val parameterizedName: String = if (parameters.isEmpty()) {
-      fullyQualifiedName
-   } else {
-      val params = this.parameters.joinToString(",") { it.parameterizedName }
-      "$fullyQualifiedName<$params>"
-   }
+   val parameterizedName: String = calculateParameterizedName(fullyQualifiedName, parameters)
 
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val namespace: String = fullyQualifiedName.split(".").dropLast(1).joinToString(".")
 
    // Convenience for the UI
+   // Note: don't use by lazy {} here, as we see
+   // a lot of allocation of QualifiedName (even with the interner)
+   // and the lazy {} seems to allocate a bunch of bytes that drive up the heap
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
-   val longDisplayName: String by lazy {
-      val longTypeName = this.parameterizedName.replace("@@", " / ")
-      when {
-         this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1 -> parameters[0].fullyQualifiedName + "[]"
-         this.parameters.isNotEmpty() -> longTypeName + this.parameters.joinToString(
-            ",",
-            prefix = "<",
-            postfix = ">"
-         ) { it.longDisplayName }
+   val longDisplayName: String
+      get() {
+         val longTypeName = this.parameterizedName.replace("@@", " / ")
+         return when {
+            this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1 -> parameters[0].fullyQualifiedName + "[]"
+            this.parameters.isNotEmpty() -> longTypeName + this.parameters.joinToString(
+               ",",
+               prefix = "<",
+               postfix = ">"
+            ) { it.longDisplayName }
 
-         else -> longTypeName
+            else -> longTypeName
+         }
       }
-   }
 
    // Convenience for the UI
+   // Note: don't use by lazy {} here, as we see
+   // a lot of allocation of QualifiedName (even with the interner)
+   // and the lazy {} seems to allocate a bunch of bytes that drive up the heap
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
-   val shortDisplayName: String by lazy {
-      val shortTypeName = this.name.split("@@").last()
-      when {
-         this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1 -> parameters[0].shortDisplayName + "[]"
-         this.parameters.isNotEmpty() -> shortTypeName + this.parameters.joinToString(
-            ",",
-            prefix = "<",
-            postfix = ">"
-         ) { it.shortDisplayName }
+   val shortDisplayName: String
+      get() {
+         val shortTypeName = this.name.split("@@").last()
+         return when {
+            this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1 -> parameters[0].shortDisplayName + "[]"
+            this.parameters.isNotEmpty() -> shortTypeName + this.parameters.joinToString(
+               ",",
+               prefix = "<",
+               postfix = ">"
+            ) { it.shortDisplayName }
 
-         else -> shortTypeName
+            else -> shortTypeName
+         }
       }
-   }
 
    override fun toString(): String = parameterizedName
    override fun equals(other: Any?): Boolean {
