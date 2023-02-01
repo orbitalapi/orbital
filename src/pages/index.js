@@ -64,28 +64,16 @@ export default function Home({publishYourApiHighlightedSnippets, queryExampleCod
         />
         <title>Orbital - Automated integration for microservices.</title>
       </Head>
+      {/*Used to have: mb-20 space-y-20  sm:mb-32 sm:space-y-32 md:mb-40 md:space-y-40 */}
       <div
-        className="mb-20 space-y-20 overflow-hidden sm:mb-32 sm:space-y-32 md:mb-40 md:space-y-40 dark:bg-midnight-blue">
+        className="overflow-hidden dark:bg-midnight-blue">
         <HeroSection/>
-        <section className="text-center px-8 pb-[5rem]">
-          <h2 className="font-brand text-4xl tracking-tight sm:text-5xl text-white">
-            Connector-less integration
-          </h2>
-          <p className="mt-6 max-w-3xl mx-auto text-xl">
-            Leave behind field mappings and resolver glue code - they're time consuming and brittle.
-          </p>
-          <p className="mt-4 max-w-3xl mx-auto text-xl">
-            Orbital integrates on-demand, using metadata embedded in your API specs.
-          </p>
-          <p className="mt-8 max-w-3xl mx-auto text-3xl text-slate-300">
-            Automatically orchestrate your APIs, databases and message queues.  As things change, Orbital adapts.
-          </p>
-        </section>
       </div>
       <div className="pt-20 mb-20 space-y-20 overflow-hidden sm:pt-32 sm:mb-32 md:pt-40 md:mb-40">
+        <QueryExamples highlightedSnippets={queryExampleCodeHighlightedSnippets}/>
         <PublishYourApi highlightedSnippets={publishYourApiHighlightedSnippets}/>
         {/*<HowVyneWorks/>*/}
-        <QueryExamples highlightedSnippets={queryExampleCodeHighlightedSnippets}/>
+
         {/*<DebugTools/>*/}
         {/*<DataPipelines/>*/}
         {/*<FeatureArticles tag="blog" title="Latest from the blog" subtitle="From our brains to your eyeballs."/>*/}

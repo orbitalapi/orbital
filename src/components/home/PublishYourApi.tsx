@@ -127,10 +127,10 @@ export default function PublishYourApi({ highlightedSnippets }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
         <Caption className="text-pink-400 text-center ">Discover, and be discovered</Caption>
         <BigText className="text-center font-brand">
-          <Widont>Publish your APIs</Widont>
+          <Widont>Powered by your APIs</Widont>
         </BigText>
         <Paragraph>
-          Publish your API specs and Database schemas to Orbital, enriched with Taxi metadata to describe links.
+          Orbital uses your existing API specs and Database schemas - enriched with Taxi metadata to describe links.
         </Paragraph>
         <Paragraph>
           Orbital turns this into rich API and data catalog, letting you explore all your data, and how it connects

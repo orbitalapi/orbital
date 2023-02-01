@@ -14,7 +14,7 @@
 .token.rule,
 .token.pseudo-class,
 .token.important {
-  @apply text-slate-300;
+  @apply text-sky-300;
 }
 
 .token.attr-value,

@@ -49,24 +49,14 @@ export default class Document extends NextDocument {
           <meta name="msapplication-TileColor" content="#38bdf8"/>
           <meta name="msapplication-config" content={v('/favicons/browserconfig.xml')}/>
           <meta name="theme-color" content="#f8fafc"/>
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                // try {
-                //   if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                //     document.documentElement.classList.add('dark')
-                //     // This is required for mdx-mermaid set the theme correctly.
-                //     document.documentElement.setAttribute('data-theme', 'dark');
-                //     document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0B1120')
-                //   } else {
-                //     document.documentElement.classList.remove('dark')
-                //     // This is required for mdx-mermaid set the theme correctly.
-                //     document.documentElement.setAttribute('data-theme', 'light');
-                //   }
-                // } catch (_) {}
-              `,
-            }}
-          />
+          {/*         // Can't use leaderLine in webpack unfortunately,
+         // as while it works at dev time, in prod builds
+         // it fails as the library refers to `window`, which isn't
+         // available in ssr.
+         //
+         // Instead, we're loading from a CDN, and inserting as a global.*/}
+          <script src="https://cdn.jsdelivr.net/npm/leader-line@1.0.7/leader-line.min.js"
+                  integrity="sha256-iKeFRzcz3iPVPlQcZXB/1wesZwIwnrY41rN7yaFvVB4=" crossOrigin="anonymous"></script>
         </Head>
         <body
           className={clsx('antialiased text-slate-500 dark:text-slate-400', {
