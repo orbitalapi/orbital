@@ -12,8 +12,8 @@ const footerNav = [
       {title: 'Building data pipelines', href: 'https://docs.orbitalhq.com/'},
     ],
     Guides: [
-      {title: 'APIs, Dbs and Queues - A flyby of Orbital ', href: 'https://docs.orbitalhq.com/'},
-      {title: 'Building a datamesh', href: 'https://docs.orbitalhq.com/'},
+      {title: 'APIs, DBs and Queues - A flyby of Orbital ', href: 'https://docs.orbitalhq.com/'},
+      {title: 'Building a datamesh with Orbital', href: 'https://docs.orbitalhq.com/'},
       {title: 'Taxonomy best practices', href: 'https://docs.orbitalhq.com/'},
       {title: 'Zero code data normalization', href: 'https://docs.orbitalhq.com/'},
     ],

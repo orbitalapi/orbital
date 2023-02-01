@@ -2,7 +2,8 @@ const Prism = require('prismjs')
 const loadLanguages = require('prismjs/components/')
 const redent = require('redent')
 const {taxiPrismLanguage} = require('../src/utils/taxiPrismLanguage')
-loadLanguages()
+
+loadLanguages();
 // register Taxi for syntax highlighting
 taxiPrismLanguage(Prism);
 

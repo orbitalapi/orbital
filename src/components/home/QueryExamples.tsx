@@ -1,16 +1,21 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { BigText, Caption, Link, Paragraph } from '../common';
+import { BigText, Caption, Paragraph } from '@/components/home/common';
 import { Tabs } from '../Tabs';
 import { GridLockup } from '../GridLockup';
-import { AnimatePresence, motion } from 'framer-motion';
-import { CodeWindow } from '../CodeWindow';
+import { AnimatePresence } from 'framer-motion';
 import { Widont } from '../Widont';
-import ExplainPlan, { ExplainPlanProps } from './explain-plan';
-import ResultsTable, { ResultsTableProps } from './results-table';
+import ExplainPlan, { ExplainPlanProps } from './ExplainPlan';
 import Prism from 'prismjs';
+import { Button } from '@/components/Button';
+import { Snippet } from '@/components/Steps';
+import { CodeSnippet, CodeSnippetMap, HighlightedCodeSnippetMap } from '@/components/Guides/CodeSnippet';
+import IntegrationDiagram, { IntegrationDiagramProps } from '@/components/home/IntegrationDiagram';
 
-const paragraphClass = 'text-lg font-semibold text-indigo-600 mb-8'
+const paragraphClass = 'text-lg font-semibold text-sky-400 mb-8'
+
+export type Tabs = 'Fetch' | 'Combine' | 'Stream' | 'Expressions';
+
 const tabData = {
   'Fetch': {
     query: `find { Customer[] }
@@ -22,34 +27,25 @@ as {
 }
       `,
     paragraph: () => (
-      <Paragraph className={paragraphClass}>Vyne automatically generates integration code for calling your APIs
+      <Paragraph className={paragraphClass}>Orbital automatically generates integration code for calling your APIs
       </Paragraph>
     ),
-    explainPlan: [{
-      title: ['fetch Customer'],
-      rows: [
-        { method: 'GET', operationName: 'Customer API', path: '/customers' },
-        { method: 'TRANSFORM', operationName: '{ name, firstName, lastName }' },
-        { method: 'EVALUATE', operationName: `concat(CustomerFirstName, ' ', CustomerLastName)` },
-
+    integrationDiagrams: [{
+      title: ['Customer', 'CardNumber'],
+      nodes: [
+        { title: 'Orbital', type: 'orbital', linkText: 'Fetch' },
+        { title: 'Customer\nAPI', type: 'api' },
       ]
-    }] as ExplainPlanProps[],
+    }] as IntegrationDiagramProps[],
     lines: [
       {
-        from: () => Array.from(document.getElementsByClassName('token keyword')).filter(t => t.innerText === 'find')[0],
+        from: () => Array.from(document.getElementsByClassName('token keyword')).filter((t: HTMLElement) => t.innerText === 'find')[0],
         to: () => document.getElementById('Fetch-Plan-0').querySelector('img'),
         offset: 'find { Customer[] }'.length
       }
     ],
-    results: {
-      headers: ['id', 'firstName', 'lastName', 'name'],
-      rows: [
-        [1, 'Jimmy', 'Smitts', 'Jimmy Smitts'],
-        [2, 'Jane', 'Splatt', 'Jane Splatt'],
-      ]
-    } as ResultsTableProps
   },
-  Join: {
+  'Combine': {
     query: `find { Customer[] }
 as {
    id: CustomerId
@@ -60,42 +56,39 @@ as {
 }
       `,
     paragraph: () => (
-      <Paragraph className={paragraphClass}>Ask for data from multiple sources, Vyne automatically links data
+      <Paragraph className={paragraphClass}>Query for data from multiple sources, Orbital automatically links data
         sources, as required
       </Paragraph>
     ),
-    explainPlan: [{
-      title: ['Customer', 'CardNumber'],
-      rows: [
-        { method: 'GET', operationName: 'Customer API', path: '/customers' },
-        { method: 'SELECT', operationName: 'Cards Database', path: 'select c.cardNumber from...' },
-      ]
-    }, {
-      title: ['Customer', 'AccountBalance'],
-      rows: [
-        { method: 'GET', operationName: 'Customer API', path: '/customers' },
-        { method: 'SELECT', operationName: 'Cards Database', path: 'select c.cardNumber from...' },
-        { method: 'GET', operationName: 'Accounts API', path: '/balances/{cardNumber}' },
-      ]
-    },] as ExplainPlanProps[],
+    integrationDiagrams: [
+      {
+        title: ['Customer', 'CardNumber'],
+        nodes: [
+          { title: 'Customer\nAPI', type: 'api', linkText: 'CustomerId' },
+          { title: 'Cards\nDatabase', type: 'database' },
+        ]
+      },
+      {
+        title: ['Customer', 'AccountBalance'],
+        nodes: [
+          { title: 'Customer\nAPI', type: 'api', linkText: 'CustomerId' },
+          { title: 'Cards\nDatabase', type: 'database', linkText: 'CardNbr' },
+          { title: 'Balances\nAPI', type: 'api' }
+        ]
+      }
+    ] as IntegrationDiagramProps[],
     lines: [
       {
-        from: () => Array.from(document.getElementsByClassName('token class-name')).filter(t => t.innerText === 'CardNumber')[0],
-        to: () => document.getElementById('Join-Plan-0').querySelector('img'),
-        offset: 'CardNumber'.length
-      }, {
-        from: () => Array.from(document.getElementsByClassName('token class-name')).filter(t => t.innerText === 'AccountBalance')[0],
-        to: () => document.getElementById('Join-Plan-1').querySelector('img'),
-        offset: 'AccountBalance'.length
+        from: () => Array.from(document.getElementsByClassName('token class-name')).filter((t: HTMLElement) => t.innerText === ': CardNumber')[0],
+        to: () => document.getElementById('Combine-Plan-0').querySelector('img'),
+        offset: ': CardNumber'.length
+      },
+      {
+        from: () => Array.from(document.getElementsByClassName('token class-name')).filter((t: HTMLElement) => t.innerText === ': AccountBalance')[0],
+        to: () => document.getElementById('Combine-Plan-1').querySelector('img'),
+        offset: ': AccountBalance'.length
       }
     ],
-    results: {
-      headers: ['id', 'firstName', 'lastName', 'cardNumber', 'balance'],
-      rows: [
-        [1, 'Jimmy', 'Smitts', '525-600-112-230', '$89.00'],
-        [2, 'Jane', 'Splatt', '43-24601-33-23', '$5,230.23'],
-      ]
-    } as ResultsTableProps
   },
   Stream: {
     query: `stream { PurchaseEvents }
@@ -112,48 +105,38 @@ as {
       <Paragraph className={paragraphClass}>Work with streaming data, joined across databases and APIs
       </Paragraph>
     ),
-    explainPlan: [
+    integrationDiagrams: [
       {
-        title: ['Stream PurchaseEvents'],
-        rows: [
-          { method: 'SUBSCRIBE', operationName: 'Kafka', path: 'transactions topic' },
+        title: ['Subscribe for PurchaseEvents'],
+        nodes: [
+          { title: 'Orbital', type: 'api', linkText: 'Subscribe' },
+          { title: 'Purchases', type: 'kafka' },
+        ]
+      }, {
+        title: ['PurchaseEvent', 'AccountBalance'],
+        nodes: [
+          { title: 'Purchases', type: 'kafka', linkText: 'CustomerId' },
+          { title: 'Cards\nDatabase', type: 'database', linkText: 'CardNumber' },
+          { title: 'Balances\nAPI', type: 'api' },
         ]
       },
-      // {
-      //     title: ['PurchaseEvent', 'StoreLocation'],
-      //     rows: [
-      //         {method: 'SUBSCRIBE', operationName: 'Kafka', path: 'transactions topic'},
-      //         {method: 'SELECT', operationName: 'Stores Database', path: 'SELECT location from stores...'},
-      //     ]
-      // },
-      {
-        title: ['PurchaseEvent', 'AccountBalance'],
-        rows: [
-          { method: 'SUBSCRIBE', operationName: 'Kafka', path: 'transactions topic' },
-          { method: 'GET', operationName: 'Customer API', path: '/customers/{customerId}' },
-          { method: 'SELECT', operationName: 'Cards Database', path: 'select c.cardNumber from...' },
-          { method: 'GET', operationName: 'Accounts API', path: '/balances/{cardNumber}' },
-        ]
-      }
-    ] as ExplainPlanProps[],
-    results: {
-      headers: ['id', 'name', 'storeLocation', 'txnId', 'value', 'remainingBalance'],
-      rows: [
-        [1, 'Jimmy Smitts', 'London', 23004, '$45.00', '$2,300.00'],
-        [2, 'Jane Splatt', 'New York', 89003, '$11.50', '$5,230.23'],
-      ]
-    } as ResultsTableProps,
+    ] as IntegrationDiagramProps[],
     lines: [
       {
-        from: () => Array.from(document.getElementsByClassName('token class-name')).filter(t => t.innerText === 'AccountBalance')[0],
+        from: () => Array.from(document.getElementsByClassName('token keyword')).filter((t: HTMLElement) => t.innerText === 'stream')[0],
+        to: () => document.getElementById('Stream-Plan-0').querySelector('img'),
+        offset: 'stream { PurchaseEvents }'.length
+      },
+      {
+        from: () => Array.from(document.getElementsByClassName('token class-name')).filter((t: HTMLElement) => t.innerText === ': AccountBalance')[0],
         to: () => document.getElementById('Stream-Plan-1').querySelector('img'),
-        offset: 'AccountBalance'.length
+        offset: ': AccountBalance'.length
       }
     ],
   },
   Expressions: {
     query: `// Create simple definitions to share,
-// Vyne will find the data for you.
+// Orbital will find the data for you.
 type Profit = PurchasePrice - CostOfSale
 type CostOfSale = (PurchasePrice * AgentCommission) + UnitPrice
 // Use definitions in your queries
@@ -164,31 +147,20 @@ as {
    profit: Profit
 }`,
     paragraph: () => (
-      <Paragraph className={paragraphClass}>Define your logic once, let Vyne do the working out.
+      <Paragraph className={paragraphClass}>Define your logic once, let Orbital do the working out.
       </Paragraph>
     ),
-    explainPlan: [
-      {
-        title: ['PurchaseEvent', 'Profit'],
-        rows: [
-          { method: 'SUBSCRIBE', operationName: 'Kafka', path: 'transactions topic' },
-          { method: 'GET', operationName: 'Stock API', path: '/stock/{productId}/wholesalePrice' },
-          { method: 'SELECT', operationName: 'HR Database', path: 'select c.agentCommission from...' },
-          { method: 'EVALUATE', operationName: 'CostOfSale = (PurchasePrice * AgentCommission) + UnitPrice' },
-          { method: 'EVALUATE', operationName: 'Profit = PurchasePrice - CostOfSale' },
-        ]
-      }
-    ] as ExplainPlanProps[],
-    results: {
-      headers: ['id', 'name', 'storeLocation', 'txnId', 'value', 'remainingBalance'],
-      rows: [
-        [1, 'Jimmy Smitts', 'London', 23004, '$45.00', '$2,300.00'],
-        [2, 'Jane Splatt', 'New York', 89003, '$11.50', '$5,230.23'],
+    integrationDiagrams: [{
+      title: ['Customer', 'CardNumber'],
+      nodes: [
+        { title: `Customer API`, type: 'api', linkText: 'CustomerId' },
+        { title: 'Cards Database', type: 'database', linkText: 'CardNbr' },
+        { title: 'Balances API', type: 'kafka' }
       ]
-    } as ResultsTableProps,
+    }] as IntegrationDiagramProps[],
     // lines: [
     //     {
-    //         from: () => Array.from(document.getElementsByClassName('token class-name')).filter(t => t.innerText === 'Profit')[1],
+    //         from: () => Array.from(document.getElementsByClassName('token class-name')).filter((t:HTMLElement) => t.innerText === 'Profit')[1],
     //         to: () => document.getElementById('Expressions-Plan-0').querySelector('img'),
     //         offset: 'Profit'.length
     //     }
@@ -196,6 +168,17 @@ as {
   },
 }
 
+export const queryExampleCodeSnippets: CodeSnippetMap = Object.fromEntries(Object.entries(tabData).map(([key, value]) => {
+  return [key, {
+    // Using graphQL for query snippets until we improve
+    // the grammar spec to cover TaxiQL
+    // NOte: Changing this also need to update the element selection logic in IntegrationDiagram.
+    // Just look for the text span in chrome-dev-tools, and find the css class applied to the span.  Super simple
+    lang: 'taxi',
+    name: 'query.taxi',
+    code: value.query
+  } as CodeSnippet]
+}))
 // Icons taken from:
 // https://iconpark.oceanengine.com/official
 let tabs = {
@@ -210,7 +193,7 @@ let tabs = {
       <path d="M4 34H44" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </>
   ),
-  Join: (selected) => (
+  Combine: (selected) => (
     <>
       <svg width="38" height="38" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="16" y="16" width="27" height="27" rx="2" stroke="currentColor" strokeWidth="2"
@@ -249,26 +232,13 @@ let tabs = {
 
 const lines = [];
 
-function QueryExamples() {
+export type QueryExampleProps = {
+  highlightedSnippets: HighlightedCodeSnippetMap
+}
+
+function QueryExamples(props: QueryExampleProps) {
 
   const [tab, setTab] = useState('Fetch')
-  Prism.languages.taxi = Prism.languages.extend('graphql', {
-    'comment': [
-      {
-        pattern: /(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,
-        lookbehind: true,
-        greedy: true
-      },
-      {
-        pattern: /(^|[^\\:])\/\/.*/,
-        lookbehind: true,
-        greedy: true
-      }
-    ],
-    'keyword': /\b(?:find|stream|model|type|inherits|as|namespace|import|parameter|by|when|else|closed|with|synonym|of|alias|extension|service|operation|lineage|query|)\b/,
-    'scalar': /\b(?:String|Boolean|Int|Decimal|Date|Time|DateTime|INstant|Any|Double|Void)\b/,
-
-  });
 
   function drawConnectorLines() {
     // We used to do this:
@@ -282,7 +252,7 @@ function QueryExamples() {
     // Note: Scoping matters here, as placing this reference outside this function
     // will cause evaluation at build time (when gatsby renders the pages)
     // which will break the build
-    const LeaderLine = window.LeaderLine;
+    const LeaderLine = (window as any).LeaderLine;
 
     removeLines()
     if (tabData[tab].lines !== undefined) {
@@ -336,36 +306,34 @@ function QueryExamples() {
 
 
   return (
-    <section id="query-examples" className="relative bg-sky-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 md:py-32 py-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-          <Caption className="text-indigo-500 ">Fetch anything</Caption>
-          <BigText>
-            <Widont>All your data, exactly how you need it, one API.</Widont>
-          </BigText>
-          <Paragraph>
-            Ask for the data you need, and Vyne builds integrations between data sources on the fly
-            to fetch, combine and transform the data you need.
-          </Paragraph>
-          <Paragraph>
-            Vyne works with databases, streaming data sources, APIs, lambdas, the lot.
-          </Paragraph>
-          {/*<Paragraph>*/}
-          {/*   Utility classes help you work within the constraints of a system instead of littering your*/}
-          {/*   stylesheets with arbitrary values. They make it easy to be consistent with color choices,*/}
-          {/*   spacing, typography, shadows, and everything else that makes up a well-engineered design*/}
-          {/*   system.*/}
-          {/*</Paragraph>*/}
-          <a href="https://docs.vyne.co/querying-with-vyne/writing-queries/" color="indigo" darkColor="indigo">
-            Learn more
-          </a>
+    <section id="query-examples" className="relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+        <div className={'flex flex-col items-center'}>
+          <div className="max-w-3xl mx-auto flex flex-col items-center">
+            <BigText className="text-center font-brand">
+              <Widont>Connect without the glue</Widont>
+            </BigText>
+            <Paragraph>
+              Query for the data you need, and Orbital integrates on-the-fly.
+            </Paragraph>
+            <Paragraph>
+              From simple API calls, to complex multi-hop lookups, Oribtal automatically orchestrates your APIs,
+              databases, queues and lambdas.
+            </Paragraph>
+            <Paragraph>
+              No glue code required. As things change, Orbital adapts.
+            </Paragraph>
+            <Button href="https://docs.vyne.co/querying-with-vyne/writing-queries/" className={'mt-8 mb-8'}>
+              Learn more
+            </Button>
+          </div>
           <div className="mt-10">
             <Tabs
               tabs={tabs}
               selected={tab}
               onChange={(tab) => setTab(tab)}
-              className="text-indigo-600 "
-              iconClassName="text-indigo-500 "
+              className="text-sky-400 "
+              iconClassName="text-sky-500 "
             />
           </div>
 
@@ -375,41 +343,16 @@ function QueryExamples() {
         <GridLockup
           className="mt-10 xl:mt-2"
           left={
-            <CodeWindow>
-              <AnimatePresence initial={true} exitBeforeEnter onExitComplete={doHighlight}>
-                <motion.div
-                  key={tab}
-                  className="w-full flex-auto flex min-h-0"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <CodeWindow.Code2 lines={lineCount(tabData[tab].query)}
-                                    language="taxi"
-                  >
-                    <code className="language-taxi" style={{ 'whiteSpace': 'pre-wrap' }}>
-                      {tabData[tab].query}
-                    </code>
-
-                  </CodeWindow.Code2>
-                </motion.div>
-              </AnimatePresence>
-            </CodeWindow>
+            <Snippet highlightedCode={props.highlightedSnippets[tab]} code={queryExampleCodeSnippets[tab]}/>
           }
           right={
             <AnimatePresence initial={false} exitBeforeEnter>
               <>
-                {/*Not showing the results table anymore, just show the explain plans*/}
-                {/*{tabData[tab].results && (*/}
-                {/*    <div className=' flex flex-col items-center'>*/}
-                {/*        <ResultsTable headers={tabData[tab].results.headers}*/}
-                {/*                      rows={tabData[tab].results.rows}/>*/}
-                {/*    </div>)}*/}
-                {tabData[tab].explainPlan.map((plan, idx) => {
+                {tabData[tab].integrationDiagrams.map((plan, idx) => {
                   return (<div key={`${tab}-PlanDiv-${idx}`} id={`${tab}-Plan-${idx}`}
                                className=" pt-8 flex flex-col items-center">
                     {/* We use this id for building lines from the query to the plan*/}
-                    <ExplainPlan  {...plan}/>
+                    <IntegrationDiagram  {...plan}/>
                   </div>)
                 })
                 }
@@ -422,18 +365,6 @@ function QueryExamples() {
       </div>
     </section>
   )
-}
-
-
-function highlightTokens(query: string) {
-  const languages = Object.keys(Prism.languages);
-  const grammar = Prism.languages['graphql'];
-  if (grammar === null || grammar === undefined) {
-    return ' Taxi not found - found : ' + languages;
-  }
-  const tokens = Prism.tokenize(query, grammar)
-  return JSON.stringify(tokens);
-  // return tokens;
 }
 
 function lineCount(src: string): number {

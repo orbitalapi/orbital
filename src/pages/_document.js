@@ -1,5 +1,6 @@
 import clsx from 'clsx'
 import NextDocument, {Head, Html, Main, NextScript} from 'next/document'
+import {ServerStyleSheet} from "styled-components";
 
 const FAVICON_VERSION = 3
 
@@ -9,8 +10,28 @@ function v(href) {
 
 export default class Document extends NextDocument {
   static async getInitialProps(ctx) {
-    const initialProps = await NextDocument.getInitialProps(ctx)
-    return {...initialProps}
+    const sheet = new ServerStyleSheet()
+    const originalRenderPage = ctx.renderPage
+
+    // Enable styled-components.
+    // See here: https://github.com/vercel/next.js/blob/canary/examples/with-styled-components/pages/_document.tsx
+    // docs are here: https://styled-components.com/docs/advanced#nextjs
+
+    try {
+      ctx.renderPage = () =>
+        originalRenderPage({
+          enhanceApp: (App) => (props) =>
+            sheet.collectStyles(<App {...props} />),
+        })
+
+      const initialProps = await NextDocument.getInitialProps(ctx)
+      return {
+        ...initialProps,
+        styles: [initialProps.styles, sheet.getStyleElement()],
+      }
+    } finally {
+      sheet.seal()
+    }
   }
 
   render() {
@@ -28,24 +49,14 @@ export default class Document extends NextDocument {
           <meta name="msapplication-TileColor" content="#38bdf8"/>
           <meta name="msapplication-config" content={v('/favicons/browserconfig.xml')}/>
           <meta name="theme-color" content="#f8fafc"/>
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                try {
-                  if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                    document.documentElement.classList.add('dark')
-                    // This is required for mdx-mermaid set the theme correctly.
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                    document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0B1120')
-                  } else {
-                    document.documentElement.classList.remove('dark')
-                    // This is required for mdx-mermaid set the theme correctly.
-                    document.documentElement.setAttribute('data-theme', 'light');
-                  }
-                } catch (_) {}
-              `,
-            }}
-          />
+          {/*         // Can't use leaderLine in webpack unfortunately,
+         // as while it works at dev time, in prod builds
+         // it fails as the library refers to `window`, which isn't
+         // available in ssr.
+         //
+         // Instead, we're loading from a CDN, and inserting as a global.*/}
+          <script src="https://cdn.jsdelivr.net/npm/leader-line@1.0.7/leader-line.min.js"
+                  integrity="sha256-iKeFRzcz3iPVPlQcZXB/1wesZwIwnrY41rN7yaFvVB4=" crossOrigin="anonymous"></script>
         </Head>
         <body
           className={clsx('antialiased text-slate-500 dark:text-slate-400', {

@@ -8,3 +8,7 @@
 
 @import 'tailwindcss/components';
 @import 'utilities.css';
+
+.leader-line {
+  z-index: 10;
+}

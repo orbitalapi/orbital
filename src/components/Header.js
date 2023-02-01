@@ -96,6 +96,11 @@ export function NavItems() {
         </Link>
       </li>
       <li>
+        <Link href="/pricing">
+          <a className="hover:text-sky-500 dark:hover:text-sky-400">Pricing</a>
+        </Link>
+      </li>
+      <li>
         <Link href="/blog">
           <a className="hover:text-sky-500 dark:hover:text-sky-400">Blog</a>
         </Link>
@@ -104,7 +109,7 @@ export function NavItems() {
   )
 }
 
-export function Header({hasNav = false, navIsOpen, onNavToggle, title, section}) {
+export function Header({hasNav = false, navIsOpen, onNavToggle, title, section, allowThemeToggle = true}) {
   let [isOpaque, setIsOpaque] = useState(false)
 
   useEffect(() => {
@@ -176,7 +181,7 @@ export function Header({hasNav = false, navIsOpen, onNavToggle, title, section})
                   </ul>
                 </nav>
                 <div className="flex items-center border-l border-slate-200 ml-6 pl-6 dark:border-slate-800">
-                  <ThemeToggle panelClassName="mt-8"/>
+                  { allowThemeToggle && (<ThemeToggle panelClassName="mt-8"/>)}
                   <a
                     href="https://github.com/orbitalapi/orbital"
                     className="ml-6 block text-slate-400 hover:text-slate-500 dark:hover:text-slate-300"

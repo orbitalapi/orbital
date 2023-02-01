@@ -152,10 +152,10 @@ function Code({code, lang, pad}) {
   )
 }
 
-function Snippet({code, highlightedCode}) {
+export function Snippet({code, highlightedCode}) {
   if (Array.isArray(code)) {
     return (
-      <div className="col-span-3">
+      <div>
         <SnippetGroup
           actions={({selectedIndex}) => <CopyButton code={code[selectedIndex].code}/>}
         >
