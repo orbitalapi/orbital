@@ -8,6 +8,7 @@ import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import io.vyne.models.EvaluatedExpression
 import io.vyne.models.FailedEvaluatedExpression
 import io.vyne.models.MappedSynonym
@@ -2814,5 +2815,71 @@ service Broker1Service {
 //      result.should.equal(mapOf("title" to "Star Wars", "star" to "Mark Hamill"))
    }
 
+
+   @Test
+   fun `should resolve items on inline projection`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         type CreditScore inherits String
+         type BloodType inherits String
+         model Person {
+           id : PersonId inherits Int
+           name : PersonName inherits String
+          }
+          model ActorDetails {
+            bloodType : BloodType
+            creditScore : CreditScore
+          }
+          model Movie {
+            cast : Person[]
+         }
+
+         service MyService {
+            operation findMovies():Movie[]
+            operation getActorDetails(PersonId):ActorDetails
+         }
+         """
+      )
+      stub.addResponse(
+         "findMovies", vyne.parseJson(
+            "Movie[]", """[
+            |{ "cast" : [
+            |    { "id" : 1, "name" : "Tom Planks" },
+            |    { "id" : 2, "name" : "Jimmy Falcon" }
+            | ] }
+            |]""".trimMargin()
+         )
+      )
+      val actorDetails = vyne.parseJson(
+         "ActorDetails",
+         """{ "bloodType" : "O+", "creditScore" : "AAA" } """
+      )
+      stub.addResponse("getActorDetails", actorDetails)
+      val result = vyne.query(
+         """
+find { Movie[] } as {
+    cast : Person[]
+    aListers : filterAll(this.cast, (Person) -> containsString(PersonName, 'a')) as  { // Inferred return type is Person
+       bloodType : BloodType
+       creditScore : CreditScore
+       ...except { id }
+    }[]
+}[]"""
+      ).firstTypedObject()["aListers"].toRawObject() as List<Map<String, Any>>
+      result.shouldBe(
+         listOf(
+            mapOf(
+               "name" to "Tom Planks",
+               "bloodType" to "O+",
+               "creditScore" to "AAA"
+            ),
+            mapOf(
+               "name" to "Jimmy Falcon",
+               "bloodType" to "O+",
+               "creditScore" to "AAA"
+            )
+         )
+      )
+   }
 
 }

@@ -7,7 +7,6 @@ import io.vyne.query.TypedInstanceValidPredicate
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.accessors.Argument
-import lang.taxi.accessors.ProjectionFunctionScope
 
 /**
  * Allows for segreated searches of facts.
@@ -24,9 +23,10 @@ import lang.taxi.accessors.ProjectionFunctionScope
  * from the global set of facts (whcih contain many entities)
  */
 class CascadingFactBag(private val primary: FactBag, private val secondary: FactBag) : FactBag {
-   constructor(primary: FactBag, secondary: TypedInstance, schema: Schema) : this(
+   constructor(primary: FactBag, secondary: TypedInstance, schema: Schema) : this(primary, listOf(secondary), schema)
+   constructor(primary: FactBag, secondary: List<TypedInstance>, schema: Schema) : this(
       primary,
-      CopyOnWriteFactBag(listOf(secondary), schema)
+      CopyOnWriteFactBag(secondary, schema)
    )
 
    enum class CascadeApproach {
@@ -44,9 +44,13 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
    override val scopedFacts: List<ScopedFact> = primary.scopedFacts + secondary.scopedFacts
 
    override fun getScopedFact(scope: Argument): ScopedFact {
-      return getScopedFactOrNull(scope) ?:
-         error("No scope of ${scope.name} exists in this CascadingFactBag")
+      return getScopedFactOrNull(scope) ?: error("No scope of ${scope.name} exists in this CascadingFactBag")
    }
+
+//   val currentScopedFact:ScopedFact?
+//      get() {
+//         return primary.scopedFacts.
+//      }
 
    override fun getScopedFactOrNull(scope: Argument): ScopedFact? {
       return primary.getScopedFactOrNull(scope) ?: secondary.getScopedFactOrNull(scope)
@@ -178,7 +182,7 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
       if (search.strategy == FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) {
          val primaryFact = primary.getFactOrNull(search)
          val secondaryFact = secondary.getFactOrNull(search)
-         return combineIfPossible(primaryFact,secondaryFact)
+         return combineIfPossible(primaryFact, secondaryFact)
       } else {
          return primary.getFactOrNull(search) ?: secondary.getFactOrNull(search)
       }

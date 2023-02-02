@@ -1,10 +1,12 @@
 package io.vyne.query.collections
 
-import io.vyne.models.*
+import io.vyne.models.MixedSources
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
 import io.vyne.models.facts.FactDiscoveryStrategy
 import io.vyne.models.facts.FactSearch
 import io.vyne.models.facts.FilterPredicateStrategy
-import io.vyne.query.ExcludeQueryStrategyKlassPredicate.Companion.ExcludeObjectBuilderPredicate
+import io.vyne.query.ExcludeQueryStrategyKlassPredicate.Companion.ExcludeObjectBuilder
 import io.vyne.query.QueryContext
 import io.vyne.query.QueryEngine
 import io.vyne.query.SearchFailedException
@@ -14,10 +16,13 @@ import io.vyne.schemas.Field
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withContext
 import lang.taxi.types.PrimitiveType
-import lang.taxi.types.TypedValue
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -74,7 +79,7 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
       queryContext: QueryContext,
       spec: TypedInstanceValidPredicate
    ): TypedInstance? {
-      val queryResult = queryEngine.find(targetType, queryContext, spec, ExcludeObjectBuilderPredicate)
+      val queryResult = queryEngine.find(targetType, queryContext, spec, ExcludeObjectBuilder)
       val resultList = try {
          queryResult.results
             .toList()
