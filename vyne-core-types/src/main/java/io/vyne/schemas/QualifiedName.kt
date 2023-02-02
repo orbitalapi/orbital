@@ -14,7 +14,7 @@ data class QualifiedName @Deprecated("call QualifiedName.from() instead, as it u
    Serializable {
 
    companion object {
-      private val POOL = MapMaker().weakKeys().makeMap<String, QualifiedName>()
+      private val POOL = MapMaker().makeMap<String, QualifiedName>()
       fun from(namespace: String, name: String, parmeters: List<QualifiedName> = emptyList()): QualifiedName {
          return if (namespace.isNotBlank()) {
             from("$namespace.$name", parmeters)
