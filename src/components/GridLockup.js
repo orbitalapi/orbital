@@ -22,27 +22,12 @@ export function GridLockup({
 GridLockup.Container = function Grid({beams = 0, className, overhang = 'sm', children}) {
   return (
     <div className={clsx('relative pt-10 xl:pt-0', className)}>
-      <div
-        className={clsx(
-          'hidden dark:block absolute top-0 inset-x-0 h-[37.5rem] bg-gradient-to-b from-[#0c1120]',
-          overhangs[overhang]
-        )}
-      />
-      {beams !== -1 && (
-        <div
-          className={clsx(
-            'absolute top-0 inset-x-0 bg-top bg-no-repeat',
-            styles[`beams-${beams}`],
-            overhangs[overhang]
-          )}
-        />
-      )}
-      <div
-        className={clsx(
-          'absolute top-0 inset-x-0 h-[37.5rem] bg-grid-slate-900/[0.04] bg-top [mask-image:linear-gradient(0deg,transparent,black)] dark:bg-grid-slate-100/[0.03] dark:bg-[center_top_-1px] dark:border-t dark:border-slate-100/5',
-          overhangs[overhang]
-        )}
-      />
+      {/*<div*/}
+      {/*  className={clsx(*/}
+      {/*    'hidden dark:block absolute top-0 inset-x-0 h-[37.5rem] bg-gradient-to-b from-[#0c1120]',*/}
+      {/*    overhangs[overhang]*/}
+      {/*  )}*/}
+      {/*/>*/}
       {/* <div
         className={clsx(
           'absolute top-0 inset-x-0 min-h-[37.5rem]  bg-top bg-no-repeat dark:border-t dark:border-slate-100/5',

@@ -10,6 +10,7 @@ import wormholeAqua from '@/img/wormhole-aqua-transparent.png';
 import {ReactComponent as DataPatternLight} from '@/img/data-pattern.svg';
 import PublishYourApi, {publishYourApiCodeSnippets} from "@/components/home/PublishYourApi";
 import QueryExamples, {queryExampleCodeSnippets} from "@/components/home/QueryExamples";
+import DebugTools from "@/components/home/DebugTools";
 
 
 function HeroSection() {
@@ -74,7 +75,7 @@ export default function Home({publishYourApiHighlightedSnippets, queryExampleCod
         <PublishYourApi highlightedSnippets={publishYourApiHighlightedSnippets}/>
         {/*<HowVyneWorks/>*/}
 
-        {/*<DebugTools/>*/}
+        <DebugTools/>
         {/*<DataPipelines/>*/}
         {/*<FeatureArticles tag="blog" title="Latest from the blog" subtitle="From our brains to your eyeballs."/>*/}
       </div>
