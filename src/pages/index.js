@@ -6,7 +6,7 @@ import {Header, NavItems, NavPopover} from '@/components/Header'
 import {useTheme} from '@/components/ThemeToggle'
 
 import wormholeCitrus from '@/img/wormhole-citrus-transparent.png';
-import wormholeAqua from '@/img/wormhole-aqua-transparent.png';
+import networkDiagram from '@/components/home/img/network-diagram.png';
 import {ReactComponent as DataPatternLight} from '@/img/data-pattern.svg';
 import PublishYourApi, {publishYourApiCodeSnippets} from "@/components/home/PublishYourApi";
 import QueryExamples, {queryExampleCodeSnippets} from "@/components/home/QueryExamples";
@@ -19,25 +19,30 @@ function HeroSection() {
       <div className="px-4 sm:px-6 md:px-8 dark:bg-midnight-blue">
         <Header allowThemeToggle={false}/>
         <div className="font-brand relative max-w-8xl mx-auto pt-20 sm:pt-24 lg:pt-32 relative">
-          <div className="max-w-2xl pb-[15rem]">
-            <h1 className="text-slate-900 text-4xl sm:text-5xl lg:text-6xl tracking-tight dark:text-white">
-              Automated integration for microservices
-            </h1>
-            <p className="mt-6 text-3xl text-slate-600 dark:text-slate-400">
-              Orbital eliminates the integration effort, so you can get back to shipping
-            </p>
-            <div className="mt-6 sm:mt-10 flex justify-left space-x-6 text-sm">
-              <NextLink href="/docs/installation">
-                <a
-                  className="bg-citrus hover:bg-citrus-300 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50 text-midnight-blue font-semibold h-12 px-6 rounded-lg w-10 flex items-center justify-center sm:w-auto dark:bg-citrus dark:highlight-white/20 dark:hover:bg-citrus-300">
-                  Get started
-                </a>
-              </NextLink>
+          <div className={'flex'}>
+            <div className="max-w-2xl pb-[15rem]">
+              <h1 className="text-slate-900 text-4xl sm:text-5xl lg:text-6xl tracking-tight dark:text-white">
+                Automated integration for microservices
+              </h1>
+              <p className="mt-6 text-3xl text-slate-600 dark:text-slate-400">
+                Orbital eliminates the integration effort, so you can get back to shipping
+              </p>
+              <div className="mt-6 sm:mt-10 flex justify-left space-x-6 text-sm">
+                <NextLink href="/docs/installation">
+                  <a
+                    className="bg-citrus hover:bg-citrus-300 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50 text-midnight-blue font-semibold h-12 px-6 rounded-lg w-10 flex items-center justify-center sm:w-auto dark:bg-citrus dark:highlight-white/20 dark:hover:bg-citrus-300">
+                    Get started
+                  </a>
+                </NextLink>
+              </div>
+            </div>
+            <div className={'bg-slate-900/75 z-10 p-8 backdrop-blur-md shadow-2xl rounded-md ml-20 -mt-24 mb-32'}>
+              <img src={networkDiagram.src} className={'w-[560px]'}/>
             </div>
 
           </div>
-          <img src={wormholeAqua.src} className="h-[500px] rotate-[130deg] absolute top-0 right-0 dark:hidden block"/>
-          <img src={wormholeCitrus.src} className="h-[500px] rotate-[130deg] absolute top-0 right-0 hidden dark:block"/>
+          <img src={wormholeCitrus.src} className="h-[500px] rotate-[130deg] absolute top-0 right-0 block"/>
+
           <DataPatternLight
             className="right-0 absolute top-[340px] w-[900px] fill-black dark:fill-sky-100"></DataPatternLight>
 
