@@ -123,8 +123,8 @@ export default function PublishYourApi({ highlightedSnippets }) {
   const [tab, setTab] = useState('Open API')
 
   return (
-    <section id="publish-your-api">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+    <section id="publish-your-api" className={'bg-midnight-blue'}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 md:py-32">
         <Caption className="text-pink-400 text-center ">Discover, and be discovered</Caption>
         <BigText className="text-center font-brand">
           <Widont>Powered by your APIs</Widont>

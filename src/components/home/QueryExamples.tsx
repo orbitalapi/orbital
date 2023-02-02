@@ -1,20 +1,18 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { BigText, Caption, Paragraph } from '@/components/home/common';
+import { BigText, Paragraph } from '@/components/home/common';
 import { Tabs } from '../Tabs';
 import { GridLockup } from '../GridLockup';
 import { AnimatePresence } from 'framer-motion';
 import { Widont } from '../Widont';
-import ExplainPlan, { ExplainPlanProps } from './ExplainPlan';
 import Prism from 'prismjs';
 import { Button } from '@/components/Button';
 import { Snippet } from '@/components/Steps';
 import { CodeSnippet, CodeSnippetMap, HighlightedCodeSnippetMap } from '@/components/Guides/CodeSnippet';
 import IntegrationDiagram, { IntegrationDiagramProps } from '@/components/home/IntegrationDiagram';
+import OrbitalLogo from '@/img/wormhole-aqua-transparent.png';
 
 const paragraphClass = 'text-lg font-semibold text-sky-400 mb-8'
-
-export type Tabs = 'Fetch' | 'Combine' | 'Stream' | 'Expressions';
 
 const tabData = {
   'Fetch': {
@@ -307,6 +305,7 @@ function QueryExamples(props: QueryExampleProps) {
 
   return (
     <section id="query-examples" className="relative">
+      <img src={OrbitalLogo.src} className={'absolute blur-3xl opacity-25'} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
         <div className={'flex flex-col items-center'}>
           <div className="max-w-3xl mx-auto flex flex-col items-center">
@@ -342,6 +341,7 @@ function QueryExamples(props: QueryExampleProps) {
 
         <GridLockup
           className="mt-10 xl:mt-2"
+          beams={-1}
           left={
             <Snippet highlightedCode={props.highlightedSnippets[tab]} code={queryExampleCodeSnippets[tab]}/>
           }
