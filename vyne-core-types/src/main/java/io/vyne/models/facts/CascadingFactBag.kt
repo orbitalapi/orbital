@@ -173,7 +173,7 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
                strategy,
                spec
             ) // return null if no match in primary to allow fallthrough to parent
-               ?: secondary.getFact(type, strategy, spec)
+               ?: secondary.getFactOrNull(type, strategy, spec)
          }
       }
    }
