@@ -7,6 +7,7 @@ import com.google.common.base.Stopwatch
 import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.vyne.models.EvaluatedExpression
@@ -104,51 +105,24 @@ service Broker1Service {
 
 
    @Test
-   fun `Should yield result when there is no discovery path`() = runBlocking {
+   fun `Should throw error when there is no discovery path and model is closed`() = runBlocking {
       val schemaStr = """
-         type IndexId inherits String
-         type Asset inherits String
-         type ProviderCode inherits String
-
-         model IndexMetadata {
-             identifiers: IndexCompositionIdentifiers
-         }
-
-         model IndexIdentifiers {
-             providerCode: ProviderCode
-         }
-
-         model Position {
-            assets: Asset[]
-         }
-
-         model ClosePosition {
-             close: Position
-         }
-
-         model IndexSummaryData {
-           index: IndexMetadata
-           closePositions: Position
-         }
-
-         model IndexData {
-             id: IndexId
-             summary: IndexSummaryData
+         closed model Film {
+             id : FilmId inherits Int
          }
       """.trimIndent()
       val schema = TaxiSchema.from(schemaStr)
       val (vyne, _) = testVyne(schema)
-      val queryResult = vyne.query(
-         """
-         find { IndexData } as {
-            BENCHMARK_ID: ProviderCode}
-         """.trimIndent()
-      )
-      queryResult.rawResults
-         .test {
-            expectRawMap().should.equal(mapOf("BENCHMARK_ID" to null))
-            awaitComplete()
+      val exception = assertFailsWith<UnresolvedTypeInQueryException> {
+         vyne.query(
+            """
+         find { Film } as {
+            filmId: FilmId
          }
+         """.trimIndent()
+         ).firstRawObject()
+      }
+      exception.message!!.shouldBe("No strategy found for discovering type Film")
    }
 
    @Test
@@ -2877,6 +2851,155 @@ find { Movie[] } as {
                "name" to "Jimmy Falcon",
                "bloodType" to "O+",
                "creditScore" to "AAA"
+            )
+         )
+      )
+   }
+
+   @Test
+   fun `should use values in given clause to invoke services for data in nested projection`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         type CreditScore inherits String
+         type BloodType inherits String
+         type AgentId inherits String
+         model Person {
+           id : PersonId inherits Int
+           name : PersonName inherits String
+          }
+          model ActorDetails {
+            bloodType : BloodType
+            creditScore : CreditScore
+          }
+          model Movie {
+            movieId: MovieId inherits Int
+            star : Person
+         }
+
+         service MyService {
+            operation findMovies():Movie
+
+            // This is the test
+            // Operation requires 3 params, that come from different
+            // scopes
+            // AgentId -> From the given {} clause
+            // MovieId -> From the parent projection scope
+            // PersonId -> From the current projection scope
+            operation getActorDetails(MovieId,AgentId,PersonId):ActorDetails
+         }
+         """
+      )
+      stub.addResponse(
+         "findMovies", vyne.parseJson(
+            "Movie[]", """[
+            |{
+            |  "movieId" : 1,
+            |  "star" : { "id" : 1, "name" : "Tom Planks" }
+            | }
+            |]""".trimMargin()
+         )
+      )
+      val actorDetails = vyne.parseJson(
+         "ActorDetails",
+         """{ "bloodType" : "O+", "creditScore" : "AAA" } """
+      )
+      stub.addResponse("getActorDetails", actorDetails)
+      val result = vyne.query(
+         """
+given { AgentId = "123" }
+find { Movie } as {
+    cast : Person as {
+      details: {
+         name : PersonName
+         bloodType : BloodType
+      }
+    }
+}"""
+      ).firstTypedObject()["cast"].toRawObject() as Map<String, Any>
+      result.shouldBe(
+         mapOf(
+            "details" to mapOf(
+               "name" to "Tom Planks",
+               "bloodType" to "O+"
+            )
+         )
+      )
+      val calls = stub.invocations["getActorDetails"]!!
+
+      calls.shouldContainInOrder(
+         vyne.typedValue("MovieId", 1),
+         vyne.typedValue("AgentId", "123"),
+         vyne.typedValue("PersonId", "1"),
+      )
+   }
+
+   @Test
+   fun `will populate collection on inline projection`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         type CreditScore inherits String
+         type BloodType inherits String
+         type AgentId inherits String
+         model Person {
+           id : PersonId inherits Int
+           name : PersonName inherits String
+          }
+          model Award {
+             year : AwardYear inherits Int
+             name : AwardTitle inherits String
+          }
+          model ActorDetails {
+            creditScore : CreditScore
+            awards : Award[]
+          }
+          model Movie {
+            movieId: MovieId inherits Int
+            star : Person
+         }
+
+         service MyService {
+            operation findMovies():Movie
+            operation getActorDetails(PersonId):ActorDetails
+         }
+         """
+      )
+      stub.addResponse(
+         "findMovies", vyne.parseJson(
+            "Movie[]", """[
+            |{
+            |  "movieId" : 1,
+            |  "star" : { "id" : 1, "name" : "Tom Planks" }
+            | }
+            |]""".trimMargin()
+         )
+      )
+      val actorDetails = vyne.parseJson(
+         "ActorDetails",
+         """{  "creditScore" : "AAA" , "awards" : [
+            |{ "name" : "Top bloke", "year" : 2023 },
+            |{ "name" : "Snappy dresser" , "year" : 2023 }
+            |] } """.trimMargin()
+      )
+      stub.addResponse("getActorDetails", actorDetails)
+      val result = vyne.query(
+         """
+find { Movie } as {
+    cast : Person as {
+      details: {
+         name : PersonName
+         awards : Award[]
+      }
+    }
+}"""
+      ).firstTypedObject()["cast"].toRawObject() as Map<String, Any>
+      result.shouldBe(
+         mapOf(
+            "details" to mapOf(
+               "name" to "Tom Planks",
+               "awards" to listOf(
+                  mapOf("year" to 2023, "name" to "Top bloke"),
+                  mapOf("year" to 2023, "name" to "Snappy dresser"),
+               )
             )
          )
       )
