@@ -7,15 +7,19 @@ import java.time.Duration
 class TimeBucketed {
    private val activities = HashMultimap.create<String,Duration>()
    companion object {
+      // var as we want to enable time bucketing in our performance tests.
+      var ENABLED = false
       val DEFAULT:TimeBucketed = TimeBucketed()
    }
    fun addActivity(key:String, duration:Duration) {
-      activities.put(key,duration)
+      if (ENABLED) {
+         activities.put(key, duration)
+      }
    }
    fun log() {
       activities.asMap().forEach { (key,durations) ->
          val average = durations.map { it.toMillis() }.average()
-         val total = durations.map { it.toMillis() }.sum()
+         val total = durations.sumOf { it.toMillis() }
          println("Activity: $key; Count: ${durations.size};  Total: $total ms;  Average: $average ms  ")
       }
    }

@@ -19,7 +19,6 @@ import io.vyne.query.active.ActiveQueryMonitor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -45,10 +44,10 @@ class QueryEventObserver(
     *
     * Callers should only used the returned value.
     */
-   suspend fun responseWithQueryHistoryListener(query: Query, queryResponse: QueryResponse): QueryResponse {
+   fun responseWithQueryHistoryListener(query: Query, queryResponse: QueryResponse): QueryResponse {
       return when (queryResponse) {
          is QueryResult -> captureQueryResultStreamToHistory(query, queryResponse)
-         is FailedQueryResponse -> emitFailure(query, queryResponse)
+         is FailedQueryResponse -> emitFailure(queryResponse)
          else -> error("Received unknown type of QueryResponse: ${queryResponse::class.simpleName}")
       }
    }
@@ -117,28 +116,16 @@ class QueryEventObserver(
       )
    }
 
-   private suspend fun emitFailure(query: Query, failure: FailedQueryResponse): FailedQueryResponse {
-
-      val event = QueryFailureEvent(
-         failure.queryResponseId,
-         failure.clientQueryId,
-         failure
-      )
-      consumer.handleEvent(event)
-      metricsEventConsumer.handleEvent(event)
-      return failure
-   }
-
    /**
     * Attaches an observer to the result flow of the QueryResponse, returning
     * an updated QueryResponse with it's internal flow updated.
     *
     * Callers should only used the returned value.
     */
-   suspend fun responseWithQueryHistoryListener(query: TaxiQLQueryString, queryResponse: QueryResponse): QueryResponse {
+   fun responseWithQueryHistoryListener(query: TaxiQLQueryString, queryResponse: QueryResponse): QueryResponse {
       return when (queryResponse) {
          is QueryResult -> captureTaxiQlQueryResultStreamToHistory(query, queryResponse)
-         is FailedQueryResponse -> emitFailure(query, queryResponse)
+         is FailedQueryResponse -> emitFailure(queryResponse)
          else -> error("Received unknown type of QueryResponse: ${queryResponse::class.simpleName}")
       }
    }
@@ -229,7 +216,7 @@ class QueryEventObserver(
 
    }
 
-   private suspend fun emitFailure(query: TaxiQLQueryString, failure: FailedQueryResponse): FailedQueryResponse {
+   private fun emitFailure(failure: FailedQueryResponse): FailedQueryResponse {
       val event = QueryFailureEvent(
          failure.queryResponseId,
          failure.clientQueryId,
