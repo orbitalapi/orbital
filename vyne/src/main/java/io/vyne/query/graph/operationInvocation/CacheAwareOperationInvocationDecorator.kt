@@ -218,6 +218,7 @@ private class CachingInvocationActor(
                      sink.next(it)
                   }
             } catch(exception:Exception) {
+               logger.error(exception) { "An exception was thrown inside the invoker (${invoker::class.simpleName} calling ${operation.name})" }
                // This is an exception thrown in the invoke method, but not within the flux / flow.
                // ie., something has gone wrong internally, not in the service.
                sink.error(exception)

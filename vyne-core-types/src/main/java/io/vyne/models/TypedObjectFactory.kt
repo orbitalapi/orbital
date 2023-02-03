@@ -628,17 +628,27 @@ class TypedObjectFactory(
             )
             when {
                searchedValue != null -> searchedValue
+               // Since we know that the value isn't present in the fact bag,
+               // and that it's scalar, the only thing left to do is query.
+               fieldType.isScalar -> queryForResult(field, fieldType, attributeName, fieldTypeName)
 
-               !fieldType.isScalar -> {
+               fieldType.isCollection -> {
+                  // TODO : I suspect this needs to be richer.
+                  // Currently supporting the use case of picking a collection
+                  // from a query result onto a field.  (see
+                  // VyneProjectionTest.will populate collection on inline projection)
+                  // However, there's likely other nuanced cases we need to support.
+                  queryForResult(field, fieldType, attributeName, fieldTypeName)
+
+               }
+
+               else -> {
                   // BugFix: Only attempt to build a field object if the fieldType isn't scalar.
                   // Otherwise, we're calling into TypedObjectFactory with a scalar type,
                   // which is incorrect (it's intended for Object types).
                   attemptToBuildFieldObject(field, fieldType, attributeName, fieldTypeName)
                      ?: queryForResult(field, fieldType, attributeName, fieldTypeName)
                }
-               // Since we know that the value isn't present in the fact bag,
-               // and that it's scalar, the only thing left to do is query.
-               else -> queryForResult(field, fieldType, attributeName, fieldTypeName)
             }
          }
 
@@ -667,10 +677,7 @@ class TypedObjectFactory(
       if (type.isScalar) {
          return null
       }
-
-      // TODO : Is the scope of Null correct here?
-      // Not sure where else it can come from.
-      val result = newFactory(fieldType, this.value, scope = null).build()
+      val result = newFactory(fieldType, this.value, scope = projectionScope).build()
       return if (result is TypedNull) {
          null
       } else {
@@ -711,6 +718,7 @@ class TypedObjectFactory(
                .toList()
          }
          when {
+            type.isCollection -> TypedCollection.arrayOf(type.collectionType!!, buildResult)
             buildResult.isEmpty() -> failWithTypedNull(type, attributeName, fieldTypeName)
             buildResult.size == 1 -> buildResult.single()
             else -> {

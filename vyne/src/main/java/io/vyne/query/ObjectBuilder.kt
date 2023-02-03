@@ -265,7 +265,9 @@ class ObjectBuilder(
       return if (searchFailed) {
          if (!targetType.isClosed) {
             logger.debug { "Search for object ${targetType.qualifiedName.shortDisplayName} failed, so initiating building one" }
-            buildObjectInstance(targetType, spec, facts)
+            val result = buildObjectInstance(targetType, spec, facts)
+            logger.debug { "Successfully built instance of ${targetType.qualifiedName.shortDisplayName}" }
+            result
          } else {
             TypedNull.create(
                targetType,
