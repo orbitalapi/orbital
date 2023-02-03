@@ -305,7 +305,7 @@ function QueryExamples(props: QueryExampleProps) {
 
   return (
     <section id="query-examples" className="relative">
-      <img src={OrbitalLogo.src} className={'absolute blur-3xl opacity-25'} />
+      <img src={OrbitalLogo.src} className={'absolute blur-3xl opacity-25 -z-10'}/>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
         <div className={'flex flex-col items-center'}>
           <div className="max-w-3xl mx-auto flex flex-col items-center">

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { BigText, Caption, Link, Paragraph } from '@/components/home/common';
+import { BigText, Caption, Paragraph } from '@/components/home/common';
 import { Widont } from '../Widont';
 import { Tabs } from '../Tabs';
 import CellLineageImg from './img/cell-lineage.png';
@@ -104,15 +104,16 @@ function DebugTools() {
   const [tab, setTab] = useState('Cell lineage')
   return (
     <section id="debug-tools" className="relative">
-      <img src={OrbitalLogo.src} className={'absolute blur-3xl opacity-25 right-0'} />
-      <div className='max-w-4xl mx-auto px-4 sm:px-6 md:px-8 md:py-32'>
+      <img src={OrbitalLogo.src} className={'absolute blur-3xl opacity-25 right-0 -z-10'}/>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8 md:py-32">
         <div className={'flex flex-col items-center'}>
           <Caption className="text-pink-400 text-center">Lineage & Monitoring</Caption>
           <BigText className={'text-center text-slate-900'}>
             <Widont>See exactly what's happening.</Widont>
           </BigText>
           <Paragraph>
-            Detailed call traces, request monitoring and lineage gives you end-to-end visibility of query execution, so you can see
+            Detailed call traces, request monitoring and lineage gives you end-to-end visibility of query execution, so
+            you can see
             exactly what is happening under the hood.
           </Paragraph>
           <Button href="https://docs.vyne.co/querying-with-vyne/data-lineage/" className={'mt-8 mb-8'}>
