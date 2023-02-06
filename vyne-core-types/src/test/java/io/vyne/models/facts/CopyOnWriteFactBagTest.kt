@@ -201,4 +201,5 @@ class CopyOnWriteFactBagTest {
       val result = factBag.getFact(schema.type("ThreeLetterCountryCode"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
       result.shouldNotBeNull()
    }
+
 }

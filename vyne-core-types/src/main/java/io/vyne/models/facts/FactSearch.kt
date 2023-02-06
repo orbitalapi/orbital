@@ -8,6 +8,7 @@ import io.vyne.query.TypedInstanceValidPredicate
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeMatchingPredicate
 import io.vyne.schemas.TypeMatchingStrategy
+import io.vyne.schemas.or
 import io.vyne.utils.ImmutableEquality
 import mu.KotlinLogging
 
@@ -57,6 +58,7 @@ data class FactSearch(
     */
    val refiningPredicate: RefiningPredicate = NO_REFINING_PERMITTED,
 ) {
+
    private val targetTypeName = targetType.name.parameterizedName
    private val filterPredicateId = filterPredicate.id
    private val refiningPredicateId = refiningPredicate.id
@@ -79,6 +81,26 @@ data class FactSearch(
    }
 
    companion object {
+      fun defaultTypeMatcher(
+         strategy: FactDiscoveryStrategy,
+      ): TypeMatchingPredicate {
+         // MP 4-Nov-22
+         // Design choice around searching for arrays: (weakly held):
+         // Sometimes when we're searching for Foo[], we want to gather up all the values.
+         // (ie., traverse an object graph, and collect all the instances of Foo).
+         // Other times, we only want to find exact instances of Foo[]
+         // We're using the  ALLOW_MANY / ALLOW_ONE heuristic to determine how we search.
+         // Not sure this is correct.  See CopyOnWriteFactBagTest for tests that explore this with use-cases.
+         val predicate = if (strategy == FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) {
+            TypeMatchingStrategy.MATCH_ON_COLLECTION_TYPE
+               .or(TypeMatchingStrategy.MATCH_ON_COLLECTION_OF_TYPE)
+               .or(TypeMatchingStrategy.ALLOW_INHERITED_TYPES)
+         } else {
+            TypeMatchingStrategy.ALLOW_INHERITED_TYPES // default
+         }
+         return predicate
+      }
+
       /**
        * Refining predicate that indicates no refining is allowed - ie.,
        * if we didn't get an exact match previously, don't try to refine the list further.
@@ -106,7 +128,7 @@ data class FactSearch(
          type: Type,
          strategy: FactDiscoveryStrategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY,
          spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-         matcher: TypeMatchingPredicate = TypeMatchingStrategy.ALLOW_INHERITED_TYPES
+         matcher: TypeMatchingPredicate = defaultTypeMatcher(strategy)
       ): FactSearch {
          val predicate = object : FilterPredicateStrategy {
             override val id = matcher.id
@@ -149,7 +171,10 @@ enum class FactDiscoveryStrategy {
          search: FactSearch
       ): TypedInstance? {
          val matches = facts
-            .breadthFirstFilter(ANY_DEPTH_EXPECT_ONE, FactMapTraversalStrategy.enterIfHasFieldOfType(search.targetType)) { search.filterPredicate.predicate(it) }
+            .breadthFirstFilter(
+               ANY_DEPTH_EXPECT_ONE,
+               FactMapTraversalStrategy.enterIfHasFieldOfType(search.targetType)
+            ) { search.filterPredicate.predicate(it) }
             .toList()
          return when {
             matches.isEmpty() -> null
@@ -175,7 +200,10 @@ enum class FactDiscoveryStrategy {
          search: FactSearch
       ): TypedInstance? {
          val matches = facts
-            .breadthFirstFilter(ANY_DEPTH_EXPECT_ONE, FactMapTraversalStrategy.enterIfHasFieldOfType(search.targetType)) { search.filterPredicate.predicate(it) }
+            .breadthFirstFilter(
+               ANY_DEPTH_EXPECT_ONE,
+               FactMapTraversalStrategy.enterIfHasFieldOfType(search.targetType)
+            ) { search.filterPredicate.predicate(it) }
             .distinct()
             .toList()
          return when {
@@ -212,7 +240,10 @@ enum class FactDiscoveryStrategy {
          search: FactSearch
       ): TypedCollection? {
          val matches = factBag
-            .breadthFirstFilter(ANY_DEPTH_ALLOW_MANY, FactMapTraversalStrategy.enterIfHasFieldOfType(search.targetType)) { search.filterPredicate.predicate(it) }
+            .breadthFirstFilter(
+               ANY_DEPTH_ALLOW_MANY,
+               FactMapTraversalStrategy.enterIfHasFieldOfType(search.targetType)
+            ) { search.filterPredicate.predicate(it) }
             .distinct()
             .toList()
          return when {
