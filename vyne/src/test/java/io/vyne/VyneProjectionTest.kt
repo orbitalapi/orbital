@@ -3005,4 +3005,74 @@ find { Movie } as {
       )
    }
 
+   @Test
+   fun `a nested inline projection can request data from a parent scope`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         model Person {
+           id : PersonId inherits Int
+           name : PersonName inherits String
+          }
+          model Movie {
+            movieId: MovieId inherits Int
+            data : MovieData
+         }
+         model MovieData {
+            contributors: Contributors
+         }
+         model Contributors {
+            cast : Person[]
+         }
+
+         service MyService {
+            operation findMovies():Movie
+         }
+         """
+      )
+      val movie = vyne.parseJson(
+         "Movie", """{
+            |  "movieId" : 1,
+            |  "data" : {
+            |     "contributors" : {
+            |        "cast" : [
+            |           { "id" : 1, "name" : "Tom Planks" },
+            |           { "id" : 2, "name" : "Jimmy Falcon" }
+            |        ]
+            |      }
+            |   }
+            | }""".trimMargin()
+      ) as TypedObject
+      val movieData = movie["data"]
+//      val factBag = FieldAndFactBag(mapOf("data" to movieData), listOf(), listOf(ScopedFact(ProjectionFunctionScope.implicitThis(vyne.type("Movie").taxiType), movie)), vyne.schema)
+//      val personName =
+//         factBag.getFactOrNull(vyne.schema.type("PersonName[]"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)
+//      personName.shouldNotBeNull()
+      stub.addResponse(
+         "findMovies", movie
+      )
+
+      val result = vyne.query(
+         """
+find { Movie } as {
+    data : MovieData as {
+       actors : {
+          cast : PersonName[]
+       }
+    }
+}"""
+      ).firstRawObject()
+      result.shouldBe(
+         mapOf(
+            "data" to mapOf(
+               "actors" to mapOf(
+                  "cast" to listOf(
+                     "Tom Planks",
+                     "Jimmy Falcon"
+                  )
+               )
+            )
+         )
+      )
+   }
+
 }
