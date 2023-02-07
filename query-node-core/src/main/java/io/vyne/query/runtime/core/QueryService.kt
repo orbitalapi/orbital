@@ -26,11 +26,16 @@ import io.vyne.query.runtime.core.monitor.ActiveQueryMonitor
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.Schema
 import io.vyne.security.VynePrivileges
+import io.vyne.spring.http.websocket.WebSocketController
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.launch
 import lang.taxi.query.TaxiQLQueryString
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus
@@ -44,12 +49,17 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.reactive.socket.CloseStatus
+import org.springframework.web.reactive.socket.WebSocketSession
+import reactor.core.Disposable
+import reactor.core.publisher.Mono
+import reactor.core.publisher.Sinks
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.Executors
 
 const val TEXT_CSV = "text/csv"
 const val TEXT_CSV_UTF_8 = "$TEXT_CSV;charset=UTF-8"
-
 
 
 /**
@@ -74,7 +84,7 @@ class QueryService(
    val activeQueryMonitor: ActiveQueryMonitor,
    val metricsEventConsumer: MetricsEventConsumer,
    private val queryResponseFormatter: QueryResponseFormatter
-) : QueryServiceApi {
+) : QueryServiceApi, WebSocketController {
 
 
    @Deprecated("Use taxiQL endpoints instead")
@@ -250,6 +260,7 @@ class QueryService(
                         //emit(QueryCancelledType.cancelled(throwable.message ?: "No message provided"))
                         logger.info { "Query $queryId was cancelled" }
                      }
+
                      else -> {
                         emit(ErrorType.error(throwable.message ?: "No message provided", schemaStore))
                         logger.error { "Query $queryId failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}" }
@@ -260,8 +271,42 @@ class QueryService(
                   resultSerializer.serialize(it)
                }
          }
+
          else -> error("Unhandled type of QueryResponse for query $queryId - received ${queryResponse::class.simpleName}")
       }
+   }
+
+   private val vyneQlDispatcher =
+      Executors.newFixedThreadPool(10).asCoroutineDispatcher()
+
+
+   override val paths: List<String> = listOf("/api/query/taxiql")
+   override fun handle(session: WebSocketSession): Mono<Void> {
+      val sink = Sinks.many().replay().latest<String>()
+      val output = sink.asFlux()
+         .map { entry -> session.textMessage(entry.toString()) }
+
+      session.receive()
+         .subscribe { message ->
+            val query = message.payloadAsText
+               .removeSurrounding("\"")
+
+            CoroutineScope(vyneQlDispatcher).launch {
+               getVyneQlQueryStreamingResponse(
+                  query,
+                  ResultMode.TYPED,
+                  MediaType.APPLICATION_JSON_VALUE,
+               ).onCompletion { sink.emitComplete(Sinks.EmitFailureHandler.FAIL_FAST) }
+                  .collect { emittedResult ->
+                     val json = objectMapper.writeValueAsString(emittedResult)
+                     sink.emitNext(json, Sinks.EmitFailureHandler.FAIL_FAST)
+                  }
+               session.close(CloseStatus.NORMAL)
+            }
+         }
+
+
+      return session.send(output)
    }
 
    suspend fun doVyneMonitoredWork(
@@ -304,7 +349,14 @@ class QueryService(
           * We need to emit the QueryStart event manually so that analytics records are persisted for query compilation as well.
           */
          historyWriterEventConsumer.handleEvent(
-         QueryStartEvent(queryId = queryId, timestamp = Instant.now(), taxiQuery = query, query = null, clientQueryId = clientQueryId ?: "", message = "")
+            QueryStartEvent(
+               queryId = queryId,
+               timestamp = Instant.now(),
+               taxiQuery = query,
+               query = null,
+               clientQueryId = clientQueryId ?: "",
+               message = ""
+            )
          )
          val failedSearchResponse = FailedSearchResponse(
             message = e.message!!, // Message contains the error messages from the compiler
@@ -321,7 +373,7 @@ class QueryService(
          FailedSearchResponse(e.message!!, null, queryId = queryId)
       } catch (e: QueryCancelledException) {
          FailedSearchResponse(e.message!!, null, queryId = queryId)
-      } catch(e: Exception) {
+      } catch (e: Exception) {
          FailedSearchResponse(e.message!!, null, queryId = queryId)
       }
       QueryEventObserver(historyWriterEventConsumer, activeQueryMonitor, metricsEventConsumer)

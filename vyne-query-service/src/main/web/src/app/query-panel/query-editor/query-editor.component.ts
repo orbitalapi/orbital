@@ -202,7 +202,7 @@ export class QueryEditorComponent implements OnInit {
       this.handleQueryFinished();
     };
 
-    this.queryService.submitVyneQlQueryStreaming(this.query, this.queryClientId, ResultMode.SIMPLE).subscribe(
+    this.queryService.websocketQuery(this.query, this.queryClientId, ResultMode.SIMPLE).subscribe(
       queryMessageHandler,
       queryErrorHandler,
       queryCompleteHandler);
