@@ -15,9 +15,3 @@ interface StoreConfigurator {
    }
 }
 
-object DisabledStoreConfigurator : StoreConfigurator
-
-object SchemaSourceProviderRegistrar {
-
-}
-

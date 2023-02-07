@@ -21,6 +21,11 @@
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>cockpit-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>license-client</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -60,6 +65,16 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-history-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>history-service</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>history-persistence</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -176,6 +191,11 @@
       <dependency>
          <groupId>org.springframework.security</groupId>
          <artifactId>spring-security-oauth2-jose</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>query-node-core</artifactId>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>

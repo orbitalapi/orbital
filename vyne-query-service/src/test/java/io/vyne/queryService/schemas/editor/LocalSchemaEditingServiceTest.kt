@@ -9,7 +9,9 @@ import com.winterbe.expekt.should
 import io.kotest.matchers.shouldBe
 import io.vyne.PackageMetadata
 import io.vyne.VersionedSource
-import io.vyne.queryService.schemas.BuiltInTypesProvider
+import io.vyne.cockpit.core.schemas.BuiltInTypesProvider
+import io.vyne.cockpit.core.schemas.editor.EditedSchema
+import io.vyne.cockpit.core.schemas.editor.LocalSchemaEditingService
 import io.vyne.queryService.schemas.SubmitEditJson
 import io.vyne.schema.publisher.PublisherHealth
 import io.vyne.schema.publisher.PublisherType
@@ -39,8 +41,8 @@ class LocalSchemaEditingServiceTest {
    fun setup() {
       schemaStore = LocalValidatingSchemaStoreClient()
       schemaStore.submitSchemas(
-         BuiltInTypesProvider.versionedSources.packageMetadata,
-         BuiltInTypesProvider.versionedSources.sources
+         BuiltInTypesProvider.sourcePackage.packageMetadata,
+         BuiltInTypesProvider.sourcePackage.sources
       )
       editorService = LocalSchemaEditingService(packagesServiceApi, schemaEditorApi, schemaStore)
    }

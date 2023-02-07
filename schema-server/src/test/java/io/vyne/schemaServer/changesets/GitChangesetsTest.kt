@@ -9,6 +9,7 @@ import io.vyne.VersionedSource
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemaServer.core.file.FileChangeDetectionMethod
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
+import io.vyne.schemaServer.core.file.packages.ReactivePollingFileSystemMonitor
 import io.vyne.schemaServer.core.git.GitSchemaPackageLoaderFactory
 import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
 import io.vyne.schemaServer.core.repositories.lifecycle.RepositoryLifecycleEventDispatcher
@@ -68,6 +69,12 @@ class GitChangesetsTest {
    private lateinit var schemaEditorApi: SchemaEditorApi
 
    @Autowired
+   private lateinit var gitLoaderFactory: GitSchemaPackageLoaderFactory
+
+   @Autowired
+   private lateinit var repositoryManager: ReactiveRepositoryManager
+
+   @Autowired
    private lateinit var schemaStore: SchemaStore
    private val packageIdentifier = PackageIdentifier("io.vyne", "films", "0.1.0")
 
@@ -80,15 +87,19 @@ class GitChangesetsTest {
    @TestConfiguration
    internal class TestConfig {
 
+      @Bean
+      fun gitLoaderFactory() = GitSchemaPackageLoaderFactory(changeDetectionMethod = FileChangeDetectionMethod.POLL)
+
       @Primary
       @Bean
       fun repositoryManager(
          eventSource: RepositorySpecLifecycleEventSource,
-         eventDispatcher: RepositoryLifecycleEventDispatcher
+         eventDispatcher: RepositoryLifecycleEventDispatcher,
+         gitLoaderFactory: GitSchemaPackageLoaderFactory
       ): ReactiveRepositoryManager {
          return ReactiveRepositoryManager(
             FileSystemPackageLoaderFactory(),
-            GitSchemaPackageLoaderFactory(changeDetectionMethod = FileChangeDetectionMethod.POLL),
+            gitLoaderFactory,
             eventSource, eventDispatcher
          )
       }
@@ -99,8 +110,11 @@ class GitChangesetsTest {
       expect(schemaStore.schema().sources).to.be.empty
       initializeSchemaToRepo()
 
+      pollForChangesNow()
       await().atMost(10, TimeUnit.SECONDS).until<Boolean> {
-         schemaStore.schema().hasType("film.types.Description") && schemaStore.schema()
+         val store = schemaStore
+         val schema = store.schema()
+         schema.hasType("film.types.Description") && schemaStore.schema()
             .type("film.types.Description").typeDoc?.isEmpty() ?: false
       }
 
@@ -115,12 +129,14 @@ class GitChangesetsTest {
          )
       ).block()
 
+      pollForChangesNow()
       await().atMost(10, TimeUnit.SECONDS).until<Boolean> {
          schemaStore.schema().type("film.types.Description").typeDoc == "Documentation goes here"
       }
 
       schemaEditorApi.setActiveChangeset(SetActiveChangesetRequest("main", packageIdentifier)).block()
 
+      pollForChangesNow()
       await().atMost(10, TimeUnit.SECONDS).until<Boolean> {
          schemaStore.schema().hasType("film.types.Description") && schemaStore.schema()
             .type("film.types.Description").typeDoc?.isEmpty() ?: false
@@ -128,11 +144,20 @@ class GitChangesetsTest {
 
       schemaEditorApi.setActiveChangeset(SetActiveChangesetRequest("test-changes", packageIdentifier)).block()
 
+      pollForChangesNow()
       await().atMost(10, TimeUnit.SECONDS).until<Boolean> {
          schemaStore.schema().type("film.types.Description").typeDoc == "Documentation goes here"
       }
 
       schemaEditorApi.finalizeChangeset(FinalizeChangesetRequest("test-changes", packageIdentifier)).block()
+   }
+
+   private fun pollForChangesNow() {
+      val gitLoader = repositoryManager.gitLoaders.single()
+      gitLoader.syncNow()
+      val fileMonitor = gitLoader.fileMonitor as ReactivePollingFileSystemMonitor
+      fileMonitor.pollNow()
+
    }
 
    private fun initializeSchemaToRepo() {

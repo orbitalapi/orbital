@@ -17,7 +17,9 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.io.Resources
 import io.vyne.ParsedPackage
 import io.vyne.UriSafePackageIdentifier
-import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
+import io.vyne.cockpit.core.schemas.editor.LocalSchemaEditingService
+import io.vyne.cockpit.core.schemas.importing.CompositeSchemaImporter
+import io.vyne.cockpit.core.schemas.importing.SchemaConverter
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.consumer.SchemaStore

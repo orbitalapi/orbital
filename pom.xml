@@ -14,12 +14,12 @@
       <version>2.7.7</version>
    </parent>
 
-   <url>https://vyne.co</url>
+   <url>https://orbitalhq.com</url>
 
    <licenses>
       <license>
-         <name>Vyne Enterprise License</name>
-         <url>https://vyne.co</url>
+         <name>Orbital Enterprise License</name>
+         <url>https://orbitalhq.com</url>
       </license>
    </licenses>
 
@@ -31,7 +31,10 @@
       <kotlin-logging.version>3.0.4</kotlin-logging.version>
 
       <reactive-feign.version>3.2.6</reactive-feign.version>
-
+      <!-- Use Java 17.
+      Currently, Chronicle doens't support later versions.
+      Based on their release cadence, it seems they're unlikely to support versions other than LTS.
+      -->
       <java.version>17</java.version>
       <kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
 
@@ -68,8 +71,8 @@
 
    <modules>
       <module>cask</module>
-      <module>config-server</module>
-      <module>eureka</module>
+      <!--      <module>config-server</module>-->
+      <!--      <module>eureka</module>-->
       <module>vyne-core-types</module>
       <module>events-api</module>
       <module>vyne-search</module>
@@ -103,6 +106,12 @@
       <module>taxi-playground</module>
       <module>station</module>
       <module>auth-common</module>
+      <module>query-node-core</module>
+      <module>query-node-service</module>
+      <module>history-persistence</module>
+      <module>history-service</module>
+      <module>cockpit-core</module>
+      <module>query-node-api</module>
    </modules>
 
    <scm>
@@ -550,7 +559,7 @@
                <artifactId>license-maven-plugin</artifactId>
                <version>2.0.0</version>
                <configuration>
-                  <licenseName>Vyne Enterprise License</licenseName>
+                  <licenseName>Orbital Enterprise License</licenseName>
                   <licenseResolver>${project.baseUri}/src/license</licenseResolver>
                   <licenseMerges>
                      <licenseMerge>Apache License, Version 2.0|The Apache Software License, Version 2.0|Apache 2|Apache

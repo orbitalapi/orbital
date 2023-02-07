@@ -4,7 +4,14 @@ import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.orbital.station.OrbitalStationConfig
 import io.vyne.cask.api.CaskApi
+import io.vyne.cockpit.core.CockpitCoreConfig
+import io.vyne.cockpit.core.lsp.LanguageServerConfig
+import io.vyne.cockpit.core.pipelines.PipelineConfig
+import io.vyne.cockpit.core.schemas.BuiltInTypesSubmitter
+import io.vyne.cockpit.core.security.VyneUserConfig
 import io.vyne.history.QueryAnalyticsConfig
+import io.vyne.history.db.InProcessHistoryConfiguration
+import io.vyne.history.rest.QueryHistoryRestConfig
 import io.vyne.licensing.LicenseConfig
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.format.ModelFormatSpec
@@ -12,9 +19,8 @@ import io.vyne.pipelines.jet.api.PipelineApi
 import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
-import io.vyne.queryService.lsp.LanguageServerConfig
-import io.vyne.queryService.pipelines.PipelineConfig
-import io.vyne.queryService.security.VyneUserConfig
+import io.vyne.query.runtime.core.EnableVyneQueryNode
+import io.vyne.schema.publisher.SchemaPublisherService
 import io.vyne.schemaServer.changelog.ChangelogApi
 import io.vyne.schemaServer.editor.SchemaEditorApi
 import io.vyne.schemaServer.packages.PackagesServiceApi
@@ -117,8 +123,9 @@ class QueryServiceApp {
 
    //   @LoadBalanced
    @Bean
-   fun webClientFactory(loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction,
-                        metricsCustomizer: MetricsWebClientCustomizer
+   fun webClientFactory(
+      loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction,
+      metricsCustomizer: MetricsWebClientCustomizer
    ): WebClient.Builder {
       val builder = WebClient.builder()
          .filter(
@@ -239,7 +246,17 @@ class QueryServerConfig {
 @VyneSchemaConsumer
 @VyneSchemaPublisher
 @EnableVyneEmbeddedSearch
-class VyneConfig
+@EnableVyneQueryNode
+@Import(
+   InProcessHistoryConfiguration::class,
+   QueryHistoryRestConfig::class,
+   CockpitCoreConfig::class
+)
+class VyneConfig {
+   @Bean
+   fun builtInTypesSubmitter(publisher: SchemaPublisherService): BuiltInTypesSubmitter =
+      BuiltInTypesSubmitter(publisher)
+}
 
 @Configuration
 class PipelineConfig {

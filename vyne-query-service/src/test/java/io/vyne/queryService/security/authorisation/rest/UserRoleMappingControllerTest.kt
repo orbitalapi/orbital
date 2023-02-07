@@ -1,6 +1,6 @@
 package io.vyne.queryService.security.authorisation.rest
 
-import io.vyne.queryService.security.authorisation.VyneAuthorisationConfig
+import io.vyne.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import io.vyne.spring.config.TestDiscoveryClientConfig
 import org.junit.Test
 import org.junit.runner.RunWith

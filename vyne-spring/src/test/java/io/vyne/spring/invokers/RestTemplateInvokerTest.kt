@@ -15,7 +15,6 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
 import io.vyne.rawObjects
-import io.vyne.schema.api.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
@@ -689,7 +688,7 @@ namespace vyne {
          )
       }
 
-      Benchmark.benchmark("Heavy load", warmup = 2, iterations = 5) {
+      Benchmark.benchmark("Heavy load", warmup = 0, iterations = 1) {
          runBlocking {
             val invokedPaths = ConcurrentHashMap<String, Int>()
             server.prepareResponse(

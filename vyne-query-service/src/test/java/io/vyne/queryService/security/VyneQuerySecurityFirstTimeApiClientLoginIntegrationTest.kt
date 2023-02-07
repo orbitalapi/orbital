@@ -2,8 +2,8 @@ package io.vyne.queryService.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.vyne.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import io.vyne.queryService.VyneQueryIntegrationTest
-import io.vyne.queryService.security.authorisation.VyneAuthorisationConfig
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.spring.SimpleTaxiSchemaProvider

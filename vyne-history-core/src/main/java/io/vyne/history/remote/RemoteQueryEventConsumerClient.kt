@@ -2,7 +2,7 @@ package io.vyne.history.remote
 
 import com.google.common.cache.CacheBuilder
 import io.vyne.history.QueryResultEventMapper
-import io.vyne.history.db.ResultRowPersistenceStrategy
+import io.vyne.history.ResultRowPersistenceStrategy
 import io.vyne.models.OperationResult
 import io.vyne.query.QueryCompletedEvent
 import io.vyne.query.QueryEvent

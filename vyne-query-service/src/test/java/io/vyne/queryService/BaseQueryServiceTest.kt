@@ -7,7 +7,6 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.StubService
 import io.vyne.Vyne
 import io.vyne.VyneProvider
-import io.vyne.history.QueryEventObserver
 import io.vyne.history.db.QueryHistoryDbWriter
 import io.vyne.models.TypedInstance
 import io.vyne.models.csv.CsvFormatSpec
@@ -19,10 +18,11 @@ import io.vyne.query.Query
 import io.vyne.query.QueryEventConsumer
 import io.vyne.query.QueryMode
 import io.vyne.query.TypeNameListQueryExpression
-import io.vyne.query.active.ActiveQueryMonitor
-import io.vyne.queryService.query.MetricsEventConsumer
-import io.vyne.queryService.query.QueryResponseFormatter
-import io.vyne.queryService.query.QueryService
+import io.vyne.query.runtime.core.MetricsEventConsumer
+import io.vyne.query.runtime.core.QueryEventObserver
+import io.vyne.query.runtime.core.QueryResponseFormatter
+import io.vyne.query.runtime.core.QueryService
+import io.vyne.query.runtime.core.monitor.ActiveQueryMonitor
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemaStore.SimpleSchemaStore
