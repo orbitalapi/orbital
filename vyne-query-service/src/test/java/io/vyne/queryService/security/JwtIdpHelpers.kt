@@ -2,6 +2,7 @@ package io.vyne.queryService.security
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.github.tomakehurst.wiremock.client.WireMock
+import io.vyne.auth.authentication.JwtStandardClaims
 import io.vyne.pipelines.jet.api.MetricValueSet
 import org.jose4j.json.JsonUtil
 import org.jose4j.jwk.JsonWebKeySet

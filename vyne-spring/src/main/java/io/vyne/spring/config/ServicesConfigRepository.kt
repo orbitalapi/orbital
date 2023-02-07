@@ -56,7 +56,7 @@ class ServicesConfigRepository(
 }
 
 data class ServicesConfig(
-   val services: Map<String, Map<String, String>>
+   val services: Map<String, Map<String, String>> = emptyMap()
 ) {
    companion object {
       val DEFAULT = ServicesConfig(

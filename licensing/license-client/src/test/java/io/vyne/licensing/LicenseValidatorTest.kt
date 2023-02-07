@@ -8,10 +8,8 @@ import io.vyne.utils.ManualClock
 import org.junit.Test
 import java.time.Duration
 import java.time.Instant
-import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.toPath
 
-@OptIn(ExperimentalPathApi::class)
 class LicenseValidatorTest {
 
    val vendor = LicenseVendor.forPrivateKeyAtPath(

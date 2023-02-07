@@ -1,6 +1,7 @@
 package io.vyne.queryService.schemas.editor.splitter
 
 import com.winterbe.expekt.should
+import io.vyne.cockpit.core.schemas.editor.splitter.SingleTypePerFileSplitter
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.ImportableToken

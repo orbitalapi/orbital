@@ -1,12 +1,14 @@
 package io.vyne.history.api
 
-import io.vyne.history.rest.QueryResultNodeDetail
-import io.vyne.history.rest.RegressionPackRequest
+import com.fasterxml.jackson.annotation.JsonRawValue
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.query.QueryProfileData
 import io.vyne.query.ValueWithTypeName
 import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QuerySummary
+import io.vyne.schemas.QualifiedName
 import io.vyne.security.VynePrivileges
+import io.vyne.serde.KeepAsJsonDeserializer
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
@@ -98,3 +100,17 @@ interface QueryHistoryServiceRestApi {
       @RequestBody request: RegressionPackRequest,
    ): Mono<ByteBuffer>
 }
+
+
+data class RegressionPackRequest(val queryId: String, val regressionPackName: String)
+
+data class QueryResultNodeDetail(
+   val attributeName: String,
+   val path: String,
+   val typeName: QualifiedName,
+   val dataSourceId: String?,
+   @JsonRawValue
+   @JsonDeserialize(using = KeepAsJsonDeserializer::class)
+   val source: String? // json of the DataSource
+)
+

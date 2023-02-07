@@ -15,9 +15,11 @@ package io.vyne.queryService.schemas.importing.swagger
 
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
+import io.vyne.cockpit.core.schemas.importing.SchemaConversionRequest
+import io.vyne.cockpit.core.schemas.importing.swagger.SwaggerConverterOptions
+import io.vyne.cockpit.core.schemas.importing.swagger.SwaggerSchemaConverter
 import io.vyne.http.MockWebServerRule
 import io.vyne.queryService.schemas.importing.BaseSchemaConverterServiceTest
-import io.vyne.queryService.schemas.importing.SchemaConversionRequest
 import lang.taxi.errors
 import org.junit.Rule
 import org.junit.Test

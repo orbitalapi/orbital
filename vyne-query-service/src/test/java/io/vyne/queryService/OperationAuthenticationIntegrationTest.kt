@@ -4,9 +4,9 @@ import com.google.common.io.Files
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
 import io.vyne.asPackage
+import io.vyne.cockpit.core.security.AuthTokenConfigurationService
 import io.vyne.http.MockWebServerRule
-import io.vyne.queryService.query.QueryService
-import io.vyne.queryService.security.AuthTokenConfigurationService
+import io.vyne.query.runtime.core.QueryService
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.spring.SimpleTaxiSchemaProvider

@@ -1,6 +1,7 @@
 package io.vyne.queryService.lsp.querying
 
 import com.nhaarman.mockito_kotlin.mock
+import io.vyne.cockpit.core.lsp.querying.QueryCodeCompletionProvider
 import io.vyne.schemas.Schema
 import lang.taxi.lsp.LspServicesConfig
 import lang.taxi.lsp.TaxiCompilerService

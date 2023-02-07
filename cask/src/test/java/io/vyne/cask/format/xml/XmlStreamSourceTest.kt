@@ -29,13 +29,14 @@ class XmlStreamSourceTest {
       val resource = Resources.getResource("Coinbase_BTCUSD.xml").toURI()
 
       // Ingest it a few times to get an average performance
-      Benchmark.benchmark("Can ingest list of orders provided in a single xml document", 10 ,10) {
+      Benchmark.benchmark("Can ingest list of orders provided in a single xml document", 0, 1) {
          val stream = XmlStreamSource(
             Flux.just(File(resource).inputStream()),
             versionedType,
             schema,
             MessageIds.uniqueId(),
-            "root/Order")
+            "root/Order"
+         )
          val noOfMappedRows = stream
             .stream
             .count()

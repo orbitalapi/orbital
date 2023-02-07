@@ -1,8 +1,8 @@
 package io.vyne.history.remote
 
 import io.vyne.history.QueryAnalyticsConfig
-import io.vyne.history.db.LineageSankeyViewBuilder
-import io.vyne.history.db.ResultRowPersistenceStrategyFactory
+import io.vyne.history.ResultRowPersistenceStrategyFactory
+import io.vyne.history.chart.LineageSankeyViewBuilder
 import io.vyne.models.OperationResult
 import io.vyne.models.json.Jackson
 import io.vyne.query.HistoryEventConsumerProvider

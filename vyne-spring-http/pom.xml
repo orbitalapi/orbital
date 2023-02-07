@@ -23,6 +23,10 @@
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-webflux</artifactId>
       </dependency>
+      <dependency>
+         <groupId>io.github.openfeign</groupId>
+         <artifactId>feign-core</artifactId>
+      </dependency>
    </dependencies>
 
 </project>

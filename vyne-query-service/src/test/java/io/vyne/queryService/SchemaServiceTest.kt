@@ -2,6 +2,7 @@ package io.vyne.queryService
 
 import com.winterbe.expekt.should
 import io.vyne.asPackage
+import io.vyne.cockpit.core.schemas.SchemaService
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.spring.SimpleTaxiSchemaProvider

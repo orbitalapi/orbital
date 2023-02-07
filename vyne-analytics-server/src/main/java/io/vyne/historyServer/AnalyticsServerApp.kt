@@ -16,12 +16,11 @@ import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
-import org.springframework.cloud.netflix.eureka.EnableEurekaClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import reactor.core.publisher.Sinks
-import java.util.TimeZone
+import java.util.*
 import javax.annotation.PostConstruct
 
 private val logger = KotlinLogging.logger {}
@@ -62,14 +61,6 @@ class AnalyticsServerApp {
       logger.info { "Analytics server version => $version" }
    }
 
-   @Bean
-   fun exceptionProvider() = VyneQueryServiceExceptionProvider()
-
-   @Bean
-   fun vyneHistoryRecordsSinks(): Sinks.Many<VyneHistoryRecord> = Sinks.many().multicast().directAllOrNothing()
-
-   @Bean
-   fun csvFormatSpec(): ModelFormatSpec = CsvFormatSpec
 }
 
 @VyneSchemaPublisher
@@ -81,3 +72,17 @@ class VyneConfig
 @Configuration
 @Import(DiscoveryClientConfig::class)
 class DiscoveryConfig
+
+
+@Configuration
+class AnalyticsServiceConfig {
+
+   @Bean
+   fun exceptionProvider() = VyneQueryServiceExceptionProvider()
+
+   @Bean
+   fun vyneHistoryRecordsSinks(): Sinks.Many<VyneHistoryRecord> = Sinks.many().multicast().directAllOrNothing()
+
+   @Bean
+   fun csvFormatSpec(): ModelFormatSpec = CsvFormatSpec
+}

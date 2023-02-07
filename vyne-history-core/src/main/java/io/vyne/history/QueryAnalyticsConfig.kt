@@ -31,5 +31,6 @@ data class QueryAnalyticsConfig(
 
 enum class AnalyticsMode {
    Inprocess,
-   Remote
+   Remote,
+   None
 }
