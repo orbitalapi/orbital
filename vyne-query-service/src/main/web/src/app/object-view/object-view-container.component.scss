@@ -24,8 +24,9 @@ img.icon {
   flex-grow: 1;
 }
 
-app-results-table {
-  display: block;
+
+app-results-table, app-json-results-view {
+  flex-grow: 1;
   height: 100%;
 }
 
@@ -33,6 +34,7 @@ app-results-table {
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
+
   .type-name {
     font-size: 1rem;
     margin-right: 2rem;

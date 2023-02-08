@@ -16,11 +16,12 @@ export interface LandingPageCardConfig {
   selector: 'app-landing-page',
   styleUrls: ['./landing-page.component.scss'],
   template: `
-    <app-header-bar title="">
-    </app-header-bar>
-    <div class="container content-box schema-diagram-container">
-      <app-schema-diagram title="Your services" [schema$]="schema$" displayedMembers="services"></app-schema-diagram>
-    </div>
+      <app-header-bar title="">
+      </app-header-bar>
+      <div class="container content-box schema-diagram-container">
+          <app-schema-diagram title="Your services" [schema$]="schema$"
+                              displayedMembers="services"></app-schema-diagram>
+      </div>
 
 
   `
