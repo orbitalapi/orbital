@@ -45,8 +45,9 @@ type WordWrapOptions = 'off' | 'on' | 'wordWrapColumn' | 'bounded';
 
 @Component({
   selector: 'app-code-editor',
-  templateUrl: './code-editor.component.html',
-  styleUrls: ['./code-editor.component.scss']
+  styleUrls: ['./code-editor.component.scss'],
+  template: `<div #codeEditorContainer class="code-editor"></div>
+  `
 })
 export class CodeEditorComponent implements OnDestroy {
   private _codeEditorContainer: ElementRef;

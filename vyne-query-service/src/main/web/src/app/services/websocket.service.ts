@@ -1,10 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { delay, map, retryWhen, switchMap } from 'rxjs/operators';
+import { delay, retryWhen } from 'rxjs/operators';
 import { WebSocketSubject } from 'rxjs/internal-compatibility';
 import { webSocket } from 'rxjs/webSocket';
-import { of } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -24,21 +23,33 @@ export class WebsocketService {
     }
   }
 
+  /**
+   * Returns a websocket that supports sending and receiving,
+   * but does not reconnect on failure.
+   */
+  websocket(path: string): WebSocketSubject<any> {
+    return this.getOrBuildWebsocket(this.getWsUrl(path))
+  }
+
+  /**
+   * Returns a websocket that receives updates, and reconnects on failure.
+   * Does not support sending
+   */
   connect(path: string): Observable<any> {
-    return of(path).pipe(
-      // https becomes wws, http becomes ws
-      map(apiUrl => this.getWsUrl(path)),
-      switchMap(wsUrl => {
-        if (this.connections.has(wsUrl)) {
-          return this.connections.get(wsUrl);
-        } else {
-          const connection$ = webSocket(wsUrl);
-          this.connections.set(wsUrl, connection$);
-          return connection$;
-        }
-      }),
-      retryWhen((errors) => errors.pipe(delay(this.RETRY_SECONDS)))
-    );
+    return this.websocket(path)
+      .pipe(
+        retryWhen((errors) => errors.pipe(delay(this.RETRY_SECONDS)))
+      );
+  }
+
+  private getOrBuildWebsocket(wsUrl): WebSocketSubject<any> {
+    if (this.connections.has(wsUrl)) {
+      return this.connections.get(wsUrl);
+    } else {
+      const connection$ = webSocket(wsUrl);
+      this.connections.set(wsUrl, connection$);
+      return connection$;
+    }
   }
 
   static buildWsUrl(appServerUrl: string, path: string): string {

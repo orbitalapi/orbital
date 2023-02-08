@@ -10,6 +10,7 @@ import { SearchModule } from '../search/search.module';
 import { SchemaDiagramModule } from '../schema-diagram/schema-diagram.module';
 import { LandingPageContainerComponent } from './landing-page-container.component';
 import { ChangelogModule } from '../changelog/changelog.module';
+import { JsonViewerModule } from 'src/app/json-viewer/json-viewer.module';
 
 const routes: Routes = [
   {
@@ -25,6 +26,7 @@ const routes: Routes = [
     SearchModule,
     SchemaDiagramModule,
     ChangelogModule,
+    JsonViewerModule
   ],
   exports: [LandingPageComponent, LandingCardComponent],
   declarations: [LandingPageComponent, LandingCardComponent, LandingPageContainerComponent],

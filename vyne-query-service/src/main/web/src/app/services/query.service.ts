@@ -19,6 +19,7 @@ import { catchError, concatAll, map, shareReplay } from 'rxjs/operators';
 import { SseEventSourceService } from './sse-event-source.service';
 import { of } from 'rxjs';
 import { FailedSearchResponse, StreamingQueryMessage, ValueWithTypeName } from './models';
+import { WebsocketService } from 'src/app/services/websocket.service';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -34,7 +35,8 @@ export class QueryService {
   };
 
   constructor(private http: HttpClient,
-              private sse: SseEventSourceService) {
+              private sse: SseEventSourceService,
+              private websocketService: WebsocketService) {
 
   }
 
@@ -42,6 +44,9 @@ export class QueryService {
     return `${window.location.protocol}${environment.serverUrl}/api/taxiql`;
   }
 
+  /**
+   * @deprecated use websocketQuery() instead
+   */
   submitQuery(query: Query, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<ValueWithTypeName> {
     // TODO :  I suspect the return type here is actually ValueWithTypeName | ValueWithTypeName[]
     return this.http.post<ValueWithTypeName[]>(`${environment.serverUrl}/api/query?resultMode=${resultMode}&clientQueryId=${clientQueryId}`, query, this.httpOptions)
@@ -53,9 +58,28 @@ export class QueryService {
         concatAll(),
         shareReplay({ bufferSize: replayCacheSize, refCount: false }),
       );
-
   }
 
+  websocketQuery(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<ValueWithTypeName> {
+    const websocket = this.websocketService.websocket('/api/query/taxiql')
+    websocket.next({
+      clientQueryId: clientQueryId,
+      query: query
+    })
+    return websocket
+  }
+
+  /**
+   * @deprecated use websocketQuery() instead
+   *
+   * Using SSE is simple to get going with, but has issues around:
+   *  * GET only, which limits a bunch of things, not least of all - query size, so...
+   *  * ...Can't send large queries (which customers seemed to keep hitting)
+   *  * No indication of "end", which required lots of workaround
+   *  * Can't read headers, or send metadata
+   *
+   * Ultimately, we'll using websocket querying instead from the browser
+   */
   submitVyneQlQueryStreaming(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<StreamingQueryMessage> {
     const queryPart = encodeURIComponent(query);
     const url = `${environment.serverUrl}/api/vyneql?resultMode=${resultMode}&clientQueryId=${clientQueryId}&query=${queryPart}`;
