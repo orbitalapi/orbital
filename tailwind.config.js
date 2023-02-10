@@ -11,12 +11,11 @@ module.exports = {
   theme: {
     // `demo-*` screens are used for the "mobile-first" responsive demo
     screens: {
-      sm: '640px',
+      sm: { max: '767px' },
       'demo-sm': '720px',
       md: '768px',
-      lg: '1024px',
-      xl: '1280px',
-      '2xl': '1536px',
+      lg: '1440px',
+      xl: '1920px'
     },
     aspectRatio: {
       auto: 'auto',

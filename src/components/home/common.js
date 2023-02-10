@@ -1,5 +1,7 @@
 import clsx from 'clsx'
 import {Button} from '../Button'
+import {ReactComponent as ArrowCitrus} from '@/img/arrow-citrus.svg';
+
 
 export function IconContainer({as: Component = 'div', className = '', light, dark, ...props}) {
   return (
@@ -28,20 +30,50 @@ export function IconContainer({as: Component = 'div', className = '', light, dar
 }
 
 export function Caption({className = '', ...props}) {
-  return <h2 className={`mt-8 font-semibold ${className}`} {...props} />
+  return <h2 className={`mt-8 font-semibold font-brand ${className}`} {...props} />
 }
 
-export function BigText({className = '', ...props}) {
+export function QuerySectionTitle({className = '', ...props}) {
   return (
     <p
-      className={`mt-4 text-3xl sm:text-4xl text-slate-900 font-extrabold tracking-tight dark:text-slate-50 ${className}`}
+      className={`mt-4 text-3xl sm:text-lg dark:text-citrus font-brand ${className}`}
       {...props}
     />
   )
 }
 
+export function QuerySectionHeader({className = '', ...props}) {
+  return (
+    <p
+      className={`mt-4 text-3xl sm:text-xl dark:text-white font-medium font-brand ${className}`}
+      {...props}
+    />
+  )
+}
+
+export function BigText({className = '', ...props}) {
+  return (
+    <p
+      className={`mt-4 text-4xl lg:text-5xl text-slate-900 font-extrabold tracking-tight dark:text-slate-50 ${className}`}
+      {...props}
+    />
+  )
+}
+
+export function LearnMoreButton({className = '', href = '', label = 'Learn more'}) {
+  return (
+    <p className={`my-8 flex w-3/4 content-baseline justify-center h-8 ${className}`}>
+      <a href={href} className={'font-brand text-citrus uppercase tracking-widest font-bold leading-8'}>
+        {label}
+      </a>
+
+      <ArrowCitrus className="-rotate-90 stroke-[6px] leading-8 ml-4" width="16" height="32"></ArrowCitrus>
+    </p>
+  )
+}
+
 export function Paragraph({as: Component = 'p', className = '', ...props}) {
-  return <Component className={`text-xl text-center font-light leading-8 mt-4 space-y-6 ${className}`} {...props} />
+  return <Component className={`text-lg text-center font-light leading-8 mt-8 space-y-6 font-brand text-white ${className}`} {...props} />
 }
 
 export function Link({className, ...props}) {
