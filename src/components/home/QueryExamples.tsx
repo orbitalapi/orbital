@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { BigText, Paragraph } from '@/components/home/common';
+import { BigText, LearnMoreButton, Paragraph, QuerySectionHeader, QuerySectionTitle } from '@/components/home/common';
 import { Tabs } from '../Tabs';
 import { GridLockup } from '../GridLockup';
 import { AnimatePresence } from 'framer-motion';
@@ -12,7 +12,7 @@ import { CodeSnippet, CodeSnippetMap, HighlightedCodeSnippetMap } from '@/compon
 import IntegrationDiagram, { IntegrationDiagramProps } from '@/components/home/IntegrationDiagram';
 import OrbitalLogo from '@/img/wormhole-aqua-transparent.png';
 
-const paragraphClass = 'text-lg font-semibold text-sky-400 mb-8'
+const paragraphClass = 'md:w-3/4 text-lg font-semibold text-citrus mb-8, mt-8'
 
 const tabData = {
   'Fetch': {
@@ -270,7 +270,7 @@ function QueryExamples(props: QueryExampleProps) {
             }),
             startPlug: 'disc',
             endPlug: 'disc',
-            color: '#059669',
+            color: '#e0ff4f',
             showEffectName: 'fade'
           }));
         }
@@ -306,11 +306,11 @@ function QueryExamples(props: QueryExampleProps) {
   return (
     <section id="query-examples" className="relative">
       <img src={OrbitalLogo.src} className={'absolute blur-3xl opacity-25 -z-10'}/>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 md:px-8">
         <div className={'flex flex-col items-center'}>
           <div className="max-w-3xl mx-auto flex flex-col items-center">
-            <BigText className="text-center font-brand">
-              <Widont>Connect without the glue</Widont>
+            <BigText className="text-center font-brand pb-4">
+              <span className="text-citrus">Connect</span><Widont> without the glue</Widont>
             </BigText>
             <Paragraph>
               Query for the data you need, and Orbital integrates on-the-fly.
@@ -322,17 +322,23 @@ function QueryExamples(props: QueryExampleProps) {
             <Paragraph>
               No glue code required. As things change, Orbital adapts.
             </Paragraph>
-            <Button href="https://docs.vyne.co/querying-with-vyne/writing-queries/" className={'mt-8 mb-8'}>
-              Learn more
-            </Button>
-          </div>
-          <div className="mt-10">
+            
+            <LearnMoreButton href="https://docs.vyne.co/querying-with-vyne/writing-queries/" />
+            {/* <p className="my-8 flex w-3/4 content-baseline justify-center h-8">
+              <a href="https://docs.vyne.co/querying-with-vyne/writing-queries/" className={'font-brand text-citrus uppercase tracking-widest font-bold leading-8'}>
+                Learn more
+              </a>
+
+              <ArrowCitrus className="-rotate-90 stroke-[6px] leading-8 ml-4" width="16" height="32"></ArrowCitrus>
+            </p> */}
+          </div> 
+          <div className="mt-10 w-full">
             <Tabs
               tabs={tabs}
               selected={tab}
               onChange={(tab) => setTab(tab)}
-              className="text-sky-400 "
-              iconClassName="text-sky-500 "
+              className="text-citrus"
+              iconClassName="text-citrus"
             />
           </div>
 
@@ -340,7 +346,7 @@ function QueryExamples(props: QueryExampleProps) {
         </div>
 
         <GridLockup
-          className="mt-10 xl:mt-2"
+          className="mt-10"
           beams={-1}
           left={
             <Snippet highlightedCode={props.highlightedSnippets[tab]} code={queryExampleCodeSnippets[tab]}/>
@@ -352,7 +358,7 @@ function QueryExamples(props: QueryExampleProps) {
                   return (<div key={`${tab}-PlanDiv-${idx}`} id={`${tab}-Plan-${idx}`}
                                className=" pt-8 flex flex-col items-center">
                     {/* We use this id for building lines from the query to the plan*/}
-                    <IntegrationDiagram  {...plan}/>
+                    <IntegrationDiagram  {...plan} orientation='vertical' />
                   </div>)
                 })
                 }

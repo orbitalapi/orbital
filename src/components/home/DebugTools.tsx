@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { BigText, Caption, Paragraph } from '@/components/home/common';
+import { BigText, Caption, LearnMoreButton, Paragraph } from '@/components/home/common';
 import { Widont } from '../Widont';
 import { Tabs } from '../Tabs';
 import CellLineageImg from './img/cell-lineage.png';
@@ -10,7 +10,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/Button';
 import OrbitalLogo from '@/img/wormhole-citrus-transparent.png';
 
-const paragraphClass = 'text-lg font-semibold text-slate-400 mb-8'
+const paragraphClass = 'text-lg font-semibold text-white mb-8'
 const ImgClass = 'rounded-l md:rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 m-auto';
 const CellLineage = () => {
   return (
@@ -105,10 +105,10 @@ function DebugTools() {
   return (
     <section id="debug-tools" className="relative">
       <img src={OrbitalLogo.src} className={'absolute blur-3xl opacity-25 right-0 -z-10'}/>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8 md:py-32">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
         <div className={'flex flex-col items-center'}>
-          <Caption className="text-pink-400 text-center">Lineage & Monitoring</Caption>
-          <BigText className={'text-center text-slate-900'}>
+          <Caption className="text-citrus text-center">Lineage & Monitoring</Caption>
+          <BigText className={'text-center text-white'}>
             <Widont>See exactly what's happening.</Widont>
           </BigText>
           <Paragraph>
@@ -116,16 +116,14 @@ function DebugTools() {
             you can see
             exactly what is happening under the hood.
           </Paragraph>
-          <Button href="https://docs.vyne.co/querying-with-vyne/data-lineage/" className={'mt-8 mb-8'}>
-            Learn more
-          </Button>
-          <div className="mt-10">
+          <LearnMoreButton href="https://docs.vyne.co/querying-with-vyne/data-lineage/" className={'mt-8 mb-8'} />
+          <div className="mt-10 w-full">
             <Tabs
               tabs={tabs}
               selected={tab}
               onChange={(tab) => setTab(tab)}
-              className="text-pink-400"
-              iconClassName="text-pink-400"
+              className="text-citrus"
+              iconClassName="text-citrus"
             />
           </div>
           <div className='max-w-3xl'>

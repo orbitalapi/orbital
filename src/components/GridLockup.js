@@ -21,7 +21,7 @@ export function GridLockup({
 
 GridLockup.Container = function Grid({beams = 0, className, overhang = 'sm', children}) {
   return (
-    <div className={clsx('relative pt-10 xl:pt-0', className)}>
+    <div className={clsx('relative pt-10', className)}>
       {/*<div*/}
       {/*  className={clsx(*/}
       {/*    'hidden dark:block absolute top-0 inset-x-0 h-[37.5rem] bg-gradient-to-b from-[#0c1120]',*/}

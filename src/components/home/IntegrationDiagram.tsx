@@ -1,15 +1,15 @@
 import * as React from 'react';
 import styled from 'styled-components';
+import clsx from 'clsx';
 
 import OrbitalLogo from '@/img/wormhole-aqua-transparent.png';
 import { ApiIcon } from '@/components/ApiIcon';
 import { DatabaseIcon } from '@/components/DatabaseIcon';
 import { KafkaIcon } from '@/components/KafkaIcon';
-import colors from 'tailwindcss/colors'
 
 export interface IntegrationDiagramProps {
   title: string[];
-  nodes: ServiceNode[]
+  nodes: ServiceNode[];
 }
 
 type ServiceType = 'api' | 'database' | 'kafka' | 'orbital';
@@ -18,6 +18,7 @@ export interface ServiceNode {
   type: ServiceType
   title: string;
   linkText?: string;
+  lastItem?: boolean;
 }
 
 
@@ -75,14 +76,14 @@ const StyledIntegrationDiagram = styled.div`
 
 const ConnectorLine = ({ label, ...props }) => {
   return (
-    <div {...props}>
+    <div {...props} className={clsx("ml-5", props.className)}>
       {/* Border which becomes the arrow*/}
-      <div className={'border-t border-sky-300 text-sky-300 relative'}>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 absolute top-[-10px] right-[-11px]">
+      <div className={'border-t border-white text-white relative border-r'}>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 absolute sm:bottom-[-15px] md:top-[-10px] right-[-11px] sm:rotate-90">
           <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
         </svg>
       </div>
-      <div className={'font-mono m-[0.5rem] text-xs p-1 border rounded text-sky-300 border-sky-300'}>{label}</div>
+      <div className={'font-mono m-[0.5rem] text-xs p-1 border rounded text-white border-white'}>{label}</div>
     </div>
   )
 }
@@ -101,18 +102,24 @@ const ServiceIcon = ({ serviceType, ...props }) => {
 }
 const DiagramServiceNode = (props: ServiceNode) => {
   return (
-    <div className={'flex items-center'}>
+    <div className={clsx("flex items-center sm:flex-col md:justify-between", !props.lastItem && "w-full")}>
       <div className="flex flex-col items-center">
-        <ServiceIcon serviceType={props.type} style={{ width: '48px', height: '48px', color: colors.sky['500'] }}
-                     className={'mb-3'}/>
-        <span className={'text-sky-200 text-sm text-center whitespace-pre-wrap'}>{props.title}</span>
+        <ServiceIcon serviceType={props.type} style={{ width: '48px', height: '48px' }}
+                     className={clsx('mb-3 text-aqua', props.linkText && 'grow')}/>
+        <span className={'text-white text-sm text-center whitespace-pre-wrap'}>{props.title}</span>
       </div>
-      {props.linkText && (<ConnectorLine label={props.linkText} className={'mt-[-0.75rem]'}/>)}
+      {props.linkText && (
+        <div className="sm:w-full md:max-w-max">
+          <ConnectorLine label={props.linkText} className="flex sm:flex-row-reverse sm:mr-[6.5rem] sm:mt-4 md:flex-col md:mt-[-0.75rem]" />
+        </div>
+      )}
     </div>
   );
 }
 
 const IntegrationDiagram = (props: IntegrationDiagramProps) => {
+  // const orientation = props.orientation || 'horizontal';
+  
   return (
     <StyledIntegrationDiagram>
       <div className="drop-shadow-md border-collapse rounded-md bg-slate-800/75 ring-1 ring-inset ring-white/10 p-4 flex flex-col space-y-4">
@@ -120,7 +127,7 @@ const IntegrationDiagram = (props: IntegrationDiagramProps) => {
           <div className="flex items-center">
             <img src={OrbitalLogo.src} className="mr-4 w-[45px]"/>
             <div className="text-white">
-              <h4 className="text-sky-300 font-semibold ">INTEGRATION PLAN</h4>
+              <h4 className="text-aqua font-semibold ">INTEGRATION PLAN</h4>
               {(props.title.length > 1) && <><span>
                                 {props.title[0]}
                 <span className="mono">{' -> '}</span>
@@ -133,9 +140,9 @@ const IntegrationDiagram = (props: IntegrationDiagramProps) => {
         </div>
         <div>
           {/*  Body*/}
-          <div className={'flex space-x-4'}>
-            {props.nodes.map(node => {
-              return (<DiagramServiceNode {...node}></DiagramServiceNode>);
+          <div className="flex sm:flex-col sm:items-center sm:space-y-4 md:space-x-4 gap-6">
+            {props.nodes.map((node, index) => {
+              return (<DiagramServiceNode {...node} lastItem={props.nodes.length - 1 === index }></DiagramServiceNode>);
             })}
           </div>
         </div>
