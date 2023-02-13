@@ -25,6 +25,7 @@
          "regression-tests",
          "schema-server",
          "start.vyne.co",
+         "test-containers",
          "ui",
          "ui/data-catalog",
          "ui/kafka-topic-importer",

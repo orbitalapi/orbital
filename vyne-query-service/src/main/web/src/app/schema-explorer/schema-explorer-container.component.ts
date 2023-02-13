@@ -1,4 +1,4 @@
-import { Component, Directive, OnInit } from '@angular/core';
+import { Component, Directive } from '@angular/core';
 import { AppInfoService, QueryServiceConfig } from '../services/app-info.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PackagesService, SourcePackageDescription } from 'src/app/package-viewer/packages.service';
@@ -42,7 +42,7 @@ export class BaseSchemaExplorerContainer {
   selector: 'app-schema-explorer-container',
   template: `
     <app-header-bar title="Schema Explorer">
-      <div class="add-new" *ngIf="config?.server.newSchemaSubmissionEnabled">
+      <div class="add-new">
         <button mat-stroked-button [routerLink]="['/schema-importer']">Add new</button>
         <!--<mat-icon svgIcon="add_box"></mat-icon>-->
         <!--Add a new one-->

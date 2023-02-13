@@ -26,7 +26,7 @@ class KafkaConnectionTest : BaseKafkaContainerTest() {
          "VyneTest-" + Random.nextInt(),
       )
       KafkaConnection.test(connection)
-         .get().should.equal("Failed to construct kafka consumer : No resolvable bootstrap urls given in bootstrap.servers")
+         .get().should.equal("Failed to create new KafkaAdminClient : No resolvable bootstrap urls given in bootstrap.servers")
    }
 
 }

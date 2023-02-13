@@ -14,12 +14,12 @@
       <version>2.7.7</version>
    </parent>
 
-   <url>https://vyne.co</url>
+   <url>https://orbitalhq.com</url>
 
    <licenses>
       <license>
-         <name>Vyne Enterprise License</name>
-         <url>https://vyne.co</url>
+         <name>Orbital Enterprise License</name>
+         <url>https://orbitalhq.com</url>
       </license>
    </licenses>
 
@@ -31,26 +31,34 @@
       <kotlin-logging.version>3.0.4</kotlin-logging.version>
 
       <reactive-feign.version>3.2.6</reactive-feign.version>
+      <!-- Use Java 17.
+      Currently, Chronicle doens't support later versions.
+      Based on their release cadence, it seems they're unlikely to support versions other than LTS.
+      -->
+      <java.version>17</java.version>
+      <kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
 
-      <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
+      <maven.compiler.source>${java.version}</maven.compiler.source>
+      <maven.compiler.target>${java.version}</maven.compiler.target>
+
       <kotlin.version>1.8.0</kotlin.version>
       <kotlin.coroutines.version>1.6.4</kotlin.coroutines.version>
       <!-- Kotlin serialization is currently fixed to the version supported by spring -->
       <kotlin.serialization.version>1.4.1</kotlin.serialization.version>
-      <java.version>1.8</java.version>
+
       <logback.version>1.2.11</logback.version>
 
       <spring.cloud.version>2021.0.5</spring.cloud.version>
-      <arrow.version>1.1.3</arrow.version>
+      <arrow.version>1.1.5</arrow.version>
       <logstash.logback.version>7.2</logstash.logback.version>
 
       <swagger.springfox.version>3.0.0</swagger.springfox.version>
-      <http4k.version>4.35.2.0</http4k.version>
+      <http4k.version>4.36.0.0</http4k.version>
       <hazelcast-jet.version>4.5</hazelcast-jet.version>
       <hazelcast.version>5.2.1</hazelcast.version>
       <testcontainers.version>1.16.2</testcontainers.version>
       <h2.version>2.1.214</h2.version>
-      <reactor-bom.version>2020.0.26</reactor-bom.version>
+      <reactor-bom.version>2020.0.27</reactor-bom.version>
       <netty.version>4.1.75.Final</netty.version>
       <!-- CVE-2022-31692  -->
       <spring-security.version>5.7.5</spring-security.version>
@@ -63,8 +71,8 @@
 
    <modules>
       <module>cask</module>
-      <module>config-server</module>
-      <module>eureka</module>
+      <!--      <module>config-server</module>-->
+      <!--      <module>eureka</module>-->
       <module>vyne-core-types</module>
       <module>events-api</module>
       <module>vyne-search</module>
@@ -98,6 +106,12 @@
       <module>taxi-playground</module>
       <module>station</module>
       <module>auth-common</module>
+      <module>query-node-core</module>
+      <module>query-node-service</module>
+      <module>history-persistence</module>
+      <module>history-service</module>
+      <module>cockpit-core</module>
+      <module>query-node-api</module>
    </modules>
 
    <scm>
@@ -256,7 +270,7 @@
          <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>bom</artifactId>
-            <version>2.19.5</version>
+            <version>2.19.14</version>
             <type>pom</type>
             <scope>import</scope>
          </dependency>
@@ -407,7 +421,7 @@
          <dependency>
             <groupId>net.openhft</groupId>
             <artifactId>chronicle-bom</artifactId>
-            <version>2.24ea25</version>
+            <version>2.24ea26</version>
             <type>pom</type>
             <scope>import</scope>
          </dependency>
@@ -433,7 +447,7 @@
       <plugins>
          <plugin>
             <artifactId>maven-surefire-plugin</artifactId>
-            <version>2.22.2</version>
+            <version>3.0.0-M7</version>
          </plugin>
          <plugin>
             <groupId>com.amashchenko.maven.plugin</groupId>
@@ -545,7 +559,7 @@
                <artifactId>license-maven-plugin</artifactId>
                <version>2.0.0</version>
                <configuration>
-                  <licenseName>Vyne Enterprise License</licenseName>
+                  <licenseName>Orbital Enterprise License</licenseName>
                   <licenseResolver>${project.baseUri}/src/license</licenseResolver>
                   <licenseMerges>
                      <licenseMerge>Apache License, Version 2.0|The Apache Software License, Version 2.0|Apache 2|Apache
@@ -592,6 +606,21 @@
                      </goals>
                   </execution>
                </executions>
+            </plugin>
+            <!-- As JDK 17 introduced the new module system, we need to relax the access to JDK internals used by Chronicle library for tests -->
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-surefire-plugin</artifactId>
+               <configuration>
+                  <argLine>
+                     --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+                     --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
+                     --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
+                     --add-opens=jdk.compiler/com.sun.tools.javac=ALL-UNNAMED
+                     --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+                     --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED
+                  </argLine>
+               </configuration>
             </plugin>
          </plugins>
       </pluginManagement>

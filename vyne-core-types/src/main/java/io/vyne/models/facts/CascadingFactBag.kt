@@ -7,7 +7,6 @@ import io.vyne.query.TypedInstanceValidPredicate
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.accessors.Argument
-import lang.taxi.accessors.ProjectionFunctionScope
 
 /**
  * Allows for segreated searches of facts.
@@ -24,9 +23,10 @@ import lang.taxi.accessors.ProjectionFunctionScope
  * from the global set of facts (whcih contain many entities)
  */
 class CascadingFactBag(private val primary: FactBag, private val secondary: FactBag) : FactBag {
-   constructor(primary: FactBag, secondary: TypedInstance, schema: Schema) : this(
+   constructor(primary: FactBag, secondary: TypedInstance, schema: Schema) : this(primary, listOf(secondary), schema)
+   constructor(primary: FactBag, secondary: List<TypedInstance>, schema: Schema) : this(
       primary,
-      CopyOnWriteFactBag(listOf(secondary), schema)
+      CopyOnWriteFactBag(secondary, schema)
    )
 
    enum class CascadeApproach {
@@ -41,12 +41,16 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
       Cascade
    }
 
-   override val scopedFacts: List<ScopedFact> = primary.scopedFacts + secondary.scopedFacts
+   override val scopedFacts: List<ScopedFact> = (primary.scopedFacts + secondary.scopedFacts).distinct()
 
    override fun getScopedFact(scope: Argument): ScopedFact {
-      return getScopedFactOrNull(scope) ?:
-         error("No scope of ${scope.name} exists in this CascadingFactBag")
+      return getScopedFactOrNull(scope) ?: error("No scope of ${scope.name} exists in this CascadingFactBag")
    }
+
+//   val currentScopedFact:ScopedFact?
+//      get() {
+//         return primary.scopedFacts.
+//      }
 
    override fun getScopedFactOrNull(scope: Argument): ScopedFact? {
       return primary.getScopedFactOrNull(scope) ?: secondary.getScopedFactOrNull(scope)
@@ -169,18 +173,18 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
                strategy,
                spec
             ) // return null if no match in primary to allow fallthrough to parent
-               ?: secondary.getFact(type, strategy, spec)
+               ?: secondary.getFactOrNull(type, strategy, spec)
          }
       }
    }
 
    override fun getFactOrNull(search: FactSearch): TypedInstance? {
-      if (search.strategy == FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) {
+      return if (search.strategy == FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) {
          val primaryFact = primary.getFactOrNull(search)
          val secondaryFact = secondary.getFactOrNull(search)
-         return combineIfPossible(primaryFact,secondaryFact)
+         combineIfPossible(primaryFact, secondaryFact)
       } else {
-         return primary.getFactOrNull(search) ?: secondary.getFactOrNull(search)
+         primary.getFactOrNull(search) ?: secondary.getFactOrNull(search)
       }
    }
 
@@ -191,7 +195,13 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
          primaryFact == null && secondaryFact != null -> return secondaryFact
       }
       if (primaryFact is TypedCollection && secondaryFact is TypedCollection) {
-         return TypedCollection.from(primaryFact + secondaryFact)
+         // HACK:
+         // we're finding the same result multiple times, because
+         // cascading can traverse the same object path multiple times.
+         // Instead of fixing it right now,
+         // just grab a distinct set of facts.
+         val distinctFacts = (primaryFact.value + secondaryFact.value).distinct()
+         return TypedCollection.from(distinctFacts)
       }
       // We can't combine, so return just the primary, since that's our contract.
       // This may cause problems - if so, we should log and return null

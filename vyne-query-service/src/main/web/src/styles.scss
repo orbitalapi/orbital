@@ -3,24 +3,35 @@
 @import "~ag-grid-community/src/styles/ag-grid.scss";
 @import "~ag-grid-community/src/styles/ag-theme-alpine/sass/ag-theme-alpine-mixin.scss";
 @import '~highlight.js/styles/ocean.css';
-// This has to be manually overridden in the search bar component, which also uses a different themed ng-select
-//@import "~@ng-select/ng-select/themes/material.theme.css";
+@import "t2-colors";
 
 :root {
   --tui-text-font: $font-sans;
   --tui-font-text: $font-sans;
+  --tui-radius-s: 0.3rem;
+  --tui-radius-m: 0.4rem;
+  --tui-radius-l: 0.5rem;
+
+  --tui-primary: #{$primary};
+  --tui-primary-hover: #{$primary-light};
+  --tui-primary-active: #{$primary-dark};
 }
 .ag-theme-alpine {
   @include ag-theme-alpine((
     font-family: ($font-sans),
     border-color: $border-dark
   ));
+
   .ag-header-cell-text {
     font-family: $headings-font;
     color: $dark-grey-3;
     font-size: 1rem;
     font-weight: 400;
   }
+}
+
+tui-wrapper[data-appearance='textfield'] {
+  box-shadow: 0 1px 2px rgb(19 20 22 / 10%);
 }
 
 tui-root {
@@ -89,4 +100,13 @@ $vyne-app-theme: mat.define-light-theme($vyne-app-primary, $vyne-app-accent, $vy
 
 tui-dialog-host {
   z-index: 10000;
+}
+
+tui-dropdown-box {
+  z-index: 1000000 !important;
+}
+
+.mat-stroked-button:not([class*=mat-elevation-z]) {
+  box-shadow: 0 1px 2px rgb(19 20 22 / 10%);
+  background-color: rgba(255, 255, 255, 0.7);
 }

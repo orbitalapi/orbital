@@ -1,7 +1,6 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {QueryProfileData, QueryResult} from '../../../services/query.service';
+import { Component, Input } from '@angular/core';
+import { QueryProfileData } from '../../../services/query.service';
 import { Observable } from 'rxjs/index';
-import { QualifiedName } from '../../../services/schema';
 
 @Component({
   selector: 'app-sequence-diagram',
@@ -34,9 +33,9 @@ export class SequenceDiagramComponent {
       const sortedRemoteCalls = profileData.remoteCalls
         .sort((a, b) => {
           switch (true) {
-            case a.timestamp.getTime() < b.timestamp.getTime() :
+            case a.startTime.getTime() < b.startTime.getTime() :
               return -1;
-            case a.timestamp.getTime() > b.timestamp.getTime() :
+            case a.startTime.getTime() > b.startTime.getTime() :
               return 1;
             default:
               return 0;
@@ -44,12 +43,12 @@ export class SequenceDiagramComponent {
         });
       const remoteCallLines = sortedRemoteCalls
         .map(remoteCall => {
-          const wasSuccessful = remoteCall.resultCode >= 200 && remoteCall.resultCode <= 299;
-          let resultMessage = wasSuccessful ? 'Success ' : 'Error ';
-          resultMessage += remoteCall.resultCode;
+          const wasSuccessful = remoteCall.success
+          const resultMessage = (wasSuccessful) ? `${remoteCall.responseTypeDisplayName} (${remoteCall.durationMs}ms)`
+            : `${remoteCall.resultCode} (${remoteCall.durationMs}ms)`
           const indent = '    ';
-          const lines = [indent + `Vyne ->> ${remoteCall.serviceDisplayName || remoteCall.service}: ${remoteCall.operation} (${remoteCall.method})`,
-            indent + `${remoteCall.serviceDisplayName || remoteCall.service} ->> Vyne: ${remoteCall.responseTypeDisplayName || remoteCall.responseTypeName} (${remoteCall.durationMs}ms)`
+          const lines = [indent + `Vyne ->> ${remoteCall.serviceDisplayName}: ${remoteCall.operationName} (${remoteCall.method})`,
+            indent + `${remoteCall.serviceDisplayName} ->> Vyne: ${resultMessage}`
           ].join('\n');
           return lines;
 

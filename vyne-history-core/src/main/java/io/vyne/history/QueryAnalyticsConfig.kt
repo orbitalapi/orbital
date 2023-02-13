@@ -15,6 +15,8 @@ data class QueryAnalyticsConfig(
    val maxPayloadSizeInBytes: Int = 2048,
    // Mutable for testing
    var persistRemoteCallResponses: Boolean = true,
+
+   var persistRemoteCallMetadata: Boolean = true,
    // Page size for the historical Query Display in UI.
    val pageSize: Int = 20,
 
@@ -31,5 +33,6 @@ data class QueryAnalyticsConfig(
 
 enum class AnalyticsMode {
    Inprocess,
-   Remote
+   Remote,
+   None
 }

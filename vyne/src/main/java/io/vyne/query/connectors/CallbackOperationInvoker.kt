@@ -6,6 +6,7 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedInstanceConverter
 import io.vyne.models.json.Jackson
+import io.vyne.query.EmptyExchangeData
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
@@ -45,7 +46,7 @@ class CallbackOperationInvoker(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String?
+      queryId: String
    ): Flow<TypedInstance> {
       val paramDescription = parameters.joinToString { "${it.second.type.name.shortDisplayName} = ${it.second.value}" }
       logger.debug { "Invoking ${service.name} -> ${operation.name}($paramDescription)" }
@@ -108,9 +109,12 @@ class CallbackOperationInvoker(
          durationMs = 0,
          response = Jackson.defaultObjectMapper.writeValueAsString(result),
          timestamp = Instant.now(),
-         responseMessageType = ResponseMessageType.FULL
+         responseMessageType = ResponseMessageType.FULL,
+         exchange = EmptyExchangeData
       )
-      val dataSource = OperationResult.from(params, remoteCall)
+
+
+      val dataSource = OperationResult.from(params, remoteCall).asOperationReferenceDataSource()
       return result.map { typedInstance ->
          val updated = TypedInstanceConverter(DataSourceMutatingMapper(dataSource)).convert(typedInstance)
          TypedInstance.from(typedInstance.type, updated, schema, source = dataSource)

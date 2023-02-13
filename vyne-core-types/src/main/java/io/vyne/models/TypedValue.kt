@@ -3,6 +3,7 @@
 package io.vyne.models
 
 import io.vyne.schemas.Type
+import io.vyne.utils.Ids
 import lang.taxi.ImmutableEquality
 import lang.taxi.jvm.common.PrimitiveTypes
 import lang.taxi.types.FormatsAndZoneOffset
@@ -62,6 +63,7 @@ data class TypedValue private constructor(
    override fun toString(): String {
       return "TypedValue(type=${type.qualifiedName.longDisplayName}, value=$value)"
    }
+   override val nodeId: String = Ids.fastUuid()
 
    init {
       if (type.isEnum) {

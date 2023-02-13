@@ -1,7 +1,9 @@
 package io.vyne.queryService.schemas.editor.generator
 
 import com.winterbe.expekt.should
-import io.vyne.queryService.schemas.editor.EditedSchema
+import io.vyne.cockpit.core.schemas.editor.EditedSchema
+import io.vyne.cockpit.core.schemas.editor.generator.VyneSchemaToTaxiGenerator
+import io.vyne.query.VyneQlGrammar
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.withoutWhitespace
 import lang.taxi.TaxiDocument
@@ -48,6 +50,35 @@ class VyneSchemaToVyneSchemaToTaxiGeneratorTest {
 
       """
 
+      // Create a Vyne schema first...
+      val schema = TaxiSchema.from(
+         source
+      ).toPartialSchema()
+      // Then convert that into a taxi schema
+      val schemaGenerator = VyneSchemaToTaxiGenerator()
+      val generated = schemaGenerator.generate(schema)
+
+      generated.shouldCompileTheSameAs(source)
+   }
+
+   @Test
+   fun `generates table operations correctly`() {
+      val source = """
+         // We need the VyneQL query type, because we generate query operations on compilation.
+         ${VyneQlGrammar.QUERY_TYPE_TAXI}
+
+         namespace films {
+
+            model Film {
+               filmId : FilmId inherits Int
+               title : FilmTitle inherits String
+            }
+            @io.vyne.jdbc.DatabaseService(connection = "films")
+            service FilmService {
+               table film : Film[]
+            }
+         }
+      """.trimIndent()
       // Create a Vyne schema first...
       val schema = TaxiSchema.from(
          source

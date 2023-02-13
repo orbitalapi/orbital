@@ -2,7 +2,9 @@ package io.vyne.history.codec
 
 import com.winterbe.expekt.should
 import io.netty.buffer.PooledByteBufAllocator
+import io.vyne.query.HttpExchange
 import io.vyne.query.QueryResponse
+import io.vyne.query.ResponseMessageType
 import io.vyne.query.history.FlowChartData
 import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QueryResultRow
@@ -11,6 +13,7 @@ import io.vyne.query.history.QuerySummary
 import io.vyne.query.history.RemoteCallResponse
 import io.vyne.query.history.SankeyNodeType
 import io.vyne.query.history.VyneHistoryRecord
+import io.vyne.schemas.fqn
 import org.junit.Test
 import org.springframework.core.ResolvableType
 import org.springframework.core.io.buffer.NettyDataBufferFactory
@@ -90,7 +93,21 @@ class VyneHistoryRecordObjectEncoderTest {
          queryId = "queryId",
          remoteCallId = "callId",
          response = "response",
-         responseId = "responseID"
+         responseId = "responseID",
+         startTime = Instant.parse("2022-10-22T23:00:00Z"),
+         durationMs = 33,
+         exchange = HttpExchange(
+            "http://foo.com",
+            "GET",
+            "{ foo }",
+            200,
+            20000
+         ),
+         operation = "foo.bar.Bz".fqn(),
+         success = true,
+         messageKind = ResponseMessageType.EVENT,
+         address = "",
+         responseType = "FooResponse".fqn()
       )
       val encodedValue = encoder.encodeValue(
          remoteCallResponse,

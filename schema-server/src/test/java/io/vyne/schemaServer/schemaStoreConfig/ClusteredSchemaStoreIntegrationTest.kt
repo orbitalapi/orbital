@@ -132,7 +132,6 @@ class ClusteredSchemaStoreIntegrationTest {
          .sources(SchemaServerApp::class.java)
          .properties(
             "spring.main.allow-bean-definition-overriding=true",
-            "eureka.client.enabled=false",
             "vyne.schema.server.clustered=true",
             "vyne.schema.server.port=${SocketUtils.findAvailableTcpPort()}",
             "hazelcast.config=classpath:hz-test-config.xml"

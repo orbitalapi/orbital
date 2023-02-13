@@ -2,8 +2,8 @@ package io.vyne.models
 
 import com.google.common.collect.Interners
 import io.vyne.schemas.Type
+import io.vyne.utils.Ids
 import io.vyne.utils.ImmutableEquality
-import lang.taxi.Equality
 import lang.taxi.packages.utils.log
 
 // TypedNull is very cachable, except for the source attribute.
@@ -25,6 +25,8 @@ data class TypedNull private constructor(private val wrapper: TypedNullWrapper,
           log().debug("Found a TypedNull with an UndefinedSource.  Consider updating caller to populate the datasource")
        }
    }
+   override val nodeId: String = Ids.fastUuid()
+
    companion object {
       // Intern the wrappers, so that we can do fast equality checks
       private val internedWrappers = Interners.newWeakInterner<TypedNullWrapper>()

@@ -1,15 +1,29 @@
 package io.vyne.query
 
-import io.vyne.models.*
+import io.vyne.models.AccessorHandler
+import io.vyne.models.DataSource
+import io.vyne.models.FailedSearch
+import io.vyne.models.MixedSources
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedInstancePredicateFactory
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedObjectFactory
+import io.vyne.models.TypedValue
 import io.vyne.models.facts.FactBag
 import io.vyne.models.facts.FactDiscoveryStrategy
 import io.vyne.models.facts.FieldAndFactBag
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.functions.FunctionRegistry
-import io.vyne.query.ExcludeQueryStrategyKlassPredicate.Companion.ExcludeObjectBuilderPredicate
+import io.vyne.query.ExcludeQueryStrategyKlassPredicate.Companion.ExcludeObjectBuilder
 import io.vyne.query.collections.CollectionBuilder
 import io.vyne.query.collections.CollectionProjectionBuilder
-import io.vyne.schemas.*
+import io.vyne.schemas.AttributeName
+import io.vyne.schemas.Field
+import io.vyne.schemas.FieldSource
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
@@ -251,7 +265,9 @@ class ObjectBuilder(
       return if (searchFailed) {
          if (!targetType.isClosed) {
             logger.debug { "Search for object ${targetType.qualifiedName.shortDisplayName} failed, so initiating building one" }
-            buildObjectInstance(targetType, spec, facts)
+            val result = buildObjectInstance(targetType, spec, facts)
+            logger.debug { "Successfully built instance of ${targetType.qualifiedName.shortDisplayName}" }
+            result
          } else {
             TypedNull.create(
                targetType,
@@ -444,7 +460,7 @@ class ObjectBuilder(
       val result = try {
 //         val queryContext = context.copy()
 //         queryContext.addFacts(facts.rootAndScopedFacts())
-         queryEngine.find(targetType, context, spec, ExcludeObjectBuilderPredicate)
+         queryEngine.find(targetType, context, spec, ExcludeObjectBuilder)
       } catch (e: QueryCancelledException) {
          throw e
       } catch (e: Exception) {

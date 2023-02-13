@@ -7,7 +7,6 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.StubService
 import io.vyne.Vyne
 import io.vyne.VyneProvider
-import io.vyne.history.QueryEventObserver
 import io.vyne.history.db.QueryHistoryDbWriter
 import io.vyne.models.TypedInstance
 import io.vyne.models.csv.CsvFormatSpec
@@ -19,10 +18,11 @@ import io.vyne.query.Query
 import io.vyne.query.QueryEventConsumer
 import io.vyne.query.QueryMode
 import io.vyne.query.TypeNameListQueryExpression
-import io.vyne.query.active.ActiveQueryMonitor
-import io.vyne.queryService.query.MetricsEventConsumer
-import io.vyne.queryService.query.QueryResponseFormatter
-import io.vyne.queryService.query.QueryService
+import io.vyne.query.runtime.core.MetricsEventConsumer
+import io.vyne.query.runtime.core.QueryEventObserver
+import io.vyne.query.runtime.core.QueryResponseFormatter
+import io.vyne.query.runtime.core.QueryService
+import io.vyne.query.runtime.core.monitor.ActiveQueryMonitor
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemaStore.SimpleSchemaStore
@@ -104,11 +104,13 @@ abstract class BaseQueryServiceTest {
    }
 
    protected fun setupTestService(
-      historyDbWriter: QueryHistoryDbWriter = mockHistoryWriter()
+      historyDbWriter: QueryHistoryDbWriter = mockHistoryWriter(),
+      schema: String = testSchema,
+      prepareStubCallback: (StubService, Vyne) -> Unit = { stub, vyne -> this.prepareStubService(stub, vyne) }
    ) {
-      val (vyne, stubService) = testVyne(testSchema)
+      val (vyne, stubService) = testVyne(schema)
       setupTestService(vyne, stubService, historyDbWriter)
-      prepareStubService(stubService, vyne)
+      prepareStubCallback(stubService, vyne)
    }
 
    protected fun setupTestService(
@@ -134,7 +136,7 @@ abstract class BaseQueryServiceTest {
       return queryService
    }
 
-   private fun prepareStubService(stubService: StubService, vyne: Vyne) {
+   public fun prepareStubService(stubService: StubService, vyne: Vyne) {
       stubService.addResponse(
          "getOrders", vyne.parseJsonModel(
             "Order[]", """
@@ -212,13 +214,21 @@ class TestSpringConfig {
       """
       )
       // setup stubs
-      stub.addResponse("findPersonIdByEmail", TypedInstance.from(vyne.type("PersonId"), 1, vyne.schema), modifyDataSource = true)
+      stub.addResponse(
+         "findPersonIdByEmail",
+         TypedInstance.from(vyne.type("PersonId"), 1, vyne.schema),
+         modifyDataSource = true
+      )
       stub.addResponse(
          "findMembership",
          vyne.parseKeyValuePair("LoyaltyCardNumber", "1234-5678"),
          modifyDataSource = true
       )
-      stub.addResponse("findBalance", vyne.parseJson("AccountBalance", """{ "balance" : 100 }"""), modifyDataSource = true)
+      stub.addResponse(
+         "findBalance",
+         vyne.parseJson("AccountBalance", """{ "balance" : 100 }"""),
+         modifyDataSource = true
+      )
       return SimpleVyneProvider(vyne)
    }
 }

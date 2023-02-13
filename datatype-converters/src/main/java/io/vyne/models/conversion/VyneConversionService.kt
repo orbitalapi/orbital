@@ -10,7 +10,13 @@ import org.springframework.core.convert.support.DefaultConversionService
 import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.NumberFormat
-import java.time.*
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
@@ -171,11 +177,18 @@ private object UtcAsDefaultInstantConverter {
 
 class StringToNumberConverter(override val next: ConversionService = NoOpConversionService) :
    ForwardingConversionService {
+
+   companion object {
+      // Keep this as static.
+      // NumberFormat.getInstance() calls clone(), so it's actually a really expensive call.
+      private val numberFormat = NumberFormat.getInstance(Locale.ENGLISH)
+   }
+
    override fun <T> convert(source: Any?, targetType: Class<T>, format: FormatsAndZoneOffset?): T {
       if (source !is String) {
          return next.convert(source, targetType, format)
       } else {
-         val numberFormat = NumberFormat.getInstance(Locale.ENGLISH)
+
          return when (targetType) {
             Int::class.java -> fromScientific(source)?.toInt() as T ?: numberFormat.parse(source).toInt() as T
             Double::class.java -> fromScientific(source)?.toDouble() as T ?: numberFormat.parse(source).toDouble() as T

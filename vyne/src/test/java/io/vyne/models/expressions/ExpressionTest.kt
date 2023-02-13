@@ -5,6 +5,8 @@ import io.vyne.*
 import io.vyne.models.EvaluatedExpression
 import io.vyne.models.FailedEvaluatedExpression
 import io.vyne.models.OperationResult
+import io.vyne.models.OperationResultDataSourceWrapper
+import io.vyne.models.OperationResultReference
 import io.vyne.models.Provided
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedInstance
@@ -70,8 +72,8 @@ class ExpressionTest {
       val expressionSource = builtQuote["cost"].source as EvaluatedExpression
       expressionSource.inputs[0].value.should.equal(100.toBigDecimal())
       expressionSource.inputs[1].value.should.equal(0.48.toBigDecimal())
-      val inputFromRemoteServiceDataSource = expressionSource.inputs[1].source as OperationResult
-      ((inputFromRemoteServiceDataSource.inputs[0].value) as TypeNamedInstance).value.should.equal("GBPNZD")
+      val inputFromRemoteServiceDataSource = expressionSource.inputs[1].source as OperationResultDataSourceWrapper
+      ((inputFromRemoteServiceDataSource.operationResult.inputs[0].value) as TypeNamedInstance).value.should.equal("GBPNZD")
    }
 
    @Test
@@ -128,14 +130,14 @@ class ExpressionTest {
          val gbpNzdSource = builtQuote.first { it["symbol"].value == "GBPNZD" }
             .get("cost")
             .source as EvaluatedExpression
-         val gbpNzdOperationResultSource = gbpNzdSource.inputs[1].source as OperationResult
-         ((gbpNzdOperationResultSource.inputs[0].value) as TypeNamedInstance).value.should.equal("GBPNZD")
+         val gbpNzdOperationResultSource = gbpNzdSource.inputs[1].source as OperationResultDataSourceWrapper
+         ((gbpNzdOperationResultSource.operationResult.inputs[0].value) as TypeNamedInstance).value.should.equal("GBPNZD")
 
          val audNzdSource = builtQuote.first { it["symbol"].value == "AUDNZD" }
             .get("cost")
             .source as EvaluatedExpression
-         val operationResultSource = audNzdSource.inputs[1].source as OperationResult
-         ((operationResultSource.inputs[0].value) as TypeNamedInstance).value.should.equal("AUDNZD")
+         val operationResultSource = audNzdSource.inputs[1].source as OperationResultDataSourceWrapper
+         ((operationResultSource.operationResult.inputs[0].value) as TypeNamedInstance).value.should.equal("AUDNZD")
 
       }
 

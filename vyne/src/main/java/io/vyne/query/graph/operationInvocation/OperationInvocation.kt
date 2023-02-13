@@ -1,6 +1,13 @@
 package io.vyne.query.graph.operationInvocation
 
-import io.vyne.models.*
+import io.vyne.models.DataSource
+import io.vyne.models.FailedEvaluation
+import io.vyne.models.FailedSearch
+import io.vyne.models.MixedSources
+import io.vyne.models.OperationResult
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
@@ -232,6 +239,8 @@ class OperationInvocationEvaluator(
       } catch (exception: Exception) {
          val dataSource = when (exception) {
             is OperationInvocationException -> OperationResult.from(exception.parameters, exception.remoteCall)
+               .asOperationReferenceDataSource()
+
             else -> FailedEvaluation("An error occurred when invoking operation ${operation.qualifiedName.longDisplayName}: ${exception.message} ")
          }
          // Operation invokers throw exceptions for failed invocations.

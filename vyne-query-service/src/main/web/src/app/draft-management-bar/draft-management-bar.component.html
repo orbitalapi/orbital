@@ -16,9 +16,8 @@
       <div class="description subtle">
         Created <i>{{getCreatedAtString()}}</i> by <a>you</a>
         <span
-          *ngIf="changesetService.activeChangesetOverview !== null"> • {{changesetService.activeChangesetOverview.additions}}
-          additions, {{changesetService.activeChangesetOverview.changedFiles}}
-          changes, {{changesetService.activeChangesetOverview.deletions}} deletions</span>
+          *ngIf="changesetService.activeChangesetOverview !== null"> • {{changesetService.activeChangesetOverview.changedFiles}}
+          changes</span>
       </div>
     </div>
     <div class="right">

@@ -2,9 +2,11 @@ package io.vyne.queryService.schemas.importing.protobuf
 
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
+import io.vyne.cockpit.core.schemas.importing.SchemaConversionRequest
+import io.vyne.cockpit.core.schemas.importing.protobuf.ProtobufSchemaConverter
+import io.vyne.cockpit.core.schemas.importing.protobuf.ProtobufSchemaConverterOptions
 import io.vyne.http.MockWebServerRule
 import io.vyne.queryService.schemas.importing.BaseSchemaConverterServiceTest
-import io.vyne.queryService.schemas.importing.SchemaConversionRequest
 import org.junit.Rule
 import org.junit.Test
 import org.springframework.stereotype.Component

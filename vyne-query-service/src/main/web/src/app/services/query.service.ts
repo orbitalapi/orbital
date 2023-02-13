@@ -19,6 +19,7 @@ import { catchError, concatAll, map, shareReplay } from 'rxjs/operators';
 import { SseEventSourceService } from './sse-event-source.service';
 import { of } from 'rxjs';
 import { FailedSearchResponse, StreamingQueryMessage, ValueWithTypeName } from './models';
+import { WebsocketService } from 'src/app/services/websocket.service';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -34,7 +35,8 @@ export class QueryService {
   };
 
   constructor(private http: HttpClient,
-              private sse: SseEventSourceService) {
+              private sse: SseEventSourceService,
+              private websocketService: WebsocketService) {
 
   }
 
@@ -42,6 +44,9 @@ export class QueryService {
     return `${window.location.protocol}${environment.serverUrl}/api/taxiql`;
   }
 
+  /**
+   * @deprecated use websocketQuery() instead
+   */
   submitQuery(query: Query, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<ValueWithTypeName> {
     // TODO :  I suspect the return type here is actually ValueWithTypeName | ValueWithTypeName[]
     return this.http.post<ValueWithTypeName[]>(`${environment.serverUrl}/api/query?resultMode=${resultMode}&clientQueryId=${clientQueryId}`, query, this.httpOptions)
@@ -53,9 +58,28 @@ export class QueryService {
         concatAll(),
         shareReplay({ bufferSize: replayCacheSize, refCount: false }),
       );
-
   }
 
+  websocketQuery(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<ValueWithTypeName> {
+    const websocket = this.websocketService.websocket('/api/query/taxiql')
+    websocket.next({
+      clientQueryId: clientQueryId,
+      query: query
+    })
+    return websocket
+  }
+
+  /**
+   * @deprecated use websocketQuery() instead
+   *
+   * Using SSE is simple to get going with, but has issues around:
+   *  * GET only, which limits a bunch of things, not least of all - query size, so...
+   *  * ...Can't send large queries (which customers seemed to keep hitting)
+   *  * No indication of "end", which required lots of workaround
+   *  * Can't read headers, or send metadata
+   *
+   * Ultimately, we'll using websocket querying instead from the browser
+   */
   submitVyneQlQueryStreaming(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<StreamingQueryMessage> {
     const queryPart = encodeURIComponent(query);
     const url = `${environment.serverUrl}/api/vyneql?resultMode=${resultMode}&clientQueryId=${clientQueryId}&query=${queryPart}`;
@@ -120,22 +144,12 @@ export class QueryService {
       ;
   }
 
-  private parseRemoteCallTimestampsAsDates(profileData: QueryProfileData): QueryProfileData {
-    const remoteCalls = profileData.remoteCalls.map(remoteCall => {
-      remoteCall.timestamp = new Date((remoteCall as any).timestamp);
-      return remoteCall;
-    });
-    profileData.remoteCalls = remoteCalls.sort((a, b) => {
-      switch (true) {
-        case a.timestamp.getTime() < b.timestamp.getTime() :
-          return -1;
-        case a.timestamp.getTime() > b.timestamp.getTime() :
-          return 1;
-        default:
-          return 0;
+  getRemoteCallResponse(remoteCallId: string): Observable<string> {
+    return this.http.get(`${environment.serverUrl}/api/query/history/calls/${remoteCallId}`,
+      {
+        responseType: 'text'
       }
-    });
-    return profileData;
+    );
   }
 
   invokeOperation(serviceName: string, operationName: string, parameters: { [index: string]: Fact }): Observable<TypedInstance> {
@@ -150,8 +164,22 @@ export class QueryService {
     return this.http.delete<void>(`${environment.serverUrl}/api/query/active/clientId/${clientQueryId}`, this.httpOptions);
   }
 
-  getRemoteCallResponse(remoteCallId: string): Observable<string> {
-    return this.http.get<string>(`${environment.serverUrl}/api/query/history/calls/${remoteCallId}`);
+  private parseRemoteCallTimestampsAsDates(profileData: QueryProfileData): QueryProfileData {
+    const remoteCalls = profileData.remoteCalls.map(remoteCall => {
+      remoteCall.startTime = new Date((remoteCall as any).startTime);
+      return remoteCall;
+    });
+    profileData.remoteCalls = remoteCalls.sort((a, b) => {
+      switch (true) {
+        case a.startTime.getTime() < b.startTime.getTime() :
+          return -1;
+        case a.startTime.getTime() > b.startTime.getTime() :
+          return 1;
+        default:
+          return 0;
+      }
+    });
+    return profileData;
   }
 
   getLineageRecord(dataSourceId: string): Observable<LineageRecord> {
@@ -212,8 +240,22 @@ export interface QueryResultNodeDetail {
 }
 
 
-export function isOperationResult(source: DataSource): source is OperationResultDataSource {
+export function isOperationResult(source: DataSource): source is OperationResultReference {
   return source.dataSourceName === 'Operation result';
+}
+
+
+export interface OperationResultReference extends DataSource {
+  remoteCallId: string;
+  remoteCallResponseId: string;
+  wasSuccessful: boolean;
+  inputs: OperationParam[];
+  operationName: QualifiedName;
+  failedAttempts: DataSource[];
+
+  operationDisplayName: string;
+  serviceDisplayName: string;
+
 }
 
 export interface OperationResultDataSource extends DataSource {
@@ -268,6 +310,56 @@ export interface QueryResult {
 }
 
 
+export interface RemoteCallResponse {
+  responseId: string;
+  remoteCallId: string;
+  queryId: string;
+  address: string;
+  startTime: Date;
+  durationMs: number;
+  exchange: RemoteCallExchangeMetadata,
+  operation: QualifiedName;
+  success: boolean;
+  messageKind: ResponseMessageType
+
+  method: string;
+
+  resultCode: string;
+
+  serviceDisplayName: string;
+  operationName: string;
+  displayName: string;
+
+  responseType: string
+  responseTypeDisplayName: string;
+}
+
+export type ResponseMessageType = 'FULL' | 'EVENT';
+
+export interface RemoteCallExchangeMetadata {
+  requestBody: string | null;
+}
+
+export interface HttpExchange extends RemoteCallExchangeMetadata {
+  uri: string;
+  verb: string;
+  requestBody: string;
+  responseCode: number;
+  responseSize: number
+
+  type: 'Http'
+}
+
+export interface SqlExchange extends RemoteCallExchangeMetadata {
+  sql: string;
+  recordCount: number;
+  type: 'Sql'
+}
+
+export interface EmptyExchangeData extends RemoteCallExchangeMetadata {
+  type: 'None'
+}
+
 export interface RemoteCall extends Proxyable {
   remoteCallId: string;
   service: string;
@@ -288,7 +380,7 @@ export interface RemoteCall extends Proxyable {
 export interface QueryProfileData {
   id: string;
   duration: number;
-  remoteCalls: RemoteCall[];
+  remoteCalls: RemoteCallResponse[];
   operationStats: RemoteOperationPerformanceStats[];
   queryLineageData: QuerySankeyChartRow[];
 }

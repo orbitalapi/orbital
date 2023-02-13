@@ -3,13 +3,11 @@ package io.vyne.spring.config
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
-import io.vyne.config.BaseHoconConfigFileRepository
 import io.vyne.config.ChangeWatchingConfigFileRepository
 import mu.KotlinLogging
-import reactor.core.publisher.Sinks
-import java.nio.file.*
-import java.util.concurrent.atomic.AtomicReference
-import kotlin.io.path.absolutePathString
+import java.nio.file.Files
+import java.nio.file.Path
+import kotlin.io.path.createDirectories
 
 class ServicesConfigRepository(
    private val configFilePath: Path,
@@ -44,6 +42,7 @@ class ServicesConfigRepository(
       private val logger = KotlinLogging.logger {}
 
       fun writeDefaultConfigFile(path: Path) {
+         path.parent.createDirectories()
          ServicesConfigRepository(path, createConfigFileIfMissing = false).writeDefault()
       }
    }
@@ -57,7 +56,7 @@ class ServicesConfigRepository(
 }
 
 data class ServicesConfig(
-   val services: Map<String, Map<String, String>>
+   val services: Map<String, Map<String, String>> = emptyMap()
 ) {
    companion object {
       val DEFAULT = ServicesConfig(

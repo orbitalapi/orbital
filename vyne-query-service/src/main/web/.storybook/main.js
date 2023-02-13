@@ -5,6 +5,7 @@ module.exports = {
     "../src/app/schema-diagram/*.stories.@(js|jsx|ts|tsx)",
     "../src/app/type-list/**/*.stories.@(js|jsx|ts|tsx)",
     "../src/app/type-viewer/**/*.stories.@(js|jsx|ts|tsx)",
+    "../src/app/json-viewer/**/*.stories.@(js|jsx|ts|tsx)",
   ],
   "addons": [
     "@storybook/addon-links",

@@ -7,9 +7,6 @@ import io.vyne.VersionedSource
 import io.vyne.models.TypedInstance
 import io.vyne.query.RemoteCall
 import io.vyne.utils.ImmutableEquality
-import lang.taxi.Equality
-import lang.taxi.services.FilterCapability
-import lang.taxi.services.QueryOperationCapability
 import java.io.Serializable
 
 
@@ -160,93 +157,11 @@ interface RemoteOperation : MetadataTarget {
       get() = OperationNames.operationName(qualifiedName)
 }
 
-@JsonDeserialize(`as` = QueryOperation::class)
-data class QueryOperation(
-   override val qualifiedName: QualifiedName,
-   override val parameters: List<Parameter>,
-   @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
-   override val returnType: Type,
-   override val metadata: List<Metadata> = emptyList(),
-   override val grammar: String,
-   override val capabilities: List<QueryOperationCapability>,
-   override val typeDoc: String? = null
-) : MetadataTarget, SchemaMember, RemoteOperation, PartialQueryOperation {
-   override val contract = OperationContract(returnType)
-   override val operationType: String? = null
-   private val filterCapability: FilterCapability? = capabilities
-      .filterIsInstance<FilterCapability>()
-      .firstOrNull()
-
-   override val hasFilterCapability = this.filterCapability != null
-   override val supportedFilterOperations = filterCapability?.supportedOperations ?: emptyList()
-
-   override val returnTypeName: QualifiedName = returnType.name
-
-   private val equality = ImmutableEquality(
-      this,
-      QueryOperation::name,
-      // 11-Aug-22: Added attributes and docs as needed for diffing.
-      // However, if this trashes performance, we can revert,and we'll find another way.
-      QueryOperation::parameters,
-      QueryOperation::metadata,
-      QueryOperation::returnType,
-      QueryOperation::typeDoc
-   )
-
-   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
-   override fun hashCode(): Int = equality.hash()
-}
-
 
 // Need to use @JsonDeserialize on this type, as the PartialXxxx
 // interface is overriding default deserialization behaviour
 // causing all of these to be deserialized as partials, even when
 // they're the real thing
-@JsonDeserialize(`as` = TableOperation::class)
-data class TableOperation(
-   override val qualifiedName: QualifiedName,
-   @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
-   override val returnType: Type,
-   override val metadata: List<Metadata> = emptyList(),
-   override val typeDoc: String? = null
-) : PartialOperation, MetadataTarget, SchemaMember, RemoteOperation {
-   override val parameters: List<Parameter> = emptyList()
-   override val contract = OperationContract(returnType)
-   override val operationType: String? = null
-   override val returnTypeName: QualifiedName = returnType.name
-
-}
-
-/**
- * A StreamOperation is an operation that connects to a streaming data source.
- * (eg., a Message broker like Kafka).
- * Note that other operations (such as http operation and query operations)
- * can return Stream<T>.  That's perfectly valid.
- *
- * Also, while an Operation may return Stream<T>, a stream operation MUST return
- * Stream<T> - ie., it is invalid for a stream operation to return T.
- *
- * StreamOperations encapsulate operations that exclusively require a special
- * streaming connector and driver.
- */
-// Need to use @JsonDeserialize on this type, as the PartialXxxx
-// interface is overriding default deserialization behaviour
-// causing all of these to be deserialized as partials, even when
-// they're the real thing
-@JsonDeserialize(`as` = StreamOperation::class)
-data class StreamOperation(
-   override val qualifiedName: QualifiedName,
-   @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
-   override val returnType: Type,
-   override val metadata: List<Metadata> = emptyList(),
-   override val typeDoc: String? = null
-) : PartialOperation, MetadataTarget, SchemaMember, RemoteOperation {
-   override val parameters: List<Parameter> = emptyList()
-   override val contract = OperationContract(returnType)
-   override val operationType: String? = null
-
-   override val returnTypeName: QualifiedName = returnType.name
-}
 
 data class ConsumedOperation(val serviceName: ServiceName, val operationName: String) {
    val operationQualifiedName: QualifiedName = OperationNames.qualifiedName(serviceName, operationName)
@@ -353,10 +268,13 @@ data class Service(
       return this.operations.first { it.name == name }
    }
 
-   val remoteOperations: List<RemoteOperation> = operations + queryOperations
+   val remoteOperations: List<RemoteOperation> =
+      operations + queryOperations + tableOperations.flatMap { it.queryOperations }
+
 
    fun remoteOperation(name: String): RemoteOperation {
       return this.queryOperations.firstOrNull { it.name == name }
+         ?: this.tableOperations.flatMap { it.queryOperations }.firstOrNull { it.name == name }
          ?: this.operations.first { it.name == name }
    }
 

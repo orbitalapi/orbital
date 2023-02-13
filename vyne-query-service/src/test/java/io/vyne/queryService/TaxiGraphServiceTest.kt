@@ -1,6 +1,8 @@
 package io.vyne.queryService
 
 import io.vyne.VyneCacheConfiguration
+import io.vyne.cockpit.core.schemas.TaxiGraphService
+import io.vyne.cockpit.core.schemas.TypeLineageService
 import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemas.taxi.TaxiSchema
 import org.apache.commons.io.IOUtils
@@ -26,7 +28,10 @@ class TaxiGraphServiceTest {
    fun when_producingTaxiGraphSchema_that_verticesAreFiltered() {
       val fullSchema = IOUtils.toString(this::class.java.getResourceAsStream("/schema.taxi"))
       val schemaProvider = SimpleSchemaProvider(TaxiSchema.from(fullSchema))
-      val service = TaxiGraphService(schemaProvider, VyneCacheConfiguration.default(), TypeLineageService(schemaProvider))
+      val service = TaxiGraphService(
+         schemaProvider, VyneCacheConfiguration.default(),
+         TypeLineageService(schemaProvider)
+      )
       service.getLinksFromType("io.vyne.ClientJurisdiction")
    }
 

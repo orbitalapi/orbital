@@ -2,7 +2,12 @@ package io.vyne.models
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
-import io.vyne.models.facts.*
+import io.vyne.models.facts.CascadingFactBag
+import io.vyne.models.facts.CopyOnWriteFactBag
+import io.vyne.models.facts.FactBag
+import io.vyne.models.facts.FactDiscoveryStrategy
+import io.vyne.models.facts.FactSearch
+import io.vyne.models.facts.ScopedFact
 import io.vyne.models.format.FormatDetector
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.functions.FunctionRegistry
@@ -16,7 +21,6 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.timeBucket
-import io.vyne.utils.timeBucketAsync
 import io.vyne.utils.xtimed
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -52,9 +56,14 @@ class TypedObjectFactory(
    private val accessorHandlers: List<AccessorHandler<out Accessor>> = emptyList(),
    private val formatSpecs: List<ModelFormatSpec> = emptyList(),
    private val parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
-   private val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf()
+   private val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf(),
+   private val projectionScope: ProjectionFunctionScope? = null
 ) : EvaluationValueSupplier {
-   private val logger = KotlinLogging.logger {}
+
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+
 
    private val buildSpecProvider = TypedInstancePredicateFactory()
 
@@ -77,6 +86,12 @@ class TypedObjectFactory(
             .isNotEmpty() -> FactBag.of(value.filterIsInstance<TypedInstance>(), schema)
 
          else -> FactBag.empty()
+      }
+   }
+
+   init {
+      if (type.isScalar) {
+         logger.warn { "TypedObjectFactory constructed for scalar type ${type.qualifiedName.shortDisplayName} - TypedObjectFactory is intended for object types - this probably indicates an upstream bug" }
       }
    }
 
@@ -211,7 +226,8 @@ class TypedObjectFactory(
          accessorHandlers,
          formatSpecs,
          parsingErrorBehaviour,
-         functionResultCache
+         functionResultCache,
+         scope
       )
    }
 
@@ -610,8 +626,30 @@ class TypedObjectFactory(
                   strategy = searchStrategy
                )
             )
-            searchedValue ?: attemptToBuildFieldObject(field, fieldType, attributeName, fieldTypeName)
-            ?: queryForResult(field, fieldType, attributeName, fieldTypeName)
+            when {
+               searchedValue != null -> searchedValue
+               // Since we know that the value isn't present in the fact bag,
+               // and that it's scalar, the only thing left to do is query.
+               fieldType.isScalar -> queryForResult(field, fieldType, attributeName, fieldTypeName)
+
+               fieldType.isCollection -> {
+                  // TODO : I suspect this needs to be richer.
+                  // Currently supporting the use case of picking a collection
+                  // from a query result onto a field.  (see
+                  // VyneProjectionTest.will populate collection on inline projection)
+                  // However, there's likely other nuanced cases we need to support.
+                  queryForResult(field, fieldType, attributeName, fieldTypeName)
+
+               }
+
+               else -> {
+                  // BugFix: Only attempt to build a field object if the fieldType isn't scalar.
+                  // Otherwise, we're calling into TypedObjectFactory with a scalar type,
+                  // which is incorrect (it's intended for Object types).
+                  attemptToBuildFieldObject(field, fieldType, attributeName, fieldTypeName)
+                     ?: queryForResult(field, fieldType, attributeName, fieldTypeName)
+               }
+            }
          }
 
          else -> queryForResult(field, fieldType, attributeName, fieldTypeName)
@@ -639,9 +677,7 @@ class TypedObjectFactory(
       if (type.isScalar) {
          return null
       }
-      // TODO : Is the scope of Null correct here?
-      // Not sure where else it can come from.
-      val result = newFactory(fieldType, this.value, scope = null).build()
+      val result = newFactory(fieldType, this.value, scope = projectionScope).build()
       return if (result is TypedNull) {
          null
       } else {
@@ -675,11 +711,14 @@ class TypedObjectFactory(
    ): TypedInstance {
       return if (inPlaceQueryEngine != null) {
          val fieldInstanceValidPredicate = buildSpecProvider.provide(field)
+         val (additionalFacts, additionalScope) = getFactsInScopeForSearch()
          val buildResult = runBlocking {
-            inPlaceQueryEngine.findType(type, fieldInstanceValidPredicate)
+            inPlaceQueryEngine.withAdditionalFacts(additionalFacts, additionalScope)
+               .findType(type, fieldInstanceValidPredicate, PermittedQueryStrategies.EXCLUDE_BUILDER_AND_MODEL_SCAN)
                .toList()
          }
          when {
+            type.isCollection -> TypedCollection.arrayOf(type.collectionType!!, buildResult)
             buildResult.isEmpty() -> failWithTypedNull(type, attributeName, fieldTypeName)
             buildResult.size == 1 -> buildResult.single()
             else -> {
@@ -692,6 +731,28 @@ class TypedObjectFactory(
       } else {
          failWithTypedNull(type, attributeName, fieldTypeName)
       }
+   }
+
+   private fun getFactsInScopeForSearch(): Pair<List<TypedInstance>, List<ScopedFact>> {
+      return if (value is CascadingFactBag) {
+         // This is a basic implementation now, which is required to make tests pass.
+         // The use case here is building an object within an inline field projection.
+         //
+         // eg:
+         // find { Foo } as {
+         //    thing : Thing as {
+         //       ... // <--- if fields are declared here that require searching, we need to include the "Thing" that's the current projection scope
+         //    }
+         // (see VyneProjectionTest."should resolve items on inline projection")
+         // However, additional thought in future should be given to
+         // do we need a broader scoped fact?
+         val additionalFacts = emptyList<TypedInstance>()
+         val scopedFacts = listOfNotNull(this.projectionScope?.let { scope -> value.getScopedFact(scope) })
+         additionalFacts to scopedFacts
+      } else {
+         emptyList<TypedInstance>() to emptyList();
+      }
+
    }
 
 

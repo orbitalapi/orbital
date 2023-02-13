@@ -9,13 +9,12 @@ import io.vyne.expectTypedObject
 import io.vyne.http.MockWebServerRule
 import io.vyne.http.respondWith
 import io.vyne.http.response
-import io.vyne.models.OperationResult
+import io.vyne.models.OperationResultReference
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
 import io.vyne.rawObjects
-import io.vyne.schema.api.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
@@ -266,7 +265,7 @@ namespace vyne {
          result.map { it["countryName"] }
             .forEach { countryName ->
                countryName.source.failedAttempts.should.have.size(1)
-               countryName.source.failedAttempts.first().should.be.instanceof(OperationResult::class.java)
+               countryName.source.failedAttempts.first().should.be.instanceof(OperationResultReference::class.java)
 
             }
 
@@ -371,7 +370,7 @@ namespace vyne {
             result.map { it["countryName"] }
                .forEach { countryName ->
                   countryName.source.failedAttempts.should.have.size(1)
-                  countryName.source.failedAttempts.first().should.be.instanceof(OperationResult::class.java)
+                  countryName.source.failedAttempts.first().should.be.instanceof(OperationResultReference::class.java)
 
                }
 
@@ -404,7 +403,7 @@ namespace vyne {
             service, operation, listOf(
                paramAndType("vyne.ClientId", "myClientId", schema),
                paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
-            ), mock { }
+            ), mock { }, "testQuery"
          ).testIn(this)
 
          val typedInstance = turbine.expectTypedObject()
@@ -689,7 +688,7 @@ namespace vyne {
          )
       }
 
-      Benchmark.benchmark("Heavy load", warmup = 2, iterations = 5) {
+      Benchmark.benchmark("Heavy load", warmup = 0, iterations = 1) {
          runBlocking {
             val invokedPaths = ConcurrentHashMap<String, Int>()
             server.prepareResponse(

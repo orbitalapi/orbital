@@ -1,16 +1,19 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
-import {BehaviorSubject, Observable, Subject} from 'rxjs';
-import {DownloadClickedEvent} from '../object-view/object-view-container.component';
-import {InstanceLike, Type} from '../services/schema';
-import {QueryProfileData} from '../services/query.service';
-import {BaseQueryResultComponent} from '../query-panel/result-display/BaseQueryResultComponent';
-import {TypesService} from '../services/types.service';
-import {AppInfoService, QueryServiceConfig} from '../services/app-info.service';
-import {ConfigDisabledFormComponent} from '../test-pack-module/config-disabled-form.component';
-import {ConfigPersistResultsDisabledFormComponent} from '../test-pack-module/config-persist-results-disabled-form.component';
-import {MatDialog} from '@angular/material/dialog';
-import {isNullOrUndefined} from 'util';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { BehaviorSubject, EMPTY, Observable, of, Subject } from 'rxjs';
+import { DisplayMode, DownloadClickedEvent } from '../object-view/object-view-container.component';
+import { InstanceLike, Type } from '../services/schema';
+import { QueryProfileData } from '../services/query.service';
+import { BaseQueryResultComponent } from '../query-panel/result-display/BaseQueryResultComponent';
+import { TypesService } from '../services/types.service';
+import { AppInfoService, QueryServiceConfig } from '../services/app-info.service';
+import { ConfigDisabledFormComponent } from '../test-pack-module/config-disabled-form.component';
+import {
+  ConfigPersistResultsDisabledFormComponent
+} from '../test-pack-module/config-persist-results-disabled-form.component';
+import { MatDialog } from '@angular/material/dialog';
+import { isNullOrUndefined } from 'util';
 import { ExportFormat } from 'src/app/results-download/results-download.service';
+import { map, scan, tap } from 'rxjs/operators';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -19,16 +22,22 @@ import { ExportFormat } from 'src/app/results-download/results-download.service'
     <!--    <app-error-panel *ngIf="lastQueryResultAsSuccess?.unmatchedNodes?.length > 0"-->
     <!--                     [queryResult]="lastQueryResultAsSuccess">-->
     <!--    </app-error-panel>-->
+    <div class="alert" *ngIf="responseIsLarge$ | async">The response is really big. Some features have been disabled.
+    </div>
     <app-panel-header title="Results" alignItems="left">
       <tui-tabs [(activeItemIndex)]="activeTabIndex" *ngIf="showResultsPanel"
                 (activeItemIndexChange)="onTabIndexChanged()">
-        <button tuiTab>
+        <button tuiTab [disabled]="responseIsLarge$ | async">
           <img src="assets/img/tabler/table.svg" class="tab-icon">
           Table
         </button>
-        <button tuiTab>
+        <button tuiTab [disabled]="responseIsLarge$ | async">
           <img src="assets/img/tree-list.svg" class="tab-icon">
           Tree
+        </button>
+        <button tuiTab>
+          <img src="assets/img/tabler/code-dots.svg" class="tab-icon">
+          Raw
         </button>
         <button tuiTab>
           <img src="assets/img/tabler/gauge.svg" class="tab-icon">
@@ -49,10 +58,10 @@ import { ExportFormat } from 'src/app/results-download/results-download.service'
 
     </app-panel-header>
     <app-object-view-container
-      *ngIf="activeTabIndex < 2 && showResultsPanel"
-      [instances$]="instances$"
+      *ngIf="activeTabIndex < 3 && showResultsPanel"
+      [instances$]="_instances$"
       [schema]="schema"
-      [displayMode]="activeTabIndex === 0 ? 'table' : 'tree'"
+      [displayMode]="displayMode"
       [selectable]="true"
       [downloadSupported]="downloadSupported"
       (downloadClicked)="this.downloadClicked.emit($event)"
@@ -60,7 +69,7 @@ import { ExportFormat } from 'src/app/results-download/results-download.service'
       [anonymousTypes]="anonymousTypes"
       (instanceClicked)="instanceClicked($event,type.name)"></app-object-view-container>
     <app-call-explorer [queryProfileData$]="profileData$"
-                       *ngIf="activeTabIndex === 2 && showResultsPanel"></app-call-explorer>
+                       *ngIf="activeTabIndex === 3 && showResultsPanel"></app-call-explorer>
 
     <ng-template #icon>
       <tui-svg
@@ -106,6 +115,7 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
       .subscribe(next => this.config = next);
   }
 
+  LARGE_RESPONSE_LIMIT = 1_048_576; // 1MB
   activeTabIndex: number = 0;
   @Input()
   downloadSupported = true;
@@ -116,15 +126,57 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   downloadMenuOpen = false;
 
   hasModelFormatSpecs: Subject<boolean> = new BehaviorSubject(true);
+  jsonInstances$: Observable<string> = of();
+  responseIsLarge$: Observable<boolean> = of(false);
 
+  get displayMode(): DisplayMode {
+    switch (this.activeTabIndex) {
+      case 0:
+        return 'table';
+      case 1:
+        return 'tree';
+      case 2:
+        return 'json';
+    }
+  }
+
+  private _instances$: Observable<InstanceLike>;
 
   @Input()
-  instances$: Observable<InstanceLike>;
+  get instances$(): Observable<InstanceLike> {
+    return this._instances$;
+  }
+
+  set instances$(value: Observable<InstanceLike>) {
+    if (isNullOrUndefined(value)) {
+      this._instances$ = EMPTY
+    } else {
+      this._instances$ = value;
+    }
+
+    this.jsonInstances$ = this.instances$.pipe(
+      map((result) => JSON.stringify(result.value))
+    );
+
+    this.responseIsLarge$ = this.jsonInstances$
+      .pipe(
+        scan((acc, curr) => curr.length + acc, 0),
+        map(responseSize => {
+          return responseSize > this.LARGE_RESPONSE_LIMIT
+        }),
+        tap((isLargeResponse) => {
+          if (isLargeResponse) {
+            // Only show JSON in large responses.
+            this.activeTabIndex = 2;
+          }
+        })
+      )
+  }
 
   protected _type: Type;
 
   get showResultsPanel(): boolean {
-    return !isNullOrUndefined(this.type) || !isNullOrUndefined(this.instances$);
+    return !isNullOrUndefined(this.type) || !isNullOrUndefined(this._instances$);
   }
 
   @Input()
@@ -180,7 +232,7 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
 
 
   onTabIndexChanged() {
-    if (this.activeTabIndex === 2) {
+    if (this.activeTabIndex === 3) {
       this.loadProfileData.emit();
     }
   }

@@ -19,13 +19,13 @@ interface QueryContextEventDispatcher {
     * This is populated by services setting the HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT header
     * in their response to Vyne.
     */
-   fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int) {}
+   fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int)
 
    /**
     * Request that this query cancel.
     */
-   fun requestCancel() {}
+   fun requestCancel()
 
 
-   fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String) {}
+   fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String)
 }

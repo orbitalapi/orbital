@@ -2,10 +2,38 @@ package io.vyne.schemas.taxi
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.common.base.Stopwatch
-import io.vyne.*
+import io.vyne.PackageMetadata
+import io.vyne.SourcePackage
+import io.vyne.VersionedSource
+import io.vyne.asSourcePackage
 import io.vyne.models.functions.FunctionRegistry
-import io.vyne.schemas.*
-import lang.taxi.*
+import io.vyne.schemas.ConsumedOperation
+import io.vyne.schemas.DefaultTypeCache
+import io.vyne.schemas.FieldModifier
+import io.vyne.schemas.Metadata
+import io.vyne.schemas.Operation
+import io.vyne.schemas.OperationNames
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.Policy
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.QueryOperation
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
+import io.vyne.schemas.ServiceLineage
+import io.vyne.schemas.StreamOperation
+import io.vyne.schemas.TableOperation
+import io.vyne.schemas.TaxiTypeCache
+import io.vyne.schemas.TaxiTypeMapper
+import io.vyne.schemas.Type
+import io.vyne.schemas.TypeCache
+import io.vyne.schemas.fqn
+import io.vyne.toSourcesWithPackageIdentifier
+import lang.taxi.CompilationError
+import lang.taxi.CompilationException
+import lang.taxi.Compiler
+import lang.taxi.ImmutableEquality
+import lang.taxi.TaxiDocument
+import lang.taxi.errors
 import lang.taxi.messages.Severity
 import lang.taxi.packages.TaxiSourcesLoader
 import lang.taxi.types.Annotation
@@ -134,11 +162,20 @@ class TaxiSchema(
             },
             tableOperations = taxiService.tables.map { taxiTable ->
                val returnType = this.type(taxiTable.returnType.toVyneQualifiedName())
-               TableOperation(
+
+               TableOperation.build(
                   qualifiedName = OperationNames.qualifiedName(taxiService.qualifiedName, taxiTable.name),
                   returnType = returnType,
                   metadata = parseAnnotationsToMetadata(taxiTable.annotations),
-                  typeDoc = taxiTable.typeDoc
+                  typeDoc = taxiTable.typeDoc,
+                  schema = this
+               )
+               TableOperation.build(
+                  qualifiedName = OperationNames.qualifiedName(taxiService.qualifiedName, taxiTable.name),
+                  returnType = returnType,
+                  metadata = parseAnnotationsToMetadata(taxiTable.annotations),
+                  typeDoc = taxiTable.typeDoc,
+                  schema = this
                )
             },
             streamOperations = taxiService.streams.map { taxiStream ->
@@ -253,7 +290,7 @@ class TaxiSchema(
          val schemaWarnings = compilationErrors.filter { it.severity == Severity.WARNING }
          when {
             schemaErrors.isNotEmpty() -> {
-               logger.error {
+               logger.info {
                   "There were ${schemaErrors.size} compilation errors found in sources. \n ${
                      compilationErrors.errors().toMessage()
                   }"
@@ -261,7 +298,7 @@ class TaxiSchema(
             }
 
             compilationErrors.any { it.severity == Severity.WARNING } -> {
-               logger.warn { "There are ${schemaWarnings.size} warning found in the sources" }
+               logger.info { "There are ${schemaWarnings.size} warning found in the sources" }
             }
 
             compilationErrors.isNotEmpty() -> {

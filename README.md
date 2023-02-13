@@ -1,14 +1,31 @@
 # Development Environment
 
-
 ## Server side
-* JDK8 (todo upgrade to Java 11)
+
+* JDK 18
 * Maven 3.x
+
+Make sure to have these as command line arguments to `java` command when running query server, analytics server or
+vyne-history-core modules.
+
+```shell
+--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED
+--add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
+--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
+--add-opens=jdk.compiler/com.sun.tools.javac=ALL-UNNAMED
+--add-opens=java.base/java.lang=ALL-UNNAMED
+--add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+--add-opens=java.base/java.io=ALL-UNNAMED
+--add-opens=java.base/java.util=ALL-UNNAMED
+```
+
+They can also be set as `MAVEN_OPTS` - more info [here](https://chronicle.software/chronicle-support-java-17/).
 
 ## Client Side
 
-* Node.js 12.16.3
-* Npm (tested with version 6.9.0)
+* Node.js 16 or later LTS
+* npm 7 or later
 
 # Running App Locally for development purpose
 

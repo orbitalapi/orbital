@@ -11,13 +11,13 @@ import java.util.function.Predicate
 
 object VyneContainerProvider {
    @JvmStatic
-   val VyneQueryServerImage: DockerImageName = DockerImageName.parse("vyneco/vyne")
+   val VyneQueryServerImage: DockerImageName = DockerImageName.parse("orbitalhq/vyne")
 
    @JvmStatic
-   val CaskImage: DockerImageName = DockerImageName.parse("vyneco/cask")
+   val CaskImage: DockerImageName = DockerImageName.parse("orbitalhq/cask")
 
    @JvmStatic
-   val SchemaServer: DockerImageName = DockerImageName.parse("vyneco/schema-server")
+   val SchemaServer: DockerImageName = DockerImageName.parse("orbitalhq/schema-server")
 
    @JvmStatic
    val PipelineOrchestrator: DockerImageName = DockerImageName.parse("vyneco/pipelines-orchestrator")
@@ -27,9 +27,6 @@ object VyneContainerProvider {
 
    @JvmStatic
    val Postgres: DockerImageName = DockerImageName.parse("postgres")
-
-   @JvmStatic
-   val Kafka: DockerImageName = DockerImageName.parse("lensesio/fast-data-dev")
 
    @JvmStatic
    val Eureka: DockerImageName = DockerImageName.parse("vyneco/eureka")

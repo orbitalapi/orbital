@@ -246,14 +246,7 @@ namespace actor {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service ActorService {
-      vyneQl query actorQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<actor.Actor> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table actor : Actor[]
    }
 }
 namespace address {
@@ -271,14 +264,7 @@ namespace address {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service AddressService {
-      vyneQl query addressQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<address.Address> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table address : Address[]
    }
 }
 namespace category {
@@ -291,14 +277,7 @@ namespace category {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service CategoryService {
-      vyneQl query categoryQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<category.Category> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table category : Category[]
    }
 }
 namespace city {
@@ -312,14 +291,7 @@ namespace city {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service CityService {
-      vyneQl query cityQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<city.City> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table city : City[]
    }
 }
 namespace country {
@@ -332,14 +304,7 @@ namespace country {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service CountryService {
-      vyneQl query countryQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<country.Country> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table country : Country[]
    }
 }
 namespace customer {
@@ -359,14 +324,7 @@ namespace customer {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service CustomerService {
-      vyneQl query customerQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<customer.Customer> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table customer : Customer[]
    }
 }
 namespace film {
@@ -390,14 +348,7 @@ namespace film {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service FilmService {
-      vyneQl query filmQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<film.Film> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table film : Film[]
    }
 }
 namespace filmActor {
@@ -410,14 +361,7 @@ namespace filmActor {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service FilmActorService {
-      vyneQl query filmactorQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<filmActor.FilmActor> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table filmactor : FilmActor[]
    }
 }
 namespace filmCategory {
@@ -430,14 +374,7 @@ namespace filmCategory {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service FilmCategoryService {
-      vyneQl query filmcategoryQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<filmCategory.FilmCategory> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table filmcategory : FilmCategory[]
    }
 }
 namespace inventory {
@@ -451,14 +388,7 @@ namespace inventory {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service InventoryService {
-      vyneQl query inventoryQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<inventory.Inventory> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table inventory : Inventory[]
    }
 }
 namespace language {
@@ -471,14 +401,7 @@ namespace language {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service LanguageService {
-      vyneQl query languageQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<language.Language> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table language: Language[]
    }
 }
 namespace payment {
@@ -494,14 +417,7 @@ namespace payment {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service PaymentService {
-      vyneQl query paymentQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<payment.Payment> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table payment : Payment[]
    }
 }
 namespace paymentP200701 {
@@ -517,14 +433,7 @@ namespace paymentP200701 {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service PaymentP200701Service {
-      vyneQl query paymentp200701Query(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<paymentP200701.PaymentP200701> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table paymentp200701:lang.taxi.Array<paymentP200701.PaymentP200701>
    }
 }
 namespace paymentP200702 {
@@ -540,14 +449,7 @@ namespace paymentP200702 {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service PaymentP200702Service {
-      vyneQl query paymentp200702Query(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<paymentP200702.PaymentP200702> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table paymentp200702:lang.taxi.Array<paymentP200702.PaymentP200702>
    }
 }
 namespace paymentP200703 {
@@ -563,14 +465,7 @@ namespace paymentP200703 {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service PaymentP200703Service {
-      vyneQl query paymentp200703Query(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<paymentP200703.PaymentP200703> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table paymentp200703:lang.taxi.Array<paymentP200703.PaymentP200703>
    }
 }
 namespace paymentP200704 {
@@ -586,14 +481,7 @@ namespace paymentP200704 {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service PaymentP200704Service {
-      vyneQl query paymentp200704Query(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<paymentP200704.PaymentP200704> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table paymentp200704:lang.taxi.Array<paymentP200704.PaymentP200704>
    }
 }
 namespace paymentP200705 {
@@ -609,14 +497,7 @@ namespace paymentP200705 {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service PaymentP200705Service {
-      vyneQl query paymentp200705Query(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<paymentP200705.PaymentP200705> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table  paymentp200705:lang.taxi.Array<paymentP200705.PaymentP200705>
    }
 }
 namespace paymentP200706 {
@@ -632,14 +513,7 @@ namespace paymentP200706 {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service PaymentP200706Service {
-      vyneQl query paymentp200706Query(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<paymentP200706.PaymentP200706> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table paymentp200706:lang.taxi.Array<paymentP200706.PaymentP200706>
    }
 }
 namespace rental {
@@ -656,14 +530,7 @@ namespace rental {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service RentalService {
-      vyneQl query rentalQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<rental.Rental> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table rental:lang.taxi.Array<rental.Rental>
    }
 }
 namespace staff {
@@ -684,14 +551,7 @@ namespace staff {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service StaffService {
-      vyneQl query staffQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<staff.Staff> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table staff:lang.taxi.Array<staff.Staff>
    }
 }
 namespace store {
@@ -705,13 +565,6 @@ namespace store {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service StoreService {
-      vyneQl query storeQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<store.Store> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table store:lang.taxi.Array<store.Store>
    }
 }

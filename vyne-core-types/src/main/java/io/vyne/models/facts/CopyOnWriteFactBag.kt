@@ -5,10 +5,17 @@ import com.diffplug.common.base.TreeStream
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
-import io.vyne.models.*
+import io.vyne.models.MixedSources
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedEnumValue
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import io.vyne.query.AlwaysGoodSpec
 import io.vyne.query.TypedInstanceValidPredicate
-import io.vyne.schemas.*
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.timeBucket
 import lang.taxi.types.PrimitiveType
@@ -26,7 +33,12 @@ open class CopyOnWriteFactBag(
 ) : FactBag {
    private val logger = KotlinLogging.logger {}
 
-   constructor(facts: Collection<TypedInstance>, schema: Schema) : this(CopyOnWriteArrayList(facts), emptyList(),  schema)
+   constructor(facts: Collection<TypedInstance>, schema: Schema) : this(
+      CopyOnWriteArrayList(facts),
+      emptyList(),
+      schema
+   )
+
    constructor(fact: TypedInstance, schema: Schema) : this(listOf(fact), schema)
 
    override fun rootFacts(): List<TypedInstance> {
@@ -125,7 +137,9 @@ open class CopyOnWriteFactBag(
       shouldGoDeeperPredicate: FactMapTraversalStrategy,
       matchingPredicate: (TypedInstance) -> Boolean
    ): List<TypedInstance> {
-      return modelTree(shouldGoDeeperPredicate).filter(matchingPredicate)
+      val instancesToEvaluate = modelTree(shouldGoDeeperPredicate)
+      val filtered = instancesToEvaluate.filter(matchingPredicate)
+      return filtered
    }
 
    /**
@@ -134,7 +148,8 @@ open class CopyOnWriteFactBag(
     * Deeply nested children are less likely to be relevant matches.
     */
    private fun modelTree(shouldGoDeeperPredicate: FactMapTraversalStrategy): List<TypedInstance> {
-      return modelTreeCache.get(shouldGoDeeperPredicate)
+      val modelTree = modelTreeCache.get(shouldGoDeeperPredicate)
+      return modelTree
 
       // TODO : MP - Investigating the performance implications of caching the tree.
       // If this turns out to be faster, we should refactor the api to be List<TypedInstance>, since
@@ -187,17 +202,15 @@ open class CopyOnWriteFactBag(
     */
    private val factSearchCache = ConcurrentHashMap<GetFactOrNullCacheKey, Optional<TypedInstance>>()
    private fun fromFactCache(key: GetFactOrNullCacheKey): TypedInstance? {
-//      val stopwatch = Stopwatch.createStarted()
-//      val allFacts = breadthFirstFilter(FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) { true }
-//      val groupedByType = allFacts.groupBy { it.type.fullyQualifiedName }
-//      logger.debug { "Flattened to ${allFacts.size} facts (grouped to ${groupedByType.keys.size} types) in ${stopwatch.elapsed().toMillis()}ms" }
-
-
       val optionalVal = factSearchCache.getOrPut(key) {
-//         val stopwatch = Stopwatch.createStarted()
-         val result = timeBucket("FactBag search for ${key.search.name}") { Optional.ofNullable(key.search.strategy.getFact(this, key.search)) }
-//         val found = if (result.isPresent) "DID" else "did NOT"
-//         logger.debug { "CopyOnWriteFactBag search ${key.search.name} took ${stopwatch.elapsed().toMillis()}ms and $found return a result" }
+         val result = timeBucket("FactBag search for ${key.search.name}") {
+            Optional.ofNullable(
+               key.search.strategy.getFact(
+                  this,
+                  key.search
+               )
+            )
+         }
          result
       }
       return if (optionalVal.isPresent) optionalVal.get() else null
@@ -208,30 +221,16 @@ open class CopyOnWriteFactBag(
       strategy: FactDiscoveryStrategy,
       spec: TypedInstanceValidPredicate
    ): TypedInstance? {
-      val searchCacheKey = getFactOrNullCacheKey(strategy, type, spec)
-      return fromFactCache(searchCacheKey)
+      val search = FactSearch.findType(type, strategy, spec)
+      val searchCacheKey = getFactOrNullCacheKey(search)
+      val result = fromFactCache(searchCacheKey)
+      return result
    }
 
    private fun getFactOrNullCacheKey(
-      strategy: FactDiscoveryStrategy,
-      type: Type,
-      spec: TypedInstanceValidPredicate
+      factSearch: FactSearch
    ): GetFactOrNullCacheKey {
-      // MP 4-Nov-22
-      // Design choice around searching for arrays: (weakly held):
-      // Sometimes when we're searching for Foo[], we want to gather up all the values.
-      // (ie., traverse an object graph, and collect all the instances of Foo).
-      // Other times, we only want to find exact instances of Foo[]
-      // We're using the  ALLOW_MANY / ALLOW_ONE heuristic to determine how we search.
-      // Not sure this is correct.  See CopyOnWriteFactBagTest for tests that explore this with use-cases.
-      val predicate = if (strategy == FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) {
-         TypeMatchingStrategy.MATCH_ON_COLLECTION_TYPE
-            .or(TypeMatchingStrategy.MATCH_ON_COLLECTION_OF_TYPE)
-            .or(TypeMatchingStrategy.ALLOW_INHERITED_TYPES)
-      } else {
-         TypeMatchingStrategy.ALLOW_INHERITED_TYPES // default
-      }
-      return GetFactOrNullCacheKey(FactSearch.findType(type, strategy, spec, predicate))
+      return GetFactOrNullCacheKey(factSearch)
    }
 
    @VisibleForTesting
@@ -240,7 +239,7 @@ open class CopyOnWriteFactBag(
       strategy: FactDiscoveryStrategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec
    ): Boolean {
-      val key = getFactOrNullCacheKey(strategy, type, spec)
+      val key = getFactOrNullCacheKey(FactSearch.findType(type, strategy, spec))
       return factSearchCache.containsKey(key)
    }
 
@@ -275,13 +274,17 @@ private class TreeNavigator(val shouldGoDeeperPredicate: (TypedInstance) -> Tree
 }
 
 
-
 private object TypedInstanceTree {
+   private val logger = KotlinLogging.logger {}
+
    /**
     * Function which defines how to convert a TypedInstance into a tree, for traversal
     */
 
-   fun visit(instance: TypedInstance, navigationPredicate: (TypedInstance) -> TreeNavigationInstruction): List<TypedInstance> {
+   fun visit(
+      instance: TypedInstance,
+      navigationPredicate: (TypedInstance) -> TreeNavigationInstruction
+   ): List<TypedInstance> {
 
       // We've changed the semantics of closed.
       // It now means "don't attempt to construct this from other things",
@@ -304,6 +307,7 @@ private object TypedInstanceTree {
             }
 
          }
+
          is TypedEnumValue -> {
             instance.synonyms
          }

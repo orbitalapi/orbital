@@ -3,36 +3,44 @@ package io.vyne.connectors.kafka
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
-import io.vyne.connectors.*
+import io.vyne.connectors.ConnectionDriverOptions
+import io.vyne.connectors.ConnectionDriverParam
+import io.vyne.connectors.ConnectionParameterName
+import io.vyne.connectors.ConnectionSucceeded
+import io.vyne.connectors.IConnectionParameter
+import io.vyne.connectors.SimpleDataType
+import io.vyne.connectors.connectionParams
 import io.vyne.connectors.registry.ConnectorConfiguration
 import io.vyne.connectors.registry.ConnectorType
 import mu.KotlinLogging
+import org.apache.kafka.clients.admin.AdminClient
 import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import reactor.kafka.receiver.ReceiverOptions
-import java.time.Duration
-import java.util.*
+import java.util.Properties
 
-
+private val logger = KotlinLogging.logger {}
 object KafkaConnection {
-   private val logger = KotlinLogging.logger {}
    fun test(connection: KafkaConnectionConfiguration): Either<String, ConnectionSucceeded> {
-      val consumerProps = connection.toConsumerProps()
+      logger.info { "testing kafka connection configuration => $connection" }
       return try {
-         KafkaConsumer<Any, Any>(consumerProps)
-            .listTopics(Duration.ofSeconds(15))
-         // If we were able to list topics, consider the test a success
-         ConnectionSucceeded.right()
+          AdminClient.create(connection.toAdminProps()).use { adminClient ->
+            val nodes = adminClient.describeCluster().nodes().get()
+            return if (!nodes.isNullOrEmpty()) {
+               ConnectionSucceeded.right()
+            } else {
+               "Invalid Kafka Cluster".left()
+            }
+         }
+
       } catch (e: Exception) {
          val message = listOfNotNull(e.message, e.cause?.message).joinToString(" : ")
          message.left()
       }
-
    }
 
    enum class Parameters(override val param: ConnectionDriverParam) : IConnectionParameter {
@@ -85,6 +93,14 @@ data class KafkaConnectionConfiguration(
       val consumerProps = this.toConsumerProps(offset)
       return ReceiverOptions
          .create(consumerProps)
+   }
+
+   fun toAdminProps(): MutableMap<String, Any> {
+      val adminProps: MutableMap<String, Any> = HashMap()
+      adminProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = this.brokers
+      adminProps[ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG] =3000
+      adminProps[ConsumerConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG] = 5000
+      return adminProps
    }
 
    fun toConsumerProps(offset: String = "latest"): MutableMap<String, Any> {

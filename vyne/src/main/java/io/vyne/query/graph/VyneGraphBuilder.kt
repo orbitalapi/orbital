@@ -17,7 +17,6 @@ import io.vyne.query.excludedValues
 import io.vyne.query.graph.edges.EvaluatableEdge
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Field
-import io.vyne.schemas.Operation
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.ParamNames
 import io.vyne.schemas.QualifiedName
@@ -26,6 +25,7 @@ import io.vyne.schemas.Relationship
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
+import io.vyne.schemas.TableOperation
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import io.vyne.utils.ImmutableEquality
@@ -123,7 +123,9 @@ fun operation(service: Service, operation: RemoteOperation): Element {
    return operation(operationReference, operation)
 }
 
-fun operation(name: String, operation: RemoteOperation?) = Element(name, ElementType.OPERATION, instanceValue = operation)
+fun operation(name: String, operation: RemoteOperation?) =
+   Element(name, ElementType.OPERATION, instanceValue = operation)
+
 fun providedInstance(typedInstance: TypedInstance): Element {
    val instanceHash = typedInstance.value?.hashCode() ?: -1
    val nodeId = typedInstance.typeName + "@$instanceHash"
@@ -291,21 +293,21 @@ class VyneGraphBuilder(
          }
 
          //if (!type.isClosed) {
-            type.attributes.map { (attributeName, attributeType) ->
-               val attributeQualifiedName = attributeFqn(typeFullyQualifiedName, attributeName)
-               val attributeNode = member(attributeQualifiedName)
-               addConnection(typeNode, attributeNode, Relationship.HAS_ATTRIBUTE)
+         type.attributes.map { (attributeName, attributeType) ->
+            val attributeQualifiedName = attributeFqn(typeFullyQualifiedName, attributeName)
+            val attributeNode = member(attributeQualifiedName)
+            addConnection(typeNode, attributeNode, Relationship.HAS_ATTRIBUTE)
 
-               // (attribute) -[IS_ATTRIBUTE_OF]-> (type)
-               addConnection(attributeNode, typeNode, Relationship.IS_ATTRIBUTE_OF)
+            // (attribute) -[IS_ATTRIBUTE_OF]-> (type)
+            addConnection(attributeNode, typeNode, Relationship.IS_ATTRIBUTE_OF)
 
-               val attributeTypeNode = type(attributeType.type.parameterizedName)
-               addConnection(attributeNode, attributeTypeNode, Relationship.IS_TYPE_OF)
+            val attributeTypeNode = type(attributeType.type.parameterizedName)
+            addConnection(attributeNode, attributeTypeNode, Relationship.IS_TYPE_OF)
 //               typesAndWhereTheyreUsed.put(attributeTypeNode, attributeNode)
-               // See the relationship for why commented out ....
-               // migrating this relationship to an INSTNACE_OF node.
+            // See the relationship for why commented out ....
+            // migrating this relationship to an INSTNACE_OF node.
 //            builder.connect(attributeTypeNode).to(attributeNode).withEdge(Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE)
-            }
+         }
          //}
 
 //         log().debug("Added attribute ${type.name} to graph")
@@ -332,6 +334,7 @@ class VyneGraphBuilder(
                .forEach { operation ->
                   val operationNode = operation(service, operation)
                   when (operation) {
+                     is TableOperation -> connections.addAll(buildTableOperationConnections(operation, operationNode))
                      is QueryOperation -> connections.addAll(buildQueryOperationConnections(operation, operationNode))
                      else -> connections.addAll(buildStandardOperationConnections(operation, operationNode))
                   }
@@ -349,6 +352,13 @@ class VyneGraphBuilder(
       return connections
    }
 
+   private fun buildTableOperationConnections(
+      operation: TableOperation,
+      operationNode: Element
+   ): List<GraphConnection> {
+      return operation.queryOperations.flatMap { buildQueryOperationConnections(it, operationNode) }
+   }
+
    private fun buildQueryOperationConnections(
       operation: QueryOperation,
       operationNode: Element
@@ -364,7 +374,11 @@ class VyneGraphBuilder(
       val idFields = returnType.getAttributesWithAnnotation("Id".fqn())
       if (idFields.size == 1) { // For now, we can't support composite keys
          val idField = idFields.values.first()
-         connections.addConnection(parameter(idField.type.parameterizedName), querySpec, Relationship.CAN_CONSTRUCT_QUERY)
+         connections.addConnection(
+            parameter(idField.type.parameterizedName),
+            querySpec,
+            Relationship.CAN_CONSTRUCT_QUERY
+         )
       }
       return connections
    }

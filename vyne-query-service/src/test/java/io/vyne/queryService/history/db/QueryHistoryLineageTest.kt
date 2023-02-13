@@ -9,11 +9,11 @@ import io.vyne.history.rest.QueryHistoryService
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.query.ResultMode
 import io.vyne.query.ValueWithTypeName
-import io.vyne.query.active.ActiveQueryMonitor
+import io.vyne.query.runtime.core.MetricsEventConsumer
+import io.vyne.query.runtime.core.QueryResponseFormatter
+import io.vyne.query.runtime.core.QueryService
+import io.vyne.query.runtime.core.monitor.ActiveQueryMonitor
 import io.vyne.queryService.TestSpringConfig
-import io.vyne.queryService.query.MetricsEventConsumer
-import io.vyne.queryService.query.QueryResponseFormatter
-import io.vyne.queryService.query.QueryService
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
@@ -42,7 +42,6 @@ import kotlin.time.ExperimentalTime
    properties = [
       "vyne.schema.publicationMethod=LOCAL",
       "spring.main.allow-bean-definition-overriding=true",
-      "eureka.client.enabled=false",
       "vyne.search.directory=./search/\${random.int}",
       "vyne.analytics.persistResults=true",
       "spring.datasource.url=jdbc:h2:mem:testdbQueryHistoryLineageTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"
@@ -67,7 +66,7 @@ class QueryHistoryLineageTest {
       val queryId = UUID.randomUUID().toString()
       val meterRegistry = SimpleMeterRegistry()
       val queryService = QueryService(
-         SimpleSchemaStore(SchemaSet.Companion.from(schemaProvider.schema, 1)),
+         SimpleSchemaStore(SchemaSet.from(schemaProvider.schema, 1)),
          vyneProvider,
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),
