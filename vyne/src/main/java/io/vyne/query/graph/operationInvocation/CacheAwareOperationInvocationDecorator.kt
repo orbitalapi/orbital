@@ -19,12 +19,10 @@ import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
-import org.apache.commons.lang3.StringUtils
 import reactor.core.publisher.Flux
 import java.time.Duration
 import java.time.Instant
@@ -69,7 +67,7 @@ class CacheAwareOperationInvocationDecorator(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String?
+      queryId: String
    ): Flow<TypedInstance> {
       val (key, params) = getCacheKeyAndParamMessage(service, operation, parameters, eventDispatcher, queryId)
       val actor = actorCache.get(key) {
@@ -120,7 +118,7 @@ class CacheAwareOperationInvocationDecorator(
          operation: RemoteOperation,
          parameters: List<Pair<Parameter, TypedInstance>>,
          eventDispatcher: QueryContextEventDispatcher,
-         queryId: String?
+         queryId: String
       ): Pair<String, OperationInvocationParamMessage> {
          return generateCacheKey(service, operation, parameters) to
             OperationInvocationParamMessage(
@@ -196,7 +194,7 @@ private class CachingInvocationActor(
          operation: RemoteOperation,
          parameters: List<Pair<Parameter, TypedInstance>>,
          eventDispatcher: QueryContextEventDispatcher,
-         queryId: String?) = message
+         queryId: String) = message
 
       // A bit of async framework hopping here.
       // Invoker.invoke() is a suspend function, but we need to operate in a flux to allow
@@ -240,7 +238,7 @@ private data class OperationInvocationParamMessage(
    val operation: RemoteOperation,
    val parameters: List<Pair<Parameter, TypedInstance>>,
    val eventDispatcher: QueryContextEventDispatcher,
-   val queryId: String?
+   val queryId: String
 ) {
    fun recordElapsed(wasFromCache: Boolean) {
       if (wasFromCache) {

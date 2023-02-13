@@ -10,6 +10,7 @@ import io.vyne.models.OperationResult
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.Jackson
+import io.vyne.query.EmptyExchangeData
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
@@ -54,10 +55,10 @@ class LambdaInvoker(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String?
+      queryId: String
    ): Flow<TypedInstance> {
       val awsConnection = fetchConnection(service)
-      return invokeAwsLambda(awsConnection, parameters, service, operation)
+      return invokeAwsLambda(awsConnection, parameters, service, operation, eventDispatcher, queryId)
    }
 
    private fun fetchConnection(service: Service): AwsConnectionConnectorConfiguration {
@@ -78,7 +79,9 @@ class LambdaInvoker(
       connection: AwsConnectionConnectorConfiguration,
       parameters: List<Pair<Parameter, TypedInstance>>,
       service: Service,
-      operation: RemoteOperation
+      operation: RemoteOperation,
+      eventDispatcher: QueryContextEventDispatcher,
+      queryId: String
    ): Flow<TypedInstance> {
       val functionName = fetchFunctionName(operation)
       val argument = if (parameters.size == 1) {
@@ -118,23 +121,24 @@ class LambdaInvoker(
                   address = functionName,
                   operation = operation.name,
                   responseTypeName = operation.returnType.name,
-                  method = "Aws Lambda",
                   requestBody = payload,
-                  resultCode = 0,
                   durationMs = duration,
                   response = responseBody,
                   timestamp = initiationTime,
                   responseMessageType = ResponseMessageType.FULL,
-                  isFailed = failed
+                  isFailed = failed,
+                  exchange = EmptyExchangeData
                )
             }
 
             val clientResponse = durationAndResponse.t2
             if (clientResponse.functionError() != null) {
+               val remoteCall = remoteCall(clientResponse.functionError() ?: "", true)
+               eventDispatcher.reportRemoteOperationInvoked(OperationResult.from(parameters, remoteCall), queryId)
                throw OperationInvocationException(
                   "Aws lambda invocation error ${clientResponse.functionError()} from function $functionName",
                   0,
-                  remoteCall(clientResponse.functionError() ?: "", true),
+                  remoteCall,
                   parameters
                )
             }
@@ -142,7 +146,9 @@ class LambdaInvoker(
             // UTF_8 won't be enough for all cases.
             val response = clientResponse.payload().asUtf8String()
             val remoteCall = remoteCall(responseBody = response)
-            handleSuccessfulLambdaResponse(response, operation, parameters, remoteCall)
+            val operationResult = OperationResult.from(parameters, remoteCall)
+            eventDispatcher.reportRemoteOperationInvoked(OperationResult.from(parameters, remoteCall), queryId)
+            handleSuccessfulLambdaResponse(response, operation, operationResult)
          }.asFlow().flowOn(dispatcher)
    }
 
@@ -160,11 +166,10 @@ class LambdaInvoker(
    private fun handleSuccessfulLambdaResponse(
       result: String,
       operation: RemoteOperation,
-      parameters: List<Pair<Parameter, TypedInstance>>,
-      remoteCall: RemoteCall
+      operationResult: OperationResult
    ): Flux<TypedInstance> {
       logger.debug { "Result of ${operation.name} was $result" }
-      val dataSource = OperationResult.from(parameters, remoteCall)
+
 
       val type = operation.returnType.collectionType ?: operation.returnType
 
@@ -172,7 +177,7 @@ class LambdaInvoker(
          type,
          result,
          schemaProvider.schema,
-         source = dataSource,
+         source = operationResult.asOperationReferenceDataSource(),
          evaluateAccessors = true
       )
       return if (typedInstance is TypedCollection) {

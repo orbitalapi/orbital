@@ -35,14 +35,18 @@ interface ResultRowPersistenceStrategy {
 
 object ResultRowPersistenceStrategyFactory {
 
-   fun resultRowPersistenceStrategy(objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-                                    persistenceQueue: HistoryPersistenceQueue?,
-                                    config: QueryAnalyticsConfig): ResultRowPersistenceStrategy {
-      when {
-         config.persistResults && persistenceQueue != null -> DatabaseResultRowPersistenceStrategy(objectMapper, persistenceQueue, config)
-      }
-      return if (config.persistResults) {
-         DatabaseResultRowPersistenceStrategy(objectMapper, persistenceQueue, config)
+   fun resultRowPersistenceStrategy(
+      objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
+      persistenceQueue: HistoryPersistenceQueue?,
+      config: QueryAnalyticsConfig
+   ): ResultRowPersistenceStrategy {
+      return if (config.persistRemoteCallResponses || config.persistRemoteCallMetadata) {
+         DatabaseResultRowPersistenceStrategy(
+            objectMapper,
+            persistenceQueue,
+            config.persistRemoteCallResponses,
+            config.persistRemoteCallMetadata
+         )
       } else {
          NoOpResultRowPersistenceStrategy()
       }
@@ -61,9 +65,15 @@ class NoOpResultRowPersistenceStrategy : ResultRowPersistenceStrategy {
    }
 }
 
-class RemoteDatabaseResultRowPersistenceStrategy(private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-                                                 private val config: QueryAnalyticsConfig)
-   : DatabaseResultRowPersistenceStrategy(objectMapper, null, config) {
+class RemoteDatabaseResultRowPersistenceStrategy(
+   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
+   private val config: QueryAnalyticsConfig
+) : DatabaseResultRowPersistenceStrategy(
+   objectMapper,
+   null,
+   config.persistRemoteCallResponses,
+   config.persistRemoteCallMetadata
+) {
    override fun persistResultRowAndLineage(event: QueryResultEvent) {
       // noop
    }
@@ -72,7 +82,9 @@ class RemoteDatabaseResultRowPersistenceStrategy(private val objectMapper: Objec
 open class DatabaseResultRowPersistenceStrategy(
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    private val persistenceQueue: HistoryPersistenceQueue?,
-   private val config: QueryAnalyticsConfig) : ResultRowPersistenceStrategy {
+   private val persistRemoteResponses: Boolean,
+   private val persistRemoteMetadata: Boolean
+) : ResultRowPersistenceStrategy {
    private val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
    private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
 
@@ -90,19 +102,24 @@ open class DatabaseResultRowPersistenceStrategy(
             // so we don't need to persist it, and return null from this mapper
 
             //+ discoveredDataSource.failedAttempts
-            (listOf(discoveredDataSource)).mapNotNull { dataSource ->
-               // Some data sources (eg., streaming topics) actually span multiple queries.
-               val scopedDataSourceId = "$queryId/${dataSource.id}"
-               val previousLineageRecordId = createdLineageRecordIds.putIfAbsent(scopedDataSourceId, dataSource.id)
-               val recordAlreadyPersisted = previousLineageRecordId != null
+            (listOf(discoveredDataSource))
+               .mapNotNull { dataSource ->
+                  // Some data sources (eg., streaming topics) actually span multiple queries.
+                  val scopedDataSourceId = "$queryId/${dataSource.id}"
+                  val previousLineageRecordId = createdLineageRecordIds.putIfAbsent(scopedDataSourceId, dataSource.id)
+                  val recordAlreadyPersisted = previousLineageRecordId != null
 
-               if (recordAlreadyPersisted) null else LineageRecord(
-                  dataSource.id,
-                  queryId,
-                  dataSource.name,
-                  objectMapper.writeValueAsString(dataSource)
-               )
-            }
+                  try {
+                     if (recordAlreadyPersisted) null else LineageRecord(
+                        dataSource.id,
+                        queryId,
+                        dataSource.name,
+                        objectMapper.writeValueAsString(dataSource)
+                     )
+                  } catch (e: OutOfMemoryError) {
+                     null
+                  }
+               }
 
          }
 
@@ -110,18 +127,11 @@ open class DatabaseResultRowPersistenceStrategy(
    }
 
    override fun createRemoteCallRecord(operationResult: OperationResult, queryId: String): RemoteCallResponse? {
-      val responseJson = when (operationResult.remoteCall.response) {
-         null -> "No response body received"
-         // It's pretty rare to get a collection here, as the response value is the value before it's
-         // been deserialzied.  However, belts 'n' braces.
-         is Collection<*>, is Map<*, *> -> objectMapper.writeValueAsString(operationResult.remoteCall.response)
-         else -> operationResult.remoteCall.response.toString()
-      }
-      return  RemoteCallResponse(
-         responseId = operationResult.remoteCall.responseId,
-         remoteCallId = operationResult.remoteCall.remoteCallId,
-         queryId = queryId,
-         response = responseJson
+      return RemoteCallResponse.fromRemoteCall(
+         operationResult.remoteCall,
+         queryId,
+         objectMapper,
+         persistRemoteResponses
       )
    }
 
@@ -129,7 +139,9 @@ open class DatabaseResultRowPersistenceStrategy(
       val resultRowCallsAndLineage = this.extractResultRowAndLineage(event)
       resultRowCallsAndLineage?.let {
          persistenceQueue?.storeResultRow(it.queryResultRow)
-         it.remoteCalls.forEach { remoteCallResponse -> persistenceQueue?.storeRemoteCallResponse(remoteCallResponse) }
+         // Moved the persistence of remote calls into PersistingQueryEventConsumer, so that
+         // we capture more calls - even those that fail
+//         it.remoteCalls.forEach { remoteCallResponse -> persistenceQueue?.storeRemoteCallResponse(remoteCallResponse) }
          it.lineageRecords.forEach { lineageRecord ->
             persistenceQueue?.storeLineageRecord(lineageRecord)
          }
@@ -143,25 +155,19 @@ open class DatabaseResultRowPersistenceStrategy(
          json = objectMapper.writeValueAsString(convertedTypedInstance),
          valueHash = event.typedInstance.hashCodeWithDataSource
       )
-      val remoteCalls = if (config.persistRemoteCallResponses) {
+      val remoteCalls = if (persistRemoteResponses || persistRemoteMetadata) {
          dataSources
             .map { it.second }
             .filterIsInstance<OperationResult>()
             .distinctBy { it.remoteCall.responseId }
             .map { operationResult ->
-               val responseJson = when (operationResult.remoteCall.response) {
-                  null -> "No response body received"
-                  // It's pretty rare to get a collection here, as the response value is the value before it's
-                  // been deserialzied.  However, belts 'n' braces.
-                  is Collection<*>, is Map<*, *> -> objectMapper.writeValueAsString(operationResult.remoteCall.response)
-                  else -> operationResult.remoteCall.response.toString()
-               }
-               RemoteCallResponse(
-                  responseId = operationResult.remoteCall.responseId,
-                  remoteCallId = operationResult.remoteCall.remoteCallId,
-                  queryId = event.queryId,
-                  response = responseJson
+               RemoteCallResponse.fromRemoteCall(
+                  operationResult.remoteCall,
+                  event.queryId,
+                  objectMapper,
+                  persistRemoteResponses
                )
+
             }
       } else {
          listOf()
@@ -173,5 +179,9 @@ open class DatabaseResultRowPersistenceStrategy(
 
 }
 
-data class QueryResultRowLineage(val queryResultRow: QueryResultRow, val remoteCalls: List<RemoteCallResponse>, val lineageRecords: List<LineageRecord>)
+data class QueryResultRowLineage(
+   val queryResultRow: QueryResultRow,
+   val remoteCalls: List<RemoteCallResponse>,
+   val lineageRecords: List<LineageRecord>
+)
 

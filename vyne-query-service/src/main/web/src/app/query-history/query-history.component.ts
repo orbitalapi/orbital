@@ -119,7 +119,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
 
   private loadQueryResults(selectedQueryId: string) {
 
-    console.log('Fetching query results now');
+    console.log(`Fetching query results for query ${selectedQueryId}`);
 
     this.activeRecordResults$ = this.queryService.getQueryResults(selectedQueryId)
       .pipe(

@@ -40,6 +40,8 @@ import javax.sql.DataSource
       "vyne.schema.publicationMethod=LOCAL",
       "spring.main.allow-bean-definition-overriding=true",
       "vyne.search.directory=./search/\${random.int}",
+      "vyne.analytics.persistRemoteCallMetadata=true",
+      "vyne.analytics.persistRemoteCallResponses=false",
       "spring.datasource.url=jdbc:h2:mem:testdbQueryLineageTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"
    ]
 )
@@ -84,18 +86,23 @@ class QueryLineageTest : BaseQueryServiceTest() {
             traderId : ReutersTraderId inherits String
          }
          service BloombergOrders {
+            @HttpOperation(url = "https://fakeurl")
             operation findBbgOrders():BloombergOrder[]
          }
          service ReutersOrders {
+            @HttpOperation(url = "https://fakeurl")
             operation findReutersOrders():ReutersOrder[]
          }
          service BloombergTraderService {
+            @HttpOperation(url = "https://fakeurl")
             operation resolveBbgTraderId(BbgTraderId):InternalTraderId
          }
          service ReutersTraderService {
+            @HttpOperation(url = "https://fakeurl")
             operation resolveReutersTraderId(ReutersTraderId):InternalTraderId
          }
          service TraderService {
+            @HttpOperation(url = "https://fakeurl")
             operation lookupTrader(InternalTraderId):Trader
          }
       """
@@ -124,7 +131,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
       }
       var sankeyReport: List<QuerySankeyChartRow> = emptyList()
 
-      Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until<Boolean>{
+      Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until<Boolean> {
          sankeyReport =
             sankeyChartRowRepository.findAllByQueryId(queryHistoryRecordRepository.findByClientQueryId(clientQueryId)!!.queryId)
          sankeyReport.size == 15
@@ -135,7 +142,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
          .filter { it.targetNodeType == SankeyNodeType.AttributeName }
          .map { it.targetNode }
          .distinct()
-         .should.have.elements("orderId", "firstName","lastName","name")
+         .should.have.elements("orderId", "firstName", "lastName", "name")
 
    }
 
@@ -202,16 +209,18 @@ class QueryLineageTest : BaseQueryServiceTest() {
          historyRecord!!.endTime != null
       }
       var sankeyReport: List<QuerySankeyChartRow> = emptyList()
+      val queryId = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)!!.queryId
       Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until<Boolean> {
-         sankeyReport =
-            sankeyChartRowRepository.findAllByQueryId(queryHistoryRecordRepository.findByClientQueryId(clientQueryId)!!.queryId)
+         val allRows = sankeyChartRowRepository.findAll()
+         val isEmpty = allRows.size > 0
+         sankeyReport = sankeyChartRowRepository.findAllByQueryId(queryId)
          sankeyReport.size == 15
       }
       sankeyReport
          .filter { it.targetNodeType == SankeyNodeType.AttributeName }
          .map { it.targetNode }
          .distinct()
-         .should.have.elements("orderId", "traderData/firstName","traderData/lastName","traderData/name")
+         .should.have.elements("orderId", "traderData/firstName", "traderData/lastName", "traderData/name")
    }
 
    private fun buildHistoryConsumer(): HistoryEventConsumerProvider {

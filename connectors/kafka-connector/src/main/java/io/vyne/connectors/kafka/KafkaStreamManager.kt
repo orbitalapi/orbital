@@ -5,9 +5,11 @@ import com.google.common.cache.CacheBuilder
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
 import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
+import io.vyne.models.OperationResultDataSourceWrapper
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.Jackson
 import io.vyne.protobuf.ProtobufFormatSpec
+import io.vyne.query.MessageStreamExchange
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
 import io.vyne.schema.api.SchemaProvider
@@ -39,10 +41,10 @@ data class KafkaConsumerRequest(
 }
 
 class KafkaStreamManager(
-    private val connectionRegistry: KafkaConnectionRegistry,
-    private val schemaProvider: SchemaProvider,
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
-    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper
+   private val connectionRegistry: KafkaConnectionRegistry,
+   private val schemaProvider: SchemaProvider,
+   private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
+   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper
 ) {
 
    private val logger = KotlinLogging.logger {}
@@ -136,20 +138,23 @@ class KafkaStreamManager(
          address = connectionConfiguration.brokers,
          operation = request.operation.name,
          responseTypeName = request.operation.returnType.name,
-         method = "READ",
          requestBody = objectMapper.writerWithDefaultPrettyPrinter()
             .writeValueAsString(mapOf("topic" to request.topicName, "offset" to request.offset)),
-         resultCode = 200, // Using HTTP status codes here, because I'm not sure what else to use
          // What should we use for the duration?  Using zero, because I can't think of anything better
          durationMs = Duration.ZERO.toMillis(),
          timestamp = Instant.now(),
          responseMessageType = ResponseMessageType.EVENT,
          // Feels like capturing the results are a bad idea.  Can revisit if there's a use-case
-         response = "Not captured"
+         response = null,
+         exchange = MessageStreamExchange(
+            topic = request.topicName
+         )
       )
-      return OperationResult.from(
-         emptyList(),
-         remoteCall
+      return OperationResultDataSourceWrapper(
+         OperationResult.from(
+            emptyList(),
+            remoteCall
+         )
       )
    }
 

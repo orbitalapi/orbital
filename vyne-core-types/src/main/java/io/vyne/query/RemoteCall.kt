@@ -2,12 +2,15 @@ package io.vyne.query
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.QualifiedNameAsStringSerializer
+import kotlinx.serialization.Serializable
 import java.time.Instant
 import java.util.*
 
@@ -33,15 +36,22 @@ data class RemoteCall(
    @JsonSerialize(using = QualifiedNameAsStringSerializer::class)
    @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)
    val responseTypeName: QualifiedName,
-   val method: String,
-   val requestBody: Any?,
-   val resultCode: Int,
+
+   @Deprecated(message = "Use a dedicated exchange type")
+   val method: String = "",
+   @Deprecated(message = "Use a dedicated exchange type")
+   val requestBody: Any? = null,
+
+   @Deprecated(message = "Use a dedicated exchange type")
+   val resultCode: Int = -1,
    val durationMs: Long,
    val timestamp: Instant,
 
    // Nullable for now, as we transition this to being stored.
    // After a while, let's make this stricter.
    val responseMessageType: ResponseMessageType?,
+
+   val exchange: RemoteCallExchangeMetadata,
 
    @get:JsonIgnore
    val response: Any?,
@@ -76,4 +86,62 @@ enum class ResponseMessageType {
     * or a SSE / Websocket message in an HTTP request
     */
    EVENT
+}
+
+
+/**
+ * Models transport-specific metadata we wish to capture.
+ *
+ * Rather than trying to cram everything into a single,
+ * general-purpose RemoteCall object,
+ * we use Exhcnage metadata to capture the specifics in a
+ * well modelled manner.
+ *
+ * eg: capture verb, response code, headers etc for HTTP,
+ * other stuff for db.
+ *
+ */
+
+@Serializable
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes(
+   JsonSubTypes.Type(value = HttpExchange::class, name = "Http"),
+   JsonSubTypes.Type(value = SqlExchange::class, name = "Sql"),
+   JsonSubTypes.Type(value = MessageStreamExchange::class, name = "MessageStream"),
+   JsonSubTypes.Type(value = EmptyExchangeData::class, name = "None")
+)
+sealed class RemoteCallExchangeMetadata {
+   abstract val requestBody: String?
+}
+
+
+@Serializable
+data class HttpExchange(
+   val url: String,
+   val verb: String,
+   override val requestBody: String?,
+
+   val responseCode: Int,
+   val responseSize: Int
+) : RemoteCallExchangeMetadata()
+
+@Serializable
+data class SqlExchange(
+   val sql: String,
+   val recordCount: Int,
+) : RemoteCallExchangeMetadata() {
+   override val requestBody: String = sql
+}
+
+
+@Serializable
+data class MessageStreamExchange(
+   val topic: String
+) : RemoteCallExchangeMetadata() {
+   override val requestBody: String? = null
+}
+
+@Serializable
+object EmptyExchangeData : RemoteCallExchangeMetadata() {
+   override val requestBody: String? = null
 }

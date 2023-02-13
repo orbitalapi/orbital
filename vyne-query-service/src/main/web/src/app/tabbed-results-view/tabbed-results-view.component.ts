@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
-import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
+import { BehaviorSubject, EMPTY, Observable, of, Subject } from 'rxjs';
 import { DisplayMode, DownloadClickedEvent } from '../object-view/object-view-container.component';
 import { InstanceLike, Type } from '../services/schema';
 import { QueryProfileData } from '../services/query.service';
@@ -148,7 +148,12 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   }
 
   set instances$(value: Observable<InstanceLike>) {
-    this._instances$ = value;
+    if (isNullOrUndefined(value)) {
+      this._instances$ = EMPTY
+    } else {
+      this._instances$ = value;
+    }
+
     this.jsonInstances$ = this.instances$.pipe(
       map((result) => JSON.stringify(result.value))
     );

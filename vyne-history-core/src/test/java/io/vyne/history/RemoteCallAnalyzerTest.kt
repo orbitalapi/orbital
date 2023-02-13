@@ -1,9 +1,13 @@
 package io.vyne.history
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.should
+import io.vyne.query.EmptyExchangeData
+import io.vyne.query.HttpExchange
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseCodeGroup
 import io.vyne.query.ResponseMessageType
+import io.vyne.query.history.RemoteCallResponse
 import io.vyne.schemas.fqn
 import org.junit.Test
 import java.time.Instant
@@ -65,7 +69,9 @@ class RemoteCallAnalyzerTest {
          ResponseCodeGroup.HTTP_3XX to http3xx,
          ResponseCodeGroup.HTTP_4XX to http4xx,
          ResponseCodeGroup.HTTP_5XX to http5xx,
-         ResponseCodeGroup.UNKNOWN to 0
+         ResponseCodeGroup.UNKNOWN to 0,
+         ResponseCodeGroup.SUCCESS to 0,
+         ResponseCodeGroup.FAIL to 0,
       )
 
    }
@@ -79,21 +85,33 @@ class RemoteCallAnalyzerTest {
       resultCode: Int = 200,
       responseMessageType: ResponseMessageType = ResponseMessageType.FULL,
       serviceName: String = "Service"
-   ): RemoteCall {
-      return RemoteCall(
-         callId,
-         responseId,
-         serviceName.fqn(),
-         "",
-         operationName,
-         "Something".fqn(),
-         "",
-         "",
-         resultCode,
-         durationMs.toLong(),
-         Instant.now(),
-         responseMessageType,
-         null
+   ): RemoteCallResponse {
+      return RemoteCallResponse.fromRemoteCall(
+         RemoteCall(
+            callId,
+            responseId,
+            serviceName.fqn(),
+            "",
+            operationName,
+            "Something".fqn(),
+            "",
+            "",
+            resultCode,
+            durationMs.toLong(),
+            Instant.now(),
+            responseMessageType,
+            HttpExchange(
+               url = "",
+               verb = "GET",
+               requestBody = null,
+               responseCode = resultCode,
+               responseSize = 0
+            ),
+            null
+         ),
+         "queryId",
+         jacksonObjectMapper(),
+         false
       )
    }
 }

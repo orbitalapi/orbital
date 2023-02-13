@@ -2,6 +2,7 @@ package io.vyne.models
 
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import io.vyne.utils.Ids
 import lang.taxi.ImmutableEquality
 import lang.taxi.utils.takeHead
 import mu.KotlinLogging
@@ -13,6 +14,7 @@ data class TypedCollection(
    override val source: DataSource = MixedSources
 ) : List<TypedInstance> by value, TypedInstance {
    private val equality = ImmutableEquality(this, TypedCollection::type, TypedCollection::value)
+   override val nodeId: String = Ids.fastUuid()
 
    override fun toString(): String {
       return "TypedCollection(type=${type.qualifiedName.longDisplayName}, value=$value)"

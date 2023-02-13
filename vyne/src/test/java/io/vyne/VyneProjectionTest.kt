@@ -14,6 +14,8 @@ import io.vyne.models.EvaluatedExpression
 import io.vyne.models.FailedEvaluatedExpression
 import io.vyne.models.MappedSynonym
 import io.vyne.models.OperationResult
+import io.vyne.models.OperationResultDataSourceWrapper
+import io.vyne.models.OperationResultReference
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
@@ -24,12 +26,17 @@ import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonCollection
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
+import io.vyne.query.EmptyExchangeData
 import io.vyne.query.Projection
 import io.vyne.query.QueryContext
+import io.vyne.query.RemoteCall
+import io.vyne.query.ResponseMessageType
 import io.vyne.query.UnresolvedTypeInQueryException
 import io.vyne.query.VyneQueryStatistics
 import io.vyne.query.projection.ProjectionProvider
 import io.vyne.schemas.OperationInvocationException
+import io.vyne.schemas.OperationNames
+import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.Benchmark
 import io.vyne.utils.StrategyPerformanceProfiler
@@ -45,6 +52,7 @@ import lang.taxi.utils.quoted
 import org.junit.Ignore
 import org.junit.Test
 import java.math.BigDecimal
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertFailsWith
 import kotlin.test.fail
@@ -2484,8 +2492,8 @@ service Broker1Service {
          .typedObjects()
       val first = results[0]
       val countrySource = first["country"].source as MappedSynonym
-      val remoteSource = countrySource.source.source as OperationResult
-      remoteSource.remoteCall.operationQualifiedName.toString().should.equal("PeopleService@@listPeople")
+      val remoteSource = countrySource.source.source as OperationResultDataSourceWrapper
+      remoteSource.operationResultReferenceSource.operationName.fullyQualifiedName.should.equal("PeopleService@@listPeople")
    }
 
    @Test
@@ -2725,8 +2733,20 @@ service Broker1Service {
          """.trimIndent(),
          projectionProvider = explodingProjectionProvider
       )
-      stub.addResponse("findPeople") { _, _ ->
-         throw OperationInvocationException("This service call failed", 503, mock { }, emptyList())
+      stub.addResponse("findPeople") { op, _ ->
+         throw OperationInvocationException("This service call failed", 503, RemoteCall(
+            service = OperationNames.serviceName(op.qualifiedName).fqn(),
+            address = "",
+            isFailed = true,
+            durationMs = 0,
+            exchange = EmptyExchangeData,
+            operation = OperationNames.operationName(op.qualifiedName),
+            response = null,
+            responseMessageType = ResponseMessageType.FULL,
+            responseTypeName = op.returnType.name,
+            timestamp = Instant.now()
+
+         ), emptyList())
       }
       assertFailsWith<UnresolvedTypeInQueryException> {
          vyne.query(

@@ -127,7 +127,7 @@ data class QueryContext(
 
    val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = ConcurrentHashMap()
 
-) : ProfilerOperation by profiler, FactBag by facts, QueryContextEventDispatcher, InPlaceQueryEngine {
+) : ProfilerOperation by profiler, FactBag by facts, QueryContextEventDispatcher by eventBroker, InPlaceQueryEngine {
 
    private val logger = KotlinLogging.logger {}
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
@@ -334,17 +334,6 @@ data class QueryContext(
       addToOperationResultCache: Boolean = true
    ): TypedInstance {
       return notifyOperationResult(operation.vertex1.value.toString(), result, callArgs, addToOperationResultCache)
-
-//      val (service, _) = OperationNames.serviceAndOperation(operation.vertex1.valueAsQualifiedName())
-//      val invokedService = schema.service(service)
-//      onServiceInvoked((invokedService))
-//      if (result.source is OperationResult) {
-//         eventBroker.reportRemoteOperationInvoked(result.source as OperationResult, this.queryId)
-//      }
-//      val operationCacheKey = ServiceInvocationCacheKey(operation.vertex1.value.toString(), callArgs)
-//      getTopLevelContext().operationCache[operationCacheKey] = result
-//      logger.debug { "Caching $operation [${operation.previousValue?.value} -> ${result.type.qualifiedName}]" }
-//      return result
    }
 
    fun notifyOperationResult(
@@ -357,9 +346,7 @@ data class QueryContext(
 
       val invokedService = schema.service(service)
       onServiceInvoked((invokedService))
-      if (result.source is OperationResult) {
-         eventBroker.reportRemoteOperationInvoked(result.source as OperationResult, this.queryId)
-      }
+
       if (addToOperationResultCache) {
          val cacheKey = ServiceInvocationCacheKey(operationName, callArgs)
          getTopLevelContext().operationCache[cacheKey] = result
@@ -491,7 +478,16 @@ interface CancelRequestHandler : QueryContextEventHandler {
    fun requestCancel() {}
 }
 
-object NoOpQueryContextEventDispatcher : QueryContextEventDispatcher
+object NoOpQueryContextEventDispatcher : QueryContextEventDispatcher {
+   override fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int) {
+   }
+
+   override fun requestCancel() {
+   }
+
+   override fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String) {
+   }
+}
 
 interface RemoteCallOperationResultHandler : QueryContextEventHandler {
    fun recordResult(operation: OperationResult, queryId: String)

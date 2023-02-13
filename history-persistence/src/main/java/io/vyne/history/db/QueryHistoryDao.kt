@@ -39,7 +39,9 @@ class QueryHistoryDao(
          logger.warn(e) { "Failed to persist lineage records, as a SQLIntegrityConstraintViolationException was thrown" }
       }
       logger.debug {
-         "Persistence batch of ${lineageRecords.size} LineageRecords (filtered to ${newRecords.size}) took ${
+         "Persisting batch of ${lineageRecords.size} LineageRecords for query ${
+            lineageRecords.map { it.queryId }.distinct()
+         } (filtered to ${newRecords.size}) took ${
             sw.elapsed(
                TimeUnit.MILLISECONDS
             )

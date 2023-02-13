@@ -8,12 +8,14 @@
   height: 100%;
   overflow: auto;
 }
+
 .sequence-diagram-container {
   display: flex;
   align-items: flex-start;
   flex-grow: 1;
   overflow: hidden;
 }
+
 app-sequence-diagram {
   display: block;
   height: 100%;
@@ -67,10 +69,10 @@ app-service-stats {
 }
 
 .badges {
-   .separator-slash {
-     margin: 0 0.5rem;
-   }
- }
+  .separator-slash {
+    margin: 0 0.5rem;
+  }
+}
 
 
 .operation {
@@ -134,5 +136,32 @@ app-operation-view {
   // resize correctly.  If this is set too high, flex-grow doesn't size to the rest of the space.
   // 100% doesn't work either.
   width: 10px;
+  flex-grow: 1;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid $light-purple-grey-300;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+
+  flex-grow: 1;
+
+  app-json-viewer {
+    flex-grow: 1;
+  }
+}
+
+.flex-split {
+  ::ng-deep {
+    .as-split-area {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+}
+
+.request-response-container {
   flex-grow: 1;
 }

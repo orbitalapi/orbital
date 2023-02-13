@@ -159,7 +159,6 @@ class QueryEventObserver(
 
       return queryResult.copy(
          results = queryResult.results
-
             .onEach { typedInstance ->
                activeQueryMonitor.incrementEmittedRecordCount(queryId = queryResult.queryResponseId)
                val event = TaxiQlQueryResultEvent(
