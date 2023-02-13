@@ -18,11 +18,17 @@ Get started quickly with Orbital.  Deploy a demo project, and integrate data sou
 
 {% /quick-links %}
 
+---
+
+## What is Orbital?
+
 Orbital is a data gateway that automates the integration, transformation and discovery of data from data sources (API's, databases, message brokers) across your enterprise.
 
 Orbital integrates on-the-fly, automatically adjusting as your data sources change.
 
 This is powered by rich semantic schemas, which infer how data across your organisation links together, and automate the integration and discovery of data.
+
+![](/images/network-diagram.png)
 
 ---
 
