@@ -78,9 +78,9 @@ export function NavPopover({display = 'md:hidden', className, ...props}) {
               </a>
             </li>
           </ul>
-          <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-200/10">
+          {/* <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-200/10">
             <ThemeSelect/>
-          </div>
+          </div> */}
         </div>
       </Dialog>
     </div>
@@ -161,11 +161,11 @@ export function Header({hasNav = false, navIsOpen, onNavToggle, title, section, 
               hasNav ? 'mx-4 lg:mx-0' : ''
             )}
           >
-            <div className="relative flex justify-between">
-              <div class="left">
+            <div className="relative flex justify-between items-center">
+              <div class="left mr-auto">
                 <Link href="/">
                   <a
-                    className="mr-3 flex-none w-[80px] overflow-hidden md:w-auto"
+                    className="mr-3 flex items-center w-[200px] overflow-hidden"
                     onContextMenu={(e) => {
                       e.preventDefault()
                       Router.push('/brand')
@@ -177,7 +177,7 @@ export function Header({hasNav = false, navIsOpen, onNavToggle, title, section, 
                 </Link>
               </div>
               <div class="right flex">
-                <div className="relative hidden lg: flex items-center ml-auto">
+                <div className="relative hidden md:flex items-center ml-auto">
                   <nav className="text-sm leading-6 font-semibold text-slate-700 dark:text-slate-200">
                     <ul className="flex space-x-8">
                       <NavItems/>
@@ -203,7 +203,7 @@ export function Header({hasNav = false, navIsOpen, onNavToggle, title, section, 
                   </div>
                 </div>
                 <SearchButton
-                  className="ml-auto text-slate-500 w-8 h-8 -my-1 flex items-center justify-center hover:text-slate-600 lg:hidden dark:text-slate-400 dark:hover:text-slate-300">
+                  className="ml-auto text-slate-500 w-8 h-8 -my-1 flex items-center justify-center hover:text-slate-600 md:hidden dark:text-slate-400 dark:hover:text-slate-300">
                   <span className="sr-only">Search</span>
                   <svg
                     width="24"
@@ -219,7 +219,7 @@ export function Header({hasNav = false, navIsOpen, onNavToggle, title, section, 
                     <circle cx="11" cy="11" r="6"/>
                   </svg>
                 </SearchButton>
-                <NavPopover className="ml-2 -my-1" display="lg:hidden"/>
+                <NavPopover className="ml-2 -my-1" display="md:hidden"/>
               </div>
             </div>
           </div>
