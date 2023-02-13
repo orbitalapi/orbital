@@ -1,4 +1,12 @@
-import { Component, ElementRef, Input, OnDestroy, ViewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  Input,
+  OnDestroy,
+  ViewChild
+} from '@angular/core';
 import { editor } from 'monaco-editor';
 
 
@@ -19,25 +27,42 @@ import * as monacoFeature7
 import * as monacoFeature8
   from 'monaco-editor/esm/vs/editor/standalone/browser/quickInput/standaloneQuickInputService.js';
 import { JSONPathFinder } from 'src/app/json-viewer/JsonPathFinder';
+import { Clipboard } from '@angular/cdk/clipboard';
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 import ITextModel = editor.ITextModel;
 
 @Component({
   selector: 'app-json-viewer',
   template: `
+    <app-panel-header *ngIf="showHeader" [title]="title">
+      <div class="spacer"></div>
+      <button (click)="applyFormat()"
+              tuiButton size="s" appearance="outline"
+              [disabled]="formatInProgress">{{ formatInProgress ? 'Formatting...' : 'Format'}}</button>
+      <button (click)="copyToClipboard()" tuiButton size="s" appearance="outline">{{ copyButtonText }}</button>
+    </app-panel-header>
     <div #codeEditorContainer class="code-editor"></div>`,
-  styleUrls: ['./json-viewer.component.scss']
+  styleUrls: ['./json-viewer.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class JsonViewerComponent implements OnDestroy {
 
-  constructor() {
+  formatLabel = 'Format'
+
+  private _json: string;
+  private pathFinder: JSONPathFinder
+  formatInProgress = false;
+  copyButtonText = 'Copy'
+  @Input()
+  title: string;
+  @Input()
+  showHeader = true;
+
+  constructor(private changeDetector: ChangeDetectorRef, private clipboard: Clipboard) {
     // This does nothing, but prevents tree-shaking
     const features = [monadoEditorAll, monacoFeature4, monacoFeature5, monacoFeature6, monacoFeature7, monacoFeature8, languageFeatureService];
 
   }
-
-  private _json: string;
-  private pathFinder: JSONPathFinder
 
   @Input()
   get json(): string {
@@ -72,6 +97,30 @@ export class JsonViewerComponent implements OnDestroy {
     }
   }
 
+  applyFormat() {
+    this.formatInProgress = true;
+    this.changeDetector.markForCheck();
+    this.monacoEditor.getAction('editor.action.formatDocument')
+      .run()
+      .then(result => {
+        this.formatInProgress = false;
+        this.changeDetector.markForCheck();
+      })
+  }
+
+  copyToClipboard() {
+    this.monacoEditor.getAction('editor.action.clipboardCopyAction')
+      .run()
+      .then(() => {
+        this.copyButtonText = 'Copied';
+        this.changeDetector.markForCheck();
+        setTimeout(() => {
+          this.copyButtonText = 'Copy';
+          this.changeDetector.markForCheck();
+        }, 2000);
+      });
+  }
+
   private createOrUpdateEditor(): void {
     if (!this.codeEditorContainer) {
       return;
@@ -84,7 +133,7 @@ export class JsonViewerComponent implements OnDestroy {
     } else {
       let monacoTextModel: ITextModel
       if (this.json) {
-        const modelUri = monaco.Uri.parse('inmemory://dummy.json'); // a made up unique URI for our model
+        const modelUri = monaco.Uri.parse(`inmemory://json-file-${Date.now()}.json`); // a made up unique URI for our model
         monacoTextModel = monaco.editor.createModel(this.json, 'json', modelUri)
       }
 
@@ -93,11 +142,23 @@ export class JsonViewerComponent implements OnDestroy {
         glyphMargin: true,
         automaticLayout: true,
         readOnly: false,
+        contextmenu: true,
         folding: true,
       });
 
+      // Add back the "Copy" action.  Shouldn't have to do this.
+      // but is a workaround as documented here:
+      // https://github.com/microsoft/monaco-editor/issues/2195#issuecomment-711471692
+      this.monacoEditor.addAction({
+        id: 'editor.action.clipboardCopyAction',
+        label: 'Copy',
+        run: () => {
+          this.monacoEditor?.focus()
+          document.execCommand('copy')
+        },
+      })
+
       this.monacoEditor.onDidChangeCursorPosition(e => {
-        console.log('Curson change', e)
         const position = this.pathFinder.getPath(e.position.lineNumber, e.position.column);
         console.log('New position: ' + position)
       });

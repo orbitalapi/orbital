@@ -5,7 +5,6 @@ import io.vyne.models.facts.FactBag
 import io.vyne.models.facts.ScopedFact
 import io.vyne.query.Projection
 import io.vyne.query.QueryContext
-import io.vyne.query.QueryResult
 import io.vyne.query.VyneQueryStatistics
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.toVyneQualifiedName
@@ -14,7 +13,14 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.flow.withIndex
 import kotlinx.coroutines.isActive
 import lang.taxi.accessors.CollectionProjectionExpressionAccessor
 import lang.taxi.types.ArrayType
@@ -62,7 +68,7 @@ class LocalProjectionProvider : ProjectionProvider {
                   cancel()
                }
                val projectionType = selectProjectionType(projection.type)
-               val (scopedFact, isProjectable) = projection.scope?.let { scope ->
+               val scopedFact = projection.scope?.let { scope ->
                   val emittedType = emittedResult.value.type
                   // Adding this guard clause.
                   // We're getting the incorrect type passed in.
@@ -70,17 +76,17 @@ class LocalProjectionProvider : ProjectionProvider {
                   // trying to project the wrong source type.
                   // TODO : Investigate the cause - I suspect it's coming from the Graph search strategy, when service invocation fails.
                   val isProjectable = when (scope.type) {
-                     is ArrayType -> (scope.type as ArrayType).memberType.isAssignableTo(emittedType.taxiType)
-                     is StreamType -> (scope.type as StreamType).type.isAssignableTo(emittedType.taxiType)
-                     else -> scope.type.isAssignableTo(emittedType.taxiType)
+                     is ArrayType -> emittedType.taxiType.isAssignableTo((scope.type as ArrayType).memberType)
+                     is StreamType -> emittedType.taxiType.isAssignableTo((scope.type as StreamType).type)
+                     else -> emittedType.taxiType.isAssignableTo(scope.type)
                   }
                   if (!isProjectable) {
                      val message =
-                        "Projecting has received an invalid type - expected to receive an instance of ${scope.type.toVyneQualifiedName().shortDisplayName} but received an instance of ${emittedResult.value.type.qualifiedName.shortDisplayName}.  This is an error upstream, but aborting projection now"
+                        "Projecting has received an invalid type - expected to receive an instance of ${scope.type.toVyneQualifiedName().shortDisplayName} but received an instance of ${emittedResult.value.type.qualifiedName.shortDisplayName}.  This is an error upstream."
                      logger.error { message }
                   }
-                  ScopedFact(scope, emittedResult.value) to isProjectable
-               } ?: (null to true)
+                  ScopedFact(scope, emittedResult.value)
+               } ?: null
 
                // If the projection scope was explicitly defined,
                // add the thing we're projecting as a specific scoped fact.

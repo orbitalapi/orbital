@@ -130,7 +130,8 @@ class RemoteQueryEventConsumerClient(
    }
 
    override fun recordResult(operation: OperationResult, queryId: String) {
-      val lineageRecords = resultRowPersistenceStrategy.createLineageRecords(listOf(operation), queryId)
+      val lineageRecords =
+         resultRowPersistenceStrategy.createLineageRecords(listOf(operation.asOperationReferenceDataSource()), queryId)
       if (operation.remoteCall.isFailed) {
          // emit a remoteCall record so that we can persist the failed call in REMOTE_CALL_RESPONSE
          resultRowPersistenceStrategy.createRemoteCallRecord(operation, queryId)?.let {

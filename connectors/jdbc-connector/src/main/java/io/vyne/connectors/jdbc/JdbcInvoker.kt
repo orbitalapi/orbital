@@ -13,6 +13,7 @@ import io.vyne.query.ConstructedQueryDataSource
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
+import io.vyne.query.SqlExchange
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Parameter
@@ -36,9 +37,9 @@ import java.time.Instant
  * where we're receiving a TypedInstance containing the VyneQL query, along with a datasource of ConstructedQuery.
  */
 class JdbcInvoker(
-    private val connectionFactory: JdbcConnectionFactory,
-    private val schemaProvider: SchemaProvider,
-    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper
+   private val connectionFactory: JdbcConnectionFactory,
+   private val schemaProvider: SchemaProvider,
+   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper
 ) :
    OperationInvoker {
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
@@ -50,7 +51,7 @@ class JdbcInvoker(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String?
+      queryId: String
    ): Flow<TypedInstance> {
       val (connectionConfig, jdbcTemplate) = getConnectionConfigAndTemplate(service)
       val schema = schemaProvider.schema
@@ -63,42 +64,45 @@ class JdbcInvoker(
       val stopwatch = Stopwatch.createStarted()
       val resultList = jdbcTemplate.queryForList(sql, paramMap)
       val elapsed = stopwatch.elapsed()
-      val datasource = buildDataSource(
+      val operationResult = buildOperationResult(
          service,
          operation,
          constructedQueryDataSource.inputs,
          sql,
          connectionConfig.address,
-         elapsed
+         elapsed,
+         recordCount = resultList.size
       )
-      return convertToTypedInstances(resultList, query, schema, datasource)
+      eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
+      return convertToTypedInstances(resultList, query, schema, operationResult.asOperationReferenceDataSource())
    }
 
-   private fun buildDataSource(
+   private fun buildOperationResult(
       service: Service,
       operation: RemoteOperation,
       parameters: List<TypedInstance>,
       sql: String,
       jdbcUrl: String,
       elapsed: Duration,
-   ): DataSource {
+      recordCount: Int
+   ): OperationResult {
 
       val remoteCall = RemoteCall(
          service = service.name,
          address = jdbcUrl,
          operation = operation.name,
          responseTypeName = operation.returnType.name,
-         method = "SELECT",
-         requestBody = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(
-            mapOf("sql" to sql)
-         ),
-         resultCode = 200, // Using HTTP status codes here, because not sure what else to use.
+         requestBody = sql,
          durationMs = elapsed.toMillis(),
          timestamp = Instant.now(),
          // If we implement streaming database queries, this will change
          responseMessageType = ResponseMessageType.FULL,
          // Feels like capturing the results are a bad idea.  Can revisit if there's a use-case
-         response = "Not captured"
+         response = null,
+         exchange = SqlExchange(
+            sql = sql,
+            recordCount = recordCount
+         )
       )
       return OperationResult.fromTypedInstances(
          parameters,
@@ -151,6 +155,7 @@ class JdbcInvoker(
          service.metadata(JdbcConnectorTaxi.Annotations.DatabaseOperation.NAME).params["connection"] as String
       return connectionName to connectionFactory.jdbcTemplate(connectionName)
    }
+
    private fun getConnectionConfigAndTemplate(service: Service): Pair<JdbcConnectionConfiguration, NamedParameterJdbcTemplate> {
       val connectionName =
          service.metadata(JdbcConnectorTaxi.Annotations.DatabaseOperation.NAME).params["connection"] as String

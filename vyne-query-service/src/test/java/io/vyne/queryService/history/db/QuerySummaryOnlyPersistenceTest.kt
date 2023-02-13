@@ -35,6 +35,8 @@ import kotlin.time.ExperimentalTime
       "vyne.schema.publicationMethod=LOCAL",
       "vyne.search.directory=./search/\${random.int}",
       "vyne.analytics.persistResults=false",
+      "vyne.analytics.persistRemoteCallMetadata=false",
+      "vyne.analytics.persistRemoteCallResponses=false",
       "spring.datasource.url=jdbc:h2:mem:testdbQuerySummaryOnlyPersistenceTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"]
 )
 class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {

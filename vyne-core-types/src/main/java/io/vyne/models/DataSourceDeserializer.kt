@@ -39,7 +39,7 @@ class DataSourceDeserializer : JsonDeserializer<DataSource>() {
       if (isRemoteCall) {
          val remoteCall = mapper.convertValue(rawMap["remoteCall"], RemoteCall::class.java)
          val inputs = (rawMap["inputs"] as List<Map<String, Any?>>).mapNotNull { mapToOperationParam(it) }
-         return OperationResult(remoteCall, inputs)
+         return OperationResult(remoteCall, inputs).asOperationReferenceDataSource()
       }
       return Provided
    }

@@ -115,11 +115,14 @@ class QueryHistoryDbWriter(
 
             override fun onNext(rows: Tuple2<Long, RemoteCallResponse>) {
                rows.let { remoteCallResponse ->
+                  if (!config.persistRemoteCallResponses) {
+                     return@let
+                  }
                   createdRemoteCallRecordIds.computeIfAbsent(remoteCallResponse.t2.responseId) {
                      try {
                         queryHistoryDao.saveRemoteCallResponse(remoteCallResponse.t2)
                      } catch (exception: Exception) {
-                        logger.warn { "Attempting to re-save an already saved Remote Call ${exception.message}" }
+                        logger.warn { "Persisting remote call failed: ${exception::class.simpleName} - ${exception.message}" }
                      }
                      remoteCallResponse.t2.responseId
                   }

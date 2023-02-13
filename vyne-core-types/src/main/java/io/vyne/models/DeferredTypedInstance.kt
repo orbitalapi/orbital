@@ -2,6 +2,7 @@ package io.vyne.models
 
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import io.vyne.utils.Ids
 import io.vyne.utils.ImmutableEquality
 import lang.taxi.expressions.LambdaExpression
 
@@ -20,6 +21,8 @@ class DeferredTypedInstance(
       this,
       DeferredTypedInstance::value
    )
+
+   override val nodeId: String = Ids.fastUuid()
 
    override fun hashCode(): Int = equality.hash()
    override fun equals(other: Any?): Boolean {

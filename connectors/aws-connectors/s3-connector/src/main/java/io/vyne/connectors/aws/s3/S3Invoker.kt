@@ -9,7 +9,6 @@ import io.vyne.connectors.calcite.VyneCalciteDataSource
 import io.vyne.connectors.convertToTypedInstances
 import io.vyne.connectors.jdbc.sql.dml.SelectStatementGenerator
 import io.vyne.connectors.resultType
-import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
 import io.vyne.models.csv.CsvAnnotationSpec
@@ -18,6 +17,7 @@ import io.vyne.models.csv.CsvFormatSpecAnnotation
 import io.vyne.models.format.FormatDetector
 import io.vyne.models.json.Jackson
 import io.vyne.query.ConstructedQueryDataSource
+import io.vyne.query.EmptyExchangeData
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
@@ -55,17 +55,19 @@ class S3Invoker(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String?): Flow<TypedInstance> {
+      queryId: String
+   ): Flow<TypedInstance> {
       val schema = schemaProvider.schema
       val awsConnection = fetchConnection(service)
       val bucketName = fetchBucket(operation)
 
-      val s3ConnectionConfiguration = AwsS3ConnectionConnectorConfiguration.fromAwsConnectionConfiguration(awsConnection, bucketName)
+      val s3ConnectionConfiguration =
+         AwsS3ConnectionConnectorConfiguration.fromAwsConnectionConfiguration(awsConnection, bucketName)
       logger.info { "AWS connection ${awsConnection.connectionName} with region ${awsConnection.region} found in configurations, using to access bucket $bucketName" }
       val taxiSchema = schema.taxi
       val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
       val query = Compiler(taxiQuery, importSources = listOf(taxiSchema)).queries().first()
-      val (sql, paramList) = SelectStatementGenerator(taxiSchema).toSql(query) { type -> type.toQualifiedName().typeName.toUpperCase()}
+      val (sql, paramList) = SelectStatementGenerator(taxiSchema).toSql(query) { type -> type.toQualifiedName().typeName.toUpperCase() }
       val paramMap = paramList.associate { param -> param.nameUsedInTemplate to param.value }
       val resultTypeQualifiedName = query.resultType()
       val resultType = schema.type(resultTypeQualifiedName.toVyneQualifiedName())
@@ -79,7 +81,7 @@ class S3Invoker(
       val stopwatch = Stopwatch.createStarted()
       val result = NamedParameterJdbcTemplate(dataSource).queryForList(sql, paramMap)
       val elapsed = stopwatch.elapsed()
-      val datasource = buildDataSource(
+      val operationResult = buildOperationResult(
          service,
          operation,
          constructedQueryDataSource.inputs,
@@ -87,34 +89,37 @@ class S3Invoker(
          s3ConnectionConfiguration.connectionName,
          elapsed
       )
-      return result.convertToTypedInstances(schema, datasource, resultTypeQualifiedName, dispatcher)
+      eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
+      return result.convertToTypedInstances(
+         schema,
+         operationResult.asOperationReferenceDataSource(),
+         resultTypeQualifiedName,
+         dispatcher
+      )
    }
 
-   private fun buildDataSource(
+   private fun buildOperationResult(
       service: Service,
       operation: RemoteOperation,
       parameters: List<TypedInstance>,
       sql: String,
       jdbcUrl: String,
       elapsed: Duration,
-   ): DataSource {
+   ): OperationResult {
 
       val remoteCall = RemoteCall(
          service = service.name,
          address = jdbcUrl,
          operation = operation.name,
          responseTypeName = operation.returnType.name,
-         method = "SELECT",
-         requestBody = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(
-            mapOf("sql" to sql)
-         ),
-         resultCode = 200, // Using HTTP status codes here, because not sure what else to use.
+         requestBody = sql,
          durationMs = elapsed.toMillis(),
          timestamp = Instant.now(),
          // If we implement streaming database queries, this will change
          responseMessageType = ResponseMessageType.FULL,
          // Feels like capturing the results are a bad idea.  Can revisit if there's a use-case
-         response = "Not captured"
+         response = null,
+         exchange = EmptyExchangeData
       )
       return OperationResult.fromTypedInstances(
          parameters,

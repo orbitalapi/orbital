@@ -15,6 +15,6 @@ interface OperationInvoker {
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String? = null
+      queryId: String
    ): Flow<TypedInstance>
 }

@@ -1,11 +1,14 @@
 package io.vyne
 
 import io.vyne.models.DataSourceMutatingMapper
+import io.vyne.models.DataSourceUpdater
 import io.vyne.models.OperationResult
+import io.vyne.models.OperationResultDataSourceWrapper
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedInstanceConverter
 import io.vyne.models.json.Jackson
+import io.vyne.query.HttpExchange
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
@@ -23,6 +26,7 @@ import io.vyne.schemas.fqn
 import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.map
 import mu.KotlinLogging
 import java.time.Instant
 
@@ -85,9 +89,16 @@ class StubService(
          durationMs = 0,
          response = Jackson.defaultObjectMapper.writeValueAsString(result),
          timestamp = Instant.now(),
-         responseMessageType = ResponseMessageType.FULL
+         responseMessageType = ResponseMessageType.FULL,
+         exchange = HttpExchange(
+            url = "https://fakeulr.com",
+            verb = "GET",
+            requestBody = "Fake request body",
+            responseCode = 200,
+            responseSize = 1000
+         )
       )
-      val dataSource = OperationResult.from(params, remoteCall)
+      val dataSource = OperationResultDataSourceWrapper(OperationResult.from(params, remoteCall))
       return result.map { typedInstance ->
          val updated = TypedInstanceConverter(DataSourceMutatingMapper(dataSource)).convert(typedInstance)
          TypedInstance.from(typedInstance.type, updated, schema, source = dataSource)
@@ -109,7 +120,7 @@ class StubService(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String?
+      queryId: String
    ): Flow<TypedInstance> {
       val paramDescription = parameters.joinToString { "${it.second.type.name.shortDisplayName} = ${it.second.value}" }
       logger.debug { "Invoking ${service.name} -> ${operation.name}($paramDescription)" }
@@ -128,19 +139,49 @@ class StubService(
       ) {
          throw IllegalArgumentException("No stub response or handler prepared for operation $stubResponseKey")
       }
-
       val stubResponse = when {
          responses.containsKey(stubResponseKey) -> {
             unwrapTypedCollections(responses[stubResponseKey]!!)
          }
+
          handlers.containsKey(stubResponseKey) -> {
             unwrapTypedCollections(handlers[stubResponseKey]!!.invoke(operation, parameters))
          }
+
          flowHandlers.containsKey(stubResponseKey) -> flowHandlers[stubResponseKey]!!.invoke(operation, parameters)
          else -> error("No handler found for $stubResponseKey")
       }
-      return stubResponse
+      return stubResponse.map { value ->
+         // Notify the event handler, so things like history and
+         // lineage work.
+         val operationResult = if (value.source is OperationResultDataSourceWrapper) {
+            (value.source as OperationResultDataSourceWrapper).operationResult
+         } else {
+            val remoteCall = RemoteCall(
+               service = service.name,
+               address = "http://fakeurl",
+               operation = operation.name,
+               responseTypeName = value.type.name,
+               durationMs = 1,
+               timestamp = Instant.now(),
+               responseMessageType = ResponseMessageType.FULL,
+               response = value,
+               exchange = HttpExchange(
+                  url = "http://fakeurl",
+                  verb = "GET",
+                  requestBody = """{ "stub" : "Not captured" }""",
+                  responseCode = 200,
+                  responseSize = 1000
+               )
+            )
+            OperationResult.from(parameters, remoteCall)
+         }
+
+         eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
+         DataSourceUpdater.update(value, operationResult.asOperationReferenceDataSource())
+      }
    }
+
 
    /**
     * If the provided TypedInstance is a TypedCollection, will unwrap it to a list

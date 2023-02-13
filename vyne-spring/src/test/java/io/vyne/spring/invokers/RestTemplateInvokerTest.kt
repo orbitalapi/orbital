@@ -9,7 +9,7 @@ import io.vyne.expectTypedObject
 import io.vyne.http.MockWebServerRule
 import io.vyne.http.respondWith
 import io.vyne.http.response
-import io.vyne.models.OperationResult
+import io.vyne.models.OperationResultReference
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
@@ -265,7 +265,7 @@ namespace vyne {
          result.map { it["countryName"] }
             .forEach { countryName ->
                countryName.source.failedAttempts.should.have.size(1)
-               countryName.source.failedAttempts.first().should.be.instanceof(OperationResult::class.java)
+               countryName.source.failedAttempts.first().should.be.instanceof(OperationResultReference::class.java)
 
             }
 
@@ -370,7 +370,7 @@ namespace vyne {
             result.map { it["countryName"] }
                .forEach { countryName ->
                   countryName.source.failedAttempts.should.have.size(1)
-                  countryName.source.failedAttempts.first().should.be.instanceof(OperationResult::class.java)
+                  countryName.source.failedAttempts.first().should.be.instanceof(OperationResultReference::class.java)
 
                }
 
@@ -403,7 +403,7 @@ namespace vyne {
             service, operation, listOf(
                paramAndType("vyne.ClientId", "myClientId", schema),
                paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
-            ), mock { }
+            ), mock { }, "testQuery"
          ).testIn(this)
 
          val typedInstance = turbine.expectTypedObject()

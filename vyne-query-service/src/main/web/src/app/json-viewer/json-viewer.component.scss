@@ -1,4 +1,27 @@
+@import "src/styles";
+
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
 .code-editor {
   width: 100%;
-  height: 100%;
+  flex-grow: 1;
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+app-panel-header {
+  button {
+    margin-left: 1rem;
+  }
+}
+
+button {
+  font-family: $headings-font;
+  font-weight: 300;
+  font-size: 0.9rem;
 }

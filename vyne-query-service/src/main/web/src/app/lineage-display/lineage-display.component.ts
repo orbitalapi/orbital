@@ -1,9 +1,12 @@
-import {Component, Input} from '@angular/core';
+import { Component, Input } from '@angular/core';
 import {
-  EvaluatedExpressionDataSource, FailedEvaluatedExpressionDataSource,
-  isEvaluatedExpressionDataSource, isFailedEvaluatedExpressionDataSource,
+  EvaluatedExpressionDataSource,
+  FailedEvaluatedExpressionDataSource,
+  isEvaluatedExpressionDataSource,
+  isFailedEvaluatedExpressionDataSource,
   isOperationResult,
-  OperationResultDataSource, QueryService,
+  OperationResultReference,
+  QueryService,
   RemoteCall,
 } from '../services/query.service';
 
@@ -12,16 +15,18 @@ import {
   isMappedSynonym,
   isTypedCollection,
   isTypeNamedInstance,
-  isUntypedInstance, ReferenceOrInstance, ReferenceRepository,
+  isUntypedInstance,
+  ReferenceRepository,
   SchemaGraphLink,
-  SchemaGraphNode, SchemaGraphNodeType,
+  SchemaGraphNode,
+  SchemaGraphNodeType,
   SchemaNodeSet,
   TypeNamedInstance
 } from '../services/schema';
-import {BaseGraphComponent} from '../inheritence-graph/base-graph-component';
-import {Subject} from 'rxjs';
-import {isNullOrUndefined, isString} from 'util';
-import {QueryResultMemberCoordinates} from '../query-panel/instance-selected-event';
+import { BaseGraphComponent } from '../inheritence-graph/base-graph-component';
+import { Subject } from 'rxjs';
+import { isNullOrUndefined } from 'util';
+import { QueryResultMemberCoordinates } from '../query-panel/instance-selected-event';
 
 type LineageElement = TypeNamedInstance | TypeNamedInstance[] | DataSource;
 
@@ -87,6 +92,68 @@ export class LineageDisplayComponent extends BaseGraphComponent {
     return this.buildGraph(startNode)
   }
 
+  serviceName(node: SchemaGraphNode): string {
+    const dataSource = node.value as OperationResultReference;
+    return dataSource.serviceDisplayName;
+  }
+
+
+  private buildExpressionNode(node: EvaluatedExpressionDataSource, dataSourceToNode: (dataSource: DataSource) => SchemaGraphNode, nodes: SchemaGraphNode[], links: SchemaGraphLink[], linkTo: SchemaGraphNode, instanceToNode: (instance: TypeNamedInstance) => SchemaGraphNode, nodeSet: SchemaNodeSet) {
+    const expressionDataSource = node as EvaluatedExpressionDataSource;
+    const dataSourceNode = dataSourceToNode(expressionDataSource);
+    this.appendLoadedDataSource(node);
+    nodes.push(dataSourceNode)
+    links.push({
+      source: dataSourceNode.nodeId,
+      target: linkTo.nodeId,
+      label: 'returned'
+    })
+
+
+    expressionDataSource.inputs.forEach(param => {
+      const inputNode = instanceToNode(param);
+      nodes.push(inputNode);
+      links.push({
+        source: inputNode.nodeId,
+        target: dataSourceNode.nodeId,
+        label: 'input'
+      });
+      const inputNodes = this.buildGraph(param, inputNode, []);
+      this.appendNodeSet(inputNodes, nodeSet);
+    })
+  }
+
+  nodeSelected(selectedNode: SchemaGraphNode) {
+    if (!isNullOrUndefined(selectedNode.value.dataSourceId)) {
+      const dataSourceId = selectedNode.value.dataSourceId;
+      if (!this.loadedDataSources[dataSourceId]) {
+        this.loadAdditionalDataSource(dataSourceId, selectedNode);
+      }
+    }
+  }
+
+  loadAdditionalDataSource(dataSourceId: string, linkTo: SchemaGraphNode) {
+    if (!this.instanceQueryCoordinates) {
+      return;
+    }
+    this.queryHistoryService.getLineageRecord(dataSourceId).subscribe(result => {
+      const source = result.dataSource;
+      this.appendLoadedDataSource(source);
+      const newNodes = this.buildGraph(source, linkTo)
+      this.appendNodeSet(newNodes, this.schemaGraph);
+      this.graphNodesChanged.next(true);
+    })
+  }
+
+  showServiceName(node): boolean {
+    return node.type === 'OPERATION' || node.type === 'MEMBER';
+  }
+
+  operationName(node): string {
+    const dataSource = node.value as OperationResultReference;
+    return dataSource.operationDisplayName
+  }
+
   private buildGraph(node: LineageElement, linkTo: SchemaGraphNode = null, nodesUnderConstruction: LineageElement[] = []): SchemaNodeSet {
     if (!node || !this.dataSource) {
       return this.emptyGraph();
@@ -148,13 +215,13 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       } as SchemaGraphNode;
     }
 
-    function remoteCallToNode(remoteCall: RemoteCall, dataSource: OperationResultDataSource): SchemaGraphNode {
+    function remoteCallToNode(dataSource: OperationResultReference): SchemaGraphNode {
       self.appendLoadedDataSource(dataSource);
-      const instanceId = nodeId(remoteCall, () => remoteCall.operationQualifiedName + new Date().getTime());
+      const instanceId = nodeId(dataSource, () => dataSource.operationName.fullyQualifiedName + new Date().getTime());
       return {
         id: instanceId,
         nodeId: instanceId,
-        label: remoteCall.operation,
+        label: dataSource.operationDisplayName,
         subHeader: 'Operation',
         value: dataSource,
         type: 'OPERATION'
@@ -238,8 +305,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       }
 
     } else if (isOperationResult(node)) {
-      const remoteCall = this.remoteCallRepository.getInstance(node.remoteCall);
-      const remoteCallNode = remoteCallToNode(remoteCall, node);
+      const remoteCallNode = remoteCallToNode(node);
       if (remoteCallNode.nodeId !== linkTo.nodeId) {
         nodes.push(remoteCallNode);
         links.push({
@@ -291,71 +357,6 @@ export class LineageDisplayComponent extends BaseGraphComponent {
     }
 
     return nodeSet;
-  }
-
-
-  private buildExpressionNode(node: EvaluatedExpressionDataSource, dataSourceToNode: (dataSource: DataSource) => SchemaGraphNode, nodes: SchemaGraphNode[], links: SchemaGraphLink[], linkTo: SchemaGraphNode, instanceToNode: (instance: TypeNamedInstance) => SchemaGraphNode, nodeSet: SchemaNodeSet) {
-    const expressionDataSource = node as EvaluatedExpressionDataSource;
-    const dataSourceNode = dataSourceToNode(expressionDataSource);
-    this.appendLoadedDataSource(node);
-    nodes.push(dataSourceNode)
-    links.push({
-      source: dataSourceNode.nodeId,
-      target: linkTo.nodeId,
-      label: 'returned'
-    })
-
-
-    expressionDataSource.inputs.forEach(param => {
-      const inputNode = instanceToNode(param);
-      nodes.push(inputNode);
-      links.push({
-        source: inputNode.nodeId,
-        target: dataSourceNode.nodeId,
-        label: 'input'
-      });
-      const inputNodes = this.buildGraph(param, inputNode, []);
-      this.appendNodeSet(inputNodes, nodeSet);
-    })
-  }
-
-  nodeSelected(selectedNode: SchemaGraphNode) {
-    if (!isNullOrUndefined(selectedNode.value.dataSourceId)) {
-      const dataSourceId = selectedNode.value.dataSourceId;
-      if (!this.loadedDataSources[dataSourceId]) {
-        this.loadAdditionalDataSource(dataSourceId, selectedNode);
-      }
-    }
-  }
-
-  loadAdditionalDataSource(dataSourceId: string, linkTo: SchemaGraphNode) {
-    if (!this.instanceQueryCoordinates) {
-      return;
-    }
-    this.queryHistoryService.getLineageRecord(dataSourceId).subscribe(result => {
-      const source = result.dataSource;
-      this.appendLoadedDataSource(source);
-      const newNodes = this.buildGraph(source, linkTo)
-      this.appendNodeSet(newNodes, this.schemaGraph);
-      this.graphNodesChanged.next(true);
-    })
-  }
-
-  showServiceName(node): boolean {
-    return node.type === 'OPERATION' || node.type === 'MEMBER';
-  }
-
-  serviceName(node: SchemaGraphNode): string {
-    const dataSource = node.value as OperationResultDataSource;
-    const remoteCall = this.remoteCallRepository.getInstance(dataSource.remoteCall);
-    const parts = remoteCall.service.split('.')
-    return parts[parts.length - 1];
-  }
-
-  operationName(node): string {
-    const dataSource = node.value as OperationResultDataSource;
-    const remoteCall = this.remoteCallRepository.getInstance(dataSource.remoteCall);
-    return remoteCall.operation
   }
 
 }

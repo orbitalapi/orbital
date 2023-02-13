@@ -19,6 +19,7 @@ import io.vyne.query.StreamingQueryCancelledEvent
 import io.vyne.query.TaxiQlQueryExceptionEvent
 import io.vyne.query.TaxiQlQueryResultEvent
 import io.vyne.query.VyneQueryStatisticsEvent
+import io.vyne.query.history.RemoteCallResponse
 import io.vyne.schemas.Schema
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -43,9 +44,9 @@ class PersistingQueryEventConsumer(
    private val queryHistoryDao: QueryHistoryDao,
    private val persistenceQueue: HistoryPersistenceQueue,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-   config: QueryAnalyticsConfig,
+   private val config: QueryAnalyticsConfig,
    private val scope: CoroutineScope,
-   schema:Schema
+   schema: Schema
 
 ) : QuerySummaryPersister(queryHistoryDao, queryId, schema), QueryEventConsumer, RemoteCallOperationResultHandler {
    val lastWriteTime = AtomicLong(System.currentTimeMillis())
@@ -113,9 +114,22 @@ class PersistingQueryEventConsumer(
       // However, Traversing all the OperationResult entries to get the
       // grandparent operation results from parameters is quite tricky.
       // Instead, we're capturing them out-of-band.
-      val lineageRecords = resultRowPersistenceStrategy.createLineageRecords(listOf(operation), queryId)
+      val lineageRecords =
+         resultRowPersistenceStrategy.createLineageRecords(listOf(operation.asOperationReferenceDataSource()), queryId)
       lineageRecords.forEach { persistenceQueue.storeLineageRecord(it) }
       appendOperationResultToSankeyChart(operation, this.sankeyViewBuilder)
+      recordOperationMetadata(operation, queryId)
+   }
+
+   private fun recordOperationMetadata(operation: OperationResult, queryId: String) {
+      persistenceQueue.storeRemoteCallResponse(
+         RemoteCallResponse.fromRemoteCall(
+            operation.remoteCall,
+            queryId,
+            objectMapper,
+            config.persistRemoteCallResponses
+         )
+      )
    }
 
    fun finalize() {

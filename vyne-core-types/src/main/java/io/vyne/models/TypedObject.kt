@@ -8,8 +8,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.toVyneQualifiedName
-import io.vyne.schemas.toVyneQualifiedName
-import lang.taxi.Equality
+import io.vyne.utils.Ids
 import lang.taxi.ImmutableEquality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
@@ -31,6 +30,8 @@ data class TypedObject(
          .joinToString(" - ")
          .hashCode()
    }
+   override val nodeId: String = Ids.fastUuid()
+
 
    override val value: Map<String, TypedInstance>
       get() = combinedValues

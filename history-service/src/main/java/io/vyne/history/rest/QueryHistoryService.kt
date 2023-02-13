@@ -1,9 +1,6 @@
 package io.vyne.history.rest
 
-import com.fasterxml.jackson.annotation.JsonRawValue
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.history.RemoteCallAnalyzer
 import io.vyne.history.api.QueryHistoryServiceRestApi
@@ -17,13 +14,13 @@ import io.vyne.history.db.RemoteCallResponseRepository
 import io.vyne.history.rest.export.ExportFormat
 import io.vyne.history.rest.export.QueryHistoryExporter
 import io.vyne.history.rest.export.RegressionPackProvider
-import io.vyne.models.OperationResult
 import io.vyne.query.QueryProfileData
 import io.vyne.query.ValueWithTypeName
 import io.vyne.query.history.LineageRecord
+import io.vyne.query.history.PartialRemoteCallResponse
 import io.vyne.query.history.QuerySankeyChartRow
 import io.vyne.query.history.QuerySummary
-import io.vyne.schemas.QualifiedName
+import io.vyne.query.history.toDto
 import io.vyne.schemas.fqn
 import io.vyne.security.VynePrivileges
 import io.vyne.utils.ExceptionProvider
@@ -98,6 +95,15 @@ class QueryHistoryService(
                querySummaryRecord
             }
          }
+   }
+
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+   @GetMapping("/api/query/history/clientId/{clientId}/calls")
+   fun getRemoteCallListByClientId(@PathVariable("clientId") clientQueryId: String): Mono<List<PartialRemoteCallResponse>> {
+      val historyRecord = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
+         ?: throw exceptionProvider.notFoundException("Client query Id $clientQueryId could not be found")
+      val responses = remoteCallResponseRepository.findByQueryId(historyRecord.queryId)
+      return Mono.just(responses)
    }
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
@@ -320,12 +326,8 @@ class QueryHistoryService(
 
 
    private fun getQueryProfileData(querySummary: QuerySummary): Mono<QueryProfileData> {
-      val lineageRecords = lineageRecordRepository.findAllByQueryIdAndDataSourceType(
-         querySummary.queryId,
-         OperationResult.NAME
-      )
-
-      val remoteCalls = lineageRecords.map { objectMapper.readValue<OperationResult>(it.dataSourceJson).remoteCall }
+      val remoteCalls = remoteCallResponseRepository.findByQueryId(querySummary.queryId)
+         .map { it.toDto() }
       val stats = remoteCallAnalyzer.generateStats(remoteCalls)
       val queryLineageData = sankeyChartRowRepository.findAllByQueryId(querySummary.queryId)
 

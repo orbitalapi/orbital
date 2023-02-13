@@ -2,6 +2,7 @@ package io.vyne.query
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import io.vyne.query.history.PartialRemoteCallResponse
 import io.vyne.query.history.QuerySankeyChartRow
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
@@ -9,9 +10,7 @@ import io.vyne.schemas.QualifiedNameAsStringSerializer
 import io.vyne.utils.log
 import java.math.BigDecimal
 import java.time.Clock
-import java.util.ArrayDeque
-import java.util.Deque
-import java.util.UUID
+import java.util.*
 
 // TODO Make it configurable https://projects.notional.uk/youtrack/issue/LENS-164
 // Disabling atm as the data is needed by the UI
@@ -189,6 +188,7 @@ object UnusedProfilerOperation : ProfilerOperation {
    }
 
 }
+
 @Deprecated("ProfilerOperation has not proved useful, and will be removed")
 interface ProfilerOperation {
    fun startChild(ownerInstance: Any, name: String, type: OperationType): ProfilerOperation =
@@ -260,11 +260,12 @@ interface ProfilerOperation {
 data class QueryProfileData(
    val queryId: String,
    val duration: Long,
-   val remoteCalls: List<RemoteCall> = emptyList(),
+   val remoteCalls: List<PartialRemoteCallResponse> = emptyList(),
    val timings: Map<OperationType, Long> = emptyMap(),
-   val operationStats:List<RemoteOperationPerformanceStats> = emptyList(),
+   val operationStats: List<RemoteOperationPerformanceStats> = emptyList(),
    val queryLineageData: List<QuerySankeyChartRow> = emptyList()
 )
+
 data class Result(
    val startTime: Long,
    val endTime: Long,
@@ -375,7 +376,6 @@ class DefaultProfilerOperation(
 }
 
 
-
 data class RemoteOperationPerformanceStats(
    @JsonSerialize(using = QualifiedNameAsStringSerializer::class)
    @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)
@@ -393,9 +393,22 @@ enum class ResponseCodeGroup {
    HTTP_3XX,
    HTTP_4XX,
    HTTP_5XX,
+
+   // For non-http traffic
+   SUCCESS,
+   FAIL,
+
    UNKNOWN;
 
    companion object {
+      fun fromSuccess(success: Boolean): ResponseCodeGroup {
+         return if (success) {
+            SUCCESS
+         } else {
+            FAIL
+         }
+      }
+
       fun groupFromCode(code: Int): ResponseCodeGroup {
          return when (code) {
             in 200..299 -> HTTP_2XX

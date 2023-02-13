@@ -1,21 +1,20 @@
-import {Component, Input} from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import {
   QueryProfileData,
-  QueryResult, QuerySankeyChartRow,
+  QuerySankeyChartRow,
   QueryService,
-  RemoteCall,
+  RemoteCallResponse,
   RemoteOperationPerformanceStats
 } from '../../../services/query.service';
-import {Observable} from 'rxjs';
-import {map} from 'rxjs/operators';
-import {Operation} from '../../../services/schema';
-import {isNullOrUndefined} from "util";
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { isNullOrUndefined } from 'util';
 
 @Component({
   selector: 'app-call-explorer',
   template: `
     <div class="toolbar">
-      <mat-button-toggle-group [(ngModel)]="displayMode"  data-e2e-id="profiler-call-operation-selection">
+      <mat-button-toggle-group [(ngModel)]="displayMode" data-e2e-id="profiler-call-operation-selection">
         <mat-button-toggle value="lineage" data-e2e-id="call-select">
           <img class="icon" src="assets/img/lineage-nodes.svg">
         </mat-button-toggle>
@@ -40,7 +39,7 @@ import {isNullOrUndefined} from "util";
                  [ngClass]="statusTextClassForRemoteCall(remoteCall)">{{ remoteCall.resultCode }}</div>
             <div class="pill duration">{{ remoteCall.durationMs }}ms</div>
             <div class="address"
-                 [matTooltip]="getPathOnly(remoteCall.address)">{{ getOperationName(remoteCall) }}</div>
+                 [matTooltip]="getPathOnly(remoteCall.address)">{{ remoteCall.displayName }}</div>
           </div>
         </div>
       </div>
@@ -54,6 +53,7 @@ import {isNullOrUndefined} from "util";
     <app-service-stats *ngIf="displayMode === 'stats'" [operationStats]="operationStats$ | async"></app-service-stats>
     <app-query-lineage *ngIf="displayMode === 'lineage'" [rows]="querySankeyChartRows$ | async"></app-query-lineage>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./call-explorer.component.scss']
 })
 export class CallExplorerComponent {
@@ -65,7 +65,7 @@ export class CallExplorerComponent {
 
   private _queryProfileData$: Observable<QueryProfileData>;
 
-  remoteCalls$: Observable<RemoteCall[]>;
+  remoteCalls$: Observable<RemoteCallResponse[]>;
 
   @Input()
   get queryProfileData$(): Observable<QueryProfileData> {
@@ -83,34 +83,37 @@ export class CallExplorerComponent {
   }
 
 
-  selectedOperation: RemoteCall;
+  selectedOperation: RemoteCallResponse;
   selectedOperationResult$: Observable<string>;
   displayMode: CallExplorerDisplayMode = 'lineage';
 
-  getOperationName(remoteCall: RemoteCall): string {
-    const serviceName = remoteCall.service.split('.').pop();
-    return `${serviceName}/${remoteCall.operation}`;
-  }
   getPathOnly(address: string) {
     // Hack - there's proabably a better way
     const parts: string[] = address.split('/');
     return '/' + parts.slice(3).join('/');
   }
 
-  selectOperation(operation: RemoteCall) {
+  selectOperation(operation: RemoteCallResponse) {
     this.selectedOperation = operation;
     this.selectedOperationResult$ = this.queryService.getRemoteCallResponse(operation.remoteCallId);
   }
 
-  statusTextClassForRemoteCall(remoteCall: RemoteCall): string {
+  statusTextClassForRemoteCall(remoteCall: RemoteCallResponse): string {
     return statusTextClass(remoteCall.resultCode);
   }
 }
 
 export type CallExplorerDisplayMode = 'sequence' | 'stats' | 'lineage';
 
-export function statusTextClass(resultCode: number): string {
-  const codeStart = resultCode.toString().substr(0, 1);
+export function statusTextClass(resultCode: string): string {
+
+  switch (resultCode) {
+    case 'OK':
+      return 'status-success';
+    case 'ERROR' :
+      return 'status-error';
+  }
+  const codeStart = resultCode.substr(0, 1);
   switch (codeStart) {
     case '2' :
       return 'status-success';
