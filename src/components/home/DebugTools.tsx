@@ -100,11 +100,11 @@ let tabs = {
 }
 
 
-function DebugTools() {
+function DebugTools({className = ''}) {
   const [tab, setTab] = useState('Cell lineage')
   return (
-    <section id="debug-tools" className="relative">
-      <img src={OrbitalLogo.src} className={'absolute blur-3xl opacity-25 right-0 -z-10'}/>
+    <section id="debug-tools" className={`relative dark:bg-slate-900 ${className}`}>
+      <img src={OrbitalLogo.src} className={'absolute blur-3xl opacity-25 right-0'}/>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
         <div className={'flex flex-col items-center'}>
           <Caption className="text-citrus text-center">Lineage & Monitoring</Caption>

@@ -232,6 +232,7 @@ const lines = [];
 
 export type QueryExampleProps = {
   highlightedSnippets: HighlightedCodeSnippetMap
+  className: String
 }
 
 function QueryExamples(props: QueryExampleProps) {
@@ -304,8 +305,8 @@ function QueryExamples(props: QueryExampleProps) {
 
 
   return (
-    <section id="query-examples" className="relative">
-      <img src={OrbitalLogo.src} className={'absolute blur-3xl opacity-25 -z-10'}/>
+    <section id="query-examples" className={`relative dark:bg-slate-900 ${props.className}`}>
+      <img src={OrbitalLogo.src} className={'absolute blur-3xl opacity-25'}/>
       <div className="max-w-7xl mx-auto px-4 sm:px-8 md:px-8">
         <div className={'flex flex-col items-center'}>
           <div className="max-w-3xl mx-auto flex flex-col items-center">
