@@ -17,9 +17,9 @@ import DebugTools from "@/components/home/DebugTools";
 function HeroSection() {
   return (
     <header className="relative">
-      <div className="px-4 sm:px-6 md:px-8 dark:bg-midnight-blue">
+      <div className="sm:px-6 md:px-8 dark:bg-midnight-blue">
         <Header allowThemeToggle={false}/>
-        <div className="font-brand relative max-w-8xl mx-auto pt-20 sm:pt-4 lg:pt-32 relative">
+        <div className="font-brand relative max-w-8xl mx-auto sm:pt-16 md:pt-32 relative">
           <div className={'flex'}>  
             <div className="max-w-2xl sm:pb-10 pb-[6rem]">
               <h1 className="font-light text-5xl md:text-6xl leading-[4rem] md:leading-[5rem] tracking-tight dark:text-white">
