@@ -77,12 +77,12 @@ export default function Home({publishYourApiHighlightedSnippets, queryExampleCod
         className="overflow-hidden dark:bg-midnight-blue">
         <HeroSection/>
       </div>
-      <div className="space-y-20 overflow-hidden sm:pt-32 md:pt-20 sm:mb-32 md:mb-40">
-        <QueryExamples highlightedSnippets={queryExampleCodeHighlightedSnippets}/>
+      <div className="overflow-hidden sm:mb-32 md:mb-40">
+        <QueryExamples highlightedSnippets={queryExampleCodeHighlightedSnippets} className="sm:pt-32 md:pt-20 pb-20"/>
         <PublishYourApi highlightedSnippets={publishYourApiHighlightedSnippets}/>
         {/*<HowVyneWorks/>*/}
 
-        <DebugTools/>
+        <DebugTools className="sm:pt-32 md:pt-20 pb-20" />
         {/*<DataPipelines/>*/}
         {/*<FeatureArticles tag="blog" title="Latest from the blog" subtitle="From our brains to your eyeballs."/>*/}
       </div>
