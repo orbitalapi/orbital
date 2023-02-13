@@ -78,9 +78,6 @@ export function NavPopover({display = 'md:hidden', className, ...props}) {
               </a>
             </li>
           </ul>
-          {/* <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-200/10">
-            <ThemeSelect/>
-          </div> */}
         </div>
       </Dialog>
     </div>
@@ -109,7 +106,7 @@ export function NavItems() {
   )
 }
 
-export function Header({hasNav = false, navIsOpen, onNavToggle, title, section, allowThemeToggle = true}) {
+export function Header({hasNav = false, navIsOpen, onNavToggle, title, section, allowThemeToggle = false, className = ''}) {
   let [isOpaque, setIsOpaque] = useState(false)
 
   useEffect(() => {
@@ -148,10 +145,11 @@ export function Header({hasNav = false, navIsOpen, onNavToggle, title, section, 
       </div> */}
       <div
         className={clsx(
-          'sticky top-0 z-40 w-full backdrop-blur flex-none transition-colors duration-500 lg:z-50',
+          'sticky top-[-1px] z-40 w-full backdrop-blur flex-none transition-colors duration-500 lg:z-50 ',
           isOpaque
             ? 'bg-white supports-backdrop-blur:bg-white/95 dark:bg-slate-900/75'
-            : 'bg-white/95 supports-backdrop-blur:bg-white/60 dark:bg-transparent'
+            : 'bg-white/95 supports-backdrop-blur:bg-white/60 dark:bg-transparent',
+          className
         )}
       >
         <div className="max-w-8xl mx-auto">
