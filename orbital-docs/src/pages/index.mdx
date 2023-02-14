@@ -1,22 +1,25 @@
----
-title: Getting started
-pageTitle: Orbital - Dynamic integration
-description: Connect all your APIs & data sources dynamically, without writing integration code 
----
+export const meta = {
+   title: 'Getting started',
+   pageTitle: 'Orbital Docs',
+   description: 'Connect all your APIs & data sources dynamically, without writing integration code'
+}
 
-Get started quickly with Orbital.  Deploy a demo project, and integrate data sources in just a few minutes. {% .lead %}
+import {QuickLink, QuickLinks} from "@/components/QuickLinks";
+import {Callout} from "@/components/Callout";
 
-{% quick-links %}
+Get started quickly with Orbital.  Deploy a demo project, and integrate data sources in just a few minutes.
 
-{% quick-link title="Installation" icon="installation" href="/" description="Step-by-step guides to setting up Orbital locally, and deploying to your cloud of choice." /%}
+<QuickLinks>
+   <QuickLink title='Installation' icon='installation' href='/'
+              description='Step-by-step guides to setting up Orbital locally, and deploying to your cloud of choice.'></QuickLink>
+   <QuickLink title="Connecting data sources" icon="presets" href="/"
+              description="Connect your APIs, Databases and Message Queues to Orbital."/>
+   <QuickLink title="Querying" icon="plugins" href="/"
+              description="Query for data through Orbital's API, and let Orbital handle the integration plumbing for you."/>
+   <QuickLink title="Data Pipelines" icon="theming" href="/"
+              description="Code-free ETL with Orbital's data pipelines, which can transform and enrich data automatically"/>
+</QuickLinks>
 
-{% quick-link title="Connecting data sources" icon="presets" href="/" description="Connect your APIs, Databases and Message Queues to Orbital." /%}
-
-{% quick-link title="Querying" icon="plugins" href="/" description="Query for data through Orbital's API, and let Orbital handle the integration plumbing for you." /%}
-
-{% quick-link title="Data Pipelines" icon="theming" href="/" description="Code-free ETL with Orbital's data pipelines, which can transform and enrich data automatically" /%}
-
-{% /quick-links %}
 
 ---
 
@@ -50,9 +53,11 @@ npm install @tailwindlabs/cache-advance
 
 Possimus saepe veritatis sint nobis et quam eos. Architecto consequatur odit perferendis fuga eveniet possimus rerum cumque. Ea deleniti voluptatum deserunt voluptatibus ut non iste. Provident nam asperiores vel laboriosam omnis ducimus enim nesciunt quaerat. Minus tempora cupiditate est quod.
 
-{% callout type="warning" title="Oh no! Something bad happened!" %}
-This is what a disclaimer message looks like. You might want to include inline `code` in it. Or maybe you’ll want to include a [link](/) in it. I don’t think we should get too carried away with other scenarios like lists or tables — that would be silly.
-{% /callout %}
+<Callout type='warning' title='Oh no! Something bad happened!'>
+   This is what a disclaimer message looks like. You might want to include inline `code` in it. Or maybe you’ll want to
+   include a [link](/) in it. I don’t think we should get too carried away with other scenarios like lists or tables —
+   that would be silly.
+</Callout>
 
 ### Configuring the library
 
@@ -70,10 +75,6 @@ export default {
 ```
 
 Possimus saepe veritatis sint nobis et quam eos. Architecto consequatur odit perferendis fuga eveniet possimus rerum cumque. Ea deleniti voluptatum deserunt voluptatibus ut non iste. Provident nam asperiores vel laboriosam omnis ducimus enim nesciunt quaerat. Minus tempora cupiditate est quod.
-
-{% callout title="You should know!" %}
-This is what a disclaimer message looks like. You might want to include inline `code` in it. Or maybe you’ll want to include a [link](/) in it. I don’t think we should get too carried away with other scenarios like lists or tables — that would be silly.
-{% /callout %}
 
 ---
 
