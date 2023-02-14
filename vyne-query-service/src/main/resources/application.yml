@@ -135,7 +135,7 @@ logging:
       org.apache.http: OFF
       com.netflix: WARN
       com.hazelcast: WARN
-      io.vyne: DEBUG
+      io.vyne: INFO
 #       Enable this to get graph debug schemas:
 #      io.vyne.query.GraphSearcher: TRACE
 #      io.vyne.query: DEBUG
