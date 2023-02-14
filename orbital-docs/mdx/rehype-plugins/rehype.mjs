@@ -1,4 +1,3 @@
-import rehypeHighlight from "rehype-highlight";
 import * as acorn from 'acorn'
 import {toString} from 'mdast-util-to-string'
 import {slugifyWithCounter} from '@sindresorhus/slugify'
@@ -76,7 +75,7 @@ function getSections(node) {
 
 
 export const rehypePlugins = [
-   rehypeHighlight,
+   // rehypeHighlight,
    // mdxAnnotations.rehype,
    // rehypeParseCodeBlocks,
    // rehypeShiki,

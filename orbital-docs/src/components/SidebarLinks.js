@@ -4,7 +4,7 @@ export const SidebarLinks = [
       title: 'Introduction',
       links: [
          {title: 'Quick start', href: '/'},
-         {title: 'Installation', href: '/docs/installation'},
+         {title: 'Overview', href: '/docs/introduction'},
       ],
    },
    {

@@ -70,6 +70,10 @@ function Header({navigation}) {
 }
 
 function useTableOfContents(tableOfContents) {
+   if(tableOfContents === undefined || tableOfContents === null) {
+      console.log('Did not receive a tableOfContents!')
+      return ;
+   }
    let [currentSection, setCurrentSection] = useState(tableOfContents[0]?.id)
 
    let getHeadings = useCallback((tableOfContents) => {
@@ -88,7 +92,7 @@ function useTableOfContents(tableOfContents) {
    }, [])
 
    useEffect(() => {
-      if (tableOfContents.length === 0) return
+      if (tableOfContents === undefined || tableOfContents.length === 0) return
       let headings = getHeadings(tableOfContents)
 
       function onScroll() {
@@ -212,7 +216,7 @@ export function Layout({children, title, tableOfContents}) {
             <div
                className="hidden xl:sticky xl:top-[4.5rem] xl:-mr-6 xl:block xl:h-[calc(100vh-4.5rem)] xl:flex-none xl:overflow-y-auto xl:py-16 xl:pr-6">
                <nav aria-labelledby="on-this-page-title" className="w-56">
-                  {tableOfContents.length > 0 && (
+                  {tableOfContents && tableOfContents.length > 0 && (
                      <>
                         <h2
                            id="on-this-page-title"
