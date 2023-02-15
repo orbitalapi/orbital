@@ -285,6 +285,7 @@ publish-orbital-to-docker-hub:
       microservice_vyne: vyne
       microservice_orbital: orbital-server
    before_script:
+      - mkdir -p station/target/classes
       - cp -a vyne-query-service/target/classes/static/. station/target/classes/static
 
 #publish-cask-to-docker-hub:
@@ -450,7 +451,7 @@ terraform-deploy-prod:
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.22
    tags:
       - docker-heavy
-   retry: 2
+#   retry: 2
    before_script:
       - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
       - PROJECT_VERSION=$(cat build-version.txt)
