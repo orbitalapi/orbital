@@ -82,11 +82,11 @@ default:
          # Be careful!  The each of these jar files can get big.
          # If the total size of all jar files being stored in artifacts
          # exceeds 1GB then builds can fail.
-         - "cask/target/cask.jar"
+#         - "cask/target/cask.jar"
          - "pipelines/pipeline-jet/target/pipeline-jet.jar"
          - "schema-server/target/schema-server.jar"
          - "vyne-analytics-server/target/vyne-analytics-server.jar"
-         #         - "vyne-query-service/target/vyne.zip"
+         - "vyne-query-service/target/vyne.zip"
          - "station/target/orbital.zip"
          - "test-cli/target/*.zip"
          - "taxi-playground/target/taxi-playground.jar"
@@ -428,6 +428,10 @@ terraform-deploy-dev:
       TF_VAR_environment: $TF_STATE_NAME_DEV
    rules:
       -  if: $CI_COMMIT_BRANCH == "develop"
+         when: manual
+      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+         when: never
+
 
 terraform-deploy-prod:
    extends: .terraform-deploy
@@ -528,6 +532,7 @@ terraform-deploy-dev-voyager:
          when: 'never'
       -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
          when: 'manual'
+      -  else: 'never'
 
 terraform-deploy-prod-voyager:
    extends: .terraform-deploy
