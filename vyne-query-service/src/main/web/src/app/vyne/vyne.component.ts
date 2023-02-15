@@ -1,15 +1,15 @@
-import {Component, OnInit} from '@angular/core';
-import {BreakpointObserver, Breakpoints} from '@angular/cdk/layout';
-import {BehaviorSubject, Observable} from 'rxjs';
-import {filter, map} from 'rxjs/operators';
-import {AppInfo, AppInfoService} from '../services/app-info.service';
-import {NavigationEnd, Router} from '@angular/router';
-import {SchemaNotificationService} from '../services/schema-notification.service';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {SystemAlert} from '../system-alert/system-alert.component';
-import {TypesService} from '../services/types.service';
-import {VyneUser, UserInfoService, VynePrivileges} from '../services/user-info.service';
-import {DatePipe} from "@angular/common";
+import { Component, OnInit } from '@angular/core';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
+import { AppInfo, AppInfoService } from '../services/app-info.service';
+import { NavigationEnd, Router } from '@angular/router';
+import { SchemaNotificationService } from '../services/schema-notification.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { SystemAlert } from '../system-alert/system-alert.component';
+import { TypesService } from '../services/types.service';
+import { UserInfoService, VynePrivileges, VyneUser } from '../services/user-info.service';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'vyne-app',
@@ -84,13 +84,13 @@ export class VyneComponent implements OnInit {
       testId: 'authentication-sidebar',
       requiredAuthority: VynePrivileges.ViewAuthenticationTokens
     },
-    {
-      title: 'Pipeline manager',
-      icon: 'assets/img/pipeline.svg',
-      route: 'pipeline-manager',
-      testId: 'pipeline-sidebar',
-      requiredAuthority: VynePrivileges.ViewPipelines
-    },
+    // {
+    //   title: 'Pipeline manager',
+    //   icon: 'assets/img/pipeline.svg',
+    //   route: 'pipeline-manager',
+    //   testId: 'pipeline-sidebar',
+    //   requiredAuthority: VynePrivileges.ViewPipelines
+    // },
 
   ].map(value => {
     return {

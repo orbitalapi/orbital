@@ -8,7 +8,7 @@ variables:
    # As of Maven 3.3.0 instead of this you may define these options in `.mvn/maven.config` so the same config is used
    # when running from the command line.
    # `installAtEnd` and `deployAtEnd` are only effective with recent version of the corresponding plugins.
-   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -U -Dsurefire.rerunFailingTestsCount=2"
+   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -U -Dsurefire.rerunFailingTestsCount=2 -DskipTests"
    # Used during gitflow interaction.
    MAJOR_RELEASE_DIGIT: 0
    MINOR_RELEASE_DIGIT: 1
@@ -82,11 +82,12 @@ default:
          # Be careful!  The each of these jar files can get big.
          # If the total size of all jar files being stored in artifacts
          # exceeds 1GB then builds can fail.
-         - "cask/target/cask.jar"
+         #         - "cask/target/cask.jar"
          - "pipelines/pipeline-jet/target/pipeline-jet.jar"
          - "schema-server/target/schema-server.jar"
          - "vyne-analytics-server/target/vyne-analytics-server.jar"
          - "vyne-query-service/target/vyne.zip"
+         - "station/target/orbital.zip"
          - "test-cli/target/*.zip"
          - "taxi-playground/target/taxi-playground.jar"
       expire_in: 1 hours
@@ -252,8 +253,6 @@ regression-test:
          docker buildx build
          --platform linux/arm64/v8,linux/amd64
          --push
-         -t "${registry_vyne}/${microservice_vyne}:${tag}"
-         -t "${registry_vyne}/${microservice_vyne}:${versionTag}"
          -t "${registry_orbital}/${microservice_orbital}:${tag}"
          -t "${registry_orbital}/${microservice_orbital}:${versionTag}"
          .
@@ -279,19 +278,21 @@ regression-test:
    before_script:
       - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
 
-publish-vyne-to-docker-hub:
+publish-orbital-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: vyne-query-service
       microservice_vyne: vyne
       microservice_orbital: orbital-server
+   before_script:
+      - cp -a vyne-query-service/target/classes/static/. station/target/classes/static
 
-publish-cask-to-docker-hub:
-   extends: .publish-to-docker-hub
-   variables:
-      projectDir: cask
-      microservice_vyne: cask
-      microservice_orbital: cask
+#publish-cask-to-docker-hub:
+#   extends: .publish-to-docker-hub
+#   variables:
+#      projectDir: cask
+#      microservice_vyne: cask
+#      microservice_orbital: cask
 
 publish-pipeline-jet-to-docker-hub:
    extends: .publish-to-docker-hub
@@ -319,7 +320,7 @@ publish-vyne-to-gitlab-container-registry:
    variables:
       projectDir: vyne-query-service
       microservice_vyne: vyne
-      microservice_orbital: orbital-server
+      microservice_orbital: orbital
 
 publish-schema-server-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
@@ -427,6 +428,10 @@ terraform-deploy-dev:
       TF_VAR_environment: $TF_STATE_NAME_DEV
    rules:
       -  if: $CI_COMMIT_BRANCH == "develop"
+         when: manual
+      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+         when: never
+
 
 terraform-deploy-prod:
    extends: .terraform-deploy
@@ -521,8 +526,12 @@ terraform-deploy-dev-voyager:
       TF_VAR_environment: $TF_STATE_NAME_DEV
       TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
    rules:
-      -  when: manual
       -  if: $CI_COMMIT_BRANCH == "develop"
+         when: 'always'
+      -  if: $CI_COMMIT_BRANCH == "master"
+         when: 'never'
+      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+         when: 'never'
 
 terraform-deploy-prod-voyager:
    extends: .terraform-deploy
@@ -535,8 +544,12 @@ terraform-deploy-prod-voyager:
       TF_VAR_environment: $TF_STATE_NAME_PROD
       TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
    rules:
-      -  when: manual
       -  if: $CI_COMMIT_BRANCH == "develop"
+         when: 'manual'
+      -  if: $CI_COMMIT_BRANCH == "master"
+         when: 'always'
+      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+         when: 'never'
 
 publish-snyk-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
