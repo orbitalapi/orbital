@@ -287,12 +287,12 @@ publish-orbital-to-docker-hub:
    before_script:
       - cp -a vyne-query-service/target/classes/static/. station/target/classes/static
 
-publish-cask-to-docker-hub:
-   extends: .publish-to-docker-hub
-   variables:
-      projectDir: cask
-      microservice_vyne: cask
-      microservice_orbital: cask
+#publish-cask-to-docker-hub:
+#   extends: .publish-to-docker-hub
+#   variables:
+#      projectDir: cask
+#      microservice_vyne: cask
+#      microservice_orbital: cask
 
 publish-pipeline-jet-to-docker-hub:
    extends: .publish-to-docker-hub
