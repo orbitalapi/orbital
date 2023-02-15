@@ -24,13 +24,11 @@ const dlv = require('dlv')
 const Prism = require('prismjs')
 
 const fallbackLayouts = {
-  'src/pages/docs/**/*': ['@/layouts/DocumentationLayout', 'DocumentationLayout'],
 }
 
 const fallbackDefaultExports = {
-  'src/pages/{docs,components}/**/*': ['@/layouts/ContentsLayout', 'ContentsLayout'],
+  'src/pages/{docs,components}/**/*': ['@/layouts/DocsLayout', 'DocsLayout'],
   'src/pages/blog/**/*': ['@/layouts/BlogPostLayout', 'BlogPostLayout'],
-  'src/pages/showcase/**/*': ['@/layouts/ShowcaseLayout', 'ShowcaseLayout'],
 }
 
 const fallbackGetStaticProps = {
