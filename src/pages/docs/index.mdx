@@ -1,22 +1,23 @@
-export const meta = {
-   title: 'Getting started',
-   pageTitle: 'Orbital Docs',
-   description: 'Connect all your APIs & data sources dynamically, without writing integration code'
-}
-
+import {ImageWithCaption} from "@/components/ImageWithCaption";
 import {QuickLink, QuickLinks} from "@/components/QuickLinks";
+import NetworkDiagram from './network-diagram.png';
+export const meta = {
+  title: 'Getting started',
+  pageTitle: 'Orbital Docs',
+  description: 'Connect all your APIs & data sources dynamically, without writing integration code'
+}
 
 Get started quickly with Orbital.  Deploy a demo project, and integrate data sources in just a few minutes.
 
 <QuickLinks>
-   <QuickLink title='Installation' icon='installation' href='/'
-              description='Step-by-step guides to setting up Orbital locally, and deploying to your cloud of choice.'></QuickLink>
-   <QuickLink title="Connecting data sources" icon="presets" href="/"
-              description="Connect your APIs, Databases and Message Queues to Orbital."/>
-   <QuickLink title="Querying" icon="plugins" href="/"
-              description="Query for data through Orbital's API, and let Orbital handle the integration plumbing for you."/>
-   <QuickLink title="Data Pipelines" icon="theming" href="/"
-              description="Code-free ETL with Orbital's data pipelines, which can transform and enrich data automatically"/>
+  <QuickLink title='Installation' icon='installation' href='/'
+             description='Step-by-step guides to setting up Orbital locally, and deploying to your cloud of choice.'></QuickLink>
+  <QuickLink title="Connecting data sources" icon="presets" href="/"
+             description="Connect your APIs, Databases and Message Queues to Orbital."/>
+  <QuickLink title="Querying" icon="plugins" href="/"
+             description="Query for data through Orbital's API, and let Orbital handle the integration plumbing for you."/>
+  <QuickLink title="Data Pipelines" icon="theming" href="/"
+             description="Code-free ETL with Orbital's data pipelines, which can transform and enrich data automatically"/>
 </QuickLinks>
 
 
@@ -31,7 +32,7 @@ Orbital integrates on-the-fly, automatically adjusting as your data sources chan
 
 This is powered by rich semantic schemas, which infer how data across your organisation links together, and automate the integration and discovery of data.
 
-![Network diagram](/img/network-diagram.png)
+<ImageWithCaption src={NetworkDiagram.src} addLightBackground/>
 
 ---
 
@@ -42,6 +43,8 @@ Get Oribtal deployed locally, quickly:
 ```bash
 docker run -p 9022:9022 orbitalhq/orbital
 ```
+
+Then visit [https://localhost:9022](https://localhost:9022) in your browser.
 
 ## Take a tutorial
 

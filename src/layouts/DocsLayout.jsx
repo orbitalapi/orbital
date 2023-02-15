@@ -159,7 +159,7 @@ export function DocsLayout({children, tableOfContents, meta, slug}) {
     <>
       {isHomePage && <Hero/>}
 
-      <div className="relative mx-auto flex max-w-8xl justify-center sm:px-2 lg:px-8 xl:px-12">
+      <div className="relative mx-auto flex max-w-[96rem] justify-center sm:px-2 lg:px-8 xl:px-12">
         <div className="hidden lg:relative lg:block lg:flex-none">
           <div className="absolute inset-y-0 right-0 w-[50vw] bg-slate-50 dark:hidden"/>
           <div
@@ -243,15 +243,15 @@ export function DocsLayout({children, tableOfContents, meta, slug}) {
                   {tableOfContents.map((section) => (
                     <li key={section.id}>
                       <h3>
-                        <Link
-                          href={`#${section.slug}`}
-                          className={clsx(
-                            isActive(section)
-                              ? 'text-sky-500'
-                              : 'font-normal text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
-                          )}
-                        >
-                          {section.title}
+                        <Link href={`#${section.slug}`}>
+                          <a
+                            className={clsx(
+                              isActive(section)
+                                ? 'text-sky-500'
+                                : 'font-normal text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+                            )}
+                          >{section.title}</a>
+
                         </Link>
                       </h3>
                       {section.children.length > 0 && (
@@ -260,16 +260,15 @@ export function DocsLayout({children, tableOfContents, meta, slug}) {
                           className="mt-2 space-y-3 pl-5 text-slate-500 dark:text-slate-400"
                         >
                           {section.children.map((subSection) => (
-                            <li key={subSection.id}>
+                            <li key={subSection.slug}>
                               <Link
-                                href={`#${subSection.id}`}
-                                className={
+                                href={`#${subSection.slug}`}
+                              >
+                                <a className={
                                   isActive(subSection)
                                     ? 'text-sky-500'
                                     : 'hover:text-slate-600 dark:hover:text-slate-300'
-                                }
-                              >
-                                {subSection.title}
+                                }>{subSection.title}</a>
                               </Link>
                             </li>
                           ))}
