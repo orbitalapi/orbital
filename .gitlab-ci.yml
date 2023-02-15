@@ -522,8 +522,12 @@ terraform-deploy-dev-voyager:
       TF_VAR_environment: $TF_STATE_NAME_DEV
       TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
    rules:
-      -  when: manual
       -  if: $CI_COMMIT_BRANCH == "develop"
+         when: 'always'
+      -  if: $CI_COMMIT_BRANCH == "master"
+         when: 'never'
+      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+         when: 'manual'
 
 terraform-deploy-prod-voyager:
    extends: .terraform-deploy
@@ -536,8 +540,12 @@ terraform-deploy-prod-voyager:
       TF_VAR_environment: $TF_STATE_NAME_PROD
       TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
    rules:
-      -  when: manual
       -  if: $CI_COMMIT_BRANCH == "develop"
+         when: 'manual'
+      -  if: $CI_COMMIT_BRANCH == "master"
+         when: 'always'
+      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+         when: 'never'
 
 publish-snyk-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
