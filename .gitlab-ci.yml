@@ -376,7 +376,12 @@ publish-voyager:
       microservice: taxi-playground
    when: manual
 
-
+publish-pipelines-to-gitlab-container-registry:
+   extends: .publish-to-gitlab-container-registry
+   variables:
+      projectDir: pipelines/pipeline-jet
+      microservice_vyne: pipeline
+      microservice_orbital: pipelines
 
 terraform-fmt:
    extends: .terraform:fmt
