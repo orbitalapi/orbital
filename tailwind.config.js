@@ -11,7 +11,7 @@ module.exports = {
   theme: {
     // `demo-*` screens are used for the "mobile-first" responsive demo
     screens: {
-      sm: '640px',
+      sm: { max: '767px' },
       'demo-sm': '720px',
       md: '768px',
       lg: '1024px',

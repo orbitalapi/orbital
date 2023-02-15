@@ -33,13 +33,13 @@ export class PricingPageTemplate extends React.Component {
    render() {
       return (
          <div>
-            <div className="relative bg-gradient-to-r from-darkblue-900 to-darkblue-700 text-gray-100">
+            <div className="relative dark:bg-midnight-blue text-gray-100">
                {/* Overlapping background */}
                <div aria-hidden="true" className="hidden absolute w-full h-6 bottom-0 lg:block"/>
 
                <div className="relative max-w-2xl mx-auto pt-16 px-4 text-center sm:pt-32 sm:px-6 lg:max-w-7xl lg:px-8">
                   <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-6xl">
-                     <span className="block lg:inline">Rediscover your data.</span>
+                     <span className="block lg:inline"><span className="text-citrus">Rediscover</span> your data.</span>
                   </h1>
                   <p className="mt-4 text-xl text-gray-100">
                      Get started building now, then add a plan to go live.
@@ -49,26 +49,26 @@ export class PricingPageTemplate extends React.Component {
                <h2 className="sr-only">Plans</h2>
 
                {/* Cards */}
-               <div className="relative mt-8 max-w-2xl mx-auto px-4 pb-8 sm:mt-12 sm:px-6 lg:max-w-7xl lg:px-8 lg:pb-0">
+               <div className="relative max-w-2xl mx-auto mt-20 px-4 pb-8 sm:px-6 lg:max-w-7xl lg:px-8 lg:pb-0">
                   {/* Decorative background */}
                   <div
                      aria-hidden="true"
                      className="hidden absolute top-4 bottom-6 left-8 right-8 inset-0 bg-darkblue-700 rounded-tl-lg rounded-tr-lg lg:block"
                   />
 
-            <div className="relative space-y-6 lg:space-y-0 lg:grid lg:grid-cols-3">
+               <div className="relative space-y-6 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
                      {plans.map((plan) => (
                         <div
                            key={plan.title}
                            className={classNames(
-                              plan.featured ? 'bg-slate-800 shadow-lg shadow-aqua/50 border-aqua border' : 'bg-darkblue-600 lg:bg-transparent',
-                              'pt-6 px-6 pb-9 rounded-lg  lg:pt-12'
+                              plan.featured ? 'bg-white/5 ring-aqua ring-2 shadow-lg shadow-aqua/50' : 'bg-darkblue-600 lg:bg-transparent border-white border',
+                              'pt-6 px-6 pb-9 rounded-3xl lg:pt-12'
                            )}
                         >
                            <div>
                               <h3
                                  className={classNames(
-                                    plan.featured ? 'text-darkblue-700' : 'text-sky-500',
+                                    plan.featured ? 'text-darkblue-700' : 'text-aqua',
                                     'text-sm font-semibold uppercase tracking-wide'
                                  )}
                               >
@@ -86,12 +86,12 @@ export class PricingPageTemplate extends React.Component {
                                     </div>}
                               </div>
                               <div
-                                 className="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between lg:flex-col lg:items-start">
+                                 className="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between lg:flex-col lg:items-start mt-4">
                                  <a
                                     href={plan.ctaLink}
                                     className={classNames(
                                        plan.featured
-                                          ? 'bg-pink-500 text-white hover:bg-pink-200'
+                                          ? 'bg-citrus text-midnight-blue hover:bg-citrus-300'
                                           : 'border-white text-white hover:bg-gray-400',
                                        'mt-6 w-full inline-block py-2 px-8 border border-transparent rounded-md shadow-sm text-center text-sm font-medium sm:mt-0 sm:w-auto lg:mt-6 lg:w-full'
                                     )}
@@ -104,7 +104,7 @@ export class PricingPageTemplate extends React.Component {
                            <ul
                               className={classNames(
                                  plan.featured
-                                    ? 'border-gray-500 divide-slate-800'
+                                    ? 'border-gray-500 divide-gray-500'
                                     : 'border-gray-500 divide-gray-500 divide-opacity-75',
                                  'mt-7 border-t divide-y lg:border-t-0'
                               )}
@@ -151,7 +151,7 @@ export class PricingPageTemplate extends React.Component {
                            )}
                         >
                            <h3
-                              className={classNames(plan.featured ? 'text-gray-600' : 'text-gray-900', 'text-sm font-bold')}>
+                              className={classNames(plan.featured ? 'text-citrus' : 'text-white', 'text-sm font-bold')}>
                               {plan.title}
                            </h3>
                            <p className="mt-2 text-sm text-gray-500">{plan.description}</p>
@@ -163,7 +163,7 @@ export class PricingPageTemplate extends React.Component {
                               <span key={group.title}>
                       {
                          groupIndex != 0 &&
-                         <h4 className="mt-10 text-sm font-bold text-gray-900">{group.title}</h4>
+                         <h4 className="mt-10 text-sm font-bold text-aqua">{group.title}</h4>
                       }
 
                                  <div className={"relative" + (groupIndex != 0 ? " mt-6" : "")}>
@@ -173,7 +173,7 @@ export class PricingPageTemplate extends React.Component {
                           <div
                              className={classNames(
                                 plan.featured ? 'shadow-md' : 'shadow',
-                                'absolute right-0 w-1/2 h-full bg-white rounded-lg'
+                                'absolute right-0 w-1/2 h-full bg-white/5 rounded-lg'
                              )}
                           />
                         </div>
@@ -181,18 +181,18 @@ export class PricingPageTemplate extends React.Component {
                         <div
                            className={classNames(
                               plan.featured ? 'ring-2 ring-lightblue-400 shadow-md' : 'ring-1 ring-black ring-opacity-5 shadow',
-                              'relative py-3 px-4 bg-white rounded-lg sm:p-0 sm:bg-transparent sm:rounded-none sm:ring-0 sm:shadow-none'
+                              'relative py-3 px-4 bg-white/5 rounded-lg sm:p-0 sm:bg-transparent sm:rounded-none sm:ring-0 sm:shadow-none'
                            )}
                         >
                           <dl className="divide-y divide-gray-200">
                             {group.features.map((feature) => (
                                <div key={feature.title} className="py-3 flex justify-between sm:grid sm:grid-cols-2">
-                                  <dt className="text-sm font-medium text-gray-600 sm:pr-4">{feature.title}</dt>
+                                  <dt className="text-sm font-medium text-white sm:pr-4">{feature.title}</dt>
                                   <dd className="flex items-center justify-end sm:px-4 sm:justify-center">
                                      {typeof feature.tiers[mobilePlanIndex].value === 'string' ? (
                                         <span
                                            className={classNames(
-                                              feature.tiers[mobilePlanIndex].featured ? 'text-lightblue-300' : 'text-gray-900',
+                                              feature.tiers[mobilePlanIndex].featured ? 'text-white' : 'text-white',
                                               'text-sm font-medium'
                                            )}
                                         >
@@ -201,7 +201,7 @@ export class PricingPageTemplate extends React.Component {
                                      ) : (
                                         <>
                                            {feature.tiers[mobilePlanIndex].value === true ? (
-                                              <CheckIcon className="mx-auto h-5 w-5 text-lightblue-400"
+                                              <CheckIcon className="mx-auto h-5 w-5 text-white"
                                                          aria-hidden="true"/>
                                            ) : (
                                               <XMarkIcon className="mx-auto h-5 w-5 text-grey-200" aria-hidden="true"/>

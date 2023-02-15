@@ -97,6 +97,7 @@ export default function App({Component, pageProps, router}) {
             navIsOpen={navIsOpen}
             onNavToggle={(isOpen) => setNavIsOpen(isOpen)}
             title={meta.title}
+            className="sm:px-6 md:px-8"
           />
         )}
         <Layout {...layoutProps}>

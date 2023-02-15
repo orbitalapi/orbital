@@ -160,7 +160,7 @@ export function DocsLayout({children, tableOfContents, meta, slug}) {
       {isHomePage && <Hero/>}
 
       <div className="relative mx-auto flex max-w-[96rem] justify-center sm:px-2 lg:px-8 xl:px-12">
-        <div className="hidden lg:relative lg:block lg:flex-none">
+        <div className="hidden md:relative md:block md:flex-none">
           <div className="absolute inset-y-0 right-0 w-[50vw] bg-slate-50 dark:hidden"/>
           <div
             className="absolute top-16 bottom-0 right-0 hidden h-12 w-px bg-gradient-to-t from-slate-800 dark:block"/>
@@ -173,7 +173,7 @@ export function DocsLayout({children, tableOfContents, meta, slug}) {
             />
           </div>
         </div>
-        <div className="min-w-0 max-w-2xl flex-auto px-4 py-16 lg:max-w-none lg:pr-0 lg:pl-8 xl:px-16">
+        <div className="min-w-0 max-w-2xl flex-auto px-4 py-16 lg:max-w-none lg:pr-0 lg:pl-8 md:px-16">
           <article>
             {(title || section) && (
               <header className="mb-9 space-y-1">
@@ -229,7 +229,7 @@ export function DocsLayout({children, tableOfContents, meta, slug}) {
           </dl>
         </div>
         <div
-          className="hidden xl:sticky xl:top-[4.5rem] xl:-mr-6 xl:block xl:h-[calc(100vh-4.5rem)] xl:flex-none xl:overflow-y-auto xl:py-16 xl:pr-6">
+          className="hidden md:sticky md:top-[4.5rem] md:-mr-6 md:block md:h-[calc(100vh-4.5rem)] md:flex-none md:overflow-y-auto md:py-16 md:pr-6">
           <nav aria-labelledby="on-this-page-title" className="w-56">
             {tableOfContents && tableOfContents.length > 0 && (
               <>

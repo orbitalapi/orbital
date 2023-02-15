@@ -1,9 +1,9 @@
 export function Tabs({tabs, selected, onChange, className, iconClassName}) {
   return (
-    <div className="flex overflow-auto -mx-4 sm:mx-0">
+    <div className="flex overflow-auto sm:mx-0 w-full">
       <ul
-        className="flex-none inline-grid gap-x-2 px-4 sm:px-0 xl:gap-x-6"
-        style={{gridTemplateColumns: `repeat(${Object.keys(tabs).length}, minmax(6rem, 1fr))`}}
+        className="flex-none inline-grid gap-x-2 px-4 sm:px-0 gap-y-8 xl:gap-x-6 w-full"
+        style={{gridTemplateColumns: `repeat(auto-fit, minmax(7rem, 1fr))`}}
       >
         {Object.entries(tabs).map(([name, icon]) => (
           <li key={name}>
