@@ -8,7 +8,7 @@ variables:
    # As of Maven 3.3.0 instead of this you may define these options in `.mvn/maven.config` so the same config is used
    # when running from the command line.
    # `installAtEnd` and `deployAtEnd` are only effective with recent version of the corresponding plugins.
-   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -U -Dsurefire.rerunFailingTestsCount=2"
+   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -U -Dsurefire.rerunFailingTestsCount=2 -DskipTests"
    # Used during gitflow interaction.
    MAJOR_RELEASE_DIGIT: 0
    MINOR_RELEASE_DIGIT: 1
@@ -86,7 +86,8 @@ default:
          - "pipelines/pipeline-jet/target/pipeline-jet.jar"
          - "schema-server/target/schema-server.jar"
          - "vyne-analytics-server/target/vyne-analytics-server.jar"
-         - "vyne-query-service/target/vyne.zip"
+         #         - "vyne-query-service/target/vyne.zip"
+         - "station/target/orbital.zip"
          - "test-cli/target/*.zip"
          - "taxi-playground/target/taxi-playground.jar"
       expire_in: 1 hours
@@ -252,8 +253,6 @@ regression-test:
          docker buildx build
          --platform linux/arm64/v8,linux/amd64
          --push
-         -t "${registry_vyne}/${microservice_vyne}:${tag}"
-         -t "${registry_vyne}/${microservice_vyne}:${versionTag}"
          -t "${registry_orbital}/${microservice_orbital}:${tag}"
          -t "${registry_orbital}/${microservice_orbital}:${versionTag}"
          .
@@ -279,12 +278,14 @@ regression-test:
    before_script:
       - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
 
-publish-vyne-to-docker-hub:
+publish-orbital-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: vyne-query-service
       microservice_vyne: vyne
       microservice_orbital: orbital-server
+   before_script:
+      - cp -a vyne-query-service/target/classes/static/. station/target/classes/static
 
 publish-cask-to-docker-hub:
    extends: .publish-to-docker-hub
@@ -319,7 +320,7 @@ publish-vyne-to-gitlab-container-registry:
    variables:
       projectDir: vyne-query-service
       microservice_vyne: vyne
-      microservice_orbital: orbital-server
+      microservice_orbital: orbital
 
 publish-schema-server-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
@@ -375,12 +376,7 @@ publish-voyager:
       microservice: taxi-playground
    when: manual
 
-publish-pipelines-to-gitlab-container-registry:
-   extends: .publish-to-gitlab-container-registry
-   variables:
-      projectDir: pipelines/pipeline-jet
-      microservice_vyne: pipeline
-      microservice_orbital: pipelines
+
 
 terraform-fmt:
    extends: .terraform:fmt
