@@ -1,6 +1,5 @@
 server:
-   # 11 more than 9022, the port than Vyne ran on.
-   port: 9033
+   port: 9022
 spring:
    cloud:
       config:

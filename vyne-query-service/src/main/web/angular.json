@@ -27,7 +27,7 @@
             },
             "assets": [
               "src/silent-refresh.html",
-              "src/icon-48x48.png",
+              "src/favicon-32x32.png",
               "src/assets",
               {
                 "glob": "**/*",
