@@ -67,11 +67,6 @@ export default function App({Component, pageProps, router}) {
     return <Component {...pageProps} />
   }
 
-  let section =
-    meta.section ||
-    Object.entries(Component.layoutProps?.Layout?.nav ?? {}).find(([, items]) =>
-      items.find(({href}) => href === router.pathname)
-    )?.[0]
 
   return (
     <>
@@ -102,12 +97,11 @@ export default function App({Component, pageProps, router}) {
             navIsOpen={navIsOpen}
             onNavToggle={(isOpen) => setNavIsOpen(isOpen)}
             title={meta.title}
-            section={section}
             className="sm:px-6 md:px-8"
           />
         )}
         <Layout {...layoutProps}>
-          <Component section={section} {...pageProps} />
+          <Component {...pageProps} />
         </Layout>
       </SearchProvider>
     </>

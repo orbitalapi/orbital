@@ -88,7 +88,7 @@ export function NavItems() {
   return (
     <>
       <li>
-        <Link href="https://docs.orbitalhq.com">
+        <Link href="/docs">
           <a className="hover:text-sky-500 dark:hover:text-sky-400">Docs</a>
         </Link>
       </li>

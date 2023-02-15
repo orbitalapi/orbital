@@ -20,7 +20,7 @@ function HeroSection() {
       <div className="sm:px-6 md:px-8 dark:bg-midnight-blue">
         <Header allowThemeToggle={false}/>
         <div className="font-brand relative max-w-8xl mx-auto sm:pt-16 md:pt-32 relative">
-          <div className={'flex'}>  
+          <div className={'flex'}>
             <div className="max-w-2xl sm:pb-10 pb-[6rem]">
               <h1 className="font-light text-5xl md:text-6xl leading-[4rem] md:leading-[5rem] tracking-tight dark:text-white">
                 Automated integration for microservices
@@ -37,7 +37,7 @@ function HeroSection() {
                 </NextLink>
               </div>
             </div>
-            <div className={'hidden lg:block bg-slate-900/75 z-10 p-8 backdrop-blur-md shadow-2xl rounded-md ml-20 -mt-24 mb-32'}>
+            <div className={'hidden xl:block bg-slate-900/75 z-10 p-8 backdrop-blur-md shadow-2xl rounded-md ml-20 -mt-24 mb-32'}>
               <img src={networkDiagram.src} className={'w-[560px]'}/>
             </div>
 

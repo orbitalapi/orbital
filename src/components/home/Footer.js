@@ -4,18 +4,18 @@ import {Logo} from '@/components/Logo'
 const footerNav = [
   {
     'Getting Started': [
-      {title: 'Quick start', href: 'https://docs.orbitalhq.com/'},
-      {title: 'Connecting OpenAPI Services', href: 'https://docs.orbitalhq.com/'},
-      {title: 'Connnecting Message Queues', href: 'https://docs.orbitalhq.com/'},
-      {title: 'Connnecting Databases', href: 'https://docs.orbitalhq.com/'},
-      {title: 'Querying for data', href: 'https://docs.orbitalhq.com/'},
-      {title: 'Building data pipelines', href: 'https://docs.orbitalhq.com/'},
+      {title: 'Quick start', href: '/docs'},
+      {title: 'Connecting OpenAPI Services', href: '/docs'},
+      {title: 'Connnecting Message Queues', href: '/docs'},
+      {title: 'Connnecting Databases', href: '/docs'},
+      {title: 'Querying for data', href: '/docs'},
+      {title: 'Building data pipelines', href: '/docs'},
     ],
     Guides: [
-      {title: 'APIs, DBs and Queues - A flyby of Orbital ', href: 'https://docs.orbitalhq.com/'},
-      {title: 'Building a datamesh with Orbital', href: 'https://docs.orbitalhq.com/'},
-      {title: 'Taxonomy best practices', href: 'https://docs.orbitalhq.com/'},
-      {title: 'Zero code data normalization', href: 'https://docs.orbitalhq.com/'},
+      {title: 'APIs, DBs and Queues - A flyby of Orbital ', href: '/docs'},
+      {title: 'Building a datamesh with Orbital', href: '/docs'},
+      {title: 'Taxonomy best practices', href: '/docs'},
+      {title: 'Zero code data normalization', href: '/docs'},
     ],
     'Community and Tools': [
       {title: 'Voyager', href: 'https://voyager.orbitalhq.com'},

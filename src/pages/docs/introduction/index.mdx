@@ -1,0 +1,176 @@
+import WhatClientsSee from './what-clients-sees.png';
+import {ImageWithCaption} from "@/components/ImageWithCaption";
+import OrbitalHighLevel from './high-level-overview.png';
+import LinkedServices from './linked-services.png';
+import {SnippetGroup} from "@/components/SnippetGroup";
+
+export const meta = {
+  title: 'Overview',
+  description: 'Vyne automates API integration, and provides rich data discovery, so you can spend less time plumbing, and more time building.'
+}
+
+## Introduction
+Modern organisations have multiple services and data sources - and with the move to microservices,
+this is on the rise.
+
+However, while microservices are great, lots of services means lots of plumbing - which can quickly become
+brittle, making change difficult.
+
+Orbital addresses this by automatically building and maintaining the integration between services,
+allowing services to stay decoupled from one another.
+
+### Consumer-centric integration
+Orbital allows consumers to ask for the data they need, without specifying how to fetch it.  Orbital generates the integration on-the-fly, using [Taxi](https://taxilang.org)
+metadata embedded inside API specs.
+
+This means that as API's evolve, or as services are deployed or replaced, Orbital's integrations automatically adapt, without requiring clients to change.
+
+<ImageWithCaption src={OrbitalHighLevel.src} addLightBackground={true}/>
+
+
+```taxi
+given {
+   emailAddress : EmailAddress = "jimmy@demo.com"
+} find {
+   lastPurchase: {
+      @Format("dd/MMM/yyyy hh:mm:ss")
+      date : LastPurchaseDate
+      value : LastPurchaseValue
+   }
+   accountBalance : AccountBalance
+}
+```
+
+Orbital leverages schemas to automatically work out which services to call,
+and sequences them together to pass data from service to service, in order to discover the data clients need.
+
+<ImageWithCaption src={WhatClientsSee.src} addLightBackground={true}/>
+
+## Integration that adapts with you
+
+Services publish their schemas to Orbital, which describe their API's and the data they provide.
+
+Orbital uses this to build integration plans on-the-fly. This means that as your API's change, Orbital automatically adapts,
+keeping clients protected from the change.
+
+There's no resolvers to update, Swagger SDK's to rebuild, or API consumer contracts to refactor.
+
+Orbital provides several ways for services to generate and publish their schema -
+hand-crafted schema's, automatically generated at runtime, git backed in a central repository, or a mix of the three.
+
+Find out more about schema strategies [here](/docs/publishing-and-sharing-schemas)
+
+
+## Semantic data schemas
+Semantic schemas describe the meaning of their data in a way that's sharable between systems.
+
+| Schema attribute | What it tells us                           |
+|------------------|--------------------------------------------|
+| Field name       | Where to find information                  |
+| Data type        | How to read / write from the wire          |
+| ???              | What the data means in a broader ecosystem |
+
+### Today's schemas aren't semantic
+
+Today, when we connect two systems together, an engineer has to build a mental model between the **field name** and the **data they're looking for**.
+
+```taxi
+// The id attribute in the Customer model from the Accounts sytems
+// is the same as the custId attribute in the Purchase model from sales system
+namespace accounts {
+   model Customer {
+     id : String  // This is the same...
+   }
+}
+namespace sales {
+   model Purchase {
+      custId : String //...as this
+   }
+}
+```
+
+This has a few shortcomings:
+ * The mapping of `Customer.id -> Purchase.custId` gets embedded in code.  If a field name changes, this breaks, making change difficult.
+ * The mapping gets repeated for **every consumer**.
+
+This mapping exercise takes place because traditional schemas don't provide rich enough information to link on anything else.
+
+If a field gets renamed?  💥 Boom! Breakdown city.
+
+What's missing is *semantic metadata* - something that describes how data between systems relates to one another, independent of field names.
+
+### Defining semantic metadata
+[Taxi](https://taxilang.org) is a language for defining and embedded semantic metadata.
+
+It allows us to represent how data links *between* systems, without relying on field names.
+
+```taxi
+// Define the semantic concept
+type CustomerId inherits String
+
+namespace accounts {
+   model Customer {
+     id : CustomerId  // This is the same...
+   }
+}
+namespace sales {
+   model Purchase {
+      custId : CustomerId //...as this
+   }
+}
+```
+
+These semantic types are defined in Taxi.  You can choose to either describe your APIs using Taxi (which has first class
+support for semantic metadata), or embed Taxi metadata within other schema languages, such as OpenAPI:
+
+<SnippetGroup>
+
+  ```yml Customer OpenAPI Spec
+  # An extract of the ShoppingCartApi OpenAPI spec:
+  components:
+  schemas:
+  Customer:
+  properties:
+  id: # Field name
+  x-taxi-type: # <-- Taxi extension
+  name: CustomerId # <-- Semantic type
+  type: string
+  ```
+
+  ```yaml Sales OpenAPI Spec
+  # An extract of the CustomerApi OpenAPI spec:
+  components:
+  schemas:
+  Purchase:
+  properties:
+  custId: # Field name
+  x-taxi-type: # <-- Taxi extension
+  name: CustomerId # <-- Semantic type
+  type: string
+  ```
+
+</SnippetGroup>
+
+### Semantic driven integration
+
+Once we understand how data between systems relates, we can use the rest of the API specs to work out how to connect them together.
+
+For example, given a `Purchase` from our Orders system, we can understand how to look up information about the customer from the Customer system.
+
+<ImageWithCaption src={LinkedServices.src} voyagerLink={'clvXNtikmp'}/>
+
+Orbital performs this integration for us.
+
+By sending a request in [TaxiQL](https://taxilang.org/language-reference/querying-with-taxiql/), we can ask for data, without specifying how data
+relates, or which systems to get them from.
+
+```taxi
+find { Purchases[] } as {
+  purchaseId : PurchaseId // Comes from the Purchase object
+  customerName : CustomerName // Looked up by calling the Customer service
+}
+```
+
+This means that systems are free to update field names, replace databases with APIs, APIs with databases, etc.  Consumers remain unaffected.
+
+Find out more about Semantic data and Taxi on the  [Taxi website](https://taxilang.org)

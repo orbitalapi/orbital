@@ -91,8 +91,10 @@ function TabItem({children, selectedIndex, myIndex, marker}) {
  * @param {CodeBlock[]} props.children
  */
 export function SnippetGroup({children, actions}) {
-  let [selectedIndex, setSelectedIndex] = useState(0)
 
+  let [selectedIndex, setSelectedIndex] = useState(0)
+  // if we only get passed a single entry, it doesn't arrive as an array.
+  const childrenArray = (Array.isArray(children)) ? children : [children];
   return (
     <Tab.Group
       as="div"

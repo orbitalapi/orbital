@@ -9,30 +9,30 @@ function v(href) {
 }
 
 export default class Document extends NextDocument {
-  static async getInitialProps(ctx) {
-    const sheet = new ServerStyleSheet()
-    const originalRenderPage = ctx.renderPage
-
-    // Enable styled-components.
-    // See here: https://github.com/vercel/next.js/blob/canary/examples/with-styled-components/pages/_document.tsx
-    // docs are here: https://styled-components.com/docs/advanced#nextjs
-
-    try {
-      ctx.renderPage = () =>
-        originalRenderPage({
-          enhanceApp: (App) => (props) =>
-            sheet.collectStyles(<App {...props} />),
-        })
-
-      const initialProps = await NextDocument.getInitialProps(ctx)
-      return {
-        ...initialProps,
-        styles: [initialProps.styles, sheet.getStyleElement()],
-      }
-    } finally {
-      sheet.seal()
-    }
-  }
+  // static async getInitialProps(ctx) {
+  //   const sheet = new ServerStyleSheet()
+  //   const originalRenderPage = ctx.renderPage
+  //
+  //   // Enable styled-components.
+  //   // See here: https://github.com/vercel/next.js/blob/canary/examples/with-styled-components/pages/_document.tsx
+  //   // docs are here: https://styled-components.com/docs/advanced#nextjs
+  //
+  //   try {
+  //     ctx.renderPage = () =>
+  //       originalRenderPage({
+  //         enhanceApp: (App) => (props) =>
+  //           sheet.collectStyles(<App {...props} />),
+  //       })
+  //
+  //     const initialProps = await NextDocument.getInitialProps(ctx)
+  //     return {
+  //       ...initialProps,
+  //       styles: [initialProps.styles, sheet.getStyleElement()],
+  //     }
+  //   } finally {
+  //     sheet.seal()
+  //   }
+  // }
 
   render() {
     return (
