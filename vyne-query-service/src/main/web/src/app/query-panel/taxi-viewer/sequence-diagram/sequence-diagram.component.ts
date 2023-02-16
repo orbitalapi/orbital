@@ -47,8 +47,8 @@ export class SequenceDiagramComponent {
           const resultMessage = (wasSuccessful) ? `${remoteCall.responseTypeDisplayName} (${remoteCall.durationMs}ms)`
             : `${remoteCall.resultCode} (${remoteCall.durationMs}ms)`
           const indent = '    ';
-          const lines = [indent + `Vyne ->> ${remoteCall.serviceDisplayName}: ${remoteCall.operationName} (${remoteCall.method})`,
-            indent + `${remoteCall.serviceDisplayName} ->> Vyne: ${resultMessage}`
+          const lines = [indent + `Orbital ->> ${remoteCall.serviceDisplayName}: ${remoteCall.operationName} (${remoteCall.method})`,
+            indent + `${remoteCall.serviceDisplayName} ->> Orbital: ${resultMessage}`
           ].join('\n');
           return lines;
 

@@ -283,7 +283,7 @@ publish-orbital-to-docker-hub:
    variables:
       projectDir: vyne-query-service
       microservice_vyne: vyne
-      microservice_orbital: orbital-server
+      microservice_orbital: orbital
    before_script:
       - mkdir -p station/target/classes
       - cp -a vyne-query-service/target/classes/static/. station/target/classes/static
