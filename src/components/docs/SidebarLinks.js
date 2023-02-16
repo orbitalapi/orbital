@@ -10,12 +10,14 @@ export const SidebarLinks = [
    {
       title: 'Connecting data sources',
       links: [
-         {title: 'Overview', href: '/docs/publishing-data-sources/overview'},
+         {title: 'Overview', href: '/docs/connecting-data-sources/overview'},
+         {title: 'Connecting a Git repository', href: '/docs/connecting-data-sources/connecting-a-git-repo'},
          {title: 'Using Taxi', href: '/docs/publishing-data-sources/using-taxi'},
          {title: 'Using existing API specs', href: '/docs/publishing-data-sources/existing-api-specs'},
          {title: 'Connecting databases', href: '/docs/publishing-data-sources/connecting-databases'},
          {title: 'Connecting message brokers', href: '/docs/publishing-data-sources/connecting-message-brokers'},
-         {title: 'Publishing from applications', href: '/docs/publishing-data-sources/publishing-from-applications'},
+         {title: 'Publishing from applications', href: '/docs/connecting-data-sources/publishing-from-applications'},
+         {title: 'Pushing directly to Orbital', href: '/docs/connecting-data-sources/publishing-direct-to-orbital'},
       ],
    },
    {
@@ -33,9 +35,10 @@ export const SidebarLinks = [
       ],
    },
    {
-      title: 'Production',
+      title: 'Deploying Orbital',
       links: [
          {title: 'Production deployments', href: '/docs/sample'},
+         {title: 'Configuring Orbital', href: '/docs/deploying/configuring-orbital'},
          {title: 'Authenticating to other services', href: '/docs/sample'},
          {
             title: 'Authorization within Orbital',

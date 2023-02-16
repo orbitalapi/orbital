@@ -1,0 +1,55 @@
+import PublishingFromSources from './publshing-from-sources.png'
+import {ImageWithCaption} from "@/components/ImageWithCaption";
+export const meta = {
+  title: 'Overview',
+  pageTitle: 'Connecting data sources - Overview',
+  description: 'An overview of how to connect data sources to Orbital'
+}
+
+
+
+Orbital works by having data sources (APIs, Databases, Message queues and Serverless functions) provide a description
+of the data and capabilities they provide.
+
+Orbital uses these descriptions to build integration on-the-fly, when a query is received.
+
+Data sources are described using some form of API spec language (Protobuf, OpenAPI, Avro, Taxi), along with
+additional metadata that defines how concepts are related semantically.
+
+There's lots of different ways to tell Orbital about your data sources - we believe that Orbital should fit with
+the way you work today.
+
+Generally there's at least the following components:
+
+ * A taxonomy project (built using Taxi) that defines the terms embedded in your API contracts.  This is most commonly stored in Git, or locally on your machine (when you're first getting started).
+ * A series of API specs, enriched with metadata using terms from your Taxonomy project.
+
+<ImageWithCaption src={PublishingFromSources.src} addLightBackground={true} />
+
+## Publishing and updating
+How and when you choose to publish / update these sources is up to you - teams tend to have different preferences around this.  
+
+You're also free to mix and match - to pick the publication method that best works for your tech and team working style.
+
+The following publication methods are available:
+
+ * Pushing updates to Orbital when applications start up
+ * Pushing updates to Orbital manually (eg., within a CI/CD pipeline)
+ * Having Orbital poll sources for changes
+
+### Pushing updates on startup
+Applications can generate Taxi, direct from code, and publish to Orbital.
+
+ * Suits microservices and teams who prefer generating their API specs from code
+ * Currently only Java / Kotlin with Spring Boot is supported, but other SDKs are planned - [reach out](https://github.com/orbitalapi/orbital/discussions) to tell us about your usecase.
+
+
+Learn more about this approach [here](./publishing-from-applications)
+
+### Pushing updates to Orbital manually (CI/CD)
+Data sources can publish updated specs to Orbital manually, using our CLI, or direct to our API.  This is a good fit
+for teams that choose to push updates as part of a CI/CD cycle.
+
+ * Suits teams who publish API specs during a CI/CD job
+
+Learn more about this approach [here](./publishing-direct-to-orbital)

@@ -1,0 +1,26 @@
+export const meta = {
+  title: 'Connecting a Git repository',
+  pageTitle: 'Connecting data sources - Connecting to Git',
+  description: 'Orbital can read schema and taxonomy definitions direct from Git'
+}
+
+It's common to have Orbital read definitions direct from a git repository.
+
+## Adding a Git repository using the UI
+
+## Adding a Git repository through config
+The schema repositories that Orbital is connected to can be configured through a file, which by default is called `schema-server.conf`
+
+
+The full documentation for config-driven git repositories is available [here](/docs/deploying/configuring-orbital#configuring-git-repositories).
+
+
+## Supporting edits to Git repositories
+When changes are made to services or taxonomy definitions within Orbital's UI, these need to be written
+somewhere.
+
+It's common that these are persisted to a git repository.
+
+Orbital supports two different flows for edits:
+ * Committing and pushing directly to the configured branch (default)
+ * Committing and pushing to a branch, and raising a Pull Request (Github only)
