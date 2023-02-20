@@ -4,7 +4,7 @@
       ":prConcurrentLimitNone",
       ":prHourlyLimitNone"
    ],
-   "rebaseWhen": "behind-base-branch",
+   "rebaseWhen": "conflicted",
    "packageRules": [
       {
          "updateTypes": [
