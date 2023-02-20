@@ -50,7 +50,7 @@
 
       <spring.cloud.version>2021.0.5</spring.cloud.version>
       <arrow.version>1.1.5</arrow.version>
-      <logstash.logback.version>7.2</logstash.logback.version>
+      <logstash.logback.version>7.3</logstash.logback.version>
 
       <swagger.springfox.version>3.0.0</swagger.springfox.version>
       <http4k.version>4.36.0.0</http4k.version>
