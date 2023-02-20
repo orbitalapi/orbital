@@ -64,8 +64,8 @@
       <spring-security.version>5.7.5</spring-security.version>
       <spring-security-test.version>5.7.5</spring-security-test.version>
       <kotest.version>5.5.1</kotest.version>
-      <junit.jupiter.version>5.9.1</junit.jupiter.version>
-      <junit.vintage.version>5.9.1</junit.vintage.version>
+      <junit.jupiter.version>5.9.2</junit.jupiter.version>
+      <junit.vintage.version>5.9.2</junit.vintage.version>
 
    </properties>
 
