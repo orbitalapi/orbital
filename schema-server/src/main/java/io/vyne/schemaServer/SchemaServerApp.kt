@@ -1,5 +1,6 @@
 package io.vyne.schemaServer
 
+import io.vyne.monitoring.EnableCloudMetrics
 import io.vyne.schemaServer.core.VersionedSourceLoader
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
@@ -76,3 +77,6 @@ class SchemaServerApp {
    }
 }
 
+
+@EnableCloudMetrics
+class SchemaServerConfig

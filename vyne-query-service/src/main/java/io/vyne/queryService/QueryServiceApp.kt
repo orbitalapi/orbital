@@ -15,6 +15,7 @@ import io.vyne.history.rest.QueryHistoryRestConfig
 import io.vyne.licensing.LicenseConfig
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.format.ModelFormatSpec
+import io.vyne.monitoring.EnableCloudMetrics
 import io.vyne.pipelines.jet.api.PipelineApi
 import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
 import io.vyne.query.TaxiJacksonModule
@@ -247,6 +248,7 @@ class QueryServerConfig {
 @VyneSchemaPublisher
 @EnableVyneEmbeddedSearch
 @EnableVyneQueryNode
+@EnableCloudMetrics
 @Import(
    InProcessHistoryConfiguration::class,
    QueryHistoryRestConfig::class,
