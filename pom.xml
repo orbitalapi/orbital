@@ -112,6 +112,7 @@
       <module>history-service</module>
       <module>cockpit-core</module>
       <module>query-node-api</module>
+       <module>monitoring-common</module>
    </modules>
 
    <scm>
