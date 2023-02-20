@@ -448,7 +448,7 @@ terraform-deploy-prod:
 
 .e2e-tests:
    stage: verify
-   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:20.10.23
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:23.0.1
    tags:
       - docker-heavy
 #   retry: 2
