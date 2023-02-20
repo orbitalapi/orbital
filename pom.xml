@@ -41,7 +41,7 @@
       <maven.compiler.source>${java.version}</maven.compiler.source>
       <maven.compiler.target>${java.version}</maven.compiler.target>
 
-      <kotlin.version>1.8.0</kotlin.version>
+      <kotlin.version>1.8.10</kotlin.version>
       <kotlin.coroutines.version>1.6.4</kotlin.coroutines.version>
       <!-- Kotlin serialization is currently fixed to the version supported by spring -->
       <kotlin.serialization.version>1.4.1</kotlin.serialization.version>
