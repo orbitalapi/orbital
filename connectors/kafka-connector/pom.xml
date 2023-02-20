@@ -12,7 +12,7 @@
    <artifactId>kafka-connector</artifactId>
    <properties>
       <schemacrawler.version>16.19.7</schemacrawler.version>
-      <kafka.version>2.8.2</kafka.version>
+      <kafka.version>3.4.0</kafka.version>
    </properties>
 
    <dependencies>
