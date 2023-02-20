@@ -99,7 +99,7 @@ default:
 
 .build-ui:
    stage: build
-   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:16.14
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:16.19
    before_script:
       - npm config set cache .npm/cache --global
       - npm --global cache verify
