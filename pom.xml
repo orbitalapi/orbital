@@ -63,7 +63,7 @@
       <!-- CVE-2022-31692  -->
       <spring-security.version>5.7.5</spring-security.version>
       <spring-security-test.version>5.7.5</spring-security-test.version>
-      <kotest.version>5.5.1</kotest.version>
+      <kotest.version>5.5.5</kotest.version>
       <junit.jupiter.version>5.9.2</junit.jupiter.version>
       <junit.vintage.version>5.9.2</junit.vintage.version>
 
