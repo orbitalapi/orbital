@@ -46,7 +46,7 @@
       <!-- Kotlin serialization is currently fixed to the version supported by spring -->
       <kotlin.serialization.version>1.4.1</kotlin.serialization.version>
 
-      <logback.version>1.2.11</logback.version>
+      <logback.version>1.4.5</logback.version>
 
       <spring.cloud.version>2021.0.5</spring.cloud.version>
       <arrow.version>1.1.5</arrow.version>
