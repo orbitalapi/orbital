@@ -9,7 +9,7 @@ import {Schema} from '../../services/schema';
   styleUrls: ['./schema-source-panel.component.scss'],
   template: `
     <div>
-      <tui-combo-box
+      <tui-select
         tuiTextfieldExampleText="Type of schema"
         [stringify]="stringify"
         [(ngModel)]="schemaType"
@@ -20,7 +20,7 @@ import {Schema} from '../../services/schema';
           [items]="schemaTypes | tuiFilterByInputWith : stringify"
           [itemContent]="stringify | tuiStringifyContent"
         ></tui-data-list-wrapper>
-      </tui-combo-box>
+      </tui-select>
       <div [ngSwitch]="schemaType?.id" class="config-container">
         <app-swagger-config *ngSwitchCase="'swagger'"
                             (loadSchema)="convertSchema.emit($event)"
@@ -55,10 +55,11 @@ export class SchemaSourcePanelComponent {
   schemaTypes: SchemaType[] = [
     // { 'label' : 'Taxi', id: 'taxi'},
     {'label': 'Swagger / OpenAPI', id: 'swagger'},
-    {'label': 'JsonSchema', id: 'jsonSchema'},
+    {'label': 'JsonSchema', id: 'jsonSchem'},
     {'label': 'Database table', id: 'databaseTable'},
     {'label': 'Kafka topic', id: 'kafkaTopic'},
     {'label': 'Protobuf', id: 'protobuf'},
+
     // { 'label' : 'XML Schema (xsd)', id: 'xsd'},
   ]
 

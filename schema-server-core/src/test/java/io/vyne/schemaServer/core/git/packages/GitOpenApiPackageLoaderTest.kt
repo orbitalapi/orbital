@@ -3,11 +3,11 @@ package io.vyne.schemaServer.core.git.packages
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
 import io.vyne.PackageIdentifier
-import io.vyne.schemaServer.core.adaptors.OpenApiPackageLoaderSpec
 import io.vyne.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
 import io.vyne.schemaServer.core.file.packages.ReactivePollingFileSystemMonitor
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
 import io.vyne.schemaServer.core.git.GitSchemaPackageLoader
+import io.vyne.schemaServer.packages.OpenApiPackageLoaderSpec
 import org.apache.commons.io.FileUtils
 import org.eclipse.jgit.api.Git
 import org.junit.Before
@@ -45,7 +45,7 @@ class GitOpenApiPackageLoaderTest {
          uri = remoteRepoDir.root.toURI().toASCIIString(),
          branch = "master",
          loader = OpenApiPackageLoaderSpec(
-            PackageIdentifier("com.acme", "petstore", "0"),
+            PackageIdentifier("com.acme", "petstore", "1.0.0"),
             defaultNamespace = "com.acme.pets"
          )
       )
@@ -69,7 +69,7 @@ class GitOpenApiPackageLoaderTest {
                PackageIdentifier(
                   organisation = "com.acme",
                   name = "petstore",
-                  version = "1.0.0" // version is read from the OpenApi spec
+                  version = "1.0.0"
                )
             )
             true

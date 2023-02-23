@@ -194,7 +194,7 @@ class SchemaServerSourceManager(
    }
 
    override fun removeSchemas(identifiers: List<PackageIdentifier>): Either<CompilationException, Schema> {
-      TODO("Not yet implemented")
+      return validatingStore.removeSchemas(identifiers)
    }
 
    private fun Either<CompilationException, Schema>.asSourceSubmissionResponse(): SourceSubmissionResponse {

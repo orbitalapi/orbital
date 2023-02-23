@@ -185,7 +185,8 @@ class LocalSchemaEditingServiceTest {
          0,
          0,
          PublisherType.FileSystem,
-         true
+         true,
+         null
       )
    }
 }

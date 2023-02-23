@@ -3,7 +3,7 @@ package io.vyne.schemaServer.core
 import com.google.common.io.Resources
 import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
-import io.vyne.schemaServer.core.adaptors.OpenApiPackageLoaderSpec
+import io.vyne.schemaServer.packages.OpenApiPackageLoaderSpec
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
 import io.vyne.schemaServer.core.git.GitRepositoryConfig

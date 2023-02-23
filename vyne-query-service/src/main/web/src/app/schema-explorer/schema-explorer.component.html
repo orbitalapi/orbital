@@ -21,4 +21,4 @@
 <app-changelog-list *ngIf="activeTabIndex == 1" [changeLogEntries]="changelogEntries | async"></app-changelog-list>
 <app-code-viewer [sources]="parsedPackage?.sources" sidebarMode="Visible"
                  *ngIf="activeTabIndex == 2 && parsedPackage?.sources?.length>0"></app-code-viewer>
-
+<app-schema-settings *ngIf="activeTabIndex === 3" [packageDescription]="packageDescription"></app-schema-settings>

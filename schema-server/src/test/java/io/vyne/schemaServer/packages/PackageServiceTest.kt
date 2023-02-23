@@ -7,7 +7,6 @@ import com.winterbe.expekt.should
 import io.vyne.PackageMetadata
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
-import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemaServer.core.packages.PackageService
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.PartialSchema
@@ -37,7 +36,7 @@ class PackageServiceTest {
             )
          )
       )
-      val packageService = PackageService(mock { }, schemaStore, mock {  })
+      val packageService = PackageService(mock { }, schemaStore, mock { }, mock { })
       val schema = packageService.getPartialSchemaForPackage(packageMetadata.identifier.uriSafeId).block()!!
 
       val json = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(schema)
@@ -84,7 +83,7 @@ class PackageServiceTest {
             )
          )
       )
-      val packageService = PackageService(mock { }, schemaStore, mock {  })
+      val packageService = PackageService(mock { }, schemaStore, mock { }, mock { })
       val schema = packageService.getPartialSchemaForPackage(actorsPackage.identifier.uriSafeId).block()!!
 
       schema.services.map { it.name.name }.should.contain("ActorService")

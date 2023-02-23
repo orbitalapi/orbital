@@ -6,7 +6,7 @@ import { Schema, Type } from '../services/schema';
 import { combineLatest, Observable } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ChangesetService } from 'src/app/services/changeset.service';
-import { buildInheritable , Inheritable} from 'src/app/inheritence-graph/build.inheritable';
+import { buildInheritable, Inheritable } from 'src/app/inheritence-graph/build.inheritable';
 
 @Component({
   selector: 'app-type-viewer-container',
@@ -23,7 +23,7 @@ import { buildInheritable , Inheritable} from 'src/app/inheritence-graph/build.i
                      [typeUsages]="typeUsages"
                      [showAttributes]="showAttributes"
                      [showDocumentation]="showDocumentation"
-                     [editable]="true"
+                     [editable]="false"
                      [showTags]="showTags"
                      [showTaxi]="showTaxi"
                      [showUsages]="showUsages"

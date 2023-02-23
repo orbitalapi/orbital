@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
 import { VyneServicesModule } from '../services/vyne-services.module';
 import { HttpClient } from '@angular/common/http';
-import { ConvertSchemaEvent } from './schema-importer.models';
+import { ConvertSchemaEvent, FileSystemPackageSpec, GitRepositoryConfig } from './schema-importer.models';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs/internal/Observable';
 import { SchemaSubmissionResult } from '../services/types.service';
 import { PartialSchema } from '../services/schema';
-import { PackagesService, SourcePackageDescription } from '../package-viewer/packages.service';
+import { PackageIdentifier, PackagesService, SourcePackageDescription } from '../package-viewer/packages.service';
 import { switchMap } from 'rxjs/operators';
 
 @Injectable({
@@ -33,9 +33,57 @@ export class SchemaImporterService {
       });
     }));
   }
+
+  testGitConnection(request: GitConnectionTestRequest): Observable<GitConnectionTestResult> {
+    return this.httpClient.post<GitConnectionTestResult>(`${environment.serverUrl}/api/repositories/git?test`, request)
+  }
+
+  testFileConnection(request: FileRepositoryTestRequest): Observable<FileRepositoryTestResponse> {
+    return this.httpClient.post<FileRepositoryTestResponse>(`${environment.serverUrl}/api/repositories/file?test`, request)
+
+  }
+
+  addNewGitRepository(request: GitRepositoryConfig): Observable<any> {
+    return this.httpClient.post<any>(`${environment.serverUrl}/api/repositories/git`, request)
+  }
+
+  addNewFileRepository(request: FileSystemPackageSpec): Observable<any> {
+    return this.httpClient.post<any>(`${environment.serverUrl}/api/repositories/file`, request)
+  }
+
+
+  removeRepository(packageDescription: SourcePackageDescription): Observable<any> {
+    return this.httpClient.delete<any>(`${environment.serverUrl}/api/packages/${packageDescription.identifier.uriSafeId}`)
+  }
 }
 
 export interface SchemaConversionRequest {
   format: string;
   options: any;
+}
+
+export interface GitConnectionTestRequest {
+  uri: string;
+}
+
+export interface FileRepositoryTestRequest {
+  path: string;
+}
+
+export interface FileRepositoryTestResponse {
+  path: string;
+  exists: boolean;
+  identifier: PackageIdentifier | null;
+}
+
+export interface GitConnectionTestResult {
+  successful: boolean;
+  errorMessage: string;
+  branchNames: string[];
+  defaultBranch: string;
+}
+
+export interface GitValidateFilePathRequest {
+  repositoryUrl: string;
+  filePath: string;
 }

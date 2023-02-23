@@ -5,8 +5,8 @@ import io.vyne.ParsedPackage
 import io.vyne.UriSafePackageIdentifier
 import io.vyne.schema.publisher.PublisherHealth
 import io.vyne.schema.publisher.PublisherType
-import io.vyne.schemas.DefaultPartialSchema
 import io.vyne.schemas.PartialSchema
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import reactivefeign.spring.config.ReactiveFeignClient
@@ -19,7 +19,8 @@ data class SourcePackageDescription(
    val warningCount: Int,
    val errorCount: Int,
    val publisherType: PublisherType,
-   val editable: Boolean
+   val editable: Boolean,
+   val packageConfig: Any? // GitRepositoryConfig or  FileSystemPackageSpec
    // TODO : Other things for visualisation
 ) {
    val uriPath: String = PackageIdentifier.toUriSafeId(identifier)
@@ -37,8 +38,16 @@ interface PackagesServiceApi {
    fun listPackages(): Mono<List<SourcePackageDescription>>
 
    @GetMapping("/api/packages/{packageUri}")
-   fun loadPackage(@PathVariable("packageUri") packageUri: String): Mono<ParsedPackage>
+   fun loadPackage(@PathVariable("packageUri") packageUri: String): Mono<PackageWithDescription>
 
    @GetMapping("/api/packages/{packageUri}/schema")
    fun getPartialSchemaForPackage(@PathVariable("packageUri") packageUri: UriSafePackageIdentifier): Mono<PartialSchema>
+
+   @DeleteMapping("/api/packages/{packageUri}")
+   fun removePackage(@PathVariable("packageUri") packageUri: UriSafePackageIdentifier): Mono<Unit>
 }
+
+data class PackageWithDescription(
+   val parsedPackage: ParsedPackage,
+   val description: SourcePackageDescription
+)

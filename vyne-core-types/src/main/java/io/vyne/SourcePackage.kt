@@ -1,6 +1,7 @@
 package io.vyne
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.packages.TaxiPackageSources
@@ -40,9 +41,14 @@ data class PackageIdentifier(
     */
    val version: String,
 ) : Serializable {
+   // Use getters, rather that initializers, as Jackson deser seems to break the initalization
+   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val unversionedId: UnversionedPackageIdentifier = "$organisation/$name"
-   val id = "$unversionedId/$version"
 
+   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+   val id: String = "$unversionedId/$version"
+
+   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val uriSafeId = toUriSafeId(this)
 
    companion object {

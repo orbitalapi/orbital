@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.orbital.station.OrbitalStationConfig
 import io.vyne.cask.api.CaskApi
 import io.vyne.cockpit.core.CockpitCoreConfig
+import io.vyne.cockpit.core.WebUiUrlSupportFilter
 import io.vyne.cockpit.core.lsp.LanguageServerConfig
 import io.vyne.cockpit.core.pipelines.PipelineConfig
 import io.vyne.cockpit.core.schemas.BuiltInTypesSubmitter
@@ -194,48 +195,7 @@ class QueryServiceApp {
 }
 
 
-/**
- * Handles requests intended for our web app (ie., everything not at /api)
- * and forwards them down to index.html, to allow angular to handle the
- * routing
- */
-@Component
-class Html5UrlSupportFilter(
-   @Value("\${management.endpoints.web.base-path:/actuator}") private val actuatorPath: String
-) : WebFilter {
-   companion object {
-      val ASSET_EXTENSIONS =
-         listOf(".css", ".js", ".js?", ".js.map", ".html", ".scss", ".ts", ".ttf", ".wott", ".svg", ".gif", ".png")
-   }
 
-   override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
-      val path = exchange.request.uri.path
-      // If the request is not for the /api, and does not contain a . (eg., main.js), then
-      // redirect to index.  This means requrests to things like /query-wizard are rendereed by our Angular app
-      return when {
-         path.startsWith("/api") -> {
-            chain.filter(exchange)
-         }
-
-         path.startsWith(actuatorPath) -> {
-            chain.filter(exchange)
-         }
-
-         ASSET_EXTENSIONS.any { path.endsWith(it) } -> chain.filter(exchange)
-         else -> {
-            // These are requests that aren't /api, and don't have an asset extension (like .js), so route it to the
-            // angular app
-            chain.filter(
-               exchange
-                  .mutate().request(
-                     exchange.request.mutate().path("/index.html").build()
-                  )
-                  .build()
-            )
-         }
-      }
-   }
-}
 
 @ConfigurationProperties(prefix = "vyne")
 class QueryServerConfig {
@@ -252,7 +212,8 @@ class QueryServerConfig {
 @Import(
    InProcessHistoryConfiguration::class,
    QueryHistoryRestConfig::class,
-   CockpitCoreConfig::class
+   CockpitCoreConfig::class,
+   WebUiUrlSupportFilter::class
 )
 class VyneConfig {
    @Bean

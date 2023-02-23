@@ -1,12 +1,13 @@
 package io.vyne.cockpit.core.schemas
 
-import io.vyne.ParsedPackage
 import io.vyne.UriSafePackageIdentifier
+import io.vyne.schemaServer.packages.PackageWithDescription
 import io.vyne.schemaServer.packages.PackagesServiceApi
 import io.vyne.schemaServer.packages.SourcePackageDescription
 import io.vyne.schemas.PartialSchema
 import io.vyne.spring.config.ExcludeFromOrbitalStation
 import io.vyne.spring.http.handleFeignErrors
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RestController
@@ -25,7 +26,7 @@ class PackagesServiceFacade(private val packagesServiceApi: PackagesServiceApi) 
    }
 
    @GetMapping("/api/packages/{packageUri}")
-   fun loadPackage(@PathVariable("packageUri") packageUri: String): Mono<ParsedPackage> = handleFeignErrors {
+   fun loadPackage(@PathVariable("packageUri") packageUri: String): Mono<PackageWithDescription> = handleFeignErrors {
       packagesServiceApi.loadPackage(packageUri)
    }
 
@@ -35,5 +36,10 @@ class PackagesServiceFacade(private val packagesServiceApi: PackagesServiceApi) 
       handleFeignErrors {
          packagesServiceApi.getPartialSchemaForPackage(packageUri)
       }
-}
 
+   @DeleteMapping("/api/packages/{packageUri}")
+   fun removePackage(@PathVariable("packageUri") packageUri: UriSafePackageIdentifier): Mono<Unit> = handleFeignErrors {
+      packagesServiceApi.removePackage(packageUri)
+   }
+
+}

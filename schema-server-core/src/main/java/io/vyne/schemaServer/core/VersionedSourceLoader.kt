@@ -1,8 +1,6 @@
 package io.vyne.schemaServer.core
 
 import io.vyne.SourcePackage
-import io.vyne.schemaServer.core.file.SourcesChangedMessage
-import reactor.core.publisher.Flux
 
 interface VersionedSourceLoader {
 
@@ -20,6 +18,3 @@ interface VersionedSourceLoader {
    fun loadSourcePackage(forceVersionIncrement: Boolean = false, cachedValuePermissible:Boolean = true): SourcePackage
 }
 
-interface UpdatingVersionedSourceLoader : VersionedSourceLoader {
-   val sourcesChanged: Flux<SourcesChangedMessage>
-}

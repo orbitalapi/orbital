@@ -23,7 +23,7 @@ import {isNullOrUndefined} from 'util';
             </div>
           </div>
           <div class="form-element">
-            <tui-combo-box
+            <tui-select
               [stringify]="stringifyConnection"
               [(ngModel)]="selectedConnection"
               (ngModelChange)="kafkaTopicOptions.connectionName = $event.connectionName">
@@ -40,7 +40,7 @@ import {isNullOrUndefined} from 'util';
                 <button *ngFor="let connection of connections | messageBrokers" tuiOption
                         [value]="connection">{{ connection.connectionName }}</button>
               </tui-data-list>
-            </tui-combo-box>
+            </tui-select>
           </div>
         </div>
         <div class="form-row">

@@ -108,7 +108,7 @@ class GitChangesetsTest {
    @Test
    fun `changesets work with git as expected (create a changeset, add changes into it, change active changeset and finalize changeset)`() {
       expect(schemaStore.schema().sources).to.be.empty
-      initializeSchemaToRepo()
+      initializeSchemaToRepo(gitServerContainer, mainTempFolder.newFolder(), gitRepoUri)
 
       pollForChangesNow()
       await().atMost(10, TimeUnit.SECONDS).until<Boolean> {
@@ -160,48 +160,10 @@ class GitChangesetsTest {
 
    }
 
-   private fun initializeSchemaToRepo() {
-      // Initialize the git repo by first fixing the permissions of the folder to be used and then creating a bare git repo
-      // ash is the sh of alpine on which the image used is based
-      gitServerContainer.execInContainer("ash", "-c", "/bin/chown -hR git:git /home/git/test-repo-remote")
-      gitServerContainer.execInContainer(
-         "ash",
-         "-c",
-         "/home/git/git-shell-commands/git-init --bare --shared=all -b main /home/git/test-repo-remote"
-      )
 
-      val tempCloneFolder = mainTempFolder.newFolder()
-      val git = Git.init()
-         .setDirectory(tempCloneFolder)
-         .setInitialBranch("main")
-         .call()
-
-
-      Resources.getResource("changesets/projects").toURI().copyDirectoryTo(tempCloneFolder)
-
-      git.add()
-         .addFilepattern(".")
-         .call()
-
-      git.commit()
-         .setMessage("Initial commit")
-         .call()
-
-      git.remoteAdd()
-         .setName("origin")
-         .setUri(URIish(gitRepoUri))
-         .call()
-
-      git.push()
-         .setRemote("origin")
-         .setPushAll()
-         .setRefSpecs(RefSpec("main:main"))
-         .setCredentialsProvider(UsernamePasswordCredentialsProvider("git", "12345"))
-         .call()
-   }
 
    companion object {
-      private val gitServerImage = DockerImageName.parse("rockstorm/git-server").withTag("2.38")
+      val gitServerImage = DockerImageName.parse("rockstorm/git-server").withTag("2.38")
 
       @ClassRule
       @JvmField
@@ -234,11 +196,11 @@ class GitChangesetsTest {
          get() = "ssh://git@${gitServerContainer.host}:${gitServerContainer.firstMappedPort}/home/git/test-repo-remote"
 
 
-      private fun initializeGitServer() {
-         gitServerContainer = GenericContainer(gitServerImage)
+      fun initializeGitServer(path: String): GenericContainer<*> {
+         return GenericContainer(gitServerImage)
             .withExposedPorts(22)
             .withFileSystemBind(
-               mainTempFolder.newFolder().absolutePath,
+               path,
                "/home/git/test-repo-remote",
                BindMode.READ_WRITE
             )
@@ -247,10 +209,50 @@ class GitChangesetsTest {
             }
       }
 
+      fun initializeSchemaToRepo(gitContainer:GenericContainer<*>, cloneFolder:File, gitRepoUri: String) {
+         // Initialize the git repo by first fixing the permissions of the folder to be used and then creating a bare git repo
+         // ash is the sh of alpine on which the image used is based
+         gitContainer.execInContainer("ash", "-c", "/bin/chown -hR git:git /home/git/test-repo-remote")
+         gitContainer.execInContainer(
+            "ash",
+            "-c",
+            "/home/git/git-shell-commands/git-init --bare --shared=all -b main /home/git/test-repo-remote"
+         )
+
+//      val tempCloneFolder = mainTempFolder.newFolder()
+         val git = Git.init()
+            .setDirectory(cloneFolder)
+            .setInitialBranch("main")
+            .call()
+
+
+         Resources.getResource("changesets/projects").toURI().copyDirectoryTo(cloneFolder)
+
+         git.add()
+            .addFilepattern(".")
+            .call()
+
+         git.commit()
+            .setMessage("Initial commit")
+            .call()
+
+         git.remoteAdd()
+            .setName("origin")
+            .setUri(URIish(gitRepoUri))
+            .call()
+
+         git.push()
+            .setRemote("origin")
+            .setPushAll()
+            .setRefSpecs(RefSpec("main:main"))
+            .setCredentialsProvider(UsernamePasswordCredentialsProvider("git", "12345"))
+            .call()
+      }
+
       @JvmStatic
       @DynamicPropertySource
       fun registerDynamicProperties(registry: DynamicPropertyRegistry) {
-         initializeGitServer()
+         gitServerContainer = initializeGitServer(mainTempFolder.newFolder().absolutePath)
          registry.add("vyne.repositories.config-file") { configFileInTempFolder("changesets/schema-server.conf").absolutePath }
       }
 

@@ -5,10 +5,12 @@ import io.vyne.schema.publisher.loaders.SchemaPackageTransport
 import io.vyne.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
 import io.vyne.schemaServer.core.adaptors.taxi.TaxiSchemaSourcesAdaptor
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
-import io.vyne.schemaServer.core.file.packages.*
+import io.vyne.schemaServer.core.file.packages.FileSystemPackageLoader
+import io.vyne.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
+import io.vyne.schemaServer.core.file.packages.ReactiveWatchingFileSystemMonitor
 import io.vyne.schemaServer.core.git.GitSchemaPackageLoader
 import io.vyne.schemaServer.core.git.GitSchemaPackageLoaderFactory
-import mu.KotlinLogging
+import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfigLoader
 import java.nio.file.Path
 
 /**
@@ -19,7 +21,7 @@ class ReactiveRepositoryManager(
    private val fileRepoFactory: FileSystemPackageLoaderFactory,
    private val gitRepoFactory: GitSchemaPackageLoaderFactory,
    private val eventSource: RepositorySpecLifecycleEventSource,
-   private val eventDispatcher: RepositoryLifecycleEventDispatcher
+   private val eventDispatcher: RepositoryLifecycleEventDispatcher,
 ) {
    fun getLoaderOrNull(packageIdentifier: PackageIdentifier): SchemaPackageTransport? {
       return loaders
@@ -39,13 +41,15 @@ class ReactiveRepositoryManager(
       fun testWithFileRepo(
          projectPath: Path? = null,
          isEditable: Boolean = false,
-         eventSource: RepositoryLifecycleManager = RepositoryLifecycleManager()
+         eventSource: RepositoryLifecycleManager = RepositoryLifecycleManager(),
+         configRepo: SchemaRepositoryConfigLoader
+
       ): ReactiveRepositoryManager {
          val manager = ReactiveRepositoryManager(
             FileSystemPackageLoaderFactory(),
             GitSchemaPackageLoaderFactory(SchemaSourcesAdaptorFactory()),
             eventSource,
-            eventSource
+            eventSource,
          )
          if (projectPath != null) {
             manager._fileLoaders.add(
@@ -104,4 +108,5 @@ class ReactiveRepositoryManager(
       get() {
          return _fileLoaders.filter { it.isEditable() }
       }
+
 }

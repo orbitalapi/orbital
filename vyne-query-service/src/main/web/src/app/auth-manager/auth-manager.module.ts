@@ -16,9 +16,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { TuiButtonModule } from '@taiga-ui/core';
 import { RouterModule } from '@angular/router';
-import { AuthGuard } from 'src/app/services/auth.guard';
-import { VynePrivileges } from 'src/app/services/user-info.service';
-import { AuthManagerService } from 'src/app/auth-mananger/auth-manager.service';
+import { AuthManagerService } from 'src/app/auth-manager/auth-manager.service';
+import { HeaderComponentLayoutModule } from 'src/app/header-component-layout/header-component-layout.module';
 
 @NgModule({
   imports: [
@@ -40,9 +39,10 @@ import { AuthManagerService } from 'src/app/auth-mananger/auth-manager.service';
         path: '',
         component: AuthManagerComponent,
       },
-    ])
+    ]),
+    HeaderComponentLayoutModule
   ],
-  exports: [AuthManagerComponent],
+  exports: [AuthManagerComponent, TokenListComponent],
   declarations: [AuthManagerComponent, TokenListComponent, NewTokenPanelComponent],
   providers: [AuthManagerService],
   entryComponents: [NewTokenPanelComponent]

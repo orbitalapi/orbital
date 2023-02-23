@@ -2,6 +2,7 @@ package io.orbital.station
 
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.vyne.cockpit.core.WebUiUrlSupportFilter
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.TaxiJacksonModule
@@ -14,6 +15,7 @@ import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilde
 import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerCodecConfigurer
 import org.springframework.http.codec.json.Jackson2JsonDecoder
@@ -23,6 +25,7 @@ import org.springframework.web.reactive.config.WebFluxConfigurer
 import org.springframework.web.reactive.function.client.WebClient
 
 @Configuration
+@Import(WebUiUrlSupportFilter::class)
 class WebConfig(private val objectMapper: ObjectMapper) : WebFluxConfigurer {
 
    @Value("\${orbital.cors.enabled:true}")

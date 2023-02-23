@@ -91,6 +91,8 @@ interface SchemaPackageTransport {
    val packageIdentifier: PackageIdentifier
 
    val publisherType: PublisherType
+
+   val config: Any
 }
 
 interface SchemaSourcesAdaptor {

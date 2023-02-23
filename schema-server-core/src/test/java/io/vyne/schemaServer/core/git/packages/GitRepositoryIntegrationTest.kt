@@ -1,6 +1,5 @@
 package io.vyne.schemaServer.core.git.packages
 
-import com.jayway.awaitility.Awaitility
 import com.jayway.awaitility.Awaitility.await
 import io.vyne.schemaServer.core.file.FileChangeDetectionMethod
 import io.vyne.schemaServer.core.file.deployProject
@@ -9,13 +8,12 @@ import io.vyne.schemaServer.core.file.packages.ReactivePollingFileSystemMonitor
 import io.vyne.schemaServer.core.git.GitSchemaPackageLoaderFactory
 import io.vyne.schemaServer.core.git.GitSchemaRepositoryConfig
 import io.vyne.schemaServer.core.publisher.SourceWatchingSchemaPublisher
-import io.vyne.schemaServer.core.repositories.FileSchemaRepositoryConfigLoader
 import io.vyne.schemaServer.core.repositories.InMemorySchemaRepositoryConfigLoader
 import io.vyne.schemaServer.core.repositories.RepositoryService
 import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfig
 import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
 import io.vyne.schemaServer.core.repositories.lifecycle.RepositoryLifecycleManager
-import io.vyne.schemaServer.repositories.GitRepositoryChangeRequest
+import io.vyne.schemaServer.repositories.git.GitRepositoryChangeRequest
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.utils.asA
 import org.eclipse.jgit.api.Git
@@ -96,6 +94,7 @@ class GitRepositoryIntegrationTest {
             "my-git-repo",
             uri = remoteRepoDir.root.toURI().toASCIIString(),
             branch = "master",
+
          )
       )
 

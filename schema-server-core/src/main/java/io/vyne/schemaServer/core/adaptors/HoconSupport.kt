@@ -8,21 +8,13 @@ import io.github.config4k.ClassContainer
 import io.github.config4k.CustomType
 import io.github.config4k.extract
 import io.github.config4k.toConfig
-import io.vyne.schemaServer.core.adaptors.taxi.TaxiPackageLoaderSpec
+import io.vyne.schemaServer.packages.TaxiPackageLoaderSpec
+import io.vyne.schemaServer.packages.OpenApiPackageLoaderSpec
+import io.vyne.schemaServer.packages.PackageLoaderSpec
+import io.vyne.schemaServer.packages.PackageType
 import java.net.URI
 import java.time.Instant
 import kotlin.reflect.full.isSubclassOf
-
-interface PackageLoaderSpec {
-   val packageType: PackageType
-}
-
-enum class PackageType {
-   OpenApi,
-   Taxi,
-   Protobuf,
-   JsonSchema
-}
 
 object InstantHoconSupport : CustomType {
    override fun parse(clazz: ClassContainer, config: Config, name: String): Any? {

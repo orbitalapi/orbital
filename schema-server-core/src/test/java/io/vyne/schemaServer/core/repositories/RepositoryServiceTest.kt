@@ -3,14 +3,16 @@ package io.vyne.schemaServer.core.repositories
 import com.winterbe.expekt.should
 import io.vyne.PackageIdentifier
 import io.vyne.schemaServer.core.repositories.lifecycle.RepositoryLifecycleManager
+import io.vyne.schemaServer.packages.TaxiPackageLoaderSpec
 import io.vyne.schemaServer.repositories.CreateFileRepositoryRequest
-import io.vyne.schemaServer.repositories.GitRepositoryChangeRequest
+import io.vyne.schemaServer.repositories.git.GitRepositoryChangeRequest
 import io.vyne.spring.http.BadRequestException
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import kotlin.test.assertFailsWith
+
 
 class RepositoryServiceTest {
 
@@ -37,7 +39,8 @@ class RepositoryServiceTest {
       repositoryService.createFileRepository(
          CreateFileRepositoryRequest(
             folder.canonicalPath, true,
-            PackageIdentifier.fromId("foo/test/0.1.0")
+            loader = TaxiPackageLoaderSpec,
+            newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
          )
       )
 
@@ -57,7 +60,8 @@ class RepositoryServiceTest {
       val request = CreateFileRepositoryRequest(
          folder.canonicalPath,
          true,
-         PackageIdentifier.fromId("foo/test/0.1.0")
+         loader = TaxiPackageLoaderSpec,
+         newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
       )
       repositoryService.createFileRepository(request)
 
@@ -73,12 +77,13 @@ class RepositoryServiceTest {
 
       val request = CreateFileRepositoryRequest(
          folder.canonicalPath, true,
-         PackageIdentifier.fromId("foo/test/0.1.0")
+         loader = TaxiPackageLoaderSpec,
+         newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
       )
       repositoryService.createFileRepository(request)
 
       assertFailsWith<BadRequestException> {
-         repositoryService.createFileRepository(request.copy(editable = false))
+         repositoryService.createFileRepository(request.copy(isEditable = false))
       }
    }
 
@@ -89,7 +94,8 @@ class RepositoryServiceTest {
 
       val request = CreateFileRepositoryRequest(
          folder.canonicalPath, true,
-         PackageIdentifier.fromId("foo/test/0.1.0")
+         loader = TaxiPackageLoaderSpec,
+         newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
       )
       repositoryService.createFileRepository(request)
 
@@ -122,5 +128,6 @@ class RepositoryServiceTest {
       gitRepo.uri.should.equal("https://github.com/test/repo")
       gitRepo.branch.should.equal("master")
    }
+
 
 }
