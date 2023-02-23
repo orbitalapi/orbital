@@ -13,6 +13,10 @@
 
    <dependencies>
       <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>testcontainers</artifactId>
+      </dependency>
+      <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-rsocket</artifactId>
       </dependency>
@@ -20,6 +24,16 @@
          <groupId>org.taxilang</groupId>
          <artifactId>taxi-writer</artifactId>
          <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>testcontainers</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>junit-jupiter</artifactId>
+         <scope>test</scope>
       </dependency>
 
       <dependency>

@@ -1,6 +1,7 @@
 package io.vyne.schemaServer.core.repositories
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.vyne.PackageIdentifier
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
 import io.vyne.schemaServer.core.repositories.lifecycle.FileSpecAddedEvent
@@ -9,13 +10,11 @@ import io.vyne.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleE
 import io.vyne.utils.concat
 
 class InMemorySchemaRepositoryConfigLoader(
-   private var config: SchemaRepositoryConfig,
-   private val eventDispatcher: RepositorySpecLifecycleEventDispatcher
+   private var config: SchemaRepositoryConfig, private val eventDispatcher: RepositorySpecLifecycleEventDispatcher
 ) : SchemaRepositoryConfigLoader {
    override fun load(): SchemaRepositoryConfig = config
    override fun safeConfigJson(): String {
-      return jacksonObjectMapper().writerWithDefaultPrettyPrinter()
-         .writeValueAsString(config)
+      return jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(config)
    }
 
    override fun addFileSpec(fileSpec: FileSystemPackageSpec) {
@@ -34,5 +33,16 @@ class InMemorySchemaRepositoryConfigLoader(
          )
       )
       eventDispatcher.gitRepositorySpecAdded(GitSpecAddedEvent(gitSpec, config.git!!))
+   }
+
+   override fun removeGitRepository(
+      repositoryName: String,
+      packageIdentifier: PackageIdentifier
+   ): List<PackageIdentifier> {
+      TODO("Not yet implemented")
+   }
+
+   override fun removeFileRepository(packageIdentifier: PackageIdentifier): List<PackageIdentifier> {
+      TODO("Not yet implemented")
    }
 }

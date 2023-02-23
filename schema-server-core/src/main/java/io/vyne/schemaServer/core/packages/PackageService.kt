@@ -6,12 +6,17 @@ import io.vyne.UriSafePackageIdentifier
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.publisher.ExpiringSourcesStore
 import io.vyne.schema.publisher.PublisherType
+import io.vyne.schemaServer.core.git.GitRepositoryConfig
+import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfigLoader
 import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
+import io.vyne.schemaServer.packages.PackageWithDescription
 import io.vyne.schemaServer.packages.PackagesServiceApi
 import io.vyne.schemaServer.packages.SourcePackageDescription
 import io.vyne.schemas.DefaultPartialSchema
 import io.vyne.schemas.PartialSchema
 import io.vyne.spring.http.NotFoundException
+import mu.KotlinLogging
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RestController
@@ -22,35 +27,75 @@ import reactor.core.publisher.Mono
 class PackageService(
    private val expiringSourcesStore: ExpiringSourcesStore,
    private val schemaStore: SchemaStore,
-   private val repositoryManager: ReactiveRepositoryManager
+   private val repositoryManager: ReactiveRepositoryManager,
+   private val configRepo: SchemaRepositoryConfigLoader
 ) : PackagesServiceApi {
 
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+
    @GetMapping("/api/packages/{packageUri}")
-   override fun loadPackage(@PathVariable("packageUri") packageUri: UriSafePackageIdentifier): Mono<ParsedPackage> {
+   override fun loadPackage(@PathVariable("packageUri") packageUri: UriSafePackageIdentifier): Mono<PackageWithDescription> {
       val packageIdentifier = PackageIdentifier.fromUriSafeId(packageUri)
       val sourcePackage = schemaStore.schemaSet.parsedPackages.firstOrNull { it.identifier == packageIdentifier }
          ?: throw NotFoundException("Package $packageIdentifier was not found on this server")
-      return Mono.just(sourcePackage)
+
+      val packageDescription = buildPackageDescription(sourcePackage)
+      return Mono.just(
+         PackageWithDescription(
+            parsedPackage = sourcePackage,
+            description = packageDescription
+         )
+      )
+   }
+
+   @DeleteMapping("/api/packages/{packageUri}")
+   override fun removePackage(@PathVariable("packageUri") packageUri: UriSafePackageIdentifier): Mono<Unit> {
+      logger.info { "Received request to delete source package $packageUri" }
+      return loadPackage(packageUri)
+         .map { packageWithDescription ->
+            val packageDescription = packageWithDescription.description
+            when (packageDescription.publisherType) {
+               PublisherType.GitRepo -> {
+                  val repositoryName = (packageDescription.packageConfig as GitRepositoryConfig).name
+                  configRepo.removeGitRepository(repositoryName, packageDescription.identifier)
+               }
+
+               PublisherType.FileSystem -> {
+                  configRepo.removeFileRepository(packageDescription.identifier)
+               }
+
+               else -> {
+                  error("Removing packages is not supported for publisher type ${packageDescription.publisherType}")
+               }
+            }
+         }
    }
 
    @GetMapping("/api/packages")
    override fun listPackages(): Mono<List<SourcePackageDescription>> {
       val packages = schemaStore.schemaSet.parsedPackages.map { parsedPackage ->
-         val loader = repositoryManager.getLoaderOrNull(parsedPackage.identifier)
-         val publisherType = loader?.publisherType ?: PublisherType.Pushed
-         val editable = loader?.isEditable() ?: false
-
-         SourcePackageDescription(
-            parsedPackage.identifier,
-            expiringSourcesStore.getPublisherHealth(parsedPackage.identifier),
-            parsedPackage.sources.size,
-            0, // TODO : Warning count
-            parsedPackage.sourcesWithErrors.size,
-            publisherType,
-            editable
-         )
+         buildPackageDescription(parsedPackage)
       }
       return Mono.just(packages)
+   }
+
+   private fun buildPackageDescription(parsedPackage: ParsedPackage): SourcePackageDescription {
+      val loader = repositoryManager.getLoaderOrNull(parsedPackage.identifier)
+      val publisherType = loader?.publisherType ?: PublisherType.Pushed
+      val editable = loader?.isEditable() ?: false
+
+      return SourcePackageDescription(
+         parsedPackage.identifier,
+         expiringSourcesStore.getPublisherHealth(parsedPackage.identifier),
+         parsedPackage.sources.size,
+         0, // TODO : Warning count
+         parsedPackage.sourcesWithErrors.size,
+         publisherType,
+         editable,
+         loader?.config
+      )
    }
 
    @GetMapping("/api/packages/{packageUri}/schema")

@@ -1,3 +1,4 @@
+@import "tailwind-colors";
 @import "t2-colors";
 
 // These colors are the original "style".
@@ -25,9 +26,9 @@ $vyne-yellow: #f5d326;
 
 $green: #16aa6d;
 
-$whiteish: #F5F7F9;
+$whiteish: $slate-50;
 
-$body-bg: #f5f6fa;
+$body-bg: $slate-50;
 
 $body: $dark-grey-2;
 

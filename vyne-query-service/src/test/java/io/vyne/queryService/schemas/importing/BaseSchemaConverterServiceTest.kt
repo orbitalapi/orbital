@@ -15,7 +15,7 @@ package io.vyne.queryService.schemas.importing
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.io.Resources
-import io.vyne.ParsedPackage
+import com.nhaarman.mockito_kotlin.mock
 import io.vyne.UriSafePackageIdentifier
 import io.vyne.cockpit.core.schemas.editor.LocalSchemaEditingService
 import io.vyne.cockpit.core.schemas.importing.CompositeSchemaImporter
@@ -25,6 +25,7 @@ import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemaServer.core.editor.SchemaEditorService
 import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
+import io.vyne.schemaServer.packages.PackageWithDescription
 import io.vyne.schemaServer.packages.PackagesServiceApi
 import io.vyne.schemaServer.packages.SourcePackageDescription
 import io.vyne.schemaStore.SimpleSchemaStore
@@ -59,7 +60,8 @@ abstract class BaseSchemaConverterServiceTest {
       val schemaEditorService = SchemaEditorService(
          ReactiveRepositoryManager.testWithFileRepo(
             tempFolder.root.toPath(),
-            isEditable = true
+            isEditable = true,
+            configRepo = mock { }
          ),
          schemaStore
       )
@@ -69,11 +71,15 @@ abstract class BaseSchemaConverterServiceTest {
                return Mono.just(listOf())
             }
 
-            override fun loadPackage(packageUri: String): Mono<ParsedPackage> {
+            override fun loadPackage(packageUri: String): Mono<PackageWithDescription> {
                TODO("Not yet implemented")
             }
 
             override fun getPartialSchemaForPackage(packageUri: UriSafePackageIdentifier): Mono<PartialSchema> {
+               TODO("Not yet implemented")
+            }
+
+            override fun removePackage(packageUri: UriSafePackageIdentifier): Mono<Unit> {
                TODO("Not yet implemented")
             }
 

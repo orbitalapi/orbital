@@ -22,14 +22,15 @@ import { PackageViewerModule } from '../package-viewer/package-viewer.module';
 import { ChangelogModule } from '../changelog/changelog.module';
 import { SchemaSummaryViewComponent } from './schema-summary-view.component';
 import { SimpleBadgeListModule } from '../simple-badge-list/simple-badge-list.module';
-import { TuiButtonModule } from '@taiga-ui/core';
+import { TuiButtonModule, TuiNotificationModule } from '@taiga-ui/core';
 import { TuiTabsModule } from '@taiga-ui/kit';
 import { SchemaExplorerTableModule } from 'src/app/schema-explorer-table/schema-explorer-table.module';
 import {
   OrbitalSchemaExplorerContainerComponent
 } from 'src/app/schema-explorer/orbital-schema-explorer-container.component';
-import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
 import { ChangesetSelectorModule } from '../changeset-selector/changeset-selector.module';
+import { SchemaSettingsComponent } from './schema-settings.component';
+import { SchemaSourceConfigModule } from 'src/app/schema-source-config/schema-source-config.module';
 
 
 @NgModule({
@@ -56,10 +57,11 @@ import { ChangesetSelectorModule } from '../changeset-selector/changeset-selecto
     SchemaExplorerTableModule,
     SimpleBadgeListModule,
     TuiButtonModule,
+    SchemaSourceConfigModule,
     RouterModule.forChild([
       {
         path: '',
-        component: appInstanceType.appType == 'vyne' ? SchemaExplorerContainerComponent : OrbitalSchemaExplorerContainerComponent,
+        component: SchemaExplorerContainerComponent,
         children: [
           {
             path: '', component: SchemaSummaryViewComponent
@@ -71,10 +73,11 @@ import { ChangesetSelectorModule } from '../changeset-selector/changeset-selecto
       },
     ]),
     TuiTabsModule,
-    ChangesetSelectorModule
+    ChangesetSelectorModule,
+    TuiNotificationModule,
   ],
   exports: [SchemaExplorerComponent],
-  declarations: [SchemaExplorerComponent, SchemaExplorerContainerComponent, SchemaSummaryViewComponent, OrbitalSchemaExplorerContainerComponent],
+  declarations: [SchemaExplorerComponent, SchemaExplorerContainerComponent, SchemaSummaryViewComponent, OrbitalSchemaExplorerContainerComponent, SchemaSettingsComponent],
   providers: [],
 })
 export class SchemaExplorerModule {

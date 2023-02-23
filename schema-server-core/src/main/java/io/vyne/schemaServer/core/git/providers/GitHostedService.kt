@@ -2,6 +2,7 @@ package io.vyne.schemaServer.core.git.providers
 
 import io.vyne.schema.publisher.loaders.ChangesetOverview
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
+import io.vyne.schemaServer.repositories.git.GitHostingProvider
 
 interface GitHostedService {
    fun raisePr(
@@ -10,12 +11,6 @@ interface GitHostedService {
       description: String,
       author: String
    ): Pair<ChangesetOverview, String>
-}
-
-enum class GitHostingProvider {
-   Noop,
-   Github,
-   Gitlab
 }
 
 class GitHostingProviderRegistry {

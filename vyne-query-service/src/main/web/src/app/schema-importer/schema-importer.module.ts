@@ -2,13 +2,16 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SchemaImporterComponent } from './schema-importer.component';
 import {
-  TuiAccordionModule, TuiAvatarModule,
+  TuiAccordionModule,
+  TuiAvatarModule,
   TuiBadgeModule,
   TuiCheckboxLabeledModule,
+  TuiCheckboxModule,
   TuiComboBoxModule,
   TuiDataListWrapperModule,
   TuiFilterByInputPipeModule,
-  TuiInputModule, TuiRadioBlockModule,
+  TuiInputModule,
+  TuiRadioBlockModule,
   TuiSelectModule,
   TuiStringifyContentPipeModule,
   TuiTabsModule,
@@ -48,16 +51,17 @@ import { RouterModule } from '@angular/router';
 import { SchemaExplorerTableModule } from 'src/app/schema-explorer-table/schema-explorer-table.module';
 import { AddSchemaTypeSelectorComponent } from './add-schema-type-selector/add-schema-type-selector.component';
 import { OrbitalSchemaImporterContainerComponent } from './orbital-schema-importer-container.component';
-import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
 import { PushSchemaConfigPanelComponent } from 'src/app/schema-importer/push-panel/push-schema-config-panel.component';
 import { SchemaImporterContainerComponent } from './schema-importer-container.component';
 import { CdPipelineInstructionsComponent } from './push-panel/cd-pipeline-instructions.component';
 import { ApplicationPushInstructionsComponent } from './push-panel/application-push-instructions.component';
+import { HeaderComponentLayoutModule } from 'src/app/header-component-layout/header-component-layout.module';
+import { SchemaSourceConfigModule } from 'src/app/schema-source-config/schema-source-config.module';
 
 
 @NgModule({
   exports: [SchemaImporterComponent,
-    SchemaSourcePanelComponent, KafkaTopicConfigComponent],
+    SchemaSourcePanelComponent, KafkaTopicConfigComponent,],
   declarations: [SchemaImporterComponent,
     SchemaSourcePanelComponent,
     SwaggerConfigComponent, JsonSchemaConfigComponent,
@@ -68,7 +72,7 @@ import { ApplicationPushInstructionsComponent } from './push-panel/application-p
     PushSchemaConfigPanelComponent,
     SchemaImporterContainerComponent,
     CdPipelineInstructionsComponent,
-    ApplicationPushInstructionsComponent
+    ApplicationPushInstructionsComponent,
   ],
   imports: [
     ConnectionFiltersModule,
@@ -106,15 +110,18 @@ import { ApplicationPushInstructionsComponent } from './push-panel/application-p
     TuiHintControllerModule,
     TypeAutocompleteModule,
     AngularSplitModule,
+    SchemaSourceConfigModule,
     RouterModule.forChild([
       {
         path: '',
-        component: appInstanceType.appType == 'vyne' ? SchemaImporterContainerComponent : OrbitalSchemaImporterContainerComponent,
+        component: OrbitalSchemaImporterContainerComponent,
       },
     ]),
     TuiRadioBlockModule,
     TuiAvatarModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    TuiCheckboxModule,
+    HeaderComponentLayoutModule
   ]
 })
 export class SchemaImporterModule {

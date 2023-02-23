@@ -26,6 +26,7 @@
   h3 {
     margin: 0;
     font-size: 1rem;
+    padding-bottom: 0.5rem;
   }
   .form-item-description-container {
     margin-bottom: 1rem;
@@ -41,6 +42,7 @@
 
   .help-text {
     width: 24rem;
+    font-size: 0.95rem;
   }
 
   mat-form-field, app-type-autocomplete, app-schema-member-autocomplete, .form-element {
@@ -74,7 +76,14 @@ app-description-editor {
   span, button, mat-progress-bar {
     margin-right: 1rem;
   }
+
   mat-progress-bar {
     width: 250px;
   }
+}
+
+.form-header-text {
+  color: $slate-700;
+  font-size: 1.15rem;
+  padding-bottom: 1rem;
 }

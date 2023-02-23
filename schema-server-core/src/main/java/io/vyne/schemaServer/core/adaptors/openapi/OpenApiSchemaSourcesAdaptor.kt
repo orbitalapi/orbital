@@ -6,7 +6,7 @@ import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.schema.publisher.loaders.SchemaPackageTransport
 import io.vyne.schema.publisher.loaders.SchemaSourcesAdaptor
-import io.vyne.schemaServer.core.adaptors.OpenApiPackageLoaderSpec
+import io.vyne.schemaServer.packages.OpenApiPackageLoaderSpec
 import lang.taxi.generators.openApi.GeneratorOptions
 import lang.taxi.generators.openApi.TaxiGenerator
 import mu.KotlinLogging
@@ -37,12 +37,16 @@ class OpenApiSchemaSourcesAdaptor(private val spec: OpenApiPackageLoaderSpec) : 
          }.map { byteArray ->
             val openApiSpec = String(byteArray)
             // Use the version fom the OpenApi spec if available.
-            val version = TaxiGenerator().readSchemaVersion(openApiSpec)
+//            val version = TaxiGenerator().readSchemaVersion(openApiSpec)
             OpenApiSpecPackageMetadata(
                PackageIdentifier(
                   spec.identifier.organisation,
                   spec.identifier.name,
-                  version ?: spec.identifier.version
+                  // Used to use the version from the OpenApi spec if available, rather than
+                  // the version in the spec.
+                  // However, that breaks comparisons against specs and has a bunch
+                  // of unexpected consequences.
+                  spec.identifier.version
                ),
                spec.submissionDate,
                spec.dependencies,

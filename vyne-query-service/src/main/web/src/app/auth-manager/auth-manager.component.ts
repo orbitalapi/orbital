@@ -6,14 +6,12 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 @Component({
   selector: 'app-auth-manager',
   template: `
-    <app-header-bar title="Authentication Manager">
-    </app-header-bar>
-    <div class="page-content centered-page-block-container">
+      <app-header-bar title="Authentication Manager">
+      </app-header-bar>
       <app-token-list
-        class="centered-page-block"
-        [tokens]="tokens" (newTokenSaved)="refreshTokenList()"
-                      (deleteToken)="deleteToken($event)"></app-token-list>
-    </div>
+              class="centered-page-block"
+              [tokens]="tokens" (newTokenSaved)="refreshTokenList()"
+              (deleteToken)="deleteToken($event)"></app-token-list>
   `,
   styleUrls: ['./auth-manager.component.scss']
 })

@@ -1,5 +1,6 @@
 package io.vyne.schemaServer.core.repositories.lifecycle
 
+import io.vyne.PackageIdentifier
 import io.vyne.schema.publisher.loaders.SchemaPackageTransport
 import io.vyne.schemaServer.core.file.SourcesChangedMessage
 import reactor.core.publisher.Flux
@@ -16,4 +17,6 @@ interface RepositoryLifecycleEventSource {
     * currently active with the system
     */
    val sourcesChanged: Flux<SourcesChangedMessage>
+
+   val sourcesRemoved: Flux<List<PackageIdentifier>>
 }

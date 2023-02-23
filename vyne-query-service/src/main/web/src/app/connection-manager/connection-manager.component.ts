@@ -1,16 +1,12 @@
-import {Component, OnInit} from '@angular/core';
-import {Router} from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-connection-manager',
   template: `
-    <app-header-bar title="Connection manager">
+    <app-header-bar>
     </app-header-bar>
-    <div class="page-content centered-page-block-container">
-      <div class="centered-page-block">
-        <router-outlet></router-outlet>
-      </div>
-    </div>
+    <router-outlet></router-outlet>
   `,
   styleUrls: ['./connection-manager.component.scss']
 })

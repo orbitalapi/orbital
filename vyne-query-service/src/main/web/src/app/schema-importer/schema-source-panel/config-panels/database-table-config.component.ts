@@ -28,7 +28,7 @@ import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
             </div>
           </div>
           <div class="form-element">
-            <tui-combo-box
+            <tui-select
               [stringify]="stringifyConnection"
               [(ngModel)]="selectedConnection"
               (ngModelChange)="selectedConnectionChanged($event)">
@@ -45,7 +45,7 @@ import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
                 <button *ngFor="let connection of connections | databases" tuiOption
                         [value]="connection">{{ connection.connectionName }}</button>
               </tui-data-list>
-            </tui-combo-box>
+            </tui-select>
           </div>
         </div>
         <div class="form-row">
@@ -56,7 +56,7 @@ import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
             </div>
           </div>
           <div class="form-element">
-            <tui-combo-box [(ngModel)]="selectedTable"
+            <tui-select [(ngModel)]="selectedTable"
                            [stringify]="stringifyTableName"
                            [disabled]="selectedConnection == null"
             >
@@ -66,7 +66,7 @@ import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
                 [itemContent]="stringifyTableName | tuiStringifyContent"
                 [items]="tables$  | async | tuiFilterByInputWith : stringifyTableName"
               ></tui-data-list-wrapper>
-            </tui-combo-box>
+            </tui-select>
           </div>
         </div>
         <div class="form-row">

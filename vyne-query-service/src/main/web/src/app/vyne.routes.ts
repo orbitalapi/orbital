@@ -70,7 +70,7 @@ export const VYNE_ROUTES = RouterModule.forRoot(
     },
     {
       path: 'authentication-manager',
-      loadChildren: () => import('./auth-mananger/auth-manager.module').then(m => m.AuthManagerModule),
+      loadChildren: () => import('./auth-manager/auth-manager.module').then(m => m.AuthManagerModule),
       canActivate: [AuthGuard],
       data: { requiredAuthority: VynePrivileges.ViewAuthenticationTokens }
     },

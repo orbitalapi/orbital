@@ -1,7 +1,9 @@
-package io.vyne.schemaServer.core.adaptors
+package io.vyne.schemaServer.packages
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.vyne.PackageIdentifier
+import io.vyne.schemaServer.packages.PackageLoaderSpec
+import io.vyne.schemaServer.packages.PackageType
 import java.net.URI
 import java.time.Instant
 

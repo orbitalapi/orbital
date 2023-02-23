@@ -79,7 +79,7 @@ import {isNullOrUndefined} from 'util';
           </div>
         </div>
         <div class="form-element">
-          <tui-combo-box [(ngModel)]="jsonSchemaConverterOptions.schemaVersion"
+          <tui-select [(ngModel)]="jsonSchemaConverterOptions.schemaVersion"
                       [stringify]="stringify">
             Select the JsonSchema version
             <tui-data-list-wrapper
@@ -87,7 +87,7 @@ import {isNullOrUndefined} from 'util';
               [items]="jsonSchemaVersions"
               [itemContent]="stringify | tuiStringifyContent"
             ></tui-data-list-wrapper>
-          </tui-combo-box>
+          </tui-select>
         </div>
       </div>
     </div>
