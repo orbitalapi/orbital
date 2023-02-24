@@ -48,7 +48,7 @@
 
       <logback.version>1.2.11</logback.version>
 
-      <spring.cloud.version>2021.0.5</spring.cloud.version>
+      <spring.cloud.version>2021.0.6</spring.cloud.version>
       <arrow.version>1.1.5</arrow.version>
       <logstash.logback.version>7.3</logstash.logback.version>
 
