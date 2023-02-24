@@ -44,7 +44,7 @@
       <kotlin.version>1.8.10</kotlin.version>
       <kotlin.coroutines.version>1.6.4</kotlin.coroutines.version>
       <!-- Kotlin serialization is currently fixed to the version supported by spring -->
-      <kotlin.serialization.version>1.4.1</kotlin.serialization.version>
+      <kotlin.serialization.version>1.5.0</kotlin.serialization.version>
 
       <logback.version>1.2.11</logback.version>
 
