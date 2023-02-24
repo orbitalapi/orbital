@@ -11,7 +11,7 @@ export const SidebarLinks = [
       title: 'Connecting data sources',
       links: [
          {title: 'Overview', href: '/docs/connecting-data-sources/overview'},
-         {title: 'Connecting a Git repository', href: '/docs/connecting-data-sources/connecting-a-git-repo'},
+         {title: 'Pulling API specs from git', href: '/docs/connecting-data-sources/connecting-a-git-repo'},
          {title: 'Using Taxi', href: '/docs/publishing-data-sources/using-taxi'},
          {title: 'Using existing API specs', href: '/docs/publishing-data-sources/existing-api-specs'},
          {title: 'Connecting databases', href: '/docs/publishing-data-sources/connecting-databases'},

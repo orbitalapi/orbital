@@ -1,19 +1,16 @@
 import clsx from 'clsx'
-
-import { InstallationIcon } from '@/components/icons/InstallationIcon'
-import { LightbulbIcon } from '@/components/icons/LightbulbIcon'
-import { PluginsIcon } from '@/components/icons/PluginsIcon'
-import { PresetsIcon } from '@/components/icons/PresetsIcon'
-import { ThemingIcon } from '@/components/icons/ThemingIcon'
-import { WarningIcon } from '@/components/icons/WarningIcon'
+import {ApiIcon} from "@/components/icons/api";
+import {RingIcon} from "@/components/icons/ring";
+import {RocketOneIcon} from "@/components/icons/rocket-one-icon";
+import {LeftBranchIcon} from "@/components/icons/left-branch";
+import {GuideIcon} from "@/components/icons/guide";
 
 const icons = {
-  installation: InstallationIcon,
-  presets: PresetsIcon,
-  plugins: PluginsIcon,
-  theming: ThemingIcon,
-  lightbulb: LightbulbIcon,
-  warning: WarningIcon,
+  connect: ApiIcon,
+  query: RingIcon,
+  production: RocketOneIcon,
+  pipelines: LeftBranchIcon,
+  guides: GuideIcon,
 }
 
 const iconStyles = {
@@ -26,15 +23,8 @@ export function Icon({ color = 'blue', icon, className, ...props }) {
   let IconComponent = icons[icon]
 
   return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 32 32"
-      fill="none"
-      className={clsx(className, iconStyles[color])}
-      {...props}
-    >
+
       <IconComponent color={color} />
-    </svg>
   )
 }
 

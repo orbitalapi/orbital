@@ -317,13 +317,13 @@ function QueryExamples(props: QueryExampleProps) {
               Query for the data you need, and Orbital integrates on-the-fly.
             </Paragraph>
             <Paragraph>
-              From simple API calls, to complex multi-hop lookups, Oribtal automatically orchestrates your APIs,
+              From simple API calls, to complex multi-hop lookups, Orbital automatically orchestrates your APIs,
               databases, queues and lambdas.
             </Paragraph>
             <Paragraph>
               No glue code required. As things change, Orbital adapts.
             </Paragraph>
-            
+
             <LearnMoreButton href="https://docs.vyne.co/querying-with-vyne/writing-queries/" />
             {/* <p className="my-8 flex w-3/4 content-baseline justify-center h-8">
               <a href="https://docs.vyne.co/querying-with-vyne/writing-queries/" className={'font-brand text-citrus uppercase tracking-widest font-bold leading-8'}>
@@ -332,7 +332,7 @@ function QueryExamples(props: QueryExampleProps) {
 
               <ArrowCitrus className="-rotate-90 stroke-[6px] leading-8 ml-4" width="16" height="32"></ArrowCitrus>
             </p> */}
-          </div> 
+          </div>
           <div className="mt-10 w-full">
             <Tabs
               tabs={tabs}
