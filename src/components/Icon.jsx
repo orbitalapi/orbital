@@ -5,12 +5,25 @@ import {RocketOneIcon} from "@/components/icons/rocket-one-icon";
 import {LeftBranchIcon} from "@/components/icons/left-branch";
 import {GuideIcon} from "@/components/icons/guide";
 
+import { InstallationIcon } from '@/components/icons/InstallationIcon'
+import { LightbulbIcon } from '@/components/icons/LightbulbIcon'
+import { PluginsIcon } from '@/components/icons/PluginsIcon'
+import { PresetsIcon } from '@/components/icons/PresetsIcon'
+import { ThemingIcon } from '@/components/icons/ThemingIcon'
+import { WarningIcon } from '@/components/icons/WarningIcon'
+
 const icons = {
   connect: ApiIcon,
   query: RingIcon,
   production: RocketOneIcon,
   pipelines: LeftBranchIcon,
   guides: GuideIcon,
+  installation: InstallationIcon,
+  presets: PresetsIcon,
+  plugins: PluginsIcon,
+  theming: ThemingIcon,
+  lightbulb: LightbulbIcon,
+  warning: WarningIcon,
 }
 
 const iconStyles = {
