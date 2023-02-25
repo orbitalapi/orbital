@@ -7,22 +7,14 @@ export const meta = {
   description: 'Connect all your APIs & data sources dynamically, without writing integration code'
 }
 
-Get started quickly with Orbital.  Deploy a demo project, and integrate data sources in just a few minutes.
+Orbital automates integration for your microservices.  
 
-<QuickLinks>
-  <QuickLink title='Installation' icon='installation' href='/'
-             description='Step-by-step guides to setting up Orbital locally, and deploying to your cloud of choice.'></QuickLink>
-  <QuickLink title="Connecting data sources" icon="presets" href="/"
-             description="Connect your APIs, Databases and Message Queues to Orbital."/>
-  <QuickLink title="Querying" icon="plugins" href="/"
-             description="Query for data through Orbital's API, and let Orbital handle the integration plumbing for you."/>
-  <QuickLink title="Data Pipelines" icon="theming" href="/"
-             description="Code-free ETL with Orbital's data pipelines, which can transform and enrich data automatically"/>
-</QuickLinks>
+Get started right now, by spinning up Orbital on your machine
 
-
----
-
+```bash
+docker run -p 9022:9022 orbitalhq/orbital
+```
+Then visit [https://localhost:9022](https://localhost:9022) in your browser.
 
 ## What is Orbital?
 
@@ -34,21 +26,23 @@ This is powered by rich semantic schemas, which infer how data across your organ
 
 <ImageWithCaption src={NetworkDiagram.src} addLightBackground/>
 
----
+## Quick Links
+Once you have Orbital running locally, connect your microservices, and start querying for data
 
-## Quick start
+<QuickLinks>
+  <QuickLink title="Connecting data sources" icon="connect" href="/"
+             description="Connect your APIs, Databases and Message Queues to Orbital."/>
+  <QuickLink title="Querying" icon="query" href="/"
+             description="Query for data through Orbital's API, and let Orbital handle the integration plumbing for you."/>
 
-Get Orbital deployed locally, quickly:
+  <QuickLink title="Follow a guide" icon="guides" href="/"
+             description="Connect APIs, a DB and Kafka in this tutorial"/>
 
-```bash
-docker run -p 9022:9022 orbitalhq/orbital
-```
+  <QuickLink title="Head to production" icon="production" href="/"
+             description="Deploy Orbital on your Kubernetes cluster or using Docker Compose"/>
+</QuickLinks>
 
-Then visit [https://localhost:9022](https://localhost:9022) in your browser.
 
-## Take a tutorial
-
- * Follow our [tutorial](/tutorials/api-db-integration/rest-db-integration/) to link microservice APIs, a kafka topic, and a database together.
 
 ## Getting help
 

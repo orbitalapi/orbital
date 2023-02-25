@@ -11,6 +11,7 @@ import {Prose} from '@/components/docs/Prose'
 import {Search} from '@/components/docs/Search'
 import {ThemeSelector} from '@/components/docs/ThemeSelector'
 import {SidebarLinks} from "@/components/docs/SidebarLinks";
+import {Footer} from "@/components/home/Footer";
 
 
 function GitHubIcon(props) {
@@ -131,6 +132,13 @@ function useTableOfContents(tableOfContents) {
 
 const navigation = SidebarLinks
 
+const GetInTouchMethods = [
+  { label: 'Submit an issue', link: 'https://github.com/orbitalapi/orbital/issues'},
+  { label: 'Start a discussion', link: 'https://github.com/orbitalapi/orbital/discussions'},
+  { label: 'Chat on Slack', link: 'https://join.slack.com/t/orbitalapi/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg'},
+  { label: 'Tweet us', link: 'https://twitter.com/orbitalapi'},
+]
+
 export function DocsLayout({children, tableOfContents, meta, slug}) {
   let router = useRouter()
   let isHomePage = router.pathname === '/'
@@ -239,7 +247,7 @@ export function DocsLayout({children, tableOfContents, meta, slug}) {
                 >
                   On this page
                 </h2>
-                <ol role="list" className="mt-4 space-y-3 text-sm">
+                <ol role="list" className="mt-4 space-y-3 text-sm mb-20">
                   {tableOfContents.map((section) => (
                     <li key={section.id}>
                       <h3>
@@ -279,9 +287,25 @@ export function DocsLayout({children, tableOfContents, meta, slug}) {
                 </ol>
               </>
             )}
+            <h2
+              id="get-in-touch-title"
+              className="font-display text-sm font-medium text-slate-900 dark:text-white"
+            >
+              Get in touch
+            </h2>
+            <ol role="list" className="mt-4 space-y-3 text-sm">
+              {GetInTouchMethods.map((method) => {
+                return (<li key={method.label}>
+                  <Link href={method.link}>
+                    <a className='hover:text-slate-600 dark:hover:text-slate-300'>{method.label}</a>
+                  </Link>
+                </li>)})
+              }
+            </ol>
           </nav>
         </div>
       </div>
+
     </>
   )
 }

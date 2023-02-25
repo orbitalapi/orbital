@@ -1,0 +1,153 @@
+import { ImageWithCaption } from '@/components/ImageWithCaption';
+export const meta = {
+  title: 'Pulling API specs from Git',
+  pageTitle: 'Connecting data sources - Connecting to Git',
+  description: 'Orbital can read schema and taxonomy definitions direct from Git'
+}
+
+import AddSchemaSources from './add-schema-sources.png'
+import AddGitRepoForm from './add-git-repo-form.png'
+import { Callout } from '@/components/docs/Callout';
+
+It's common to store your [core taxonomy](./overview#your-core-taxonomy), existing API specs (such as [OpenApi](./using-open-api) or [Protobuf](./using-protobuf)), or [database definitions](./connecting-databases)
+in a git repository, so they're version controlled.
+
+Orbital can read directly from your Git repository, pulling in updates as they're merged.
+
+A typical Git configuring consists of:
+
+ * The address of your git repository 
+ * A branch to monitor
+ * A path within your repository to read
+
+Additionally, if you're connecting an OpenApi or Protobuf source, you'll need to provide a little additional metadata.
+
+The list of Git repositories that Orbital can be modified either through the [Orbital UI](#adding-a-git-repository-using-the-ui),
+or by editing a [config file](#adding-a-git-repository-through-config), which can be version controlled, and automatically deployed (self-hosted deployments only)
+
+## Adding a Git repository using the UI
+To add a new Git repository via the UI either navigate to [/schema-importer](http://localhost:9022/schema-importer), or from within the UI
+click on Schema's on the left navigation bar, then "Add new sources" in the top bar.
+
+<ImageWithCaption src={AddSchemaSources.src} addLightBackground/>
+
+### Completing the new Git Repository form
+CLick on the "Git Repository" tab, and provide the details of how to connect to your 
+
+<ImageWithCaption src={AddGitRepoForm.src} addLightBackground/>
+
+<Callout type='note' title={`Tip...`}>
+  After adding the url of your repository, click Test Connection.  Orbital will verify the connection works,
+  and fetch the list of branches (including the default branch) from your repository.
+</Callout>
+
+
+## Adding a Git repository through config
+The schema repositories that Orbital is connected to can be configured through a [HOCON file](/docs/deploying/configuring-orbital), which by default is called `schema-server.conf`
+
+```hocon
+git {
+   # The root directory where all git repositories are cloned to
+   checkoutRoot="/opt/service/orbital/git-root"
+   # How frequently Orbital should poll git repositories for changes
+   pollFrequency=PT30S
+   
+   # A collection of Git Repository configurations
+   repositories=[
+      {
+         # Give this repo a name.  
+         name=hamilton-taxonomy
+         
+         # The url (including personal access token) to clone the repo from
+         uri="https://alexhamilton:glpat-dundadadadundundun@github.com/orbital/reynolds-pamphlet"
+         
+         # The branch to monitor
+         branch=master
+
+         # The path within the git repo (Optional, by default uses the root) 
+         path="/a/path/to/a/folder"
+      }
+   ]
+}
+```
+
+The full documentation for config-driven git repositories is available [here](/docs/deploying/configuring-orbital#configuring-git-repositories).
+
+### Reading OpenApi specs from Git
+If Orbital is reading an OpenApi spec from git, a few more parameters are needed.
+
+
+```hocon
+git {
+   # The root directory where all git repositories are cloned to
+   checkoutRoot="/opt/service/orbital/git-root"
+   # How frequently Orbital should poll git repositories for changes
+   pollFrequency=PT30S
+   
+   # A collection of Git Repository configurations
+   repositories=[
+      {
+         # Give this repo a name.  
+         name=hamilton-taxonomy
+         
+         # The url (including personal access token) to clone the repo from
+         uri="https://alexhamilton:glpat-dundadadadundundun@github.com/orbital/reynolds-pamphlet"
+         
+         # The branch to monitor
+         branch=master
+
+         # The path within the git repo (Optional, by default uses the root) 
+         path="/a/path/to/a/folder"
+
+         loader: {
+            # Must be OpenApi
+            packageType: 'OpenApi'
+            
+            # Orbital will automatically create services and models
+            # from the OpenApi spec, and place them under this namespace.
+            # Mandatory.
+            defaultNamespace: 'com.hamilton'
+
+            # If the paths specified in the OpenApi spec are relative,
+            # and no base path is specified, then specify one here.
+            serviceBasePath: https://hamilton.com/
+
+            # Provides a project identifier for this api spec.
+            # Mandatory
+            identifier: {
+              organisation: acme
+              name: hamilton
+              # Must be a Semver version
+              version: '1.1.0'
+            }
+         }
+      }
+   ]
+}
+```
+
+## Git Urls and Authentication
+Currently, `https://` connections are supported only.
+
+To provide authentication credentials, use a Username + Personal Authentication Token (supported in Github and Gitlab).
+
+For example:
+
+```
+https://alexhamilton:glpat-dundadadadundundun@github.com/orbital/reynolds-pamphlet
+```
+
+
+Support for `ssh://` connections with public/private keypairs is available in a private beta.  If you'd like to try it out, please [get in touch](/docs#getting-help).
+
+
+
+## Supporting edits to Git repositories
+When changes are made to services or taxonomy definitions within Orbital's UI, these need to be written
+somewhere.
+
+It's common that these are persisted to a git repository.
+
+Orbital supports two different flows for edits:
+ * Committing and pushing directly to the configured branch (default)
+ * Committing and pushing to a branch, and raising a Pull Request (Github only)

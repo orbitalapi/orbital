@@ -316,7 +316,7 @@ function QueryExamples(props: QueryExampleProps) {
               Query for the data you need, and Orbital integrates on-the-fly.
             </Paragraph>
             <Paragraph>
-              From simple API calls, to complex multi-hop lookups, Oribtal automatically orchestrates your APIs,
+              From simple API calls, to complex multi-hop lookups, Orbital automatically orchestrates your APIs,
               databases, queues and lambdas.
             </Paragraph>
             <Paragraph>

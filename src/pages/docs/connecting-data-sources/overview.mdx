@@ -1,0 +1,144 @@
+import PublishingFromSources from './publshing-from-sources.png'
+import { ImageWithCaption } from "@/components/ImageWithCaption";
+import {SnippetGroup} from '@/components/SnippetGroup'
+
+export const meta = {
+  title: 'Overview',
+  pageTitle: 'Connecting data sources - Overview',
+  description: 'An overview of how to connect data sources to Orbital'
+}
+
+
+
+Orbital works by having data sources (APIs, Databases, Message queues and Serverless functions) provide a description
+of the data and capabilities they provide.
+
+Orbital uses these descriptions to build integration on-the-fly, when a query is received.
+
+Data sources are described using some form of API spec language (Protobuf, OpenAPI, Avro, Taxi), along with
+additional metadata that defines how concepts are related semantically.
+
+There's lots of different ways to tell Orbital about your data sources - we believe that Orbital should fit with
+the way you work today.
+
+## Components
+
+Generally there's at least the following components:
+
+ * A taxonomy project (built using Taxi) that defines the terms embedded in your API contracts.  This is most commonly stored in Git, or locally on your machine (when you're first getting started).
+ * A series of API specs, enriched with metadata using terms from your Taxonomy project.
+
+<ImageWithCaption src={PublishingFromSources.src} addLightBackground={true} />
+
+
+### Your core taxonomy
+The core taxonomy is a collection of terms that describe your data attributes.  Think of them
+as simple tags, which describe your data - such as `FirstName`, `LastName`, etc.
+
+These tags provide
+In practice, these tags are actually semantic types, defined using [Taxi](/docs/connecting-data-sources/using-taxi).
+
+```taxi
+type FirstName inherits String
+type LastName inherits String
+type CustomerId inherits Int
+```
+
+By using Taxi, you get the benefit of a full type system, rich build tooling to verify correctness, and an
+open source ecosystem to build your own plugins.
+
+A common pattern for building a core taxonomy is:
+
+ * Created as a standalone project, independent of any specific API / Service
+ * Lives in a Git repository
+ * Orbital [monitors the git repository](/docs/connecting-data-sources/connecting-a-git-repo) and automatically deploys changes.
+
+### Services and data Sources
+Services and data sources are described using existing API specs (OpenAPI / Protobuf / Json Schema, etc), enriched
+with semantic tags from [your core taxonomy](#your-core-taxonomy).
+
+<SnippetGroup>
+
+```yml ShoppingCart OpenAPI Spec
+   # An extract of the ShoppingCartApi OpenAPI spec:
+   components:  
+     schemas:  
+       ShoppingCart:  
+         properties:  
+           custId:   # Field name
+             x-taxi-type:  
+>              name: CustomerId  # <-- Semantic type
+             type: string  
+```
+
+```protobuf Example.proto   
+  import "org/taxilang/dataType.proto";
+
+   message Customer {
+      optional string customer_name = 1 [(taxi.dataType)="CustomerName"];
+>     optional int32 customer_id = 2 [(taxi.dataType)="CustomerId"];
+   }
+```
+
+</SnippetGroup>
+
+For more information, follow our guides on using [OpenApi](/docs/connecting-data-sources/using-open-api) or [Protobuf](/docs/connecting-data-sources/using-protobuf) to describe your data sources.
+
+#### Using Taxi
+Another option is authoring your API specs directly in [Taxi](/docs/connecting-data-sources/using-taxi):
+
+```taxi
+model Customer {
+  id : CustomerId inherits Int
+  firstName : CustomerFirstName inherits Sring
+}
+
+service CustomerService {
+  @HttpOperation(method = "GET", url = "/shoppingCart/{CustomerId}")
+  operation getShoppingCartByCustomerId(CustomerId):ShoppingCart
+}
+```
+
+
+
+Alternatively, you can just generate schema definitions directly from code, or author your definitions in Taxi.
+
+Once you choose how to describe your services, you simply need to [publish](#publishing-and-updating) your specs to Orbital
+
+## Publishing and updating
+How and when you choose to publish / update these sources is up to you - teams tend to have different preferences around this.
+
+You're also free to mix and match - to pick the publication method that best works for your tech and team working style.
+
+The following publication methods are available:
+
+ * Pushing updates to Orbital when applications start up
+ * Pushing updates to Orbital manually (eg., within a CI/CD pipeline)
+ * Having Orbital poll sources for changes
+
+### Pushing updates on startup
+Applications can generate Taxi, direct from code, and publish to Orbital.
+
+ * Suits microservices and teams who prefer generating their API specs from code
+ * Currently only Java / Kotlin with Spring Boot is supported, but other SDKs are planned - [reach out](https://github.com/orbitalapi/orbital/discussions) to tell us about your usecase.
+
+
+Learn more about this approach [here](./publishing-from-applications)
+
+### Pushing updates to Orbital manually (CI/CD)
+Data sources can publish updated specs to Orbital manually, using our CLI, or direct to our API.  This is a good fit
+for teams that choose to push updates as part of a CI/CD cycle.
+
+ * Suits teams who publish API specs during a CI/CD job
+
+Learn more about this approach [here](./publishing-direct-to-orbital)
+
+
+### Reading API specs from a Git repository
+
+In addition to storing your [core taxonomy](#your-core-taxonomy) in Git, you can fetch other API specs (such as Protobuf or OpenApi) from
+a git repository.
+
+Orbital will poll your git repo, and automatically update as changes are merged into your target branch.
+
+For more information, read about [pulling API specs from git](./connecting-a-git-repo)

@@ -1,0 +1,175 @@
+export const meta = {
+  title: 'Configuring Orbital',
+  pageTitle: 'Configuring Orbital',
+  description: 'Orbital can be configured through a series of config files'
+}
+
+Orbital can be configured through a series of config files, passed at runtime.
+
+We designed Orbital this way to encourage scripted deployments, (as opposed to using a config database, which is hard to script).
+
+Orbital uses [HOCON](https://github.com/lightbend/config#examples-of-hocon) format for it's config files.  (HOCON is a superset of JSON, so JSON is also valid.)
+
+## Configuration basics
+There's several common themes in how Orbital configuration works.
+
+### Creating reasonable defaults
+If you don't provide a config file, Orbital will create one for you on startup,
+and populate it with reasonable defaults.
+
+### Environment variables and sensitive data
+Often configuration files need to contain sensitive data (usernames, passwords, etc).
+
+It may not always be desirable to specify sensitive connection information directly in the config file - especially
+if these are being checked into source control.
+
+Environment variables can be used anywhere in the config file, following the [HOCON standards](https://github.com/lightbend/config#uses-of-substitutions).
+
+For example:
+
+```HOCON
+jdbc {
+   some-database-connection {
+      connectionName = some-database-connection
+      # .. other params omitted for bevity ..
+      connectionParameters {
+         # .. other params omitted for bevity ..
+         password = ${postgres_password} # Reads the environment variable "postgres_password"
+      }
+   }
+}
+```
+
+### Correctly handling substitutions in Urls
+In some config files, you'll need to specify URLs, and will want to use variables.  Using a variable inside a url using Hocon can be tricky.
+
+In short, here's how substitutions need to be defined:
+
+```hocon
+query-server {
+   // The Url has specifal characters (:), so needs to be inside of quotes.
+   // However, variable substitution doesn't work inside of quotes,
+   // so the variable must be outside of quotes.
+   url="http://"${MY_VARIABLE}":9305"
+}
+```
+
+For more information, see [this issue](https://github.com/lightbend/config/issues/633) in the Hocon library
+
+## Configuring the Schema Server
+
+The schema repositories that Orbital is connected to can be configured through a config file.
+
+By default, this file is called `schema-server.conf`, however that can be modified by passing a command-line argument
+when starting the schema server:
+
+| Argument | Default value |
+|-------|-------|
+| `orbital.repositories.config-file` | `schema-server.conf` |
+
+
+For example, in a Docker Compose file:
+
+```yaml
+version: "3.3"
+services:
+  ## Other services omitted
+   schema-server:
+      image: orbitalhq/schema-server:latest
+      environment:
+         OPTIONS: >-
+            --orbital.repositories.config-file=/var/lib/orbital/schema-server/schema-server.conf
+```
+
+### Configuring git repositories
+In production, it's common to read (and write) from a git repository, rather than a local file system.
+
+This allows the use of standard git workflows to promote changes to 'production'.
+
+The schema server will periodically poll a git repository and branch, and pull in any changes as they're detected
+
+#### Using access tokens
+Github and Gitlab support embedding access tokens within the url of the git repository.
+
+Here's an example:
+
+```hocon
+git {
+   checkoutRoot="/some/path"
+   repositories=[
+      {
+         branch=master
+         name=my-taxonomy
+         uri="https://jimmy:glpat-purple-tortoise@gitlab.com/acme/acme-taxonomy"
+      }
+   ]
+}
+```
+
+
+
+### Example
+```hocon
+git {
+   # Defines the root folder where git repositories will be checked out to.
+   # Each repository gets its own subdirectory under this path
+   checkoutRoot="/my/git/root"
+
+   # Defines the frequency that Orbital will poll for updates
+   # against the git repository
+   pollFrequency=PT30S
+
+   # A collection of repositories to fetch
+   repositories=[
+      {
+           name=my-git-project
+           branch=master
+           uri="https://github.com/something.git"
+
+           # Optional
+           sshAuth={
+               privateKeyPath='/my/path/to/key'
+               # Optional.
+               # You can use environment variables here
+               passphrase: CorrectHorseBatteryStaple
+           }
+
+           # Defines if Orbital can submit changes to this repository
+           # (eg., for edits from the UI)
+           isEditable: true | false
+
+           # If Orbital is making changes, providing
+           # pullRequestConfig means that changes are submitted
+           # via a pull request, rather than comitted directly onto the defined branch
+           pullRequestConfig={
+              branchPrefix: "schema-updates/"
+           }
+      }
+   ]
+}
+
+```
+
+### Kitchen Sink config example
+```hocon
+file {
+   changeDetectionMethod=WATCH
+   incrementVersionOnChange=false
+   paths=[
+      "/path/to/project"
+   ]
+   pollFrequency=PT5S
+   recompilationFrequencyMillis=PT3S
+}
+git {
+   checkoutRoot="/my/git/root"
+   pollFrequency=PT30S
+   repositories=[
+      {
+         branch=master
+         name=my-git-project
+         uri="https://github.com/something.git"
+      }
+   ]
+}
+```
