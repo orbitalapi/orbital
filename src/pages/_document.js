@@ -49,6 +49,7 @@ export default class Document extends NextDocument {
           <meta name="msapplication-TileColor" content="#38bdf8"/>
           <meta name="msapplication-config" content={v('/favicons/browserconfig.xml')}/>
           <meta name="theme-color" content="#f8fafc"/>
+          <script defer data-domain="orbitalhq.com" src="https://plausible.io/js/script.js"></script>
           {/*         // Can't use leaderLine in webpack unfortunately,
          // as while it works at dev time, in prod builds
          // it fails as the library refers to `window`, which isn't
