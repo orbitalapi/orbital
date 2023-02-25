@@ -1,12 +1,11 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { BigText, LearnMoreButton, Paragraph, QuerySectionHeader, QuerySectionTitle } from '@/components/home/common';
+import { BigText, LearnMoreButton, Paragraph } from '@/components/home/common';
 import { Tabs } from '../Tabs';
 import { GridLockup } from '../GridLockup';
 import { AnimatePresence } from 'framer-motion';
 import { Widont } from '../Widont';
 import Prism from 'prismjs';
-import { Button } from '@/components/Button';
 import { Snippet } from '@/components/Steps';
 import { CodeSnippet, CodeSnippetMap, HighlightedCodeSnippetMap } from '@/components/Guides/CodeSnippet';
 import IntegrationDiagram, { IntegrationDiagramProps } from '@/components/home/IntegrationDiagram';
@@ -306,12 +305,12 @@ function QueryExamples(props: QueryExampleProps) {
 
   return (
     <section id="query-examples" className={`relative dark:bg-slate-900 ${props.className}`}>
-      <img src={OrbitalLogo.src} className={'absolute blur-3xl opacity-25'}/>
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 md:px-8">
+      <img src={OrbitalLogo.src} className={'absolute blur-3xl opacity-25 pointer-events-none'} />
+      <div className='max-w-7xl mx-auto px-4 sm:px-8 md:px-8'>
         <div className={'flex flex-col items-center'}>
-          <div className="max-w-3xl mx-auto flex flex-col items-center">
-            <BigText className="text-center font-brand pb-4">
-              <span className="text-citrus">Connect</span><Widont> without the glue</Widont>
+          <div className='max-w-3xl mx-auto flex flex-col items-center'>
+            <BigText className='text-center font-brand pb-4'>
+              <span className='text-citrus'>Connect</span><Widont> without the glue</Widont>
             </BigText>
             <Paragraph>
               Query for the data you need, and Orbital integrates on-the-fly.
@@ -323,7 +322,7 @@ function QueryExamples(props: QueryExampleProps) {
             <Paragraph>
               No glue code required. As things change, Orbital adapts.
             </Paragraph>
-            
+
             <LearnMoreButton href="https://docs.vyne.co/querying-with-vyne/writing-queries/" />
             {/* <p className="my-8 flex w-3/4 content-baseline justify-center h-8">
               <a href="https://docs.vyne.co/querying-with-vyne/writing-queries/" className={'font-brand text-citrus uppercase tracking-widest font-bold leading-8'}>
@@ -332,7 +331,7 @@ function QueryExamples(props: QueryExampleProps) {
 
               <ArrowCitrus className="-rotate-90 stroke-[6px] leading-8 ml-4" width="16" height="32"></ArrowCitrus>
             </p> */}
-          </div> 
+          </div>
           <div className="mt-10 w-full">
             <Tabs
               tabs={tabs}
