@@ -1,7 +1,7 @@
-package io.vyne.schemaServer.core.taxonomy
+package io.vyne.schemaServer.core.codegen
 
 import io.vyne.schema.consumer.SchemaStore
-import io.vyne.schemaServer.taxonomy.TaxonomyApi
+import io.vyne.schemaServer.codegen.CodeGenApi
 import lang.taxi.generators.TaxiProjectEnvironment
 import lang.taxi.generators.typescript.TypeScriptGenerator
 import lang.taxi.packages.TaxiPackageProject
@@ -13,9 +13,9 @@ import reactor.core.scheduler.Schedulers
 import java.nio.file.Path
 
 @RestController
-class TaxonomyService(
+class CodeGenService(
    private val schemaStore: SchemaStore
-) : TaxonomyApi {
+) : CodeGenApi {
    companion object {
       private val logger = KotlinLogging.logger {}
    }

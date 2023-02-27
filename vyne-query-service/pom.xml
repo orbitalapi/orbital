@@ -86,6 +86,12 @@
          <groupId>io.vyne</groupId>
          <artifactId>jdbc-connector</artifactId>
          <version>${project.version}</version>
+         <exclusions>
+            <exclusion>
+               <groupId>org.slf4j</groupId>
+               <artifactId>slf4j-nop</artifactId>
+            </exclusion>
+         </exclusions>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
