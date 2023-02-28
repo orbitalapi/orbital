@@ -50,7 +50,12 @@ import java.util.concurrent.TimeUnit
 
 
 fun URI.copyDirectoryTo(destDirectory: File): File {
-   val source = File(this)
+   val source = try {
+      File(this)
+   } catch (e: Exception) {
+      throw RuntimeException("Failed to create file from URI ${this.toASCIIString()}", e)
+   }
+
    val destFile = destDirectory.resolve(source.name)
    FileUtils.copyDirectory(source, destFile)
    return destFile
