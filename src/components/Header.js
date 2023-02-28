@@ -1,11 +1,11 @@
-import Link from 'next/link'
-import {SearchButton} from '@/components/Search'
-import Router from 'next/router'
-import {Logo} from '@/components/Logo'
-import {Dialog} from '@headlessui/react'
-import {useEffect, useState} from 'react'
-import clsx from 'clsx'
-import {ThemeSelect, ThemeToggle} from './ThemeToggle'
+import Link from 'next/link';
+import { SearchButton } from '@/components/Search';
+import Router from 'next/router';
+import { Logo } from '@/components/Logo';
+import { Dialog } from '@headlessui/react';
+import { useEffect, useState } from 'react';
+import clsx from 'clsx';
+import { ThemeToggle } from './ThemeToggle';
 
 
 export function NavPopover({display = 'md:hidden', className, ...props}) {
@@ -160,31 +160,31 @@ export function Header({hasNav = false, navIsOpen, onNavToggle, title, section, 
             )}
           >
             <div className="relative flex justify-between items-center">
-              <div class="left mr-auto">
-                <Link href="/">
+              <div className='left mr-auto'>
+                <Link href='/'>
                   <a
-                    className="mr-3 flex items-center w-[200px] overflow-hidden"
+                    className='mr-3 flex items-center w-[200px] overflow-hidden'
                     onContextMenu={(e) => {
-                      e.preventDefault()
-                      Router.push('/brand')
+                      e.preventDefault();
+                      Router.push('/brand');
                     }}
                   >
-                    <span className="sr-only">Orbital home page</span>
-                    <Logo className="w-auto h-7"/>
+                    <span className='sr-only'>Orbital home page</span>
+                    <Logo className='w-auto h-7' />
                   </a>
                 </Link>
               </div>
-              <div class="right flex">
-                <div className="relative hidden md:flex items-center ml-auto">
-                  <nav className="text-sm leading-6 font-semibold text-slate-700 dark:text-slate-200">
-                    <ul className="flex space-x-8">
-                      <NavItems/>
+              <div className='right flex'>
+                <div className='relative hidden md:flex items-center ml-auto'>
+                  <nav className='text-sm leading-6 font-semibold text-slate-700 dark:text-slate-200'>
+                    <ul className='flex space-x-8'>
+                      <NavItems />
                     </ul>
                   </nav>
-                  <div className="flex items-center border-l border-slate-200 ml-6 pl-6 dark:border-slate-800">
-                    { allowThemeToggle && (<ThemeToggle panelClassName="mt-8"/>)}
+                  <div className='flex items-center border-l border-slate-200 ml-6 pl-6 dark:border-slate-800'>
+                    {allowThemeToggle && (<ThemeToggle panelClassName='mt-8' />)}
                     <a
-                      href="https://github.com/orbitalapi/orbital"
+                      href='https://github.com/orbitalapi/orbital'
                       className="ml-6 block text-slate-400 hover:text-slate-500 dark:hover:text-slate-300"
                     >
                       <span className="sr-only">Orbital on GitHub</span>

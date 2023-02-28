@@ -119,7 +119,7 @@ const DiagramServiceNode = (props: ServiceNode) => {
 
 const IntegrationDiagram = (props: IntegrationDiagramProps) => {
   // const orientation = props.orientation || 'horizontal';
-  
+
   return (
     <StyledIntegrationDiagram>
       <div className="drop-shadow-md border-collapse rounded-md bg-slate-800/75 ring-1 ring-inset ring-white/10 p-4 flex flex-col space-y-4">
@@ -142,7 +142,8 @@ const IntegrationDiagram = (props: IntegrationDiagramProps) => {
           {/*  Body*/}
           <div className="flex sm:flex-col sm:items-center sm:space-y-4 md:space-x-4 gap-6">
             {props.nodes.map((node, index) => {
-              return (<DiagramServiceNode {...node} lastItem={props.nodes.length - 1 === index }></DiagramServiceNode>);
+              return (<DiagramServiceNode key={`diagram-service-node-${index}`} {...node}
+                                          lastItem={props.nodes.length - 1 === index}></DiagramServiceNode>);
             })}
           </div>
         </div>
