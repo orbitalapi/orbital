@@ -109,6 +109,7 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
 // workaround for lack of enum support in templates
   downloadFileType = ExportFormat;
 
+
   constructor(protected typeService: TypesService, protected appInfoService: AppInfoService, private dialogService: MatDialog, private changeDetector: ChangeDetectorRef) {
     super(typeService);
     appInfoService.getConfig()
@@ -141,6 +142,7 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   }
 
   private _instances$: Observable<InstanceLike>;
+  PROFILER_TAB_INDEX = 3;
 
   @Input()
   get instances$(): Observable<InstanceLike> {
@@ -149,9 +151,15 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
 
   set instances$(value: Observable<InstanceLike>) {
     if (isNullOrUndefined(value)) {
-      this._instances$ = EMPTY
+      this._instances$ = EMPTY;
     } else {
       this._instances$ = value;
+    }
+
+    // If we're currently on the Profiler tab, switch back, as the
+    // profile data is now stale.
+    if (this.activeTabIndex === this.PROFILER_TAB_INDEX) {
+      this.activeTabIndex = 0;
     }
 
     this.jsonInstances$ = this.instances$.pipe(
@@ -162,7 +170,7 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
       .pipe(
         scan((acc, curr) => curr.length + acc, 0),
         map(responseSize => {
-          return responseSize > this.LARGE_RESPONSE_LIMIT
+          return responseSize > this.LARGE_RESPONSE_LIMIT;
         }),
         tap((isLargeResponse) => {
           if (isLargeResponse) {
@@ -170,7 +178,9 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
             this.activeTabIndex = 2;
           }
         })
-      )
+      );
+
+    this.changeDetector.markForCheck();
   }
 
   protected _type: Type;
@@ -232,7 +242,7 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
 
 
   onTabIndexChanged() {
-    if (this.activeTabIndex === 3) {
+    if (this.activeTabIndex === this.PROFILER_TAB_INDEX) {
       this.loadProfileData.emit();
     }
   }

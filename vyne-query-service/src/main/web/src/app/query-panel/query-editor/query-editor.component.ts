@@ -2,7 +2,9 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  EventEmitter, Inject, Injector,
+  EventEmitter,
+  Inject,
+  Injector,
   Input,
   OnInit,
   Output
@@ -36,18 +38,17 @@ import {
   StreamingQueryMessage
 } from '../../services/models';
 import { Router } from '@angular/router';
-import ITextModel = editor.ITextModel;
-import ICodeEditor = editor.ICodeEditor;
 import { ExportFormat, ResultsDownloadService } from 'src/app/results-download/results-download.service';
 import { copyQueryAs, CopyQueryFormat } from 'src/app/query-panel/query-editor/QueryFormatter';
 import { Clipboard } from '@angular/cdk/clipboard';
-import { NewTokenPanelComponent } from 'src/app/auth-manager/new-token-panel.component';
 import {
   CodeGenRequest,
   QuerySnippetContainerComponent
 } from 'src/app/query-snippet-panel/query-snippet-container.component';
 import { TuiDialogService } from '@taiga-ui/core';
 import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
+import ITextModel = editor.ITextModel;
+import ICodeEditor = editor.ICodeEditor;
 
 declare const monaco: any; // monaco
 @Component({
@@ -175,6 +176,9 @@ export class QueryEditorComponent implements OnInit {
     this.results$ = new ReplaySubject(5000);
     this.latestQueryStatus = null;
     this.queryMetadata$ = null;
+    this.queryProfileData$ = null;
+
+    this.changeDetector.markForCheck();
 
 
     const queryErrorHandler = (error: FailedSearchResponse) => {
