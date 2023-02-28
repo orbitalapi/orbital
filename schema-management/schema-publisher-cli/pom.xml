@@ -14,7 +14,7 @@
    <properties>
       <maven.compiler.source>11</maven.compiler.source>
       <maven.compiler.target>11</maven.compiler.target>
-      <ktor.version>2.2.3</ktor.version>
+      <ktor.version>2.2.4</ktor.version>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
       <app.main.class>io.vyne.schema.publisher.cli.SchemaPublisherCliApp</app.main.class>
    </properties>
