@@ -22,7 +22,7 @@ private val logger = KotlinLogging.logger {}
 @RunWith(SpringRunner::class)
 @SpringBootTest(
    properties = [
-      "vyne.schema-server.compileOnStartup=false"]
+      "vyne.schema-server.compileOnStartup=false"],
 )
 class SchemaStoreTest {
    private val taxiSource1 = VersionedSource("test1.taxi", "1.0.0", """

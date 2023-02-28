@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Input } from '@angular/core';
 import { findType, Schema, Type } from 'src/app/services/schema';
 import { Snippet } from 'src/app/query-snippet-panel/query-snippet-panel.component';
 import { POLYMORPHEUS_CONTEXT } from '@tinkoff/ng-polymorpheus';
 import { TuiDialogContext } from '@taiga-ui/core';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { PrimitiveTypeNames } from 'src/app/services/taxi';
 import { isNullOrUndefined } from 'util';
 
@@ -45,7 +44,14 @@ export class QuerySnippetContainerComponent {
   queryToGenerate: CodeGenRequest;
 
   generators: SnippetGenerator[] = [
+    // { label: 'Java', generate: typescriptGenerator },
+    // { label: 'Java - Spring Boot', generate: typescriptGenerator },
+    // { label: 'Kotlin', generate: typescriptGenerator },
+    // { label: 'Kotlin - Spring Boot', generate: typescriptGenerator },
     { label: 'Typescript', generate: typescriptGenerator }
+    // { label: 'Typescript - NodeJS', generate: typescriptGenerator },
+    // { label: 'Typescript - Angular', generate: typescriptGenerator },
+    // { label: 'Typescript - NextJS', generate: typescriptGenerator },
   ];
   snippetGenerator: SnippetGenerator;
 
@@ -74,6 +80,7 @@ interface SnippetGenerator {
   generate: (CodeGenRequest) => Snippet[];
 }
 
+
 export function typescriptGenerator(request: CodeGenRequest): Snippet[] {
   const dependency = new Snippet(
     'Dependencies',
@@ -81,7 +88,7 @@ export function typescriptGenerator(request: CodeGenRequest): Snippet[] {
     `npm i @orbitalhq/oribtal-client`
   );
   const imports = new Snippet(
-    'Boilerplate',
+    'Imports',
     'typescript',
     `import { HttpQueryClient } from '@orbitalhq/orbital-client';
 import { Observable } from 'rxjs';`
