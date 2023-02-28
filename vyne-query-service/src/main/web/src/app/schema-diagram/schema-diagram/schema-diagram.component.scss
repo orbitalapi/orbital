@@ -39,3 +39,7 @@ mat-mini-fab {
   width: 30px;
   height: 30px;
 }
+
+::ng-deep .react-flow__node {
+  transition: all 0.5s ease-out;
+}

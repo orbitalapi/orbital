@@ -1,6 +1,6 @@
 import {Clipboard} from '@angular/cdk/clipboard';
 
-export type CopyQueryFormat = 'query' | 'curl';
+export type CopyQueryFormat = 'query' | 'curl' | 'snippet';
 export function copyQueryAs(query: string, queryEndpoint: string, format: CopyQueryFormat, clipboard: Clipboard) {
 
   function wrapTextInCurl(query: string) {

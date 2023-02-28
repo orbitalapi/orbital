@@ -32,7 +32,6 @@ data class TypedObject(
    }
    override val nodeId: String = Ids.fastUuid()
 
-
    override val value: Map<String, TypedInstance>
       get() = combinedValues
 

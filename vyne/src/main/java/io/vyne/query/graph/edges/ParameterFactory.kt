@@ -1,11 +1,11 @@
 package io.vyne.query.graph.edges
 
-import io.vyne.models.facts.CopyOnWriteFactBag
-import io.vyne.models.facts.FactDiscoveryStrategy
 import io.vyne.models.MixedSources
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
+import io.vyne.models.facts.CopyOnWriteFactBag
+import io.vyne.models.facts.FactDiscoveryStrategy
 import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
 import io.vyne.query.SearchGraphExclusion
@@ -146,17 +146,22 @@ class ParameterFactory {
 
             (attributeValue == null) -> {
                throw UnresolvedOperationParametersException(
-                   "Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ",
-                   context.evaluatedPath(),
-                   context.profiler.root,
-                   emptyList()
+                  "Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ",
+                  context.evaluatedPath(),
+                  context.profiler.root,
+                  emptyList()
                )
             }
 
             else -> attributeName to attributeValue
          }
       }.toMap()
-      return TypedObject(paramType, fields, MixedSources)
+      // We need a composite data source here, which contains
+      // all the data sources/
+      // Don't have one, and building one right now is too expensive.
+
+      val dataSource = MixedSources.singleSourceOrMixedSources(fields.map { it.value })
+      return TypedObject(paramType, fields, dataSource)
    }
 
 }
