@@ -31,8 +31,14 @@ function HeroSection() {
         >
           <Dialog.Panel
             className='relative transform overflow-hidden rounded-lg bg-slate-800 px-4 pt-5 pb-4 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-sm sm:p-6 w-[75vw] h-[75vh]'>
-            <iframe className='w-full h-full' src='https://www.loom.com/embed/611473f78fa54235bc70e5d0dea13534'
-                    frameBorder='0' webkitallowfullscreen mozallowfullscreen allowFullScreen></iframe>
+            <div className='flex w-full h-full'>
+              <iframe className='w-[80%]' src='https://www.loom.com/embed/611473f78fa54235bc70e5d0dea13534'
+                      frameBorder='0' webkitallowfullscreen mozallowfullscreen allowFullScreen></iframe>
+              <div className='flex-grow'>
+
+              </div>
+            </div>
+
           </Dialog.Panel>
         </Transition.Child>
       </div>
