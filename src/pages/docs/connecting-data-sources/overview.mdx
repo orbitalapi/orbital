@@ -36,7 +36,7 @@ The core taxonomy is a collection of terms that describe your data attributes.  
 as simple tags, which describe your data - such as `FirstName`, `LastName`, etc.
 
 These tags provide
-In practice, these tags are actually semantic types, defined using [Taxi](/docs/connecting-data-sources/using-taxi).
+In practice, these tags are actually semantic types, defined using [Taxi](https://taxilang.org).
 
 ```taxi
 type FirstName inherits String
@@ -82,10 +82,10 @@ with semantic tags from [your core taxonomy](#your-core-taxonomy).
 
 </SnippetGroup>
 
-For more information, follow our guides on using [OpenApi](/docs/connecting-data-sources/using-open-api) or [Protobuf](/docs/connecting-data-sources/using-protobuf) to describe your data sources.
+For more information, follow our guides on using [OpenApi](/docs/describing-data-sources/open-api) or [Protobuf](/docs/describing-data-sources/protobuf) to describe your data sources.
 
 #### Using Taxi
-Another option is authoring your API specs directly in [Taxi](/docs/connecting-data-sources/using-taxi):
+Another option is authoring your API specs directly in [Taxi](/docs/describing-data-sources/taxi):
 
 ```taxi
 model Customer {
@@ -123,15 +123,16 @@ Applications can generate Taxi, direct from code, and publish to Orbital.
  * Currently only Java / Kotlin with Spring Boot is supported, but other SDKs are planned - [reach out](https://github.com/orbitalapi/orbital/discussions) to tell us about your usecase.
 
 
-Learn more about this approach [here](./publishing-from-applications)
+Learn more about this approach [here](./schema-publication-methods)
 
-### Pushing updates to Orbital manually (CI/CD)
+<!-- TODO: Flesh this out -->
+<!-- ### Pushing updates to Orbital manually (CI/CD)
 Data sources can publish updated specs to Orbital manually, using our CLI, or direct to our API.  This is a good fit
 for teams that choose to push updates as part of a CI/CD cycle.
 
  * Suits teams who publish API specs during a CI/CD job
 
-Learn more about this approach [here](./publishing-direct-to-orbital)
+Learn more about this approach [here](./publishing-direct-to-orbital) -->
 
 
 ### Reading API specs from a Git repository
