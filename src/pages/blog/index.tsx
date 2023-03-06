@@ -6,6 +6,7 @@ import buildRss from '@/scripts/build-rss';
 import { AuthorAvatar } from '@/components/AuthorAvatar';
 import WormholeAqua from '@/img/wormhole-aqua-transparent.png';
 import WormholeCitrus from '@/img/wormhole-citrus-transparent.png';
+//@ts-ignore
 import { ReactComponent as DataPatternLight } from '@/img/data-pattern-light.svg';
 
 export interface Author {
@@ -23,6 +24,7 @@ interface Post {
       description: string;
       date: string;
       imageUrl?: string;
+      hidden: boolean;
       authors: Author[]
     }
   };
@@ -66,17 +68,19 @@ export default function Blog() {
 
       <div
         className='mx-auto mt-16 grid max-w-2xl auto-rows-fr grid-cols-1 gap-8 sm:mt-6 lg:mx-0 lg:max-w-none lg:grid-cols-3'>
-        {posts.map((post) => (
-          <article
-            key={post.slug}
-            className='relative isolate flex flex-col rounded-2xl bg-gray-900'
-          >
-            {post.module.meta.imageUrl ? (<img src={post.module.meta.imageUrl} alt=''
-                                               className='absolute inset-0 -z-10 h-full w-full object-cover' />) :
-              (<DefaultPostImage {...post}></DefaultPostImage>)}
+        {posts
+          .filter((post) => post.module.meta.hidden !== true)
+          .map((post) => (
+            <article
+              key={post.slug}
+              className='relative isolate flex flex-col rounded-2xl bg-gray-900'
+            >
+              {post.module.meta.imageUrl ? (<img src={post.module.meta.imageUrl} alt=''
+                                                 className='absolute inset-0 -z-10 h-full w-full object-cover' />) :
+                (<DefaultPostImage {...post}></DefaultPostImage>)}
 
-            <div className='px-8 py-8'>
-              <h3 className='mt-3 text-lg font-semibold leading-6 text-white'>
+              <div className='px-8 py-8'>
+                <h3 className='mt-3 text-lg font-semibold leading-6 text-white'>
                 <Link href={`/blog/${post.slug}`}>
                   <a className='flex items-center text-sm text-slate-50 hover:text-sky-500 text-xl font-medium'>
                     <span className='relative'>                    {post.module.meta.title}                  </span>
