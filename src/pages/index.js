@@ -30,7 +30,7 @@ function HeroSection() {
       {
         title: 'Handling breaking changes with Orbital',
         duration: '3 mins',
-        link: 'https://www.loom.com/share/ff01b2a3655047c58f60240aaae54445'
+        link: 'https://www.loom.com/embed/ff01b2a3655047c58f60240aaae54445'
       }
     ];
 
@@ -70,7 +70,7 @@ function HeroSection() {
                         video === currentVideo ? 'text-citrus font-bold' : 'text-slate-50 hover:text-sky-300'
                       )}>{video.title}</h3>
                     </a>
-                    {(video === currentVideo) && (
+                    {(video == currentVideo) && (
                       <div className={'flex items-center text-citrus mb-2 text-sm font-bold'}>
                         <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' strokeWidth={1.5}
                              stroke='currentColor' className='w-4 h-4 mr-4'>
