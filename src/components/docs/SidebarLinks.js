@@ -45,6 +45,7 @@ export const SidebarLinks = [
     title: 'Querying',
     links: [
       { title: 'Writing queries', href: '/docs/querying/writing-queries' },
+      { title: 'Using the Kotlin SDK', href: '/docs/querying/kotlin-sdk' }
       // { title: 'TaxiQL tutorial', href: '/docs/sample' },
       // TODO: This needs to be more step by step rather than the existing docs which describes how to write TaxiQL
       // { title: `Querying using Orbital's API`, href: '/docs/sample' },
