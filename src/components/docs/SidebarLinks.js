@@ -8,6 +8,12 @@ export const SidebarLinks = [
     ],
   },
   {
+    title: 'Guides',
+    links: [
+      { title: 'First integration', href: '/docs/guides/first-integration/guide'}
+    ],
+  },
+  {
     title: 'Connecting data sources',
     links: [
       { title: 'Overview', href: '/docs/connecting-data-sources/overview' },
