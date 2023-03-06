@@ -1,18 +1,27 @@
-import {readFileSync} from 'fs'
-import {join} from 'path'
-import * as cheerio from 'cheerio'
-import {http, https} from 'follow-redirects'
-import {Canvas, Image} from '@napi-rs/canvas'
-import opentype from 'opentype.js'
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import * as cheerio from 'cheerio';
+import { http, https } from 'follow-redirects';
+import { Canvas, Image } from '@napi-rs/canvas';
+import opentype from 'opentype.js';
 
-const WIDTH = 1200
-const HEIGHT = 630
-const PADDING = {x: 96, y: 96}
+/*
+ * This file generates the open graph metadata (including an image)
+ * for our pages.
+ *
+ * It's hit by sending a request to /api/og?path=/path/to/page
+ *
+ * This is wired in inside _app.js
+ */
 
-const fontLight = opentype.loadSync(resolve('Poppins-Light.ttf'))
-const fontMedium = opentype.loadSync(resolve('Poppins-Medium.ttf'))
-const fontSemiBold = opentype.loadSync(resolve('Poppins-SemiBold.ttf'))
-const fontExtraBold = opentype.loadSync(resolve('Poppins-ExtraBold.ttf'))
+const WIDTH = 1200;
+const HEIGHT = 630;
+const PADDING = { x: 96, y: 96 };
+
+const fontLight = opentype.loadSync(resolve('Poppins-Light.ttf'));
+const fontMedium = opentype.loadSync(resolve('Poppins-Medium.ttf'));
+const fontSemiBold = opentype.loadSync(resolve('Poppins-SemiBold.ttf'));
+const fontExtraBold = opentype.loadSync(resolve('Poppins-ExtraBold.ttf'));
 
 const colors = {
   sky500: '#0EA5E9',

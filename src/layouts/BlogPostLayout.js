@@ -1,10 +1,11 @@
-import {Widont} from '@/components/home/common'
-import {NewsletterForm} from '@/components/NewsletterForm'
-import {formatDate} from '@/utils/formatDate'
-import {mdxComponents} from '@/utils/mdxComponents'
-import {MDXProvider} from '@mdx-js/react'
-import clsx from 'clsx'
-import Link from 'next/link'
+import { Widont } from '@/components/home/common';
+import { NewsletterForm } from '@/components/NewsletterForm';
+import { formatDate } from '@/utils/formatDate';
+import { mdxComponents } from '@/utils/mdxComponents';
+import { MDXProvider } from '@mdx-js/react';
+import clsx from 'clsx';
+import Link from 'next/link';
+import { AuthorAvatar } from '@/components/AuthorAvatar';
 
 export function BlogPostLayout({children, meta}) {
   return (
@@ -59,26 +60,12 @@ export function BlogPostLayout({children, meta}) {
                 <ul className={clsx('flex flex-wrap text-sm leading-6 -mt-6 -mx-5')}>
                   {meta.authors.map((author) => (
                     <li
+                      className={'px-5'}
                       key={author.twitter}
-                      className="flex items-center font-medium whitespace-nowrap px-5 mt-6"
+                      // className="flex items-center font-medium whitespace-nowrap px-5 mt-6"
                     >
-                      <img
-                        src={author.avatar}
-                        alt=""
-                        className="mr-3 w-9 h-9 rounded-full bg-slate-50 dark:bg-slate-800"
-                        decoding="async"
-                      />
-                      <div className="text-sm leading-4">
-                        <div className="text-slate-900 dark:text-slate-200">{author.name}</div>
-                        <div className="mt-1">
-                          <a
-                            href={`https://twitter.com/${author.twitter}`}
-                            className="text-sky-500 hover:text-sky-600 dark:text-sky-400"
-                          >
-                            @{author.twitter}
-                          </a>
-                        </div>
-                      </div>
+
+                      <AuthorAvatar {...author}></AuthorAvatar>
                     </li>
                   ))}
                 </ul>
