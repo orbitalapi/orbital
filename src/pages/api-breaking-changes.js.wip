@@ -1,0 +1,53 @@
+
+import Head from 'next/head';
+import GetStartedButton from '@/components/GetStartedButton';
+import WatchADemoButton from '../components/DemosModal';
+import Wormhole from '@/components/Wormhole';
+
+
+
+export default function BreakingChangesLandingPage() {
+
+    return (
+        <>
+            <Head>
+                <meta
+                    key='twitter:title'
+                    name='twitter:title'
+                    content='Orbital - Automatically adapt to breaking API changes'
+                />
+                <meta
+                    key='og:title'
+                    property='og:title'
+                    content='Orbital - Automatically adapt to breaking API changes'
+                />
+                <title>Orbital - Automated integration for microservices.</title>
+            </Head>
+
+            {/* template - header */}
+            <div className="isolate">
+                <main>
+                    <div className="relative px-6 lg:px-8 font-brand">
+                        <div className="mx-auto max-w-4xl py-32 sm:py-48 lg:py-56">
+                            <div className="text-center">
+                                <h1 className="text-7xl tracking-wide font-bold text-gray-900 dark:text-white leading-tight ">
+                                    👋 Wave goodbye to <span className="text-citrus">breaking changes</span>
+                                </h1>
+                                <p className="mt-16 text-2xl leading-relaxed text-slate-400">
+                                    Orbital protects you from upstream changes by providing auto-generated semantic integration to your API's and data sources.
+                                </p>
+                                <div className="mt-20 flex items-center justify-center gap-x-6">
+                                    <GetStartedButton />
+                                    <WatchADemoButton defaultVideo="breakingChanges" />
+                                </div>
+                            </div>
+
+                            <Wormhole className="opacity-25" />
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </>
+
+    );
+}
