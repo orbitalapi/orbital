@@ -291,7 +291,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
                @KafkaService( connectionName = "moviesConnection" )
                service MovieService {
                   @KafkaOperation( topic = "movies", offset = "earliest" )
-                  operation streamMovieQuery():Stream<Movie>
+                  stream streamMovieQuery:Stream<Movie>
                }
 
             """.trimIndent()

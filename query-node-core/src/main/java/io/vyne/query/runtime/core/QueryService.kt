@@ -293,10 +293,17 @@ class QueryService(
             CoroutineScope(vyneQlDispatcher).launch {
                getVyneQlQueryStreamingResponse(
                   websocketQuery.query,
-                  ResultMode.TYPED,
+                  websocketQuery.resultMode,
                   MediaType.APPLICATION_JSON_VALUE,
                   clientQueryId = websocketQuery.clientQueryId
-               ).onCompletion { sink.emitComplete(Sinks.EmitFailureHandler.FAIL_FAST) }
+               )
+                  .onCompletion { error ->
+                     if (error == null) {
+                        sink.emitComplete(Sinks.EmitFailureHandler.FAIL_FAST)
+                     } else {
+                        sink.emitError(error, Sinks.EmitFailureHandler.FAIL_FAST)
+                     }
+                  }
                   .collect { emittedResult ->
                      val json = objectMapper.writeValueAsString(emittedResult)
                      sink.emitNext(json, Sinks.EmitFailureHandler.FAIL_FAST)
@@ -423,5 +430,7 @@ class QueryService(
 
 data class WebsocketQuery(
    val clientQueryId: String,
-   val query: String
+   val query: String,
+   // Default for the UI. TODO : Make the default RAW
+   val resultMode: ResultMode = ResultMode.TYPED
 )
