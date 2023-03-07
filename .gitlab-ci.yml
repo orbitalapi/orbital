@@ -281,7 +281,7 @@ regression-test:
 publish-orbital-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
-      projectDir: station
+      projectDir: vyne-query-service
       microservice_vyne: vyne
       microservice_orbital: orbital
    before_script:
