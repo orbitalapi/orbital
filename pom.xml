@@ -629,27 +629,34 @@
 
    <distributionManagement>
       <repository>
-         <id>repo.vyne.co</id>
-         <url>s3://repo.vyne.co/release</url>
+         <id>repo.orbitalhq.com</id>
+         <url>s3://repo.orbitalhq.com/release</url>
       </repository>
       <snapshotRepository>
-         <id>repo.vyne.co</id>
-         <url>s3://repo.vyne.co/snapshot</url>
+         <id>repo.orbitalhq.com</id>
+         <url>s3://repo.orbitalhq.com/snapshot</url>
       </snapshotRepository>
    </distributionManagement>
-
    <repositories>
-      <!-- for taxi snapshots -->
+      <!-- for orbital snapshots -->
       <repository>
-         <id>vyne-snapshots</id>
-         <url>https://repo.vyne.co/snapshot</url>
+         <id>orbital-snapshots</id>
+         <url>https://repo.orbitalhq.com/snapshot</url>
+         <snapshots>
+            <enabled>true</enabled>
+         </snapshots>
+      </repository>
+      <repository>
+         <!-- for taxi snapshots -->
+         <id>maven-central-snapshots</id>
+         <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
          <snapshots>
             <enabled>true</enabled>
          </snapshots>
       </repository>
       <repository>
          <id>vyne</id>
-         <url>https://repo.vyne.co/release</url>
+         <url>https://repo.orbitalhq.com/release</url>
          <snapshots>
             <enabled>false</enabled>
          </snapshots>
