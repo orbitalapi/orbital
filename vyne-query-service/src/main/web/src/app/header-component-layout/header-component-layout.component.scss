@@ -44,5 +44,11 @@
     margin: 0 auto;
     // LR padding is to prevent rubbing up the side of smaller containers
     padding: 2rem 2rem 0;
+
+    // Added because the schema importer was compacting
+    // Test a db import flow if changing this.
+    // Note: Scrollbars still don't feel consistent across the app,
+    // but deferring that for now.
+    display: flex;
   }
 }
