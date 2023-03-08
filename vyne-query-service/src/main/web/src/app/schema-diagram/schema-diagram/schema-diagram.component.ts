@@ -1,11 +1,10 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, Input, OnInit, Output, ViewChild, EventEmitter } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { Schema } from '../../services/schema';
 import { RequiredMembersProps, SchemaFlowWrapper } from './schema-flow.react';
 import { ResizedEvent } from 'angular-resize-event/lib/resized.event';
 import { isNullOrUndefined } from 'util';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { toPng } from 'html-to-image';
 import { arraysEqual } from 'src/app/utils/arrays';
 import { LinkKind } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
 
@@ -38,7 +37,7 @@ export class SchemaDiagramComponent {
     this.resetComponent();
   }
 
-  private _displayedMembers: string[] | 'everything' | 'services';
+  private _displayedMembers: string[] | 'everything' | 'services' = 'services';
 
 
 

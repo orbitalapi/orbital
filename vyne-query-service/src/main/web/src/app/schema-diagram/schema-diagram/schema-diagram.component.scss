@@ -11,16 +11,6 @@
   width: 100%;
 }
 
-// .toolbar {
-//   width: 100%;
-//   display: flex;
-//   align-items: center;
-
-//   .spacer {
-//     flex-grow: 1;
-//   }
-// }
-
 .toolbar {
   display: flex;
   flex-direction: column;
@@ -41,5 +31,5 @@ mat-mini-fab {
 }
 
 ::ng-deep .react-flow__node {
-  transition: all 0.5s ease-out;
+  transition: all 0.25s ease-out;
 }
