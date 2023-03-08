@@ -77,7 +77,7 @@ class GitRepositoryIntegrationTest {
             changeDetectionMethod = FileChangeDetectionMethod.POLL,
             pollFrequency = Duration.ofDays(1)
          ),
-         eventDispatcher, eventDispatcher
+         eventDispatcher, eventDispatcher, eventDispatcher
       )
 
       // Setup: A SchemaStoreClient, which will
