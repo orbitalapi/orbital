@@ -115,7 +115,7 @@ class QueryHistoryDbWriter(
 
             override fun onNext(rows: Tuple2<Long, RemoteCallResponse>) {
                rows.let { remoteCallResponse ->
-                  if (!config.persistRemoteCallResponses) {
+                  if (!config.persistRemoteCallResponses && !config.persistRemoteCallMetadata) {
                      return@let
                   }
                   createdRemoteCallRecordIds.computeIfAbsent(remoteCallResponse.t2.responseId) {
