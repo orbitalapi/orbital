@@ -10,7 +10,7 @@ export const SidebarLinks = [
   {
     title: 'Guides',
     links: [
-      { title: 'First integration', href: '/docs/guides/first-integration/guide'}
+      { title: 'First integration', href: '/docs/guides/first-integration' }
     ],
   },
   {
