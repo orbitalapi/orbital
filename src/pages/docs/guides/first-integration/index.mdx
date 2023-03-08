@@ -4,6 +4,7 @@ description: Deploy Orbital locally, then integrate a database, a REST API, and 
 ---
 
 
+
 import { ImageWithCaption } from '@/components/ImageWithCaption';
 import { Callout } from '@/components/Callout';
 import SchemaExplorer from './schema-explorer.png';
@@ -63,7 +64,7 @@ cd orbital-films-demo
 wget https://github.com/orbitalapi/demos/raw/main/importing-through-ui/docker-compose.yml
 wget https://github.com/orbitalapi/demos/raw/main/importing-through-ui/docker/schema-server/schema-server.conf -P orbital/schema-server
 wget https://github.com/orbitalapi/demos/raw/main/importing-through-ui/docker/schema-server/projects/taxi.conf -P orbital/schema-server/projects
-wget https://gitlab.com/vyne/demos/-/raw/master/films/services.conf -P orbital/config
+wget https://github.com/orbitalapi/demos/raw/main/importing-through-ui/services.conf -P orbital/config
 docker compose up -d
 ```
 
