@@ -63,7 +63,7 @@ class RepositoryService(private val configRepo: SchemaRepositoryConfigLoader) : 
       return Mono.empty()
    }
 
-   @PostMapping("/api/repositories/file", params = ["test"])
+   @PostMapping("/api/repositories/file/test")
    override fun testFileRepository(@RequestBody request: FileRepositoryTestRequest): Mono<FileRepositoryTestResponse> {
       return try {
          val project = TaxiPackageLoader.forDirectoryContainingTaxiFile(Paths.get(request.path)).load()
@@ -91,7 +91,7 @@ class RepositoryService(private val configRepo: SchemaRepositoryConfigLoader) : 
       return Mono.empty()
    }
 
-   @PostMapping("/api/repositories/git", params = ["test"])
+   @PostMapping("/api/repositories/git/test")
    override fun testGitConnection(request: GitConnectionTestRequest): Mono<GitConnectionTestResult> {
       return Mono.just(GitOperations.testConnection(request.uri))
          .map { testResult ->

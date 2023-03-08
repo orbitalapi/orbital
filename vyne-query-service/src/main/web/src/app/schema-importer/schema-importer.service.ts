@@ -74,6 +74,7 @@ export interface FileRepositoryTestResponse {
   path: string;
   exists: boolean;
   identifier: PackageIdentifier | null;
+  errorMessage?: string;
 }
 
 export interface GitConnectionTestResult {
