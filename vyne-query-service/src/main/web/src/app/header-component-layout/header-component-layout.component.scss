@@ -50,5 +50,6 @@
     // Note: Scrollbars still don't feel consistent across the app,
     // but deferring that for now.
     display: flex;
+    flex-direction: column;
   }
 }
