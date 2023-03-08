@@ -7,36 +7,9 @@ import Wormhole from '@/components/Wormhole';
 import { ReactComponent as DataPatternLight } from '@/img/data-pattern.svg';
 import { ReactComponent as ArrowCitrus } from '@/img/arrow-citrus.svg';
 // import { ArrowPathIcon, CloudArrowUpIcon, FingerPrintIcon, LockClosedIcon } from '@heroicons/react/24/outline'
-import { ArrowPathIcon, CloudArrowUpIcon, LockClosedIcon, ServerIcon } from '@heroicons/react/20/solid'
+import { CodeBracketIcon, ArrowPathIcon, EyeIcon, CpuChipIcon, ServerIcon, WrenchIcon, GlobeAsiaAustraliaIcon } from '@heroicons/react/20/solid'
 import OrbitalLogo from '@/img/wormhole-aqua-transparent.png';
-
-
-// const features = [
-//     {
-//         name: 'Consumer-defined queries',
-//         description:
-//             'Morbi viverra dui mi arcu sed. Tellus semper adipiscing suspendisse semper morbi. Odio urna massa nunc massa.',
-//         icon: CloudArrowUpIcon,
-//     },
-//     {
-//         name: 'CI / CD Tooling',
-//         description:
-//             'Sit quis amet rutrum tellus ullamcorper ultricies libero dolor eget. Sem sodales gravida quam turpis enim lacus amet.',
-//         icon: LockClosedIcon,
-//     },
-//     {
-//         name: 'Zero maintenance',
-//         description:
-//             'Quisque est vel vulputate cursus. Risus proin diam nunc commodo. Lobortis auctor congue commodo diam neque.',
-//         icon: ArrowPathIcon,
-//     },
-//     {
-//         name: 'Advanced security',
-//         description:
-//             'Arcu egestas dolor vel iaculis in ipsum mauris. Tincidunt mattis aliquet hac quis. Id hac maecenas ac donec pharetra eget.',
-//         icon: FingerPrintIcon,
-//     },
-// ]
+import HowOrbitalWorks from '@/components/home/HowOrbitalWorks';
 
 const breakingChangesFeatures = [
     {
@@ -44,21 +17,21 @@ const breakingChangesFeatures = [
         description:
             'Define your integrations based on the shape you want to receive it, instead of being at the mercy of how it\'s published.',
         href: '#',
-        icon: CloudArrowUpIcon,
+        icon: CodeBracketIcon,
     },
     {
         name: 'CI / CD tooling',
         description:
             'Integrate rich build time checks to ensure your queries are still compatible with your data producer\'s schemas.',
         href: '#',
-        icon: LockClosedIcon,
+        icon: ArrowPathIcon,
     },
     {
         name: 'Zero maintenance',
         description:
             'When schemas are updated, your app isn\'t affected. Orbital updates the mappings on-the-fly to fulfill the queries you originally designed.',
         href: '#',
-        icon: ArrowPathIcon,
+        icon: WrenchIcon,
     },
 ]
 
@@ -66,17 +39,17 @@ const generalOrbitalFeatures = [
     {
         name: 'Universal microservices API',
         description: 'Let Orbital do the heavy lifting of stitching together data from your microservices ecosystem.',
-        icon: CloudArrowUpIcon,
+        icon: GlobeAsiaAustraliaIcon,
     },
     {
         name: 'Full observability',
         description: 'See full traces of which systems were called as part of your query and what data was provided.',
-        icon: LockClosedIcon,
+        icon: EyeIcon,
     },
     {
         name: 'Inbuilt API and data catalogs',
         description: 'Explore the systems and data available to you with Orbital\'s auto-generated catalogs.',
-        icon: ServerIcon,
+        icon: CpuChipIcon,
     },
 ]
 
@@ -86,23 +59,29 @@ const faqs = [
         question: 'What\'s wrong with standard API versioning?',
         answer:
             'Change is inevitable, and API versioning has worked great for helping to manage different rates of change between producers and consumers of data. Producers can release new versions of their API when they need to and consumers have the flexibility to update when it\'s the right time for them. \
-            \
+            <br /><br />\
             The downside for both parties is that maintenance burden of keeping up with these changes. Producers need to maintain multiple version of their API in the codebase, including the mappings to their back end systems. Consumers need to schedule busy work that they didn\'t necessarily ask for and doesn\'t help achieve their goals but is required simply to keep their system running.',
     },
     {
         question: 'Do you really get rid of breaking changes?',
         answer:
-            'Ok, you got us, we don\'t get rid of ALL breaking changes. We do prevent all types of structural, format, and protocol related changes. For example, if fields are renamed, or moved from a flat to a nested structure, then Orbital handles those without skipping a beat. We don\'t store any data ourselves (and that\'d introduce a whole other set of problems), so if data is completely removed so it\'s no longer available anywhere then we can\'t help.',
+            'Ok, you got us, we don\'t get rid of ALL breaking changes. We do prevent all types of structural, format, and protocol related changes. For example, if fields are renamed, or moved from a flat to a nested structure, then Orbital handles those without skipping a beat. \
+            <br /><br />\
+            We don\'t store any data ourselves (and that\'d introduce a whole other set of problems), so if data is completely removed so it\'s no longer available anywhere then we can\'t help.',
     },
     {
         question: 'What types of API\'s and data sources do you support?',
         answer:
-            'We currently support multiple HTTP (REST) based schemas, including OpenAPI and older versions of Swagger, various databases and streaming sources such as Kafka. Our architecture is designed to be easily extensible for creating connections to different data sources so if we don\'t have one you need, we can built it in quickly.',
+            'We currently support multiple HTTP (REST) based schemas, including OpenAPI and older versions of Swagger, various databases and streaming sources such as Kafka. \
+            <br /><br />\
+            Our architecture is designed to be easily extensible for creating connections to different data sources so if we don\'t have one you need, we can built it in quickly.',
     },
     {
         question: 'How can there be no maintenance?',
         answer:
-            'Orbital lets your ask for data in the specific shape, or data model, that you want. We then handle the transformation between the way the data is provided by upstream systems and the shape you\'ve defined. That means when upstream systems change the way they\'re providing data, Orbital simply adjust the transformations it runs to fulfill your query.',
+            'Orbital lets your ask for data in the specific shape, or data model, that you want. We then handle the transformation between the way the data is provided by upstream systems and the shape you\'ve defined. \
+            <br /><br />\
+            That means when upstream systems change the way they\'re providing data, Orbital simply adjust the transformations it runs to fulfill your query.',
     },
 ]
 
@@ -182,11 +161,11 @@ export default function BreakingChangesLandingPage() {
                                     </dt>
                                     <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-slate-400">
                                         <p className="flex-auto">{feature.description}</p>
-                                        <p className="mt-6">
+                                        {/* <p className="mt-6">
                                             <a href={feature.href} className="text-sm font-semibold leading-6 text-aqua">
                                                 Learn more <span aria-hidden="true">→</span>
                                             </a>
-                                        </p>
+                                        </p> */}
                                     </dd>
                                 </div>
                             ))}
@@ -195,41 +174,12 @@ export default function BreakingChangesLandingPage() {
                 </div>
             </div>
 
-
-            {/* <div className="py-24 sm:py-32">
-                <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div className="mx-auto max-w-2xl lg:text-center">
-                        <h2 className="text-base font-semibold leading-7 text-indigo-600 dark:text-citrus">Decoupled integrations</h2>
-                        <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-                            Integrations that bend, not break
-                        </p>
-                        <p className="mt-6 text-lg leading-8 text-gray-600 dark:text-slate-400">
-                            Quis tellus eget adipiscing convallis sit sit eget aliquet quis. Suspendisse eget egestas a elementum
-                            pulvinar et feugiat blandit at. In mi viverra elit nunc.
-                        </p>
-                    </div>
-                    <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-4xl">
-                        <dl className="grid max-w-xl grid-cols-1 gap-y-10 gap-x-8 lg:max-w-none lg:grid-cols-2 lg:gap-y-16">
-                            {features.map((feature) => (
-                                <div key={feature.name} className="relative pl-16">
-                                    <dt className="text-base font-semibold leading-7 text-white">
-                                        <div className="absolute top-0 left-0 flex h-10 w-10 items-center justify-center rounded-lg bg-aqua">
-                                            <feature.icon className="h-6 w-6 text-white" aria-hidden="true" />
-                                        </div>
-                                        {feature.name}
-                                    </dt>
-                                    <dd className="mt-2 text-base leading-7 text-slate-400">{feature.description}</dd>
-                                </div>
-                            ))}
-                        </dl>
-                    </div>
-                </div>
-            </div> */}
+            <HowOrbitalWorks className="hidden lg:block"/>
 
             <div className="py-24">
                 <img src={OrbitalLogo.src} className={'absolute blur-3xl opacity-25 pointer-events-none'} />
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    <div className="relative isolate overflow-hidden py-20 px-6 sm:rounded-3xl sm:py-24 sm:px-10 lg:py-24">
+                    <div className="relative isolate overflow-hidden py-20 sm:rounded-3xl sm:py-24 sm:px-10 lg:py-24">
                         <div className="mx-auto grid max-w-2xl grid-cols-1 gap-y-16 gap-x-8 sm:gap-y-20 lg:mx-0 lg:max-w-none lg:grid-cols-2 lg:items-center lg:gap-y-0">
                             <div className="lg:row-start-2 lg:max-w-md">
                                 <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
@@ -286,7 +236,7 @@ export default function BreakingChangesLandingPage() {
                                 {faqs.map((faq) => (
                                     <div key={faq.question}>
                                         <dt className="text-base font-semibold leading-7 text-slate-200">{faq.question}</dt>
-                                        <dd className="mt-2 text-base leading-7 text-slate-400">{faq.answer}</dd>
+                                        <dd className="mt-2 text-base leading-7 text-slate-400" dangerouslySetInnerHTML={{__html: faq.answer}}></dd>
                                     </div>
                                 ))}
                             </dl>

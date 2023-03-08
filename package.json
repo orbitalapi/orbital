@@ -29,6 +29,7 @@
     "@tailwindcss/forms": "^0.5.3",
     "@tailwindcss/line-clamp": "^0.3.1",
     "@tailwindcss/typography": "^0.5.9",
+    "animejs": "^3.2.1",
     "autoprefixer": "^10.4.0",
     "brotli-size": "^4.0.0",
     "cheerio": "^1.0.0-rc.12",
