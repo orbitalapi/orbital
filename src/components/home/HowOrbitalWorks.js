@@ -1175,8 +1175,8 @@ const textColour = orbitalTextGray;
 const primaryLinesColour = orbitalCitrus;
 const secondaryLinesColour = orbitalTextGray;
 
-const lineLabelTextColour = orbitalAqua;
-const lineLabelColour = orbitalCitrus;
+const lineLabelTextColour = orbitalBlue;
+const lineLabelColour = "white";
 
 const StyledCaptions = styled.div`
   .counter, .subtitle {

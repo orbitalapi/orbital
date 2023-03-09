@@ -1,5 +1,6 @@
 
 import Head from 'next/head';
+import Image from 'next/image';
 import { Footer } from '@/components/home/Footer';
 import GetStartedButton from '@/components/GetStartedButton';
 import WatchADemoButton from '../components/DemosModal';
@@ -10,6 +11,7 @@ import { ReactComponent as ArrowCitrus } from '@/img/arrow-citrus.svg';
 import { CodeBracketIcon, ArrowPathIcon, EyeIcon, CpuChipIcon, ServerIcon, WrenchIcon, GlobeAsiaAustraliaIcon } from '@heroicons/react/20/solid'
 import OrbitalLogo from '@/img/wormhole-aqua-transparent.png';
 import HowOrbitalWorks from '@/components/home/HowOrbitalWorks';
+import OrbitalQuery from '@/components/home/img/orbital-query.png';
 
 const breakingChangesFeatures = [
     {
@@ -174,7 +176,7 @@ export default function BreakingChangesLandingPage() {
                 </div>
             </div>
 
-            <HowOrbitalWorks className="hidden lg:block"/>
+            <HowOrbitalWorks className="hidden lg:block" />
 
             <div className="py-24">
                 <img src={OrbitalLogo.src} className={'absolute blur-3xl opacity-25 pointer-events-none'} />
@@ -193,13 +195,20 @@ export default function BreakingChangesLandingPage() {
                                     As well as protection from breaking changes, Orbital offers a complete set of features to change your integration game.
                                 </p>
                             </div>
-                            <img
-                                src="https://tailwindui.com/img/component-images/dark-project-app-screenshot.png"
-                                alt="Product screenshot"
-                                className="relative -z-20 min-w-full max-w-xl rounded-xl shadow-xl ring-1 ring-white/10 lg:row-span-4 lg:w-[64rem] lg:max-w-none"
-                                width={2432}
-                                height={1442}
-                            />
+                            <div
+                                className="relative -z-20 max-w-xl h-fit rounded-xl shadow-xl ring-1 ring-white/10 lg:row-span-4 lg:w-[64rem] lg:max-w-none"
+                            >
+                                <Image
+                                    src={OrbitalQuery}
+                                    alt="Orbital product screenshot"
+                                    fill
+                                    // width={2432}
+                                    // height={1442}
+                                    style={{
+                                        borderRadius: "0.75rem",
+                                    }}
+                                />
+                            </div>
                             <div className="max-w-xl lg:row-start-3 lg:mt-10 lg:max-w-md lg:border-t lg:border-white/10 lg:pt-10">
                                 <dl className="max-w-xl space-y-8 text-base leading-7 text-gray-300 lg:max-w-none">
                                     {generalOrbitalFeatures.map((feature) => (
@@ -236,7 +245,7 @@ export default function BreakingChangesLandingPage() {
                                 {faqs.map((faq) => (
                                     <div key={faq.question}>
                                         <dt className="text-base font-semibold leading-7 text-slate-200">{faq.question}</dt>
-                                        <dd className="mt-2 text-base leading-7 text-slate-400" dangerouslySetInnerHTML={{__html: faq.answer}}></dd>
+                                        <dd className="mt-2 text-base leading-7 text-slate-400" dangerouslySetInnerHTML={{ __html: faq.answer }}></dd>
                                     </div>
                                 ))}
                             </dl>
