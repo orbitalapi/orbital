@@ -1,4 +1,3 @@
-import { Widont } from '@/components/Widont';
 import { getAllPostPreviews } from '@/utils/getAllPosts';
 import Link from 'next/link';
 import { formatDate } from '@/utils/formatDate';
@@ -52,17 +51,16 @@ export default function Blog() {
 
   return (
     <main className='max-w-[52rem] mx-auto px-4 pb-28 sm:px-6 md:px-8 xl:px-12 lg:max-w-8xl'>
-      <header className='py-16 sm:text-center'>
+      <header className='py-16 text-center flex items-center flex-col'>
         <h1 className='mb-4 text-3xl sm:text-4xl tracking-tight text-slate-900 font-extrabold dark:text-slate-200'>
           Latest Updates
         </h1>
-        <p className='text-lg text-slate-700 dark:text-slate-400'>
-          <Widont>All the latest Orbital news, direct from the team. From our outputs to your inputs.</Widont>
-        </p>
-        {/*TODO : Get the hubspot form */}
-        {/*<section className="mt-3 max-w-sm sm:mx-auto sm:px-4">*/}
+        {/*<p className='text-lg text-slate-700 dark:text-slate-400'>*/}
+        {/*  <Widont>Stay up to date with all the latest Orbital news. From our outputs to your inputs.</Widont>*/}
+        {/*</p>*/}
+        {/*<section className="mt-3 max-w-sm sm:mx-auto sm:px-4 flex items-center">*/}
         {/*  <h2 className="sr-only">Sign up for our newsletter</h2>*/}
-        {/*  <NewsletterForm action="https://app.convertkit.com/forms/3181837/subscriptions"/>*/}
+        {/*  <NewsletterForm />*/}
         {/*</section>*/}
       </header>
 

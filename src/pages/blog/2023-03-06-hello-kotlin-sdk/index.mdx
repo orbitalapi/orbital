@@ -2,6 +2,9 @@ import { martyPitt } from '@/authors';
 import OrbitalMermaid from '@/components/OrbitalMermaid';
 import { ImageWithCaption } from '@/components/ImageWithCaption';
 import FilmsDbAndApi from './films-db-and-api.png';
+import QueryExecutionPlan from './query-execution-plan.png';
+import QuerySequenceDiagram from './query-sequence-diagram.png';
+import ValueLineage from './value-lineage.png';
 
 export const meta = {
   title: 'Hello, Kotlin SDK',
@@ -17,7 +20,14 @@ We've just released the first version of our Kotlin SDK for invoking Orbital's i
 your Kotlin code.  Our Kotlin SDK gives rich, type-safe integration across databases, APIs, kafka topics and more,
 all without writing any integration code.
 
-A little background on what Orbital is and how it works.  If you'd rather, just [skip to the new bit](#type-safe-querying).
+## In this post
+ * [A video showing our Kotlin SDK](#watch-the-video)
+ * [Background - Semantic APIs with Taxi and Kotlin](#background-semantic-ap-is-with-taxi-and-kotlin-s-typealias)
+ * [Type safe integration with our new Kotlin SDK](#type-safe-querying)
+ * [Linking Streaming data from Kafka with Microservices](#querying-kafka)
+ * [Oribtal's amazing observability](#observability)
+
+
 
 ## Watch the video
 The content of this blog is also covered in this video, if that's more your cup-o-tea!
@@ -204,6 +214,33 @@ Here, Orbital is enriching the data on every message, enriching with a database 
 
 However, the client code has remained incredibly simple!
 
+## Observability
+
+Even though our queries were triggered by the Kotlin client, the orchestration
+was performed by Orbital - which means we get Orbital's amazing observability, with zero effort.
+
+The profiler shows us lots of great information - let's take a quick look at what's available
+
+### High level execution plan
+The high level execution plan shows us exactly how the integration was executed - which systems
+were invoked, and how data was passed between them.
+
+<ImageWithCaption src={QueryExecutionPlan.src} wide
+                  caption='A query execution plan, showing which systems are orchestrated for this query'></ImageWithCaption>
+
+### Call sequence diagram
+We can also see a classic sequence diagram, showing each call between the systems.
+Clicking on each call shows us the request that was sent, and the response we got back.
+
+<ImageWithCaption src={QuerySequenceDiagram.src} wide
+                  caption='Orbital generates sequence diagrams showing call level flow of data between systems'></ImageWithCaption>
+
+### Cell-level lineage
+We can go even deeper.  Clicking on any value returned shows the actual values passed between the systems
+to derive the provided values.
+
+<ImageWithCaption src={ValueLineage.src} wide
+                  caption='The full on how each individual value was derived'></ImageWithCaption>
 
 ## Grab the bits
 

@@ -18,12 +18,12 @@ const footerNav = [
       { title: 'Zero code data normalization', href: '/docs' }
     ],
     'Community and Tools': [
-      {title: 'Voyager', href: 'https://voyager.orbitalhq.com'},
-      {title: 'Taxi', href: 'https://taxilang.org'},
+      { title: 'Voyager', href: 'https://voyager.vyne.co' },
+      { title: 'Taxi', href: 'https://taxilang.org' },
 
-      {title: 'GitHub', href: 'https://github.com/orbitalapi/orbital'},
-      {title: 'Twitter', href: 'https://twitter.com/orbitalapi'},
-      {title: 'LinkedIn', href: 'https://www.linkedin.com/company/orbitalhq/'},
+      { title: 'GitHub', href: 'https://github.com/orbitalapi/orbital' },
+      { title: 'Twitter', href: 'https://twitter.com/orbitalapi' },
+      { title: 'LinkedIn', href: 'https://www.linkedin.com/company/orbitalhq/' }
     ],
   },
 ]
