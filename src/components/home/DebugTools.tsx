@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { BigText, Caption, LearnMoreButton, Paragraph } from '@/components/home/common';
+import { BigText, Caption, LearnMoreLink, Paragraph } from '@/components/home/common';
 import { Widont } from '../Widont';
 import { Tabs } from '../Tabs';
 import CellLineageImg from './img/cell-lineage.png';
@@ -116,7 +116,7 @@ function DebugTools({className = ''}) {
             you can see
             exactly what is happening under the hood.
           </Paragraph>
-          <LearnMoreButton href="https://docs.vyne.co/querying-with-vyne/data-lineage/" className={'mt-8 mb-8'} />
+          <LearnMoreLink href="https://docs.vyne.co/querying-with-vyne/data-lineage/" className={'mt-8 mb-8'} />
           <div className="mt-10 w-full">
             <Tabs
               tabs={tabs}

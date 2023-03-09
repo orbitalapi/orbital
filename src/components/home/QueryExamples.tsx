@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { BigText, LearnMoreButton, Paragraph } from '@/components/home/common';
+import { BigText, LearnMoreLink, Paragraph } from '@/components/home/common';
 import { Tabs } from '../Tabs';
 import { GridLockup } from '../GridLockup';
 import { AnimatePresence } from 'framer-motion';
@@ -323,7 +323,7 @@ function QueryExamples(props: QueryExampleProps) {
               No glue code required. As things change, Orbital adapts.
             </Paragraph>
 
-            <LearnMoreButton href="https://docs.vyne.co/querying-with-vyne/writing-queries/" />
+            <LearnMoreLink href="/docs/querying/writing-queries/" />
             {/* <p className="my-8 flex w-3/4 content-baseline justify-center h-8">
               <a href="https://docs.vyne.co/querying-with-vyne/writing-queries/" className={'font-brand text-citrus uppercase tracking-widest font-bold leading-8'}>
                 Learn more

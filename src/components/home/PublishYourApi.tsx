@@ -1,4 +1,5 @@
-import { BigText, Caption, Paragraph, Widont } from '@/components/home/common';
+import { BigText, Caption, LearnMoreLink, Paragraph, Widont } from '@/components/home/common';
+import LearnMoreButton from '@/components/home/LearnMoreButton'; 
 import { Snippet } from '@/components/Steps';
 import * as React from 'react';
 import { useState } from 'react';
@@ -174,28 +175,7 @@ export default function PublishYourApi({ highlightedSnippets }) {
                        code={publishYourApiCodeSnippets['taxi-simple']} />
             </div>
 
-            <button
-              type='button'
-              className='mt-4 inline-flex items-center px-3.5 py-2 border border-transparent text-sm leading-4 font-medium rounded-full shadow-sm text-midnight-blue bg-citrus hover:bg-citrus-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-citrus-700'
-            >
-              Learn more about Taxi<span className='hidden lg:inline'>, our metadata language</span>
-
-              <svg
-                className={clsx(
-                  'overflow-visible ml-5'
-                )}
-                width='3'
-                height='6'
-                viewBox='0 0 3 6'
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='2'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-              >
-                <path d={'M0 0L3 3L0 6'} />
-              </svg>
-            </button>
+            <LearnMoreButton href="https://taxilang.org" text={() => <span>Learn more about Taxi<span className='hidden xl:inline'>, our metadata language</span></span>} />
           </div>
           <div className='col-span-2'>
             <Snippet highlightedCode={tabCodeSnippets[tab].highlightedCode} code={tabCodeSnippets[tab].code} />
