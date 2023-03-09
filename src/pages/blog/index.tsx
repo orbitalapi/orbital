@@ -7,6 +7,8 @@ import WormholeAqua from '@/img/wormhole-aqua-transparent.png';
 import WormholeCitrus from '@/img/wormhole-citrus-transparent.png';
 //@ts-ignore
 import { ReactComponent as DataPatternLight } from '@/img/data-pattern-light.svg';
+import React from 'react';
+import { Widont } from '@/components/Widont';
 
 export interface Author {
   name: string;
@@ -55,9 +57,9 @@ export default function Blog() {
         <h1 className='mb-4 text-3xl sm:text-4xl tracking-tight text-slate-900 font-extrabold dark:text-slate-200'>
           Latest Updates
         </h1>
-        {/*<p className='text-lg text-slate-700 dark:text-slate-400'>*/}
-        {/*  <Widont>Stay up to date with all the latest Orbital news. From our outputs to your inputs.</Widont>*/}
-        {/*</p>*/}
+        <p className='text-lg text-slate-700 dark:text-slate-400'>
+          <Widont>Stay up to date with all the latest Orbital news. From our outputs to your inputs.</Widont>
+        </p>
         {/*<section className="mt-3 max-w-sm sm:mx-auto sm:px-4 flex items-center">*/}
         {/*  <h2 className="sr-only">Sign up for our newsletter</h2>*/}
         {/*  <NewsletterForm />*/}
