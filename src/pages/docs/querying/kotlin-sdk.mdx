@@ -1,0 +1,155 @@
+import { Callout } from '@/components/Callout';
+export const meta = {
+  title: 'Kotlin SDK',
+  description: 'Using the Kotlin SDK for querying with Orbital'
+}
+
+## Installation
+Install the library using the following maven dependency.
+
+![](https://img.shields.io/maven-central/v/com.orbitalhq/kotlin-client?label=Latest%20version&style=for-the-badge)
+
+```xml
+<dependency>
+  <groupId>com.orbitalhq</groupId>
+  <artifactId>kotlin-client</artifactId>
+  <version>${orbital.version}</version>
+</dependency>
+```
+
+## Generating Kotlin from Taxi
+
+## Querying using the typesafe builder
+
+Queries start with a verb - either `find` (for finite result sets) or `stream` (for infinite streams of data - like a Kafka topic).
+
+```kotlin
+import com.orbital.client.find
+import com.orbital.client.stream
+
+// Will look for a service that exposes Film[]
+val listOfFilms = find<List<Film>>()
+
+// Will look for a service that exposes Film[]
+val singleFilm = find<Film>()
+
+// Will look for a service that exposes a Stream<FilmWatchedEvent>
+// (such as a kafka topic)
+val announcements = stream<FilmWatchedEvent>()
+```
+
+<Callout type='note' title={"Under construction"}>
+  Currently, you can't pass any criteria through the typesafe builder. We're working on that right now.
+</Callout>
+
+
+### Projecting to a response object
+Orbital really shines when you ask for a source object to be transformed into something else.
+
+The Kotlin SDK gives you typesafe querying using response objects, defined as data classes, using
+type aliases annotated with `@DataType`.  (These are normally [generated](#generating-kotlin-from-taxi), but don't have to be)
+
+```kotlin
+// Normally, these are generated...
+@DataType("com.foo.FilmId")
+typealias FilmId = String
+// etc...
+
+
+// Define a response object
+data class Response(
+    val id: FilmId,
+    val title: Title,
+
+    val streamingProviderName: StreamingProviderName,
+    val cost: StreamingProviderPrice,
+
+    val reviewScore: FilmReviewScore,
+    val reviewText: ReviewText
+)
+```
+
+Once you have a response object defined, you can project your source object to the response:
+
+```kotlin
+// Transforming a List of Films to a List of Responses
+val response = find<List<Film>>()
+    .asA<List<Response>>()
+
+// or, with a stream of data:
+val response = stream<FilmWatchedEvent>()
+    .asA<Response>()
+```
+
+### Specifying criteria
+Specifying criteria isn't yet implemented in the Kotlin SDK, but we're working on it.
+
+Subscribe for updates on [this issue](https://github.com/orbitalapi/kotlin-sdk/issues/1) for more information.
+
+## Querying using TaxiQL directly
+Passing TaxiQL directly isn't yet implemented in the Kotlin SDK, but we're working on it.
+
+Subscribe for updates on [this issue](https://github.com/orbitalapi/kotlin-sdk/issues/2) for more information.
+
+## Executing queries
+Once you have your query defined, you need to execute, using `run()`.
+
+`run` takes a [transport](#transports), which is responsible for connecting to the Orbital server, and handling responses.
+
+```kotlin
+import com.orbital.client.converter.run
+
+val response = find<List<Film>>()
+    .asA<List<Response>>()
+    .run(http("http://localhost:9022"))
+    .toFlux()
+```
+<Callout title={'Heads Up!'}>
+  <code>run</code> returns a <code>Publisher</code>, which is a reactive type. You need to subscribe to the publisher,
+  or the query won't be executed.
+</Callout>
+
+
+## Transports
+Currently, transports are provided for `http` and `httpStreaming`, implemented using [okhttp](https://square.github.io/okhttp/).
+
+However, the library is designed such that transports can be pluggable by implementing the [OrbitalTransport](https://github.com/orbitalapi/kotlin-sdk/blob/main/src/main/java/com/orbital/client/OrbitalTransport.kt) interface.
+
+Generally, `httpStream` is a reasonable default.
+
+### http transport
+Executes a query over http, returning the full result set once transformations have been completed.
+
+Unlike `httpStream`, the full response object is held in memory and returned once the query has been fully executed.
+As a result, the response type is `List<T>`, receiving the fully collected list.
+
+For larger queries, you should use `httpStream`.
+
+
+### httpStream transport
+Executes a query over websocket, and streams the results as they become available.
+
+When queries are made against a streaming source (such as a message queue or kafka topic), then each message
+is transformed and emitted independently.
+
+When queries are made against a request-response data source (such as a database or query), then responses
+are emitted individually, as soon as the message is transformed.
+
+Orbital executes queries and transformations in parallel, so responses are streamed as soon as they are available.
+
+This is generally preferred, as the orbital server doesn't need to hold results in memory, and clients get results
+sooner.
+
+## Example
+
+
+```kotlin
+import com.orbital.client.converter.run
+import com.orbital.client.find
+import com.orbital.client.transport.okhttp.http
+
+val response:Flux<List<Response>> = find<List<Film>>()
+    .asA<List<Response>>()
+    .run(http("http://localhost:9022"))
+    .toFlux()
+```

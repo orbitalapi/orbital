@@ -1,0 +1,256 @@
+import { martyPitt } from '@/authors';
+import OrbitalMermaid from '@/components/OrbitalMermaid';
+import { ImageWithCaption } from '@/components/ImageWithCaption';
+import FilmsDbAndApi from './films-db-and-api.png';
+import QueryExecutionPlan from './query-execution-plan.png';
+import QuerySequenceDiagram from './query-sequence-diagram.png';
+import ValueLineage from './value-lineage.png';
+
+export const meta = {
+  title: 'Hello, Kotlin SDK',
+  description: `Using Orbital's Kotlin SDK to connect APIs, DB's and Kafka`,
+  date: '2023-02-24T08:00:00.000Z',
+  authors: [martyPitt]
+}
+
+Orbital is a platform for automating integration between microservices.  Developers can ask for
+the data they need, and let Orbital handle all the integration work.
+
+We've just released the first version of our Kotlin SDK for invoking Orbital's integration engine directly inside
+your Kotlin code.  Our Kotlin SDK gives rich, type-safe integration across databases, APIs, kafka topics and more,
+all without writing any integration code.
+
+## In this post
+ * [A video showing our Kotlin SDK](#watch-the-video)
+ * [Background - Semantic APIs with Taxi and Kotlin](#background-semantic-ap-is-with-taxi-and-kotlin-s-typealias)
+ * [Type safe integration with our new Kotlin SDK](#type-safe-querying)
+ * [Linking Streaming data from Kafka with Microservices](#querying-kafka)
+ * [Oribtal's amazing observability](#observability)
+
+
+
+## Watch the video
+The content of this blog is also covered in this video, if that's more your cup-o-tea!
+
+<div style={{ position: "relative", "paddingBottom": "56.25%", height: 0 }}>
+  <iframe src="https://www.loom.com/embed/9f07a7365322428c9f051ad2394c0caf" frameborder="0" webkitallowfullscreen
+          mozallowfullscreen allowfullscreen
+          style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}></iframe>
+</div>
+
+## Background: Semantic APIs with Taxi and Kotlin's typealias
+Semantic metadata allows developers to build a library of simple terms that describe data attributes between systems.
+
+Data seldom exists in a silo - keys from one system can be fed to another to provide data or capabilities. Semantic Metadata is a way of capturing these relationships, and using them to drive software automation.
+
+<ImageWithCaption src={FilmsDbAndApi.src} voyagerLink='qBw38GjhQe' wide></ImageWithCaption>
+
+This is a really powerful technique for building autonomous systems, which self-integrate and self-repair.  We go
+into this is much more detail in [this post](/blog/2023-01-16-using-semantic-metadata), which is worth reading.
+
+## Semantic Metadata using Kotlin
+
+[Taxi](https://taxilang.org) has had support generating Kotlin `typealias` for some time, using the [Taxi Kotlin plugin](https://taxilang.org/plugins/kotlin-plugin/).
+
+This allows developers building microservices to publish fine-grained semantic schemas directly from their code.
+
+Of course, there's other ways to publish semantic metadata, such as directly in [OpenAPI schemas](/docs/describing-data-sources/open-api), or [Protobuf specs](/docs/describing-data-sources/protobuf),
+but this is a Kotlin blog, so we'll stay in code.
+
+For example, consider a Spring Boot REST API that tells me which streaming services I can watch a movie on:
+
+```kotlin
+@DataType("com.demo.FilmId")
+typealias FilmId = Int
+
+@DataType("com.demo.StreamingProviderName")
+typealias StreamingProviderName = String
+
+@DataType("com.demo.StreamingProviderPrice")
+typealias StreamingProviderPrice = String
+
+// Response object
+data class StreamingProvider(
+    val name: StreamingProviderName,
+    val pricePerMonth: StreamingProviderPrice
+)
+
+// REST API
+@GetMapping("/films/{filmId}/streamingProviders")
+fun getPlacesWhereFilmIsPlaying(@PathVariable("filmId") filmId: FilmId): StreamingProvider {
+    //...
+}
+```
+
+
+## Type safe querying
+The Kotlin SDK lets you write type-safe queries that ask for data, without specifying where to fetch it from, or how to
+enrich it.
+
+This is really powerful, as it means consumers of data are no longer tightly-coupled to producer APIs.
+
+For example, we can ask Orbital to stitch some data from multiple a database of Films, together with data that tells me where I can watch it.
+
+First, we need to define a data class, containing the fields we're interested in:
+
+```kotlin
+data class MyResponseObject(
+    // Grab some fields from our database:
+    val id: FilmId,
+    val title: Title,
+
+    // Along with some from a REST API:
+    val availableToWatchAt: StreamingProviderName,
+    val costPerMonth: StreamingProviderPrice
+)
+```
+
+Then, Use Orbital's Kotlin sdk to ask orbital to fetch the data for us:
+
+```kotlin
+val response = find<List<Film>>()
+    .asA<List<MyResponseObject>>()
+    // Specify where Orbital is running
+    .run(http("http://localhost:9022"))
+    .toFlux()
+    .subscribe { printLn("Received a response: ${objectMapper.writeValueAsString(event)}")  }
+```
+
+Under the covers, this code constructs a [TaxiQL](https://taxilang.org/language-reference/querying-with-taxiql/) query
+and sends it to Orbital, running at `localhost:9022`.
+
+Orbital then generates an integration on-the-fly, fetching data from our database first, then enriching it
+with API calls, before returning the results
+
+<OrbitalMermaid chart={`sequenceDiagram
+    Kotlin Client->>Orbital: TaxiQL query
+    Orbital->>FilmsDb: SQL Query: select * from Films
+    Orbital->>RestAPI: GET /films/{filmId}/streamingProviders
+    Orbital->>Kotlin Client: Query results
+    `} />
+
+### Getting richer
+If we added more fields to our response object that come from a 3rd data source, this time asking for reviews of our films:
+
+```kotlin
+    data class MyResponseObject(
+        // Grab some fields from our database:
+        val id: FilmId,
+        val title: Title,
+    
+        // Along with some from a REST API:
+        val availableToWatchAt: StreamingProviderName,
+        val costPerMonth: StreamingProviderPrice,
+        
+>        val reviewScore: FilmReviewScore,
+>        val review: ReviewText
+    )
+```
+
+This time, executing our query Orbital does more work for us:
+
+<OrbitalMermaid wide chart={`sequenceDiagram
+    Kotlin Client->>Orbital: TaxiQL query
+    Orbital->>FilmsDb: SQL Query: select * from Films
+    par Enrich where can people watch this
+       Orbital->>RestAPI: GET /films/{filmId}/streamingProviders
+    and Enrich with film reviews
+        Orbital->>ReviewsApi: GET /reviews/{filmId}/reviews
+    end 
+    Orbital->>Kotlin Client: Query results
+    `} />
+
+Here, Orbital is fetching data from multiple sources.  The work happens in parallel, to keep
+the integration snappy.
+
+## Streaming query results
+
+So far, Orbital has been executing the query, enriching the data, and returning to our Kotlin client
+once the query is finished.
+
+However, we can ask Orbital to stream the data as soon as it's available, operating on a stream.
+
+This means we get data back much sooner.  It's as simple as changing the the transport from `http` to `httpStream`:
+
+```kotlin
+  val response = find<List<Film>>()
+      .asA<List<Response>>()
+>      .run(httpStream("http://localhost:9022"))
+      .toFlux()
+      .subscribe { printLn("Received a message: ${objectMapper.writeValueAsString(event)}")  }
+```
+
+Now, when we run the query, we see results stream in almost instantly.
+
+## Querying Kafka
+Orbital can also handle querying infinite streams of data, such as from a Kafka topic.
+
+All that's different is we change the verb from `find` to `stream`.
+
+Let's subscribe to a stream of new release announcements, which are published on Kafka:
+
+```kotlin
+>  val response = stream<NewReleaseAnnouncement>()
+      .asA<List<Response>>()
+      .run(httpStream("http://localhost:9022"))
+      .toFlux()
+      .subscribe { printLn("Received a message: ${objectMapper.writeValueAsString(event)}")  }
+```
+
+Here, Orbital is enriching the data on every message, enriching with a database query and a series of Rest API calls.
+
+<OrbitalMermaid wide chart={`sequenceDiagram
+    Kotlin Client->>Orbital: TaxiQL query
+    Orbital->>Kafka: Subscribe to Kafka topic
+    Kafka-->>Orbital: Message
+    Orbital->>FilmsDb: SQL Query: select * from Films where FilmId = ?
+    par Enrich where can people watch this
+       Orbital->>RestAPI: GET /films/{filmId}/streamingProviders
+    and Enrich with film reviews
+        Orbital->>ReviewsApi: GET /reviews/{filmId}/reviews
+    end 
+    Orbital-->>Kotlin Client: Query results streaming
+    `} />
+
+However, the client code has remained incredibly simple!
+
+## Observability
+
+Even though our queries were triggered by the Kotlin client, the orchestration
+was performed by Orbital - which means we get Orbital's amazing observability, with zero effort.
+
+The profiler shows us lots of great information - let's take a quick look at what's available
+
+### High level execution plan
+The high level execution plan shows us exactly how the integration was executed - which systems
+were invoked, and how data was passed between them.
+
+<ImageWithCaption src={QueryExecutionPlan.src} wide
+                  caption='A query execution plan, showing which systems are orchestrated for this query'></ImageWithCaption>
+
+### Call sequence diagram
+We can also see a classic sequence diagram, showing each call between the systems.
+Clicking on each call shows us the request that was sent, and the response we got back.
+
+<ImageWithCaption src={QuerySequenceDiagram.src} wide
+                  caption='Orbital generates sequence diagrams showing call level flow of data between systems'></ImageWithCaption>
+
+### Cell-level lineage
+We can go even deeper.  Clicking on any value returned shows the actual values passed between the systems
+to derive the provided values.
+
+<ImageWithCaption src={ValueLineage.src} wide
+                  caption='The full on how each individual value was derived'></ImageWithCaption>
+
+## Grab the bits
+
+You can grab the artefacts directly from Maven Central, or view the code [over on Github](https://github.com/orbitalapi/kotlin-sdk).  Also, check out the full API reference over in our [docs](/docs/querying/kotlin-sdk).
+
+```xml
+<!-- For writing queries -->
+<dependency>
+    <groupId>com.orbitalhq</groupId>
+    <artifactId>kotlin-client</artifactId>
+    <version>0.1.0</version>
+</dependency>
+```

@@ -1,11 +1,11 @@
 import { Widont } from '@/components/home/common';
-import { NewsletterForm } from '@/components/NewsletterForm';
 import { formatDate } from '@/utils/formatDate';
 import { mdxComponents } from '@/utils/mdxComponents';
 import { MDXProvider } from '@mdx-js/react';
 import clsx from 'clsx';
 import Link from 'next/link';
 import { AuthorAvatar } from '@/components/AuthorAvatar';
+import { Footer } from '@/components/home/Footer';
 
 export function BlogPostLayout({children, meta}) {
   return (
@@ -75,36 +75,22 @@ export function BlogPostLayout({children, meta}) {
               </div>
             </article>
           </main>
-          <footer className="mt-16">
-            <div className="relative">
-              <img
-                src={require('@/img/beams/blog-post-form@80.jpg').default.src}
-                alt=""
-                className="absolute top-px sm:left-auto sm:right-0 left-1/4 dark:hidden max-w-none"
-                width="476"
-                decoding="async"
-              />
-              <img
-                src={require('@/img/beams/blog-post-form-dark@90.jpg').default.src}
-                alt=""
-                className="absolute top-px -left-1/4 sm:left-0 hidden dark:block max-w-none"
-                width="1429"
-                decoding="async"
-              />
-              <section className="relative py-16 border-t border-slate-200 dark:border-slate-200/5">
-                <h2 className="text-xl font-semibold text-slate-900 tracking-tight dark:text-white">
-                  Get all of our updates directly to your&nbsp;inbox.
-                  <br/>
-                  Sign up for our newsletter.
-                </h2>
-                <div className="mt-5 max-w-md">
-                  <NewsletterForm action="https://app.convertkit.com/forms/3181881/subscriptions"/>
-                </div>
-              </section>
-            </div>
-          </footer>
+          {/*<footer className="mt-16">*/}
+          {/*  <div className="relative">*/}
+          {/*    <section className="relative py-16 border-t border-slate-200 dark:border-slate-200/5">*/}
+          {/*      <h2 className="text-xl font-semibold text-slate-900 tracking-tight dark:text-white">*/}
+          {/*        Get our updates directly to your&nbsp;inbox.*/}
+          {/*      </h2>*/}
+          {/*      <div className="mt-5 max-w-md">*/}
+          {/*        <NewsletterForm />*/}
+          {/*      </div>*/}
+          {/*    </section>*/}
+          {/*  </div>*/}
+          {/*</footer>*/}
+
         </div>
       </div>
+      <Footer />
     </div>
   )
 }
