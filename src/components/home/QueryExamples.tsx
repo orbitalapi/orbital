@@ -1,5 +1,8 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
+import Image from 'next/future/image';
+import Script from 'next/script';
+
 import { BigText, LearnMoreLink, Paragraph } from '@/components/home/common';
 import { Tabs } from '../Tabs';
 import { GridLockup } from '../GridLockup';
@@ -181,26 +184,26 @@ export const queryExampleCodeSnippets: CodeSnippetMap = Object.fromEntries(Objec
 let tabs = {
   'Fetch': (selected) => (
     <>
-      <rect width="48" height="48" fill="white" fillOpacity="0.01"/>
+      <rect width="48" height="48" fill="white" fillOpacity="0.01" />
       <path d="M10 8L4 14L10 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-            strokeLinejoin="round"/>
+        strokeLinejoin="round" />
       <path d="M38 28L44 34L38 40" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-            strokeLinejoin="round"/>
-      <path d="M4 14H44" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M4 34H44" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        strokeLinejoin="round" />
+      <path d="M4 14H44" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 34H44" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </>
   ),
   Combine: (selected) => (
     <>
       <svg width="38" height="38" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="16" y="16" width="27" height="27" rx="2" stroke="currentColor" strokeWidth="2"
-              strokeLinecap="round" strokeLinejoin="round"/>
+          strokeLinecap="round" strokeLinejoin="round" />
         <rect x="5" y="5" width="27" height="27" rx="2" stroke="currentColor" strokeWidth="2"
-              strokeLinecap="round" strokeLinejoin="round"/>
+          strokeLinecap="round" strokeLinejoin="round" />
         <path d="M27 16L16 27" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-              strokeLinejoin="round"/>
+          strokeLinejoin="round" />
         <path d="M32 21L21 32" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-              strokeLinejoin="round"/>
+          strokeLinejoin="round" />
       </svg>
     </>
   ),
@@ -208,19 +211,19 @@ let tabs = {
     <>
       <path
         d="M38.1421 38.1421C45.9526 30.3316 45.9526 17.6684 38.1421 9.85786C30.3316 2.04738 17.6684 2.04738 9.85786 9.85786C2.04738 17.6684 2.04738 30.3316 9.85786 38.1421M32.4853 32.4853C37.1716 27.799 37.1716 20.201 32.4853 15.5147C27.799 10.8284 20.201 10.8284 15.5147 15.5147C10.8284 20.201 10.8284 27.799 15.5147 32.4853"
-        stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+        stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
       <path
         d="M28 24C28 26.2091 26.2091 28 24 28C21.7909 28 20 26.2091 20 24C20 21.7909 21.7909 20 24 20C26.2091 20 28 21.7909 28 24Z"
-        fill="none"/>
+        fill="none" />
       <path
         d="M24 28C26.2091 28 28 26.2091 28 24C28 21.7909 26.2091 20 24 20C21.7909 20 20 21.7909 20 24C20 26.2091 21.7909 28 24 28ZM24 28V44M24 44H28M24 44H20"
-        stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+        stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
     </>
   ),
   Expressions: () => (
     <>
       <path d="M40 9L37 6H8L26 24L8 42H37L40 39" stroke="currentColor" strokeWidth="3" strokeLinecap="round"
-            strokeLinejoin="round"/>
+        strokeLinejoin="round" />
     </>
   )
 
@@ -305,7 +308,7 @@ function QueryExamples(props: QueryExampleProps) {
 
   return (
     <section id="query-examples" className={`relative dark:bg-slate-900 ${props.className}`}>
-      <img src={OrbitalLogo.src} className={'absolute blur-3xl opacity-25 pointer-events-none'} />
+      <Image src={OrbitalLogo} className={'absolute blur-3xl opacity-25 pointer-events-none'} alt="Orbital aqua wormhole background image" />
       <div className='max-w-7xl mx-auto px-4 sm:px-8 md:px-8'>
         <div className={'flex flex-col items-center'}>
           <div className='max-w-3xl mx-auto flex flex-col items-center'>
@@ -349,14 +352,14 @@ function QueryExamples(props: QueryExampleProps) {
           className="mt-10"
           beams={-1}
           left={
-            <Snippet highlightedCode={props.highlightedSnippets[tab]} code={queryExampleCodeSnippets[tab]}/>
+            <Snippet highlightedCode={props.highlightedSnippets[tab]} code={queryExampleCodeSnippets[tab]} />
           }
           right={
             <AnimatePresence initial={false} exitBeforeEnter>
               <>
                 {tabData[tab].integrationDiagrams.map((plan, idx) => {
                   return (<div key={`${tab}-PlanDiv-${idx}`} id={`${tab}-Plan-${idx}`}
-                               className=" pt-8 flex flex-col items-center">
+                    className=" pt-8 flex flex-col items-center">
                     {/* We use this id for building lines from the query to the plan*/}
                     <IntegrationDiagram  {...plan} orientation='vertical' />
                   </div>)

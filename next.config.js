@@ -1,12 +1,12 @@
 const path = require('path')
-const {createLoader} = require('simple-functional-loader')
+const { createLoader } = require('simple-functional-loader')
 const frontMatter = require('front-matter')
 const withSmartQuotes = require('@silvenon/remark-smartypants')
 const mdxMermaid = require('mdx-mermaid');
-const {withTableOfContents} = require('./remark/withTableOfContents')
-const {withSyntaxHighlighting} = require('./remark/withSyntaxHighlighting')
-const {withNextLinks} = require('./remark/withNextLinks')
-const {withLinkRoles} = require('./rehype/withLinkRoles')
+const { withTableOfContents } = require('./remark/withTableOfContents')
+const { withSyntaxHighlighting } = require('./remark/withSyntaxHighlighting')
+const { withNextLinks } = require('./remark/withNextLinks')
+const { withLinkRoles } = require('./rehype/withLinkRoles')
 const minimatch = require('minimatch')
 const withExamples = require('./remark/withExamples')
 const {
@@ -15,7 +15,7 @@ const {
   simplifyToken,
   normalizeTokens,
 } = require('./remark/utils')
-const {withPrevalInstructions} = require('./remark/withPrevalInstructions')
+const { withPrevalInstructions } = require('./remark/withPrevalInstructions')
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 })
@@ -37,9 +37,9 @@ const fallbackGetStaticProps = {
 
 module.exports = withBundleAnalyzer({
   swcMinify: true,
-  pageExtensions: ['js', 'jsx', 'ts','tsx','mdx'],
+  pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
   experimental: {
-    esmExternals: false,
+    esmExternals: false
   },
   compiler: {
     styledComponents: true,
@@ -95,7 +95,7 @@ module.exports = withBundleAnalyzer({
             example:
               Object.keys(utilities).length > 0
                 ? Object.keys(utilities)
-                  [Math.floor((Object.keys(utilities).length - 1) / 2)].split(/[>:]/)[0]
+                [Math.floor((Object.keys(utilities).length - 1) / 2)].split(/[>:]/)[0]
                   .trim()
                   .substr(1)
                   .replace(/\\/g, '')
@@ -109,7 +109,7 @@ module.exports = withBundleAnalyzer({
     config.module.rules.push({
       test: /\.svg$/,
       use: [
-        {loader: '@svgr/webpack', options: {svgoConfig: {plugins: {removeViewBox: false}}}},
+        { loader: '@svgr/webpack', options: { svgoConfig: { plugins: { removeViewBox: false } } } },
         {
           loader: 'file-loader',
           options: {
@@ -199,8 +199,8 @@ module.exports = withBundleAnalyzer({
     ]
 
     config.module.rules.push({
-      test: {and: [/\.mdx$/, /snippets/]},
-      resourceQuery: {not: [/rss/, /preview/]},
+      test: { and: [/\.mdx$/, /snippets/] },
+      resourceQuery: { not: [/rss/, /preview/] },
       use: [
         options.defaultLoaders.babel,
         {
@@ -258,7 +258,7 @@ module.exports = withBundleAnalyzer({
         ...mdx(plugins),
         createLoader(function (source) {
           let fields = new URLSearchParams(this.resourceQuery.substr(1)).get('meta') ?? undefined
-          let {attributes: meta, body} = frontMatter(source)
+          let { attributes: meta, body } = frontMatter(source)
           if (fields) {
             for (let field in meta) {
               if (!fields.split(',').includes(field)) {
@@ -329,8 +329,8 @@ module.exports = withBundleAnalyzer({
     }
 
     config.module.rules.push({
-      test: {and: [/\.mdx$/], not: [/snippets/]},
-      resourceQuery: {not: [/rss/, /preview/]},
+      test: { and: [/\.mdx$/], not: [/snippets/] },
+      resourceQuery: { not: [/rss/, /preview/] },
       exclude: [path.join(__dirname, 'src/pages/showcase/')],
       use: mainMdxLoader(),
     })
@@ -356,7 +356,7 @@ function normalizeProperties(input) {
   }, {})
 }
 
-function getUtilities(plugin, {includeNegativeValues = false} = {}) {
+function getUtilities(plugin, { includeNegativeValues = false } = {}) {
   if (!plugin) return {}
   const utilities = {}
 
@@ -383,10 +383,10 @@ function getUtilities(plugin, {includeNegativeValues = false} = {}) {
     },
     corePlugins: () => true,
     prefix: (x) => x,
-    config: (option, defaultValue) => (option ? defaultValue : {future: {}}),
+    config: (option, defaultValue) => (option ? defaultValue : { future: {} }),
     addUtilities,
     theme: (key, defaultValue) => dlv(defaultConfig.theme, key, defaultValue),
-    matchUtilities: (matches, {values, supportsNegativeValues} = {}) => {
+    matchUtilities: (matches, { values, supportsNegativeValues } = {}) => {
       if (!values) return
 
       let modifierValues = Object.entries(values)

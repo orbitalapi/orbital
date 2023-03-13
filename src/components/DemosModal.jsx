@@ -26,7 +26,7 @@ export default function WatchADemoButton(props) {
             </Transition.Root>
 
             <button
-                className='bg-midnight-blue hover:bg-slate-300/20 color-white text-white font-bold h-12 px-6 rounded-full border-2 border-white sm:w-full w-60 flex items-center justify-center uppercase tracking-wider'
+                className='bg-midnight-blue hover:bg-slate-300/20 color-white text-white font-bold h-12 px-6 rounded-full border-2 border-white w-60 min-w-[220px] flex sm:flex-1 items-center justify-center uppercase tracking-wider'
                 onClick={() => setPlayerVisible(true)}
             >
                 Watch a demo {'>'}

@@ -11,6 +11,7 @@ import PublishYourApi, { publishYourApiCodeSnippets } from '@/components/home/Pu
 import QueryExamples, { queryExampleCodeSnippets } from '@/components/home/QueryExamples';
 import DebugTools from '@/components/home/DebugTools';
 import WatchADemoButton from '../components/DemosModal';
+import Image from 'next/image';
 
 
 function HeroSection() {
@@ -19,7 +20,7 @@ function HeroSection() {
       <header className='relative'>
         <div className='sm:px-6 md:px-8 dark:bg-midnight-blue'>
           <Header allowThemeToggle={false} />
-          <div className='font-brand relative max-w-8xl mx-auto sm:pt-16 md:pt-32 relative'>
+          <div className='font-brand relative max-w-8xl md:min-h-[70vh] mx-auto sm:pt-16 md:pt-32 relative'>
             <div className={'flex'}>
               <div className='max-w-2xl sm:pb-10 pb-[6rem]'>
                 <h1
@@ -30,7 +31,7 @@ function HeroSection() {
                   Orbital eliminates the integration effort, so you can get back to <span
                   className='text-citrus'>shipping</span>
                 </p>
-                <div className='sm:mt-10 mt-14 flex justify-left space-x-6 text-lg'>
+                <div className='sm:mt-10 mt-14 flex justify-left gap-6 text-base md:text-lg flex-wrap'>
                   <GetStartedButton />
                   <WatchADemoButton />
                 </div>
@@ -45,9 +46,9 @@ function HeroSection() {
             <Wormhole className="lg:opacity-50" />
 
             <DataPatternLight
-              className='sm:hidden md:left-80 lg:left-auto lg:right-0 absolute top-[320px] lg:top-[450px] w-[900px] lg:w-[1000px] fill-black dark:fill-sky-100 pointer-events-none'></DataPatternLight>
+              className='sm:hidden md:left-80 lg:left-auto lg:right-0 absolute top-[380px] md:top-[480px] w-[900px] lg:w-[900px] fill-black dark:fill-sky-100 pointer-events-none'></DataPatternLight>
 
-            <ArrowCitrus className='flex justify-center w-full mb-8 stroke-2'></ArrowCitrus>
+            <ArrowCitrus className='flex justify-center w-full mb-8 stroke-2 md:absolute md:bottom-0'></ArrowCitrus>
 
           </div>
         </div>

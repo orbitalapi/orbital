@@ -5,17 +5,18 @@ const footerNav = [
   {
     'Getting Started': [
       { title: 'Quick start', href: '/docs' },
-      { title: 'Connecting OpenAPI Services', href: '/docs' },
-      { title: 'Connecting Message Queues', href: '/docs' },
-      { title: 'Connecting Databases', href: '/docs' },
-      { title: 'Querying for data', href: '/docs' },
-      { title: 'Building data pipelines', href: '/docs' }
+      // { title: 'Connecting OpenAPI Services', href: '/docs' },
+      // { title: 'Connecting Message Queues', href: '/docs' },
+      { title: 'Connecting a Kafka topic', href: '/docs/connecting-data-sources/connect-kafka-topic' },
+      { title: 'Connecting Databases', href: '/docs/connecting-data-sources/connecting-a-database' },
+      { title: 'Querying for data', href: '/docs/querying/writing-queries' },
+      // { title: 'Building data pipelines', href: '/docs' }
     ],
     Guides: [
-      { title: 'APIs, DBs and Queues - A flyby of Orbital ', href: '/docs' },
-      { title: 'Building a data mesh with Orbital', href: '/docs' },
-      { title: 'Taxonomy best practices', href: '/docs' },
-      { title: 'Zero code data normalization', href: '/docs' }
+      { title: 'APIs, DBs and Queues - A flyby of Orbital ', href: '/docs/guides/first-integration' },
+      // { title: 'Building a data mesh with Orbital', href: '/docs' },
+      // { title: 'Taxonomy best practices', href: '/docs' },
+      // { title: 'Zero code data normalization', href: '/docs' }
     ],
     'Community and Tools': [
       { title: 'Voyager', href: 'https://voyager.vyne.co' },

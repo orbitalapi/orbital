@@ -1,6 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
 import clsx from 'clsx';
+import Image from 'next/future/image';
 
 import OrbitalLogo from '@/img/wormhole-aqua-transparent.png';
 import { ApiIcon } from '@/components/ApiIcon';
@@ -97,7 +98,7 @@ const ServiceIcon = ({ serviceType, ...props }) => {
     case 'kafka':
       return (<KafkaIcon {...props} />)
     case 'orbital' :
-      return <img src={OrbitalLogo.src} {...props} />
+      return <Image src={OrbitalLogo.src} alt="Orbital" width={45} height={45} {...props} />
   }
 }
 const DiagramServiceNode = (props: ServiceNode) => {
@@ -125,7 +126,7 @@ const IntegrationDiagram = (props: IntegrationDiagramProps) => {
       <div className="drop-shadow-md border-collapse rounded-md bg-slate-800/75 ring-1 ring-inset ring-white/10 p-4 flex flex-col space-y-4">
         <div className={'integration-header border-b border-slate-700 pb-2'}>
           <div className="flex items-center">
-            <img src={OrbitalLogo.src} className="mr-4 w-[45px]"/>
+            <Image src={OrbitalLogo.src} className="mr-4 w-[45px]" width={45} height={45} alt="Orbital" />
             <div className="text-white">
               <h4 className="text-aqua font-semibold ">INTEGRATION PLAN</h4>
               {(props.title.length > 1) && <><span>

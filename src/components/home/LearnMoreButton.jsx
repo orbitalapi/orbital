@@ -7,7 +7,7 @@ export default function LearnMoreButton({ href, text }) {
         return (
         <button
             type='button'
-            formtarget="https://docs.taxilang.org"
+            formTarget="https://docs.taxilang.org"
             className='mt-4 px-3.5 py-2 border border-transparent text-sm leading-4 font-sm rounded-full shadow-sm text-midnight-blue bg-citrus hover:bg-citrus-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-citrus-700'
         >
             <a href={href} target="_blank" className="inline-flex items-center">
