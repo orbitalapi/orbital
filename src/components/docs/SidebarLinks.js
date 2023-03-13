@@ -14,19 +14,20 @@ export const SidebarLinks = [
     ],
   },
   {
-    title: 'Connecting data sources',
+    title: 'Connecting schema projects',
     links: [
       { title: 'Overview', href: '/docs/connecting-data-sources/overview' },
-      { title: 'Publishing schemas to Orbital', href: '/docs/connecting-data-sources/schema-publication-methods' },
+      // { title: 'Publishing schemas to Orbital', href: '/docs/connecting-data-sources/schema-publication-methods' },
       { title: 'Pulling schemas from git', href: '/docs/connecting-data-sources/connecting-a-git-repo' },
+      { title: 'Reading schemas from disk', href: '/docs/connecting-data-sources/connecting-a-disk-repo' },
+      { title: 'Schema config file reference', href: '/docs/connecting-data-sources/reading-from-disk' }
       // TODO
       //  {title: 'Using Taxi', href: '/docs/publishing-data-sources/using-taxi'},
       // TODO
       //  {title: 'Using existing API specs', href: '/docs/publishing-data-sources/existing-api-specs'},
       // COPIED
       // COPIED
-      { title: 'Connecting a Database', href: '/docs/connecting-data-sources/connecting-a-database' },
-      { title: 'Connecting a Kafka topic', href: '/docs/connecting-data-sources/connect-kafka-topic' },
+
 
       // TODO: Copied over the Kafka specific page instead, this one would be a better overview
       //  {title: 'Connecting message brokers', href: '/docs/publishing-data-sources/connecting-message-brokers'},
@@ -43,8 +44,9 @@ export const SidebarLinks = [
       { title: 'Using Protobuf', href: '/docs/describing-data-sources/protobuf' },
       // Note: This used to be 'Connecting databases'
       { title: 'Databases', href: '/docs/describing-data-sources/databases' },
+      { title: 'Connecting a Kafka topic', href: '/docs/connecting-data-sources/connect-kafka-topic' },
       // { title: 'Using Taxi', href: '/docs/describing-data- sources/taxi'}
-      { title: 'Enable UI Schema Editing', href: '/docs/describing-data-sources/enable-ui-schema-editing'},
+      { title: 'Enable UI Schema Editing', href: '/docs/describing-data-sources/enable-ui-schema-editing' }
     ]
   },
   {

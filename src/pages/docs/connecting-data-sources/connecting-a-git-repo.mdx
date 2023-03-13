@@ -1,13 +1,12 @@
 import { ImageWithCaption } from '@/components/ImageWithCaption';
+import AddSchemaSources from './add-schema-sources.png';
+import AddGitRepoForm from './add-git-repo-form.png';
+import { Callout } from '@/components/docs/Callout';
 export const meta = {
   title: 'Pulling API specs from Git',
   pageTitle: 'Connecting data sources - Connecting to Git',
   description: 'Orbital can read schema and taxonomy definitions direct from Git'
 }
-
-import AddSchemaSources from './add-schema-sources.png'
-import AddGitRepoForm from './add-git-repo-form.png'
-import { Callout } from '@/components/docs/Callout';
 
 It's common to store your [core taxonomy](./overview#your-core-taxonomy), existing API specs (such as [OpenApi](../describing-data-sources/open-api) or [Protobuf](../describing-data-sources/protobuf)), or [database definitions](../describing-data-sources/databases)
 in a git repository, so they're version controlled.
@@ -32,7 +31,7 @@ click on Schema's on the left navigation bar, then "Add new sources" in the top 
 <ImageWithCaption src={AddSchemaSources.src} addLightBackground/>
 
 ### Completing the new Git Repository form
-CLick on the "Git Repository" tab, and provide the details of how to connect to your 
+Click on the "Git Repository" tab, and provide the details of how to connect to your git repo
 
 <ImageWithCaption src={AddGitRepoForm.src} addLightBackground/>
 
