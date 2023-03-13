@@ -21,7 +21,9 @@ import io.vyne.pipelines.jet.api.PipelineApi
 import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
+import io.vyne.query.chat.ChatQueryParser
 import io.vyne.query.runtime.core.EnableVyneQueryNode
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.publisher.SchemaPublisherService
 import io.vyne.schemaServer.changelog.ChangelogApi
 import io.vyne.schemaServer.codegen.CodeGenApi
@@ -41,6 +43,7 @@ import io.vyne.spring.http.auth.HttpAuthConfig
 import io.vyne.spring.projection.ApplicationContextProvider
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.actuate.metrics.web.reactive.client.MetricsWebClientCustomizer
@@ -93,6 +96,11 @@ class QueryServiceApp {
          app.setBannerMode(Banner.Mode.OFF)
          app.run(*args)
       }
+   }
+
+   @Bean
+   fun chatGptService(@Value("\${vyne.chat-gpt.api-key}") apiKey: String): ChatQueryParser {
+      return ChatQueryParser(apiKey)
    }
 
 

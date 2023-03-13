@@ -1,48 +1,50 @@
-<as-split direction="horizontal" unit="percent">
+<as-split direction='horizontal' unit='percent'>
   <as-split-area>
-    <as-split direction="vertical" unit="percent" class="query-panel-split">
-      <as-split-area [size]="50">
-        <div class="code-editor-section">
-          <app-panel-header title="Code">
+    <as-split direction='vertical' unit='percent' class='query-panel-split'>
+      <as-split-area [size]='50'>
+        <div class='code-editor-section'>
+          <app-panel-header title='Code'>
             <app-query-editor-bottom-bar
-              (executeQuery)="submitQuery()"
-              [currentState$]="currentState$"
-              [error]="lastErrorMessage"
-              [runningQueryStatus]="queryMetadata$ | async"
-              (cancelQuery)="cancelQuery()"
-              (copyQuery)="copyQuery($event)"
+              (executeQuery)='submitQuery()'
+              [currentState$]='currentState$'
+              [error]='lastErrorMessage'
+              [(queryLanguage)]='queryLanguage'
+              [runningQueryStatus]='queryMetadata$ | async'
+              (cancelQuery)='cancelQuery()'
+              (copyQuery)='copyQuery($event)'
             >
             </app-query-editor-bottom-bar>
           </app-panel-header>
-          <div class="code-viewer-container">
+          <div class='code-viewer-container' *ngIf='queryLanguage === "TaxiQL"'>
             <app-code-editor
-              class="code-editor"
-              [actions]="customActions"
-              [(content)]="query" #editor></app-code-editor>
+              class='code-editor'
+              [actions]='customActions'
+              [(content)]='query' #editor></app-code-editor>
           </div>
+          <tui-text-area class='flat query-input' [(ngModel)]='chatQuery' *ngIf='queryLanguage === "Text"'>Write a query</tui-text-area>
         </div>
       </as-split-area>
-      <as-split-area size="50">
-        <app-error-panel *ngIf="lastQueryResultAsSuccess?.unmatchedNodes?.length > 0"
-                         [queryResult]="lastQueryResultAsSuccess">
+      <as-split-area size='50'>
+        <app-error-panel *ngIf='lastQueryResultAsSuccess?.unmatchedNodes?.length > 0'
+                         [queryResult]='lastQueryResultAsSuccess'>
         </app-error-panel>
 
-        <app-tabbed-results-view [instances$]="results$"
-                                 [profileData$]="queryProfileData$"
-                                 [type]="resultType"
-                                 (loadProfileData)="loadProfileData()"
-                                 [anonymousTypes]="anonymousTypes"
-                                 (instanceSelected)="valuePanelVisible = true; instanceSelected$.next($event)"
-                                 (downloadClicked)="downloadQueryHistory($event.format)"
+        <app-tabbed-results-view [instances$]='results$'
+                                 [profileData$]='queryProfileData$'
+                                 [type]='resultType'
+                                 (loadProfileData)='loadProfileData()'
+                                 [anonymousTypes]='anonymousTypes'
+                                 (instanceSelected)='valuePanelVisible = true; instanceSelected$.next($event)'
+                                 (downloadClicked)='downloadQueryHistory($event.format)'
         ></app-tabbed-results-view>
 
       </as-split-area>
     </as-split>
   </as-split-area>
-  <as-split-area  *ngIf="valuePanelVisible" size="25">
+  <as-split-area *ngIf='valuePanelVisible' size='25'>
     <app-typed-instance-panel-container
-            [queryResultSelectedEvent$]="instanceSelected$"
-      (close)="valuePanelVisible = false"
+      [queryResultSelectedEvent$]='instanceSelected$'
+      (close)='valuePanelVisible = false'
     ></app-typed-instance-panel-container>
   </as-split-area>
 </as-split>

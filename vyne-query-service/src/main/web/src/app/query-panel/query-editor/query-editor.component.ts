@@ -13,6 +13,7 @@ import { tap } from 'rxjs/operators';
 
 import { editor, KeyCode, KeyMod } from 'monaco-editor';
 import {
+  ChatParseResult,
   QueryHistorySummary,
   QueryProfileData,
   QueryResult,
@@ -20,7 +21,7 @@ import {
   randomId,
   ResultMode
 } from '../../services/query.service';
-import { QueryState } from './bottom-bar.component';
+import { QueryLanguage, QueryState } from './bottom-bar.component';
 import { isQueryResult, QueryResultInstanceSelectedEvent } from '../result-display/BaseQueryResultComponent';
 import { MatDialog } from '@angular/material/dialog';
 import { findType, InstanceLike, Schema, Type } from '../../services/schema';
@@ -63,8 +64,13 @@ export class QueryEditorComponent implements OnInit {
   @Input()
   initialQuery: QueryHistorySummary;
 
+  queryLanguage: QueryLanguage = 'TaxiQL';
+
+  codeEditorTabIndex: number = 0;
+
   monacoEditor: ICodeEditor;
   monacoModel: ITextModel;
+  chatQuery: string;
   query: string;
   queryClientId: string | null = null;
   lastQueryResult: QueryResult | FailedSearchResponse;
@@ -98,6 +104,8 @@ export class QueryEditorComponent implements OnInit {
   currentState$: BehaviorSubject<QueryState> = new BehaviorSubject<QueryState>('Editing');
 
   valuePanelVisible: boolean = false;
+
+  queryParseResult: ChatParseResult;
 
   @Output()
   queryResultUpdated = new EventEmitter<QueryResult | FailedSearchResponse>();
@@ -164,6 +172,35 @@ export class QueryEditorComponent implements OnInit {
   }
 
   submitQuery() {
+    switch (this.queryLanguage) {
+      case 'Text':
+        this.submitTextQuery();
+        break;
+      case 'TaxiQL':
+        this.submitTaxiQlQuery();
+        break;
+    }
+
+  }
+
+  private submitTextQuery() {
+    this.prepareToSubmitQuery();
+    this.queryParseResult = null;
+    this.queryService.textToQuery(this.chatQuery)
+      .subscribe(result => {
+        this.query = result.taxi;
+        this.queryParseResult = result;
+        // Submit the taxiQL query.  Make sure parsingQuery = true, so we don't come
+        // through this branch again,
+        this.submitTaxiQlQuery();
+      }, error => {
+        console.log('Failed to parse ChatGPT query');
+        console.log(error);
+        this.lastErrorMessage = 'A problem occurred parsing the text to a query';
+      });
+  }
+
+  private prepareToSubmitQuery() {
     this.currentState$.next('Running');
     this.lastQueryResult = null;
     this.queryReturnedResults = false;
@@ -179,7 +216,11 @@ export class QueryEditorComponent implements OnInit {
     this.queryProfileData$ = null;
 
     this.changeDetector.markForCheck();
+  }
 
+  private submitTaxiQlQuery() {
+
+    this.prepareToSubmitQuery();
 
     const queryErrorHandler = (error: FailedSearchResponse) => {
       this.loading = false;
@@ -219,7 +260,6 @@ export class QueryEditorComponent implements OnInit {
       queryMessageHandler,
       queryErrorHandler,
       queryCompleteHandler);
-
   }
 
   private subscribeForQueryStatusUpdates(queryId: string) {

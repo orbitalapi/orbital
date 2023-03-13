@@ -59,6 +59,8 @@ interface Schema {
    val queryOperations: Set<QueryOperation>
       get() = services.flatMap { it.queryOperations }.toSet()
 
+   val tableOperations : Set<TableOperation>
+      get() = services.flatMap { it.tableOperations }.toSet()
    val streamOperations: Set<StreamOperation>
       get() = services.flatMap { it.streamOperations }.toSet()
 
