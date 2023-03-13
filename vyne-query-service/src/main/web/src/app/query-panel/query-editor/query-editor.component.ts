@@ -166,6 +166,7 @@ export class QueryEditorComponent implements OnInit {
   submitQuery() {
     this.currentState$.next('Running');
     this.lastQueryResult = null;
+    this.lastErrorMessage = null;
     this.queryReturnedResults = false;
     this.loading = true;
     this.loadingChanged.emit(true);
@@ -217,7 +218,7 @@ export class QueryEditorComponent implements OnInit {
 
     this.queryService.websocketQuery(this.query, this.queryClientId, ResultMode.SIMPLE).subscribe(
       queryMessageHandler,
-      queryErrorHandler,
+      queryCompleteHandler,
       queryCompleteHandler);
 
   }

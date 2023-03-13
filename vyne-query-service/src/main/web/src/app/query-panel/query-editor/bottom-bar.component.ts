@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { isNullOrUndefined } from 'util';
 import { RunningQueryStatus } from '../../services/active-queries-notification-service';
 import { Observable } from 'rxjs/internal/Observable';
 import { CopyQueryFormat } from 'src/app/query-panel/query-editor/QueryFormatter';
-
 
 
 @Component({
@@ -93,7 +92,6 @@ export class BottomBarComponent {
   }
 
   runQuery() {
-    this.error = null;
     this.queryStarted = new Date();
     this.executeQuery.emit();
   }
