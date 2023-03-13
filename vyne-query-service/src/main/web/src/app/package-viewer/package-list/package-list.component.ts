@@ -50,8 +50,10 @@ export class PackageListComponent {
   getSourceDescription(sourcePackage:SourcePackageDescription):string {
     switch (sourcePackage.publisherType) {
       case 'FileSystem': return 'Read from disk'
-      case 'GitRepo': return 'Git repo'
-      case 'Pushed': return 'Pushed to Vyne'
+      case 'GitRepo':
+        return 'Git repo';
+      case 'Pushed':
+        return 'Pushed to Orbital';
     }
   }
   getSourceIcon(sourcePackage: SourcePackageDescription) {
