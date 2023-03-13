@@ -3,6 +3,7 @@ title: Describing Databases
 description: Learn how to make a table in a database available for Orbital
 ---
 
+
 import { Callout } from '@/components/docs/Callout';
 import NewDataSource from './new-data-source.png';
 import TypeSearch from './type-search.png';
@@ -11,15 +12,17 @@ import TypeSearch from './type-search.png';
 Orbital can connect to databases to fetch data when running a query.
 
 In order to understand the data that is present in a database table, Orbital uses a Taxi Schema for that table.
-The taxi schema describes the table - it's columns and the data they hold.  Because we're using Taxi here,
-the column descriptions are richer than things like "String" or "Integer" - instead using rich semantic tags like "FirstName",
-"LastName", or "EmailAddress"
+The taxi schema describes the table - it's columns and the data they hold.
+
+Because we're using Taxi here, the column descriptions are richer than things like `String` or `Integer` - instead using rich semantic tags like `FirstName`,
+`LastName`, or `EmailAddress`
 
 In this guide, we'll learn how to create a Taxi Schema for a specific database table - both through the user interface, and by directly editing a schema
 
 <Callout type='note' title='Before you continue...'>
 
-   Before you run through this guide, make sure you've [added a database connection](../connecting-data-sources/connecting-a-database) for the table you want to connect.
+  Before you run through this guide, make sure you've [added a database
+  connection](../connecting-data-sources/connecting-a-database) for the table you want to connect.
 
 </Callout>
 
@@ -155,11 +158,11 @@ namespace demo.customers {
 
 The `@Table` annotation contains the following parameters:
 
-| Parameter  | Description                                                                                                                                                                          |
-|------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Parameter  | Description                                                                                                                                                         |
+|------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | connection | The name of a connection, as defined in your [connections configuration file](/docs/connecting-data-sources/connecting-a-database/#defining-a-database-connection). |
-| schema     | The name of the schema.  Optional, depending on your database                                                                                                                        |
-| table      | The name of the table                                                                                                                                                                |
+| schema     | The name of the schema.  Optional, depending on your database                                                                                                       |
+| table      | The name of the table                                                                                                                                               |
 
 
 
@@ -167,7 +170,7 @@ The `@Table` annotation contains the following parameters:
 Use an `@Id` annotation to define the column that represents the primary key.  At this stage, composite keys
 are not supported.
 
-### Exposing a query service
+### Exposing a database service
 Orbital uses Taxi Services to expose query capabilities.  To configure Orbital to be able to query the database table, a
 service must be declared, and annotated with the `@io.vyne.jdbc.DatabaseService` annotation.
 
@@ -175,18 +178,11 @@ Here's an example:
 
 ```
 import io.vyne.jdbc.DatabaseService
-import vyne.vyneQl.VyneQlQuery
+
 namespace demo.customers {
    @DatabaseService(connection = "films-database")
    service CustomerService {
-      vyneQl query customerQuery(query: VyneQlQuery):Customer[] with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table customers : Customer[]
    }
 }
 
@@ -195,8 +191,8 @@ namespace demo.customers {
 
 The `@DatabaseService` annotation contains the following parameters:
 
-| Parameter  | Description                                                                                                                                                                          |
-|------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Parameter  | Description                                                                                                                                                           |
+|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | connection | The name of a connection, as defined in your (connections configuration file)[/how-to-guides/connections/manage-database-connection/#defining-a-database-connection]. |
 
 
