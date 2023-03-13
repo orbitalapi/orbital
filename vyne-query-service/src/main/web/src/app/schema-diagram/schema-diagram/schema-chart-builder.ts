@@ -1,12 +1,14 @@
 import {
   arrayMemberTypeNameOrTypeNameFromName,
   collectAllServiceOperations,
+  findType,
   QualifiedName,
   Schema,
   SchemaMember,
   SchemaMemberType,
   Service,
-  ServiceMember, splitOperationQualifiedName,
+  ServiceMember,
+  splitOperationQualifiedName,
   Type
 } from '../../services/schema';
 import { AppendLinksHandler, NodeType } from './schema-flow.react';
@@ -17,7 +19,7 @@ export function getNodeKind(member: SchemaMember): NodeType {
   if (member.kind === 'TYPE') {
     return 'Model';
   } else if (member.kind === 'SERVICE') {
-    return 'Service'
+    return 'Service';
   }
 }
 
@@ -25,7 +27,7 @@ export interface EdgeParams {
   sourceCanFloat: boolean;
   targetCanFloat: boolean;
   label: string;
-  linkKind: LinkKind
+  linkKind: LinkKind;
 }
 
 export interface Links {
@@ -44,17 +46,17 @@ export function collectLinks(links: Links | null): Link[] {
 export function collectAllLinks(data: MemberWithLinks) {
   let childLinks = [];
   if (data.links instanceof ModelLinks || data.links instanceof ServiceLinks) {
-    childLinks = data.links.collectAllChildLinks()
+    childLinks = data.links.collectAllChildLinks();
   }
   return collectLinks(data.links).concat(childLinks);
 }
 
 export interface HasChildLinks extends Links {
-  collectAllChildLinks(): Link[]
+  collectAllChildLinks(): Link[];
 }
 
 export function edgeSourceAndTargetExist(nodes: Map<string, Node<MemberWithLinks>>, edge: Edge): boolean {
-  const sourceAndTargetExist = nodes.has(edge.source) && nodes.has(edge.target)
+  const sourceAndTargetExist = nodes.has(edge.source) && nodes.has(edge.target);
   if (!sourceAndTargetExist) {
     return false;
   }
@@ -77,8 +79,8 @@ export class ModelLinks implements HasChildLinks {
 
 
 function buildModelLinks(type: Type, schema: Schema, operations: ServiceMember[]): ModelLinks {
-  const modelLinks = buildLinksForType(type.name, schema, operations, null)
-  const thisNodeId = getNodeId('TYPE', type.name)
+  const modelLinks = buildLinksForType(type.name, schema, operations, null);
+  const thisNodeId = getNodeId('TYPE', type.name);
   const attributeLinks: { [key: string]: Links } = {};
   Object.keys(type.attributes).map(fieldName => {
     const fieldType = type.attributes[fieldName].type;
@@ -92,7 +94,7 @@ function buildModelLinks(type: Type, schema: Schema, operations: ServiceMember[]
     modelLinks.inputs,
     modelLinks.outputs,
     attributeLinks
-  )
+  );
   return returnValue;
 
 }
@@ -102,13 +104,23 @@ export function collectionOperations(schema: Schema): ServiceMember[] {
     return (service.operations as ServiceMember[])
       .concat(service.queryOperations as ServiceMember[])
       .concat(service.tableOperations as ServiceMember[])
-      .concat(service.streamOperations as ServiceMember[])
-  })
+      .concat(service.streamOperations as ServiceMember[]);
+  });
 }
 
 export function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: ServiceMember[], parent: { name: QualifiedName, nodeId: string, field: string } | null): Links {
-  const typeNodeId = getNodeId('TYPE', typeName)
+  const typeNodeId = getNodeId('TYPE', typeName);
   const consumingOperations: Link[] = [];
+
+  const type = findType(schema, typeName.parameterizedName);
+  if (type.isPrimitive) {
+    // Don't build links on primitives.
+    // Something that returns Int isn't descriptive enough for linking
+    return {
+      outputs: [],
+      inputs: []
+    };
+  }
 
   // When building links for a type, we could either be linking to a model directly,
   // or to a field within another model.  (As determined by the parent input).
@@ -117,14 +129,14 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
     sourceNodeName: parent.name,
     sourceHandleId: HandleIds.modelFieldOutbound(parent.name, parent.field),
     inverseSourceHandleId: HandleIds.modelFieldInbound(parent.name, parent.field),
-    sourceMemberType: 'TYPE' as SchemaMemberType,
+    sourceMemberType: 'TYPE' as SchemaMemberType
   } : {
     sourceNodeId: typeNodeId,
     sourceNodeName: typeName,
     sourceHandleId: HandleIds.modelOutbound(typeName),
     sourceMemberType: 'TYPE' as SchemaMemberType,
     inverseSourceHandleId: HandleIds.modelInbound(typeName)
-  }
+  };
 
   // Build links from thisType -[to]-> OperationParam
   operations.forEach(operation => {
@@ -141,9 +153,9 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
 
         linkKind: 'entity'
 
-      })
+      });
     }
-  })
+  });
 
   // BuildLinks from OperationReturnType -[to]-> this Type
   const producedByOperations: Link[] = [];
@@ -164,9 +176,9 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
         targetMemberType: 'TYPE',
 
         linkKind: 'entity'
-      })
+      });
     }
-  })
+  });
 
   const modelLinks: Map<string, Link> = new Map<string, Link>();
   // Build links for models which have this type as an attribute
@@ -201,7 +213,7 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
           // We want an id where source -> destination and destination -> source provide the same id.
           // This is to prevent duplicate linkes
           const linkId = [link.sourceNodeId, link.targetNodeId].sort((a, b) => a.localeCompare(b))
-            .join('-')
+            .join('-');
           link.linkId = linkId;
           modelLinks.set(linkId, link);
 
@@ -219,15 +231,15 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
           //   targetMemberType: source.sourceMemberType
           // })
         }
-      })
-    })
+      });
+    });
 
   return {
     // Model links "float" (ie., have no concept of input/output),
     // so it doesn't matter where we add them.
     outputs: consumingOperations.concat(Array.from(modelLinks.values())),
     inputs: producedByOperations
-  }
+  };
 }
 
 export class ServiceLinks implements HasChildLinks {
@@ -256,20 +268,21 @@ function buildServiceLinks(service: Service, schema: Schema, operations: Service
       targetHandleId: HandleIds.serviceInbound(service.name),
       targetMemberType: 'SERVICE',
       linkKind: 'lineage'
-    } as Link
-  })
+    } as Link;
+  });
 
   collectAllServiceOperations(service)
     .forEach(serviceMember => {
-      operationLinks[serviceMember.name] = buildOperationLinks(serviceMember, service)
-    })
+      operationLinks[serviceMember.name] = buildOperationLinks(serviceMember, service);
+    });
   return new ServiceLinks(
     serviceInboundLinks,
     [],
-    operationLinks)
+    operationLinks);
 }
 
 export type LinkKind = 'entity' | 'lineage';
+
 export interface Link {
   sourceNodeName: QualifiedName;
   sourceNodeId: string;
@@ -303,7 +316,7 @@ function buildOperationLinks(operation: ServiceMember, service: Service): Links 
       targetHandleId: HandleIds.serviceOperationInbound(QualifiedName.from(nameParts.serviceName), QualifiedName.from(nameParts.operationName)),
       targetNodeName: QualifiedName.from(nameParts.serviceName),
       targetMemberType: 'OPERATION'
-    } as Link
+    } as Link;
   });
 
   let returnTypeName = arrayMemberTypeNameOrTypeNameFromName(operation.returnTypeName);
@@ -319,12 +332,12 @@ function buildOperationLinks(operation: ServiceMember, service: Service): Links 
     targetMemberType: 'TYPE',
 
     linkKind: 'entity'
-  }]
+  }];
   // Not sure if returning operation links here is helpful.
   return {
     inputs,
     outputs
-  }
+  };
 }
 
 function buildLinks(member: SchemaMember, schema: Schema, operations: ServiceMember[]): Links {
@@ -333,21 +346,21 @@ function buildLinks(member: SchemaMember, schema: Schema, operations: ServiceMem
       // I think the most natural links for a service are actually at the operation level.
       return buildServiceLinks(member.member as Service, schema, operations);
     case 'TYPE':
-      return buildModelLinks(member.member as Type, schema, operations)
+      return buildModelLinks(member.member as Type, schema, operations);
     default:
       throw new Error('No strategy for building links for member kind ' + member.kind);
   }
 }
 
 export function getNodeId(schemaMemberType: SchemaMemberType, name: QualifiedName): string {
-  return `${schemaMemberType.toLowerCase()}-${name.fullyQualifiedName}`
+  return `${schemaMemberType.toLowerCase()}-${name.fullyQualifiedName}`;
 }
 
 export function buildSchemaNode(schema: Schema, member: SchemaMember, operations: ServiceMember[], appendLinksHandler: AppendLinksHandler, position: XYPosition = {
   x: 100,
   y: 100
 }): Node<MemberWithLinks> {
-  const links = buildLinks(member, schema, operations)
+  const links = buildLinks(member, schema, operations);
   return {
     id: getNodeId(member.kind, member.name),
     draggable: true,
@@ -360,7 +373,7 @@ export function buildSchemaNode(schema: Schema, member: SchemaMember, operations
     },
     type: getNodeKind(member),
     position
-  } as Node<MemberWithLinks>
+  } as Node<MemberWithLinks>;
 }
 
 
@@ -368,7 +381,7 @@ export interface MemberWithLinks {
   member: SchemaMember;
   links: Links;
 
-  appendNodesHandler: AppendLinksHandler
+  appendNodesHandler: AppendLinksHandler;
 }
 
 
@@ -390,18 +403,19 @@ export class HandleIds {
   }
 
   static serviceOperationInbound(serviceName: QualifiedName, operationName: QualifiedName): string {
-    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}-inbound`
+    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}-inbound`;
   }
 
   static serviceOperationOutbound(serviceName: QualifiedName, operationName: QualifiedName): string {
-    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}-outbound`
+    return `service-${serviceName.fullyQualifiedName}-operation-${operationName.fullyQualifiedName}-outbound`;
   }
 
   static serviceInbound(serviceName: QualifiedName): string {
-    return `service-${serviceName.fullyQualifiedName}-inbound`
+    return `service-${serviceName.fullyQualifiedName}-inbound`;
   }
+
   static serviceOutbound(serviceName: QualifiedName): string {
-    return `service-${serviceName.fullyQualifiedName}-outbound`
+    return `service-${serviceName.fullyQualifiedName}-outbound`;
   }
 
   static appendPositionToHandleId(handleId: string, position: Position): string {
