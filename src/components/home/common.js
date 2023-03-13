@@ -62,13 +62,13 @@ export function BigText({ className = '', ...props }) {
 
 export function LearnMoreLink({ className = '', href = '', label = 'Learn more' }) {
   return (
-    <p className={`my-8 w-3/4 h-8 ${className}`}>
+    <p className={`my-8 h-8 ${className}`}>
       <a href={href} className={'font-brand text-citrus uppercase tracking-widest font-bold leading-8'}>
-        <div className="flex justify-center content-baseline">
+        <span className="flex justify-center content-baseline">
           {label}
 
           <ArrowCitrus className="-rotate-90 stroke-[6px] leading-8 ml-4" width="16" height="32"></ArrowCitrus>
-        </div>
+        </span>
       </a>
 
     </p>
