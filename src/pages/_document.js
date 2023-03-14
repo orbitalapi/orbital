@@ -43,6 +43,10 @@ export default class Document extends NextDocument {
           <link rel="manifest" href={v('/favicons/site.webmanifest')} />
           <link rel="mask-icon" href={v('/favicons/safari-pinned-tab.svg')} color="#38bdf8" />
           <link rel="shortcut icon" href={v('/favicons/favicon.ico')} />
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
+          <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Fira+Code:wght@300;700&display=swap" rel="stylesheet" />
+
           <meta name="apple-mobile-web-app-title" content="Orbital" />
           <meta name="application-name" content="Orbital" />
           <meta name="msapplication-TileColor" content="#38bdf8" />
@@ -50,7 +54,7 @@ export default class Document extends NextDocument {
           <meta name='theme-color' content='#f8fafc' />
           <meta name='referrer' content='origin' />
           <script defer data-domain='orbitalhq.com' src='https://plausible.io/js/script.js'></script>
-          
+
         </Head>
         <body
           className={clsx('antialiased text-slate-500 dark:text-slate-400', {

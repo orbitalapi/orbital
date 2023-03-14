@@ -261,11 +261,14 @@ module.exports = {
         },
       }),
       fontFamily: {
-        sans: ['Inter var', ...defaultTheme.fontFamily.sans],
+        // standardize the sans font to our brand font - poppins
+        // sans: ['Inter var', ...defaultTheme.fontFamily.sans],
+        sans: ['poppins', ...defaultTheme.fontFamily.sans],
         brand: ['poppins', ...defaultTheme.fontFamily.sans],
-        mono: ['Fira Code VF', ...defaultTheme.fontFamily.mono],
-        source: ['Source Sans Pro', ...defaultTheme.fontFamily.sans],
-        'ubuntu-mono': ['Ubuntu Mono', ...defaultTheme.fontFamily.mono],
+        mono: ['Fira Code', ...defaultTheme.fontFamily.mono],
+        // these didn't seem to be used
+        // source: ['Source Sans Pro', ...defaultTheme.fontFamily.sans],
+        // 'ubuntu-mono': ['Ubuntu Mono', ...defaultTheme.fontFamily.mono],
       },
       spacing: {
         18: '4.5rem',
