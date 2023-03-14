@@ -44,6 +44,9 @@ module.exports = withBundleAnalyzer({
   compiler: {
     styledComponents: true,
   },
+  images: {
+    formats: ['image/avif', 'image/webp']
+  },  
   async redirects() {
     return require('./redirects.json')
   },

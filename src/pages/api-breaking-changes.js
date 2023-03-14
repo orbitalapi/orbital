@@ -7,11 +7,14 @@ import WatchADemoButton from '../components/DemosModal';
 import Wormhole from '@/components/Wormhole';
 import { ReactComponent as DataPatternLight } from '@/img/data-pattern.svg';
 import { ReactComponent as ArrowCitrus } from '@/img/arrow-citrus.svg';
-// import { ArrowPathIcon, CloudArrowUpIcon, FingerPrintIcon, LockClosedIcon } from '@heroicons/react/24/outline'
-import { CodeBracketIcon, ArrowPathIcon, EyeIcon, CpuChipIcon, ServerIcon, WrenchIcon, GlobeAsiaAustraliaIcon } from '@heroicons/react/20/solid'
+import { CodeBracketIcon, ArrowPathIcon, EyeIcon, CpuChipIcon, WrenchIcon, GlobeAsiaAustraliaIcon } from '@heroicons/react/20/solid'
 import OrbitalLogo from '@/img/wormhole-aqua-transparent.png';
-import HowOrbitalWorks from '@/components/home/HowOrbitalWorks';
 import OrbitalQuery from '@/components/home/img/orbital-query.png';
+import dynamic from 'next/dynamic';
+
+const DynamicHowOrbitalWorks = dynamic(() => import('@/components/home/HowOrbitalWorks'), {
+    loading: () => <p>Loading...</p>
+})
 
 const breakingChangesFeatures = [
     {
@@ -176,7 +179,7 @@ export default function BreakingChangesLandingPage() {
                 </div>
             </div>
 
-            <HowOrbitalWorks className="hidden lg:block" />
+            <DynamicHowOrbitalWorks className="hidden lg:block" />
 
             <div className="py-24">
                 <img src={OrbitalLogo.src} className={'absolute blur-3xl opacity-25 pointer-events-none'} />
