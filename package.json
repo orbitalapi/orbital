@@ -10,6 +10,7 @@
   "browserslist": [
     "> 1%"
   ],
+  "sideEffects": false,
   "dependencies": {
     "@badrap/bar-of-progress": "^0.1.1",
     "@docsearch/react": "^3.0.0",
