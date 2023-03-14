@@ -13,6 +13,9 @@ export default function Wormhole(props) {
                 fill
                 priority
                 alt="Orbital wormhole logo"
+                sizes="(max-width: 767px) 0vw,
+                    (max-width: 1280px) 50vw,
+                    33vw"
             />
         </div>
     );
