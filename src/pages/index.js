@@ -38,7 +38,7 @@ function HeroSection() {
               </div>
               <div
                 className={'hidden xl:block bg-slate-900/75 z-10 p-8 backdrop-blur-md shadow-2xl rounded-md ml-20 -mt-24 mb-32'}>
-                <img src={networkDiagram.src} className={'w-[560px]'} />
+                <img src={networkDiagram.src} className={'w-[560px]'} alt="Orbital example integration diagram" />
               </div>
 
             </div>
