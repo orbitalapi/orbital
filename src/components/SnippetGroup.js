@@ -1,6 +1,6 @@
-import {Tab} from '@headlessui/react'
-import clsx from 'clsx'
-import {useState} from 'react'
+import { Tab } from '@headlessui/react';
+import clsx from 'clsx';
+import { useState } from 'react';
 
 /**
  * @typedef {React.ReactElement<{ filename?: string }>} CodeBlock
@@ -103,7 +103,7 @@ export function SnippetGroup({children, actions}) {
     >
       <div className="flex">
         <Tab.List className="flex text-slate-400 text-xs leading-6 overflow-hidden rounded-tl-xl pt-2">
-          {children.map((child, tabIndex) => (
+          {childrenArray.map((child, tabIndex) => (
             <TabItem key={child.props.filename} myIndex={tabIndex} selectedIndex={selectedIndex}>
               {child.props.filename}
             </TabItem>
@@ -122,10 +122,10 @@ export function SnippetGroup({children, actions}) {
         ) : null}
       </div>
       <Tab.Panels className="flex overflow-auto">
-        {children.map((child) => (
+        {childrenArray.map((child) => (
           <Tab.Panel
             key={child.props.filename}
-            className="flex-none min-w-full p-5 text-sm leading-6 text-slate-50 ligatures-none"
+            className='flex-none min-w-full p-5 text-sm leading-6 text-slate-50 ligatures-none'
           >
             {child.props.children}
           </Tab.Panel>
