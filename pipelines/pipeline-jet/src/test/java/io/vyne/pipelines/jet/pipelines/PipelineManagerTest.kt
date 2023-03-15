@@ -16,12 +16,9 @@ import kotlinx.coroutines.flow.flowOf
 import org.awaitility.Awaitility
 import org.junit.Ignore
 import org.junit.Test
-import org.springframework.scheduling.support.CronExpression
 import java.time.Instant
 import java.time.ZoneId
-import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
-import java.time.temporal.TemporalUnit
 import java.util.concurrent.TimeUnit
 
 class PipelineManagerTest : BaseJetIntegrationTest() {
@@ -29,7 +26,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
 
    @Test
    fun `can get details of running pipelines`() {
-      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneClient) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -42,7 +39,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
       )
       val manager = pipelineManager(
          hazelcastInstance,
-         vyneProvider
+         vyneClient
       )
       val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "Target")
       val pipelineSpec = PipelineSpec(
@@ -67,7 +64,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
 
    @Test
    fun `can schedule pipelines`() {
-      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneClient) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -80,7 +77,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
       )
       val manager = pipelineManager(
          hazelcastInstance,
-         vyneProvider
+         vyneClient
       )
       val (_, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "Target")
       val pipelineSpec = PipelineSpec(
@@ -102,7 +99,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
 
    @Test
    fun `can manually trigger a scheduled pipeline`() {
-      val (hazelcastInstance, applicationContext, vyneProvider, stub) = jetWithSpringAndVyne(
+      val testSetup = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -114,12 +111,11 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
       """
       )
 
-      val vyne = vyneProvider.createVyne()
-      stub.addResponseFlow("getAll") { _, _ ->
+      testSetup.stubService.addResponseFlow("getAll") { _, _ ->
          flowOf(
-            vyne.parseJson("Person", """{ "firstName": "Jimmy", "lastName": "Fallon" }"""),
-            vyne.parseJson("Person", """{ "firstName": "Conan", "lastName": "O'Brien" }"""),
-            vyne.parseJson("Person", """{ "firstName": "Jimmy", "lastName": "Kimmel" }"""),
+            parseJson(testSetup.schema, "Person", """{ "firstName": "Jimmy", "lastName": "Fallon" }"""),
+            parseJson(testSetup.schema, "Person", """{ "firstName": "Conan", "lastName": "O'Brien" }"""),
+            parseJson(testSetup.schema, "Person", """{ "firstName": "Jimmy", "lastName": "Kimmel" }"""),
          )
       }
 
@@ -130,7 +126,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
 
       val twoHoursLater = Instant.now().plus(2L, ChronoUnit.HOURS).atZone(ZoneId.systemDefault()).hour
       val everyTwoHoursLater = "0 0 $twoHoursLater * * *"
-      val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "Person")
+      val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(testSetup.applicationContext, targetType = "Person")
       val pipelineSpec = PipelineSpec(
          name = "test-query-poll",
          input = PollingQueryInputSpec(
@@ -140,7 +136,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
          outputs = listOf(outputSpec)
       )
 
-      val pipelineManager = startPipeline(hazelcastInstance, vyneProvider, pipelineSpec).third
+      val pipelineManager = startPipeline(testSetup.hazelcastInstance, testSetup.vyneClient, pipelineSpec).third
 
       // manually trigger the execution as its scheduled to run every 5 hours
       pipelineManager.triggerScheduledPipeline(pipelineSpec.id)
@@ -161,7 +157,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
    @Test
    @Ignore("this test is failing because of pipeline publication issues - need to investigate")
    fun `can stop running pipeline`() {
-      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneClient) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -174,7 +170,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
       )
       val manager = pipelineManager(
          hazelcastInstance,
-         vyneProvider
+         vyneClient
       )
       val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "Target")
       val pipelineSpec = PipelineSpec(

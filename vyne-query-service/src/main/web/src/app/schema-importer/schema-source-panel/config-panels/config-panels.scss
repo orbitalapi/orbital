@@ -1,7 +1,6 @@
 @import "src/theme";
 @import "src/forms";
 
-
 .icon {
   width: 24px;
   margin-right: 1rem;
@@ -17,4 +16,17 @@
 
 .form-row {
   margin-bottom: 2rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
+
+.form-element > .row > button {
+  margin-left: 1rem;
 }

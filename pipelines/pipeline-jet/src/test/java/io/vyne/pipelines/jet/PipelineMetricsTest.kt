@@ -14,7 +14,7 @@ class PipelineMetricsTest : BaseJetIntegrationTest() {
    @Test
    @Ignore("Fails on Gitlab")
    fun metricsAreRecordedCorrectly() {
-      val (hazelcastInstance, applicationContext, vyneProvider, _, meterRegistry) = jetWithSpringAndVyne(
+      val testSetup = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -26,7 +26,7 @@ class PipelineMetricsTest : BaseJetIntegrationTest() {
       """
       )
 
-      val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "Target")
+      val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(testSetup.applicationContext, targetType = "Target")
       val pipelineSpec = PipelineSpec(
          "test-pipeline",
          input = FixedItemsSourceSpec(
@@ -39,9 +39,9 @@ class PipelineMetricsTest : BaseJetIntegrationTest() {
          outputs = listOf(outputSpec)
       )
 
-      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
+      startPipeline(testSetup.hazelcastInstance, testSetup.vyneClient, pipelineSpec)
 
-      val (listSinkTarget2, outputSpec2) = listSinkTargetAndSpec(applicationContext, targetType = "Target")
+      val (listSinkTarget2, outputSpec2) = listSinkTargetAndSpec(testSetup.applicationContext, targetType = "Target")
       val pipelineSpec2 = PipelineSpec(
          "second-pipeline",
          input = FixedItemsSourceSpec(
@@ -54,7 +54,7 @@ class PipelineMetricsTest : BaseJetIntegrationTest() {
          outputs = listOf(outputSpec2)
       )
 
-      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec2)
+      startPipeline(testSetup.hazelcastInstance, testSetup.vyneClient, pipelineSpec2)
 
 
       await().atMost(30, TimeUnit.SECONDS).until {

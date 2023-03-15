@@ -5,7 +5,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.21.0</version>
+      <version>0.22.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -14,7 +14,24 @@
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>monitoring-common</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>schema-server-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-rsocket</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <type>test-jar</type>
+         <scope>test</scope>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -49,6 +66,18 @@
       <dependency>
          <groupId>org.springframework.cloud</groupId>
          <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+         <exclusions>
+            <exclusion>
+               <groupId>commons-jxpath</groupId>
+               <artifactId>commons-jxpath</artifactId>
+            </exclusion>
+         </exclusions>
+      </dependency>
+      <!-- TODO Remove once spring-cloud-starter-netflix-eureka-client is updated to use at least this version (vulnerability in 1.4.18) -->
+      <dependency>
+         <groupId>com.thoughtworks.xstream</groupId>
+         <artifactId>xstream</artifactId>
+         <version>1.4.20</version>
       </dependency>
       <dependency>
          <groupId>org.springframework.cloud</groupId>
@@ -70,7 +99,7 @@
       <dependency>
          <groupId>org.eclipse.jgit</groupId>
          <artifactId>org.eclipse.jgit</artifactId>
-         <version>6.3.0.202209071007-r</version>
+         <version>6.4.0.202211300538-r</version>
       </dependency>
       <dependency>
          <groupId>commons-io</groupId>
@@ -96,6 +125,23 @@
          <groupId>com.github.tomakehurst</groupId>
          <artifactId>wiremock-jre8-standalone</artifactId>
          <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>testcontainers</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>junit-jupiter</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-server-core</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
       </dependency>
    </dependencies>
    <build>

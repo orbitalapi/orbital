@@ -1,6 +1,7 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.TaxiDocument
@@ -14,6 +15,9 @@ class CompositeSchema(private val schemas: List<Schema>) : Schema {
       schemas.size == 1 -> schemas.first().taxi
       else -> error("Schema size should be  at most 1 ${schemas.size}")
    }
+
+   @get:JsonIgnore
+   override val packages: List<SourcePackage> = this.schemas.flatMap { it.packages }
 
    @get:JsonIgnore
    val taxiSchemas: List<TaxiSchema> = this.schemas.filterIsInstance<TaxiSchema>()

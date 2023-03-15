@@ -4,12 +4,19 @@ import com.fasterxml.jackson.datatype.jsr310.DecimalUtils
 import io.vyne.models.ConversionService
 import io.vyne.models.NoOpConversionService
 import lang.taxi.types.EnumValue
+import lang.taxi.types.FormatsAndZoneOffset
 import org.springframework.core.convert.ConverterNotFoundException
 import org.springframework.core.convert.support.DefaultConversionService
 import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.NumberFormat
-import java.time.*
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
@@ -25,7 +32,7 @@ object VyneConversionService : ConversionService {
       )
    }
 
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: FormatsAndZoneOffset?): T {
       try {
          return innerConversionService.convert(source, targetType, format)!!
       } catch (e: ConverterNotFoundException) {
@@ -44,7 +51,7 @@ interface ForwardingConversionService : ConversionService {
 private class SpringConverterWrapper : ConversionService {
 
    val innerConversionService = buildSpringConversionService()
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: FormatsAndZoneOffset?): T {
       try {
          return innerConversionService.convert(source, targetType)!!
       } catch (e: ConverterNotFoundException) {
@@ -102,7 +109,9 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
       doConvert: (source: String, formatter: DateTimeFormatter) -> D,
       optionalFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
    ): D {
-      require(format != null) { "Formats are expected for Date types" }
+      require(format != null) {
+         " Formats are expected for Date types"
+      }
       // Note - using US Locale so that AM PM in uppercase is supported
       val locale = when {
          source.contains("pm") || source.contains("am") -> Locale.UK
@@ -130,19 +139,19 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
    }
 
 
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: FormatsAndZoneOffset?): T {
       return when {
          source is String && targetType == Instant::class.java -> {
-            toTemporalObject(source, format, UtcAsDefaultInstantConverter::parse) as T
+            toTemporalObject(source, format?.patterns, UtcAsDefaultInstantConverter::parse) as T
          }
          source is String && targetType == LocalDateTime::class.java -> {
-            toTemporalObject(source, format, LocalDateTime::parse) as T
+            toTemporalObject(source, format?.patterns, LocalDateTime::parse) as T
          }
          source is String && targetType == LocalDate::class.java -> {
-            toTemporalObject(source, format, LocalDate::parse, DateTimeFormatter.ISO_LOCAL_DATE) as T
+            toTemporalObject(source, format?.patterns, LocalDate::parse, DateTimeFormatter.ISO_LOCAL_DATE) as T
          }
          source is String && targetType == LocalTime::class.java -> {
-            toTemporalObject(source, format, LocalTime::parse, DateTimeFormatter.ISO_TIME) as T
+            toTemporalObject(source, format?.patterns, LocalTime::parse, DateTimeFormatter.ISO_TIME) as T
          }
          else -> {
             next.convert(source, targetType, format)
@@ -168,11 +177,18 @@ private object UtcAsDefaultInstantConverter {
 
 class StringToNumberConverter(override val next: ConversionService = NoOpConversionService) :
    ForwardingConversionService {
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
+
+   companion object {
+      // Keep this as static.
+      // NumberFormat.getInstance() calls clone(), so it's actually a really expensive call.
+      private val numberFormat = NumberFormat.getInstance(Locale.ENGLISH)
+   }
+
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: FormatsAndZoneOffset?): T {
       if (source !is String) {
          return next.convert(source, targetType, format)
       } else {
-         val numberFormat = NumberFormat.getInstance(Locale.ENGLISH)
+
          return when (targetType) {
             Int::class.java -> fromScientific(source)?.toInt() as T ?: numberFormat.parse(source).toInt() as T
             Double::class.java -> fromScientific(source)?.toDouble() as T ?: numberFormat.parse(source).toDouble() as T

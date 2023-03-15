@@ -2,7 +2,7 @@ package io.vyne.history.remote
 
 import com.google.common.cache.CacheBuilder
 import io.vyne.history.QueryResultEventMapper
-import io.vyne.history.db.ResultRowPersistenceStrategy
+import io.vyne.history.ResultRowPersistenceStrategy
 import io.vyne.models.OperationResult
 import io.vyne.query.QueryCompletedEvent
 import io.vyne.query.QueryEvent
@@ -130,7 +130,8 @@ class RemoteQueryEventConsumerClient(
    }
 
    override fun recordResult(operation: OperationResult, queryId: String) {
-      val lineageRecords = resultRowPersistenceStrategy.createLineageRecords(listOf(operation), queryId)
+      val lineageRecords =
+         resultRowPersistenceStrategy.createLineageRecords(listOf(operation.asOperationReferenceDataSource()), queryId)
       if (operation.remoteCall.isFailed) {
          // emit a remoteCall record so that we can persist the failed call in REMOTE_CALL_RESPONSE
          resultRowPersistenceStrategy.createRemoteCallRecord(operation, queryId)?.let {

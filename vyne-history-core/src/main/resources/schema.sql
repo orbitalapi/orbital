@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS QUERY_SUMMARY
    id                   SERIAL PRIMARY KEY,
    query_id             VARCHAR(255),
    client_query_id      VARCHAR(255),
-   taxi_ql              VARCHAR(5000),
+   taxi_ql              TEXT,
    query_json           CLOB(100000),
    start_time           TIMESTAMP,
    response_status      VARCHAR(255),
@@ -45,7 +45,15 @@ CREATE TABLE IF NOT EXISTS REMOTE_CALL_RESPONSE
    response_id    varchar(255) PRIMARY KEY,
    remote_call_id VARCHAR(255),
    query_id       VARCHAR(255),
-   response       CLOB
+   address        VARCHAR(2000),
+   response       CLOB,
+   start_time     timestamp,
+   duration_ms    numeric null,
+   exchange       CLOB,
+   operation      varchar(2000),
+   success        bool,
+   message_kind   varchar(255),
+   response_type  VARCHAR(2000)
 );
 
 CREATE INDEX IF NOT EXISTS ix_remoteCallResponse_queryId ON REMOTE_CALL_RESPONSE (query_id);
@@ -57,13 +65,13 @@ CREATE TABLE IF NOT EXISTS QUERY_SANKEY_ROW
    client_query_id       VARCHAR(255) NULL,
    source_node_type      VARCHAR(50),
    source_node           VARCHAR(1000),
-   source_operation_data CLOB NULL,
+   source_operation_data CLOB         NULL,
    target_node_type      VARCHAR(50),
    target_node           VARCHAR(1000),
-   target_operation_data CLOB NULL,
+   target_operation_data CLOB         NULL,
    node_count            BIGINT,
    PRIMARY KEY (query_id, source_node, source_node_type, target_node, target_node_type)
 );
 
 CREATE INDEX IF NOT EXISTS ix_querySankeyRow_queryId on QUERY_SANKEY_ROW (query_id);
-CREATE INDEX IF NOT EXISTS ix_querySankeyRow_clientQueryId on QUERY_SANKEY_ROW (client_query_id);
+-- CREATE INDEX IF NOT EXISTS ix_querySankeyRow_clientQueryId on QUERY_SANKEY_ROW (client_query_id);

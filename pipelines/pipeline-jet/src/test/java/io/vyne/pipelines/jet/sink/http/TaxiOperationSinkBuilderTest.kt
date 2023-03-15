@@ -21,7 +21,7 @@ class TaxiOperationSinkBuilderTest : BaseJetIntegrationTest() {
 
    @Test
    fun `can submit to http service`() {
-      val (hazelcastInstance, _, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, _, vyneClient) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -49,7 +49,7 @@ class TaxiOperationSinkBuilderTest : BaseJetIntegrationTest() {
          )
       )
 
-      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
+      startPipeline(hazelcastInstance, vyneClient, pipelineSpec)
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
          server.requestCount > 0
       }

@@ -13,8 +13,8 @@ import {SchemaSubmissionResult, TypesService} from '../services/types.service';
 import {findType, Schema, Type, VersionedSource} from '../services/schema';
 import {isNullOrUndefined} from 'util';
 import {HttpErrorResponse} from '@angular/common/http';
-import {NewTypeSpec, qualifiedName} from '../type-editor/type-editor.component';
 import {MatSnackBar} from '@angular/material/snack-bar';
+import { NewTypeSpec, qualifiedName } from 'src/app/type-editor/new-type-spec';
 
 @Component({
   selector: 'app-table-importer-container',

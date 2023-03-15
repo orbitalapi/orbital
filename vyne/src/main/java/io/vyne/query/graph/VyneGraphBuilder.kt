@@ -17,7 +17,6 @@ import io.vyne.query.excludedValues
 import io.vyne.query.graph.edges.EvaluatableEdge
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Field
-import io.vyne.schemas.Operation
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.ParamNames
 import io.vyne.schemas.QualifiedName
@@ -26,6 +25,7 @@ import io.vyne.schemas.Relationship
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
+import io.vyne.schemas.TableOperation
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import io.vyne.utils.ImmutableEquality
@@ -108,7 +108,6 @@ data class Element(val value: Any, val elementType: ElementType, val instanceVal
 }
 
 fun Type.asElement(): Element = type(this)
-fun Operation.asElement(): Element = operation(this.qualifiedName.fullyQualifiedName)
 fun type(name: String) = Element(name, ElementType.TYPE)
 fun type(type: Type): Element {
    return type(type.qualifiedName.parameterizedName)
@@ -121,10 +120,12 @@ fun querySpec(operation: QueryOperation) =
 fun parameter(paramTypeFqn: String) = Element(ParamNames.toParamName(paramTypeFqn), ElementType.PARAMETER)
 fun operation(service: Service, operation: RemoteOperation): Element {
    val operationReference = OperationNames.name(service.qualifiedName, operation.name)
-   return operation(operationReference)
+   return operation(operationReference, operation)
 }
 
-fun operation(name: String) = Element(name, ElementType.OPERATION)
+fun operation(name: String, operation: RemoteOperation?) =
+   Element(name, ElementType.OPERATION, instanceValue = operation)
+
 fun providedInstance(typedInstance: TypedInstance): Element {
    val instanceHash = typedInstance.value?.hashCode() ?: -1
    val nodeId = typedInstance.typeName + "@$instanceHash"
@@ -159,7 +160,7 @@ private data class GraphWithFactInstancesCacheKey(
 )
 
 class VyneGraphBuilder(
-   private val schema: Schema,
+   val schema: Schema,
    vyneGraphBuilderCache: VyneGraphBuilderCacheSettings = VyneGraphBuilderCacheSettings()
 ) {
    companion object {
@@ -224,7 +225,7 @@ class VyneGraphBuilder(
       return graphCache.get(filteredFacts) {
          StrategyPerformanceProfiler.profiled("buildGraph") {
             val graph = createCachingGraph(filteredFacts)
-            // TODO : Waiting to see if we actually use GraphBuildResult anymore, if not, just reutnr the graph here.
+            // TODO : Waiting to see if we actually use GraphBuildResult anymore, if not, just return the graph here.
             GraphBuildResult(graph, emptyList(), emptyList())
          }
       }
@@ -291,23 +292,23 @@ class VyneGraphBuilder(
             addConnection(unformattedTypeNode, typeNode, Relationship.CAN_POPULATE)
          }
 
-         if (!type.isClosed) {
-            type.attributes.map { (attributeName, attributeType) ->
-               val attributeQualifiedName = attributeFqn(typeFullyQualifiedName, attributeName)
-               val attributeNode = member(attributeQualifiedName)
-               addConnection(typeNode, attributeNode, Relationship.HAS_ATTRIBUTE)
+         //if (!type.isClosed) {
+         type.attributes.map { (attributeName, attributeType) ->
+            val attributeQualifiedName = attributeFqn(typeFullyQualifiedName, attributeName)
+            val attributeNode = member(attributeQualifiedName)
+            addConnection(typeNode, attributeNode, Relationship.HAS_ATTRIBUTE)
 
-               // (attribute) -[IS_ATTRIBUTE_OF]-> (type)
-               addConnection(attributeNode, typeNode, Relationship.IS_ATTRIBUTE_OF)
+            // (attribute) -[IS_ATTRIBUTE_OF]-> (type)
+            addConnection(attributeNode, typeNode, Relationship.IS_ATTRIBUTE_OF)
 
-               val attributeTypeNode = type(attributeType.type.parameterizedName)
-               addConnection(attributeNode, attributeTypeNode, Relationship.IS_TYPE_OF)
+            val attributeTypeNode = type(attributeType.type.parameterizedName)
+            addConnection(attributeNode, attributeTypeNode, Relationship.IS_TYPE_OF)
 //               typesAndWhereTheyreUsed.put(attributeTypeNode, attributeNode)
-               // See the relationship for why commented out ....
-               // migrating this relationship to an INSTNACE_OF node.
+            // See the relationship for why commented out ....
+            // migrating this relationship to an INSTNACE_OF node.
 //            builder.connect(attributeTypeNode).to(attributeNode).withEdge(Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE)
-            }
          }
+         //}
 
 //         log().debug("Added attribute ${type.name} to graph")
       }
@@ -333,6 +334,7 @@ class VyneGraphBuilder(
                .forEach { operation ->
                   val operationNode = operation(service, operation)
                   when (operation) {
+                     is TableOperation -> connections.addAll(buildTableOperationConnections(operation, operationNode))
                      is QueryOperation -> connections.addAll(buildQueryOperationConnections(operation, operationNode))
                      else -> connections.addAll(buildStandardOperationConnections(operation, operationNode))
                   }
@@ -350,6 +352,13 @@ class VyneGraphBuilder(
       return connections
    }
 
+   private fun buildTableOperationConnections(
+      operation: TableOperation,
+      operationNode: Element
+   ): List<GraphConnection> {
+      return operation.queryOperations.flatMap { buildQueryOperationConnections(it, operationNode) }
+   }
+
    private fun buildQueryOperationConnections(
       operation: QueryOperation,
       operationNode: Element
@@ -365,7 +374,11 @@ class VyneGraphBuilder(
       val idFields = returnType.getAttributesWithAnnotation("Id".fqn())
       if (idFields.size == 1) { // For now, we can't support composite keys
          val idField = idFields.values.first()
-         connections.addConnection(parameter(idField.type.parameterizedName), querySpec, Relationship.CAN_CONSTRUCT_QUERY)
+         connections.addConnection(
+            parameter(idField.type.parameterizedName),
+            querySpec,
+            Relationship.CAN_CONSTRUCT_QUERY
+         )
       }
       return connections
    }

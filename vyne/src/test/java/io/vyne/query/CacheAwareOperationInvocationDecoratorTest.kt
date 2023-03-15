@@ -23,6 +23,7 @@ import io.vyne.schemas.Service
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.utils.Ids
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -56,11 +57,11 @@ class CacheAwareOperationInvocationDecoratorTest {
       val cacheAware = CacheAwareOperationInvocationDecorator(mockOperationInvoker)
 
       val type =
-         Type(name = QualifiedName("type1"), sources = listOf(), taxiType = PrimitiveType.STRING, typeDoc = null)
+         Type(name = QualifiedName.from("type1"), sources = listOf(), taxiType = PrimitiveType.STRING, typeDoc = null)
       val mockedTypeInstance = mock<TypedInstance>()
-      val service = Service(QualifiedName("srv1"), listOf(), listOf(), listOf(), listOf())
+      val service = Service(QualifiedName.from("srv1"), listOf(), listOf(), listOf(), listOf(), listOf(), listOf())
       val operation = Operation(
-         qualifiedName = QualifiedName("op1@@op1"),
+         qualifiedName = QualifiedName.from("op1@@op1"),
          returnType = type,
          parameters = listOf(),
          sources = listOf()
@@ -118,7 +119,8 @@ class CacheAwareOperationInvocationDecoratorTest {
          service,
          operation,
          listOf(param("A")),
-         mock { }
+         mock { },
+         Ids.id("queryId")
       ).toList()
       result.should.have.size(1)
       result.first().value.should.equal("Hello")
@@ -127,7 +129,8 @@ class CacheAwareOperationInvocationDecoratorTest {
          service,
          operation,
          listOf(param("A")),
-         mock { }
+         mock { },
+         Ids.id("queryId")
       ).toList()
       cachedResult.should.have.size(1)
       cachedResult.first().value.should.equal("Hello")
@@ -154,7 +157,8 @@ class CacheAwareOperationInvocationDecoratorTest {
             service,
             operation,
             listOf(),
-            mock { }
+            mock { },
+            Ids.id("queryId")
          ).toList()
          result.should.have.size(5)
          result.first().value.should.equal("Hello")
@@ -165,7 +169,8 @@ class CacheAwareOperationInvocationDecoratorTest {
             service,
             operation,
             listOf(),
-            mock { }
+            mock { },
+            Ids.id("queryId")
          ).toList()
          resultFromSecondAttempt.should.have.size(5)
          invoker.invokedCalls.should.have.size(2)
@@ -182,7 +187,8 @@ class CacheAwareOperationInvocationDecoratorTest {
             service,
             operation,
             listOf(param("A")),
-            mock { }
+            mock { },
+            Ids.id("queryId")
          ).toList()
       }
    }
@@ -206,7 +212,8 @@ class CacheAwareOperationInvocationDecoratorTest {
          service,
          operation,
          emptyList(),
-         mock { }
+         mock { },
+         Ids.id("queryId")
       ).test {
          val words = listOf("Hello".asTypedString(), "World".asTypedString())
          flow.tryEmit(words[0])
@@ -222,7 +229,8 @@ class CacheAwareOperationInvocationDecoratorTest {
          service,
          operation,
          emptyList(),
-         mock { }
+         mock { },
+         Ids.id("queryId")
       ).test {
          expect("Hello".asTypedString())
          expect("World".asTypedString())
@@ -297,7 +305,8 @@ class CacheAwareOperationInvocationDecoratorTest {
             service,
             operation,
             emptyList(),
-            mock { }
+            mock { },
+            Ids.id("queryId")
          ).testIn(this)
          val error = turbine.awaitError()
          error.message.should.equal("You shall not pass")
@@ -346,7 +355,7 @@ class CacheAwareOperationInvocationDecoratorTest {
                launch {
                   logger.info { "Initiating call with input ${inputValue.second.toRawObject()}" }
                   val result = try {
-                     cachingInvoker.invoke(service, operation, listOf(inputValue), eventDispatcher)
+                     cachingInvoker.invoke(service, operation, listOf(inputValue), eventDispatcher, Ids.id("queryId"))
                         .toList().first()
                   } catch (exception: Exception) {
                      exception
@@ -381,7 +390,7 @@ private class ExceptionThrowingInvoker(val exception:Throwable = UnsupportedOper
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String?
+      queryId: String
    ): Flow<TypedInstance> {
       throw exception
    }
@@ -401,7 +410,7 @@ private class ConcurrentAccessProhibitedInvoker(private val handler: (List<Pair<
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String?
+      queryId: String
    ): Flow<TypedInstance> {
       val cacheKey = CacheAwareOperationInvocationDecorator.generateCacheKey(
          service,

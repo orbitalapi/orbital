@@ -1,6 +1,8 @@
 package io.vyne.queryService
 
 import com.winterbe.expekt.should
+import io.vyne.asPackage
+import io.vyne.cockpit.core.schemas.SchemaService
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.spring.SimpleTaxiSchemaProvider
@@ -8,6 +10,7 @@ import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.ConsumedOperation
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.toParsedPackages
 import org.junit.Before
 import org.junit.Test
 
@@ -78,7 +81,7 @@ class SchemaServiceTest {
 
    @Before
    fun setUp() {
-      store.setSchemaSet(SchemaSet.from(taxiSchema.sources, 1))
+      store.setSchemaSet(SchemaSet.fromParsed(taxiSchema.sources.asPackage().toParsedPackages(), 1))
    }
 
    @Test
@@ -91,6 +94,7 @@ class SchemaServiceTest {
          )
       )
       val stores = service.lineage!!.stores.toSet()
-      stores.should.equal(setOf(QualifiedName("Order"), QualifiedName("Trade")))
+      stores.should.equal(setOf(QualifiedName.from("Order"), QualifiedName.from(
+         "Trade")))
    }
 }

@@ -10,6 +10,7 @@ import io.vyne.models.TypedNull
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.accessors.XpathAccessor
+import lang.taxi.types.FormatsAndZoneOffset
 import org.apache.commons.io.IOUtils
 import org.w3c.dom.Document
 import org.w3c.dom.NodeList
@@ -40,7 +41,7 @@ class XmlTypedInstanceParser(private val primitiveParser: PrimitiveParser = Prim
       })
 
 
-   fun parse(xml: Document, type: Type, accessor: XpathAccessor, schema:Schema, source:DataSource, nullable: Boolean): TypedInstance {
+   fun parse(xml: Document, type: Type, accessor: XpathAccessor, schema:Schema, source:DataSource, nullable: Boolean, format: FormatsAndZoneOffset?): TypedInstance {
       val xpath = xpathCache.get(accessor.expression)
       val result = xpath.evaluate(xml)
       if (result.isEmpty()) {
@@ -50,12 +51,12 @@ class XmlTypedInstanceParser(private val primitiveParser: PrimitiveParser = Prim
             return TypedNull.create(type, source)
          }
       }
-      return primitiveParser.parse(result, type, source)
+      return primitiveParser.parse(result, type, source, format = format)
    }
 
 
-   fun parse(xml: String, type: Type, accessor: XpathAccessor, schema:Schema, source:DataSource, nullable: Boolean): TypedInstance {
+   fun parse(xml: String, type: Type, accessor: XpathAccessor, schema:Schema, source:DataSource, nullable: Boolean, format: FormatsAndZoneOffset?): TypedInstance {
       val document = documentCache.get(xml)
-      return parse(document, type, accessor, schema, source, nullable)
+      return parse(document, type, accessor, schema, source, nullable, format = format)
    }
 }

@@ -35,6 +35,8 @@ import kotlin.time.ExperimentalTime
       "vyne.schema.publicationMethod=LOCAL",
       "vyne.search.directory=./search/\${random.int}",
       "vyne.analytics.persistResults=false",
+      "vyne.analytics.persistRemoteCallMetadata=false",
+      "vyne.analytics.persistRemoteCallResponses=false",
       "spring.datasource.url=jdbc:h2:mem:testdbQuerySummaryOnlyPersistenceTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"]
 )
 class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
@@ -57,7 +59,7 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
 
       runTest {
          val turbine =
-            queryService.submitVyneQlQuery("findAll { Order[] } as Report[]", clientQueryId = id).body.testIn(this)
+            queryService.submitVyneQlQuery("find { Order[] } as Report[]", clientQueryId = id).body.testIn(this)
 
          val first = turbine.awaitItem()
          first.should.not.be.`null`
@@ -72,7 +74,7 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
       val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)
 
       historyRecord.should.not.be.`null`
-      historyRecord!!.taxiQl.should.equal("findAll { Order[] } as Report[]")
+      historyRecord!!.taxiQl.should.equal("find { Order[] } as Report[]")
       historyRecord.endTime.should.not.be.`null`
       historyRecord.recordCount.should.equal(1)
 

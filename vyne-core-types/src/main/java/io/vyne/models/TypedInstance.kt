@@ -7,10 +7,13 @@ import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.json.isJson
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.log
-import lang.taxi.Equality
 import lang.taxi.accessors.NullValue
 import lang.taxi.types.ArrayType
+import lang.taxi.types.FormatsAndZoneOffset
+import lang.taxi.types.ObjectType
+import lang.taxi.types.isMapType
 
 
 interface TypedInstance {
@@ -21,13 +24,14 @@ interface TypedInstance {
    @get:JsonView(DataSourceIncludedView::class)
    val source: DataSource
 
+   val nodeId: String
    /**
     * Hash code which includes the datasource - normally excluded.
     * Used in determining rowIds for TypedInstances when persisting to the UI.
     */
    val hashCodeWithDataSource: Int
       get() {
-         return Equality(this, TypedInstance::typeName, TypedInstance::value, TypedInstance::source).hash()
+         return ImmutableEquality(this, TypedInstance::typeName, TypedInstance::value, TypedInstance::source).hash()
       }
 
    val typeName: String
@@ -73,6 +77,7 @@ interface TypedInstance {
                }
                TypedCollection(collectionMemberType, members)
             }
+
             type.isEnum -> type.enumTypedInstance(value, source)
             type.isScalar -> TypedValue.from(type, value, performTypeConversions, source)
             else -> createTypedObject(typeNamedInstance, schema, performTypeConversions, source)
@@ -135,7 +140,9 @@ interface TypedInstance {
          evaluateAccessors: Boolean = true,
          functionRegistry: FunctionRegistry = FunctionRegistry.default,
          formatSpecs: List<ModelFormatSpec> = emptyList(),
-         inPlaceQueryEngine: InPlaceQueryEngine? = null
+         inPlaceQueryEngine: InPlaceQueryEngine? = null,
+         parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
+         format: FormatsAndZoneOffset? = type.formatAndZoneOffset
       ): TypedInstance {
          return when {
             value is TypedInstance -> value
@@ -153,7 +160,9 @@ interface TypedInstance {
                   evaluateAccessors,
                   functionRegistry,
                   formatSpecs,
-                  inPlaceQueryEngine
+                  inPlaceQueryEngine,
+                  parsingErrorBehaviour,
+                  format
                )
             }
 
@@ -172,7 +181,9 @@ interface TypedInstance {
                         inPlaceQueryEngine = inPlaceQueryEngine,
                         formatSpecs = formatSpecs,
                         functionRegistry = functionRegistry,
-                        )
+                        parsingErrorBehaviour = parsingErrorBehaviour,
+                        format = format
+                     )
                   },
                   source
                )
@@ -181,9 +192,12 @@ interface TypedInstance {
             type.isEnum -> {
                type.enumTypedInstance(value, source)
             }
+            type.taxiType is ObjectType && type.taxiType.isMapType() -> {
+               TypedMaps.parse(type, value, schema, performTypeConversions, nullValues, source, evaluateAccessors, functionRegistry, formatSpecs)
+            }
 
             type.isScalar -> {
-               TypedValue.from(type, value, performTypeConversions, source)
+               TypedValue.from(type, value, performTypeConversions, source, parsingErrorBehaviour, format)
             }
             // This is here primarily for readability.  We could just let this fall through to below.
             isJson(value) -> TypedObjectFactory(
@@ -195,7 +209,8 @@ interface TypedInstance {
                evaluateAccessors = evaluateAccessors,
                functionRegistry = functionRegistry,
                inPlaceQueryEngine = inPlaceQueryEngine,
-               formatSpecs = formatSpecs
+               formatSpecs = formatSpecs,
+               parsingErrorBehaviour = parsingErrorBehaviour,
             ).build()
 
             // This is a bit special...value isn't a collection, but the type is.  Oooo!
@@ -211,7 +226,8 @@ interface TypedInstance {
                evaluateAccessors = evaluateAccessors,
                functionRegistry = functionRegistry,
                inPlaceQueryEngine = inPlaceQueryEngine,
-               formatSpecs = formatSpecs
+               formatSpecs = formatSpecs,
+               parsingErrorBehaviour = parsingErrorBehaviour
             )
          }
       }

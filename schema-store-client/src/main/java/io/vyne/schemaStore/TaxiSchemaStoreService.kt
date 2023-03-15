@@ -1,23 +1,19 @@
 package io.vyne.schemaStore
 
-import arrow.core.Either
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.api.SchemaSourceProvider
 import io.vyne.schema.publisher.ExpiringSourcesStore
+import io.vyne.schema.publisher.KeepAlivePackageSubmission
 import io.vyne.schema.publisher.KeepAliveStrategyMonitor
 import io.vyne.schema.publisher.SourceSubmissionResponse
-import io.vyne.schema.publisher.VersionedSourceSubmission
-import io.vyne.schemas.Schema
-import lang.taxi.CompilationError
 import mu.KotlinLogging
-import org.springframework.beans.factory.InitializingBean
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
-import reactor.core.publisher.Sinks
 
 private val logger = KotlinLogging.logger { }
 
@@ -73,20 +69,17 @@ class TaxiSchemaStoreService(
       logger.info { "Initialised TaxiSchemaStoreService" }
       taxiSchemaStoreWatcher
          .currentSources
-         .subscribe { currentState ->
+         .subscribe { update ->
             logger.info { "Received an update of SchemaSources, submitting to schema store" }
-            val result = validatingStore.submitSchemas(currentState.sources, currentState.removedSchemaIds)
+            val result = validatingStore.submitUpdates(update)
          }
    }
 
    @RequestMapping(method = [RequestMethod.POST])
-   fun submitSources(@RequestBody submission: VersionedSourceSubmission): Mono<SourceSubmissionResponse> {
+   fun submitSources(@RequestBody submission: KeepAlivePackageSubmission): Mono<SourceSubmissionResponse> {
       val updateMessage = taxiSchemaStoreWatcher
-         .submitSources(
-            submission = submission,
-            emitUpdateMessage = false
-         )
-      val result = validatingStore.submitSchemas(updateMessage.sources, updateMessage.removedSchemaIds)
+         .submitSources(submission)
+      val result = validatingStore.submitUpdates(updateMessage)
          .map { validatingStore.schemaSet }
       return Mono.just(SourceSubmissionResponse.fromEither(result))
    }
@@ -101,6 +94,12 @@ class TaxiSchemaStoreService(
    fun listRawSchema(): String {
       return validatingStore.schemaSet.rawSchemaStrings.joinToString("\n")
    }
+
+   override val packages: List<SourcePackage>
+      get() {
+         return validatingStore.schemaSet.packages
+      }
+
 
    override val versionedSources: List<VersionedSource>
       get() {

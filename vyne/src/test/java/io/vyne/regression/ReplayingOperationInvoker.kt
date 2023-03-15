@@ -31,7 +31,7 @@ class ReplayingOperationInvoker(private val remoteCalls: List<RemoteCall>, priva
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String?
+      queryId: String
    ): Flow<TypedInstance> {
       val (_, url, _) = operation.httpOperationMetadata()
       val uriVariables = uriVariableProvider.getUriVariables(parameters, url)

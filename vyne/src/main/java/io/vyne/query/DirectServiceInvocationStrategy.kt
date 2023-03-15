@@ -2,7 +2,6 @@ package io.vyne.query
 
 import com.google.common.cache.CacheBuilder
 import io.vyne.models.DefinedInSchema
-import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.schemas.Operation
@@ -10,9 +9,9 @@ import io.vyne.schemas.Parameter
 import io.vyne.schemas.PropertyToParameterConstraint
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Schema
+import io.vyne.schemas.StreamOperation
 import io.vyne.schemas.Type
 import io.vyne.utils.log
-import kotlinx.coroutines.flow.onEach
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.RelativeValueExpression
 
@@ -25,7 +24,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
    BaseOperationInvocationStrategy(invocationService) {
    private val operationsForTypeCache = CacheBuilder.newBuilder()
       .weakKeys()
-      .build<Type, List<Operation>>()
+      .build<Type, List<RemoteOperation>>()
 
    override suspend fun invoke(
       target: Set<QuerySpecTypeNode>,
@@ -36,29 +35,29 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
 
       /**
 
-       Commenting out this to fulfill the following scneario:
+      Commenting out this to fulfill the following scneario:
 
-       model Item {
-          id: Id
-       }
+      model Item {
+      id: Id
+      }
 
-       service SecurityService {
-         operation allSecurities(): Item[]
-         operation currentStock(): NumberOfItems
-       }
+      service SecurityService {
+      operation allSecurities(): Item[]
+      operation currentStock(): NumberOfItems
+      }
 
-       findAll { Item[] }  as {
-         isin: Isin
-          currentStock: NumberOfItems
+      find { Item[] }  as {
+      isin: Isin
+      currentStock: NumberOfItems
       }[]
 
-       in the above query 'currentStock' can only be populated by currentStock() operation through this strategy during projection.
-       Below check put in place to avoid infinite recursions. However, it doesn't seem to be valid anymore.
+      in the above query 'currentStock' can only be populated by currentStock() operation through this strategy during projection.
+      Below check put in place to avoid infinite recursions. However, it doesn't seem to be valid anymore.
 
       if (context.isProjecting) {
-         return QueryStrategyResult.searchFailed()
+      return QueryStrategyResult.searchFailed()
       }
-      */
+       */
 
       val operations = lookForCandidateServices(context, target)
       return invokeOperations(operations, context, target)
@@ -103,7 +102,8 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
       requireAllParametersResolved: Boolean
    ): Map<RemoteOperation, Map<Parameter, TypedInstance>> {
       var operationsForType = operationsForTypeCache.get(target.type) {
-         schema.operations.filter {
+         val operations: Set<RemoteOperation> = schema.operations + schema.streamOperations
+         (operations).filter {
             it.returnType.isAssignableTo(target.type)
          }
       }
@@ -151,16 +151,20 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
     * can satisfy the contract, then the parameters to search inputs are returned mapped.
     */
    private fun compareOperationContractToDataRequirementsAndFetchSearchParams(
-      operation: Operation,
+      remoteOperation: RemoteOperation,
       target: QuerySpecTypeNode,
       schema: Schema
    ): Pair<Boolean, Map<Parameter, TypedInstance>> {
       if (target.dataConstraints.isEmpty()) {
          return true to emptyMap()
       }
+      if (remoteOperation is StreamOperation) {
+         return true to emptyMap()
+      }
+      require(remoteOperation is Operation) { "Expected to find an Operation, but was type ${remoteOperation::class.simpleName}" }
       val unevaluatableConstraints = target.dataConstraints.filter { it !is PropertyToParameterConstraint }
       if (unevaluatableConstraints.isNotEmpty()) {
-         log().warn("Operation ${operation.name} has constraints that we haven't built support for.  Will not be evaluated")
+         log().warn("Operation ${remoteOperation.name} has constraints that we haven't built support for.  Will not be evaluated")
          return false to emptyMap()
       }
       // This approach is a first pass, and far from ideal.  It's far too concrete and tightly coupled
@@ -175,7 +179,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
       val operationConstraintParameterValues: Map<Parameter, TypedInstance> = target.dataConstraints
          .filterIsInstance<PropertyToParameterConstraint>() // everything by this stage
          .flatMap { requiredConstraint ->
-            operation.contract.constraints
+            remoteOperation.contract.constraints
                .filterIsInstance<PropertyToParameterConstraint>()
                .filter { operationConstraint ->
                   filterPropertyToParameterConstraint(
@@ -185,8 +189,8 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
                }
                .map { operationConstraint ->
                   val path = (operationConstraint.expectedValue as RelativeValueExpression).path
-                  val parameter = operation.parameter(path.path)
-                     ?: error("Operation ${operation.name} does not expose a parameter called ${path.path}")
+                  val parameter = remoteOperation.parameter(path.path)
+                     ?: error("Operation ${remoteOperation.name} does not expose a parameter called ${path.path}")
                   val value = (requiredConstraint.expectedValue as ConstantValueExpression).value
 
                   // TODO: Confirm that DefinedInSchema is appropriate here, but pretty sure these are constants.

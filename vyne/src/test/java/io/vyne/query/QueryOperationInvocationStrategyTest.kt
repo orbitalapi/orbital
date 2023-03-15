@@ -4,16 +4,17 @@ import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonModel
-import io.vyne.queryDeclaration
 import io.vyne.rawObjects
+import io.vyne.schemas.TableOperation
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.tableDeclaration
 import io.vyne.testVyne
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.Compiler
 import org.junit.Before
 import org.junit.Test
-import java.util.UUID
+import java.util.*
 
 class QueryOperationInvocationStrategyTest {
    val schema = TaxiSchema.fromStrings(
@@ -24,7 +25,7 @@ class QueryOperationInvocationStrategyTest {
             firstName : FirstName
          }
          service PersonService {
-            ${queryDeclaration("personQuery", "Person[]")}
+            ${tableDeclaration("personQuery", "Person[]")}
          }
       """.trimIndent()
    )
@@ -38,14 +39,14 @@ class QueryOperationInvocationStrategyTest {
 
    @Test
    fun matchesQueryOperationForFindAll() {
-      val querySpecNode = getQuerySpecNode("findAll { Person[] }", schema)
+      val querySpecNode = getQuerySpecNode("find { Person[] }", schema)
       val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
       candidates.should.have.size(1)
    }
 
    @Test
    fun matchesQueryOperationFilteringEqualsAttributeName() {
-      val querySpecNode = getQuerySpecNode("findAll { Person[]( FirstName == 'Jimmy' ) }", schema)
+      val querySpecNode = getQuerySpecNode("find { Person[]( FirstName == 'Jimmy' ) }", schema)
       val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
       candidates.should.have.size(1)
    }
@@ -64,14 +65,14 @@ class QueryOperationInvocationStrategyTest {
             trader : TraderName
          }
          service FxTradeService {
-            ${queryDeclaration("fxTradeQuery", "FxTrade[]")}
+            ${tableDeclaration("fxTradeQuery", "FxTrade[]")}
          }
          service IrsTradeService {
-            ${queryDeclaration("irsTradeQuery", "IrsTrade[]")}
+            ${tableDeclaration("irsTradeQuery", "IrsTrade[]")}
          }
       """.trimIndent()
       )
-      val querySpecNode = getQuerySpecNode("findAll { Trade[]( TraderName == 'Jimmy' ) }", schema)
+      val querySpecNode = getQuerySpecNode("find { Trade[]( TraderName == 'Jimmy' ) }", schema)
       val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
       candidates.should.have.size(2)
    }
@@ -95,17 +96,17 @@ class QueryOperationInvocationStrategyTest {
             trader : TraderName
          }
          service BondTradeService {
-            ${queryDeclaration("bondTradeQuery", "BondTrade[]")}
+            ${tableDeclaration("bondTradeQuery", "BondTrade[]")}
          }
          service FxTradeService {
-            ${queryDeclaration("fxTradeQuery", "FxTrade[]")}
+            ${tableDeclaration("fxTradeQuery", "FxTrade[]")}
          }
          service IrsTradeService {
-            ${queryDeclaration("irsTradeQuery", "IrsTrade[]")}
+            ${tableDeclaration("irsTradeQuery", "IrsTrade[]")}
          }
       """.trimIndent()
       )
-      val querySpecNode = getQuerySpecNode("findAll { Trade[]( TraderName == 'Jimmy' ) }", schema)
+      val querySpecNode = getQuerySpecNode("find { Trade[]( TraderName == 'Jimmy' ) }", schema)
       val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
       candidates.should.have.size(2)
    }
@@ -116,14 +117,14 @@ class QueryOperationInvocationStrategyTest {
       val (vyne, stub) = testVyne(schema)
 
       stub.addResponse(
-         "personQuery", vyne.parseJsonModel(
+         TableOperation.findManyOperationName("personQuery"), vyne.parseJsonModel(
             "Person[]",
             """
             [ { "firstName" : "Jimmy" } ]
          """.trimIndent()
          )
       )
-      val result = runBlocking { vyne.query("findAll { Person[]( FirstName == 'Jimmy' ) }").results.toList() }
+      val result = runBlocking { vyne.query("find { Person[]( FirstName == 'Jimmy' ) }").results.toList() }
 
       stub.invocations.should.have.size(1)
       // TODO :  Assert the vyneQl was formed correctly
@@ -150,20 +151,19 @@ class QueryOperationInvocationStrategyTest {
             operation findPeople():Person[]
          }
          service DbService {
-            ${queryDeclaration("getEmployeesDetails", "EmployeeDetails[]")}
-            ${queryDeclaration("getOneEmployeeDetails", "EmployeeDetails")}
+            ${tableDeclaration("getEmployeesDetails", "EmployeeDetails[]")}
           }
       """.trimIndent()
          )
       )
       stub.addResponse("findPeople", vyne.parseJson("Person[]", """[ { "id" : "001" , "name" :  "Jimmy" } ]"""))
       stub.addResponse(
-         "getOneEmployeeDetails",
+         TableOperation.findOneOperationName("getEmployeesDetails"),
          vyne.parseJson("EmployeeDetails", """[ { "id" : "001" , "managerName" :  "Jones" } ]""")
       )
       val result = runBlocking {
          vyne.query(
-            """findAll { Person[] } as {
+            """find { Person[] } as {
          id : PersonId
          name : PersonName
           managerName : ManagerName

@@ -27,7 +27,7 @@
       }
    ],
    "reviewers": [
-      "RoopeHakulinen"
+      "martypitt"
    ],
    "ignorePaths": [
       "regression-tests/terraform/"

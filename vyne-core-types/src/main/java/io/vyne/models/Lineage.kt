@@ -3,8 +3,10 @@ package io.vyne.models
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.query.RemoteCall
+import io.vyne.schemas.OperationNames
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.fqn
 import io.vyne.utils.orElse
 import mu.KotlinLogging
 import java.util.*
@@ -104,13 +106,80 @@ data class FailedParsingSource(
    val error: String,
    override val id: String = UUID.randomUUID().toString(),
    override val failedAttempts: List<DataSource> = emptyList(),
-   override val name: String = "Failed parsing"): DataSource
+   override val name: String = "Failed parsing"
+) : DataSource
+
+/**
+ * A lightweight version of OperationResult.
+ * Really just has the id's required to load the real operation result,
+ * plus a handful of things to help with debugging.
+ *
+ * Crucially, does not contain the actual result.
+ */
+data class OperationResultReference(
+   val remoteCallId: String,
+   val remoteCallResponseId: String,
+   val wasSuccessful: Boolean,
+   val inputs: List<OperationResult.OperationParam>,
+   val operationName: QualifiedName,
+   override val failedAttempts: List<DataSource> = emptyList()
+) : DataSource {
+   companion object {
+      const val NAME: String = "Operation result"
+   }
+
+   val operationDisplayName: String = operationName.shortDisplayName
+   val serviceDisplayName: String = OperationNames.serviceName(operationName).fqn().shortDisplayName
+
+   override val name: String = NAME
+
+   override val id: String = remoteCallId
+
+   override fun appendFailedAttempts(failedAttempts: List<DataSource>): DataSource {
+      return OperationResultReference(
+         remoteCallId = remoteCallId,
+         remoteCallResponseId = remoteCallResponseId,
+         wasSuccessful = wasSuccessful,
+         inputs = inputs,
+         operationName = operationName,
+         failedAttempts = this.failedAttempts + failedAttempts
+      )
+   }
+}
+
+
+/**
+ * Wraps an OperationResult.
+ *
+ * Generally, usage of OperationResult as a datasource
+ * is discouraged, as they can contain a very large
+ * amount of data, which leads to heap and storage problems.
+ *
+ * Generally, a OperationResultReference is preferred.
+ *
+ * However, sometimes (in the case of streaming results),
+ * it's not possible to construct an OperationResultReference
+ * within invokers.
+ *
+ * In that case, use a OperationResultDataSourceWrapper as an interim measure,
+ * and convert to OperationResultReference at earliest possible point.
+ *
+ */
+data class OperationResultDataSourceWrapper(val operationResult: OperationResult) : DataSource {
+   val operationResultReferenceSource = operationResult.asOperationReferenceDataSource()
+   override val name: String
+      get() = operationResultReferenceSource.name
+   override val id: String
+      get() = operationResultReferenceSource.id
+   override val failedAttempts: List<DataSource> = operationResultReferenceSource.failedAttempts
+
+}
 
 data class OperationResult(
    val remoteCall: RemoteCall,
    val inputs: List<OperationParam>,
-   override val failedAttempts: List<DataSource> = emptyList()
-) : DataSource {
+   val failedAttempts: List<DataSource> = emptyList()
+) /*: DataSource */ {
    companion object {
       const val NAME: String = "Operation result"
       fun from(
@@ -137,15 +206,26 @@ data class OperationResult(
 
    data class OperationParam(val parameterName: String, val value: Any?)
 
-   override val name: String = NAME
-   override val id: String = remoteCall.remoteCallId
+   val name: String = NAME
+   val id: String = remoteCall.remoteCallId
 
-   override fun appendFailedAttempts(failedAttempts: List<DataSource>): DataSource {
-      return OperationResult(
-         remoteCall, inputs,
-         failedAttempts = this.failedAttempts + failedAttempts
+//   fun appendFailedAttempts(failedAttempts: List<DataSource>): DataSource {
+//      return OperationResult(
+//         remoteCall, inputs,
+//         failedAttempts = this.failedAttempts + failedAttempts
+//      )
+//   }
+
+   fun asOperationReferenceDataSource(): OperationResultReference {
+      return OperationResultReference(
+         remoteCallId = this.remoteCall.remoteCallId,
+         remoteCallResponseId = this.remoteCall.responseId,
+         wasSuccessful = !remoteCall.isFailed,
+         inputs = inputs,
+         operationName = remoteCall.operationQualifiedName
       )
    }
+
 }
 
 
@@ -199,6 +279,8 @@ data class FailedEvaluatedExpression(
    val inputs: List<TypedInstance>,
    val errorMessage: String,
    val unresolvedInputs: List<QualifiedName> = emptyList(),
+   val inputInError: TypedInstance? = null,
+   val cause: DataSource? = null,
    override val id: String = UUID.randomUUID().toString(),
    override val failedAttempts: List<DataSource> = emptyList()
 ) : DataSource {

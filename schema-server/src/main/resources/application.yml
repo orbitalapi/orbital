@@ -81,9 +81,9 @@ management:
             include: prometheus,metrics,info,health
 
 
-#logging:
-#   level:
-#      io.netty: DEBUG
+logging:
+   level:
+      io.vyne: DEBUG
 #      org.apache: DEBUG
 #      org.springframework: DEBUG
 #      org.springframework.web.reactive: DEBUG

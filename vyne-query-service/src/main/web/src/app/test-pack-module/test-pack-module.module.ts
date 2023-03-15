@@ -7,6 +7,7 @@ import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {ConfigDisabledFormComponent} from './config-disabled-form.component';
 import {ConfigPersistResultsDisabledFormComponent} from './config-persist-results-disabled-form.component';
+import { MatToolbarModule } from '@angular/material/toolbar';
 
 
 @NgModule({
@@ -21,7 +22,8 @@ import {ConfigPersistResultsDisabledFormComponent} from './config-persist-result
     MatInputModule,
     FormsModule,
     ReactiveFormsModule,
-    MatButtonModule
+    MatButtonModule,
+    MatToolbarModule
   ],
   entryComponents: [
     TestSpecFormComponent,

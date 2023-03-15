@@ -2,8 +2,6 @@ import {NgModule} from '@angular/core';
 
 import {ConnectionEditorComponent} from './connection-editor.component';
 import {CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {MatCardModule} from '@angular/material/card';
 import {MatSelectModule} from '@angular/material/select';
 import {MatInputModule} from '@angular/material/input';
@@ -38,41 +36,41 @@ import {
 } from '@taiga-ui/kit';
 import {TuiButtonModule, TuiTextfieldControllerModule} from '@taiga-ui/core';
 import {DbConnectionEditorDialogComponent} from './db-connection-editor-dialog.component';
+import { HeaderComponentLayoutModule } from 'src/app/header-component-layout/header-component-layout.module';
 
 const appearance: MatFormFieldDefaultOptions = {
   appearance: 'outline'
 };
 
 @NgModule({
-  imports: [
-    CommonModule,
-    BrowserModule,
-    BrowserAnimationsModule,
-    MatDialogModule,
-    MatCardModule,
-    MatSelectModule,
-    MatInputModule,
-    FormsModule,
-    MatButtonModule,
-    AgGridModule.withComponents([TypeSelectorCellEditorComponent, CheckboxCellEditorComponent]),
-    TypeAutocompleteModule,
-    MatCheckboxModule,
-    CovalentDynamicFormsModule,
-    ReactiveFormsModule,
-    MatStepperModule,
-    MatProgressBarModule,
-    TypedEditorModule,
-    RouterModule,
-    MatMenuModule,
-    TuiInputModule,
-    TuiFieldErrorModule,
-    TuiComboBoxModule,
-    TuiDataListWrapperModule,
-    TuiFilterByInputPipeModule,
-    TuiStringifyContentPipeModule,
-    TuiTextfieldControllerModule,
-    TuiButtonModule
-  ],
+    imports: [
+        CommonModule,
+        MatDialogModule,
+        MatCardModule,
+        MatSelectModule,
+        MatInputModule,
+        FormsModule,
+        MatButtonModule,
+        AgGridModule.withComponents([TypeSelectorCellEditorComponent, CheckboxCellEditorComponent]),
+        TypeAutocompleteModule,
+        MatCheckboxModule,
+        CovalentDynamicFormsModule,
+        ReactiveFormsModule,
+        MatStepperModule,
+        MatProgressBarModule,
+        TypedEditorModule,
+        RouterModule,
+        MatMenuModule,
+        TuiInputModule,
+        TuiFieldErrorModule,
+        TuiComboBoxModule,
+        TuiDataListWrapperModule,
+        TuiFilterByInputPipeModule,
+        TuiStringifyContentPipeModule,
+        TuiTextfieldControllerModule,
+        TuiButtonModule,
+        HeaderComponentLayoutModule
+    ],
   exports: [ConnectionEditorComponent, TableImporterComponent,
     DbConnectionWizardComponent,
     TableSelectorComponent],

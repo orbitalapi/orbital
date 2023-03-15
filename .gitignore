@@ -172,6 +172,7 @@ roles.conf
 license.json
 services.conf
 ./config/
+gitWorkingDir/
 
 /search/
 /schemas/
@@ -197,3 +198,7 @@ schema-server/.*_pid*
 
 build-version.txt
 /config/
+
+### Terraform config ###
+**/.terraform
+**/.terraform.lock.hcl

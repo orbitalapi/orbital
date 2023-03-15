@@ -18,7 +18,7 @@ class KafkaSourceTest : AbstractKafkaJetTest() {
    @Ignore("failing to connect to kafka in a test, needs investigation")
    fun canReceiveStringFromKakfaInput() {
       // Pipeline Kafka -> Direct
-      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneClient) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -47,7 +47,7 @@ class KafkaSourceTest : AbstractKafkaJetTest() {
          ),
          outputs = listOf(outputSpec)
       )
-      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
+      startPipeline(hazelcastInstance, vyneClient, pipelineSpec)
 
       // Send for messages into kafka
       sendKafkaMessage(""" {"firstName":"Jimmy", "lastName" : "Schmitt" } """)

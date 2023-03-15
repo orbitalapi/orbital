@@ -4,7 +4,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.21.0</version>
+      <version>0.22.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -21,8 +21,25 @@
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>monitoring-common</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>cockpit-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>license-client</artifactId>
          <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
@@ -39,13 +56,10 @@
          <artifactId>schema-server-api</artifactId>
          <version>${project.version}</version>
       </dependency>
-
-      <!-- use the actual dependency for tests.  at runtime, we just use the api -->
       <dependency>
          <groupId>io.vyne</groupId>
-         <artifactId>schema-server-core</artifactId>
+         <artifactId>auth-common</artifactId>
          <version>${project.version}</version>
-         <scope>test</scope>
       </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>
@@ -60,8 +74,24 @@
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>history-service</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>history-persistence</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>jdbc-connector</artifactId>
          <version>${project.version}</version>
+         <exclusions>
+            <exclusion>
+               <groupId>org.slf4j</groupId>
+               <artifactId>slf4j-nop</artifactId>
+            </exclusion>
+         </exclusions>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
@@ -132,17 +162,30 @@
       <dependency>
          <groupId>org.bitbucket.b_c</groupId>
          <artifactId>jose4j</artifactId>
-         <version>0.9.1</version>
+         <version>0.9.3</version>
          <scope>test</scope>
       </dependency>
       <dependency>
          <groupId>org.springframework.cloud</groupId>
          <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+         <exclusions>
+            <exclusion>
+               <groupId>commons-jxpath</groupId>
+               <artifactId>commons-jxpath</artifactId>
+            </exclusion>
+
+         </exclusions>
+      </dependency>
+      <!-- TODO Remove once spring-cloud-starter-netflix-eureka-client is updated to use at least this version (vulnerability in 1.4.18) -->
+      <dependency>
+         <groupId>com.thoughtworks.xstream</groupId>
+         <artifactId>xstream</artifactId>
+         <version>1.4.20</version>
       </dependency>
       <dependency>
          <groupId>io.netty</groupId>
          <artifactId>netty-tcnative-boringssl-static</artifactId>
-         <version>2.0.54.Final</version>
+         <version>2.0.59.Final</version>
       </dependency>
       <dependency>
          <groupId>org.springframework.boot</groupId>
@@ -159,6 +202,11 @@
       <dependency>
          <groupId>org.springframework.security</groupId>
          <artifactId>spring-security-oauth2-jose</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>query-node-core</artifactId>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>
@@ -224,6 +272,11 @@
                <artifactId>spring-boot-starter-tomcat</artifactId>
             </exclusion>
          </exclusions>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-server-core</artifactId>
+         <version>${project.version}</version>
       </dependency>
 
       <dependency>
@@ -361,6 +414,12 @@
          <groupId>org.jetbrains.kotlinx</groupId>
          <artifactId>kotlinx-serialization-cbor</artifactId>
       </dependency>
+      <!-- TODO Remove once the right version is picked automatically. This was needed due to wire-compiler of protobuf-utils pulling version 1.0.1 -->
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-serialization-core-jvm</artifactId>
+         <version>${kotlin.serialization.version}</version>
+      </dependency>
       <dependency>
          <groupId>junit</groupId>
          <artifactId>junit</artifactId>
@@ -462,6 +521,17 @@
                      </programs>
                      <repositoryLayout>flat</repositoryLayout>
                      <repositoryName>lib</repositoryName>
+                     <extraJvmArguments>
+                        --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED
+                        --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+                        --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
+                        --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
+                        --add-opens=jdk.compiler/com.sun.tools.javac=ALL-UNNAMED
+                        --add-opens=java.base/java.lang=ALL-UNNAMED
+                        --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+                        --add-opens=java.base/java.io=ALL-UNNAMED
+                        --add-opens=java.base/java.util=ALL-UNNAMED
+                     </extraJvmArguments>
                   </configuration>
                </execution>
             </executions>
@@ -483,41 +553,6 @@
                   <goals>
                      <goal>single</goal>
                   </goals>
-               </execution>
-            </executions>
-         </plugin>
-         <plugin>
-            <groupId>com.github.eirslett</groupId>
-            <artifactId>frontend-maven-plugin</artifactId>
-            <version>1.12.1</version>
-            <configuration>
-               <workingDirectory>src/main/web/</workingDirectory>
-               <nodeVersion>v12.16.3</nodeVersion>
-            </configuration>
-            <executions>
-               <execution>
-                  <id>install-npm</id>
-                  <goals>
-                     <goal>install-node-and-npm</goal>
-                  </goals>
-               </execution>
-               <execution>
-                  <id>run-npm-install</id>
-                  <goals>
-                     <goal>npm</goal>
-                  </goals>
-                  <configuration>
-                     <arguments>ci</arguments>
-                  </configuration>
-               </execution>
-               <execution>
-                  <id>ng-build</id>
-                  <goals>
-                     <goal>npm</goal>
-                  </goals>
-                  <configuration>
-                     <arguments>run-script build-prod</arguments>
-                  </configuration>
                </execution>
             </executions>
          </plugin>

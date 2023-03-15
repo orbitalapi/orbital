@@ -1,7 +1,7 @@
 package io.vyne
 
 import com.google.common.annotations.VisibleForTesting
-import io.vyne.models.FactBag
+import com.google.common.base.Stopwatch
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObjectFactory
@@ -10,19 +10,15 @@ import io.vyne.query.*
 import io.vyne.query.graph.Algorithms
 import io.vyne.schemas.*
 import io.vyne.schemas.taxi.TaxiConstraintConverter
-import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.schemas.taxi.TaxiSchemaAggregator
 import io.vyne.schemas.taxi.compileExpression
 import io.vyne.utils.Ids
 import io.vyne.utils.log
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.job
-import lang.taxi.CompilationException
 import lang.taxi.Compiler
-import lang.taxi.errors
+import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
-import lang.taxi.types.TaxiQLQueryString
 import java.util.*
 
 enum class NodeTypes {
@@ -46,8 +42,7 @@ interface ModelContainer : SchemaContainer {
 
 class Vyne(
    schemas: List<Schema>,
-   private val queryEngineFactory: QueryEngineFactory,
-   private val compositeSchemaBuilder: CompositeSchemaBuilder = CompositeSchemaBuilder()
+   private val queryEngineFactory: QueryEngineFactory
 ) : ModelContainer {
 
    init {
@@ -60,8 +55,8 @@ class Vyne(
 
    override var schema: Schema = schemas.firstOrNull() ?: SimpleSchema.EMPTY
       // Setter only for legacy purposes, used in tests we need to migrate.
-      // schema is immuable now.
-      private set;
+      // schema is immutable now.
+      private set
 
    fun queryEngine(
       factSetIds: Set<FactSetId> = setOf(FactSets.ALL),
@@ -80,7 +75,9 @@ class Vyne(
       clientQueryId: String? = null,
       eventBroker: QueryContextEventBroker = QueryContextEventBroker()
    ): QueryResult {
+      val sw = Stopwatch.createStarted()
       val vyneQuery = Compiler(source = vyneQlQuery, importSources = listOf(this.schema.taxi)).queries().first()
+      log().debug("Compiled query in ${sw.elapsed().toMillis()}ms")
       return query(vyneQuery, queryId, clientQueryId, eventBroker)
    }
 
@@ -95,9 +92,9 @@ class Vyne(
       val queryCanceller = QueryCanceller(queryContext, currentJob)
       eventBroker.addHandler(queryCanceller)
       return when (taxiQl.queryMode) {
-         lang.taxi.types.QueryMode.FIND_ALL -> queryContext.findAll(expression)
-         lang.taxi.types.QueryMode.FIND_ONE -> queryContext.find(expression)
-         lang.taxi.types.QueryMode.STREAM -> queryContext.findAll(expression)
+         lang.taxi.query.QueryMode.FIND_ALL -> queryContext.findAll(expression)
+         lang.taxi.query.QueryMode.FIND_ONE -> queryContext.find(expression)
+         lang.taxi.query.QueryMode.STREAM -> queryContext.findAll(expression)
       }
    }
 
@@ -106,7 +103,7 @@ class Vyne(
       return taxiQl.projectedType?.let { projectedType ->
          val type = ProjectionAnonymousTypeProvider.projectedTo(projectedType, schema)
          type.collectionType?.fullyQualifiedName ?: type.fullyQualifiedName
-      } ?: taxiQl.typesToFind.first().type.firstTypeParameterOrSelf
+      } ?: taxiQl.typesToFind.first().typeName.firstTypeParameterOrSelf
    }
 
    @VisibleForTesting
@@ -118,22 +115,22 @@ class Vyne(
    ): Pair<QueryContext, QueryExpression> {
       val additionalFacts = taxiQl.facts.map { variable ->
          TypedInstance.from(
-            schema.type(variable.value.fqn.fullyQualifiedName),
-            variable.value.value,
+            schema.type(variable.value.typedValue.fqn.fullyQualifiedName),
+            variable.value.typedValue.value,
             schema,
             source = Provided
          )
       }.toSet()
-      var queryContext = query(
+      val queryContext = query(
          additionalFacts = additionalFacts,
          queryId = queryId,
          clientQueryId = clientQueryId,
          eventBroker = eventBroker
       )
          .responseType(deriveResponseType(taxiQl))
-      queryContext = taxiQl.projectedType?.let {
-         queryContext.projectResultsTo(it) // Merge conflict, was : it.toVyneQualifiedName()
-      } ?: queryContext
+//      queryContext = taxiQl.projectedType?.let {
+//         queryContext.projectResultsTo(it, taxiQl.projectionScope) // Merge conflict, was : it.toVyneQualifiedName()
+//      } ?: queryContext
 
       val constraintProvider = TaxiConstraintConverter(this.schema)
       val queryExpressions = taxiQl.typesToFind.map { discoveryType ->
@@ -141,12 +138,13 @@ class Vyne(
             ProjectionAnonymousTypeProvider
                .toVyneAnonymousType(discoveryType.anonymousType!!, schema)
          }
-            ?: schema.type(discoveryType.type.toVyneQualifiedName())
+            ?: schema.type(discoveryType.typeName.toVyneQualifiedName())
+
          val expression = if (discoveryType.constraints.isNotEmpty()) {
             val constraints = constraintProvider.buildOutputConstraints(targetType, discoveryType.constraints)
             ConstrainedTypeNameQueryExpression(targetType.name.parameterizedName, constraints)
          } else {
-            TypeNameQueryExpression(discoveryType.type.toVyneQualifiedName().parameterizedName)
+            TypeNameQueryExpression(discoveryType.typeName.toVyneQualifiedName().parameterizedName)
          }
 
          expression
@@ -155,7 +153,14 @@ class Vyne(
       if (queryExpressions.size > 1) {
          TODO("Handle multiple target types in VyneQL")
       }
-      val expression = queryExpressions.first()
+      val expression = queryExpressions.first().let { expression ->
+         if (taxiQl.projectedType != null) {
+            ProjectedExpression(expression, Projection(ProjectionAnonymousTypeProvider.projectedTo(taxiQl.projectedType!!,schema), taxiQl.projectionScope))
+         } else {
+            expression
+         }
+      }
+
       return Pair(queryContext, expression)
    }
 
@@ -177,6 +182,7 @@ class Vyne(
          schemaWithType,
          source = Provided,
          inPlaceQueryEngine = queryContext,
+         functionResultCache = queryContext.functionResultCache
       ).build()
      return buildResult
    }

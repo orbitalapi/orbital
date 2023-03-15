@@ -22,7 +22,7 @@ object ProjectionAnonymousTypeProvider {
       schema.typeCache.registerAnonymousType(vyneAnonymousType)
       val retValue = schema.type(taxiType.toVyneQualifiedName())
       (parameterType as ObjectType).fields.forEach { anonymoustTypeField ->
-         if (anonymoustTypeField.type.anonymous || anonymoustTypeField.type.formattedInstanceOfType != null) {
+         if (anonymoustTypeField.type.anonymous) {
             toVyneAnonymousType(anonymoustTypeField.type, schema)
          }
       }

@@ -6,6 +6,7 @@ import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.spring.context.SpringManagedContext
 import io.vyne.connectors.VyneConnectionsConfig
+import io.vyne.monitoring.EnableCloudMetrics
 import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
 import io.vyne.pipelines.jet.pipelines.PipelineRepository
 import io.vyne.pipelines.jet.sink.PipelineSinkBuilder
@@ -42,10 +43,11 @@ import java.time.Clock
    VyneSpringProjectionConfiguration::class,
    VyneConnectionsConfig::class
 )
-@Import(HttpAuthConfig::class,
+@Import(
+   HttpAuthConfig::class,
    PipelineStateConfig::class,
    DiscoveryClientConfig::class
-   )
+)
 class JetPipelineApp {
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -90,6 +92,7 @@ class JetPipelineApp {
 
 
 @Configuration
+@EnableCloudMetrics
 class JetConfiguration {
    @Bean
    fun springManagedContext(): SpringManagedContext {

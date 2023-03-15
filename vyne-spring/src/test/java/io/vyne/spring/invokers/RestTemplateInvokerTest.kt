@@ -9,13 +9,12 @@ import io.vyne.expectTypedObject
 import io.vyne.http.MockWebServerRule
 import io.vyne.http.respondWith
 import io.vyne.http.response
-import io.vyne.models.OperationResult
+import io.vyne.models.OperationResultReference
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
 import io.vyne.rawObjects
-import io.vyne.schema.api.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
@@ -155,7 +154,7 @@ namespace vyne {
       runTest {
          val turbine = RestTemplateInvoker(
             webClient = webClient,
-            schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1))
+            schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources, 1)
          )
             .invoke(
                service, operation, listOf(
@@ -207,7 +206,7 @@ namespace vyne {
 
 
       runTest {
-         val turbine = vyne.query("findAll { Person[] }").results.testIn(this)
+         val turbine = vyne.query("find { Person[] }").results.testIn(this)
          turbine.awaitItem()
          turbine.awaitComplete()
 
@@ -254,7 +253,7 @@ namespace vyne {
 
          // Create a new vyne instance to destroy the cache between loops
          val result = buildNewVyne().query(
-            """findAll { Person[] } as {
+            """find { Person[] } as {
          personName : Name
          countryName : CountryName }[]"""
          )
@@ -266,7 +265,7 @@ namespace vyne {
          result.map { it["countryName"] }
             .forEach { countryName ->
                countryName.source.failedAttempts.should.have.size(1)
-               countryName.source.failedAttempts.first().should.be.instanceof(OperationResult::class.java)
+               countryName.source.failedAttempts.first().should.be.instanceof(OperationResultReference::class.java)
 
             }
 
@@ -310,7 +309,7 @@ namespace vyne {
             "/country/iso/NZD/name" to response("New Zealand")
          )
 
-         val response = vyne.query("""findAll { Person[] } as { name : Name country : CountryName }[]""")
+         val response = vyne.query("""find { Person[] } as { name : Name country : CountryName }[]""")
             .rawObjects()
          response.should.equal(
             listOf(
@@ -341,7 +340,7 @@ namespace vyne {
             @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/people")
             operation findPeople():Person[]
             @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/country/{id}")
-            operation findCountry(@PathVariable("id") id : CountryId):Country
+            operation findCountry(@PathVariable id : CountryId):Country
          }
       """, Invoker.RestTemplateWithCache
             )
@@ -359,7 +358,7 @@ namespace vyne {
 
             // Create a new vyne instance to destroy the cache between loops
             val result = buildNewVyne().query(
-               """findAll { Person[] } as {
+               """find { Person[] } as {
          personName : Name
          countryName : CountryName }[]"""
             )
@@ -371,7 +370,7 @@ namespace vyne {
             result.map { it["countryName"] }
                .forEach { countryName ->
                   countryName.source.failedAttempts.should.have.size(1)
-                  countryName.source.failedAttempts.first().should.be.instanceof(OperationResult::class.java)
+                  countryName.source.failedAttempts.first().should.be.instanceof(OperationResultReference::class.java)
 
                }
 
@@ -399,12 +398,12 @@ namespace vyne {
       runTest {
          val turbine = RestTemplateInvoker(
             webClient = webClient,
-            schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1))
+            schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources, 1)
          ).invoke(
             service, operation, listOf(
                paramAndType("vyne.ClientId", "myClientId", schema),
                paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
-            ), mock { }
+            ), mock { }, "testQuery"
          ).testIn(this)
 
          val typedInstance = turbine.expectTypedObject()
@@ -455,7 +454,7 @@ namespace vyne {
       runTest {
          val turbine = RestTemplateInvoker(
             webClient = webClient,
-            schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1))
+            schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources, 1)
             //SchemaProvider.from(schema)
          ).invoke(
             service, operation, listOf(
@@ -496,7 +495,7 @@ namespace vyne {
       runTest {
          val turbine = RestTemplateInvoker(
             webClient = webClient,
-            schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1))
+            schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources, 1)
          ).invoke(
             service, operation, listOf(
                paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
@@ -555,7 +554,7 @@ namespace vyne {
       runTest {
          val turbine = RestTemplateInvoker(
             webClient = webClient,
-            schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1))
+            schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources, 1)
          )
             .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID")
             .testIn(this)
@@ -610,7 +609,7 @@ namespace vyne {
       runTest {
          val turbine = RestTemplateInvoker(
             webClient = webClient,
-            schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1))
+            schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources, 1)
          )
             .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID")
             .testIn(this)
@@ -689,7 +688,7 @@ namespace vyne {
          )
       }
 
-      Benchmark.benchmark("Heavy load", warmup = 2, iterations = 5) {
+      Benchmark.benchmark("Heavy load", warmup = 0, iterations = 1) {
          runBlocking {
             val invokedPaths = ConcurrentHashMap<String, Int>()
             server.prepareResponse(
@@ -711,7 +710,7 @@ namespace vyne {
             )
 
             val result = vyne.query(
-               """findAll { Movie[] } as {
+               """find { Movie[] } as {
          title : MovieTitle
          director : DirectorName
          producer : ProductionCompanyName
@@ -729,5 +728,64 @@ namespace vyne {
       logger.warn("Perf test of $recordCount completed")
       logger.warn("Stats:\n ${jackson.writerWithDefaultPrettyPrinter().writeValueAsString(stats)}")
    }
+
+   @Test
+   fun `can resolve queryString parameters from facts`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
+         type ApiKey inherits String
+         model Person {
+            name : Name inherits String
+         }
+         service PersonService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people?apiKey={apiKey}")
+            operation listPeople(apiKey:ApiKey):Person[]
+          }
+      """, invoker = Invoker.RestTemplate
+      )
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""[ { "name" : "Jimmy" }]""")
+      }
+      vyne.query("""given { key : ApiKey = "hello" } find { Person[] }""")
+         .rawObjects()
+
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals("/people?apiKey=hello", request.path)
+         assertEquals(HttpMethod.GET.name, request.method)
+      }
+   }
+
+   @Test
+   fun `can resolve path variables from facts`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
+         type ApiKey inherits String
+         model Person {
+            name : Name inherits String
+         }
+         service PersonService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/{apiKey}/people")
+            operation listPeople(apiKey:ApiKey):Person[]
+          }
+      """, invoker = Invoker.RestTemplate
+      )
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""[ { "name" : "Jimmy" }]""")
+      }
+      vyne.query("""given { key : ApiKey = "hello" } find { Person[] }""")
+         .rawObjects()
+
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals("/hello/people", request.path)
+         assertEquals(HttpMethod.GET.name, request.method)
+      }
+   }
+
 
 }

@@ -22,7 +22,9 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import org.apache.lucene.document.Field as LuceneField
 
-@Component
+// The indexer appears to alrady be indexing on startup, and this is causing the main thread to block.
+// If we need to add this back in, move indexing to a worker thread.
+//@Component
 class IndexOnStartupTask(private val indexer: SearchIndexer, private val schemaStore: SchemaStore) {
    private val logger = KotlinLogging.logger {}
    init {

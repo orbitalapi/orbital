@@ -1,12 +1,26 @@
 package io.vyne.query.history
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRawValue
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.json.Jackson
+import io.vyne.models.serde.InstantSerializer
+import io.vyne.query.HttpExchange
+import io.vyne.query.MessageStreamExchange
 import io.vyne.query.QueryResponse
+import io.vyne.query.RemoteCall
+import io.vyne.query.RemoteCallExchangeMetadata
+import io.vyne.query.ResponseMessageType
+import io.vyne.query.SqlExchange
+import io.vyne.schemas.OperationName
+import io.vyne.schemas.OperationNames
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.QualifiedNameAsStringSerializer
+import io.vyne.schemas.ServiceName
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import java.time.Duration
@@ -131,15 +145,160 @@ data class RemoteCallResponse(
    // Because remote calls can be streams, it's possible that there are many responses for a single remote call.
    @Id
    @Column(name = "response_id")
-   val responseId: String,
+   override val responseId: String,
    @Column(name = "remote_call_id")
-   val remoteCallId: String,
+   override val remoteCallId: String,
    @Column(name = "query_id")
-   val queryId: String,
+   override val queryId: String,
+   @Column(name = "address")
+   override val address: String,
+
+   @Serializable(InstantSerializer::class)
+   @Column(name = "start_time")
+   override val startTime: Instant,
+   @Column(name = "duration_ms", nullable = true)
+   override val durationMs: Long?,
+   @Lob
+   @Convert(converter = RemoteCallExchangeMetadataJsonConverter::class)
+   @Column(name = "exchange")
+   override val exchange: RemoteCallExchangeMetadata,
+
+   @Column(name = "operation")
+   @Convert(converter = QualifiedNameJpaConverter::class)
+   @JsonSerialize(using = QualifiedNameAsStringSerializer::class)
+   override val operation: QualifiedName,
+
+   @Column(name = "success")
+   override val success: Boolean,
+
    @JsonRawValue
-   @Column(columnDefinition = "clob")
-   val response: String
-) : VyneHistoryRecord()
+   @Column(columnDefinition = "clob", nullable = true)
+   val response: String?,
+
+   @Column(name = "message_kind")
+   @Enumerated(value = EnumType.STRING)
+   override val messageKind: ResponseMessageType,
+
+   @Column(name = "response_type")
+   @Convert(converter = QualifiedNameJpaConverter::class)
+   @JsonSerialize(using = QualifiedNameAsStringSerializer::class)
+   override val responseType: QualifiedName
+
+) : BasePartialRemoteCallResponse, VyneHistoryRecord() {
+
+
+   companion object {
+      fun fromRemoteCall(
+         remoteCall: RemoteCall,
+         queryId: String,
+         objectMapper: ObjectMapper,
+         includeResponse: Boolean
+      ): RemoteCallResponse {
+         val responseJson = if (includeResponse) {
+            when (remoteCall.response) {
+               null -> null
+               // It's pretty rare to get a collection here, as the response value is the value before it's
+               // been deserialized.  However, belts 'n' braces.
+               is Collection<*>, is Map<*, *> -> objectMapper.writeValueAsString(remoteCall.response)
+               else -> remoteCall.response.toString()
+            }
+         } else {
+            null
+         }
+
+
+         return RemoteCallResponse(
+            responseId = remoteCall.responseId,
+            remoteCallId = remoteCall.remoteCallId,
+            queryId = queryId,
+            address = remoteCall.address,
+            response = responseJson,
+            startTime = remoteCall.timestamp,
+            durationMs = remoteCall.durationMs,
+            exchange = remoteCall.exchange,
+            operation = remoteCall.operationQualifiedName,
+            success = !remoteCall.isFailed,
+            messageKind = remoteCall.responseMessageType!!,
+            responseType = remoteCall.responseTypeName
+         )
+      }
+   }
+}
+
+/**
+ * Thin wrapper around PartialRemoteCallResponse
+ * to add helper functions for the UI.
+ */
+data class RemoteCallResponseDto(
+   @JsonIgnore
+   private val response: PartialRemoteCallResponse
+) : PartialRemoteCallResponse by response {
+   // UI Helpers
+   val method: String
+      get() = when (exchange) {
+         is HttpExchange -> (exchange as HttpExchange).verb
+         is SqlExchange -> "SELECT"
+         is MessageStreamExchange -> "SUBSCRIBE"
+         else -> "CALL"
+      }
+
+
+   // Use getters, rather than initializers here, as
+   // initializers don't appear to run when loading from the db.
+   val resultCode: String
+      get() = when (exchange) {
+         is HttpExchange -> (exchange as HttpExchange).responseCode.toString()
+         else -> if (this.success) "OK" else "ERROR"
+      }
+
+   val serviceDisplayName: ServiceName
+      get() = OperationNames.serviceName(operation)
+
+   val operationName: OperationName
+      get() = OperationNames.operationName(operation)
+
+   val displayName: String
+      get() = OperationNames.shortDisplayNameFromOperation(operation)
+
+   val responseTypeDisplayName: String
+      get() = responseType.shortDisplayName
+}
+
+
+// This interface exists to appease Spring Data JPA.
+// We want an interface that is implemented in our actual entity
+// and the reference that doesn't contain the response.
+// If RemoteCallResponse implements PartialRemoteCallResponse
+// then we can't project to it, as Spring Data returns the full
+// RemoteCallResponse.
+
+interface BasePartialRemoteCallResponse {
+   val responseId: String
+   val remoteCallId: String
+   val queryId: String
+   val address: String
+   val startTime: Instant
+   val durationMs: Long?
+   val exchange: RemoteCallExchangeMetadata
+   val operation: QualifiedName
+   val success: Boolean
+   val messageKind: ResponseMessageType
+   val responseType: QualifiedName
+}
+
+/**
+ * Convenience for UI, which excludes the response (very expensive to send
+ * over the wire, so we require the UI to do an explicit request to fetch the response body)
+ */
+interface PartialRemoteCallResponse : BasePartialRemoteCallResponse {
+
+}
+
+
+// Has to be an extension function, because Spring Data.
+fun PartialRemoteCallResponse.toDto(): RemoteCallResponseDto {
+   return RemoteCallResponseDto(this)
+}
 
 /**
  * A SankeyChart is a specific type of visualisation.

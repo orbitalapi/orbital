@@ -17,9 +17,16 @@ import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.query.projection.ProjectionProvider
-import io.vyne.schemas.*
+import io.vyne.schemas.Operation
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
+import io.vyne.schemas.Type
+import io.vyne.toFactBag
 import io.vyne.utils.StrategyPerformanceProfiler
-import io.vyne.utils.log
+import io.vyne.utils.timeBucketAsync
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
@@ -64,28 +71,28 @@ interface QueryEngine {
       type: Type,
       context: QueryContext,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
 
    suspend fun find(
       queryString: QueryExpression,
       context: QueryContext,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
 
    suspend fun find(
       target: QuerySpecTypeNode,
       context: QueryContext,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
 
    suspend fun find(
       target: Set<QuerySpecTypeNode>,
       context: QueryContext,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
 
    suspend fun find(
@@ -93,7 +100,7 @@ interface QueryEngine {
       context: QueryContext,
       excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
 
    suspend fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult
@@ -129,29 +136,27 @@ interface QueryEngine {
  * A query engine which allows for the provision of initial state
  */
 class StatefulQueryEngine(
-   initialState: FactSetMap,
-   schema: Schema,
-   strategies: List<QueryStrategy>,
+   private val initialState: FactSetMap,
+   override val schema: Schema,
+   private val strategies: List<QueryStrategy>,
    private val profiler: QueryProfiler = QueryProfiler(),
-   projectionProvider: ProjectionProvider,
-   operationInvocationService: OperationInvocationService,
-   formatSpecs: List<ModelFormatSpec>
+   private val projectionProvider: ProjectionProvider,
+   override val operationInvocationService: OperationInvocationService,
+   val formatSpecs: List<ModelFormatSpec>
 ) :
-   BaseQueryEngine(schema, strategies, projectionProvider, operationInvocationService, formatSpecs = formatSpecs),
+   QueryEngine,
    ModelContainer {
+
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
    private val factSets: FactSetMap = FactSetMap.create()
+
 
    init {
       factSets.putAll(initialState)
    }
 
-
-//   override fun find(expression: String, factSet: Set<TypedInstance>): QueryResult {
-//      val nodeSetsWithLocalState = factSets.copy()
-//      nodeSetsWithLocalState.putAll(FactSets.DEFAULT, factSet)
-//
-//      return super.find(expression, nodeSetsWithLocalState.values().toSet())
-//   }
 
    override fun addModel(model: TypedInstance, factSetId: FactSetId): StatefulQueryEngine {
       this.factSets[factSetId].add(model)
@@ -177,20 +182,6 @@ class StatefulQueryEngine(
          eventBroker = eventBroker
       )
    }
-
-}
-
-// Note:  originally, there were two query engines (Default and Stateful), but only one was ever used (stateful).
-// I've removed the default, and made it the BaseQueryEngine.  However, even this might be overkill, and we may
-// fold this into a single class later.
-// The separation between what's in the base and whats in the concrete impl. is not well thought out currently.
-abstract class BaseQueryEngine(
-   override val schema: Schema,
-   private val strategies: List<QueryStrategy>,
-   private val projectionProvider: ProjectionProvider,
-   override val operationInvocationService: OperationInvocationService,
-   val formatSpecs: List<ModelFormatSpec>
-) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
 
@@ -292,7 +283,7 @@ abstract class BaseQueryEngine(
       context,
       targetType,
       functionRegistry = this.schema.functionRegistry,
-      formatSpecs = formatSpecs
+      formatSpecs = formatSpecs,
    )
 
    // TODO investigate why in tests got throught this method (there are two facts of TypedCollection), looks like this is only in tests
@@ -304,7 +295,7 @@ abstract class BaseQueryEngine(
          targetType
       }
 
-      log().info("Mapping collections to collection of type ${targetCollectionType.qualifiedName} ")
+      logger.info("Mapping collections to collection of type ${targetCollectionType.qualifiedName} ")
       val transformed = context.facts
          .filterIsInstance<TypedCollection>()
          .flatMap { deeplyFlatten(it) }
@@ -343,11 +334,11 @@ abstract class BaseQueryEngine(
          require(results.size == 1) { "Expected only a single transformation result" }
          val result = results.first()
          if (result == null) {
-            log().warn("Transformation from $typedInstance to instance of ${targetType.fullyQualifiedName} was reported as sucessful, but result was null")
+            logger.warn("Transformation from $typedInstance to instance of ${targetType.fullyQualifiedName} was reported as sucessful, but result was null")
          }
          result
       } else {
-         log().warn("Failed to transform from $typedInstance to instance of ${targetType.fullyQualifiedName}")
+         logger.warn("Failed to transform from $typedInstance to instance of ${targetType.fullyQualifiedName}")
          null
       }
    }
@@ -360,7 +351,7 @@ abstract class BaseQueryEngine(
       queryString: QueryExpression,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
    ): QueryResult {
       val target = queryParser.parse(queryString)
       return find(target, context, spec, applicableStrategiesPredicate)
@@ -370,7 +361,7 @@ abstract class BaseQueryEngine(
       type: Type,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
    ): QueryResult {
       return find(TypeNameQueryExpression(type.name.parameterizedName), context, spec, applicableStrategiesPredicate)
    }
@@ -379,7 +370,7 @@ abstract class BaseQueryEngine(
       target: QuerySpecTypeNode,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
    ): QueryResult {
       return find(setOf(target), context, spec, applicableStrategiesPredicate)
    }
@@ -388,15 +379,15 @@ abstract class BaseQueryEngine(
       target: Set<QuerySpecTypeNode>,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
    ): QueryResult {
       try {
          return doFind(target, context, spec, applicableStrategiesPredicate)
       } catch (e: QueryCancelledException) {
-         log().info("QueryCancelled. Coroutine active state: ${currentCoroutineContext().isActive}")
+         logger.info("QueryCancelled. Coroutine active state: ${currentCoroutineContext().isActive}")
          throw e
       } catch (e: Exception) {
-         log().error("Search failed with exception:", e)
+         logger.error("Search failed with exception:", e)
          throw SearchRuntimeException(e, context.profiler.root)
       }
    }
@@ -406,14 +397,14 @@ abstract class BaseQueryEngine(
       context: QueryContext,
       excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
       spec: TypedInstanceValidPredicate,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
    ): QueryResult {
       try {
          return doFind(target, context, spec, excludedOperations, applicableStrategiesPredicate)
       } catch (e: QueryCancelledException) {
          throw e
       } catch (e: Exception) {
-         log().error("Search failed with exception:", e)
+         logger.error("Search failed with exception:", e)
          throw SearchRuntimeException(e, context.profiler.root)
       }
    }
@@ -424,7 +415,7 @@ abstract class BaseQueryEngine(
       target: Set<QuerySpecTypeNode>,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
    ): QueryResult {
 
 
@@ -456,8 +447,9 @@ abstract class BaseQueryEngine(
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
       excludedOperations: Set<SearchGraphExclusion<RemoteOperation>> = emptySet(),
-      applicableStrategiesPredicate: QueryStrategyValidPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
    ): QueryResult {
+      logger.debug { "Initiating find for ${target.description}" }
       if (context.cancelRequested) {
          throw QueryCancelledException()
       }
@@ -501,6 +493,7 @@ abstract class BaseQueryEngine(
                   .takeWhile { !context.cancelRequested }
                   .collectIndexed { _, value ->
                      resultsReceivedFromStrategy = true
+
                      // We may have received a TypedCollection upstream (ie., from a service
                      // that returns Foo[]).  Given we treat everything as a flow of results,
                      // we don't want consumers to receive a result that is a collection (as it makes the
@@ -510,10 +503,18 @@ abstract class BaseQueryEngine(
                      } else {
                         listOf(value)
                      }
-                     emitTypedInstances(valueAsCollection, !isActive, failedAttempts) { instance -> send(instance) }
+                     emitTypedInstances(valueAsCollection, !isActive, failedAttempts) { instance ->
+                        if (instance is TypedNull) {
+                           logger.debug { "Emitting TypedNull of type ${instance.type.qualifiedName.shortDisplayName} produced from strategy ${queryStrategy::class.simpleName} in search for ${target.description}" }
+                        } else {
+                           logger.debug { "Emitting instance of type ${instance.type.qualifiedName.shortDisplayName} produced from strategy ${queryStrategy::class.simpleName} in search for ${target.description}" }
+                        }
+
+                        send(instance)
+                     }
                   }
             } else {
-               log().debug("Strategy ${queryStrategy::class.simpleName} failed to resolve ${target.description}")
+               logger.debug("Strategy ${queryStrategy::class.simpleName} failed to resolve ${target.description}")
                StrategyPerformanceProfiler.record(queryStrategy::class.simpleName!!, stopwatch.elapsed())
             }
          }
@@ -547,15 +548,21 @@ abstract class BaseQueryEngine(
          }
       }
 
-      val results: Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (context.projectResultsTo) {
+      val results: Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (target.projection) {
          null -> resultsFlow.map { it to context.vyneQueryStatistics }
          else -> {
-            projectionProvider.project(resultsFlow, context)
+            // Pick the facts that we want to make available during projection.
+            // Currently, we pass the initial state (things from the `given {}` clause, and anything about the user).
+            // We may wish to expand this.
+            // The projection provider handles picking the correct entity to project,
+            // so we don't need to consdier that here.
+            val factsToPropagate = initialState.toFactBag(schema)
+            projectionProvider.project(resultsFlow, target.projection, context, factsToPropagate)
          }
       }
 
-      val querySpecTypeNode = if (context.projectResultsTo != null) {
-         QuerySpecTypeNode(context.projectResultsTo!!, emptySet(), QueryMode.DISCOVER)
+      val querySpecTypeNode = if (target.projection != null) {
+         QuerySpecTypeNode(target.projection.type, emptySet(), QueryMode.DISCOVER)
       } else {
          target
       }
@@ -603,7 +610,7 @@ abstract class BaseQueryEngine(
       target: QuerySpecTypeNode,
       invocationConstraints: InvocationConstraints
    ): QueryStrategyResult {
-      return queryStrategy.invoke(setOf(target), context, invocationConstraints)
+      return timeBucketAsync("Call ${queryStrategy::class.simpleName} for target ${target.type.name.shortDisplayName}") { queryStrategy.invoke(setOf(target), context, invocationConstraints) }
    }
 }
 

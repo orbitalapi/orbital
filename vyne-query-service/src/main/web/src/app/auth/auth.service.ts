@@ -1,11 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { AuthConfig, JwksValidationHandler, OAuthService } from 'angular-oauth2-oidc';
 import { Router } from '@angular/router';
 import { HttpBackend, HttpClient } from '@angular/common/http';
 import { BehaviorSubject, combineLatest, Observable, ReplaySubject } from 'rxjs';
-import { environment } from '../../environments/environment';
 import { filter, map } from 'rxjs/operators';
 import { UserInfoService } from '../services/user-info.service';
+import { ENVIRONMENT, Environment } from 'src/app/services/environment';
 
 
 interface FrontendConfig {
@@ -43,10 +43,12 @@ export class AuthService {
   private errorDuringBootstrap: any = undefined;
 
 
-  constructor(private oauthService: OAuthService,
-              private router: Router,
-              private userInfoService: UserInfoService,
-              httpBackend: HttpBackend) {
+  constructor(
+    @Inject(ENVIRONMENT) private environment: Environment,
+    private oauthService: OAuthService,
+    private router: Router,
+    private userInfoService: UserInfoService,
+    httpBackend: HttpBackend) {
     this.http = new HttpClient(httpBackend);
 
   }
@@ -143,7 +145,7 @@ export class AuthService {
   }
 
   private loadFrontendConfig(): Observable<FrontendConfig> {
-    return this.http.get<FrontendConfig>(`${environment.queryServiceUrl}/api/security/config`);
+    return this.http.get<FrontendConfig>(`${this.environment.serverUrl}/api/security/config`);
   }
 
   private runInitialLoginSequence(): Promise<void> {

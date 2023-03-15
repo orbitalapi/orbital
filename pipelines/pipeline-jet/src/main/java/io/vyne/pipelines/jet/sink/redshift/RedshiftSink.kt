@@ -4,6 +4,7 @@ import com.hazelcast.jet.pipeline.Sink
 import com.hazelcast.jet.pipeline.SinkBuilder
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
+import io.vyne.VyneClientWithSchema
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
@@ -14,7 +15,6 @@ import io.vyne.pipelines.jet.pipelines.PostgresDdlGenerator
 import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
-import io.vyne.spring.VyneProvider
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import java.sql.DriverManager
@@ -59,8 +59,7 @@ class RedshiftSinkBuilder :
          .receiveFn { context: RedshiftSinkContext, message: MessageContentProvider ->
 
             val postgresDdlGenerator = PostgresDdlGenerator()
-            val vyne = context.vyneProvider.createVyne()
-            val schema = vyne.schema
+            val schema = context.vyneClient.schema
             val input = TypedInstance.from(
                schema.versionedType(pipelineTransportSpec.targetType.typeName).type,
                message.asString(),
@@ -106,7 +105,7 @@ class RedshiftSinkContext(
    val outputSpec: RedshiftTransportOutputSpec
 ) {
    @Resource
-   lateinit var vyneProvider: VyneProvider
+   lateinit var vyneClient: VyneClientWithSchema
 
    @Resource
    lateinit var jdbcConnectionRegistry: InMemoryJdbcConnectionRegistry

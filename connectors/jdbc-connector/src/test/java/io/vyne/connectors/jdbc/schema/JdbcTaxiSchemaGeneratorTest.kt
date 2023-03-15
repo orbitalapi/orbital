@@ -5,6 +5,7 @@ import io.vyne.VersionedSource
 import io.vyne.connectors.jdbc.DatabaseMetadataService
 import io.vyne.connectors.jdbc.JdbcConnectorTaxi
 import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
+import io.vyne.from
 import io.vyne.query.VyneQlGrammar
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.Compiler
@@ -71,14 +72,7 @@ namespace io.vyne.test {
 
    @io.vyne.jdbc.DatabaseService(connection = "testConnection")
    service ActorService {
-      vyneQl query actorQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<io.vyne.test.Actor> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+     table actor : Actor[]
    }
 }
       """
@@ -111,14 +105,7 @@ namespace io.vyne.test {
 
             @io.vyne.jdbc.DatabaseService(connection = "testDb")
             service CityService {
-               vyneQl query cityQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<city.City> with capabilities {
-                  sum,
-                  count,
-                  avg,
-                  min,
-                  max,
-                  filter(==,!=,in,like,>,<,>=,<=)
-               }
+               table city : City[]
             }
          }
       """.trimIndent())
@@ -157,14 +144,7 @@ namespace actor {
 
    @io.vyne.jdbc.DatabaseService(connection = "testDb")
    service ActorService {
-      vyneQl query actorQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<actor.Actor> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table actor : Actor[]
    }
 }
 namespace movie {
@@ -176,14 +156,7 @@ namespace movie {
 
    @io.vyne.jdbc.DatabaseService(connection = "testDb")
    service MovieService {
-      vyneQl query movieQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<movie.Movie> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table movie : Movie[]
    }
 }
 namespace movieActors {
@@ -195,14 +168,7 @@ namespace movieActors {
 
    @io.vyne.jdbc.DatabaseService(connection = "testDb")
    service MovieActorsService {
-      vyneQl query movieactorsQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<movieActors.MovieActors> with capabilities {
-         sum,
-         count,
-         avg,
-         min,
-         max,
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
+      table movieactors : MovieActors[]
    }
 }
       """

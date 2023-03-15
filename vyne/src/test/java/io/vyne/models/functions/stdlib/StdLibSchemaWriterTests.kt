@@ -27,7 +27,7 @@ type FullName inherits String
 
 model Person {
    firstName : FirstName
-   leftName : FullName by taxi.stdlib.left( this.firstName, 5)
+   leftName : FullName by left( this.firstName, 5)
 }
 """
       generated.withoutWhitespace().should.equal(expected.withoutWhitespace())
@@ -44,7 +44,7 @@ model Person {
       val expected = """
          type PrimarKey inherits String
          model Thing {
-           primaryKey :  PrimarKey by taxi.stdlib.concat( column(0),"-",column("NAME"),"-",column(2) )
+           primaryKey :  PrimarKey by concat( column(0),"-",column("NAME"),"-",column(2) )
          }
       """
 
@@ -63,7 +63,7 @@ model Person {
       val expected = """
          type PrimarKey inherits String
          model Thing {
-           primaryKey : PrimarKey  by taxi.stdlib.upperCase(taxi.stdlib.left("asdf",3))
+           primaryKey : PrimarKey  by upperCase(left("asdf",3))
          }
       """
       generated.withoutWhitespace().should.equal(expected.withoutWhitespace())

@@ -3,11 +3,13 @@ import {
   ChangeDetectorRef,
   Component,
   EventEmitter,
+  Inject,
+  Injector,
   Input,
   OnInit,
   Output
 } from '@angular/core';
-import {filter, take, tap} from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 
 import { editor, KeyCode, KeyMod } from 'monaco-editor';
 import {
@@ -16,25 +18,35 @@ import {
   QueryResult,
   QueryService,
   randomId,
-  ResultMode,
+  ResultMode
 } from '../../services/query.service';
-import {vyneQueryLanguageConfiguration, vyneQueryLanguageTokenProvider} from './vyne-query-language.monaco';
-import {QueryState} from './bottom-bar.component';
-import {isQueryResult, QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
-import {ExportFileService, ExportFormat} from '../../services/export.file.service';
-import {MatDialog} from '@angular/material/dialog';
-import {findType, InstanceLike, Schema, Type} from '../../services/schema';
-import {BehaviorSubject, Observable, ReplaySubject, Subject} from 'rxjs';
-import {isNullOrUndefined} from 'util';
-import {ActiveQueriesNotificationService, RunningQueryStatus} from '../../services/active-queries-notification-service';
-import {TypesService} from '../../services/types.service';
+import { QueryState } from './bottom-bar.component';
+import { isQueryResult, QueryResultInstanceSelectedEvent } from '../result-display/BaseQueryResultComponent';
+import { MatDialog } from '@angular/material/dialog';
+import { findType, InstanceLike, Schema, Type } from '../../services/schema';
+import { BehaviorSubject, Observable, ReplaySubject, Subject } from 'rxjs';
+import { isNullOrUndefined } from 'util';
+import {
+  ActiveQueriesNotificationService,
+  RunningQueryStatus
+} from '../../services/active-queries-notification-service';
+import { TypesService } from '../../services/types.service';
 import {
   FailedSearchResponse,
   isFailedSearchResponse,
   isValueWithTypeName,
   StreamingQueryMessage
 } from '../../services/models';
-import {Router} from '@angular/router';
+import { Router } from '@angular/router';
+import { ExportFormat, ResultsDownloadService } from 'src/app/results-download/results-download.service';
+import { copyQueryAs, CopyQueryFormat } from 'src/app/query-panel/query-editor/QueryFormatter';
+import { Clipboard } from '@angular/cdk/clipboard';
+import {
+  CodeGenRequest,
+  QuerySnippetContainerComponent
+} from 'src/app/query-snippet-panel/query-snippet-container.component';
+import { TuiDialogService } from '@taiga-ui/core';
+import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
 import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
 
@@ -44,7 +56,7 @@ declare const monaco: any; // monaco
   selector: 'query-editor',
   templateUrl: './query-editor.component.html',
   styleUrls: ['./query-editor.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class QueryEditorComponent implements OnInit {
 
@@ -98,12 +110,15 @@ export class QueryEditorComponent implements OnInit {
   instanceSelected$ = new ReplaySubject<QueryResultInstanceSelectedEvent>(1);
 
   constructor(private queryService: QueryService,
-              private fileService: ExportFileService,
+              private fileService: ResultsDownloadService,
               private dialogService: MatDialog,
               private activeQueryNotificationService: ActiveQueriesNotificationService,
               private typeService: TypesService,
               private router: Router,
-              private changeDetector: ChangeDetectorRef
+              private changeDetector: ChangeDetectorRef,
+              private clipboard: Clipboard,
+              @Inject(TuiDialogService) private readonly tuiDialogService: TuiDialogService,
+              @Inject(Injector) private readonly injector: Injector
   ) {
 
     this.initialQuery = this.router.getCurrentNavigation()?.extras?.state?.query;
@@ -120,7 +135,7 @@ export class QueryEditorComponent implements OnInit {
         contextMenuGroupId: 'navigation',
         contextMenuOrder: 1.5
       }
-    ]
+    ];
   }
 
   ngOnInit(): void {
@@ -151,6 +166,7 @@ export class QueryEditorComponent implements OnInit {
   submitQuery() {
     this.currentState$.next('Running');
     this.lastQueryResult = null;
+    this.lastErrorMessage = null;
     this.queryReturnedResults = false;
     this.loading = true;
     this.loadingChanged.emit(true);
@@ -161,6 +177,9 @@ export class QueryEditorComponent implements OnInit {
     this.results$ = new ReplaySubject(5000);
     this.latestQueryStatus = null;
     this.queryMetadata$ = null;
+    this.queryProfileData$ = null;
+
+    this.changeDetector.markForCheck();
 
 
     const queryErrorHandler = (error: FailedSearchResponse) => {
@@ -197,9 +216,9 @@ export class QueryEditorComponent implements OnInit {
       this.handleQueryFinished();
     };
 
-    this.queryService.submitVyneQlQueryStreaming(this.query, this.queryClientId, ResultMode.SIMPLE).subscribe(
+    this.queryService.websocketQuery(this.query, this.queryClientId, ResultMode.SIMPLE).subscribe(
       queryMessageHandler,
-      queryErrorHandler,
+      queryCompleteHandler,
       queryCompleteHandler);
 
   }
@@ -238,7 +257,7 @@ export class QueryEditorComponent implements OnInit {
   private handleQueryFinished() {
     this.loading = false;
     this.loadingChanged.emit(false);
-    const currentState = this.currentState$.getValue()
+    const currentState = this.currentState$.getValue();
     // If we're already in an error state, then don't change the state.
     if (currentState === 'Running' || currentState === 'Cancelling') {
       this.currentState$.next('Result');
@@ -258,9 +277,9 @@ export class QueryEditorComponent implements OnInit {
     let cancelOperation$: Observable<void>;
 
     if (this.latestQueryStatus) {
-      cancelOperation$ = this.queryService.cancelQuery(this.latestQueryStatus.queryId)
+      cancelOperation$ = this.queryService.cancelQuery(this.latestQueryStatus.queryId);
     } else {
-      cancelOperation$ = this.queryService.cancelQueryByClientQueryId(this.queryClientId)
+      cancelOperation$ = this.queryService.cancelQueryByClientQueryId(this.queryClientId);
     }
 
     cancelOperation$.subscribe(next => {
@@ -272,13 +291,13 @@ export class QueryEditorComponent implements OnInit {
     }, error => {
       console.log('Error occurred trying to cancel query: ' + JSON.stringify(error));
       this.currentState$.next('Editing');
-    })
+    });
   }
 
 
   loadProfileData() {
     const currentState = this.currentState$.getValue();
-    const isFinished = (currentState === "Result" || currentState === 'Error')
+    const isFinished = (currentState === 'Result' || currentState === 'Error');
     if (isFinished && !isNullOrUndefined(this.queryProfileData$)) {
       // We've alreaded loaded the query profile data.  It won't be different, as
       // the query is finished, so no point in loading it again.
@@ -287,5 +306,26 @@ export class QueryEditorComponent implements OnInit {
 
     this.queryProfileData$ = this.queryService.getQueryProfileFromClientId(this.queryClientId);
     this.changeDetector.detectChanges();
+  }
+
+  copyQuery($event: CopyQueryFormat) {
+
+    if ($event === 'snippet') {
+      this.tuiDialogService.open(
+        new PolymorpheusComponent(QuerySnippetContainerComponent, this.injector),
+        {
+          size: 'l',
+          data: {
+            query: this.query,
+            returnType: this.resultType,
+            schema: this.schema,
+            anonymousTypes: this.anonymousTypes
+          } as CodeGenRequest,
+          dismissible: true
+        }
+      ).subscribe();
+    } else {
+      copyQueryAs(this.query, this.queryService.queryEndpoint, $event, this.clipboard);
+    }
   }
 }

@@ -1,19 +1,25 @@
-<app-header-bar title="Schema Explorer">
-  <div class="add-new" *ngIf="config?.server.newSchemaSubmissionEnabled">
-    <button mat-stroked-button [routerLink]="['./import']">Add new</button>
-    <!--<mat-icon svgIcon="add_box"></mat-icon>-->
-    <!--Add a new one-->
-    <mat-menu #appMenu="matMenu">
-      <button mat-menu-item (click)="importSchemaFromUrl()">Add schema from url</button>
-      <!--<button mat-menu-item (click)="createNewSchema()">Add schema directly</button>-->
-    </mat-menu>
-  </div>
-</app-header-bar>
-<app-code-viewer [sources]="schemas | async" sidebarMode="Visible"
-                 *ngIf="(schemas | async)?.length>0"></app-code-viewer>
-<div *ngIf="(schemas | async)?.length==0" class="empty-state">
-  <img src="assets/img/getting-started.svg">
-  <div>There's nothing registered yet. Schemas will appear here as services register, or you can add
-    a new schema manually from the toolbar above.
+<div *ngIf="parsedPackage" class="header-bar">
+  <div class="titles">
+    <h2>{{parsedPackage.metadata.identifier.name}}</h2>
+    <app-simple-badge-list [badges]="badges"></app-simple-badge-list>
   </div>
 </div>
+<div class="tab-bar">
+  <tui-tabs [(activeItemIndex)]="activeTabIndex">
+    <button *ngFor="let tab of tabs; let i = index"
+            tuiTab
+            (click)="activeTabIndex = i"
+    >
+      <img [src]="tab.icon">
+      {{tab.label}}
+    </button>
+  </tui-tabs>
+</div>
+<app-schema-explorer-table *ngIf="activeTabIndex == 0" [editable]="false" [partialSchema$]="partialSchema$"
+                           [schema]="schema"
+
+                           [allowTryItOut]="true"></app-schema-explorer-table>
+<app-changelog-list *ngIf="activeTabIndex == 1" [changeLogEntries]="changelogEntries | async"></app-changelog-list>
+<app-code-viewer [sources]="parsedPackage?.sources" sidebarMode="Visible"
+                 *ngIf="activeTabIndex == 2 && parsedPackage?.sources?.length>0"></app-code-viewer>
+<app-schema-settings *ngIf="activeTabIndex === 3" [packageDescription]="packageDescription"></app-schema-settings>

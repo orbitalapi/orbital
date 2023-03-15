@@ -1,0 +1,12 @@
+@import "src/theme";
+
+:host {
+  display: flex;
+  background-color: $white;
+  border: 1px solid $borer-light;
+  border-radius: 4px;
+}
+app-lineage-node-diagram {
+  height: 100%;
+  flex-grow: 1;
+}

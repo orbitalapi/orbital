@@ -4,6 +4,7 @@ description: Pipelines stream data continuously between a source and destination
 ---
 
 
+
 import { Callout } from "../../components/callout";
 
 ## Overview
@@ -58,6 +59,7 @@ docker compose.
 | Config Parameter                | Description                                                                                                                |
 |---------------------------------|----------------------------------------------------------------------------------------------------------------------------|
 | `vyne.pipelines.pipeline-path`  | Specifies a directory containing multiple pipeline spec `.pipeline.json` files.  Defaults to `./pipelines`                 |
+| `vyne.pipelines.query-mode`     | `EMBEDDED` or `REMOTE`. Defines whether to use an embedded Vyne instance or to call a remote Vyne instance over HTTP.      |
 | `vyne.connections.config-file`  | Path to the config file of connections.  Should be the same file as passed to Vyne.  Defaults to `config/connections.conf` |
 | `vyne.schema.consumptionMethod` | Defines how to connect to the schema server and consume schema updates.  `RSOCKET` is a reasonable default                 |
 

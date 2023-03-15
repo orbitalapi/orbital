@@ -49,16 +49,6 @@ class JdbcQueryTest {
    }
 
    @Test
-   fun canStart() {
-      val movie = Movie("1", "A New Hope")
-      movieRepository.save(
-         movie
-      )
-
-      movieRepository.count().should.equal(1)
-   }
-
-   @Test
    fun `can use a TaxiQL statement to query a db`(): Unit = runBlocking {
       movieRepository.save(
          Movie("1", "A New Hope")
@@ -75,26 +65,22 @@ class JdbcQueryTest {
 
          @Table(connection = "movies", schema = "public", table = "movie")
          model Movie {
-            id : MovieId
-            title : MovieTitle
+            ID : MovieId
+            TITLE : MovieTitle
          }
 
          @DatabaseService( connection = "movies" )
          service MovieDb {
-            vyneQl query movieQuery(body:VyneQlQuery):Movie[] with capabilities {
-                  filter(==,in,like),
-                  sum,
-                  count
-               }
+            table movie : Movie[]
          }
       """
          )
       ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
-      val result = vyne.query("""findAll { Movie[]( MovieTitle == "A New Hope" ) } """)
+      val result = vyne.query("""find { Movie[]( MovieTitle == "A New Hope" ) } """)
          .typedObjects()
       result.should.have.size(1)
       result.first().toRawObject()
-         .should.equal(mapOf("title" to "A New Hope", "id" to 1))
+         .should.equal(mapOf("TITLE" to "A New Hope", "ID" to 1))
    }
 
    @Test
@@ -114,8 +100,8 @@ class JdbcQueryTest {
          type AvailableCopyCount inherits Int
          @Table(connection = "movies", table = "movie", schema = "public")
          model Movie {
-            id : MovieId
-            title : MovieTitle
+             ID : MovieId
+            TITLE : MovieTitle
          }
 
          service ApiService {
@@ -124,11 +110,7 @@ class JdbcQueryTest {
 
          @DatabaseService( connection = "movies" )
          service MovieDb {
-            vyneQl query movieQuery(body:VyneQlQuery):Movie[] with capabilities {
-                  filter(==,in,like),
-                  sum,
-                  count
-               }
+            table movie : Movie[]
          }
       """
          )
@@ -143,7 +125,7 @@ class JdbcQueryTest {
          listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)), stub)
       }
       val result = vyne.query(
-         """findAll { Movie[]( MovieTitle == "A New Hope" ) }
+         """find { Movie[]( MovieTitle == "A New Hope" ) }
          | as {
          |  title : MovieTitle
          |  availableCopies : AvailableCopyCount
@@ -174,8 +156,8 @@ class JdbcQueryTest {
          @Table(connection = "movies", table = "movie", schema = "public")
          model Movie {
             @Id
-            id : MovieId
-            title : MovieTitle
+              ID : MovieId
+            TITLE : MovieTitle
          }
 
          model NewRelease {
@@ -189,12 +171,7 @@ class JdbcQueryTest {
 
          @DatabaseService( connection = "movies" )
          service MovieDb {
-            vyneQl query findOneMovie(body:VyneQlQuery):Movie with capabilities {
-                  filter(==,in,like),
-                  sum,
-                  count
-               }
-
+            table movie : Movie[]
          }
       """
          )
@@ -214,7 +191,7 @@ class JdbcQueryTest {
          listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)), stub)
       }
       val result = vyne.query(
-         """findAll { NewRelease[] }
+         """find { NewRelease[] }
          | as {
          |  title : MovieTitle
          |  releaseDate : ReleaseDate
@@ -245,8 +222,8 @@ class JdbcQueryTest {
          @Table(connection = "movies", table = "movie", schema = "public")
          model Movie {
             @Id
-            id : MovieId by column("movie id")
-            title : MovieTitle by column("movie title")
+            ID : MovieId by column("movie id")
+            TITLE : MovieTitle by column("movie title")
          }
 
          model NewRelease {
@@ -260,12 +237,7 @@ class JdbcQueryTest {
 
          @DatabaseService( connection = "movies" )
          service MovieDb {
-            vyneQl query findOneMovie(body:VyneQlQuery):Movie with capabilities {
-                  filter(==,in,like),
-                  sum,
-                  count
-               }
-
+            table movie : Movie[]
          }
       """
          )
@@ -285,7 +257,7 @@ class JdbcQueryTest {
          listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)), stub)
       }
       val result = vyne.query(
-         """findAll { NewRelease[] }
+         """find { NewRelease[] }
          | as {
          |  title : MovieTitle
          |  releaseDate : ReleaseDate

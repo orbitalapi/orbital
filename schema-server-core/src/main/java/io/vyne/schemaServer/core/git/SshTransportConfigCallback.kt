@@ -10,7 +10,7 @@ import org.eclipse.jgit.transport.ssh.jsch.JschConfigSessionFactory
 import org.eclipse.jgit.transport.ssh.jsch.OpenSshConfig
 import org.eclipse.jgit.util.FS
 
-data class SshTransportConfigCallback(val sshPrivateKeyPath: String, val sshPassPhrase: String? = null): TransportConfigCallback {
+data class SshTransportConfigCallback(val sshAuth: GitSshAuth): TransportConfigCallback {
    private val sshSessionFactory: SshSessionFactory = object : JschConfigSessionFactory() {
       override fun configure(hc: OpenSshConfig.Host?, session: Session) {
          session.setConfig("StrictHostKeyChecking", "no")
@@ -19,10 +19,10 @@ data class SshTransportConfigCallback(val sshPrivateKeyPath: String, val sshPass
       override fun createDefaultJSch(fs: FS?): JSch {
          val jSch = super.createDefaultJSch(fs)
 
-         if(sshPassPhrase.isNullOrEmpty()) {
-            jSch.addIdentity(sshPrivateKeyPath)
+         if(sshAuth.passphrase.isNullOrEmpty()) {
+            jSch.addIdentity(sshAuth.privateKeyPath)
          } else {
-            jSch.addIdentity(sshPrivateKeyPath, sshPassPhrase.toByteArray())
+            jSch.addIdentity(sshAuth.privateKeyPath, sshAuth.passphrase.toByteArray())
          }
 
          return jSch

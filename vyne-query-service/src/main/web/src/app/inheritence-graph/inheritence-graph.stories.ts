@@ -1,11 +1,6 @@
-import {moduleMetadata, storiesOf} from '@storybook/angular';
-import {CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
-import {PipelinesModule} from '../pipelines/pipelines.module';
-import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
-import {testSchema} from '../object-view/test-schema';
-import {InheritanceGraphModule} from './inheritance-graph.module';
-import {Inheritable} from './inheritance-graph.component';
+import { moduleMetadata, storiesOf } from '@storybook/angular';
+import { InheritanceGraphModule } from './inheritance-graph.module';
+import { Inheritable } from 'src/app/inheritence-graph/build.inheritable';
 
 storiesOf('Inheritence Graph', module)
   .addDecorator(

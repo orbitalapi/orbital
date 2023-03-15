@@ -15,17 +15,25 @@ package io.vyne.queryService.schemas.importing
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.io.Resources
-import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
+import com.nhaarman.mockito_kotlin.mock
+import io.vyne.UriSafePackageIdentifier
+import io.vyne.cockpit.core.schemas.editor.LocalSchemaEditingService
+import io.vyne.cockpit.core.schemas.importing.CompositeSchemaImporter
+import io.vyne.cockpit.core.schemas.importing.SchemaConverter
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.consumer.SchemaStore
-import io.vyne.schemaServer.core.editor.DefaultApiEditorRepository
 import io.vyne.schemaServer.core.editor.SchemaEditorService
-import io.vyne.schemaServer.core.file.FileSystemSchemaRepository
+import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
+import io.vyne.schemaServer.packages.PackageWithDescription
+import io.vyne.schemaServer.packages.PackagesServiceApi
+import io.vyne.schemaServer.packages.SourcePackageDescription
 import io.vyne.schemaStore.SimpleSchemaStore
+import io.vyne.schemas.PartialSchema
 import org.apache.commons.io.FileUtils
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
+import reactor.core.publisher.Mono
 import java.io.File
 
 abstract class BaseSchemaConverterServiceTest {
@@ -50,11 +58,32 @@ abstract class BaseSchemaConverterServiceTest {
    ): CompositeSchemaImporter {
       copySampleProjectTo(tempFolder.root, projectName)
       val schemaEditorService = SchemaEditorService(
-         DefaultApiEditorRepository(
-            FileSystemSchemaRepository.forPath(tempFolder.root.toPath())
-         )
+         ReactiveRepositoryManager.testWithFileRepo(
+            tempFolder.root.toPath(),
+            isEditable = true,
+            configRepo = mock { }
+         ),
+         schemaStore
       )
-      val editingService: LocalSchemaEditingService = LocalSchemaEditingService(
+      val editingService = LocalSchemaEditingService(
+         object: PackagesServiceApi {
+            override fun listPackages(): Mono<List<SourcePackageDescription>> {
+               return Mono.just(listOf())
+            }
+
+            override fun loadPackage(packageUri: String): Mono<PackageWithDescription> {
+               TODO("Not yet implemented")
+            }
+
+            override fun getPartialSchemaForPackage(packageUri: UriSafePackageIdentifier): Mono<PartialSchema> {
+               TODO("Not yet implemented")
+            }
+
+            override fun removePackage(packageUri: UriSafePackageIdentifier): Mono<Unit> {
+               TODO("Not yet implemented")
+            }
+
+         },
          schemaEditorService,
          schemaStore
       )

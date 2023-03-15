@@ -3,10 +3,11 @@ import { Field, findType, QualifiedName, Schema, Type } from '../../services/sch
 import { isNullOrUndefined } from 'util';
 import { TuiHandler } from '@taiga-ui/cdk';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { TypeSearchContainerComponent, TypeSelectedEvent } from '../type-search/type-search-container.component';
+import { TypeSearchContainerComponent } from '../type-search/type-search-container.component';
 import { BaseDeferredEditComponent } from '../base-deferred-edit.component';
 import { TUI_TREE_LOADING, TuiTreeLoader, TuiTreeService } from '@taiga-ui/kit';
 import { Observable, of } from 'rxjs';
+import { TypeSelectedEvent } from 'src/app/type-viewer/type-search/type-selected-event';
 
 
 export interface TypeMemberTreeNode {

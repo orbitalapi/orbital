@@ -5,9 +5,10 @@ import io.vyne.FactSetId
 import io.vyne.FactSets
 import io.vyne.schemas.OutputConstraint
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
-import java.util.UUID
-import kotlin.reflect.KClass
+import lang.taxi.accessors.ProjectionFunctionScope
+import java.util.*
 
 
 data class Fact @JvmOverloads constructor(
@@ -59,6 +60,9 @@ data class ConstrainedTypeNameQueryExpression(
 data class TypeNameQueryExpression(val typeName: String) : QueryExpression {
    val qualifiedTypeNames: QualifiedName = typeName.fqn()
 }
+data class ProjectedExpression(val source: QueryExpression, val projection: Projection) : QueryExpression
+
+data class Projection(val type: Type, val scope: ProjectionFunctionScope?)
 
 data class TypeNameListQueryExpression(val typeNames: List<String>) : QueryExpression {
    val qualifiedTypeNames = typeNames.map { it.fqn() }
@@ -73,6 +77,7 @@ enum class QueryMode {
    /**
     * Find a single value
     */
+   @Deprecated("findOne is no longer supported.  Use Gather - which is equivalent of old findAll {}, and current find {} ")
    DISCOVER,
 
    /**
@@ -87,34 +92,28 @@ enum class QueryMode {
    BUILD
 }
 
-enum class ResultMode(val viewClass: KClass<out ResultView>) {
+enum class ResultMode {
    /**
     * Raw results
     */
-   RAW(SimpleResultView::class),
+   RAW,
 
    /**
     * Exclude type information for each attribute in 'results'
     */
    @Deprecated("Use TYPED instead", replaceWith = ReplaceWith("ResultMode.TYPED"))
-   SIMPLE(SimpleResultView::class),
+   SIMPLE,
 
    /**
     * Provide type metadata in results at a row level
     */
-   TYPED(SimpleResultView::class),
+   TYPED,
+
    /**
     * Include type information for each attribute included in 'results'
     */
-   @Deprecated("Use Simple instead, this contains too much data")
-   VERBOSE(VerboseResultView::class);
-
-
+   VERBOSE;
 }
-
-interface ResultView
-interface SimpleResultView : ResultView
-interface VerboseResultView : ResultView
 
 // Used Built-in regression pack.
 data class QueryHolder(val query: Any, val type: String = query::class.java.name)

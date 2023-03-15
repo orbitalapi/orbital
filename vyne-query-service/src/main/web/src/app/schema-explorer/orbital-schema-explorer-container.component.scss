@@ -1,0 +1,16 @@
+@import "src/orbital-theme";
+
+:host {
+  display: flex;
+  flex: 1 0 auto;
+  // This is to match layout with vyne schema-explorer.  Otherwsie,
+  // flexes get flucked.
+  height: 100%;
+  width: 100%;
+  flex-direction: column;
+}
+
+.container {
+  height: 10px;
+}
+

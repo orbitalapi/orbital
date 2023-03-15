@@ -8,12 +8,14 @@ import com.hazelcast.core.IExecutorService
 import com.spikhalskiy.futurity.Futurity
 import io.vyne.Vyne
 import io.vyne.models.TypedInstance
+import io.vyne.models.facts.FactBag
+import io.vyne.models.serde.SerializableTypedInstance
+import io.vyne.models.serde.toSerializable
+import io.vyne.query.Projection
 import io.vyne.query.QueryContext
 import io.vyne.query.SerializableVyneQueryStatistics
 import io.vyne.query.VyneQueryStatistics
 import io.vyne.query.projection.ProjectionProvider
-import io.vyne.spring.projection.serde.SerializableTypedInstance
-import io.vyne.spring.projection.serde.toSerializable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.reactive.asFlow
@@ -38,7 +40,7 @@ class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistrib
 
     val hazelcastScheduler: Scheduler = Schedulers.parallel()
 
-    override fun project(results: Flow<TypedInstance>, context:QueryContext):Flow<Pair<TypedInstance, VyneQueryStatistics>> {
+    override fun project(results: Flow<TypedInstance>, projection: Projection, context: QueryContext, globalFacts: FactBag):Flow<Pair<TypedInstance, VyneQueryStatistics>> {
 
         val instance:HazelcastInstance = Hazelcast.getAllHazelcastInstances().first()
         val executorService:IExecutorService = instance.getExecutorService("projectionExecutorService")
@@ -58,7 +60,7 @@ class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistrib
             .index()
             .parallel()
             .runOn( hazelcastScheduler )
-            .map { toDistributableTask(context, it.t2, it.t1) } //Serialize to task
+            .map { toDistributableTask(context, projection, it.t2, it.t1) } //Serialize to task
             .map { Futurity.shift(executorService.submit(it.first, selector)).toMono() to it.second } //Distribute on hazelcast
             .map { deserialiseTaskResults(context, vyne, it.first, it.second) }
 
@@ -66,13 +68,13 @@ class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistrib
 
     }
 
-    private fun toDistributableTask(context: QueryContext, input: List<TypedInstance>, segment:Long):Pair<HazelcastProjectingTask, Long> {
+    private fun toDistributableTask(context: QueryContext, projection: Projection, input: List<TypedInstance>, segment:Long):Pair<HazelcastProjectingTask, Long> {
 
         logger.info { "Distributing segment $segment for query ${context.queryId} at ${LocalDateTime.now()}" }
         val serializedTypedInstancesAsByteList = input.map { it.toSerializable().toBytes() }
         val serializedExcludedServices = Cbor.encodeToByteArray(context.excludedServices)
-        val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
-        val qualifiedName = actualProjectedType!!.qualifiedName
+        val actualProjectedType = projection.type.collectionType ?: projection.type
+        val qualifiedName = actualProjectedType.qualifiedName
         return HazelcastProjectingTask(context.queryId, serializedTypedInstancesAsByteList, serializedExcludedServices, qualifiedName, segment) to segment
     }
 

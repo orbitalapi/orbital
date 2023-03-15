@@ -8,8 +8,8 @@ import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import io.vyne.history.db.QueryHistoryRecordRepository
 import io.vyne.history.db.QueryResultRowRepository
-import io.vyne.history.export.ExportFormat
-import io.vyne.history.export.QueryHistoryExporter
+import io.vyne.history.rest.export.ExportFormat
+import io.vyne.history.rest.export.QueryHistoryExporter
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
@@ -31,7 +31,7 @@ import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
 import org.springframework.dao.EmptyResultDataAccessException
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
@@ -142,7 +142,7 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
       """
       )
       val vyneQlQuery = """
-         findAll {
+         find {
             Person[]
          } as
          @io.vyne.formats.Csv(

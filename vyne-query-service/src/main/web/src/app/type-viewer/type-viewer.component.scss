@@ -10,14 +10,20 @@
   }
 }
 
+app-schema-diagram, app-service-lineage-graph-container {
+  height: 600px;
+}
+
 .types-row {
   display: flex;
   align-items: center;
+
   app-inherits-from {
     margin-top: 0;
     margin-left: 0.75rem;
   }
 }
+
 .row {
   display: flex;
 
@@ -53,3 +59,7 @@ section.no-h2 {
 mat-button-toggle-group {
   margin-bottom: 1rem;
  }
+
+.last-edited {
+  color: gray;
+}

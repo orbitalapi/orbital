@@ -11,6 +11,12 @@
 mat-progress-bar {
   opacity: 0;
 }
+
 mat-progress-bar.loading {
   opacity: 100%;
+}
+
+app-schema-diagram {
+  // This makes the diagram consume the remainder of the vertical space
+  height: inherit;
 }

@@ -4,6 +4,7 @@ import com.hazelcast.jet.pipeline.Sink
 import com.hazelcast.jet.pipeline.SinkBuilder
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
+import io.vyne.embedded.EmbeddedVyneClientWithSchema
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
@@ -12,7 +13,6 @@ import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
-import io.vyne.spring.VyneProvider
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
@@ -48,8 +48,8 @@ class TaxiOperationSinkBuilder : SingleMessagePipelineSinkBuilder<TaxiOperationO
             )
          }
          .receiveFn { context: TaxiOperationSinkContext, message: MessageContentProvider ->
-            val vyne = context.vyneProvider.createVyne()
-            val schema = vyne.schema
+            val vyneClient = context.vyneClient
+            val schema = vyneClient.schema
             val (service, operation) = schema.operation(context.outputSpec.operationName.fqn())
             val inputPayloadParam = operation.parameters.first()
             val inputPayloadType = inputPayloadParam.type
@@ -58,7 +58,7 @@ class TaxiOperationSinkBuilder : SingleMessagePipelineSinkBuilder<TaxiOperationO
             runBlocking {
                context.logger.info("Invoking operation ${operation.qualifiedName} with arg ${input.toRawObject()}")
                try {
-                  vyne.from(input)
+                  vyneClient.from(input)
                      .invokeOperation(
                         service,
                         operation,
@@ -87,5 +87,5 @@ class TaxiOperationSinkContext(
    val outputSpec: TaxiOperationOutputSpec
 ) {
    @Resource
-   lateinit var vyneProvider: VyneProvider
+   lateinit var vyneClient: EmbeddedVyneClientWithSchema
 }

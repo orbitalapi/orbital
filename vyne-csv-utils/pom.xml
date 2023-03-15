@@ -5,7 +5,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.21.0</version>
+      <version>0.22.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -19,8 +19,15 @@
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>datatype-converters</artifactId>
-         <version>0.21.0</version>
+         <version>0.22.0</version>
          <scope>test</scope>
       </dependency>
    </dependencies>

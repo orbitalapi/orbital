@@ -19,3 +19,13 @@
   filter: drop-shadow(3px 3px 2px rgba(0, 0, 0, .7));
   /* Similar syntax to box-shadow */
 }
+
+
+:host {
+  display: flex;
+}
+app-lineage-node-diagram {
+  flex-grow: 1;
+  height: 100%;
+  display: block;
+}

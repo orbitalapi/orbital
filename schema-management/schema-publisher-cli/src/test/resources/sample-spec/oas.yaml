@@ -1,0 +1,64 @@
+openapi: 3.0.3
+info:
+   title: Api Documentation
+   description: Api Documentation
+   termsOfService: urn:tos
+   contact: {}
+   license:
+      name: Apache 2.0
+      url: http://www.apache.org/licenses/LICENSE-2.0
+   version: '1.0'
+servers:
+   - url: http://localhost:9981
+     description: Inferred Url
+paths:
+   /films/{filmId}/streamingProviders:
+      get:
+         tags:
+            - streaming-movies-provider
+         summary: getStreamingProvidersForFilm
+         operationId: getStreamingProvidersForFilmUsingGET
+         parameters:
+            - name: filmId
+              in: path
+              description: filmId
+              required: true
+              style: simple
+              schema:
+                 type: integer
+                 format: int32
+                 x-taxi-type:
+                    name: films.FilmId
+         responses:
+            '200':
+               description: OK
+               content:
+                  '*/*':
+                     schema:
+                        $ref: '#/components/schemas/StreamingProvider'
+            '401':
+               description: Unauthorized
+            '403':
+               description: Forbidden
+            '404':
+               description: Not Found
+components:
+   schemas:
+      StreamingProvider:
+         title: StreamingProvider
+         x-taxi-type:
+            name: io.vyne.demos.films.StreamingProvider
+         required:
+            - name
+            - pricePerMonth
+         type: object
+         properties:
+            name:
+               type: string
+               x-taxi-type:
+                  name: films.StreamingProviderName
+            pricePerMonth:
+               type: number
+               format: bigdecimal
+               x-taxi-type:
+                  name: films.StreamingProviderPrice

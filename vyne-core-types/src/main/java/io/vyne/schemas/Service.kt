@@ -1,13 +1,13 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.VersionedSource
 import io.vyne.models.TypedInstance
 import io.vyne.query.RemoteCall
-import lang.taxi.Equality
-import lang.taxi.services.FilterCapability
-import lang.taxi.services.QueryOperationCapability
+import io.vyne.utils.ImmutableEquality
+import java.io.Serializable
 
 
 typealias OperationName = String
@@ -78,6 +78,11 @@ object OperationNames {
    }
 }
 
+// Need to use @JsonDeserialize on this type, as the PartialXxxx
+// interface is overriding default deserialization behaviour
+// causing all of these to be deserialized as partials, even when
+// they're the real thing
+@JsonDeserialize(`as` = Parameter::class)
 data class Parameter(
    @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
    val type: Type,
@@ -89,9 +94,24 @@ data class Parameter(
       return this.name != null && this.name == name
    }
 
+   private val equality = ImmutableEquality(
+      this,
+      Parameter::name,
+      Parameter::type,
+      Parameter::metadata,
+   )
+
+   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
+   override fun hashCode(): Int = equality.hash()
+
    override val typeName: QualifiedName = type.name
 }
 
+// Need to use @JsonDeserialize on this type, as the PartialXxxx
+// interface is overriding default deserialization behaviour
+// causing all of these to be deserialized as partials, even when
+// they're the real thing
+@JsonDeserialize(`as` = Operation::class)
 data class Operation(
    override val qualifiedName: QualifiedName,
    override val parameters: List<Parameter>,
@@ -105,7 +125,9 @@ data class Operation(
    val sources: List<VersionedSource>,
    override val typeDoc: String? = null
 ) : MetadataTarget, SchemaMember, RemoteOperation, PartialOperation {
-   private val equality = Equality(this, Operation::qualifiedName, Operation::returnType)
+   private val equality =
+      ImmutableEquality(this, Operation::qualifiedName, Operation::returnType, Operation::parameters, Operation::metadata)
+
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
    override fun hashCode(): Int {
       return equality.hash()
@@ -135,27 +157,11 @@ interface RemoteOperation : MetadataTarget {
       get() = OperationNames.operationName(qualifiedName)
 }
 
-data class QueryOperation(
-   override val qualifiedName: QualifiedName,
-   override val parameters: List<Parameter>,
-   @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
-   override val returnType: Type,
-   override val metadata: List<Metadata> = emptyList(),
-   override val grammar: String,
-   override val capabilities: List<QueryOperationCapability>,
-   override val typeDoc: String? = null
-) : MetadataTarget, SchemaMember, RemoteOperation, PartialQueryOperation {
-   override val contract = OperationContract(returnType)
-   override val operationType: String? = null
-   private val filterCapability: FilterCapability? = capabilities
-      .filterIsInstance<FilterCapability>()
-      .firstOrNull()
 
-   override val hasFilterCapability = this.filterCapability != null
-   override val supportedFilterOperations = filterCapability?.supportedOperations ?: emptyList()
-
-   override val returnTypeName: QualifiedName = returnType.name
-}
+// Need to use @JsonDeserialize on this type, as the PartialXxxx
+// interface is overriding default deserialization behaviour
+// causing all of these to be deserialized as partials, even when
+// they're the real thing
 
 data class ConsumedOperation(val serviceName: ServiceName, val operationName: String) {
    val operationQualifiedName: QualifiedName = OperationNames.qualifiedName(serviceName, operationName)
@@ -181,15 +187,79 @@ data class ServiceLineage(
    }
 }
 
+
+enum class ServiceKind : Serializable {
+   API,
+   Database,
+   Kafka;
+
+   companion object {
+
+      fun inferFromMetadata(
+         serviceMetadata: List<Metadata>,
+         operations: List<Operation> = emptyList(),
+         streamOperations: List<StreamOperation>,
+         tableOperations: List<TableOperation>
+      ): ServiceKind? {
+         val allOperationMetadata = operations.flatMap { it.metadata }
+         val hasOperations = operations.isNotEmpty()
+         val hasStreams = streamOperations.isNotEmpty()
+         val hasTables = tableOperations.isNotEmpty()
+         // We have to use string literals here, rather than constants, as we don't have
+         // compile time dependencies on the connector libraries in core.
+         return when {
+            !hasOperations && !hasStreams && hasTables -> Database
+            !hasOperations && hasStreams && !hasTables -> Kafka
+
+            serviceMetadata.containsMetadata("io.vyne.kafka.KafkaService") -> Kafka
+            serviceMetadata.containsMetadata("io.vyne.jdbc.DatabaseService") -> Database
+            allOperationMetadata.containsMetadata("HttpOperation") -> API
+            else -> null
+         }
+      }
+   }
+}
+
+// Need to use @JsonDeserialize on this type, as the PartialXxxx
+// interface is overriding default deserialization behaviour
+// causing all of these to be deserialized as partials, even when
+// they're the real thing
+@JsonDeserialize(`as` = Service::class)
 data class Service(
    override val name: QualifiedName,
    override val operations: List<Operation>,
    override val queryOperations: List<QueryOperation>,
+   override val streamOperations: List<StreamOperation> = emptyList(),
+   override val tableOperations: List<TableOperation> = emptyList(),
    override val metadata: List<Metadata> = emptyList(),
    val sourceCode: List<VersionedSource>,
    override val typeDoc: String? = null,
-   val lineage: ServiceLineage? = null
+   val lineage: ServiceLineage? = null,
+   val serviceKind: ServiceKind? = ServiceKind.inferFromMetadata(
+      metadata,
+      operations,
+      streamOperations,
+      tableOperations
+   ),
 ) : MetadataTarget, SchemaMember, PartialService {
+
+   private val equality = ImmutableEquality(
+      this,
+      Service::name,
+      // 11-Aug-22: Added attributes and docs as needed for diffing.
+      // However, if this trashes performance, we can revert,and we'll find another way.
+      Service::operations,
+      Service::queryOperations,
+      Service::tableOperations,
+      Service::streamOperations,
+      Service::typeDoc,
+      Service::metadata
+   )
+
+   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
+   override fun hashCode(): Int = equality.hash()
+
+
    fun queryOperation(name: String): QueryOperation {
       return this.queryOperations.first { it.name == name }
    }
@@ -198,10 +268,14 @@ data class Service(
       return this.operations.first { it.name == name }
    }
 
-   val remoteOperations: List<RemoteOperation> = operations + queryOperations
+   val remoteOperations: List<RemoteOperation> =
+      operations + queryOperations + tableOperations.flatMap { it.queryOperations }
+
 
    fun remoteOperation(name: String): RemoteOperation {
       return this.queryOperations.firstOrNull { it.name == name }
+         ?: this.tableOperations.flatMap { it.queryOperations }.firstOrNull { it.name == name }
+         ?: this.streamOperations.firstOrNull { it.name == name }
          ?: this.operations.first { it.name == name }
    }
 
@@ -251,3 +325,7 @@ class OperationInvocationException(
    val remoteCall: RemoteCall,
    val parameters: List<Pair<Parameter, TypedInstance>>
 ) : RuntimeException(message)
+
+private fun List<Metadata>.containsMetadata(name: String): Boolean {
+   return this.any { it.name.fullyQualifiedName == name }
+}

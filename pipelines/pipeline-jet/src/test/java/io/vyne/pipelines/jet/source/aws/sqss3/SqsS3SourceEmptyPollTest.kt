@@ -1,16 +1,12 @@
 package io.vyne.pipelines.jet.source.aws.sqss3
 
-import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
-import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.SqlUtils
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.PostgresSQLContainerFacade
 import io.vyne.pipelines.jet.UTCClockProvider
-import io.vyne.pipelines.jet.api.JobStatus
-import io.vyne.pipelines.jet.api.PipelineStatus
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
@@ -88,7 +84,7 @@ type OrderWindowSummary {
     // Changed column
     close : Price by column("Close")
 }""".trimIndent()
-      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneClient) = jetWithSpringAndVyne(
          coinBaseSchema,
          emptyList(),
          listOf(localstack.awsConnection()),
@@ -115,7 +111,7 @@ type OrderWindowSummary {
          )
       )
 
-      val (_, jobId, pipelineManager) =  startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
+      val (_, jobId, pipelineManager) = startPipeline(hazelcastInstance, vyneClient, pipelineSpec)
 
       Awaitility
          .await()

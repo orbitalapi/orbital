@@ -1,6 +1,8 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import io.vyne.PackageIdentifier
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.VersionedTypeReference
 import io.vyne.models.functions.FunctionRegistry
@@ -21,6 +23,9 @@ interface Schema {
    val taxi: TaxiDocument
 
    fun asTaxiSchema(): TaxiSchema
+
+   @get:JsonIgnore
+   val packages: List<SourcePackage>
 
    @get:JsonIgnore
    val sources: List<VersionedSource>
@@ -53,6 +58,9 @@ interface Schema {
 
    val queryOperations: Set<QueryOperation>
       get() = services.flatMap { it.queryOperations }.toSet()
+
+   val streamOperations: Set<StreamOperation>
+      get() = services.flatMap { it.streamOperations }.toSet()
 
    @get:JsonIgnore
    val remoteOperations: Set<RemoteOperation>
@@ -216,6 +224,29 @@ interface Schema {
    }
 
    fun toTaxiType(versionedType: VersionedType) = type(versionedType.fullyQualifiedName.fqn()).taxiType
+
+   fun getSourcePackageOrNull(rawPackageIdentifier: String): SourcePackage? {
+      val packageIdentifier = PackageIdentifier.fromId(rawPackageIdentifier)
+
+      // This is a brute-force approach, since we don't currently store a reference of schema members to the
+      // sources they came from.
+      return this.packages.firstOrNull { it.identifier == packageIdentifier }
+   }
+
+   fun getPartialSchemaForPackage(rawPackageIdentifier: String): PartialSchema {
+      val sourcePackageOrNull = this.getSourcePackageOrNull(rawPackageIdentifier)
+      val types = sourcePackageOrNull?.let {sourcePackage -> this.types
+         .filter { it.sources.any { source -> source.packageIdentifier == sourcePackage.identifier } }
+      } ?: emptySet()
+      val services = sourcePackageOrNull?.let { sourcePackage ->
+         this.services
+            .filter { it.sourceCode.any { source -> source.packageIdentifier == sourcePackage.identifier } }
+      } ?: emptySet()
+      return DefaultPartialSchema(
+         types.toSet(),
+         services.toSet()
+      )
+   }
 
 }
 

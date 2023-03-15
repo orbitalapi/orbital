@@ -122,10 +122,12 @@ class TypeTest {
       val schema = TaxiSchema.from("""
          type EventDate inherits Instant
          model Source {
-            eventDate : EventDate( @format = "MM/dd/yy'T'HH:mm:ss.SSSX" )
+            @Format( "MM/dd/yy'T'HH:mm:ss.SSSX" )
+            eventDate : EventDate
          }
          model ThingWithInlineInstant {
-            eventDate : Instant( @format = "yyyy-MM-dd'T'HH:mm:ss.SSSX" )
+            @Format( "yyyy-MM-dd'T'HH:mm:ss.SSSX" )
+            eventDate : Instant
          }
       """)
       schema.type("EventDate").resolveAliases().fullyQualifiedName.should.equal("EventDate")
@@ -140,10 +142,12 @@ class TypeTest {
          type LunchTime inherits Instant
 
          model Source {
-            eventDate : EventDate( @format = "MM/dd/yy'T'HH:mm:ss.SSSX" )
+            @Format("MM/dd/yy'T'HH:mm:ss.SSSX" )
+            eventDate : EventDate
          }
          model Target {
-            eventDate : EventDate( @format = "yyyy-MM-dd'T'HH:mm:ss.SSSX" )
+         @Format( "yyyy-MM-dd'T'HH:mm:ss.SSSX")
+            eventDate : EventDate
          }
       """)
       val sourceType = schema.type(schema.type("Source").attribute("eventDate").type)

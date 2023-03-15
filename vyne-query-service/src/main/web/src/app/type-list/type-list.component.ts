@@ -1,26 +1,26 @@
-import {Component, OnInit} from '@angular/core';
-import {TypesService} from '../services/types.service';
+import { Component, OnInit } from '@angular/core';
+import { TypesService } from '../services/types.service';
 import * as _ from 'lodash';
-import {Router} from '@angular/router';
-import {Schema, SchemaMember, SchemaMemberType, Service, Type} from '../services/schema';
-import {TypeFilter, TypeFilterParams} from './filter-types/filter-types.component';
-import {SchemaNotificationService} from '../services/schema-notification.service';
+import { Router } from '@angular/router';
+import { Schema, SchemaMember, Service, Type } from '../services/schema';
+import { SHOW_EVERYTHING, TypeFilter, TypeFilterParams } from './filter-types/filter-types.component';
 
 @Component({
   selector: 'app-type-list',
   templateUrl: './type-list.component.html',
-  styleUrls: ['./type-list.component.scss']
+  styleUrls: ['./type-list.component.scss'],
 })
 export class TypeListComponent implements OnInit {
 
-  constructor(private typeService: TypesService,
-              private router: Router) {
+  constructor(
+    private typeService: TypesService,
+    private router: Router) {
   }
 
   schema: Schema;
   members: SchemaMember[] = [];
   filteredMembers: SchemaMember[] = [];
-  filterProps: TypeFilterParams;
+  filterProps: TypeFilterParams = SHOW_EVERYTHING;
 
   ngOnInit() {
     this.loadTypes();
@@ -33,22 +33,23 @@ export class TypeListComponent implements OnInit {
   private loadTypes(refresh: boolean = false) {
     this.typeService.getTypes(refresh).subscribe(schema => {
         this.schema = schema;
+        this.members = this.buildUnfilteredMembers(schema);
         this.applyFilter();
-      }, error => console.log('error : ' + error)
+      }, error => console.log('error : ' + error),
     );
   }
 
-  private applyFilter() {
-    if (!this.schema) {
-      return;
-    }
-    const typeMembers: SchemaMember[] = this.schema.types.map((t) => SchemaMember.fromType(t as Type));
+  private buildUnfilteredMembers(schema: Schema): SchemaMember[] {
+    const typeMembers: SchemaMember[] = schema.types.map((t) => SchemaMember.fromType(t as Type));
     let operationMembers: SchemaMember[] = [];
     this.schema.services.forEach((service) => operationMembers = operationMembers.concat(SchemaMember.fromService(service as Service)));
-    let members: SchemaMember[] = typeMembers.concat(operationMembers);
+    return typeMembers.concat(operationMembers);
+  }
 
+  private applyFilter() {
     // Filter
-    members = (this.filterProps) ? new TypeFilter(this.filterProps).filter(members) : members;
+    let members = (this.filterProps) ?
+      new TypeFilter(this.filterProps).filter(this.members) : this.members;
     // Sort
     members = _.sortBy(members, [(m: SchemaMember) => {
       return m.name.fullyQualifiedName;
@@ -71,7 +72,7 @@ export class TypeListComponent implements OnInit {
 
   startNewQuery(member: SchemaMember) {
     this.router.navigate(['/query-wizard'], {
-      queryParams: {'types': [member.name.fullyQualifiedName]}
+      queryParams: { 'types': [member.name.fullyQualifiedName] },
     });
   }
 
@@ -103,4 +104,6 @@ export class TypeListComponent implements OnInit {
     this.filterProps = $event;
     this.applyFilter();
   }
+
+
 }

@@ -5,17 +5,24 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.21.0</version>
+      <version>0.22.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>vyne-search</artifactId>
 
    <properties>
-      <lucene.version>9.4.0</lucene.version>
+      <lucene.version>9.5.0</lucene.version>
    </properties>
 
    <dependencies>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
+      </dependency>
       <dependency>
          <groupId>org.apache.lucene</groupId>
          <artifactId>lucene-core</artifactId>

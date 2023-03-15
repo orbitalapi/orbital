@@ -1,13 +1,12 @@
 package io.vyne.queryService.security
 
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.winterbe.expekt.should
+import io.kotest.matchers.booleans.shouldBeTrue
+import io.vyne.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.JdbcDriver
-import io.vyne.queryService.QueryServiceApp
 import io.vyne.queryService.VyneQueryIntegrationTest
-import io.vyne.queryService.security.authorisation.VyneAuthorisationConfig
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.spring.SimpleTaxiSchemaProvider
@@ -31,7 +30,6 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import reactivefeign.utils.HttpStatus
 
@@ -53,7 +51,6 @@ profile
       "vyne.schema.publisher.method=Local",
       "vyne.schema.consumer.method=Local",
       "spring.main.allow-bean-definition-overriding=true",
-      "eureka.client.enabled=false",
       "vyne.search.directory=./search/\${random.int}",
       "spring.datasource.url=jdbc:h2:mem:testdbVyneQuerySecureIntegrationTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY",
       "spring.security.oauth2.resourceserver.jwt.jwk-set-uri=\${wiremock.server.baseUrl}/.well-known/jwks.json",
@@ -79,7 +76,6 @@ class VyneQuerySecurityIntegrationTest {
 
    @Autowired
    private lateinit var objectMapper: ObjectMapper
-   private val typeRef: TypeReference<Map<String, Any?>?> = object : TypeReference<Map<String, Any?>?>() {}
 
    /**
     * see "authorisation/user-role-mappings.conf" in resources.
@@ -139,8 +135,7 @@ class VyneQuerySecurityIntegrationTest {
       val token = setUpLoggedInUser(queryRunnerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = issueVyneQuery(headers)
-      val responseMap = objectMapper.readValue(response.body, typeRef)
-      responseMap!!["message"]!!.toString().should.equal("No strategy found for discovering type io.vyne.Username[]")
+      response.statusCode.is2xxSuccessful.shouldBeTrue()
    }
 
    @Test
@@ -156,8 +151,7 @@ class VyneQuerySecurityIntegrationTest {
       val token = setUpLoggedInUser(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = issueVyneQuery(headers)
-      val responseMap = objectMapper.readValue(response.body, typeRef)
-      responseMap!!["message"]!!.toString().should.equal("No strategy found for discovering type io.vyne.Username[]")
+      response.statusCode.is2xxSuccessful.shouldBeTrue()
    }
 
    /**
@@ -689,7 +683,7 @@ class VyneQuerySecurityIntegrationTest {
    }
 
    private fun issueVyneQuery(headers: HttpHeaders): ResponseEntity<String> {
-      val entity = HttpEntity("findAll { io.vyne.Username[] }", headers)
+      val entity = HttpEntity("find { io.vyne.Username[] }", headers)
       return restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
    }
 

@@ -1,11 +1,11 @@
 package io.vyne.query.graph.edges
 
-import io.vyne.models.CopyOnWriteFactBag
-import io.vyne.models.FactDiscoveryStrategy
 import io.vyne.models.MixedSources
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
+import io.vyne.models.facts.CopyOnWriteFactBag
+import io.vyne.models.facts.FactDiscoveryStrategy
 import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
 import io.vyne.query.SearchGraphExclusion
@@ -78,10 +78,6 @@ class ParameterFactory {
       val fields = paramType.attributes.map { (attributeName, field) ->
          val attributeType = context.schema.type(field.type.fullyQualifiedName)
 
-         // THIS IS WHERE I'M UP TO.
-         // Try restructing this to a strategy approach.
-         // Can we try searching within the context before we try constructing?
-         // what are the impacts?
          var attributeValue: TypedInstance? =
             context.getFactOrNull(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
 
@@ -150,17 +146,22 @@ class ParameterFactory {
 
             (attributeValue == null) -> {
                throw UnresolvedOperationParametersException(
-                   "Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ",
-                   context.evaluatedPath(),
-                   context.profiler.root,
-                   emptyList()
+                  "Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ",
+                  context.evaluatedPath(),
+                  context.profiler.root,
+                  emptyList()
                )
             }
 
             else -> attributeName to attributeValue
          }
       }.toMap()
-      return TypedObject(paramType, fields, MixedSources)
+      // We need a composite data source here, which contains
+      // all the data sources/
+      // Don't have one, and building one right now is too expensive.
+
+      val dataSource = MixedSources.singleSourceOrMixedSources(fields.map { it.value })
+      return TypedObject(paramType, fields, dataSource)
    }
 
 }

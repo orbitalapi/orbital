@@ -5,7 +5,6 @@ import {MatToolbarModule} from '@angular/material/toolbar';
 import {SearchModule} from '../search/search.module';
 import {DescriptionEditorModule} from '../type-viewer/description-editor/description-editor.module';
 import {CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
 import {RouterModule} from '@angular/router';
 import {MatButtonModule} from '@angular/material/button';
 import {MatInputModule} from '@angular/material/input';
@@ -21,7 +20,6 @@ import {FormsModule} from '@angular/forms';
 @NgModule({
   imports: [
     CommonModule,
-    BrowserModule,
     MatToolbarModule,
     SearchModule,
     DescriptionEditorModule,

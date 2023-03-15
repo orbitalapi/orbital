@@ -4,11 +4,11 @@
 	<appender name="console" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
 		    <!-- Don't use %L or %M for Production or Perf test -->
-			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %logger - %msg%n</pattern>
+			<pattern>schema-server %d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %logger - %msg%n</pattern>
 		</encoder>
 	</appender>
 
-   <logger level="DEBUG" name="io.vyne" />
+   <logger level="INFO" name="io.vyne" />
    <logger level="INFO" name="ion.vyne.schemaServerCore.file.FilePoller" />
 	<root level="INFO">
 		<appender-ref ref="console" />

@@ -8,6 +8,7 @@ import io.rsocket.transport.netty.server.TcpServerTransport
 import io.rsocket.util.DefaultPayload
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
+import io.vyne.asParsedPackage
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.rsocket.CBORJackson
 import io.vyne.schema.rsocket.SchemaServerRSocketFactory
@@ -54,10 +55,12 @@ class RSocketSchemaStoreTest {
          SchemaServerRSocketFactory(TcpAddress("localhost", port))
       ).schemaChanged.toFlux().subscribe { event -> events.add(event) }
 
-      sink.tryEmitNext(SchemaSet.fromParsed(
-         listOf(ParsedSource(VersionedSource.sourceOnly("type HelloWorld"))),
-         1
-      ))
+      sink.tryEmitNext(
+         SchemaSet.fromParsed(
+            listOf(ParsedSource(VersionedSource.sourceOnly("type HelloWorld")).asParsedPackage()),
+            1
+         )
+      )
 
       Awaitility.await().atMost(5, TimeUnit.SECONDS)
          .until<Boolean> { events.size == 1 }
@@ -74,7 +77,7 @@ class RSocketSchemaStoreTest {
       ).schemaChanged.toFlux().subscribe { event -> events.add(event) }
 
       val schemaSet = SchemaSet.fromParsed(
-         listOf(ParsedSource(VersionedSource.sourceOnly("type HelloWorld"))),
+         listOf(ParsedSource(VersionedSource.sourceOnly("type HelloWorld")).asParsedPackage()),
          1
       )
 

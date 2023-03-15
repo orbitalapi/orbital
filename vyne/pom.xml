@@ -4,7 +4,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.21.0</version>
+      <version>0.22.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -37,6 +37,13 @@
          <groupId>io.vyne</groupId>
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
       </dependency>
       <!-- This might be a bad idea - it's just to access CsvImportParameters.
       If this creates circular dependencies, or a mess, let's just refactor the
@@ -96,7 +103,7 @@
       <dependency>
          <groupId>org.apache.commons</groupId>
          <artifactId>commons-csv</artifactId>
-         <version>1.9.0</version>
+         <version>1.10.0</version>
       </dependency>
       <dependency>
          <!-- Hipster provides implementations of graph search algorithms -->
@@ -159,17 +166,9 @@ Do not allow this to leak beyond a test scope
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-spring-http</artifactId>
-         <version>0.21.0</version>
+         <version>0.22.0</version>
          <scope>test</scope>
       </dependency>
-      <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne-csv-utils</artifactId>
-         <version>0.21.0</version>
-         <scope>test</scope>
-      </dependency>
-
-
    </dependencies>
    <build>
       <plugins>

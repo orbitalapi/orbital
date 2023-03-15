@@ -4,6 +4,8 @@ import io.vyne.FactSetMap
 import io.vyne.VyneCacheConfiguration
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.connectors.OperationInvoker
+import io.vyne.query.graph.EdgeNavigator
+import io.vyne.query.graph.HipsterDiscoverGraphQueryStrategy
 import io.vyne.query.graph.edges.ArrayMappingAttributeEvaluator
 import io.vyne.query.graph.edges.AttributeOfEdgeEvaluator
 import io.vyne.query.graph.edges.CanPopulateEdgeEvaluator

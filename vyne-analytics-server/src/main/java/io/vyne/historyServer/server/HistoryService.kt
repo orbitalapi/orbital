@@ -1,6 +1,5 @@
 package io.vyne.historyServer.server
 
-import io.vyne.history.QuerySummaryPersister
 import io.vyne.history.db.LineageRecordRepository
 import io.vyne.history.db.QueryHistoryDao
 import io.vyne.history.db.QueryHistoryRecordRepository
@@ -21,7 +20,6 @@ import org.springframework.stereotype.Component
 import reactor.core.publisher.Sinks
 import reactor.core.scheduler.Schedulers
 
-private val logger = KotlinLogging.logger {}
 @Component
 class HistoryService(queryHistoryRecordRepository: QueryHistoryRecordRepository,
                      resultRowRepository: QueryResultRowRepository,
@@ -29,12 +27,19 @@ class HistoryService(queryHistoryRecordRepository: QueryHistoryRecordRepository,
                      remoteCallResponseRepository: RemoteCallResponseRepository,
                      sankeyChartRowRepository: QuerySankeyChartRowRepository,
                      private val messageSink: Sinks.Many<VyneHistoryRecord>): InitializingBean {
+
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+
    private val queryHistoryDao = QueryHistoryDao(
       queryHistoryRecordRepository,
       resultRowRepository,
       lineageRecordRepository,
       remoteCallResponseRepository,
-      sankeyChartRowRepository)
+      sankeyChartRowRepository
+   )
+
    override fun afterPropertiesSet() {
       messageSink
          .asFlux()

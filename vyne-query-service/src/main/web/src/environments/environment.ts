@@ -2,14 +2,15 @@
 // `ng build ---prod` replaces `environment.ts` with `environment.prod.ts`.
 // The list of file replacements can be found in `angular.json`.
 
+
+import { Environment } from 'src/app/services/environment';
+
 export const environment = {
   production: false,
   // Convention for relative urls:  Start with an /, but don't end with one
-  queryServiceUrl: `//${window.location.host}`,
+  serverUrl: `//${window.location.host}`,
   websocketUrl: `ws://${window.location.host}/api/`,
-  showPolicyManager: true,
-  showGenerateSchema: true,
-};
+} as Environment;
 
 /*
  * In development mode, to ignore zone related error stack frames such as
@@ -18,3 +19,4 @@ export const environment = {
  * because it will have performance impact when throw error
  */
 // import 'zone.js/plugins/zone-error';  // Included with Angular CLI.
+

@@ -4,8 +4,10 @@ import com.winterbe.expekt.should
 import io.vyne.utils.withoutWhitespace
 import lang.taxi.types.ObjectType
 import org.junit.Assert
+import org.junit.Ignore
 import org.junit.Test
 
+@Ignore("Views not currently supported")
 class WhenStatementGeneratorTest {
    private val testView  = TestSchemas.fromSchemaSource(TestSchemas.versionedSourceForViewWithTwoFindsOneWithAJoin)
    private val viewDefinitionWithJoinPart = testView.taxiView.viewBodyDefinitions!![1]

@@ -1,11 +1,14 @@
 package io.vyne.queryService.security
 
 import com.google.common.io.Resources
-import io.vyne.queryService.security.authorisation.VyneOpenIdpConnectConfig
-import io.vyne.queryService.security.authorisation.VyneUserRoleDefinitionFileRepository
-import io.vyne.queryService.security.authorisation.VyneUserRoleDefinitionRepository
-import io.vyne.queryService.security.authorisation.VyneUserRoleMappingFileRepository
-import io.vyne.queryService.security.authorisation.VyneUserRoleMappingRepository
+import io.vyne.auth.authentication.ConfigFileVyneUserRepository
+import io.vyne.auth.authentication.VyneUser
+import io.vyne.auth.authorisation.VyneUserRoleDefinitionFileRepository
+import io.vyne.auth.authorisation.VyneUserRoleDefinitionRepository
+import io.vyne.auth.authorisation.VyneUserRoleMappingFileRepository
+import io.vyne.auth.authorisation.VyneUserRoleMappingRepository
+import io.vyne.cockpit.core.security.UserService
+import io.vyne.cockpit.core.security.authorisation.VyneOpenIdpConnectConfig
 import org.apache.commons.io.FileUtils
 import org.junit.Rule
 import org.junit.Test
@@ -32,7 +35,8 @@ class UserServiceTest {
          configFileVyneUserRepository,
          vyneUserRoleMappingRepository,
          vyneUserRoleDefinitionRepository,
-         VyneOpenIdpConnectConfig())
+         VyneOpenIdpConnectConfig()
+      )
       StepVerifier
          .create(userService.vyneUsers())
          .expectNext(VyneUser("userId1", "stuncay", "serhat.tuncay@vyne.co", "http://vyne/stuncay", "Serhat Tuncay"))

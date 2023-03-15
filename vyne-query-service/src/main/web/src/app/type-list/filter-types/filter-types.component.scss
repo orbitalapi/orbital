@@ -30,3 +30,14 @@ td-highlight {
 }
 
 
+form {
+  display: flex;
+  width: 100%;
+  tui-checkbox-block {
+    width: 10rem;
+  }
+  tui-input {
+    margin-left: 1rem;
+    flex-grow: 1;
+  }
+}

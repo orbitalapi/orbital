@@ -17,7 +17,7 @@ object TaxiTypeMapper {
    fun fromTaxiType(taxiType: lang.taxi.types.Type, schema: Schema, typeCache: TypeCache = schema.typeCache): Type {
       return when (taxiType) {
          is ObjectType -> {
-            val typeName = QualifiedName(taxiType.qualifiedName)
+            val typeName = QualifiedName.from(taxiType.qualifiedName)
             val fields = taxiType.allFields.map { field ->
                when (field.type) {
                   is ArrayType -> field.name to Field(
@@ -27,8 +27,11 @@ object TaxiTypeMapper {
                      readCondition = field.readExpression,
                      typeDoc = field.typeDoc,
                      nullable = field.nullable,
-                     metadata = parseAnnotationsToMetadata(field.annotations)
+                     metadata = parseAnnotationsToMetadata(field.annotations),
+                     fieldProjection = field.projection,
+                     format = field.formatAndZoneOffset
                   )
+
                   else -> field.name to Field(
                      field.type.qualifiedName.fqn(),
                      constraintProvider = buildDeferredConstraintProvider(
@@ -50,7 +53,9 @@ object TaxiTypeMapper {
                            field.type.qualifiedName.fqn(),
                            (field.accessor as FieldSourceAccessor).sourceType.toVyneQualifiedName()
                         )
-                     else null
+                     else null,
+                     fieldProjection = field.projection,
+                     format = field.formatAndZoneOffset
                   )
                }
             }.toMap()
@@ -67,9 +72,10 @@ object TaxiTypeMapper {
                typeCache = typeCache
             )
          }
+
          is TypeAlias -> {
             Type(
-               QualifiedName(taxiType.qualifiedName),
+               QualifiedName.from(taxiType.qualifiedName),
                metadata = parseAnnotationsToMetadata(taxiType.annotations),
                aliasForTypeName = taxiType.aliasType!!.toQualifiedName().toVyneQualifiedName(),
                sources = taxiType.compilationUnits.toVyneSources(),
@@ -78,10 +84,11 @@ object TaxiTypeMapper {
                typeCache = typeCache
             )
          }
+
          is EnumType -> {
             val enumValues = taxiType.values.map { EnumValue(it.name, it.value, it.synonyms, it.typeDoc) }
             Type(
-               QualifiedName(taxiType.qualifiedName),
+               QualifiedName.from(taxiType.qualifiedName),
                modifiers = parseModifiers(taxiType),
                metadata = parseAnnotationsToMetadata(taxiType.annotations),
                enumValues = enumValues,
@@ -91,13 +98,15 @@ object TaxiTypeMapper {
                typeCache = typeCache
             )
          }
+
          is ArrayType -> {
             val collectionType = typeCache.type(taxiType.parameters[0].qualifiedName)
 
             collectionType.asArrayType()
          }
+
          else -> Type(
-            QualifiedName(taxiType.qualifiedName),
+            QualifiedName.from(taxiType.qualifiedName),
             modifiers = parseModifiers(taxiType),
             sources = taxiType.compilationUnits.toVyneSources(),
             taxiType = taxiType,
@@ -133,6 +142,7 @@ object TaxiTypeMapper {
                lang.taxi.types.Modifier.PARAMETER_TYPE -> Modifier.PARAMETER_TYPE
             }
          }
+
          else -> emptyList()
       }
    }

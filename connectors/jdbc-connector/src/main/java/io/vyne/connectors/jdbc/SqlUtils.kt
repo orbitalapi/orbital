@@ -8,6 +8,7 @@ import org.jooq.tools.jdbc.JDBCUtils
 import java.util.*
 
 object SqlUtils {
+
    /**
     * Returns the annotated TableName if present, otherwise
     * falls back to the type name (without namespace)

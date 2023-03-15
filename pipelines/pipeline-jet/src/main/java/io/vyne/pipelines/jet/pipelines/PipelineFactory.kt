@@ -11,6 +11,7 @@ import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
+import io.vyne.VyneClientWithSchema
 import io.vyne.models.validation.MandatoryFieldNotNull
 import io.vyne.models.validation.ValidationRule
 import io.vyne.models.validation.failValidationViolationHandler
@@ -28,22 +29,20 @@ import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.pipelines.jet.source.PipelineSourceType
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
-import io.vyne.spring.VyneProvider
 import org.springframework.stereotype.Component
 import java.io.Serializable
 import javax.annotation.Resource
 
 @Component
 class PipelineFactory(
-   private val vyneProvider: VyneProvider,
+   private val vyneClient: VyneClientWithSchema,
    private val sourceProvider: PipelineSourceProvider,
    private val sinkProvider: PipelineSinkProvider
 ) {
    fun <I : PipelineTransportSpec, O : PipelineTransportSpec> createJetPipeline(pipelineSpec: PipelineSpec<I, O>): Pipeline {
       val jetPipeline = Pipeline.create()
-      val vyne = vyneProvider.createVyne()
       val sourceBuilder = sourceProvider.getPipelineSource(pipelineSpec)
-      val schema = vyne.schema
+      val schema = vyneClient.schema
       val inputTypeName = sourceBuilder.getEmittedType(pipelineSpec, schema)
       val inputType = if (inputTypeName != null) schema.type(inputTypeName) else null
 
@@ -170,7 +169,7 @@ data class ValidationFilterContext(
    val inputType: QualifiedName,
 ) : Serializable {
    @Resource
-   lateinit var vyneProvider: VyneProvider
+   lateinit var vyneClient: VyneClientWithSchema
 
    @Resource
    lateinit var meterRegistry: MeterRegistry
@@ -179,7 +178,7 @@ data class ValidationFilterContext(
    lateinit var validationFailedCounter: Counter
 
    fun schema(): Schema {
-      return vyneProvider.createVyne().schema
+      return vyneClient.schema
    }
 
    fun createMetricCounters(pipelineName: String) {

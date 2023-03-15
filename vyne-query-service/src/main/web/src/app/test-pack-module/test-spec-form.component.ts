@@ -1,8 +1,5 @@
-import {Component, Inject, OnInit} from '@angular/core';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
-import {ExportFileService} from '../services/export.file.service';
-import {CsvOptions} from '../services/types.service';
-import {Type} from '../services/schema';
+import { Component } from '@angular/core';
+import { MatDialogRef } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-test-spec-form',

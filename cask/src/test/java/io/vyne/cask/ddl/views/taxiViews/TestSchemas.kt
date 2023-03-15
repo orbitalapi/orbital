@@ -3,13 +3,16 @@ package io.vyne.cask.ddl.views.taxiViews
 import com.nhaarman.mockito_kotlin.eq
 import com.nhaarman.mockito_kotlin.whenever
 import io.vyne.VersionedSource
+import io.vyne.asPackage
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.from
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.toParsedPackages
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.View
 
@@ -17,7 +20,7 @@ object TestSchemas {
    fun fromSchemaSource(versionSource: VersionedSource, repository: CaskConfigRepository? = null): TestView {
       val taxiSchema = TaxiSchema.from(versionSource)
       val schemaStore = SimpleSchemaStore()
-      schemaStore.setSchemaSet(SchemaSet.from(listOf(versionSource), 1))
+      schemaStore.setSchemaSet(SchemaSet.fromParsed(listOf(versionSource).asPackage().toParsedPackages(), 1))
       val taxiView = taxiSchema.document.views.first()
       val bodyTypes = taxiView.viewBodyDefinitions?.map { viewBodyDefinition -> viewBodyDefinition.bodyType }
          ?: emptyList()
@@ -68,7 +71,8 @@ object TestSchemas {
             @Id
             sentOrderId : SentOrderId
             @Between
-		      orderDateTime: OrderEventDateTime( @format = "MM/dd/yy HH:mm:ss") by column("Time Submitted")
+            @Format( "MM/dd/yy HH:mm:ss")
+		      orderDateTime: OrderEventDateTime by column("Time Submitted")
             orderType: OrderType by default("Market")
             subSecurityType: SecurityDescription? by column("Instrument Desc")
             requestedQuantity: RequestedQuantity? by column("Size")
@@ -99,7 +103,8 @@ object TestSchemas {
          view OrderView inherits OrderEvent with query {
             find { OrderSent[] } as {
               orderId: OrderSent::SentOrderId
-              orderDateTime: OrderSent::OrderEventDateTime( @format = "MM/dd/yy HH:mm:ss")
+              @Format( "MM/dd/yy HH:mm:ss")
+              orderDateTime: OrderSent::OrderEventDateTime
               orderType: OrderSent::OrderType
               subSecurityType: OrderSent::SecurityDescription
               requestedQuantity: OrderSent::RequestedQuantity

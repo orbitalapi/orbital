@@ -19,7 +19,7 @@ import io.vyne.cask.ingest.CaskMutationDispatcher
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.websocket.XmlWebsocketRequest
-import io.vyne.schema.spring.FileSchemaSourceProvider
+import io.vyne.schema.publisher.loaders.FileSchemaSourceProvider
 import org.junit.Before
 import org.junit.Test
 import org.postgresql.PGConnection

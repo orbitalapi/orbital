@@ -1,22 +1,15 @@
-import {Component, EventEmitter, Output} from '@angular/core';
-import {
-  Query,
-  QueryProfileData,
-  QueryService,
-  ResponseStatus
-} from '../../services/query.service';
-import {TypesService} from '../../services/types.service';
-import {findType, InstanceLike, Schema, Type} from '../../services/schema';
-import {nanoid} from 'nanoid';
-import {HttpErrorResponse} from '@angular/common/http';
-import {Subject} from 'rxjs';
-import {RunningQueryStatus} from '../../services/active-queries-notification-service';
-import {isNullOrUndefined} from 'util';
-import {QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
-import {ExportFileService, ExportFormat} from '../../services/export.file.service';
-import {Observable, ReplaySubject} from 'rxjs/index';
-import {tap} from 'rxjs/operators';
-import {FailedSearchResponse} from '../../services/models';
+import { Component, EventEmitter, Output } from '@angular/core';
+import { Query, QueryProfileData, QueryService, ResponseStatus } from '../../services/query.service';
+import { TypesService } from '../../services/types.service';
+import { findType, InstanceLike, Schema, Type } from '../../services/schema';
+import { nanoid } from 'nanoid';
+import { HttpErrorResponse } from '@angular/common/http';
+import { RunningQueryStatus } from '../../services/active-queries-notification-service';
+import { isNullOrUndefined } from 'util';
+import { QueryResultInstanceSelectedEvent } from '../result-display/BaseQueryResultComponent';
+import { Observable, ReplaySubject } from 'rxjs/index';
+import { FailedSearchResponse } from '../../services/models';
+import { ExportFormat, ResultsDownloadService } from 'src/app/results-download/results-download.service';
 
 @Component({
   selector: 'app-query-builder',
@@ -73,7 +66,7 @@ export class QueryBuilderComponent {
 
   constructor(private queryService: QueryService,
               private typeService: TypesService,
-              private fileService: ExportFileService) {
+              private fileService: ResultsDownloadService) {
     this.typeService.getTypes()
       .subscribe(schema => this.schema = schema);
   }

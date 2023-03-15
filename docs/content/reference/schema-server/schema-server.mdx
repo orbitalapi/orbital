@@ -194,23 +194,7 @@ In production, rather than using a [local file system](#file-repositories), it's
 to use a git repository.  This allows the use of standard git workflows to promote
 changes to 'production'.
 
-The schema server will periodically poll a git repository and branch, and pull in
-any changes as they're detected
-
-#### Example
-```hocon
-git {
-   checkoutRoot="/my/git/root"
-   pollFrequency=PT30S
-   repositories=[
-      {
-         branch=master
-         name=my-git-project
-         uri="https://github.com/something.git"
-      }
-   ]
-}
-```
+Refer to [git flow documentation](./git-flow) on how to configure git repositories.
 
 ## Kitchen sink configuration example
 

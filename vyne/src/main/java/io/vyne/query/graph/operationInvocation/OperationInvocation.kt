@@ -1,6 +1,13 @@
 package io.vyne.query.graph.operationInvocation
 
-import io.vyne.models.*
+import io.vyne.models.DataSource
+import io.vyne.models.FailedEvaluation
+import io.vyne.models.FailedSearch
+import io.vyne.models.MixedSources
+import io.vyne.models.OperationResult
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
@@ -19,6 +26,7 @@ import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
 import io.vyne.schemas.fqn
 import io.vyne.utils.StrategyPerformanceProfiler
+import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
 import mu.KotlinLogging
@@ -55,7 +63,12 @@ class DefaultOperationInvocationService(
          ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
 
       val paramStart = Instant.now()
-      val parameters = gatherParameters(operation.parameters, preferredParams, context, providedParamValues)
+      val parameters = try {
+         gatherParameters(operation.parameters, preferredParams, context, providedParamValues)
+      } catch (e:Exception) {
+         log().error("Gather params failed", e)
+         throw e
+      }
       val resolvedParams = ensureParametersSatisfyContracts(parameters, context)
       val validatedParams = resolvedParams
       StrategyPerformanceProfiler.record(
@@ -226,6 +239,8 @@ class OperationInvocationEvaluator(
       } catch (exception: Exception) {
          val dataSource = when (exception) {
             is OperationInvocationException -> OperationResult.from(exception.parameters, exception.remoteCall)
+               .asOperationReferenceDataSource()
+
             else -> FailedEvaluation("An error occurred when invoking operation ${operation.qualifiedName.longDisplayName}: ${exception.message} ")
          }
          // Operation invokers throw exceptions for failed invocations.
@@ -280,7 +295,7 @@ class OperationInvocationEvaluator(
       operation: RemoteOperation,
       edge: EvaluatableEdge,
       context: QueryContext
-   ) = operation.parameters.map { requiredParam ->
+   ):List<TypedInstance> = operation.parameters.mapNotNull { requiredParam ->
 
       try {
          // Note: We can't always assume that the inbound relationship has taken care of this
@@ -291,7 +306,7 @@ class OperationInvocationEvaluator(
          }
       } catch (e: Exception) {
          logger.warn { "Failed to discover param of type ${requiredParam.type.fullyQualifiedName} for operation ${operation.qualifiedName} - ${e::class.simpleName} ${e.message}" }
-         edge.failure(null)
+         null
       }
    }
 

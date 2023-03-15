@@ -1,8 +1,7 @@
-import {Component} from '@angular/core';
-import {SearchResult, SearchService} from '../search.service';
-import {Observable, of} from 'rxjs';
-import {Router} from '@angular/router';
-import {QualifiedName, Schema} from '../../services/schema';
+import { Component } from '@angular/core';
+import { SearchResult, SearchService } from '../search.service';
+import { Observable, of } from 'rxjs';
+import { Router } from '@angular/router';
 
 
 @Component({
@@ -19,7 +18,6 @@ export class SearchBarContainerComponent {
   }
 
   searchResults: Observable<SearchResult[]> = of([]);
-  schema: Schema;
 
 
   triggerSearch($event: string) {

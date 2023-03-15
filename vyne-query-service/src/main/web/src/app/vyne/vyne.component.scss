@@ -25,8 +25,9 @@
   height: 100%;
 }
 
-.logo {
+.logo-container {
   padding: 24px 16px;
+
   img {
     vertical-align: middle;
     width: 65%;
@@ -36,7 +37,15 @@
     vertical-align: middle;
     font-weight: 600;
   }
+}
 
+.logo {
+  display: flex;
+  align-items: center;
+
+  img.integrator {
+    width: 65px;
+  }
 }
 
 .sidenav {

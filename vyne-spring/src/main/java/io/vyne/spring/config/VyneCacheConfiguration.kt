@@ -13,6 +13,6 @@ import org.springframework.boot.context.properties.ConstructorBinding
 @ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.graph")
 data class VyneSpringCacheConfiguration(
-   override val vyneGraphBuilderCache: VyneGraphBuilderCacheSettings,
-   override val vyneDiscoverGraphQuery: HipsterDiscoverGraphQueryStrategyCacheConfiguration
+   override val vyneGraphBuilderCache: VyneGraphBuilderCacheSettings = VyneGraphBuilderCacheSettings(),
+   override val vyneDiscoverGraphQuery: HipsterDiscoverGraphQueryStrategyCacheConfiguration = HipsterDiscoverGraphQueryStrategyCacheConfiguration()
 ) : VyneCacheConfiguration

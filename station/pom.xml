@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <parent>
+      <artifactId>platform</artifactId>
+      <groupId>io.vyne</groupId>
+      <version>0.22.0</version>
+   </parent>
+   <modelVersion>4.0.0</modelVersion>
+
+   <artifactId>station</artifactId>
+
+   <properties>
+      <buildNumber>0</buildNumber>
+      <maven.compiler.source>11</maven.compiler.source>
+      <maven.compiler.target>11</maven.compiler.target>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <app.main.class>io.orbital.station.OrbitalStationApp</app.main.class>
+      <app.distribution.directory>${project.build.directory}/distributions/app</app.distribution.directory>
+
+      <!-- see the plugin below for why we're disabling this -->
+      <spring-boot.repackage.skip>true</spring-boot.repackage.skip>
+
+   </properties>
+
+   <dependencies>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-server-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>cockpit-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>query-node-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-webflux</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>auth-common</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-data-jpa</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>license-client</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-security</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-actuator</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.security</groupId>
+         <artifactId>spring-security-oauth2-resource-server</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.security</groupId>
+         <artifactId>spring-security-oauth2-jose</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-core</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>com.h2database</groupId>
+         <artifactId>h2</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.flywaydb</groupId>
+         <artifactId>flyway-core</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.postgresql</groupId>
+         <artifactId>postgresql</artifactId>
+      </dependency>
+   </dependencies>
+
+   <build>
+      <plugins>
+         <plugin>
+            <groupId>io.github.git-commit-id</groupId>
+            <artifactId>git-commit-id-maven-plugin</artifactId>
+            <version>5.0.0</version>
+            <executions>
+               <execution>
+                  <id>get-the-git-infos</id>
+                  <goals>
+                     <goal>revision</goal>
+                  </goals>
+               </execution>
+            </executions>
+            <configuration>
+               <generateGitPropertiesFile>true</generateGitPropertiesFile>
+               <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties
+               </generateGitPropertiesFilename>
+            </configuration>
+         </plugin>
+         <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <executions>
+               <execution>
+                  <id>repackage</id>
+                  <!-- We can't use a spring boot repackaged fat jar.
+               We're using Wire (https://github.com/square/wire) for protobuf generation.
+    At runtime, this uses okio (https://github.com/square/okio) generate artifacts in order to generate a protobuf schema - and it treats
+    the current classpath as a zip.  This is reasonable, because normally the jar is a valid zip.
+    However, spring boot rewires this to make an executable, fat jar.  That breaks okio, and therefore wire.
+
+    Ideally, there'd be a workaround, but I haven't found one.
+    See discussions here:
+    https://github.com/square/okio/issues/1094
+    https://github.com/square/wire/discussions/2209
+
+    So, we're reverting to a classic jar build using maven appassembler
+
+                -->
+                  <goals>
+                     <goal>repackage</goal>
+                  </goals>
+                  <configuration>
+                     <skip>true</skip>
+                  </configuration>
+               </execution>
+               <execution>
+                  <goals>
+                     <goal>build-info</goal>
+                  </goals>
+               </execution>
+            </executions>
+            <configuration>
+               <additionalProperties>
+                  <!--suppress UnresolvedMavenProperty -->
+                  <baseVersion>
+                     ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}
+                  </baseVersion>
+                  <buildNumber>
+                     ${buildNumber}
+                  </buildNumber>
+               </additionalProperties>
+            </configuration>
+         </plugin>
+         <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>appassembler-maven-plugin</artifactId>
+            <version>2.1.0</version>
+            <executions>
+               <execution>
+                  <id>assemble-script</id>
+                  <phase>package</phase>
+                  <goals>
+                     <goal>assemble</goal>
+                  </goals>
+                  <configuration>
+                     <showConsoleWindow>true</showConsoleWindow>
+                     <programs>
+                        <program>
+                           <mainClass>${app.main.class}</mainClass>
+                           <id>orbital</id>
+                        </program>
+                     </programs>
+                     <repositoryLayout>flat</repositoryLayout>
+                     <repositoryName>lib</repositoryName>
+                     <extraJvmArguments>
+                        --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED
+                        --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+                        --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
+                        --add-opens=java.base/java.lang=ALL-UNNAMED
+                        --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+                        --add-opens=java.base/java.io=ALL-UNNAMED
+                        --add-opens=java.base/java.util=ALL-UNNAMED
+                     </extraJvmArguments>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <version>3.4.2</version>
+            <configuration>
+               <descriptors>
+                  <descriptor>src/main/assembly/assembly.xml</descriptor>
+               </descriptors>
+               <appendAssemblyId>false</appendAssemblyId>
+               <finalName>orbital</finalName>
+            </configuration>
+            <executions>
+               <execution>
+                  <id>make-assembly</id> <!-- this is used for inheritance merges -->
+                  <phase>package</phase> <!-- bind to the packaging phase -->
+                  <goals>
+                     <goal>single</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+      </plugins>
+   </build>
+</project>

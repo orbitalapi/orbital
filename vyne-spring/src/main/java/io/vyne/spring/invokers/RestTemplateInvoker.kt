@@ -6,6 +6,7 @@ import io.vyne.http.UriVariableProvider
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
+import io.vyne.query.HttpExchange
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
@@ -45,27 +46,25 @@ import reactor.netty.http.client.HttpClient
 import reactor.netty.resources.ConnectionProvider
 import java.time.Duration
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
-
-private val logger = KotlinLogging.logger {}
 
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
 
 class RestTemplateInvoker(
-    val schemaStore: SchemaStore,
-    val webClient: WebClient,
-    private val serviceUrlResolvers: List<ServiceUrlResolver> = ServiceUrlResolver.DEFAULT,
-    private val requestFactory: HttpRequestFactory = DefaultRequestFactory()
+   val schemaStore: SchemaStore,
+   val webClient: WebClient,
+   private val serviceUrlResolvers: List<ServiceUrlResolver> = ServiceUrlResolver.DEFAULT,
+   private val requestFactory: HttpRequestFactory = DefaultRequestFactory()
 ) : OperationInvoker {
-
+   private val logger = KotlinLogging.logger {}
 
    @Autowired
    constructor(
-       schemaStore: SchemaStore,
-       webClientBuilder: WebClient.Builder,
-       serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
-       requestFactory: HttpRequestFactory = DefaultRequestFactory()
+      schemaStore: SchemaStore,
+      webClientBuilder: WebClient.Builder,
+      serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
+      requestFactory: HttpRequestFactory = DefaultRequestFactory()
    )
       : this(
       schemaStore,
@@ -113,7 +112,7 @@ class RestTemplateInvoker(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String?
+      queryId: String
    ): Flow<TypedInstance> {
       logger.debug { "Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}" }
 
@@ -127,7 +126,7 @@ class RestTemplateInvoker(
       logger.debug { "Operation ${operation.name} resolves to $absoluteUrl" }
       val typeInstanceParameters = parameters.map { it.second }
       val httpEntity = requestFactory.buildRequestBody(operation, typeInstanceParameters)
-      val queryParams =  requestFactory.buildRequestQueryParams(operation)
+      val queryParams = requestFactory.buildRequestQueryParams(operation)
 
       val expandedUri = defaultUriBuilderFactory.expand(absoluteUrl, uriVariables)
 
@@ -147,6 +146,8 @@ class RestTemplateInvoker(
          request.bodyValue(httpEntity.body)
       }
 
+      logger.debug { "[$queryId] - Performing $httpMethod to ${expandedUri.toASCIIString()}" }
+
       val remoteCallId = UUID.randomUUID().toString()
       val results = request
          .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
@@ -162,6 +163,11 @@ class RestTemplateInvoker(
                .isCompatibleWith(MediaType.TEXT_EVENT_STREAM)
             val responseMessageType = if (isEventStream) ResponseMessageType.EVENT else ResponseMessageType.FULL
 
+            logger.debug {
+               "[$queryId] - $httpMethod to ${expandedUri.toASCIIString()} returned status ${clientResponse.statusCode()} and body length of ${
+                  clientResponse.headers().contentLength().orElse(-1)
+               } after ${duration}ms"
+            }
 
             fun remoteCall(responseBody: String, failed: Boolean = false): RemoteCall {
                return RemoteCall(
@@ -178,7 +184,16 @@ class RestTemplateInvoker(
                   response = responseBody,
                   timestamp = initiationTime,
                   responseMessageType = responseMessageType,
-                  isFailed = failed
+                  isFailed = failed,
+                  exchange = HttpExchange(
+                     url = expandedUri.toASCIIString(),
+                     verb = httpMethod.name,
+                     requestBody = httpEntity.body?.toString(),
+                     responseCode = clientResponse.rawStatusCode(),
+                     // Strictly, this isn't the size in bytes,
+                     // but it's close enough until someone complains.
+                     responseSize = responseBody.length,
+                  )
                )
             }
 
@@ -187,8 +202,9 @@ class RestTemplateInvoker(
                   .switchIfEmpty(Mono.just(""))
                   .map { responseBody ->
                      val remoteCall = remoteCall(responseBody = responseBody, failed = true)
+                     eventDispatcher.reportRemoteOperationInvoked(OperationResult.from(parameters, remoteCall), queryId)
                      throw OperationInvocationException(
-                        "Http error ${clientResponse.statusCode()} from url $expandedUri",
+                        "http error ${clientResponse.statusCode()} from url $expandedUri - $responseBody",
                         clientResponse.statusCode().value(),
                         remoteCall,
                         parameters
@@ -211,7 +227,8 @@ class RestTemplateInvoker(
                         parameters,
                         remoteCall,
                         clientResponse.headers(),
-                        eventDispatcher
+                        eventDispatcher,
+                        queryId
                      )
                   }
             } else {
@@ -229,7 +246,8 @@ class RestTemplateInvoker(
                         parameters,
                         remoteCall,
                         clientResponse.headers(),
-                        eventDispatcher
+                        eventDispatcher,
+                        queryId
                      )
                   }
             }
@@ -258,9 +276,11 @@ class RestTemplateInvoker(
       parameters: List<Pair<Parameter, TypedInstance>>,
       remoteCall: RemoteCall,
       headers: ClientResponse.Headers,
-      eventDispatcher: QueryContextEventDispatcher
+      eventDispatcher: QueryContextEventDispatcher,
+      queryId: String
    ): Flux<TypedInstance> {
-      logger.debug { "Result of ${operation.name} was $result" }
+      // Logging responses in our logs is a security issue.  Let's not do this.
+//      logger.debug { "Result of ${operation.name} was $result" }
 
       val isPreparsed = headers
          .header(io.vyne.http.HttpHeaders.CONTENT_PREPARSED).let { headerValues ->
@@ -268,15 +288,15 @@ class RestTemplateInvoker(
          }
       // If the content has been pre-parsed upstream, we don't evaluate accessors
       val evaluateAccessors = !isPreparsed
-      val dataSource = OperationResult.from(parameters, remoteCall)
+      val operationResult = OperationResult.from(parameters, remoteCall)
 
       val type = inferContentType(operation, headers, result)
-
+      eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
       val typedInstance = TypedInstance.from(
          type,
          result,
          schemaStore.schemaSet.schema,
-         source = dataSource,
+         source = operationResult.asOperationReferenceDataSource(),
          evaluateAccessors = evaluateAccessors
       )
       return if (typedInstance is TypedCollection) {

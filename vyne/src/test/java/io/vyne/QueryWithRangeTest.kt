@@ -38,12 +38,12 @@ class QueryWithRangeTest {
       // We need simpler api for expressing date ranges
       runBlocking {vyne.query().find(ConstrainedTypeNameQueryExpression("Trade[]", listOf(
          PropertyToParameterConstraint(
-            PropertyTypeIdentifier(QualifiedName.from("TradeDate")),
+            PropertyTypeIdentifier(vyne.type("TradeDate").taxiType),
             Operator.GREATER_THAN_OR_EQUAL_TO,
             ConstantValueExpression(Instant.parse("2020-05-10T10:00:00Z"))
          ),
          PropertyToParameterConstraint(
-            PropertyTypeIdentifier(QualifiedName.from("TradeDate")),
+            PropertyTypeIdentifier(vyne.type("TradeDate").taxiType),
             Operator.LESS_THAN,
             ConstantValueExpression(Instant.parse("2020-05-10T11:00:00Z"))
          )

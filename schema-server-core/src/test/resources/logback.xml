@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+   <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+      <!-- encoders are assigned the type
+           ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+      <encoder>
+         <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger - %msg%n</pattern>
+      </encoder>
+   </appender>
+
+    <!--<logger level="error" name="com.hazelcast" />-->
+    <!--<logger level="info"  name="org.springframework.data" />-->
+    <!--<logger level="trace" name="org.springframework.data.hazelcast" />-->
+    <!--<logger level="trace" name="com" />-->
+
+<!--   <logger level="DEBUG" name="io.vyne" />-->
+   <logger level="INFO" name="io.vyne" />
+<!--   <logger level="TRACE" name="org.testcontainers" />-->
+<!--   <logger level="TRACE" name="com.github.dockerjava" />-->
+<!--   For graph viz, uncomment the following -->
+<!--   <logger level="TRACE" name="io.vyne.query.GraphSearcher" />-->
+	<root level="INFO">
+
+		<appender-ref ref="console" />
+	</root>
+
+</configuration>

@@ -6,3 +6,9 @@ tui-tabs {
   width: 1rem;
   margin-right: 0.5rem;
 }
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}

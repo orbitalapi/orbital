@@ -85,7 +85,7 @@ enum City {
          }
       """.trimIndent()
       )
-      val enum = PrimitiveParser().parse(true, schema.type("IsAlive"), Provided)
+      val enum = PrimitiveParser().parse(true, schema.type("IsAlive"), Provided, format = null)
       enum.type.name.fullyQualifiedName.should.equal("IsAlive")
       // Note -it's a string, because enum values are string by default
       enum.value.should.equal("true")
@@ -141,7 +141,7 @@ enum CountryCode inherits Country
 type OrderNumber inherits String
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      val enum = PrimitiveParser().parse("order_1", schema.type("OrderNumber"), Provided)
+      val enum = PrimitiveParser().parse("order_1", schema.type("OrderNumber"), Provided, format = null)
       enum.type.name.fullyQualifiedName.should.equal("OrderNumber")
       enum.value.should.equal("order_1")
    }
@@ -152,11 +152,13 @@ type OrderNumber inherits String
 type alias OrderNumber as String
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      val enum = PrimitiveParser().parse("order_1", schema.type("OrderNumber"), Provided)
+      val enum = PrimitiveParser().parse("order_1", schema.type("OrderNumber"), Provided, format = null)
       enum.type.name.fullyQualifiedName.should.equal("OrderNumber")
       enum.value.should.equal("order_1")
    }
 
+   // MP 3-Aug: Not throwing this exception anymore, just returning a TypedNull,
+   // with details of the parsing failure.
    @Test
    fun primitiveTypeParsingFailure() {
       exception.expect(DataParsingException::class.java)
@@ -165,8 +167,21 @@ type alias OrderNumber as String
 type alias OrderNumber as Int
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      PrimitiveParser().parse("order_1", schema.type("OrderNumber"), Provided)
+      PrimitiveParser().parse("order_1", schema.type("OrderNumber"), Provided, format = null)
    }
+
+   @Test
+   fun `when cannot parse a value a typed null is returned with a meaningful error`() {
+      val src = """
+type alias OrderNumber as Int
+      """.trimIndent()
+      val schema = TaxiSchema.from(src)
+      val value = PrimitiveParser().parse("order_1", schema.type("OrderNumber"), Provided, parsingErrorBehaviour = ParsingFailureBehaviour.ReturnTypedNull, format = null)
+      value.should.be.instanceof(TypedNull::class.java)
+      val source = value.source as FailedParsingSource
+      source.error.should.equal("""Failed to parse value order_1 to type OrderNumber (no formats were supplied) - Character o is neither a decimal digit number, decimal point, nor "e" notation exponential mark.""")
+   }
+
 
    @Test
    fun parseLongAsInstant() {
@@ -174,20 +189,21 @@ type alias OrderNumber as Int
 type alias OrderDate as Instant
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      val value = PrimitiveParser().parse(java.lang.Long.valueOf(1575389279798), schema.type("OrderDate"), Provided)
+      val value = PrimitiveParser().parse(java.lang.Long.valueOf(1575389279798), schema.type("OrderDate"), Provided, format = null)
       value.value.should.equal(Instant.parse("2019-12-03T16:07:59.798Z"))
    }
 
    @Test
    fun reportMeaningfulException() {
-      exception.expect(DataParsingException::class.java)
-      exception.expectMessage("""Unable to convert value=389279798 to type=class java.time.Instant Error: No converter found capable of converting from type [java.lang.Integer] to type [java.time.Instant]""")
-
       val src = """
 type alias OrderDate as Instant
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      PrimitiveParser().parse(java.lang.Integer.valueOf(389279798), schema.type("OrderDate"), Provided)
+
+      val instance = PrimitiveParser().parse(java.lang.Integer.valueOf(389279798), schema.type("OrderDate"), Provided, ParsingFailureBehaviour.ReturnTypedNull, format = null)
+      instance.should.be.instanceof(TypedNull::class.java)
+      val source = (instance as TypedNull).source as FailedParsingSource
+      source.error.should.equal("""Failed to parse value 389279798 to type OrderDate (no formats were supplied) - Unable to convert value=389279798 to type=class java.time.Instant Error: No converter found capable of converting from type [java.lang.Integer] to type [java.time.Instant]""")
 
    }
 }

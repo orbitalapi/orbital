@@ -1,52 +1,49 @@
 import {
   AfterContentInit,
-  ChangeDetectionStrategy, ChangeDetectorRef,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   EventEmitter,
   Input,
-  OnInit,
   Output,
   ViewChild
 } from '@angular/core';
-import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
-import {Type, InstanceLike} from '../services/schema';
-import {Observable, Subscription, BehaviorSubject, Subject} from 'rxjs';
-import {ExportFormat} from '../services/export.file.service';
-import {ResultsTableComponent} from '../results-table/results-table.component';
-import {AppInfoService, QueryServiceConfig} from '../services/app-info.service';
-import {MatDialog} from '@angular/material/dialog';
-import {ConfigDisabledFormComponent} from '../test-pack-module/config-disabled-form.component';
-import {
-  ConfigPersistResultsDisabledFormComponent
-} from '../test-pack-module/config-persist-results-disabled-form.component';
-import {TypesService} from '../services/types.service';
-import {debounce, throttleTime} from "rxjs/operators";
+import { BaseTypedInstanceViewer } from './BaseTypedInstanceViewer';
+import { InstanceLike, Type } from '../services/schema';
+import { Observable, Subscription } from 'rxjs';
+import { ResultsTableComponent } from '../results-table/results-table.component';
+import { AppInfoService, QueryServiceConfig } from '../services/app-info.service';
+import { TypesService } from '../services/types.service';
+import { throttleTime } from 'rxjs/operators';
+import { ExportFormat } from 'src/app/results-download/results-download.service';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-object-view-container',
   template: `
-    <div class="container" *ngIf="ready">
-      <div class="display-wrapper">
-        <app-results-table *ngIf="displayMode==='table'"
-                           [instances$]="instances$"
-                           [rowData]="instances"
-                           [schema]="schema"
-                           [selectable]="selectable"
-                           [type]="type"
-                           [anonymousTypes]="anonymousTypes"
-                           (instanceClicked)="instanceClicked.emit($event)">
-        </app-results-table>
-        <app-object-view *ngIf="displayMode==='tree'"
+    <ng-container *ngIf="ready">
+      <app-results-table *ngIf="displayMode==='table'"
                          [instances$]="instances$"
+                         [rowData]="instances"
                          [schema]="schema"
                          [selectable]="selectable"
                          [type]="type"
                          [anonymousTypes]="anonymousTypes"
                          (instanceClicked)="instanceClicked.emit($event)">
-        </app-object-view>
-      </div>
-    </div>
+      </app-results-table>
+      <app-object-view *ngIf="displayMode==='tree'"
+                       [instances$]="instances$"
+                       [schema]="schema"
+                       [selectable]="selectable"
+                       [type]="type"
+                       [anonymousTypes]="anonymousTypes"
+                       (instanceClicked)="instanceClicked.emit($event)">
+      </app-object-view>
+      <app-json-results-view *ngIf="displayMode === 'json'"
+                             [instances$]="instances$">
+
+      </app-json-results-view>
+    </ng-container>
   `,
   styleUrls: ['./object-view-container.component.scss']
 })
@@ -167,7 +164,7 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
 
 }
 
-export type DisplayMode = 'table' | 'tree';
+export type DisplayMode = 'table' | 'tree' | 'json';
 
 export class DownloadClickedEvent {
   constructor(public readonly format: ExportFormat) {

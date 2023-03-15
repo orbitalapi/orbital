@@ -19,10 +19,14 @@ class SqsInvoker(private val schemaProvider: SchemaProvider, private val sqsStre
          streamReturnType(operation) != null
    }
 
-   override suspend fun invoke(service: Service,
-                               operation: RemoteOperation,
-                               parameters: List<Pair<Parameter, TypedInstance>>, eventDispatcher: QueryContextEventDispatcher, queryId: String?): Flow<TypedInstance> {
-      val connectionName = service.metadata(SqsConnectorTaxi.Annotations.SqsService.NAME )
+   override suspend fun invoke(
+      service: Service,
+      operation: RemoteOperation,
+      parameters: List<Pair<Parameter, TypedInstance>>,
+      eventDispatcher: QueryContextEventDispatcher,
+      queryId: String
+   ): Flow<TypedInstance> {
+      val connectionName = service.metadata(SqsConnectorTaxi.Annotations.SqsService.NAME)
          .params[SqsConnectorTaxi.Annotations.SqsService.ConnectionNameParam] as String
       val sqsOperation = operation.metadata(SqsConnectorTaxi.Annotations.SqsOperation.NAME)
          .let { SqsConnectorTaxi.Annotations.SqsOperation.from(it) }

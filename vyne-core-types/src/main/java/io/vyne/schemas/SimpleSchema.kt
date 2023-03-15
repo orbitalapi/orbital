@@ -1,5 +1,6 @@
 package io.vyne.schemas
 
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.TaxiDocument
@@ -11,6 +12,7 @@ class SimpleSchema(override val types: Set<Type>, override val services: Set<Ser
    override val taxi: TaxiDocument
       get() = TODO("Not yet implemented")
    override val sources: List<VersionedSource> = emptyList()
+   override val packages: List<SourcePackage> = emptyList()
    override val policies: Set<Policy> = emptySet()
    override fun hasType(name: String): Boolean {
       // Don't defer to base, which looks at the full typeCache.

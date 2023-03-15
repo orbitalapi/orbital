@@ -8,6 +8,7 @@ import io.vyne.models.TypedValue
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.timed
 import lang.taxi.TaxiDocument
+import lang.taxi.types.ArrayType
 import lang.taxi.types.EnumValueQualifiedName
 import lang.taxi.types.ObjectType
 import java.util.concurrent.CopyOnWriteArrayList
@@ -22,7 +23,7 @@ abstract class BaseTypeCache : TypeCache {
    private val shortNames: MutableMap<String, MutableList<Type>> = mutableMapOf()
    private val anonymousTypes: MutableMap<QualifiedName, Type> = mutableMapOf()
    private val enumSynonymValues: MutableMap<EnumValueQualifiedName, CachedEnumSynonymValues> = mutableMapOf()
-   private val detectedMetadata: MutableSet<Metadata> = mutableSetOf()
+
    val types: Set<Type>
       get() {
          return this.cache.values.toSet()
@@ -95,7 +96,13 @@ abstract class BaseTypeCache : TypeCache {
          // but not Array<Foo> directly.
          // It's still valid, so we'll construct the type
          val baseType = type(name.fullyQualifiedName)
-         val parameterisedType = baseType.copy(name = name, typeParametersTypeNames = name.parameters)
+         val taxiType = if(ArrayType.isArrayTypeName(baseType.fullyQualifiedName)) {
+            ArrayType.of(type(name.parameters[0]).taxiType)
+         } else {
+            // Not sure what to do here.
+            baseType.taxiType
+         }
+         val parameterisedType = baseType.copy(name = name, typeParametersTypeNames = name.parameters, taxiType = taxiType)
          add(parameterisedType)
       } else {
          null
@@ -179,7 +186,7 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : BaseTypeCache() {
 }
 
 /**
- * A type cache which can on-demand populate it's values
+ * A type cache which can on-demand populate its values
  * from an underlying Taxi schema
  */
 class TaxiTypeCache(private val taxi: TaxiDocument, private val schema: Schema) : BaseTypeCache() {

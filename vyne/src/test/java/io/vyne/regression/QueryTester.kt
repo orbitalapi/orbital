@@ -9,6 +9,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.VersionedSource
 import io.vyne.Vyne
 import io.vyne.VyneCacheConfiguration
+import io.vyne.from
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypeNamedInstanceDeserializer
 import io.vyne.models.TypedInstance
@@ -133,9 +134,6 @@ class QueryTester {
 interface VyneTestFailure {
    val message: String
 }
-
-data class SimpleTestFailure(override val message: String) : VyneTestFailure
-data class NotEqualTestFailure(override val message: String, val expected: TypedInstance, val actual: TypedInstance) : VyneTestFailure
 
 data class VyneTestCase(
    val test: String,

@@ -21,7 +21,7 @@ class PollingTaxiOperationSourceBuilderTest : BaseJetIntegrationTest() {
 
    @Test
    fun `poll from operation and return values`() {
-      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneClient) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -54,7 +54,7 @@ class PollingTaxiOperationSourceBuilderTest : BaseJetIntegrationTest() {
          outputs = listOf(outputSpec)
       )
 
-      val (_, job) = startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
+      val (_, job) = startPipeline(hazelcastInstance, vyneClient, pipelineSpec)
 
       // Wait until the next scheduled time is set
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {

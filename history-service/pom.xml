@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <parent>
+      <groupId>io.vyne</groupId>
+      <artifactId>platform</artifactId>
+      <version>0.22.0</version>
+   </parent>
+
+   <artifactId>history-service</artifactId>
+
+   <description>
+      This jar provides RESTful endpoints for services
+      that wish to expose query history over API.
+
+      We allow history to be persisted in a few places,
+      including a dedicated analytics server.
+
+      However, users access it from an admin UI, which
+      may be running in a different service from the
+      thing persisting history.
+
+      This JAR is for exposing those API operations.
+
+      Consumers would be things like the Vyne Query Service,
+      Orbital Station, etc
+   </description>
+   <properties>
+      <maven.compiler.source>19</maven.compiler.source>
+      <maven.compiler.target>19</maven.compiler.target>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+   </properties>
+
+   <dependencies>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>history-persistence</artifactId>
+         <version>0.22.0</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-history-core</artifactId>
+         <version>0.22.0</version>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.security</groupId>
+         <artifactId>spring-security-core</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-web</artifactId>
+      </dependency>
+   </dependencies>
+
+</project>

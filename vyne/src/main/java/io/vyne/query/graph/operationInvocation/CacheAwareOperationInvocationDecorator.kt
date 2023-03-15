@@ -8,6 +8,7 @@ import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
 import io.vyne.utils.StrategyPerformanceProfiler
+import io.vyne.utils.abbreviate
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,7 +19,6 @@ import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.reactive.asFlow
@@ -49,7 +49,7 @@ class CacheAwareOperationInvocationDecorator(
 
    private val actorCache = CacheBuilder.newBuilder()
       .removalListener<String, CachingInvocationActor> { notification ->
-         logger.info { "Caching operation invoker removing entry for ${notification.key} for reason ${notification.cause}" }
+         logger.info { "Caching operation invoker removing entry for ${notification.key?.abbreviate()} for reason ${notification.cause}" }
       }
       .build<String, CachingInvocationActor>()
 
@@ -67,7 +67,7 @@ class CacheAwareOperationInvocationDecorator(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String?
+      queryId: String
    ): Flow<TypedInstance> {
       val (key, params) = getCacheKeyAndParamMessage(service, operation, parameters, eventDispatcher, queryId)
       val actor = actorCache.get(key) {
@@ -96,7 +96,8 @@ class CacheAwareOperationInvocationDecorator(
             .onEach {
                emittedRecords++
                if (!evictedFromCache && emittedRecords > evictWhenResultSizeExceeds) {
-                  logger.info { "Response from $key has exceeded max cachable records ($evictWhenResultSizeExceeds) so is being removed from the cache.  Subsequent calls will hit the original service, not the cache" }
+                  // Some cache keys can be huge
+                  logger.info { "Response from ${key.abbreviate()} has exceeded max cachable records ($evictWhenResultSizeExceeds) so is being removed from the cache.  Subsequent calls will hit the original service, not the cache" }
                   actorCache.invalidate(key)
                   actorCache.cleanUp()
                   evictedFromCache = true
@@ -117,7 +118,7 @@ class CacheAwareOperationInvocationDecorator(
          operation: RemoteOperation,
          parameters: List<Pair<Parameter, TypedInstance>>,
          eventDispatcher: QueryContextEventDispatcher,
-         queryId: String?
+         queryId: String
       ): Pair<String, OperationInvocationParamMessage> {
          return generateCacheKey(service, operation, parameters) to
             OperationInvocationParamMessage(
@@ -163,11 +164,11 @@ private class CachingInvocationActor(
          var wasFromCache = false // Used for telemetry
          val params = channel.receive()
          if (result == null) {
-            logger.debug { "$cacheKey cache miss, loading from Operation Invoker" }
+            logger.debug { "${cacheKey.abbreviate()} cache miss, loading from Operation Invoker" }
             result = invokeUnderlyingService(params)
             wasFromCache = false
          } else {
-            logger.debug { "$cacheKey cache hit, replaying from cache" }
+            logger.debug { "${cacheKey.abbreviate()} cache hit, replaying from cache" }
             wasFromCache = true
          }
 
@@ -193,7 +194,7 @@ private class CachingInvocationActor(
          operation: RemoteOperation,
          parameters: List<Pair<Parameter, TypedInstance>>,
          eventDispatcher: QueryContextEventDispatcher,
-         queryId: String?) = message
+         queryId: String) = message
 
       // A bit of async framework hopping here.
       // Invoker.invoke() is a suspend function, but we need to operate in a flux to allow
@@ -205,7 +206,7 @@ private class CachingInvocationActor(
             try {
                invoker.invoke(service, operation, parameters, eventDispatcher, queryId)
                   .catch { exception ->
-                     logger.info { "Operation with cache key $cacheKey failed with exception ${exception::class.simpleName} ${exception.message}.  This operation with params will not be attempted again.  Future attempts will have this error replayed" }
+                     logger.info { "Operation with cache key ${cacheKey.abbreviate()} failed with exception ${exception::class.simpleName} ${exception.message}.  This operation with params will not be attempted again.  Future attempts will have this error replayed" }
                      sink.error(exception)
                   }
                   .onCompletion {
@@ -215,6 +216,7 @@ private class CachingInvocationActor(
                      sink.next(it)
                   }
             } catch(exception:Exception) {
+               logger.error(exception) { "An exception was thrown inside the invoker (${invoker::class.simpleName} calling ${operation.name})" }
                // This is an exception thrown in the invoke method, but not within the flux / flow.
                // ie., something has gone wrong internally, not in the service.
                sink.error(exception)
@@ -236,7 +238,7 @@ private data class OperationInvocationParamMessage(
    val operation: RemoteOperation,
    val parameters: List<Pair<Parameter, TypedInstance>>,
    val eventDispatcher: QueryContextEventDispatcher,
-   val queryId: String?
+   val queryId: String
 ) {
    fun recordElapsed(wasFromCache: Boolean) {
       if (wasFromCache) {
