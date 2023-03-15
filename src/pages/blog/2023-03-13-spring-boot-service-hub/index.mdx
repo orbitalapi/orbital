@@ -21,18 +21,22 @@ export const meta = {
   hidden: false
 }
 
-Spring Boot is an awesome framework for building Microservices.
+Spring Boot is an awesome framework for building Microservices, and Orbital is 
+an amazing platform for connecting those microservices together.
 
-And, while tools like OpenApi are great for describing a single API, they don't
-describe an ecosystem of services, and how the data between them is realted.
+Orbital works by reading the specs of microservices, (eg., OpenApi, Raml, Protobuf or [Taxi](https://taxilang.org))
+and building a large mesh of APIs.  
 
-This is where Orbital can help.
-
-As well as being awesome at integration, Orbital has a best-in-class developer hub, allowing engineers to see
-the services that exist (along with databases, kafka topics, and more).
+All this schema metadata is browsable in Orbital's UI, and can be
+an awesome hub for developers to discover and document their APIs - even without
+using Orbital's integration capabilities.
 
 In this blog post, we're going to explore creating an awesome self-updating developer
-hub using Spring Boot, Kotlin, and Orbital's API catalog.
+hub using Spring Boot, Kotlin, and Orbital's API catalog.  
+
+Our microservices will publish their APIs directly to Orbital on startup, so that Orbital is always up-to-date.
+There's lots of [different ways](/docs/connecting-data-sources/overview) to publish API specs to Orbital - but in this post we'll focus on 
+a code-first workflow.
 
 ## What we'll get
 At the end of this post, we'll end up with a local instance of Orbital, with a
@@ -52,36 +56,34 @@ In addition, Orbital gives us a rich data and API catalog, where we can search a
                   caption='The operation explorer lets us interact and play around with individual APIs' />
 
 ## The Spring Boot app
-The Spring Boot app itself is pretty vanilla:
+We'll start out with a vanilla Spring Boot app:
 
 <SnippetGroup>
 
 
   ```kotlin FilmListingsApp.kt
-
-
   package com.petflix.voyager.listings
 
-  import org.springframework.beans.factory.annotation.Autowired
-  import org.springframework.beans.factory.annotation.Value
-  import org.springframework.boot.SpringApplication
-  import org.springframework.boot.autoconfigure.SpringBootApplication
-  import org.springframework.boot.info.GitProperties
-  import org.springframework.context.annotation.Bean
-  import org.springframework.context.annotation.Configuration
-  import org.springframework.stereotype.Component
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.SpringApplication
+import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.info.GitProperties
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.stereotype.Component
 
-  @SpringBootApplication
-  open class FilmListingsApp {
+@SpringBootApplication
+open class FilmListingsApp {
 
-  companion object {
-  val logger = LoggerFactory.getLogger(this::class.java)
+    companion object {
+        val logger = LoggerFactory.getLogger(this::class.java)
 
-  @JvmStatic
-  fun main(args: Array<String>) {
-  SpringApplication.run(FilmListingsApp::class.java, *args)
-}
-}
+        @JvmStatic
+        fun main(args: Array<String>) {
+            SpringApplication.run(FilmListingsApp::class.java, *args)
+        }
+    }
 }
 
   ```
@@ -89,51 +91,51 @@ The Spring Boot app itself is pretty vanilla:
   ```kotlin FilmListings.kt
   package com.petflix.voyager.listings
 
-  import org.springframework.data.crossstore.ChangeSetPersister
-  import org.springframework.data.jpa.repository.JpaRepository
-  import org.springframework.data.repository.findByIdOrNull
-  import org.springframework.stereotype.Component
-  import org.springframework.web.bind.annotation.GetMapping
-  import org.springframework.web.bind.annotation.PathVariable
-  import org.springframework.web.bind.annotation.RestController
-  import javax.persistence.Entity
-  import javax.persistence.Id
+import org.springframework.data.crossstore.ChangeSetPersister
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.repository.findByIdOrNull
+import org.springframework.stereotype.Component
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RestController
+import javax.persistence.Entity
+import javax.persistence.Id
 
-  @Entity
-  data class Film(
-  @Id
-  val filmId: FilmId,
-  val title: String
-  )
+@Entity
+data class Film(
+    @Id
+    val filmId: FilmId,
+    val title: String
+)
 
-  interface FilmRepository : JpaRepository<Film, Int>
+interface FilmRepository : JpaRepository<Film, Int>
 
-  /**
-  * A simple component to populate our database on startup
-  */
-  @Component
-  class FilmDbSeeder(val repo: FilmRepository) {
-  init {
-  val films = listOf(
-  Film(1, "Gladiator"),
-  Film(2, "Star Wars IV - A New Hope"),
-  Film(3, "Star Wars V - Empire Strikes Back"),
-  Film(4, "Star Wars VI - Return of the Jedi"),
-  )
-  repo.saveAll(films)
+/**
+ * A simple component to populate our database on startup
+ */
+@Component
+class FilmDbSeeder(val repo: FilmRepository) {
+    init {
+        val films = listOf(
+            Film(1, "Gladiator"),
+            Film(2, "Star Wars IV - A New Hope"),
+            Film(3, "Star Wars V - Empire Strikes Back"),
+            Film(4, "Star Wars VI - Return of the Jedi"),
+        )
+        repo.saveAll(films)
+    }
 }
-}
 
-  @RestController
-  class ListingsService(val repository: FilmRepository) {
+@RestController
+class ListingsService(val repository: FilmRepository) {
 
-  @GetMapping("/films")
-  fun listAllFilms(): List<Film> = repository.findAll()
+    @GetMapping("/films")
+    fun listAllFilms(): List<Film> = repository.findAll()
 
-  @GetMapping("/films/{id}")
-  fun getFilm(@PathVariable("id") filmId: FilmId): Film {
-  return repository.findByIdOrNull(filmId) ?: throw ChangeSetPersister.NotFoundException()
-}
+    @GetMapping("/films/{id}")
+    fun getFilm(@PathVariable("id") filmId: FilmId): Film {
+        return repository.findByIdOrNull(filmId) ?: throw ChangeSetPersister.NotFoundException()
+    }
 }
 
   ```
@@ -141,55 +143,55 @@ The Spring Boot app itself is pretty vanilla:
   ```kotlin Reviews.kt
   package com.petflix.voyager.listings
 
-  import org.springframework.data.jpa.repository.JpaRepository
-  import org.springframework.web.bind.annotation.GetMapping
-  import org.springframework.web.bind.annotation.PathVariable
-  import org.springframework.web.bind.annotation.RestController
-  import javax.persistence.Entity
-  import javax.persistence.GeneratedValue
-  import javax.persistence.GenerationType
-  import javax.persistence.Id
-  import kotlin.random.Random
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RestController
+import javax.persistence.Entity
+import javax.persistence.GeneratedValue
+import javax.persistence.GenerationType
+import javax.persistence.Id
+import kotlin.random.Random
 
 
-  @Entity
-  data class Review(
-  val filmId: FilmId,
-  val reviewText: String,
-  val score: Double,
+@Entity
+data class Review(
+    val filmId: FilmId,
+    val reviewText: String,
+    val score: Double,
 
-  @Id @GeneratedValue(strategy = GenerationType.AUTO) val id: Int?,
-  )
+    @Id @GeneratedValue(strategy = GenerationType.AUTO) val id: Int?,
+)
 
-  interface ReviewRepository : JpaRepository<Review, Int> {
-  fun findAllByFilmId(filmId: Int): Review
+interface ReviewRepository : JpaRepository<Review, Int> {
+    fun findAllByFilmId(filmId: Int): Review
 }
 
-  @RestController
-  class ReviewService(val repo: ReviewRepository) {
+@RestController
+class ReviewService(val repo: ReviewRepository) {
 
-  init {
-  repo.saveAll(listOf(1, 2, 3, 4, 5).map {filmId ->
-  Review(
-  filmId,
-  listOf("Good", "Great", "Not bad", "Ok", "Terrible").random(),
-  score = Random.nextDouble(3.0, 5.0),
-  null
-  )
-})
-}
+    init {
+        repo.saveAll(listOf(1, 2, 3, 4, 5).map {filmId ->
+            Review(
+                filmId,
+                listOf("Good", "Great", "Not bad", "Ok", "Terrible").random(),
+                score = Random.nextDouble(3.0, 5.0),
+                null
+            )
+        })
+    }
 
-  @GetMapping("/reviews")
-  fun listAll(): List<Review> {
-  return repo.findAll()
-}
+    @GetMapping("/reviews")
+    fun listAll(): List<Review> {
+        return repo.findAll()
+    }
 
-  @GetMapping("/reviews/{filmId}")
+    @GetMapping("/reviews/{filmId}")
 
-  fun getReviewsForFilm(@PathVariable("filmId") filmId: FilmId): Review {
-  return repo.findAllByFilmId(filmId)
-}
-}
+    fun getReviewsForFilm(@PathVariable("filmId") filmId: FilmId): Review {
+        return repo.findAllByFilmId(filmId)
+    }
+} 
   ```
 
 
@@ -274,20 +276,20 @@ The Spring Boot app itself is pretty vanilla:
 </Callout>
 
 This consists of:
-  * A maven`pom.xml` file, declaring our vanilla Spring Boot dependencies, and a JPA database
+* A maven `pom.xml` file, declaring our vanilla Spring Boot dependencies, and a JPA database
 * `FilmListingsApp.kt` - The spring boot app class file
-*  `FilmListings.kt` - A Spring Data repository and controller for listing films
+* `FilmListings.kt` - A Spring Data repository and controller for listing films
 * `Reviews.kt` - A Spring Data repository and controller for listing reviews of our films
 
 Since these are all pretty standard, we won't go into them in more detail here
 
 ## Starting Orbital
 
-To get Orbital running, grab the docker compose from [start.orbitalhq.com](https://start.orbtialhq.com)
+To get Orbital running, grab the docker compose from [start.orbitalhq.com](https://start.orbitalhq.com)
 and start Orbital running
 
 ```bash
-wget https://start.orbtialhq.com > docker-compose.yml
+curl https://start.orbitalhq.com > docker-compose.yml
 docker-compose up -d
 ```
 
@@ -405,7 +407,7 @@ Our catalog also already has rich information about our services - including an 
 <ImageWithCaption src={OrbitalCatalog2.src} caption='The data and API catalog' />
 
 ## Going further - Exposing links between our APIs
-So far, this is great.
+So far, we have a pretty rich catalog, from just a few lines of code.
 
 However, there's important relationships here that we're not exposing.
 
