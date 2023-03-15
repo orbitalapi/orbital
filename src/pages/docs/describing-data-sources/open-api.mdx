@@ -1,8 +1,184 @@
-import UnderConstruction from "@/components/docs/UnderConstruction.tsx";
+import { ImageWithCaption } from '@/components/ImageWithCaption';
+import SelectOpenApi from './select-open-api.png';
+import OpenApiPreview from './open-api-preview.png'; import { Callout } from '@/components/Callout'; import NextLink
+  from 'next/link';
+
 export const meta = {
   title: 'Using OpenApi to describe your services',
   pageTitle: 'Connecting data sources - Using OpenApi to describe your services',
   description: 'An overview of how to connect data sources to Orbital'
 }
 
-<UnderConstruction/>
+Orbital can use OpenApi specs to understand what APIs exist, and how to call them.
+
+Orbital uses [Semantic schemas](/docs/introduction#semantic-data-schemas) to describe how data relates between systems. For OpenAPI, this
+means enriching return types and input parameters to describem semantically.
+
+To do this, we embed Taxi metadata within the OpenApi specs.
+
+## Adding Taxi annotations to OpenApi specs
+Taxi annotations use a custom `x-taxi-type` block within OpenApi specs.
+
+Example:
+
+```yaml
+x-taxi-type:
+  # The name of the type
+  name: com.acme.MyType
+  # Optional.  Indicates if the type should be created if not already present.
+  create: false
+```
+
+The `create` element is optional, and overrides the default behaviour.
+
+If `create` is set to `false`, then schemas which attempt to publish types that aren't already defined on the schema server
+are rejected as compilation errors.
+
+This is to prevent accidental typos.
+
+However, the default behaviour for `create` is different between response models and attribute types:
+
+| Entity type           | Default `create` behaviour | Impact                                                                                                             |
+|-----------------------|----------------------------|--------------------------------------------------------------------------------------------------------------------|
+| Model (Response type) | `true`                     | By default, if the model isn't already present within the schema, it's created.                                    |
+| Attribute             | `false`                    | By default, if an attribute type isn't already present within the remote schema, then the OpenApi spec is rejected |
+
+
+### Describing response types
+Response models returned from API calls can be enriched to include semantic metadata
+
+#### Assigning Taxi type names to models
+You can optionally define a custom type name for response types being published to Orbital.
+If omitted, then the type name is inferred from the rest of the schema
+
+```yaml
+  components:
+    schemas:
+      Pet:
+        # Assign a Taxi type name to the model.
+        # Optional
+>       x-taxi-type:
+>         name: petstore.Pet
+        # Everything else is standard OpenApi spec...
+        allOf:
+          - $ref: '#/components/schemas/NewPet'
+          - required:
+```
+
+#### Adding type annotations to attributes
+Enrich attributes with semantic type metadata
+
+```yaml
+
+      NewPet:
+        required:
+          - name
+        properties:
+          name:
+>           x-taxi-type:
+>             name: petstore.Name
+            type: string
+          tag:
+>           x-taxi-type:
+>             name: petstore.Tag
+            type: string
+```
+
+By default, it's expected that types referred to in `x-taxi-type` within attributes have already been defined on the schema server, as part of your
+[core taxonomy](/docs/connecting-data-sources/overview#your-core-taxonomy).
+
+However, if you are intentionally publishing new types from your OpenApi spec, then set `create` to `true`:
+
+```yaml
+      NewPet:
+        required:
+          - name
+        properties:
+          name:
+>           x-taxi-type:
+>             name: petstore.Name
+>             # petstore.Name will be created if not present
+>             create: true
+            type: string
+```
+
+
+
+### Describing service parameters
+Inputs into services can also be enriched, to annotate the semantic data required.
+
+Simply add a `x-taxi-type` annotation to each input, containing a `name` attribute with a reference to the name of the type from your [core taxonomy](/docs/connecting-data-sources/overview#your-core-taxonomy)
+
+```yaml
+  ## ... OpenApi spec trimmed...
+  paths:
+    /pets/{id}:
+      get:
+        description: Returns a user based on a single ID, if the user does not have access to the pet
+        operationId: find pet by id
+        parameters:
+          - name: id
+            in: path
+            description: ID of pet to fetch
+            required: true
+            schema:
+              type: integer
+              format: int64
+>             x-taxi-type:
+>               name: petstore.PetId  # <-- Name of type from core taxonomy
+```
+
+
+## Publishing OpenAPI specs to Orbital
+Once you have added taxi annotations to your OpenApi spec, you're ready to publish it to Orbital.
+
+<Callout type='note'>
+  <p>
+    Before you can import an OpenApi spec into Orbital, you need to ensure you have configured an editable Schema source
+    - either a
+    local <NextLink href='/docs/connecting-data-sources/connecting-a-disk-repo'>disk repository</NextLink> or
+    a <NextLink href='/docs/connecting-data-sources/connecting-a-git-repo'>git repository</NextLink>
+  </p>
+
+  <p>
+    Be sure to enable editing of the repository when adding it.
+  </p>
+
+  <p>
+    This lets Orbital store the converted OpenApi spec, with some additional metadata that it creates when importing
+  </p>
+</Callout>
+
+
+### Importing through the UI
+
+In the Orbital UI, navigate to Schemas, and click "Add New Sources".  Alternatively, navigate to [/schema-importer](http://localhost:9022/schema-importer) within your Orbital UI.
+
+Next, choose Import, and select Swagger / Open API
+
+<ImageWithCaption src={SelectOpenApi.src} />
+
+ * Either provide the OpenApi spec file directly, or enter a Url to load the spec from.
+ * Provide a default namespace.  (eg: `com.petflix.pets`).  Services from your OpenAPI spec are imported into this namespace
+ * If your OpenAPI spec doesn't define a base url (ie.,: `servers/url`), then specify a Base url.  All paths in the OpenApi spec are treated as relative to this path.
+ * Then click Create
+
+
+#### Preview your imported schema
+<ImageWithCaption src={OpenApiPreview.src} />
+
+Your imported OpenApi spec will be available for you to browse, to make sure everything looks correct.
+
+Any types that have been defined as `create: true` within the Yaml spec should appear wihtin the Types section.
+
+Services and operations should've been created for all endpoints within your OpenApi spec.
+
+At this point, you can edit types (by clicking on the blue underlined type names) to further refine your schema.
+Once you're happy, click Save, and the OpenApi spec will be imported.
+
+
+### Pushing using the Taxi cli
+
+We're working on a CLI to enable publishing OpenApi specs to Orbital from within CI/CD workflows.
+
+If you'd like to be an early adopter, ping us on [slack](https://join.slack.com/t/orbitalapi/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg)!

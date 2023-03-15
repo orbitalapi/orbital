@@ -1,0 +1,63 @@
+import { ImageWithCaption } from '@/components/ImageWithCaption';
+import UnderConstruction from '@/components/docs/UnderConstruction.tsx';
+import { Callout } from '@/components/docs/Callout';
+import NextLink from 'next/link';
+import AddSchemaSources from './add-schema-sources.png';
+export const meta = {
+  title: 'Pulling API specs from Git',
+  pageTitle: 'Connecting data sources - Connecting to Git',
+  description: 'Orbital can read schema and taxonomy definitions direct from Git'
+}
+
+<Callout type='note'>
+  Using a local disk repo is a great way to get started, However, for production, consider using a <NextLink
+  href='/docs/connecting-data-sources/connecting-a-git-repo'>Git repo</NextLink> instead.
+</Callout>
+
+When you're getting started, it's useful to store your [core taxonomy](./overview#your-core-taxonomy), existing API specs (such as [OpenApi](../describing-data-sources/open-api) or [Protobuf](../describing-data-sources/protobuf)), or [database definitions](../describing-data-sources/databases)
+in a local disk repo, making it quick and easy to get going.
+
+## Adding a file repository using the UI
+To add a new File repository via the UI either navigate to [/schema-importer](http://localhost:9022/schema-importer), or from within the UI
+click on Schema's on the left navigation bar, then "Add new sources" in the top bar.
+
+<ImageWithCaption src={AddSchemaSources.src} addLightBackground />
+
+### Completing the new File repository form
+Click on the Local Disk tabl, and provide the details of where your local repository is.
+
+If you haven't created one yet, just provide an empty directory, and a repository will be created for you.
+
+## Adding a file repository through config
+The schema repositories that Orbital is connected to can be configured through a [HOCON file](/docs/deploying/configuring-orbital), which by default is called `schema-server.conf`
+
+```hocon
+file {
+    projects=[
+        {
+            # Optional (defaults to false).  Indciates if the project can receive edits through the UI
+            isEditable=true
+            # Path to the folder containing a taxi.conf file.
+            path="/opt/var/orbital/schemas/taxi"
+        }
+    ]
+
+    # Optional - WATCH or POLL
+    changeDetectionMethod=WATCH
+
+    # Optional - Should the version of the project be incremented when the local disk changes?
+    # False is a safe setting here
+    incrementVersionOnChange=false
+
+    # Optional.  If polling, define the frequency.
+    pollFrequency=PT5S
+
+     # Optional.  Defines the frequency that updates trigger recompilation.
+     # Useful if you're locally editing a schema, and don't want to trigger
+     # lots of recompilation
+    recompilationFrequencyMillis=PT3S
+}
+
+```
+
+<UnderConstruction />
