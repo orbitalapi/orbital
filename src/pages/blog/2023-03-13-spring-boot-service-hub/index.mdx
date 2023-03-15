@@ -1,0 +1,494 @@
+import { martyPitt } from '@/authors';
+import ServicesDiagramFinal from './services-diagram-final.png';
+import OperationExplorerFinal from './operation-explorer-final.png';
+import ServicesExplorerFinal from './service-explorer-final.png';
+import { Callout } from '@/components/docs/Callout';
+
+import { ImageWithCaption } from '@/components/ImageWithCaption';
+
+import { SnippetGroup } from '@/components/SnippetGroup';
+import OrbitalCatalog1 from './orbital-catalog-1.gif';
+import OrbitalCatalog2 from './orbital-catalog-2.gif';
+import MissingRelationship from './missing-relationship.png';
+import UpdatedServicesDiagram from './updated-services-diagram.png';
+import Changelog from './changelog.png';
+
+export const meta = {
+  title: 'Building an API Hub with Spring Boot, Kotlin and Orbital',
+  description: `Spring boot is awesome for building Microservices.  Orbital is awesome for discovering and connecting them.  A match made in South west London`,
+  date: '2023-03-13T08:00:00.000Z',
+  authors: [martyPitt],
+  hidden: false
+}
+
+Spring Boot is an awesome framework for building Microservices, and Orbital is 
+an amazing platform for connecting those microservices together.
+
+Orbital works by reading the specs of microservices, (eg., OpenApi, Raml, Protobuf or [Taxi](https://taxilang.org))
+and building a large mesh of APIs.  
+
+All this schema metadata is browsable in Orbital's UI, and can be
+an awesome hub for developers to discover and document their APIs - even without
+using Orbital's integration capabilities.
+
+In this blog post, we're going to explore creating an awesome self-updating developer
+hub using Spring Boot, Kotlin, and Orbital's API catalog.  
+
+Our microservices will publish their APIs directly to Orbital on startup, so that Orbital is always up-to-date.
+There's lots of [different ways](/docs/connecting-data-sources/overview) to publish API specs to Orbital - but in this post we'll focus on 
+a code-first workflow.
+
+## What we'll get
+At the end of this post, we'll end up with a local instance of Orbital, with a
+couple of Spring Boot microservices that self-publish their API's.
+
+We'll get beautiful diagrams like this, which show the running services,
+as well as how the data between them is related:
+
+<ImageWithCaption src={ServicesDiagramFinal.src}
+                  caption="Orbital's service diagram - showing two microservices, their APIs, and how they relate" />
+
+In addition, Orbital gives us a rich data and API catalog, where we can search and play with APIs:
+
+<ImageWithCaption src={ServicesExplorerFinal.src}
+                  caption='Service explorer lets developers see the endpoints and operations exposed by an API' />
+<ImageWithCaption src={OperationExplorerFinal.src}
+                  caption='The operation explorer lets us interact and play around with individual APIs' />
+
+## The Spring Boot app
+We'll start out with a vanilla Spring Boot app:
+
+<SnippetGroup>
+
+
+  ```kotlin FilmListingsApp.kt
+  package com.petflix.voyager.listings
+
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.SpringApplication
+import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.info.GitProperties
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.stereotype.Component
+
+@SpringBootApplication
+open class FilmListingsApp {
+
+    companion object {
+        val logger = LoggerFactory.getLogger(this::class.java)
+
+        @JvmStatic
+        fun main(args: Array<String>) {
+            SpringApplication.run(FilmListingsApp::class.java, *args)
+        }
+    }
+}
+
+  ```
+
+  ```kotlin FilmListings.kt
+  package com.petflix.voyager.listings
+
+import org.springframework.data.crossstore.ChangeSetPersister
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.repository.findByIdOrNull
+import org.springframework.stereotype.Component
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RestController
+import javax.persistence.Entity
+import javax.persistence.Id
+
+@Entity
+data class Film(
+    @Id
+    val filmId: FilmId,
+    val title: String
+)
+
+interface FilmRepository : JpaRepository<Film, Int>
+
+/**
+ * A simple component to populate our database on startup
+ */
+@Component
+class FilmDbSeeder(val repo: FilmRepository) {
+    init {
+        val films = listOf(
+            Film(1, "Gladiator"),
+            Film(2, "Star Wars IV - A New Hope"),
+            Film(3, "Star Wars V - Empire Strikes Back"),
+            Film(4, "Star Wars VI - Return of the Jedi"),
+        )
+        repo.saveAll(films)
+    }
+}
+
+@RestController
+class ListingsService(val repository: FilmRepository) {
+
+    @GetMapping("/films")
+    fun listAllFilms(): List<Film> = repository.findAll()
+
+    @GetMapping("/films/{id}")
+    fun getFilm(@PathVariable("id") filmId: FilmId): Film {
+        return repository.findByIdOrNull(filmId) ?: throw ChangeSetPersister.NotFoundException()
+    }
+}
+
+  ```
+
+  ```kotlin Reviews.kt
+  package com.petflix.voyager.listings
+
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RestController
+import javax.persistence.Entity
+import javax.persistence.GeneratedValue
+import javax.persistence.GenerationType
+import javax.persistence.Id
+import kotlin.random.Random
+
+
+@Entity
+data class Review(
+    val filmId: FilmId,
+    val reviewText: String,
+    val score: Double,
+
+    @Id @GeneratedValue(strategy = GenerationType.AUTO) val id: Int?,
+)
+
+interface ReviewRepository : JpaRepository<Review, Int> {
+    fun findAllByFilmId(filmId: Int): Review
+}
+
+@RestController
+class ReviewService(val repo: ReviewRepository) {
+
+    init {
+        repo.saveAll(listOf(1, 2, 3, 4, 5).map {filmId ->
+            Review(
+                filmId,
+                listOf("Good", "Great", "Not bad", "Ok", "Terrible").random(),
+                score = Random.nextDouble(3.0, 5.0),
+                null
+            )
+        })
+    }
+
+    @GetMapping("/reviews")
+    fun listAll(): List<Review> {
+        return repo.findAll()
+    }
+
+    @GetMapping("/reviews/{filmId}")
+
+    fun getReviewsForFilm(@PathVariable("filmId") filmId: FilmId): Review {
+        return repo.findAllByFilmId(filmId)
+    }
+} 
+  ```
+
+
+  ```xml pom.xml
+  <?xml version="1.0" encoding="UTF-8"?>
+  <project xmlns="http://maven.apache.org/POM/4.0.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+      <groupId>com.orbitalhq.demos</groupId>
+      <artifactId>spring-boot-voyager-diagram</artifactId>
+      <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>film-listings-voyager</artifactId>
+    <properties>
+      <kotlin.version>1.7.20</kotlin.version>
+    </properties>
+
+    <dependencies>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-jpa</artifactId>
+      </dependency>
+      <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+      </dependency>
+    </dependencies>
+    <build>
+      <plugins>
+        <plugin>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-maven-plugin</artifactId>
+        </plugin>
+        <plugin>
+          <groupId>org.jetbrains.kotlin</groupId>
+          <artifactId>kotlin-maven-plugin</artifactId>
+          <configuration>
+            <compilerPlugins>
+              <plugin>jpa</plugin>
+              <plugin>spring</plugin>
+            </compilerPlugins>
+            <args>
+              <arg>-Xjsr305=strict</arg>
+            </args>
+          </configuration>
+          <dependencies>
+            <dependency>
+              <groupId>org.jetbrains.kotlin</groupId>
+              <artifactId>kotlin-maven-noarg</artifactId>
+              <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>org.jetbrains.kotlin</groupId>
+              <artifactId>kotlin-maven-allopen</artifactId>
+              <version>${kotlin.version}</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+      </plugins>
+    </build>
+
+  </project>
+  ```
+</SnippetGroup>
+
+<Callout type='note' title='Heads up...'>
+  <p>To keep this example simple, we're deploying a single Spring boot
+    application with multiple API endpoints, each simulating a different
+    microservice.</p>
+
+  <p>
+    In practice, each of these controllers would be seperate microservices and Spring Boot applications.
+    We'll leave that as an exercise for the reader. You got this.
+  </p>
+</Callout>
+
+This consists of:
+* A maven `pom.xml` file, declaring our vanilla Spring Boot dependencies, and a JPA database
+* `FilmListingsApp.kt` - The spring boot app class file
+* `FilmListings.kt` - A Spring Data repository and controller for listing films
+* `Reviews.kt` - A Spring Data repository and controller for listing reviews of our films
+
+Since these are all pretty standard, we won't go into them in more detail here
+
+## Starting Orbital
+
+To get Orbital running, grab the docker compose from [start.orbitalhq.com](https://start.orbitalhq.com)
+and start Orbital running
+
+```bash
+curl https://start.orbitalhq.com > docker-compose.yml
+docker-compose up -d
+```
+
+If you head over to [http://localhost:9022](https://localhost:9022) you should see Orbital running, and
+waiting for connections
+
+  ## Publishing our schemas
+Next up, let's get our Spring Boot applications publishing their schemas.
+
+When the apps start, they'll create a schema (using Taxi), and publish them up.
+
+Note - you don't have to use Taxi here - if you already have an OpenAPI spec
+you can use that, by following the [docs](/docs/describing - data - sources / open - api).
+
+First, we'll add some dependencies to our Maven:
+
+```xml
+  <properties>
+     <taxi.version>1.36.2</taxi.version>
+     <orbital.version>0.22.0</taxi.version>
+  </properties>
+ <dependencies>
+    <!-- others omitted -->
+
+      <!-- A publisher, which will push our service schema
+      to Orbital on startup -->
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-rsocket-publisher</artifactId>
+         <version>${orbital.version}</version>
+      </dependency>
+
+      <!-- The taxi codegen, which generates schemas for a spring boot app -->
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>java-spring-taxi</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+   </dependencies>
+
+   <!-- Also, add the Orbital maven repository -->
+  <repositories>
+      <repository>
+          <id>orbital</id>
+          <url>https://repo.orbitalhq.com/release</url>
+      </repository>
+  <repositories>
+```
+
+Now, add a Kotlin class with the following code:
+
+```kotlin
+import io.vyne.PackageMetadata
+import io.vyne.schema.publisher.SchemaPublisherService
+import io.vyne.schema.publisher.rsocket.RSocketSchemaPublisherTransport
+import io.vyne.schema.rsocket.TcpAddress
+import lang.taxi.generators.java.spring.SpringTaxiGenerator
+/**
+ * Create a task, which runs on startup, generating & publishing our schema
+ */
+@Component
+class RegisterSchemaTask(
+   @Value("\${spring.application.name}") appName: String,
+   @Value("\${server.port}") private val serverPort: String
+) {
+   init {
+      /**
+       * Declare a publisher, which will connect to the local running Orbital,
+       * and publish the generated schema
+       */
+      val publisher = SchemaPublisherService(
+         appName,
+         RSocketSchemaPublisherTransport(
+            // Orbital accepts schema submissions over
+            // RSocket using port 7655
+            TcpAddress("localhost", 7655)
+         )
+      )
+      publisher.publish(
+         // Package metadata identifies this project.
+         // Kinda like maven poms, or npm package.json
+         // This can be whatever you want, but make it unique to this service
+         PackageMetadata.from(
+            organisation = "io.petflix.demos",
+            name = "films-listings"
+         ),
+         // The generator creates Taxi schemas.
+         // The base url should be the url of this application.
+         // All published URLs are relative to this url
+         SpringTaxiGenerator.forBaseUrl("http://localhost:${serverPort}")
+            .forPackage(FilmListingsApp::class.java)
+            .generate()
+      ).subscribe()
+   }
+}
+
+```
+
+
+That's it!  Now, restart your application.
+
+## Exploring our catalog
+Inside Orbital, Click on the Catalog tab, and then the Services Diagram tab.
+
+You should now see a diagram, showing our two API's.
+
+Clicking on any of the endpoints will also add the response schema to the diagram.
+
+
+<ImageWithCaption src={OrbitalCatalog1.src} caption='Our services diagram' />
+
+Our catalog also already has rich information about our services - including an API browser,
+  and data catalog.
+
+<ImageWithCaption src={OrbitalCatalog2.src} caption='The data and API catalog' />
+
+## Going further - Exposing links between our APIs
+So far, we have a pretty rich catalog, from just a few lines of code.
+
+However, there's important relationships here that we're not exposing.
+
+The Id from the Films can be passed to my Review service to lookup a review.This is key information for developers who are trying to navigate between services to
+Get Stuff Done.
+
+<ImageWithCaption src={MissingRelationship.src}
+                  caption="There's a missing relationship between the Film model and the ReviewService" />
+
+However, we're in luck.
+
+The schema that was generated is actually built using [Taxi](https://taxilang.org) - an [open source](https://gitlab.com/taxi-lang/taxi-lang) schema language that focuses
+on describing the semantic relationship of data between services.
+
+Taxi has amazing support for Kotlin, and lets us use Kotlin's `typealias` to express that the data
+is related.
+
+First, let's define a type alias:
+
+```kotlin
+import lang.taxi.annotations.DataType
+
+// The DataType annotation from 
+@DataType
+typealias FilmId = Int
+```
+
+Then update our code to use this.
+
+There's a few places we can change:
+
+```diff-kotlin
+// Update the response object our API returns
+@Entity
+data class Film(
+   @Id
+-   val filmId: Int,
++   val filmId: FilmId,
+   val title: String
+)
+```
+
+```diff-kotlin
+// Update the input into our Review service
+fun getReviewsForFilm(
+-  @PathVariable("filmId") filmId: Int
++  @PathVariable("filmId") filmId: FilmId
+  ): Review {
+  return repo.findAllByFilmId(filmId)
+}
+```
+
+Now, if restart the Spring Boot app, our updated schema will get published directly to Orbital.
+
+Refreshing the services diagram now shows an updated diagram with the relationship mapped:
+
+<ImageWithCaption src={UpdatedServicesDiagram.src}
+                  caption='Using type aliases, the relationship between services can be mapped' />
+
+## Changelog
+
+We just pushed a change to our schema.While this one was fairly harmless(changing an input type from`Int` to`typealias FilmId = Int`),
+it's useful to know when changes occur.
+
+Orbital has a full changelog, every time a change is pushed.
+
+Navigate over to the Schemas tab, and see the changelog entry
+
+<ImageWithCaption src={Changelog.src} caption="Orbital's changelog shows changes to APIs as they're published" />
+
+
+## Summary
+That's a lot of catalog, for only a few lines of change.
+
+To recap - the only change we needed to make to our Spring Boot application
+was adding our schema publisher - about a dozen lines of simple code.
+
+Of course, we can go much further-- Orbital's real power is using the
+data in these schemas to automate integration between services.Check out
+our [Kotlin SDK](/blog/2023 - 03 - 06 - hello - kotlin - sdk) for more information!
+
+As always, if you have any questions, come chat to us on [Slack](https://join.slack.com/t/orbitalapi/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg),
+or reach out on Twitter(either [me](https://twitter.com/marty_pitt), or our [team](https://twitter.com/orbitalapi))
+
