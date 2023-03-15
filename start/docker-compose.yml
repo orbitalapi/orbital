@@ -1,4 +1,4 @@
-## This file stands up a Vyne instance, Schema server and Eureka.
+## This file stands up an Orbital instance and Schema server
 ##
 ##
 ## It's configured to use RSocket for distribution
@@ -11,44 +11,34 @@
 ##
 ## The following variables can be set in a .env file:
 ##
-## VYNE_VERSION (default: latest-snapshot)
+## ORBITAL_VERSION (default: latest)
 ## SCHEMA_PATH (default: current directory .)
 
 version: "3.3"
 services:
    vyne:
-      image: vyneco/vyne:${VYNE_VERSION:-latest}
+      image: orbitalhq/orbital:${ORBITAL_VERSION:-latest}
       environment:
          OPTIONS: >-
-            --vyne.newSchemaSubmissionEnabled=true
-            --eureka.uri=http://eureka
-            --eureka.instance.preferIpAddress=true
-            --server.port=80
-            --management.endpoints.web.exposure.include=elastic,prometheus,metrics,info,health,logfile,loggers
             --vyne.analytics.mode=InProcess
             --vyne.analytics.persistRemoteCallResponses=true
             --vyne.analytics.persistResults=true
-            --vyne.schema.publicationMethod=RSOCKET
-            --vyne.schema.consumptionMethod=RSOCKET
-            --vyne.schema.management.KeepAliveStrategyId=RSocket
       expose:
-         - 80
+         - 9022
       ports:
-         - "9022:80"
+         - "9022:9022"
       volumes:
-         - ~/.vyne/license:/opt/var/vyne/license
-         - ./vyne/config:/opt/service/config
+         - ~/.orbital/license:/opt/var/vyne/license
+         - ./orbital/config:/opt/service/config
       deploy:
          resources:
             limits:
                memory: 600mb
 
    schema-server:
-      image: vyneco/schema-server:${VYNE_VERSION:-latest}
-      depends_on:
-         - eureka
+      image: orbitalhq/schema-server:${ORBITAL_VERSION:-latest}
       volumes:
-         - ${SCHEMA_PATH:-.}:/var/lib/vyne/schema-server
+         - ${SCHEMA_PATH:-.}:/var/lib/orbital/schema-server
       environment:
          OPTIONS: >-
             --server.port=80
@@ -62,20 +52,8 @@ services:
                memory: 600mb
 
       expose:
-         - 80
-
-   eureka:
-      image: vyneco/eureka:${VYNE_VERSION:-latest}
-      environment:
-         OPTIONS: >-
-            --server.port=80
-            --spring.main.banner-mode=off
-            --eureka.instance.preferIpAddress=true
-      expose:
-         - 80
+         - 7655
+         - 9305
       ports:
-         - "8761:80"
-      deploy:
-         resources:
-            limits:
-               memory: 500mb
+         - "7655:7655"
+         - "9305:9305"
