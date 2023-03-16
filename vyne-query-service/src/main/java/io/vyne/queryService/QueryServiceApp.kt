@@ -10,6 +10,7 @@ import io.vyne.cockpit.core.lsp.LanguageServerConfig
 import io.vyne.cockpit.core.pipelines.PipelineConfig
 import io.vyne.cockpit.core.schemas.BuiltInTypesSubmitter
 import io.vyne.cockpit.core.security.VyneUserConfig
+import io.vyne.cockpit.core.telemetry.TelemetryConfig
 import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.history.db.InProcessHistoryConfiguration
 import io.vyne.history.rest.QueryHistoryRestConfig
@@ -39,6 +40,7 @@ import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.auth.HttpAuthConfig
 import io.vyne.spring.projection.ApplicationContextProvider
+import io.vyne.spring.utils.versionOrDev
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.Banner
@@ -48,6 +50,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
+import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -80,7 +83,8 @@ import java.util.*
    HttpAuthConfig::class,
    ApplicationContextProvider::class,
    LicenseConfig::class,
-   DiscoveryClientConfig::class
+   DiscoveryClientConfig::class,
+   TelemetryConfig::class
 )
 class QueryServiceApp {
 
@@ -118,11 +122,17 @@ class QueryServiceApp {
    @Bean
    fun webClientFactory(
       loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction,
-      metricsCustomizer: MetricsWebClientCustomizer
+      metricsCustomizer: MetricsWebClientCustomizer,
+      discoveryClient: DiscoveryClient
    ): WebClient.Builder {
+
+
       val builder = WebClient.builder()
          .filter(
-            ConditionallyLoadBalancedExchangeFilterFunction.permitLocalhost(loadBalancingFilterFunction)
+            ConditionallyLoadBalancedExchangeFilterFunction.onlyKnownHosts(
+               discoveryClient.services,
+               loadBalancingFilterFunction
+            )
          )
       metricsCustomizer.customize(builder)
       return builder
@@ -130,15 +140,7 @@ class QueryServiceApp {
 
    @Autowired
    fun logInfo(@Autowired(required = false) buildInfo: BuildProperties? = null) {
-      val baseVersion = buildInfo?.get("baseVersion")
-      val buildNumber = buildInfo?.get("buildNumber")
-      val version = if (!baseVersion.isNullOrEmpty() && buildNumber != "0" && buildInfo.version.contains("SNAPSHOT")) {
-         "$baseVersion-BETA-$buildNumber"
-      } else {
-         buildInfo?.version ?: "Dev version"
-      }
-
-      log().info("Vyne query server version => $version")
+      log().info("Orbital Query Server v ${buildInfo.versionOrDev()}")
    }
 }
 

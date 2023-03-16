@@ -90,6 +90,7 @@ private val logger = KotlinLogging.logger {}
       "vyne.schema.publicationMethod=LOCAL",
       "vyne.search.directory=./search/\${random.int}",
       "vyne.analytics.persistResults=true",
+      "vyne.telemetry.enabled=false",
       "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"]
 )
 class QueryHistoryPersistenceTest : BaseQueryServiceTest() {

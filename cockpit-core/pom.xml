@@ -6,7 +6,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.22.0-SNAPSHOT</version>
+      <version>0.23.0-SNAPSHOT</version>
    </parent>
 
    <artifactId>cockpit-core</artifactId>
@@ -25,6 +25,20 @@
    </properties>
 
    <dependencies>
+      <dependency>
+         <groupId>com.github.ben-manes.caffeine</groupId>
+         <artifactId>caffeine</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>spring-utils</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>analytics</artifactId>
+         <version>${project.version}</version>
+      </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-core-types</artifactId>

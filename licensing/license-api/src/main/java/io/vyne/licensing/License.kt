@@ -6,7 +6,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.Locale
+import java.util.*
 
 data class License(
    val licensee: String,
@@ -25,12 +25,12 @@ data class License(
    val signature: String? = null
 ) {
    companion object {
-      fun unlicensed(expiresOn: Instant): License {
+      fun unlicensed(expiresOn: Instant, licensee: String): License {
          return License(
-            "Unlicensed",
+            licensee,
             expiresOn,
             Instant.now(),
-            LicensedEdition.ENTERPRISE,
+            LicensedEdition.STARTER,
             true
          )
       }
