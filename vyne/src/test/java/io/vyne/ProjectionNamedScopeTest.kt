@@ -1,9 +1,11 @@
 package io.vyne
 
 import com.winterbe.expekt.should
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.vyne.models.TypedInstance
 import io.vyne.models.json.parseJson
-import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.runBlocking
+import org.junit.Ignore
 import org.junit.Test
 
 class ProjectionNamedScopeTest {
@@ -104,6 +106,53 @@ class ProjectionNamedScopeTest {
             )
          )
       )
+   }
+
+   @Test
+   @Ignore("Doesn't work - ORB-75")
+   fun `can use a named scope to refine a service call`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         model Film {
+            id : FilmId inherits Int
+            title : Title inherits String
+         }
+         model Review {
+            id : ReviewId inherits Int
+            filmId : FilmId
+         }
+         service MyService {
+            operation findFilms():Film[]
+            // Should not be called
+            operation findReviews():Review[]
+            operation findFilmReview(id: FilmId):Review[](FilmId == id)
+         }
+      """.trimIndent()
+      )
+      stub.addResponse(
+         "findFilms", vyne.parseJson(
+            "Film[]", """[
+         | { "id" : 1, "title" : "Foo" },
+         | { "id" : 2, "title" : "Bar" }
+         |]
+      """.trimMargin()
+         )
+      )
+      stub.addResponse("findFilmReview") { request, params ->
+         vyne.parseJson(
+            "Review[]",
+            """[ { "id" : 1, "filmId": ${params.get(0).second.value} } ]"""
+         ) as List<TypedInstance>
+      }
+      val response = vyne.query(
+         """find { Film[] } as (src:Film) -> {
+         | film : Film
+         | review : Review[]( FilmId == src.id )
+         |}[]
+      """.trimMargin()
+      ).rawObjects()
+      response.shouldNotBeNull()
+      val invocations = stub.invocations["findFilmReview"]
    }
 
 }
