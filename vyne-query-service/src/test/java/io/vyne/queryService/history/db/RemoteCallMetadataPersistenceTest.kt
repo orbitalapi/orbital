@@ -48,6 +48,7 @@ import java.util.concurrent.ConcurrentHashMap
       "vyne.search.directory=./search/\${random.int}",
       "vyne.analytics.persistRemoteCallMetadata=true",
       "vyne.analytics.persistRemoteCallResponses=false",
+      "vyne.telemetry.enabled=false",
       "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"]
 )
 class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {

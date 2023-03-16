@@ -67,6 +67,7 @@
       <junit.jupiter.version>5.9.2</junit.jupiter.version>
       <junit.vintage.version>5.9.2</junit.vintage.version>
 
+
    </properties>
 
    <modules>
@@ -112,7 +113,9 @@
       <module>history-service</module>
       <module>cockpit-core</module>
       <module>query-node-api</module>
-       <module>monitoring-common</module>
+      <module>monitoring-common</module>
+      <module>analytics</module>
+      <module>spring-utils</module>
    </modules>
 
    <scm>
