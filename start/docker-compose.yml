@@ -16,7 +16,7 @@
 
 version: "3.3"
 services:
-   vyne:
+   orbital:
       image: orbitalhq/orbital:${ORBITAL_VERSION:-latest}
       environment:
          OPTIONS: >-

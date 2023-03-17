@@ -5,7 +5,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.22.0</version>
+      <version>0.23.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -20,6 +20,14 @@
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
       </dependency>
+      <!-- Object pooling, as NumberFormat is both expensive to create, and
+      not thread safe -->
+      <dependency>
+         <groupId>com.github.chrisvest</groupId>
+         <artifactId>stormpot</artifactId>
+         <version>3.1</version>
+      </dependency>
+
 
       <!-- Adding this being lazy - we need access to the ConversionService
    in TypedValue, that's the only reason.  Have added it in the weakest way

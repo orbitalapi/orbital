@@ -60,9 +60,9 @@ profile
       "vyne.analytics.persistResults=true",
       "vyne.caskService.url=http://localhost:\${wiremock.server.port}",
       "vyne.pipelinesJetRunner.url=http://localhost:\${wiremock.server.port}",
-   ""
-
-   ])
+      "vyne.telemetry.enabled=false",
+   ]
+)
 class VyneQuerySecurityIntegrationTest {
 
    private var rsaJsonWebKey: RsaJsonWebKey? = null
@@ -80,7 +80,7 @@ class VyneQuerySecurityIntegrationTest {
    /**
     * see "authorisation/user-role-mappings.conf" in resources.
     */
-   private  val adminUserName = "adminUser"
+   private val adminUserName = "adminUser"
    private val platformManagerUser = "platformManager"
    private val queryRunnerUser = "queryExecutor"
    private val viewerUserName = "viewer"
@@ -694,7 +694,12 @@ class VyneQuerySecurityIntegrationTest {
 
    private fun getQueryResult(headers: HttpHeaders): ResponseEntity<String> {
       val entity = HttpEntity<Unit>(headers)
-      return restTemplate.exchange("/api/query/history/summary/clientId/foo", HttpMethod.GET, entity, String::class.java)
+      return restTemplate.exchange(
+         "/api/query/history/summary/clientId/foo",
+         HttpMethod.GET,
+         entity,
+         String::class.java
+      )
    }
 
    private fun getCasks(headers: HttpHeaders): ResponseEntity<String> {
@@ -734,10 +739,13 @@ class VyneQuerySecurityIntegrationTest {
 
    private fun createJdbcConnection(headers: HttpHeaders): ResponseEntity<String> {
       val entity = HttpEntity(
-         DefaultJdbcConnectionConfiguration("foo", JdbcDriver.H2, mapOf(
-            Pair("catalog", "dsda"), Pair("username", "foo"), Pair("password", "bar")
-         )),
-         headers)
+         DefaultJdbcConnectionConfiguration(
+            "foo", JdbcDriver.H2, mapOf(
+               Pair("catalog", "dsda"), Pair("username", "foo"), Pair("password", "bar")
+            )
+         ),
+         headers
+      )
       return restTemplate.exchange(JWSBuilder.createJdbcConnection, HttpMethod.POST, entity, String::class.java)
    }
 

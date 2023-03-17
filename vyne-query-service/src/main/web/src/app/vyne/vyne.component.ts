@@ -123,7 +123,7 @@ export class VyneComponent implements OnInit {
       .getConfig()
       .subscribe(config => {
         if (!config.licenseStatus.isLicensed) {
-          this.setUnlicensedAlert(config.licenseStatus.expiresOn);
+          // this.setUnlicensedAlert(config.licenseStatus.expiresOn);
         }
         appInfoService
           .getAppInfo(config.actuatorPath)

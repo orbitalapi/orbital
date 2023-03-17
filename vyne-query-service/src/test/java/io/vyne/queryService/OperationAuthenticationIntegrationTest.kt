@@ -44,6 +44,7 @@ import org.springframework.test.context.junit4.SpringRunner
       "vyne.schema.publisher.method=Local",
       "vyne.schema.consumer.method=Local",
       "spring.main.allow-bean-definition-overriding=true",
+      "vyne.telemetry.enabled=false",
       "vyne.search.directory=./search/\${random.int}"
    ]
 )

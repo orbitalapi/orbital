@@ -6,33 +6,21 @@ import java.security.PublicKey
 import java.security.spec.X509EncodedKeySpec
 import java.time.Clock
 import java.time.Duration
-import java.util.Base64
+import java.util.*
 
 class LicenseValidator(
    private val publicKey: PublicKey,
-   private val fallbackLicenseDuration: Duration = Duration.ofHours(4L),
+   private val fallbackLicenseDuration: Duration = defaultFallbackLicenseDuration,
    private val clock: Clock = Clock.systemUTC()
 ) {
    private val logger = KotlinLogging.logger {}
 
-   /**
-    * Returns either the license provided, or a fallback
-    * license, which expires after fallbackLicenseDuration.
-    *
-    * This allows users to run the system unlicensed for a short period of time.
-    */
-   fun validOrFallback(license: License): License {
-      return if (isValidLicense(license)) {
-         logger.info { "License obtained successfully: ${license.unsigned()}" }
-         license
-      } else {
-         val fallback = fallbackLicense()
-         logger.warn { "Issuing fallback license: $fallback" }
-         fallback
-      }
-   }
 
-   fun fallbackLicense() = License.unlicensed(clock.instant().plus(fallbackLicenseDuration))
+   /**
+    * Returns a fallback license, which allows the platform to run
+    * if no license was found
+    */
+   fun fallbackLicense(licensee: String) = License.unlicensed(clock.instant().plus(fallbackLicenseDuration), licensee)
 
    fun isValidLicense(license: License): Boolean {
       return when {
@@ -69,9 +57,10 @@ class LicenseValidator(
    }
 
    companion object {
+      val defaultFallbackLicenseDuration = Duration.ofDays(999)
       fun forPublicKeyAtPath(
          path: Path,
-         fallbackLicenseDuration: Duration = Duration.ofHours(4L),
+         fallbackLicenseDuration: Duration = defaultFallbackLicenseDuration,
          clock: Clock = Clock.systemUTC()
       ): LicenseValidator {
          val bytes = path.toFile().readBytes()
@@ -79,7 +68,8 @@ class LicenseValidator(
       }
 
       fun forPublicKey(
-         bytes: ByteArray, fallbackLicenseDuration: Duration = Duration.ofHours(1L),
+         bytes: ByteArray,
+         fallbackLicenseDuration: Duration = defaultFallbackLicenseDuration,
          clock: Clock = Clock.systemUTC()
       ): LicenseValidator {
          val publicKey = Signing.keyFactory
