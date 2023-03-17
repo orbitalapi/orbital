@@ -6,7 +6,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.23.0</version>
+      <version>0.24.0-SNAPSHOT</version>
    </parent>
 
    <artifactId>history-persistence</artifactId>

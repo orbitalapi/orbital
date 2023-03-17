@@ -6,7 +6,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.23.0</version>
+      <version>0.24.0-SNAPSHOT</version>
    </parent>
 
    <artifactId>query-node-core</artifactId>
@@ -85,7 +85,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-spring-http</artifactId>
-         <version>0.23.0</version>
+         <version>0.24.0-SNAPSHOT</version>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
