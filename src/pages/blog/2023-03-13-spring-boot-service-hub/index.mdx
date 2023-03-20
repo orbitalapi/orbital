@@ -9,6 +9,7 @@ import { ImageWithCaption } from '@/components/ImageWithCaption';
 import { SnippetGroup } from '@/components/SnippetGroup';
 import OrbitalCatalog1 from './orbital-catalog-1.gif';
 import OrbitalCatalog2 from './orbital-catalog-2.gif';
+import OrbitalCatalogFinal from './orbital-catalog-4.gif';
 import MissingRelationship from './missing-relationship.png';
 import UpdatedServicesDiagram from './updated-services-diagram.png';
 import Changelog from './changelog.png';
@@ -33,6 +34,8 @@ using Orbital's integration capabilities.
 
 In this blog post, we're going to explore creating an awesome self-updating developer
 hub using Spring Boot, Kotlin, and Orbital's API catalog.  
+
+<ImageWithCaption src={OrbitalCatalogFinal.src} caption='A GIF showing the working catalog, diagrams and API explorer' />
 
 Our microservices will publish their APIs directly to Orbital on startup, so that Orbital is always up-to-date.
 There's lots of [different ways](/docs/connecting-data-sources/overview) to publish API specs to Orbital - but in this post we'll focus on 
