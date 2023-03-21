@@ -5,3 +5,8 @@ export const martyPitt = {
   twitter: 'marty_pitt',
   avatar: martyPittAvatar.src,
 }
+
+export const michaelStone = {
+  name: 'Michael Stone',
+  twitter: 'michaelstoneldn'
+}
