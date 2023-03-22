@@ -28,8 +28,8 @@ services:
       ports:
          - "9022:9022"
       volumes:
-         - ~/.orbital/license:/opt/var/vyne/license
-         - ./orbital/config:/opt/service/config
+         - ~/.orbital/license:/opt/var/orbital/license
+         - ~/.orbital/config:/opt/service/config
       deploy:
          resources:
             limits:
