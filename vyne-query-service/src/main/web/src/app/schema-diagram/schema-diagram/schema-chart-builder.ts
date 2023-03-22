@@ -11,7 +11,7 @@ import {
   splitOperationQualifiedName,
   Type
 } from '../../services/schema';
-import { AppendLinksHandler, NodeType } from './schema-flow.react';
+import { AppendLinksHandler, NodeType, SchemaMemberClickHandler } from './schema-flow.react';
 import { Edge, Node, Position, XYPosition } from 'reactflow';
 import { CSSProperties } from 'react';
 
@@ -356,7 +356,7 @@ export function getNodeId(schemaMemberType: SchemaMemberType, name: QualifiedNam
   return `${schemaMemberType.toLowerCase()}-${name.fullyQualifiedName}`;
 }
 
-export function buildSchemaNode(schema: Schema, member: SchemaMember, operations: ServiceMember[], appendLinksHandler: AppendLinksHandler, position: XYPosition = {
+export function buildSchemaNode(schema: Schema, member: SchemaMember, operations: ServiceMember[], appendLinksHandler: AppendLinksHandler, clickHandler: SchemaMemberClickHandler, position: XYPosition = {
   x: 100,
   y: 100
 }): Node<MemberWithLinks> {
@@ -369,7 +369,8 @@ export function buildSchemaNode(schema: Schema, member: SchemaMember, operations
     data: {
       member,
       links,
-      appendNodesHandler: appendLinksHandler
+      appendNodesHandler: appendLinksHandler,
+      clickHandler: clickHandler
     },
     type: getNodeKind(member),
     position
@@ -382,6 +383,7 @@ export interface MemberWithLinks {
   links: Links;
 
   appendNodesHandler: AppendLinksHandler;
+  clickHandler: SchemaMemberClickHandler;
 }
 
 

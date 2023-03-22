@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
-import { Schema } from '../../services/schema';
-import { RequiredMembersProps, SchemaFlowWrapper } from './schema-flow.react';
+import { Schema, SchemaMember, SchemaMemberType, splitOperationQualifiedName } from '../../services/schema';
+import { RequiredMembersProps, SchemaFlowWrapper, SchemaMemberClickProps } from './schema-flow.react';
 import { ResizedEvent } from 'angular-resize-event/lib/resized.event';
 import { isNullOrUndefined } from 'util';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { arraysEqual } from 'src/app/utils/arrays';
 import { LinkKind } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-schema-diagram',
@@ -22,6 +23,9 @@ import { LinkKind } from 'src/app/schema-diagram/schema-diagram/schema-chart-bui
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SchemaDiagramComponent {
+
+  constructor(private router: Router) {
+  }
 
   private _visibleLinkKinds: LinkKind[] = ['entity'];
   @Input()
@@ -134,6 +138,30 @@ export class SchemaDiagramComponent {
       return;
     }
 
+    const clickHandler = new Subject<SchemaMemberClickProps>();
+    clickHandler.subscribe((clickedMember:SchemaMemberClickProps) => {
+      const navigate = (schemaMemberType:SchemaMemberType, name: string) => {
+        switch (schemaMemberType) {
+          case 'TYPE':
+            this.router.navigate(['catalog',name]);
+            break;
+          case 'OPERATION':
+            const operationName = splitOperationQualifiedName(name);
+            this.router.navigate(['services',operationName.serviceName, operationName.operationName])
+            break;
+          case 'SERVICE':
+            this.router.navigate(['services',name])
+            break;
+        }
+      }
+
+      if ("type" in clickedMember) {
+        navigate(clickedMember.type, clickedMember.name.memberQualifiedName.fullyQualifiedName);
+      } else {
+        navigate(clickedMember.kind, clickedMember.name.fullyQualifiedName);
+      }
+    })
+
     const membersToDisplay: Observable<RequiredMembersProps> = this.schema$.pipe(
       map(schema => {
         if (this.displayedMembers === 'everything') {
@@ -161,7 +189,8 @@ export class SchemaDiagramComponent {
       this.schema$,
       this.lastMeasureEvent.newRect.width,
       this.lastMeasureEvent.newRect.height,
-      this.visibleLinkKinds
+      this.visibleLinkKinds,
+      clickHandler
     )
   }
 }

@@ -21,6 +21,15 @@ export const SchemaNodeContainer = styled.div`
     }
   }
 
+  a {
+    color: unset;
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+      text-decoration-color: ${colors.slate['600']};
+    }
+  }
+
   .node-icon-outer-container {
     position: relative;;
     .node-icon-container {
