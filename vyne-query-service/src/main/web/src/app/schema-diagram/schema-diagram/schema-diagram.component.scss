@@ -11,16 +11,6 @@
   width: 100%;
 }
 
-// .toolbar {
-//   width: 100%;
-//   display: flex;
-//   align-items: center;
-
-//   .spacer {
-//     flex-grow: 1;
-//   }
-// }
-
 .toolbar {
   display: flex;
   flex-direction: column;
@@ -38,4 +28,8 @@ mat-mini-fab {
   color: white;
   width: 30px;
   height: 30px;
+}
+
+::ng-deep .react-flow__node {
+  transition: all 0.25s ease-out;
 }

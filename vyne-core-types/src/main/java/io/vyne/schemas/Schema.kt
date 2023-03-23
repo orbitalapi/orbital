@@ -59,6 +59,9 @@ interface Schema {
    val queryOperations: Set<QueryOperation>
       get() = services.flatMap { it.queryOperations }.toSet()
 
+   val streamOperations: Set<StreamOperation>
+      get() = services.flatMap { it.streamOperations }.toSet()
+
    @get:JsonIgnore
    val remoteOperations: Set<RemoteOperation>
       get() = (operations + queryOperations).toSet()

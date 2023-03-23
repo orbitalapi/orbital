@@ -4,7 +4,11 @@ import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
 import io.vyne.schemaServer.core.git.GitSchemaPackageLoaderFactory
 import io.vyne.schemaServer.core.publisher.SourceWatchingSchemaPublisher
-import io.vyne.schemaServer.core.repositories.lifecycle.*
+import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
+import io.vyne.schemaServer.core.repositories.lifecycle.RepositoryLifecycleEventDispatcher
+import io.vyne.schemaServer.core.repositories.lifecycle.RepositoryLifecycleEventSource
+import io.vyne.schemaServer.core.repositories.lifecycle.RepositoryLifecycleManager
+import io.vyne.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventSource
 import mu.KotlinLogging
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -17,12 +21,13 @@ class SchemaPublicationConfig {
    @Bean
    fun repositoryManager(
       eventSource: RepositorySpecLifecycleEventSource,
-      eventDispatcher: RepositoryLifecycleEventDispatcher
+      eventDispatcher: RepositoryLifecycleEventDispatcher,
+      repositoryEventSource: RepositoryLifecycleEventSource
    ): ReactiveRepositoryManager {
       return ReactiveRepositoryManager(
          FileSystemPackageLoaderFactory(),
          GitSchemaPackageLoaderFactory(),
-         eventSource, eventDispatcher
+         eventSource, eventDispatcher, repositoryEventSource
       )
    }
 

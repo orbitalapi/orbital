@@ -19,7 +19,7 @@ import {
   modelNodeBorderColor,
   serviceNodeBorderColor
 } from 'src/app/schema-diagram/schema-diagram/diagram-nodes/schema-node-container';
-import { AppendLinksHandler } from 'src/app/schema-diagram/schema-diagram/schema-flow.react';
+import { AppendLinksHandler, SchemaMemberClickHandler } from 'src/app/schema-diagram/schema-diagram/schema-flow.react';
 
 export const HORIZONTAL_GAP = 50;
 
@@ -52,7 +52,8 @@ export class SchemaChartController {
   build(buildOptions: {
     autoAppendLinks: boolean,
     layoutAlgo: 'full' | 'incremental',
-    appendLinksHandler: AppendLinksHandler
+    appendLinksHandler: AppendLinksHandler,
+    clickHandler: SchemaMemberClickHandler
   }): ChartBuildResult {
     const builtNodesById = new Map<string, Node<MemberWithLinks>>();
 
@@ -60,7 +61,7 @@ export class SchemaChartController {
       const schemaMember = findSchemaMember(this.schema, member);
       const nodeId = getNodeId(schemaMember.kind, schemaMember.name);
       const existingPosition = this.currentNodesById.get(nodeId)?.position;
-      return buildSchemaNode(this.schema, schemaMember, this.operations, buildOptions.appendLinksHandler, existingPosition);
+      return buildSchemaNode(this.schema, schemaMember, this.operations, buildOptions.appendLinksHandler, buildOptions.clickHandler, existingPosition);
     }).forEach(node => builtNodesById.set(node.id, node));
 
     const builtEdgedById = new Map<string, Edge>();

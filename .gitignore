@@ -202,3 +202,6 @@ build-version.txt
 ### Terraform config ###
 **/.terraform
 **/.terraform.lock.hcl
+
+fallback-license.json
+**/fallback-license.json

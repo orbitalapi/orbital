@@ -2,6 +2,7 @@ package io.vyne.schemaServer.repositories
 
 import io.vyne.PackageIdentifier
 import io.vyne.schemaServer.packages.PackageLoaderSpec
+import io.vyne.schemaServer.packages.TaxiPackageLoaderSpec
 import io.vyne.schemaServer.repositories.git.GitRepositoryChangeRequest
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -14,14 +15,14 @@ interface RepositoryServiceApi {
    @PostMapping("/api/repositories/file")
    fun createFileRepository(@RequestBody request: CreateFileRepositoryRequest): Mono<Unit>
 
-   @PostMapping("/api/repositories/file", params = ["test"])
+   @PostMapping("/api/repositories/file/test")
    fun testFileRepository(@RequestBody request: FileRepositoryTestRequest): Mono<FileRepositoryTestResponse>
 
 
    @PostMapping("/api/repositories/git")
    fun createGitRepository(@RequestBody request: GitRepositoryChangeRequest): Mono<Unit>
 
-   @PostMapping("/api/repositories/git", params = ["test"])
+   @PostMapping("/api/repositories/git/test")
    fun testGitConnection(@RequestBody request: GitConnectionTestRequest): Mono<GitConnectionTestResult>
 
 }
@@ -51,7 +52,7 @@ data class GitConnectionTestResult(
 data class CreateFileRepositoryRequest(
    val path: String,
    val isEditable: Boolean,
-   val loader: PackageLoaderSpec,
+   val loader: PackageLoaderSpec = TaxiPackageLoaderSpec,
 
    /**
     * If populated, indicates that the path is not

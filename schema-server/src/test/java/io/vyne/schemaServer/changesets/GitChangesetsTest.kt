@@ -13,6 +13,7 @@ import io.vyne.schemaServer.core.file.packages.ReactivePollingFileSystemMonitor
 import io.vyne.schemaServer.core.git.GitSchemaPackageLoaderFactory
 import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
 import io.vyne.schemaServer.core.repositories.lifecycle.RepositoryLifecycleEventDispatcher
+import io.vyne.schemaServer.core.repositories.lifecycle.RepositoryLifecycleEventSource
 import io.vyne.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventSource
 import io.vyne.schemaServer.editor.AddChangesToChangesetRequest
 import io.vyne.schemaServer.editor.FinalizeChangesetRequest
@@ -50,7 +51,12 @@ import java.util.concurrent.TimeUnit
 
 
 fun URI.copyDirectoryTo(destDirectory: File): File {
-   val source = File(this)
+   val source = try {
+      File(this)
+   } catch (e: Exception) {
+      throw RuntimeException("Failed to create file from URI ${this.toASCIIString()}", e)
+   }
+
    val destFile = destDirectory.resolve(source.name)
    FileUtils.copyDirectory(source, destFile)
    return destFile
@@ -95,12 +101,13 @@ class GitChangesetsTest {
       fun repositoryManager(
          eventSource: RepositorySpecLifecycleEventSource,
          eventDispatcher: RepositoryLifecycleEventDispatcher,
-         gitLoaderFactory: GitSchemaPackageLoaderFactory
+         gitLoaderFactory: GitSchemaPackageLoaderFactory,
+         repositoryEventSource: RepositoryLifecycleEventSource
       ): ReactiveRepositoryManager {
          return ReactiveRepositoryManager(
             FileSystemPackageLoaderFactory(),
             gitLoaderFactory,
-            eventSource, eventDispatcher
+            eventSource, eventDispatcher, repositoryEventSource
          )
       }
    }

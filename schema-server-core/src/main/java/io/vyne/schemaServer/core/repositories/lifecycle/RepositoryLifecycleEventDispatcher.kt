@@ -10,4 +10,5 @@ import io.vyne.schemaServer.core.git.GitSchemaPackageLoader
 interface RepositoryLifecycleEventDispatcher {
    fun fileRepositoryAdded(repository: FileSystemPackageLoader)
    fun gitRepositoryAdded(repository: GitSchemaPackageLoader)
+
 }

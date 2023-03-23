@@ -86,7 +86,7 @@ class FileRepositoryIntegrationTest {
       val repositoryManager = ReactiveRepositoryManager(
          FileSystemPackageLoaderFactory(),
          GitSchemaPackageLoaderFactory(),
-         eventDispatcher, eventDispatcher
+         eventDispatcher, eventDispatcher, eventDispatcher
       )
 
       // Setup: A SchemaStoreClient, which will
@@ -157,7 +157,7 @@ class FileRepositoryIntegrationTest {
       val repositoryManager = ReactiveRepositoryManager(
          FileSystemPackageLoaderFactory(),
          GitSchemaPackageLoaderFactory(),
-         eventDispatcher, eventDispatcher
+         eventDispatcher, eventDispatcher, eventDispatcher
       )
 
       // Setup: A SchemaStoreClient, which will

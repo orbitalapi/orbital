@@ -1,8 +1,7 @@
 package io.vyne.utils
 
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
-import java.util.Random
-import java.util.UUID
+import java.util.*
 
 object Ids {
    /**
@@ -25,3 +24,4 @@ object Ids {
     */
    fun fastUuid() = UUID(random.nextLong(), random.nextLong()).toString()
 }
+

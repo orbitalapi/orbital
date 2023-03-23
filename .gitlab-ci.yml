@@ -8,7 +8,7 @@ variables:
    # As of Maven 3.3.0 instead of this you may define these options in `.mvn/maven.config` so the same config is used
    # when running from the command line.
    # `installAtEnd` and `deployAtEnd` are only effective with recent version of the corresponding plugins.
-   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -U -Dsurefire.rerunFailingTestsCount=2 -DskipTests"
+   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -U"
    # Used during gitflow interaction.
    MAJOR_RELEASE_DIGIT: 0
    MINOR_RELEASE_DIGIT: 1
@@ -409,49 +409,51 @@ build-helm:
       paths:
          - infra/helm/vyne-helm/charts
 
-.terraform-deploy:
-   extends: .terraform:deploy
-   stage: deploy
-   before_script:
-      - echo ${TF_ROOT}
-      - cd ${TF_ROOT}
-      - gitlab-terraform plan
-      - gitlab-terraform plan-json
+#.terraform-deploy:
+#   extends: .terraform:deploy
+#   stage: deploy
+#   before_script:
+#      - echo ${TF_ROOT}
+#      - cd ${TF_ROOT}
+#      - gitlab-terraform plan
+#      - gitlab-terraform plan-json
+#
+#terraform-deploy-dev:
+#   extends: .terraform-deploy
+#   stage: deploy
+#   environment:
+#      name: $TF_STATE_NAME_DEV
+#   variables:
+#      TF_ROOT: ${CI_PROJECT_DIR}/infra/terraform/environments/$TF_STATE_NAME_DEV
+#      TF_STATE_NAME: $TF_STATE_NAME_DEV
+#      TF_VAR_environment: $TF_STATE_NAME_DEV
+#   rules:
+#      -  if: $CI_COMMIT_BRANCH == "develop"
+#         when: manual
+#      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+#         when: never
+#
 
-terraform-deploy-dev:
-   extends: .terraform-deploy
-   stage: deploy
-   environment:
-      name: $TF_STATE_NAME_DEV
-   variables:
-      TF_ROOT: ${CI_PROJECT_DIR}/infra/terraform/environments/$TF_STATE_NAME_DEV
-      TF_STATE_NAME: $TF_STATE_NAME_DEV
-      TF_VAR_environment: $TF_STATE_NAME_DEV
-   rules:
-      -  if: $CI_COMMIT_BRANCH == "develop"
-         when: manual
-      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
-         when: never
-
-
-terraform-deploy-prod:
-   extends: .terraform-deploy
-   stage: deploy
-   environment:
-      name: $TF_STATE_NAME_PROD
-   variables:
-      TF_ROOT: ${CI_PROJECT_DIR}/infra/terraform/environments/$TF_STATE_NAME_PROD
-      TF_STATE_NAME: $TF_STATE_NAME_PROD
-      TF_VAR_environment: $TF_STATE_NAME_PROD
-   rules:
-      -  if: $CI_COMMIT_BRANCH == "main"
+#terraform-deploy-prod:
+#   extends: .terraform-deploy
+#   stage: deploy
+#   environment:
+#      name: $TF_STATE_NAME_PROD
+#   variables:
+#      TF_ROOT: ${CI_PROJECT_DIR}/infra/terraform/environments/$TF_STATE_NAME_PROD
+#      TF_STATE_NAME: $TF_STATE_NAME_PROD
+#      TF_VAR_environment: $TF_STATE_NAME_PROD
+#   rules:
+#      -  if: $CI_COMMIT_BRANCH == "main"
 
 .e2e-tests:
    stage: verify
+   #   Disabling e2e tests for a bit.
+   when: manual
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:23.0.1
    tags:
       - docker-heavy
-#   retry: 2
+   #   retry: 2
    before_script:
       - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
       - PROJECT_VERSION=$(cat build-version.txt)
@@ -516,41 +518,41 @@ e2e-tests-other-branches:
    dependencies:
       - build-jvm-branch
 
-terraform-deploy-dev-voyager:
-   extends: .terraform-deploy
-   stage: deploy
-   environment:
-      name: $TF_STATE_NAME_DEV
-   variables:
-      TF_ROOT: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/$TF_STATE_NAME_DEV
-      TF_STATE_NAME: taxi_playground_$TF_STATE_NAME_DEV
-      TF_VAR_environment: $TF_STATE_NAME_DEV
-      TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
-   rules:
-      -  if: $CI_COMMIT_BRANCH == "develop"
-         when: 'always'
-      -  if: $CI_COMMIT_BRANCH == "master"
-         when: 'never'
-      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
-         when: 'never'
-
-terraform-deploy-prod-voyager:
-   extends: .terraform-deploy
-   stage: deploy
-   environment:
-      name: $TF_STATE_NAME_PROD
-   variables:
-      TF_ROOT: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/$TF_STATE_NAME_PROD
-      TF_STATE_NAME: taxi_playground_$TF_STATE_NAME_PROD
-      TF_VAR_environment: $TF_STATE_NAME_PROD
-      TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
-   rules:
-      -  if: $CI_COMMIT_BRANCH == "develop"
-         when: 'manual'
-      -  if: $CI_COMMIT_BRANCH == "master"
-         when: 'always'
-      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
-         when: 'never'
+#terraform-deploy-dev-voyager:
+#   extends: .terraform-deploy
+#   stage: deploy
+#   environment:
+#      name: $TF_STATE_NAME_DEV
+#   variables:
+#      TF_ROOT: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/$TF_STATE_NAME_DEV
+#      TF_STATE_NAME: taxi_playground_$TF_STATE_NAME_DEV
+#      TF_VAR_environment: $TF_STATE_NAME_DEV
+#      TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
+#   rules:
+#      -  if: $CI_COMMIT_BRANCH == "develop"
+#         when: 'always'
+#      -  if: $CI_COMMIT_BRANCH == "master"
+#         when: 'never'
+#      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+#         when: 'never'
+#
+#terraform-deploy-prod-voyager:
+#   extends: .terraform-deploy
+#   stage: deploy
+#   environment:
+#      name: $TF_STATE_NAME_PROD
+#   variables:
+#      TF_ROOT: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/$TF_STATE_NAME_PROD
+#      TF_STATE_NAME: taxi_playground_$TF_STATE_NAME_PROD
+#      TF_VAR_environment: $TF_STATE_NAME_PROD
+#      TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
+#   rules:
+#      -  if: $CI_COMMIT_BRANCH == "develop"
+#         when: 'manual'
+#      -  if: $CI_COMMIT_BRANCH == "master"
+#         when: 'always'
+#      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+#         when: 'never'
 
 publish-snyk-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry

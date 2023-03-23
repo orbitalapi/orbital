@@ -4,7 +4,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.22.0-SNAPSHOT</version>
+      <version>0.24.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -19,6 +19,11 @@
    </properties>
 
    <dependencies>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>spring-utils</artifactId>
+         <version>${project.version}</version>
+      </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>monitoring-common</artifactId>
@@ -86,6 +91,12 @@
          <groupId>io.vyne</groupId>
          <artifactId>jdbc-connector</artifactId>
          <version>${project.version}</version>
+         <exclusions>
+            <exclusion>
+               <groupId>org.slf4j</groupId>
+               <artifactId>slf4j-nop</artifactId>
+            </exclusion>
+         </exclusions>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>

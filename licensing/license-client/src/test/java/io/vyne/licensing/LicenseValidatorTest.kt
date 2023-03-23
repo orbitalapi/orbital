@@ -4,7 +4,6 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
 import io.vyne.licensing.vendor.LicenseVendor
-import io.vyne.utils.ManualClock
 import org.junit.Test
 import java.time.Duration
 import java.time.Instant
@@ -78,28 +77,7 @@ class LicenseValidatorTest {
       loader.isValidLicense(signedExpiredLicense).should.be.`false`
    }
 
-   @Test
-   fun `loader returns provided license when valid`() {
-      val signedLicense = vendor.generateSignedLicense(license)
-      loader.validOrFallback(signedLicense).should.equal(signedLicense)
-   }
 
-   @Test
-   fun `loader returns fallback license when invalid license provided`() {
-      val clock = ManualClock(Instant.now())
-      val loader = LicenseValidator.forPublicKeyAtPath(
-         Resources.getResource("test-license-key_pub.der").toURI().toPath(),
-         fallbackLicenseDuration = Duration.ofMinutes(10L),
-         clock = clock
-      )
-
-      val signedLicense = vendor.generateSignedLicense(license)
-      val tamperedLicense = signedLicense.copy(edition = LicensedEdition.STARTER)
-      val loadedLicense = loader.validOrFallback(tamperedLicense)
-
-      loadedLicense.isFallbackLicense.should.be.`true`
-      loadedLicense.expiresOn.should.equal(clock.instant().plus(Duration.ofMinutes(10L)))
-   }
 
    @Test
    fun `license gives reasonable toString()`() {

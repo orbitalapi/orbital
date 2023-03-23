@@ -6,6 +6,7 @@ import io.vyne.UriSafePackageIdentifier
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.publisher.ExpiringSourcesStore
 import io.vyne.schema.publisher.PublisherType
+import io.vyne.schema.publisher.loaders.SchemaPackageTransport
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
 import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfigLoader
 import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
@@ -73,11 +74,32 @@ class PackageService(
          }
    }
 
+   private fun buildEmptyDescription(packageTransport: SchemaPackageTransport): SourcePackageDescription {
+      val identifier = packageTransport.packageIdentifier
+      return SourcePackageDescription(
+         identifier,
+         expiringSourcesStore.getPublisherHealth(identifier),
+         0,
+         0, // TODO : Warning count
+         0,
+         packageTransport.publisherType,
+         packageTransport.isEditable(),
+         packageTransport.config
+      )
+   }
+
    @GetMapping("/api/packages")
    override fun listPackages(): Mono<List<SourcePackageDescription>> {
       val packages = schemaStore.schemaSet.parsedPackages.map { parsedPackage ->
          buildPackageDescription(parsedPackage)
       }
+
+      // Edge case: Find any loaders that are configured, but don't yet have any sources.
+      // These won't be present in the above, since they don't contribute any parsed packages.
+      val foundPackages = packages.map { it.identifier }.toSet()
+      val emptyPackages = repositoryManager.loaders.filter { loader ->
+         !foundPackages.contains(loader.packageIdentifier)
+      }.map { buildEmptyDescription(it) }
       return Mono.just(packages)
    }
 

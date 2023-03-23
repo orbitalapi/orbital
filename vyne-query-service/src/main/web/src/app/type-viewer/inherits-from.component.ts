@@ -9,7 +9,7 @@ import { BaseDeferredEditComponent } from './base-deferred-edit.component';
   selector: 'app-inherits-from',
   template: `
     <div
-      *ngIf="!inheritsFromPrimitive">
+      *ngIf="!inheritsFromPrimitive && type.inheritsFrom.length > 0">
       <ng-container *ngIf="!editable || type.inheritsFrom.length > 1">
         <span>inherits&nbsp;</span>
         <div class="inherited-member" *ngFor="let inherits of type.inheritsFrom">

@@ -376,6 +376,8 @@ class ObjectBuilder(
       val searchableFacts =
          FieldAndFactBag(populatedValues, context.facts.toList(), context.scopedFacts, context.schema)
       val searchableWithParentFacts = searchableFacts.merge(facts)
+
+
       return TypedObjectFactory(
          targetType,
          searchableWithParentFacts,

@@ -6,7 +6,7 @@
    <groupId>io.vyne</groupId>
    <artifactId>platform</artifactId>
    <packaging>pom</packaging>
-   <version>0.22.0-SNAPSHOT</version>
+   <version>0.24.0-SNAPSHOT</version>
 
    <parent>
       <groupId>org.springframework.boot</groupId>
@@ -24,7 +24,7 @@
    </licenses>
 
    <properties>
-      <taxi.version>1.35.0-SNAPSHOT</taxi.version>
+      <taxi.version>1.36.0</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -66,6 +66,7 @@
       <kotest.version>5.5.5</kotest.version>
       <junit.jupiter.version>5.9.2</junit.jupiter.version>
       <junit.vintage.version>5.9.2</junit.vintage.version>
+
 
    </properties>
 
@@ -112,7 +113,9 @@
       <module>history-service</module>
       <module>cockpit-core</module>
       <module>query-node-api</module>
-       <module>monitoring-common</module>
+      <module>monitoring-common</module>
+      <module>analytics</module>
+      <module>spring-utils</module>
    </modules>
 
    <scm>
@@ -439,9 +442,9 @@
    <build>
       <extensions>
          <extension>
-            <groupId>org.springframework.build</groupId>
-            <artifactId>aws-maven</artifactId>
-            <version>5.0.0.RELEASE</version>
+            <groupId>com.github.seahen</groupId>
+            <artifactId>maven-s3-wagon</artifactId>
+            <version>1.3.3</version>
          </extension>
       </extensions>
       <finalName>${project.artifactId}</finalName>
@@ -629,27 +632,34 @@
 
    <distributionManagement>
       <repository>
-         <id>repo.vyne.co</id>
-         <url>s3://repo.vyne.co/release</url>
+         <id>repo.orbitalhq.com</id>
+         <url>s3://repo.orbitalhq.com/release</url>
       </repository>
       <snapshotRepository>
-         <id>repo.vyne.co</id>
-         <url>s3://repo.vyne.co/snapshot</url>
+         <id>repo.orbitalhq.com</id>
+         <url>s3://repo.orbitalhq.com/snapshot</url>
       </snapshotRepository>
    </distributionManagement>
-
    <repositories>
-      <!-- for taxi snapshots -->
+      <!-- for orbital snapshots -->
       <repository>
-         <id>vyne-snapshots</id>
-         <url>https://repo.vyne.co/snapshot</url>
+         <id>orbital-snapshots</id>
+         <url>https://repo.orbitalhq.com/snapshot</url>
+         <snapshots>
+            <enabled>true</enabled>
+         </snapshots>
+      </repository>
+      <repository>
+         <!-- for taxi snapshots -->
+         <id>maven-central-snapshots</id>
+         <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
          <snapshots>
             <enabled>true</enabled>
          </snapshots>
       </repository>
       <repository>
          <id>vyne</id>
-         <url>https://repo.vyne.co/release</url>
+         <url>https://repo.orbitalhq.com/release</url>
          <snapshots>
             <enabled>false</enabled>
          </snapshots>

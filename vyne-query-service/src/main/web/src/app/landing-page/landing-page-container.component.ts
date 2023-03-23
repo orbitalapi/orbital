@@ -1,13 +1,13 @@
 import { Component } from '@angular/core';
 import { TypesService } from '../services/types.service';
 import { Schema } from '../services/schema';
-import { ChangeLogEntry, ChangelogService } from '../changelog/changelog.service';
+import { ChangeLogEntry } from '../changelog/changelog.service';
 import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-landing-page-container',
   template: `
-    <app-landing-page [schema$]="schema$"></app-landing-page>
+    <app-landing-page></app-landing-page>
   `,
   styleUrls: ['./landing-page-container.component.scss']
 })

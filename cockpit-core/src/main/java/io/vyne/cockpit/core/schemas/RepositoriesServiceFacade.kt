@@ -1,6 +1,8 @@
 package io.vyne.cockpit.core.schemas
 
 import io.vyne.schemaServer.repositories.CreateFileRepositoryRequest
+import io.vyne.schemaServer.repositories.FileRepositoryTestRequest
+import io.vyne.schemaServer.repositories.FileRepositoryTestResponse
 import io.vyne.schemaServer.repositories.GitConnectionTestRequest
 import io.vyne.schemaServer.repositories.GitConnectionTestResult
 import io.vyne.schemaServer.repositories.RepositoryServiceApi
@@ -22,6 +24,13 @@ class RepositoriesServiceFacade(private val repositoryServiceApi: RepositoryServ
    fun createFileRepository(@RequestBody request: CreateFileRepositoryRequest): Mono<Unit> = handleFeignErrors {
       repositoryServiceApi.createFileRepository(request)
    }
+
+   @PostMapping("/api/repositories/file", params = ["test"])
+   fun testFileRepository(@RequestBody request: FileRepositoryTestRequest): Mono<FileRepositoryTestResponse> =
+      handleFeignErrors {
+         repositoryServiceApi.testFileRepository(request)
+      }
+
 
    @PostMapping("/api/repositories/git")
    fun createGitRepository(@RequestBody request: GitRepositoryChangeRequest): Mono<Unit> = handleFeignErrors {

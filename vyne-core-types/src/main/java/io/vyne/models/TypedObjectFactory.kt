@@ -257,7 +257,8 @@ class TypedObjectFactory(
          attributeName to getOrBuild(attributeName)
       }.toMap()
 
-      return TypedObject(type, decorator(mappedAttributes), source)
+      val attributes = decorator(mappedAttributes)
+      return TypedObject(type, attributes, source)
    }
 
    fun build(decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
