@@ -3,7 +3,7 @@ package io.vyne.cask.ddl.views
 import lang.taxi.types.QualifiedName
 import org.springframework.boot.context.properties.ConstructorBinding
 
-@ConstructorBinding
+//@ConstructorBinding
 data class CaskViewDefinition(
    val typeName: QualifiedName,
    val inherits: List<QualifiedName> = emptyList(),

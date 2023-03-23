@@ -3,6 +3,7 @@ package io.vyne.cask.ingest
 import io.vyne.schemas.VersionedType
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.repository.CrudRepository
 import org.springframework.data.repository.PagingAndSortingRepository
 import java.time.Instant
 import javax.persistence.Column
@@ -29,13 +30,21 @@ class IngestionError(
       fun fromThrowable(t: Throwable, messageId: String, versionedType: VersionedType) = IngestionError(
          caskMessageId = messageId,
          error = t.message ?: "Unknown error",
-         fullyQualifiedName = versionedType.fullyQualifiedName)
+         fullyQualifiedName = versionedType.fullyQualifiedName
+      )
    }
 }
 
-interface IngestionErrorRepository : PagingAndSortingRepository<IngestionError, String> {
+interface IngestionErrorRepository : PagingAndSortingRepository<IngestionError, String>,
+   CrudRepository<IngestionError, String> {
    fun findByInsertedAtBetween(start: Instant, end: Instant, pageable: Pageable): Page<IngestionError>
-   fun findByFullyQualifiedNameAndInsertedAtBetweenOrderByInsertedAtDesc(fullyQualifiedName: String, start: Instant, end: Instant, pageable: Pageable): Page<IngestionError>
+   fun findByFullyQualifiedNameAndInsertedAtBetweenOrderByInsertedAtDesc(
+      fullyQualifiedName: String,
+      start: Instant,
+      end: Instant,
+      pageable: Pageable
+   ): Page<IngestionError>
+
    fun countByFullyQualifiedNameAndInsertedAtBetween(fullyQualifiedName: String, start: Instant, end: Instant): Int
 }
 

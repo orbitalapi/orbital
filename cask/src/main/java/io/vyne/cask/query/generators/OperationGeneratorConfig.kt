@@ -4,7 +4,7 @@ import lang.taxi.types.Type
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 
-@ConstructorBinding
+//@ConstructorBinding
 @ConfigurationProperties(prefix = "cask")
 data class OperationGeneratorConfig(val operations: List<OperationConfigDefinition> = emptyList()) {
    companion object {
@@ -22,7 +22,7 @@ data class OperationGeneratorConfig(val operations: List<OperationConfigDefiniti
             && config.name == annotation }
    }
 
-   @ConstructorBinding
+//   @ConstructorBinding
    data class OperationConfigDefinition(val applicableTo: String, val name: OperationAnnotation)
 }
 

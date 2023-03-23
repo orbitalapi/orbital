@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConstructorBinding
 import java.nio.file.Path
 import java.nio.file.Paths
 
-@ConstructorBinding
+//@ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.analytics")
 data class QueryAnalyticsConfig(
    /**

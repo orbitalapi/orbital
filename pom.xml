@@ -30,7 +30,7 @@
       <elasticsearch.version>7.5.2</elasticsearch.version>
       <kotlin-logging.version>3.0.5</kotlin-logging.version>
 
-      <reactive-feign.version>3.2.6</reactive-feign.version>
+      <reactive-feign.version>4.0.0-SNAPSHOT</reactive-feign.version>
       <!-- Use Java 17.
       Currently, Chronicle doens't support later versions.
       Based on their release cadence, it seems they're unlikely to support versions other than LTS.
@@ -307,21 +307,27 @@
          </dependency>
 
          <dependency>
-            <groupId>com.playtika.reactivefeign</groupId>
+            <groupId>com.orbitalhq.reactivefeign</groupId>
             <artifactId>feign-reactor-webclient</artifactId>
             <version>${reactive-feign.version}</version>
          </dependency>
 
          <dependency>
-            <groupId>com.playtika.reactivefeign</groupId>
+            <groupId>com.orbitalhq.reactivefeign</groupId>
             <artifactId>feign-reactor-cloud</artifactId>
             <version>${reactive-feign.version}</version>
          </dependency>
 
          <dependency>
-            <groupId>com.playtika.reactivefeign</groupId>
+            <groupId>com.orbitalhq.reactivefeign</groupId>
             <artifactId>feign-reactor-spring-configuration</artifactId>
             <version>${reactive-feign.version}</version>
+         </dependency>
+
+         <dependency>
+            <groupId>javax.persistence</groupId>
+            <artifactId>javax.persistence-api</artifactId>
+            <version>2.2</version>
          </dependency>
          <dependency>
             <groupId>io.micrometer</groupId>

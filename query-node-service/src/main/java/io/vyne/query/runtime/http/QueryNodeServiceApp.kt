@@ -20,7 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer
-import org.springframework.boot.actuate.metrics.web.reactive.client.MetricsWebClientCustomizer
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
@@ -28,7 +27,9 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerA
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
+import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
+import org.springframework.cloud.client.loadbalancer.reactive.WebClientCustomizer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -97,17 +98,21 @@ class WebConfig {
 
    //   @LoadBalanced
    @Bean
-   fun webClientFactory(
+   fun webClientCustomizer(
       loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction,
-      metricsCustomizer: MetricsWebClientCustomizer
-   ): WebClient.Builder {
-      val builder = WebClient.builder()
-         .filter(
-            ConditionallyLoadBalancedExchangeFilterFunction.permitLocalhost(loadBalancingFilterFunction)
+      discoveryClient: DiscoveryClient
+
+   ): WebClientCustomizer {
+      return WebClientCustomizer { webClientBuilder ->
+         webClientBuilder.filter(
+            ConditionallyLoadBalancedExchangeFilterFunction.onlyKnownHosts(
+               discoveryClient.services,
+               loadBalancingFilterFunction
+            )
          )
-      metricsCustomizer.customize(builder)
-      return builder
+      }
    }
+
 
    @Bean
    fun metricsCommonTags(): MeterRegistryCustomizer<MeterRegistry> {

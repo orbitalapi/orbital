@@ -29,9 +29,9 @@ import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.pipelines.jet.source.PipelineSourceType
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
+import jakarta.annotation.Resource
 import org.springframework.stereotype.Component
 import java.io.Serializable
-import javax.annotation.Resource
 
 @Component
 class PipelineFactory(

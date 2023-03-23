@@ -52,17 +52,17 @@
        </dependency>
 
        <dependency>
-          <groupId>com.playtika.reactivefeign</groupId>
+          <groupId>com.orbitalhq.reactivefeign</groupId>
           <artifactId>feign-reactor-webclient</artifactId>
        </dependency>
 
        <dependency>
-          <groupId>com.playtika.reactivefeign</groupId>
+          <groupId>com.orbitalhq.reactivefeign</groupId>
           <artifactId>feign-reactor-cloud</artifactId>
        </dependency>
 
        <dependency>
-          <groupId>com.playtika.reactivefeign</groupId>
+          <groupId>com.orbitalhq.reactivefeign</groupId>
           <artifactId>feign-reactor-spring-configuration</artifactId>
        </dependency>
 

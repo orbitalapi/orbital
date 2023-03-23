@@ -414,7 +414,7 @@ namespace vyne {
          expectRequestCount(1)
          expectRequest { request ->
             assertEquals("/costs/myClientId/doCalculate", request.path)
-            assertEquals(HttpMethod.POST.name, request.method)
+            assertEquals(HttpMethod.POST.name(), request.method)
             assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
          }
       }
@@ -469,7 +469,7 @@ namespace vyne {
          expectRequestCount(1)
          expectRequest { request ->
             assertEquals("/pets/100", request.path)
-            assertEquals(HttpMethod.GET.name, request.method)
+            assertEquals(HttpMethod.GET.name(), request.method)
             assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
          }
       }
@@ -508,7 +508,7 @@ namespace vyne {
          expectRequestCount(1)
          expectRequest { request ->
             assertEquals("/pets/100", request.path)
-            assertEquals(HttpMethod.GET.name, request.method)
+            assertEquals(HttpMethod.GET.name(), request.method)
             assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
          }
 
@@ -565,7 +565,7 @@ namespace vyne {
          expectRequestCount(1)
          expectRequest { request ->
             assertEquals("/pets", request.path)
-            assertEquals(HttpMethod.GET.name, request.method)
+            assertEquals(HttpMethod.GET.name(), request.method)
             assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
          }
       }
@@ -621,7 +621,7 @@ namespace vyne {
          expectRequestCount(1)
          expectRequest { request ->
             assertEquals("/pets", request.path)
-            assertEquals(HttpMethod.GET.name, request.method)
+            assertEquals(HttpMethod.GET.name(), request.method)
             assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
          }
       }
@@ -754,7 +754,7 @@ namespace vyne {
       expectRequestCount(1)
       expectRequest { request ->
          assertEquals("/people?apiKey=hello", request.path)
-         assertEquals(HttpMethod.GET.name, request.method)
+         assertEquals(HttpMethod.GET.name(), request.method)
       }
    }
 
@@ -783,7 +783,7 @@ namespace vyne {
       expectRequestCount(1)
       expectRequest { request ->
          assertEquals("/hello/people", request.path)
-         assertEquals(HttpMethod.GET.name, request.method)
+         assertEquals(HttpMethod.GET.name(), request.method)
       }
    }
 

@@ -22,6 +22,7 @@ import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.spring.config.DiscoveryClientConfig
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.utils.log
+import jakarta.annotation.PostConstruct
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
@@ -61,7 +62,6 @@ import org.springframework.web.reactive.socket.server.upgrade.TomcatRequestUpgra
 import java.sql.Timestamp
 import java.time.Duration
 import java.util.*
-import javax.annotation.PostConstruct
 
 private val logger = KotlinLogging.logger {}
 

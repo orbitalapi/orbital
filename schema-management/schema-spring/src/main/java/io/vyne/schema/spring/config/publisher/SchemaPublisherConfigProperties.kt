@@ -5,10 +5,9 @@ import io.vyne.schema.spring.config.SchemaConfigProperties.Companion.SCHEMA_CONF
 import io.vyne.schema.spring.config.SchemaTransportConfigProperties
 import io.vyne.schema.spring.config.publisher.SchemaPublisherConfigProperties.Companion.PUBLISHER_CONFIG
 import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.boot.context.properties.NestedConfigurationProperty
 
-@ConstructorBinding
+//@ConstructorBinding
 @ConfigurationProperties(prefix = PUBLISHER_CONFIG)
 data class SchemaPublisherConfigProperties(
    override var method: VyneSchemaInteractionMethod = VyneSchemaInteractionMethod.RSocket,

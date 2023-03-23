@@ -22,6 +22,8 @@ import io.vyne.pipelines.jet.source.PipelineSourceType
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import jakarta.annotation.PostConstruct
+import jakarta.annotation.Resource
 import net.snowflake.client.jdbc.internal.amazonaws.services.s3.event.S3EventNotification
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.services.s3.S3Client
@@ -37,8 +39,6 @@ import java.nio.charset.StandardCharsets
 import java.time.Clock
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.logging.Level
-import javax.annotation.PostConstruct
-import javax.annotation.Resource
 
 data class S3SourceMetadata(val etag: String) : MessageSourceWithGroupId {
    override val groupId = etag

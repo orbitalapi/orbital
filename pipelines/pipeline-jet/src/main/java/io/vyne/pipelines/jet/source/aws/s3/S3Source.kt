@@ -28,6 +28,8 @@ import io.vyne.pipelines.jet.source.PipelineSourceType
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import jakarta.annotation.PostConstruct
+import jakarta.annotation.Resource
 import org.apache.commons.csv.CSVRecord
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.services.s3.S3Client
@@ -38,11 +40,8 @@ import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.Serializable
-import java.io.StringReader
 import java.nio.charset.StandardCharsets
 import java.util.stream.Stream
-import javax.annotation.PostConstruct
-import javax.annotation.Resource
 
 
 @Component

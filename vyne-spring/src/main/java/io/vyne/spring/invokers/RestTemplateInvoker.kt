@@ -117,7 +117,7 @@ class RestTemplateInvoker(
       logger.debug { "Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}" }
 
       val (_, url, method) = operation.httpOperationMetadata()
-      val httpMethod = HttpMethod.resolve(method)!!
+      val httpMethod = HttpMethod.valueOf(method)!!
       //val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation", OperationType.REMOTE_CALL) { httpInvokeOperation ->
 
       val absoluteUrl = makeUrlAbsolute(service, operation, url)
@@ -177,9 +177,9 @@ class RestTemplateInvoker(
                   address = expandedUri.toASCIIString(),
                   operation = operation.name,
                   responseTypeName = operation.returnType.name,
-                  method = httpMethod.name,
+                  method = httpMethod.name(),
                   requestBody = httpEntity.body,
-                  resultCode = clientResponse.rawStatusCode(),
+                  resultCode = clientResponse.statusCode().value(),
                   durationMs = duration,
                   response = responseBody,
                   timestamp = initiationTime,
@@ -187,9 +187,9 @@ class RestTemplateInvoker(
                   isFailed = failed,
                   exchange = HttpExchange(
                      url = expandedUri.toASCIIString(),
-                     verb = httpMethod.name,
+                     verb = httpMethod.name(),
                      requestBody = httpEntity.body?.toString(),
-                     responseCode = clientResponse.rawStatusCode(),
+                     responseCode = clientResponse.statusCode().value(),
                      // Strictly, this isn't the size in bytes,
                      // but it's close enough until someone complains.
                      responseSize = responseBody.length,
