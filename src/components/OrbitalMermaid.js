@@ -14,11 +14,6 @@ import clsx from 'clsx';
  * dark and light within the same session leaves the chart unrendered.
  */
 export default function OrbitalMermaid({ chart, wide }) {
-  const extraWideImageBreakoutContainer = wide ? {
-    position: 'relative',
-    right: '50%',
-    width: '60vw'
-  } : {};
 
   // Don't render server-side, as it screws up
   // the measuring of the diagrams.
@@ -35,11 +30,21 @@ export default function OrbitalMermaid({ chart, wide }) {
     });
   }, [theme]);
 
-  return (<div style={extraWideImageBreakoutContainer}>
+  return (<div className='breakout-image'>
     <div className={clsx(
-      'relative my-[2em] first:mt-0 last:mb-0 rounded-lg overflow-hidden rounded-lg w-full'
+      'relative my-[2em] first:mt-0 last:mb-0 rounded-lg overflow-hidden rounded-lg w-full lg:w-[65vw] mx-auto'
     )}>
-      {!isSSR() && <Mermaid chart={chart} />}
+      {!isSSR() && <Mermaid chart={chart} config={
+        {
+          mermaid: {
+            theme: 'dark',
+            themeCSS: `svg { width: '100%' }`,
+            sequence: {
+              useMaxWidth: false
+            }
+          }
+        }
+      }/>}
 
     </div>
   </div>);

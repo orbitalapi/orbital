@@ -43,7 +43,7 @@ Semantic metadata allows developers to build a library of simple terms that desc
 
 Data seldom exists in a silo - keys from one system can be fed to another to provide data or capabilities. Semantic Metadata is a way of capturing these relationships, and using them to drive software automation.
 
-<ImageWithCaption src={FilmsDbAndApi.src} voyagerLink='qBw38GjhQe' wide></ImageWithCaption>
+<ImageWithCaption src={FilmsDbAndApi} voyagerLink='qBw38GjhQe' wide></ImageWithCaption>
 
 This is a really powerful technique for building autonomous systems, which self-integrate and self-repair.  We go
 into this is much more detail in [this post](/blog/2023-01-16-using-semantic-metadata), which is worth reading.
@@ -225,21 +225,21 @@ The profiler shows us lots of great information - let's take a quick look at wha
 The high level execution plan shows us exactly how the integration was executed - which systems
 were invoked, and how data was passed between them.
 
-<ImageWithCaption src={QueryExecutionPlan.src} wide
+<ImageWithCaption src={QueryExecutionPlan} wide
                   caption='A query execution plan, showing which systems are orchestrated for this query'></ImageWithCaption>
 
 ### Call sequence diagram
 We can also see a classic sequence diagram, showing each call between the systems.
 Clicking on each call shows us the request that was sent, and the response we got back.
 
-<ImageWithCaption src={QuerySequenceDiagram.src} wide
+<ImageWithCaption src={QuerySequenceDiagram} wide
                   caption='Orbital generates sequence diagrams showing call level flow of data between systems'></ImageWithCaption>
 
 ### Cell-level lineage
 We can go even deeper.  Clicking on any value returned shows the actual values passed between the systems
 to derive the provided values.
 
-<ImageWithCaption src={ValueLineage.src} wide
+<ImageWithCaption src={ValueLineage} wide
                   caption='The full on how each individual value was derived'></ImageWithCaption>
 
 ## Grab the bits
