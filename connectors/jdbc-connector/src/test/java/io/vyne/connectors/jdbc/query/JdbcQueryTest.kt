@@ -10,6 +10,9 @@ import io.vyne.query.VyneQlGrammar
 import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.testVyne
 import io.vyne.typedObjects
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.Id
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
@@ -24,9 +27,6 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.test.context.junit4.SpringRunner
 import java.time.LocalDate
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.Id
 
 @SpringBootTest(classes = [JdbcQueryTestConfig::class])
 @RunWith(SpringRunner::class)

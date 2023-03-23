@@ -11,7 +11,7 @@
    <parent>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-parent</artifactId>
-      <version>3.0.3</version>
+      <version>3.0.4</version>
    </parent>
 
    <url>https://orbitalhq.com</url>
@@ -46,23 +46,20 @@
       <!-- Kotlin serialization is currently fixed to the version supported by spring -->
       <kotlin.serialization.version>1.4.1</kotlin.serialization.version>
 
-      <logback.version>1.2.11</logback.version>
-
-      <spring.cloud.version>2021.0.5</spring.cloud.version>
+      <spring.cloud.version>2022.0.0</spring.cloud.version>
       <arrow.version>1.1.5</arrow.version>
       <logstash.logback.version>7.3</logstash.logback.version>
 
-      <swagger.springfox.version>3.0.0</swagger.springfox.version>
       <http4k.version>4.39.0.0</http4k.version>
       <hazelcast-jet.version>4.5</hazelcast-jet.version>
       <hazelcast.version>5.2.2</hazelcast.version>
       <testcontainers.version>1.16.2</testcontainers.version>
       <h2.version>2.1.214</h2.version>
-      <reactor-bom.version>2020.0.28</reactor-bom.version>
-      <netty.version>4.1.75.Final</netty.version>
+      <reactor-bom.version>2022.0.5</reactor-bom.version>
+      <!--      <netty.version>4.1.75.Final</netty.version>-->
       <!-- CVE-2022-31692  -->
-      <spring-security.version>5.7.5</spring-security.version>
-      <spring-security-test.version>5.7.5</spring-security-test.version>
+      <!--      <spring-security.version>5.7.5</spring-security.version>-->
+      <!--      <spring-security-test.version>5.7.5</spring-security-test.version>-->
       <kotest.version>5.5.5</kotest.version>
       <junit.jupiter.version>5.9.2</junit.jupiter.version>
       <junit.vintage.version>5.9.2</junit.vintage.version>
@@ -148,11 +145,6 @@
          <version>3.12.0</version>
       </dependency>
 
-      <dependency>
-         <groupId>ch.qos.logback</groupId>
-         <artifactId>logback-classic</artifactId>
-         <version>${logback.version}</version>
-      </dependency>
       <dependency>
          <groupId>com.diffplug.durian</groupId>
          <artifactId>durian</artifactId>
@@ -373,16 +365,7 @@
             <artifactId>logstash-logback-encoder</artifactId>
             <version>${logstash.logback.version}</version>
          </dependency>
-         <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-swagger2</artifactId>
-            <version>${swagger.springfox.version}</version>
-         </dependency>
-         <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-swagger-ui</artifactId>
-            <version>${swagger.springfox.version}</version>
-         </dependency>
+
          <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-core</artifactId>

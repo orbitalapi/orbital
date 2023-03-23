@@ -21,24 +21,24 @@ import io.vyne.schemas.OperationNames
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringSerializer
 import io.vyne.schemas.ServiceName
+import jakarta.persistence.Column
+import jakarta.persistence.Convert
+import jakarta.persistence.Embeddable
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.IdClass
+import jakarta.persistence.Index
+import jakarta.persistence.Lob
+import jakarta.persistence.Table
+import jakarta.persistence.Transient
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import java.time.Duration
 import java.time.Instant
-import javax.persistence.Column
-import javax.persistence.Convert
-import javax.persistence.Embeddable
-import javax.persistence.Entity
-import javax.persistence.EnumType
-import javax.persistence.Enumerated
-import javax.persistence.GeneratedValue
-import javax.persistence.GenerationType
-import javax.persistence.Id
-import javax.persistence.IdClass
-import javax.persistence.Index
-import javax.persistence.Lob
-import javax.persistence.Table
-import javax.persistence.Transient
 
 
 @Entity(name = "QUERY_SUMMARY")

@@ -55,13 +55,13 @@
    <dependencyManagement>
       <!-- Override the version inherited from out-of-date spring boot BOM -->
       <dependencies>
-         <dependency>
-            <groupId>io.rsocket</groupId>
-            <artifactId>rsocket-bom</artifactId>
-            <version>${rsocket.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
-         </dependency>
+         <!--         <dependency>-->
+         <!--            <groupId>io.rsocket</groupId>-->
+         <!--            <artifactId>rsocket-bom</artifactId>-->
+         <!--            <version>${rsocket.version}</version>-->
+         <!--            <type>pom</type>-->
+         <!--            <scope>import</scope>-->
+         <!--         </dependency>-->
       </dependencies>
    </dependencyManagement>
 

@@ -1,16 +1,16 @@
 package io.vyne.cask.ingest
 
 import io.vyne.schemas.VersionedType
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.CrudRepository
 import org.springframework.data.repository.PagingAndSortingRepository
 import java.time.Instant
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.GeneratedValue
-import javax.persistence.GenerationType
-import javax.persistence.Id
 
 @Entity
 class IngestionError(

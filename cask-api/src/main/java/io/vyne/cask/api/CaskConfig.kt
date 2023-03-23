@@ -1,12 +1,12 @@
 package io.vyne.cask.api
 
 import io.vyne.schemas.VersionedType
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.Id
 import java.time.Instant
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.EnumType
-import javax.persistence.Enumerated
-import javax.persistence.Id
 
 @Entity(name = "cask_config")
 //@TypeDef(name = "list-array", typeClass = ListArrayType::class)

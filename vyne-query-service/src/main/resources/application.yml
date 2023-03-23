@@ -22,7 +22,7 @@ spring:
 
    jpa:
       hibernate:
-         use-new-id-generator-mappings: false
+#         use-new-id-generator-mappings: false
       #      show-sql: true
       hibernate.ddl-auto: none
 
@@ -156,23 +156,6 @@ eureka:
 
 
 management:
-   metrics:
-      export:
-         prometheus:
-            enabled: false
-         influx:
-            enabled: false
-         elastic:
-            enabled: false
-         jmx:
-            enabled: false
-         graphite:
-            enabled: false
-         datadog:
-            enabled: false
-         dynatrace:
-            enabled: false
-
    endpoints:
       web:
          exposure:
@@ -187,3 +170,31 @@ management:
       health:
          show-details: always
          show-components: always
+   prometheus:
+      metrics:
+         export:
+            enabled: false
+   influx:
+      metrics:
+         export:
+            enabled: false
+   dynatrace:
+      metrics:
+         export:
+            enabled: false
+   datadog:
+      metrics:
+         export:
+            enabled: false
+   elastic:
+      metrics:
+         export:
+            enabled: false
+   jmx:
+      metrics:
+         export:
+            enabled: false
+   graphite:
+      metrics:
+         export:
+            enabled: false

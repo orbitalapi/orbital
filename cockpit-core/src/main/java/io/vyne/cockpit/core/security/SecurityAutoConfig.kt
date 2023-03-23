@@ -35,6 +35,7 @@ private val logger = KotlinLogging.logger { }
 
 @EnableWebFluxSecurity
 @EnableConfigurationProperties(VyneAuthorisationConfig::class, VyneOpenIdpConnectConfig::class)
+@Configuration
 class VyneInSecurityAutoConfig {
 
    fun getURLsForDisabledCSRF(): NegatedServerWebExchangeMatcher? {
