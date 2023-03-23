@@ -1,10 +1,12 @@
 
 import { michaelStone } from '@/authors';
+import { ImageWithCaption } from '@/components/ImageWithCaption';
 
+import QueryExecutionPlan from './query-execution-plan.png';
 
 export const meta = {
   title: 'Hello, Typescript SDK',
-  description: `Using Orbital's Typescript SDK to connect APIs, DB's and Kafka`,
+  description: `Using Orbital's Typescript SDK to connect your microservices and data sources`,
   date: '2023-03-21T08:00:00.000Z',
   authors: [michaelStone]
 }
@@ -32,14 +34,12 @@ npm install @orbitalhq/orbital-client
 
 ## Usage
 
-There’s two methods of using the SDK depending on your preferred styles. 
+There’s two methods of using the SDK depending on your preferred style. 
 
 1. Submit a TaxiQL query string
-2. Use the query DSL
+2. Use the typesafe query building
 
-For both cases, the first step is to generate a taxonomy of terms based on the schemas registered with Orbital. That's done using a script provided in the Orbital client npm package that connects to the Orbital schema server and downloads the typescript version of the taxonomy. Simply define an orbital.config.json file with the schema server URL and away you go.
-
-The content of the taxonomy depends on the data providers that have uploaded their schemas to Orbital. There's more info available in our docs on how [schemas can be published](https://orbitalhq.com/docs/connecting-data-sources/overview).
+For both cases, the first step is to generate a taxonomy of terms based on the schemas registered with Orbital. That's done using a script provided in the Orbital client npm package that connects to the Orbital schema server and downloads the typescript version of the taxonomy. Simply define an `orbital.config.json` file with the schema server URL and away you go.
 
 ```json
 {
@@ -47,7 +47,9 @@ The content of the taxonomy depends on the data providers that have uploaded the
 }
 ```
 
-And to run the script from your project:
+The content of the taxonomy depends on the data providers that have uploaded their schemas to Orbital. There's more info available in our docs on how [schemas can be published](https://orbitalhq.com/docs/connecting-data-sources/overview).
+
+To run the taxonomy generation script from your project:
 
 ```bash
 npx orbital-generate
@@ -55,20 +57,28 @@ npx orbital-generate
 
 ### Submitting TaxiQL
 
-This method is closer to what you’d use if you’ve experimented with the Query Editor in the Orbital UI. 
+This method is closer to what you’d use if you’ve experimented with the Query Editor in the Orbital UI. If you've already written a query in the UI you're happy with, you can generate this code directly from the Query Editor by clicking the the `copy` button .
 
 ```typescript
 const orbitalClient = new HttpQueryClient(`http://localhost:9022`)
 let films = orbitalClient.query(```
+import film.types.FilmId
 import film.types.Title
-import films.FilmId
+import com.petflix.listings.StreamingProviderName
+import com.petflix.listings.StreamingProviderPrice
 
 find { Film[] } as {
     id: FilmId
     title : Title
+
+    // where can I watch this?
+    provider: StreamingProviderName
+    cost: StreamingProviderPrice
 }[]
 ```);
 ```
+
+
 
 Here, we simply send the query string over to Orbital which describes:
 
@@ -76,31 +86,43 @@ Here, we simply send the query string over to Orbital which describes:
 * which pieces of data we want (id and title) 
 * the structure we want it in (flat).
 
+In our projection of the pieces of data we want, we're asking for two different types of information. Some details about the film itself (the FilmId and the Title), and information about where it's availabled to watch (StreamingProviderName and StreamingProviderPrice). 
+
+If we check out the query history in the Orbital UI after running this query, we can see that the data has come from two different systems. We fetched the `id` and `title` from our `Films` database, and then we used the `FilmId` to call our `StreamingProvidersService` to fetch the `provider` and `cost` properties.  
+
+<ImageWithCaption src={QueryExecutionPlan} caption="The query execution plan executed by Orbital" />
+
+
 It’s worth noting that when defining the structure of data we want to receive, we can use whatever property names we want. It’s the semantic tags that we’ve imported from our generated taxonomy that are significant. In this example, `FilmId` and `Title` are the tags we've used, shown as the types of the `id` and `title` properties of our response projection. 
 
 Check out our other content for why we're advocating for [using semantic metadata](https://orbitalhq.com/blog/2023-01-16-using-semantic-metadata) to queries and schemas. 
 
-You can also extract the query to a separate `*.taxi` where you can take advantage of our [VSCode Taxi language plugin](https://taxilang.org/taxi-vs-code/editor-plugins/) 
+You can also extract the query to a separate `*.taxi` where you can take advantage of our [VSCode Taxi language plugin](https://taxilang.org/taxi-vs-code/editor-plugins/) for editing your query.
 
 
-### Building a DSL query
+### Type safe query builder
 
-The other option is to use the DSL built in to our SDK which allows us to build our query as a series of chained functions. Just like in our query string, we’ll define the data we want, the properties we’re interested in, and the structure.
+The other option is to use the query builder in our SDK which allows us to build our query as a series of chained functions. Just like in our query string, we’ll define the data we want, the properties we’re interested in, and the structure.
 
 ```typescript
+import { com, film } from '@/app/taxonomy';
+const filmTaxonomy = new film.Taxonomy();
+const filmTypesTaxonomy = new film.types.Taxonomy();
+const listingsTaxonomy = new com.petflix.listings.Taxonomy();
+
 let films = orbitalClient
     // What data do I want to find
-    .find(asArray(taxonomy.film.Film))
+    .find(asArray(filmTaxonomy.Film))
 
     // Which properties do I want returned, and in what structure
     .as({
         // The property names can be whatever you want
         // The types on the right hand side are our semantic tags that describe
         // to Orbital what data to find
-        id: taxonomy.film.types.FilmId,
-        title: taxonomy.film.types.Title,
-        provider: taxonomy.com.petflix.listings.StreamingProviderName,
-        cost: taxonomy.com.petflix.listings.StreamingProviderPrice
+        id: filmTypesTaxonomy.FilmId,
+        title: filmTypesTaxonomy.Title,
+        provider: listingsTaxonomy.StreamingProviderName,
+        cost: listingsTaxonomy.StreamingProviderPrice
     })
     .execute()
     .subscribe()
@@ -111,24 +133,27 @@ let films = orbitalClient
 
 Sometimes we want to be more specific about the data we’re fetching. Instead of ALL the films, maybe we want more detailed information about one film. 
 
-It’s worth mentioning here a design consideration of Orbital. We make consuming your existing APIs and data sources much easier, but we work with what you’ve got. So for example if you only define an endpoint which returns all the films, that’s what you can query with Orbital. 
-
-You probably do have a getter for individual items, and that’s where this feature of the SDK comes in handy. 
+Orbital works with your existing API endpoints and data sources - so provided you've got and endpoint that returns a single Film from it's Id, Orbital will automatically query it.
 
 We’ll add an extra function call `given()`, using the semantic tag of the item we’re specifying, the film ID. 
 
 
 ```typescript
+import { com, film } from '@/app/taxonomy';
+const filmTaxonomy = new film.Taxonomy();
+const filmTypesTaxonomy = new film.types.Taxonomy();
+const listingsTaxonomy = new com.petflix.listings.Taxonomy();
+
 let film = orbitalClient
     // Return the data for the film with a FilmId of "5"
-    .given(taxonomy.film.types.FilmId, "5")
-    .find(asArray(taxonomy.film.Film))
+    .given(filmTypesTaxonomy.FilmId, "5")
+    .find(asArray(filmTaxonomy.Film))
     .as({
-        id: taxonomy.film.types.FilmId,
-        title: taxonomy.film.types.Title,
-        provider: taxonomy.com.petflix.listings.StreamingProviderName,
-        cost: taxonomy.com.petflix.listings.StreamingProviderPrice
-    })
+        id: filmTypesTaxonomy.FilmId,
+        title: filmTypesTaxonomy.Title,
+        provider: listingsTaxonomy.StreamingProviderName,
+        cost: listingsTaxonomy.StreamingProviderPrice
+      })
     .execute()
     .subscribe()
 ```

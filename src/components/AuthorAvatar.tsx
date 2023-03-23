@@ -6,7 +6,7 @@ export function AuthorAvatar(author: Author) {
     key={author.twitter}
     className='flex items-center font-medium whitespace-nowrap mt-6'
   >
-    { author.avatar != null &&
+    { author.avatar !== undefined &&
       <img
         src={author.avatar}
         alt=''
