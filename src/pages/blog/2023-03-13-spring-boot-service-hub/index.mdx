@@ -5,6 +5,7 @@ import ServicesExplorerFinal from './service-explorer-final.png';
 import { Callout } from '@/components/docs/Callout';
 
 import { ImageWithCaption } from '@/components/ImageWithCaption';
+import { RawImageWithCaption } from '@/components/RawImageWithCaption';
 
 import { SnippetGroup } from '@/components/SnippetGroup';
 import OrbitalCatalog1 from './orbital-catalog-1.gif';
@@ -35,7 +36,7 @@ using Orbital's integration capabilities.
 In this blog post, we're going to explore creating an awesome self-updating developer
 hub using Spring Boot, Kotlin, and Orbital's API catalog.  
 
-<ImageWithCaption src={OrbitalCatalogFinal} caption='A GIF showing the working catalog, diagrams and API explorer' />
+<RawImageWithCaption src={OrbitalCatalogFinal.src} caption='A GIF showing the working catalog, diagrams and API explorer' />
 
 Our microservices will publish their APIs directly to Orbital on startup, so that Orbital is always up-to-date.
 There's lots of [different ways](/docs/connecting-data-sources/overview) to publish API specs to Orbital - but in this post we'll focus on 
@@ -402,12 +403,12 @@ You should now see a diagram, showing our two API's.
 Clicking on any of the endpoints will also add the response schema to the diagram.
 
 
-<ImageWithCaption src={OrbitalCatalog1} caption='Our services diagram' />
+<RawImageWithCaption src={OrbitalCatalog1.src} caption='Our services diagram' />
 
 Our catalog also already has rich information about our services - including an API browser,
   and data catalog.
 
-<ImageWithCaption src={OrbitalCatalog2} caption='The data and API catalog' />
+<RawImageWithCaption src={OrbitalCatalog2.src} caption='The data and API catalog' />
 
 ## Going further - Exposing links between our APIs
 So far, we have a pretty rich catalog, from just a few lines of code.
