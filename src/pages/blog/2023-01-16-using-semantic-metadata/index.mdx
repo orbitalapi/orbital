@@ -87,7 +87,7 @@ Imagine we have 3 systems:
  * A Customers API
  *  And an AccountBalance API, which takes a Customer number, and returns an Account Balance.
 
-<ImageWithCaption src={untypedDiagram.src} caption={`3 systems, but without any hints as to how it all relates`} wide  voyagerLink={`DCb8cYYKmj`}  />
+<ImageWithCaption src={untypedDiagram} caption={`3 systems, but without any hints as to how it all relates`} wide  voyagerLink={`DCb8cYYKmj`}  />
 
 
 We'd like to capture the following:
@@ -157,7 +157,7 @@ components:
 
 We now have a formal way of modelling that data can flow between systems:
 
-<ImageWithCaption src={withSemanticTypes.src} caption={`By embedding semantic types, we can infer how data relates`} wide voyagerLink={`ChLGny26S6`} />
+<ImageWithCaption src={withSemanticTypes} caption={`By embedding semantic types, we can infer how data relates`} wide voyagerLink={`ChLGny26S6`} />
 
 ### Semantic, declarative integration
 By combining OpenAPI (which tells us **how** to interact with systems) with Taxi (which lets us reference the returned data), we're able to automate the integration between these systems.

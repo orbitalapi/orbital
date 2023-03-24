@@ -35,7 +35,7 @@ using Orbital's integration capabilities.
 In this blog post, we're going to explore creating an awesome self-updating developer
 hub using Spring Boot, Kotlin, and Orbital's API catalog.  
 
-<ImageWithCaption src={OrbitalCatalogFinal.src} caption='A GIF showing the working catalog, diagrams and API explorer' />
+<ImageWithCaption src={OrbitalCatalogFinal} caption='A GIF showing the working catalog, diagrams and API explorer' />
 
 Our microservices will publish their APIs directly to Orbital on startup, so that Orbital is always up-to-date.
 There's lots of [different ways](/docs/connecting-data-sources/overview) to publish API specs to Orbital - but in this post we'll focus on 
@@ -48,14 +48,14 @@ couple of Spring Boot microservices that self-publish their API's.
 We'll get beautiful diagrams like this, which show the running services,
 as well as how the data between them is related:
 
-<ImageWithCaption src={ServicesDiagramFinal.src}
+<ImageWithCaption src={ServicesDiagramFinal}
                   caption="Orbital's service diagram - showing two microservices, their APIs, and how they relate" />
 
 In addition, Orbital gives us a rich data and API catalog, where we can search and play with APIs:
 
-<ImageWithCaption src={ServicesExplorerFinal.src}
+<ImageWithCaption src={ServicesExplorerFinal}
                   caption='Service explorer lets developers see the endpoints and operations exposed by an API' />
-<ImageWithCaption src={OperationExplorerFinal.src}
+<ImageWithCaption src={OperationExplorerFinal}
                   caption='The operation explorer lets us interact and play around with individual APIs' />
 
 ## The Spring Boot app
@@ -402,12 +402,12 @@ You should now see a diagram, showing our two API's.
 Clicking on any of the endpoints will also add the response schema to the diagram.
 
 
-<ImageWithCaption src={OrbitalCatalog1.src} caption='Our services diagram' />
+<ImageWithCaption src={OrbitalCatalog1} caption='Our services diagram' />
 
 Our catalog also already has rich information about our services - including an API browser,
   and data catalog.
 
-<ImageWithCaption src={OrbitalCatalog2.src} caption='The data and API catalog' />
+<ImageWithCaption src={OrbitalCatalog2} caption='The data and API catalog' />
 
 ## Going further - Exposing links between our APIs
 So far, we have a pretty rich catalog, from just a few lines of code.
@@ -417,7 +417,7 @@ However, there's important relationships here that we're not exposing.
 The Id from the Films can be passed to my Review service to lookup a review.This is key information for developers who are trying to navigate between services to
 Get Stuff Done.
 
-<ImageWithCaption src={MissingRelationship.src}
+<ImageWithCaption src={MissingRelationship}
                   caption="There's a missing relationship between the Film model and the ReviewService" />
 
 However, we're in luck.
@@ -467,7 +467,7 @@ Now, if restart the Spring Boot app, our updated schema will get published direc
 
 Refreshing the services diagram now shows an updated diagram with the relationship mapped:
 
-<ImageWithCaption src={UpdatedServicesDiagram.src}
+<ImageWithCaption src={UpdatedServicesDiagram}
                   caption='Using type aliases, the relationship between services can be mapped' />
 
 ## Changelog
@@ -479,7 +479,7 @@ Orbital has a full changelog, every time a change is pushed.
 
 Navigate over to the Schemas tab, and see the changelog entry
 
-<ImageWithCaption src={Changelog.src} caption="Orbital's changelog shows changes to APIs as they're published" />
+<ImageWithCaption src={Changelog} caption="Orbital's changelog shows changes to APIs as they're published" />
 
 
 ## Summary
