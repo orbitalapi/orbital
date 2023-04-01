@@ -16,6 +16,11 @@
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>chatgpt</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>query-node-api</artifactId>
          <version>${project.version}</version>
       </dependency>

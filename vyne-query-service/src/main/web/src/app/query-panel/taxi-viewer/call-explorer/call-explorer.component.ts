@@ -13,45 +13,53 @@ import { isNullOrUndefined } from 'util';
 @Component({
   selector: 'app-call-explorer',
   template: `
-    <div class="toolbar">
-      <mat-button-toggle-group [(ngModel)]="displayMode" data-e2e-id="profiler-call-operation-selection">
-        <mat-button-toggle value="lineage" data-e2e-id="call-select">
-          <img class="icon" src="assets/img/lineage-nodes.svg">
+    <div class='toolbar'>
+      <mat-button-toggle-group [(ngModel)]='displayMode' data-e2e-id='profiler-call-operation-selection'>
+        <mat-button-toggle value='lineage' data-e2e-id='call-select'>
+          <img class='icon' src='assets/img/lineage-nodes.svg'>
         </mat-button-toggle>
-        <mat-button-toggle value="sequence" data-e2e-id="call-select">
-          <img class="icon" src="assets/img/sequence.svg">
+        <mat-button-toggle value='sequence' data-e2e-id='call-select'>
+          <img class='icon' src='assets/img/sequence.svg'>
         </mat-button-toggle>
-        <mat-button-toggle value="stats" data-e2e-id="operation-select">
-          <img class="icon" src="assets/img/table-view.svg">
+        <mat-button-toggle value='stats' data-e2e-id='operation-select'>
+          <img class='icon' src='assets/img/table-view.svg'>
         </mat-button-toggle>
       </mat-button-toggle-group>
     </div>
-    <div class="sequence-diagram-container" *ngIf="displayMode === 'sequence'">
-      <div class="operation-list-container">
-        <div class="header">
-          <div class="table-header">Calls</div>
-          <div class="table-subheader">(Click to explore)</div>
-        </div>
-        <div class="operation-list">
-          <div class="operation" *ngFor="let remoteCall of remoteCalls$ | async" (click)="selectOperation(remoteCall)">
-            <div class="pill verb">{{ remoteCall.method }}</div>
-            <div class="pill result"
-                 [ngClass]="statusTextClassForRemoteCall(remoteCall)">{{ remoteCall.resultCode }}</div>
-            <div class="pill duration">{{ remoteCall.durationMs }}ms</div>
-            <div class="address"
-                 [matTooltip]="getPathOnly(remoteCall.address)">{{ remoteCall.displayName }}</div>
+    <div class='sequence-diagram-container' *ngIf="displayMode === 'sequence'">
+      <as-split direction='horizontal' unit='pixel'>
+        <as-split-area [size]='500'>
+          <div class='operation-list-container'>
+            <div class='header'>
+              <div class='table-header'>Calls</div>
+              <div class='table-subheader'>(Click to explore)</div>
+            </div>
+            <div class='operation-list'>
+              <div class='operation' *ngFor='let remoteCall of remoteCalls$ | async'
+                   (click)='selectOperation(remoteCall)'>
+                <div class='pill verb'>{{ remoteCall.method }}</div>
+                <div class='pill result'
+                     [ngClass]='statusTextClassForRemoteCall(remoteCall)'>{{ remoteCall.resultCode }}</div>
+                <div class='pill duration'>{{ remoteCall.durationMs }}ms</div>
+                <div class='address'
+                     [matTooltip]='getPathOnly(remoteCall.address)'>{{ remoteCall.displayName }}</div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-      <div class="chart-container" *ngIf="!selectedOperation">
-        <app-sequence-diagram [profileData$]="queryProfileData$"></app-sequence-diagram>
-      </div>
-      <app-call-explorer-operation-view [operation]="selectedOperation" *ngIf="selectedOperation"
-                                        [operationResponse$]="selectedOperationResult$"
-                                        (close)="selectedOperation = null"></app-call-explorer-operation-view>
+        </as-split-area>
+        <as-split-area size='*'>
+          <div class='chart-container' *ngIf='!selectedOperation'>
+            <app-sequence-diagram [profileData$]='queryProfileData$'></app-sequence-diagram>
+          </div>
+          <app-call-explorer-operation-view [operation]='selectedOperation' *ngIf='selectedOperation'
+                                            [operationResponse$]='selectedOperationResult$'
+                                            (close)='selectedOperation = null'></app-call-explorer-operation-view>
+
+        </as-split-area>
+      </as-split>
     </div>
-    <app-service-stats *ngIf="displayMode === 'stats'" [operationStats]="operationStats$ | async"></app-service-stats>
-    <app-query-lineage *ngIf="displayMode === 'lineage'" [rows]="querySankeyChartRows$ | async"></app-query-lineage>
+    <app-service-stats *ngIf="displayMode === 'stats'" [operationStats]='operationStats$ | async'></app-service-stats>
+    <app-query-lineage *ngIf="displayMode === 'lineage'" [rows]='querySankeyChartRows$ | async'></app-query-lineage>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./call-explorer.component.scss']

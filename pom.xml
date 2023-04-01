@@ -24,7 +24,7 @@
    </licenses>
 
    <properties>
-      <taxi.version>1.36.0</taxi.version>
+      <taxi.version>1.36.3-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -116,6 +116,8 @@
       <module>monitoring-common</module>
       <module>analytics</module>
       <module>spring-utils</module>
+      <module>chatgpt</module>
+
    </modules>
 
    <scm>

@@ -9,6 +9,7 @@ import io.vyne.VyneProvider
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.csv.CsvFormatSpec
+import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonModel
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore
@@ -20,6 +21,7 @@ import io.vyne.spring.config.TestDiscoveryClientConfig
 import io.vyne.testVyne
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.skyscreamer.jsonassert.JSONAssert
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
@@ -46,7 +48,8 @@ import kotlin.test.assertEquals
       "vyne.search.directory=./search/\${random.int}",
       "vyne.telemetry.enabled=false",
       "spring.datasource.url=jdbc:h2:mem:testdbVyneQueryIntegrationTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"
-   ])
+   ]
+)
 class VyneQueryIntegrationTest {
 
    @Autowired
@@ -62,6 +65,10 @@ class VyneQueryIntegrationTest {
                userId : UserId as String
                userName : Username as String
             }
+            type UserWithNulls {
+               userId : UserId as String
+               userName : Username as String
+            }
 
             type Empty {
                emptyId : EmptyId as String
@@ -70,6 +77,7 @@ class VyneQueryIntegrationTest {
 
             service UserService {
                operation getUsers(): User[]
+               operation getUsersWithNulls(): UserWithNulls[]
             }
 
             service EmptyService {
@@ -117,7 +125,7 @@ class VyneQueryIntegrationTest {
       fun schemaProvider(): SchemaProvider = SimpleTaxiSchemaProvider(UserSchema.source)
 
       @Bean
-      fun schemaStore():SchemaStore = LocalValidatingSchemaStoreClient()
+      fun schemaStore(): SchemaStore = LocalValidatingSchemaStoreClient()
 
       @Bean
       @Primary
@@ -125,7 +133,7 @@ class VyneQueryIntegrationTest {
          val (vyne, stub) = UserSchema.pipelineTestVyne()
          stub.addResponse(
             "getUsers", vyne.parseJsonModel(
-            "io.vyne.queryService.User[]", """
+               "io.vyne.queryService.User[]", """
             [{
                "userId": "1010",
                "userName": "jean-pierre"
@@ -137,15 +145,31 @@ class VyneQueryIntegrationTest {
                "userName": "jean-jacques"
             }]
          """.trimIndent()
+            )
          )
+         stub.addResponse(
+            "getUsersWithNulls", vyne.parseJson(
+               "io.vyne.queryService.UserWithNulls[]", """
+            [{
+               "userId": "1010",
+               "userName": null
+            },{
+               "userId": "2020",
+               "userName": null
+            },{
+               "userId": "3030",
+               "userName": null
+            }]
+         """.trimIndent()
+            )
          )
 
          stub.addResponse(
             "getEmpties", vyne.parseJsonModel(
-            "io.vyne.queryService.Empty[]", """
+               "io.vyne.queryService.Empty[]", """
             []
          """.trimIndent()
-         )
+            )
          )
 
          val csv = """field1|field2
@@ -179,7 +203,8 @@ str2|2"""
 
       val result = jacksonObjectMapper().readTree(response.body)
 
-      assertEquals(result.toPrettyString(), """
+      assertEquals(
+         result.toPrettyString(), """
    [ {
      "userId" : "1010",
      "userName" : "jean-pierre"
@@ -189,7 +214,8 @@ str2|2"""
    }, {
      "userId" : "3030",
      "userName" : "jean-jacques"
-   } ]""".trimIndent())
+   } ]""".trimIndent()
+      )
    }
 
    @Test
@@ -258,7 +284,8 @@ str2|2"""
 
       val result = jacksonObjectMapper().readTree(response.body)
 
-      assertEquals(result.toPrettyString(), """
+      assertEquals(
+         result.toPrettyString(), """
          [ {
            "userId" : "1010",
            "userName" : "jean-pierre"
@@ -268,7 +295,8 @@ str2|2"""
          }, {
            "userId" : "3030",
            "userName" : "jean-jacques"
-         } ]""".trimIndent())
+         } ]""".trimIndent()
+      )
    }
 
    @Test
@@ -284,7 +312,8 @@ str2|2"""
       response.statusCodeValue.should.be.equal(200)
       response.headers["Content-Type"].should.equal(listOf(MediaType.APPLICATION_JSON_VALUE))
       val result = jacksonObjectMapper().readTree(response.body)
-      assertEquals(result.toPrettyString(), """
+      assertEquals(
+         result.toPrettyString(), """
          [ {
            "userId" : "1010",
            "userName" : "jean-pierre"
@@ -294,7 +323,8 @@ str2|2"""
          }, {
            "userId" : "3030",
            "userName" : "jean-jacques"
-         } ]""".trimIndent())
+         } ]""".trimIndent()
+      )
    }
 
    @Test
@@ -340,12 +370,14 @@ str2|2"""
 
       response.statusCodeValue.should.be.equal(200)
       response.headers["Content-Type"].should.equal(listOf("text/csv;charset=UTF-8"))
-      assertEquals(response.body.trimIndent(), """
+      assertEquals(
+         response.body.trimIndent(), """
          userId,userName
          1010,jean-pierre
          2020,jean-paul
          3030,jean-jacques
-         """.trimIndent())
+         """.trimIndent()
+      )
    }
 
    @Test
@@ -363,8 +395,10 @@ str2|2"""
 
       val result = jacksonObjectMapper().readTree(response.body)
 
-      assertEquals(result.toPrettyString(), """
-      [ ]""".trimIndent())
+      assertEquals(
+         result.toPrettyString(), """
+      [ ]""".trimIndent()
+      )
 
    }
 
@@ -383,8 +417,22 @@ str2|2"""
          str1|1
          str2|2
          """.trimIndent(),
-         response.body.trimIndent())
+         response.body.trimIndent()
+      )
+   }
 
+   @Test
+   fun `a RAW request with nulls omitted doesnt include nulls in response`() {
+      val headers = HttpHeaders()
+      headers.contentType = MediaType.APPLICATION_JSON
+      headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
+      val entity = HttpEntity("@OmitNulls query MyQuery { find { UserWithNulls[] } }", headers)
+      val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
+      response.statusCodeValue.should.be.equal(200)
+      response.headers["Content-Type"].should.equal(listOf("application/json"))
+      // The null keys shouldn't be present
+      val expected = """[{"userId":"1010"},{"userId":"2020"},{"userId":"3030"}]"""
+      JSONAssert.assertEquals(expected, response.body, true)
    }
 
 

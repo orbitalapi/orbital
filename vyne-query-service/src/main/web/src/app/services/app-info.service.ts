@@ -47,8 +47,12 @@ export interface QueryServiceConfig {
   }
   actuatorPath: string;
   pipelineConfig: PipelineConfig;
+  featureToggles: FeatureToggles;
 }
 
+export interface FeatureToggles {
+  chatGptEnabled: boolean;
+}
 export interface PipelineConfig {
   kibanaUrl: string;
   logsIndex: string;

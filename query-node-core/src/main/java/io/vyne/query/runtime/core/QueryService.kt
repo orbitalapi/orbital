@@ -16,6 +16,7 @@ import io.vyne.query.Query
 import io.vyne.query.QueryCancelledException
 import io.vyne.query.QueryContextEventBroker
 import io.vyne.query.QueryMode
+import io.vyne.query.QueryOptions
 import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResult
 import io.vyne.query.QueryStartEvent
@@ -102,13 +103,14 @@ class QueryService(
    ): ResponseEntity<Flow<Any>> {
 
       val queryResult = executeQuery(query, clientQueryId)
-      return queryResultToResponseEntity(queryResult, resultMode, contentType)
+      return queryResultToResponseEntity(queryResult, resultMode, contentType, QueryOptions())
    }
 
    private fun queryResultToResponseEntity(
       queryResult: QueryResponse,
       resultMode: ResultMode,
-      contentType: String
+      contentType: String,
+      queryOptions: QueryOptions
    ): ResponseEntity<Flow<Any>> {
       val httpStatus = when (queryResult) {
          is QueryResult -> HttpStatus.OK
@@ -118,23 +120,24 @@ class QueryService(
       return ResponseEntity.status(httpStatus)
          .header("x-vyne-query-id", queryResult.queryId)
          .header("x-vyne-client-query-id", queryResult.clientQueryId)
-         .body(convertToExpectedResult(queryResult, resultMode, contentType))
+         .body(convertToExpectedResult(queryResult, resultMode, contentType, queryOptions))
    }
 
    private fun convertToExpectedResult(
       queryResult: QueryResponse,
       resultMode: ResultMode,
-      contentType: String
+      contentType: String,
+      queryOptions: QueryOptions
    ): Flow<Any> {
-      return queryResponseFormatter.convertToSerializedContent(queryResult, resultMode, contentType)
+      return queryResponseFormatter.convertToSerializedContent(queryResult, resultMode, contentType, queryOptions)
    }
 
-   suspend fun monitored(
+   suspend fun <T> monitored(
       query: TaxiQLQueryString,
       clientQueryId: String?,
       queryId: String, vyneUser: VyneUser?,
-      block: suspend () -> QueryResponse
-   ): QueryResponse {
+      block: suspend () -> T
+   ): T {
 
       activeQueryMonitor.reportStart(queryId, clientQueryId, query)
       return block.invoke()
@@ -155,8 +158,8 @@ class QueryService(
    ): ResponseEntity<Flow<String>> {
 
       val user = auth?.toVyneUser()
-      val response = vyneQLQuery(query, user, clientQueryId = clientQueryId, queryId = UUID.randomUUID().toString())
-      return queryResultToResponseEntity(response, resultMode, contentType) as ResponseEntity<Flow<String>>
+      val (response,queryOptions) = vyneQLQuery(query, user, clientQueryId = clientQueryId, queryId = UUID.randomUUID().toString())
+      return queryResultToResponseEntity(response, resultMode, contentType, queryOptions) as ResponseEntity<Flow<String>>
 
    }
 
@@ -177,13 +180,13 @@ class QueryService(
       @RequestParam("clientQueryId", required = false) clientQueryId: String?
    ): ResponseEntity<Flow<Any>> {
       val user = auth?.toVyneUser()
-      val response = vyneQLQuery(
+      val (response,queryOptions) = vyneQLQuery(
          query,
          user,
          clientQueryId = clientQueryId,
          queryId = clientQueryId ?: UUID.randomUUID().toString()
       )
-      return queryResultToResponseEntity(response, resultMode, contentType)
+      return queryResultToResponseEntity(response, resultMode, contentType, queryOptions)
    }
 
    /**
@@ -242,11 +245,12 @@ class QueryService(
       }
       val user = auth?.toVyneUser()
       val queryId = UUID.randomUUID().toString()
-      return when (val queryResponse = vyneQLQuery(query, user, clientQueryId, queryId)) {
+      val (queryResponse,queryOptions) = vyneQLQuery(query, user, clientQueryId, queryId)
+      return when (queryResponse) {
          is FailedSearchResponse -> flowOf(queryResponse)
          is QueryResult -> {
             val resultSerializer =
-               this.queryResponseFormatter.buildStreamingSerializer(resultMode, queryResponse, contentType)
+               this.queryResponseFormatter.buildStreamingSerializer(resultMode, queryResponse, contentType, queryOptions)
             queryResponse.results
                .catch { throwable ->
                   when (throwable) {
@@ -341,14 +345,15 @@ class QueryService(
       vyneUser: VyneUser? = null,
       clientQueryId: String?,
       queryId: String
-   ): QueryResponse = monitored(query = query, clientQueryId = clientQueryId, queryId = queryId, vyneUser = vyneUser) {
+   ): Pair<QueryResponse,QueryOptions> = monitored(query = query, clientQueryId = clientQueryId, queryId = queryId, vyneUser = vyneUser) {
       logger.info { "[$queryId] $query" }
       val vyne = vyneProvider.createVyne(vyneUser.facts())
       val historyWriterEventConsumer = historyWriterProvider.createEventConsumer(queryId, vyne.schema)
-      val response = try {
+      val (response,queryOptions) = try {
          val eventDispatcherForQuery =
             activeQueryMonitor.eventDispatcherForQuery(queryId, listOf(historyWriterEventConsumer))
-         vyne.query(query, queryId = queryId, clientQueryId = clientQueryId, eventBroker = eventDispatcherForQuery)
+         val (taxiQlQuery, queryOptions) = vyne.parseQuery(query)
+         vyne.query(query, queryId = queryId, clientQueryId = clientQueryId, eventBroker = eventDispatcherForQuery) to queryOptions
       } catch (e: lang.taxi.CompilationException) {
          logger.info("The query failed compilation: ${e.message}")
          /**
@@ -371,20 +376,20 @@ class QueryService(
             clientQueryId = clientQueryId,
             queryId = queryId
          )
-         failedSearchResponse
+         failedSearchResponse to QueryOptions.default()
       } catch (e: SearchFailedException) {
-         FailedSearchResponse(e.message!!, e.profilerOperation, queryId = queryId)
+         FailedSearchResponse(e.message!!, e.profilerOperation, queryId = queryId) to QueryOptions.default()
 
       } catch (e: NotImplementedError) {
          // happens when Schema is empty
-         FailedSearchResponse(e.message!!, null, queryId = queryId)
+         FailedSearchResponse(e.message!!, null, queryId = queryId) to QueryOptions.default()
       } catch (e: QueryCancelledException) {
-         FailedSearchResponse(e.message!!, null, queryId = queryId)
+         FailedSearchResponse(e.message!!, null, queryId = queryId) to QueryOptions.default()
       } catch (e: Exception) {
-         FailedSearchResponse(e.message!!, null, queryId = queryId)
+         FailedSearchResponse(e.message!!, null, queryId = queryId) to QueryOptions.default()
       }
       QueryEventObserver(historyWriterEventConsumer, activeQueryMonitor, metricsEventConsumer)
-         .responseWithQueryHistoryListener(query, response)
+         .responseWithQueryHistoryListener(query, response) to queryOptions
    }
 
    private suspend fun executeQuery(query: Query, clientQueryId: String?): QueryResponse {
