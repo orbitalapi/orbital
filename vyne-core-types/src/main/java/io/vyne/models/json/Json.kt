@@ -30,12 +30,13 @@ fun isJsonArray(value: Any): Boolean {
 }
 
 object Jackson {
-   val defaultObjectMapper: ObjectMapper by lazy {
+   fun newObjectMapperWithDefaults() =
       jacksonObjectMapper()
          .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,false)
          .registerModule(JavaTimeModule())
          .registerModule(SimpleModule().addSerializer(DeferredTypedInstanceSerializer()))
-   }
+
+   val defaultObjectMapper: ObjectMapper = newObjectMapperWithDefaults()
 }
 
 

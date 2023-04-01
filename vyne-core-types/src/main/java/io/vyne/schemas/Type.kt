@@ -636,6 +636,16 @@ data class Type(
    fun hasAttribute(name: String): Boolean {
       return this.attributes.containsKey(name)
    }
+
+   fun findAttributeForType(type: Type): List<Pair<AttributeName, Field>> {
+      return this.attributes.filter { (name, field) ->
+         type.isAssignableTo(field.type)
+      }.map { it.key to it.value }
+   }
+
+   fun hasAttributeWithType(type: Type): Boolean {
+      return findAttributeForType(type).isNotEmpty()
+   }
 }
 
 // Part of the migration back to Taxi types

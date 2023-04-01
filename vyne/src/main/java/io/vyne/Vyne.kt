@@ -75,10 +75,15 @@ class Vyne(
       clientQueryId: String? = null,
       eventBroker: QueryContextEventBroker = QueryContextEventBroker()
    ): QueryResult {
+      val vyneQuery = parseQuery(vyneQlQuery).first
+      return query(vyneQuery, queryId, clientQueryId, eventBroker)
+   }
+
+   fun parseQuery(vyneQlQuery: TaxiQLQueryString): Pair<TaxiQlQuery,QueryOptions> {
       val sw = Stopwatch.createStarted()
       val vyneQuery = Compiler(source = vyneQlQuery, importSources = listOf(this.schema.taxi)).queries().first()
       log().debug("Compiled query in ${sw.elapsed().toMillis()}ms")
-      return query(vyneQuery, queryId, clientQueryId, eventBroker)
+      return vyneQuery to QueryOptions.fromQuery(vyneQuery)
    }
 
    suspend fun query(

@@ -14,23 +14,23 @@ import kotlinx.coroutines.flow.map
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class QueryResult(
-    @field:JsonIgnore
+   @field:JsonIgnore
    val querySpec: QuerySpecTypeNode,
-    @field:JsonIgnore // we send a lightweight version below
+   @field:JsonIgnore // we send a lightweight version below
    val results: Flow<TypedInstance>,
-    @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
+   @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation? = null,
-    @Deprecated("It's no longer possible to know at the time the QueryResult is instantiated if the query has been fully resolved.  Catch the exception from the Flow<> instead.")
+   @Deprecated("It's no longer possible to know at the time the QueryResult is instantiated if the query has been fully resolved.  Catch the exception from the Flow<> instead.")
    override val isFullyResolved: Boolean,
-    val anonymousTypes: Set<Type> = setOf(),
-    override val clientQueryId: String? = null,
-    override val queryId: String,
-    @field:JsonIgnore // we send a lightweight version below
+   val anonymousTypes: Set<Type> = setOf(),
+   override val clientQueryId: String? = null,
+   override val queryId: String,
+   @field:JsonIgnore // we send a lightweight version below
    val statistics: MutableSharedFlow<VyneQueryStatistics>? = null,
-    override val responseType: String? = null,
+   override val responseType: String? = null,
 
-    @field:JsonIgnore
+   @field:JsonIgnore
    private val onCancelRequestHandler: () -> Unit = {}
 ) : QueryResponse {
    override val queryResponseId: String = queryId
@@ -44,7 +44,8 @@ data class QueryResult(
    val unmatchedNodes: Set<QuerySpecTypeNode> by lazy {
       setOf(querySpec)
    }
-   override val responseStatus: QueryResponse.ResponseStatus = if (isFullyResolved) QueryResponse.ResponseStatus.COMPLETED else QueryResponse.ResponseStatus.INCOMPLETE
+   override val responseStatus: QueryResponse.ResponseStatus =
+      if (isFullyResolved) QueryResponse.ResponseStatus.COMPLETED else QueryResponse.ResponseStatus.INCOMPLETE
 
    // for UI
    val searchedTypeName: QualifiedName = querySpec.type.qualifiedName

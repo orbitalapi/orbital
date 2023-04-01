@@ -56,17 +56,21 @@ export class QueryService {
         // therefore, concatAll() seems to do this.
         // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
         concatAll(),
-        shareReplay({ bufferSize: replayCacheSize, refCount: false }),
+        shareReplay({ bufferSize: replayCacheSize, refCount: false })
       );
   }
 
+  textToQuery(queryText: String): Observable<ChatParseResult> {
+    return this.http.post<ChatParseResult>(`${environment.serverUrl}/api/query/chat/parse`, queryText);
+  }
+
   websocketQuery(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<ValueWithTypeName> {
-    const websocket = this.websocketService.websocket('/api/query/taxiql')
+    const websocket = this.websocketService.websocket('/api/query/taxiql');
     websocket.next({
       clientQueryId: clientQueryId,
       query: query
-    })
-    return websocket
+    });
+    return websocket;
   }
 
   /**
@@ -345,19 +349,19 @@ export interface HttpExchange extends RemoteCallExchangeMetadata {
   verb: string;
   requestBody: string;
   responseCode: number;
-  responseSize: number
+  responseSize: number;
 
-  type: 'Http'
+  type: 'Http';
 }
 
 export interface SqlExchange extends RemoteCallExchangeMetadata {
   sql: string;
   recordCount: number;
-  type: 'Sql'
+  type: 'Sql';
 }
 
 export interface EmptyExchangeData extends RemoteCallExchangeMetadata {
-  type: 'None'
+  type: 'None';
 }
 
 export interface RemoteCall extends Proxyable {
@@ -468,18 +472,38 @@ export type SankeyOperationNodeDetails = DatabaseNode | HttpOperationNode | Kafk
 export interface DatabaseNode {
   connectionName: string;
   tableNames: string[];
-  operationType: 'Database'
+  operationType: 'Database';
 }
 
 export interface HttpOperationNode {
-  operationName: QualifiedName
+  operationName: QualifiedName;
   verb: string;
   path: string;
-  operationType: 'Http'
+  operationType: 'Http';
 }
 
 export interface KafkaOperationNode {
   connectionName: string;
   topic: string;
-  operationType: 'KafkaTopic'
+  operationType: 'KafkaTopic';
+}
+
+
+export interface ChatParseResult {
+  queryText: string;
+  chatGptQuery: ChatGptQuery;
+  taxi: string;
+}
+
+export interface ChatGptQuery {
+  fields: string[];
+  conditions: ParsedChatCondition[];
+}
+
+// We're not really using this client-side, so not bothering
+// with ts declaration.
+export interface ParsedChatCondition {
+  operator: any;
+  left: any;
+  right: any;
 }

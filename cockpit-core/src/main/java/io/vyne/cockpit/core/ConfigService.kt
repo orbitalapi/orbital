@@ -6,6 +6,8 @@ import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.licensing.License
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer
+import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.bind.annotation.GetMapping
@@ -19,11 +21,18 @@ class ConfigService(
    analyticsConfig: QueryAnalyticsConfig,
    pipelineConfig: PipelineConfig,
    license: License,
-   @Value("\${management.endpoints.web.base-path:/actuator}") actuatorPath: String
+   @Value("\${management.endpoints.web.base-path:/actuator}") actuatorPath: String,
+   val featureToggles: FeatureTogglesConfig
 ) {
 
    private val configSummary =
-      ConfigSummary(analyticsConfig, pipelineConfig, LicenseStatus.from(license), actuatorPath)
+      ConfigSummary(
+         analyticsConfig,
+         pipelineConfig,
+         LicenseStatus.from(license),
+         actuatorPath,
+         featureToggles
+      )
 
    @GetMapping("/api/config")
    fun getConfig(): ConfigSummary {
@@ -36,7 +45,14 @@ data class ConfigSummary(
    val analytics: QueryAnalyticsConfig,
    val pipelineConfig: PipelineConfig,
    val licenseStatus: LicenseStatus,
-   val actuatorPath: String
+   val actuatorPath: String,
+   val featureToggles: FeatureTogglesConfig
+)
+
+@ConstructorBinding
+@ConfigurationProperties(prefix = "vyne.toggles")
+data class FeatureTogglesConfig(
+   val chatGptEnabled: Boolean = false
 )
 
 data class LicenseStatus(

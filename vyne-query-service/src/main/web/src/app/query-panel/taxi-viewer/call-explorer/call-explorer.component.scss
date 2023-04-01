@@ -45,7 +45,7 @@ app-service-stats {
   overflow: auto;
   display: flex;
   flex-direction: column;
-  width: 500px;
+  //width: 500px;
 
   .header {
     padding: 10px 20px;
@@ -135,7 +135,7 @@ app-operation-view {
   // It seems we need a small width set here to allow flex-grow to
   // resize correctly.  If this is set too high, flex-grow doesn't size to the rest of the space.
   // 100% doesn't work either.
-  width: 10px;
+  //width: 10px;
   flex-grow: 1;
 }
 

@@ -39,11 +39,12 @@ import { RouterModule } from '@angular/router';
 import { MatSortModule } from '@angular/material/sort';
 import { CovalentFileModule } from '@covalent/core/file';
 import { ExpandingPanelSetModule } from '../expanding-panelset/expanding-panel-set.module';
-import { TuiButtonModule, TuiHintModule } from '@taiga-ui/core';
+import { TuiButtonModule, TuiHintModule, TuiTextfieldControllerModule } from '@taiga-ui/core';
 import { ResultsDownloadModule } from 'src/app/results-download/results-download.module';
 import { MatMenuModule } from '@angular/material/menu';
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { QuerySnippetPanelModule } from 'src/app/query-snippet-panel/query-snippet-panel.module';
+import { TuiDataListWrapperModule, TuiSelectModule, TuiTabsModule, TuiTextAreaModule } from '@taiga-ui/kit';
 
 @NgModule({
   imports: [
@@ -84,7 +85,12 @@ import { QuerySnippetPanelModule } from 'src/app/query-snippet-panel/query-snipp
     MatMenuModule,
     ClipboardModule,
     TuiHintModule,
-    QuerySnippetPanelModule
+    QuerySnippetPanelModule,
+    TuiTabsModule,
+    TuiTextAreaModule,
+    TuiSelectModule,
+    TuiDataListWrapperModule,
+    TuiTextfieldControllerModule
   ],
   exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent,
     ErrorPanelComponent],

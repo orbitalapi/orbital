@@ -4,6 +4,7 @@ import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.query.Fact
 import io.vyne.query.NoOpQueryContextEventDispatcher
+import io.vyne.query.QueryOptions
 import io.vyne.query.ResultMode
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.runtime.OperationServiceApi
@@ -52,7 +53,7 @@ class OperationService(
             it.canSupport(service, operation)
          } ?: error("No invoker found for operation ${operation.qualifiedName.shortDisplayName}")
          val invocationId = UUID.randomUUID().toString()
-         val serialiser = FirstEntryMetadataResultSerializer(queryId = invocationId)
+         val serialiser = FirstEntryMetadataResultSerializer(queryId = invocationId, queryOptions = QueryOptions.default())
          val operationResult = operationInvoker.invoke(
             service,
             operation,
