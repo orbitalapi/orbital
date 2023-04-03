@@ -407,14 +407,14 @@ build-helm:
       paths:
          - infra/helm/vyne-helm/charts
 
-# .terraform-deploy:
-#   extends: .terraform:deploy
-#   stage: deploy
-#   before_script:
-#      - echo ${TF_ROOT}
-#      - cd ${TF_ROOT}
-#      - gitlab-terraform plan
-#      - gitlab-terraform plan-json
+.terraform-deploy:
+  extends: .terraform:deploy
+  stage: deploy
+  before_script:
+     - echo ${TF_ROOT}
+     - cd ${TF_ROOT}
+     - gitlab-terraform plan
+     - gitlab-terraform plan-json
 #
 #terraform-deploy-dev:
 #   extends: .terraform-deploy
@@ -553,7 +553,7 @@ e2e-tests-other-branches:
 #         when: 'never'
 
 terraform-deploy-dev-voyager:
-   extends: .terraform:deploy
+   extends: .terraform-deploy
    stage: deploy
    environment:
       name: $TF_STATE_NAME_DEV
@@ -565,7 +565,7 @@ terraform-deploy-dev-voyager:
    when: manual
 
 terraform-deploy-prod-voyager:
-   extends: .terraform:deploy
+   extends: .terraform-deploy
    stage: deploy
    environment:
       name: $TF_STATE_NAME_PROD
