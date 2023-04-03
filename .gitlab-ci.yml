@@ -350,7 +350,7 @@ publish-voyager-to-gitlab-container-registry:
    before_script:
       - docker info
       - docker buildx create --use
-      - echo "$DOCKER_REGISTRY_PASS" | docker login --username $DOCKER_REGISTRY_USER --password-stdin
+      - echo "$GITLAB_DOCKER_REGISTRY_PASS" | docker login --username $GITLAB_DOCKER_REGISTRY_USER --password-stdin
       - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
       - |
          if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
