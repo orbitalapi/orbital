@@ -5,8 +5,7 @@ locals {
   ips_for_http = [local.any_ip] # TODO Remove any_ip
 
   subnet_ids = [aws_subnet.subnet_1.id, aws_subnet.subnet_2.id]
-
-  domain_name             = "voyager.orbitalhq.com"
+  
   environment_domain_name = var.environment == "prod" ? local.domain_name : "${var.environment}.${local.domain_name}"
 }
 
