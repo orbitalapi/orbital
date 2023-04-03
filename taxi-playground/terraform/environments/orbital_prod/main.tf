@@ -12,10 +12,11 @@ variable "taxi_playground_docker_image_id" {
   type = string
 }
 
+
 module "platform" {
   source                          = "../../"
-  environment                     = "dev"
-  domain_name                     = "voyager.vyne.co"
+  environment                     = "prod"
+  domain_name                     = "voyager.orbitalhq.com"
   gitlab_docker_registry_username = var.gitlab_docker_registry_username
   gitlab_docker_registry_password = var.gitlab_docker_registry_password
   taxi_playground_docker_image_id = var.taxi_playground_docker_image_id
