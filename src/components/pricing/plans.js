@@ -13,7 +13,7 @@ export const plans = [
          {id: 3, value: 'Up to 5 endpoints included'}
       ],
       cta: 'Get Started',
-      ctaLink: 'https://docs.vyne.co/tutorials/api-db-integration/rest-db-integration/',
+      ctaLink: '/docs/guides/first-integration/',
    },
    {
       title: 'Platform',
@@ -28,7 +28,7 @@ export const plans = [
          {id: 3, value: 'Database and streaming data sources'},
       ],
       cta: 'Get Started',
-      ctaLink: 'https://docs.vyne.co/tutorials/api-db-integration/rest-db-integration/',
+      ctaLink: '/docs/guides/first-integration/',
    },
    {
       title: 'Enterprise',
@@ -45,6 +45,6 @@ export const plans = [
          {id: 5, value: 'Rich security policies, applied everywhere'},
       ],
       cta: 'Contact Us',
-      ctaLink: `mailto:hello@vyne.co?subject=Tell me more about Vyne!&body=Hi Vyne team, <enter expression of interest / encouragement / delight / fascination / astoundment here>.`
+      ctaLink: `mailto:hello@orbitalhq.com?subject=Tell me more about Orbital!&body=Hi Orbital team, <enter expression of interest / encouragement / delight / fascination / astoundment here>.`
    },
 ]

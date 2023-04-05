@@ -2,8 +2,8 @@ import React from 'react';
 import {CheckIcon, ChevronDownIcon, ChevronRightIcon, XMarkIcon} from '@heroicons/react/24/solid'
 import {plans} from '@/components/pricing/plans'
 import {featureGroups} from '@/components/pricing/features'
-import {Header} from "@/components/Header";
 import {Footer} from "@/components/home/Footer";
+import NextLink from 'next/link';
 
 
 function classNames(...classes) {
@@ -87,17 +87,16 @@ export class PricingPageTemplate extends React.Component {
                               </div>
                               <div
                                  className="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between lg:flex-col lg:items-start mt-4">
-                                 <a
-                                    href={plan.ctaLink}
-                                    className={classNames(
+                                 <NextLink href={plan.ctaLink}>
+                                    <a className={classNames(
                                        plan.featured
                                           ? 'bg-citrus text-midnight-blue hover:bg-citrus-300'
                                           : 'border-white text-white hover:bg-gray-400',
                                        'mt-6 w-full inline-block py-2 px-8 border border-transparent rounded-md shadow-sm text-center text-sm font-medium sm:mt-0 sm:w-auto lg:mt-6 lg:w-full'
-                                    )}
-                                 >
-                                    {plan.cta}
-                                 </a>
+                                    )}>
+                                       {plan.cta}
+                                    </a>
+                                 </NextLink>
                               </div>
                            </div>
                            <h4 className="sr-only">Features</h4>
@@ -257,7 +256,7 @@ export class PricingPageTemplate extends React.Component {
                            <div
                               className={classNames(plan.featured ? 'border-lightblue-600' : 'border-transparent', 'py-6 border-t-2')}
                            >
-                              <p className={classNames(plan.featured ? 'text-lightblue-600' : 'text-gray-900', 'text-sm font-bold')}>
+                              <p className={classNames(plan.featured ? 'text-aqua' : 'text-lightblue-600', 'text-sm font-bold')}>
                                  {plan.title}
                               </p>
                               <p className="mt-2 text-sm text-gray-500">{plan.description}</p>
@@ -270,7 +269,7 @@ export class PricingPageTemplate extends React.Component {
                         <span key={group.title}>
                   {
                      groupIndex != 0 && group.features.length > 1 &&
-                     <h3 className={"mt-10 text-sm font-bold text-gray-900"}>{group.title}</h3>
+                     <h3 className={"mt-10 text-sm font-bold text-aqua"}>{group.title}</h3>
                   }
                            <div className={"relative" + (groupIndex != 0 ? " mt-6" : "")}>
                     {/* Fake card backgrounds */}
@@ -308,7 +307,7 @@ export class PricingPageTemplate extends React.Component {
                               <th scope="row" onClick={() => this.toggleFeature(groupIndex, featureIndex)}
                                   className={classNames(
                               "w-1/4 py-3 pr-4 text-left text-sm font-medium",
-                                     group.features.length == 1 ? 'font-bold text-gray-900' : 'text-slate-400',
+                                     group.features.length == 1 ? 'font-bold text-aqua' : 'text-slate-400',
                                      feature.description ? 'cursor-pointer' : ''
                                   )}>
                                  {feature.title}
