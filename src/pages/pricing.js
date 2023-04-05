@@ -2,8 +2,8 @@ import React from 'react';
 import {CheckIcon, ChevronDownIcon, ChevronRightIcon, XMarkIcon} from '@heroicons/react/24/solid'
 import {plans} from '@/components/pricing/plans'
 import {featureGroups} from '@/components/pricing/features'
-import {Header} from "@/components/Header";
 import {Footer} from "@/components/home/Footer";
+import NextLink from 'next/link';
 
 
 function classNames(...classes) {
@@ -87,17 +87,16 @@ export class PricingPageTemplate extends React.Component {
                               </div>
                               <div
                                  className="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between lg:flex-col lg:items-start mt-4">
-                                 <a
-                                    href={plan.ctaLink}
-                                    className={classNames(
+                                 <NextLink href={plan.ctaLink}>
+                                    <a className={classNames(
                                        plan.featured
                                           ? 'bg-citrus text-midnight-blue hover:bg-citrus-300'
                                           : 'border-white text-white hover:bg-gray-400',
                                        'mt-6 w-full inline-block py-2 px-8 border border-transparent rounded-md shadow-sm text-center text-sm font-medium sm:mt-0 sm:w-auto lg:mt-6 lg:w-full'
-                                    )}
-                                 >
-                                    {plan.cta}
-                                 </a>
+                                    )}>
+                                       {plan.cta}
+                                    </a>
+                                 </NextLink>
                               </div>
                            </div>
                            <h4 className="sr-only">Features</h4>
