@@ -4,7 +4,7 @@ import OperationExplorerFinal from './operation-explorer-final.png';
 import ServicesExplorerFinal from './service-explorer-final.png';
 import { Callout } from '@/components/docs/Callout';
 
-import { ImageWithCaption } from '@/components/ImageWithCaption';
+import { BlogImageWithCaption } from '@/components/BlogImageWithCaption';
 import { RawImageWithCaption } from '@/components/RawImageWithCaption';
 
 import { SnippetGroup } from '@/components/SnippetGroup';
@@ -49,14 +49,14 @@ couple of Spring Boot microservices that self-publish their API's.
 We'll get beautiful diagrams like this, which show the running services,
 as well as how the data between them is related:
 
-<ImageWithCaption src={ServicesDiagramFinal}
+<BlogImageWithCaption src={ServicesDiagramFinal}
                   caption="Orbital's service diagram - showing two microservices, their APIs, and how they relate" />
 
 In addition, Orbital gives us a rich data and API catalog, where we can search and play with APIs:
 
-<ImageWithCaption src={ServicesExplorerFinal}
+<BlogImageWithCaption src={ServicesExplorerFinal}
                   caption='Service explorer lets developers see the endpoints and operations exposed by an API' />
-<ImageWithCaption src={OperationExplorerFinal}
+<BlogImageWithCaption src={OperationExplorerFinal}
                   caption='The operation explorer lets us interact and play around with individual APIs' />
 
 ## The Spring Boot app
@@ -418,7 +418,7 @@ However, there's important relationships here that we're not exposing.
 The Id from the Films can be passed to my Review service to lookup a review.This is key information for developers who are trying to navigate between services to
 Get Stuff Done.
 
-<ImageWithCaption src={MissingRelationship}
+<BlogImageWithCaption src={MissingRelationship}
                   caption="There's a missing relationship between the Film model and the ReviewService" />
 
 However, we're in luck.
@@ -468,7 +468,7 @@ Now, if restart the Spring Boot app, our updated schema will get published direc
 
 Refreshing the services diagram now shows an updated diagram with the relationship mapped:
 
-<ImageWithCaption src={UpdatedServicesDiagram}
+<BlogImageWithCaption src={UpdatedServicesDiagram}
                   caption='Using type aliases, the relationship between services can be mapped' />
 
 ## Changelog
@@ -480,7 +480,7 @@ Orbital has a full changelog, every time a change is pushed.
 
 Navigate over to the Schemas tab, and see the changelog entry
 
-<ImageWithCaption src={Changelog} caption="Orbital's changelog shows changes to APIs as they're published" />
+<BlogImageWithCaption src={Changelog} caption="Orbital's changelog shows changes to APIs as they're published" />
 
 
 ## Summary
