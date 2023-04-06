@@ -85,7 +85,7 @@ export function typescriptGenerator(request: CodeGenRequest): Snippet[] {
   const dependency = new Snippet(
     'Dependencies',
     'bash',
-    `npm i @orbitalhq/oribtal-client`
+    `npm i @orbitalhq/orbital-client`
   );
   const imports = new Snippet(
     'Imports',
