@@ -374,11 +374,6 @@ publish-pipelines-to-gitlab-container-registry:
       microservice_vyne: pipeline
       microservice_orbital: pipelines
 
-terraform-fmt:
-   extends: .terraform:fmt
-   needs: [ ]
-   stage: build
-
 terraform-validate:
    extends: .terraform:validate
    needs: [ ]
