@@ -13,6 +13,10 @@
 
    <dependencies>
       <dependency>
+         <groupId>io.projectreactor.kotlin</groupId>
+         <artifactId>reactor-kotlin-extensions</artifactId>
+      </dependency>
+      <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-consumer-api</artifactId>
          <version>0.24.0-SNAPSHOT</version>

@@ -3,6 +3,7 @@ package io.vyne
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import io.vyne.utils.shaHash
 import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.packages.TaxiPackageSources
 import java.io.Serializable
@@ -28,6 +29,19 @@ data class SourcePackage(
       this.sources.map { it.copy(packageIdentifier = this.packageMetadata.identifier) }
 }
 
+object SourcePackageHasher {
+   fun hash(sourcePackage: SourcePackage): String {
+      return sourcePackage.sources.sortedBy { it.name }
+         .map { it.fullHash }
+         .shaHash()
+   }
+
+   fun hash(packages: List<SourcePackage>): String {
+      return packages.sortedBy { it.packageMetadata.identifier.id }
+         .map { hash(it) }
+         .shaHash()
+   }
+}
 
 typealias UnversionedPackageIdentifier = String
 typealias UriSafePackageIdentifier = String
@@ -107,6 +121,7 @@ interface PackageMetadata : Serializable {
     */
    val submissionDate: Instant
    val dependencies: List<PackageIdentifier>
+
 
    companion object {
       fun from(

@@ -113,6 +113,10 @@ class CacheAwareOperationInvocationDecorator(
    }
 
    companion object {
+      fun decorateAll(invokers: List<OperationInvoker>, evictWhenResultSizeExceeds: Int = 10): List<OperationInvoker> {
+         return invokers.map { CacheAwareOperationInvocationDecorator(it, evictWhenResultSizeExceeds) }
+      }
+
       private fun getCacheKeyAndParamMessage(
          service: Service,
          operation: RemoteOperation,
@@ -215,7 +219,7 @@ private class CachingInvocationActor(
                   .collect {
                      sink.next(it)
                   }
-            } catch(exception:Exception) {
+            } catch (exception: Exception) {
                logger.error(exception) { "An exception was thrown inside the invoker (${invoker::class.simpleName} calling ${operation.name})" }
                // This is an exception thrown in the invoke method, but not within the flux / flow.
                // ie., something has gone wrong internally, not in the service.

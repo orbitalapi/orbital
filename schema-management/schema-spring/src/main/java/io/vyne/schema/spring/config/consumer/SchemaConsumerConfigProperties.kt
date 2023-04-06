@@ -7,7 +7,7 @@ import io.vyne.schema.spring.config.consumer.SchemaConsumerConfigProperties.Comp
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 
-@ConstructorBinding
+//@ConstructorBinding
 @ConfigurationProperties(prefix = CONSUMER_CONFIG)
 data class SchemaConsumerConfigProperties(
    override var method: VyneSchemaInteractionMethod = VyneSchemaInteractionMethod.RSocket,

@@ -159,11 +159,15 @@
          <classifier>jdk8</classifier>
       </dependency>
 
-      <dependency>
-         <groupId>net.snowflake</groupId>
-         <artifactId>snowflake-jdbc</artifactId>
-         <version>3.13.27</version>
-      </dependency>
+      <!-- Snowflake is a huge jar, with shaded dependencies.
+      This causes native builds to break.
+      See: https://github.com/snowflakedb/snowflake-jdbc/issues/1310
+      -->
+      <!--      <dependency>-->
+      <!--         <groupId>net.snowflake</groupId>-->
+      <!--         <artifactId>snowflake-jdbc</artifactId>-->
+      <!--         <version>3.13.27</version>-->
+      <!--      </dependency>-->
       <dependency>
          <groupId>com.amazon.redshift</groupId>
          <artifactId>redshift-jdbc42</artifactId>

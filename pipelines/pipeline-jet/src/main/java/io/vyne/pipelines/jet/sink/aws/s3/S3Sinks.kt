@@ -36,6 +36,7 @@ import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineAwareVariableProvider
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.schemas.Schema
+import jakarta.annotation.Resource
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
@@ -48,7 +49,6 @@ import software.amazon.awssdk.services.s3.model.UploadPartRequest
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import javax.annotation.Nonnull
-import javax.annotation.Resource
 
 /**
  * Contains factory methods for creating AWS S3 sinks.

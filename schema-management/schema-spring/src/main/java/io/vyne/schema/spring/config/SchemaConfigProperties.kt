@@ -6,7 +6,7 @@ import io.vyne.schema.spring.config.publisher.SchemaPublisherConfigProperties
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 
-@ConstructorBinding
+//@ConstructorBinding
 @ConfigurationProperties(prefix = SchemaConfigProperties.SCHEMA_CONFIG)
 data class SchemaConfigProperties(
    // By default, use the application name from Spring, and allow Spring's

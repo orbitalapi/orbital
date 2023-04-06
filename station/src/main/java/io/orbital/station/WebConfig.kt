@@ -10,9 +10,10 @@ import io.vyne.query.VyneJacksonModule
 import io.vyne.spring.config.ConditionallyLoadBalancedExchangeFilterFunction
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.actuate.metrics.web.reactive.client.MetricsWebClientCustomizer
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
+import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
+import org.springframework.cloud.client.loadbalancer.reactive.WebClientCustomizer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -60,16 +61,19 @@ class WebConfig(private val objectMapper: ObjectMapper) : WebFluxConfigurer {
 
    //   @LoadBalanced
    @Bean
-   fun webClientFactory(
+   fun webClientCustomizer(
       loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction,
-      metricsCustomizer: MetricsWebClientCustomizer
-   ): WebClient.Builder {
-      val builder = WebClient.builder()
-         .filter(
-            ConditionallyLoadBalancedExchangeFilterFunction.permitLocalhost(loadBalancingFilterFunction)
+      discoveryClient: DiscoveryClient
+
+   ): WebClientCustomizer {
+      return WebClientCustomizer { webClientBuilder ->
+         webClientBuilder.filter(
+            ConditionallyLoadBalancedExchangeFilterFunction.onlyKnownHosts(
+               discoveryClient.services,
+               loadBalancingFilterFunction
+            )
          )
-      metricsCustomizer.customize(builder)
-      return builder
+      }
    }
 
 

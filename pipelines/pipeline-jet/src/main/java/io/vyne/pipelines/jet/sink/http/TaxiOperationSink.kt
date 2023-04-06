@@ -13,10 +13,10 @@ import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
+import jakarta.annotation.Resource
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
-import javax.annotation.Resource
 
 @Component
 class TaxiOperationSinkBuilder : SingleMessagePipelineSinkBuilder<TaxiOperationOutputSpec> {

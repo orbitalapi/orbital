@@ -56,8 +56,9 @@ class PostgresConnectionTests {
       val template = SimpleJdbcConnectionFactory()
          .jdbcTemplate(connectionDetails)
       val metadataService = DatabaseMetadataService(template.jdbcTemplate)
-      metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery)
-         .get().should.equal("Failed to obtain JDBC Connection; nested exception is org.postgresql.util.PSQLException: FATAL: password authentication failed for user \"wrongUser\"")
+      val error = metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery)
+         .get()
+      error.should.equal("FATAL: password authentication failed for user \"wrongUser\"")
    }
 
    @Test
@@ -72,7 +73,7 @@ class PostgresConnectionTests {
       val metadataService = DatabaseMetadataService(template.jdbcTemplate)
       metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery)
          .get().toString()
-         .trim().should.equal("Failed to obtain JDBC Connection; nested exception is org.postgresql.util.PSQLException: Unable to parse URL")
+         .trim().should.equal("Unable to parse URL jdbc:postgresql://wronghost:9999")
    }
 
    @Test

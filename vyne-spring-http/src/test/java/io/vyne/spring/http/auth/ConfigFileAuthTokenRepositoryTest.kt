@@ -3,6 +3,8 @@ package io.vyne.spring.http.auth
 import com.google.common.io.Resources
 import com.typesafe.config.ConfigFactory
 import com.winterbe.expekt.should
+import io.vyne.auth.tokens.AuthToken
+import io.vyne.auth.tokens.AuthTokenType
 import org.apache.commons.io.FileUtils
 import org.junit.Rule
 import org.junit.Test

@@ -2,7 +2,7 @@ package io.vyne.query.history
 
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
-import javax.persistence.AttributeConverter
+import jakarta.persistence.AttributeConverter
 
 object QualifiedNameJpaConverter : AttributeConverter<QualifiedName, String> {
    override fun convertToDatabaseColumn(attribute: QualifiedName): String {

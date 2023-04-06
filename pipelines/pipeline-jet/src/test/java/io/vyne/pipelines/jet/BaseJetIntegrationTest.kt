@@ -10,7 +10,8 @@ import com.mercateo.test.clock.TestClock
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.StubService
-import io.vyne.*
+import io.vyne.VyneClient
+import io.vyne.VyneClientWithSchema
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import io.vyne.connectors.jdbc.JdbcConnectionConfiguration
@@ -31,6 +32,7 @@ import io.vyne.pipelines.jet.sink.stream.StreamSinkTargetContainer
 import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
@@ -39,6 +41,8 @@ import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.invokers.RestTemplateInvoker
 import io.vyne.spring.invokers.ServiceUrlResolver
+import io.vyne.testVyne
+import io.vyne.testVyneWithStub
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.support.GenericApplicationContext
@@ -74,7 +78,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
          listOf(
             CacheAwareOperationInvocationDecorator(
                RestTemplateInvoker(
-                  SimpleSchemaStore().setSchemaSet(SchemaSet.fromParsed(taxiSchema.sources.asPackage().toParsedPackages(), 1)),
+                  SimpleSchemaProvider(taxiSchema),
                   WebClient.builder(),
                   ServiceUrlResolver.DEFAULT
                )
@@ -138,7 +142,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
          schema, listOf(
             CacheAwareOperationInvocationDecorator(
                RestTemplateInvoker(
-                  SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1)),
+                  SimpleSchemaProvider(schema),
                   WebClient.builder(),
                   ServiceUrlResolver.DEFAULT
                )

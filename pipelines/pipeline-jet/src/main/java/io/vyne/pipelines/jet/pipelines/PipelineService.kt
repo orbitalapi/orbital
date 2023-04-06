@@ -8,6 +8,7 @@ import io.vyne.pipelines.jet.api.SubmittedPipeline
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.schema.consumer.SchemaChangedEventProvider
 import io.vyne.schemas.taxi.TaxiSchema
+import jakarta.annotation.PostConstruct
 import mu.KotlinLogging
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -17,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import javax.annotation.PostConstruct
 
 @RestController
 class PipelineService(

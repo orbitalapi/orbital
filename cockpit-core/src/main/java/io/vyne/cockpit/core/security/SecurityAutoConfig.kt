@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.core.convert.converter.Converter
 import org.springframework.core.io.ClassPathResource
 import org.springframework.http.HttpMethod
+import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.core.GrantedAuthority
@@ -35,6 +36,7 @@ private val logger = KotlinLogging.logger { }
 
 @EnableWebFluxSecurity
 @EnableConfigurationProperties(VyneAuthorisationConfig::class, VyneOpenIdpConnectConfig::class)
+@Configuration
 class VyneInSecurityAutoConfig {
 
    fun getURLsForDisabledCSRF(): NegatedServerWebExchangeMatcher? {
@@ -88,6 +90,10 @@ class VyneInSecurityAutoConfig {
 
    @ConditionalOnProperty("vyne.security.openIdp.enabled", havingValue = "true", matchIfMissing = false)
    @Configuration
+   // useAuthorizationManager = false required for support for method based PreAuthorize when returning a Kotlin Flow
+// see: https://github.com/spring-projects/spring-security/issues/12821
+   @EnableReactiveMethodSecurity(useAuthorizationManager = false)
+
    class VyneReactiveSecurityConfig {
       @Bean
       fun grantedAuthoritiesExtractor(

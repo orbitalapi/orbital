@@ -3,6 +3,8 @@ package io.vyne.spring.config
 import com.jayway.awaitility.Awaitility
 import com.winterbe.expekt.should
 import io.vyne.config.toConfig
+import io.vyne.http.ServicesConfig
+import io.vyne.http.ServicesConfigRepository
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder

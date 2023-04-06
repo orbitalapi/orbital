@@ -10,6 +10,7 @@ import io.vyne.spring.config.DiscoveryClientConfig
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.spring.http.VyneQueryServiceExceptionProvider
 import io.vyne.utils.log
+import jakarta.annotation.PostConstruct
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.SpringApplication
@@ -21,7 +22,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import reactor.core.publisher.Sinks
 import java.util.*
-import javax.annotation.PostConstruct
 
 private val logger = KotlinLogging.logger {}
 

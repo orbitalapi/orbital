@@ -1,10 +1,10 @@
 package io.vyne.cockpit.core.security
 
+import io.vyne.auth.tokens.AuthToken
+import io.vyne.auth.tokens.AuthTokenRepository
+import io.vyne.auth.tokens.NoCredentialsAuthToken
 import io.vyne.security.VynePrivileges
 import io.vyne.spring.http.BadRequestException
-import io.vyne.spring.http.auth.AuthToken
-import io.vyne.spring.http.auth.AuthTokenRepository
-import io.vyne.spring.http.auth.NoCredentialsAuthToken
 import mu.KotlinLogging
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping

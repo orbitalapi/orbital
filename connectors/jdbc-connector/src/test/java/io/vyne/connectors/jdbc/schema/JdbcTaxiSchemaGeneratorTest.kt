@@ -8,6 +8,9 @@ import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
 import io.vyne.from
 import io.vyne.query.VyneQlGrammar
 import io.vyne.schemas.taxi.TaxiSchema
+import jakarta.persistence.Entity
+import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
 import lang.taxi.Compiler
 import lang.taxi.testing.TestHelpers
 import lang.taxi.testing.TestHelpers.expectToCompileTheSame
@@ -21,9 +24,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.junit4.SpringRunner
-import javax.persistence.Entity
-import javax.persistence.Id
-import javax.persistence.OneToMany
 
 internal const val TEST_NAMESPACE = "io.vyne.test"
 

@@ -237,7 +237,7 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
          jdbcTemplate.queryForObject("select count(*) from v_OrderWithPerson", Int::class.java)
       } catch (exception: Exception) {
          // View shouldn't exist anymore
-         exception.message.should.contain("""relation "v_orderwithperson" does not exist""")
+         exception.cause!!.message.should.contain("""relation "v_orderwithperson" does not exist""")
       }
 
       caskUpgrader.upgradeAll(tablesToMigrate)

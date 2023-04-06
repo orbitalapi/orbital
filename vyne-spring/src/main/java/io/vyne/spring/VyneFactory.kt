@@ -61,7 +61,7 @@ class VyneFactory(
          schemas = listOf(schema),
          queryEngineFactory = QueryEngineFactory.withOperationInvokers(
             vyneCacheConfiguration,
-            operationInvokers.map { CacheAwareOperationInvocationDecorator(it) },
+            CacheAwareOperationInvocationDecorator.decorateAll(operationInvokers),
             projectionProvider = projectionProvider
          )
       )

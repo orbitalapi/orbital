@@ -3,6 +3,10 @@ package io.vyne.spring.http.auth
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
+import io.vyne.auth.tokens.AuthConfig
+import io.vyne.auth.tokens.AuthToken
+import io.vyne.auth.tokens.AuthTokenRepository
+import io.vyne.auth.tokens.NoCredentialsAuthToken
 import io.vyne.config.BaseHoconConfigFileRepository
 import io.vyne.config.toConfig
 import mu.KotlinLogging
@@ -39,6 +43,7 @@ class ConfigFileAuthTokenRepository(
 
    override fun extract(config: Config): AuthConfig = config.extract()
 
+   override fun getAllTokens(): AuthConfig = typedConfig()
 
    override fun getToken(serviceName: String): AuthToken? {
       val config = typedConfig()

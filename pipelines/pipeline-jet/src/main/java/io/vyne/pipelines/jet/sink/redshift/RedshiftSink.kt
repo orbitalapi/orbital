@@ -15,11 +15,11 @@ import io.vyne.pipelines.jet.pipelines.PostgresDdlGenerator
 import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
+import jakarta.annotation.Resource
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import java.sql.DriverManager
 import java.util.*
-import javax.annotation.Resource
 
 @Component
 class RedshiftSinkBuilder :

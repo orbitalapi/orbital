@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <parent>
+      <groupId>io.vyne</groupId>
+      <artifactId>platform</artifactId>
+      <version>0.24.0-SNAPSHOT</version>
+   </parent>
+
+   <artifactId>auth-tokens</artifactId>
+
+   <dependencies>
+      <!-- ideally we wouldn't be binding to spring-web here,
+      but this has the header references.
+      Also, we modify http requests to inject tokens,
+      so we kinda need spring here.  -->
+      <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-web</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+   </dependencies>
+
+</project>

@@ -11,8 +11,6 @@
 
    <artifactId>query-node-core</artifactId>
 
-
-
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
@@ -22,6 +20,11 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>query-node-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>connectors-core</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>

@@ -24,9 +24,9 @@ package io.vyne.queryService.schemas.importing.database
 //import org.springframework.test.context.TestPropertySource
 //import org.springframework.test.context.junit4.SpringRunner
 //import java.time.Duration
-//import javax.persistence.Entity
-//import javax.persistence.Id
-//import javax.persistence.OneToMany
+//import jakarta.persistence.Entity
+//import jakarta.persistence.Id
+//import jakarta.persistence.OneToMany
 
 // I couldn't get this to work, try as I might.
 // This test is picking up the config in application-test.yml,
