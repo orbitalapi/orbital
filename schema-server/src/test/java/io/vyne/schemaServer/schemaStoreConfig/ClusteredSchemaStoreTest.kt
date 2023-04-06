@@ -11,7 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.junit4.SpringRunner
-import org.springframework.util.SocketUtils
+import org.springframework.test.util.TestSocketUtils
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(properties = [
@@ -28,7 +28,7 @@ class ClusteredSchemaStoreTest {
       @JvmStatic
       @DynamicPropertySource
       fun properties(registry: DynamicPropertyRegistry) {
-         registry.add("vyne.schema.server.port") { SocketUtils.findAvailableTcpPort() }
+         registry.add("vyne.schema.server.port") { TestSocketUtils.findAvailableTcpPort() }
       }
    }
 

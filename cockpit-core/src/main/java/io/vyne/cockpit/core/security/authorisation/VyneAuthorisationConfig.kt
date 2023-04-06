@@ -2,11 +2,9 @@ package io.vyne.cockpit.core.security.authorisation
 
 import io.vyne.auth.authorisation.VyneUserAuthorisationRole
 import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.boot.context.properties.ConstructorBinding
 import java.nio.file.Path
 import java.nio.file.Paths
 
-@ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.security.authorisation")
 class VyneAuthorisationConfig {
    val roleDefinitionsFile: Path = Paths.get("config/roles.conf")
@@ -20,7 +18,6 @@ class VyneAuthorisationConfig {
 
 }
 
-@ConstructorBinding
 // configuration class annotation need to use kebab-case, otherwise spring gives prefix must be in canonical form in Intellij
 @ConfigurationProperties(prefix = "vyne.security.open-idp")
 data class VyneOpenIdpConnectConfig(

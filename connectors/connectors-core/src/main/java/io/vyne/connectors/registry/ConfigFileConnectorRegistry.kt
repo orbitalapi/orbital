@@ -25,7 +25,7 @@ abstract class ConfigFileConnectorRegistry<TMapType : ConnectionConfigMap, TConf
       }
    }
 
-   protected abstract fun getConnectionMap():Map<String,TConfigType>
+   abstract fun getConnectionMap(): Map<String, TConfigType>
 
    fun saveConnectorConfig(connectionConfig: TConfigType) {
       val newConfig = ConfigFactory.empty()

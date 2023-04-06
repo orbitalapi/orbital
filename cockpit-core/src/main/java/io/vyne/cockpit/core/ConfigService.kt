@@ -49,7 +49,6 @@ data class ConfigSummary(
    val featureToggles: FeatureTogglesConfig
 )
 
-@ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.toggles")
 data class FeatureTogglesConfig(
    val chatGptEnabled: Boolean = false

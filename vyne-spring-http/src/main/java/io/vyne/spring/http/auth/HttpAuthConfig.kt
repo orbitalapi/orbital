@@ -1,5 +1,6 @@
 package io.vyne.spring.http.auth
 
+import io.vyne.auth.tokens.AuthTokenRepository
 import mu.KotlinLogging
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
@@ -9,7 +10,7 @@ import org.springframework.context.annotation.Configuration
 import java.nio.file.Path
 import java.nio.file.Paths
 
-@ConstructorBinding
+//@ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.auth")
 data class VyneHttpAuthConfig(
    val configFile: Path = Paths.get("auth.conf")

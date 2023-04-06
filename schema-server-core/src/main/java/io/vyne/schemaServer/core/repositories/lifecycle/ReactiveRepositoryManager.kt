@@ -46,8 +46,7 @@ class ReactiveRepositoryManager(
       fun testWithFileRepo(
          projectPath: Path? = null,
          isEditable: Boolean = false,
-         eventSource: RepositoryLifecycleManager = RepositoryLifecycleManager(),
-         configRepo: SchemaRepositoryConfigLoader
+         eventSource: RepositoryLifecycleManager = RepositoryLifecycleManager()
 
       ): ReactiveRepositoryManager {
          val manager = ReactiveRepositoryManager(

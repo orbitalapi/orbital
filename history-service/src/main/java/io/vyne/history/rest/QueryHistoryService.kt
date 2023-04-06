@@ -64,13 +64,13 @@ class QueryHistoryService(
 ) : QueryHistoryServiceRestApi {
    private val remoteCallAnalyzer = RemoteCallAnalyzer()
 
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    @DeleteMapping("/api/query/history")
    fun clearHistory() {
       queryHistoryRecordRepository.deleteAll()
    }
 
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewQueryHistory}')")
+//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewQueryHistory}')")
    @GetMapping("/api/query/history")
    override fun listHistory(): Flux<QuerySummary> {
 
@@ -97,7 +97,7 @@ class QueryHistoryService(
          }
    }
 
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    @GetMapping("/api/query/history/clientId/{clientId}/calls")
    fun getRemoteCallListByClientId(@PathVariable("clientId") clientQueryId: String): Mono<List<PartialRemoteCallResponse>> {
       val historyRecord = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
@@ -106,7 +106,7 @@ class QueryHistoryService(
       return Mono.just(responses)
    }
 
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    @GetMapping("/api/query/history/summary/clientId/{clientId}")
    override fun getQuerySummary(@PathVariable("clientId") clientQueryId: String): Mono<QuerySummary> {
       logger.info { "Getting query summary for query client id $clientQueryId" }
@@ -115,7 +115,7 @@ class QueryHistoryService(
       } ?: Mono.empty()
    }
 
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    @GetMapping("/api/query/history/calls/{remoteCallId}")
    override fun getRemoteCallResponse(@PathVariable("remoteCallId") remoteCallId: String): Mono<String> {
       logger.info { "getting remote call responses for call id $remoteCallId" }
@@ -134,7 +134,7 @@ class QueryHistoryService(
          strings.joinToString(prefix = "[", postfix = "]")
       }
 
-      return Mono.just(just)
+      return Mono.just(just!!)
 
    }
 
@@ -142,7 +142,7 @@ class QueryHistoryService(
    /**
     * Returns the results (as JSON of TypeNamedInstances) over server-sent-events
     */
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    @GetMapping(
       "/api/query/history/{id}/results", produces = [
          MediaType.TEXT_EVENT_STREAM_VALUE,
@@ -194,7 +194,7 @@ class QueryHistoryService(
    }
 
    @GetMapping("/api/query/history/clientId/{id}/dataSource/{rowId}/{attributePath}")
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    override fun getNodeDetailFromClientQueryId(
       @PathVariable("id") clientQueryId: String,
       @PathVariable("rowId") rowValueHash: Int,
@@ -209,7 +209,7 @@ class QueryHistoryService(
    }
 
    @GetMapping("/api/query/history/{id}/dataSource/{rowId}/{attributePath}")
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    override fun getNodeDetail(
       @PathVariable("id") queryId: String,
       @PathVariable("rowId") rowValueHash: Int,
@@ -230,7 +230,7 @@ class QueryHistoryService(
    }
 
    @GetMapping("/api/query/history/{id}/{format}/export")
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    fun exportQueryResults(
       @PathVariable("id") queryId: String,
       @PathVariable("format") exportFormat: ExportFormat,
@@ -281,7 +281,7 @@ class QueryHistoryService(
 
 
    @GetMapping("/api/query/history/clientId/{id}/profile")
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    override fun getQueryProfileDataFromClientId(@PathVariable("id") queryClientId: String): Mono<QueryProfileData> {
       logger.info { "getting query profile data for query client id $queryClientId" }
       return queryHistoryRecordRepository.findByClientQueryId(queryClientId)?.let {
@@ -290,7 +290,7 @@ class QueryHistoryService(
    }
 
    @GetMapping("/api/query/history/{id}/profile")
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    override fun getQueryProfileData(@PathVariable("id") queryId: String): Mono<QueryProfileData> {
       logger.info { "getting query profile data for id $queryId" }
       try {
@@ -301,7 +301,7 @@ class QueryHistoryService(
    }
 
    @GetMapping("/api/query/history/dataSource/{id}")
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    override fun getLineageRecord(@PathVariable("id") dataSourceId: String): Mono<LineageRecord> {
       logger.info { "getting lineage record for data source $dataSourceId" }
       // Technically, data sources can belong to multiple queries, which is why this is a find-all.
@@ -343,7 +343,7 @@ class QueryHistoryService(
    }
 
    @PostMapping("/api/query/history/clientId/{id}/regressionPack")
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    override fun getRegressionPackFromClientId(
       @PathVariable("id") clientQueryId: String,
       @RequestBody request: RegressionPackRequest
@@ -355,7 +355,7 @@ class QueryHistoryService(
    }
 
    @PostMapping("/api/query/history/{id}/regressionPack")
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    override fun getRegressionPack(
       @PathVariable("id") queryId: String,
       @RequestBody request: RegressionPackRequest

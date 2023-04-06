@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 
-@ConstructorBinding
+//@ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.language-server")
 data class LanguageServerConfig(
    val maxClients: Int = 100,

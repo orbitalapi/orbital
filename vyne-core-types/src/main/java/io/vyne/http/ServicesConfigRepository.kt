@@ -1,4 +1,4 @@
-package io.vyne.spring.config
+package io.vyne.http
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -25,7 +25,7 @@ class ServicesConfigRepository(
          logger.info { "Using a file based service mapping, but no config file found at $path so writing a default file" }
          writeDefaultConfigFile(path)
       } else {
-         logger.info { "Service mapping initiated at ${configFilePath}" }
+         logger.info { "Service mapping initiated at $configFilePath" }
       }
    }
 
@@ -55,18 +55,3 @@ class ServicesConfigRepository(
    }
 }
 
-data class ServicesConfig(
-   val services: Map<String, Map<String, String>> = emptyMap()
-) {
-   companion object {
-      val DEFAULT = ServicesConfig(
-         mapOf(
-            "schema-server" to mapOf("url" to "http://schema-server", "rsocket-port" to "7655"),
-            "query-server" to mapOf("url" to "http://vyne"),
-            "pipeline-runner" to mapOf("url" to "http://vyne-pipeline-runner"),
-            "cask-server" to mapOf("url" to "http://cask"),
-            "analytics-server" to mapOf("url" to "http://vyne-analytics-server")
-         )
-      )
-   }
-}

@@ -13,8 +13,8 @@ import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
+import jakarta.annotation.Resource
 import org.springframework.stereotype.Component
-import javax.annotation.Resource
 
 data class ListSinkSpec(val outputTypeName: String, val target: String = "default") :
    PipelineTransportSpec {

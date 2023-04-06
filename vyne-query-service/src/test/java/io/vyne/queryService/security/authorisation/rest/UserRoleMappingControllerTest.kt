@@ -1,6 +1,7 @@
 package io.vyne.queryService.security.authorisation.rest
 
 import io.vyne.cockpit.core.security.authorisation.VyneAuthorisationConfig
+import io.vyne.queryService.CustomWebFluxConfigSupport
 import io.vyne.spring.config.TestDiscoveryClientConfig
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,7 +32,7 @@ class UserRoleMappingControllerTest {
    private lateinit var webClient: WebTestClient
 
    @TestConfiguration
-   @Import(TestDiscoveryClientConfig::class)
+   @Import(TestDiscoveryClientConfig::class, CustomWebFluxConfigSupport::class)
    class TestVyneAuthorisationConfig {
       @Primary
       @Bean

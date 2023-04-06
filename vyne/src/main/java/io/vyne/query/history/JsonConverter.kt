@@ -2,8 +2,8 @@ package io.vyne.query.history
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import javax.persistence.AttributeConverter
-import javax.persistence.Converter
+import jakarta.persistence.AttributeConverter
+import jakarta.persistence.Converter
 
 abstract class JsonConverter<T> : AttributeConverter<T, String> {
    companion object {

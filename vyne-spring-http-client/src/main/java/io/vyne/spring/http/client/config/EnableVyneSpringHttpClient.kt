@@ -1,7 +1,6 @@
 package io.vyne.spring.http.client.config
 
 import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Import
 
@@ -11,7 +10,7 @@ import org.springframework.context.annotation.Import
 @EnableConfigurationProperties(VyneHttpClientConfig::class)
 annotation class EnableVyneSpringHttpClient
 
-@ConstructorBinding
+//@org.springframework.boot.context.properties.bind.ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.http.client")
 data class VyneHttpClientConfig(
    val id: String? = null,

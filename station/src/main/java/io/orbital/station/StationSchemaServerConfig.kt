@@ -12,7 +12,7 @@ import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.EnableConfigurationProperties
-import org.springframework.cloud.netflix.eureka.EnableEurekaClient
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
@@ -26,7 +26,7 @@ import java.nio.file.Path
 @Configuration
 @EnableAsync
 @EnableScheduling
-@EnableEurekaClient
+@EnableDiscoveryClient
 @EnableConfigurationProperties(
    value = [VyneSpringHazelcastConfiguration::class]
 )

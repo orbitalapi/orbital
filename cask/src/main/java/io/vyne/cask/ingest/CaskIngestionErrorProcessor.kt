@@ -5,7 +5,6 @@ import org.springframework.beans.factory.InitializingBean
 import org.springframework.stereotype.Service
 import reactor.core.publisher.UnicastProcessor
 import reactor.core.scheduler.Schedulers.boundedElastic
-import reactor.core.scheduler.Schedulers.elastic
 
 @Service
 class CaskIngestionErrorProcessor(private val repository: IngestionErrorRepository): InitializingBean {

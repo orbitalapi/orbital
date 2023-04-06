@@ -48,13 +48,13 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
-import org.springframework.boot.actuate.metrics.web.reactive.client.MetricsWebClientCustomizer
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
+import org.springframework.cloud.client.loadbalancer.reactive.WebClientCustomizer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -67,7 +67,6 @@ import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.http.codec.json.KotlinSerializationJsonEncoder
 import org.springframework.web.reactive.config.WebFluxConfigurer
-import org.springframework.web.reactive.function.client.WebClient
 import reactivefeign.spring.config.EnableReactiveFeignClients
 import java.util.*
 
@@ -129,23 +128,22 @@ class QueryServiceApp {
    }
 
    //   @LoadBalanced
+
+
    @Bean
-   fun webClientFactory(
+   fun webClientCustomizer(
       loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction,
-      metricsCustomizer: MetricsWebClientCustomizer,
       discoveryClient: DiscoveryClient
-   ): WebClient.Builder {
 
-
-      val builder = WebClient.builder()
-         .filter(
+   ): WebClientCustomizer {
+      return WebClientCustomizer { webClientBuilder ->
+         webClientBuilder.filter(
             ConditionallyLoadBalancedExchangeFilterFunction.onlyKnownHosts(
                discoveryClient.services,
                loadBalancingFilterFunction
             )
          )
-      metricsCustomizer.customize(builder)
-      return builder
+      }
    }
 
    @Autowired
@@ -153,6 +151,7 @@ class QueryServiceApp {
       log().info("Orbital Query Server v ${buildInfo.versionOrDev()}")
    }
 }
+
 
 @Configuration
 @EnableVyne
@@ -247,7 +246,7 @@ class WebFluxWebConfig(private val objectMapper: ObjectMapper) : WebFluxConfigur
  * https://github.com/spring-projects/spring-framework/issues/28856
  */
 @Configuration
-class CustomerWebFluxConfigSupport {
+class CustomWebFluxConfigSupport {
 
    @Bean
    @Primary

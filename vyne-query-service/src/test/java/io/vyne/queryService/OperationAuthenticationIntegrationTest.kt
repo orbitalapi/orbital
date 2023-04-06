@@ -4,6 +4,9 @@ import com.google.common.io.Files
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
 import io.vyne.asPackage
+import io.vyne.auth.tokens.AuthToken
+import io.vyne.auth.tokens.AuthTokenRepository
+import io.vyne.auth.tokens.AuthTokenType
 import io.vyne.cockpit.core.security.AuthTokenConfigurationService
 import io.vyne.http.MockWebServerRule
 import io.vyne.query.runtime.core.QueryService
@@ -13,9 +16,6 @@ import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.config.TestDiscoveryClientConfig
-import io.vyne.spring.http.auth.AuthToken
-import io.vyne.spring.http.auth.AuthTokenRepository
-import io.vyne.spring.http.auth.AuthTokenType
 import io.vyne.spring.http.auth.ConfigFileAuthTokenRepository
 import io.vyne.spring.http.auth.VyneHttpAuthConfig
 import kotlinx.coroutines.flow.toList
@@ -118,7 +118,7 @@ class OperationAuthenticationIntegrationTest {
          )
       }
       val response = queryService.submitVyneQlQuery("""find { Person(PersonId == "123") }""")
-         .body.toList()
+         .body!!.toList()
       response.should.not.be.`null`
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION).should.be.`null`
@@ -143,7 +143,7 @@ class OperationAuthenticationIntegrationTest {
          )
       }
       val response = queryService.submitVyneQlQuery("""find { Person[] } """)
-         .body.toList()
+         .body!!.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION)
          .should.equal("Bearer abc123")
@@ -166,7 +166,7 @@ class OperationAuthenticationIntegrationTest {
          )
       }
       val response = queryService.submitVyneQlQuery("""find { Person[] } """)
-         .body.toList()
+         .body!!.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION).should.be.`null`
       submittedRequest.requestUrl!!.query.should.equal("api_key=abc123")
@@ -190,7 +190,7 @@ class OperationAuthenticationIntegrationTest {
       }
 
       val response = queryService.submitVyneQlQuery("""find { Person[] } """)
-         .body.toList()
+         .body!!.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.COOKIE)
          .should.equal("api_key=abc123")
@@ -205,7 +205,7 @@ class OperationAuthenticationIntegrationTest {
          )
       }
       val response = queryService.submitVyneQlQuery("""find { Address[] } """)
-         .body.toList()
+         .body!!.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION)
          .should.be.`null`

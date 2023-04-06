@@ -84,7 +84,7 @@ class QueryService(
    val objectMapper: ObjectMapper,
    val activeQueryMonitor: ActiveQueryMonitor,
    val metricsEventConsumer: MetricsEventConsumer,
-   private val queryResponseFormatter: QueryResponseFormatter
+   private val queryResponseFormatter: QueryResponseFormatter,
 ) : QueryServiceApi, WebSocketController {
 
 
@@ -122,6 +122,7 @@ class QueryService(
          .header("x-vyne-client-query-id", queryResult.clientQueryId)
          .body(convertToExpectedResult(queryResult, resultMode, contentType, queryOptions))
    }
+
 
    private fun convertToExpectedResult(
       queryResult: QueryResponse,
@@ -179,6 +180,7 @@ class QueryService(
       auth: Authentication?,
       @RequestParam("clientQueryId", required = false) clientQueryId: String?
    ): ResponseEntity<Flow<Any>> {
+
       val user = auth?.toVyneUser()
       val (response,queryOptions) = vyneQLQuery(
          query,

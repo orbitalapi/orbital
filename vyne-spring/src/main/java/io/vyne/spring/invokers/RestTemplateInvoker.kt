@@ -11,7 +11,7 @@ import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
 import io.vyne.query.connectors.OperationInvoker
-import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.OperationInvocationException
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
@@ -52,7 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
 
 class RestTemplateInvoker(
-   val schemaStore: SchemaStore,
+   val schemaProvider: SchemaProvider,
    val webClient: WebClient,
    private val serviceUrlResolvers: List<ServiceUrlResolver> = ServiceUrlResolver.DEFAULT,
    private val requestFactory: HttpRequestFactory = DefaultRequestFactory()
@@ -61,13 +61,13 @@ class RestTemplateInvoker(
 
    @Autowired
    constructor(
-      schemaStore: SchemaStore,
+      schemaProvider: SchemaProvider,
       webClientBuilder: WebClient.Builder,
       serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
       requestFactory: HttpRequestFactory = DefaultRequestFactory()
    )
       : this(
-      schemaStore,
+      schemaProvider,
       webClientBuilder
          .exchangeStrategies(
             ExchangeStrategies.builder().codecs { it.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) }.build()
@@ -117,25 +117,25 @@ class RestTemplateInvoker(
       logger.debug { "Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}" }
 
       val (_, url, method) = operation.httpOperationMetadata()
-      val httpMethod = HttpMethod.resolve(method)!!
+      val httpMethod = HttpMethod.valueOf(method)!!
       //val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation", OperationType.REMOTE_CALL) { httpInvokeOperation ->
 
-      val absoluteUrl = makeUrlAbsolute(service, operation, url)
+//      val absoluteUrl = makeUrlAbsolute(service, operation, url)
       val uriVariables = uriVariableProvider.getUriVariables(parameters, url)
 
-      logger.debug { "Operation ${operation.name} resolves to $absoluteUrl" }
+      logger.debug { "Operation ${operation.name} resolves to $url" }
       val typeInstanceParameters = parameters.map { it.second }
       val httpEntity = requestFactory.buildRequestBody(operation, typeInstanceParameters)
       val queryParams = requestFactory.buildRequestQueryParams(operation)
 
-      val expandedUri = defaultUriBuilderFactory.expand(absoluteUrl, uriVariables)
+      val expandedUri = defaultUriBuilderFactory.expand(url, uriVariables)
 
       //TODO - On upgrade to Spring boot 2.4.X replace usage of exchange with exchangeToFlow LENS-473
       val request = webClient
          .method(httpMethod)
          .uri { _ ->
             val uriBuilder = UriComponentsBuilder
-               .fromUriString(absoluteUrl)
+               .fromUriString(url)
             (queryParams?.let { uriBuilder.queryParams(it) } ?: uriBuilder).build(uriVariables)
          }
          .contentType(MediaType.APPLICATION_JSON)
@@ -177,9 +177,9 @@ class RestTemplateInvoker(
                   address = expandedUri.toASCIIString(),
                   operation = operation.name,
                   responseTypeName = operation.returnType.name,
-                  method = httpMethod.name,
+                  method = httpMethod.name(),
                   requestBody = httpEntity.body,
-                  resultCode = clientResponse.rawStatusCode(),
+                  resultCode = clientResponse.statusCode().value(),
                   durationMs = duration,
                   response = responseBody,
                   timestamp = initiationTime,
@@ -187,9 +187,9 @@ class RestTemplateInvoker(
                   isFailed = failed,
                   exchange = HttpExchange(
                      url = expandedUri.toASCIIString(),
-                     verb = httpMethod.name,
+                     verb = httpMethod.name(),
                      requestBody = httpEntity.body?.toString(),
-                     responseCode = clientResponse.rawStatusCode(),
+                     responseCode = clientResponse.statusCode().value(),
                      // Strictly, this isn't the size in bytes,
                      // but it's close enough until someone complains.
                      responseSize = responseBody.length,
@@ -295,7 +295,7 @@ class RestTemplateInvoker(
       val typedInstance = TypedInstance.from(
          type,
          result,
-         schemaStore.schemaSet.schema,
+         schemaProvider.schema,
          source = operationResult.asOperationReferenceDataSource(),
          evaluateAccessors = evaluateAccessors
       )

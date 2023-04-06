@@ -24,7 +24,7 @@ import org.springframework.http.codec.cbor.Jackson2CborEncoder
 import org.springframework.messaging.rsocket.RSocketRequester
 import org.springframework.messaging.rsocket.RSocketStrategies
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
-import org.springframework.util.SocketUtils
+import org.springframework.test.util.TestSocketUtils
 import org.springframework.web.util.pattern.PathPatternRouteMatcher
 import reactor.core.publisher.Flux
 import java.util.*
@@ -133,13 +133,13 @@ class ClusteredSchemaStoreIntegrationTest {
          .properties(
             "spring.main.allow-bean-definition-overriding=true",
             "vyne.schema.server.clustered=true",
-            "vyne.schema.server.port=${SocketUtils.findAvailableTcpPort()}",
+            "vyne.schema.server.port=${TestSocketUtils.findAvailableTcpPort()}",
             "hazelcast.config=classpath:hz-test-config.xml"
          )
          // for some reason port numbers can only be overridden via run args.
          .run(
-            "--server.port=${SocketUtils.findAvailableTcpPort()}",
-            "--vyne.schema.server.port=${SocketUtils.findAvailableTcpPort()}",
+            "--server.port=${TestSocketUtils.findAvailableTcpPort()}",
+            "--vyne.schema.server.port=${TestSocketUtils.findAvailableTcpPort()}",
             "--spring.application.name=${UUID.randomUUID()}",
             "--hazelcast.config=classpath:hz-test-config.xml"
          )

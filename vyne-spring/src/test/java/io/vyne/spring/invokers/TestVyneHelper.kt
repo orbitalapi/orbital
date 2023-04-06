@@ -1,9 +1,13 @@
 package io.vyne.spring.invokers
 
-import io.vyne.*
+import io.vyne.PackageMetadata
+import io.vyne.ParsedPackage
+import io.vyne.ParsedSource
+import io.vyne.VersionedSource
+import io.vyne.Vyne
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
-import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemaStore.SimpleSchemaStore
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
@@ -22,7 +26,7 @@ fun testVyne(schema: String, invoker: Invoker): Vyne {
                .codecs { config -> config.defaultCodecs().maxInMemorySize(2 * 1024 * 1024) }
                .build()
             ).build(),
-         schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources)
+         schemaProvider = SimpleSchemaProvider(schema)
       ).let {
          if (invoker == Invoker.RestTemplateWithCache) {
             CacheAwareOperationInvocationDecorator(it)

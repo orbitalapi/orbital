@@ -1,6 +1,5 @@
-package io.vyne.spring.http.auth
+package io.vyne.auth.tokens
 
-import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.ServiceName
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -13,22 +12,26 @@ enum class AuthTokenType {
       override fun applyTo(token: AuthToken, httpRequest: HttpEntity<*>): HttpEntity<*> {
          val headers = HttpHeaders()
          headers.addAll(httpRequest.headers)
-         val headerValue = if(!token.valuePrefix.isNullOrBlank()) "${token.valuePrefix} ${token.value}" else token.value
+         val headerValue =
+            if (!token.valuePrefix.isNullOrBlank()) "${token.valuePrefix} ${token.value}" else token.value
          headers.set(token.paramName, headerValue)
          return HttpEntity(
             httpRequest.body,
             headers
          )
       }
+
       override fun queryParams(token: AuthToken): MultiValueMap<String, String>? = null
    },
    QueryParam {
       override fun applyTo(token: AuthToken, httpRequest: HttpEntity<*>): HttpEntity<*> {
-        return httpRequest
+         return httpRequest
       }
+
       override fun queryParams(token: AuthToken): MultiValueMap<String, String>? {
-         val queryParamValue = if(!token.valuePrefix.isNullOrBlank()) "${token.valuePrefix} ${token.value}" else token.value
-         val queryParamMultiMap =  LinkedMultiValueMap<String, String>()
+         val queryParamValue =
+            if (!token.valuePrefix.isNullOrBlank()) "${token.valuePrefix} ${token.value}" else token.value
+         val queryParamMultiMap = LinkedMultiValueMap<String, String>()
          queryParamMultiMap.add(token.paramName, queryParamValue)
          return queryParamMultiMap
       }
@@ -38,7 +41,8 @@ enum class AuthTokenType {
       override fun applyTo(token: AuthToken, httpRequest: HttpEntity<*>): HttpEntity<*> {
          val headers = HttpHeaders()
          headers.addAll(httpRequest.headers)
-         val cookieValue = if(!token.valuePrefix.isNullOrBlank()) "${token.valuePrefix} ${token.value}" else token.value
+         val cookieValue =
+            if (!token.valuePrefix.isNullOrBlank()) "${token.valuePrefix} ${token.value}" else token.value
          headers.set("Cookie", "${token.paramName}=$cookieValue")
          return HttpEntity(
             httpRequest.body,
@@ -56,7 +60,12 @@ enum class AuthTokenType {
 
 data class AuthConfig(
    val authenticationTokens: MutableMap<ServiceName, AuthToken> = ConcurrentHashMap()
-)
+) : AuthTokenProvider {
+   override fun getToken(serviceName: ServiceName): AuthToken? {
+      return authenticationTokens[serviceName]
+   }
+
+}
 
 data class AuthToken(
    val tokenType: AuthTokenType,
@@ -65,7 +74,7 @@ data class AuthToken(
    val valuePrefix: String? = null
 ) {
    fun applyTo(httpRequest: HttpEntity<*>): HttpEntity<*> {
-      return tokenType.applyTo( this, httpRequest)
+      return tokenType.applyTo(this, httpRequest)
    }
 }
 
@@ -74,14 +83,18 @@ data class NoCredentialsAuthToken(
    val tokenType: AuthTokenType
 )
 
+interface AuthTokenProvider {
+   fun getToken(serviceName: ServiceName): AuthToken?
+}
 
-interface AuthTokenRepository {
-   fun getToken(serviceName: String): AuthToken?
+interface AuthTokenRepository : AuthTokenProvider {
    fun saveToken(serviceName: String, token: AuthToken)
 
-   fun listTokens():List<NoCredentialsAuthToken>
+   fun listTokens(): List<NoCredentialsAuthToken>
    fun deleteToken(serviceName: String)
 
-   val writeSupported:Boolean
+   fun getAllTokens(): AuthConfig
+
+   val writeSupported: Boolean
 }
 

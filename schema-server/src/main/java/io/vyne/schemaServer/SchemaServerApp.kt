@@ -17,7 +17,6 @@ import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
-import org.springframework.cloud.netflix.eureka.EnableEurekaClient
 import org.springframework.context.annotation.Bean
 import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.scheduling.annotation.EnableScheduling
@@ -28,7 +27,8 @@ private val logger = KotlinLogging.logger {}
 @EnableAsync
 @SpringBootApplication(scanBasePackageClasses = [SchemaServerApp::class, VersionedSourceLoader::class])
 @EnableScheduling
-@EnableEurekaClient
+// MP: I don't think Schema server needs a discovery client, does it?
+//@EnableDiscoveryClient
 @EnableConfigurationProperties(
    value = [VyneSpringHazelcastConfiguration::class]
 )
