@@ -6,7 +6,7 @@ locals {
 
   subnet_ids = [aws_subnet.subnet_1.id, aws_subnet.subnet_2.id]
   
-  environment_domain_name = var.environment == "prod" ? local.domain_name : "${var.environment}.${local.domain_name}"
+  environment_domain_name = var.environment == "prod" ? var.domain_name : "${var.environment}.${var.domain_name}"
 }
 
 resource "aws_acm_certificate" "cert" {
@@ -24,7 +24,7 @@ resource "aws_acm_certificate" "cert" {
 }
 
 data "aws_route53_zone" "primary" {
-  name = local.domain_name
+  name = var.domain_name
 }
 
 resource "aws_route53_record" "cert_validation" {

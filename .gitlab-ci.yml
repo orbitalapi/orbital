@@ -367,14 +367,6 @@ publish-voyager-to-gitlab-container-registry:
          -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${tag}"
          -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${CI_COMMIT_SHORT_SHA}" .
 
-publish-voyager:
-   extends: .publish-docker-gitlab
-   stage: publish
-   variables:
-      projectDir: taxi-playground
-      microservice: taxi-playground
-   when: manual
-
 publish-pipelines-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
    variables:
