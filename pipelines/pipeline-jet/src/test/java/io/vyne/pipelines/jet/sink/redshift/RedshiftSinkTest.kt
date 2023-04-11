@@ -1,7 +1,8 @@
 package io.vyne.pipelines.jet.sink.redshift
 
-import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
-import io.vyne.connectors.jdbc.JdbcDriver
+import io.vyne.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
+import io.vyne.connectors.config.jdbc.JdbcDriver
+import io.vyne.connectors.jdbc.buildUrlAndCredentials
 import io.vyne.connectors.jdbc.builders.RedshiftJdbcUrlBuilder
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec

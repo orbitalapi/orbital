@@ -20,6 +20,11 @@
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>connectors-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>auth-tokens</artifactId>
          <version>${project.version}</version>
       </dependency>

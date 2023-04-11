@@ -1,6 +1,6 @@
 package io.vyne.connectors.jdbc.sql.dml
 
-import io.vyne.connectors.jdbc.JdbcConnectionConfiguration
+import io.vyne.connectors.config.jdbc.JdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.SqlUtils
 import io.vyne.connectors.jdbc.sqlBuilder
 import io.vyne.models.TypedInstance
@@ -22,9 +22,9 @@ class InsertStatementGenerator(private val schema: Schema) {
    private val logger = KotlinLogging.logger {}
 
    fun generateInsertWithoutConnecting(
-      typedInstance: TypedInstance,
-      connection: JdbcConnectionConfiguration,
-      useUpsertSemantics: Boolean = false
+       typedInstance: TypedInstance,
+       connection: JdbcConnectionConfiguration,
+       useUpsertSemantics: Boolean = false
    ) =
       generateInsertWithoutConnecting(listOf(typedInstance), connection, useUpsertSemantics).single()
 
@@ -113,9 +113,9 @@ class InsertStatementGenerator(private val schema: Schema) {
     * Useful for testing.
     */
    fun generateInsertWithoutConnecting(
-      values: List<TypedInstance>,
-      connection: JdbcConnectionConfiguration,
-      useUpsertSemantics: Boolean = false
+       values: List<TypedInstance>,
+       connection: JdbcConnectionConfiguration,
+       useUpsertSemantics: Boolean = false
    ) = generateInserts(values, connection.sqlBuilder(), useUpsertSemantics)
 
    private fun assertAllValuesHaveSameType(values: List<TypedInstance>): Type {

@@ -2,6 +2,9 @@ package io.vyne.connectors.jdbc
 
 import com.winterbe.expekt.should
 import io.vyne.connectors.ConnectionSucceeded
+import io.vyne.connectors.config.jdbc.JdbcDriver
+import io.vyne.connectors.config.jdbc.JdbcUrlAndCredentials
+import io.vyne.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
 import io.vyne.utils.get
 import org.junit.Before
 import org.junit.Rule

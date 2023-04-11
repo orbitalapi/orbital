@@ -1,59 +1,34 @@
-package io.vyne.connectors.jdbc
-
-import io.vyne.connectors.ConnectionDriverOptions
-import io.vyne.connectors.ConnectionDriverParam
-import io.vyne.connectors.ConnectionParameterName
-import io.vyne.connectors.jdbc.builders.H2JdbcUrlBuilder
-import io.vyne.connectors.jdbc.builders.PostgresJdbcUrlBuilder
-import io.vyne.connectors.jdbc.builders.RedshiftJdbcUrlBuilder
-import io.vyne.connectors.jdbc.builders.SnowflakeJdbcUrlBuilder
-import io.vyne.connectors.registry.ConnectorType
+package io.vyne.connectors.config.jdbc
 
 
 /**
  * Enum of supported Jdbc drivers.
  */
 enum class JdbcDriver(
-   private val builderFactory: () -> JdbcUrlBuilder,
    val metadata: JdbcMetadataParams = JdbcMetadataParams()
 ) {
    H2(
-      builderFactory = { H2JdbcUrlBuilder() },
       metadata = JdbcMetadataParams(
          tableListSchemaPattern = "PUBLIC"
       )
    ),
    POSTGRES(
-      builderFactory = { PostgresJdbcUrlBuilder() },
       metadata = JdbcMetadataParams().copy(
          tableTypesToListTables = arrayOf("TABLE")
       )
    ),
    SNOWFLAKE(
-      builderFactory = { SnowflakeJdbcUrlBuilder() },
       metadata = JdbcMetadataParams().copy(
          tableTypesToListTables = arrayOf("TABLE")
       )
    ),
    REDSHIFT(
-      builderFactory = { RedshiftJdbcUrlBuilder() },
       metadata = JdbcMetadataParams().copy(
          tableTypesToListTables = arrayOf("TABLE")
       )
    );
 //   MYSQL(displayName = "MySQL", driverName = "com.mysql.jdbc.Driver");
 
-   fun urlBuilder(): JdbcUrlBuilder {
-      return this.builderFactory()
-   }
-
-   companion object {
-      val driverOptions: List<ConnectionDriverOptions> = values().map { driver ->
-         val builder = driver.urlBuilder()
-         ConnectionDriverOptions(driver.name, builder.displayName, ConnectorType.JDBC, builder.parameters)
-      }
-
-   }
 }
 
 
@@ -103,14 +78,3 @@ data class JdbcMetadataParams(
 )
 
 
-/**
- * Builds a Jdbc connection string substituting parameters
- */
-interface JdbcUrlBuilder {
-   val displayName: String
-   val driverName: String
-   val parameters: List<ConnectionDriverParam>
-
-   fun build(inputs: Map<ConnectionParameterName, Any?>): JdbcUrlAndCredentials
-
-}

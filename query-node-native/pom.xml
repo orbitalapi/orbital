@@ -11,11 +11,44 @@
 
    <artifactId>query-node-native</artifactId>
 
+   <properties>
+      <aws-lambda-events.version>3.9.0</aws-lambda-events.version>
+      <spring-cloud-function.version>4.0.2</spring-cloud-function.version>
+      <wrapper.version>1.0.29.RELEASE</wrapper.version>
+   </properties>
+
 
    <dependencies>
       <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-function-context</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-function-web</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-function-adapter-aws</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.amazonaws</groupId>
+         <artifactId>aws-lambda-java-events</artifactId>
+         <version>${aws-lambda-events.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.amazonaws</groupId>
+         <artifactId>aws-lambda-java-core</artifactId>
+         <version>1.1.0</version>
+         <scope>provided</scope>
+      </dependency>
+      <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-webflux</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-actuator</artifactId>
       </dependency>
       <dependency>
          <groupId>com.fasterxml.jackson.module</groupId>
@@ -32,6 +65,10 @@
       <dependency>
          <groupId>org.jetbrains.kotlin</groupId>
          <artifactId>kotlin-stdlib-jdk8</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-coroutines-reactor</artifactId>
       </dependency>
       <dependency>
          <groupId>org.jetbrains.kotlinx</groupId>
@@ -92,36 +129,47 @@
          <version>${kotest.version}</version>
          <scope>test</scope>
       </dependency>
-      <!--      <dependency>-->
-      <!--         <groupId>com.github.ben-manes.caffeine</groupId>-->
-      <!--         <artifactId>caffeine</artifactId>-->
-      <!--      </dependency>-->
+      <!-- Caffeine is excluded, as it breaks native runtime -->
+<!--      <dependency>-->
+<!--         <groupId>com.github.ben-manes.caffeine</groupId>-->
+<!--         <artifactId>caffeine</artifactId>-->
+<!--      </dependency>-->
    </dependencies>
+
+   <dependencyManagement>
+      <dependencies>
+         <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-function-dependencies</artifactId>
+            <version>${spring-cloud-function.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+         </dependency>
+      </dependencies>
+   </dependencyManagement>
+
    <build>
       <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
       <testSourceDirectory>${project.basedir}/src/test/java</testSourceDirectory>
       <plugins>
-<plugin>
-   <groupId>org.graalvm.buildtools</groupId>
-   <artifactId>native-maven-plugin</artifactId>
-   <configuration>
-      <classesDirectory>${project.build.outputDirectory}</classesDirectory>
-      <metadataRepository>
-         <enabled>true</enabled>
-      </metadataRepository>
-      <requiredVersion>22.3</requiredVersion>
-      <verbose>true</verbose>
-      <buildArgs>
-         <arg>--verbose</arg>
-         <arg>--initialize-at-build-time=org.slf4j.LoggerFactory,ch.qos.logback</arg>
-         <arg>--trace-class-initialization=ch.qos.logback.core.status.InfoStatus,ch.qos.logback.core.util.StatusPrinter,ch.qos.logback.classic.Level,ch.qos.logback.classic.Logger,ch.qos.logback.core.util.Loader,ch.qos.logback.core.status.StatusBase</arg>
-      </buildArgs>
-   </configuration>
-</plugin>
+         <plugin>
+            <groupId>org.graalvm.buildtools</groupId>
+            <artifactId>native-maven-plugin</artifactId>
+            <configuration>
+               <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+               <metadataRepository>
+                  <enabled>true</enabled>
+               </metadataRepository>
+               <requiredVersion>22.3</requiredVersion>
+               <verbose>true</verbose>
+            </configuration>
+         </plugin>
          <plugin>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-maven-plugin</artifactId>
          </plugin>
+
+
          <plugin>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-maven-plugin</artifactId>
@@ -143,15 +191,4 @@
          </plugin>
       </plugins>
    </build>
-   <dependencyManagement>
-      <dependencies>
-         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-dependencies</artifactId>
-            <version>3.0.4</version>
-            <type>pom</type>
-            <scope>import</scope>
-         </dependency>
-      </dependencies>
-   </dependencyManagement>
 </project>

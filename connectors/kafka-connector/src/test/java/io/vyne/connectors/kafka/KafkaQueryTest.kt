@@ -3,6 +3,7 @@ package io.vyne.connectors.kafka
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
 import io.vyne.Vyne
+import io.vyne.connectors.config.kafka.KafkaConnectionConfiguration
 import io.vyne.connectors.kafka.registry.InMemoryKafkaConnectorRegistry
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject

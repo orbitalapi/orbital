@@ -3,13 +3,17 @@ package io.vyne
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import io.vyne.models.serde.InstantSerializer
 import io.vyne.utils.shaHash
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Polymorphic
 import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.packages.TaxiPackageSources
 import java.io.Serializable
 import java.time.Instant
 
 
+@kotlinx.serialization.Serializable
 data class SourcePackage(
    val packageMetadata: PackageMetadata,
    /**
@@ -46,6 +50,7 @@ object SourcePackageHasher {
 typealias UnversionedPackageIdentifier = String
 typealias UriSafePackageIdentifier = String
 
+@kotlinx.serialization.Serializable
 data class PackageIdentifier(
    val organisation: String,
    val name: String,
@@ -141,7 +146,10 @@ interface PackageMetadata : Serializable {
 
 }
 
-open class DefaultPackageMetadata(
+// MP:10-APR-23 This class was open, not sure why, made it a data class, as needed an equals and hashcode impl
+// for serde (see QueryMessageTest)
+@kotlinx.serialization.Serializable
+data class DefaultPackageMetadata(
    override val identifier: PackageIdentifier,
 
    /**
@@ -149,10 +157,10 @@ open class DefaultPackageMetadata(
     * In the case that two packages with the same identifier are submitted,
     * the "latest" wins - using this data to determine latest.
     */
+   @kotlinx.serialization.Serializable(with = InstantSerializer::class)
    override val submissionDate: Instant = Instant.now(),
    override val dependencies: List<PackageIdentifier> = emptyList()
 ) : PackageMetadata
-
 
 fun lang.taxi.packages.PackageIdentifier.toVynePackageIdentifier(): PackageIdentifier {
    return PackageIdentifier(

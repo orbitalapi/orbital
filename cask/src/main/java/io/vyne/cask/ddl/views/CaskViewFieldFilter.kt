@@ -85,7 +85,6 @@ class CaskViewFieldFilter(private val viewName: QualifiedName, private val types
       val selector =  FieldReferenceSelector(renamedField, expression.returnType)
       val existingCompilationUnit = expression.compilationUnits.first()
       val compilationUnit = CompilationUnit(
-         expression,
          existingCompilationUnit.source.copy(content = "this.$renamedField"),
          existingCompilationUnit.location
       )

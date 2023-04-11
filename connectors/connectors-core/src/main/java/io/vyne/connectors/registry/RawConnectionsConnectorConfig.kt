@@ -23,7 +23,6 @@ import java.nio.file.Path
 class RawConnectionsConnectorConfig(
    private val path: Path,
    private val fallback: Config = ConfigFactory.systemEnvironment(),
-   private val objectMapper: ObjectMapper = jacksonObjectMapper()
 ) {
    @Autowired
    constructor(connectionConfig: VyneConnectionsConfig) : this(connectionConfig.configFile)

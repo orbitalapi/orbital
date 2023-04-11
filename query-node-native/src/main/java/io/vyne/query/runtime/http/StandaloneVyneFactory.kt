@@ -2,17 +2,16 @@ package io.vyne.query.runtime.http
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.convertValue
 import com.google.common.cache.CacheBuilder
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.SourcePackageHasher
 import io.vyne.Vyne
+import io.vyne.connectors.config.ConnectorsConfig
 import io.vyne.connectors.jdbc.HikariJdbcConnectionFactory
 import io.vyne.connectors.jdbc.JdbcInvoker
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
-import io.vyne.connectors.jdbc.registry.JdbcConnections
 import io.vyne.query.QueryEngineFactory
 import io.vyne.query.runtime.QueryMessage
 import io.vyne.schema.api.SchemaProvider
@@ -23,8 +22,11 @@ import io.vyne.spring.config.VyneSpringCacheConfiguration
 import io.vyne.spring.http.DefaultRequestFactory
 import io.vyne.spring.http.auth.AuthTokenInjectingRequestFactory
 import io.vyne.spring.invokers.RestTemplateInvoker
+import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTimedValue
 
 /**
  * Vyne factory that doesn't use any shared state.
@@ -44,6 +46,9 @@ class StandaloneVyneFactory(
    private val cacheConfiguration: VyneSpringCacheConfiguration
 //   private val schemaCache: ?
 ) {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
 
    private val schemaCache = CacheBuilder.newBuilder()
       .maximumSize(5)
@@ -52,11 +57,17 @@ class StandaloneVyneFactory(
    private val lenientObjectMapper = objectMapper
       .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
+   @OptIn(ExperimentalTime::class)
    fun buildVyne(message: QueryMessage): Vyne {
-      val sourcesHash = SourcePackageHasher.hash(message.sourcePackages)
+      val sources = message.sourcePackages()
+      val sourcesHash = SourcePackageHasher.hash(sources)
       val schemaProvider = schemaCache.get(sourcesHash) {
-         val schema = TaxiSchema.from(message.sourcePackages)
-         SchemaWithSourcesSchemaProvider(schema, message.sourcePackages)
+         val timedSchema = measureTimedValue {
+            TaxiSchema.from(sources)
+         }
+         logger.info { "Building schema took ${timedSchema.duration}" }
+         val schema = timedSchema.value
+         SchemaWithSourcesSchemaProvider(schema, sources)
       }
 
       val jdbcInvoker = buildJdbcInvoker(message.connections, schemaProvider)
@@ -88,15 +99,13 @@ class StandaloneVyneFactory(
       return RestTemplateInvoker(
          schemaProvider,
          builder,
-         emptyList(),
          requestFactory
       )
    }
 
-   private fun buildJdbcInvoker(connections: Map<String, Any>, schemaProvider: SchemaProvider): JdbcInvoker {
+   private fun buildJdbcInvoker(connections: ConnectorsConfig, schemaProvider: SchemaProvider): JdbcInvoker {
 
-      val jdbcConnections = lenientObjectMapper.convertValue<JdbcConnections>(connections)
-      val connectionRegistry = InMemoryJdbcConnectionRegistry(jdbcConnections.jdbc.values.toList())
+      val connectionRegistry = InMemoryJdbcConnectionRegistry(connections.jdbc.values.toList())
       val jdbcConnectionFactory = HikariJdbcConnectionFactory(
          connectionRegistry,
          hikariConfig,

@@ -3,6 +3,8 @@ package io.vyne.connectors.jdbc.query
 import com.winterbe.expekt.should
 import com.zaxxer.hikari.HikariConfig
 import io.vyne.StubService
+import io.vyne.connectors.config.jdbc.JdbcDriver
+import io.vyne.connectors.jdbc.NamedTemplateConnection
 import io.vyne.connectors.jdbc.*
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.models.TypedInstance

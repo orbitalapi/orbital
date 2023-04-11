@@ -2,9 +2,9 @@ package io.vyne.connectors.jdbc.sql.dml
 
 import com.winterbe.expekt.should
 import io.kotest.core.spec.style.DescribeSpec
-import io.vyne.connectors.jdbc.JdbcDriver
-import io.vyne.connectors.jdbc.JdbcUrlAndCredentials
-import io.vyne.connectors.jdbc.JdbcUrlCredentialsConnectionConfiguration
+import io.vyne.connectors.config.jdbc.JdbcDriver
+import io.vyne.connectors.config.jdbc.JdbcUrlAndCredentials
+import io.vyne.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
 import io.vyne.connectors.jdbc.sqlBuilder
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.Compiler

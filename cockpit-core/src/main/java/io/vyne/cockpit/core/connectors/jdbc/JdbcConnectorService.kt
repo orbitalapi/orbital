@@ -7,6 +7,7 @@ import io.vyne.PackageIdentifier
 import io.vyne.VersionedSource
 import io.vyne.cockpit.core.connectors.ConnectionTestedSuccessfully
 import io.vyne.cockpit.core.schemas.editor.LocalSchemaEditingService
+import io.vyne.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.*
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.connectors.registry.ConnectorConfigurationSummary

@@ -13,13 +13,16 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.Authentication
+import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import java.util.*
 
 @ConditionalOnBean(QueryDispatcher::class)
+@RestController
 class QueryDispatcherService(
    val objectMapper: ObjectMapper,
    private val queryDispatcher: QueryDispatcher

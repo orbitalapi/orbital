@@ -1,21 +1,30 @@
 package io.vyne.query.runtime.core
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.auth.tokens.AuthTokenRepository
-import io.vyne.connectors.registry.RawConnectionsConnectorConfig
+import io.vyne.connectors.config.ConfigFileConnectorsRegistry
 import io.vyne.http.ServicesConfigRepository
 import io.vyne.query.ResultMode
+import io.vyne.query.runtime.CompressedQueryResultWrapper
 import io.vyne.query.runtime.QueryMessage
+import io.vyne.query.runtime.QueryMessageCborWrapper
 import io.vyne.schema.api.SchemaProvider
+import io.vyne.utils.formatAsFileSize
+import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.encodeToStream
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
-import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.reactive.function.client.body
-import org.springframework.web.reactive.function.client.bodyToFlux
+import org.springframework.web.reactive.function.client.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
+import reactor.util.function.Tuple2
+import java.io.ByteArrayOutputStream
+import java.util.zip.GZIPOutputStream
 
 /**
  * Entry point for sending queries to
@@ -30,9 +39,8 @@ class QueryDispatcher(
    private val webClient: WebClient.Builder,
    private val servicesRepository: ServicesConfigRepository,
    private val authTokenRepository: AuthTokenRepository,
-   private val connectionsConfigProvider: RawConnectionsConnectorConfig,
+   private val connectionsConfigProvider: ConfigFileConnectorsRegistry,
    private val schemaProvider: SchemaProvider,
-   private val objectMapper: ObjectMapper,
    @Value("\${vyne.query-router-url}") private val queryRouterUrl: String
 ) {
 
@@ -49,23 +57,28 @@ class QueryDispatcher(
       clientQueryId: String,
       mediaType: String,
       resultMode: ResultMode = ResultMode.RAW
-   ): Flux<Any> {
+   ): Mono<Any> {
       val message = QueryMessage(
          query = query,
          sourcePackages = schemaProvider.schema.packages,
-         connections = connectionsConfigProvider.loadAsMap(),
+         connections = connectionsConfigProvider.load(),
          authTokens = authTokenRepository.getAllTokens(),
          services = servicesRepository.load(),
          resultMode, mediaType, clientQueryId
       )
 
-      logger.info { "Received query $clientQueryId - $query" }
+      val encodedWrapper = QueryMessageCborWrapper.from(message)
+      logger.info { "Dispatching query $clientQueryId - ${encodedWrapper.size().formatAsFileSize}" }
 
       return webClient.build().post()
          .uri(queryRouterUrl)
-         .body(Mono.just(message))
-         .exchangeToFlux { clientResponse ->
-            clientResponse.bodyToFlux<Any>()
+         .body(Mono.just(encodedWrapper))
+         .retrieve()
+         .bodyToMono(CompressedQueryResultWrapper::class.java)
+         .timed()
+         .map { result ->
+            logger.info { "Received result in ${result.elapsed()}- ${result.get().r.size.formatAsFileSize}" }
+            result.get().decompress()
          }
    }
 

@@ -1,8 +1,6 @@
 package io.vyne.connectors.jdbc.registry
 
-import io.vyne.connectors.jdbc.JdbcConnectionConfiguration
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
-import javax.sql.DataSource
+import io.vyne.connectors.config.jdbc.JdbcConnectionConfiguration
 
 
 class InMemoryJdbcConnectionRegistry(configs: List<JdbcConnectionConfiguration> = emptyList()) :

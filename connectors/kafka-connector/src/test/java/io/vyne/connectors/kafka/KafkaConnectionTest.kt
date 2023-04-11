@@ -2,6 +2,9 @@ package io.vyne.connectors.kafka
 
 import com.winterbe.expekt.should
 import io.vyne.connectors.ConnectionSucceeded
+import io.vyne.connectors.config.kafka.KafkaConnection
+import io.vyne.connectors.config.kafka.KafkaConnectionConfiguration
+import io.vyne.connectors.kafka.registry.test
 import io.vyne.utils.get
 import org.junit.Test
 import kotlin.random.Random

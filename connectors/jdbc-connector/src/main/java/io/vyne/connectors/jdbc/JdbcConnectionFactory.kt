@@ -4,6 +4,7 @@ import com.google.common.cache.CacheBuilder
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
+import io.vyne.connectors.config.jdbc.JdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import mu.KotlinLogging
 import org.jooq.DSLContext
@@ -24,6 +25,7 @@ interface JdbcConnectionFactory {
    fun config(connectionName: String): JdbcConnectionConfiguration
 
    fun dsl(connectionConfiguration: JdbcConnectionConfiguration): DSLContext {
+      connectionConfiguration.jdbcDriver
       val dialect = JDBCUtils.dialect(connectionConfiguration.buildUrlAndCredentials().url)
       val datasource = dataSource(connectionConfiguration)
       return DSL.using(datasource, dialect)

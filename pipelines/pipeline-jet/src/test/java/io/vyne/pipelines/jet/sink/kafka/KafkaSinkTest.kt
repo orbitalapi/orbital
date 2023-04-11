@@ -1,7 +1,7 @@
 package io.vyne.pipelines.jet.sink.kafka
 
 import com.winterbe.expekt.should
-import io.vyne.connectors.kafka.KafkaConnectionConfiguration
+import io.vyne.connectors.config.kafka.KafkaConnectionConfiguration
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportOutputSpec
 import io.vyne.pipelines.jet.queueOf

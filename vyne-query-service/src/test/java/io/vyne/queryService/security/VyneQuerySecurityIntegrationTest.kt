@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.winterbe.expekt.should
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.vyne.cockpit.core.security.authorisation.VyneAuthorisationConfig
-import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
-import io.vyne.connectors.jdbc.JdbcDriver
+import io.vyne.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
+import io.vyne.connectors.config.jdbc.JdbcDriver
 import io.vyne.queryService.VyneQueryIntegrationTest
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore

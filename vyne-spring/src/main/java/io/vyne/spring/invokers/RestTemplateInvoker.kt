@@ -54,7 +54,6 @@ inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>(
 class RestTemplateInvoker(
    val schemaProvider: SchemaProvider,
    val webClient: WebClient,
-   private val serviceUrlResolvers: List<ServiceUrlResolver> = ServiceUrlResolver.DEFAULT,
    private val requestFactory: HttpRequestFactory = DefaultRequestFactory()
 ) : OperationInvoker {
    private val logger = KotlinLogging.logger {}
@@ -63,7 +62,6 @@ class RestTemplateInvoker(
    constructor(
       schemaProvider: SchemaProvider,
       webClientBuilder: WebClient.Builder,
-      serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
       requestFactory: HttpRequestFactory = DefaultRequestFactory()
    )
       : this(
@@ -91,8 +89,6 @@ class RestTemplateInvoker(
             )
          )
          .build(),
-
-      serviceUrlResolvers,
       requestFactory
    )
 
@@ -314,12 +310,5 @@ class RestTemplateInvoker(
          MediaType.APPLICATION_JSON -> return operation.returnType
       }
       return operation.returnType.collectionType ?: operation.returnType
-   }
-
-
-   private fun makeUrlAbsolute(service: Service, operation: RemoteOperation, url: String): String {
-      return this.serviceUrlResolvers.firstOrNull { it.canResolve(service, operation) }
-         ?.makeAbsolute(url, service, operation)
-         ?: error("No url resolvers were found that can make url $url (on operation ${operation.qualifiedName}) absolute")
    }
 }

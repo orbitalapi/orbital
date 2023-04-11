@@ -1,6 +1,7 @@
 package io.vyne.auth.tokens
 
 import io.vyne.schemas.ServiceName
+import kotlinx.serialization.Serializable
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.util.LinkedMultiValueMap
@@ -58,6 +59,7 @@ enum class AuthTokenType {
 }
 
 
+@Serializable
 data class AuthConfig(
    val authenticationTokens: MutableMap<ServiceName, AuthToken> = ConcurrentHashMap()
 ) : AuthTokenProvider {
@@ -67,6 +69,7 @@ data class AuthConfig(
 
 }
 
+@Serializable
 data class AuthToken(
    val tokenType: AuthTokenType,
    val value: String,

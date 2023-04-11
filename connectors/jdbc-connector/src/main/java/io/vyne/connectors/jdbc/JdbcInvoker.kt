@@ -3,6 +3,7 @@ package io.vyne.connectors.jdbc
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Stopwatch
 import io.vyne.connectors.collectionTypeOrType
+import io.vyne.connectors.config.jdbc.JdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.sql.dml.SelectStatementGenerator
 import io.vyne.connectors.resultType
 import io.vyne.models.DataSource

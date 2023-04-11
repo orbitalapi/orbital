@@ -1,5 +1,8 @@
 package io.vyne.http
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class ServicesConfig(
    val services: Map<String, Map<String, String>> = emptyMap()
 ) {

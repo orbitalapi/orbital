@@ -32,18 +32,13 @@ import io.vyne.queryService.TestSpringConfig
 import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.spring.invokers.Invoker
 import io.vyne.spring.invokers.RestTemplateInvoker
-import io.vyne.spring.invokers.ServiceUrlResolver
 import io.vyne.testVyne
 import io.vyne.typedObjects
 import io.vyne.utils.Benchmark
 import io.vyne.utils.StrategyPerformanceProfiler
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import mu.KotlinLogging
 import org.http4k.core.Method.GET
@@ -277,7 +272,6 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
                RestTemplateInvoker(
                   SimpleSchemaProvider(schema),
                   WebClient.builder(),
-                  ServiceUrlResolver.DEFAULT
                )
             )
          )
@@ -366,7 +360,6 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
                RestTemplateInvoker(
                   SimpleSchemaProvider(schema),
                   WebClient.builder(),
-                  ServiceUrlResolver.DEFAULT
                )
             )
          )

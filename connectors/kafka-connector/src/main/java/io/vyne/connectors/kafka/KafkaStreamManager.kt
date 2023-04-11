@@ -2,7 +2,10 @@ package io.vyne.connectors.kafka
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
+import io.vyne.connectors.config.kafka.KafkaConnectionConfiguration
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
+import io.vyne.connectors.kafka.registry.brokers
+import io.vyne.connectors.kafka.registry.toReceiverOptions
 import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
 import io.vyne.models.OperationResultDataSourceWrapper

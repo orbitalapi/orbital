@@ -3,8 +3,8 @@ package io.vyne.connectors.jdbc.registry
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
-import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
-import io.vyne.connectors.jdbc.JdbcConnectionConfiguration
+import io.vyne.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
+import io.vyne.connectors.config.jdbc.JdbcConnectionConfiguration
 import io.vyne.connectors.registry.ConfigFileConnectorRegistry
 import io.vyne.connectors.registry.ConnectionConfigMap
 import java.nio.file.Path

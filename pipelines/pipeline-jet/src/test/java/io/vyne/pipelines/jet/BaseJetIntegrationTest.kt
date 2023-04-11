@@ -9,12 +9,10 @@ import com.hazelcast.spring.context.SpringManagedContext
 import com.mercateo.test.clock.TestClock
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import io.vyne.StubService
-import io.vyne.VyneClient
-import io.vyne.VyneClientWithSchema
+import io.vyne.*
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
-import io.vyne.connectors.jdbc.JdbcConnectionConfiguration
+import io.vyne.connectors.config.jdbc.JdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.connectors.kafka.registry.InMemoryKafkaConnectorRegistry
 import io.vyne.embedded.EmbeddedVyneClientWithSchema
@@ -40,9 +38,6 @@ import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.invokers.RestTemplateInvoker
-import io.vyne.spring.invokers.ServiceUrlResolver
-import io.vyne.testVyne
-import io.vyne.testVyneWithStub
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.support.GenericApplicationContext
@@ -68,11 +63,11 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
    val meterRegistry = SimpleMeterRegistry()
 
    fun jetWithSpringAndVyne(
-      schema: String,
-      jdbcConnections: List<JdbcConnectionConfiguration> = emptyList(),
-      awsConnections: List<AwsConnectionConfiguration> = emptyList(),
-      testClockConfiguration: Class<*> = TestClockProvider::class.java,
-      contextConfig: (GenericApplicationContext) -> Unit = {},
+       schema: String,
+       jdbcConnections: List<JdbcConnectionConfiguration> = emptyList(),
+       awsConnections: List<AwsConnectionConfiguration> = emptyList(),
+       testClockConfiguration: Class<*> = TestClockProvider::class.java,
+       contextConfig: (GenericApplicationContext) -> Unit = {},
    ): JetTestSetup {
       val (vyne, stub) = testVyneWithStub(schema) { taxiSchema ->
          listOf(
@@ -80,7 +75,6 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
                RestTemplateInvoker(
                   SimpleSchemaProvider(taxiSchema),
                   WebClient.builder(),
-                  ServiceUrlResolver.DEFAULT
                )
             )
          )
@@ -132,11 +126,11 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
     * wired into a jet instance
     */
    fun jetWithSpringAndVyne(
-      schema: TaxiSchema,
-      jdbcConnections: List<JdbcConnectionConfiguration>,
-      awsConnections: List<AwsConnectionConfiguration> = emptyList(),
-      testClockConfiguration: Class<*> = TestClockProvider::class.java,
-      contextConfig: (GenericApplicationContext) -> Unit = {},
+       schema: TaxiSchema,
+       jdbcConnections: List<JdbcConnectionConfiguration>,
+       awsConnections: List<AwsConnectionConfiguration> = emptyList(),
+       testClockConfiguration: Class<*> = TestClockProvider::class.java,
+       contextConfig: (GenericApplicationContext) -> Unit = {},
    ): Triple<HazelcastInstance, ApplicationContext, VyneClient> {
       val vyne = testVyne(
          schema, listOf(
@@ -144,7 +138,6 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
                RestTemplateInvoker(
                   SimpleSchemaProvider(schema),
                   WebClient.builder(),
-                  ServiceUrlResolver.DEFAULT
                )
             )
          )

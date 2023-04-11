@@ -13,6 +13,7 @@ import java.io.Serializable
 import java.time.Instant
 
 
+@kotlinx.serialization.Serializable
 data class VersionedSource(
    val name: String,
    val version: String,
@@ -68,6 +69,7 @@ data class VersionedSource(
    val id: SchemaId = "$name:$version"
 
    @Transient
+   @kotlinx.serialization.Transient
    private var _semver: Version? = null
 
    @get:JsonIgnore

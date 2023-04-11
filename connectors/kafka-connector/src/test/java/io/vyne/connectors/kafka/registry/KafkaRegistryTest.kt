@@ -2,7 +2,7 @@ package io.vyne.connectors.kafka.registry
 
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
-import io.vyne.connectors.kafka.KafkaConnectionConfiguration
+import io.vyne.connectors.config.kafka.KafkaConnectionConfiguration
 import io.vyne.utils.withoutWhitespace
 import org.apache.commons.io.FileUtils
 import org.junit.Rule

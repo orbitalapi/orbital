@@ -5,6 +5,7 @@ import com.hazelcast.jet.pipeline.SinkBuilder
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.VyneClientWithSchema
+import io.vyne.connectors.jdbc.buildUrlAndCredentials
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
@@ -86,7 +87,7 @@ class RedshiftSinkBuilder :
             val connectionConfiguration = context.jdbcConnectionRegistry.getConnection(context.outputSpec.connection)
 
             val urlCredentials = connectionConfiguration.buildUrlAndCredentials()
-            val url = connectionConfiguration.buildUrlAndCredentials().url
+            val url = urlCredentials.url
 
             val connection = DriverManager.getConnection(url, urlCredentials.username, urlCredentials.password)
             val statement = connection.createStatement()

@@ -12,6 +12,7 @@ import java.nio.file.Path
 // Marker interface, to help make this stuff easier to follow
 interface ConnectionConfigMap
 
+@Deprecated("Replacing this, as it makes serialization difficult - use config.ConfigFileConnectorsRegistry")
 abstract class ConfigFileConnectorRegistry<TMapType : ConnectionConfigMap, TConfigType : ConnectorConfiguration>(
    path: Path,
    fallback: Config = ConfigFactory.systemEnvironment(),

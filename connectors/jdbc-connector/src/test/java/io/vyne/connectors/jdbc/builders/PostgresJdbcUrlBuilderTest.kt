@@ -1,7 +1,7 @@
 package io.vyne.connectors.jdbc.builders
 
 import com.winterbe.expekt.should
-import io.vyne.connectors.jdbc.JdbcUrlAndCredentials
+import io.vyne.connectors.config.jdbc.JdbcUrlAndCredentials
 import org.junit.Test
 
 class PostgresJdbcUrlBuilderTest {
