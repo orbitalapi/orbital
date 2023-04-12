@@ -290,7 +290,7 @@ class TaxiSchema(
          val schemaWarnings = compilationErrors.filter { it.severity == Severity.WARNING }
          when {
             schemaErrors.isNotEmpty() -> {
-               logger.error {
+               logger.info {
                   "There were ${schemaErrors.size} compilation errors found in sources. \n ${
                      compilationErrors.errors().toMessage()
                   }"
@@ -298,7 +298,7 @@ class TaxiSchema(
             }
 
             compilationErrors.any { it.severity == Severity.WARNING } -> {
-               logger.warn { "There are ${schemaWarnings.size} warning found in the sources" }
+               logger.info { "There are ${schemaWarnings.size} warning found in the sources" }
             }
 
             compilationErrors.isNotEmpty() -> {

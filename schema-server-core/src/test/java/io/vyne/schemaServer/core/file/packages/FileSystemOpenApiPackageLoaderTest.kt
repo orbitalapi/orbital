@@ -3,8 +3,8 @@ package io.vyne.schemaServer.core.file.packages
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
 import io.vyne.PackageIdentifier
-import io.vyne.schemaServer.core.adaptors.OpenApiPackageLoaderSpec
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
+import io.vyne.schemaServer.packages.OpenApiPackageLoaderSpec
 import org.junit.Test
 import reactor.kotlin.test.test
 import java.nio.file.Paths
@@ -40,7 +40,7 @@ class FileSystemOpenApiPackageLoaderTest : BaseFileSystemPackageLoaderTest() {
                PackageIdentifier(
                   organisation = "com.acme",
                   name = "petstore-api",
-                  version = "1.0.0" // Version is taken from the OpenApi spec, not what's passed in
+                  version = "0.2.0" // The version from the package spec overrides what's in the OAS spec
                )
             )
             true

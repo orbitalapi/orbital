@@ -5,18 +5,21 @@
    <parent>
       <artifactId>connectors</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.22.0-SNAPSHOT</version>
+      <version>0.24.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>connectors-core</artifactId>
 
    <properties>
-      <maven.compiler.source>11</maven.compiler.source>
-      <maven.compiler.target>11</maven.compiler.target>
    </properties>
 
    <dependencies>
+      <dependency>
+         <groupId>org.skyscreamer</groupId>
+         <artifactId>jsonassert</artifactId>
+         <scope>test</scope>
+      </dependency>
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot</artifactId>

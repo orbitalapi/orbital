@@ -5,6 +5,18 @@
   align-items: center;
 }
 
+
+::ng-deep tui-select {
+  tui-wrapper[data-appearance=textfield] {
+    box-shadow:  0 0 0 rgb(19 20 22 / 10%);
+  }
+}
+
+tui-select {
+  width: 8rem;
+  margin-right: 2rem;
+}
+
 .footer-bar {
   // Provide a consistent height so that we don't jump around
   // as buttons are replaced etc

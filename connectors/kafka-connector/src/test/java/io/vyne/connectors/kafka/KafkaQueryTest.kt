@@ -3,6 +3,7 @@ package io.vyne.connectors.kafka
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
 import io.vyne.Vyne
+import io.vyne.connectors.config.kafka.KafkaConnectionConfiguration
 import io.vyne.connectors.kafka.registry.InMemoryKafkaConnectorRegistry
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
@@ -14,7 +15,6 @@ import io.vyne.testVyne
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -37,8 +37,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Configuration
 import org.springframework.test.context.junit4.SpringRunner
 import java.time.Instant
-import java.util.Properties
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.random.Random
 
@@ -126,7 +125,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       sendMessage(message("message1"))
       sendMessage(message("message2"))
 
-      await().atMost(1, SECONDS).until<Boolean> { resultsFromQuery1.size == 2 }
+      await().atMost(10, SECONDS).until<Boolean> { resultsFromQuery1.size == 2 }
       query.requestCancel()
       Thread.sleep(1000)
 
@@ -293,7 +292,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
                @KafkaService( connectionName = "moviesConnection" )
                service MovieService {
                   @KafkaOperation( topic = "movies", offset = "earliest" )
-                  operation streamMovieQuery():Stream<Movie>
+                  stream streamMovieQuery:Stream<Movie>
                }
 
             """.trimIndent()

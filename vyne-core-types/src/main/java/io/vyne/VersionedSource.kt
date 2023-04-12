@@ -13,6 +13,7 @@ import java.io.Serializable
 import java.time.Instant
 
 
+@kotlinx.serialization.Serializable
 data class VersionedSource(
    val name: String,
    val version: String,
@@ -27,6 +28,7 @@ data class VersionedSource(
 
 
    companion object {
+      private val hashCharset = java.nio.charset.Charset.defaultCharset()
       const val UNNAMED = "<unknown>"
       val DEFAULT_VERSION: Version = Version.valueOf("0.0.0")
 
@@ -67,6 +69,7 @@ data class VersionedSource(
    val id: SchemaId = "$name:$version"
 
    @Transient
+   @kotlinx.serialization.Transient
    private var _semver: Version? = null
 
    @get:JsonIgnore
@@ -84,10 +87,17 @@ data class VersionedSource(
       }
 
    val contentHash: String = Hashing.sha256().newHasher()
-      .putString(content, java.nio.charset.Charset.defaultCharset())
+      .putString(content, hashCharset)
       .hash()
       .toString()
       .substring(0, 6)
+
+   val fullHash = Hashing.sha256().newHasher()
+      .putString(packageQualifiedName, hashCharset)
+      .putString(version, hashCharset)
+      .putString(content, hashCharset)
+      .hash()
+      .toString()
 
 }
 

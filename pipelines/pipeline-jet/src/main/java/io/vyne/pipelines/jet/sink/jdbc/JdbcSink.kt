@@ -22,11 +22,11 @@ import io.vyne.pipelines.jet.api.transport.jdbc.WriteDisposition
 import io.vyne.pipelines.jet.sink.WindowingPipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
+import jakarta.annotation.Resource
 import mu.KotlinLogging
 import org.jooq.DSLContext
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
-import javax.annotation.Resource
 
 
 @Component

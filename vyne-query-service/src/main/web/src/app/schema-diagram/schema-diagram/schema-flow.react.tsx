@@ -14,8 +14,14 @@ import * as ReactDOM from 'react-dom';
 import ModelNode from './diagram-nodes/model-node';
 import ApiNode from './diagram-nodes/api-service-node';
 import { SchemaChartController } from './schema-chart.controller';
-import { arrayMemberTypeNameOrTypeNameFromName, emptySchema, Schema } from '../../services/schema';
-import { Observable } from 'rxjs';
+import {
+  arrayMemberTypeNameOrTypeNameFromName,
+  emptySchema,
+  Schema,
+  SchemaMember,
+  SchemaMemberNamed, SchemaMemberKind
+} from '../../services/schema';
+import { Observable, Subject } from 'rxjs';
 import { Link, LinkKind, MemberWithLinks } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
 import { applyElkLayout } from 'src/app/schema-diagram/schema-diagram/elk-chart-layout';
 import FloatingEdge from 'src/app/schema-diagram/schema-diagram/diagram-nodes/floating-edge';
@@ -32,19 +38,21 @@ type NodeMap = { [key in NodeType]: ReactComponentFunction }
 
 const nodeTypes: NodeMap = {
   'Model': ModelNode,
-  'Service': ApiNode,
-}
+  'Service': ApiNode
+};
 
 const edgeTypes = {
   'floating': FloatingEdge
-}
+};
 
 interface SchemaFlowDiagramProps {
   schema$: Observable<Schema>;
   requiredMembers$: Observable<RequiredMembersProps>;
   width: number;
   height: number;
-  linkKinds: LinkKind[]
+  linkKinds: LinkKind[];
+
+  clickHandler: Subject<SchemaMember>;
 }
 
 export interface RequiredMembersProps {
@@ -67,28 +75,28 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   const [requiredMembers, setRequiredMembers] = useState<RequiredMembersProps>({
     schema: emptySchema(),
     memberNames: []
-  })
+  });
   const updateNodeInternals = useUpdateNodeInternals();
 
   const appendNodesAndEdgesForLinks = (props: AppendLinksProps) => {
-    const newMemberNames = new Set<string>(requiredMembers.memberNames)
+    const newMemberNames = new Set<string>(requiredMembers.memberNames);
     props.links.forEach(link => {
-      newMemberNames.add(arrayMemberTypeNameOrTypeNameFromName(link.sourceNodeName).fullyQualifiedName)
-      newMemberNames.add(arrayMemberTypeNameOrTypeNameFromName(link.targetNodeName).fullyQualifiedName)
-    })
+      newMemberNames.add(arrayMemberTypeNameOrTypeNameFromName(link.sourceNodeName).fullyQualifiedName);
+      newMemberNames.add(arrayMemberTypeNameOrTypeNameFromName(link.targetNodeName).fullyQualifiedName);
+    });
     setRequiredMembers({
       schema: requiredMembers.schema,
       memberNames: Array.from(newMemberNames)
-    })
-  }
+    });
+  };
 
   useEffect(() => {
     const subscription = props.requiredMembers$.subscribe(event => {
-      setRequiredMembers(event)
+      setRequiredMembers(event);
     });
     return () => {
       subscription.unsubscribe();
-    }
+    };
   }, []); // Note for non-react devs:  Passing [] as deps means this useEffect() only runs on mount / unmount
 
   useEffect(() => {
@@ -118,21 +126,25 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
       return;
     }
     console.log('Required members has changed: ', requiredMembers.memberNames);
+
+    const clickHandler = (schemaMember: SchemaMember) => props.clickHandler.next(schemaMember);
+
     const buildResult = new SchemaChartController(requiredMembers.schema, nodes, edges, requiredMembers.memberNames)
       .build({
         autoAppendLinks: true,
         layoutAlgo: 'full',
-        appendLinksHandler: appendNodesAndEdgesForLinks
-      })
+        appendLinksHandler: appendNodesAndEdgesForLinks,
+        clickHandler: clickHandler
+      });
     setNodes(buildResult.nodes);
     buildResult.nodesRequiringUpdate.forEach(node => updateNodeInternals(node.id));
     setEdges(buildResult.edges.filter(edge => {
-      return props.linkKinds.includes(edge.data.linkKind)
+      return props.linkKinds.includes(edge.data.linkKind);
     }));
 
     console.log('Requesting layout');
     setAwaitingLayout(true);
-  }, [requiredMembers.memberNames.join(','), requiredMembers.schema.hash])
+  }, [requiredMembers.memberNames.join(','), requiredMembers.schema.hash]);
 
   function downloadImage() {
     toPng(document.querySelector<HTMLElement>('.react-flow__viewport'), {
@@ -145,7 +157,7 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
         }
 
         return true;
-      },
+      }
     }).then((dataUrl) => {
       const a = document.createElement('a');
 
@@ -155,11 +167,11 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
     });
   }
 
-  const ToggleFullScreenButton = isFullScreen ? <MinimizeIcon/> : <FullScreenIcon/>
+  const ToggleFullScreenButton = isFullScreen ? <MinimizeIcon /> : <FullScreenIcon />;
   const styleProps = isFullScreen ? {} : {
     height: props.height,
     width: props.width
-  }
+  };
 
   return (<div className={isFullScreen ? 'fullscreen' : ''} style={styleProps}>
     <ReactFlow
@@ -178,14 +190,14 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
         showInteractive={false}
       >
         <ControlButton onClick={downloadImage}>
-          <DownloadIcon/>
+          <DownloadIcon />
         </ControlButton>
         <ControlButton onClick={() => setFullScreen(!isFullScreen)}>
           {ToggleFullScreenButton}
         </ControlButton>
       </Controls>
     </ReactFlow>
-  </div>)
+  </div>);
 }
 
 export const SchemaDiagramContainer = styled.div`
@@ -214,10 +226,12 @@ function SchemaFlowDiagramWithProvider(props) {
         <SchemaFlowDiagram {...props}></SchemaFlowDiagram>
       </ReactFlowProvider>
     </SchemaDiagramContainer>
-  )
+  );
 }
 
 
+export type SchemaMemberClickProps = SchemaMember | { name: SchemaMemberNamed, type: SchemaMemberKind }
+export type SchemaMemberClickHandler = (SchemaMemberClickProps) => void;
 export type AppendLinksHandler = (AppendLinksProps) => void;
 
 export interface AppendLinksProps {
@@ -230,15 +244,17 @@ export class SchemaFlowWrapper {
   static destroy(
     elementRef: ElementRef
   ) {
-    ReactDOM.unmountComponentAtNode(elementRef.nativeElement)
+    ReactDOM.unmountComponentAtNode(elementRef.nativeElement);
   }
+
   static initialize(
     elementRef: ElementRef,
     requiredMembers$: Observable<RequiredMembersProps>,
     schema$: Observable<Schema>,
     width: number = 1800,
     height: number = 1200,
-    linkKinds: LinkKind[] = ['entity']
+    linkKinds: LinkKind[] = ['entity'],
+    clickHandler: Subject<SchemaMemberClickProps>
   ) {
 
     ReactDOM.render(
@@ -247,9 +263,10 @@ export class SchemaFlowWrapper {
         requiredMembers$,
         width,
         height,
-        linkKinds
+        linkKinds,
+        clickHandler
       } as SchemaFlowDiagramProps),
       elementRef.nativeElement
-    )
+    );
   }
 }

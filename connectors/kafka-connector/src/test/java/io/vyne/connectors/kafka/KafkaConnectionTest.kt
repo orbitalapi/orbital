@@ -2,6 +2,9 @@ package io.vyne.connectors.kafka
 
 import com.winterbe.expekt.should
 import io.vyne.connectors.ConnectionSucceeded
+import io.vyne.connectors.config.kafka.KafkaConnection
+import io.vyne.connectors.config.kafka.KafkaConnectionConfiguration
+import io.vyne.connectors.kafka.registry.test
 import io.vyne.utils.get
 import org.junit.Test
 import kotlin.random.Random
@@ -26,7 +29,7 @@ class KafkaConnectionTest : BaseKafkaContainerTest() {
          "VyneTest-" + Random.nextInt(),
       )
       KafkaConnection.test(connection)
-         .get().should.equal("Failed to construct kafka consumer : No resolvable bootstrap urls given in bootstrap.servers")
+         .get().should.equal("Failed to create new KafkaAdminClient : No resolvable bootstrap urls given in bootstrap.servers")
    }
 
 }

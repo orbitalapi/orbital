@@ -21,3 +21,15 @@ class SimpleSchemaProvider(
       }
 
 }
+
+class SchemaWithSourcesSchemaProvider(
+   override val schema: Schema,
+   override val packages: List<SourcePackage>
+) : SchemaProvider {
+   override val versionedSources: List<VersionedSource>
+      get() {
+         return packages.flatMap { it.sources }
+      }
+
+}
+

@@ -2,8 +2,8 @@ package io.vyne.queryService.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.vyne.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import io.vyne.queryService.VyneQueryIntegrationTest
-import io.vyne.queryService.security.authorisation.VyneAuthorisationConfig
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.spring.SimpleTaxiSchemaProvider
@@ -40,6 +40,7 @@ private val logger = KotlinLogging.logger {  }
       "spring.datasource.url=jdbc:h2:mem:testdbVyneQuerySecureIntegrationTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY",
       "spring.security.oauth2.resourceserver.jwt.jwk-set-uri=\${wiremock.server.baseUrl}/.well-known/jwks.json",
       "vyne.security.openIdp.enabled=true",
+      "vyne.telemetry.enabled=false",
       "wiremock.server.baseUrl=http://localhost:\${wiremock.server.port}",
       "logging.level.org.springframework.security=DEBUG",
    ])

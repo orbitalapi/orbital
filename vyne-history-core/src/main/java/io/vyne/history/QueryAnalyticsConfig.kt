@@ -1,11 +1,9 @@
 package io.vyne.history
 
 import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.boot.context.properties.ConstructorBinding
 import java.nio.file.Path
 import java.nio.file.Paths
 
-@ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.analytics")
 data class QueryAnalyticsConfig(
    /**
@@ -15,6 +13,8 @@ data class QueryAnalyticsConfig(
    val maxPayloadSizeInBytes: Int = 2048,
    // Mutable for testing
    var persistRemoteCallResponses: Boolean = true,
+
+   var persistRemoteCallMetadata: Boolean = true,
    // Page size for the historical Query Display in UI.
    val pageSize: Int = 20,
 
@@ -31,5 +31,6 @@ data class QueryAnalyticsConfig(
 
 enum class AnalyticsMode {
    Inprocess,
-   Remote
+   Remote,
+   None
 }

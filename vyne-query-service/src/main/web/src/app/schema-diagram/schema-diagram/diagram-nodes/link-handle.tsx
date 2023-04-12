@@ -16,8 +16,8 @@ export function LinkHandle(props: LinkHandleProps) {
     return <></>
   }
   if (props.links.some(link => link.linkKind === 'lineage')) {
-    console.log('hell')
   }
+
   const handleId = props.node.id === props.links[0].sourceNodeId ? props.links[0].sourceHandleId : props.links[0].targetHandleId;
   const handleIdWithSide = props.allowConnectionToFloat ? HandleIds.appendPositionToHandleId(handleId, props.position) : handleId;
 

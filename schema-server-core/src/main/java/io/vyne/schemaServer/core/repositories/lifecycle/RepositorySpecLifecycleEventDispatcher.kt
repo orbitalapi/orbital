@@ -1,7 +1,7 @@
 package io.vyne.schemaServer.core.repositories.lifecycle
 
-import io.vyne.schemaServer.core.file.FileSystemPackageSpec
-import io.vyne.schemaServer.core.git.GitRepositoryConfig
+import io.vyne.PackageIdentifier
+
 
 /**
  * Ligthweight interface which emits messages when the *spec* for a
@@ -10,4 +10,6 @@ import io.vyne.schemaServer.core.git.GitRepositoryConfig
 interface RepositorySpecLifecycleEventDispatcher {
    fun fileRepositorySpecAdded(spec: FileSpecAddedEvent)
    fun gitRepositorySpecAdded(spec: GitSpecAddedEvent)
+
+   fun schemaSourceRemoved(packages: List<PackageIdentifier>)
 }

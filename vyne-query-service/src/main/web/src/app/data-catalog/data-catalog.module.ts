@@ -20,6 +20,9 @@ import { VynePrivileges } from 'src/app/services/user-info.service';
 import { TypeViewerContainerComponent } from 'src/app/type-viewer/type-viewer-container.component';
 import { TypeViewerModule } from 'src/app/type-viewer/type-viewer.module';
 import { TypeListModule } from 'src/app/type-list/type-list.module';
+import { HeaderComponentLayoutModule } from 'src/app/header-component-layout/header-component-layout.module';
+import { TuiTabsModule } from '@taiga-ui/kit';
+import { SchemaDiagramModule } from 'src/app/schema-diagram/schema-diagram.module';
 
 
 @NgModule({
@@ -54,8 +57,11 @@ import { TypeListModule } from 'src/app/type-list/type-list.module';
         component: TypeViewerContainerComponent,
         canActivate: [AuthGuard],
         data: { requiredAuthority: VynePrivileges.BrowseCatalog }
-      },
-    ])
+      }
+    ]),
+    HeaderComponentLayoutModule,
+    TuiTabsModule,
+    SchemaDiagramModule
   ]
 })
 export class DataCatalogModule {

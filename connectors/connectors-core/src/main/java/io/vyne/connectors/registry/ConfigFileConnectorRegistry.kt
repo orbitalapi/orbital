@@ -12,6 +12,7 @@ import java.nio.file.Path
 // Marker interface, to help make this stuff easier to follow
 interface ConnectionConfigMap
 
+@Deprecated("Replacing this, as it makes serialization difficult - use config.ConfigFileConnectorsRegistry")
 abstract class ConfigFileConnectorRegistry<TMapType : ConnectionConfigMap, TConfigType : ConnectorConfiguration>(
    path: Path,
    fallback: Config = ConfigFactory.systemEnvironment(),
@@ -25,7 +26,7 @@ abstract class ConfigFileConnectorRegistry<TMapType : ConnectionConfigMap, TConf
       }
    }
 
-   protected abstract fun getConnectionMap():Map<String,TConfigType>
+   abstract fun getConnectionMap(): Map<String, TConfigType>
 
    fun saveConnectorConfig(connectionConfig: TConfigType) {
       val newConfig = ConfigFactory.empty()

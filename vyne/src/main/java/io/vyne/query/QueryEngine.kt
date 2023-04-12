@@ -1,7 +1,11 @@
 package io.vyne.query
 
 import com.google.common.base.Stopwatch
-import io.vyne.*
+import io.vyne.FactSetId
+import io.vyne.FactSetMap
+import io.vyne.FactSets
+import io.vyne.ModelContainer
+import io.vyne.filterFactSets
 import io.vyne.models.DataSource
 import io.vyne.models.DataSourceUpdater
 import io.vyne.models.MixedSources
@@ -13,9 +17,15 @@ import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.query.projection.ProjectionProvider
-import io.vyne.schemas.*
+import io.vyne.schemas.Operation
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
+import io.vyne.schemas.Type
+import io.vyne.toFactBag
 import io.vyne.utils.StrategyPerformanceProfiler
-import io.vyne.utils.log
 import io.vyne.utils.timeBucketAsync
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.cancel
@@ -61,28 +71,28 @@ interface QueryEngine {
       type: Type,
       context: QueryContext,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
 
    suspend fun find(
       queryString: QueryExpression,
       context: QueryContext,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
 
    suspend fun find(
       target: QuerySpecTypeNode,
       context: QueryContext,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
 
    suspend fun find(
       target: Set<QuerySpecTypeNode>,
       context: QueryContext,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
 
    suspend fun find(
@@ -90,7 +100,7 @@ interface QueryEngine {
       context: QueryContext,
       excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
 
    suspend fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult
@@ -341,7 +351,7 @@ class StatefulQueryEngine(
       queryString: QueryExpression,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
    ): QueryResult {
       val target = queryParser.parse(queryString)
       return find(target, context, spec, applicableStrategiesPredicate)
@@ -351,7 +361,7 @@ class StatefulQueryEngine(
       type: Type,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
    ): QueryResult {
       return find(TypeNameQueryExpression(type.name.parameterizedName), context, spec, applicableStrategiesPredicate)
    }
@@ -360,7 +370,7 @@ class StatefulQueryEngine(
       target: QuerySpecTypeNode,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
    ): QueryResult {
       return find(setOf(target), context, spec, applicableStrategiesPredicate)
    }
@@ -369,7 +379,7 @@ class StatefulQueryEngine(
       target: Set<QuerySpecTypeNode>,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
    ): QueryResult {
       try {
          return doFind(target, context, spec, applicableStrategiesPredicate)
@@ -387,7 +397,7 @@ class StatefulQueryEngine(
       context: QueryContext,
       excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
       spec: TypedInstanceValidPredicate,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
    ): QueryResult {
       try {
          return doFind(target, context, spec, excludedOperations, applicableStrategiesPredicate)
@@ -405,7 +415,7 @@ class StatefulQueryEngine(
       target: Set<QuerySpecTypeNode>,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
    ): QueryResult {
 
 
@@ -437,7 +447,7 @@ class StatefulQueryEngine(
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
       excludedOperations: Set<SearchGraphExclusion<RemoteOperation>> = emptySet(),
-      applicableStrategiesPredicate: QueryStrategyValidPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
    ): QueryResult {
       logger.debug { "Initiating find for ${target.description}" }
       if (context.cancelRequested) {

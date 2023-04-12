@@ -29,7 +29,7 @@ sealed class TreeNavigationInstruction {
 
 object IgnoreThisElement : TreeNavigationInstruction()
 data class EvaluateSpecificFields(val fieldNames: Set<String>) : TreeNavigationInstruction() {
-   fun plus(other:EvaluateSpecificFields) = EvaluateSpecificFields(this.fieldNames + other.fieldNames)
+   fun plus(other: EvaluateSpecificFields) = EvaluateSpecificFields(this.fieldNames + other.fieldNames)
    fun filter(instance: TypedObject): List<TypedInstance> {
       val result = fieldNames.flatMap { instance.getAllAtPath(it) }
       return result
@@ -86,10 +86,16 @@ data class FactMapTraversalStrategy(val name: String, val predicate: (TypedInsta
                   // - Find all things of T, and collect into an array
                   // - Find all collections of T
                   // So, we search for both
-                  enterIfHasFieldOfType(
+                  val enterIfHasFieldOfCollectionType = enterIfHasFieldOfType(
                      searchTaxiType,
                      instance.type.taxiType
-                  ).combine(enterIfHasFieldOfType(searchType.collectionType!!.taxiType, instance.type.taxiType))
+                  )
+                  val enterIfHasFieldOfMemberType =
+                     enterIfHasFieldOfType(searchType.collectionType!!.taxiType, instance.type.taxiType)
+
+                  // Mix the two results, using the rules in combine(), which
+                  // picks the least restrictive instruction.
+                  enterIfHasFieldOfCollectionType.combine(enterIfHasFieldOfMemberType)
                } else {
                   enterIfHasFieldOfType(searchTaxiType, instance.type.taxiType)
                }
@@ -102,20 +108,17 @@ data class FactMapTraversalStrategy(val name: String, val predicate: (TypedInsta
          searchType: lang.taxi.types.Type,
          instanceType: lang.taxi.types.Type
       ): TreeNavigationInstruction {
-         return when {
-//            instanceType.isAssignableTo(searchType) -> true
-            instanceType is ObjectType -> {
+         return when (instanceType) {
+            is ObjectType -> {
                val paths = instanceType.getDescendantPathsOfType(searchType).toSet()
                if (paths.isEmpty()) {
                   IgnoreThisElement
                } else {
                   EvaluateSpecificFields(paths)
                }
-
-//               instanceType.hasDescendantWithType(searchType)
             }
 
-            instanceType is ArrayType -> {
+            is ArrayType -> {
                val memberType = instanceType.memberType
                if (memberType == PrimitiveType.ANY) {
                   // A collection of Any must be traversed
@@ -125,9 +128,9 @@ data class FactMapTraversalStrategy(val name: String, val predicate: (TypedInsta
                }
 
             } /* && taxiType.memberType is ObjectType -> {
-               val memberType = taxiType.memberType as ObjectType
-               memberType.isAssignableTo(searchTaxiType) || memberType.hasDescendantWithType(searchTaxiType)
-            } */
+                    val memberType = taxiType.memberType as ObjectType
+                    memberType.isAssignableTo(searchTaxiType) || memberType.hasDescendantWithType(searchTaxiType)
+                 } */
             else -> IgnoreThisElement
          }
       }

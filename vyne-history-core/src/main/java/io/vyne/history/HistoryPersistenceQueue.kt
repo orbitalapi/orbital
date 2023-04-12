@@ -9,10 +9,34 @@ import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
-import java.io.File
+import java.io.IOException
+import java.nio.file.FileVisitResult
+import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.attribute.BasicFileAttributes
+import kotlin.io.path.deleteExisting
 
 private val logger = KotlinLogging.logger {}
+
+fun Path.deleteRecursively() {
+   Files.walkFileTree(
+      this,
+      object : SimpleFileVisitor<Path>() {
+         override fun visitFile(file: Path, attrs: BasicFileAttributes?): FileVisitResult {
+            file.deleteExisting()
+            return FileVisitResult.CONTINUE
+         }
+
+         override fun postVisitDirectory(dir: Path, exc: IOException?): FileVisitResult {
+            if (exc != null)
+               throw exc
+            dir.deleteExisting()
+            return FileVisitResult.CONTINUE
+         }
+      }
+   )
+}
 
 /**
  * A fast disk-based queue which offloads pending history results
@@ -53,10 +77,6 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
    private val lineageRecordStore: ChronicleStore<LineageRecord>
 
    init {
-      /**
-       * Clear down any existing old queue files
-       */
-      shutDown()
       queryResultRowStore =
          ChronicleStore(baseQueuePath.resolve("$queryBasePath/results/").toFile().canonicalPath,
             { queryResultRow -> queryResultRowToByteArray(queryResultRow) },
@@ -119,8 +139,11 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
    }
 
    fun shutDown() {
+      lineageRecordStore.close()
+      queryResultRowStore.close()
+      remoteCallResponseStore.close()
       try {
-         File(queryBasePath).deleteRecursively()
+         Path.of(queryBasePath).deleteRecursively()
       } catch (exception: Exception) {
          logger.warn(exception) { "Unable to delete queue directory for query $queryId - ${exception.message}" }
       }

@@ -5,16 +5,26 @@ import io.vyne.models.ConversionService
 import io.vyne.models.NoOpConversionService
 import lang.taxi.types.EnumValue
 import lang.taxi.types.FormatsAndZoneOffset
+import mu.KotlinLogging
 import org.springframework.core.convert.ConverterNotFoundException
 import org.springframework.core.convert.support.DefaultConversionService
+import stormpot.Pool
+import stormpot.Timeout
 import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.NumberFormat
-import java.time.*
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
 import java.util.*
+import java.util.concurrent.TimeUnit
 import java.util.function.BiFunction
 
 object VyneConversionService : ConversionService {
@@ -138,15 +148,19 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
          source is String && targetType == Instant::class.java -> {
             toTemporalObject(source, format?.patterns, UtcAsDefaultInstantConverter::parse) as T
          }
+
          source is String && targetType == LocalDateTime::class.java -> {
             toTemporalObject(source, format?.patterns, LocalDateTime::parse) as T
          }
+
          source is String && targetType == LocalDate::class.java -> {
             toTemporalObject(source, format?.patterns, LocalDate::parse, DateTimeFormatter.ISO_LOCAL_DATE) as T
          }
+
          source is String && targetType == LocalTime::class.java -> {
             toTemporalObject(source, format?.patterns, LocalTime::parse, DateTimeFormatter.ISO_TIME) as T
          }
+
          else -> {
             next.convert(source, targetType, format)
          }
@@ -171,31 +185,64 @@ private object UtcAsDefaultInstantConverter {
 
 class StringToNumberConverter(override val next: ConversionService = NoOpConversionService) :
    ForwardingConversionService {
+
+   companion object {
+      private val logger = KotlinLogging.logger {}
+
+      // NumberFormat is expensive to create, and not thread safe.
+      // So, we have a pool.
+      private val numberFormatPool = Pool.from(NumberFormatAllocator())
+         .setSize(20) // Difficult to know how big to size this.  20 is a guess.
+         .build()
+
+   }
+
    override fun <T> convert(source: Any?, targetType: Class<T>, format: FormatsAndZoneOffset?): T {
       if (source !is String) {
          return next.convert(source, targetType, format)
       } else {
-         val numberFormat = NumberFormat.getInstance(Locale.ENGLISH)
-         return when (targetType) {
-            Int::class.java -> fromScientific(source)?.toInt() as T ?: numberFormat.parse(source).toInt() as T
-            Double::class.java -> fromScientific(source)?.toDouble() as T ?: numberFormat.parse(source).toDouble() as T
-            BigDecimal::class.java -> {
-               val scientificValue = fromScientific(source)
-               when {
-                  scientificValue != null -> {
-                     scientificValue as T
-                  }
-                  numberFormat is DecimalFormat -> {
-                     numberFormat.isParseBigDecimal = true
-                     numberFormat.parse(source) as T
-                  }
-                  else -> {
-                     TODO("Didn't receive a decimal formatter from the locale")
-                  }
+
+         numberFormatPool.claim(Timeout(500, TimeUnit.MILLISECONDS)).use { poolableNumberFormat ->
+            val numberFormat = if (poolableNumberFormat == null) {
+               logger.warn { "Failed to obtain a lease to a number formatter instance, will create a new one, but this is expensive.  Consider adjusting the size of the pool" }
+               NumberFormat.getInstance(Locale.ENGLISH)
+            } else {
+               poolableNumberFormat.numberFormat
+            }
+            return convertWithNumberFormat(targetType, source, format, numberFormat)
+         }
+
+      }
+   }
+
+   private fun <T> convertWithNumberFormat(
+      targetType: Class<T>,
+      source: String,
+      format: FormatsAndZoneOffset?,
+      numberFormat: NumberFormat
+   ): T {
+      return when (targetType) {
+         Int::class.java -> fromScientific(source)?.toInt() as T ?: numberFormat.parse(source).toInt() as T
+         Double::class.java -> fromScientific(source)?.toDouble() as T ?: numberFormat.parse(source).toDouble() as T
+         BigDecimal::class.java -> {
+            val scientificValue = fromScientific(source)
+            when {
+               scientificValue != null -> {
+                  scientificValue as T
+               }
+
+               numberFormat is DecimalFormat -> {
+                  numberFormat.isParseBigDecimal = true
+                  numberFormat.parse(source) as T
+               }
+
+               else -> {
+                  TODO("Didn't receive a decimal formatter from the locale")
                }
             }
-            else -> next.convert(source, targetType, format)
          }
+
+         else -> next.convert(source, targetType, format)
       }
    }
 

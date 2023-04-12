@@ -24,6 +24,7 @@ interface TypedInstance {
    @get:JsonView(DataSourceIncludedView::class)
    val source: DataSource
 
+   val nodeId: String
    /**
     * Hash code which includes the datasource - normally excluded.
     * Used in determining rowIds for TypedInstances when persisting to the UI.

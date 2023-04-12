@@ -5,7 +5,7 @@
    <parent>
       <artifactId>connectors</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.22.0-SNAPSHOT</version>
+      <version>0.24.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -15,13 +15,13 @@
       <dependency>
          <groupId>org.apache.calcite</groupId>
          <artifactId>calcite-core</artifactId>
-         <version>1.32.0</version>
+         <version>1.33.0</version>
       </dependency>
       <!-- TODO Remove once calcite-core is not depending on an earlier version with a vulnerability -->
       <dependency>
          <groupId>com.google.protobuf</groupId>
          <artifactId>protobuf-java</artifactId>
-         <version>3.21.12</version>
+         <version>3.22.0</version>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
@@ -31,7 +31,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>datatype-converters</artifactId>
-         <version>0.22.0-SNAPSHOT</version>
+         <version>0.24.0-SNAPSHOT</version>
       </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>

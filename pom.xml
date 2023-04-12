@@ -1,70 +1,75 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0">
    <modelVersion>4.0.0</modelVersion>
 
    <groupId>io.vyne</groupId>
    <artifactId>platform</artifactId>
    <packaging>pom</packaging>
-   <version>0.22.0-SNAPSHOT</version>
+   <version>0.24.0-SNAPSHOT</version>
 
    <parent>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-parent</artifactId>
-      <version>2.7.7</version>
+      <version>3.0.5</version>
    </parent>
 
-   <url>https://vyne.co</url>
-
+   <url>https://orbitalhq.com</url>
    <licenses>
       <license>
-         <name>Vyne Enterprise License</name>
-         <url>https://vyne.co</url>
+         <name>Orbital Enterprise License</name>
+         <url>https://orbitalhq.com</url>
       </license>
    </licenses>
 
    <properties>
-      <taxi.version>1.35.0-SNAPSHOT</taxi.version>
+      <taxi.version>1.36.3-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
-      <kotlin-logging.version>3.0.4</kotlin-logging.version>
+      <kotlin-logging.version>3.0.5</kotlin-logging.version>
 
-      <reactive-feign.version>3.2.6</reactive-feign.version>
+      <reactive-feign.version>4.0.0-SNAPSHOT</reactive-feign.version>
+      <!-- Use Java 17.
+      Currently, Chronicle doens't support later versions.
+      Based on their release cadence, it seems they're unlikely to support versions other than LTS.
+      -->
+      <java.version>17</java.version>
+      <kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
 
-      <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
-      <kotlin.version>1.8.0</kotlin.version>
-      <kotlin.coroutines.version>1.6.4</kotlin.coroutines.version>
-      <!-- Kotlin serialization is currently fixed to the version supported by spring -->
-      <kotlin.serialization.version>1.4.1</kotlin.serialization.version>
-      <java.version>1.8</java.version>
-      <logback.version>1.2.11</logback.version>
+      <maven.compiler.source>${java.version}</maven.compiler.source>
+      <maven.compiler.target>${java.version}</maven.compiler.target>
 
-      <spring.cloud.version>2021.0.5</spring.cloud.version>
-      <arrow.version>1.1.3</arrow.version>
-      <logstash.logback.version>7.2</logstash.logback.version>
+      <kotlin.version>1.8.10</kotlin.version>
+      <!-- Coroutines 1.7.0-Beta is compatible with 1.8.10 as per https://github.com/Kotlin/kotlinx.coroutines -->
+      <kotlin.coroutines.version>1.7.0-Beta</kotlin.coroutines.version>
 
-      <swagger.springfox.version>3.0.0</swagger.springfox.version>
-      <http4k.version>4.36.0.0</http4k.version>
+      <kotlin.serialization.version>1.5.0</kotlin.serialization.version>
+
+      <spring.cloud.version>2022.0.0</spring.cloud.version>
+      <arrow.version>1.1.5</arrow.version>
+      <logstash.logback.version>7.3</logstash.logback.version>
+
+      <http4k.version>4.39.0.0</http4k.version>
       <hazelcast-jet.version>4.5</hazelcast-jet.version>
-      <hazelcast.version>5.2.1</hazelcast.version>
+      <hazelcast.version>5.2.2</hazelcast.version>
       <testcontainers.version>1.16.2</testcontainers.version>
       <h2.version>2.1.214</h2.version>
-      <reactor-bom.version>2020.0.27</reactor-bom.version>
-      <netty.version>4.1.75.Final</netty.version>
+      <reactor-bom.version>2022.0.5</reactor-bom.version>
+      <!--      <netty.version>4.1.75.Final</netty.version>-->
       <!-- CVE-2022-31692  -->
-      <spring-security.version>5.7.5</spring-security.version>
-      <spring-security-test.version>5.7.5</spring-security-test.version>
-      <kotest.version>5.5.1</kotest.version>
-      <junit.jupiter.version>5.9.1</junit.jupiter.version>
-      <junit.vintage.version>5.9.1</junit.vintage.version>
+      <!--      <spring-security.version>5.7.5</spring-security.version>-->
+      <!--      <spring-security-test.version>5.7.5</spring-security-test.version>-->
+      <kotest.version>5.5.5</kotest.version>
+      <junit.jupiter.version>5.9.2</junit.jupiter.version>
+      <junit.vintage.version>5.9.2</junit.vintage.version>
+
 
    </properties>
 
    <modules>
       <module>cask</module>
-      <module>config-server</module>
-      <module>eureka</module>
       <module>vyne-core-types</module>
       <module>events-api</module>
       <module>vyne-search</module>
@@ -98,12 +103,23 @@
       <module>taxi-playground</module>
       <module>station</module>
       <module>auth-common</module>
-       <module>query-proxy-service</module>
-   </modules>
+      <module>query-node-core</module>
+      <module>query-node-service</module>
+      <module>history-persistence</module>
+      <module>history-service</module>
+      <module>cockpit-core</module>
+      <module>query-node-api</module>
+      <module>monitoring-common</module>
+      <module>analytics</module>
+      <module>spring-utils</module>
+      <module>chatgpt</module>
 
+      <module>auth-tokens</module>
+      <module>query-node-native</module>
+      <module>query-proxy-service</module>
+   </modules>
    <scm>
       <developerConnection>scm:git:git@gitlab.com:vyne/vyne.git</developerConnection>
-      <tag>HEAD</tag>
    </scm>
 
    <dependencies>
@@ -131,11 +147,6 @@
          <version>3.12.0</version>
       </dependency>
 
-      <dependency>
-         <groupId>ch.qos.logback</groupId>
-         <artifactId>logback-classic</artifactId>
-         <version>${logback.version}</version>
-      </dependency>
       <dependency>
          <groupId>com.diffplug.durian</groupId>
          <artifactId>durian</artifactId>
@@ -257,7 +268,7 @@
          <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>bom</artifactId>
-            <version>2.19.14</version>
+            <version>2.20.8</version>
             <type>pom</type>
             <scope>import</scope>
          </dependency>
@@ -273,7 +284,6 @@
             <type>pom</type>
             <scope>import</scope>
          </dependency>
-         <!-- https://mvnrepository.com/artifact/org.http4k/http4k-bom -->
          <dependency>
             <groupId>org.http4k</groupId>
             <artifactId>http4k-bom</artifactId>
@@ -288,23 +298,26 @@
             <type>pom</type>
             <scope>import</scope>
          </dependency>
-
          <dependency>
-            <groupId>com.playtika.reactivefeign</groupId>
+            <groupId>com.orbitalhq.reactivefeign</groupId>
             <artifactId>feign-reactor-webclient</artifactId>
             <version>${reactive-feign.version}</version>
          </dependency>
-
          <dependency>
-            <groupId>com.playtika.reactivefeign</groupId>
+            <groupId>com.orbitalhq.reactivefeign</groupId>
             <artifactId>feign-reactor-cloud</artifactId>
+            <version>${reactive-feign.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>com.orbitalhq.reactivefeign</groupId>
+            <artifactId>feign-reactor-spring-configuration</artifactId>
             <version>${reactive-feign.version}</version>
          </dependency>
 
          <dependency>
-            <groupId>com.playtika.reactivefeign</groupId>
-            <artifactId>feign-reactor-spring-configuration</artifactId>
-            <version>${reactive-feign.version}</version>
+            <groupId>javax.persistence</groupId>
+            <artifactId>javax.persistence-api</artifactId>
+            <version>2.2</version>
          </dependency>
          <dependency>
             <groupId>io.micrometer</groupId>
@@ -350,16 +363,7 @@
             <artifactId>logstash-logback-encoder</artifactId>
             <version>${logstash.logback.version}</version>
          </dependency>
-         <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-swagger2</artifactId>
-            <version>${swagger.springfox.version}</version>
-         </dependency>
-         <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-swagger-ui</artifactId>
-            <version>${swagger.springfox.version}</version>
-         </dependency>
+
          <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-core</artifactId>
@@ -408,7 +412,7 @@
          <dependency>
             <groupId>net.openhft</groupId>
             <artifactId>chronicle-bom</artifactId>
-            <version>2.24ea26</version>
+            <version>2.24ea41</version>
             <type>pom</type>
             <scope>import</scope>
          </dependency>
@@ -425,16 +429,16 @@
    <build>
       <extensions>
          <extension>
-            <groupId>org.springframework.build</groupId>
-            <artifactId>aws-maven</artifactId>
-            <version>5.0.0.RELEASE</version>
+            <groupId>com.github.seahen</groupId>
+            <artifactId>maven-s3-wagon</artifactId>
+            <version>1.3.3</version>
          </extension>
       </extensions>
       <finalName>${project.artifactId}</finalName>
       <plugins>
          <plugin>
             <artifactId>maven-surefire-plugin</artifactId>
-            <version>2.22.2</version>
+            <version>3.0.0-M9</version>
          </plugin>
          <plugin>
             <groupId>com.amashchenko.maven.plugin</groupId>
@@ -456,7 +460,6 @@
                <!-- Configure branches -->
                <gitFlowConfig>
                   <productionBranch>master</productionBranch>
-                  <!-- default is develop, but we use development -->
                   <developmentBranch>develop</developmentBranch>
                </gitFlowConfig>
             </configuration>
@@ -481,17 +484,6 @@
                   </goals>
                </execution>
             </executions>
-            <configuration>
-               <compilerPlugins>
-                  <!-- Or "spring" for the Spring support -->
-                  <plugin>spring</plugin>
-                  <plugin>jpa</plugin>
-                  <plugin>no-arg</plugin>
-                  <plugin>kotlinx-serialization</plugin>
-               </compilerPlugins>
-               <jvmTarget>${kotlin.compiler.jvmTarget}</jvmTarget>
-            </configuration>
-
             <dependencies>
                <dependency>
                   <groupId>org.jetbrains.kotlin</groupId>
@@ -509,9 +501,17 @@
                   <version>${kotlin.version}</version>
                </dependency>
             </dependencies>
+            <configuration>
+               <compilerPlugins>
+                  <plugin>spring</plugin>
+                  <plugin>jpa</plugin>
+                  <plugin>no-arg</plugin>
+                  <plugin>kotlinx-serialization</plugin>
+               </compilerPlugins>
+               <jvmTarget>${kotlin.compiler.jvmTarget}</jvmTarget>
+            </configuration>
          </plugin>
          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
             <version>3.10.1</version>
             <configuration>
@@ -520,15 +520,13 @@
             </configuration>
          </plugin>
          <plugin>
-            <!-- build helper plug-in is used for de-composing the version and it gaining access to its sub parts.
-             We are doing for tagging docker images, we want to have a tag with BETA qualifier instead of SNAPSHOT and the build number from git will be the last part. -->
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>build-helper-maven-plugin</artifactId>
             <version>3.3.0</version>
             <executions>
                <execution>
-                  <phase>validate</phase>
                   <id>phase-version</id>
+                  <phase>validate</phase>
                   <goals>
                      <goal>parse-version</goal>
                   </goals>
@@ -546,7 +544,7 @@
                <artifactId>license-maven-plugin</artifactId>
                <version>2.0.0</version>
                <configuration>
-                  <licenseName>Vyne Enterprise License</licenseName>
+                  <licenseName>Orbital Enterprise License</licenseName>
                   <licenseResolver>${project.baseUri}/src/license</licenseResolver>
                   <licenseMerges>
                      <licenseMerge>Apache License, Version 2.0|The Apache Software License, Version 2.0|Apache 2|Apache
@@ -594,33 +592,55 @@
                   </execution>
                </executions>
             </plugin>
+            <!-- As JDK 17 introduced the new module system, we need to relax the access to JDK internals used by Chronicle library for tests -->
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-surefire-plugin</artifactId>
+               <configuration>
+                  <argLine>
+                     --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+                     --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
+                     --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
+                     --add-opens=jdk.compiler/com.sun.tools.javac=ALL-UNNAMED
+                     --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+                     --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED
+                  </argLine>
+               </configuration>
+            </plugin>
          </plugins>
       </pluginManagement>
    </build>
 
    <distributionManagement>
       <repository>
-         <id>repo.vyne.co</id>
-         <url>s3://repo.vyne.co/release</url>
+         <id>repo.orbitalhq.com</id>
+         <url>s3://repo.orbitalhq.com/release</url>
       </repository>
       <snapshotRepository>
-         <id>repo.vyne.co</id>
-         <url>s3://repo.vyne.co/snapshot</url>
+         <id>repo.orbitalhq.com</id>
+         <url>s3://repo.orbitalhq.com/snapshot</url>
       </snapshotRepository>
    </distributionManagement>
-
    <repositories>
-      <!-- for taxi snapshots -->
+      <!-- for orbital snapshots -->
       <repository>
-         <id>vyne-snapshots</id>
-         <url>https://repo.vyne.co/snapshot</url>
+         <id>orbital-snapshots</id>
+         <url>https://repo.orbitalhq.com/snapshot</url>
+         <snapshots>
+            <enabled>true</enabled>
+         </snapshots>
+      </repository>
+      <repository>
+         <!-- for taxi snapshots -->
+         <id>maven-central-snapshots</id>
+         <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
          <snapshots>
             <enabled>true</enabled>
          </snapshots>
       </repository>
       <repository>
          <id>vyne</id>
-         <url>https://repo.vyne.co/release</url>
+         <url>https://repo.orbitalhq.com/release</url>
          <snapshots>
             <enabled>false</enabled>
          </snapshots>

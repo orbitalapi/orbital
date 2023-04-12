@@ -2,9 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { TypesService } from '../services/types.service';
 import * as _ from 'lodash';
 import { Router } from '@angular/router';
-import { Schema, SchemaMember, SchemaMemberType, Service, Type } from '../services/schema';
-import { TypeFilter, TypeFilterParams } from './filter-types/filter-types.component';
-import { SchemaNotificationService } from '../services/schema-notification.service';
+import { Schema, SchemaMember, Service, Type } from '../services/schema';
+import { SHOW_EVERYTHING, TypeFilter, TypeFilterParams } from './filter-types/filter-types.component';
 
 @Component({
   selector: 'app-type-list',
@@ -21,7 +20,7 @@ export class TypeListComponent implements OnInit {
   schema: Schema;
   members: SchemaMember[] = [];
   filteredMembers: SchemaMember[] = [];
-  filterProps: TypeFilterParams;
+  filterProps: TypeFilterParams = SHOW_EVERYTHING;
 
   ngOnInit() {
     this.loadTypes();
@@ -49,7 +48,8 @@ export class TypeListComponent implements OnInit {
 
   private applyFilter() {
     // Filter
-    let members = (this.filterProps) ? new TypeFilter(this.filterProps).filter(this.members) : this.members;
+    let members = (this.filterProps) ?
+      new TypeFilter(this.filterProps).filter(this.members) : this.members;
     // Sort
     members = _.sortBy(members, [(m: SchemaMember) => {
       return m.name.fullyQualifiedName;

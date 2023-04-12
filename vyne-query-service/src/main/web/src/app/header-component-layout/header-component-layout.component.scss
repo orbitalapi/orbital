@@ -1,0 +1,55 @@
+@import "src/theme";
+
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+.header-container {
+  // LR padding is to prevent rubbing up the side of smaller containers
+  padding: 2rem 2rem 0;
+  background-color: $slate-100;
+
+  display: flex;
+
+  &.pad-bottom {
+    padding-bottom: 2rem;
+  }
+
+  .header {
+    width: 1280px;
+    margin: 0 auto;
+
+    .spacer {
+      flex-grow: 1;
+    }
+
+    .buttons {
+      flex-shrink: 0;
+      margin-left: 2rem;
+    }
+  }
+
+  .row {
+    display: flex;
+  }
+}
+
+.body-container {
+  background-color: $body-bg;
+  flex-grow: 1;
+
+  .body {
+    max-width: 1280px;
+    margin: 0 auto;
+    // LR padding is to prevent rubbing up the side of smaller containers
+    padding: 2rem 2rem 0;
+
+    // Added because the schema importer was compacting
+    // Test a db import flow if changing this.
+    // Note: Scrollbars still don't feel consistent across the app,
+    // but deferring that for now.
+    display: flex;
+    flex-direction: column;
+  }
+}

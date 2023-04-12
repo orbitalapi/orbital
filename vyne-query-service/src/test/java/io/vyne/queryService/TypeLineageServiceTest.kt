@@ -1,6 +1,8 @@
 package io.vyne.queryService
 
 import com.winterbe.expekt.should
+import io.vyne.cockpit.core.schemas.ServiceLineageForType
+import io.vyne.cockpit.core.schemas.TypeLineageService
 import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemas.ConsumedOperation
 import io.vyne.schemas.fqn

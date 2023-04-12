@@ -7,6 +7,7 @@ import io.vyne.VersionedSource
 import io.vyne.models.TypedInstance
 import io.vyne.query.RemoteCall
 import io.vyne.utils.ImmutableEquality
+import lang.taxi.types.Documented
 import java.io.Serializable
 
 
@@ -133,6 +134,9 @@ data class Operation(
       return equality.hash()
    }
 
+   override val operationKind: OperationKind = OperationKind.ApiCall
+   override val schemaMemberKind: SchemaMemberKind = SchemaMemberKind.OPERATION
+
    fun parameter(name: String): Parameter? {
       return this.parameters.firstOrNull { it.name == name }
    }
@@ -145,7 +149,7 @@ data class Operation(
  * ( Operation ), and query operations (QueryOperation)
  *
  */
-interface RemoteOperation : MetadataTarget {
+interface RemoteOperation : MetadataTarget, Documented, SchemaMember {
    val qualifiedName: QualifiedName
    val parameters: List<Parameter>
    val returnType: Type
@@ -153,10 +157,18 @@ interface RemoteOperation : MetadataTarget {
 
    val operationType: String?
 
+   val operationKind:OperationKind
+
    val name: String
       get() = OperationNames.operationName(qualifiedName)
 }
 
+enum class OperationKind {
+   ApiCall,
+   Query,
+   Stream,
+   Table
+}
 
 // Need to use @JsonDeserialize on this type, as the PartialXxxx
 // interface is overriding default deserialization behaviour
@@ -256,6 +268,8 @@ data class Service(
       Service::metadata
    )
 
+   override val schemaMemberKind: SchemaMemberKind = SchemaMemberKind.SERVICE
+
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
    override fun hashCode(): Int = equality.hash()
 
@@ -275,6 +289,7 @@ data class Service(
    fun remoteOperation(name: String): RemoteOperation {
       return this.queryOperations.firstOrNull { it.name == name }
          ?: this.tableOperations.flatMap { it.queryOperations }.firstOrNull { it.name == name }
+         ?: this.streamOperations.firstOrNull { it.name == name }
          ?: this.operations.first { it.name == name }
    }
 

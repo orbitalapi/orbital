@@ -12,44 +12,46 @@ import { TuiButtonModule, TuiLinkModule } from '@taiga-ui/core';
 import { AuthGuard } from 'src/app/services/auth.guard';
 import { VynePrivileges } from 'src/app/services/user-info.service';
 import { DbConnectionWizardComponent } from 'src/app/db-connection-editor/db-connection-wizard.component';
+import { HeaderComponentLayoutModule } from 'src/app/header-component-layout/header-component-layout.module';
 
 @NgModule({
-  imports: [
-    HeaderBarModule,
-    MatButtonModule,
-    MatMenuModule,
-    RouterModule,
-    CommonModule,
-    DbConnectionEditorModule,
-    TuiLinkModule,
-    TuiButtonModule,
-    RouterModule.forChild([
-      {
-        path: '',
-        component: ConnectionManagerComponent,
-        children: [
-          {
-            path: '',
-            component: ConnectionListComponent,
-            canActivate: [AuthGuard],
-            data: { requiredAuthority: VynePrivileges.ViewConnections }
-          },
-          {
-            path: 'new',
-            component: DbConnectionWizardComponent,
-            canActivate: [AuthGuard],
-            data: { requiredAuthority: VynePrivileges.EditConnections }
-          },
-          {
-            path: 'jdbc/:connectionName',
-            component: DbConnectionWizardComponent,
-            canActivate: [AuthGuard],
-            data: { requiredAuthority: VynePrivileges.EditConnections }
-          }
-        ]
-      },
-    ])
-  ],
+    imports: [
+        HeaderBarModule,
+        MatButtonModule,
+        MatMenuModule,
+        RouterModule,
+        CommonModule,
+        DbConnectionEditorModule,
+        TuiLinkModule,
+        TuiButtonModule,
+        RouterModule.forChild([
+            {
+                path: '',
+                component: ConnectionManagerComponent,
+                children: [
+                    {
+                        path: '',
+                        component: ConnectionListComponent,
+                        canActivate: [AuthGuard],
+                        data: { requiredAuthority: VynePrivileges.ViewConnections }
+                    },
+                    {
+                        path: 'new',
+                        component: DbConnectionWizardComponent,
+                        canActivate: [AuthGuard],
+                        data: { requiredAuthority: VynePrivileges.EditConnections }
+                    },
+                    {
+                        path: 'jdbc/:connectionName',
+                        component: DbConnectionWizardComponent,
+                        canActivate: [AuthGuard],
+                        data: { requiredAuthority: VynePrivileges.EditConnections }
+                    }
+                ]
+            },
+        ]),
+        HeaderComponentLayoutModule
+    ],
   exports: [ConnectionManagerComponent, ConnectionListComponent],
   declarations: [ConnectionManagerComponent, ConnectionListComponent],
   providers: [],

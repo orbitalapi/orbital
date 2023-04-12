@@ -1,4 +1,4 @@
-import { Component, Directive, OnInit } from '@angular/core';
+import { Component, Directive } from '@angular/core';
 import { AppInfoService, QueryServiceConfig } from '../services/app-info.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PackagesService, SourcePackageDescription } from 'src/app/package-viewer/packages.service';
@@ -24,10 +24,6 @@ export class BaseSchemaExplorerContainer {
     this.configService.getConfig().subscribe(result => this.config = result);
   }
 
-  importSchemaFromUrl() {
-    this.router.navigate(['schema-importer']);
-  }
-
   navigateToPackage(sourcePackage: SourcePackageDescription) {
     this.router.navigate([sourcePackage.uriPath], { relativeTo: this.activatedRoute })
   }
@@ -41,21 +37,14 @@ export class BaseSchemaExplorerContainer {
 @Component({
   selector: 'app-schema-explorer-container',
   template: `
-    <app-header-bar title="Schema Explorer">
-      <div class="add-new" *ngIf="config?.server.newSchemaSubmissionEnabled">
-        <button mat-stroked-button [routerLink]="['/schema-importer']">Add new</button>
-        <!--<mat-icon svgIcon="add_box"></mat-icon>-->
-        <!--Add a new one-->
-        <mat-menu #appMenu="matMenu">
-          <button mat-menu-item (click)="importSchemaFromUrl()">Add schema from url</button>
-          <!--<button mat-menu-item (click)="createNewSchema()">Add schema directly</button>-->
-        </mat-menu>
+      <app-header-bar title="Schema Explorer">
+          <button mat-stroked-button [routerLink]="['/schema-importer']">Add new sources</button>
+      </app-header-bar>
+      <div class="container">
+          <app-package-list [packages]="packages | async"
+                            (packageClicked)="navigateToPackage($event)"></app-package-list>
+          <router-outlet></router-outlet>
       </div>
-    </app-header-bar>
-    <div class="container">
-      <app-package-list [packages]="packages | async" (packageClicked)="navigateToPackage($event)"></app-package-list>
-      <router-outlet></router-outlet>
-    </div>
 
   `,
   styleUrls: ['./schema-explorer-container.component.scss']

@@ -5,16 +5,16 @@
    <parent>
       <artifactId>licensing</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.22.0-SNAPSHOT</version>
+      <version>0.24.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>license-vendor</artifactId>
 
    <properties>
-      <maven.compiler.source>11</maven.compiler.source>
-      <maven.compiler.target>11</maven.compiler.target>
-      <picocli.version>4.7.0</picocli.version>
+
+
+      <picocli.version>4.7.1</picocli.version>
       <app.main.class>io.vyne.licensing.vendor.LicenseCli</app.main.class>
       <app.distribution.directory>${project.build.directory}/distributions/app</app.distribution.directory>
    </properties>

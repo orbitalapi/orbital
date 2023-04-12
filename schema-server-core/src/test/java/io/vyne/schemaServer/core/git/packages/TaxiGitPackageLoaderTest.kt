@@ -3,7 +3,7 @@ package io.vyne.schemaServer.core.git.packages
 import com.winterbe.expekt.should
 import io.vyne.PackageIdentifier
 import io.vyne.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
-import io.vyne.schemaServer.core.adaptors.taxi.TaxiPackageLoaderSpec
+import io.vyne.schemaServer.packages.TaxiPackageLoaderSpec
 import io.vyne.schemaServer.core.file.deployProject
 import io.vyne.schemaServer.core.file.packages.ReactivePollingFileSystemMonitor
 import io.vyne.schemaServer.core.git.GitRepositoryConfig

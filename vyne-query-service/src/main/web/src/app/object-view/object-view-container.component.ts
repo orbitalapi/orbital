@@ -21,27 +21,29 @@ import { ExportFormat } from 'src/app/results-download/results-download.service'
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-object-view-container',
   template: `
-    <div class="container" *ngIf="ready">
-      <div class="display-wrapper">
-        <app-results-table *ngIf="displayMode==='table'"
-                           [instances$]="instances$"
-                           [rowData]="instances"
-                           [schema]="schema"
-                           [selectable]="selectable"
-                           [type]="type"
-                           [anonymousTypes]="anonymousTypes"
-                           (instanceClicked)="instanceClicked.emit($event)">
-        </app-results-table>
-        <app-object-view *ngIf="displayMode==='tree'"
+    <ng-container *ngIf="ready">
+      <app-results-table *ngIf="displayMode==='table'"
                          [instances$]="instances$"
+                         [rowData]="instances"
                          [schema]="schema"
                          [selectable]="selectable"
                          [type]="type"
                          [anonymousTypes]="anonymousTypes"
                          (instanceClicked)="instanceClicked.emit($event)">
-        </app-object-view>
-      </div>
-    </div>
+      </app-results-table>
+      <app-object-view *ngIf="displayMode==='tree'"
+                       [instances$]="instances$"
+                       [schema]="schema"
+                       [selectable]="selectable"
+                       [type]="type"
+                       [anonymousTypes]="anonymousTypes"
+                       (instanceClicked)="instanceClicked.emit($event)">
+      </app-object-view>
+      <app-json-results-view *ngIf="displayMode === 'json'"
+                             [instances$]="instances$">
+
+      </app-json-results-view>
+    </ng-container>
   `,
   styleUrls: ['./object-view-container.component.scss']
 })
@@ -162,7 +164,7 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
 
 }
 
-export type DisplayMode = 'table' | 'tree';
+export type DisplayMode = 'table' | 'tree' | 'json';
 
 export class DownloadClickedEvent {
   constructor(public readonly format: ExportFormat) {

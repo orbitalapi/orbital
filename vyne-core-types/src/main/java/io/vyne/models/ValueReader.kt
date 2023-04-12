@@ -1,8 +1,10 @@
 package io.vyne.models
 
 import com.fasterxml.jackson.databind.node.ObjectNode
+import io.vyne.models.facts.FactBag
 import io.vyne.utils.log
 import lang.taxi.annotations.DataType
+import mu.KotlinLogging
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
@@ -14,10 +16,20 @@ import kotlin.reflect.jvm.javaField
 // is because of the various different ways we parse / handle Json content (sometimes it's a Map, sometimes
 // it's a JsonNode).
 class ValueReader {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
    fun contains(source: Any, attribute: String): Boolean {
       return when (source) {
          is Map<*, *> -> mapContains(source, attribute)
          is ObjectNode -> jsonObjectContains(source, attribute)
+         is FactBag -> {
+            // FactBags can't do lookups using attribute names, only types,
+            // so there's no point in looking any further.
+            // Also, objectContains() uses reflection, which we'd like to avoid here.
+            logger.debug { "ValueReader attempted to read attribute $attribute against a FactBag.  That can't work.  Can we optimize this?" }
+            false
+         }
          else -> objectContains(source, attribute)
       }
    }
@@ -38,6 +50,13 @@ class ValueReader {
       return when (source) {
          is Map<*, *> -> readFromMap(source, attribute)
          is ObjectNode -> readFromJsonObject(source, attribute)
+         is FactBag -> {
+            // FactBags can't do lookups using attribute names, only types,
+            // so there's no point in looking any further.
+            // Also, objectContains() uses reflection, which we'd like to avoid here.
+            logger.debug { "ValueReader attempted to read attribute $attribute against a FactBag.  That can't work.  Can we optimize this?" }
+            return null
+         }
          else -> readFromObject(source, attribute)
       }
    }

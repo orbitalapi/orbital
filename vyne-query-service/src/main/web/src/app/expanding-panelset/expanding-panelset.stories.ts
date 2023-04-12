@@ -17,9 +17,30 @@ storiesOf('Expanding panelset', module)
       template: `<div style="padding: 40px">
 <app-panel-header title="Code">
     <button tuiButton size="s">Run</button>
-
 </app-panel-header>
     </div>`,
       props: {}
     };
-  });
+  })
+  .add('panelset', () => {
+    return {
+      template: `<div style="padding: 40px">
+<app-panelset style="width: 400px;" >
+<app-panel title="Catalog" icon="assets/img/tabler/vocabulary.svg">
+<div>Hello, from Catalog</div>
+
+</app-panel>
+<app-panel title="History" icon="assets/img/tabler/history.svg">
+<div>Hello, from History</div>
+
+</app-panel>
+</app-panelset>
+    </div>`,
+      props: {
+      }
+
+    }
+  })
+
+
+;

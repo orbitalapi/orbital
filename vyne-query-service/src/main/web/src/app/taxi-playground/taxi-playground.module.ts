@@ -1,11 +1,11 @@
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { PlaygroundToolbarComponent } from 'src/app/taxi-playground/toolbar/playground-toolbar.component';
-import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
-import { DomSanitizer } from '@angular/platform-browser';
-import { MatButtonModule } from '@angular/material/button';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { SubscribeDialogComponent } from './subscribe-dialog/subscribe-dialog.component';
+import {NgModule} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {PlaygroundToolbarComponent} from 'src/app/taxi-playground/toolbar/playground-toolbar.component';
+import {MatIconModule, MatIconRegistry} from '@angular/material/icon';
+import {DomSanitizer} from '@angular/platform-browser';
+import {MatButtonModule} from '@angular/material/button';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
+import {SubscribeDialogComponent} from './subscribe-dialog/subscribe-dialog.component';
 import {
   TuiCheckboxLabeledModule,
   TuiDataListWrapperModule,
@@ -16,13 +16,11 @@ import {
 import {
   TuiButtonModule,
   TuiDialogModule,
-  TuiHintBoxModule,
   TuiHintModule,
   TuiLinkModule,
-  TuiTextfieldControllerModule,
-  TuiTooltipModule
+  TuiTextfieldControllerModule
 } from '@taiga-ui/core';
-import { ShareDialogComponent } from './share-dialog/share-dialog.component';
+import {ShareDialogComponent} from './share-dialog/share-dialog.component';
 
 
 @NgModule({

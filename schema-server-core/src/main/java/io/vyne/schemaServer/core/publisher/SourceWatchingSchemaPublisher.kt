@@ -3,7 +3,6 @@ package io.vyne.schemaServer.core.publisher
 import arrow.core.Either
 import io.vyne.SourcePackage
 import io.vyne.schema.publisher.SchemaPublisherTransport
-import io.vyne.schema.publisher.loaders.SchemaPackageTransport
 import io.vyne.schemaServer.core.repositories.lifecycle.RepositoryLifecycleEventSource
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
@@ -29,8 +28,16 @@ class SourceWatchingSchemaPublisher(
          .sourcesChanged
          .publishOn(Schedulers.boundedElastic())
          .subscribe { message ->
-            logger.info { "Received source change message for packages ${message.packages.joinToString{ it.identifier.id} } - submitting updated packages" }
+            logger.info { "Received source change message for packages ${message.packages.joinToString { it.identifier.id }} - submitting updated packages" }
             submitSources(message.packages)
+         }
+
+      eventSource
+         .sourcesRemoved
+         .publishOn(Schedulers.boundedElastic())
+         .subscribe { packages ->
+            logger.info { "Received source change message for packages ${packages.joinToString { it.id }} - removing packages" }
+            schemaPublisher.removeSchemas(packages)
          }
    }
 

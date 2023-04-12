@@ -7,6 +7,7 @@
   flex-grow: 1;
   width: 10px;
   margin-left: 1rem;
+  overflow: auto;
 }
 :host(.vyne) {
   background-color: $body-bg;

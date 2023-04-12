@@ -11,12 +11,12 @@ import io.vyne.models.TypedCollection
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.schemas.QualifiedName
+import jakarta.annotation.Resource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.future.future
 import java.util.concurrent.CompletableFuture
-import javax.annotation.Resource
 import kotlin.coroutines.CoroutineContext
 
 /**

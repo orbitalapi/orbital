@@ -89,23 +89,6 @@ cask:
 management.endpoints.web.base-path: /api/actuator
 
 management:
-   metrics:
-      export:
-         prometheus:
-            enabled: false
-         influx:
-            enabled: false
-         elastic:
-            enabled: false
-         jmx:
-            enabled: false
-         graphite:
-            enabled: false
-         datadog:
-            enabled: false
-         dynatrace:
-            enabled: false
-
    endpoint:
       metrics:
          enabled: true
@@ -120,5 +103,33 @@ management:
       web:
          exposure:
             include: prometheus,metrics,info,health,logfile
+   prometheus:
+      metrics:
+         export:
+            enabled: false
+   dynatrace:
+      metrics:
+         export:
+            enabled: false
+   datadog:
+      metrics:
+         export:
+            enabled: false
+   graphite:
+      metrics:
+         export:
+            enabled: false
+   jmx:
+      metrics:
+         export:
+            enabled: false
+   influx:
+      metrics:
+         export:
+            enabled: false
+   elastic:
+      metrics:
+         export:
+            enabled: false
 
 

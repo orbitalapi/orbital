@@ -1,59 +1,67 @@
-import {Component, Input} from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import {
   QueryProfileData,
-  QueryResult, QuerySankeyChartRow,
+  QuerySankeyChartRow,
   QueryService,
-  RemoteCall,
+  RemoteCallResponse,
   RemoteOperationPerformanceStats
 } from '../../../services/query.service';
-import {Observable} from 'rxjs';
-import {map} from 'rxjs/operators';
-import {Operation} from '../../../services/schema';
-import {isNullOrUndefined} from "util";
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { isNullOrUndefined } from 'util';
 
 @Component({
   selector: 'app-call-explorer',
   template: `
-    <div class="toolbar">
-      <mat-button-toggle-group [(ngModel)]="displayMode"  data-e2e-id="profiler-call-operation-selection">
-        <mat-button-toggle value="lineage" data-e2e-id="call-select">
-          <img class="icon" src="assets/img/lineage-nodes.svg">
+    <div class='toolbar'>
+      <mat-button-toggle-group [(ngModel)]='displayMode' data-e2e-id='profiler-call-operation-selection'>
+        <mat-button-toggle value='lineage' data-e2e-id='call-select'>
+          <img class='icon' src='assets/img/lineage-nodes.svg'>
         </mat-button-toggle>
-        <mat-button-toggle value="sequence" data-e2e-id="call-select">
-          <img class="icon" src="assets/img/sequence.svg">
+        <mat-button-toggle value='sequence' data-e2e-id='call-select'>
+          <img class='icon' src='assets/img/sequence.svg'>
         </mat-button-toggle>
-        <mat-button-toggle value="stats" data-e2e-id="operation-select">
-          <img class="icon" src="assets/img/table-view.svg">
+        <mat-button-toggle value='stats' data-e2e-id='operation-select'>
+          <img class='icon' src='assets/img/table-view.svg'>
         </mat-button-toggle>
       </mat-button-toggle-group>
     </div>
-    <div class="sequence-diagram-container" *ngIf="displayMode === 'sequence'">
-      <div class="operation-list-container">
-        <div class="header">
-          <div class="table-header">Calls</div>
-          <div class="table-subheader">(Click to explore)</div>
-        </div>
-        <div class="operation-list">
-          <div class="operation" *ngFor="let remoteCall of remoteCalls$ | async" (click)="selectOperation(remoteCall)">
-            <div class="pill verb">{{ remoteCall.method }}</div>
-            <div class="pill result"
-                 [ngClass]="statusTextClassForRemoteCall(remoteCall)">{{ remoteCall.resultCode }}</div>
-            <div class="pill duration">{{ remoteCall.durationMs }}ms</div>
-            <div class="address"
-                 [matTooltip]="getPathOnly(remoteCall.address)">{{ getOperationName(remoteCall) }}</div>
+    <div class='sequence-diagram-container' *ngIf="displayMode === 'sequence'">
+      <as-split direction='horizontal' unit='pixel'>
+        <as-split-area [size]='500'>
+          <div class='operation-list-container'>
+            <div class='header'>
+              <div class='table-header'>Calls</div>
+              <div class='table-subheader'>(Click to explore)</div>
+            </div>
+            <div class='operation-list'>
+              <div class='operation' *ngFor='let remoteCall of remoteCalls$ | async'
+                   (click)='selectOperation(remoteCall)'>
+                <div class='pill verb'>{{ remoteCall.method }}</div>
+                <div class='pill result'
+                     [ngClass]='statusTextClassForRemoteCall(remoteCall)'>{{ remoteCall.resultCode }}</div>
+                <div class='pill duration'>{{ remoteCall.durationMs }}ms</div>
+                <div class='address'
+                     [matTooltip]='getPathOnly(remoteCall.address)'>{{ remoteCall.displayName }}</div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-      <div class="chart-container" *ngIf="!selectedOperation">
-        <app-sequence-diagram [profileData$]="queryProfileData$"></app-sequence-diagram>
-      </div>
-      <app-call-explorer-operation-view [operation]="selectedOperation" *ngIf="selectedOperation"
-                                        [operationResponse$]="selectedOperationResult$"
-                                        (close)="selectedOperation = null"></app-call-explorer-operation-view>
+        </as-split-area>
+        <as-split-area size='*'>
+          <div class='chart-container' *ngIf='!selectedOperation'>
+            <app-sequence-diagram [profileData$]='queryProfileData$'></app-sequence-diagram>
+          </div>
+          <app-call-explorer-operation-view [operation]='selectedOperation' *ngIf='selectedOperation'
+                                            [operationResponse$]='selectedOperationResult$'
+                                            (close)='selectedOperation = null'></app-call-explorer-operation-view>
+
+        </as-split-area>
+      </as-split>
     </div>
-    <app-service-stats *ngIf="displayMode === 'stats'" [operationStats]="operationStats$ | async"></app-service-stats>
-    <app-query-lineage *ngIf="displayMode === 'lineage'" [rows]="querySankeyChartRows$ | async"></app-query-lineage>
+    <app-service-stats *ngIf="displayMode === 'stats'" [operationStats]='operationStats$ | async'></app-service-stats>
+    <app-query-lineage *ngIf="displayMode === 'lineage'" [rows]='querySankeyChartRows$ | async'></app-query-lineage>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./call-explorer.component.scss']
 })
 export class CallExplorerComponent {
@@ -65,7 +73,7 @@ export class CallExplorerComponent {
 
   private _queryProfileData$: Observable<QueryProfileData>;
 
-  remoteCalls$: Observable<RemoteCall[]>;
+  remoteCalls$: Observable<RemoteCallResponse[]>;
 
   @Input()
   get queryProfileData$(): Observable<QueryProfileData> {
@@ -83,34 +91,37 @@ export class CallExplorerComponent {
   }
 
 
-  selectedOperation: RemoteCall;
+  selectedOperation: RemoteCallResponse;
   selectedOperationResult$: Observable<string>;
   displayMode: CallExplorerDisplayMode = 'lineage';
 
-  getOperationName(remoteCall: RemoteCall): string {
-    const serviceName = remoteCall.service.split('.').pop();
-    return `${serviceName}/${remoteCall.operation}`;
-  }
   getPathOnly(address: string) {
     // Hack - there's proabably a better way
     const parts: string[] = address.split('/');
     return '/' + parts.slice(3).join('/');
   }
 
-  selectOperation(operation: RemoteCall) {
+  selectOperation(operation: RemoteCallResponse) {
     this.selectedOperation = operation;
     this.selectedOperationResult$ = this.queryService.getRemoteCallResponse(operation.remoteCallId);
   }
 
-  statusTextClassForRemoteCall(remoteCall: RemoteCall): string {
+  statusTextClassForRemoteCall(remoteCall: RemoteCallResponse): string {
     return statusTextClass(remoteCall.resultCode);
   }
 }
 
 export type CallExplorerDisplayMode = 'sequence' | 'stats' | 'lineage';
 
-export function statusTextClass(resultCode: number): string {
-  const codeStart = resultCode.toString().substr(0, 1);
+export function statusTextClass(resultCode: string): string {
+
+  switch (resultCode) {
+    case 'OK':
+      return 'status-success';
+    case 'ERROR' :
+      return 'status-error';
+  }
+  const codeStart = resultCode.substr(0, 1);
   switch (codeStart) {
     case '2' :
       return 'status-success';

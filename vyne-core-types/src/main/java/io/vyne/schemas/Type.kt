@@ -111,6 +111,7 @@ data class Type(
    companion object {
       private val internedParameterizedNames = Interners.newStrongInterner<String>()
    }
+   override val schemaMemberKind: SchemaMemberKind = SchemaMemberKind.TYPE
 
    // Interned, so that can be used for equality checks
    val paramaterizedName: String = internedParameterizedNames.intern(qualifiedName.parameterizedName)
@@ -635,6 +636,16 @@ data class Type(
 
    fun hasAttribute(name: String): Boolean {
       return this.attributes.containsKey(name)
+   }
+
+   fun findAttributeForType(type: Type): List<Pair<AttributeName, Field>> {
+      return this.attributes.filter { (name, field) ->
+         type.isAssignableTo(field.type)
+      }.map { it.key to it.value }
+   }
+
+   fun hasAttributeWithType(type: Type): Boolean {
+      return findAttributeForType(type).isNotEmpty()
    }
 }
 

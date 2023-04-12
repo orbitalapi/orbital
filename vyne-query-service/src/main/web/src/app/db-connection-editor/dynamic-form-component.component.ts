@@ -1,15 +1,15 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input} from '@angular/core';
 import {FormControl, FormGroup} from '@angular/forms';
 import {MatFormFieldAppearance} from '@angular/material/form-field';
-import {TuiInputModeT, TuiInputTypeT} from '@taiga-ui/cdk';
+import {TuiInputMode, TuiInputType} from '@taiga-ui/cdk';
 
 export class DynamicFormComponentSpec {
   constructor(readonly componentType: ComponentType,
               readonly key: string,
               readonly label: string,
               readonly required: boolean,
-              readonly textFieldMode: TuiInputModeT | null,
-              readonly textFieldType: TuiInputTypeT | null,
+              readonly textFieldMode: TuiInputMode | null,
+              readonly textFieldType: TuiInputType | null,
               public value: any = null) {
   }
 }

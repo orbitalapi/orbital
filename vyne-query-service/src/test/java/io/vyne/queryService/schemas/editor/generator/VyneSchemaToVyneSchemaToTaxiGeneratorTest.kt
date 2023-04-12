@@ -1,8 +1,9 @@
 package io.vyne.queryService.schemas.editor.generator
 
 import com.winterbe.expekt.should
+import io.vyne.cockpit.core.schemas.editor.EditedSchema
+import io.vyne.cockpit.core.schemas.editor.generator.VyneSchemaToTaxiGenerator
 import io.vyne.query.VyneQlGrammar
-import io.vyne.queryService.schemas.editor.EditedSchema
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.withoutWhitespace
 import lang.taxi.TaxiDocument

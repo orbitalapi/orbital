@@ -2,6 +2,8 @@ package io.vyne.licensing
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.io.Resources
+import io.vyne.utils.Ids
+import io.vyne.utils.Names
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -11,7 +13,6 @@ import org.springframework.scheduling.annotation.EnableScheduling
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.time.Duration
 import kotlin.system.exitProcess
 
 @Configuration
@@ -20,9 +21,11 @@ class LicenseConfig {
 
    private val logger = KotlinLogging.logger {}
 
+   private val fallbackLicensePath = Paths.get(".", "/fallback-license.json")
    private val defaultLicenseSearchPaths = listOf(
+      Paths.get(System.getProperty("user.home"), ".orbital/license.json"),
       Paths.get(System.getProperty("user.home"), ".vyne/license.json"),
-      Paths.get("/opt/var/vyne/license/license.json"),
+      Paths.get("/opt/var/orbital/license/license.json"),
    )
 
    /**
@@ -36,7 +39,7 @@ class LicenseConfig {
       val publicKey = Resources.toByteArray(Resources.getResource("vyne-license-pub.der"))
       val validator = LicenseValidator.forPublicKey(
          publicKey,
-         fallbackLicenseDuration = Duration.ofHours(4)
+         fallbackLicenseDuration = LicenseValidator.defaultFallbackLicenseDuration
       )
       val pathsToSearch = if (licensePath != null) {
          listOf(licensePath) + defaultLicenseSearchPaths
@@ -63,8 +66,7 @@ class LicenseConfig {
          }.mapNotNull { licensePath ->
             try {
                logger.info { "Attempting to load license from ${licensePath.toAbsolutePath()}" }
-               val licenseJson = licensePath.toFile().readText()
-               val loadedLicense = Signing.objectMapper.readValue<License>(licenseJson)
+               val loadedLicense = loadUnvalidatedLicense(licensePath)
                if (licenseValidator.isValidLicense(loadedLicense)) {
                   logger.info { "Successfully loaded license at ${licensePath.toAbsolutePath()}" }
                   loadedLicense
@@ -80,10 +82,29 @@ class LicenseConfig {
 
       return if (loadedLicense == null) {
          logger.warn { "No license found.  Will use a fallback license." }
-         licenseValidator.fallbackLicense()
+         getOrCreateFallbackLicense(licenseValidator)
       } else {
          loadedLicense
       }
+   }
+
+   private fun getOrCreateFallbackLicense(licenseValidator: LicenseValidator): License {
+      return if (Files.exists(fallbackLicensePath)) {
+         logger.info { "Using existing fallback license at ${fallbackLicensePath.toFile().canonicalPath}" }
+         loadUnvalidatedLicense(fallbackLicensePath).copy(isFallbackLicense = true)
+      } else {
+         val name = Names.randomName(suffix = Ids.id("", 4))
+         val license = licenseValidator.fallbackLicense(name)
+         logger.info { "Creating new fallback license at $fallbackLicensePath" }
+         Signing.objectMapper.writerWithDefaultPrettyPrinter().writeValue(fallbackLicensePath.toFile(), license)
+         logger.info { "Fallback license for $name created at ${fallbackLicensePath.toFile().canonicalPath}" }
+         license
+      }
+   }
+
+   private fun loadUnvalidatedLicense(licensePath: Path): License {
+      val licenseJson = licensePath.toFile().readText()
+      return Signing.objectMapper.readValue(licenseJson)
    }
 
    @Bean

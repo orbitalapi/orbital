@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import { APIRequestContext, expect, Page } from '@playwright/test';
 
 export async function selectTab(page: Page, text: string, selectorPrefix = ''): Promise<void> {
    await page.click(`${selectorPrefix} tui-tabs button:has-text("${text}")`);
@@ -31,4 +31,18 @@ export async function openAccordion(page: Page, text: string, selectorPrefix = '
 
 export async function selectTreeItem(page: Page, text: string, selectorPrefix = ''): Promise<void> {
    await page.click(`${selectorPrefix} tui-tree-item-content:has-text("${text}")`);
+}
+
+export async function doPost(request: APIRequestContext, url: string, requestCount: number, expectedResponseProperty: string, expectedResponsePropertyValue: string) {
+   for(let i=0; i<requestCount; i++) {
+      const response = await request.post(url)
+      expect(response.ok()).toBeTruthy();
+      const responseObject = await response.json();
+      console.log(JSON.stringify(responseObject));
+      expect(responseObject[expectedResponseProperty]).toBe(expectedResponsePropertyValue);
+   }
+}
+
+export async function waitFor(page: Page, waitFor: number = 1000): Promise<void> {
+   await page.waitForTimeout(waitFor);
 }

@@ -3,7 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { ParsedSource, PartialSchema } from '../services/schema';
-import { map, shareReplay } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
+import { FileSystemPackageSpec, GitRepositoryConfig } from 'src/app/schema-importer/schema-importer.models';
 
 @Injectable({
   providedIn: 'root',
@@ -13,8 +14,8 @@ export class PackagesService {
   constructor(private readonly httpClient: HttpClient) {
   }
 
-  loadPackage(packageUri: string): Observable<ParsedPackage> {
-    return this.httpClient.get<ParsedPackage>(`${environment.serverUrl}/api/packages/${packageUri}`);
+  loadPackage(packageUri: string): Observable<PackageWithDescription> {
+    return this.httpClient.get<PackageWithDescription>(`${environment.serverUrl}/api/packages/${packageUri}`);
   }
 
   listPackages(): Observable<SourcePackageDescription[]> {
@@ -28,8 +29,13 @@ export class PackagesService {
   getEditablePackage(): Observable<SourcePackageDescription> {
     return this.listPackages()
       .pipe(
-        map((packages: SourcePackageDescription[]) => this.resolveEditablePackage(packages)),
-        shareReplay(1),
+        map((packages: SourcePackageDescription[]) => this.resolveEditablePackage(packages))
+        // TODO : We should be caching this.
+        // However, we need to get cache invalidation working, so that when
+        // users add a repository via the UI, they can use it.
+        // When caching is enabled, users are required to refresh after adding a repository.
+        // :(
+        // shareReplay(1),
       );
   }
 
@@ -46,6 +52,11 @@ export class PackagesService {
   }
 }
 
+
+export interface PackageWithDescription {
+  parsedPackage: ParsedPackage;
+  description: SourcePackageDescription;
+}
 
 export interface ParsedPackage {
   metadata: PackageMetadata;
@@ -70,6 +81,8 @@ export interface SourcePackageDescription {
   uriPath: string;
   editable: boolean;
   publisherType: PublisherType;
+
+  packageConfig: GitRepositoryConfig | FileSystemPackageSpec;
 }
 
 export interface PublisherHealth {
@@ -87,6 +100,7 @@ export interface PackageIdentifier {
 
   id: string;
   unversionedId: UnversionedPackageIdentifier;
+  uriSafeId?: string;
 }
 
 export type UnversionedPackageIdentifier = string;

@@ -1,0 +1,23 @@
+_HANDLER: 'foo'
+server:
+   port: 9500
+
+management:
+   endpoints:
+      web:
+         exposure:
+            include: prometheus,metrics,info,health,logfile,loggers
+         base-path: /api/actuator
+
+   endpoint:
+      metrics:
+         enabled: true
+      prometheus:
+         enabled: false
+      health:
+         show-details: always
+         show-components: always
+
+vyne:
+   analytics:
+      mode: none

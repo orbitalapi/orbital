@@ -34,7 +34,8 @@ data class TableOperation private constructor(
    override val contract = OperationContract(returnType)
    override val operationType: String? = null
    override val returnTypeName: QualifiedName = returnType.name
-
+   override val schemaMemberKind: SchemaMemberKind = SchemaMemberKind.OPERATION
+   override val operationKind: OperationKind = OperationKind.Table
 
    companion object {
       fun findOneOperationName(operationName: String) = "${operationName}_FindOne"

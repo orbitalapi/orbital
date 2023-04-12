@@ -1,6 +1,6 @@
 package io.vyne.connectors.jdbc.sql.ddl
 
-import io.vyne.connectors.jdbc.JdbcUrlCredentialsConnectionConfiguration
+import io.vyne.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
 import io.vyne.connectors.jdbc.SqlUtils
 import io.vyne.connectors.jdbc.sqlBuilder
 import io.vyne.schemas.Type

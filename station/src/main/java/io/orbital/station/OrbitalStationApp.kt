@@ -1,33 +1,43 @@
 package io.orbital.station
 
-import io.orbital.station.lsp.LanguageServerConfig
-import io.orbital.station.security.OrbitalUserConfig
-import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfig
+import io.vyne.cockpit.core.lsp.LanguageServerConfig
+import io.vyne.cockpit.core.pipelines.PipelineConfig
+import io.vyne.cockpit.core.security.VyneUserConfig
+import io.vyne.history.QueryAnalyticsConfig
+import io.vyne.licensing.LicenseConfig
 import io.vyne.schemaServer.core.VersionedSourceLoader
-import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
-import io.vyne.schemaServer.core.repositories.FileSchemaRepositoryConfigLoader
-import io.vyne.schemaServer.core.repositories.InMemorySchemaRepositoryConfigLoader
-import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfigLoader
+import io.vyne.spring.config.DiscoveryClientConfig
+import io.vyne.spring.config.VyneSpringCacheConfiguration
+import io.vyne.spring.config.VyneSpringHazelcastConfiguration
+import io.vyne.spring.config.VyneSpringProjectionConfiguration
+import io.vyne.spring.http.auth.HttpAuthConfig
+import io.vyne.spring.projection.ApplicationContextProvider
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
-import org.springframework.web.reactive.config.CorsRegistry
-import org.springframework.web.reactive.config.WebFluxConfigurer
-import java.nio.file.Path
+import org.springframework.context.annotation.Import
 
 @SpringBootApplication(
-//   exclude = [SecurityAutoConfiguration::class],
-   scanBasePackageClasses = [OrbitalStationApp::class, VersionedSourceLoader::class])
+   scanBasePackageClasses = [OrbitalStationApp::class, VersionedSourceLoader::class]
+)
 @EnableConfigurationProperties(
+   VyneSpringCacheConfiguration::class,
    LanguageServerConfig::class,
-   OrbitalUserConfig::class
+   QueryAnalyticsConfig::class,
+   PipelineConfig::class,
+   VyneSpringProjectionConfiguration::class,
+   VyneSpringHazelcastConfiguration::class,
+   VyneUserConfig::class,
+)
+@Import(
+   HttpAuthConfig::class,
+   ApplicationContextProvider::class,
+   LicenseConfig::class,
+   DiscoveryClientConfig::class
 )
 //@EnableWebFluxSecurity
 class OrbitalStationApp {
@@ -51,23 +61,7 @@ class OrbitalStationApp {
          buildInfo?.version ?: "Dev version"
       }
 
-      logger.info { "Orbital Station version => $version" }
+      logger.info { "Orbital Station version $version" }
    }
 }
 
-
-@Configuration
-class WebConfig : WebFluxConfigurer {
-
-   @Value("\${orbital.cors.enabled:true}")
-   var corsEnabled: Boolean = true
-
-   private val logger = KotlinLogging.logger {}
-   override fun addCorsMappings(registry: CorsRegistry) {
-      if (!corsEnabled) {
-         logger.warn { "CORS is disabled.  Allowing all access" }
-         registry
-            .addMapping("/**")
-      }
-   }
-}

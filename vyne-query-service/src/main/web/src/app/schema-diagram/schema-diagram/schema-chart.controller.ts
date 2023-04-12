@@ -1,4 +1,4 @@
-import { findSchemaMember, Schema, SchemaMemberType, ServiceMember } from '../../services/schema';
+import { findSchemaMember, Schema, SchemaMemberKind, ServiceMember } from '../../services/schema';
 import { Edge, EdgeMarkerType, MarkerType, Node, XYPosition } from 'reactflow';
 import {
   buildSchemaNode, collectAllLinks,
@@ -19,7 +19,7 @@ import {
   modelNodeBorderColor,
   serviceNodeBorderColor
 } from 'src/app/schema-diagram/schema-diagram/diagram-nodes/schema-node-container';
-import { AppendLinksHandler } from 'src/app/schema-diagram/schema-diagram/schema-flow.react';
+import { AppendLinksHandler, SchemaMemberClickHandler } from 'src/app/schema-diagram/schema-diagram/schema-flow.react';
 
 export const HORIZONTAL_GAP = 50;
 
@@ -52,7 +52,8 @@ export class SchemaChartController {
   build(buildOptions: {
     autoAppendLinks: boolean,
     layoutAlgo: 'full' | 'incremental',
-    appendLinksHandler: AppendLinksHandler
+    appendLinksHandler: AppendLinksHandler,
+    clickHandler: SchemaMemberClickHandler
   }): ChartBuildResult {
     const builtNodesById = new Map<string, Node<MemberWithLinks>>();
 
@@ -60,7 +61,7 @@ export class SchemaChartController {
       const schemaMember = findSchemaMember(this.schema, member);
       const nodeId = getNodeId(schemaMember.kind, schemaMember.name);
       const existingPosition = this.currentNodesById.get(nodeId)?.position;
-      return buildSchemaNode(this.schema, schemaMember, this.operations, buildOptions.appendLinksHandler, existingPosition);
+      return buildSchemaNode(this.schema, schemaMember, this.operations, buildOptions.appendLinksHandler, buildOptions.clickHandler, existingPosition);
     }).forEach(node => builtNodesById.set(node.id, node));
 
     const builtEdgedById = new Map<string, Edge>();
@@ -139,7 +140,7 @@ export class SchemaChartController {
     }
   }
 
-  private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, sourceSchemaKind: SchemaMemberType, targetNode: Node<MemberWithLinks>, targetHandleId: string, targetSchemaKind: SchemaMemberType, linkKind: LinkKind, linkId?: string): Edge {
+  private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, sourceSchemaKind: SchemaMemberKind, targetNode: Node<MemberWithLinks>, targetHandleId: string, targetSchemaKind: SchemaMemberKind, linkKind: LinkKind, linkId?: string): Edge {
     let label: string;
     let markerStart, markerEnd: EdgeMarkerType;
     // Default color

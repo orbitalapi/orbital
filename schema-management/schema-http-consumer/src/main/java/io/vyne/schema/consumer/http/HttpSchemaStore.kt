@@ -1,19 +1,15 @@
 package io.vyne.schema.consumer.http
 
-import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.consumer.SchemaSetChangedEventRepository
 import io.vyne.schema.consumer.SchemaStore
-import io.vyne.schemas.SchemaSetChangedEvent
+import jakarta.annotation.PostConstruct
+import jakarta.annotation.PreDestroy
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.context.ApplicationEventPublisher
 import reactor.core.publisher.Flux
 import reactor.core.scheduler.Schedulers
 import reactor.util.retry.Retry
 import java.time.Duration
-import java.util.concurrent.atomic.AtomicInteger
-import javax.annotation.PostConstruct
-import javax.annotation.PreDestroy
 
 private val logger = KotlinLogging.logger {}
 

@@ -15,8 +15,8 @@ import io.vyne.pipelines.jet.sink.WindowingPipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
+import jakarta.annotation.Resource
 import org.springframework.stereotype.Component
-import javax.annotation.Resource
 
 /**
  * Exists only for testing purposes.

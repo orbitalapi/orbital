@@ -1,0 +1,37 @@
+# management.endpoints.web.exposure.include=functions.
+server:
+   port: 8081
+   compression:
+      enabled: true
+      mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+      min-response-size: 1024
+   error:
+      include-message: always
+spring:
+   cloud:
+      function:
+         web:
+            export:
+               enabled: false
+
+   application:
+      name: query-function
+   #   autoconfigure:
+   #      exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration, org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
+   mvc:
+      async:
+         request-timeout: 18000000
+   main:
+      banner-mode: off
+      web-application-type: reactive
+   codec:
+      max-in-memory-size: 100MB
+management:
+   endpoints:
+      web:
+         exposure:
+            include: functions
+logging:
+   level:
+#     org.springframework: DEBUG
+     io.vyne: INFO

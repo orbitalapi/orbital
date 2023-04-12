@@ -1,6 +1,5 @@
 package io.vyne.query
 
-import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.schemas.Parameter
@@ -10,7 +9,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
-import kotlinx.coroutines.flow.onEach
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -66,13 +64,25 @@ abstract class BaseOperationInvocationStrategy(
       // invokeOperations calls to the invocationService, which has been decorated
       // with a CacheAwareOperationInvokerDecorator, which handles the caching.
       return if (queryStrategyResult.hasMatchesNodes()) {
-         val observedFlow = queryStrategyResult.matchedNodes.onEach { instance ->
-            val instanceSource = instance.source
-            if (instanceSource is OperationResult) {
-               context.notifyOperationResult(instanceSource)
-            }
-         }
-         queryStrategyResult.copy(nullableMatchedNodes = observedFlow)
+
+         // 9-Feb-23: Responsibility of calling context.notifyOperationResult(instanceSource)
+         // has moved into the individual invokers,
+         // to eliminate OperationResult as a DataSource (b/c it's really memory hungry)
+
+//         val observedFlow = queryStrategyResult.matchedNodes.map { instance ->
+//            val instanceSource = instance.source
+//            if (instanceSource is OperationResult) {
+//               context.notifyOperationResult(instanceSource)
+//
+//               // Having the OperationResult as a datasource is really
+//               // heavy.  So, once we've persisted it once to the db,
+//               // swap it out with a lightweight data source that just references it.
+//               DataSourceUpdater.update(instance, instanceSource.asOperationReferenceDataSource())
+//            } else {
+//               instance
+//            }
+//         }
+         queryStrategyResult.copy(nullableMatchedNodes = queryStrategyResult.matchedNodes)
       } else {
          queryStrategyResult
       }

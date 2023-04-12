@@ -27,7 +27,7 @@ import java.time.Duration
 import kotlin.io.path.readBytes
 
 class FileSystemPackageLoader(
-   private val config: FileSystemPackageSpec,
+   override val config: FileSystemPackageSpec,
    private val adaptor: SchemaSourcesAdaptor,
    private val fileMonitor: ReactiveFileSystemMonitor,
    private val eventThrottleSize: Int = 100,
@@ -60,7 +60,9 @@ class FileSystemPackageLoader(
       get() {
          return synchronized(this) {
             if (_packageIdentifier == null) {
-               val loaded = loadNow().block()
+               // Don't call block(), as it throws an exception when we're
+               // in an async code. (ie., a netty request)
+               val loaded = loadNow().toFuture().get()
                _packageIdentifier ?: error("The project at ${config.path} does not have a valid taxi.conf file")
             } else {
                _packageIdentifier!!
@@ -127,7 +129,7 @@ class FileSystemPackageLoader(
    }
 
    override fun createChangeset(name: String): Mono<CreateChangesetResponse> {
-      TODO("Not yet implemented")
+      throw UnsupportedOperationException("Setting or updating changesets against file loaders is not supported")
    }
 
    override fun addChangesToChangeset(name: String, edits: List<VersionedSource>): Mono<AddChangesToChangesetResponse> {
@@ -139,18 +141,18 @@ class FileSystemPackageLoader(
    }
 
    override fun finalizeChangeset(name: String): Mono<FinalizeChangesetResponse> {
-      TODO("Not yet implemented")
+      throw UnsupportedOperationException("Setting or updating changesets against file loaders is not supported")
    }
 
    override fun updateChangeset(name: String, newName: String): Mono<UpdateChangesetResponse> {
-      TODO("Not yet implemented")
+      throw UnsupportedOperationException("Setting or updating changesets against file loaders is not supported")
    }
 
    override fun getAvailableChangesets(): Mono<AvailableChangesetsResponse> {
-      TODO("Not yet implemented")
+      return Mono.just(AvailableChangesetsResponse(emptyList()))
    }
 
    override fun setActiveChangeset(branchName: String): Mono<SetActiveChangesetResponse> {
-      TODO("Not yet implemented")
+      throw UnsupportedOperationException("Setting or updating changesets against file loaders is not supported")
    }
 }

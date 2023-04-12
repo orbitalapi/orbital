@@ -4,6 +4,7 @@ import io.vyne.schema.publisher.loaders.ChangesetOverview
 import io.vyne.schemaServer.core.git.providers.GitHostingProviderRegistry
 import mu.KotlinLogging
 import org.eclipse.jgit.api.*
+import org.eclipse.jgit.api.errors.TransportException
 import org.eclipse.jgit.diff.DiffEntry
 import org.eclipse.jgit.lib.BranchConfig
 import org.eclipse.jgit.lib.Repository
@@ -61,6 +62,59 @@ class GitOperations(
       git = Git.wrap(fileRepository)
    }
 
+   companion object {
+      private val logger = KotlinLogging.logger {}
+      private fun String.objectNameToDisplayName() = this.split("/").last()
+      data class TestConnectionResult(
+         val successful: Boolean,
+         val errorMessage: String?,
+         val branchNames: List<String>?,
+         val defaultBranch: String?
+      ) {
+         companion object {
+            fun failed(error: String) = TestConnectionResult(
+               false,
+               error,
+               null,
+               null
+            )
+         }
+      }
+
+      fun testConnection(url: String): TestConnectionResult {
+         val branches = try {
+            Git.lsRemoteRepository()
+               .setRemote(url)
+               .callAsMap()
+         } catch (e: TransportException) {
+            val message = e.message ?: ""
+            if (message.contains("Authentication is required but no CredentialsProvider has been registered")) {
+               return TestConnectionResult.failed(
+                  "Authentication failed",
+               )
+            }
+            if (message.contains("not found: Not Found")) {
+               return TestConnectionResult.failed("Could not connect to the remote repository")
+            }
+            logger.warn(e) { "Failed to connect to git repo at $url, but the exception has not been handled" }
+            return TestConnectionResult.failed("An unknown error occurred")
+         }
+         val defaultBranchName = branches.get("HEAD")
+            ?.target?.name?.objectNameToDisplayName()
+
+         val branchNames = branches.keys.filter { it.startsWith("refs/heads/") }
+            .map { it.objectNameToDisplayName() }
+
+         return TestConnectionResult(
+            true,
+            null,
+            branchNames,
+            defaultBranchName
+         )
+
+      }
+   }
+
    override fun close() {
       fileRepository.close()
       git.close()
@@ -92,6 +146,9 @@ class GitOperations(
    }
 
    fun clone(): OperationResult {
+      // TODO : This should be a shallow clone.
+      // We need to wait for jgit 6.5, due for release shortly (as of Feb 2023).
+      // https://bugs.eclipse.org/bugs/show_bug.cgi?id=475615
       Git.cloneRepository()
          .setDirectory(workingDir)
          .setURI(config.uri)
@@ -139,17 +196,9 @@ class GitOperations(
          .call()
    }
 
-   fun lsRemote(): OperationResult {
-      val result = git.lsRemote()
-         .setRemote(config.uri)
-         .setTransportConfigCallback(transportConfigCallback)
-         .call()
-
-      return OperationResult.fromBoolean(result.isNotEmpty())
-   }
 
    fun commitAndPush(message: String) {
-      val addResult = git.add().addFilepattern(".").call()
+      git.add().addFilepattern(".").call()
       val commitResult = git.commit().setMessage(message).setAllowEmpty(true).call()
       logger.info { "Committed ${commitResult.id.abbreviate(8).name()} on $description with message $message" }
       pushToRemote()

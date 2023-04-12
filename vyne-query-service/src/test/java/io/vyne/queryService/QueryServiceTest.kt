@@ -6,7 +6,7 @@ import com.winterbe.expekt.should
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.ResultMode
 import io.vyne.query.ValueWithTypeName
-import io.vyne.queryService.query.TEXT_CSV
+import io.vyne.query.runtime.core.TEXT_CSV
 import io.vyne.schemas.fqn
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview

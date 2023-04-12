@@ -3,8 +3,9 @@ package io.vyne.pipelines.jet.source.kafka
 import com.hazelcast.jet.kafka.KafkaSources
 import com.hazelcast.jet.pipeline.StreamSource
 import io.vyne.connectors.kafka.MessageEncodingType
-import io.vyne.connectors.kafka.asKafkaProperties
+import io.vyne.connectors.config.kafka.asKafkaProperties
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
+import io.vyne.connectors.kafka.registry.toConsumerProps
 import io.vyne.pipelines.jet.BadRequestException
 import io.vyne.pipelines.jet.JetLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider

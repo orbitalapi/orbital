@@ -41,4 +41,6 @@ data class QueryOperation(
 
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
    override fun hashCode(): Int = equality.hash()
+   override val schemaMemberKind: SchemaMemberKind = SchemaMemberKind.OPERATION
+   override val operationKind: OperationKind = OperationKind.Query
 }

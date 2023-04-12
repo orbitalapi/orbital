@@ -1,5 +1,6 @@
 package io.vyne.schemaServer.core.repositories.lifecycle
 
+import io.vyne.PackageIdentifier
 import io.vyne.schema.publisher.loaders.SchemaPackageTransport
 import io.vyne.schemaServer.core.file.SourcesChangedMessage
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageLoader
@@ -22,6 +23,7 @@ class RepositoryLifecycleManager(
    private val emitFailureHandler: Sinks.EmitFailureHandler =
       Sinks.EmitFailureHandler.busyLooping(Duration.ofMillis(100))
 
+   private val schemaSourceRemovedSink = Sinks.many().replay().all<List<PackageIdentifier>>()
    private val schemaSourceAddedSink = Sinks.many().replay().all<SchemaPackageTransport>()
    private val gitSpecAddedSink = Sinks.many().replay().all<GitSpecAddedEvent>()
    private val fileSpecAddedSink = Sinks.many().replay().all<FileSpecAddedEvent>()
@@ -35,6 +37,7 @@ class RepositoryLifecycleManager(
    override val repositoryAdded: Flux<SchemaPackageTransport> = schemaSourceAddedSink.asFlux()
 
    override val sourcesChanged: Flux<SourcesChangedMessage> = sourcesChangedSink.asFlux()
+   override val sourcesRemoved: Flux<List<PackageIdentifier>> = schemaSourceRemovedSink.asFlux()
 
    init {
       repositoryAdded
@@ -68,6 +71,10 @@ class RepositoryLifecycleManager(
 
    override fun gitRepositorySpecAdded(spec: GitSpecAddedEvent) {
       gitSpecAddedSink.emitNext(spec, emitFailureHandler)
+   }
+
+   override fun schemaSourceRemoved(packages: List<PackageIdentifier>) {
+      schemaSourceRemovedSink.emitNext(packages, emitFailureHandler)
    }
 }
 

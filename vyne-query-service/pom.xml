@@ -4,7 +4,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.22.0-SNAPSHOT</version>
+      <version>0.24.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -19,6 +19,21 @@
    </properties>
 
    <dependencies>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>spring-utils</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>monitoring-common</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>cockpit-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>license-client</artifactId>
@@ -51,14 +66,6 @@
          <artifactId>auth-common</artifactId>
          <version>${project.version}</version>
       </dependency>
-
-      <!-- use the actual dependency for tests.  at runtime, we just use the api -->
-      <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>schema-server-core</artifactId>
-         <version>${project.version}</version>
-         <scope>test</scope>
-      </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>test-utils</artifactId>
@@ -72,8 +79,24 @@
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>history-service</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>history-persistence</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>jdbc-connector</artifactId>
          <version>${project.version}</version>
+         <exclusions>
+            <exclusion>
+               <groupId>org.slf4j</groupId>
+               <artifactId>slf4j-nop</artifactId>
+            </exclusion>
+         </exclusions>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
@@ -144,7 +167,7 @@
       <dependency>
          <groupId>org.bitbucket.b_c</groupId>
          <artifactId>jose4j</artifactId>
-         <version>0.9.2</version>
+         <version>0.9.3</version>
          <scope>test</scope>
       </dependency>
       <dependency>
@@ -164,11 +187,11 @@
          <artifactId>xstream</artifactId>
          <version>1.4.20</version>
       </dependency>
-      <dependency>
-         <groupId>io.netty</groupId>
-         <artifactId>netty-tcnative-boringssl-static</artifactId>
-         <version>2.0.56.Final</version>
-      </dependency>
+      <!--      <dependency>-->
+      <!--         <groupId>io.netty</groupId>-->
+      <!--         <artifactId>netty-tcnative-boringssl-static</artifactId>-->
+      <!--         <version>2.0.59.Final</version>-->
+      <!--      </dependency>-->
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-security</artifactId>
@@ -184,6 +207,11 @@
       <dependency>
          <groupId>org.springframework.security</groupId>
          <artifactId>spring-security-oauth2-jose</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>query-node-core</artifactId>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>
@@ -210,10 +238,6 @@
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-data-jdbc</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.cloud</groupId>
-         <artifactId>spring-cloud-starter-config</artifactId>
       </dependency>
       <dependency>
          <groupId>org.springframework.boot</groupId>
@@ -253,7 +277,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-server-core</artifactId>
-         <version>0.22.0-SNAPSHOT</version>
+         <version>${project.version}</version>
       </dependency>
 
       <dependency>
@@ -324,35 +348,35 @@
          <artifactId>micrometer-registry-prometheus</artifactId>
       </dependency>
 
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-influx</artifactId>
-      </dependency>
+      <!--      <dependency>-->
+      <!--         <groupId>io.micrometer</groupId>-->
+      <!--         <artifactId>micrometer-registry-influx</artifactId>-->
+      <!--      </dependency>-->
 
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-elastic</artifactId>
-      </dependency>
+      <!--      <dependency>-->
+      <!--         <groupId>io.micrometer</groupId>-->
+      <!--         <artifactId>micrometer-registry-elastic</artifactId>-->
+      <!--      </dependency>-->
 
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-jmx</artifactId>
-      </dependency>
+      <!--      <dependency>-->
+      <!--         <groupId>io.micrometer</groupId>-->
+      <!--         <artifactId>micrometer-registry-jmx</artifactId>-->
+      <!--      </dependency>-->
 
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-graphite</artifactId>
-      </dependency>
+      <!--      <dependency>-->
+      <!--         <groupId>io.micrometer</groupId>-->
+      <!--         <artifactId>micrometer-registry-graphite</artifactId>-->
+      <!--      </dependency>-->
 
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-datadog</artifactId>
-      </dependency>
+      <!--      <dependency>-->
+      <!--         <groupId>io.micrometer</groupId>-->
+      <!--         <artifactId>micrometer-registry-datadog</artifactId>-->
+      <!--      </dependency>-->
 
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-dynatrace</artifactId>
-      </dependency>
+      <!--      <dependency>-->
+      <!--         <groupId>io.micrometer</groupId>-->
+      <!--         <artifactId>micrometer-registry-dynatrace</artifactId>-->
+      <!--      </dependency>-->
 
       <dependency>
          <groupId>ch.streamly</groupId>
@@ -498,6 +522,17 @@
                      </programs>
                      <repositoryLayout>flat</repositoryLayout>
                      <repositoryName>lib</repositoryName>
+                     <extraJvmArguments>
+                        --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED
+                        --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+                        --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
+                        --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
+                        --add-opens=jdk.compiler/com.sun.tools.javac=ALL-UNNAMED
+                        --add-opens=java.base/java.lang=ALL-UNNAMED
+                        --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+                        --add-opens=java.base/java.io=ALL-UNNAMED
+                        --add-opens=java.base/java.util=ALL-UNNAMED
+                     </extraJvmArguments>
                   </configuration>
                </execution>
             </executions>
@@ -519,41 +554,6 @@
                   <goals>
                      <goal>single</goal>
                   </goals>
-               </execution>
-            </executions>
-         </plugin>
-         <plugin>
-            <groupId>com.github.eirslett</groupId>
-            <artifactId>frontend-maven-plugin</artifactId>
-            <version>1.12.1</version>
-            <configuration>
-               <workingDirectory>src/main/web/</workingDirectory>
-               <nodeVersion>v16.14.0</nodeVersion>
-            </configuration>
-            <executions>
-               <execution>
-                  <id>install-npm</id>
-                  <goals>
-                     <goal>install-node-and-npm</goal>
-                  </goals>
-               </execution>
-               <execution>
-                  <id>run-npm-install</id>
-                  <goals>
-                     <goal>npm</goal>
-                  </goals>
-                  <configuration>
-                     <arguments>ci</arguments>
-                  </configuration>
-               </execution>
-               <execution>
-                  <id>ng-build</id>
-                  <goals>
-                     <goal>npm</goal>
-                  </goals>
-                  <configuration>
-                     <arguments>run-script build-prod</arguments>
-                  </configuration>
                </execution>
             </executions>
          </plugin>

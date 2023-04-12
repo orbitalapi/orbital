@@ -5,10 +5,10 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.PackageIdentifier
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
-import io.vyne.schema.publisher.rsocket.RSocketPublisherKeepAliveStrategyMonitor
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.api.SchemaSourceProvider
 import io.vyne.schema.publisher.*
+import io.vyne.schema.publisher.rsocket.RSocketPublisherKeepAliveStrategyMonitor
 import io.vyne.schema.rsocket.RSocketRoutes
 import io.vyne.schemaServer.core.config.LocalSchemaNotifier
 import io.vyne.schemaServer.core.config.SchemaUpdateNotifier
@@ -182,7 +182,7 @@ class SchemaServerSourceManager(
    }
 
    override fun submitPackage(submission: SourcePackage): Either<CompilationException, Schema> {
-      logger.info { "Received Schema Submission From ${submission.packageMetadata.identifier} without keepalive data.  This will not be automaticatlly tidied up" }
+      logger.info { "Received Schema Submission From ${submission.packageMetadata.identifier} without keepalive data. This will not be automatically tidied up" }
       return submitKeepAlivePackage(
          KeepAlivePackageSubmission(submission)
       )
@@ -194,7 +194,7 @@ class SchemaServerSourceManager(
    }
 
    override fun removeSchemas(identifiers: List<PackageIdentifier>): Either<CompilationException, Schema> {
-      TODO("Not yet implemented")
+      return validatingStore.removeSchemas(identifiers)
    }
 
    private fun Either<CompilationException, Schema>.asSourceSubmissionResponse(): SourceSubmissionResponse {

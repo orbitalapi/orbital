@@ -5,9 +5,9 @@ import io.vyne.connectors.ConnectionParameterName
 import io.vyne.connectors.ConnectorUtils
 import io.vyne.connectors.IConnectionParameter
 import io.vyne.connectors.SimpleDataType
+import io.vyne.connectors.config.jdbc.JdbcUrlBuilder
 import io.vyne.connectors.connectionParams
-import io.vyne.connectors.jdbc.JdbcUrlAndCredentials
-import io.vyne.connectors.jdbc.JdbcUrlBuilder
+import io.vyne.connectors.config.jdbc.JdbcUrlAndCredentials
 import io.vyne.utils.substitute
 
 class PostgresJdbcUrlBuilder : JdbcUrlBuilder {

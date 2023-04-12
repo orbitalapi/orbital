@@ -1,11 +1,11 @@
 package io.vyne.queryService.schemas.importing.kafkaTopic
 
 import com.winterbe.expekt.should
+import io.vyne.cockpit.core.schemas.importing.SchemaConversionRequest
+import io.vyne.cockpit.core.schemas.importing.kafka.KafkaTopicConverterOptions
+import io.vyne.cockpit.core.schemas.importing.kafka.KafkaTopicImporter
 import io.vyne.connectors.kafka.KafkaConnectorTaxi
 import io.vyne.queryService.schemas.importing.BaseSchemaConverterServiceTest
-import io.vyne.queryService.schemas.importing.SchemaConversionRequest
-import io.vyne.queryService.schemas.importing.kafka.KafkaTopicConverterOptions
-import io.vyne.queryService.schemas.importing.kafka.KafkaTopicImporter
 import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema

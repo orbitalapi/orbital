@@ -1,6 +1,7 @@
 server:
-   # 11 more than 9022, the port than Vyne ran on.
-   port: 9033
+   port: 9022
+   error:
+      include-message: always
 spring:
    cloud:
       config:
@@ -49,3 +50,11 @@ management:
          exposure:
             include: prometheus,metrics,info,health,logfile,loggers
          base-path: /api/actuator
+vyne:
+   schema:
+      consumer:
+         method: local
+      publisher:
+         method: local
+   analytics:
+      mode: Inprocess

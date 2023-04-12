@@ -1,5 +1,5 @@
 import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
-import {QualifiedName, Schema, SchemaMember, SchemaMemberType, Type} from '../services/schema';
+import {QualifiedName, Schema, SchemaMember, SchemaMemberKind, Type} from '../services/schema';
 import {FormControl} from '@angular/forms';
 import {map, startWith} from 'rxjs/operators';
 import {Observable} from 'rxjs';

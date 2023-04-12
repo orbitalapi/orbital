@@ -5,7 +5,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.22.0-SNAPSHOT</version>
+      <version>0.24.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -28,6 +28,16 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-server-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>cockpit-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>query-node-core</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -176,6 +186,15 @@
                      </programs>
                      <repositoryLayout>flat</repositoryLayout>
                      <repositoryName>lib</repositoryName>
+                     <extraJvmArguments>
+                        --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED
+                        --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+                        --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
+                        --add-opens=java.base/java.lang=ALL-UNNAMED
+                        --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+                        --add-opens=java.base/java.io=ALL-UNNAMED
+                        --add-opens=java.base/java.util=ALL-UNNAMED
+                     </extraJvmArguments>
                   </configuration>
                </execution>
             </executions>

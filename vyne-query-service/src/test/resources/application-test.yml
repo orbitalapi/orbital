@@ -13,3 +13,4 @@ spring:
 
 eureka:
   uri: http://127.0.0.1:8761
+vyne.telemetry.enabled: false

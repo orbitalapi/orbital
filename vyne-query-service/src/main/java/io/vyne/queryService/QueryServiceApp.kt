@@ -4,18 +4,30 @@ import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.orbital.station.OrbitalStationConfig
 import io.vyne.cask.api.CaskApi
+import io.vyne.cockpit.core.CockpitCoreConfig
+import io.vyne.cockpit.core.FeatureTogglesConfig
+import io.vyne.cockpit.core.WebUiUrlSupportFilter
+import io.vyne.cockpit.core.lsp.LanguageServerConfig
+import io.vyne.cockpit.core.pipelines.PipelineConfig
+import io.vyne.cockpit.core.schemas.BuiltInTypesSubmitter
+import io.vyne.cockpit.core.security.VyneUserConfig
+import io.vyne.cockpit.core.telemetry.TelemetryConfig
 import io.vyne.history.QueryAnalyticsConfig
+import io.vyne.history.db.InProcessHistoryConfiguration
+import io.vyne.history.rest.QueryHistoryRestConfig
 import io.vyne.licensing.LicenseConfig
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.format.ModelFormatSpec
+import io.vyne.monitoring.EnableCloudMetrics
 import io.vyne.pipelines.jet.api.PipelineApi
 import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
-import io.vyne.queryService.lsp.LanguageServerConfig
-import io.vyne.queryService.pipelines.PipelineConfig
-import io.vyne.queryService.security.VyneUserConfig
+import io.vyne.query.chat.ChatQueryParser
+import io.vyne.query.runtime.core.EnableVyneQueryNode
+import io.vyne.schema.publisher.SchemaPublisherService
 import io.vyne.schemaServer.changelog.ChangelogApi
+import io.vyne.schemaServer.codegen.CodeGenApi
 import io.vyne.schemaServer.editor.SchemaEditorApi
 import io.vyne.schemaServer.packages.PackagesServiceApi
 import io.vyne.schemaServer.repositories.RepositoryServiceApi
@@ -23,20 +35,25 @@ import io.vyne.search.embedded.EnableVyneEmbeddedSearch
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
-import io.vyne.spring.config.*
+import io.vyne.spring.config.ConditionallyLoadBalancedExchangeFilterFunction
+import io.vyne.spring.config.DiscoveryClientConfig
+import io.vyne.spring.config.VyneSpringCacheConfiguration
+import io.vyne.spring.config.VyneSpringHazelcastConfiguration
+import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.auth.HttpAuthConfig
 import io.vyne.spring.projection.ApplicationContextProvider
+import io.vyne.spring.utils.versionOrDev
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
-import org.springframework.boot.actuate.metrics.web.reactive.client.MetricsWebClientCustomizer
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
-import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
+import org.springframework.boot.web.reactive.function.client.WebClientCustomizer
+import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -49,26 +66,13 @@ import org.springframework.http.codec.ServerCodecConfigurer
 import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.http.codec.json.KotlinSerializationJsonEncoder
-import org.springframework.http.converter.HttpMessageConverter
-import org.springframework.http.converter.json.KotlinSerializationJsonHttpMessageConverter
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
-import org.springframework.stereotype.Component
 import org.springframework.web.reactive.config.WebFluxConfigurer
-import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.server.ServerWebExchange
-import org.springframework.web.server.WebFilter
-import org.springframework.web.server.WebFilterChain
-import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer
-import org.springframework.web.servlet.config.annotation.CorsRegistry
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import reactivefeign.spring.config.EnableReactiveFeignClients
-import reactor.core.publisher.Mono
 import java.util.*
 
 
 @SpringBootApplication(scanBasePackageClasses = [QueryServiceApp::class, OrbitalStationConfig::class])
 @EnableConfigurationProperties(
-   QueryServerConfig::class,
    VyneSpringCacheConfiguration::class,
    LanguageServerConfig::class,
    QueryAnalyticsConfig::class,
@@ -76,12 +80,15 @@ import java.util.*
    VyneSpringProjectionConfiguration::class,
    VyneSpringHazelcastConfiguration::class,
    VyneUserConfig::class,
+   FeatureTogglesConfig::class
 )
 @Import(
    HttpAuthConfig::class,
    ApplicationContextProvider::class,
    LicenseConfig::class,
-   DiscoveryClientConfig::class
+   DiscoveryClientConfig::class,
+   TelemetryConfig::class
+
 )
 class QueryServiceApp {
 
@@ -94,6 +101,11 @@ class QueryServiceApp {
          app.setBannerMode(Banner.Mode.OFF)
          app.run(*args)
       }
+   }
+
+   @Bean
+   fun chatGptService(@Value("\${vyne.chat-gpt.api-key:''}") apiKey: String): ChatQueryParser {
+      return ChatQueryParser(apiKey)
    }
 
 
@@ -116,130 +128,49 @@ class QueryServiceApp {
    }
 
    //   @LoadBalanced
+
+
    @Bean
-   fun webClientFactory(loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction,
-                        metricsCustomizer: MetricsWebClientCustomizer
-   ): WebClient.Builder {
-      val builder = WebClient.builder()
-         .filter(
-            ConditionallyLoadBalancedExchangeFilterFunction.permitLocalhost(loadBalancingFilterFunction)
+   fun webClientCustomizer(
+      loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction,
+      discoveryClient: DiscoveryClient
+
+   ): WebClientCustomizer {
+      return WebClientCustomizer { webClientBuilder ->
+         webClientBuilder.filter(
+            ConditionallyLoadBalancedExchangeFilterFunction.onlyKnownHosts(
+               discoveryClient.services,
+               loadBalancingFilterFunction
+            )
          )
-      metricsCustomizer.customize(builder)
-      return builder
+      }
    }
 
    @Autowired
    fun logInfo(@Autowired(required = false) buildInfo: BuildProperties? = null) {
-      val baseVersion = buildInfo?.get("baseVersion")
-      val buildNumber = buildInfo?.get("buildNumber")
-      val version = if (!baseVersion.isNullOrEmpty() && buildNumber != "0" && buildInfo.version.contains("SNAPSHOT")) {
-         "$baseVersion-BETA-$buildNumber"
-      } else {
-         buildInfo?.version ?: "Dev version"
-      }
-
-      log().info("Vyne query server version => $version")
-   }
-
-   @Configuration
-   //   @EnableWebMvc
-   class WebConfig : WebMvcConfigurer {
-
-      @Value("\${cors.host:localhost}")
-      lateinit var allowedHost: String
-
-      @Value("\${cors.enabled:false}")
-      var corsEnabled: Boolean = false
-
-      @Value("\${vyne.mvc.executor.corePoolSize:5}")
-      var corePoolSize: Int = 5
-
-      @Value("\${vyne.mvc.executor.maxPoolSize:5}")
-      var maxPoolSize: Int = 15
-
-      @Value("\${vyne.mvc.executor.queueCapacity:50}")
-      var queueCapacity: Int = 50
-
-      override fun configureMessageConverters(converters: MutableList<HttpMessageConverter<*>>) {
-         converters.sortBy { converter -> if (converter is KotlinSerializationJsonHttpMessageConverter) 1000 else 0 }
-      }
-
-      override fun configureAsyncSupport(configurer: AsyncSupportConfigurer) {
-         val executor = ThreadPoolTaskExecutor()
-         executor.corePoolSize = corePoolSize
-         executor.maxPoolSize = maxPoolSize // maximum number of concurrent running threads when queue size is full
-         executor.queueCapacity = queueCapacity
-         executor.threadNamePrefix = "vyne-query-executor"
-         executor.initialize()
-         configurer.setTaskExecutor(executor)
-      }
-
-      override fun addCorsMappings(registry: CorsRegistry) {
-         if (corsEnabled) {
-            log().info("Registering Cors host at $allowedHost")
-            registry.addMapping("/**")
-               .allowedOrigins(allowedHost)
-         }
-      }
-   }
-
-}
-
-
-/**
- * Handles requests intended for our web app (ie., everything not at /api)
- * and forwards them down to index.html, to allow angular to handle the
- * routing
- */
-@Component
-class Html5UrlSupportFilter(
-   @Value("\${management.endpoints.web.base-path:/actuator}") private val actuatorPath: String
-) : WebFilter {
-   companion object {
-      val ASSET_EXTENSIONS =
-         listOf(".css", ".js", ".js?", ".js.map", ".html", ".scss", ".ts", ".ttf", ".wott", ".svg", ".gif", ".png")
-   }
-
-   override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
-      val path = exchange.request.uri.path
-      // If the request is not for the /api, and does not contain a . (eg., main.js), then
-      // redirect to index.  This means requrests to things like /query-wizard are rendereed by our Angular app
-      return when {
-         path.startsWith("/api") -> {
-            chain.filter(exchange)
-         }
-
-         path.startsWith(actuatorPath) -> {
-            chain.filter(exchange)
-         }
-
-         ASSET_EXTENSIONS.any { path.endsWith(it) } -> chain.filter(exchange)
-         else -> {
-            // These are requests that aren't /api, and don't have an asset extension (like .js), so route it to the
-            // angular app
-            chain.filter(
-               exchange
-                  .mutate().request(
-                     exchange.request.mutate().path("/index.html").build()
-                  )
-                  .build()
-            )
-         }
-      }
+      log().info("Orbital Query Server v ${buildInfo.versionOrDev()}")
    }
 }
 
-@ConfigurationProperties(prefix = "vyne")
-class QueryServerConfig {
-   var newSchemaSubmissionEnabled: Boolean = false
-}
 
 @Configuration
 @EnableVyne
 @VyneSchemaConsumer
 @VyneSchemaPublisher
 @EnableVyneEmbeddedSearch
-class VyneConfig
+@EnableVyneQueryNode
+@EnableCloudMetrics
+@Import(
+   InProcessHistoryConfiguration::class,
+   QueryHistoryRestConfig::class,
+   CockpitCoreConfig::class,
+   WebUiUrlSupportFilter::class
+)
+class VyneConfig {
+   @Bean
+   fun builtInTypesSubmitter(publisher: SchemaPublisherService): BuiltInTypesSubmitter =
+      BuiltInTypesSubmitter(publisher)
+}
 
 @Configuration
 class PipelineConfig {
@@ -255,7 +186,8 @@ class PipelineConfig {
       SchemaEditorApi::class,
       PackagesServiceApi::class,
       RepositoryServiceApi::class,
-      ChangelogApi::class
+      ChangelogApi::class,
+      CodeGenApi::class
    ]
 )
 class FeignConfig
@@ -277,6 +209,15 @@ class WebFluxWebConfig(private val objectMapper: ObjectMapper) : WebFluxConfigur
             ActuatorV3MediaType
          )
       )
+
+   }
+
+   override fun addCorsMappings(registry: org.springframework.web.reactive.config.CorsRegistry) {
+      registry.addMapping("/**")
+         .allowedOrigins("*")
+         .allowedHeaders("*")
+         .exposedHeaders("*")
+         .allowedMethods("*")
 
    }
 
@@ -305,7 +246,7 @@ class WebFluxWebConfig(private val objectMapper: ObjectMapper) : WebFluxConfigur
  * https://github.com/spring-projects/spring-framework/issues/28856
  */
 @Configuration
-class CustomerWebFluxConfigSupport {
+class CustomWebFluxConfigSupport {
 
    @Bean
    @Primary

@@ -1,5 +1,6 @@
 package io.vyne.schemaServer.core.repositories
 
+import io.vyne.PackageIdentifier
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
@@ -23,5 +24,7 @@ interface SchemaRepositoryConfigLoader {
    fun addFileSpec(fileSpec: FileSystemPackageSpec)
 
    fun addGitSpec(gitSpec: GitRepositoryConfig)
+   fun removeGitRepository(repositoryName: String, packageIdentifier: PackageIdentifier): List<PackageIdentifier>
+   fun removeFileRepository(packageIdentifier: PackageIdentifier): List<PackageIdentifier>
 }
 

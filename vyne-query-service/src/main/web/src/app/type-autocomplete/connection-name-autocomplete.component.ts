@@ -1,5 +1,5 @@
 import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
-import { SchemaMemberType } from '../services/schema';
+import { SchemaMemberKind } from '../services/schema';
 import { FormControl } from '@angular/forms';
 import { map, startWith } from 'rxjs/operators';
 import { FloatLabelType, MatFormFieldAppearance } from '@angular/material/form-field';
@@ -41,7 +41,7 @@ export class ConnectionNameAutocompleteComponent {
   placeholder: string;
 
   @Input()
-  schemaMemberType: SchemaMemberType = 'TYPE';
+  schemaMemberType: SchemaMemberKind = 'TYPE';
 
   @Input()
   connections: ConnectorSummary[] = [];

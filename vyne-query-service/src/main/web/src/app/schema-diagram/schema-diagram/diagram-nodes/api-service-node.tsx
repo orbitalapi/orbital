@@ -17,6 +17,15 @@ interface OperationsListProps {
 function ApiNode(node: Node<MemberWithLinks>) {
   const service = node.data.member.member as Service;
 
+  const operationClickHandler = (event, operation:OperationLike) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    node.data.clickHandler({
+      name: operation,
+      type: 'OPERATION'
+    })
+  }
   function NoArgOperation(props: { operation: OperationLike, operationLinks: Links }) {
     const { operation, operationLinks } = props;
     return (<>
@@ -24,7 +33,7 @@ function ApiNode(node: Node<MemberWithLinks>) {
         <td colSpan={2} className="">
           <div className={'handle-container'}>
             <LinkHandle node={node} links={operationLinks.inputs} position={Position.Left}></LinkHandle>
-            {operation.qualifiedName.shortDisplayName}
+            <a href='#' onClick={(event) => operationClickHandler(event, operation)}>{operation.qualifiedName.shortDisplayName}</a>
           </div>
 
         </td>
@@ -43,7 +52,7 @@ function ApiNode(node: Node<MemberWithLinks>) {
     return (<>
       <tr>
         <td colSpan={3} className="operation-name">
-          {operation.qualifiedName.shortDisplayName}
+          <a href='#' onClick={(event) => operationClickHandler(event, operation)}>{operation.qualifiedName.shortDisplayName}</a>
         </td>
       </tr>
       <tr>
@@ -109,7 +118,7 @@ function ApiNode(node: Node<MemberWithLinks>) {
 
   function getIcon(): string {
     switch (service.serviceKind) {
-      case 'Api':
+      case 'API':
         return 'assets/img/chart-icons/api-icon.svg';
       case 'Database':
         return 'assets/img/chart-icons/database-icon.svg';
@@ -122,6 +131,11 @@ function ApiNode(node: Node<MemberWithLinks>) {
     }
   }
 
+  const clickHandler = (event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    node.data.clickHandler(node.data.member);
+  }
   return (
     <SchemaNodeContainer>
       <div className={'node-icon-outer-container'}>
@@ -141,7 +155,7 @@ function ApiNode(node: Node<MemberWithLinks>) {
             <div className={'handle-container'}>
               {/*For services, there's really only inbound links when we're mapping lineage*/}
               <LinkHandle node={node} links={node.data.links.inputs} position={Position.Left} allowConnectionToFloat></LinkHandle>
-              {node.data.member.name.shortDisplayName}
+              <a href='#' onClick={(event) => clickHandler(event)}>{node.data.member.name.shortDisplayName}</a>
               <LinkHandle node={node} links={node.data.links.inputs} position={Position.Right}  allowConnectionToFloat></LinkHandle>
             </div>
           </th>

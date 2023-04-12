@@ -2,8 +2,8 @@ package io.vyne.pipelines.jet
 
 import io.vyne.VersionedTypeReference
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
-import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
-import io.vyne.connectors.jdbc.JdbcDriver
+import io.vyne.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
+import io.vyne.connectors.config.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.SqlUtils
 import io.vyne.connectors.jdbc.builders.PostgresJdbcUrlBuilder
 import io.vyne.schemas.Type

@@ -1,14 +1,18 @@
 package io.vyne.schemaServer.core.file.packages
 
-import io.vyne.schemaServer.core.adaptors.taxi.TaxiSchemaSourcesAdaptor
-import io.vyne.schemaServer.core.file.*
+import io.vyne.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
+import io.vyne.schemaServer.core.file.FileChangeDetectionMethod
+import io.vyne.schemaServer.core.file.FileSystemPackageSpec
+import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
 import mu.KotlinLogging
 
 /**
  * Responsible for creating a FileSystemPackageLoader
  * from a FileSystemPackageSpec
  */
-class FileSystemPackageLoaderFactory {
+class FileSystemPackageLoaderFactory(
+   private val adaptorFactory: SchemaSourcesAdaptorFactory = SchemaSourcesAdaptorFactory()
+) {
    private val logger = KotlinLogging.logger {}
 
    // design choice:
@@ -21,9 +25,11 @@ class FileSystemPackageLoaderFactory {
          FileChangeDetectionMethod.POLL -> ReactivePollingFileSystemMonitor(spec.path, config.pollFrequency)
          FileChangeDetectionMethod.WATCH -> ReactiveWatchingFileSystemMonitor(spec.path)
       }
+
+      val adaptor = adaptorFactory.getAdaptor(spec.loader)
       return FileSystemPackageLoader(
          spec,
-         TaxiSchemaSourcesAdaptor(),
+         adaptor,
          monitor,
       )
    }

@@ -34,3 +34,7 @@ variable "taxi_playground_docker_image_id" {
   type        = string
   description = "The specific image ID which should be deployed"
 }
+
+variable "domain_name" {
+  type        = string
+}

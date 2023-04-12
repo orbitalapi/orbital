@@ -27,14 +27,15 @@ class JsonIngesterBenchmarkTest {
       val versionedType = taxiSchema.versionedType("OrderWindowSummary".fqn())
       val resource = Resources.getResource("Coinbase_BTCUSD.json").toURI()
 
-      Benchmark.benchmark("ingest JSON to db") { stopwatch ->
+      Benchmark.benchmark("ingest JSON to db", warmup = 0, iterations = 1) { stopwatch ->
 
          val pipelineSource = JsonStreamSource(
             Flux.just(File(resource).inputStream()),
             versionedType,
             taxiSchema,
             MessageIds.uniqueId(),
-            ObjectMapper())
+            ObjectMapper()
+         )
 
          pipelineSource.stream.blockLast()
 

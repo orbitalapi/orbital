@@ -5,14 +5,14 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.22.0-SNAPSHOT</version>
+      <version>0.24.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>vyne-search</artifactId>
 
    <properties>
-      <lucene.version>9.4.2</lucene.version>
+      <lucene.version>9.5.0</lucene.version>
    </properties>
 
    <dependencies>

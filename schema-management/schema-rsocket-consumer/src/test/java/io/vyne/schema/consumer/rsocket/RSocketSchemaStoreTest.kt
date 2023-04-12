@@ -18,10 +18,10 @@ import io.vyne.utils.log
 import org.junit.After
 import org.junit.Ignore
 import org.junit.Test
-import org.springframework.util.SocketUtils
+import org.springframework.test.util.TestSocketUtils
 import reactor.core.Disposable
 import reactor.core.publisher.Sinks
-import reactor.core.publisher.toFlux
+import reactor.kotlin.core.publisher.toFlux
 import java.util.concurrent.TimeUnit
 
 class RSocketSchemaStoreTest {
@@ -47,7 +47,7 @@ class RSocketSchemaStoreTest {
 
    @Test
    fun `consumes schema over rsocket`() {
-      val port = SocketUtils.findAvailableTcpPort()
+      val port = TestSocketUtils.findAvailableTcpPort()
       val (sink, _) = startServer(port)
 
       val events = mutableListOf<SchemaSetChangedEvent>()
@@ -68,7 +68,7 @@ class RSocketSchemaStoreTest {
 
    @Test
    fun `duplicate events from server don't emit multiple events`() {
-      val port = SocketUtils.findAvailableTcpPort()
+      val port = TestSocketUtils.findAvailableTcpPort()
       val (sink, _) = startServer(port)
 
       val events = mutableListOf<SchemaSetChangedEvent>()

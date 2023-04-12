@@ -5,6 +5,7 @@ import com.google.common.cache.CacheBuilder
 import io.vyne.schemas.EnumValue
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeCache
+import io.vyne.utils.Ids
 import io.vyne.utils.ImmutableEquality
 import lang.taxi.types.EnumType
 import lang.taxi.types.EnumValueQualifiedName
@@ -52,6 +53,7 @@ data class TypedEnumValue(
    override val source: DataSource,
    private val valueKind: EnumValueKind = EnumValueKind.VALUE
 ) : TypedInstance {
+   override val nodeId: String = Ids.fastUuid()
 
    override fun toString(): String {
       return "${type.qualifiedName.longDisplayName}.$enumValue"

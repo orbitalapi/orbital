@@ -1,19 +1,28 @@
 package io.vyne.schemaServer.core.repositories
 
+import com.google.common.io.Resources
 import com.jayway.awaitility.Awaitility
 import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
 import io.vyne.PackageIdentifier
+import io.vyne.schemaServer.core.file.FileSystemPackageSpec
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
+import io.vyne.schemaServer.core.git.GitRepositoryConfig
 import io.vyne.schemaServer.core.git.GitSchemaPackageLoaderFactory
 import io.vyne.schemaServer.core.publisher.SourceWatchingSchemaPublisher
 import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
 import io.vyne.schemaServer.core.repositories.lifecycle.RepositoryLifecycleManager
+import io.vyne.schemaServer.packages.OpenApiPackageLoaderSpec
+import io.vyne.schemaServer.packages.TaxiPackageLoaderSpec
 import io.vyne.schemaServer.repositories.CreateFileRepositoryRequest
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
+import lang.taxi.packages.TaxiPackageLoader
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.util.concurrent.TimeUnit
+import kotlin.test.assertFailsWith
 
 class FileRepositoryIntegrationTest {
 
@@ -21,6 +30,48 @@ class FileRepositoryIntegrationTest {
    @Rule
    @JvmField
    val folder = TemporaryFolder()
+
+   @Test
+   fun `adding a file repository to an empty folder creates a taxi project`() {
+      val configFile = folder.root.resolve("repositories.conf")
+      val eventDispatcher = RepositoryLifecycleManager()
+      val loader = FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
+
+      val projectFolder = folder.newFolder().toPath()
+      loader.addFileSpec(
+         FileSystemPackageSpec(
+            path = projectFolder,
+            packageIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
+         )
+      )
+
+      val createdProject = TaxiPackageLoader.forDirectoryContainingTaxiFile(projectFolder).load()
+      createdProject.identifier.id.shouldBe("com/foo/1.0.0")
+   }
+
+
+   @Test
+   fun `can add an openApi spec`() {
+      // Copy the OpenAPI spec somewhhere
+      val openApiSpec = folder.newFile()
+      Resources.copy(Resources.getResource("open-api/petstore-expanded.yaml"), openApiSpec.outputStream())
+
+      val configFile = folder.root.resolve("repositories.conf")
+      val eventDispatcher = RepositoryLifecycleManager()
+      val loader = FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
+
+      loader.addFileSpec(
+         FileSystemPackageSpec(
+            path = openApiSpec.toPath(),
+            loader = OpenApiPackageLoaderSpec(
+               identifier = PackageIdentifier.fromId("com/foo/1.0.0"),
+               defaultNamespace = "com.foo"
+            )
+         )
+      )
+
+
+   }
 
    @Test
    fun `configure a file repository at runtime and when files are changes then schema updates are emitted`() {
@@ -35,7 +86,7 @@ class FileRepositoryIntegrationTest {
       val repositoryManager = ReactiveRepositoryManager(
          FileSystemPackageLoaderFactory(),
          GitSchemaPackageLoaderFactory(),
-         eventDispatcher, eventDispatcher
+         eventDispatcher, eventDispatcher, eventDispatcher
       )
 
       // Setup: A SchemaStoreClient, which will
@@ -52,7 +103,8 @@ class FileRepositoryIntegrationTest {
          CreateFileRepositoryRequest(
             projectFolder.canonicalPath,
             true,
-            PackageIdentifier.fromId("foo/test/0.1.0")
+            loader = TaxiPackageLoaderSpec,
+            newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
          )
       )
 
@@ -88,7 +140,8 @@ class FileRepositoryIntegrationTest {
          CreateFileRepositoryRequest(
             projectFolder.canonicalPath,
             true,
-            PackageIdentifier.fromId("foo/test/0.1.0")
+            loader = TaxiPackageLoaderSpec,
+            newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
          )
       )
       projectFolder.resolve("src/hello.taxi")
@@ -104,7 +157,7 @@ class FileRepositoryIntegrationTest {
       val repositoryManager = ReactiveRepositoryManager(
          FileSystemPackageLoaderFactory(),
          GitSchemaPackageLoaderFactory(),
-         eventDispatcher, eventDispatcher
+         eventDispatcher, eventDispatcher, eventDispatcher
       )
 
       // Setup: A SchemaStoreClient, which will
@@ -124,4 +177,118 @@ class FileRepositoryIntegrationTest {
 
 
    }
+
+
+   @Test
+   fun `can delete git repository`() {
+      val configFile = folder.root.resolve("repositories.conf")
+      val schemaRepository =
+         FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = RepositoryLifecycleManager())
+
+      schemaRepository.load()
+         .git?.repositories?.should?.be?.empty
+
+      createFourRepositories(schemaRepository)
+      schemaRepository.shouldHaveRepositories(fileRepoCount = 2, gitRepoCount = 2)
+
+      schemaRepository.removeGitRepository("test-repo-1", PackageIdentifier.fromId("foo/bar/1.2"))
+
+      schemaRepository.shouldHaveRepositories(fileRepoCount = 2, gitRepoCount = 1)
+   }
+
+   @Test
+   fun `can delete file repository`() {
+      val configFile = folder.root.resolve("repositories.conf")
+      val schemaRepository =
+         FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = RepositoryLifecycleManager())
+
+      schemaRepository.load()
+         .git?.repositories?.should?.be?.empty
+
+      createFourRepositories(schemaRepository)
+      schemaRepository.shouldHaveRepositories(fileRepoCount = 2, gitRepoCount = 2)
+
+      schemaRepository.removeFileRepository(PackageIdentifier.fromId("com/foo/1.0.0"))
+
+      schemaRepository.shouldHaveRepositories(fileRepoCount = 1, gitRepoCount = 2)
+
+   }
+
+   @Test
+   fun `throws error removing file repository that doesn't exist`() {
+      val configFile = folder.root.resolve("repositories.conf")
+      val schemaRepository =
+         FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = RepositoryLifecycleManager())
+
+      schemaRepository.load()
+         .git?.repositories?.should?.be?.empty
+
+      createFourRepositories(schemaRepository)
+      schemaRepository.shouldHaveRepositories(fileRepoCount = 2, gitRepoCount = 2)
+      assertFailsWith<Exception> {
+         schemaRepository.removeFileRepository(PackageIdentifier.fromId("com/bad/1.0.0"))
+      }
+      schemaRepository.shouldHaveRepositories(fileRepoCount = 2, gitRepoCount = 2)
+
+   }
+
+   @Test
+   fun `throws error removing git repository that doesn't exist`() {
+      val configFile = folder.root.resolve("repositories.conf")
+      val schemaRepository =
+         FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = RepositoryLifecycleManager())
+
+      schemaRepository.load()
+         .git?.repositories?.should?.be?.empty
+
+      createFourRepositories(schemaRepository)
+      schemaRepository.shouldHaveRepositories(fileRepoCount = 2, gitRepoCount = 2)
+      assertFailsWith<Exception> {
+         schemaRepository.removeGitRepository("bad-repo-1", PackageIdentifier.fromId("com/git/1.0.0"))
+      }
+      schemaRepository.shouldHaveRepositories(fileRepoCount = 2, gitRepoCount = 2)
+
+   }
+
+   private fun createFourRepositories(schemaRepository: FileSchemaRepositoryConfigLoader) {
+      schemaRepository.addGitSpec(
+         GitRepositoryConfig(
+            "test-repo-1",
+            "https://github.com/test/repo1",
+            "master",
+         )
+      )
+      schemaRepository.addGitSpec(
+         GitRepositoryConfig(
+            "test-repo-2",
+            "https://github.com/test/repo2",
+            "master",
+         )
+      )
+
+      schemaRepository.addFileSpec(
+         FileSystemPackageSpec(
+            folder.root.resolve("project-1/").toPath(),
+            loader = TaxiPackageLoaderSpec,
+            packageIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
+         )
+      )
+
+
+      schemaRepository.addFileSpec(
+         FileSystemPackageSpec(
+            folder.root.resolve("project-2/").toPath(),
+            loader = TaxiPackageLoaderSpec,
+            packageIdentifier = PackageIdentifier.fromId("com/bar/1.0.0")
+         )
+      )
+   }
+
+}
+
+private fun FileSchemaRepositoryConfigLoader.shouldHaveRepositories(fileRepoCount: Int, gitRepoCount: Int) {
+   this.load()
+      .git?.repositories?.shouldHaveSize(gitRepoCount)
+   this.load()
+      .file?.projects?.shouldHaveSize(fileRepoCount)
 }

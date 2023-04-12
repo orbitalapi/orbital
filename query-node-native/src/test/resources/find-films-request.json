@@ -1,0 +1,1140 @@
+{
+   "query": "find { Film[] }",
+   "sourcePackages": [
+      {
+         "packageMetadata": {
+            "identifier": {
+               "organisation": "io.vyne",
+               "name": "core-types",
+               "version": "1.0.0",
+               "unversionedId": "io.vyne/core-types",
+               "id": "io.vyne/core-types/1.0.0",
+               "uriSafeId": "io.vyne:core-types:1.0.0"
+            },
+            "submissionDate": "2023-02-17T22:43:58.282764867Z",
+            "dependencies": []
+         },
+         "sources": [
+            {
+               "name": "UserTypes",
+               "version": "0.1.0",
+               "content": "namespace io.vyne {\n   type Username inherits String\n}",
+               "packageIdentifier": {
+                  "organisation": "io.vyne",
+                  "name": "core-types",
+                  "version": "1.0.0",
+                  "unversionedId": "io.vyne/core-types",
+                  "id": "io.vyne/core-types/1.0.0",
+                  "uriSafeId": "io.vyne:core-types:1.0.0"
+               },
+               "packageQualifiedName": "[io.vyne/core-types/1.0.0]/UserTypes",
+               "id": "UserTypes:0.1.0",
+               "contentHash": "00a414"
+            },
+            {
+               "name": "VyneQueryError",
+               "version": "0.1.0",
+               "content": "namespace io.vyne {\n   type Error inherits String\n}",
+               "packageIdentifier": {
+                  "organisation": "io.vyne",
+                  "name": "core-types",
+                  "version": "1.0.0",
+                  "unversionedId": "io.vyne/core-types",
+                  "id": "io.vyne/core-types/1.0.0",
+                  "uriSafeId": "io.vyne:core-types:1.0.0"
+               },
+               "packageQualifiedName": "[io.vyne/core-types/1.0.0]/VyneQueryError",
+               "id": "VyneQueryError:0.1.0",
+               "contentHash": "f2be1f"
+            },
+            {
+               "name": "JdbcConnectors",
+               "version": "0.1.0",
+               "content": "\nnamespace io.vyne.jdbc {\n   type ConnectionName inherits String\n   annotation DatabaseService {\n      connection : ConnectionName\n   }\n\n   annotation Table {\n      connection : ConnectionName\n      table : TableName inherits String\n      schema: SchemaName inherits String\n\n   }\n}\n   ",
+               "packageIdentifier": {
+                  "organisation": "io.vyne",
+                  "name": "core-types",
+                  "version": "1.0.0",
+                  "unversionedId": "io.vyne/core-types",
+                  "id": "io.vyne/core-types/1.0.0",
+                  "uriSafeId": "io.vyne:core-types:1.0.0"
+               },
+               "packageQualifiedName": "[io.vyne/core-types/1.0.0]/JdbcConnectors",
+               "id": "JdbcConnectors:0.1.0",
+               "contentHash": "f78d95"
+            },
+            {
+               "name": "TaxiQL",
+               "version": "0.1.0",
+               "content": "namespace vyne.vyneQl { type VyneQlQuery inherits String }",
+               "packageIdentifier": {
+                  "organisation": "io.vyne",
+                  "name": "core-types",
+                  "version": "1.0.0",
+                  "unversionedId": "io.vyne/core-types",
+                  "id": "io.vyne/core-types/1.0.0",
+                  "uriSafeId": "io.vyne:core-types:1.0.0"
+               },
+               "packageQualifiedName": "[io.vyne/core-types/1.0.0]/TaxiQL",
+               "id": "TaxiQL:0.1.0",
+               "contentHash": "c1b898"
+            },
+            {
+               "name": "KafkaConnectors",
+               "version": "0.1.0",
+               "content": "\nnamespace  io.vyne.kafka {\n   annotation KafkaService {\n      connectionName : ConnectionName inherits String\n   }\n   enum TopicOffset {\n      earliest,\n      latest,\n      none\n   }\n   annotation KafkaOperation {\n      topic : TopicName inherits String\n      offset : TopicOffset\n   }\n}\n",
+               "packageIdentifier": {
+                  "organisation": "io.vyne",
+                  "name": "core-types",
+                  "version": "1.0.0",
+                  "unversionedId": "io.vyne/core-types",
+                  "id": "io.vyne/core-types/1.0.0",
+                  "uriSafeId": "io.vyne:core-types:1.0.0"
+               },
+               "packageQualifiedName": "[io.vyne/core-types/1.0.0]/KafkaConnectors",
+               "id": "KafkaConnectors:0.1.0",
+               "contentHash": "8bb20c"
+            },
+            {
+               "name": "Catalog",
+               "version": "0.1.0",
+               "content": "namespace io.vyne.catalog {\n   annotation DataOwner {\n      id : io.vyne.Username\n      name : String\n   }\n}",
+               "packageIdentifier": {
+                  "organisation": "io.vyne",
+                  "name": "core-types",
+                  "version": "1.0.0",
+                  "unversionedId": "io.vyne/core-types",
+                  "id": "io.vyne/core-types/1.0.0",
+                  "uriSafeId": "io.vyne:core-types:1.0.0"
+               },
+               "packageQualifiedName": "[io.vyne/core-types/1.0.0]/Catalog",
+               "id": "Catalog:0.1.0",
+               "contentHash": "0e7eb9"
+            },
+            {
+               "name": "AwsS3Connectors",
+               "version": "0.1.0",
+               "content": "\nnamespace  io.vyne.aws.s3 {\n   annotation S3Service {\n      connectionName : ConnectionName inherits String\n   }\n\n   annotation S3Operation {\n      bucket : BucketName inherits String\n   }\n\n   type S3EntryKey inherits String\n}\n",
+               "packageIdentifier": {
+                  "organisation": "io.vyne",
+                  "name": "core-types",
+                  "version": "1.0.0",
+                  "unversionedId": "io.vyne/core-types",
+                  "id": "io.vyne/core-types/1.0.0",
+                  "uriSafeId": "io.vyne:core-types:1.0.0"
+               },
+               "packageQualifiedName": "[io.vyne/core-types/1.0.0]/AwsS3Connectors",
+               "id": "AwsS3Connectors:0.1.0",
+               "contentHash": "ff53f3"
+            },
+            {
+               "name": "AwsSqsConnectors",
+               "version": "0.1.0",
+               "content": "\nnamespace  io.vyne.aws.sqs {\n   annotation SqsService {\n      connectionName : ConnectionName inherits String\n   }\n   annotation SqsOperation {\n      queue : QueueName inherits String\n   }\n}\n",
+               "packageIdentifier": {
+                  "organisation": "io.vyne",
+                  "name": "core-types",
+                  "version": "1.0.0",
+                  "unversionedId": "io.vyne/core-types",
+                  "id": "io.vyne/core-types/1.0.0",
+                  "uriSafeId": "io.vyne:core-types:1.0.0"
+               },
+               "packageQualifiedName": "[io.vyne/core-types/1.0.0]/AwsSqsConnectors",
+               "id": "AwsSqsConnectors:0.1.0",
+               "contentHash": "a704f5"
+            },
+            {
+               "name": "AzureStoreConnectors",
+               "version": "0.1.0",
+               "content": "\nnamespace  io.vyne.azure.store {\n   annotation BlobService {\n      connectionName : ConnectionName inherits String\n   }\n\n   annotation AzureStoreOperation {\n      container : AzureStoreContainer inherits String\n   }\n\n   type AzureStoreBlob inherits String\n}\n",
+               "packageIdentifier": {
+                  "organisation": "io.vyne",
+                  "name": "core-types",
+                  "version": "1.0.0",
+                  "unversionedId": "io.vyne/core-types",
+                  "id": "io.vyne/core-types/1.0.0",
+                  "uriSafeId": "io.vyne:core-types:1.0.0"
+               },
+               "packageQualifiedName": "[io.vyne/core-types/1.0.0]/AzureStoreConnectors",
+               "id": "AzureStoreConnectors:0.1.0",
+               "contentHash": "1a7bd5"
+            },
+            {
+               "name": "AwsLambdaConnectors",
+               "version": "0.1.0",
+               "content": "\nnamespace  io.vyne.aws.lambda {\n   annotation AwsLambdaService {\n      connectionName : ConnectionName inherits String\n   }\n\n   annotation LambdaOperation {\n      name : OperationName inherits String\n   }\n\n}\n",
+               "packageIdentifier": {
+                  "organisation": "io.vyne",
+                  "name": "core-types",
+                  "version": "1.0.0",
+                  "unversionedId": "io.vyne/core-types",
+                  "id": "io.vyne/core-types/1.0.0",
+                  "uriSafeId": "io.vyne:core-types:1.0.0"
+               },
+               "packageQualifiedName": "[io.vyne/core-types/1.0.0]/AwsLambdaConnectors",
+               "id": "AwsLambdaConnectors:0.1.0",
+               "contentHash": "26e039"
+            },
+            {
+               "name": "CsvFormat",
+               "version": "0.1.0",
+               "content": "namespace io.vyne.formats {\n\n   annotation Csv {\n      delimiter : String?\n      firstRecordAsHeader : Boolean?\n      nullValue : String?\n      containsTrailingDelimiters : Boolean?\n      ignoreContentBefore : String?\n      useFieldNamesAsColumnNames: Boolean?\n      withQuote: String?\n   }\n\n}",
+               "packageIdentifier": {
+                  "organisation": "io.vyne",
+                  "name": "core-types",
+                  "version": "1.0.0",
+                  "unversionedId": "io.vyne/core-types",
+                  "id": "io.vyne/core-types/1.0.0",
+                  "uriSafeId": "io.vyne:core-types:1.0.0"
+               },
+               "packageQualifiedName": "[io.vyne/core-types/1.0.0]/CsvFormat",
+               "id": "CsvFormat:0.1.0",
+               "contentHash": "64dbb7"
+            }
+         ],
+         "identifier": {
+            "organisation": "io.vyne",
+            "name": "core-types",
+            "version": "1.0.0",
+            "unversionedId": "io.vyne/core-types",
+            "id": "io.vyne/core-types/1.0.0",
+            "uriSafeId": "io.vyne:core-types:1.0.0"
+         }
+      },
+      {
+         "packageMetadata": {
+            "identifier": {
+               "organisation": "demo.vyne",
+               "name": "films-demo",
+               "version": "0.1.0",
+               "unversionedId": "demo.vyne/films-demo",
+               "id": "demo.vyne/films-demo/0.1.0",
+               "uriSafeId": "demo.vyne:films-demo:0.1.0"
+            },
+            "submissionDate": "2023-02-17T19:35:45.229248569Z",
+            "dependencies": []
+         },
+         "sources": [
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/country/types/LastUpdate.taxi",
+               "version": "0.1.0",
+               "content": "namespace country.types {\n   type LastUpdate inherits Instant\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/country/types/LastUpdate.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/country/types/LastUpdate.taxi:0.1.0",
+               "contentHash": "756f0b"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/country/types/CountryId.taxi",
+               "version": "0.1.0",
+               "content": "namespace country.types {\n   type CountryId inherits Int\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/country/types/CountryId.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/country/types/CountryId.taxi:0.1.0",
+               "contentHash": "7d7695"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/country/types/Country.taxi",
+               "version": "0.1.0",
+               "content": "namespace country.types {\n   type Country inherits String\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/country/types/Country.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/country/types/Country.taxi:0.1.0",
+               "contentHash": "77fcad"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/country/Country.taxi",
+               "version": "0.1.0",
+               "content": "import country.types.CountryId\nimport country.types.Country\nimport country.types.LastUpdate\nimport io.vyne.jdbc.Table\nnamespace country {\n   @io.vyne.jdbc.Table(table = \"country\" , schema = \"public\" , connection = \"films\")\n      model Country {\n         @Id country_id : country.types.CountryId\n         country : country.types.Country\n         last_update : country.types.LastUpdate\n      }\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/country/Country.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/country/Country.taxi:0.1.0",
+               "contentHash": "35cf9e"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/country/CountryService.taxi",
+               "version": "0.1.0",
+               "content": "namespace country {\n   @io.vyne.jdbc.DatabaseService(connection = \"films\")\n      service CountryService {\n      }\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/country/CountryService.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/country/CountryService.taxi:0.1.0",
+               "contentHash": "4c4313"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/staff/types/StaffId.taxi",
+               "version": "0.1.0",
+               "content": "namespace staff.types {\n   type StaffId inherits Int\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/staff/types/StaffId.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/staff/types/StaffId.taxi:0.1.0",
+               "contentHash": "d4ebc0"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/store/types/LastUpdate.taxi",
+               "version": "0.1.0",
+               "content": "namespace store.types {\n   type LastUpdate inherits Instant\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/store/types/LastUpdate.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/store/types/LastUpdate.taxi:0.1.0",
+               "contentHash": "3d6664"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/store/types/StoreId.taxi",
+               "version": "0.1.0",
+               "content": "namespace store.types {\n   type StoreId inherits Int\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/store/types/StoreId.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/store/types/StoreId.taxi:0.1.0",
+               "contentHash": "8980ad"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/store/Store.taxi",
+               "version": "0.1.0",
+               "content": "import store.types.StoreId\nimport staff.types.StaffId\nimport address.types.AddressId\nimport store.types.LastUpdate\nimport io.vyne.jdbc.Table\nnamespace store {\n   @io.vyne.jdbc.Table(table = \"store\" , schema = \"public\" , connection = \"films\")\n      model Store {\n         @Id store_id : store.types.StoreId\n         manager_staff_id : staff.types.StaffId\n         address_id : address.types.AddressId\n         last_update : store.types.LastUpdate\n      }\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/store/Store.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/store/Store.taxi:0.1.0",
+               "contentHash": "65f5e2"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/store/StoreService.taxi",
+               "version": "0.1.0",
+               "content": "namespace store {\n   @io.vyne.jdbc.DatabaseService(connection = \"films\")\n      service StoreService {\n      }\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/store/StoreService.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/store/StoreService.taxi:0.1.0",
+               "contentHash": "451476"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/NewFilmReleaseAnnouncement.taxi",
+               "version": "0.1.0",
+               "content": "import demo.netflix.NetflixFilmId\n@lang.taxi.formats.ProtobufMessage(packageName = \"\" , messageName = \"NewFilmReleaseAnnouncement\")\nmodel NewFilmReleaseAnnouncement {\n   @lang.taxi.formats.ProtobufField(tag = 1 , protoType = \"int32\") @Id filmId : NetflixFilmId?\n   @lang.taxi.formats.ProtobufField(tag = 2 , protoType = \"string\") announcement : String?\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/NewFilmReleaseAnnouncement.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/NewFilmReleaseAnnouncement.taxi:0.1.0",
+               "contentHash": "7c672c"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/address/types/AddressId.taxi",
+               "version": "0.1.0",
+               "content": "namespace address.types {\n   type AddressId inherits Int\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/address/types/AddressId.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/address/types/AddressId.taxi:0.1.0",
+               "contentHash": "87062e"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/language/types/LanguageId.taxi",
+               "version": "0.1.0",
+               "content": "namespace language.types {\n   type LanguageId inherits Int\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/language/types/LanguageId.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/language/types/LanguageId.taxi:0.1.0",
+               "contentHash": "abbc59"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/io/vyne/films/announcements/KafkaService.taxi",
+               "version": "0.1.0",
+               "content": "import io.vyne.kafka.KafkaOperation\nimport lang.taxi.Stream\nimport NewFilmReleaseAnnouncement\nnamespace io.vyne.films.announcements {\n   @io.vyne.kafka.KafkaService(connectionName = \"kafka\")\n      service KafkaService {\n         @io.vyne.kafka.KafkaOperation(topic = \"releases\" , offset = \"latest\")\n         operation consumeFromReleases(  ) : Stream<NewFilmReleaseAnnouncement>\n      }\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/io/vyne/films/announcements/KafkaService.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/io/vyne/films/announcements/KafkaService.taxi:0.1.0",
+               "contentHash": "3179b3"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/actorInfo/types/FirstName.taxi",
+               "version": "0.1.0",
+               "content": "namespace actorInfo.types {\n   type FirstName inherits String\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/actorInfo/types/FirstName.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/actorInfo/types/FirstName.taxi:0.1.0",
+               "contentHash": "6d1795"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/actorInfo/types/LastName.taxi",
+               "version": "0.1.0",
+               "content": "namespace actorInfo.types {\n   type LastName inherits String\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/actorInfo/types/LastName.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/actorInfo/types/LastName.taxi:0.1.0",
+               "contentHash": "e6e3ba"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/actorInfo/types/FilmInfo.taxi",
+               "version": "0.1.0",
+               "content": "namespace actorInfo.types {\n   type FilmInfo inherits String\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/actorInfo/types/FilmInfo.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/actorInfo/types/FilmInfo.taxi:0.1.0",
+               "contentHash": "1261a3"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/actorInfo/types/ActorId.taxi",
+               "version": "0.1.0",
+               "content": "namespace actorInfo.types {\n   type ActorId inherits Int\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/actorInfo/types/ActorId.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/actorInfo/types/ActorId.taxi:0.1.0",
+               "contentHash": "82315b"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/actorInfo/ActorInfo.taxi",
+               "version": "0.1.0",
+               "content": "import actorInfo.types.ActorId\nimport actorInfo.types.FirstName\nimport actorInfo.types.LastName\nimport actorInfo.types.FilmInfo\nimport io.vyne.jdbc.Table\nnamespace actorInfo {\n   @io.vyne.jdbc.Table(table = \"actor_info\" , schema = \"public\" , connection = \"films\")\n      model ActorInfo {\n         actor_id : actorInfo.types.ActorId?\n         first_name : actorInfo.types.FirstName?\n         last_name : actorInfo.types.LastName?\n         film_info : actorInfo.types.FilmInfo?\n      }\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/actorInfo/ActorInfo.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/actorInfo/ActorInfo.taxi:0.1.0",
+               "contentHash": "263c01"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/actorInfo/ActorInfoService.taxi",
+               "version": "0.1.0",
+               "content": "import actorInfo.ActorInfo\nnamespace actorInfo {\n   @io.vyne.jdbc.DatabaseService(connection = \"films\")\n      service ActorInfoService {\n         table actorinfo : lang.taxi.Array<actorInfo.ActorInfo>\n      }\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/actorInfo/ActorInfoService.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/actorInfo/ActorInfoService.taxi:0.1.0",
+               "contentHash": "3b6ff0"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/vyne/internal-types.taxi",
+               "version": "0.1.0",
+               "content": "namespace vyne.vyneQl { type VyneQlQuery inherits String }\n\n\nnamespace  io.vyne.kafka {\n   annotation KafkaService {\n      connectionName : ConnectionName inherits String\n   }\n   enum TopicOffset {\n      earliest,\n      latest,\n      none\n   }\n   annotation KafkaOperation {\n      topic : TopicName inherits String\n      offset : TopicOffset\n   }\n}\n",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/vyne/internal-types.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/vyne/internal-types.taxi:0.1.0",
+               "contentHash": "6328c6"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/FilmService.taxi",
+               "version": "0.1.0",
+               "content": "import vyne.vyneQl.VyneQlQuery\nimport film.Film\nnamespace film {\n   @io.vyne.jdbc.DatabaseService(connection = \"films\")\n      service FilmDatabase {\n         vyneQl query findManyFilm(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<film.Film> with capabilities {\n            sum,\n            count,\n            avg,\n            min,\n            max,\n            filter(==,!=,in,like,>,<,>=,<=)\n         }\n         vyneQl query findOneFilm(querySpec: vyne.vyneQl.VyneQlQuery):film.Film with capabilities {\n            sum,\n            count,\n            avg,\n            min,\n            max,\n            filter(==,!=,in,like,>,<,>=,<=)\n         }\n      }\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/FilmService.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/FilmService.taxi:0.1.0",
+               "contentHash": "b3898a"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/ReplacementCost.taxi",
+               "version": "0.1.0",
+               "content": "namespace film.types {\n   type ReplacementCost inherits Decimal\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/ReplacementCost.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/ReplacementCost.taxi:0.1.0",
+               "contentHash": "f71714"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/LastUpdate.taxi",
+               "version": "0.1.0",
+               "content": "namespace film.types {\n   type LastUpdate inherits Instant\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/LastUpdate.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/LastUpdate.taxi:0.1.0",
+               "contentHash": "a4f44f"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/FilmId.taxi",
+               "version": "0.1.0",
+               "content": "namespace film.types {\n   type FilmId inherits Int\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/FilmId.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/FilmId.taxi:0.1.0",
+               "contentHash": "a0b9f0"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/Title.taxi",
+               "version": "0.1.0",
+               "content": "namespace film.types {\n   type Title inherits String\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/Title.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/Title.taxi:0.1.0",
+               "contentHash": "af88ac"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/Fulltext.taxi",
+               "version": "0.1.0",
+               "content": "namespace film.types {\n   type Fulltext inherits Any\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/Fulltext.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/Fulltext.taxi:0.1.0",
+               "contentHash": "15bfd0"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/Description.taxi",
+               "version": "0.1.0",
+               "content": "namespace film.types {\n   type Description inherits String\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/Description.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/Description.taxi:0.1.0",
+               "contentHash": "ec3849"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/ReleaseYear.taxi",
+               "version": "0.1.0",
+               "content": "namespace film.types {\n   type ReleaseYear inherits Any\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/ReleaseYear.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/ReleaseYear.taxi:0.1.0",
+               "contentHash": "49725b"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/SpecialFeatures.taxi",
+               "version": "0.1.0",
+               "content": "namespace film.types {\n   type SpecialFeatures inherits String\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/SpecialFeatures.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/SpecialFeatures.taxi:0.1.0",
+               "contentHash": "2c1071"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/Length.taxi",
+               "version": "0.1.0",
+               "content": "namespace film.types {\n   type Length inherits Int\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/Length.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/Length.taxi:0.1.0",
+               "contentHash": "651a25"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/RentalRate.taxi",
+               "version": "0.1.0",
+               "content": "namespace film.types {\n   type RentalRate inherits Decimal\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/RentalRate.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/RentalRate.taxi:0.1.0",
+               "contentHash": "e1cc8c"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/Rating.taxi",
+               "version": "0.1.0",
+               "content": "namespace film.types {\n   type Rating inherits String\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/Rating.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/Rating.taxi:0.1.0",
+               "contentHash": "5f228f"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/RentalDuration.taxi",
+               "version": "0.1.0",
+               "content": "namespace film.types {\n   type RentalDuration inherits Int\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/RentalDuration.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/types/RentalDuration.taxi:0.1.0",
+               "contentHash": "584e8a"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/Film.taxi",
+               "version": "0.1.0",
+               "content": "import film.types.Title\nimport film.types.Description\nimport film.types.ReleaseYear\nimport language.types.LanguageId\nimport film.types.RentalDuration\nimport film.types.RentalRate\nimport film.types.Length\nimport film.types.ReplacementCost\nimport film.types.Rating\nimport film.types.LastUpdate\nimport film.types.Fulltext\nimport film.types.SpecialFeatures\nnamespace film {\n   @io.vyne.jdbc.Table(table = \"film\" , schema = \"public\" , connection = \"films\")\n      model Film {\n         @Id film_id : films.FilmId\n         title : film.types.Title\n         description : film.types.Description?\n         release_year : film.types.ReleaseYear?\n         language_id : language.types.LanguageId\n         original_language_id : language.types.LanguageId?\n         rental_duration : film.types.RentalDuration\n         rental_rate : film.types.RentalRate\n         length : film.types.Length?\n         replacement_cost : film.types.ReplacementCost\n         rating : film.types.Rating?\n         last_update : film.types.LastUpdate\n         special_features : film.types.SpecialFeatures[]?\n         fulltext : film.types.Fulltext\n      }\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/Film.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/Film.taxi:0.1.0",
+               "contentHash": "3290a0"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/netflix/netflix-types.taxi",
+               "version": "0.1.0",
+               "content": "namespace demo.netflix\n\ntype NetflixFilmId inherits Int",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/netflix/netflix-types.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/netflix/netflix-types.taxi:0.1.0",
+               "contentHash": "2468a0"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/Film.annotations.taxi",
+               "version": "0.1.0",
+               "content": "namespace film\n\n// This code is generated, and will be automatically updated\n@io.vyne.jdbc.Table(table = \"film\", schema = \"public\", connection = \"films\")\n@Ann\ntype extension Film {}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/Film.annotations.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/Film.annotations.taxi:0.1.0",
+               "contentHash": "365e0c"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/Film.dataOwner.taxi",
+               "version": "0.1.0",
+               "content": "namespace film\n\n// This code is generated, and will be automatically updated\n@io.vyne.catalog.DataOwner( id = \"michael.stone\" , name = \"Michael Stone\" )\ntype extension Film {}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/Film.dataOwner.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/Film.dataOwner.taxi:0.1.0",
+               "contentHash": "3eca46"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/inventory/types/LastUpdate.taxi",
+               "version": "0.1.0",
+               "content": "namespace inventory.types {\n   type LastUpdate inherits Instant\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/inventory/types/LastUpdate.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/inventory/types/LastUpdate.taxi:0.1.0",
+               "contentHash": "72a91b"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/inventory/types/InventoryId.taxi",
+               "version": "0.1.0",
+               "content": "namespace inventory.types {\n   type InventoryId inherits Int\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/inventory/types/InventoryId.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/inventory/types/InventoryId.taxi:0.1.0",
+               "contentHash": "ef2633"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/inventory/Inventory.taxi",
+               "version": "0.1.0",
+               "content": "import inventory.types.InventoryId\nimport film.types.FilmId\nimport store.types.StoreId\nimport inventory.types.LastUpdate\nimport io.vyne.jdbc.Table\nnamespace inventory {\n   @io.vyne.jdbc.Table(table = \"inventory\" , schema = \"public\" , connection = \"films\")\n      model Inventory {\n         @Id inventory_id : inventory.types.InventoryId\n         film_id : film.types.FilmId\n         store_id : store.types.StoreId\n         last_update : inventory.types.LastUpdate\n      }\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/inventory/Inventory.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/inventory/Inventory.taxi:0.1.0",
+               "contentHash": "efa61f"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/inventory/InventoryService.taxi",
+               "version": "0.1.0",
+               "content": "namespace inventory {\n   @io.vyne.jdbc.DatabaseService(connection = \"films\")\n      service InventoryService {\n      }\n}",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/inventory/InventoryService.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/inventory/InventoryService.taxi:0.1.0",
+               "contentHash": "b5ffc4"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/reviews/review-site.taxi",
+               "version": "0.1.0",
+               "content": "namespace films.reviews\n\ntype SquashedTomatoesFilmId inherits String\ntype FilmReviewScore inherits Decimal\ntype ReviewText inherits String",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/reviews/review-site.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/reviews/review-site.taxi:0.1.0",
+               "contentHash": "83b11b"
+            },
+            {
+               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/films.taxi",
+               "version": "0.1.0",
+               "content": "namespace films\n\ntype StreamingProviderName inherits String\ntype StreamingProviderPrice inherits Decimal\n\ntype FilmId inherits Int",
+               "packageIdentifier": {
+                  "organisation": "demo.vyne",
+                  "name": "films-demo",
+                  "version": "0.1.0",
+                  "unversionedId": "demo.vyne/films-demo",
+                  "id": "demo.vyne/films-demo/0.1.0",
+                  "uriSafeId": "demo.vyne:films-demo:0.1.0"
+               },
+               "packageQualifiedName": "[demo.vyne/films-demo/0.1.0]/file:///home/martypitt/dev/vyne-demos/films/taxi/src/films.taxi",
+               "id": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/films.taxi:0.1.0",
+               "contentHash": "061886"
+            }
+         ],
+         "identifier": {
+            "organisation": "demo.vyne",
+            "name": "films-demo",
+            "version": "0.1.0",
+            "unversionedId": "demo.vyne/films-demo",
+            "id": "demo.vyne/films-demo/0.1.0",
+            "uriSafeId": "demo.vyne:films-demo:0.1.0"
+         }
+      },
+      {
+         "packageMetadata": {
+            "identifier": {
+               "organisation": "io.petflex.demos",
+               "name": "id-lookup-service",
+               "version": "0.0.0",
+               "unversionedId": "io.petflex.demos/id-lookup-service",
+               "id": "io.petflex.demos/id-lookup-service/0.0.0",
+               "uriSafeId": "io.petflex.demos:id-lookup-service:0.0.0"
+            },
+            "submissionDate": "2023-02-17T19:35:41.569783207Z",
+            "dependencies": []
+         },
+         "sources": [
+            {
+               "name": "id-resolution-service",
+               "version": "0.0.0",
+               "content": "import films.FilmId\nimport demo.netflix.NetflixFilmId\nnamespace io.vyne.films.idlookup {\n   model IdResolution {\n      filmId : films.FilmId\n      netflixId : demo.netflix.NetflixFilmId\n      squashedTomatoesFilmId : films.reviews.SquashedTomatoesFilmId\n   }\n   \n   service IdLookupService {\n      @HttpOperation(method = \"GET\" , url = \"http://localhost:9986/ids/squashed/{films.reviews.SquashedTomatoesFilmId}\")\n      operation lookupFromSquashedTomatoesId(  id : String ) : IdResolution\n      @HttpOperation(method = \"GET\" , url = \"http://localhost:9986/ids/internal/{films.FilmId}\")\n      operation lookupFromInternalFilmId(  id : films.FilmId ) : IdResolution\n      @HttpOperation(method = \"GET\" , url = \"http://localhost:9986/ids/netflix/{demo.netflix.NetflixFilmId}\")\n      operation lookupFromNetflixFilmId(  id : demo.netflix.NetflixFilmId ) : IdResolution\n   }\n}",
+               "packageIdentifier": {
+                  "organisation": "io.petflex.demos",
+                  "name": "id-lookup-service",
+                  "version": "0.0.0",
+                  "unversionedId": "io.petflex.demos/id-lookup-service",
+                  "id": "io.petflex.demos/id-lookup-service/0.0.0",
+                  "uriSafeId": "io.petflex.demos:id-lookup-service:0.0.0"
+               },
+               "packageQualifiedName": "[io.petflex.demos/id-lookup-service/0.0.0]/id-resolution-service",
+               "id": "id-resolution-service:0.0.0",
+               "contentHash": "1849a5"
+            }
+         ],
+         "identifier": {
+            "organisation": "io.petflex.demos",
+            "name": "id-lookup-service",
+            "version": "0.0.0",
+            "unversionedId": "io.petflex.demos/id-lookup-service",
+            "id": "io.petflex.demos/id-lookup-service/0.0.0",
+            "uriSafeId": "io.petflex.demos:id-lookup-service:0.0.0"
+         }
+      },
+      {
+         "packageMetadata": {
+            "identifier": {
+               "organisation": "io.petflix.demos",
+               "name": "films-api",
+               "version": "0.0.0",
+               "unversionedId": "io.petflix.demos/films-api",
+               "id": "io.petflix.demos/films-api/0.0.0",
+               "uriSafeId": "io.petflix.demos:films-api:0.0.0"
+            },
+            "submissionDate": "2023-02-17T19:36:29.404638619Z",
+            "dependencies": []
+         },
+         "sources": [
+            {
+               "name": "films-service",
+               "version": "0.0.0",
+               "content": "import films.FilmId\nnamespace io.vyne.demos.films {\n   model StreamingProvider {\n      name : films.StreamingProviderName\n      pricePerMonth : films.StreamingProviderPrice\n   }\n   \n   service StreamingMoviesProvider {\n      @HttpOperation(method = \"GET\" , url = \"http://localhost:9981/films/{films.FilmId}/streamingProviders\")\n      operation getStreamingProvidersForFilm(  filmId : films.FilmId ) : StreamingProvider\n   }\n}",
+               "packageIdentifier": {
+                  "organisation": "io.petflix.demos",
+                  "name": "films-api",
+                  "version": "0.0.0",
+                  "unversionedId": "io.petflix.demos/films-api",
+                  "id": "io.petflix.demos/films-api/0.0.0",
+                  "uriSafeId": "io.petflix.demos:films-api:0.0.0"
+               },
+               "packageQualifiedName": "[io.petflix.demos/films-api/0.0.0]/films-service",
+               "id": "films-service:0.0.0",
+               "contentHash": "b5a680"
+            }
+         ],
+         "identifier": {
+            "organisation": "io.petflix.demos",
+            "name": "films-api",
+            "version": "0.0.0",
+            "unversionedId": "io.petflix.demos/films-api",
+            "id": "io.petflix.demos/films-api/0.0.0",
+            "uriSafeId": "io.petflix.demos:films-api:0.0.0"
+         }
+      },
+      {
+         "packageMetadata": {
+            "identifier": {
+               "organisation": "io.petflix.demos",
+               "name": "films-reviews",
+               "version": "0.0.0",
+               "unversionedId": "io.petflix.demos/films-reviews",
+               "id": "io.petflix.demos/films-reviews/0.0.0",
+               "uriSafeId": "io.petflix.demos:films-reviews:0.0.0"
+            },
+            "submissionDate": "2023-02-17T19:36:24.986282594Z",
+            "dependencies": []
+         },
+         "sources": [
+            {
+               "name": "squashed-tomatoes",
+               "version": "0.0.0",
+               "content": "import films.reviews.SquashedTomatoesFilmId\nnamespace io.vyne.reviews {\n   model FilmReview {\n      filmId : films.reviews.SquashedTomatoesFilmId\n      filmReview : films.reviews.ReviewText\n      score : films.reviews.FilmReviewScore\n   }\n   \n   service ReviewsService {\n      @HttpOperation(method = \"GET\" , url = \"http://localhost:9985/reviews/{films.reviews.SquashedTomatoesFilmId}\")\n      operation getReview(  filmId : films.reviews.SquashedTomatoesFilmId ) : FilmReview\n   }\n}",
+               "packageIdentifier": {
+                  "organisation": "io.petflix.demos",
+                  "name": "films-reviews",
+                  "version": "0.0.0",
+                  "unversionedId": "io.petflix.demos/films-reviews",
+                  "id": "io.petflix.demos/films-reviews/0.0.0",
+                  "uriSafeId": "io.petflix.demos:films-reviews:0.0.0"
+               },
+               "packageQualifiedName": "[io.petflix.demos/films-reviews/0.0.0]/squashed-tomatoes",
+               "id": "squashed-tomatoes:0.0.0",
+               "contentHash": "5b8b0b"
+            }
+         ],
+         "identifier": {
+            "organisation": "io.petflix.demos",
+            "name": "films-reviews",
+            "version": "0.0.0",
+            "unversionedId": "io.petflix.demos/films-reviews",
+            "id": "io.petflix.demos/films-reviews/0.0.0",
+            "uriSafeId": "io.petflix.demos:films-reviews:0.0.0"
+         }
+      }
+   ],
+   "connections": {
+      "jdbc": {
+         "films": {
+            "connectionName": "films",
+            "connectionParameters": {
+               "database": "pagila",
+               "host": "localhost",
+               "password": "admin",
+               "port": "25432",
+               "username": "root"
+            },
+            "jdbcDriver": "POSTGRES"
+         }
+      },
+      "kafka": {
+         "kafka": {
+            "connectionName": "kafka",
+            "connectionParameters": {
+               "brokerAddress": "localhost:9092",
+               "groupId": "vyne"
+            }
+         }
+      }
+   },
+   "authTokens": {
+      "authenticationTokens": {
+         "UltumusIndexCompositionService": {
+            "tokenType": "QueryParam",
+            "value": "gNQnoaIor51fze0foc3Te9jD1hD9e9x39ovGIf7q",
+            "paramName": "api-key",
+            "valuePrefix": null
+         },
+         "TMinusOneReferenceController": {
+            "tokenType": "QueryParam",
+            "value": "gNQnoaIor51fze0foc3Te9jD1hD9e9x39ovGIf7q",
+            "paramName": "api-key",
+            "valuePrefix": null
+         },
+         "UltumusIndexChangesService": {
+            "tokenType": "QueryParam",
+            "value": "gNQnoaIor51fze0foc3Te9jD1hD9e9x39ovGIf7q",
+            "paramName": "api-key",
+            "valuePrefix": null
+         }
+      }
+   },
+   "services": {
+      "services": {
+         "icap-order-feed": {
+            "url": "http://localhost:9871"
+         },
+         "bloomberg-order-feed": {
+            "url": "http://localhost:9870"
+         },
+         "query-server": {
+            "url": "http://vyne"
+         },
+         "users-service": {
+            "url": "http://localhost:9873"
+         },
+         "pipeline-runner": {
+            "url": "http://localhost:9615"
+         },
+         "instrument-ref-service": {
+            "url": "http://localhost:9872"
+         },
+         "analytics-server": {
+            "url": "http://vyne-analytics-server"
+         },
+         "cask": {
+            "url": "http://localhost:8800"
+         },
+         "esg-services": {
+            "url": "http://localhost:9825"
+         },
+         "schema-server": {
+            "rsocket-port": "7655",
+            "url": "http://localhost:9305"
+         },
+         "client-service": {
+            "url": "http://localhost:9821"
+         }
+      }
+   },
+   "resultMode": "RAW",
+   "mediaType": "*/*",
+   "clientQueryId": "98cf42d5-161e-4764-a1b6-11b9f5c51831"
+}

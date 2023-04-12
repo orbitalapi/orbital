@@ -5,13 +5,19 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.22.0-SNAPSHOT</version>
+      <version>0.24.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>schema-server</artifactId>
 
    <dependencies>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>monitoring-common</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-server-api</artifactId>
@@ -118,6 +124,16 @@
       <dependency>
          <groupId>com.github.tomakehurst</groupId>
          <artifactId>wiremock-jre8-standalone</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>testcontainers</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>junit-jupiter</artifactId>
          <scope>test</scope>
       </dependency>
       <dependency>

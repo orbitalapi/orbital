@@ -1,8 +1,8 @@
-import {Injectable} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
-import {Observable, of} from 'rxjs';
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
 
-import {environment} from 'src/environments/environment';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -35,9 +35,6 @@ export class AppInfoService {
 }
 
 export interface QueryServiceConfig {
-  server: {
-    newSchemaSubmissionEnabled: boolean
-  };
   analytics: {
     maxPayloadSizeInBytes: number
     persistRemoteCallResponses: boolean
@@ -50,8 +47,12 @@ export interface QueryServiceConfig {
   }
   actuatorPath: string;
   pipelineConfig: PipelineConfig;
+  featureToggles: FeatureToggles;
 }
 
+export interface FeatureToggles {
+  chatGptEnabled: boolean;
+}
 export interface PipelineConfig {
   kibanaUrl: string;
   logsIndex: string;

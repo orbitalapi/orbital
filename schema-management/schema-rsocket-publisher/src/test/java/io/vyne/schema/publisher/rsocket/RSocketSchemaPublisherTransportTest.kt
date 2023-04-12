@@ -25,11 +25,13 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
-import org.springframework.util.SocketUtils
+import org.springframework.test.util.TestSocketUtils
 import reactor.core.Disposable
 import reactor.core.publisher.Mono
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
+import kotlin.random.Random
+import kotlin.random.nextInt
 
 
 class RSocketSchemaPublisherTransportTest {
@@ -56,10 +58,9 @@ class RSocketSchemaPublisherTransportTest {
 
    @Test
    fun `when server is running before client then client immediately publishes state on connection`() {
-      val port = SocketUtils.findAvailableTcpPort()
       val collectedResponses = mutableListOf<SourceSubmissionResponse>()
       val connections = mutableListOf<RSocket>()
-      startServer(port, response = SourceSubmissionResponse(emptyList(), SchemaSet.EMPTY), connections)
+      val port = startServer(0, response = SourceSubmissionResponse(emptyList(), SchemaSet.EMPTY), connections)
       // Wait for a bit before starting the server
       Thread.sleep(2000)
 
@@ -71,7 +72,7 @@ class RSocketSchemaPublisherTransportTest {
 
    @Test
    fun `when client starts before server then client publishes state when connection eventually occurs`() {
-      val port = SocketUtils.findAvailableTcpPort()
+      val port = randomPort()
       val collectedResponses = mutableListOf<SourceSubmissionResponse>()
       createPublisher(port, collectedResponses)
 
@@ -86,7 +87,7 @@ class RSocketSchemaPublisherTransportTest {
 
    @Test
    fun `when schema changes before connection established then only the most recent schema is published`() {
-      val port = SocketUtils.findAvailableTcpPort()
+      val port = randomPort()
       val collectedResponses = mutableListOf<SourceSubmissionResponse>()
       val response = SourceSubmissionResponse(emptyList(), SchemaSet.EMPTY)
       val connections = mutableListOf<RSocket>()
@@ -116,9 +117,11 @@ class RSocketSchemaPublisherTransportTest {
       collectedSubmissions.single().sourcesWithPackageIdentifier.single().content.should.equal("type HelloWorld2")
    }
 
+   private fun randomPort() = TestSocketUtils.findAvailableTcpPort()
+
    @Test
    fun `republishes state after reconnecting after lost connection`() {
-      val port = SocketUtils.findAvailableTcpPort()
+      val port = randomPort()
       val collectedResponses = mutableListOf<SourceSubmissionResponse>()
       val publisher = createPublisher(port, collectedResponses)
 
@@ -144,14 +147,13 @@ class RSocketSchemaPublisherTransportTest {
 
    @Test
    fun `can submit updates to schema`() {
-      val port = SocketUtils.findAvailableTcpPort()
 
       val response = SourceSubmissionResponse(emptyList(), SchemaSet.EMPTY)
       val connections = mutableListOf<RSocket>()
       val collectedSubmissions = mutableListOf<SourcePackage>()
       val collectedResponses = mutableListOf<SourceSubmissionResponse>()
 
-      startServer(port, response, connections, collectedSubmissions)
+      val port = startServer(0, response, connections, collectedSubmissions)
 
       val publisher = SchemaPublisherService(
          publisherId = "testPublisher",
@@ -184,14 +186,13 @@ class RSocketSchemaPublisherTransportTest {
    fun `when reconnecting to server the most recent schema is published`() {
 
       // Setup
-      val port = SocketUtils.findAvailableTcpPort()
 
       val response = SourceSubmissionResponse(emptyList(), SchemaSet.EMPTY)
       val connections = mutableListOf<RSocket>()
       val collectedSubmissions = mutableListOf<SourcePackage>()
       val collectedResponses = mutableListOf<SourceSubmissionResponse>()
 
-      startServer(port, response, connections, collectedSubmissions)
+      val port = startServer(0, response, connections, collectedSubmissions)
 
       val publisher = SchemaPublisherService(
          publisherId = "testPublisher",
@@ -288,12 +289,12 @@ class RSocketSchemaPublisherTransportTest {
     * Use 0 to allow the OS to select a port, then
     * interrogate through server.address.port
     */
-   fun startServer(
+   private fun startServer(
       port: Int = 0,
       response: SourceSubmissionResponse,
       connections: MutableList<RSocket>,
       collectedSubmissions: MutableList<SourcePackage> = mutableListOf()
-   ): Disposable {
+   ): Int {
       log().info(
          """*********************************************
          |*********************************************
@@ -306,18 +307,19 @@ class RSocketSchemaPublisherTransportTest {
          .create(
             ConnectionWatchingResponseAcceptor(response, connections, collectedSubmissions)
          )
-      return rsocketServer
+      val closeableChannel = rsocketServer
          .bind(TcpServerTransport.create("localhost", port))
-         .subscribe { closeable ->
-            server = closeable
-            closeable.onClose()
-               .doFinally {
-                  log().info("Server finally")
-               }
-               .subscribe {
-                  log().info("Server closed")
-               }
+         .block()!!
+
+      server = closeableChannel
+      closeableChannel.onClose()
+         .doFinally {
+            log().info("Server finally")
          }
+         .subscribe {
+            log().info("Server closed")
+         }
+      return server!!.address().port
    }
 
    internal class ConnectionWatchingResponseAcceptor(

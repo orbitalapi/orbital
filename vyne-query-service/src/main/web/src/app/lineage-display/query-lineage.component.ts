@@ -134,7 +134,7 @@ export class QueryLineageComponent extends BaseGraphComponent {
             return [kafkaHeader, kafkaSubHeader]
           case 'Http':
             const httpHeader = 'HTTP ' + operationData.verb
-            const httpSubheader = operationData.operationName.shortDisplayName;
+            const httpSubheader = operationData.operationName.name.replace('@@', ' / ');
             return [httpHeader, httpSubheader]
         }
       }

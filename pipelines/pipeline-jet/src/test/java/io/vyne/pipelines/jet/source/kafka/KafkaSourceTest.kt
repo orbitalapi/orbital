@@ -1,6 +1,6 @@
 package io.vyne.pipelines.jet.source.kafka
 
-import io.vyne.connectors.kafka.KafkaConnectionConfiguration
+import io.vyne.connectors.config.kafka.KafkaConnectionConfiguration
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportInputSpec
 import io.vyne.utils.Ids

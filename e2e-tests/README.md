@@ -45,7 +45,7 @@ the Docker Compose command.
    - `schema-server.conf`: Change `file.projects[0].path` to point to
      the `<ABSOLUTE_PATH_TO_THIS_FOLDER>/local-development/vyne/schema-server/projects` (see `Important considerations`
      for the right format for Windows).
-   - `services.conf`: Change `services.schema-server.url` to `localhost` instead of `schema-server`.
+   - `services.conf`: Change `services.schema-server.url` to `localhost` instead of `schema-server`. Remove the configuration entry for films-api.
 
    The `local-development/` folder contents can be deleted whenever a fresh configuration is needed. E.g. to get rid of
    the schema the imported by the last run of the tests.

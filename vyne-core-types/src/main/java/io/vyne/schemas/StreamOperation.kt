@@ -32,4 +32,6 @@ data class StreamOperation(
    override val operationType: String? = null
 
    override val returnTypeName: QualifiedName = returnType.name
+   override val schemaMemberKind: SchemaMemberKind = SchemaMemberKind.OPERATION
+   override val operationKind: OperationKind = OperationKind.Stream
 }

@@ -5,8 +5,8 @@
   width: 400px;
   height: 100%;
   overflow-y: scroll;
-  background-color: $light-purple-grey;
-  border-right: 1px solid $light-purple-grey-300;
+  background-color: $slate-100;
+  border-right: 1px solid $slate-300;
 }
 
 
@@ -37,7 +37,8 @@
 
   td {
     padding-right: 3rem;
-    padding-bottom: 0.4rem;
+    // removed after updating taiga 2->3
+    //padding-bottom: 0.4rem;
   }
 }
 

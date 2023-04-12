@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.KeyDeserializer
 import com.google.common.collect.HashMultimap
 import io.vyne.models.InPlaceQueryEngine
 import io.vyne.models.OperationResult
+import io.vyne.models.PermittedQueryStrategies
 import io.vyne.models.TypedInstance
+import io.vyne.models.facts.CascadingFactBag
 import io.vyne.models.facts.CopyOnWriteFactBag
 import io.vyne.models.facts.FactBag
 import io.vyne.models.facts.FactDiscoveryStrategy
@@ -15,7 +17,15 @@ import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.query.graph.ServiceParams
 import io.vyne.query.graph.edges.EvaluatableEdge
 import io.vyne.query.graph.edges.EvaluatedEdge
-import io.vyne.schemas.*
+import io.vyne.schemas.Operation
+import io.vyne.schemas.OperationNames
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.Policy
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
+import io.vyne.schemas.Type
 import io.vyne.utils.Ids
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.orElse
@@ -117,7 +127,7 @@ data class QueryContext(
 
    val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = ConcurrentHashMap()
 
-   ) : ProfilerOperation by profiler, FactBag by facts, QueryContextEventDispatcher, InPlaceQueryEngine {
+) : ProfilerOperation by profiler, FactBag by facts, QueryContextEventDispatcher by eventBroker, InPlaceQueryEngine {
 
    private val logger = KotlinLogging.logger {}
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
@@ -163,23 +173,40 @@ data class QueryContext(
 
 
    override fun toString() = "# of facts=${facts.size} #schema types=${schema.types.size}"
-   suspend fun find(typeName: String): QueryResult = find(TypeNameQueryExpression(typeName))
+   suspend fun find(
+      typeName: String,
+      permittedStrategy: PermittedQueryStrategies = PermittedQueryStrategies.EVERYTHING
+   ): QueryResult = find(TypeNameQueryExpression(typeName), permittedStrategy)
 
-   suspend fun find(queryString: QueryExpression): QueryResult = queryEngine.find(queryString, this.newSearchContext())
+   suspend fun find(
+      queryString: QueryExpression,
+      permittedStrategy: PermittedQueryStrategies = PermittedQueryStrategies.EVERYTHING
+   ): QueryResult = queryEngine.find(
+      queryString,
+      this.newSearchContext(),
+      applicableStrategiesPredicate = PermittedQueryStrategyPredicate.forEnum(permittedStrategy)
+   )
+
    suspend fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this.newSearchContext())
    suspend fun find(target: Set<QuerySpecTypeNode>): QueryResult = queryEngine.find(target, this.newSearchContext())
-   suspend fun find(target: QuerySpecTypeNode, excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>): QueryResult =
+   suspend fun find(
+      target: QuerySpecTypeNode,
+      excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>
+   ): QueryResult =
       queryEngine.find(target, this.newSearchContext(), excludedOperations)
 
    suspend fun build(typeName: QualifiedName): QueryResult = build(typeName.parameterizedName)
-   suspend fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this.newSearchContext())
+   suspend fun build(typeName: String): QueryResult =
+      queryEngine.build(TypeNameQueryExpression(typeName), this.newSearchContext())
+
    suspend fun build(expression: QueryExpression): QueryResult =
       //timed("QueryContext.build") {
       queryEngine.build(expression, this.newSearchContext())
    //}
 
    suspend fun findAll(typeName: String): QueryResult = findAll(TypeNameQueryExpression(typeName))
-   suspend fun findAll(queryString: QueryExpression): QueryResult = queryEngine.findAll(queryString, this.newSearchContext())
+   suspend fun findAll(queryString: QueryExpression): QueryResult =
+      queryEngine.findAll(queryString, this.newSearchContext())
 
    fun parseQuery(typeName: String) = queryEngine.parse(TypeNameQueryExpression(typeName))
    fun parseQuery(expression: QueryExpression) = queryEngine.parse(expression)
@@ -206,7 +233,7 @@ data class QueryContext(
       }
    }
 
-   private fun newSearchContext(clientQueryId: String? = Ids.id(prefix = "clientQueryId", size = 8)):QueryContext {
+   private fun newSearchContext(clientQueryId: String? = Ids.id(prefix = "clientQueryId", size = 8)): QueryContext {
       return this
       val clone = this.copy(
          clientQueryId = clientQueryId,
@@ -215,29 +242,51 @@ data class QueryContext(
       clone.projectionScope = null
       return clone
    }
+
    /**
     * Returns a QueryContext, with only the provided fact.
     * All other parameters (queryEngine, schema, etc) are retained
     */
-   fun only(fact: TypedInstance, scopedFacts: List<ScopedFact> = emptyList()): QueryContext {
+   override fun only(fact: TypedInstance, scopedFacts: List<ScopedFact>): QueryContext {
       return only(listOf(fact), scopedFacts)
    }
 
-   fun only(facts:List<TypedInstance>, scopedFacts: List<ScopedFact> = emptyList()): QueryContext {
+   override fun only(facts: List<TypedInstance>, scopedFacts: List<ScopedFact>): QueryContext {
       val copied = this.newSearchContext().copy(
          facts = CopyOnWriteFactBag(CopyOnWriteArrayList(facts), scopedFacts, schema),
          parent = this,
          vyneQueryStatistics = VyneQueryStatistics()
       )
-      copied.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
-      copied.excludedServices.addAll(this.excludedServices)
+      appendExclusionsToContext(copied)
       return copied
    }
 
    fun only(): QueryContext {
       val copied = this.newSearchContext()
-      copied.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
-      copied.excludedServices.addAll(this.excludedServices)
+      appendExclusionsToContext(copied)
+      return copied
+   }
+
+   private fun appendExclusionsToContext(context: QueryContext) {
+      context.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
+      context.excludedServices.addAll(this.excludedServices)
+   }
+
+   /**
+    * Returns a QueryContext, with all of the current facts, plus the additional fact and scope
+    * appended.
+    *
+    * All other parameters (queryEngine, schema and excluded operations) are retained.
+    * The current queryContext is not affected by mutations in the new queryContext
+    */
+   override fun withAdditionalFacts(facts: List<TypedInstance>, scopedFacts: List<ScopedFact>): QueryContext {
+      val additionalFacts = CopyOnWriteFactBag(CopyOnWriteArrayList(facts), scopedFacts, schema)
+      val copied = this.newSearchContext().copy(
+         facts = CascadingFactBag(additionalFacts, this.facts),
+         parent = this,
+         vyneQueryStatistics = VyneQueryStatistics()
+      )
+      appendExclusionsToContext(copied)
       return copied
    }
 
@@ -247,32 +296,16 @@ data class QueryContext(
       return this
    }
 
-//   fun projectResultsTo(projectedTaxiType: lang.taxi.types.Type, scope:ProjectionFunctionScope?): QueryContext {
-//      return projectResultsTo(ProjectionAnonymousTypeProvider.projectedTo(projectedTaxiType,schema), scope)
-//   }
 
-   override suspend fun findType(type: Type): Flow<TypedInstance> {
-      return this.find(type.qualifiedName.parameterizedName)
+   override suspend fun findType(type: Type, permittedStrategy: PermittedQueryStrategies): Flow<TypedInstance> {
+      return this.find(type.qualifiedName.parameterizedName, permittedStrategy)
          .results
    }
-
-//   private fun projectResultsTo(targetType: Type, scope:ProjectionFunctionScope?): QueryContext {
-//      projectResultsTo = targetType
-//      projectionScope = scope
-//      return this
-//   }
-
-
-   fun addEvaluatedEdge(evaluatedEdge: EvaluatedEdge) = this.evaluatedEdges.add(evaluatedEdge)
-
 
    fun evaluatedPath(): List<EvaluatedEdge> {
       return evaluatedEdges.toList()
    }
 
-   fun collectVisitedInstanceNodes(): Set<TypedInstance> {
-      return emptySet()
-   }
 
    fun addAppliedInstruction(policy: Policy, instruction: Instruction) {
       policyInstructionCounts.compute(policy.name to instruction) { _, atomicInteger -> if (atomicInteger != null) atomicInteger + 1 else 1 }
@@ -301,17 +334,6 @@ data class QueryContext(
       addToOperationResultCache: Boolean = true
    ): TypedInstance {
       return notifyOperationResult(operation.vertex1.value.toString(), result, callArgs, addToOperationResultCache)
-
-//      val (service, _) = OperationNames.serviceAndOperation(operation.vertex1.valueAsQualifiedName())
-//      val invokedService = schema.service(service)
-//      onServiceInvoked((invokedService))
-//      if (result.source is OperationResult) {
-//         eventBroker.reportRemoteOperationInvoked(result.source as OperationResult, this.queryId)
-//      }
-//      val operationCacheKey = ServiceInvocationCacheKey(operation.vertex1.value.toString(), callArgs)
-//      getTopLevelContext().operationCache[operationCacheKey] = result
-//      logger.debug { "Caching $operation [${operation.previousValue?.value} -> ${result.type.qualifiedName}]" }
-//      return result
    }
 
    fun notifyOperationResult(
@@ -319,14 +341,12 @@ data class QueryContext(
       result: TypedInstance,
       callArgs: Set<TypedInstance?>,
       addToOperationResultCache: Boolean = true
-   ):TypedInstance {
+   ): TypedInstance {
       val (service, _) = OperationNames.serviceAndOperation(operationName)
 
       val invokedService = schema.service(service)
       onServiceInvoked((invokedService))
-      if (result.source is OperationResult) {
-         eventBroker.reportRemoteOperationInvoked(result.source as OperationResult, this.queryId)
-      }
+
       if (addToOperationResultCache) {
          val cacheKey = ServiceInvocationCacheKey(operationName, callArgs)
          getTopLevelContext().operationCache[cacheKey] = result
@@ -458,7 +478,16 @@ interface CancelRequestHandler : QueryContextEventHandler {
    fun requestCancel() {}
 }
 
-object NoOpQueryContextEventDispatcher : QueryContextEventDispatcher
+object NoOpQueryContextEventDispatcher : QueryContextEventDispatcher {
+   override fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int) {
+   }
+
+   override fun requestCancel() {
+   }
+
+   override fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String) {
+   }
+}
 
 interface RemoteCallOperationResultHandler : QueryContextEventHandler {
    fun recordResult(operation: OperationResult, queryId: String)

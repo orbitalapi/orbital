@@ -2,6 +2,7 @@ package io.vyne.schemas
 
 
 interface SchemaMember {
+   val schemaMemberKind: SchemaMemberKind
 
    @Deprecated(message = "Workaround for https://gitlab.com/vyne/vyne/issues/34.  Will be removed")
    val memberQualifiedName: QualifiedName
@@ -16,4 +17,11 @@ interface SchemaMember {
             else -> error("Unhandled SchemaMember type : ${this.javaClass.name}")
          }
       }
+}
+
+enum class SchemaMemberKind {
+   SERVICE,
+   TYPE,
+   OPERATION,
+   FIELD
 }

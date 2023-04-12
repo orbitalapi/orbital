@@ -1,6 +1,9 @@
 package io.vyne.connectors.jdbc.sql.ddl
 
 import com.winterbe.expekt.should
+import io.vyne.connectors.config.jdbc.JdbcDriver
+import io.vyne.connectors.config.jdbc.JdbcUrlAndCredentials
+import io.vyne.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
 import io.vyne.connectors.jdbc.*
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Before

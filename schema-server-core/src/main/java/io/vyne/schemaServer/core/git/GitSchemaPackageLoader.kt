@@ -31,7 +31,7 @@ import kotlin.io.path.toPath
 
 class GitSchemaPackageLoader(
    val workingDir: Path,
-   private val config: GitRepositoryConfig,
+   override val config: GitRepositoryConfig,
    adaptor: SchemaSourcesAdaptor,
    // visible for testing
    val fileMonitor: ReactiveFileSystemMonitor = ReactiveWatchingFileSystemMonitor(workingDir, listOf(".git")),
@@ -79,14 +79,14 @@ class GitSchemaPackageLoader(
       try {
          GitOperations(workingDir.toFile(), config.copy(branch = currentBranch)).fetchLatest()
       } catch (e: Exception) {
-         logger.warn(e) { "Failed to complete git sync for ${getDescriptionText()}" }
+         logger.warn(e) { "Failed to complete git sync for ${getDescriptionText()} due to ${e.message}" }
          if (currentBranch != config.branch) {
             logger.info { "Reverting to default branch ${config.branch} due to a failed pull of $currentBranch" }
             currentBranch = config.branch
          }
       }
 
-      logger.info { "Git sync for ${getDescriptionText()} finished" }
+      logger.info { "Finished a git sync for ${getDescriptionText()}" }
    }
 
    // TODO Remove this function and replace its usage with ${config.description}

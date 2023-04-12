@@ -17,7 +17,7 @@ resource "aws_cloudwatch_log_group" "main" {
 #}
 
 data "aws_sns_topic" "chatbot_topic" {
-  name = "taxi-playground-gateway-events"
+  name = "voyager-gateway-events"
 }
 
 #resource "aws_cloudwatch_metric_alarm" "voyager_app_error_alarm" {

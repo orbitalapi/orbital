@@ -2,15 +2,13 @@ package io.vyne.queryService
 
 import app.cash.turbine.test
 import com.winterbe.expekt.should
-import io.vyne.query.active.ActiveQueryMonitor
+import io.vyne.query.runtime.core.monitor.ActiveQueryMonitor
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Test
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertEquals
-import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime

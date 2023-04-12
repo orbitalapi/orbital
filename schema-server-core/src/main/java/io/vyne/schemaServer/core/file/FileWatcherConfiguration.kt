@@ -1,8 +1,9 @@
 package io.vyne.schemaServer.core.file
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.vyne.PackageIdentifier
-import io.vyne.schemaServer.core.adaptors.PackageLoaderSpec
-import io.vyne.schemaServer.core.adaptors.taxi.TaxiPackageLoaderSpec
+import io.vyne.schemaServer.packages.PackageLoaderSpec
+import io.vyne.schemaServer.packages.TaxiPackageLoaderSpec
 import java.nio.file.Path
 import java.time.Duration
 
@@ -14,11 +15,18 @@ import java.time.Duration
  *
  */
 data class FileSystemPackageSpec(
+   @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
    val path: Path,
    val loader: PackageLoaderSpec = TaxiPackageLoaderSpec,
    val isEditable: Boolean = false,
+   // TODO : Why is this nullable? When should we provide vs omit it?
    val packageIdentifier: PackageIdentifier? = null
-)
+) {
+
+   @JsonProperty(value = "path", access = JsonProperty.Access.READ_ONLY)
+   val pathString: String = path.toString()
+
+}
 
 data class FileSystemSchemaRepositoryConfig(
    val changeDetectionMethod: FileChangeDetectionMethod = FileChangeDetectionMethod.WATCH,

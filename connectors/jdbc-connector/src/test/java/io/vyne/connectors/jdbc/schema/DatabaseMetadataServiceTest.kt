@@ -4,7 +4,7 @@ import com.winterbe.expekt.should
 import io.vyne.connectors.ConnectionSucceeded
 import io.vyne.connectors.jdbc.DatabaseMetadataService
 import io.vyne.connectors.jdbc.JdbcColumn
-import io.vyne.connectors.jdbc.JdbcDriver
+import io.vyne.connectors.config.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.JdbcIndex
 import io.vyne.connectors.jdbc.JdbcTable
 import io.vyne.utils.get

@@ -5,7 +5,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.22.0-SNAPSHOT</version>
+      <version>0.24.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -15,7 +15,7 @@
       <maven.compiler.source>11</maven.compiler.source>
       <maven.compiler.target>11</maven.compiler.target>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-      <aws-sdk.version>2.17.290</aws-sdk.version>
+      <aws-sdk.version>2.20.8</aws-sdk.version>
    </properties>
 
    <dependencies>
@@ -122,41 +122,6 @@
                   <version>${kotlin.version}</version>
                </dependency>
             </dependencies>
-         </plugin>
-         <plugin>
-            <groupId>com.github.eirslett</groupId>
-            <artifactId>frontend-maven-plugin</artifactId>
-            <version>1.12.1</version>
-            <configuration>
-               <workingDirectory>../vyne-query-service/src/main/web/</workingDirectory>
-               <nodeVersion>v16.14.0</nodeVersion>
-            </configuration>
-            <executions>
-               <execution>
-                  <id>install-npm</id>
-                  <goals>
-                     <goal>install-node-and-npm</goal>
-                  </goals>
-               </execution>
-               <execution>
-                  <id>run-npm-install</id>
-                  <goals>
-                     <goal>npm</goal>
-                  </goals>
-                  <configuration>
-                     <arguments>ci</arguments>
-                  </configuration>
-               </execution>
-               <execution>
-                  <id>ng-build</id>
-                  <goals>
-                     <goal>npm</goal>
-                  </goals>
-                  <configuration>
-                     <arguments>run-script build-prod-voyager</arguments>
-                  </configuration>
-               </execution>
-            </executions>
          </plugin>
       </plugins>
    </build>

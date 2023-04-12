@@ -1,13 +1,19 @@
 package io.vyne
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import io.vyne.models.serde.InstantSerializer
+import io.vyne.utils.shaHash
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Polymorphic
 import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.packages.TaxiPackageSources
 import java.io.Serializable
 import java.time.Instant
 
 
+@kotlinx.serialization.Serializable
 data class SourcePackage(
    val packageMetadata: PackageMetadata,
    /**
@@ -27,10 +33,24 @@ data class SourcePackage(
       this.sources.map { it.copy(packageIdentifier = this.packageMetadata.identifier) }
 }
 
+object SourcePackageHasher {
+   fun hash(sourcePackage: SourcePackage): String {
+      return sourcePackage.sources.sortedBy { it.name }
+         .map { it.fullHash }
+         .shaHash()
+   }
+
+   fun hash(packages: List<SourcePackage>): String {
+      return packages.sortedBy { it.packageMetadata.identifier.id }
+         .map { hash(it) }
+         .shaHash()
+   }
+}
 
 typealias UnversionedPackageIdentifier = String
 typealias UriSafePackageIdentifier = String
 
+@kotlinx.serialization.Serializable
 data class PackageIdentifier(
    val organisation: String,
    val name: String,
@@ -40,9 +60,14 @@ data class PackageIdentifier(
     */
    val version: String,
 ) : Serializable {
+   // Use getters, rather that initializers, as Jackson deser seems to break the initalization
+   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val unversionedId: UnversionedPackageIdentifier = "$organisation/$name"
-   val id = "$unversionedId/$version"
 
+   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+   val id: String = "$unversionedId/$version"
+
+   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val uriSafeId = toUriSafeId(this)
 
    companion object {
@@ -102,6 +127,7 @@ interface PackageMetadata : Serializable {
    val submissionDate: Instant
    val dependencies: List<PackageIdentifier>
 
+
    companion object {
       fun from(
          identifier: PackageIdentifier,
@@ -120,7 +146,10 @@ interface PackageMetadata : Serializable {
 
 }
 
-open class DefaultPackageMetadata(
+// MP:10-APR-23 This class was open, not sure why, made it a data class, as needed an equals and hashcode impl
+// for serde (see QueryMessageTest)
+@kotlinx.serialization.Serializable
+data class DefaultPackageMetadata(
    override val identifier: PackageIdentifier,
 
    /**
@@ -128,10 +157,10 @@ open class DefaultPackageMetadata(
     * In the case that two packages with the same identifier are submitted,
     * the "latest" wins - using this data to determine latest.
     */
+   @kotlinx.serialization.Serializable(with = InstantSerializer::class)
    override val submissionDate: Instant = Instant.now(),
    override val dependencies: List<PackageIdentifier> = emptyList()
 ) : PackageMetadata
-
 
 fun lang.taxi.packages.PackageIdentifier.toVynePackageIdentifier(): PackageIdentifier {
    return PackageIdentifier(
