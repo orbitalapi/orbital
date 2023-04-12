@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
-import { Schema, SchemaMember, SchemaMemberType } from '../../services/schema';
+import { Schema, SchemaMember, SchemaMemberKind } from '../../services/schema';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
 
@@ -13,7 +13,7 @@ export const SHOW_EVERYTHING: TypeFilterParams = {
 export interface TypeFilterParams {
   name: string | null;
   namespace: string | null;
-  memberType: SchemaMemberType[];
+  memberType: SchemaMemberKind[];
 }
 
 export class TypeFilter {
@@ -109,7 +109,7 @@ export class FilterTypesComponent {
     });
 
     this.activatedRoute.queryParamMap.subscribe(queryParams => {
-      const memberTypes = (queryParams.getAll('memberType') || []) as SchemaMemberType[];
+      const memberTypes = (queryParams.getAll('memberType') || []) as SchemaMemberKind[];
       const memberTypesIsEmpty = memberTypes.length === 0;
       const formValue = {
         filter: queryParams.get('name'),
@@ -122,7 +122,7 @@ export class FilterTypesComponent {
 
     this.formGroup.valueChanges
       .subscribe(result => {
-        const types: SchemaMemberType[] = [];
+        const types: SchemaMemberKind[] = [];
         if (result['showTypes']) types.push('TYPE');
         if (result['showServices']) types.push('SERVICE');
         if (result['showOperations']) types.push('OPERATION');

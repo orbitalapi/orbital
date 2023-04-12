@@ -4,12 +4,9 @@ import com.google.common.base.Stopwatch
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.consumer.SchemaStore
-import io.vyne.schemas.Field
-import io.vyne.schemas.Operation
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Service
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
 import lang.taxi.CompilationException
+import lang.taxi.types.TypeKind
 import mu.KotlinLogging
 import org.apache.commons.lang3.StringUtils
 import org.apache.lucene.document.Document
@@ -87,7 +84,7 @@ class SearchIndexer(
       }
 
       val searchEntries = schema.types.flatMap { searchIndexEntry(it) } +
-         schema.operations.map { searchIndexEntry(it) } +
+         schema.remoteOperations.map { searchIndexEntry(it) } +
          schema.services.map { searchIndexEntry(it) } +
          schema.dynamicMetadata.map { searchIndexEntryForAnnotation(it) } +
          schema.metadataTypes.map { searchIndexEntryForAnnotation(it) }
@@ -138,7 +135,7 @@ class SearchIndexer(
          typeDoc = null)
    }
 
-   private fun searchIndexEntry(operation: Operation): SearchEntry {
+   private fun searchIndexEntry(operation: RemoteOperation): SearchEntry {
       return SearchEntry(
          operation.qualifiedName.fullyQualifiedName,
          operation.name,
@@ -172,12 +169,12 @@ class SearchIndexer(
    private fun searchIndexEntry(declaringType: Type, name: String, field: Field): SearchEntry {
       val id = declaringType.fullyQualifiedName + "#Field[$name]"
       return SearchEntry(
-         id,
-         name,
-         declaringType.fullyQualifiedName,
-         SearchEntryType.ATTRIBUTE,
-         field.typeDoc,
-         name
+         id = id,
+         name = name,
+         qualifiedName = declaringType.fullyQualifiedName,
+         searchEntryType = SearchEntryType.ATTRIBUTE,
+         typeDoc = field.typeDoc,
+         fieldName = name
       )
    }
 
@@ -227,5 +224,5 @@ data class SearchEntry(
    val qualifiedName: String,
    val searchEntryType: SearchEntryType,
    val typeDoc: String?,
-   val fieldName: String? = null
+   val fieldName: String? = null,
 )

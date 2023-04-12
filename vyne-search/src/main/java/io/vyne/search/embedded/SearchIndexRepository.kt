@@ -3,11 +3,9 @@ package io.vyne.search.embedded
 import io.vyne.query.graph.Algorithms
 import io.vyne.query.graph.OperationQueryResult
 import io.vyne.query.graph.OperationQueryResultItemRole
-import io.vyne.schemas.Metadata
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Schema
-import io.vyne.schemas.fqn
+import io.vyne.schemas.*
 import io.vyne.utils.log
+import lang.taxi.types.TypeKind
 import org.apache.lucene.document.Document
 import org.apache.lucene.index.IndexWriter
 import org.apache.lucene.index.Term
@@ -92,6 +90,12 @@ class SearchIndexRepository(
          }
    }
 
+   private fun findAttributeType(searchResultFullyQualifiedName: QualifiedName, matchedFieldName: String?, schema:Schema):Type? {
+      if (matchedFieldName == null) return null
+      return schema.typeOrNull(searchResultFullyQualifiedName)?.attribute(matchedFieldName)
+         ?.let { field -> schema.type(field.type) }
+   }
+
    fun searchForTypesAndOperations(term: String, schema: Schema): List<SearchResult> {
       searchManager.maybeRefresh()
       val queryBuilder = BooleanQuery.Builder()
@@ -140,19 +144,41 @@ class SearchIndexRepository(
             emptyList<Metadata>() to OperationQueryResult.empty(searchResultFullyQualifiedName.fullyQualifiedName)
          }
 
+         val matchedFieldName =
+            if (searchEntryType == SearchEntryType.ATTRIBUTE) doc.getField(SearchField.NAME.fieldName)
+               ?.stringValue() else null
+
+         val (typeKind: TypeKind?, serviceKind: ServiceKind?) = when (searchEntryType) {
+            SearchEntryType.TYPE -> schema.typeOrNull(searchResultFullyQualifiedName)?.taxiType?.typeKind to null
+            SearchEntryType.SERVICE -> null to schema.serviceOrNull(searchResultFullyQualifiedName)?.serviceKind
+            SearchEntryType.ATTRIBUTE -> {
+               val typeKind = findAttributeType(searchResultFullyQualifiedName, matchedFieldName, schema)?.taxiType?.typeKind
+               typeKind to null
+            }
+            else -> null to null
+         }
+
+         val primitiveType = when (searchEntryType) {
+            SearchEntryType.TYPE -> schema.typeOrNull(searchResultFullyQualifiedName)?.basePrimitiveTypeName
+            SearchEntryType.ATTRIBUTE -> findAttributeType(searchResultFullyQualifiedName,matchedFieldName, schema)?.basePrimitiveTypeName
+            else -> null
+         }
+
 
          SearchResult(
-            searchResultFullyQualifiedName,
-            doc.getField(SearchField.TYPEDOC.fieldName)?.stringValue(),
-            doc.getField(SearchField.FIELD_ON_TYPE.fieldName)?.stringValue(),
-            searchMatches,
-            searchEntryType,
-            hit.score,
+            qualifiedName = searchResultFullyQualifiedName,
+            typeDoc = doc.getField(SearchField.TYPEDOC.fieldName)?.stringValue(),
+            matchedFieldName = matchedFieldName,
+            matches = searchMatches,
+            memberType = searchEntryType,
+            score = hit.score,
             consumers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Input && it.operationName != null }
                .map { it.operationName!! },
             producers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Output && it.operationName != null }
                .map { it.operationName!! },
-            metadata = metadata
+            metadata = metadata,
+            typeKind, serviceKind,
+            primitiveType
          )
       }
       return distinctSearchResults(searchResults)
@@ -238,7 +264,10 @@ data class SearchResult(
    val score: Float,
    val consumers: List<QualifiedName> = emptyList(),
    val producers: List<QualifiedName> = emptyList(),
-   val metadata: List<io.vyne.schemas.Metadata> = emptyList()
+   val metadata: List<io.vyne.schemas.Metadata> = emptyList(),
+   val typeKind: TypeKind? = null,
+   val serviceKind: ServiceKind? = null,
+   val primitiveType: QualifiedName? = null
 )
 
 data class SearchMatch(val field: SearchField, val highlightedMatch: String)

@@ -2,26 +2,35 @@
   <as-split-area>
     <as-split direction='vertical' unit='percent' class='query-panel-split'>
       <as-split-area [size]='50'>
-        <div class='code-editor-section'>
-          <app-panel-header title='Code'>
-            <app-query-editor-bottom-bar
-              (executeQuery)='submitQuery()'
-              [currentState$]='currentState$'
-              [error]='lastErrorMessage'
-              [(queryLanguage)]='queryLanguage'
-              [runningQueryStatus]='queryMetadata$ | async'
-              (cancelQuery)='cancelQuery()'
-              (copyQuery)='copyQuery($event)'
-            >
-            </app-query-editor-bottom-bar>
-          </app-panel-header>
-          <div class='code-viewer-container' *ngIf='queryLanguage === "TaxiQL"'>
-            <app-code-editor
-              class='code-editor'
-              [actions]='customActions'
-              [(content)]='query' #editor></app-code-editor>
+        <div class="code-editor-panel-container">
+          <app-panelset>
+            <app-panel icon="assets/img/tabler/vocabulary.svg" title="Catalog">
+              <app-catalog-explorer-panel></app-catalog-explorer-panel>
+            </app-panel>
+          </app-panelset>
+          <div class='code-editor-section'>
+            <app-panel-header title='Code'>
+              <app-query-editor-bottom-bar
+                (executeQuery)='submitQuery()'
+                [currentState$]='currentState$'
+                [error]='lastErrorMessage'
+                [(queryLanguage)]='queryLanguage'
+                [runningQueryStatus]='queryMetadata$ | async'
+                (cancelQuery)='cancelQuery()'
+                (copyQuery)='copyQuery($event)'
+              >
+              </app-query-editor-bottom-bar>
+            </app-panel-header>
+            <div class='code-viewer-container' *ngIf='queryLanguage === "TaxiQL"'>
+              <app-code-editor
+                class='code-editor'
+                [actions]='customActions'
+                [(content)]='query' #editor></app-code-editor>
+            </div>
+            <tui-text-area class='flat query-input' [(ngModel)]='chatQuery' *ngIf='queryLanguage === "Text"'>Write a
+              query
+            </tui-text-area>
           </div>
-          <tui-text-area class='flat query-input' [(ngModel)]='chatQuery' *ngIf='queryLanguage === "Text"'>Write a query</tui-text-area>
         </div>
       </as-split-area>
       <as-split-area size='50'>

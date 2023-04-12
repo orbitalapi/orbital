@@ -19,7 +19,7 @@ import {
   emptySchema,
   Schema,
   SchemaMember,
-  SchemaMemberNamed, SchemaMemberType
+  SchemaMemberNamed, SchemaMemberKind
 } from '../../services/schema';
 import { Observable, Subject } from 'rxjs';
 import { Link, LinkKind, MemberWithLinks } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
@@ -230,7 +230,7 @@ function SchemaFlowDiagramWithProvider(props) {
 }
 
 
-export type SchemaMemberClickProps = SchemaMember | { name: SchemaMemberNamed, type: SchemaMemberType }
+export type SchemaMemberClickProps = SchemaMember | { name: SchemaMemberNamed, type: SchemaMemberKind }
 export type SchemaMemberClickHandler = (SchemaMemberClickProps) => void;
 export type AppendLinksHandler = (AppendLinksProps) => void;
 

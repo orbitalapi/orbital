@@ -1,0 +1,44 @@
+@import "src/theme";
+
+.mono-badge {
+  margin-left: 0.75rem;
+}
+
+.tooltip {
+  font-size: 0.8rem;
+}
+
+.element-label {
+  flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row {
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+
+  img {
+    margin-right: 0.5rem;
+    width: 20px;
+  }
+}
+
+:host {
+  font-size: 0.85rem;
+  color: $slate-700;
+
+}
+.result-type-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  margin-right: 0.5rem;
+  color: $slate-500;
+  font-weight: 600;
+  border: 1px solid $slate-300;
+  background-color: $slate-100;
+  padding: 0.1rem 0.25rem;
+  border-radius: 4px;
+}

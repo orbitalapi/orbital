@@ -5,7 +5,7 @@ import {
   QualifiedName,
   Schema,
   SchemaMember,
-  SchemaMemberType,
+  SchemaMemberKind,
   Service,
   ServiceMember,
   splitOperationQualifiedName,
@@ -129,12 +129,12 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
     sourceNodeName: parent.name,
     sourceHandleId: HandleIds.modelFieldOutbound(parent.name, parent.field),
     inverseSourceHandleId: HandleIds.modelFieldInbound(parent.name, parent.field),
-    sourceMemberType: 'TYPE' as SchemaMemberType
+    sourceMemberType: 'TYPE' as SchemaMemberKind
   } : {
     sourceNodeId: typeNodeId,
     sourceNodeName: typeName,
     sourceHandleId: HandleIds.modelOutbound(typeName),
-    sourceMemberType: 'TYPE' as SchemaMemberType,
+    sourceMemberType: 'TYPE' as SchemaMemberKind,
     inverseSourceHandleId: HandleIds.modelInbound(typeName)
   };
 
@@ -287,12 +287,12 @@ export interface Link {
   sourceNodeName: QualifiedName;
   sourceNodeId: string;
   sourceHandleId: string;
-  sourceMemberType: SchemaMemberType;
+  sourceMemberType: SchemaMemberKind;
 
   targetNodeName: QualifiedName;
   targetNodeId: string;
   targetHandleId: string;
-  targetMemberType: SchemaMemberType;
+  targetMemberType: SchemaMemberKind;
 
   linkStyle?: CSSProperties;
 
@@ -352,7 +352,7 @@ function buildLinks(member: SchemaMember, schema: Schema, operations: ServiceMem
   }
 }
 
-export function getNodeId(schemaMemberType: SchemaMemberType, name: QualifiedName): string {
+export function getNodeId(schemaMemberType: SchemaMemberKind, name: QualifiedName): string {
   return `${schemaMemberType.toLowerCase()}-${name.fullyQualifiedName}`;
 }
 

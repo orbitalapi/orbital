@@ -314,7 +314,9 @@ export interface Operation extends SchemaMemberNamed, Functional {
   operationType: string | null;
 }
 
-export type ServiceKind = 'Api' | 'Database' | 'Kafka';
+export type TypeKind = 'Model' | 'Type';
+export type ServiceKind = 'API' | 'Database' | 'Kafka';
+export type OperationKind = 'ApiCall' | 'Query' | 'Stream' | 'Table';
 
 export interface Version {
   version: string
@@ -533,7 +535,7 @@ export interface SchemaNodeSet {
 export class SchemaMember {
   constructor(
     public readonly name: QualifiedName,
-    public readonly kind: SchemaMemberType,
+    public readonly kind: SchemaMemberKind,
     public readonly aliasForType: string,
     public readonly member: Type | Service | Operation,
     public readonly sources: VersionedSource[],
@@ -615,7 +617,7 @@ export class SchemaMember {
   }
 }
 
-export type SchemaMemberType = 'SERVICE' | 'TYPE' | 'OPERATION';
+export type SchemaMemberKind = 'SERVICE' | 'TYPE' | 'OPERATION';
 
 export interface TypedInstance {
   type: Type;

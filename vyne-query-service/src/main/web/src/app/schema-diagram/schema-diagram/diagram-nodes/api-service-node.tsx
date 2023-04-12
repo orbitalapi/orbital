@@ -118,7 +118,7 @@ function ApiNode(node: Node<MemberWithLinks>) {
 
   function getIcon(): string {
     switch (service.serviceKind) {
-      case 'Api':
+      case 'API':
         return 'assets/img/chart-icons/api-icon.svg';
       case 'Database':
         return 'assets/img/chart-icons/database-icon.svg';

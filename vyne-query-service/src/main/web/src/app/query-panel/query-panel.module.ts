@@ -45,6 +45,8 @@ import { MatMenuModule } from '@angular/material/menu';
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { QuerySnippetPanelModule } from 'src/app/query-snippet-panel/query-snippet-panel.module';
 import { TuiDataListWrapperModule, TuiSelectModule, TuiTabsModule, TuiTextAreaModule } from '@taiga-ui/kit';
+import {DataCatalogModule} from "../data-catalog/data-catalog.module";
+import {CatalogExplorerPanelModule} from "../catalog-explorer-panel/catalog-explorer-panel.module";
 
 @NgModule({
   imports: [
@@ -90,7 +92,8 @@ import { TuiDataListWrapperModule, TuiSelectModule, TuiTabsModule, TuiTextAreaMo
     TuiTextAreaModule,
     TuiSelectModule,
     TuiDataListWrapperModule,
-    TuiTextfieldControllerModule
+    TuiTextfieldControllerModule,
+    CatalogExplorerPanelModule
   ],
   exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent,
     ErrorPanelComponent],

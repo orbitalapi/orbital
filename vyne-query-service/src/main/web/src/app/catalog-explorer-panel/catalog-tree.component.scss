@@ -1,0 +1,23 @@
+@import "src/theme";
+// give this a fixed width so that the
+// type labels (for fields / types)
+// show the primitive types in the same place.
+// They're right aligned (via flex-grow), so
+// need a max width to grow to.
+app-catalog-entry-line {
+  display: block;
+  width: 10rem;
+
+  padding: 0.15rem 0;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: $slate-100;
+  }
+}
+
+.root-node {
+  font-size: 0.85rem;
+  color: $slate-700;
+}

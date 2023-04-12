@@ -1,33 +1,33 @@
-import { Inject, Injectable, Injector } from '@angular/core';
-import { Observable, ReplaySubject, Subject } from 'rxjs';
+import {Inject, Injectable, Injector} from '@angular/core';
+import {Observable, ReplaySubject, Subject} from 'rxjs';
 
 import * as _ from 'lodash';
-import { HttpClient } from '@angular/common/http';
+import {HttpClient} from '@angular/common/http';
 
-import { concatAll, map, shareReplay } from 'rxjs/operators';
-import { Policy } from '../policy-manager/policies';
+import {concatAll, map, shareReplay} from 'rxjs/operators';
+import {Policy} from '../policy-manager/policies';
 import {
   CompilationMessage,
   Message,
-  Operation,
+  Operation, OperationKind,
   ParsedSource,
   PartialSchema,
   QualifiedName,
   Schema,
   SchemaGraph,
   SchemaGraphNode,
-  SchemaMember,
+  SchemaMember, SchemaMemberKind,
   SchemaSpec,
-  Service,
+  Service, ServiceKind,
   Type,
-  TypedInstance,
+  TypedInstance, TypeKind,
   TypeNamedInstance,
   VersionedSource,
 } from './schema';
-import { SchemaNotificationService, SchemaUpdatedNotification } from './schema-notification.service';
-import { ValueWithTypeName } from './models';
-import { ENVIRONMENT, Environment } from './environment';
-import { TuiDialogService } from '@taiga-ui/core';
+import {SchemaNotificationService, SchemaUpdatedNotification} from './schema-notification.service';
+import {ValueWithTypeName} from './models';
+import {ENVIRONMENT, Environment} from './environment';
+import {TuiDialogService} from '@taiga-ui/core';
 
 
 @Injectable({
@@ -44,8 +44,7 @@ export class TypesService {
     @Inject(Injector) private readonly injector: Injector,
     private http: HttpClient,
     private schemaNotificationService: SchemaNotificationService,
-
-    ) {
+  ) {
 
     this.getTypes().subscribe(schema => {
       this.schema = schema;
@@ -124,6 +123,16 @@ export class TypesService {
 
   getOperation(serviceName: string, operationName: string): Observable<Operation> {
     return this.http.get<Operation>(`${this.environment.serverUrl}/api/services/${serviceName}/${operationName}`);
+  }
+
+  getSchemaTree(nodeName: string | null): Observable<SchemaTreeNode[]> {
+    if (nodeName) {
+      return this.http.get<SchemaTreeNode[]>(`${this.environment.serverUrl}/api/schema/tree?node=${nodeName}`);
+    } else {
+      return this.http.get<SchemaTreeNode[]>(`${this.environment.serverUrl}/api/schema/tree`);
+    }
+
+
   }
 
   parse(content: string, type: Type): Observable<ParsedTypeInstance[]> {
@@ -210,7 +219,7 @@ export class TypesService {
       // therefore, concatAll() seems to do this.
       // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
       concatAll(),
-      shareReplay({ bufferSize: 500, refCount: false }),
+      shareReplay({bufferSize: 500, refCount: false}),
     );
 
   }
@@ -325,7 +334,6 @@ export interface SchemaEditRequest {
 }
 
 
-
 export interface SchemaPreview {
   spec: SchemaSpec;
   content: string;
@@ -434,3 +442,15 @@ export interface UpdateDataOwnerRequest {
   name: string;
 }
 
+export interface SchemaTreeNode {
+  element: QualifiedName;
+  schemaMemberKind: SchemaMemberKind;
+  hasChildren: boolean;
+  typeDoc: string | null;
+  serviceKind: ServiceKind | null;
+  typeKind: TypeKind | null;
+  operationKind: OperationKind | null;
+  fieldName: string | null;
+  primitiveType: QualifiedName | null;
+
+}

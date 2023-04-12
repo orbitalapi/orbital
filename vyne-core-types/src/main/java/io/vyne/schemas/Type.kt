@@ -111,6 +111,7 @@ data class Type(
    companion object {
       private val internedParameterizedNames = Interners.newStrongInterner<String>()
    }
+   override val schemaMemberKind: SchemaMemberKind = SchemaMemberKind.TYPE
 
    // Interned, so that can be used for equality checks
    val paramaterizedName: String = internedParameterizedNames.intern(qualifiedName.parameterizedName)

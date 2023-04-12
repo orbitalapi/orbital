@@ -1,4 +1,4 @@
-import { findSchemaMember, Schema, SchemaMemberType, ServiceMember } from '../../services/schema';
+import { findSchemaMember, Schema, SchemaMemberKind, ServiceMember } from '../../services/schema';
 import { Edge, EdgeMarkerType, MarkerType, Node, XYPosition } from 'reactflow';
 import {
   buildSchemaNode, collectAllLinks,
@@ -140,7 +140,7 @@ export class SchemaChartController {
     }
   }
 
-  private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, sourceSchemaKind: SchemaMemberType, targetNode: Node<MemberWithLinks>, targetHandleId: string, targetSchemaKind: SchemaMemberType, linkKind: LinkKind, linkId?: string): Edge {
+  private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, sourceSchemaKind: SchemaMemberKind, targetNode: Node<MemberWithLinks>, targetHandleId: string, targetSchemaKind: SchemaMemberKind, linkKind: LinkKind, linkId?: string): Edge {
     let label: string;
     let markerStart, markerEnd: EdgeMarkerType;
     // Default color

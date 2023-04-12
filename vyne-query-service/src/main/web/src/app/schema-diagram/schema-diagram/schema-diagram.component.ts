@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
-import { Schema, SchemaMember, SchemaMemberType, splitOperationQualifiedName } from '../../services/schema';
+import { Schema, SchemaMember, SchemaMemberKind, splitOperationQualifiedName } from '../../services/schema';
 import { RequiredMembersProps, SchemaFlowWrapper, SchemaMemberClickProps } from './schema-flow.react';
 import { ResizedEvent } from 'angular-resize-event/lib/resized.event';
 import { isNullOrUndefined } from 'util';
@@ -140,7 +140,7 @@ export class SchemaDiagramComponent {
 
     const clickHandler = new Subject<SchemaMemberClickProps>();
     clickHandler.subscribe((clickedMember:SchemaMemberClickProps) => {
-      const navigate = (schemaMemberType:SchemaMemberType, name: string) => {
+      const navigate = (schemaMemberType:SchemaMemberKind, name: string) => {
         switch (schemaMemberType) {
           case 'TYPE':
             this.router.navigate(['catalog',name]);
