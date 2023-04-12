@@ -8,6 +8,10 @@
   img {
     margin-right: 0.5rem;
   }
+
+  .flex-grow {
+    flex-grow: 1;
+  }
 }
 
 
@@ -18,8 +22,16 @@
   color: $slate-700;
   cursor: pointer;
 
+  .add-to-query-button {
+    visibility: hidden;
+  }
+
   &:hover {
-    background-color: $slate-100;
+    background-color: $slate-50;
+
+    .add-to-query-button {
+      visibility: visible;
+    }
   }
 }
 

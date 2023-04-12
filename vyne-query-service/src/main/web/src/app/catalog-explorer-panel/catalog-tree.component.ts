@@ -1,9 +1,9 @@
-import {Component, Inject} from '@angular/core';
+import {Component, EventEmitter, Inject, Output} from '@angular/core';
 import {SchemaTreeNode} from "../services/types.service";
 import {TUI_TREE_LOADER, TUI_TREE_LOADING, TUI_TREE_START, TuiTreeService} from "@taiga-ui/kit";
 import {SchemaTreeLoader} from "./schema-tree-loader";
 import {TuiHandler} from "@taiga-ui/cdk";
-import {OperationKind, ServiceKind, TypeKind} from "../services/schema";
+import {OperationKind, QualifiedName, ServiceKind, TypeKind} from "../services/schema";
 
 export const ROOT_NODE = {rootNode: 'Data sources'}
 
@@ -23,19 +23,21 @@ export const ROOT_NODE = {rootNode: 'Data sources'}
               let-item
       >
           <tui-loader
-                  *ngIf="item === loading; else text"
-                  class="loader"
+            *ngIf="item === loading; else text"
+            class="loader"
           ></tui-loader>
-          <ng-template #text>
-              <app-catalog-entry-line *ngIf="!isRootNode(item)"
-                                      [qualifiedName]="n(item).element"
-                                      [fieldName]="n(item).fieldName"
-                                      [primitiveType]="n(item).primitiveType"
-                                      [serviceOrTypeKind]="serviceOrType(n(item))"
-                                      [showModelNamesForFields]="false"
-              ></app-catalog-entry-line>
-              <span *ngIf="isRootNode(item)" class="root-node">{{item.rootNode}}</span>
-          </ng-template>
+        <ng-template #text>
+          <app-catalog-entry-line *ngIf="!isRootNode(item)"
+                                  [qualifiedName]="n(item).element"
+                                  [fieldName]="n(item).fieldName"
+                                  [primitiveType]="n(item).primitiveType"
+                                  [serviceOrTypeKind]="serviceOrType(n(item))"
+                                  [showModelNamesForFields]="false"
+                                  (addToQueryClicked)="addToQueryClicked.emit($event)"
+                                  (click)="itemClicked.emit(n(item).element)"
+          ></app-catalog-entry-line>
+          <span *ngIf="isRootNode(item)" class="root-node">{{item.rootNode}}</span>
+        </ng-template>
       </ng-template>
   `,
   providers: [
@@ -52,6 +54,14 @@ export const ROOT_NODE = {rootNode: 'Data sources'}
   styleUrls: ['./catalog-tree.component.scss']
 })
 export class CatalogTreeComponent {
+
+  @Output()
+  itemClicked = new EventEmitter<QualifiedName>();
+
+  @Output()
+  addToQueryClicked = new EventEmitter<QualifiedName>();
+
+
   // to add typing into template
   n(item: any): SchemaTreeNode {
     return item as SchemaTreeNode;

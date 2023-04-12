@@ -1,12 +1,12 @@
-import { Component, Input } from '@angular/core';
-import { SchemaSubmissionResult, TypesService } from '../services/types.service';
-import { Message, PartialSchema, Schema } from '../services/schema';
-import { ConnectorSummary, DbConnectionService, MappedTable } from '../db-connection-editor/db-importer.service';
-import { ConvertSchemaEvent } from './schema-importer.models';
-import { SchemaImporterService } from './schema-importer.service';
-import { Observable } from 'rxjs/internal/Observable';
-import { shareReplay } from 'rxjs/operators';
-import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
+import {Component, Input} from '@angular/core';
+import {SchemaSubmissionResult, TypesService} from '../services/types.service';
+import {Message, PartialSchema, Schema} from '../services/schema';
+import {ConnectorSummary, DbConnectionService, MappedTable} from '../db-connection-editor/db-importer.service';
+import {ConvertSchemaEvent} from './schema-importer.models';
+import {SchemaImporterService} from './schema-importer.service';
+import {Observable} from 'rxjs/internal/Observable';
+import {shareReplay} from 'rxjs/operators';
+import {appInstanceType} from 'src/app/app-config/app-instance.vyne';
 
 
 @Component({

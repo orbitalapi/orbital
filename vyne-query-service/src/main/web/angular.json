@@ -46,8 +46,8 @@
               },
               "node_modules/prismjs/themes/prism-okaidia.css",
               "node_modules/monaco-editor/dev/vs/editor/editor.main.css",
-              "node_modules/@taiga-ui/core/styles/taiga-ui-global.less",
               "node_modules/@taiga-ui/core/styles/taiga-ui-theme.less",
+              "node_modules/@taiga-ui/core/styles/taiga-ui-fonts.less",
               "node_modules/reactflow/dist/style.css",
               "./src/styles.scss"
             ],

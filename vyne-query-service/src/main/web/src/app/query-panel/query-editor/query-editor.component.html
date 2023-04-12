@@ -5,7 +5,8 @@
         <div class="code-editor-panel-container">
           <app-panelset>
             <app-panel icon="assets/img/tabler/vocabulary.svg" title="Catalog">
-              <app-catalog-explorer-panel></app-catalog-explorer-panel>
+              <app-catalog-explorer-panel
+                (addToQueryClicked)="onAddToQueryClicked($event)"></app-catalog-explorer-panel>
             </app-panel>
           </app-panelset>
           <div class='code-editor-section'>

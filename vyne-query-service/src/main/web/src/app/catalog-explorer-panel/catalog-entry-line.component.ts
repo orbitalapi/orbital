@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
+import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
 import {OperationKind, QualifiedName, ServiceKind, TypeKind} from "../services/schema";
 
 @Component({
@@ -9,17 +9,27 @@ import {OperationKind, QualifiedName, ServiceKind, TypeKind} from "../services/s
           <span class="result-type-label" *ngIf="!getIcon()">{{getLabel()}}</span>
           <ng-container *ngIf="fieldName">
           <span class="element-label">{{fieldName}}
-              <span class="attribute-model-name"
-                    *ngIf="showModelNamesForFields"
-              >(on {{qualifiedName.shortDisplayName}})</span></span>
+            <span class="attribute-model-name"
+                  *ngIf="showModelNamesForFields"
+            >(on {{qualifiedName.shortDisplayName}})</span></span>
           </ng-container>
-          <ng-container *ngIf="!fieldName">
+        <ng-container *ngIf="!fieldName">
               <span class="element-label"
-              [tuiHint]="labelTooltip"
+                    [tuiHint]="labelTooltip"
               >{{qualifiedName.shortDisplayName}}</span>
-          </ng-container>
-          <span class="mono-badge small"
-                *ngIf="primitiveType">{{primitiveType.shortDisplayName}}</span>
+        </ng-container>
+        <button *ngIf="showAddToQueryButton"
+                class="add-to-query-button"
+                tuiIconButton
+                type="button"
+                size="xs"
+                appearance="icon"
+                icon="tuiIconPlusCircle"
+                (click)="addToQueryClicked.emit(qualifiedName)"
+                [tuiHint]="'Add to query'"
+        ></button>
+        <span class="mono-badge small"
+              *ngIf="primitiveType">{{primitiveType.shortDisplayName}}</span>
       </div>
       <ng-template #labelTooltip>
         <span class="tooltip">{{ qualifiedName.shortDisplayName }}</span>
@@ -43,6 +53,18 @@ export class CatalogEntryLineComponent {
 
   @Input()
   serviceOrTypeKind: TypeKind | ServiceKind | OperationKind;
+
+  @Input()
+  allowAddToQuery: boolean = true;
+
+  @Output()
+  addToQueryClicked = new EventEmitter<QualifiedName>();
+
+
+  get showAddToQueryButton(): boolean {
+    if (!this.allowAddToQuery) return false;
+    return this.serviceOrTypeKind === "Type" || this.serviceOrTypeKind === "Model" || this.serviceOrTypeKind === "Table" || this.serviceOrTypeKind === "ApiCall" || this.serviceOrTypeKind === "Stream";
+  }
 
   getLabel(): string | null {
     if (this.serviceOrTypeKind !== "Type") {

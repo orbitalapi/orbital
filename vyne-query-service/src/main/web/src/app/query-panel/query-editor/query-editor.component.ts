@@ -9,9 +9,9 @@ import {
   OnInit,
   Output
 } from '@angular/core';
-import { tap } from 'rxjs/operators';
+import {tap} from 'rxjs/operators';
 
-import { editor, KeyCode, KeyMod } from 'monaco-editor';
+import {editor, KeyCode, KeyMod} from 'monaco-editor';
 import {
   ChatParseResult,
   QueryHistorySummary,
@@ -21,33 +21,31 @@ import {
   randomId,
   ResultMode
 } from '../../services/query.service';
-import { QueryLanguage, QueryState } from './bottom-bar.component';
-import { isQueryResult, QueryResultInstanceSelectedEvent } from '../result-display/BaseQueryResultComponent';
-import { MatDialog } from '@angular/material/dialog';
-import { findType, InstanceLike, Schema, Type } from '../../services/schema';
-import { BehaviorSubject, Observable, ReplaySubject, Subject } from 'rxjs';
-import { isNullOrUndefined } from 'util';
-import {
-  ActiveQueriesNotificationService,
-  RunningQueryStatus
-} from '../../services/active-queries-notification-service';
-import { TypesService } from '../../services/types.service';
+import {QueryLanguage, QueryState} from './bottom-bar.component';
+import {isQueryResult, QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
+import {MatDialog} from '@angular/material/dialog';
+import {findType, InstanceLike, QualifiedName, Schema, Type} from '../../services/schema';
+import {BehaviorSubject, Observable, ReplaySubject, Subject} from 'rxjs';
+import {isNullOrUndefined} from 'util';
+import {ActiveQueriesNotificationService, RunningQueryStatus} from '../../services/active-queries-notification-service';
+import {TypesService} from '../../services/types.service';
 import {
   FailedSearchResponse,
   isFailedSearchResponse,
   isValueWithTypeName,
   StreamingQueryMessage
 } from '../../services/models';
-import { Router } from '@angular/router';
-import { ExportFormat, ResultsDownloadService } from 'src/app/results-download/results-download.service';
-import { copyQueryAs, CopyQueryFormat } from 'src/app/query-panel/query-editor/QueryFormatter';
-import { Clipboard } from '@angular/cdk/clipboard';
+import {Router} from '@angular/router';
+import {ExportFormat, ResultsDownloadService} from 'src/app/results-download/results-download.service';
+import {copyQueryAs, CopyQueryFormat} from 'src/app/query-panel/query-editor/QueryFormatter';
+import {Clipboard} from '@angular/cdk/clipboard';
 import {
   CodeGenRequest,
   QuerySnippetContainerComponent
 } from 'src/app/query-snippet-panel/query-snippet-container.component';
-import { TuiDialogService } from '@taiga-ui/core';
-import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
+import {TuiDialogService} from '@taiga-ui/core';
+import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
+import {appendToQuery} from "./query-code-generator";
 import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
 
@@ -367,5 +365,9 @@ export class QueryEditorComponent implements OnInit {
     } else {
       copyQueryAs(this.query, this.queryService.queryEndpoint, $event, this.clipboard);
     }
+  }
+
+  onAddToQueryClicked($event: QualifiedName) {
+    this.query = appendToQuery(this.query, $event);
   }
 }

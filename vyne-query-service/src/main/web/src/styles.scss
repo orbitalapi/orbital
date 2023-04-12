@@ -7,8 +7,12 @@
 
 
 :root {
-  --tui-text-font: $font-sans;
-  --tui-font-text: $font-sans;
+  // Used to use variables here (--tui-text-font: $font-sans), but it stopped working.
+  // Haven't really investigated why.
+  --tui-text-font: 'nunito-sans', sans-serif;
+  --tui-font-text: 'nunito-sans', sans-serif;
+
+
   --tui-radius-s: 0.3rem;
   --tui-radius-m: 0.4rem;
   --tui-radius-l: 0.5rem;
@@ -16,7 +20,20 @@
   --tui-primary: #{$primary};
   --tui-primary-hover: #{$primary-light};
   --tui-primary-active: #{$primary-dark};
+
+
+  // After upgrading taiga 2->3, everything was shrunk
+  // to 13px.  This seems to fix it.
+  --tui-font-text-s: normal 1rem #{$body-font};
+
 }
+
+// Patching things that broke after upgrading Taiga-ui 2->3
+button {
+  // For some reason, link buttons are showing as Arial without this
+  font-family: $body-font
+}
+
 .ag-theme-alpine {
   @include ag-theme-alpine((
     font-family: ($font-sans),
@@ -44,6 +61,7 @@ tui-root {
 html, body {
   height: 100%;
   overflow: hidden;
+  font-size: 16px;
 }
 
 *:focus {

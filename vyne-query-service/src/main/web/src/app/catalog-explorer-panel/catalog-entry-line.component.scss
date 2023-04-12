@@ -30,6 +30,17 @@
   font-size: 0.85rem;
   color: $slate-700;
 
+  .add-to-query-button {
+    visibility: hidden;
+  }
+
+  &:hover {
+    .add-to-query-button {
+      visibility: visible;
+    }
+
+  }
+
 }
 .result-type-label {
   font-size: 0.7rem;

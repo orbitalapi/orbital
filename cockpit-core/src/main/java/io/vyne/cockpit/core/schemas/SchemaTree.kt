@@ -1,9 +1,7 @@
 package io.vyne.cockpit.core.schemas
 
 import io.vyne.schemas.*
-import io.vyne.schemas.taxi.toVyneQualifiedName
 import lang.taxi.types.Arrays
-import lang.taxi.types.StreamType
 import lang.taxi.types.TypeKind
 
 /**
@@ -24,6 +22,11 @@ object SchemaTreeUtils {
    fun getChildNodes(node: QualifiedName, schema: Schema): List<SchemaTreeNode> {
       return when (val element = schema.getMember(node)) {
          is Service -> {
+            if (element.serviceKind == ServiceKind.Database) {
+               element.tableOperations.map { tableOperation ->
+                  SchemaTreeNode.forTableOperation(tableOperation)
+               }
+            }
             element.remoteOperations.map { remoteOperation ->
                SchemaTreeNode.forOperation(remoteOperation)
             }
@@ -108,6 +111,16 @@ data class SchemaTreeNode(
             typeDoc = service.typeDoc,
             hasChildren = service.remoteOperations.isNotEmpty(),
             serviceKind = service.serviceKind
+         )
+      }
+
+      fun forTableOperation(tableOperation: TableOperation): SchemaTreeNode {
+         return SchemaTreeNode(
+            tableOperation.returnType.name,
+            SchemaMemberKind.TYPE,
+            hasChildren = true,
+            tableOperation.typeDoc,
+            typeKind = TypeKind.Model
          )
       }
    }

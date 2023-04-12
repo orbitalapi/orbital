@@ -1,27 +1,29 @@
-import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
-import {FormControl, FormGroup} from "@angular/forms";
+import {ChangeDetectorRef, Component, EventEmitter, Output} from '@angular/core';
 import {SearchResult, SearchService} from "../search/search.service";
 import {TypesService} from "../services/types.service";
+import {QualifiedName} from "../services/schema";
 
 @Component({
   selector: 'app-catalog-explorer-panel',
   template: `
       <div class="search-container">
           <tui-input
-                  icon="tuiIconSearch"
-                  [tuiTextfieldCleaner]="true"
-                  [tuiTextfieldLabelOutside]="true"
-                  [ngModel]="searchValue"
-                  (ngModelChange)="onSearchChanged($event)"
-                  tuiTextfieldSize="m">
-              Search
-              <input tuiTextfield/>
+            icon="tuiIconSearch"
+            [tuiTextfieldCleaner]="true"
+            [tuiTextfieldLabelOutside]="true"
+            [ngModel]="searchValue"
+            (ngModelChange)="onSearchChanged($event)"
+            tuiTextfieldSize="m">
+            Search
+            <input tuiTextfield/>
 
           </tui-input>
       </div>
       <mat-progress-bar mode="query" *ngIf="searchLoading"></mat-progress-bar>
-      <app-catalog-tree *ngIf="!searchResults"></app-catalog-tree>
+      <app-catalog-tree *ngIf="!searchResults" (addToQueryClicked)="addToQueryClicked.emit($event)"
+      ></app-catalog-tree>
       <app-catalog-panel-search-results *ngIf="searchResults"
+                                        (addToQueryClicked)="addToQueryClicked.emit($event)"
                                         [searchResults]="searchResults"></app-catalog-panel-search-results>
   `,
   styleUrls: ['./catalog-explorer-panel.component.scss']
@@ -32,6 +34,9 @@ export class CatalogExplorerPanelComponent {
               private typeService: TypesService,
               private changeDetector: ChangeDetectorRef) {
   }
+
+  @Output()
+  addToQueryClicked = new EventEmitter<QualifiedName>();
 
   searchLoading: boolean;
   searchResults: SearchResult[];

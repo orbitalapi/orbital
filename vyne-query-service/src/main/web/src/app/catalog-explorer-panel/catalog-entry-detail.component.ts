@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, Input} from '@angular/core';
+import {SchemaMember} from "../services/schema";
 
 @Component({
   selector: 'app-catalog-entry-detail',
@@ -9,11 +10,11 @@ import { Component, OnInit } from '@angular/core';
   `,
   styleUrls: ['./catalog-entry-detail.component.scss']
 })
-export class CatalogEntryDetailComponent implements OnInit {
+export class CatalogEntryDetailComponent {
 
-  constructor() { }
+  @Input()
+  member: SchemaMember
 
-  ngOnInit(): void {
-  }
 
 }
+

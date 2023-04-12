@@ -29,14 +29,14 @@ import {MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldDefaultOptions} from '@angul
 import {
   TuiComboBoxModule,
   TuiDataListWrapperModule,
-  TuiFieldErrorModule,
+  TuiFieldErrorPipeModule,
   TuiFilterByInputPipeModule,
   TuiInputModule,
   TuiStringifyContentPipeModule
 } from '@taiga-ui/kit';
 import {TuiButtonModule, TuiTextfieldControllerModule} from '@taiga-ui/core';
 import {DbConnectionEditorDialogComponent} from './db-connection-editor-dialog.component';
-import { HeaderComponentLayoutModule } from 'src/app/header-component-layout/header-component-layout.module';
+import {HeaderComponentLayoutModule} from 'src/app/header-component-layout/header-component-layout.module';
 
 const appearance: MatFormFieldDefaultOptions = {
   appearance: 'outline'
@@ -52,24 +52,24 @@ const appearance: MatFormFieldDefaultOptions = {
         FormsModule,
         MatButtonModule,
         AgGridModule.withComponents([TypeSelectorCellEditorComponent, CheckboxCellEditorComponent]),
-        TypeAutocompleteModule,
-        MatCheckboxModule,
-        CovalentDynamicFormsModule,
-        ReactiveFormsModule,
-        MatStepperModule,
-        MatProgressBarModule,
-        TypedEditorModule,
-        RouterModule,
-        MatMenuModule,
-        TuiInputModule,
-        TuiFieldErrorModule,
-        TuiComboBoxModule,
-        TuiDataListWrapperModule,
-        TuiFilterByInputPipeModule,
-        TuiStringifyContentPipeModule,
-        TuiTextfieldControllerModule,
-        TuiButtonModule,
-        HeaderComponentLayoutModule
+      TypeAutocompleteModule,
+      MatCheckboxModule,
+      CovalentDynamicFormsModule,
+      ReactiveFormsModule,
+      MatStepperModule,
+      MatProgressBarModule,
+      TypedEditorModule,
+      RouterModule,
+      MatMenuModule,
+      TuiInputModule,
+      TuiFieldErrorPipeModule,
+      TuiComboBoxModule,
+      TuiDataListWrapperModule,
+      TuiFilterByInputPipeModule,
+      TuiStringifyContentPipeModule,
+      TuiTextfieldControllerModule,
+      TuiButtonModule,
+      HeaderComponentLayoutModule
     ],
   exports: [ConnectionEditorComponent, TableImporterComponent,
     DbConnectionWizardComponent,
