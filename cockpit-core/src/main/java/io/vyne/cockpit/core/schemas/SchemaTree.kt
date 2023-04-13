@@ -20,15 +20,22 @@ object SchemaTreeUtils {
    }
 
    fun getChildNodes(node: QualifiedName, schema: Schema): List<SchemaTreeNode> {
-      return when (val element = schema.getMember(node)) {
+      val unwrappedArray = if (Arrays.isArray(node.toTaxiQualifiedName())) {
+         node.parameters.first()
+      } else {
+         node
+      }
+      return when (val element = schema.getMember(unwrappedArray)) {
          is Service -> {
             if (element.serviceKind == ServiceKind.Database) {
                element.tableOperations.map { tableOperation ->
                   SchemaTreeNode.forTableOperation(tableOperation)
                }
-            }
-            element.remoteOperations.map { remoteOperation ->
-               SchemaTreeNode.forOperation(remoteOperation)
+            } else {
+               element.remoteOperations.map { remoteOperation ->
+                  SchemaTreeNode.forOperation(remoteOperation)
+
+               }
             }
          }
 
@@ -36,6 +43,7 @@ object SchemaTreeUtils {
             val operationReturnType = Arrays.unwrapPossibleArrayType(element.returnType.taxiType)
             listOf(SchemaTreeNode.forType(schema.type(operationReturnType.qualifiedName)))
          }
+
          is StreamOperation -> {
             val operationReturnType = Arrays.unwrapPossibleArrayType(element.returnType.taxiType)
             listOf(SchemaTreeNode.forType(schema.type(operationReturnType.qualifiedName)))

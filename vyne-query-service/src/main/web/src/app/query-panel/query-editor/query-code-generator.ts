@@ -1,4 +1,5 @@
 import {QualifiedName} from "../../services/schema";
+import {isNullOrUndefined} from "util";
 
 function hasVerbClause(lines: string[]) {
   return lines.some(line => line.trim().startsWith('find {') || line.trim().startsWith('stream {'))
@@ -38,8 +39,9 @@ function typeAsField(typeToAdd: QualifiedName): string {
   return `${lowerFirstLetter(typeToAdd.name)}: ${typeToAdd.shortDisplayName}`;
 }
 
-function appendProjection(lines: string[], typeToAdd: QualifiedName): string[] {
-  lines.push('as {', indent(typeAsField(typeToAdd), 3), '}')
+function appendProjection(lines: string[], typeToAdd: QualifiedName, projectAsArray: boolean): string[] {
+  const closingTag = projectAsArray ? '}[]' : '}';
+  lines.push('as {', indent(typeAsField(typeToAdd), 3), closingTag)
   return lines;
 }
 
@@ -50,6 +52,15 @@ function appendTypeToExistingProjection(lines: string[], typeToAdd: QualifiedNam
   return lines;
 }
 
+function isQueryingArray(lines: string[]): boolean {
+  const findLine = lines.find(s => s.trim().startsWith("find {"))
+  if (isNullOrUndefined(findLine)) {
+    return false
+  } else {
+    return findLine.includes('[]');
+  }
+}
+
 export function appendToQuery(existingQuery: string, typeToAdd: QualifiedName): string {
   let lines = existingQuery.split('\n');
   lines = prependImport(lines, typeToAdd);
@@ -57,7 +68,7 @@ export function appendToQuery(existingQuery: string, typeToAdd: QualifiedName): 
   if (hasVerbClause(lines)) {
     const projectionExists = hasProjection(lines);
     if (!projectionExists) {
-      lines = appendProjection(lines, typeToAdd);
+      lines = appendProjection(lines, typeToAdd, isQueryingArray(lines));
     } else {
       lines = appendTypeToExistingProjection(lines, typeToAdd);
     }
