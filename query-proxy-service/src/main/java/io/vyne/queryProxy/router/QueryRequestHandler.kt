@@ -19,7 +19,6 @@ import reactor.kotlin.core.publisher.toFlux
 @Component
 class QueryRequestHandler(
    private val schemaStore: SchemaStore,
-   private val vyneFactory: VyneFactory
 ) : HandlerFunction<ServerResponse> {
 
    private var queryRouter: QueryRouter = QueryRouter.build(emptyList())
