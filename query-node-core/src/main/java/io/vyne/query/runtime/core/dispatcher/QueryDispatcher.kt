@@ -1,6 +1,5 @@
-package io.vyne.query.runtime.core
+package io.vyne.query.runtime.core.dispatcher
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.auth.tokens.AuthTokenRepository
 import io.vyne.connectors.config.ConfigFileConnectorsRegistry
 import io.vyne.http.ServicesConfigRepository
@@ -10,21 +9,12 @@ import io.vyne.query.runtime.QueryMessage
 import io.vyne.query.runtime.QueryMessageCborWrapper
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.utils.formatAsFileSize
-import kotlinx.serialization.encodeToByteArray
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.encodeToStream
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.*
-import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
-import reactor.util.function.Tuple2
-import java.io.ByteArrayOutputStream
-import java.util.zip.GZIPOutputStream
 
 /**
  * Entry point for sending queries to
@@ -67,8 +57,12 @@ class QueryDispatcher(
          resultMode, mediaType, clientQueryId
       )
 
+      return dispatchQuery(message)
+   }
+
+   fun dispatchQuery(message: QueryMessage): Mono<Any> {
       val encodedWrapper = QueryMessageCborWrapper.from(message)
-      logger.info { "Dispatching query $clientQueryId - ${encodedWrapper.size().formatAsFileSize}" }
+      logger.info { "Dispatching query ${message.clientQueryId} - ${encodedWrapper.size().formatAsFileSize}" }
 
       return webClient.build().post()
          .uri(queryRouterUrl)

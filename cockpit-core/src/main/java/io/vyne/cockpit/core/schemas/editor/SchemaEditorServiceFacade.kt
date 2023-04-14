@@ -6,15 +6,7 @@ import io.vyne.schema.publisher.loaders.CreateChangesetResponse
 import io.vyne.schema.publisher.loaders.FinalizeChangesetResponse
 import io.vyne.schema.publisher.loaders.SetActiveChangesetResponse
 import io.vyne.schema.publisher.loaders.UpdateChangesetResponse
-import io.vyne.schemaServer.editor.AddChangesToChangesetRequest
-import io.vyne.schemaServer.editor.FinalizeChangesetRequest
-import io.vyne.schemaServer.editor.GetAvailableChangesetsRequest
-import io.vyne.schemaServer.editor.SchemaEditorApi
-import io.vyne.schemaServer.editor.SetActiveChangesetRequest
-import io.vyne.schemaServer.editor.StartChangesetRequest
-import io.vyne.schemaServer.editor.UpdateChangesetRequest
-import io.vyne.schemaServer.editor.UpdateDataOwnerRequest
-import io.vyne.schemaServer.editor.UpdateTypeAnnotationRequest
+import io.vyne.schemaServer.editor.*
 import io.vyne.spring.config.ExcludeFromOrbitalStation
 import io.vyne.spring.http.handleFeignErrors
 import org.springframework.web.bind.annotation.PathVariable
@@ -86,4 +78,8 @@ class SchemaEditorServiceFacade(
    ): Mono<SetActiveChangesetResponse> {
       return handleFeignErrors { schemaEditorApi.setActiveChangeset(request) }
    }
+
+   @PostMapping("/api/repository/queries")
+   fun saveQuery(@RequestBody request: SaveQueryRequest): Mono<SavedQuery> =
+      handleFeignErrors { schemaEditorApi.saveQuery(request) }
 }

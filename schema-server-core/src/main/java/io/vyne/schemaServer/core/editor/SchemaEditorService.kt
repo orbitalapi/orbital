@@ -56,6 +56,22 @@ class SchemaEditorService(
          }
    }
 
+   @PostMapping("/api/repository/queries")
+   override fun saveQuery(request: SaveQueryRequest): Mono<SavedQuery> {
+      return Mono.just(request)
+         .subscribeOn(Schedulers.boundedElastic())
+         .flatMap {
+            val queryWithName = QueryEditor.prependQueryNameIfMissing(request.source)
+            addChangesToChangeset(
+               AddChangesToChangesetRequest(
+                  request.changesetName,
+                  request.source.packageIdentifier!!,
+                  listOf(queryWithName)
+               )
+            ).map { SavedQuery(queryWithName) }
+         }
+   }
+
    @PostMapping("/api/repository/changeset/add")
    override fun addChangesToChangeset(
       @RequestBody request: AddChangesToChangesetRequest

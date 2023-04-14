@@ -5,7 +5,6 @@
 @import '~highlight.js/styles/ocean.css';
 @import "t2-colors";
 
-
 :root {
   // Used to use variables here (--tui-text-font: $font-sans), but it stopped working.
   // Haven't really investigated why.
@@ -32,6 +31,14 @@
 button {
   // For some reason, link buttons are showing as Arial without this
   font-family: $body-font
+}
+
+tui-dropdown-host {
+  tui-dropdown {
+    // When dropdowns are in dialogs, their z-index is incorrect, so they sit
+    // behind the black overlay
+    z-index: 10000 !important;
+  }
 }
 
 .ag-theme-alpine {

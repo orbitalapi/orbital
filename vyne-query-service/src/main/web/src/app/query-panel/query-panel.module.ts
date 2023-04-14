@@ -39,14 +39,30 @@ import { RouterModule } from '@angular/router';
 import { MatSortModule } from '@angular/material/sort';
 import { CovalentFileModule } from '@covalent/core/file';
 import { ExpandingPanelSetModule } from '../expanding-panelset/expanding-panel-set.module';
-import { TuiButtonModule, TuiHintModule, TuiTextfieldControllerModule } from '@taiga-ui/core';
+import {
+  TuiButtonModule,
+  TuiDialogModule, TuiErrorModule,
+  TuiHintModule,
+  TuiNotificationModule,
+  TuiTextfieldControllerModule
+} from '@taiga-ui/core';
 import { ResultsDownloadModule } from 'src/app/results-download/results-download.module';
 import { MatMenuModule } from '@angular/material/menu';
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { QuerySnippetPanelModule } from 'src/app/query-snippet-panel/query-snippet-panel.module';
-import { TuiDataListWrapperModule, TuiSelectModule, TuiTabsModule, TuiTextAreaModule } from '@taiga-ui/kit';
+import {
+  TuiDataListWrapperModule, TuiFieldErrorPipeModule,
+  TuiFilterByInputPipeModule, TuiInputModule,
+  TuiSelectModule, TuiStringifyContentPipeModule,
+  TuiTabsModule,
+  TuiTextAreaModule
+} from '@taiga-ui/kit';
 import {DataCatalogModule} from "../data-catalog/data-catalog.module";
 import {CatalogExplorerPanelModule} from "../catalog-explorer-panel/catalog-explorer-panel.module";
+import {SaveQueryPanelComponent} from "./query-editor/save-query-panel.component";
+import {HeaderComponentLayoutModule} from "../header-component-layout/header-component-layout.module";
+import {AppModule} from "../app.module";
+import {DisableControlModule} from "../disable-control/disable-control.module";
 
 @NgModule({
   imports: [
@@ -93,15 +109,25 @@ import {CatalogExplorerPanelModule} from "../catalog-explorer-panel/catalog-expl
     TuiSelectModule,
     TuiDataListWrapperModule,
     TuiTextfieldControllerModule,
-    CatalogExplorerPanelModule
+    CatalogExplorerPanelModule,
+    HeaderComponentLayoutModule,
+    TuiNotificationModule,
+    TuiFilterByInputPipeModule,
+    TuiStringifyContentPipeModule,
+    TuiInputModule,
+    TuiErrorModule,
+    TuiFieldErrorPipeModule,
+    DisableControlModule,
   ],
   exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent,
-    ErrorPanelComponent],
+    ErrorPanelComponent, SaveQueryPanelComponent],
   declarations: [QueryPanelComponent, QueryWizardComponent,
     VyneQueryViewerComponent, QueryEditorComponent, BottomBarComponent, CounterTimerComponent,
 
     ErrorPanelComponent,
     QueryBuilderComponent,
+    SaveQueryPanelComponent
+
   ],
   providers: [],
 })

@@ -48,6 +48,8 @@ import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
 import {appendToQuery} from "./query-code-generator";
 import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
+import {SaveQueryPanelComponent, SaveQueryPanelProps} from "./save-query-panel.component";
+import {SavedQuery} from "../../services/type-editor.service";
 
 declare const monaco: any; // monaco
 @Component({
@@ -114,6 +116,8 @@ export class QueryEditorComponent implements OnInit {
   // when the event is emitted, but will subscribe shortly after
   @Output()
   instanceSelected$ = new ReplaySubject<QueryResultInstanceSelectedEvent>(1);
+
+  savedQuery: SavedQuery = null;
 
   constructor(private queryService: QueryService,
               private fileService: ResultsDownloadService,
@@ -369,5 +373,22 @@ export class QueryEditorComponent implements OnInit {
 
   onAddToQueryClicked($event: QualifiedName) {
     this.query = appendToQuery(this.query, $event);
+  }
+
+  saveQuery() {
+    this.tuiDialogService.open<SavedQuery>(new PolymorpheusComponent(SaveQueryPanelComponent, this.injector),
+      {
+        size: 'l',
+        data: {
+          query: this.query,
+          previousVersion: this.savedQuery
+        } as SaveQueryPanelProps,
+        dismissible: true
+      }
+    ).subscribe(result => {
+      this.savedQuery = result;
+      this.query = result.source.content;
+      this.changeDetector.markForCheck();
+    });
   }
 }

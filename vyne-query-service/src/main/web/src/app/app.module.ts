@@ -12,7 +12,14 @@ import { SearchService } from './search/search.service';
 import { VyneModule } from './vyne/vyne.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthService } from './auth/auth.service';
-import { TuiButtonModule, TuiDialogModule, TuiLinkModule, TuiRootModule } from '@taiga-ui/core';
+import {
+  TuiAlertModule,
+  TuiButtonModule,
+  TuiDialogModule,
+  TuiLinkModule,
+  TuiRootModule,
+  TuiScrollbarModule
+} from '@taiga-ui/core';
 import { LandingPageModule } from './landing-page/landing-page.module';
 import { VYNE_ROUTES } from 'src/app/vyne.routes';
 import { ConfirmationDialogModule } from 'src/app/confirmation-dialog/confirmation-dialog.module';
@@ -21,6 +28,8 @@ import { WebsocketService } from 'src/app/services/websocket.service';
 import { environment } from 'src/environments/environment';
 import { ENVIRONMENT } from 'src/app/services/environment';
 import { TuiInputModule } from '@taiga-ui/kit';
+import {PolymorpheusModule} from "@tinkoff/ng-polymorpheus";
+import {TuiDialogHostModule, TuiFocusTrapModule, TuiOverscrollModule} from "@taiga-ui/cdk";
 
 
 const oauth2OidcModule = [AuthModule];
@@ -43,12 +52,18 @@ const oauth2OidcModule = [AuthModule];
     VyneModule,
     ...oauth2OidcModule,
     TuiRootModule,
+    TuiAlertModule,
     TuiLinkModule,
     TuiDialogModule,
     TuiInputModule,
+    PolymorpheusModule,
     TuiButtonModule,
     LandingPageModule,
     ConfirmationDialogModule,
+    TuiFocusTrapModule,
+    TuiScrollbarModule,
+    TuiOverscrollModule,
+    TuiDialogHostModule,
   ],
   providers: [
     TypesService,
@@ -64,6 +79,8 @@ const oauth2OidcModule = [AuthModule];
     },
   ],
   entryComponents: [AppComponent],
+  exports: [
+  ]
 })
 export class AppModule implements DoBootstrap {
   constructor(@Optional() private authService: AuthService) {

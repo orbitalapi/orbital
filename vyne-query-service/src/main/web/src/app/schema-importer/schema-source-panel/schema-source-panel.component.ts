@@ -10,7 +10,6 @@ import {Schema} from '../../services/schema';
   template: `
     <div>
       <tui-select
-        tuiTextfieldExampleText="Type of schema"
         [stringify]="stringify"
         [(ngModel)]="schemaType"
       >

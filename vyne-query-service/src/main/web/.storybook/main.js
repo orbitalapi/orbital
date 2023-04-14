@@ -6,6 +6,7 @@ module.exports = {
     "../src/app/catalog-explorer-panel/*.stories.@(js|jsx|ts|tsx)",
     "../src/app/schema-diagram/*.stories.@(js|jsx|ts|tsx)",
     "../src/app/auth-manager/*.stories.@(js|jsx|ts|tsx)",
+    "../src/app/query-panel/*.stories.@(js|jsx|ts|tsx)",
     "../src/app/query-snippet-panel/*.stories.@(js|jsx|ts|tsx)",
   ],
   "addons": [

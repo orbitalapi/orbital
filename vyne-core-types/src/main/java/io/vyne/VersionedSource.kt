@@ -12,6 +12,16 @@ import lang.taxi.sources.SourceCode
 import java.io.Serializable
 import java.time.Instant
 
+/**
+ * Identifies a VersionedSource file
+ * within a package.
+ */
+data class PackageSourceName(
+   val packageIdentifier: PackageIdentifier,
+   val sourceName: String
+) {
+   val packageQualifiedName = VersionedSource.prependPackageIdentifier(packageIdentifier, sourceName)
+}
 
 @kotlinx.serialization.Serializable
 data class VersionedSource(
@@ -24,8 +34,15 @@ data class VersionedSource(
       name: String, version: String, content: String
    ) : this(splitPackageIdentifier(name).second, version, content, splitPackageIdentifier(name).first)
 
-   val packageQualifiedName = prependPackageIdentifier(packageIdentifier, name)
+   constructor(
+      name: PackageSourceName, content: String
+   ) : this(
+      name.sourceName,
+      name.packageIdentifier.version, content,
+      name.packageIdentifier
+   )
 
+   val packageQualifiedName = prependPackageIdentifier(packageIdentifier, name)
 
    companion object {
       private val hashCharset = java.nio.charset.Charset.defaultCharset()

@@ -28,7 +28,6 @@ import { TuiButtonModule, TuiDataListModule, TuiRootModule, TuiTextfieldControll
     TuiInputModule,
     TuiButtonModule,
     TuiTextfieldControllerModule,
-    TuiRootModule
   ]
 })
 export class QuerySnippetPanelModule {

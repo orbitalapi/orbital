@@ -65,9 +65,12 @@ button {
   flex-shrink: 0;
 }
 
-.copy-menu-button {
+.menu-bar-button {
   margin-right: 2rem;
+  border: 1px solid $slate-200;
 }
+
+
 
 .progress {
   margin-left: 2rem;

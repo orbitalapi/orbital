@@ -19,6 +19,7 @@
                 [runningQueryStatus]='queryMetadata$ | async'
                 (cancelQuery)='cancelQuery()'
                 (copyQuery)='copyQuery($event)'
+                (saveClicked)="saveQuery()"
               >
               </app-query-editor-bottom-bar>
             </app-panel-header>

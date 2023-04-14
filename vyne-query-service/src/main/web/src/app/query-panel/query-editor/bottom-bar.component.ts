@@ -27,15 +27,16 @@ import { AppInfo, AppInfoService, QueryServiceConfig } from 'src/app/services/ap
         [items]='queryLanguages'
       ></tui-data-list-wrapper>
     </tui-select>
-    <button mat-flat-button class='button-small copy-menu-button' [matMenuTriggerFor]='menu'>Copy</button>
-    <mat-menu #menu='matMenu'>
+    <button mat-flat-button class='button-small menu-bar-button' [matMenuTriggerFor]='copyAsMenu'>Copy</button>
+    <mat-menu #copyAsMenu='matMenu'>
       <button mat-menu-item (click)="copyQuery.emit('query')">Query only</button>
       <button mat-menu-item (click)="copyQuery.emit('curl')">As cURL statement</button>
       <button mat-menu-item (click)="copyQuery.emit('snippet')" tuiHint='Available once query has completed'>As code
       </button>
     </mat-menu>
+    <button mat-flat-button class="button-small menu-bar-button" (click)="saveClicked.emit()">Save</button>
     <button mat-flat-button color='accent'
-            class='button-small '
+            class='button-small menu-bar-button'
             *ngIf="(currentState$ | async) !== 'Running' && (currentState$ | async) !== 'Cancelling'"
             (click)='runQuery()'>
       <img src='assets/img/tabler/player-play.svg' class='filter-white'>
@@ -70,6 +71,13 @@ import { AppInfo, AppInfoService, QueryServiceConfig } from 'src/app/services/ap
       <span class='loader'></span>
       <span>Cancelling...</span>
     </div>
+
+    <button mat-icon-button class='button-small copy-menu-button' [matMenuTriggerFor]='moreOptionsMenu'>
+      <mat-icon>more_vert</mat-icon>
+    </button>
+    <mat-menu #moreOptionsMenu='matMenu'>
+      <button mat-menu-item (click)="publishAsHttpEndpoint.emit()">Publish query as HTTP endpoint</button>
+    </mat-menu>
   `,
   styleUrls: ['./bottom-bar.component.scss']
 })
@@ -89,6 +97,12 @@ export class BottomBarComponent {
 
   @Output()
   queryLanguageChange = new EventEmitter<QueryLanguage>();
+
+  @Output()
+  saveClicked = new EventEmitter();
+
+  @Output()
+  publishAsHttpEndpoint = new EventEmitter();
 
 
   @Input()

@@ -1,6 +1,7 @@
 import { PrimitiveTypeNames } from './taxi';
 import { isNullOrUndefined, isString } from 'util';
 import { find } from 'rxjs/operators';
+import {PackageIdentifier} from "../package-viewer/packages.service";
 
 export function fqn(input: string): QualifiedName {
   return QualifiedName.from(input);
@@ -624,12 +625,19 @@ export interface TypedInstance {
   value: any;
 }
 
+export interface PackageSourceName {
+  packageIdentifier: PackageIdentifier;
+  sourceName: string;
+
+  packageQualifiedName: string;
+}
 export interface VersionedSource {
   name: string;
   version: string;
   content: string;
   id?: string;
   contentHash?: string;
+  packageIdentifier?: PackageIdentifier
 }
 
 

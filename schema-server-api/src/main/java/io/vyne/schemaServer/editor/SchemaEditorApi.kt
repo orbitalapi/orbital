@@ -1,21 +1,12 @@
 package io.vyne.schemaServer.editor
 
 import io.vyne.PackageIdentifier
+import io.vyne.PackageSourceName
 import io.vyne.VersionedSource
-import io.vyne.schema.publisher.loaders.AddChangesToChangesetResponse
-import io.vyne.schema.publisher.loaders.AvailableChangesetsResponse
-import io.vyne.schema.publisher.loaders.Changeset
-import io.vyne.schema.publisher.loaders.CreateChangesetResponse
-import io.vyne.schema.publisher.loaders.FinalizeChangesetResponse
-import io.vyne.schema.publisher.loaders.SetActiveChangesetResponse
-import io.vyne.schema.publisher.loaders.UpdateChangesetResponse
+import io.vyne.schema.publisher.loaders.*
 import io.vyne.schemas.Metadata
 import lang.taxi.CompilationMessage
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.*
 import reactivefeign.spring.config.ReactiveFeignClient
 import reactor.core.publisher.Mono
 
@@ -73,6 +64,9 @@ interface SchemaEditorApi {
 
    @GetMapping("/api/repository/editable")
    fun getEditorConfig(): Mono<EditableRepositoryConfig>
+
+   @PostMapping("/api/repository/queries")
+   fun saveQuery(@RequestBody request: SaveQueryRequest): Mono<SavedQuery>
 }
 
 
@@ -111,7 +105,8 @@ data class StartChangesetRequest(
 data class AddChangesToChangesetRequest(
    val changesetName: String,
    val packageIdentifier: PackageIdentifier,
-   val edits: List<VersionedSource>
+   val edits: List<VersionedSource>,
+   val deletions: List<PackageSourceName> = emptyList()
 )
 
 data class SchemaEditRequest(

@@ -1,15 +1,15 @@
-import { Component, OnInit } from '@angular/core';
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { filter, map } from 'rxjs/operators';
-import { AppInfo, AppInfoService } from '../services/app-info.service';
-import { NavigationEnd, Router } from '@angular/router';
-import { SchemaNotificationService } from '../services/schema-notification.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { SystemAlert } from '../system-alert/system-alert.component';
-import { TypesService } from '../services/types.service';
-import { UserInfoService, VynePrivileges, VyneUser } from '../services/user-info.service';
-import { DatePipe } from '@angular/common';
+import {Component, OnInit} from '@angular/core';
+import {BreakpointObserver} from '@angular/cdk/layout';
+import {BehaviorSubject} from 'rxjs';
+import {filter, map} from 'rxjs/operators';
+import {AppInfo, AppInfoService} from '../services/app-info.service';
+import {NavigationEnd, Router} from '@angular/router';
+import {SchemaNotificationService} from '../services/schema-notification.service';
+import {MatSnackBar} from '@angular/material/snack-bar';
+import {SystemAlert} from '../system-alert/system-alert.component';
+import {TypesService} from '../services/types.service';
+import {UserInfoService, VynePrivileges, VyneUser} from '../services/user-info.service';
+import {DatePipe} from '@angular/common';
 
 @Component({
   selector: 'vyne-app',
@@ -17,12 +17,6 @@ import { DatePipe } from '@angular/common';
   styleUrls: ['./vyne.component.scss']
 })
 export class VyneComponent implements OnInit {
-  isHandset$: Observable<boolean> = this.breakpointObserver.observe(Breakpoints.Handset)
-    .pipe(
-      map(result => result.matches)
-    );
-
-
   sidebarElements: SidebarElement[] = [
     {
       title: 'Catalog',
@@ -118,7 +112,8 @@ export class VyneComponent implements OnInit {
               private typeService: TypesService,
               private snackbar: MatSnackBar,
               private userInfoService: UserInfoService,
-              private datePipe: DatePipe) {
+              private datePipe: DatePipe,
+              ) {
     appInfoService
       .getConfig()
       .subscribe(config => {

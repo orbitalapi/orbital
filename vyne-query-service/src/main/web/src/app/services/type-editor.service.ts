@@ -1,14 +1,14 @@
-import { Inject, Injectable, Injector } from '@angular/core';
-import { Environment, ENVIRONMENT } from 'src/app/services/environment';
-import { TuiDialogService } from '@taiga-ui/core';
-import { PackagesService } from 'src/app/package-viewer/packages.service';
-import { HttpClient } from '@angular/common/http';
-import { TypesService, UpdateDataOwnerRequest } from 'src/app/services/types.service';
-import { Metadata, Type } from 'src/app/services/schema';
-import { VyneUser } from 'src/app/services/user-info.service';
-import { Observable } from 'rxjs';
-import { switchMap, tap } from 'rxjs/operators';
-import { ChangesetService } from 'src/app/services/changeset.service';
+import {Inject, Injectable, Injector} from '@angular/core';
+import {Environment, ENVIRONMENT} from 'src/app/services/environment';
+import {TuiDialogService} from '@taiga-ui/core';
+import {PackagesService} from 'src/app/package-viewer/packages.service';
+import {HttpClient} from '@angular/common/http';
+import {TypesService, UpdateDataOwnerRequest} from 'src/app/services/types.service';
+import {Metadata, PackageSourceName, Type, VersionedSource} from 'src/app/services/schema';
+import {VyneUser} from 'src/app/services/user-info.service';
+import {Observable} from 'rxjs';
+import {switchMap, tap} from 'rxjs/operators';
+import {ChangesetService} from 'src/app/services/changeset.service';
 
 @Injectable({
   providedIn: 'root',
@@ -51,4 +51,19 @@ export class TypeEditorService {
       );
   }
 
+  saveQuery(request: SaveQueryRequest): Observable<SavedQuery> {
+    return this.http.post<SavedQuery>(`${this.environment.serverUrl}/api/repository/queries`, request)
+  }
+
+
+}
+
+export interface SaveQueryRequest {
+  source: VersionedSource;
+  changesetName: string;
+  previousPath?: PackageSourceName | null;
+}
+
+export interface SavedQuery {
+  source: VersionedSource;
 }
