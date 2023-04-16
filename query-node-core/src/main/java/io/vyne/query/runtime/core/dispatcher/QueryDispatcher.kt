@@ -7,6 +7,7 @@ import io.vyne.query.ResultMode
 import io.vyne.query.runtime.CompressedQueryResultWrapper
 import io.vyne.query.runtime.QueryMessage
 import io.vyne.query.runtime.QueryMessageCborWrapper
+import io.vyne.query.runtime.core.gateway.RoutedQuery
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.utils.formatAsFileSize
 import mu.KotlinLogging
@@ -58,6 +59,12 @@ class QueryDispatcher(
       )
 
       return dispatchQuery(message)
+   }
+
+   fun dispatchQuery(
+      query: RoutedQuery
+   ): Mono<Any> {
+TODO()
    }
 
    fun dispatchQuery(message: QueryMessage): Mono<Any> {

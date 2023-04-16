@@ -50,7 +50,6 @@ data class QueryMessage(
    val resultMode: ResultMode = ResultMode.RAW,
    val mediaType: String,
    val clientQueryId: String,
-
    ) {
    constructor(
       query: String,

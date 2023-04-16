@@ -575,7 +575,7 @@ class StatefulQueryEngine(
          profilerOperation = context.profiler.root,
          queryId = context.queryId,
          clientQueryId = context.clientQueryId,
-         anonymousTypes = context.schema.typeCache.anonymousTypes(),
+         anonymousTypes =  context.schema.typeCache.anonymousTypes(),
          statistics = statisticsFlow,
          responseType = context.responseType,
          onCancelRequestHandler = { context.requestCancel() }

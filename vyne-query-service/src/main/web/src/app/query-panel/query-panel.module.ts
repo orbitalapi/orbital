@@ -63,6 +63,8 @@ import {SaveQueryPanelComponent} from "./query-editor/save-query-panel.component
 import {HeaderComponentLayoutModule} from "../header-component-layout/header-component-layout.module";
 import {AppModule} from "../app.module";
 import {DisableControlModule} from "../disable-control/disable-control.module";
+import {QueryHistoryPanelModule} from "../query-history-panel/query-history-panel.module";
+import {SavedQueriesPanelModule} from "../saved-queries-panel/saved-queries-panel.module";
 
 @NgModule({
   imports: [
@@ -118,6 +120,8 @@ import {DisableControlModule} from "../disable-control/disable-control.module";
     TuiErrorModule,
     TuiFieldErrorPipeModule,
     DisableControlModule,
+    QueryHistoryPanelModule,
+    SavedQueriesPanelModule,
   ],
   exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent,
     ErrorPanelComponent, SaveQueryPanelComponent],

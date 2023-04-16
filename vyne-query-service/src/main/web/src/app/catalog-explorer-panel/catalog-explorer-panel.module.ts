@@ -14,7 +14,6 @@ import {MatProgressBarModule} from "@angular/material/progress-bar";
 import {CatalogPanelSearchResults} from './catalog-panel-search-results.component';
 import {CatalogTreeComponent} from './catalog-tree.component';
 import {CatalogEntryLineComponent} from './catalog-entry-line.component';
-import {CatalogEntryDetailComponent} from './catalog-entry-detail.component';
 
 
 @NgModule({
@@ -23,7 +22,6 @@ import {CatalogEntryDetailComponent} from './catalog-entry-detail.component';
     CatalogPanelSearchResults,
     CatalogTreeComponent,
     CatalogEntryLineComponent,
-    CatalogEntryDetailComponent
   ],
   exports: [
     CatalogExplorerPanelComponent,

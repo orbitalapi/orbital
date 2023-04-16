@@ -1,6 +1,7 @@
 package io.vyne.query.runtime.core.gateway
 
 import io.vyne.schemas.taxi.TaxiSchema
+import kotlinx.serialization.Serializable
 import lang.taxi.TaxiDocument
 import lang.taxi.annotations.HttpPathVariable
 import lang.taxi.query.FactValue
@@ -44,3 +45,8 @@ data class RoutedQuery(
       }
    }
 }
+
+data class QueryFact(
+   val parameterName:String,
+   val fact: Any
+)

@@ -7,6 +7,7 @@ module.exports = {
     "../src/app/schema-diagram/*.stories.@(js|jsx|ts|tsx)",
     "../src/app/auth-manager/*.stories.@(js|jsx|ts|tsx)",
     "../src/app/query-panel/*.stories.@(js|jsx|ts|tsx)",
+    "../src/app/query-history-panel/*.stories.@(js|jsx|ts|tsx)",
     "../src/app/query-snippet-panel/*.stories.@(js|jsx|ts|tsx)",
   ],
   "addons": [

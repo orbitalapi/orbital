@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
 import {QueryHistorySummary} from '../services/query.service';
 
 @Component({
@@ -16,10 +16,15 @@ export class VyneqlRecordComponent {
   @Input()
   taxiQlQuery: string;
 
-  get displayedQuery():string {
-    return this.taxiQlQuery.split("\n")
-      .filter(line => !line.startsWith("import"))
-      .join("\n")
+  get displayedQuery(): string {
+    return trimImportsFromQuery(this.taxiQlQuery);
 
   }
+}
+
+export function trimImportsFromQuery(query: string): string {
+  return query.split("\n")
+    .filter(line => !line.startsWith("import"))
+    .map(line => line.trim())
+    .join("\n")
 }

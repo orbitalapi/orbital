@@ -391,4 +391,8 @@ export class QueryEditorComponent implements OnInit {
       this.changeDetector.markForCheck();
     });
   }
+
+  queryHistoryElementClicked($event: QueryHistorySummary) {
+    this.query = $event.taxiQl;
+  }
 }

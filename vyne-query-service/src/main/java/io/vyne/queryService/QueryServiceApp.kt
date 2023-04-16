@@ -14,6 +14,7 @@ import io.vyne.cockpit.core.security.VyneUserConfig
 import io.vyne.cockpit.core.telemetry.TelemetryConfig
 import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.history.db.InProcessHistoryConfiguration
+import io.vyne.history.noop.NoopQueryEventConsumerConfiguration
 import io.vyne.history.rest.QueryHistoryRestConfig
 import io.vyne.licensing.LicenseConfig
 import io.vyne.models.csv.CsvFormatSpec
@@ -162,6 +163,7 @@ class QueryServiceApp {
 @EnableCloudMetrics
 @Import(
    InProcessHistoryConfiguration::class,
+   NoopQueryEventConsumerConfiguration::class,
    QueryHistoryRestConfig::class,
    CockpitCoreConfig::class,
    WebUiUrlSupportFilter::class
