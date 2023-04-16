@@ -1,0 +1,28 @@
+@import "src/theme";
+
+
+.query-code {
+  font-family: $mono;
+  font-size: 0.8rem;
+}
+
+.row {
+  display: flex;
+}
+.stats {
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  span {
+    margin-right: 1.5rem;
+    display: block;
+    color: $slate-600;
+  }
+
+}
+
+:host {
+  &:hover {
+    background-color: white;
+    cursor: pointer;
+  }
+}

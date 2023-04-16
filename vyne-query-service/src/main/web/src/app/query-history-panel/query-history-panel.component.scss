@@ -1,0 +1,9 @@
+@import "src/theme";
+
+app-query-history-entry {
+  display: block;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  border-bottom: 1px solid $slate-300;
+}
