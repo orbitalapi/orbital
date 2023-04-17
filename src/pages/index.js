@@ -9,9 +9,9 @@ import { ReactComponent as ArrowCitrus } from '@/img/arrow-citrus.svg';
 import { ReactComponent as DataPatternLight } from '@/img/data-pattern.svg';
 import PublishYourApi, { publishYourApiCodeSnippets } from '@/components/home/PublishYourApi';
 import QueryExamples, { queryExampleCodeSnippets } from '@/components/home/QueryExamples';
+import WhereToUseSection from '@/components/home/WhereToUseSection';
 import DebugTools from '@/components/home/DebugTools';
 import WatchADemoButton from '../components/DemosModal';
-import Image from 'next/image';
 
 
 function HeroSection() {
@@ -82,6 +82,7 @@ export default function Home({
         <HeroSection />
       </div>
       <div className='overflow-hidden sm:mb-32 md:mb-40'>
+        <WhereToUseSection className="py-20" />
         <QueryExamples highlightedSnippets={queryExampleCodeHighlightedSnippets}
                        className='sm:pt-32 md:pt-20 pb-20' />
         <PublishYourApi highlightedSnippets={publishYourApiHighlightedSnippets} />
