@@ -15,6 +15,7 @@ import io.vyne.cockpit.core.telemetry.TelemetryConfig
 import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.history.db.InProcessHistoryConfiguration
 import io.vyne.history.noop.NoopQueryEventConsumerConfiguration
+import io.vyne.history.remote.RemoteHistoryConfig
 import io.vyne.history.rest.QueryHistoryRestConfig
 import io.vyne.licensing.LicenseConfig
 import io.vyne.models.csv.CsvFormatSpec
@@ -161,6 +162,7 @@ class QueryServiceApp {
    InProcessHistoryConfiguration::class,
    NoopQueryEventConsumerConfiguration::class,
    QueryHistoryRestConfig::class,
+   RemoteHistoryConfig::class,
    CockpitCoreConfig::class,
    WebUiUrlSupportFilter::class
 )
