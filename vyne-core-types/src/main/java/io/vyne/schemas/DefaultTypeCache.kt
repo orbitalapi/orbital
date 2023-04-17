@@ -1,10 +1,6 @@
 package io.vyne.schemas
 
-import io.vyne.models.ConversionService
-import io.vyne.models.DefinedInSchema
-import io.vyne.models.TypedEnumValue
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedValue
+import io.vyne.models.*
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.timed
 import lang.taxi.TaxiDocument
@@ -21,7 +17,6 @@ abstract class BaseTypeCache : TypeCache {
    private val cache: MutableMap<QualifiedName, Type> = mutableMapOf()
    private val defaultValueCache: MutableMap<QualifiedName, Map<AttributeName, TypedInstance>?> = mutableMapOf()
    private val shortNames: MutableMap<String, MutableList<Type>> = mutableMapOf()
-   private val anonymousTypes: MutableMap<QualifiedName, Type> = mutableMapOf()
    private val enumSynonymValues: MutableMap<EnumValueQualifiedName, CachedEnumSynonymValues> = mutableMapOf()
 
    val types: Set<Type>
@@ -80,7 +75,6 @@ abstract class BaseTypeCache : TypeCache {
       return this.cache[name]
          ?: fromShortName(name)
          ?: parameterisedType(name)
-         ?: anonymousTypes[name]
    }
 
    internal fun fromShortName(name: QualifiedName): Type? =
@@ -107,12 +101,11 @@ abstract class BaseTypeCache : TypeCache {
       } else {
          null
       }
-
    }
+
 
    override fun hasType(name: QualifiedName): Boolean {
       if (cache.containsKey(name)) return true
-      if (anonymousTypes.containsKey(name)) return true
       if (name.parameters.isNotEmpty()) {
          return hasType(name.fullyQualifiedName) // this is the base type
             && name.parameters.all { hasType(it) }
@@ -124,14 +117,6 @@ abstract class BaseTypeCache : TypeCache {
       return defaultValueCache[name]
    }
 
-   override fun registerAnonymousType(anonymousType: Type) {
-      val withReference = anonymousType.copy(typeCache = this)
-      anonymousTypes[anonymousType.qualifiedName] = withReference
-   }
-
-   override fun anonymousTypes(): Set<Type> {
-      return this.anonymousTypes.values.toSet()
-   }
 
    private fun getEnumSynonyms(typedEnumValue: TypedEnumValue): CachedEnumSynonymValues {
       return this.enumSynonymValues.getOrPut(typedEnumValue.enumValueQualifiedName) {

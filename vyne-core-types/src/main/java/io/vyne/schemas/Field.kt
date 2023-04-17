@@ -17,18 +17,30 @@ data class Field(
    val accessor: Accessor?,
    @get:JsonIgnore
    val readCondition: FieldSetExpression?,
-   val typeDoc:String?,
+   val typeDoc: String?,
    val defaultValue: Any? = null,
 //   @get:JsonIgnore
 //   val formula: Formula? = null,
    val nullable: Boolean = false,
-   val typeDisplayName:String = type.longDisplayName,
-   val metadata:List<Metadata> = emptyList(),
+   val typeDisplayName: String = type.longDisplayName,
+   val metadata: List<Metadata> = emptyList(),
    val sourcedBy: FieldSource? = null,
    @get:JsonIgnore
    val fieldProjection: FieldProjection? = null,
-   val format: FormatsAndZoneOffset?
+   val format: FormatsAndZoneOffset?,
+   // If the field is an anonymous type, store the type here.
+   val anonymousType: Type? = null
 ) {
+   init {
+      if (anonymousType != null && anonymousType.paramaterizedName != type.parameterizedName) {
+         error("Field has been initialized incorrectly - the provided anonymous type does not match the provided name")
+      }
+   }
+
+   fun resolveType(schema: Schema): Type {
+      return anonymousType ?: schema.type(this.type)
+   }
+
    fun hasMetadata(name: QualifiedName): Boolean {
       return this.metadata.any { it.name == name }
    }
@@ -46,7 +58,8 @@ data class Field(
 
 
    fun getMetadata(name: QualifiedName): Metadata {
-      return this.metadata.firstOrNull { it.name == name } ?: error("No metadata named ${name.longDisplayName} is present on field type ${type.longDisplayName}")
+      return this.metadata.firstOrNull { it.name == name }
+         ?: error("No metadata named ${name.longDisplayName} is present on field type ${type.longDisplayName}")
    }
 
    // TODO : Why take the provider, and not the constraints?  I have a feeling it's because
@@ -61,4 +74,9 @@ enum class FieldModifier {
    CLOSED
 }
 
-data class FieldSource(val attributeName: AttributeName, val attributeType: QualifiedName, val sourceType: QualifiedName)
+data class FieldSource(
+   val attributeName: AttributeName,
+   val attributeType: QualifiedName,
+   val sourceType: QualifiedName,
+   val attributeAnonymousType: Type? = null
+)

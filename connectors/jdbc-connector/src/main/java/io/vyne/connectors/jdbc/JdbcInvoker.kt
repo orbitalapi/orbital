@@ -10,11 +10,7 @@ import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.Jackson
-import io.vyne.query.ConstructedQueryDataSource
-import io.vyne.query.QueryContextEventDispatcher
-import io.vyne.query.RemoteCall
-import io.vyne.query.ResponseMessageType
-import io.vyne.query.SqlExchange
+import io.vyne.query.*
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Parameter
@@ -23,7 +19,6 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
-import lang.taxi.Compiler
 import lang.taxi.query.TaxiQlQuery
 import org.postgresql.jdbc.PgArray
 import org.postgresql.util.PGobject
@@ -58,7 +53,8 @@ class JdbcInvoker(
       val schema = schemaProvider.schema
       val taxiSchema = schema.taxi
       val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
-      val query = Compiler(taxiQuery, importSources = listOf(taxiSchema)).queries().first()
+      val (query, _) = schema.parseQuery(taxiQuery)
+//      val query = Compiler(taxiQuery, importSources = listOf(taxiSchema)).queries().first()
       val (sql, paramList) = SelectStatementGenerator(taxiSchema).toSql(query, connectionConfig.sqlBuilder())
       val paramMap = paramList.associate { param -> param.nameUsedInTemplate to param.value }
 

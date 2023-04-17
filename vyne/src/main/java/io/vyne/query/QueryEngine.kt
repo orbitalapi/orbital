@@ -1,48 +1,20 @@
 package io.vyne.query
 
 import com.google.common.base.Stopwatch
-import io.vyne.FactSetId
-import io.vyne.FactSetMap
-import io.vyne.FactSets
-import io.vyne.ModelContainer
-import io.vyne.filterFactSets
-import io.vyne.models.DataSource
-import io.vyne.models.DataSourceUpdater
-import io.vyne.models.MixedSources
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
+import io.vyne.*
+import io.vyne.models.*
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.query.projection.ProjectionProvider
-import io.vyne.schemas.Operation
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Service
-import io.vyne.schemas.Type
-import io.vyne.toFactBag
+import io.vyne.schemas.*
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.timeBucketAsync
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.collectIndexed
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.takeWhile
-import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
 import mu.KotlinLogging
 
@@ -202,16 +174,31 @@ class StatefulQueryEngine(
    // some, but not all, of the facts up front, and then use Vyne to polyfill.
    // Build starts by using facts known in it's current context to build the target type
    override suspend fun build(query: QueryExpression, context: QueryContext): QueryResult {
-      // Note - this should be trivial to expand to TypeListQueryExpression too
-      val typeNameQueryExpression = when (query) {
-         is TypeNameQueryExpression -> query
+
+      val targetType = when (query) {
+         is TypeNameQueryExpression -> {
+            context.schema.type(query.typeName)
+         }
+
          is TypeNameListQueryExpression -> {
             require(query.typeNames.size == 1) { "Currently, build only supports TypeNameQueryExpression, or a list of a single type" }
-            TypeNameQueryExpression(query.typeNames.first())
+            context.schema.type(query.typeNames.first())
          }
+
+         is TypeQueryExpression -> query.type
          else -> error("Currently, build only supports TypeNameQueryExpression")
+
       }
-      val targetType = context.schema.type(typeNameQueryExpression.typeName)
+      // Note - this should be trivial to expand to TypeListQueryExpression too
+//      val typeNameQueryExpression = when (query) {
+//         is TypeNameQueryExpression -> query
+//         is TypeNameListQueryExpression -> {
+//            require(query.typeNames.size == 1) { "Currently, build only supports TypeNameQueryExpression, or a list of a single type" }
+//            TypeNameQueryExpression(query.typeNames.first())
+//         }
+//         else -> error("Currently, build only supports TypeNameQueryExpression")
+//      }
+//      val targetType = context.schema.type(typeNameQueryExpression.typeName)
       return projectTo(targetType, context)
    }
 
@@ -255,7 +242,7 @@ class StatefulQueryEngine(
             resultFlow,
             isFullyResolved = true,
             profilerOperation = context.profiler.root,
-            anonymousTypes = context.schema.typeCache.anonymousTypes(),
+            anonymousTypes = targetType.anonymousTypes,
             queryId = context.queryId,
             responseType = targetType.fullyQualifiedName,
             onCancelRequestHandler = { context.requestCancel() }
@@ -268,7 +255,7 @@ class StatefulQueryEngine(
             profilerOperation = context.profiler.root,
             queryId = context.queryId,
             clientQueryId = context.clientQueryId,
-            anonymousTypes = context.schema.typeCache.anonymousTypes(),
+            anonymousTypes = targetType.anonymousTypes,
             responseType = targetType.fullyQualifiedName,
             onCancelRequestHandler = { context.requestCancel() }
          )
@@ -363,7 +350,7 @@ class StatefulQueryEngine(
       spec: TypedInstanceValidPredicate,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate
    ): QueryResult {
-      return find(TypeNameQueryExpression(type.name.parameterizedName), context, spec, applicableStrategiesPredicate)
+      return find(TypeQueryExpression(type), context, spec, applicableStrategiesPredicate)
    }
 
    override suspend fun find(
@@ -575,7 +562,7 @@ class StatefulQueryEngine(
          profilerOperation = context.profiler.root,
          queryId = context.queryId,
          clientQueryId = context.clientQueryId,
-         anonymousTypes = context.schema.typeCache.anonymousTypes(),
+         anonymousTypes = target.anonymousTypes(),
          statistics = statisticsFlow,
          responseType = context.responseType,
          onCancelRequestHandler = { context.requestCancel() }

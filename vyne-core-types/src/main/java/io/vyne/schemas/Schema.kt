@@ -10,6 +10,8 @@ import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.assertingThat
 import lang.taxi.TaxiDocument
+import lang.taxi.query.TaxiQLQueryString
+import lang.taxi.query.TaxiQlQuery
 
 
 /**
@@ -267,14 +269,18 @@ interface Schema {
 
    fun getMember(name: QualifiedName): SchemaMember {
       return if (OperationNames.isName(name)) {
-         val (serviceName,operation) = OperationNames.serviceAndOperation(name)
+         val (serviceName, operation) = OperationNames.serviceAndOperation(name)
          val service = this.service(serviceName)
          service.remoteOperation(operation)
       } else {
-         this.serviceOrNull(name) ?: this.typeOrNull(name) ?: error("No schema member named ${name.fullyQualifiedName} found")
+         this.serviceOrNull(name) ?: this.typeOrNull(name)
+         ?: error("No schema member named ${name.fullyQualifiedName} found")
       }
 
    }
 
+   fun parseQuery(vyneQlQuery: TaxiQLQueryString): Pair<TaxiQlQuery, QueryOptions>
+
 }
+
 

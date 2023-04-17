@@ -8,7 +8,7 @@ import {MatDialogRef} from '@angular/material/dialog';
       Downloading test specs is disabled
     </h2>
     <p>
-      To create test cases, Vyne needs to store the responses from services it interacts with. Currently this is
+      To create test cases, Orbital needs to store the responses from services it interacts with. Currently this is
       disabled.
     </p>
     <p>
@@ -16,7 +16,7 @@ import {MatDialogRef} from '@angular/material/dialog';
       <code>vyne.analytics.persistRemoteCallResponses</code> setting in your server config, setting to true.
       <code>vyne.analytics.persistResults</code> setting in your server config, setting to true.
     </p>
-    <p>Once this is done, you'll need to re-start Vyne and re-run your query.</p>
+    <p>Once this is done, you'll need to re-start Orbital and re-run your query.</p>
     <div class="button-row">
       <div class="spacer"></div>
       <button mat-raised-button color="primary" (click)="this.dialogRef.close()">Close</button>

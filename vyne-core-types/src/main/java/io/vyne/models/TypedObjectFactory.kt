@@ -2,12 +2,7 @@ package io.vyne.models
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
-import io.vyne.models.facts.CascadingFactBag
-import io.vyne.models.facts.CopyOnWriteFactBag
-import io.vyne.models.facts.FactBag
-import io.vyne.models.facts.FactDiscoveryStrategy
-import io.vyne.models.facts.FactSearch
-import io.vyne.models.facts.ScopedFact
+import io.vyne.models.facts.*
 import io.vyne.models.format.FormatDetector
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.functions.FunctionRegistry
@@ -15,20 +10,13 @@ import io.vyne.models.functions.FunctionResultCacheKey
 import io.vyne.models.json.Jackson
 import io.vyne.models.json.JsonParsedStructure
 import io.vyne.models.json.isJson
-import io.vyne.schemas.AttributeName
-import io.vyne.schemas.Field
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
+import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.timeBucket
 import io.vyne.utils.xtimed
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import lang.taxi.accessors.Accessor
-import lang.taxi.accessors.Argument
-import lang.taxi.accessors.ColumnAccessor
-import lang.taxi.accessors.JsonPathAccessor
-import lang.taxi.accessors.ProjectionFunctionScope
+import lang.taxi.accessors.*
 import lang.taxi.expressions.Expression
 import lang.taxi.types.FormatsAndZoneOffset
 import mu.KotlinLogging
@@ -156,7 +144,16 @@ class TypedObjectFactory(
          // Don't attempt to project nulls
          return TypedNull.create(schema.type(field.type), fieldValue.source)
       }
-      val projectedType = schema.type(field.fieldProjection!!.projectedType)
+      // 16-Apr-23:
+      // Anonymous types for fields are now on the field directly.
+      // But, I'm not sure if the fieldProjectionType is always ths same as the fieldType
+      val projectedType =
+         if (field.anonymousType != null && field.anonymousType.name.parameterizedName == field.fieldProjection!!.projectedType.toVyneQualifiedName().parameterizedName) {
+            field.anonymousType
+         } else {
+            schema.type(field.fieldProjection!!.projectedType)
+         }
+//      val projectedType =  if (field.fieldProjection!!.projectedType.paschema.type(field.fieldProjection!!.projectedType)
       val projectedFieldValue = if (fieldValue is TypedCollection && projectedType.isCollection) {
          // Project each member of the collection seperately
          fieldValue
@@ -533,7 +530,7 @@ class TypedObjectFactory(
       val fieldType = if (field.fieldProjection != null) {
          schema.type(field.fieldProjection.sourceType)
       } else {
-         schema.type(field.type)
+         field.resolveType(schema)
       }
       val fieldTypeName = fieldType.qualifiedName
 
@@ -581,7 +578,7 @@ class TypedObjectFactory(
          ) -> readWithValueReader(attributeName, fieldType, field.format)
 
          considerAccessor -> {
-            readAccessor(fieldTypeName, field.accessor!!, field.nullable, field.format)
+            readAccessor(field.resolveType(schema), field.accessor!!, field.format)
          }
 
          evaluateTypeExpression -> {
@@ -767,7 +764,7 @@ class TypedObjectFactory(
          TypedNull.create(type, source)
       } else {
          TypedInstance.from(
-            schema.type(type.qualifiedName.parameterizedName),
+            type,
             attributeValue,
             schema,
             true,

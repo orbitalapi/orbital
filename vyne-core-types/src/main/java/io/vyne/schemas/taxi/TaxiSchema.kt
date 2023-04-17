@@ -2,40 +2,14 @@ package io.vyne.schemas.taxi
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.common.base.Stopwatch
-import io.vyne.PackageMetadata
-import io.vyne.SourcePackage
-import io.vyne.VersionedSource
-import io.vyne.asSourcePackage
+import io.vyne.*
 import io.vyne.models.functions.FunctionRegistry
-import io.vyne.schemas.ConsumedOperation
-import io.vyne.schemas.DefaultTypeCache
-import io.vyne.schemas.FieldModifier
-import io.vyne.schemas.Metadata
-import io.vyne.schemas.Operation
-import io.vyne.schemas.OperationNames
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.Policy
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.QueryOperation
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Service
-import io.vyne.schemas.ServiceLineage
-import io.vyne.schemas.StreamOperation
-import io.vyne.schemas.TableOperation
-import io.vyne.schemas.TaxiTypeCache
-import io.vyne.schemas.TaxiTypeMapper
-import io.vyne.schemas.Type
-import io.vyne.schemas.TypeCache
-import io.vyne.schemas.fqn
-import io.vyne.toSourcesWithPackageIdentifier
-import lang.taxi.CompilationError
-import lang.taxi.CompilationException
-import lang.taxi.Compiler
-import lang.taxi.ImmutableEquality
-import lang.taxi.TaxiDocument
-import lang.taxi.errors
+import io.vyne.schemas.*
+import lang.taxi.*
 import lang.taxi.messages.Severity
 import lang.taxi.packages.TaxiSourcesLoader
+import lang.taxi.query.TaxiQLQueryString
+import lang.taxi.query.TaxiQlQuery
 import lang.taxi.types.Annotation
 import lang.taxi.types.ArrayType
 import lang.taxi.types.PrimitiveType
@@ -49,11 +23,14 @@ private val logger = KotlinLogging.logger {}
 class TaxiSchema(
    @get:JsonIgnore val document: TaxiDocument,
    @get:JsonIgnore override val packages: List<SourcePackage>,
-   override val functionRegistry: FunctionRegistry = FunctionRegistry.default
+   override val functionRegistry: FunctionRegistry = FunctionRegistry.default,
+   queryCacheSize: Long = 100
 ) : Schema {
    override val types: Set<Type>
    override val services: Set<Service>
    override val policies: Set<Policy>
+
+   private val queryCompiler = DefaultQueryCompiler(this, queryCacheSize)
 
    @get:JsonIgnore
    override val sources: List<VersionedSource> = packages.flatMap { it.sourcesWithPackageIdentifier }
@@ -223,6 +200,10 @@ class TaxiSchema(
          this.packages + schema.packages,
          this.functionRegistry.merge(schema.functionRegistry)
       )
+   }
+
+   override fun parseQuery(vyneQlQuery: TaxiQLQueryString): Pair<TaxiQlQuery, QueryOptions> {
+      return queryCompiler.compile(vyneQlQuery)
    }
 
    companion object {
