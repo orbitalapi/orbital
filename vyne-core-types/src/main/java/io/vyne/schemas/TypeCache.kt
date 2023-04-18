@@ -10,8 +10,6 @@ interface TypeCache {
    fun hasType(name: String): Boolean
    fun hasType(name: QualifiedName): Boolean
    fun defaultValues(name: QualifiedName): Map<AttributeName, TypedInstance>?
-   fun registerAnonymousType(anonymousType: Type)
-   fun anonymousTypes(): Set<Type>
    fun enumSynonyms(typedEnumValue: TypedEnumValue):List<TypedEnumValue>
    fun isAssignable(typeA: Type, typeB: Type, considerTypeParameters: Boolean, func:(Type,Type,Boolean) -> Boolean): Boolean
 }
@@ -29,14 +27,6 @@ object EmptyTypeCache : TypeCache {
    override fun hasType(name: QualifiedName): Boolean = false
    override fun defaultValues(name: QualifiedName): Map<AttributeName, TypedInstance>? {
      return emptyMap()
-   }
-
-   override fun registerAnonymousType(anonymousType: Type) {
-      TODO("Not yet implemented")
-   }
-
-   override fun anonymousTypes(): Set<Type> {
-      return setOf()
    }
 
    override fun enumSynonyms(typedEnumValue: TypedEnumValue): List<TypedEnumValue> = emptyList()

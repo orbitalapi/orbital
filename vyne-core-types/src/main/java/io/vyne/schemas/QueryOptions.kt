@@ -1,4 +1,4 @@
-package io.vyne.query
+package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper

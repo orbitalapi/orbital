@@ -15,6 +15,7 @@ import io.vyne.cockpit.core.telemetry.TelemetryConfig
 import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.history.db.InProcessHistoryConfiguration
 import io.vyne.history.noop.NoopQueryEventConsumerConfiguration
+import io.vyne.history.remote.RemoteHistoryConfig
 import io.vyne.history.rest.QueryHistoryRestConfig
 import io.vyne.licensing.LicenseConfig
 import io.vyne.models.csv.CsvFormatSpec
@@ -36,11 +37,7 @@ import io.vyne.search.embedded.EnableVyneEmbeddedSearch
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
-import io.vyne.spring.config.ConditionallyLoadBalancedExchangeFilterFunction
-import io.vyne.spring.config.DiscoveryClientConfig
-import io.vyne.spring.config.VyneSpringCacheConfiguration
-import io.vyne.spring.config.VyneSpringHazelcastConfiguration
-import io.vyne.spring.config.VyneSpringProjectionConfiguration
+import io.vyne.spring.config.*
 import io.vyne.spring.http.auth.HttpAuthConfig
 import io.vyne.spring.projection.ApplicationContextProvider
 import io.vyne.spring.utils.versionOrDev
@@ -165,6 +162,7 @@ class QueryServiceApp {
    InProcessHistoryConfiguration::class,
    NoopQueryEventConsumerConfiguration::class,
    QueryHistoryRestConfig::class,
+   RemoteHistoryConfig::class,
    CockpitCoreConfig::class,
    WebUiUrlSupportFilter::class
 )

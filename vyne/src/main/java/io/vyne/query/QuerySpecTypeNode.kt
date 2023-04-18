@@ -3,7 +3,6 @@ package io.vyne.query
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.vyne.schemas.OutputConstraint
 import io.vyne.schemas.Type
-import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 
@@ -31,6 +30,10 @@ data class QuerySpecTypeNode(
    val dataConstraints: List<OutputConstraint> = emptyList(),
    val projection: Projection? = null
 ) {
+
+   fun anonymousTypes(): Set<Type> {
+      return this.type.anonymousTypes + (projection?.type?.anonymousTypes ?: emptySet())
+   }
 
    companion object {
       private val logger = KotlinLogging.logger {}

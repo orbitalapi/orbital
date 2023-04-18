@@ -2,7 +2,7 @@ package io.vyne
 
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
-import io.vyne.query.QueryOptions
+import io.vyne.schemas.QueryOptions
 import org.junit.jupiter.api.Test
 
 class QueryOptionsParsingTest {

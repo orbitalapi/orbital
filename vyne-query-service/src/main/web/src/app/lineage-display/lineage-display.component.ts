@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input} from '@angular/core';
 import {
   EvaluatedExpressionDataSource,
   FailedEvaluatedExpressionDataSource,
@@ -23,17 +23,18 @@ import {
   SchemaNodeSet,
   TypeNamedInstance
 } from '../services/schema';
-import { BaseGraphComponent } from '../inheritence-graph/base-graph-component';
-import { Subject } from 'rxjs';
-import { isNullOrUndefined } from 'util';
-import { QueryResultMemberCoordinates } from '../query-panel/instance-selected-event';
+import {BaseGraphComponent} from '../inheritence-graph/base-graph-component';
+import {Subject} from 'rxjs';
+import {isNullOrUndefined} from 'util';
+import {QueryResultMemberCoordinates} from '../query-panel/instance-selected-event';
 
 type LineageElement = TypeNamedInstance | TypeNamedInstance[] | DataSource;
 
 @Component({
   selector: 'app-lineage-display',
   templateUrl: './lineage-display.component.html',
-  styleUrls: ['./lineage-display.component.scss']
+  styleUrls: ['./lineage-display.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LineageDisplayComponent extends BaseGraphComponent {
   static NODE_ID = '__nodeId';
@@ -41,7 +42,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
   private _dataSource: DataSource;
   private _instance: TypeNamedInstance;
 
-  constructor(private queryHistoryService: QueryService) {
+  constructor(private queryHistoryService: QueryService, private changeDetector: ChangeDetectorRef) {
     super();
   }
 
@@ -142,6 +143,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       const newNodes = this.buildGraph(source, linkTo)
       this.appendNodeSet(newNodes, this.schemaGraph);
       this.graphNodesChanged.next(true);
+      this.changeDetector.markForCheck();
     })
   }
 

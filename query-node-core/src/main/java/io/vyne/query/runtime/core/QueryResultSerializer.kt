@@ -7,10 +7,10 @@ import io.vyne.models.TypedInstanceConverter
 import io.vyne.models.format.FirstTypedInstanceInfo
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.serde.toSerializable
-import io.vyne.query.QueryOptions
 import io.vyne.query.QueryResult
 import io.vyne.query.QueryResultSerializer
 import io.vyne.query.ValueWithTypeName
+import io.vyne.schemas.QueryOptions
 import io.vyne.schemas.Type
 import org.springframework.http.MediaType
 

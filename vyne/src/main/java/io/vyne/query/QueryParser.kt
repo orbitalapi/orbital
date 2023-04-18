@@ -10,6 +10,7 @@ class QueryParser(val schema: Schema) {
 
    fun parse(query: QueryExpression): Set<QuerySpecTypeNode> {
       return when (query) {
+         is TypeQueryExpression -> setOf(QuerySpecTypeNode(query.type))
          is TypeNameQueryExpression -> parseSingleType(query)
          is TypeNameListQueryExpression -> parseQueryList(query)
          is GraphQlQueryExpression -> parseQueryObject(query)

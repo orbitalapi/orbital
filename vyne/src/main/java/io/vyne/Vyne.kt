@@ -46,7 +46,7 @@ interface ModelContainer : SchemaContainer {
 
 class Vyne(
    schemas: List<Schema>,
-   private val queryEngineFactory: QueryEngineFactory
+   private val queryEngineFactory: QueryEngineFactory,
 ) : ModelContainer {
 
    init {
@@ -86,10 +86,7 @@ class Vyne(
 
 
    fun parseQuery(vyneQlQuery: TaxiQLQueryString): Pair<TaxiQlQuery, QueryOptions> {
-      val sw = Stopwatch.createStarted()
-      val vyneQuery = Compiler(source = vyneQlQuery, importSources = listOf(this.schema.taxi)).queries().first()
-      log().debug("Compiled query in ${sw.elapsed().toMillis()}ms")
-      return vyneQuery to QueryOptions.fromQuery(vyneQuery)
+      return this.schema.parseQuery(vyneQlQuery)
    }
 
    suspend fun query(
@@ -160,7 +157,7 @@ class Vyne(
             val constraints = constraintProvider.buildOutputConstraints(targetType, discoveryType.constraints)
             ConstrainedTypeNameQueryExpression(targetType.name.parameterizedName, constraints)
          } else {
-            TypeNameQueryExpression(discoveryType.typeName.toVyneQualifiedName().parameterizedName)
+            TypeQueryExpression(targetType)
          }
 
          expression

@@ -1,18 +1,22 @@
-import {Directive} from '@angular/core';
+import {ChangeDetectorRef, Directive} from '@angular/core';
 import {QueryResultInstanceSelectedEvent} from './result-display/BaseQueryResultComponent';
 import {
   asNearestTypedInstance,
   DataSource,
-  findType, InstanceLike,
+  findType,
+  InstanceLike,
   isTypedInstance,
   isTypeNamedInstance,
-  isUntypedInstance, QualifiedName, Schema, Type,
+  isUntypedInstance,
+  QualifiedName,
+  Schema,
+  Type,
   TypeNamedInstance
 } from '../services/schema';
 import {QueryService} from '../services/query.service';
 import {TypesService} from '../services/types.service';
 import {InstanceSelectedEvent, QueryResultMemberCoordinates} from './instance-selected-event';
-import { buildInheritable, Inheritable } from 'src/app/inheritence-graph/build.inheritable';
+import {buildInheritable, Inheritable} from 'src/app/inheritence-graph/build.inheritable';
 
 @Directive()
 export abstract class BaseQueryResultWithSidebarComponent {
@@ -37,7 +41,7 @@ export abstract class BaseQueryResultWithSidebarComponent {
   //   }
   // }
 
-  protected constructor(protected queryService: QueryService, protected typeService: TypesService) {
+  protected constructor(protected queryService: QueryService, protected typeService: TypesService, protected changeDetector: ChangeDetectorRef) {
     typeService.getTypes()
       .subscribe(schema => this.schema = schema);
   }
@@ -63,12 +67,14 @@ export abstract class BaseQueryResultWithSidebarComponent {
         $event.instanceSelectedEvent.queryId, $event.instanceSelectedEvent.rowValueId, $event.instanceSelectedEvent.attributeName
       )
         .subscribe(result => {
+          this.changeDetector.markForCheck();
           this.selectedInstanceQueryCoordinates = $event.instanceSelectedEvent;
           this.selectedTypeInstanceDataSource = result.source;
           this.selectedTypeInstanceType = findType(this.schema, result.typeName.fullyQualifiedName);
           this.typeService.getDiscoverableTypes(this.selectedTypeInstanceType.name.parameterizedName)
             .subscribe(result => {
               this.discoverableTypes = result;
+              this.changeDetector.markForCheck();
             });
 
           this.typeService.getTypes().subscribe(schema => {

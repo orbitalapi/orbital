@@ -5,23 +5,12 @@ import io.vyne.models.facts.FactBag
 import io.vyne.models.facts.ScopedFact
 import io.vyne.query.Projection
 import io.vyne.query.QueryContext
+import io.vyne.query.TypeQueryExpression
 import io.vyne.query.VyneQueryStatistics
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.toVyneQualifiedName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.buffer
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flatMapMerge
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.takeWhile
-import kotlinx.coroutines.flow.withIndex
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import lang.taxi.accessors.CollectionProjectionExpressionAccessor
 import lang.taxi.types.ArrayType
 import lang.taxi.types.StreamType
@@ -100,7 +89,7 @@ class LocalProjectionProvider : ProjectionProvider {
                } else {
                   context.only(globalFacts.rootFacts(), scopedFacts = listOf(scopedFact))
                }
-               val buildResult = projectionContext.build(projectionType.qualifiedName)
+               val buildResult = projectionContext.build(TypeQueryExpression(projectionType))
                buildResult.results.map { it to projectionContext.vyneQueryStatistics }
             }
          }

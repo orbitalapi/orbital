@@ -78,10 +78,10 @@ vyne:
    query-service:
       url: http://vyne
    analytics:
-      mode: None
+      mode: Inprocess
       persistRemoteCallResponses: false
       persistResults: false
-      persistRemoteCallMetadata: false
+      persistRemoteCallMetadata: true
       url: http://vyne-analytics-server
    schema-server:
       url: http://schema-server
@@ -136,11 +136,9 @@ logging:
       org.apache.http: OFF
       com.netflix: WARN
       com.hazelcast: WARN
-      io.vyne: ERROR
-      lang.taxi: WARN
+      io.vyne: INFO
       io.vyne.query.chat: DEBUG
-      net.openhft.chronicle: WARN
-      #       Enable this to get graph debug schemas:
+#       Enable this to get graph debug schemas:
 #      io.vyne.query.GraphSearcher: TRACE
 #      io.vyne.query: DEBUG
       org.apache.catalina: WARN

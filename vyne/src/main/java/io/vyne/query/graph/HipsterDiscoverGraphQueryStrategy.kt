@@ -18,10 +18,13 @@ import io.vyne.query.graph.edges.PathEvaluation
 import io.vyne.query.graph.edges.StartingEdge
 import io.vyne.schemas.*
 import io.vyne.utils.ImmutableEquality
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.*
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -157,7 +160,7 @@ class HipsterDiscoverGraphQueryStrategy(
          //    .filter { it is TypedObject }
          .mapNotNull { fact ->
             val startFact = providedInstance(fact)
-            val targetType = context.schema.type(targetElement.value as String)
+            val targetType = targetElement.instanceValue as? Type? ?: context.schema.type(targetElement.value as String)
             // Excluding paths is done by the type, not the fact.
             // Graph searches work based off of links from types, therefore
             // we should exclude based on the type, regardless of the value.

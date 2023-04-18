@@ -8,6 +8,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import lang.taxi.accessors.ProjectionFunctionScope
+import mu.KotlinLogging
 import java.util.*
 
 
@@ -57,7 +58,19 @@ data class ConstrainedTypeNameQueryExpression(
    val constraint: List<OutputConstraint>
 ) : QueryExpression
 
+data class TypeQueryExpression(val type: Type) : QueryExpression {
+
+}
+
 data class TypeNameQueryExpression(val typeName: String) : QueryExpression {
+   init {
+      logger.warn { "TypeNameQueryExpression shouldn't be called - prefer TypeQueryExpression where possible" }
+   }
+
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+
    val qualifiedTypeNames: QualifiedName = typeName.fqn()
 }
 data class ProjectedExpression(val source: QueryExpression, val projection: Projection) : QueryExpression

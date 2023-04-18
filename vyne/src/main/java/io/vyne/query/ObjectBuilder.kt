@@ -1,16 +1,6 @@
 package io.vyne.query
 
-import io.vyne.models.AccessorHandler
-import io.vyne.models.DataSource
-import io.vyne.models.FailedSearch
-import io.vyne.models.MixedSources
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedInstancePredicateFactory
-import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedObjectFactory
-import io.vyne.models.TypedValue
+import io.vyne.models.*
 import io.vyne.models.facts.FactBag
 import io.vyne.models.facts.FactDiscoveryStrategy
 import io.vyne.models.facts.FieldAndFactBag
@@ -19,11 +9,7 @@ import io.vyne.models.functions.FunctionRegistry
 import io.vyne.query.ExcludeQueryStrategyKlassPredicate.Companion.ExcludeObjectBuilder
 import io.vyne.query.collections.CollectionBuilder
 import io.vyne.query.collections.CollectionProjectionBuilder
-import io.vyne.schemas.AttributeName
-import io.vyne.schemas.Field
-import io.vyne.schemas.FieldSource
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
 import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
@@ -306,7 +292,7 @@ class ObjectBuilder(
                .forEach { (attributeName, field) ->
                   if (field.sourcedBy == null) {
                      val fieldInstanceValidPredicate = buildSpecProvider.provide(field)
-                     val targetAttributeType = context.schema.type(field.type)
+                     val targetAttributeType = field.resolveType(context.schema)
                      val returnTypedNull = true
                      when (val value =
                         sourceObjectType.getAttributeIdentifiedByType(targetAttributeType, returnTypedNull)) {
@@ -338,7 +324,7 @@ class ObjectBuilder(
          .forEach { (attributeName, field) ->
             val buildSpec = buildSpecProvider.provide(field)
             //val attributeContext = originalContext?.only() ?: context
-            val targetAttributeType = this.context.schema.type(field.type)
+            val targetAttributeType = field.resolveType(context.schema)
             //val value = ObjectBuilder(this.queryEngine, attributeContext, this.context.schema.type(field.type)).build(buildSpec)
             if (targetAttributeType.hasExpression) {
                // Don't attempt to populate expression types here.
@@ -356,7 +342,9 @@ class ObjectBuilder(
                // When building a field, populate the source (unprojected) type.
                // When we go to construct the final object (In TypedObjectFactory), this source
                // value will be projected to it's actual type.
-               val fieldBuildType = field.fieldProjection?.sourceType?.toVyneQualifiedName() ?: field.type
+               val fieldBuildType =
+                  field.fieldProjection?.sourceType?.toVyneQualifiedName()?.let { context.schema.type(it) }
+                     ?: field.resolveType(context.schema)
                val value = build(fieldBuildType, buildSpec, theseFacts)
 
 
@@ -440,7 +428,7 @@ class ObjectBuilder(
             ObjectBuilder(
                this.queryEngine,
                this.context.only(source),
-               this.context.schema.type(sourcedBy.attributeType),
+               sourcedBy.attributeAnonymousType ?: this.context.schema.type(sourcedBy.attributeType),
                functionRegistry = functionRegistry,
                formatSpecs = formatSpecs,
             )

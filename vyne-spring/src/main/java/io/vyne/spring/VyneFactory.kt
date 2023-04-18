@@ -38,6 +38,7 @@ class VyneFactory(
    override fun isSingleton() = true
    override fun getObjectType() = Vyne::class.java
 
+
    override fun getObject(): Vyne {
       return buildVyne()
    }
@@ -63,7 +64,7 @@ class VyneFactory(
             vyneCacheConfiguration,
             CacheAwareOperationInvocationDecorator.decorateAll(operationInvokers),
             projectionProvider = projectionProvider
-         )
+         ),
       )
       facts.forEach { fact ->
          val typedInstance = TypedInstance.fromNamedType(

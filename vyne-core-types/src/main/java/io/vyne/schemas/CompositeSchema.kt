@@ -5,9 +5,15 @@ import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.TaxiDocument
+import lang.taxi.query.TaxiQLQueryString
+import lang.taxi.query.TaxiQlQuery
 
 @Deprecated("This class fails to handle type extensions correctly.  Use TaxiSchema.fromNamedSources().first(), which will correctly order, compose and compile the sources")
 class CompositeSchema(private val schemas: List<Schema>) : Schema {
+   private val queryCompiler = DefaultQueryCompiler(this, 100)
+   override fun parseQuery(vyneQlQuery: TaxiQLQueryString): Pair<TaxiQlQuery, QueryOptions> {
+      return queryCompiler.compile(vyneQlQuery)
+   }
 
    @get:JsonIgnore
    override val taxi: TaxiDocument = when {

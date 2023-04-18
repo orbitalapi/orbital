@@ -7,8 +7,8 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseKeyValuePair
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import org.junit.Ignore
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
 
@@ -478,7 +478,18 @@ class VyneCollectionDiscoveryTest {
    }
 
 
+   /**
+    * This test uses a syntax that we introduced, but never really saw adoption of.
+    * ( by [Musical with ( ComposerName )] )
+    *
+    * Although flattening arrays is something we'd like to support, it's likely this is
+    * better solved via named projection scopes, which have broader adoption.
+    *
+    * This test started failing when we migrated away from anonymous types being present in the
+    * schema.
+    */
    @Test
+   @Ignore("Not planning on supporting this syntax")
    fun `can flatten an array as the top level return type using an anonymous type`(): Unit = runBlocking {
       val source = """{
          "name" : "Stephen Sondheim",

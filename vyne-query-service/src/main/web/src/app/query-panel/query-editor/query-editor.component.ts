@@ -347,7 +347,7 @@ export class QueryEditorComponent implements OnInit {
     }
 
     this.queryProfileData$ = this.queryService.getQueryProfileFromClientId(this.queryClientId);
-    this.changeDetector.detectChanges();
+    this.changeDetector.markForCheck();
   }
 
   copyQuery($event: CopyQueryFormat) {

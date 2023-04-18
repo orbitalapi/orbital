@@ -8,18 +8,13 @@ import lang.taxi.types.FormatsAndZoneOffset
 import mu.KotlinLogging
 import org.springframework.core.convert.ConverterNotFoundException
 import org.springframework.core.convert.support.DefaultConversionService
+import org.springframework.util.NumberUtils
 import stormpot.Pool
 import stormpot.Timeout
 import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.NumberFormat
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.ZoneId
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
+import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
@@ -36,9 +31,9 @@ object VyneConversionService : ConversionService {
       )
    }
 
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: FormatsAndZoneOffset?): T {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: FormatsAndZoneOffset?): T? {
       try {
-         return innerConversionService.convert(source, targetType, format)!!
+         return innerConversionService.convert(source, targetType, format)
       } catch (e: ConverterNotFoundException) {
          throw IllegalArgumentException(
             "Unable to convert value=${source} to type=${targetType} Error: ${e.message}",
@@ -48,6 +43,7 @@ object VyneConversionService : ConversionService {
    }
 }
 
+// TODO : This is a terrible idea.  We should be using a strategy here
 interface ForwardingConversionService : ConversionService {
    val next: ConversionService
 }
@@ -143,22 +139,22 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
    }
 
 
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: FormatsAndZoneOffset?): T {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: FormatsAndZoneOffset?): T? {
       return when {
          source is String && targetType == Instant::class.java -> {
-            toTemporalObject(source, format?.patterns, UtcAsDefaultInstantConverter::parse) as T
+            toTemporalObject(source, format?.patterns, UtcAsDefaultInstantConverter::parse) as T?
          }
 
          source is String && targetType == LocalDateTime::class.java -> {
-            toTemporalObject(source, format?.patterns, LocalDateTime::parse) as T
+            toTemporalObject(source, format?.patterns, LocalDateTime::parse) as T?
          }
 
          source is String && targetType == LocalDate::class.java -> {
-            toTemporalObject(source, format?.patterns, LocalDate::parse, DateTimeFormatter.ISO_LOCAL_DATE) as T
+            toTemporalObject(source, format?.patterns, LocalDate::parse, DateTimeFormatter.ISO_LOCAL_DATE) as T?
          }
 
          source is String && targetType == LocalTime::class.java -> {
-            toTemporalObject(source, format?.patterns, LocalTime::parse, DateTimeFormatter.ISO_TIME) as T
+            toTemporalObject(source, format?.patterns, LocalTime::parse, DateTimeFormatter.ISO_TIME) as T?
          }
 
          else -> {
@@ -197,11 +193,13 @@ class StringToNumberConverter(override val next: ConversionService = NoOpConvers
 
    }
 
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: FormatsAndZoneOffset?): T {
-      if (source !is String) {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: FormatsAndZoneOffset?): T? {
+      if (source !is String || !NumberUtils.STANDARD_NUMBER_TYPES.contains(targetType)) {
          return next.convert(source, targetType, format)
       } else {
-
+         if ((source as String).isEmpty()) {
+            return null
+         }
          numberFormatPool.claim(Timeout(500, TimeUnit.MILLISECONDS)).use { poolableNumberFormat ->
             val numberFormat = if (poolableNumberFormat == null) {
                logger.warn { "Failed to obtain a lease to a number formatter instance, will create a new one, but this is expensive.  Consider adjusting the size of the pool" }
@@ -220,8 +218,9 @@ class StringToNumberConverter(override val next: ConversionService = NoOpConvers
       source: String,
       format: FormatsAndZoneOffset?,
       numberFormat: NumberFormat
-   ): T {
+   ): T? {
       return when (targetType) {
+         Integer::class.java -> fromScientific(source)?.toInt() as T ?: numberFormat.parse(source).toInt() as T
          Int::class.java -> fromScientific(source)?.toInt() as T ?: numberFormat.parse(source).toInt() as T
          Double::class.java -> fromScientific(source)?.toDouble() as T ?: numberFormat.parse(source).toDouble() as T
          BigDecimal::class.java -> {

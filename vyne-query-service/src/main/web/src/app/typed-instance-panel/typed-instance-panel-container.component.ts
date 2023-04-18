@@ -1,10 +1,10 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { TypesService } from '../services/types.service';
-import { InstanceSelectedEvent } from '../query-panel/instance-selected-event';
-import { QueryService } from '../services/query.service';
-import { BaseQueryResultWithSidebarComponent } from '../query-panel/BaseQueryResultWithSidebarComponent';
-import { Observable } from 'rxjs/internal/Observable';
-import { QueryResultInstanceSelectedEvent } from '../query-panel/result-display/BaseQueryResultComponent';
+import {ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
+import {TypesService} from '../services/types.service';
+import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
+import {QueryService} from '../services/query.service';
+import {BaseQueryResultWithSidebarComponent} from '../query-panel/BaseQueryResultWithSidebarComponent';
+import {Observable} from 'rxjs/internal/Observable';
+import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
 
 @Component({
   selector: 'app-typed-instance-panel-container',
@@ -79,8 +79,8 @@ export class TypedInstancePanelContainerComponent extends BaseQueryResultWithSid
     }
   }
 
-  constructor(protected queryService: QueryService, protected typeService: TypesService) {
-    super(queryService, typeService);
+  constructor(protected queryService: QueryService, protected typeService: TypesService, changeDetector: ChangeDetectorRef) {
+    super(queryService, typeService, changeDetector);
   }
 
   onCloseTypedInstanceDrawer($event: any) {

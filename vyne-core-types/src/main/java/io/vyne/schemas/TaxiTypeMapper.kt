@@ -1,35 +1,43 @@
 package io.vyne.schemas
 
-import io.vyne.schemas.taxi.FunctionConstraintProvider
-import io.vyne.schemas.taxi.TaxiConstraintConverter
-import io.vyne.schemas.taxi.toVyneFieldModifiers
-import io.vyne.schemas.taxi.toVyneQualifiedName
-import io.vyne.schemas.taxi.toVyneSources
+import io.vyne.schemas.taxi.*
 import lang.taxi.accessors.FieldSourceAccessor
+import lang.taxi.types.*
 import lang.taxi.types.Annotation
-import lang.taxi.types.ArrayType
-import lang.taxi.types.EnumType
-import lang.taxi.types.ObjectType
-import lang.taxi.types.PrimitiveType
-import lang.taxi.types.TypeAlias
 
 object TaxiTypeMapper {
+   private fun convertIfAnonymous(taxiType: lang.taxi.types.Type, schema: Schema, typeCache: TypeCache): Type? {
+      return when {
+         taxiType is ArrayType && (taxiType as ArrayType).memberType.anonymous -> {
+            val memberType = fromTaxiType(taxiType.memberType, schema, typeCache)
+
+            memberType.asArrayType()
+         }
+
+         taxiType.anonymous -> fromTaxiType(taxiType, schema, typeCache)
+         else -> null
+      }
+
+   }
+
    fun fromTaxiType(taxiType: lang.taxi.types.Type, schema: Schema, typeCache: TypeCache = schema.typeCache): Type {
       return when (taxiType) {
          is ObjectType -> {
             val typeName = QualifiedName.from(taxiType.qualifiedName)
             val fields = taxiType.allFields.map { field ->
+               val fieldAnonymousType = convertIfAnonymous(field.type, schema, typeCache)
                when (field.type) {
                   is ArrayType -> field.name to Field(
-                     field.type.toVyneQualifiedName(),
-                     field.modifiers.toVyneFieldModifiers(),
+                     type = field.type.toVyneQualifiedName(),
+                     modifiers = field.modifiers.toVyneFieldModifiers(),
                      accessor = field.accessor,
                      readCondition = field.readExpression,
                      typeDoc = field.typeDoc,
                      nullable = field.nullable,
                      metadata = parseAnnotationsToMetadata(field.annotations),
                      fieldProjection = field.projection,
-                     format = field.formatAndZoneOffset
+                     format = field.formatAndZoneOffset,
+                     anonymousType = fieldAnonymousType
                   )
 
                   else -> field.name to Field(
@@ -51,11 +59,13 @@ object TaxiTypeMapper {
                         FieldSource(
                            (field.accessor as FieldSourceAccessor).sourceAttributeName,
                            field.type.qualifiedName.fqn(),
-                           (field.accessor as FieldSourceAccessor).sourceType.toVyneQualifiedName()
+                           (field.accessor as FieldSourceAccessor).sourceType.toVyneQualifiedName(),
+                           fieldAnonymousType
                         )
                      else null,
                      fieldProjection = field.projection,
-                     format = field.formatAndZoneOffset
+                     format = field.formatAndZoneOffset,
+                     anonymousType = fieldAnonymousType
                   )
                }
             }.toMap()

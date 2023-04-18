@@ -1,20 +1,6 @@
-import {
-  QueryService,
-} from '../services/query.service';
-import {EventEmitter, Output, Directive} from '@angular/core';
-import {
-  DataSource,
-  findType,
-  InstanceLike,
-  isTypedInstance,
-  isTypeNamedInstance,
-  isUntypedInstance,
-  Schema,
-  Type, TypeNamedInstance
-} from '../services/schema';
-import {QueryResultInstanceSelectedEvent} from './result-display/BaseQueryResultComponent';
+import {QueryService,} from '../services/query.service';
+import {ChangeDetectorRef, Directive, EventEmitter, Output} from '@angular/core';
 import {TypesService} from '../services/types.service';
-import {QueryResultMemberCoordinates} from './instance-selected-event';
 import {BaseQueryResultWithSidebarComponent} from './BaseQueryResultWithSidebarComponent';
 
 @Directive()
@@ -24,8 +10,8 @@ export abstract class BaseQueryResultDisplayComponent extends BaseQueryResultWit
 
   abstract get queryId(): string;
 
-  protected constructor(protected queryService: QueryService, protected typeService: TypesService) {
-    super(queryService, typeService);
+  protected constructor(protected queryService: QueryService, protected typeService: TypesService, protected changeDetector: ChangeDetectorRef) {
+    super(queryService, typeService, changeDetector);
   }
 
 
