@@ -127,7 +127,7 @@ export default function Home({
             </IconContext.Provider>
           </div>
         </div>
-        
+
         <WhereToUseSection className="py-20" />
 
         <QueryExamples highlightedSnippets={queryExampleCodeHighlightedSnippets}
@@ -138,6 +138,12 @@ export default function Home({
         <DebugTools className='sm:pt-32 md:pt-20 pb-20' />
         {/*<DataPipelines/>*/}
         {/*<FeatureArticles tag="blog" title="Latest from the blog" subtitle="From our brains to your eyeballs."/>*/}
+        <div className="flex flex-col items-center gap-6 mt-20">
+          <Paragraph>
+            <span className="font-bold text-2xl">Start integrating now</span>
+          </Paragraph>
+          <GetStartedButton />
+        </div>
       </div>
       <Footer />
     </>
