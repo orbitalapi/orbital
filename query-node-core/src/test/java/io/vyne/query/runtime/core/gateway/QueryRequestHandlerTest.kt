@@ -1,6 +1,8 @@
 package io.vyne.query.runtime.core.gateway
 
 import com.jayway.awaitility.Awaitility
+import com.nhaarman.mockito_kotlin.*
+import io.kotest.matchers.shouldBe
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
@@ -16,6 +18,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.returnResult
+import reactor.core.publisher.Mono
 import java.util.concurrent.TimeUnit
 
 //@SpringBootTest
@@ -25,7 +28,7 @@ import java.util.concurrent.TimeUnit
    classes = [QueryRequestHandlerTest.TestConfig::class],
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
    properties = ["spring.main.web-application-type=reactive"]
-   )
+)
 class QueryRequestHandlerTest {
 
    @Autowired
@@ -37,6 +40,9 @@ class QueryRequestHandlerTest {
    @Autowired
    lateinit var handler: QueryRouteService
 
+   @Autowired
+   lateinit var queryExecutor: RoutedQueryExecutor
+
    @Test
    fun handlesRequest() {
       schemaStore.setSchema(
@@ -45,6 +51,10 @@ class QueryRequestHandlerTest {
 
          model Film {
             id : FilmId inherits Int
+         }
+
+         service Films {
+            operation findFilm(FilmId):Film
          }
 
          @HttpOperation( method = "GET" , url = "/films/{FilmId}" )
@@ -63,7 +73,14 @@ class QueryRequestHandlerTest {
          .exchange()
          .expectStatus().isOk
          .returnResult<Map<String, Any>>()
-      TODO()
+
+      argumentCaptor<RoutedQuery>().apply {
+         verify(queryExecutor).handleRoutedQuery(capture())
+
+         lastValue.argumentValues.shouldBe(
+            mapOf("filmId" to "123")
+         )
+      }
    }
 
 
@@ -71,6 +88,20 @@ class QueryRequestHandlerTest {
    @TestConfiguration
    @Import(QueryGatewayRouterConfig::class)
    class TestConfig {
+
+      @Bean
+      fun queryExecutor():RoutedQueryExecutor {
+         val executor= mock<RoutedQueryExecutor> {
+            on { handleRoutedQuery(any())} doReturn Mono.just("Hello")
+         }
+         return executor
+      }
+
+      @Bean
+      fun queryRouteService(schemaStore: SimpleSchemaStore, queryExecutor: RoutedQueryExecutor): QueryRouteService {
+         return QueryRouteService(schemaStore, queryExecutor)
+      }
+
       @Bean
       fun schemaStore(): SimpleSchemaStore = SimpleSchemaStore()
    }

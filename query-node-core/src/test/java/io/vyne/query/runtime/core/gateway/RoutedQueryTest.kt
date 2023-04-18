@@ -5,7 +5,6 @@ import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import org.junit.Test
-import org.junit.jupiter.api.Assertions.*
 import org.springframework.mock.web.reactive.function.server.MockServerRequest
 
 class RoutedQueryTest {
@@ -31,7 +30,7 @@ class RoutedQueryTest {
          .build()
 
       val routedQuery = RoutedQuery.build(query, querySrc, request)
-      routedQuery.parameters.entries.single().value.typedValue.value
+      routedQuery.arguments.entries.single().value.typedValue.value
          .shouldBe("123")
    }
 

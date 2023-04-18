@@ -67,14 +67,11 @@ class QueryDispatcher(
    }
 
    override fun handleRoutedQuery(query: RoutedQuery): Mono<Any> {
-      val arguments = query.parameters.map { (param, value) ->
-         param.name to value.typedValue.value
-      }.toMap()
       return dispatchQuery(
          query.querySrc,
          Ids.fastUuid(),
          MediaType.APPLICATION_JSON_VALUE,
-         arguments = arguments
+         arguments = query.argumentValues
       )
    }
 

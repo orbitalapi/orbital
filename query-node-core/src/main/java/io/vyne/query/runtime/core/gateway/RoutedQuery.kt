@@ -1,8 +1,5 @@
 package io.vyne.query.runtime.core.gateway
 
-import io.vyne.schemas.taxi.TaxiSchema
-import kotlinx.serialization.Serializable
-import lang.taxi.TaxiDocument
 import lang.taxi.annotations.HttpPathVariable
 import lang.taxi.query.FactValue
 import lang.taxi.query.Parameter
@@ -20,8 +17,13 @@ import org.springframework.web.reactive.function.server.ServerRequest
 data class RoutedQuery(
    val query: TaxiQlQuery,
    val querySrc: TaxiQLQueryString,
-   val parameters: Map<Parameter, FactValue>
+   val arguments: Map<Parameter, FactValue>
 ) {
+
+   val argumentValues: Map<String, Any?> = arguments.map { (param, value) ->
+      param.name to value.typedValue.value
+   }.toMap()
+
    companion object {
       fun build(query: TaxiQlQuery, querySrc: TaxiQLQueryString, request: ServerRequest): RoutedQuery {
          val parameters = query.parameters.map { parameter ->
@@ -39,7 +41,7 @@ data class RoutedQuery(
             // TODO : This should result in a BadRequest, somehow...
             else -> error("Parameter ${parameter.name} was not provided through the request")
          }
-         return FactValue.Constant(TypedValue(parameter.type,rawValue))
+         return FactValue.Constant(TypedValue(parameter.type, rawValue))
       }
 
       private fun pathVariableName(parameter: Parameter): String? {
@@ -47,8 +49,3 @@ data class RoutedQuery(
       }
    }
 }
-
-data class QueryFact(
-   val parameterName:String,
-   val fact: Any
-)

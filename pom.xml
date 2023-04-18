@@ -116,7 +116,6 @@
 
       <module>auth-tokens</module>
       <module>query-node-native</module>
-      <module>query-proxy-service</module>
    </modules>
    <scm>
       <developerConnection>scm:git:git@gitlab.com:vyne/vyne.git</developerConnection>
