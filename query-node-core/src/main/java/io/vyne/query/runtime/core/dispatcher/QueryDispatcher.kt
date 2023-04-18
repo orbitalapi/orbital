@@ -8,11 +8,14 @@ import io.vyne.query.runtime.CompressedQueryResultWrapper
 import io.vyne.query.runtime.QueryMessage
 import io.vyne.query.runtime.QueryMessageCborWrapper
 import io.vyne.query.runtime.core.gateway.RoutedQuery
+import io.vyne.query.runtime.core.gateway.RoutedQueryExecutor
 import io.vyne.schema.api.SchemaProvider
+import io.vyne.utils.Ids
 import io.vyne.utils.formatAsFileSize
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.*
 import reactor.core.publisher.Mono
@@ -33,7 +36,7 @@ class QueryDispatcher(
    private val connectionsConfigProvider: ConfigFileConnectorsRegistry,
    private val schemaProvider: SchemaProvider,
    @Value("\${vyne.query-router-url}") private val queryRouterUrl: String
-) {
+) : RoutedQueryExecutor {
 
    init {
       logger.info { "Query dispatcher is active - routing queries to $queryRouterUrl" }
@@ -47,7 +50,8 @@ class QueryDispatcher(
       query: String,
       clientQueryId: String,
       mediaType: String,
-      resultMode: ResultMode = ResultMode.RAW
+      resultMode: ResultMode = ResultMode.RAW,
+      arguments: Map<String, Any?> = emptyMap()
    ): Mono<Any> {
       val message = QueryMessage(
          query = query,
@@ -55,16 +59,23 @@ class QueryDispatcher(
          connections = connectionsConfigProvider.load(),
          authTokens = authTokenRepository.getAllTokens(),
          services = servicesRepository.load(),
-         resultMode, mediaType, clientQueryId
+         resultMode, mediaType, clientQueryId,
+         arguments
       )
 
       return dispatchQuery(message)
    }
 
-   fun dispatchQuery(
-      query: RoutedQuery
-   ): Mono<Any> {
-TODO()
+   override fun handleRoutedQuery(query: RoutedQuery): Mono<Any> {
+      val arguments = query.parameters.map { (param, value) ->
+         param.name to value.typedValue.value
+      }.toMap()
+      return dispatchQuery(
+         query.querySrc,
+         Ids.fastUuid(),
+         MediaType.APPLICATION_JSON_VALUE,
+         arguments = arguments
+      )
    }
 
    fun dispatchQuery(message: QueryMessage): Mono<Any> {
@@ -82,5 +93,7 @@ TODO()
             result.get().decompress()
          }
    }
+
+
 
 }

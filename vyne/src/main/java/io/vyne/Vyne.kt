@@ -2,9 +2,11 @@ package io.vyne
 
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.base.Stopwatch
+import io.vyne.models.DefinedInSchema
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObjectFactory
+import io.vyne.models.facts.ScopedFact
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.query.*
 import io.vyne.query.graph.Algorithms
@@ -17,6 +19,8 @@ import io.vyne.utils.log
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.job
 import lang.taxi.Compiler
+import lang.taxi.accessors.ProjectionFunctionScope
+import lang.taxi.query.FactValue
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import java.util.*
@@ -73,13 +77,15 @@ class Vyne(
       vyneQlQuery: TaxiQLQueryString,
       queryId: String = UUID.randomUUID().toString(),
       clientQueryId: String? = null,
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker()
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
+      arguments: Map<String, Any?> = emptyMap()
    ): QueryResult {
-      val vyneQuery = parseQuery(vyneQlQuery).first
-      return query(vyneQuery, queryId, clientQueryId, eventBroker)
+      val taxiQlQuery = parseQuery(vyneQlQuery).first
+      return query(taxiQlQuery, queryId, clientQueryId, eventBroker, arguments)
    }
 
-   fun parseQuery(vyneQlQuery: TaxiQLQueryString): Pair<TaxiQlQuery,QueryOptions> {
+
+   fun parseQuery(vyneQlQuery: TaxiQLQueryString): Pair<TaxiQlQuery, QueryOptions> {
       val sw = Stopwatch.createStarted()
       val vyneQuery = Compiler(source = vyneQlQuery, importSources = listOf(this.schema.taxi)).queries().first()
       log().debug("Compiled query in ${sw.elapsed().toMillis()}ms")
@@ -90,10 +96,11 @@ class Vyne(
       taxiQl: TaxiQlQuery,
       queryId: String = UUID.randomUUID().toString(),
       clientQueryId: String? = null,
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker()
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
+      arguments: Map<String, Any?> = emptyMap()
    ): QueryResult {
       val currentJob = currentCoroutineContext().job
-      val (queryContext, expression) = buildContextAndExpression(taxiQl, queryId, clientQueryId, eventBroker)
+      val (queryContext, expression) = buildContextAndExpression(taxiQl, queryId, clientQueryId, eventBroker, arguments)
       val queryCanceller = QueryCanceller(queryContext, currentJob)
       eventBroker.addHandler(queryCanceller)
       return when (taxiQl.queryMode) {
@@ -116,7 +123,8 @@ class Vyne(
       taxiQl: TaxiQlQuery,
       queryId: String,
       clientQueryId: String?,
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker()
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
+      arguments: Map<String, Any?> = emptyMap(),
    ): Pair<QueryContext, QueryExpression> {
       val additionalFacts = taxiQl.facts.map { variable ->
          TypedInstance.from(
@@ -126,11 +134,14 @@ class Vyne(
             source = Provided
          )
       }.toSet()
+      val scopedFacts = extractArgumentsFromQuery(taxiQl, arguments)
+
       val queryContext = query(
          additionalFacts = additionalFacts,
          queryId = queryId,
          clientQueryId = clientQueryId,
-         eventBroker = eventBroker
+         eventBroker = eventBroker,
+         scopedFacts = scopedFacts
       )
          .responseType(deriveResponseType(taxiQl))
 //      queryContext = taxiQl.projectedType?.let {
@@ -160,13 +171,43 @@ class Vyne(
       }
       val expression = queryExpressions.first().let { expression ->
          if (taxiQl.projectedType != null) {
-            ProjectedExpression(expression, Projection(ProjectionAnonymousTypeProvider.projectedTo(taxiQl.projectedType!!,schema), taxiQl.projectionScope))
+            ProjectedExpression(
+               expression,
+               Projection(
+                  ProjectionAnonymousTypeProvider.projectedTo(taxiQl.projectedType!!, schema),
+                  taxiQl.projectionScope
+               )
+            )
          } else {
             expression
          }
       }
 
       return Pair(queryContext, expression)
+   }
+
+   private fun extractArgumentsFromQuery(
+      taxiQl: TaxiQlQuery,
+      arguments: Map<String, Any?>
+   ) = taxiQl.parameters.map { parameter ->
+      val argValue = when {
+         arguments.containsKey(parameter.name) -> TypedInstance.from(
+            schema.type(parameter.type),
+            arguments[parameter.name],
+            schema,
+            source = Provided
+         )
+
+         parameter.value is FactValue.Constant -> TypedInstance.from(
+            schema.type(parameter.type),
+            parameter.value.typedValue.value,
+            schema,
+            source = DefinedInSchema
+         )
+
+         else -> error("No value was provided for parameter ${parameter.name} ")
+      }
+      ScopedFact(ProjectionFunctionScope(parameter.name, parameter.type), argValue)
    }
 
    suspend fun evaluate(taxiExpression: String, returnType: Type): TypedInstance {
@@ -189,7 +230,7 @@ class Vyne(
          inPlaceQueryEngine = queryContext,
          functionResultCache = queryContext.functionResultCache
       ).build()
-     return buildResult
+      return buildResult
    }
 
    fun query(
@@ -197,8 +238,10 @@ class Vyne(
       additionalFacts: Set<TypedInstance> = emptySet(),
       queryId: String = UUID.randomUUID().toString(),
       clientQueryId: String? = null,
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker()
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
+      scopedFacts: List<ScopedFact> = emptyList()
    ): QueryContext {
+
       // Design note:  I'm creating the queryEngine with ALL the fact sets, regardless of
       // what is asked for, but only providing the desired factSets to the queryContext.
       // This is because the context only evalutates the factSets that are provided,
@@ -211,7 +254,8 @@ class Vyne(
          factSetIds = factSetIds,
          queryId = queryId,
          clientQueryId = clientQueryId,
-         eventBroker = eventBroker
+         eventBroker = eventBroker,
+         scopedFacts = scopedFacts
       )
    }
 

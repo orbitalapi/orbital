@@ -33,9 +33,9 @@ open class CopyOnWriteFactBag(
 ) : FactBag {
    private val logger = KotlinLogging.logger {}
 
-   constructor(facts: Collection<TypedInstance>, schema: Schema) : this(
+   constructor(facts: Collection<TypedInstance>, schema: Schema, scopedFacts: List<ScopedFact> = emptyList()) : this(
       CopyOnWriteArrayList(facts),
-      emptyList(),
+      scopedFacts,
       schema
    )
 

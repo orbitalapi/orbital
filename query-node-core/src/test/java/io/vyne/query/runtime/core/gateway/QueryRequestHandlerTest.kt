@@ -7,7 +7,8 @@ import io.vyne.testVyne
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
+import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
@@ -17,9 +18,14 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.returnResult
 import java.util.concurrent.TimeUnit
 
+//@SpringBootTest
 @RunWith(SpringRunner::class)
-@WebFluxTest(QueryRequestHandler::class)
-@Import(QueryGatewayRouterConfig::class)
+//@WebFluxTest(QueryRequestHandler::class)
+@SpringBootTest(
+   classes = [QueryRequestHandlerTest.TestConfig::class],
+   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+   properties = ["spring.main.web-application-type=reactive"]
+   )
 class QueryRequestHandlerTest {
 
    @Autowired
@@ -29,7 +35,7 @@ class QueryRequestHandlerTest {
    lateinit var schemaStore: SimpleSchemaStore
 
    @Autowired
-   lateinit var handler: QueryRequestHandler
+   lateinit var handler: QueryRouteService
 
    @Test
    fun handlesRequest() {
@@ -48,7 +54,7 @@ class QueryRequestHandlerTest {
       """.trimIndent()
          )
       )
-      val (vyne,stub) = testVyne(schemaStore.schemaSet.schema.asTaxiSchema())
+      val (vyne, stub) = testVyne(schemaStore.schemaSet.schema.asTaxiSchema())
 
       Awaitility.await().atMost(2, TimeUnit.SECONDS).until<Boolean> { handler.routes.isNotEmpty() }
 
@@ -61,7 +67,9 @@ class QueryRequestHandlerTest {
    }
 
 
+   @SpringBootApplication
    @TestConfiguration
+   @Import(QueryGatewayRouterConfig::class)
    class TestConfig {
       @Bean
       fun schemaStore(): SimpleSchemaStore = SimpleSchemaStore()

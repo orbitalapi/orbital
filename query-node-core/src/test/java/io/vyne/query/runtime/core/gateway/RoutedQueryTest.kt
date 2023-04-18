@@ -2,6 +2,7 @@ package io.vyne.query.runtime.core.gateway
 
 import io.kotest.matchers.shouldBe
 import io.vyne.schemas.taxi.TaxiSchema
+import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import org.junit.Test
 import org.junit.jupiter.api.Assertions.*
@@ -16,7 +17,7 @@ class RoutedQueryTest {
 
    @Test
    fun `converts path variables to facts`() {
-      val query = query(
+      val (query, querySrc) = query(
          src, """
          @HttpOperation(method = "GET", url = "/films/{filmId}")
          query findFilm( @PathVariable("filmId") filmId : FilmId ) {
@@ -29,7 +30,7 @@ class RoutedQueryTest {
          .pathVariable("filmId", "123")
          .build()
 
-      val routedQuery = RoutedQuery.build(query, request)
+      val routedQuery = RoutedQuery.build(query, querySrc, request)
       routedQuery.parameters.entries.single().value.typedValue.value
          .shouldBe("123")
    }
@@ -37,8 +38,8 @@ class RoutedQueryTest {
 }
 
 
-fun query(vararg sources: String): TaxiQlQuery {
+fun query(vararg sources: String): Pair<TaxiQlQuery, TaxiQLQueryString> {
    val src = sources.joinToString("\n")
    val schema = TaxiSchema.from(src)
-   return schema.taxi.queries.single()
+   return schema.taxi.queries.single() to schema.taxi.queries.single().compilationUnits.single().source.content
 }

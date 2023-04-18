@@ -12,6 +12,7 @@ import io.vyne.models.MixedSources
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
+import io.vyne.models.facts.ScopedFact
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
@@ -110,7 +111,8 @@ interface QueryEngine {
       additionalFacts: Set<TypedInstance> = emptySet(),
       queryId: String,
       clientQueryId: String?,
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker()
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
+      scopedFacts: List<ScopedFact> = emptyList()
    ): QueryContext
 
    suspend fun build(type: Type, context: QueryContext): QueryResult =
@@ -169,7 +171,8 @@ class StatefulQueryEngine(
       additionalFacts: Set<TypedInstance>,
       queryId: String,
       clientQueryId: String?,
-      eventBroker: QueryContextEventBroker
+      eventBroker: QueryContextEventBroker,
+      scopedFacts:List<ScopedFact>
    ): QueryContext {
       val facts = this.factSets.filterFactSets(factSetIds).values().toSet()
       return QueryContext.from(
@@ -179,7 +182,8 @@ class StatefulQueryEngine(
          profiler,
          queryId = queryId,
          clientQueryId = clientQueryId,
-         eventBroker = eventBroker
+         eventBroker = eventBroker,
+         scopedFacts = scopedFacts
       )
    }
 

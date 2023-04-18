@@ -7,11 +7,7 @@ import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
 import lang.taxi.Operator
 import lang.taxi.expressions.Expression
-import lang.taxi.services.operations.constraints.ConstantValueExpression
-import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
-import lang.taxi.services.operations.constraints.PropertyIdentifier
-import lang.taxi.services.operations.constraints.RelativeValueExpression
-import lang.taxi.services.operations.constraints.ValueExpression
+import lang.taxi.services.operations.constraints.*
 import lang.taxi.types.AttributePath
 
 typealias TaxiConstraint = lang.taxi.services.operations.constraints.Constraint
@@ -174,6 +170,7 @@ class PropertyToParameterConstraint(propertyIdentifier: PropertyIdentifier,
             val type = schema.type(argumentType.attribute(propertyIdentifier).type)
             TypedInstance.from(type, (expectedValue as ConstantValueExpression).value, schema, source = DefinedInSchema)
          }
+
          is RelativeValueExpression -> {
             when (value) {
                // This seems wrong - we shouldn't be accessing the the expected value path against value,
@@ -182,6 +179,10 @@ class PropertyToParameterConstraint(propertyIdentifier: PropertyIdentifier,
                is TypedObject -> value[(expectedValue as RelativeValueExpression).path]
                else -> error("Relative value expressions are not supported on values of type ${value::class.simpleName}")
             }
+         }
+
+         is ArgumentExpression -> {
+            TODO()
          }
       }
    }

@@ -94,9 +94,18 @@ class CaseConditionEvaluator : ConditionalPolicyStatementEvaluator {
 
    private fun resolve(subject: RelativeSubject, instance: TypedInstance, context: QueryContext): Flow<TypedInstance> {
       val contextToUse = when (subject.source) {
-         RelativeSubject.RelativeSubjectSource.CALLER -> context.queryEngine.queryContext(setOf(FactSets.CALLER), queryId = context.queryId, clientQueryId = context.clientQueryId)
+         RelativeSubject.RelativeSubjectSource.CALLER -> context.queryEngine.queryContext(
+             setOf(FactSets.CALLER),
+             queryId = context.queryId,
+             clientQueryId = context.clientQueryId
+         )
          // Use nothing from the context, except the current thing being filtered.
-         RelativeSubject.RelativeSubjectSource.THIS -> context.queryEngine.queryContext(setOf(FactSets.NONE), additionalFacts = setOf(instance), queryId = context.queryId, clientQueryId = context.clientQueryId)
+         RelativeSubject.RelativeSubjectSource.THIS -> context.queryEngine.queryContext(
+             setOf(FactSets.NONE),
+             additionalFacts = setOf(instance),
+             queryId = context.queryId,
+             clientQueryId = context.clientQueryId
+         )
       }
 
       log().warn("A blocking call is being made policystatementevaluations resolve")

@@ -28,7 +28,7 @@ class QueryRouterTest {
             find { Film( FilmId == filmId ) }
          }
       """.trimIndent()
-      )
+      ).first
       val router = QueryRouter.build(listOf(query))
 
       router.getQuery(get("/films")).shouldBeNull()

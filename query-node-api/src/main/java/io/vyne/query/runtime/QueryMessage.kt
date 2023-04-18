@@ -1,11 +1,13 @@
 package io.vyne.query.runtime
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.DefaultPackageMetadata
 import io.vyne.PackageMetadata
 import io.vyne.SourcePackage
 import io.vyne.auth.tokens.AuthConfig
 import io.vyne.connectors.config.ConnectorsConfig
 import io.vyne.http.ServicesConfig
+import io.vyne.models.json.Jackson
 import io.vyne.query.ResultMode
 import kotlinx.serialization.*
 import kotlinx.serialization.cbor.Cbor
@@ -14,10 +16,8 @@ import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import kotlinx.serialization.modules.SerializersModule
 import mu.KotlinLogging
-import java.io.BufferedReader
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.io.InputStreamReader
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import kotlin.time.ExperimentalTime
@@ -50,7 +50,8 @@ data class QueryMessage(
    val resultMode: ResultMode = ResultMode.RAW,
    val mediaType: String,
    val clientQueryId: String,
-   ) {
+   val arguments: ByteArray,
+) {
    constructor(
       query: String,
       sourcePackages: List<SourcePackage>,
@@ -64,10 +65,12 @@ data class QueryMessage(
       resultMode: ResultMode = ResultMode.RAW,
       mediaType: String,
       clientQueryId: String,
+      arguments: Map<String, Any?> = emptyMap()
    ) : this(
       query,
       compressSourcePackages(sourcePackages),
-      connections, authTokens, services, resultMode, mediaType, clientQueryId
+      connections, authTokens, services, resultMode, mediaType, clientQueryId,
+      compressArgs(arguments)
    )
 
    companion object {
@@ -78,6 +81,11 @@ data class QueryMessage(
       private val logger = KotlinLogging.logger {}
       val cbor = Cbor { serializersModule = module }
       val json = Json { serializersModule = module }
+
+      // We use Jackson for serializing polymorphic types (like Map<String,Any>, as
+      // used for params.  Kotlin serialziation doesn't like working with types there isn't
+      // a predefined schema for.
+      private val jackson = Jackson.newObjectMapperWithDefaults()
 
       fun compressSourcePackages(packages: List<SourcePackage>): ByteArray {
          val byteArrayOutputStream = ByteArrayOutputStream()
@@ -95,9 +103,24 @@ data class QueryMessage(
          logger.info { "Decoding SourcePackages took ${timedResult.duration}" }
          return timedResult.value
       }
+
+      fun compressArgs(parameters: Map<String, Any?>): ByteArray {
+         val byteArrayOutputStream = ByteArrayOutputStream()
+         val gzip = GZIPOutputStream(byteArrayOutputStream)
+         jackson.writeValue(gzip, parameters)
+         gzip.close()
+         return byteArrayOutputStream.toByteArray()
+      }
+
+      fun decompressArgs(byteArray: ByteArray): Map<String, Any?> {
+         val gzip = GZIPInputStream(ByteArrayInputStream(byteArray))
+         return jackson.readValue<Map<String, Any>>(gzip)
+      }
    }
 
-   fun sourcePackages():List<SourcePackage> = decompressSourcePackages(this.sourcePackageZip)
+   fun sourcePackages(): List<SourcePackage> = decompressSourcePackages(this.sourcePackageZip)
+
+   fun args():Map<String,Any?> = decompressArgs(this.arguments)
 
    // Have to implement equals & hashcode ourselves, b/c of the ByteArray field
    override fun equals(other: Any?): Boolean {
@@ -113,6 +136,7 @@ data class QueryMessage(
       if (services != other.services) return false
       if (resultMode != other.resultMode) return false
       if (mediaType != other.mediaType) return false
+      if (!arguments.contentEquals(other.arguments)) return false
       return clientQueryId == other.clientQueryId
    }
 
@@ -126,6 +150,7 @@ data class QueryMessage(
       result = 31 * result + resultMode.hashCode()
       result = 31 * result + mediaType.hashCode()
       result = 31 * result + clientQueryId.hashCode()
+      result = 31 * result + arguments.contentHashCode()
       return result
    }
 }
@@ -138,7 +163,7 @@ data class QueryMessage(
  * CBOR directly), but I can't work it our right now.
  */
 @OptIn(ExperimentalSerializationApi::class, ExperimentalTime::class)
-data class QueryMessageCborWrapper(val m:ByteArray) {
+data class QueryMessageCborWrapper(val m: ByteArray) {
    companion object {
       private val logger = KotlinLogging.logger {}
       fun from(queryMessage: QueryMessage): QueryMessageCborWrapper {
@@ -146,12 +171,14 @@ data class QueryMessageCborWrapper(val m:ByteArray) {
          return QueryMessageCborWrapper(messageBytes)
       }
    }
-   fun message():QueryMessage {
+
+   fun message(): QueryMessage {
       val queryMessage = measureTimedValue {
          QueryMessage.cbor.decodeFromByteArray<QueryMessage>(m)
       }
       logger.info { "Deserializing query message took ${queryMessage.duration}" }
       return queryMessage.value
    }
+
    fun size() = m.size
 }

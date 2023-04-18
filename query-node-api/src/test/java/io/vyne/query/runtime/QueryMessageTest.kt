@@ -51,7 +51,8 @@ class QueryMessageTest {
          authTokens = AuthConfig(),
          services = ServicesConfig.DEFAULT,
          mediaType = "application/json",
-         clientQueryId = "123"
+         clientQueryId = "123",
+
       )
       val bytes = QueryMessage.cbor.encodeToByteArray(message)
       val fromBytes = QueryMessage.cbor.decodeFromByteArray<QueryMessage>(bytes)

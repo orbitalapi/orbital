@@ -194,7 +194,11 @@ namespace test {
       stubService.addResponse("findUser", vyne.parseJsonModel("test.User", nonTraderUser))
       stubService.addResponse("findClient", vyne.parseJsonModel("test.Client", desk1Client))
       // Trade1 is filtered because our user doesn't have a desk id.
-      val context = vyne.queryEngine().queryContext(queryId = "ABCD", clientQueryId = null, additionalFacts = setOf(vyne.typedValue("TradeId", 1)))
+      val context = vyne.queryEngine().queryContext(
+         additionalFacts = setOf(vyne.typedValue("TradeId", 1)),
+         queryId = "ABCD",
+         clientQueryId = null
+      )
       val queryResultsList = runBlocking {context.find("test.Trade").results.toList()}
 
       val trade = queryResultsList.get(0)
@@ -250,7 +254,11 @@ namespace test {
       stubService.addResponse("findClient", clientHandler(vyne))
 
       // Trade1 is filtered because our user doesn't have a desk id.
-      val context = vyne.queryEngine().queryContext(queryId = "ABCD", clientQueryId = null,additionalFacts = setOf(vyne.typedValue("TradeId", 1)))
+      val context = vyne.queryEngine().queryContext(
+         additionalFacts = setOf(vyne.typedValue("TradeId", 1)),
+         queryId = "ABCD",
+         clientQueryId = null
+      )
       val queryResult = context.find("test.Trade").results
          .test {
             expectTypedInstance()
@@ -274,7 +282,11 @@ namespace test {
       stubService.addResponse("findClient", clientHandler(vyne))
 
       // Trade1 is filtered because our user doesn't have a desk id.
-      val context = vyne.queryEngine().queryContext(queryId = "ABCD", clientQueryId = null,additionalFacts = setOf(vyne.typedValue("TradeId", 1)))
+      val context = vyne.queryEngine().queryContext(
+         additionalFacts = setOf(vyne.typedValue("TradeId", 1)),
+         queryId = "ABCD",
+         clientQueryId = null
+      )
       val queryResult = runBlocking {context.find("test.TradeWrapper").results.toList()}
 
       val trade = queryResult.get(0)
@@ -297,7 +309,11 @@ namespace test {
       stubService.addResponse("findClient", clientHandler(vyne))
 
       // Trade2 is masked because our users deskId doesn't match
-      val context = vyne.queryEngine().queryContext(queryId = "ABCD", clientQueryId = null,additionalFacts = setOf(vyne.typedValue("TradeId", 2)))
+      val context = vyne.queryEngine().queryContext(
+         additionalFacts = setOf(vyne.typedValue("TradeId", 2)),
+         queryId = "ABCD",
+         clientQueryId = null
+      )
       val queryResult = runBlocking {context.find("test.Trade").results.toList()}
 
       val trade = queryResult.get(0) as TypedObject

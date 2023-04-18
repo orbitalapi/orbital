@@ -6,6 +6,7 @@ import lang.taxi.TaxiDocument
 import lang.taxi.annotations.HttpPathVariable
 import lang.taxi.query.FactValue
 import lang.taxi.query.Parameter
+import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.types.TypedValue
 import lang.taxi.types.annotation
@@ -18,14 +19,15 @@ import org.springframework.web.reactive.function.server.ServerRequest
  */
 data class RoutedQuery(
    val query: TaxiQlQuery,
+   val querySrc: TaxiQLQueryString,
    val parameters: Map<Parameter, FactValue>
 ) {
    companion object {
-      fun build(query: TaxiQlQuery, request: ServerRequest): RoutedQuery {
+      fun build(query: TaxiQlQuery, querySrc: TaxiQLQueryString, request: ServerRequest): RoutedQuery {
          val parameters = query.parameters.map { parameter ->
             parameter to extractParameterValueFromRequest(parameter, request)
          }.toMap()
-         return RoutedQuery(query, parameters)
+         return RoutedQuery(query, querySrc, parameters)
       }
 
 

@@ -219,11 +219,12 @@ data class QueryContext(
          profiler: QueryProfiler,
          clientQueryId: String? = null,
          queryId: String,
-         eventBroker: QueryContextEventBroker = QueryContextEventBroker()
+         eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
+         scopedFacts: List<ScopedFact> = emptyList()
       ): QueryContext {
          return QueryContext(
             schema,
-            CopyOnWriteFactBag(facts, schema),
+            CopyOnWriteFactBag(facts, schema, scopedFacts),
             queryEngine,
             profiler,
             clientQueryId = clientQueryId,

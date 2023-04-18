@@ -46,8 +46,9 @@ class QueryExecutor(
     */
    fun executeQuery(message: QueryMessage): CompressedQueryResultWrapper {
       val vyne = vyneFactory.buildVyne(message)
+      val args = message.args()
       val result = runBlocking {
-         vyne.query(message.query, clientQueryId = message.clientQueryId)
+         vyne.query(message.query, clientQueryId = message.clientQueryId, arguments = args)
             .rawResults as Flow<Any>
       }
       val collectedResult = result.asFlux().collectList().block()

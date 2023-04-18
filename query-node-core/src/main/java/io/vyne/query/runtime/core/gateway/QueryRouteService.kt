@@ -10,12 +10,22 @@ import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.*
 import org.springframework.web.reactive.function.server.ServerResponse.status
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import reactor.kotlin.core.publisher.toFlux
 
+/**
+ * The handler / service which receives HTTP invocations
+ * of queries annotated with @Http.
+ *
+ * Hands off execution to a RoutedQueryExecutor - meaning queries
+ * are either executed in-process, or routed to a serverless function somewhere.
+ *
+ */
 @ConditionalOnProperty("vyne.query-router-url")
 @Component
-class QueryRequestHandler(
+class QueryRouteService(
    private val schemaStore: SchemaStore,
+   private val hander: RoutedQueryExecutor
 ) : HandlerFunction<ServerResponse> {
 
    private var queryRouter: QueryRouter = QueryRouter.build(emptyList())
@@ -56,7 +66,11 @@ class QueryRequestHandler(
    }
 
    fun handleQuery(request: ServerRequest, query: RoutedQuery): Mono<ServerResponse> {
-      TODO()
+      logger.info { "Received query invocation on ${request.path()} - matches with query ${query.query.name}" }
+      return Mono.just(query)
+         .subscribeOn(Schedulers.boundedElastic())
+         .map { hander.handleRoutedQuery(query) }
+         .flatMap { ServerResponse.ok().body(it) }
    }
 
    override fun handle(request: ServerRequest): Mono<ServerResponse> {
@@ -65,7 +79,8 @@ class QueryRequestHandler(
          logger.warn { "Request $request did not match a query, which is unexpected - did the schema just change?" }
          status(HttpStatus.NOT_FOUND).build()
       } else {
-         val routedQuery = RoutedQuery.build(query, request)
+         val querySource = query.compilationUnits.single().source.content
+         val routedQuery = RoutedQuery.build(query, querySource, request)
          handleQuery(request, routedQuery)
       }
    }
