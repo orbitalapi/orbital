@@ -3,7 +3,9 @@ import Head from 'next/head';
 import { Header } from '@/components/Header';
 import GetStartedButton from '@/components/GetStartedButton';
 import Wormhole from '@/components/Wormhole';
+import Image from 'next/future/image';
 
+import { Paragraph } from '@/components/home/common';
 import networkDiagram from '@/components/home/img/network-diagram.png';
 import { ReactComponent as ArrowCitrus } from '@/img/arrow-citrus.svg';
 import { ReactComponent as DataPatternLight } from '@/img/data-pattern.svg';
@@ -12,6 +14,11 @@ import QueryExamples, { queryExampleCodeSnippets } from '@/components/home/Query
 import WhereToUseSection from '@/components/home/WhereToUseSection';
 import DebugTools from '@/components/home/DebugTools';
 import WatchADemoButton from '../components/DemosModal';
+import OrbitalLogo from '@/img/wormhole-citrus-transparent.png';
+import { FiCheck, FiCopy } from "react-icons/fi";
+import { IconContext } from "react-icons";
+import { useEffect, useState } from 'react';
+
 
 
 function HeroSection() {
@@ -29,7 +36,7 @@ function HeroSection() {
                 </h1>
                 <p className='sm:text-xl sm:leading-8 mt-6 text-3xl text-slate-600 dark:text-slate-400'>
                   Orbital eliminates the integration effort, so you can get back to <span
-                  className='text-citrus'>shipping</span>
+                    className='text-citrus'>shipping</span>
                 </p>
                 <div className='sm:mt-10 mt-14 flex justify-left gap-6 text-base md:text-lg flex-wrap'>
                   <GetStartedButton />
@@ -42,7 +49,7 @@ function HeroSection() {
               </div>
 
             </div>
-            
+
             <Wormhole className="lg:opacity-50" />
 
             <DataPatternLight
@@ -59,8 +66,30 @@ function HeroSection() {
 
 
 export default function Home({
-                               publishYourApiHighlightedSnippets, queryExampleCodeHighlightedSnippets
-                             }) {
+  publishYourApiHighlightedSnippets, queryExampleCodeHighlightedSnippets
+}) {
+  const [cmdCopied, setCmdCopied] = useState(false);
+  const [isNativeClipboard, setNativeClipboard] = useState(false);
+
+  useEffect(() => {
+    if (navigator.clipboard) {
+      setNativeClipboard(true);
+    }
+  }, []);
+
+  const dockerCmd = "docker run -p 9022:9022 orbitalhq/orbital"
+
+  const copyToClipboard = () => {
+    if (isNativeClipboard) {
+      navigator.clipboard.writeText(dockerCmd);
+      setCmdCopied(true);
+      setTimeout(() => {
+        setCmdCopied(false);
+      }, 2000);
+    }
+  };
+
+
   return (
     <>
       <Head>
@@ -82,9 +111,27 @@ export default function Home({
         <HeroSection />
       </div>
       <div className='overflow-hidden sm:mb-32 md:mb-40'>
+        <div className="w-full py-10">
+          <Paragraph>
+            <span className="font-bold">Get started in seconds</span> with our Docker image.
+          </Paragraph>
+          <div className="mx-auto bg-gray-900 w-fit mt-10 p-8 rounded-lg border border-tint-8">
+            <IconContext.Provider value={{ size: "1.5em", color: cmdCopied ? '#e0ff4f' : '' }}>
+              <p className="font-mono">
+                &gt; {dockerCmd}
+                {cmdCopied
+                  ? (<FiCheck className="inline-block ml-5" />)
+                  : (<FiCopy className="inline-block ml-5 cursor-pointer" onClick={copyToClipboard} />)
+                }
+              </p>
+            </IconContext.Provider>
+          </div>
+        </div>
+        
         <WhereToUseSection className="py-20" />
+
         <QueryExamples highlightedSnippets={queryExampleCodeHighlightedSnippets}
-                       className='sm:pt-32 md:pt-20 pb-20' />
+          className='sm:pt-32 md:pt-20 pb-20' />
         <PublishYourApi highlightedSnippets={publishYourApiHighlightedSnippets} />
         {/*<HowVyneWorks/>*/}
 

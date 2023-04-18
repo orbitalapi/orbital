@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import Image from 'next/future/image';
-import Script from 'next/script';
 
 import { BigText, LearnMoreLink, Paragraph } from '@/components/home/common';
 import { Tabs } from '../Tabs';
