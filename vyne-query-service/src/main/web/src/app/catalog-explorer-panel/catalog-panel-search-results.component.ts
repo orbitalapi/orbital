@@ -11,6 +11,7 @@ import {QualifiedName} from "../services/schema";
         [qualifiedName]="searchResult.qualifiedName"
         [primitiveType]="searchResult.primitiveType"
         [fieldName]="searchResult.matchedFieldName"
+        [allowAddToQuery]="false"
         [serviceOrTypeKind]="searchResult.typeKind || searchResult.serviceKind"
       ></app-catalog-entry-line>
       <div class="row">
@@ -51,4 +52,5 @@ export class CatalogPanelSearchResults {
     return result.typeKind || result.memberType === "OPERATION";
   }
 
+  protected readonly alert = alert;
 }
