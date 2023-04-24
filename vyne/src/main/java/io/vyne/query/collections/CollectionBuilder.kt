@@ -216,7 +216,7 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
    }
 
    private fun isIdField(field: Field): Boolean {
-      val fieldType = queryContext.schema.type(field.type)
+      val fieldType = field.resolveType(queryContext.schema)
       return fieldType.hasMetadata(ID_ANNOTATION) || field.hasMetadata(
          ID_ANNOTATION
       )
@@ -232,7 +232,7 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
          logger.warn { "Attempting to search for a collection of ${targetMemberType.fullyQualifiedName} and found mulitple id fields (${idFields.map { it.key }}).  This is not yet supported, will abort" }
          return null
       }
-      val idFieldType = context.schema.type(idFields.values.first().type)
+      val idFieldType = idFields.values.first().resolveType(context.schema)
       val discoveredIdValues = context.getFactOrNull(idFieldType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)
 
       if (discoveredIdValues is TypedCollection) {

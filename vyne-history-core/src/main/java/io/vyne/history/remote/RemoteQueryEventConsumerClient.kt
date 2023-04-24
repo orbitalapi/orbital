@@ -146,7 +146,11 @@ class RemoteQueryEventConsumerClient(
    private fun processQueryResultEvent(event: QueryResultEvent, querySummary: QuerySummary) {
       createQuerySummaryRecord(event.queryId) { querySummary }
       resultRowPersistenceStrategy.extractResultRowAndLineage(event)?.let {
-         emit(it.queryResultRow)
+         // queryREsultRow is null if persistResults is set to false
+         if (it.queryResultRow != null) {
+            emit(it.queryResultRow)
+         }
+
          it.remoteCalls.forEach { remoteCall -> emit(remoteCall) }
          it.lineageRecords.forEach { lineageRecord -> emit(lineageRecord) }
       }

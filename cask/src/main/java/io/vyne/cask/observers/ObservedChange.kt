@@ -23,7 +23,7 @@ data class ObservedChange(val ids: Map<String, Any>, val current: Map<String, An
          val oldValues = caskEntityMutatingMessage.oldValues?.map { oldValue ->
             val maybeField = vyneType.attributes[oldValue.key]
             val maybeTypedInstanceValue = maybeField?.let { field ->
-              val convertedValue = converter.convert(TypedInstance.from(schema.type(field.type), oldValue.value, schema))
+              val convertedValue = converter.convert(TypedInstance.from(field.resolveType(schema), oldValue.value, schema))
                oldValue.key to convertedValue
             }
             maybeTypedInstanceValue ?: (oldValue.key to oldValue.value)

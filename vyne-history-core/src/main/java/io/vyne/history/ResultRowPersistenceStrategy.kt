@@ -12,7 +12,10 @@ import io.vyne.query.QueryResultEvent
 import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.RemoteCallResponse
+import mu.KotlinLogging
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTimedValue
 
 
 interface ResultRowPersistenceStrategy {
@@ -40,12 +43,13 @@ object ResultRowPersistenceStrategyFactory {
       persistenceQueue: HistoryPersistenceQueue?,
       config: QueryAnalyticsConfig
    ): ResultRowPersistenceStrategy {
-      return if (config.persistRemoteCallResponses || config.persistRemoteCallMetadata) {
+      return if (config.persistRemoteCallResponses || config.persistRemoteCallMetadata || config.persistResults) {
          DatabaseResultRowPersistenceStrategy(
             objectMapper,
             persistenceQueue,
             config.persistRemoteCallResponses,
-            config.persistRemoteCallMetadata
+            config.persistRemoteCallMetadata,
+            config.persistResults
          )
       } else {
          NoOpResultRowPersistenceStrategy()
@@ -72,21 +76,28 @@ class RemoteDatabaseResultRowPersistenceStrategy(
    objectMapper,
    null,
    config.persistRemoteCallResponses,
-   config.persistRemoteCallMetadata
+   config.persistRemoteCallMetadata,
+   config.persistResults
 ) {
    override fun persistResultRowAndLineage(event: QueryResultEvent) {
       // noop
    }
 }
 
+@OptIn(ExperimentalTime::class)
 open class DatabaseResultRowPersistenceStrategy(
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    private val persistenceQueue: HistoryPersistenceQueue?,
    private val persistRemoteResponses: Boolean,
-   private val persistRemoteMetadata: Boolean
+   private val persistRemoteMetadata: Boolean,
+   private val persistResults: Boolean
 ) : ResultRowPersistenceStrategy {
    private val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
    private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
+
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
 
    override fun createLineageRecords(
       dataSources: List<DataSource>,
@@ -138,49 +149,61 @@ open class DatabaseResultRowPersistenceStrategy(
    override fun persistResultRowAndLineage(event: QueryResultEvent) {
       val resultRowCallsAndLineage = this.extractResultRowAndLineage(event)
       resultRowCallsAndLineage?.let {
-         persistenceQueue?.storeResultRow(it.queryResultRow)
+         if (persistResults) {
+            if (it.queryResultRow == null) {
+               logger.warn { "persistResults is configured to true, but no results were emitted"}
+            } else {
+               persistenceQueue?.storeResultRow(it.queryResultRow)
+            }
+         }
          // Moved the persistence of remote calls into PersistingQueryEventConsumer, so that
          // we capture more calls - even those that fail
 //         it.remoteCalls.forEach { remoteCallResponse -> persistenceQueue?.storeRemoteCallResponse(remoteCallResponse) }
-         it.lineageRecords.forEach { lineageRecord ->
-            persistenceQueue?.storeLineageRecord(lineageRecord)
+         if (persistResults) {
+            it.lineageRecords.forEach { lineageRecord ->
+               persistenceQueue?.storeLineageRecord(lineageRecord)
+            }
          }
       }
    }
 
    override fun extractResultRowAndLineage(event: QueryResultEvent): QueryResultRowLineage? {
-      val (convertedTypedInstance, dataSources) = converter.convertAndCollectDataSources(event.typedInstance)
-      val queryResultRow = QueryResultRow(
-         queryId = event.queryId,
-         json = objectMapper.writeValueAsString(convertedTypedInstance),
-         valueHash = event.typedInstance.hashCodeWithDataSource
-      )
-      val remoteCalls = if (persistRemoteResponses || persistRemoteMetadata) {
-         dataSources
-            .map { it.second }
-            .filterIsInstance<OperationResult>()
-            .distinctBy { it.remoteCall.responseId }
-            .map { operationResult ->
-               RemoteCallResponse.fromRemoteCall(
-                  operationResult.remoteCall,
-                  event.queryId,
-                  objectMapper,
-                  persistRemoteResponses
-               )
+      val result = measureTimedValue {
+         val (convertedTypedInstance, dataSources) = converter.convertAndCollectDataSources(event.typedInstance)
+         val queryResultRow = if (persistResults) QueryResultRow(
+            queryId = event.queryId,
+            json = objectMapper.writeValueAsString(convertedTypedInstance),
+            valueHash = event.typedInstance.hashCodeWithDataSource
+         ) else null
+         val remoteCalls = if (persistRemoteResponses || persistRemoteMetadata) {
+            dataSources
+               .map { it.second }
+               .filterIsInstance<OperationResult>()
+               .distinctBy { it.remoteCall.responseId }
+               .map { operationResult ->
+                  RemoteCallResponse.fromRemoteCall(
+                     operationResult.remoteCall,
+                     event.queryId,
+                     objectMapper,
+                     persistRemoteResponses
+                  )
 
-            }
-      } else {
-         listOf()
+               }
+         } else {
+            listOf()
+         }
+         val lineageRecords = createLineageRecords(dataSources.map { it.second }, event.queryId)
+         QueryResultRowLineage(queryResultRow, remoteCalls, lineageRecords)
       }
-      val lineageRecords = createLineageRecords(dataSources.map { it.second }, event.queryId)
-      return QueryResultRowLineage(queryResultRow, remoteCalls, lineageRecords)
-
+      logger.info { "extractResultRowAndLineage completed in ${result.duration}" }
+      return result.value
    }
 
 }
 
 data class QueryResultRowLineage(
-   val queryResultRow: QueryResultRow,
+   // The result row - null if persisting results is disabled
+   val queryResultRow: QueryResultRow?,
    val remoteCalls: List<RemoteCallResponse>,
    val lineageRecords: List<LineageRecord>
 )

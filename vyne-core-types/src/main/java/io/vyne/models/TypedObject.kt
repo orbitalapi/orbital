@@ -65,7 +65,7 @@ data class TypedObject(
          val typedAttributes: Map<String, TypedInstance> = attributes
             .filterKeys { type.hasAttribute(it) }
             .map { (attributeName, value) ->
-               val attributeType = schema.type(type.attributes.getValue(attributeName).type)
+               val attributeType = type.attributes.getValue(attributeName).resolveType(schema)
                attributeName to TypedInstance.from(
                   attributeType,
                   value,

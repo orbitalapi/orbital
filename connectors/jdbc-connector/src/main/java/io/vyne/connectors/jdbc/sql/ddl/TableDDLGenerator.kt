@@ -38,7 +38,7 @@ class TableGenerator(private val schema: Schema) {
 
       val columns = type.attributes.map { (attributeName, typeField) ->
          val sqlType =
-            TaxiTypeToJooqType.getSqlType(schema.type(typeField.type).taxiType, nullable = typeField.nullable)
+            TaxiTypeToJooqType.getSqlType(typeField.resolveType(schema).taxiType, nullable = typeField.nullable)
          field(attributeName, sqlType)
       }
 

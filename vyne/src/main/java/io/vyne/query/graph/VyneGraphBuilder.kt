@@ -466,7 +466,7 @@ class VyneGraphBuilder(
          val collectionMemberType = schema.type(type.collectionTypeName!!)
          val membersAsArrayTypes = collectionMemberType.attributes.flatMap { (attributeName, field) ->
             val memberConnections = mutableListOf<GraphConnection>()
-            val fieldTypeName = schema.type(field.type).asArrayType().name
+            val fieldTypeName = field.resolveType(schema).asArrayType().name
             val collectionMember = providedInstanceMember(attributeFqn(instanceFqn, attributeName))
             memberConnections.addConnection(providedInstance, collectionMember, Relationship.CAN_ARRAY_MAP_TO)
             val memberInstanceAsArrayType = providedInstance(fieldTypeName.parameterizedName)

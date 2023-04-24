@@ -112,14 +112,14 @@ class SchemaServiceTest {
 
    @Test
    fun `returns saved queries`() {
+      val querySrc = """query FindFilm(id:FilmId) {
+            find { Film(FilmId == id) }
+         }"""
       val src = """
          model Film {
             id : FilmId inherits String
          }
-
-         query FindFilm(id:FilmId) {
-            find { Filmd(FilmId == id) }
-         }
+         $querySrc
       """.trimIndent()
       val schema = TaxiSchema.from(src)
       val service = createService(schema)
@@ -127,19 +127,12 @@ class SchemaServiceTest {
       queries.shouldHaveSize(1)
       val query = queries.single()
       query.name.shouldBe("FindFilm".fqn())
-      query.sources.shouldHaveSingleElement(
-         VersionedSource(
-            "",
-            VersionedSource.DEFAULT_VERSION.toString(),
-            src
-         )
-      )
-
+      query.sources.single().content.withoutWhitespace().shouldBe(querySrc.withoutWhitespace())
    }
 
    private fun createService(schema: TaxiSchema): SchemaService {
       return SchemaService(
-         SimpleSchemaProvider(schema, PackageIdentifier.fromId("com/test:foo:1.0.0")),
+         SimpleSchemaProvider(schema, PackageIdentifier.fromId("com/test/foo:1.0.0")),
          SimpleSchemaStore(SchemaSet.from(schema, 0)),
          emptyList()
       )

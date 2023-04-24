@@ -142,7 +142,7 @@ class TypedObjectFactory(
    ): TypedInstance {
       if (fieldValue is TypedNull) {
          // Don't attempt to project nulls
-         return TypedNull.create(schema.type(field.type), fieldValue.source)
+         return TypedNull.create(field.resolveType(schema), fieldValue.source)
       }
       // 16-Apr-23:
       // Anonymous types for fields are now on the field directly.
@@ -689,9 +689,6 @@ class TypedObjectFactory(
       fieldTypeName: QualifiedName,
       message: String = "Can't populate attribute $attributeName on type ${type.name} as no attribute or expression was found on the supplied value of type ${value::class.simpleName}"
    ): TypedNull {
-      if (attributeName == "security") {
-         println()
-      }
       return TypedNull.create(
          fieldType,
          ValueLookupReturnedNull(
