@@ -2,12 +2,7 @@ package io.vyne.query
 
 import com.google.common.base.Stopwatch
 import io.vyne.*
-import io.vyne.models.DataSource
-import io.vyne.models.DataSourceUpdater
-import io.vyne.models.MixedSources
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
+import io.vyne.models.*
 import io.vyne.models.facts.ScopedFact
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.graph.edges.EvaluatedEdge
@@ -16,6 +11,7 @@ import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.query.projection.ProjectionProvider
 import io.vyne.schemas.*
 import io.vyne.utils.StrategyPerformanceProfiler
+import io.vyne.utils.TimeBucketed
 import io.vyne.utils.timeBucketAsync
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.cancel
@@ -606,7 +602,28 @@ class StatefulQueryEngine(
       target: QuerySpecTypeNode,
       invocationConstraints: InvocationConstraints
    ): QueryStrategyResult {
-      return timeBucketAsync("Call ${queryStrategy::class.simpleName} for target ${target.type.name.shortDisplayName}") { queryStrategy.invoke(setOf(target), context, invocationConstraints) }
+      val sw = Stopwatch.createStarted()
+      val result =
+         timeBucketAsync("Call ${queryStrategy::class.simpleName} for target ${target.type.name.shortDisplayName}") {
+            queryStrategy.invoke(
+               setOf(target),
+               context,
+               invocationConstraints
+            )
+         }
+      val bucket = TimeBucketed.DEFAULT
+      val successful = if (result.hasMatchesNodes()) {
+         "Success"
+      } else {
+         "Failed"
+      }
+      val name = "Query Strategy ${queryStrategy::class.simpleName} - $successful"
+      bucket.addActivity(name, sw.elapsed())
+      val detailedName =
+         "Invoke Query Strategy ${queryStrategy::class.simpleName} for target ${target.type.name.shortDisplayName} - $successful"
+      bucket.addActivity(detailedName, sw.elapsed())
+      return result
+
    }
 }
 
