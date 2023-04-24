@@ -377,7 +377,7 @@ class TypedObjectFactory(
          return fromFactBag
       }
       val candidateTypes = this.type.attributes.filter { (name, field) ->
-         val fieldType = schema.type(field.type)
+         val fieldType = field.resolveType(schema)
          fieldType.isAssignableTo(requestedType)
       }
       return when (candidateTypes.size) {
