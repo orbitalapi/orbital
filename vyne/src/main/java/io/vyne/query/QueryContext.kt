@@ -7,25 +7,13 @@ import io.vyne.models.InPlaceQueryEngine
 import io.vyne.models.OperationResult
 import io.vyne.models.PermittedQueryStrategies
 import io.vyne.models.TypedInstance
-import io.vyne.models.facts.CascadingFactBag
-import io.vyne.models.facts.CopyOnWriteFactBag
-import io.vyne.models.facts.FactBag
-import io.vyne.models.facts.FactDiscoveryStrategy
-import io.vyne.models.facts.ScopedFact
+import io.vyne.models.facts.*
 import io.vyne.models.functions.FunctionResultCacheKey
 import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.query.graph.ServiceParams
 import io.vyne.query.graph.edges.EvaluatableEdge
 import io.vyne.query.graph.edges.EvaluatedEdge
-import io.vyne.schemas.Operation
-import io.vyne.schemas.OperationNames
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.Policy
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Service
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
 import io.vyne.utils.Ids
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.orElse
@@ -299,7 +287,7 @@ data class QueryContext(
 
 
    override suspend fun findType(type: Type, permittedStrategy: PermittedQueryStrategies): Flow<TypedInstance> {
-      return this.find(type.qualifiedName.parameterizedName, permittedStrategy)
+      return this.find(TypeQueryExpression(type), permittedStrategy)
          .results
    }
 
