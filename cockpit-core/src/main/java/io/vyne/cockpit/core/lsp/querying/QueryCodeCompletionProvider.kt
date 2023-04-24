@@ -231,7 +231,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
          val attributeCompletionItems = if (includeModelAttributes) {
             schema.type(schemaSearchResult.resultingType).attributes
                // Don't include primitive attributes, since they're not really queryable
-               .filter { (_, field) -> !schema.type(field.type).isPrimitive }
+               .filter { (_, field) -> !field.resolveType(schema).isPrimitive }
                .map { (fieldName, field) ->
                   completionItemWithDiscoveryPath(
                      field.type.toTaxiQualifiedName(),
@@ -246,7 +246,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
          if (includeModelAttributes) {
             schema.type(typeInQuery.toVyneQualifiedName()).attributes
                // Don't include primitive attributes, since they're not really queryable
-               .filter { (_, field) -> !schema.type(field.type).isPrimitive }
+               .filter { (_, field) -> !field.resolveType(schema).isPrimitive }
                .map { (fieldName, field) ->
                   completionItemWithDiscoveryPath(
                      typeName = field.type.toTaxiQualifiedName(),

@@ -10,6 +10,7 @@ import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemaServer.editor.SavedQuery
 import io.vyne.schemas.*
+import io.vyne.schemas.taxi.toVyneSources
 import io.vyne.spring.http.NotFoundException
 import lang.taxi.generators.SourceFormatter
 import org.springframework.http.ResponseEntity
@@ -62,14 +63,14 @@ class SchemaService(
    }
 
    @GetMapping("/api/schemas/queries")
-   fun getSavedQueries():List<SavedQuery> {
-      TODO()
-//      schemaProvider.schema.asTaxiSchema().taxi.queries
-//         .map { query ->
-//            SavedQuery(VersionedSource(
-//
-//            ))
-//         }
+   fun getSavedQueries(): List<SavedQuery> {
+      return schemaProvider.schema.asTaxiSchema().taxi.queries
+         .map { query ->
+            SavedQuery(
+               query.name.toVyneQualifiedName(),
+               query.compilationUnits.toVyneSources()
+            )
+         }
    }
 
    @GetMapping(path = ["/api/types/{typeName}"])

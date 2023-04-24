@@ -1,14 +1,21 @@
 package io.vyne.queryService
 
 import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldHaveSingleElement
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
+import io.vyne.PackageIdentifier
+import io.vyne.VersionedSource
 import io.vyne.asPackage
 import io.vyne.cockpit.core.schemas.SchemaService
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.ConsumedOperation
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.toParsedPackages
 import org.junit.Before
@@ -94,7 +101,40 @@ class SchemaServiceTest {
          )
       )
       val stores = service.lineage!!.stores.toSet()
-      stores.should.equal(setOf(QualifiedName.from("Order"), QualifiedName.from(
-         "Trade")))
+      stores.should.equal(
+         setOf(
+            QualifiedName.from("Order"), QualifiedName.from(
+               "Trade"
+            )
+         )
+      )
+   }
+
+   @Test
+   fun `returns saved queries`() {
+      val querySrc = """query FindFilm(id:FilmId) {
+            find { Film(FilmId == id) }
+         }"""
+      val src = """
+         model Film {
+            id : FilmId inherits String
+         }
+         $querySrc
+      """.trimIndent()
+      val schema = TaxiSchema.from(src)
+      val service = createService(schema)
+      val queries = service.getSavedQueries()
+      queries.shouldHaveSize(1)
+      val query = queries.single()
+      query.name.shouldBe("FindFilm".fqn())
+      query.sources.single().content.withoutWhitespace().shouldBe(querySrc.withoutWhitespace())
+   }
+
+   private fun createService(schema: TaxiSchema): SchemaService {
+      return SchemaService(
+         SimpleSchemaProvider(schema, PackageIdentifier.fromId("com/test/foo:1.0.0")),
+         SimpleSchemaStore(SchemaSet.from(schema, 0)),
+         emptyList()
+      )
    }
 }

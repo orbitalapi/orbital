@@ -361,7 +361,7 @@ object Algorithms {
    private fun defaultValueForType(type: Type, schema: Schema): Any {
       if (type.attributes.isNotEmpty()) {
          return type.attributes.map { attribute ->
-            val attrType = schema.type(attribute.value.type)
+            val attrType = attribute.value.resolveType(schema)
             attribute.key to defaultValueForType(attrType, schema)
          }.toMap()
       }

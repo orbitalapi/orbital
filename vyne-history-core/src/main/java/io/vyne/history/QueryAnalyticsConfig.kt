@@ -1,5 +1,6 @@
 package io.vyne.history
 
+import mu.KotlinLogging
 import org.springframework.boot.context.properties.ConfigurationProperties
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -27,7 +28,14 @@ data class QueryAnalyticsConfig(
    var analyticsServerApplicationName: String = "VYNE-ANALYTICS-SERVER",
    // Mutable for testing
    var mode: AnalyticsMode = AnalyticsMode.Inprocess
-)
+) {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+   init {
+       logger.info { "Running with Analytics config: $this" }
+   }
+}
 
 enum class AnalyticsMode {
    Inprocess,

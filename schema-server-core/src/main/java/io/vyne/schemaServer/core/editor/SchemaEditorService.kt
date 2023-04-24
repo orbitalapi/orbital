@@ -1,5 +1,6 @@
 package io.vyne.schemaServer.core.editor
 
+import com.google.common.collect.Sets
 import io.vyne.PackageIdentifier
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
@@ -9,15 +10,15 @@ import io.vyne.schemaServer.core.file.packages.FileSystemPackageLoader
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageWriter
 import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
 import io.vyne.schemaServer.editor.*
+import io.vyne.schemas.taxi.toMessage
+import io.vyne.schemas.taxi.toVyneSources
 import io.vyne.schemas.toVyneQualifiedName
+import io.vyne.spring.http.BadRequestException
+import lang.taxi.errors
 import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
 import org.http4k.quoted
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
@@ -60,15 +61,39 @@ class SchemaEditorService(
    override fun saveQuery(request: SaveQueryRequest): Mono<SavedQuery> {
       return Mono.just(request)
          .subscribeOn(Schedulers.boundedElastic())
-         .flatMap {
-            val queryWithName = QueryEditor.prependQueryNameIfMissing(request.source)
+         .map { request ->
+
+            // If the inbound query doesn't yet have a name, we give it one.
+            val queryWithName = QueryEditor.prependQueryBlockIfMissing(request.source)
+
+            // First validate that the query is, well...y'know, valid.
+            val currentQueries = schemaProvider.schema().taxi.queries
+            val (messages, taxiDoc) = SchemaEditValidator.validate(
+               listOf(queryWithName),
+               schemaProvider.schema().asTaxiSchema()
+            )
+            if (messages.errors().isNotEmpty()) {
+               throw BadRequestException(messages.errors().toMessage())
+            }
+            val queryDifferences = Sets.difference(taxiDoc.queries, currentQueries)
+            require(queryDifferences.size == 1) { "Expected a single new query, but found ${queryDifferences.size}" }
+            queryDifferences.single() to request
+         }
+         .flatMap { (taxiQuery, _) ->
+            val queryWithName = QueryEditor.prependQueryBlockIfMissing(request.source)
             addChangesToChangeset(
                AddChangesToChangesetRequest(
                   request.changesetName,
                   request.source.packageIdentifier!!,
                   listOf(queryWithName)
                )
-            ).map { SavedQuery(queryWithName) }
+            ).map {
+               SavedQuery(
+                  taxiQuery.name.toVyneQualifiedName(),
+                  taxiQuery.compilationUnits.toVyneSources(),
+                  null // TODO : Url
+               )
+            }
          }
    }
 

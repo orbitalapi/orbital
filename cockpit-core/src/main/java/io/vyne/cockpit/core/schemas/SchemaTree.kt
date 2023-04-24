@@ -78,7 +78,7 @@ data class SchemaTreeNode(
 ) {
    companion object {
       fun forField(fieldName: String, field: Field, schema: Schema): SchemaTreeNode {
-         val fieldType = schema.type(field.type)
+         val fieldType = field.resolveType(schema)
          return SchemaTreeNode(
             field.type,
             SchemaMemberKind.FIELD,

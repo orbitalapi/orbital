@@ -99,7 +99,7 @@ data class NestedAttributeConstraint(val fieldName: String, val constraint: Inpu
       if (value !is TypedObject) throw IllegalArgumentException("NestedAttributeConstraint must be evaluated against a TypedObject")
       val nestedAttribute = value.get(fieldName)
       val field = argumentType.attributes.getValue(fieldName)
-      val nestedType = schema.type(field.type)
+      val nestedType = field.resolveType(schema)
       // This is probably wrong - find the argument type of the nested field
       return NestedConstraintEvaluation(value, fieldName, constraint.evaluate(nestedType, nestedAttribute, schema))
    }
@@ -167,7 +167,7 @@ class PropertyToParameterConstraint(propertyIdentifier: PropertyIdentifier,
       return when (expectedValue) {
          is ConstantValueExpression -> {
             // We expected a constant value.  Convert the value we were given into the appropriate type
-            val type = schema.type(argumentType.attribute(propertyIdentifier).type)
+            val type = argumentType.attribute(propertyIdentifier).resolveType(schema)
             TypedInstance.from(type, (expectedValue as ConstantValueExpression).value, schema, source = DefinedInSchema)
          }
 

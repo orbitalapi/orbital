@@ -122,7 +122,7 @@ enum extension Bar {}""".withoutWhitespace()
       val expected = """query MyQuery {
    find { Person }
 }""".trimIndent()
-      saved.source.content.shouldBe(expected)
+      saved.sources.single().content.shouldBe(expected)
       val savedSource = projectPath.resolve("src/MyQuery.taxi").readText()
       savedSource.shouldBe(expected)
    }
