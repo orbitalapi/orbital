@@ -4,6 +4,7 @@ import io.micrometer.cloudwatch2.CloudWatchConfig
 import io.micrometer.cloudwatch2.CloudWatchMeterRegistry
 import io.micrometer.core.instrument.Clock
 import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.config.MeterFilter
 import mu.KotlinLogging
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -52,11 +53,18 @@ class AwsConfig {
    @Bean
    fun getMeterRegistry(client: CloudWatchAsyncClient): MeterRegistry {
       val cloudWatchConfig = setupCloudWatchConfig()
-      return CloudWatchMeterRegistry(
+      val registry = CloudWatchMeterRegistry(
          cloudWatchConfig,
          Clock.SYSTEM,
          client
       )
+
+      registry.config()
+         .meterFilter(MeterFilter.acceptNameStartsWith("jvm.memory.used"))
+         .meterFilter(MeterFilter.acceptNameStartsWith("process.cpu.usage"))
+         .meterFilter(MeterFilter.deny())
+
+      return registry
    }
 
    @Bean
