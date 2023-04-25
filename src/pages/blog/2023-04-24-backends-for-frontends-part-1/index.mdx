@@ -28,7 +28,7 @@ This is the first of two posts with our take on BFFs. First we’ll take a look 
 
 Historically, developers build APIs from the perspective of the backend system. They create models based on their own domain. Patterns like REST let them split entities into clean and well-structured endpoints. Which is all completely rational if you’re building one of those systems.
 
-Enter UX designers who (rightly so) have very different ideas. They're likely concerned with how to create an intuitive and pleasant interface. They care not if we're serving User and Post data from two different systems and laugh in the face of the completely rational schema designs. Anything to make the Figma gods happy.
+Enter UX designers who (rightly so) have very different ideas and are concerned with how to create an intuitive and pleasant interface. They care not if we're serving User and Post data from two different systems and laugh in the face of the completely rational schema designs. Anything to make the Figma gods happy.
 
 Backends-for-frontends is a pattern that emerged to resolve this tension. It allows us to cater for the different data fetching needs of web and mobile applications.  However, the functionality and type of data are often similar across both mobile and desktop platforms. So, when developers started creating more complex mobile applications in the 2010s, it made sense to use the same backend systems as their desktop counterparts.
 
@@ -78,6 +78,8 @@ But they’re still serving any number of people, not just you. When the team bu
 
 Backends for frontends are kind of like a personal butler for your frontend. They know how you like things done, are ready and willing to make any change you want, and sometimes even know you better than you know yourself (if Michael Caine is involved). 
 
+> Backends for frontends are kind of like a personal butler for your frontend.
+
 To meet the data fetching requirements of each frontend, we can create a distinct backend. That allow us to customize the API to serve exactly what we need and as a result improve our ability to solve over fetching or under fetching issues. If we want to trial GraphQL, we don’t have to convince a backend team to expose the same API in two different protocols, or have all our sibling frontends also switch over.
 
 Since we're not liaising with another team for changes, our whole change management cycle becomes easier too. Deploying a new feature that changes the API interface doesn't need multi-team coordination. As such, the process to test, deploy and monitor the change to guard against an outage is much more contained. That flexibility is important where your deployments are via an App Store and somewhat out of your control.
@@ -94,6 +96,8 @@ By design a BFF is tightly coupled with our frontend systems. That leads to inte
 However, this leaves us with a awkward technical choice for our server side BFF. We either have to pick technologies to match the skills of frontend engineers, they need learn them, or we need to import them. Luckily there's good options for web and Android frontend teams to at least use the same programming language.  For Node.js there's great frameworks like Express and Nest and on the JVM they've got options like Spring. 
 
 I’d argue though that the programming language used is only a component of the problem. There’s generally a wide gap in the bag of tricks required to work on a backend application compared to a frontend. A level of upskilling and extra complexity for the frontend team to deal with is inevitable in this autonomy trade-off.
+
+> A level of upskilling and extra complexity for the frontend team to deal with is inevitable in this autonomy trade-off.
 
 We should also consider the raw time involved in building and deploying another service. With each frontend team now building and managing their own integration layer, there's bound to be some duplication of code and effort as payment for the flexibility that we're buying with this abstraction.
  
