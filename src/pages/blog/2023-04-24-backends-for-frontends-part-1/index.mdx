@@ -6,18 +6,19 @@ import GeneralPurposeApi from './general-purpose-api.png';
 import Bff from './bff.png';
 
 import { BlogImageWithCaption } from '@/components/BlogImageWithCaption';
+import ExternalLink from '@/components/ExternalLink';
 
 
 export const meta = {
-  title: 'Backends-for-frontends',
+  title: 'Backends for frontends',
   description: `Walkthrough of the backends-for-frontends pattern.`,
   date: '2023-04-24T12:21:00.000Z',
   authors: [michaelStone]
 }
 
-Here at Orbital, we’re interested in all things integration and backends-for-frontends (BFFs) fall squarely in that category. From one perspective, they’re simply a transformation and aggregation layer. Others would say they exist to tightly align with the requirements of the different front-ends in your stack. 
+Here at Orbital, we’re interested in all things integration and backends-for-frontends (BFFs) fall squarely in that category. From one perspective, they’re simply a transformation and aggregation layer. Others would say they exist to tightly align with the requirements of the different frontends in your stack. 
 
-In dark corners of React meetups, front-end engineers might whisper that they’re a cry for acceptance and validation after being forced to take whatever APIs get thrown at them for too long.
+In dark corners of React meetups, frontend engineers might whisper that they’re a cry for acceptance and validation after being forced to take whatever APIs get thrown at them for too long.
 
 We prefer to see them as an API that’s customized for a single consumer rather than many consumers like typical APIs. It flips the concept of who an API is built for on its head.
 
@@ -25,28 +26,30 @@ This is the first of two posts with our take on BFFs. First we’ll take a look 
 
 ## How did they become a thing?
 
-Historically, APIs were built from the perspective of the backend, or the publishing system. They create models based on their domain, and implement patterns like REST to separate entities into what are objectively very clean and well-structured endpoints. All completely rational if you’re building one of those systems.
+Historically, developers build APIs from the perspective of the backend system. Models are created based on their domain, and patterns like REST are used to separate entities into what are objectively very clean and well-structured endpoints. That's all completely rational if you’re building one of those systems.
 
 Enter UX designers who (rightly so) have very different ideas about what data should be used on an intuitive and pleasant interface. They care not about User and Post data being served from two different endpoints, or potentially different systems. They laugh in the face of the completely rational schema designs and mix together any data that makes the Figma gods happy. 
 
 Backends-for-frontends is a pattern that emerged to resolve this tension and to cater for the different data fetching needs of web and mobile applications. The functionality and type of data being served is similar across both of these, so when more complex mobile applications started to be developed in the 2010s, they were originally served by the same backend systems as their desktop counterparts.
 
-As the designs for web and mobile diverged, so did the requirements for the APIs serving them.  The importance for optimizing for mobile, meant addressing issues such as over-fetching on limited bandwidths. At the end of this path, it’s common to have similar data, all from the same domain, but very different API footprints. 
+> As the designs for desktop and mobile diverged, so did the requirements for the APIs serving them.
 
-These were accentuated by organizational structures where front-end and back end systems were managed by different teams with skills in different languages and frameworks. As the web and mobile teams started to also split, the back end teams became a bottleneck from implementing specific API requests from the different front-end teams. 
+As the designs for desktop and mobile diverged, so did the requirements for the APIs serving them.  The importance for optimizing for mobile, meant addressing issues such as over-fetching on limited bandwidths. At the end of this path, it’s common to have similar data, all from the same domain, but very different API footprints. 
 
-Enter the BFF from stage-left. The savior of developers on both sides of this divide. Bringing gifts of freedom and autonomy for front end developers, and releasing back end developers from an onslaught of trivial requests to add fields. I can only assume that project managers celebrated in their own way too.
+These were accentuated by organizational structures where frontend and backend systems were managed by different teams with skills in different languages and frameworks. As the desktop and mobile teams also started to split, backend teams became a bottleneck from implementing specific API requests from the different frontend teams. 
+
+Enter the BFF from stage-left. The savior of developers on both sides of this divide. Bringing gifts of freedom and autonomy for front end developers, and releasing backend developers from an onslaught of trivial requests to add fields. I can only assume that project managers celebrated in their own way too.
 
 
 ## So what are they?
 
-Assume we’re got a couple of front-end teams building separate desktop and mobile apps. Given the task of fetching some data from our organization's collection of endpoints or services, let’s take a look at some of the options available to them.
+Assume we’re got a couple of frontend teams building separate desktop and mobile apps. Given the task of fetching some data from our organization's collection of endpoints or services, let’s take a look at some of the options available to them.
 
 *Note: Although it’s probably more common to see this applied in microservices architectures, there’s no reason why it wouldn’t apply to a monolith as well. We’d still expect a monolith to split up their API into a number of distinct endpoints over one or more domains.*
 
 ### DIY integration
 
-The original method for this was something of a DIY approach. From each of our front-end applications, we'll call out to each API separately and aggregate the data together ourselves. It’s basically everyone for themselves.
+The original method for this was something of a DIY approach. From each of our frontend applications, we'll call out to each API separately and aggregate the data together ourselves. It’s basically everyone for themselves.
 
 <BlogImageWithCaption src={DiyIntegration}
                   caption='' />
@@ -55,21 +58,24 @@ There’s nothing wrong with this, but we do import a bunch of complexity into o
 
 ### General Purpose API
 
-An improvement on this is to implement a backend service that takes on some of this integration complexity on behalf of our front-end teams. Each frontend is kinda doing the same thing if you squint a bit so maybe that makes sense. 
+An improvement on this is to implement a backend service that takes on some of this integration complexity on behalf of our frontend teams. Each frontend is kinda doing the same thing if you squint a bit so maybe that makes sense. 
 
 <BlogImageWithCaption src={GeneralPurposeApi}
                   caption='' />
 
-What you’d have then would be a bit more like a concierge. A high-end concierge, sure! They’ll be super polite, maybe even go above and beyond to get you what you want on occasion. Instead of having to know all the ins and outs of where to get your data from, you can rely on your general purpose API to gather all the data for you and put it in a nice little package. From the perspective of the front end apps, it’s much simpler to integrate with this one API with pre-aggregated data than to do that work themselves.
+What you’d have then would be a bit more like a concierge. A high-end concierge, sure! They’ll be super polite, maybe even go above and beyond to get you what you want on occasion. Instead of having to know all the ins and outs of where to get your data from, you can rely on your concierge (general purpose API) to gather all the relevent data for you and put it in a nice little package. From the perspective of the front end apps, it’s much simpler to integrate with this one API with pre-aggregated data than to do that work themselves.
 
-But they’re still serving any number of people, not just you. When the team building our general purpose backend gets approached by two different front-end teams, they’ve gotta balance both requests.
+But they’re still serving any number of people, not just you. When the team building our general purpose backend gets approached by two different frontend teams, they’ve gotta balance both requests.
 
 
 ### Backend-for-frontend
 
 Backends for frontends are kind of like a personal butler for your front end applications. They know how you like things done, are ready and willing to make any change you want, and sometimes even know you better than you know yourself (if Michael Caine is involved). 
 
-To satisfy the individual data fetching requirements of each front-end app, we can build a separate application that handles the integration complexity for us. The API can be customized for exactly the data we need to drastically improve over fetching or under fetching issues. If we want to give GraphQL a try, we don’t have to convince a backend team to expose the same API in two different protocols, or have all our sibling front-end apps convert over to GraphQL at the same time.
+To satisfy the individual data fetching requirements of each frontend app, we can build a separate application that handles the integration complexity for us. The API can be customized for exactly the data we need to drastically improve over fetching or under fetching issues. If we want to give GraphQL a try, we don’t have to convince a backend team to expose the same API in two different protocols, or have all our sibling frontend apps convert over to GraphQL at the same time.
+
+Since we're not liasing with another team for changes, our whole change management cycle becomes easier too. Deploying a new feature that impacts the API interface between the frontend and backend services doesn't require coordination between two different teams to test, deploy and monitor the change to ensure there isn't an outage. That flexibility is particularly significant where your deployment frequency might be somewhat out of your control such as via an App Store. 
+
 
 <BlogImageWithCaption src={Bff}
                   caption='' />
@@ -77,6 +83,26 @@ To satisfy the individual data fetching requirements of each front-end app, we c
 
 ## What are the challenges?
 
-A BFF is intentionally designed to be tightly coupled with our front end systems, which leads to interesting questions about what team should own it, and what technology it should be built with. A common position. When new UI features are added, it’s the front end team which is best placed to change it. That’s true from a work division and scheduling perspective, but also so it can be implemented in a way that works best for the front end system.
+A BFF is intentionally designed to be tightly coupled with our front end systems, which leads to interesting questions about what team should own it, and what technology it should be built with. When new UI features are added, it’s the front end team which is best placed to change it. That’s true from a work division and scheduling perspective, but also so it can be implemented in a way that works best for the front end system.
 
-However, if it’s the front-end team and engineers who are best placed to own the BFF, either the implementation needs to match the skills and experience of front-end engineers, or the team needs to learn or import the skills to manage a server side application. There’s good options for web and android front-end teams in Node.js frameworks like Express and Nest or Spring for the JVM to at least use the same programming language. I’d argue that the programming language used is only a component of the problem though. There’s generally a fairly wide gap in the bag of tricks required to work on a server side compared to a client side application. A level of upskilling and extra complexity for the front-end team to deal with is inevitable in this autonomy trade-off.
+However, if it’s the frontend team and engineers who are best placed to own the BFF, either the implementation needs to match the skills and experience of frontend engineers, or the team needs to learn or import the skills to manage a server side application. There’s good options for web and android frontend teams in Node.js frameworks like Express and Nest or Spring for the JVM to at least use the same programming language. I’d argue that the programming language used is only a component of the problem though. There’s generally a fairly wide gap in the bag of tricks required to work on a server side compared to a client side application. A level of upskilling and extra complexity for the frontend team to deal with is inevitable in this autonomy trade-off.
+
+We should also consider the raw time involved in building and deploying another service. Each frontend team is now building and managing their own integration layer. There's bound to be some duplication of code and effort as payment for the flexibility that we're buying with this abstraction. 
+
+In terms of deployments, our tools have come a long *long* way and for many use cases it's a simple click of the button. Once you leave the guardrails though, there's often a bit of devops pain. As a intermittent rather than full time devops engineer myself, scripting a cloud deployment and getting the infrastructure right can become a time-consuming task. Creating a separate BFF service buys a little more of that pain, especially if it's the frontend team managing it where the infrastructure requirements might differ from those of the UI code base.
+
+Finally, although managing the coupling with the APIs of your downstream services is easier to manage in a BFF than it is directly in the frontend code the problem still exists. It's just in a different place. When any of those services updates their API, our BFF needs to be updated too. For breaking changes, the mapping code we're written needs to be reviewing and modified accordingly, and run through the test-and-deploy cycle. That's a win in terms of isolating the effect of these changes, and protecting our frontend code bases, but it's still work that the frontend team needs to pick up. 
+
+
+## What's next?
+
+Next up I'll be writing about how you can use Orbital for your Backend for Frontend services. We'll look at how you can create your BFF without needing to create a custom service, and how Orbital helps with automatically adapting to changes in downstream services, and with supporting multiple versions of frontend app being used in the wild. 
+
+
+## Other BFF material
+
+If this hasn't quenched your thirst for reading about BFFs, here's a few other great articles.
+
+- <ExternalLink href="https://samnewman.io/patterns/architectural/bff/" />
+- <ExternalLink href="https://www.thoughtworks.com/insights/blog/bff-soundcloud" />
+- <ExternalLink href="https://philcalcado.com/2019/07/12/some_thoughts_graphql_bff.html" />
