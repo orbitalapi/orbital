@@ -18,8 +18,6 @@ export const meta = {
 
 Here at Orbital, we’re interested in all things integration and backends-for-frontends (BFFs) fall squarely in that category. From one perspective, they’re simply a transformation and aggregation layer. Others would say they exist to tightly align with the requirements of the different frontends in your stack. 
 
-In dark corners of React meetups, frontend engineers might whisper that they’re a cry for acceptance and validation after being forced to take whatever APIs get thrown at them for too long.
-
 We prefer to see them as an API that’s customized for a single consumer rather than many consumers like typical APIs. It flips the concept of who an API is built for on its head.
 
 This is the first of two posts with our take on BFFs. First we’ll take a look at the pattern itself, why they emerged and what the trade offs are. In our follow-up we’ll go through how Orbital acts as a BFF and why it’s an elegant solution (if we don’t say so ourselves)
@@ -28,7 +26,7 @@ This is the first of two posts with our take on BFFs. First we’ll take a look 
 
 Historically, developers build APIs from the perspective of the backend system. They create models based on their own domain. Patterns like REST let them split entities into clean and well-structured endpoints. Which is all completely rational if you’re building one of those systems.
 
-Enter UX designers who (rightly so) have very different ideas and are concerned with how to create an intuitive and pleasant interface. They care not if we're serving User and Post data from two different systems and laugh in the face of the completely rational schema designs. Anything to make the Figma gods happy.
+Enter UX designers who (rightly so) have very different ideas and are concerned with how to create an intuitive and pleasant interface. They care not if we're serving User and Post data from two different systems and laugh in the face of the completely rational schema designs.
 
 Backends-for-frontends is a pattern that emerged to resolve this tension. It allows us to cater for the different data fetching needs of web and mobile applications.  However, the functionality and type of data are often similar across both mobile and desktop platforms. So, when developers started creating more complex mobile applications in the 2010s, it made sense to use the same backend systems as their desktop counterparts.
 
@@ -101,7 +99,7 @@ I’d argue though that the programming language used is only a component of the
 
 We should also consider the raw time involved in building and deploying another service. With each frontend team now building and managing their own integration layer, there's bound to be some duplication of code and effort as payment for the flexibility that we're buying with this abstraction.
  
-In terms of deployments, our tools have come a long *long* way and for many use cases it's a simple click of the button. Once you leave the guardrails though, there's often devops pain. As a intermittent rather than full time devops engineer myself, scripting a cloud deployment and getting the infrastructure right can become a time-consuming task. Creating a separate BFF service buys a little more of that pain. That's especially true if it's the frontend team managing it as the infrastructure requirements will differ from those of the frontend code base.
+In terms of deployments, our tools have come a long *long* way and for many use cases it's a simple click of the button. Once you leave the guardrails though, there's often devops pain. As an intermittent, rather than full time devops engineer myself, scripting a cloud deployment and getting the infrastructure right can become a time-consuming task. Creating a separate BFF service buys a little more of that pain. That's especially true if it's the frontend team managing it as the infrastructure requirements will differ from those of the frontend code base.
 
 Finally, although managing the coupling with the APIs of your downstream services is easier to manage in a BFF, the problem still exists. It's just in a different place. When any of those services updates their API, our BFF needs to be updated too. For breaking changes, the mapping code we've written needs to be reviewed and modified, and run through the test-and-deploy cycle. That's a win for isolating the effect of these changes and protecting our frontend code bases, but it's still work that the frontend team needs to pick up.
 
