@@ -4,9 +4,10 @@ import Image from 'next/future/image';
 export function BlogImageWithCaption({ caption, wide, src, voyagerLink, addLightBackground }) {
 
   return (
-    <div className='breakout-image'>
+    <div className={clsx({'breakout-image': wide})}>
       <div className={clsx(
-        "relative my-[2em] first:mt-0 last:mb-0 rounded-lg rounded-lg w-full lg:w-[65vw] mx-auto",
+        "relative my-[2em] first:mt-0 last:mb-0 rounded-lg rounded-lg w-full mx-auto",
+        { "lg:w-[65vw]": wide },
         { "bg-slate-800 dark:bg-transparent": addLightBackground },
       )}>
         <div className="p-[1rem]">

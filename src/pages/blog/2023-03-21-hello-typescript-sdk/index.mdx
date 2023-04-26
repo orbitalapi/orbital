@@ -90,7 +90,7 @@ In our projection of the pieces of data we want, we're asking for two different 
 
 If we check out the query history in the Orbital UI after running this query, we can see that the data has come from two different systems. We fetched the `id` and `title` from our `Films` database, and then we used the `FilmId` to call our `StreamingProvidersService` to fetch the `provider` and `cost` properties.  
 
-<BlogImageWithCaption src={QueryExecutionPlan} caption="The query execution plan executed by Orbital" />
+<BlogImageWithCaption src={QueryExecutionPlan} wide caption="The query execution plan executed by Orbital" />
 
 
 It’s worth noting that when defining the structure of data we want to receive, we can use whatever property names we want. It’s the semantic tags that we’ve imported from our generated taxonomy that are significant. In this example, `FilmId` and `Title` are the tags we've used, shown as the types of the `id` and `title` properties of our response projection. 
