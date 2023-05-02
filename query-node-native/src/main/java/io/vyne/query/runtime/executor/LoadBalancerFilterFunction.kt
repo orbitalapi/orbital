@@ -1,4 +1,4 @@
-package io.vyne.query.runtime.http
+package io.vyne.query.runtime.executor
 
 import org.springframework.cloud.client.ServiceInstance
 import org.springframework.cloud.client.discovery.DiscoveryClient

@@ -67,8 +67,7 @@ abstract class BaseTypeCache : TypeCache {
    }
 
    override fun type(name: QualifiedName): Type {
-      return typeOrNull(name)
-         ?: throw IllegalArgumentException("Type ${name.parameterizedName} was not found within this schema, and is not a valid short name")
+      return typeOrNull(name) ?: throw IllegalArgumentException("Type ${name.parameterizedName} was not found within this schema, and is not a valid short name")
    }
 
    protected open fun typeOrNull(name: QualifiedName): Type? {

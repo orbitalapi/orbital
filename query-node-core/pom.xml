@@ -18,6 +18,58 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>software.amazon.awssdk</groupId>
+         <artifactId>sqs</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>software.amazon.awssdk</groupId>
+         <artifactId>aws-core</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>junit-jupiter</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>io.projectreactor.rabbitmq</groupId>
+         <artifactId>reactor-rabbitmq</artifactId>
+         <version>1.5.6</version>
+      </dependency>
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>rabbitmq</artifactId>
+         <version>1.18.0</version>
+         <scope>test</scope>
+      </dependency>
+
+      <!--
+      Localstack depends on 1.x internally.
+      https://stackoverflow.com/a/75474617/59015
+      -->
+      <dependency>
+         <groupId>com.amazonaws</groupId>
+         <artifactId>aws-java-sdk-core</artifactId>
+         <version>1.12.402</version>
+         <scope>test</scope>
+         <exclusions>
+            <exclusion>
+               <groupId>*</groupId>
+               <artifactId>*</artifactId>
+            </exclusion>
+         </exclusions>
+      </dependency>
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>localstack</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.projectreactor</groupId>
+         <artifactId>reactor-test</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>query-node-api</artifactId>
          <version>${project.version}</version>

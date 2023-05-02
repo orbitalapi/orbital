@@ -1,4 +1,4 @@
-package io.vyne.query.runtime.http
+package io.vyne.query.runtime.executor
 
 import com.zaxxer.hikari.HikariConfig
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
@@ -53,14 +53,6 @@ class QueryFunctionApp {
 
    @Bean
    fun webClientBuilder() = WebClient.builder()
-
-
-   @Bean
-   @Profile("!local")
-   fun awsEventLoop(context: ConfigurableApplicationContext): CustomRuntimeEventLoop {
-      return CustomRuntimeEventLoop(context)
-   }
-
 }
 
 fun main(args: Array<String>) {
@@ -68,7 +60,7 @@ fun main(args: Array<String>) {
    logger.info { "Total available memory: ${Runtime.getRuntime().freeMemory().formatAsFileSize}" }
    logger.info { "Max memory: ${Runtime.getRuntime().maxMemory().formatAsFileSize}" }
 
-   runApplication<QueryFunctionApp>()
+   runApplication<QueryFunctionApp>(*args)
 }
 
 class NativeQueryNodeRuntimeHints : RuntimeHintsRegistrar {

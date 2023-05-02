@@ -1,4 +1,4 @@
-package io.vyne.query.runtime.core.dispatcher
+package io.vyne.query.runtime.core.dispatcher.http
 
 import io.vyne.auth.tokens.AuthTokenRepository
 import io.vyne.connectors.config.ConfigFileConnectorsRegistry
@@ -7,6 +7,7 @@ import io.vyne.query.ResultMode
 import io.vyne.query.runtime.CompressedQueryResultWrapper
 import io.vyne.query.runtime.QueryMessage
 import io.vyne.query.runtime.QueryMessageCborWrapper
+import io.vyne.query.runtime.core.dispatcher.StreamingQueryDispatcher
 import io.vyne.query.runtime.core.gateway.RoutedQuery
 import io.vyne.query.runtime.core.gateway.RoutedQueryExecutor
 import io.vyne.schema.api.SchemaProvider
@@ -18,7 +19,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.*
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toFlux
 
 /**
  * Entry point for sending queries to
@@ -28,15 +31,15 @@ import reactor.core.publisher.Mono
  * just for dispatching the query.
  */
 @Component
-@ConditionalOnProperty("vyne.query-router-url")
-class QueryDispatcher(
+@ConditionalOnProperty("vyne.dispatcher.http.enabled", havingValue = "true", matchIfMissing = false)
+class HttpQueryDispatcher(
    private val webClient: WebClient.Builder,
    private val servicesRepository: ServicesConfigRepository,
    private val authTokenRepository: AuthTokenRepository,
    private val connectionsConfigProvider: ConfigFileConnectorsRegistry,
    private val schemaProvider: SchemaProvider,
-   @Value("\${vyne.query-router-url}") private val queryRouterUrl: String
-) : RoutedQueryExecutor {
+   @Value("\${vyne.dispatcher.http.url}") private val queryRouterUrl: String
+) : StreamingQueryDispatcher {
 
    init {
       logger.info { "Query dispatcher is active - routing queries to $queryRouterUrl" }
@@ -46,13 +49,13 @@ class QueryDispatcher(
       private val logger = KotlinLogging.logger {}
    }
 
-   fun dispatchQuery(
+   override fun dispatchQuery(
       query: String,
       clientQueryId: String,
       mediaType: String,
-      resultMode: ResultMode = ResultMode.RAW,
-      arguments: Map<String, Any?> = emptyMap()
-   ): Mono<Any> {
+      resultMode: ResultMode,
+      arguments: Map<String, Any?>
+   ): Flux<Any> {
       val message = QueryMessage(
          query = query,
          sourcePackages = schemaProvider.schema.packages,
@@ -64,16 +67,17 @@ class QueryDispatcher(
       )
 
       return dispatchQuery(message)
+         .toFlux()
    }
 
-   override fun handleRoutedQuery(query: RoutedQuery): Mono<Any> {
-      return dispatchQuery(
-         query.querySrc,
-         Ids.fastUuid(),
-         MediaType.APPLICATION_JSON_VALUE,
-         arguments = query.argumentValues
-      )
-   }
+//   override fun handleRoutedQuery(query: RoutedQuery): Flux<Any> {
+//      return dispatchQuery(
+//         query.querySrc,
+//         Ids.fastUuid(),
+//         MediaType.APPLICATION_JSON_VALUE,
+//         arguments = query.argumentValues
+//      )
+//   }
 
    fun dispatchQuery(message: QueryMessage): Mono<Any> {
       val encodedWrapper = QueryMessageCborWrapper.from(message)
@@ -90,7 +94,6 @@ class QueryDispatcher(
             result.get().decompress()
          }
    }
-
 
 
 }

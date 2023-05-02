@@ -45,6 +45,10 @@ class HikariJdbcConnectionFactory(
    private val dataSourceCache = CacheBuilder.newBuilder()
       .build<String, DataSource>()
 
+   init {
+       logger.info { "New HikariJdbcConnectionFactory created" }
+   }
+
    override fun config(connectionName: String): JdbcConnectionConfiguration =
       connectionRegistry.getConnection(connectionName)
 

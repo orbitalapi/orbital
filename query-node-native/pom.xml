@@ -20,6 +20,29 @@
 
    <dependencies>
       <dependency>
+         <groupId>io.projectreactor</groupId>
+         <artifactId>reactor-test</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>junit-jupiter</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>io.projectreactor.rabbitmq</groupId>
+         <artifactId>reactor-rabbitmq</artifactId>
+         <version>1.5.6</version>
+      </dependency>
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>rabbitmq</artifactId>
+         <version>1.18.0</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
          <groupId>org.springframework.cloud</groupId>
          <artifactId>spring-cloud-function-context</artifactId>
       </dependency>
@@ -128,6 +151,12 @@
          <artifactId>kotest-assertions-core-jvm</artifactId>
          <version>${kotest.version}</version>
          <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne</artifactId>
+         <type>test-jar</type>
+         <version>${project.version}</version>
       </dependency>
       <!-- Caffeine is excluded, as it breaks native runtime -->
 <!--      <dependency>-->

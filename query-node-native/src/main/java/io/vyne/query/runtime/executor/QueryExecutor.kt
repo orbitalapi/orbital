@@ -1,19 +1,14 @@
-package io.vyne.query.runtime.http
+package io.vyne.query.runtime.executor
 
 import io.vyne.query.runtime.CompressedQueryResultWrapper
 import io.vyne.query.runtime.QueryMessage
 import io.vyne.query.runtime.QueryMessageCborWrapper
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.toCollection
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.decodeFromByteArray
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
-import org.springframework.web.bind.annotation.RequestBody
-import reactor.core.publisher.Flux
-import java.io.InputStream
 
 @OptIn(ExperimentalSerializationApi::class)
 @Component
@@ -48,7 +43,11 @@ class QueryExecutor(
       val vyne = vyneFactory.buildVyne(message)
       val args = message.args()
       val result = runBlocking {
-         vyne.query(message.query, clientQueryId = message.clientQueryId, arguments = args)
+         vyne.query(
+            message.query,
+            clientQueryId = message.clientQueryId,
+            arguments = args
+         )
             .rawResults as Flow<Any>
       }
       val collectedResult = result.asFlux().collectList().block()

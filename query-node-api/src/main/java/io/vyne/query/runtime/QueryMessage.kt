@@ -51,6 +51,11 @@ data class QueryMessage(
    val mediaType: String,
    val clientQueryId: String,
    val arguments: ByteArray,
+   /**
+    * If using Request/Reply semantics, indicates the queue where
+    * responses should be written
+    */
+   val replyTo: String? = null
 ) {
    constructor(
       query: String,
@@ -65,12 +70,14 @@ data class QueryMessage(
       resultMode: ResultMode = ResultMode.RAW,
       mediaType: String,
       clientQueryId: String,
-      arguments: Map<String, Any?> = emptyMap()
+      arguments: Map<String, Any?> = emptyMap(),
+      replyTo: String? = null
    ) : this(
       query,
       compressSourcePackages(sourcePackages),
       connections, authTokens, services, resultMode, mediaType, clientQueryId,
-      compressArgs(arguments)
+      compressArgs(arguments),
+      replyTo
    )
 
    companion object {

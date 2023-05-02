@@ -1,4 +1,4 @@
-package io.vyne.query.runtime.http
+package io.vyne.query.runtime.executor
 
 import org.springframework.aot.hint.MemberCategory
 import org.springframework.aot.hint.RuntimeHints

@@ -2,13 +2,16 @@ package io.vyne.query.runtime.core.dispatcher
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.query.ResultMode
+import io.vyne.query.runtime.core.dispatcher.http.HttpQueryDispatcher
 import io.vyne.security.VynePrivileges
+import io.vyne.spring.http.BadRequestException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.query.TaxiQLQueryString
 import mu.KotlinLogging
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.http.HttpStatus
+import org.springframework.http.HttpStatusCode
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -20,11 +23,15 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.util.*
 
-@ConditionalOnBean(QueryDispatcher::class)
+/**
+ * REST service that accepts a query.
+ * The query isn't executed on this query node, but handed off to a query dispatcher
+ * to be routed to a remote query execution node.
+ */
 @RestController
 class QueryDispatcherService(
    val objectMapper: ObjectMapper,
-   private val queryDispatcher: QueryDispatcher
+   private val queryDispatcher: StreamingQueryDispatcher?
 ) {
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -50,14 +57,21 @@ class QueryDispatcherService(
       auth: Authentication?,
       @RequestParam("clientQueryId", required = false) clientQueryId: String?
    ): ResponseEntity<Flow<Any>> {
-      val resultFlow = queryDispatcher!!.dispatchQuery(
+      if (queryDispatcher == null) {
+         logger.warn { "Received query to router, but no executor service has been enabled.  Returning bad request" }
+         throw BadRequestException("Unable to execute the request at this time, due to configuration error.")
+      }
+
+      val resultFlow = queryDispatcher.dispatchQuery(
          query,
          clientQueryId ?: UUID.randomUUID().toString(),
          mediaType = contentType
       ).asFlow()
+
 
       return ResponseEntity.status(HttpStatus.OK)
          .body(resultFlow)
 
    }
 }
+

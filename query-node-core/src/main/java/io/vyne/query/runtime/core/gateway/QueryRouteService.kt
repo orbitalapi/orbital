@@ -4,8 +4,8 @@ import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.consumer.SchemaStore
 import lang.taxi.query.TaxiQlQuery
 import mu.KotlinLogging
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.http.HttpStatus
+import org.springframework.http.HttpStatusCode
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.*
 import org.springframework.web.reactive.function.server.ServerResponse.status
@@ -21,11 +21,10 @@ import reactor.kotlin.core.publisher.toFlux
  * are either executed in-process, or routed to a serverless function somewhere.
  *
  */
-@ConditionalOnProperty("vyne.query-router-url")
 @Component
 class QueryRouteService(
    private val schemaStore: SchemaStore,
-   private val hander: RoutedQueryExecutor
+   private val executor: RoutedQueryExecutor?
 ) : HandlerFunction<ServerResponse> {
 
    private var queryRouter: QueryRouter = QueryRouter.build(emptyList())
@@ -66,11 +65,17 @@ class QueryRouteService(
    }
 
    fun handleQuery(request: ServerRequest, query: RoutedQuery): Mono<ServerResponse> {
+      if (executor == null) {
+         logger.warn { "Received query invocation on ${request.path()} - matches with query ${query.query.name} - but no query executor exists.  Returning a not found error" }
+         return ServerResponse.notFound().build()
+      }
       logger.info { "Received query invocation on ${request.path()} - matches with query ${query.query.name}" }
       return Mono.just(query)
          .subscribeOn(Schedulers.boundedElastic())
-         .map { hander.handleRoutedQuery(query) }
-         .flatMap { ServerResponse.ok().body(it) }
+         // TODO : Handle streaming queries.
+         // For now, everything is a Mono<>
+         .flatMap { executor.handleRoutedQuery(query).single() }
+         .flatMap { response: Any -> ServerResponse.ok().body<Any>(response) }
    }
 
    override fun handle(request: ServerRequest): Mono<ServerResponse> {

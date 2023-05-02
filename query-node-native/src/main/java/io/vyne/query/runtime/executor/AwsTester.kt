@@ -1,4 +1,4 @@
-package io.vyne.query.runtime.http
+package io.vyne.query.runtime.executor
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.PackageIdentifier
@@ -10,10 +10,8 @@ import io.vyne.connectors.config.ConnectorsConfig
 import io.vyne.http.ServicesConfig
 import io.vyne.query.runtime.QueryMessage
 import io.vyne.query.runtime.QueryMessageCborWrapper
-import kotlinx.serialization.encodeToByteArray
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RestController
 
 //@RestController
 class AwsTester {

@@ -1,4 +1,4 @@
-package io.vyne.query.runtime.http
+package io.vyne.query.runtime.executor
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -103,14 +103,21 @@ class StandaloneVyneFactory(
       )
    }
 
+   private val jdbcConnectionFactoryCache = CacheBuilder.newBuilder()
+      .build<Int, HikariJdbcConnectionFactory>()
+
+
    private fun buildJdbcInvoker(connections: ConnectorsConfig, schemaProvider: SchemaProvider): JdbcInvoker {
 
-      val connectionRegistry = InMemoryJdbcConnectionRegistry(connections.jdbc.values.toList())
-      val jdbcConnectionFactory = HikariJdbcConnectionFactory(
-         connectionRegistry,
-         hikariConfig,
-         MicrometerMetricsTrackerFactory(meterRegistry)
-      )
+      val jdbcConnectionFactory = jdbcConnectionFactoryCache.get(connections.jdbcConnectionsHash) {
+         val connectionRegistry = InMemoryJdbcConnectionRegistry(connections.jdbc.values.toList())
+         HikariJdbcConnectionFactory(
+            connectionRegistry,
+            hikariConfig,
+            MicrometerMetricsTrackerFactory(meterRegistry)
+         )
+      }
+
       return JdbcInvoker(jdbcConnectionFactory, schemaProvider)
    }
 

@@ -1,4 +1,4 @@
-package io.vyne.query.runtime.http
+package io.vyne.query.runtime.executor
 
 import com.fasterxml.jackson.databind.MapperFeature
 import io.micrometer.core.instrument.MeterRegistry
@@ -39,7 +39,6 @@ import org.springframework.http.codec.HttpMessageWriter
 import org.springframework.http.codec.ServerCodecConfigurer
 import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.http.codec.json.KotlinSerializationJsonEncoder
-import org.springframework.web.reactive.function.client.WebClient
 import java.net.InetAddress
 import java.util.*
 
