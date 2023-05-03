@@ -1,12 +1,7 @@
 package io.vyne.history
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.vyne.models.DataSource
-import io.vyne.models.FailedSearch
-import io.vyne.models.OperationResult
-import io.vyne.models.StaticDataSource
-import io.vyne.models.TypeNamedInstanceMapper
-import io.vyne.models.TypedInstanceConverter
+import io.vyne.models.*
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryResultEvent
 import io.vyne.query.history.LineageRecord
@@ -195,7 +190,7 @@ open class DatabaseResultRowPersistenceStrategy(
          val lineageRecords = createLineageRecords(dataSources.map { it.second }, event.queryId)
          QueryResultRowLineage(queryResultRow, remoteCalls, lineageRecords)
       }
-      logger.info { "extractResultRowAndLineage completed in ${result.duration}" }
+      logger.debug { "extractResultRowAndLineage completed in ${result.duration}" }
       return result.value
    }
 
