@@ -333,6 +333,16 @@ fun RemoteOperation.httpOperationMetadata(): VyneHttpOperation {
 
 data class VyneHttpOperation(val httpOperationMetadata: Metadata, val url: String, val method: String)
 
+/**
+ * Use this exception when we failed to actually send the request.
+ * There's no response code or remote call, because we never got the request away
+ * (eg., when there's a malformed address).
+ */
+class OperationRequestFailedException(
+   message: String,
+   throwable: Throwable?
+) : RuntimeException(message, throwable)
+
 class OperationInvocationException(
    message: String,
    val httpStatus: Int,
