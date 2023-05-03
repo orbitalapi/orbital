@@ -12,12 +12,7 @@ import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.schema.api.SchemaProvider
-import io.vyne.schemas.OperationInvocationException
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Service
-import io.vyne.schemas.Type
-import io.vyne.schemas.httpOperationMetadata
+import io.vyne.schemas.*
 import io.vyne.spring.hasHttpMetadata
 import io.vyne.spring.http.DefaultRequestFactory
 import io.vyne.spring.http.HttpRequestFactory
@@ -26,17 +21,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.reactive.asFlow
+import lang.taxi.annotations.HttpService
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
-import org.springframework.web.reactive.function.client.ClientResponse
-import org.springframework.web.reactive.function.client.ExchangeStrategies
-import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.reactive.function.client.bodyToFlux
-import org.springframework.web.reactive.function.client.bodyToMono
+import org.springframework.web.reactive.function.client.*
 import org.springframework.web.util.DefaultUriBuilderFactory
 import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Flux
@@ -116,22 +108,22 @@ class RestTemplateInvoker(
       val httpMethod = HttpMethod.valueOf(method)!!
       //val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation", OperationType.REMOTE_CALL) { httpInvokeOperation ->
 
-//      val absoluteUrl = makeUrlAbsolute(service, operation, url)
-      val uriVariables = uriVariableProvider.getUriVariables(parameters, url)
+      val absoluteUrl = prependServiceBaseUrl(service, url)
+      val uriVariables = uriVariableProvider.getUriVariables(parameters, absoluteUrl)
 
-      logger.debug { "Operation ${operation.name} resolves to $url" }
+      logger.debug { "Operation ${operation.name} resolves to $absoluteUrl" }
       val typeInstanceParameters = parameters.map { it.second }
       val httpEntity = requestFactory.buildRequestBody(operation, typeInstanceParameters)
       val queryParams = requestFactory.buildRequestQueryParams(operation)
 
-      val expandedUri = defaultUriBuilderFactory.expand(url, uriVariables)
+      val expandedUri = defaultUriBuilderFactory.expand(absoluteUrl, uriVariables)
 
       //TODO - On upgrade to Spring boot 2.4.X replace usage of exchange with exchangeToFlow LENS-473
       val request = webClient
          .method(httpMethod)
          .uri { _ ->
             val uriBuilder = UriComponentsBuilder
-               .fromUriString(url)
+               .fromUriString(absoluteUrl)
             (queryParams?.let { uriBuilder.queryParams(it) } ?: uriBuilder).build(uriVariables)
          }
          .contentType(MediaType.APPLICATION_JSON)
@@ -148,6 +140,12 @@ class RestTemplateInvoker(
       val results = request
          .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
          .exchange()
+         .onErrorMap { error ->
+            OperationRequestFailedException(
+               "Failed to invoke service ${operation.name} at url $absoluteUrl - ${error.message ?: "No message in instance of ${error::class.simpleName}"}",
+               error
+            )
+         }
          .metrics()
          .elapsed()
          .publishOn(Schedulers.boundedElastic())
@@ -250,6 +248,15 @@ class RestTemplateInvoker(
          }
 
       return results.asFlow().flowOn(Dispatchers.IO)
+
+   }
+
+   private fun prependServiceBaseUrl(service: Service, url: String): String {
+      val serviceMetadata = service.metadata.singleOrNull { it.name == HttpService.NAME.fqn() }
+         ?.let { metadata -> HttpService.fromParams(metadata.params) }
+
+      return serviceMetadata?.let { it.baseUrl.removeSuffix("/") + "/" + url.removePrefix("/") }
+         ?: url
 
    }
 
