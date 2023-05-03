@@ -71,6 +71,11 @@
          <version>${taxi.version}</version>
       </dependency>
       <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>utils</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>test-utils</artifactId>
          <version>${taxi.version}</version>

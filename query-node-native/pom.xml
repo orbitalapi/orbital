@@ -30,7 +30,10 @@
          <artifactId>junit-jupiter</artifactId>
          <scope>test</scope>
       </dependency>
-
+      <dependency>
+         <groupId>io.projectreactor</groupId>
+         <artifactId>reactor-tools</artifactId>
+      </dependency>
       <dependency>
          <groupId>io.projectreactor.rabbitmq</groupId>
          <artifactId>reactor-rabbitmq</artifactId>

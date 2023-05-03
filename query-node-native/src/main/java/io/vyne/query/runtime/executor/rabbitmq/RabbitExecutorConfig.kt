@@ -23,7 +23,7 @@ class RabbitExecutorConfig {
    fun rabbitExecutor(
       @Value("\${vyne.consumer.rabbit.enabled:false}") enabled: Boolean,
       @Value("\${vyne.consumer.rabbit.address}") rabbitAddress: String,
-      @Value("\${vyne.consumer.rabbit.concurrency:1}") concurrency: Int,
+      @Value("\${vyne.consumer.rabbit.concurrency:25}") concurrency: Int,
       vyneFactory: StandaloneVyneFactory,
    ): RabbitMqQueryExecutor? {
 

@@ -5,7 +5,11 @@ import io.vyne.query.ResultMode
 import io.vyne.query.runtime.core.dispatcher.http.HttpQueryDispatcher
 import io.vyne.security.VynePrivileges
 import io.vyne.spring.http.BadRequestException
+import io.vyne.utils.withQueryId
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onEmpty
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.query.TaxiQLQueryString
 import mu.KotlinLogging
@@ -62,13 +66,21 @@ class QueryDispatcherService(
          throw BadRequestException("Unable to execute the request at this time, due to configuration error.")
       }
 
+      val actualClientId = clientQueryId ?: UUID.randomUUID().toString()
       val resultFlow = queryDispatcher.dispatchQuery(
          query,
-         clientQueryId ?: UUID.randomUUID().toString(),
+         actualClientId,
          mediaType = contentType
-      ).asFlow()
+      )
+         .asFlow()
+         .onCompletion { throwable ->
+            if (throwable == null) {
+               logger.withQueryId(actualClientId).debug { "Query $actualClientId completed" }
+            } else {
+               logger.withQueryId(actualClientId).info(throwable) { "Query $actualClientId failed" }
+            }
 
-
+         }
       return ResponseEntity.status(HttpStatus.OK)
          .body(resultFlow)
 

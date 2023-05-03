@@ -90,7 +90,11 @@ class StandaloneVyneFactory(
       message: QueryMessage
    ): RestTemplateInvoker {
       val discoveryClient = StaticServicesConfigDiscoveryClient(message.services)
-      val builder = webClientBuilder.filter(LoadBalancerFilterFunction(discoveryClient))
+      val builder = webClientBuilder
+         // Adding filter functions mutates the builder.
+         // Be sure to clone a clean one.
+         .clone()
+         .filter(LoadBalancerFilterFunction(discoveryClient))
 
       val requestFactory = AuthTokenInjectingRequestFactory(
          DefaultRequestFactory(),

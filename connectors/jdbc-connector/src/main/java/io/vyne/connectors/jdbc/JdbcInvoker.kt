@@ -17,9 +17,11 @@ import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
+import io.vyne.utils.withQueryId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import lang.taxi.query.TaxiQlQuery
+import mu.KotlinLogging
 import org.postgresql.jdbc.PgArray
 import org.postgresql.util.PGobject
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
@@ -42,6 +44,10 @@ class JdbcInvoker(
       return service.hasMetadata(JdbcConnectorTaxi.Annotations.DatabaseOperation.NAME)
    }
 
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+
    override suspend fun invoke(
       service: Service,
       operation: RemoteOperation,
@@ -58,9 +64,11 @@ class JdbcInvoker(
       val (sql, paramList) = SelectStatementGenerator(taxiSchema).toSql(query, connectionConfig.sqlBuilder())
       val paramMap = paramList.associate { param -> param.nameUsedInTemplate to param.value }
 
+      logger.withQueryId(queryId).debug { "Starting JDBC Query $sql" }
       val stopwatch = Stopwatch.createStarted()
       val resultList = jdbcTemplate.queryForList(sql, paramMap)
       val elapsed = stopwatch.elapsed()
+      logger.withQueryId(queryId).debug { "JDBC Query completed in $elapsed" }
       val operationResult = buildOperationResult(
          service,
          operation,

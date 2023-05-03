@@ -10,21 +10,21 @@ import io.vyne.query.runtime.QueryMessage
 import io.vyne.query.runtime.QueryMessageCborWrapper
 import io.vyne.query.runtime.core.dispatcher.rabbitmq.RabbitAdmin
 import io.vyne.query.runtime.executor.StandaloneVyneFactory
+import io.vyne.utils.withQueryId
 import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.reactivestreams.Publisher
+import org.springframework.aot.hint.annotation.RegisterReflectionForBinding
 import reactor.core.CorePublisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.ParallelFlux
 import reactor.core.scheduler.Schedulers
-import reactor.rabbitmq.OutboundMessage
-import reactor.rabbitmq.OutboundMessageResult
-import reactor.rabbitmq.Receiver
-import reactor.rabbitmq.Sender
+import reactor.rabbitmq.*
+import java.time.Duration
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -39,6 +39,7 @@ class RabbitMqQueryExecutor(
 ) {
    init {
       require(parallelism > 0) { "Parallelism must be greater than 0" }
+      logger.info { "RabbitMQ Executor running with parallelism of $parallelism" }
    }
 
    companion object {
@@ -50,11 +51,16 @@ class RabbitMqQueryExecutor(
       logger.info { "Starting to consume queries from RabbitMQ" }
       consumeAndExecuteQueries()
          .subscribeOn(Schedulers.boundedElastic())
-         .subscribe { event ->
+         .subscribe { (messageKind, event) ->
             when {
-               !event.isAck -> logger.warn { "Received a NAck for response message being sent to query ${event.outboundMessage.routingKey}" }
-               event.isAck && event.isReturned -> logger.warn { "Response message being sent to query ${event.outboundMessage.routingKey} was returned, as no destinations exist." }
-               else -> logger.debug { "Response message for query ${event.outboundMessage.routingKey} was delivered to the exchange successfully" }
+               !event.isAck -> logger.withQueryId(event.outboundMessage.routingKey)
+                  .warn { "Received a NAck for ${messageKind.name} message being sent to query ${event.outboundMessage.routingKey}" }
+
+               event.isAck && event.isReturned -> logger.withQueryId(event.outboundMessage.routingKey)
+                  .warn { "${messageKind.name} message being sent to query ${event.outboundMessage.routingKey} was returned, as no destinations exist." }
+
+               else -> logger.withQueryId(event.outboundMessage.routingKey)
+                  .debug { "${messageKind.name} message for query ${event.outboundMessage.routingKey} was delivered to the exchange successfully" }
             }
          }
    }
@@ -65,23 +71,44 @@ class RabbitMqQueryExecutor(
     * As this method continually consumes query messages,
     * the returned flux never completes.
     */
-   fun consumeAndExecuteQueries(): Flux<OutboundMessageResult<OutboundMessage>> {
-      return setupRabbit().flatMapMany {
-         consumeQueries()
-            .flatMap { queryMessage -> executeQuery(queryMessage!!) }
-            .flatMap {
-               // Write the response to Rabbit.
-               // We capture the first reciept - in theory there should be only one
-               writeResultToRabbitMq(it).single()
-            }
-      }
+   fun consumeAndExecuteQueries(): Flux<Pair<QueryResponseMessage.QueryResponseMessageKind, OutboundMessageResult<OutboundMessage>>> {
+      return setupRabbit()
+         .publishOn(Schedulers.boundedElastic())
+         .flatMapMany {
+            consumeQueries()
+               .doOnRequest {
+                  logger.info { "Downstream consumer has requested $it new messages" }
+               }
+               .flatMap({ queryMessage ->
+                  executeQuery(queryMessage!!)
+                     // This flatMap consumes the results from the query, and sends them to Rabbit.
+                     // Keeping it inside the parent flatMap() ensures we can control the rate of consumption from
+                     // rabbit.
+
+                     .flatMap { (messageKind, outboundMessage) ->
+                        // Write the response to Rabbit.
+                        // We capture the first reciept - in theory there should be only one
+                        writeResultToRabbitMq(outboundMessage)
+                           .publishOn(Schedulers.boundedElastic())
+                           .map { outboundMessageResult -> messageKind to outboundMessageResult }
+                           .single()
+                           .timeout(Duration.ofSeconds(10))
+                           .doOnError {
+                              logger.withQueryId(outboundMessage.routingKey)
+                                 .error { "Rabbit failed to ACK a response message" }
+                           }
+                     }
+               }, false, parallelism) // Specifying the parallelism here defines the rate at which flatMap is performed.
+
+         }
    }
 
 
    private fun consumeQueries(): ParallelFlux<QueryMessage> {
-      val queryFlux = rabbitReceiver.consumeAutoAck(RabbitAdmin.QUERIES_QUEUE_NAME)
+      val queryFlux = rabbitReceiver.consumeAutoAck(RabbitAdmin.QUERIES_QUEUE_NAME, ConsumeOptions().qos(parallelism))
+         .limitRate(parallelism)
          .mapNotNull { delivery ->
-            logger.debug { "Received new query message" }
+            logger.info { "Received new query message" }
             try {
                val wrapper = objectMapper.readValue<QueryMessageCborWrapper>(delivery.body)
                val message = wrapper.message()
@@ -94,6 +121,7 @@ class RabbitMqQueryExecutor(
          }
          .parallel(parallelism) as ParallelFlux<QueryMessage>
 
+//      return queryFlux as Flux<QueryMessage>
       return if (parallelism > 1) {
          queryFlux.runOn(Schedulers.parallel())
       } else {
@@ -101,27 +129,32 @@ class RabbitMqQueryExecutor(
       }
    }
 
-   private fun streamEndedMessage(queryMessage: QueryMessage): Mono<OutboundMessage> {
-      logger.info { "Query ${queryMessage.clientQueryId} has completed, sending stream end message" }
-      val messageBytes = objectMapper.writeValueAsBytes(QueryResponseMessage.COMPLETED)
-      return Mono.just(
-         OutboundMessage(
-            RabbitAdmin.RESPONSES_EXCHANGE_NAME,
-            queryMessage.clientQueryId,
-            messageBytes
+   private fun streamEndedMessage(queryMessage: QueryMessage): Mono<Pair<QueryResponseMessage.QueryResponseMessageKind, OutboundMessage>> {
+      return Mono.defer {
+         logger.info { "Query ${queryMessage.clientQueryId} has completed, sending stream end message" }
+         val responseMessage = QueryResponseMessage.COMPLETED
+         val messageBytes = objectMapper.writeValueAsBytes(responseMessage)
+         Mono.just(
+            responseMessage.messageKind to
+               OutboundMessage(
+                  RabbitAdmin.RESPONSES_EXCHANGE_NAME,
+                  queryMessage.clientQueryId,
+                  messageBytes
+               )
          )
-      )
+      }
+
    }
 
    private fun writeResultToRabbitMq(
-      message: OutboundMessage
+      message: OutboundMessage,
    ): Flux<OutboundMessageResult<OutboundMessage>> {
       return rabbitSender.sendWithPublishConfirms(
          Mono.just(message)
       )
    }
 
-   private fun executeQuery(queryMessage: QueryMessage): Flux<OutboundMessage> {
+   private fun executeQuery(queryMessage: QueryMessage): Flux<Pair<QueryResponseMessage.QueryResponseMessageKind, OutboundMessage>> {
       val vyne = vyneFactory.buildVyne(queryMessage)
       val args = queryMessage.args()
 
@@ -139,11 +172,13 @@ class RabbitMqQueryExecutor(
       }
 
       return flow.asFlux()
+         .subscribeOn(Schedulers.boundedElastic())
          .map { result ->
             logger.debug { "Query ${queryMessage.clientQueryId} emitting result" }
             QueryResponseMessage.streamResult(result.toRawObject())
          }
          .onErrorResume { error ->
+            logger.withQueryId(queryMessage.clientQueryId).error(error) { "An error occurred in processing the query" }
             Mono.just(
                QueryResponseMessage.error(
                   error.message ?: "An unknown error occurred, with error type ${error::class.simpleName}"
@@ -151,7 +186,7 @@ class RabbitMqQueryExecutor(
             )
          }
          .map { queryResponseMessage ->
-            wrapInRabbitMessage(queryMessage, queryResponseMessage)
+            queryResponseMessage.messageKind to wrapInRabbitMessage(queryMessage, queryResponseMessage)
          }
          // When the query is finished, send a stream ended message.
          // concatMap() didn't work here - only the termination message (ie., the
@@ -162,17 +197,18 @@ class RabbitMqQueryExecutor(
 
    private fun wrapInRabbitMessage(
       message: QueryMessage,
-      queryResponseMessage: QueryResponseMessage?
+      queryResponseMessage: QueryResponseMessage
    ) = OutboundMessage(
       RabbitAdmin.RESPONSES_EXCHANGE_NAME,
       message.clientQueryId,
-      objectMapper.writeValueAsBytes(queryResponseMessage)
+      objectMapper.writeValueAsBytes(queryResponseMessage),
    )
 
    @VisibleForTesting
    internal fun setupRabbit(): Mono<AMQP.Exchange.DeclareOk> {
       return RabbitAdmin.createQueriesExchangeAndQueue(rabbitSender)
          .then(RabbitAdmin.createResponsesExchange(rabbitSender))
+         .cache()
    }
 
 }

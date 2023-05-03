@@ -19,11 +19,13 @@ import io.vyne.query.runtime.core.dispatcher.rabbitmq.RabbitAdmin.QUERIES_QUEUE_
 import io.vyne.query.runtime.core.dispatcher.rabbitmq.RabbitAdmin.QUERY_EXCHANGE_NAME
 import io.vyne.query.runtime.core.dispatcher.rabbitmq.RabbitAdmin.RESPONSES_EXCHANGE_NAME
 import io.vyne.schema.api.SchemaProvider
+import io.vyne.utils.withQueryId
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import reactor.rabbitmq.*
+import java.time.Duration
 
 /**
  * Sends queries onto a RabbitMQ queue
@@ -63,7 +65,9 @@ class RabbitMqQueueDispatcher(
    ): Flux<Any> {
 
       val replyQueueName = RabbitAdmin.replyQueueName(clientQueryId)
-      return createTemporaryQueue(replyQueueName, clientQueryId)
+      return Mono.just(replyQueueName)
+         .publishOn(Schedulers.boundedElastic())
+         .flatMap { createTemporaryQueue(replyQueueName, clientQueryId) }
          .map { _ ->
             QueryMessage(
                query = query,
@@ -77,34 +81,37 @@ class RabbitMqQueueDispatcher(
             )
          }
          .flatMap { sendMessageToQueue(it) }
-         .flatMapMany { queryMessage -> consumeResponses(queryMessage) }
+         .flatMapMany { queryMessage ->
+            consumeResponses(queryMessage)
+         }
    }
 
    private fun consumeResponses(queryMessage: QueryMessage): Flux<Any> {
-      return setupRabbit().flatMapMany { rabbitReceiver.consumeAutoAck(queryMessage.replyTo!!) }
+      return rabbitReceiver.consumeAutoAck(queryMessage.replyTo!!)
          .map { messageDelivery ->
+            logger.withQueryId(queryMessage.clientQueryId).debug { "Inbound message for query ${queryMessage.clientQueryId} received" }
             objectMapper.readValue<QueryResponseMessage>(messageDelivery.body)
          }
          .handle { responseMessage, sink ->
             when (responseMessage.messageKind) {
                QueryResponseMessage.QueryResponseMessageKind.ERROR -> {
-                  logger.info { "Query ${queryMessage.clientQueryId} failed with error ${responseMessage.message}" }
+                  logger.withQueryId(queryMessage.clientQueryId).info { "Query ${queryMessage.clientQueryId} failed with error ${responseMessage.message}" }
                   sink.error(QueryFailedException(responseMessage.message!!))
                }
 
                QueryResponseMessage.QueryResponseMessageKind.RESULT -> {
-                  logger.info { "Query ${queryMessage.clientQueryId} received result" }
+                  logger.withQueryId(queryMessage.clientQueryId).info { "Query ${queryMessage.clientQueryId} received result" }
                   sink.next(responseMessage.payload!!)
                   sink.complete()
                }
 
                QueryResponseMessage.QueryResponseMessageKind.STREAM_MESSAGE -> {
-                  logger.info { "Query ${queryMessage.clientQueryId} received result stream update" }
+                  logger.withQueryId(queryMessage.clientQueryId).info { "Query ${queryMessage.clientQueryId} received result stream update" }
                   sink.next(responseMessage.payload!!)
                }
 
                QueryResponseMessage.QueryResponseMessageKind.END_OF_STREAM -> {
-                  logger.info { "Query ${queryMessage.clientQueryId} has finished" }
+                  logger.withQueryId(queryMessage.clientQueryId).info { "Query ${queryMessage.clientQueryId} has finished" }
                   sink.complete()
                }
             }
@@ -116,16 +123,20 @@ class RabbitMqQueueDispatcher(
       val jsonMessage = objectMapper.writeValueAsBytes(message)
       val outboundMessage = OutboundMessage(QUERY_EXCHANGE_NAME, QUERIES_QUEUE_NAME, jsonMessage)
       val messagePublisher = Mono.just(outboundMessage)
+      val publishAckTimeout = Duration.ofSeconds(10)
+      return rabbitSender.send(messagePublisher)
+         .then(Mono.fromCallable { queryMessage })
+
       return rabbitSender.sendWithPublishConfirms(messagePublisher, SendOptions().trackReturned(true))
-         .doOnRequest { logger.info { "Dispatching query ${queryMessage.clientQueryId} to exchange ${outboundMessage.exchange} with key ${outboundMessage.routingKey}" } }
+         .doOnRequest { logger.withQueryId(queryMessage.clientQueryId).info { "Dispatching query ${queryMessage.clientQueryId} to exchange ${outboundMessage.exchange} with key ${outboundMessage.routingKey}" } }
          .filter { publicationResult ->
             if (publicationResult.isAck && !publicationResult.isReturned) {
-               logger.debug { "Query ${queryMessage.clientQueryId} dispatched successfully" }
+               logger.withQueryId(queryMessage.clientQueryId).debug { "Query ${queryMessage.clientQueryId} dispatched successfully" }
             } else {
-               logger.warn { "Failed to dispatch query ${queryMessage.clientQueryId}" }
+               logger.withQueryId(queryMessage.clientQueryId).warn { "Failed to dispatch query ${queryMessage.clientQueryId}" }
             }
             if (publicationResult.isReturned) {
-               logger.warn { "Query message ${queryMessage.clientQueryId} was returned by the broker because there are no configured destinations" }
+               logger.withQueryId(queryMessage.clientQueryId).warn { "Query message ${queryMessage.clientQueryId} was returned by the broker because there are no configured destinations" }
             }
             publicationResult.isAck && !publicationResult.isReturned
          }
@@ -133,6 +144,8 @@ class RabbitMqQueueDispatcher(
             subscriber.onError(QueryFailedException("Message failed to be delivered to any consumers before the message timed out.  "))
          }
          .single()
+         .timeout(publishAckTimeout)
+         .doOnError { logger.withQueryId(queryMessage.clientQueryId).error { "Did not receive an ACK for publishing the query to Rabbit within $publishAckTimeout" } }
          .map { _ -> queryMessage }
    }
 
@@ -148,7 +161,7 @@ class RabbitMqQueueDispatcher(
                   queryId,
                   queueName
                )
-            )
+            ).doOnRequest { logger.info { "Binding temporary reply queue for $queryId to $queueName for exchange ${RabbitAdmin.RESPONSES_EXCHANGE_NAME}" } }
          )
 
    }

@@ -1,5 +1,6 @@
 package io.vyne.query.runtime.executor
 
+import mu.KotlinLogging
 import org.springframework.cloud.client.ServiceInstance
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.client.loadbalancer.LoadBalancerUriTools
@@ -19,6 +20,10 @@ import reactor.core.publisher.Mono
  *
  */
 class LoadBalancerFilterFunction(private val discoveryClient: DiscoveryClient) : ExchangeFilterFunction {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+
    override fun filter(request: ClientRequest, next: ExchangeFunction): Mono<ClientResponse> {
       val host = request.url().host
       val instance = discoveryClient.getInstances(host)?.randomOrNull()
