@@ -1,17 +1,17 @@
-import { BrowserModule } from '@angular/platform-browser';
-import { ApplicationRef, DoBootstrap, NgModule, Optional } from '@angular/core';
+import {BrowserModule} from '@angular/platform-browser';
+import {ApplicationRef, DoBootstrap, NgModule, Optional} from '@angular/core';
 
-import { AppComponent } from './app.component';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { LayoutModule } from '@angular/cdk/layout';
-import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
-import { TypesService } from './services/types.service';
-import { QueryService } from './services/query.service';
-import { SearchService } from './search/search.service';
-import { VyneModule } from './vyne/vyne.module';
-import { AuthModule } from './auth/auth.module';
-import { AuthService } from './auth/auth.service';
+import {AppComponent} from './app.component';
+import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
+import {LayoutModule} from '@angular/cdk/layout';
+import {CommonModule} from '@angular/common';
+import {HttpClientModule} from '@angular/common/http';
+import {TypesService} from './services/types.service';
+import {QueryService} from './services/query.service';
+import {SearchService} from './search/search.service';
+import {VyneModule} from './vyne/vyne.module';
+import {AuthModule} from './auth/auth.module';
+import {AuthService} from './auth/auth.service';
 import {
   TuiAlertModule,
   TuiButtonModule,
@@ -20,16 +20,17 @@ import {
   TuiRootModule,
   TuiScrollbarModule
 } from '@taiga-ui/core';
-import { LandingPageModule } from './landing-page/landing-page.module';
-import { VYNE_ROUTES } from 'src/app/vyne.routes';
-import { ConfirmationDialogModule } from 'src/app/confirmation-dialog/confirmation-dialog.module';
-import { LANGUAGE_SERVER_WS_ADDRESS_TOKEN } from 'src/app/code-editor/code-editor.component';
-import { WebsocketService } from 'src/app/services/websocket.service';
-import { environment } from 'src/environments/environment';
-import { ENVIRONMENT } from 'src/app/services/environment';
-import { TuiInputModule } from '@taiga-ui/kit';
+import {LandingPageModule} from './landing-page/landing-page.module';
+import {VYNE_ROUTES} from 'src/app/vyne.routes';
+import {ConfirmationDialogModule} from 'src/app/confirmation-dialog/confirmation-dialog.module';
+import {LANGUAGE_SERVER_WS_ADDRESS_TOKEN} from 'src/app/code-editor/code-editor.component';
+import {WebsocketService} from 'src/app/services/websocket.service';
+import {environment} from 'src/environments/environment';
+import {ENVIRONMENT} from 'src/app/services/environment';
+import {TuiInputModule} from '@taiga-ui/kit';
 import {PolymorpheusModule} from "@tinkoff/ng-polymorpheus";
 import {TuiDialogHostModule, TuiFocusTrapModule, TuiOverscrollModule} from "@taiga-ui/cdk";
+import {MatNativeDateModule} from "@angular/material/core";
 
 
 const oauth2OidcModule = [AuthModule];
@@ -64,6 +65,7 @@ const oauth2OidcModule = [AuthModule];
     TuiScrollbarModule,
     TuiOverscrollModule,
     TuiDialogHostModule,
+    MatNativeDateModule,
   ],
   providers: [
     TypesService,
