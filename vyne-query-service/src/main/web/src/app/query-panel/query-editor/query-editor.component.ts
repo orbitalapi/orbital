@@ -46,10 +46,10 @@ import {
 import {TuiDialogService} from '@taiga-ui/core';
 import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
 import {appendToQuery} from "./query-code-generator";
-import ITextModel = editor.ITextModel;
-import ICodeEditor = editor.ICodeEditor;
 import {SaveQueryPanelComponent, SaveQueryPanelProps} from "./save-query-panel.component";
 import {SavedQuery} from "../../services/type-editor.service";
+import ITextModel = editor.ITextModel;
+import ICodeEditor = editor.ICodeEditor;
 
 declare const monaco: any; // monaco
 @Component({
@@ -199,6 +199,7 @@ export class QueryEditorComponent implements OnInit {
         console.log('Failed to parse ChatGPT query');
         console.log(error);
         this.lastErrorMessage = 'A problem occurred parsing the text to a query';
+        this.currentState$.next('Error');
       });
   }
 
