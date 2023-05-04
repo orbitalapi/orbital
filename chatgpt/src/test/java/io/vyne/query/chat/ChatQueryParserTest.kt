@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.kotest.core.spec.style.DescribeSpec
-import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.shouldBe
 import io.vyne.schemas.taxi.TaxiSchema
 
@@ -61,12 +60,14 @@ class ChatQueryParserTest : DescribeSpec({
             .readValue<ChatGptQuery>(json)
          query.shouldBe(
             ChatGptQuery(
-               fields = listOf("DurationInMinutes", "Rating"),
-               conditions = listOf(
-                  Condition(
-                     Condition.Operator.Equals,
-                     left = FieldCondition("Title"),
-                     right = LiteralCondition("Gladiator")
+               structuredQuery = StructuredQuery(
+                  fields = listOf("DurationInMinutes", "Rating"),
+                  conditions = listOf(
+                     Condition(
+                        Condition.Operator.Equals,
+                        left = FieldCondition("Title"),
+                        right = LiteralCondition("Gladiator")
+                     )
                   )
                )
             )

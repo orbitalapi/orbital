@@ -12,16 +12,26 @@ object TaxiQlGenerator {
    private val logger = KotlinLogging.logger {}
 
    fun convertToTaxi(query: ChatGptQuery, schema: Schema): TaxiQLQueryString {
-      val findClause = buildFindClause(query.conditions, schema)
-      val projection = buildProjection(query, findClause.returnsCollection)
-      return """${findClause.taxi}
+      if (query.taxi != null) {
+         return query.taxi
+      } else {
+         require(query.structuredQuery != null) { "Expected either taxi or a structure query" }
+         val findClause = buildFindClause(query.structuredQuery.conditions, schema)
+         val projection = buildProjection(query.structuredQuery, findClause.returnsCollection)
+         return """${findClause.taxi}
          |$projection
       """.trimMargin().trim()
+      }
+
    }
 
-   private fun buildProjection(query: ChatGptQuery, returnsCollection: Boolean): String {
+   private fun buildProjection(query: StructuredQuery, returnsCollection: Boolean): String {
       val collectionPostfix = if (returnsCollection) "[]" else ""
-      return query.fields.joinToString(separator = "\n", prefix = "as {\n", postfix = "\n}$collectionPostfix") { requestedField ->
+      return query.fields.joinToString(
+         separator = "\n",
+         prefix = "as {\n",
+         postfix = "\n}$collectionPostfix"
+      ) { requestedField ->
          val qualifiedName = requestedField.fqn()
          "   ${qualifiedName.name} : ${qualifiedName.parameterizedName}"
       }
@@ -29,7 +39,7 @@ object TaxiQlGenerator {
    }
 
    data class FindClause(
-      val taxi:String,
+      val taxi: String,
       val returnsCollection: Boolean
    )
    private fun buildFindClause(conditions: List<Condition>, schema: Schema): FindClause {

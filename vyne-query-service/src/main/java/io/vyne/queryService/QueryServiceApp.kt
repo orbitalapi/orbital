@@ -42,6 +42,7 @@ import io.vyne.spring.http.auth.HttpAuthConfig
 import io.vyne.spring.projection.ApplicationContextProvider
 import io.vyne.spring.utils.versionOrDev
 import io.vyne.utils.log
+import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
@@ -67,6 +68,7 @@ import org.springframework.http.codec.json.KotlinSerializationJsonEncoder
 import org.springframework.web.reactive.config.WebFluxConfigurer
 import reactivefeign.spring.config.EnableReactiveFeignClients
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 
 @SpringBootApplication(scanBasePackageClasses = [QueryServiceApp::class, OrbitalStationConfig::class])
@@ -103,7 +105,7 @@ class QueryServiceApp {
 
    @Bean
    fun chatGptService(@Value("\${vyne.chat-gpt.api-key:''}") apiKey: String): ChatQueryParser {
-      return ChatQueryParser(apiKey)
+      return ChatQueryParser(apiKey, OkHttpClient().newBuilder().readTimeout(30, TimeUnit.SECONDS).build())
    }
 
 

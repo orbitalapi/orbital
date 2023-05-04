@@ -37,24 +37,29 @@ class TaxiQlGeneratorTest : DescribeSpec({
       }
 
       }
-      """.trimIndent())
+      """.trimIndent()
+   )
    it("should generate TaxiQL") {
-      val query =  ChatGptQuery(
-         fields = listOf("films.DurationInMinutes", "films.Rating"),
-         conditions = listOf(
-            Condition(
-               Condition.Operator.Equals,
-               left = FieldCondition("films.Title"),
-               right = LiteralCondition("Gladiator")
+      val query = ChatGptQuery(
+         structuredQuery = StructuredQuery(
+            fields = listOf("films.DurationInMinutes", "films.Rating"),
+            conditions = listOf(
+               Condition(
+                  Condition.Operator.Equals,
+                  left = FieldCondition("films.Title"),
+                  right = LiteralCondition("Gladiator")
+               )
             )
          )
       )
       val taxi = TaxiQlGenerator.convertToTaxi(query, schema)
-      taxi.shouldBe("""find { Film[]( films.Title == "Gladiator" ) }
+      taxi.shouldBe(
+         """find { Film[]( films.Title == "Gladiator" ) }
 as {
    DurationInMinutes : films.DurationInMinutes
    Rating : films.Rating
-}[]""")
+}[]"""
+      )
    }
 
 
