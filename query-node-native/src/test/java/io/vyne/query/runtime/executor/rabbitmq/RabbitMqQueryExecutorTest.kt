@@ -9,9 +9,7 @@ import com.rabbitmq.client.Address
 import com.rabbitmq.client.ConnectionFactory
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
-import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.vyne.auth.tokens.AuthConfig
 import io.vyne.connectors.config.ConnectorsConfig
@@ -21,7 +19,6 @@ import io.vyne.query.QueryResponseMessage
 import io.vyne.query.runtime.QueryMessage
 import io.vyne.query.runtime.QueryMessageCborWrapper
 import io.vyne.query.runtime.core.dispatcher.rabbitmq.RabbitAdmin
-import io.vyne.query.runtime.core.dispatcher.rabbitmq.RabbitMqQueueDispatcher
 import io.vyne.query.runtime.executor.StandaloneVyneFactory
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
@@ -45,7 +42,7 @@ class RabbitMqQueryExecutorTest {
       .withExposedPorts(5672, 15672)
       .withVhost("/")
       .withUser("admin", "admin")
-      .withPermission("/", "admin", ".*", ".*", ".*");
+      .withPermission("/", "admin", ".*", ".*", ".*")
 
    lateinit var rabbitSender: Sender
    lateinit var rabbitReceiver: Receiver
@@ -69,21 +66,6 @@ class RabbitMqQueryExecutorTest {
       queryExecutor = createQueryExecutor(parallelism)
 
       queryExecutor.setupRabbit()
-         .then(
-            rabbitSender.declareQueue(
-               QueueSpecification.queue(RabbitAdmin.QUERIES_QUEUE_NAME)
-                  .arguments(mapOf("message-ttl" to 60000))
-            )
-               .flatMap {
-                  rabbitSender.bindQueue(
-                     BindingSpecification.queueBinding(
-                        RabbitAdmin.QUERY_EXCHANGE_NAME,
-                        "",
-                        RabbitAdmin.QUERIES_QUEUE_NAME
-                     )
-                  )
-               }
-         )
          .block()
       return queryExecutor
    }
@@ -103,7 +85,7 @@ class RabbitMqQueryExecutorTest {
          .then {
             sendQuery(query, queryId)
          }
-         .expectNextMatches { outboundMessageResult ->
+         .expectNextMatches { (messageKind, outboundMessageResult) ->
             verifyReceivedMessageMatches(
                outboundMessageResult,
                queryId,
@@ -111,7 +93,7 @@ class RabbitMqQueryExecutorTest {
                mapOf("response" to "Hello, world")
             )
          }
-         .expectNextMatches { outboundMessageResult ->
+         .expectNextMatches { (messageKind, outboundMessageResult) ->
             verifyReceivedMessageMatches(
                outboundMessageResult,
                queryId,
@@ -141,7 +123,7 @@ class RabbitMqQueryExecutorTest {
 
       queryExecutor.consumeAndExecuteQueries()
          .take(6)
-         .subscribe { message ->
+         .subscribe { (messageKind, message) ->
             objectMapper.readValue<QueryResponseMessage>(message.outboundMessage.body)
             collectedMessages.add(message)
          }

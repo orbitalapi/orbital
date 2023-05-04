@@ -12,7 +12,6 @@ import io.vyne.query.QueryResponseMessage
 import io.vyne.query.runtime.QueryMessage
 import io.vyne.query.runtime.QueryMessageCborWrapper
 import io.vyne.query.runtime.core.dispatcher.rabbitmq.RabbitAdmin.QUERIES_QUEUE_NAME
-import io.vyne.query.runtime.core.dispatcher.rabbitmq.RabbitAdmin.QUERY_EXCHANGE_NAME
 import io.vyne.query.runtime.core.dispatcher.rabbitmq.RabbitAdmin.RESPONSES_EXCHANGE_NAME
 import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemas.taxi.TaxiSchema
@@ -22,13 +21,14 @@ import lang.taxi.utils.log
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.jupiter.api.Assertions.*
 import org.junit.rules.TemporaryFolder
 import org.testcontainers.containers.RabbitMQContainer
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import reactor.kotlin.test.test
-import reactor.rabbitmq.*
+import reactor.rabbitmq.OutboundMessage
+import reactor.rabbitmq.Receiver
+import reactor.rabbitmq.Sender
 import reactor.test.StepVerifier
 import java.time.Duration
 
@@ -62,21 +62,6 @@ class RabbitMqQueueDispatcherTest {
       dispatcher = createDispatcher()
 
       dispatcher.setupRabbit()
-         .then(
-            rabbitSender.declareQueue(
-               QueueSpecification.queue(QUERIES_QUEUE_NAME)
-                  .arguments(mapOf("message-ttl" to 60000))
-            )
-               .flatMap {
-                  rabbitSender.bindQueue(
-                     BindingSpecification.queueBinding(
-                        QUERY_EXCHANGE_NAME,
-                        "",
-                        QUERIES_QUEUE_NAME
-                     )
-                  )
-               }
-         )
          .block()
    }
 
