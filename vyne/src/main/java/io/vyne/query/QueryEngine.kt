@@ -515,7 +515,8 @@ class StatefulQueryEngine(
             val constraintsSuffix = if (target.dataConstraints.isNotEmpty()) {
                "with the ${target.dataConstraints.size} constraints provided"
             } else ""
-            logger.debug { "No strategy found for discovering type ${target.description} $constraintsSuffix".trim() }
+            val message = "No data sources were found that can return ${target.description} $constraintsSuffix".trim()
+            logger.debug { message }
             if (strategyProvidedFlow) {
                // We found a strategy which provided a flow of data, but the flow didn't yield any results.
                // TODO : Should we just be closing here?  Perhaps we should emit some form of TypedNull,
@@ -525,7 +526,7 @@ class StatefulQueryEngine(
             } else {
                // We didn't find a strategy to provide any data.
                throw UnresolvedTypeInQueryException(
-                  "No strategy found for discovering type ${target.description} $constraintsSuffix".trim(),
+                  message,
                   target.type.name,
                   emptyList(),
                   context,

@@ -45,7 +45,7 @@ data class QuerySpecTypeNode(
       }
    }
 
-   val description = type.longDisplayName
+   val description = type.name.shortDisplayName
 }
 
 
