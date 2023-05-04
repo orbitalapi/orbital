@@ -1,30 +1,14 @@
 package io.vyne.cask.services
 
 import com.google.common.util.concurrent.MoreExecutors
-import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.argumentCaptor
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.times
-import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.whenever
+import com.nhaarman.mockito_kotlin.*
 import com.winterbe.expekt.should
 import io.kotest.matchers.shouldBe
 import io.vyne.*
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.schema
 import io.vyne.cask.ddl.views.taxiViews.SchemaBasedViewGenerator
-import io.vyne.cask.query.generators.FindAllGenerator
-import io.vyne.cask.query.generators.FindBetweenInsertedAtOperationGenerator
-import io.vyne.cask.query.generators.FindByFieldIdOperationGenerator
-import io.vyne.cask.query.generators.FindByIdGenerators
-import io.vyne.cask.query.generators.FindByMultipleGenerator
-import io.vyne.cask.query.generators.FindBySingleResultGenerator
-import io.vyne.cask.query.generators.InsertedAtGreaterThanOrEqualsToStartLessThanOrEqualsToEndOperationGenerator
-import io.vyne.cask.query.generators.InsertedAtGreaterThanStartLessThanEndOperationGenerator
-import io.vyne.cask.query.generators.InsertedAtGreaterThanStartLessThanOrEqualsToEndOperationGenerator
-import io.vyne.cask.query.generators.OperationAnnotation
-import io.vyne.cask.query.generators.OperationGeneratorConfig
-import io.vyne.cask.query.generators.VyneQlOperationGenerator
+import io.vyne.cask.query.generators.*
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.publisher.SchemaPublisherTransport
@@ -34,8 +18,6 @@ import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.withoutWhitespace
 import lang.taxi.types.QualifiedName
 import org.junit.Test
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.fail
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Sinks
 
@@ -135,7 +117,7 @@ namespace vyne.cask {
       caskMessageId : CaskMessageId
    }
 
-   @ServiceDiscoveryClient(serviceName = "cask")
+   @HttpService(baseUrl = "http://cask")
    @Datasource
    service OrderWindowSummaryCsvCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummaryCsv")
@@ -192,7 +174,7 @@ namespace vyne.cask {
       caskMessageId : CaskMessageId
    }
 
-   @ServiceDiscoveryClient(serviceName = "cask")
+   @HttpService(baseUrl = "http://cask")
    @Datasource
    service OrderWindowSummaryCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummary")
@@ -295,7 +277,7 @@ namespace vyne.cask {
       caskMessageId : CaskMessageId
    }
 
-   @ServiceDiscoveryClient(serviceName = "cask")
+   @HttpService(baseUrl = "http://cask")
    @Datasource
    service SimpleCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/Simple")
@@ -395,7 +377,7 @@ namespace vyne.cask {
       caskMessageId : CaskMessageId
    }
 
-   @ServiceDiscoveryClient(serviceName = "cask")
+   @HttpService(baseUrl = "http://cask")
    @Datasource(exclude = "[[Service1, Service2]]")
    service SimpleViewCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/SimpleView")
