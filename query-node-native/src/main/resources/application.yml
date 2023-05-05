@@ -34,4 +34,4 @@ management:
 logging:
    level:
 #     org.springframework: DEBUG
-     io.vyne: INFO
+     io.vyne: DEBUG

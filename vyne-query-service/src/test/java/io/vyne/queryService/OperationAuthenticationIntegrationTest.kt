@@ -35,6 +35,7 @@ import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 
 @RunWith(SpringRunner::class)
@@ -48,6 +49,7 @@ import org.springframework.test.context.junit4.SpringRunner
       "vyne.search.directory=./search/\${random.int}"
    ]
 )
+@ActiveProfiles("test")
 class OperationAuthenticationIntegrationTest {
    private lateinit var taxiSchema: TaxiSchema
 

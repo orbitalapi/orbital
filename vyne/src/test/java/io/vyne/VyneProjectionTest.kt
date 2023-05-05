@@ -4,35 +4,18 @@ import app.cash.turbine.test
 import app.cash.turbine.testIn
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.base.Stopwatch
-import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.vyne.models.EvaluatedExpression
-import io.vyne.models.FailedEvaluatedExpression
-import io.vyne.models.MappedSynonym
-import io.vyne.models.OperationResult
-import io.vyne.models.OperationResultDataSourceWrapper
-import io.vyne.models.OperationResultReference
-import io.vyne.models.Provided
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
+import io.vyne.models.*
 import io.vyne.models.facts.FactBag
 import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonCollection
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
-import io.vyne.query.EmptyExchangeData
-import io.vyne.query.Projection
-import io.vyne.query.QueryContext
-import io.vyne.query.RemoteCall
-import io.vyne.query.ResponseMessageType
-import io.vyne.query.UnresolvedTypeInQueryException
-import io.vyne.query.VyneQueryStatistics
+import io.vyne.query.*
 import io.vyne.query.projection.ProjectionProvider
 import io.vyne.schemas.OperationInvocationException
 import io.vyne.schemas.OperationNames
@@ -130,7 +113,7 @@ service Broker1Service {
          """.trimIndent()
          ).firstRawObject()
       }
-      exception.message!!.shouldBe("No strategy found for discovering type Film")
+      exception.message!!.shouldBe("No data sources were found that can return Film")
    }
 
    @Test

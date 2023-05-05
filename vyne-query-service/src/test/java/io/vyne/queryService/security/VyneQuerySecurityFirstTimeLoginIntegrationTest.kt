@@ -24,12 +24,14 @@ import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import java.io.File
 
 private val logger = KotlinLogging.logger {  }
 @RunWith(SpringRunner::class)
 @AutoConfigureWireMock(port = 0)
+@ActiveProfiles("test")
 @SpringBootTest(
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
    properties = [

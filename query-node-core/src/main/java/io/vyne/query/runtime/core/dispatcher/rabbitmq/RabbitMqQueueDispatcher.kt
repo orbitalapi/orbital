@@ -23,7 +23,6 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import reactor.rabbitmq.*
-import java.time.Duration
 
 /**
  * Sends queries onto a RabbitMQ queue
@@ -121,32 +120,8 @@ class RabbitMqQueueDispatcher(
       val jsonMessage = objectMapper.writeValueAsBytes(message)
       val outboundMessage = OutboundMessage(QUERY_EXCHANGE_NAME, QUERIES_QUEUE_NAME, jsonMessage)
       val messagePublisher = Mono.just(outboundMessage)
-      val publishAckTimeout = Duration.ofSeconds(10)
       return rabbitSender.send(messagePublisher)
          .then(Mono.fromCallable { queryMessage })
-
-      // Publish with confirms caused performance issues, and was not reliabliy detecting missed deliveries.
-      // Will revisit this later.
-//      return rabbitSender.sendWithPublishConfirms(messagePublisher, SendOptions().trackReturned(true))
-//         .doOnRequest { logger.withQueryId(queryMessage.clientQueryId).info { "Dispatching query ${queryMessage.clientQueryId} to exchange ${outboundMessage.exchange} with key ${outboundMessage.routingKey}" } }
-//         .filter { publicationResult ->
-//            if (publicationResult.isAck && !publicationResult.isReturned) {
-//               logger.withQueryId(queryMessage.clientQueryId).debug { "Query ${queryMessage.clientQueryId} dispatched successfully" }
-//            } else {
-//               logger.withQueryId(queryMessage.clientQueryId).warn { "Failed to dispatch query ${queryMessage.clientQueryId}" }
-//            }
-//            if (publicationResult.isReturned) {
-//               logger.withQueryId(queryMessage.clientQueryId).warn { "Query message ${queryMessage.clientQueryId} was returned by the broker because there are no configured destinations" }
-//            }
-//            publicationResult.isAck && !publicationResult.isReturned
-//         }
-//         .switchIfEmpty { subscriber ->
-//            subscriber.onError(QueryFailedException("Message failed to be delivered to any consumers before the message timed out.  "))
-//         }
-//         .single()
-//         .timeout(publishAckTimeout)
-//         .doOnError { logger.withQueryId(queryMessage.clientQueryId).error { "Did not receive an ACK for publishing the query to Rabbit within $publishAckTimeout" } }
-//         .map { _ -> queryMessage }
    }
 
    private fun createTemporaryQueue(queueName: String, queryId: String): Mono<AMQP.Queue.BindOk> {

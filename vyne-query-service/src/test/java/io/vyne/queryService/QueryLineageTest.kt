@@ -6,12 +6,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.StubService
 import io.vyne.Vyne
 import io.vyne.history.QueryAnalyticsConfig
-import io.vyne.history.db.LineageRecordRepository
-import io.vyne.history.db.QueryHistoryDbWriter
-import io.vyne.history.db.QueryHistoryRecordRepository
-import io.vyne.history.db.QueryResultRowRepository
-import io.vyne.history.db.QuerySankeyChartRowRepository
-import io.vyne.history.db.RemoteCallResponseRepository
+import io.vyne.history.db.*
 import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.query.HistoryEventConsumerProvider
@@ -28,6 +23,7 @@ import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import java.util.*
 import javax.sql.DataSource
@@ -46,6 +42,7 @@ import javax.sql.DataSource
       "spring.datasource.url=jdbc:h2:mem:testdbQueryLineageTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"
    ]
 )
+@ActiveProfiles("test")
 class QueryLineageTest : BaseQueryServiceTest() {
    @Autowired
    lateinit var datasource: DataSource
