@@ -31,7 +31,7 @@ spring:
       driverClassName: org.h2.Driver
    sql:
       init:
-         schema-locations: classpath:schema.sql
+         schema-locations: classpath:schema-h2.sql
          mode: always
 
 server:
