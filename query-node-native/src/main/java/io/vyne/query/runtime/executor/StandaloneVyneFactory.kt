@@ -13,6 +13,7 @@ import io.vyne.connectors.jdbc.HikariJdbcConnectionFactory
 import io.vyne.connectors.jdbc.JdbcInvoker
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.query.QueryEngineFactory
+import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.query.runtime.QueryMessage
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.api.SchemaWithSourcesSchemaProvider
@@ -73,13 +74,12 @@ class StandaloneVyneFactory(
       val jdbcInvoker = buildJdbcInvoker(message.connections, schemaProvider)
       val httpInvoker = buildHttpInvoker(schemaProvider, message)
 
+      val invokers = listOf(jdbcInvoker, httpInvoker)
       return Vyne(
          listOf(schemaProvider.schema),
          QueryEngineFactory.withOperationInvokers(
             cacheConfiguration,
-            listOf(
-               jdbcInvoker, httpInvoker
-            )
+            CacheAwareOperationInvocationDecorator.decorateAll(invokers)
          )
       )
 
