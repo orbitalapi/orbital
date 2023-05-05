@@ -3,8 +3,6 @@ package io.vyne.query.runtime.core.dispatcher.rabbitmq
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.rabbitmq.client.AMQP
-import com.rabbitmq.client.Address
-import com.rabbitmq.client.ConnectionFactory
 import io.vyne.auth.tokens.AuthTokenRepository
 import io.vyne.connectors.config.ConfigFileConnectorsRegistry
 import io.vyne.http.ServicesConfigRepository
@@ -127,26 +125,28 @@ class RabbitMqQueueDispatcher(
       return rabbitSender.send(messagePublisher)
          .then(Mono.fromCallable { queryMessage })
 
-      return rabbitSender.sendWithPublishConfirms(messagePublisher, SendOptions().trackReturned(true))
-         .doOnRequest { logger.withQueryId(queryMessage.clientQueryId).info { "Dispatching query ${queryMessage.clientQueryId} to exchange ${outboundMessage.exchange} with key ${outboundMessage.routingKey}" } }
-         .filter { publicationResult ->
-            if (publicationResult.isAck && !publicationResult.isReturned) {
-               logger.withQueryId(queryMessage.clientQueryId).debug { "Query ${queryMessage.clientQueryId} dispatched successfully" }
-            } else {
-               logger.withQueryId(queryMessage.clientQueryId).warn { "Failed to dispatch query ${queryMessage.clientQueryId}" }
-            }
-            if (publicationResult.isReturned) {
-               logger.withQueryId(queryMessage.clientQueryId).warn { "Query message ${queryMessage.clientQueryId} was returned by the broker because there are no configured destinations" }
-            }
-            publicationResult.isAck && !publicationResult.isReturned
-         }
-         .switchIfEmpty { subscriber ->
-            subscriber.onError(QueryFailedException("Message failed to be delivered to any consumers before the message timed out.  "))
-         }
-         .single()
-         .timeout(publishAckTimeout)
-         .doOnError { logger.withQueryId(queryMessage.clientQueryId).error { "Did not receive an ACK for publishing the query to Rabbit within $publishAckTimeout" } }
-         .map { _ -> queryMessage }
+      // Publish with confirms caused performance issues, and was not reliabliy detecting missed deliveries.
+      // Will revisit this later.
+//      return rabbitSender.sendWithPublishConfirms(messagePublisher, SendOptions().trackReturned(true))
+//         .doOnRequest { logger.withQueryId(queryMessage.clientQueryId).info { "Dispatching query ${queryMessage.clientQueryId} to exchange ${outboundMessage.exchange} with key ${outboundMessage.routingKey}" } }
+//         .filter { publicationResult ->
+//            if (publicationResult.isAck && !publicationResult.isReturned) {
+//               logger.withQueryId(queryMessage.clientQueryId).debug { "Query ${queryMessage.clientQueryId} dispatched successfully" }
+//            } else {
+//               logger.withQueryId(queryMessage.clientQueryId).warn { "Failed to dispatch query ${queryMessage.clientQueryId}" }
+//            }
+//            if (publicationResult.isReturned) {
+//               logger.withQueryId(queryMessage.clientQueryId).warn { "Query message ${queryMessage.clientQueryId} was returned by the broker because there are no configured destinations" }
+//            }
+//            publicationResult.isAck && !publicationResult.isReturned
+//         }
+//         .switchIfEmpty { subscriber ->
+//            subscriber.onError(QueryFailedException("Message failed to be delivered to any consumers before the message timed out.  "))
+//         }
+//         .single()
+//         .timeout(publishAckTimeout)
+//         .doOnError { logger.withQueryId(queryMessage.clientQueryId).error { "Did not receive an ACK for publishing the query to Rabbit within $publishAckTimeout" } }
+//         .map { _ -> queryMessage }
    }
 
    private fun createTemporaryQueue(queueName: String, queryId: String): Mono<AMQP.Queue.BindOk> {
