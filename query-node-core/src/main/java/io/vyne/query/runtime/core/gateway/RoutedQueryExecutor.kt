@@ -3,12 +3,9 @@ package io.vyne.query.runtime.core.gateway
 import io.vyne.query.runtime.core.dispatcher.StreamingQueryDispatcher
 import io.vyne.utils.Ids
 import mu.KotlinLogging
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 
 /**
  * Responsible for executing queries received from a saved query with an Http()
@@ -34,20 +31,30 @@ interface RoutedQueryExecutor {
 //@ConditionalOnBean(StreamingQueryDispatcher::class)
 @Component
 class RoutedQueryDispatcherAdaptor(
-   val dispatcher: StreamingQueryDispatcher
+   // We can't use conditional wiring in Graal native images.
+   // So, this needs to be nullable, and we need to handle the scenario that it wasn't wired.
+   val dispatcher: StreamingQueryDispatcher?
 ) : RoutedQueryExecutor {
    companion object {
       private val logger = KotlinLogging.logger {}
    }
 
    init {
-      logger.info { "RoutedQueryExecutor created.  Will offload queries to dispatcher of type ${dispatcher::class.simpleName}" }
+      if (dispatcher != null) {
+         logger.info { "RoutedQueryExecutor created.  Will offload queries to dispatcher of type ${dispatcher!!::class.simpleName}" }
+      } else {
+         logger.info { "RoutedQueryExecutor created without a dispatcher.  Queries will be rejected." }
+      }
+
    }
 
    override fun handleRoutedQuery(query: RoutedQuery): Flux<Any> {
+      if (dispatcher == null) {
+         error("Cannot dispatch a query without a configured streaming consumer.")
+      }
       val clientQueryId = Ids.id("routed-query-")
-      logger.info { "Received invocation of query ${query.query.name} to route.  Will be routed with queryId $clientQueryId to dispatcher ${dispatcher::class.simpleName}" }
-      return dispatcher.dispatchQuery(
+      logger.info { "Received invocation of query ${query.query.name} to route.  Will be routed with queryId $clientQueryId to dispatcher ${dispatcher!!::class.simpleName}" }
+      return dispatcher!!.dispatchQuery(
          query.querySrc,
          clientQueryId,
          MediaType.APPLICATION_JSON_VALUE,
