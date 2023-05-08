@@ -1,6 +1,6 @@
 # management.endpoints.web.exposure.include=functions.
 server:
-   port: 8081
+   port: 9023
    compression:
       enabled: true
       mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
@@ -30,7 +30,8 @@ management:
    endpoints:
       web:
          exposure:
-            include: functions
+            include: functions,prometheus,metrics,info,health,logfile,loggers
+         base-path: /api/actuator
 logging:
    level:
 #     org.springframework: DEBUG

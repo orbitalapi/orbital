@@ -13,33 +13,62 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import java.time.Duration
 
+/**
+ * In some build configs (where we're using native images),
+ * we can't use Profiles.
+ *
+ *
+ */
 @Configuration
 @Profile(value = ["aws"])
-class AwsConfig {
+class AwsProfileConfig  : BaseAwsMetricsConfig(requireAwsRegionEnvVar = false)
+open class BaseAwsMetricsConfig(
+   /**
+    * If set to true, only registers cloudwatch if the AWS_REGION env var
+    * is explicitly set.
+    *
+    * Otherwise, we default to US_EAST_1 if we can't find one.
+    *
+    * This is used as a cheap way of detecting if we're really running in AWS.
+    * For native images we can't use profiles, so we need a different way to avoid wiring AWS stuff
+    * outside of AWS.
+    */
+   private val requireAwsRegionEnvVar:Boolean) {
 
    private val logger = KotlinLogging.logger {}
 
    @Bean
-   fun currentAwsRegion(): Region {
+   open fun currentAwsRegion(): Region {
       val defaultRegion = Region.US_EAST_1
-      // Seems like the most reliable way of getting region is the AWS_REGION env var
-      val envVarRegion = System.getenv("AWS_REGION")
-      return if (envVarRegion.isNullOrEmpty()) {
-         logger.warn { "AWS_REGION has not been set. Metrics will be associated with region $defaultRegion by default." }
-         defaultRegion
-      } else {
-         try {
-            logger.info { "Detected region $envVarRegion - using it for metrics." }
-            Region.of(envVarRegion)
-         } catch (e: Exception) {
-            logger.warn(e) { "Failed to set region from environment variable of $envVarRegion. Default region $defaultRegion will be used." }
-            defaultRegion
-         }
-      }
+      return explicitAwsRegion ?: defaultRegion
    }
 
+   private val explicitAwsRegion:Region?
+      get() {
+         // Seems like the most reliable way of getting region is the AWS_REGION env var
+         val envVarRegion = System.getenv("AWS_REGION")
+         return if (envVarRegion.isNullOrEmpty()) {
+            logger.warn { "AWS_REGION has not been set." }
+            null
+         } else {
+            try {
+               logger.info { "Detected region $envVarRegion - using it for metrics." }
+               Region.of(envVarRegion)
+            } catch (e: Exception) {
+               logger.warn(e) { "Failed to parse region from environment variable of $envVarRegion." }
+               null
+            }
+         }
+      }
+
    @Bean
-   fun cloudWatchAsyncClient(region: Region): CloudWatchAsyncClient {
+   open fun cloudWatchAsyncClient(region: Region): CloudWatchAsyncClient? {
+      if (explicitAwsRegion == null && requireAwsRegionEnvVar) {
+         logger.warn { "No AWS Region detected - Cloudwatch metrics will be disabled" }
+         return null
+      } else {
+         logger.info { "Configuring CloudWatch client for metrics in region $region" }
+      }
       return CloudWatchAsyncClient
          .builder()
          .region(region)
@@ -50,7 +79,11 @@ class AwsConfig {
    }
 
    @Bean
-   fun getMeterRegistry(client: CloudWatchAsyncClient): MeterRegistry {
+   open fun getMeterRegistry(client: CloudWatchAsyncClient?): MeterRegistry? {
+      if (client == null) {
+         return null
+      }
+      logger.info { "CloudWatchMeterRegistry starting" }
       val cloudWatchConfig = setupCloudWatchConfig()
       return CloudWatchMeterRegistry(
          cloudWatchConfig,
@@ -60,7 +93,7 @@ class AwsConfig {
    }
 
    @Bean
-   fun tags(region: Region) = MetricsTags(listOf("region", region.id()))
+   open fun tags(region: Region) = MetricsTags(listOf("region", region.id()))
 
 
    private fun setupCloudWatchConfig(): CloudWatchConfig {
