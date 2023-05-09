@@ -24,8 +24,8 @@ class RabbitExecutorConfig {
       @Value("\${vyne.consumer.rabbit.enabled:false}") enabled: Boolean,
       @Value("\${vyne.consumer.rabbit.address}") rabbitAddress: String,
       @Value("\${vyne.consumer.rabbit.concurrency:25}") concurrency: Int,
-      @Value("\${vyne.consumer.rabbit.username}") rabbitUsername: String? = null,
-      @Value("\${vyne.consumer.rabbit.password}") rabbitPassword: String? = null,
+      @Value("\${vyne.consumer.rabbit.username:''}") rabbitUsername: String = "",
+      @Value("\${vyne.consumer.rabbit.password:''}") rabbitPassword: String = "",
       vyneFactory: StandaloneVyneFactory,
    ): RabbitMqQueryExecutor? {
 
@@ -44,7 +44,7 @@ class RabbitExecutorConfig {
       val connectionFactory = ConnectionFactory()
       connectionFactory.useNio()
 
-      if (!rabbitUsername.isNullOrBlank() && !rabbitPassword.isNullOrBlank()) {
+      if (rabbitUsername.isNotBlank() && rabbitPassword.isNotBlank()) {
          connectionFactory.username = rabbitUsername
          connectionFactory.password = rabbitPassword
          logger.info { "RabbitMQ connections using username $rabbitUsername" }

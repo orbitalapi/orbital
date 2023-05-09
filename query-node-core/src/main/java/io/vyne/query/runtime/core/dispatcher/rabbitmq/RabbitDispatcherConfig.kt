@@ -27,15 +27,15 @@ class RabbitDispatcherConfig {
       authTokenRepository: AuthTokenRepository,
       connectionsConfigProvider: ConfigFileConnectorsRegistry,
       schemaProvider: SchemaProvider,
-      @Value("\${vyne.dispatcher.rabbit.username}") rabbitUsername: String? = null,
-      @Value("\${vyne.dispatcher.rabbit.password}") rabbitPassword: String? = null,
+      @Value("\${vyne.dispatcher.rabbit.username:''}") rabbitUsername: String = "",
+      @Value("\${vyne.dispatcher.rabbit.password:''}") rabbitPassword: String = "",
    ): RabbitMqQueueDispatcher {
       logger.info { "Configuring RabbitMQ Dispatcher using addresses of $rabbitAddress" }
       val addresses = Address.parseAddresses(rabbitAddress)
       val connectionFactory = ConnectionFactory()
       connectionFactory.useNio()
 
-      if (!rabbitUsername.isNullOrBlank() && !rabbitPassword.isNullOrBlank()) {
+      if (rabbitUsername.isNotBlank() && rabbitPassword.isNotBlank()) {
          connectionFactory.username = rabbitUsername
          connectionFactory.password = rabbitPassword
          logger.info { "RabbitMQ connections using username $rabbitUsername" }
