@@ -6,6 +6,7 @@ import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import reactor.rabbitmq.*
 import reactor.util.retry.Retry
+import java.net.URI
 import java.time.Duration
 
 object RabbitAdmin {
@@ -113,5 +114,38 @@ object RabbitAdmin {
          .subscribe { result ->
             logger.info { "Rabbit queues and exchanges completed" }
          }
+   }
+
+   fun newConnectionFactory(
+      rabbitAddress: String,
+      rabbitUsername: String,
+      rabbitPassword: String
+   ): Pair<ConnectionFactory, List<Address>> {
+      logger.info { "Configuring RabbitMQ consumer at address $rabbitAddress" }
+      // Parse using URI.create rather than address parse.
+      // This is because in terraform-configured AWS, we receive the address as  amqps://xxxx.mq.eu-west-1.amazonaws.com:5671
+      val addresses = rabbitAddress.split(",").map { address ->
+         val uri = URI.create(address)
+         Address(uri.host, uri.port)
+      }
+
+      val connectionFactory = ConnectionFactory()
+      connectionFactory.useNio()
+
+      if (rabbitUsername.isNotBlank() && rabbitPassword.isNotBlank()) {
+         connectionFactory.username = rabbitUsername
+         connectionFactory.password = rabbitPassword
+         logger.info { "RabbitMQ connections using username $rabbitUsername" }
+      } else {
+         logger.info { "RabbitMQ connections are not using credentials" }
+      }
+
+      val secureAddresses = addresses.filter { it.port == 5671 }
+      if (secureAddresses.isNotEmpty()) {
+         logger.info { "Enabling TLS for RabbitMQ as found secure listener at $secureAddresses" }
+         connectionFactory.useSslProtocol()
+      }
+
+      return connectionFactory to addresses
    }
 }

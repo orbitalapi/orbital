@@ -1,7 +1,5 @@
 package io.vyne.query.runtime.core.dispatcher.rabbitmq
 
-import com.rabbitmq.client.Address
-import com.rabbitmq.client.ConnectionFactory
 import io.vyne.auth.tokens.AuthTokenRepository
 import io.vyne.connectors.config.ConfigFileConnectorsRegistry
 import io.vyne.http.ServicesConfigRepository
@@ -30,22 +28,15 @@ class RabbitDispatcherConfig {
       @Value("\${vyne.dispatcher.rabbit.username:''}") rabbitUsername: String = "",
       @Value("\${vyne.dispatcher.rabbit.password:''}") rabbitPassword: String = "",
    ): RabbitMqQueueDispatcher {
-      logger.info { "Configuring RabbitMQ Dispatcher using addresses of $rabbitAddress" }
-      val addresses = Address.parseAddresses(rabbitAddress)
-      val connectionFactory = ConnectionFactory()
-      connectionFactory.useNio()
 
-      if (rabbitUsername.isNotBlank() && rabbitPassword.isNotBlank()) {
-         connectionFactory.username = rabbitUsername
-         connectionFactory.password = rabbitPassword
-         logger.info { "RabbitMQ connections using username $rabbitUsername" }
-      } else {
-         logger.info { "RabbitMQ connections are not using credentials" }
-      }
+      val (connectionFactory, addresses) = RabbitAdmin.newConnectionFactory(
+         rabbitAddress,
+         rabbitUsername,
+         rabbitPassword
+      )
 
-
-      val reciever = RabbitAdmin.rabbitReceiver(connectionFactory, *addresses)
-      val sender = RabbitAdmin.rabbitSender(connectionFactory, *addresses)
+      val reciever = RabbitAdmin.rabbitReceiver(connectionFactory, addresses)
+      val sender = RabbitAdmin.rabbitSender(connectionFactory, addresses)
 
       val dispatcher = RabbitMqQueueDispatcher(
          sender,
