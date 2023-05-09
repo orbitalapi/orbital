@@ -1,10 +1,6 @@
 package io.vyne.query.runtime.core.dispatcher.rabbitmq
 
-import com.rabbitmq.client.AMQP
-import com.rabbitmq.client.Address
-import com.rabbitmq.client.BuiltinExchangeType
-import com.rabbitmq.client.ConnectionFactory
-import com.rabbitmq.client.Method
+import com.rabbitmq.client.*
 import mu.KotlinLogging
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
@@ -18,7 +14,7 @@ object RabbitAdmin {
    const val QUERIES_QUEUE_NAME = "queries"
    const val QUERY_EXCHANGE_NAME = "queries-exchange"
 
-   fun rabbitReceiver(connectionFactory: ConnectionFactory, vararg rabbitMqAddress: Address): Receiver {
+   fun rabbitReceiver(connectionFactory: ConnectionFactory, rabbitMqAddress: List<Address>): Receiver {
       val receiverOptions = ReceiverOptions()
          .connectionFactory(connectionFactory)
          .connectionSupplier { connectionFactory ->
@@ -27,7 +23,11 @@ object RabbitAdmin {
       return RabbitFlux.createReceiver(receiverOptions)
    }
 
-   fun rabbitSender(connectionFactory: ConnectionFactory, vararg rabbitMqAddress: Address): Sender {
+   fun rabbitReceiver(connectionFactory: ConnectionFactory, vararg rabbitMqAddress: Address): Receiver {
+      return rabbitReceiver(connectionFactory, rabbitMqAddress.asList())
+   }
+
+   fun rabbitSender(connectionFactory: ConnectionFactory, rabbitMqAddress: List<Address>): Sender {
       val senderOptions = SenderOptions()
          .connectionFactory(connectionFactory)
          .connectionSupplier { connectionFactory ->
@@ -35,6 +35,10 @@ object RabbitAdmin {
          }
          .resourceManagementScheduler(Schedulers.boundedElastic())
       return RabbitFlux.createSender(senderOptions)
+   }
+
+   fun rabbitSender(connectionFactory: ConnectionFactory, vararg rabbitMqAddress: Address): Sender {
+      return rabbitSender(connectionFactory, rabbitMqAddress.asList())
    }
 
    fun replyQueueName(queryId: String) = "query-$queryId-responses"

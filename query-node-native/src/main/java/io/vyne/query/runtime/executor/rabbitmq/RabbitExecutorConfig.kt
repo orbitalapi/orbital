@@ -6,9 +6,9 @@ import io.vyne.query.runtime.core.dispatcher.rabbitmq.RabbitAdmin
 import io.vyne.query.runtime.executor.StandaloneVyneFactory
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import java.net.URI
 
 @Configuration
 // Can't use ConditionalOnProperty, as this isn't supported in AOT compilation for native images.
@@ -24,6 +24,8 @@ class RabbitExecutorConfig {
       @Value("\${vyne.consumer.rabbit.enabled:false}") enabled: Boolean,
       @Value("\${vyne.consumer.rabbit.address}") rabbitAddress: String,
       @Value("\${vyne.consumer.rabbit.concurrency:25}") concurrency: Int,
+      @Value("\${vyne.consumer.rabbit.username}") rabbitUsername: String? = null,
+      @Value("\${vyne.consumer.rabbit.password}") rabbitPassword: String? = null,
       vyneFactory: StandaloneVyneFactory,
    ): RabbitMqQueryExecutor? {
 
@@ -33,11 +35,30 @@ class RabbitExecutorConfig {
          return null
       }
       logger.info { "Configuring RabbitMQ consumer at address $rabbitAddress with concurrency of $concurrency" }
-      val address = Address.parseAddresses(rabbitAddress)
+      // Parse using URI.create rather than address parse.
+      // This is because in terraform-configured AWS, we receive the address as  amqps://xxxx.mq.eu-west-1.amazonaws.com:5671
+      val addresses = rabbitAddress.split(",").map { address ->
+         val uri = URI.create(address)
+         Address(uri.host, uri.port)
+      }
       val connectionFactory = ConnectionFactory()
       connectionFactory.useNio()
-      val sender = RabbitAdmin.rabbitSender(connectionFactory, *address)
-      val receiver = RabbitAdmin.rabbitReceiver(connectionFactory, *address)
+
+      if (!rabbitUsername.isNullOrBlank() && !rabbitPassword.isNullOrBlank()) {
+         connectionFactory.username = rabbitUsername
+         connectionFactory.password = rabbitPassword
+         logger.info { "RabbitMQ connections using username $rabbitUsername" }
+      } else {
+         logger.info { "RabbitMQ connections are not using credentials" }
+      }
+
+      val secureAddresses = addresses.filter { it.port == 5671 }
+      if (secureAddresses.isNotEmpty()) {
+         logger.info { "Enabling TLS for RabbitMQ as found secure listener at $secureAddresses" }
+         connectionFactory.useSslProtocol()
+      }
+      val sender = RabbitAdmin.rabbitSender(connectionFactory, addresses)
+      val receiver = RabbitAdmin.rabbitReceiver(connectionFactory, addresses)
 
       val executor = RabbitMqQueryExecutor(sender, receiver, vyneFactory, parallelism = concurrency)
       RabbitAdmin.configureRabbit(executor.setupRabbit())

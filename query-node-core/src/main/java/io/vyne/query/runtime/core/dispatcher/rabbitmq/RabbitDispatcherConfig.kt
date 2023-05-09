@@ -11,8 +11,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import reactor.util.retry.Retry
-import java.time.Duration
 
 @Configuration
 @ConditionalOnProperty("vyne.dispatcher.rabbit.enabled", havingValue = "true", matchIfMissing = false)
@@ -29,11 +27,22 @@ class RabbitDispatcherConfig {
       authTokenRepository: AuthTokenRepository,
       connectionsConfigProvider: ConfigFileConnectorsRegistry,
       schemaProvider: SchemaProvider,
+      @Value("\${vyne.dispatcher.rabbit.username}") rabbitUsername: String? = null,
+      @Value("\${vyne.dispatcher.rabbit.password}") rabbitPassword: String? = null,
    ): RabbitMqQueueDispatcher {
       logger.info { "Configuring RabbitMQ Dispatcher using addresses of $rabbitAddress" }
       val addresses = Address.parseAddresses(rabbitAddress)
       val connectionFactory = ConnectionFactory()
       connectionFactory.useNio()
+
+      if (!rabbitUsername.isNullOrBlank() && !rabbitPassword.isNullOrBlank()) {
+         connectionFactory.username = rabbitUsername
+         connectionFactory.password = rabbitPassword
+         logger.info { "RabbitMQ connections using username $rabbitUsername" }
+      } else {
+         logger.info { "RabbitMQ connections are not using credentials" }
+      }
+
 
       val reciever = RabbitAdmin.rabbitReceiver(connectionFactory, *addresses)
       val sender = RabbitAdmin.rabbitSender(connectionFactory, *addresses)
