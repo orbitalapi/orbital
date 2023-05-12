@@ -1,6 +1,6 @@
-import { Tab } from '@headlessui/react';
+import {Tab} from '@headlessui/react';
 import clsx from 'clsx';
-import { useState } from 'react';
+import {useState} from 'react';
 
 /**
  * @typedef {React.ReactElement<{ filename?: string }>} CodeBlock
@@ -94,7 +94,22 @@ export function SnippetGroup({children, actions}) {
 
   let [selectedIndex, setSelectedIndex] = useState(0)
   // if we only get passed a single entry, it doesn't arrive as an array.
-  const childrenArray = (Array.isArray(children)) ? children : [children];
+  let childrenArray = (Array.isArray(children)) ? children : [children];
+  childrenArray = childrenArray.map(child => {
+
+    // Can't work this out.  Sometimes the first item doesn't get parsed as a CodeBlock.
+    // WTF?
+    if (typeof child === "string") {
+      return {
+        props: {
+          filename: 'File',
+        }
+      }
+    } else {
+      return child;
+    }
+  })
+
   return (
     <Tab.Group
       as="div"
