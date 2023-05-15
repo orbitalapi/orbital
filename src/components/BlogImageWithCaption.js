@@ -12,16 +12,16 @@ export function BlogImageWithCaption({ caption, wide, src, voyagerLink, addLight
       )}>
         <div className="p-[1rem]">
           <Image src={src}
-            alt={caption} 
-            sizes="(max-width: 1280px) 100vw,
+                 alt={caption}
+                 sizes="(max-width: 1280px) 100vw,
                     65vw"
-            className="rounded-md"
+                 className="rounded-md"
          />
 
           <div className="text-center text-slate-500 mt-[1rem]">{caption}</div>
           {voyagerLink !== undefined &&
             <div className="text-center"><a className="text-slate-400 text-sm" target='_blank'
-              href={`https://voyager.vyne.co/s/${voyagerLink}`}>Edit this diagram on
+                                            href={`https://voyager.vyne.co/s/${voyagerLink}`}>Fork this diagram on
               voyager.vyne.co</a></div>}
         </div>
       </div>
