@@ -106,48 +106,47 @@ And some other specs:
 <SnippetGroup>
 
   ```yaml reviews.openapi.yml
-  openapi: 3.0.1
-  info:
+openapi: 3.0.1
+info:
   title: ReviewsApi
   version: 1.0.0
-  paths:
-  /reviews/{id}:
-  get:
-  parameters:
-  - name: id
-  in: path
-  required: true
-  schema:
-  type: string
-  x-taxi-type: # <-- Taxi type data embedded here
-  name: FilmId
-  responses:
-  "200":
-  content:
-  application/json:
-  schema:
-  type: array
-  items:
-  $ref: '#/components/schemas/FilmReview'
-  components:
+paths:
+  https://reviews/{id}:
+    get:
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          x-taxi-type:
+            name: FilmId  # <-- Taxi metadata
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FilmReview'
+components:
   schemas:
-  FilmReview:
-  type: object
-  properties:
-  id:
-  type: string
-  x-taxi-type: # <-- Taxi type data embedded here
-  name: ReviewId
-  filmId:
-  type: string
-  x-taxi-type: # <-- Taxi type data embedded here
-  name: FilmId
-  score:
-  type: integer
-  format: int32
-  x-taxi-type: # <-- Taxi type data embedded here
-  name: ReviewScore
-
+    FilmReview:
+      type: object
+      properties:
+        id:
+          type: string
+          x-taxi-type:
+            name: ReviewId  # <-- Taxi metadata
+        filmId:
+          type: string
+          x-taxi-type:
+            name: FilmId  # <-- Taxi metadata
+        score:
+          type: integer
+          format: int32
+          x-taxi-type:
+            name: ReviewScore # <-- Taxi metadata
   ```
 
   ```protobuf NewReviewSubmittedEvent.proto
