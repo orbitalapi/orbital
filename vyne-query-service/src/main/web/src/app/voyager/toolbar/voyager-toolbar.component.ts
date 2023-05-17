@@ -1,24 +1,24 @@
-import { Component, EventEmitter, Inject, Injector, Input, Output } from '@angular/core';
-import { AuthService } from '@auth0/auth0-angular';
-import { TuiDialogService } from '@taiga-ui/core';
-import { SubscribeDialogComponent } from '../subscribe-dialog/subscribe-dialog.component';
-import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
-import { CodeSample, CodeSamples } from 'src/taxi-playground-app/code-examples';
-import { TuiStringHandler } from '@taiga-ui/cdk';
-import { tuiItemsHandlersProvider } from '@taiga-ui/kit';
-import { PLAUSIBLE_ANALYTICS } from 'src/taxi-playground-app/plausible';
+import {Component, EventEmitter, Inject, Injector, Input, Output} from '@angular/core';
+import {AuthService} from '@auth0/auth0-angular';
+import {TuiDialogService} from '@taiga-ui/core';
+import {SubscribeDialogComponent} from '../subscribe-dialog/subscribe-dialog.component';
+import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
+import {CodeSample, CodeSamples} from 'src/voyager-app/code-examples';
+import {TuiStringHandler} from '@taiga-ui/cdk';
+import {tuiItemsHandlersProvider} from '@taiga-ui/kit';
+import {PLAUSIBLE_ANALYTICS} from 'src/voyager-app/plausible';
 
 const STRINGIFY_CODE_SAMPLE: TuiStringHandler<CodeSample> = (item: CodeSample) => item.title;
 
 @Component({
   selector: 'playground-toolbar',
-  templateUrl: './playground-toolbar.component.html',
-  styleUrls: ['./playground-toolbar.component.scss'],
-  providers: [tuiItemsHandlersProvider({ stringify: STRINGIFY_CODE_SAMPLE })]
+  templateUrl: './voyager-toolbar.component.html',
+  styleUrls: ['./voyager-toolbar.component.scss'],
+  providers: [tuiItemsHandlersProvider({stringify: STRINGIFY_CODE_SAMPLE})]
 })
-export class PlaygroundToolbarComponent {
+export class VoyagerToolbarComponent {
 
-  readonly slackInviteLink = 'https://join.slack.com/t/vynehq/shared_invite/zt-1gxb15z4g-H2IeysSGo_rI1ptOty6mwA';
+  readonly slackInviteLink = 'https://join.slack.com/t/orbitalapi/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg';
 
   constructor(
     public authService: AuthService,

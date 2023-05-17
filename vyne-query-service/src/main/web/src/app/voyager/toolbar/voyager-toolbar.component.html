@@ -40,14 +40,6 @@
 <button class="header-icon-button"
         tuiHintAppearance="onDark"
         tuiHintDirection="left"
-        [tuiHint]="vyneTooltip">
-  <a (click)="openNewSite('https://vyne.co')">
-    <mat-icon svgIcon="vyneDots"></mat-icon>
-  </a>
-</button>
-<button class="header-icon-button"
-        tuiHintAppearance="onDark"
-        tuiHintDirection="left"
         [tuiHint]="githubTooltip">
   <a (click)="openNewSite('https://github.com/vyneco/voyager')">
     <mat-icon svgIcon="brandGitHub"></mat-icon>
@@ -57,8 +49,18 @@
   <mat-icon svgIcon="slack"></mat-icon>
 </button>
 
+<button [tuiHint]="vyneTooltip"
+        class="header-icon-button built-by-orbital"
+        tuiHintAppearance="onDark"
+        tuiHintDirection="left">
+  <a (click)="openNewSite('https://orbitalhq.com')">
+    <span>Built by</span>
+    <mat-icon svgIcon="orbital"></mat-icon>
+    <!--    <img src="assets/img/orbital_integrator_citrus_transparent-256x256.png" class="icon">-->
+  </a>
+</button>
 <ng-template #vyneTooltip>
-  Vyne
+  Orbital
 </ng-template>
 
 <ng-template #githubTooltip>

@@ -1,9 +1,9 @@
-import { ChangeDetectorRef, Component, Inject } from '@angular/core';
-import { FormControl, FormGroup } from '@angular/forms';
-import { TuiDialogContext } from '@taiga-ui/core';
+import {ChangeDetectorRef, Component, Inject} from '@angular/core';
+import {FormControl, FormGroup} from '@angular/forms';
+import {TuiDialogContext} from '@taiga-ui/core';
 import {POLYMORPHEUS_CONTEXT} from '@tinkoff/ng-polymorpheus';
-import { PLAUSIBLE_ANALYTICS } from 'src/taxi-playground-app/plausible';
-import { SubscriptionResult, TaxiPlaygroundService } from 'src/taxi-playground-app/taxi-playground.service';
+import {PLAUSIBLE_ANALYTICS} from 'src/voyager-app/plausible';
+import {SubscriptionResult, VoyagerService} from 'src/voyager-app/voyager.service';
 
 @Component({
   selector: 'app-subscribe-dialog',
@@ -17,7 +17,7 @@ export class SubscribeDialogComponent {
 
   constructor(
     @Inject(POLYMORPHEUS_CONTEXT) private readonly context: TuiDialogContext<boolean>,
-    private taxiPlaygroundService: TaxiPlaygroundService,
+    private voyagerService: VoyagerService,
     @Inject(PLAUSIBLE_ANALYTICS) private plausible: any,
     private ref: ChangeDetectorRef
   ) {}
@@ -29,7 +29,7 @@ export class SubscribeDialogComponent {
 
   onSubmit(data) {
     this.plausible.trackEvent("newsletter subscribe")
-    this.taxiPlaygroundService.subscribeToEmails({
+    this.voyagerService.subscribeToEmails({
       email: data.email,
       otherCommsConsent: data.otherCommsCheckbox
     }).subscribe(response => {
@@ -40,8 +40,8 @@ export class SubscribeDialogComponent {
       this.subscribed = true;
       this.subscriptionResult = SubscriptionResult.FAILED;
       this.ref.markForCheck();
-    }); 
-    
+    });
+
   }
 
   closeDialog() {

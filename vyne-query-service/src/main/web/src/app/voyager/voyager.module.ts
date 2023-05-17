@@ -1,6 +1,6 @@
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {PlaygroundToolbarComponent} from 'src/app/taxi-playground/toolbar/playground-toolbar.component';
+import {VoyagerToolbarComponent} from 'src/app/voyager/toolbar/voyager-toolbar.component';
 import {MatIconModule, MatIconRegistry} from '@angular/material/icon';
 import {DomSanitizer} from '@angular/platform-browser';
 import {MatButtonModule} from '@angular/material/button';
@@ -25,12 +25,12 @@ import {ShareDialogComponent} from './share-dialog/share-dialog.component';
 
 @NgModule({
   declarations: [
-    PlaygroundToolbarComponent,
+    VoyagerToolbarComponent,
     SubscribeDialogComponent,
     ShareDialogComponent
   ],
   exports: [
-    PlaygroundToolbarComponent
+    VoyagerToolbarComponent
   ],
   imports: [
     CommonModule,
@@ -53,7 +53,7 @@ import {ShareDialogComponent} from './share-dialog/share-dialog.component';
     SubscribeDialogComponent
   ]
 })
-export class TaxiPlaygroundModule {
+export class VoyagerModule {
 
   constructor(private matIconRegistry: MatIconRegistry, private domSanitizer: DomSanitizer) {
     this.matIconRegistry.addSvgIcon(
@@ -67,6 +67,10 @@ export class TaxiPlaygroundModule {
     this.matIconRegistry.addSvgIcon(
       `vyneDots`,
       this.domSanitizer.bypassSecurityTrustResourceUrl(`../../assets/img/vyne-logo-dots.svg`)
+    );
+    this.matIconRegistry.addSvgIcon(
+      `orbital`,
+      this.domSanitizer.bypassSecurityTrustResourceUrl(`../../assets/img/orbital_logo_white.svg`)
     );
     this.matIconRegistry.addSvgIcon(
       `share`,

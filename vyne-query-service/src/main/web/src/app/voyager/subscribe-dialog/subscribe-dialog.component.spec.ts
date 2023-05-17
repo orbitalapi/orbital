@@ -1,6 +1,6 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import {ComponentFixture, TestBed} from '@angular/core/testing';
 
-import { SubscribeDialogComponent } from './subscribe-dialog.component';
+import {SubscribeDialogComponent} from './subscribe-dialog.component';
 
 describe('SubscribeDialogComponent', () => {
   let component: SubscribeDialogComponent;

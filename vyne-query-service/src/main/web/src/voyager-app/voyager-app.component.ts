@@ -1,20 +1,16 @@
-import { ChangeDetectionStrategy, Component, Inject, Injector } from '@angular/core';
-import {
-  ParsedSchema,
-  SharedSchemaResponse,
-  TaxiPlaygroundService
-} from 'src/taxi-playground-app/taxi-playground.service';
-import { debounceTime, filter, map, mergeMap, share, shareReplay, switchMap, take } from 'rxjs/operators';
-import { emptySchema, Schema } from 'src/app/services/schema';
-import { Observable, of, Subject, defer, ReplaySubject } from 'rxjs';
-import { CodeSample, CodeSamples } from 'src/taxi-playground-app/code-examples';
-import { TuiDialogService } from '@taiga-ui/core';
-import { ShareDialogComponent } from 'src/app/taxi-playground/share-dialog/share-dialog.component';
-import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
-import { ActivatedRoute, Params } from '@angular/router';
+import {ChangeDetectionStrategy, Component, Inject, Injector} from '@angular/core';
+import {ParsedSchema, VoyagerService} from 'src/voyager-app/voyager.service';
+import {debounceTime, filter, map, mergeMap, shareReplay, switchMap, take} from 'rxjs/operators';
+import {emptySchema, Schema} from 'src/app/services/schema';
+import {Observable, of, ReplaySubject} from 'rxjs';
+import {CodeSample, CodeSamples} from 'src/voyager-app/code-examples';
+import {TuiDialogService} from '@taiga-ui/core';
+import {ShareDialogComponent} from 'src/app/voyager/share-dialog/share-dialog.component';
+import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
+import {ActivatedRoute, Params} from '@angular/router';
 
 @Component({
-  selector: 'taxi-playground-app',
+  selector: 'voyager-app',
   template: `
     <div class="app-container">
       <playground-toolbar (selectedExampleChange)="setCodeFromExample($event)"
@@ -42,10 +38,10 @@ import { ActivatedRoute, Params } from '@angular/router';
       </div>
     </div>
   `,
-  styleUrls: ['./taxi-playground-app.component.scss'],
+  styleUrls: ['./voyager-app.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TaxiPlaygroundAppComponent {
+export class VoyagerAppComponent {
 
   codeUpdated$ = new ReplaySubject<string>(1)
 
@@ -55,7 +51,7 @@ export class TaxiPlaygroundAppComponent {
 
   content: string | null = null;
 
-  constructor(private service: TaxiPlaygroundService,
+  constructor(private service: VoyagerService,
               @Inject(TuiDialogService) private readonly dialogService: TuiDialogService,
               @Inject(Injector) private readonly injector: Injector,
               private readonly activatedRoute: ActivatedRoute

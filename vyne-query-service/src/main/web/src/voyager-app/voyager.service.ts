@@ -1,9 +1,9 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpResponse } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { CompilationMessage, Schema } from 'src/app/services/schema';
-import { environment } from 'src/taxi-playground-app/environments/environment';
-import { map } from 'rxjs/operators';
+import {Injectable} from '@angular/core';
+import {HttpClient} from '@angular/common/http';
+import {Observable} from 'rxjs';
+import {CompilationMessage, Schema} from 'src/app/services/schema';
+import {environment} from 'src/voyager-app/environments/environment';
+import {map} from 'rxjs/operators';
 
 export enum SubscriptionResult {
   SUCCESS = 'SUCCESS',
@@ -15,7 +15,7 @@ export enum SubscriptionResult {
 @Injectable({
   providedIn: 'root'
 })
-export class TaxiPlaygroundService {
+export class VoyagerService {
   constructor(private httpClient: HttpClient) {
   }
 
@@ -24,7 +24,7 @@ export class TaxiPlaygroundService {
   }
 
   subscribeToEmails(subscribeDetails: SubscribeDetails): Observable<SubscriptionResponse> {
-    return this.httpClient.post<SubscriptionResponse>(`${environment.serverUrl}/api/subscribe`, subscribeDetails, { observe: 'response' })
+    return this.httpClient.post<SubscriptionResponse>(`${environment.serverUrl}/api/subscribe`, subscribeDetails, {observe: 'response'})
       .pipe(
         map(response => response.body)
       );
