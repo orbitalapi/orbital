@@ -1,11 +1,15 @@
 
 
 :host {
-    --tui-primary: #3b6af9;
+  --tui-primary: #3b6af9;
 }
 
 
 .dialog-text {
-    color: var(--tui-text-02);
-    font-size: var(--tui-font-text-s);
+  color: var(--tui-text-02);
+  font-size: var(--tui-font-text-s);
+}
+
+tui-checkbox-labeled {
+  margin: 1rem 0;
 }

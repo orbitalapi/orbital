@@ -1,6 +1,12 @@
 @use '~@angular/material' as mat;
 @import "../theme";
 
+:root {
+  --body-font: #{$body-font};
+  --tui-text-font: #{$body-font};
+  --tui-font-text: #{$body-font};
+  --tui-heading-font: #{$body-font};
+}
 
 html, body {
   height: 100%;
@@ -18,15 +24,19 @@ body {
   --tui-primary: #3b6af9;
 }
 
+button {
+  font-family: $body-font;
+}
+
 /* For use in src/lib/core/theming/_palette.scss */
 $primary: (
-    50 : #e7edfe,
-    100 : #c4d2fd,
-    200 : #9db5fc,
-    300 : #7697fb,
-    400 : #5880fa,
-    500 : #3b6af9,
-    600 : #3562f8,
+  50 : #e7edfe,
+  100 : #c4d2fd,
+  200 : #9db5fc,
+  300 : #7697fb,
+  400 : #5880fa,
+  500 : #3b6af9,
+  600 : #3562f8,
     700 : #2d57f7,
     800 : #264df6,
     900 : #193cf5,

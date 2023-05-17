@@ -24,8 +24,8 @@
             Oh, and if you get sick of us, don't worry you'll be able to unsubscribe later.
         </p>
         <p>
-            <button tuiButton type="submit">
-                Subscribe
+            <button [disabled]="!subscribeForm.valid" tuiButton type="submit">
+              Subscribe
             </button>
         </p>
     </form>
