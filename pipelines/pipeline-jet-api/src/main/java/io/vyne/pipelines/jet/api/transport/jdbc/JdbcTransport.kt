@@ -30,10 +30,12 @@ enum class WriteDisposition(val value: String) {
 data class JdbcTransportOutputSpec(
    @PipelineParam("The name of a connection, configured in Vyne's connection manager")
    val connection: String,
-   @PipelineParam("The fully qualified name of the type which content being pushed to the database should be read as")
+   @PipelineParam("The fully qualified name of the type which content being pushed to the database should be read as. Pass * to use the type from a querySpec")
    val targetTypeName: String,
    @PipelineParam("Whether to append new data into the existing table (APPEND), or to create a new table with a unique name and switch over the view to point to the newly created table (RECREATE).")
    val writeDisposition: WriteDisposition = WriteDisposition.APPEND,
+   @PipelineParam("If defined, the query return type is used as the target type.")
+   val querySpec: String? = null
 ) : WindowingPipelineTransportSpec {
    constructor(
       connection: String,

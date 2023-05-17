@@ -6,7 +6,6 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
 import lang.taxi.Operator
-import lang.taxi.expressions.Expression
 import lang.taxi.services.operations.constraints.*
 import lang.taxi.types.AttributePath
 
@@ -185,13 +184,6 @@ class PropertyToParameterConstraint(propertyIdentifier: PropertyIdentifier,
             TODO()
          }
       }
-   }
-
-}
-
-data class ExpressionConstraint(private val expression: Expression): OutputConstraint, InputConstraint {
-   override fun evaluate(argumentType: Type, value: TypedInstance, schema: Schema): ConstraintEvaluation {
-      TODO("Not yet implemented")
    }
 
 }

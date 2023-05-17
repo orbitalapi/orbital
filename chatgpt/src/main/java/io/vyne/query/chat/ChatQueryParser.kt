@@ -141,21 +141,13 @@ class ChatQueryParser(
 
    fun parseToChatQuery(schema: Schema, queryText: String): ChatGptQuery {
       val scalarsAndDescriptions = buildScalars(schema)
-      val scalars = scalarsAndDescriptions.joinToString(
-         separator = "\n"
-      ) { type ->
-         val descriptionAsComment = if (type.description.isNullOrEmpty()) {
-            ""
-         } else {
-            "// ${type.description}"
-         }
-         "Name: ${type.typeName} $descriptionAsComment"
-      }
+      val modelsAndDescriptions = buildModelDescriptions(schema)
+      val scalars = scalarsAndDescriptions.joinToString(separator = "\n")
+      val models = modelsAndDescriptions.joinToString("\n")
       val prompts = listOf(
-         OpenAiChatMessage(OpenAiChatMessage.Role.system, buildSystemPromptReturningTaxi(scalars)),
+         OpenAiChatMessage(OpenAiChatMessage.Role.system, buildSystemPromptReturningTaxi(scalars, models)),
          OpenAiChatMessage(OpenAiChatMessage.Role.user, queryText)
       )
-
 
       val terminatedQuery = if (!queryText.endsWith(".")) {
          "${queryText.trim()}."
@@ -166,21 +158,21 @@ class ChatQueryParser(
          "\n\nProvide responses to the following questions as JSON objects that conform to this typescript API\n$typescriptResponseApi\n\n.  Do not include any other text, only JSON.  THE RESPONSE MUST BE VALID JSON."
       val questionPrompt = "Generate a query that answers this question:\n$terminatedQuery"
       val chatGptQuestion = listOf(
-         buildSystemPromptReturningTaxi(scalars),
-//         buildSystemPromptReturningJson(scalars),
+         buildSystemPromptReturningTaxi(scalars, models),
+         "Write a query that answers this question:",
          terminatedQuery
       ).joinToString("\n\n")
       logger.debug { "ChatGPT request: \n$chatGptQuestion" }
       val request = OpenAiCompletionRequest(chatGptQuestion)
 //      val request = OpenAiChatRequest(
 //         prompts,
-//         model= OpenAiModel.GPT_3_5_TURBO
+//         model = OpenAiModel.GPT_3_5_TURBO
 //      )
 
 
       val httpRequest = Request.Builder()
-//         .url("https://api.openai.com/v1/completions")
          .url("https://api.openai.com/v1/completions")
+//         .url("https://api.openai.com/v1/chat/completions")
          .addHeader("Authorization", "Bearer $apiKey")
 //         .addHeader("Content-Type", "application/json")
          .post(mapper.writeValueAsString(request).toRequestBody("application/json".toMediaType()))
@@ -192,6 +184,7 @@ class ChatQueryParser(
          val responseBody =
             mapper.readValue<OpenAiCompletionsResponse>(response.body!!.bytes())
          val content = responseBody.choices.first().text.trim()
+//         val content = responseBody.choices.first().message.content.trim()
          logger.info { "OpenAI response: \n${content}" }
          val trimmedQuery = content.substring(content.indexOf("find {"))
          return ChatGptQuery(taxi = trimmedQuery, null)
@@ -201,6 +194,7 @@ class ChatQueryParser(
          throw RuntimeException(message)
       }
    }
+
 
    private fun buildSystemPromptReturningJson(scalars: String) = """
 Today's date is ${LocalDate.now()}.
@@ -217,92 +211,102 @@ $scalars
 Generate a query that answers this question:
    """.trimIndent()
 
-   private fun buildSystemPromptReturningTaxi(scalars: String): String {
+   private fun buildSystemPromptReturningTaxi(scalars: String, models: String): String {
       return """
-You are an assistant who converts requirements into data queries, using a language called Taxi.
-If someone asks for data that we don't have types defined for, then inform them.  Avoid the term "semantic type", and just say "data"
+# You are an assistant who converts requirements into data queries, using a language called Taxi.
+# If someone asks for data that we don't have types defined for, then inform them.  Avoid the term "semantic type", and just say "data"
 
-Todays date is ${LocalDate.now()}.
+# Today's date is ${LocalDate.now()}.
 
-Taxi uses Types to define data and criteria.
-Following are some sample queries In Taxi.  They use a different set of types from the ones just shown, for illustrative purposes.  IN YOUR RESPONSE, ONLY USE TYPES YOU'RE TOLD EXIST.
+# Taxi uses Types to define data and criteria.
+# Following are some sample queries In Taxi.  They use a different set of types from the ones just shown, for illustrative purposes.  IN YOUR RESPONSE, ONLY USE TYPES YOU'RE TOLD EXIST.
 
-Queries take the form:
+# This is an example query, with a comment describing it:
 
-```
-find {
-   Order[] // The base type to find.  In this example, it's an array, indicating "Find all Orders"
-}
-```
+// The base type to find.  In this example, it's an array, indicating "Find all Orders"
+find { Order[] }
 
-Criteria are specified in parenthesis after the target type:
+# Queries can ask for a single entity or a collection of entities to be returned.  To ask for a collection,
+# use array notation after the type name.  For example:
 
-```
+// Find exactly one Order:
+find { Order }
+
+// Find all matching Orders:
+find { Order[] }
+
+# Criteria are specified in parenthesis after the target type:
+
 // finds all Orders after October 1st 2021 with a notional value greater than 1 million,
 find { Order[]( SettlementDate  >= '2021-10-01' && demo.orderFeeds.trading.Notional >= 1000000 }
-```
-After specifying the criteria, you can define the fields to return in a "projection" using an "as" clause.
 
-a projection is defined as:
+// Find a single Movie entitled Gladiator
+find { Movie( Title == 'Gladiator' ) }
 
-```
-as {
-   fieldName : com.foo.TypeName
+# After specifying the criteria, you can define the fields to return in a "projection" using an "as" clause.
+# A projection is defined as:
+
+
+find { Something[]  } as {
+   fieldName : TypeName // A field named "fieldName", with type "TypeName"
 }[]
-```
-Field names are similar to a database column name - they may not contain spaces or periods.
 
-The TypeName is the name of a type from my earlier list.  IT IS AN ERROR TO USE A SEMANTIC TYPE OTHER THAN THE ONES YOU'RE TOLD EXIST.
-TypeNames must be fully qualified using the full dot-seperated name (like foo.bar.Name).  DO NOT ABBREVIATE TYPES.
 
-If the type in the find clause was an array, then the projection must also close with an array token ([]).
+# Field names are similar to a database column name - they may not contain spaces or periods.
+# You may only use types that you are told exist. I'll list the types shortly. IT IS AN ERROR TO USE A SEMANTIC TYPE OTHER THAN THE ONES YOU'RE TOLD EXIST.
+# If the type in the find clause was an array, then the projection must also close with an array token ([]).
 
-Here's an example:
+# Here's an example:
+
+
 
 // finds all Orders after October 1st 2021 with a notional value greater than 1 million, returning order Id and order type
-
 find { Order[]( SettlementDate  >= '2021-10-01' && Notional >= 1000000 }
 as {
-orderId:  com.foo.OrderId
-orderType: com.foo.OrderType
+orderId:  OrderId // a field named "orderId" with type OrderId
+endDate: OrderEndDate // a field named "endDate" with type OrderEndDate
 }[]
-```
 
-In a projection, there are no commas after a field / type pair:
+
+# In a projection, there are no commas after a field / type pair:
+
 
 // correct:
 find { ... } as {
-  orderId : com.foo.OrderId
-  type: com.foo.OrderType
+  orderId : OrderId
+  type: OrderType
 }
 
-// incorrect:
-find { ... } as {
-   orderId: com.foo.OrderId, // This comma is an error.  DO NOT INCLUDE COMMAS HERE.
-   type: com.foo.OrderType
-}
 
-Queries can indicate that missing data should be discovered by adding a @FirstNotEmpty annotation to the field.  Annotations appear before the field name,  and do not have parenthesis.
+# Queries can indicate that missing data should be discovered by adding a @FirstNotEmpty annotation preceeding the field name.
+# Annotations MUST appear  BEFORE the field name,  and do not have parenthesis.
+
+Query: Find me information about orders.  Fill in the gaps of any missing order status and end dates.
+Expected result:
+
 
 find { Order } as {
-  orderId : com.OrderId
-  @FirstNotEmpty // Tells the query engine to look up this data wherever it can
-  type: com.OrderType
+  orderId : OrderId
 
-  @FirstNotEmpty
-  orderStatus: com.OrderStatus
+ // Annotations MUST appear BEFORE the field name.
+  @FirstNotEmpty orderStatus: OrderStatus
+  @FirstNotEmpty endDate : OrderSettlementDate
+
 }
 
 
-Concatenation of strings is performed using the + operator, like this:
+# Concatenation of strings is performed using the + operator, like this:
 
 find { ... } as {
-  fullName : com.FirstName + ' ' + com.LastName // FirstName and LastName are types
+  fullName : FirstName + ' ' + LastName // FirstName and LastName are types
 }
 
-The following types can be used in your query:
+# The following field types can be used in your query:
 
 $scalars
+$models
+
+Only respond to the user using code, do not include any explanations in your response.
 
       """.trimIndent()
    }
@@ -314,14 +318,16 @@ $scalars
 //      return TaxiQlGenerator.convertToTaxi(query, schema)
    }
 
-   private fun buildScalars(schema: Schema): List<ScalarAndDescription> {
-      val excludedNamespaces = listOf(
-         PrimitiveType.NAMESPACE,
-         "io.vyne",
-         "taxi.stdlib",
-         "vyne.vyneQl",
-         "vyne.cask"
-      )
+   private val excludedNamespaces = listOf(
+      PrimitiveType.NAMESPACE,
+      "io.vyne",
+      "taxi.stdlib",
+      "vyne.vyneQl",
+      "vyne.cask"
+   )
+
+   private fun buildScalars(schema: Schema): List<TypeAndDescription> {
+
       return schema.types
          .asSequence()
          .filter { it.isScalar }
@@ -333,13 +339,41 @@ $scalars
             }
          }
          .map { type ->
-            ScalarAndDescription(type.paramaterizedName, type.typeDoc)
+            TypeAndDescription(type.name.name, type.typeDoc)
          }
+         .toList()
+   }
+
+   private fun buildModelDescriptions(schema: Schema): List<TypeAndDescription> {
+      return schema.remoteOperations
+         .asSequence()
+         .map { operation ->
+            operation.returnType.collectionType ?: operation.returnType
+         }
+         .distinctBy { it.name }
+         .filter { !it.isScalar }
+//         .filter { type ->
+//              excludedNamespaces.none { excludedNamespace ->
+//                 type.qualifiedName.namespace.startsWith(
+//                    excludedNamespace
+//                 )
+//              }
+//         }
+         .map { TypeAndDescription(it.name.name, it.typeDoc) }
          .toList()
    }
 }
 
-data class ScalarAndDescription(val typeName: String, val description: String?)
+data class TypeAndDescription(val typeName: String, val description: String?) {
+   override fun toString(): String {
+      val descriptionAsComment = if (description.isNullOrEmpty()) {
+         ""
+      } else {
+         "// $description"
+      }
+      return "Name: $typeName $descriptionAsComment"
+   }
+}
 
 
 data class OpenAiCompletionRequest(
@@ -397,23 +431,36 @@ data class OpenAiChatMessage(
    }
 }
 
+data class OpenAiChatResponse(
+   val id: String,
+   val `object`: String,
+   val created: Long,
+   val model: String,
+   val choices: List<ChatCompletionChoice>,
+   val usage: ChatGptUsage
+)
 
 data class OpenAiCompletionsResponse(
    val id: String,
    val `object`: String,
    val created: Long,
    val model: String,
-   val choices: List<ChatGptChoice>,
+   val choices: List<CompletionChoice>,
    val usage: ChatGptUsage
 
 )
 
-data class ChatGptChoice(
+data class CompletionChoice(
    val text: String,
    val index: Int,
    val logprobs: Int? = null,
    val finish_reason: String
+)
 
+data class ChatCompletionChoice(
+   val index: String,
+   val message: OpenAiChatMessage,
+   val finish_reason: String
 )
 
 data class ChatGptUsage(

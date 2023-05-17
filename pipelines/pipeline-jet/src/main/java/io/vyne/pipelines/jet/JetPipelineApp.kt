@@ -15,6 +15,7 @@ import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
+import io.vyne.spring.config.ConditionallyLoadBalancedExchangeFilterFunction
 import io.vyne.spring.config.DiscoveryClientConfig
 import io.vyne.spring.config.VyneSpringCacheConfiguration
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
@@ -23,7 +24,10 @@ import mu.KotlinLogging
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.boot.web.reactive.function.client.WebClientCustomizer
+import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
+import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -70,6 +74,22 @@ class JetPipelineApp {
    @Bean
    fun sinkProvider(builders: List<PipelineSinkBuilder<*, *>>): PipelineSinkProvider {
       return PipelineSinkProvider(builders)
+   }
+
+   @Bean
+   fun webClientCustomizer(
+      loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction,
+      discoveryClient: DiscoveryClient
+
+   ): WebClientCustomizer {
+      return WebClientCustomizer { webClientBuilder ->
+         webClientBuilder.filter(
+            ConditionallyLoadBalancedExchangeFilterFunction.onlyKnownHosts(
+               discoveryClient.services,
+               loadBalancingFilterFunction
+            )
+         )
+      }
    }
 
    @Bean

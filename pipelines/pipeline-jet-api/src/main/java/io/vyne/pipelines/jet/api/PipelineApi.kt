@@ -1,11 +1,7 @@
 package io.vyne.pipelines.jet.api
 
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
-import org.springframework.web.bind.annotation.DeleteMapping
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.*
 import reactivefeign.spring.config.ReactiveFeignClient
 import reactor.core.publisher.Mono
 
@@ -14,7 +10,7 @@ import reactor.core.publisher.Mono
  * and does not try to resolve the end point through discovery service lookup. We leverage this in our integration tests
  * (see VyneQuerySecurityIntegrationTest ) so that we can 'mock' Cask Server through a fake server, e.g. WireMock.
  */
-@ReactiveFeignClient("\${vyne.pipelinesJetRunner.name:vyne-pipeline-runner}", url = "\${vyne.pipelinesJetRunner.url:}")
+@ReactiveFeignClient("\${vyne.pipelinesJetRunner.name:pipeline-runner}", url = "\${vyne.pipelinesJetRunner.url:}")
 interface PipelineApi {
    @PostMapping("/api/pipelines")
    fun submitPipeline(@RequestBody pipelineSpec: PipelineSpec<*, *>): Mono<SubmittedPipeline>

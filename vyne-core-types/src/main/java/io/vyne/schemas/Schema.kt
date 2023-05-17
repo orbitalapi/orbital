@@ -58,6 +58,7 @@ interface Schema {
    val operations: Set<Operation>
       get() = services.flatMap { it.operations }.toSet()
 
+
    val queryOperations: Set<QueryOperation>
       get() = services.flatMap { it.queryOperations }.toSet()
 
@@ -68,7 +69,7 @@ interface Schema {
 
    @get:JsonIgnore
    val remoteOperations: Set<RemoteOperation>
-      get() = (operations + queryOperations).toSet()
+      get() = services.flatMap { it.remoteOperations }.toSet()
 
    fun operationsWithReturnType(
       requiredType: Type,
