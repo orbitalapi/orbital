@@ -87,7 +87,7 @@ default:
          - "vyne-query-service/target/vyne.zip"
          - "station/target/orbital.zip"
          - "test-cli/target/*.zip"
-         - "taxi-playground/target/taxi-playground.jar"
+         - "voyager/target/voyager.jar"
       expire_in: 1 hours
       reports:
          junit:
@@ -128,7 +128,7 @@ build-voyager-ui:
       - npm run-script build-prod-voyager
    artifacts:
       paths:
-         - "taxi-playground/target/classes/static"
+         - "voyager/target/classes/static"
       expire_in: 1 hours
 
 
@@ -331,9 +331,9 @@ publish-schema-server-to-gitlab-container-registry:
 publish-voyager-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
    variables:
-      projectDir: taxi-playground
-      microservice_vyne: taxi-playground
-      microservice_orbital: taxi-playground
+      projectDir: voyager
+      microservice_vyne: voyager
+      microservice_orbital: voyager
    when: manual
 
 .publish-docker-gitlab:
@@ -509,7 +509,7 @@ e2e-tests-other-branches:
 #   environment:
 #      name: $TF_STATE_NAME_DEV
 #   variables:
-#      TF_ROOT: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/$TF_STATE_NAME_DEV
+#      TF_ROOT: ${CI_PROJECT_DIR}/voyager/terraform/environments/$TF_STATE_NAME_DEV
 #      TF_STATE_NAME: taxi_playground_$TF_STATE_NAME_DEV
 #      TF_VAR_environment: $TF_STATE_NAME_DEV
 #      TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
@@ -527,7 +527,7 @@ e2e-tests-other-branches:
 #   environment:
 #      name: $TF_STATE_NAME_PROD
 #   variables:
-#      TF_ROOT: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/$TF_STATE_NAME_PROD
+#      TF_ROOT: ${CI_PROJECT_DIR}/voyager/terraform/environments/$TF_STATE_NAME_PROD
 #      TF_STATE_NAME: taxi_playground_$TF_STATE_NAME_PROD
 #      TF_VAR_environment: $TF_STATE_NAME_PROD
 #      TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
@@ -545,7 +545,7 @@ terraform-deploy-dev-voyager:
    environment:
       name: $TF_STATE_NAME_DEV
    variables:
-      TF_ROOT: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/orbital_$TF_STATE_NAME_DEV
+      TF_ROOT: ${CI_PROJECT_DIR}/voyager/terraform/environments/orbital_$TF_STATE_NAME_DEV
       TF_STATE_NAME: voyager_$TF_STATE_NAME_DEV
       TF_VAR_environment: $TF_STATE_NAME_DEV
       TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
@@ -557,7 +557,7 @@ terraform-deploy-prod-voyager:
    environment:
       name: $TF_STATE_NAME_PROD
    variables:
-      TF_ROOT: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/orbital_$TF_STATE_NAME_PROD
+      TF_ROOT: ${CI_PROJECT_DIR}/voyager/terraform/environments/orbital_$TF_STATE_NAME_PROD
       TF_STATE_NAME: voyager_$TF_STATE_NAME_PROD
       TF_VAR_environment: $TF_STATE_NAME_PROD
       TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
