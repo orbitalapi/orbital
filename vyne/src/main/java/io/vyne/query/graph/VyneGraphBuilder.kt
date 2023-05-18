@@ -16,6 +16,8 @@ import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.StrategyPerformanceProfiler
 import mu.KotlinLogging
 import java.util.*
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTimedValue
 
 enum class ElementType {
    TYPE,
@@ -146,6 +148,12 @@ private data class GraphWithFactInstancesCacheKey(
    val baseGraph: VyneHashBasedHipsterDirectedGraph<Element, Relationship>
 )
 
+/**
+ * For readability.
+ */
+typealias GraphCacheKey = Int
+
+@OptIn(ExperimentalTime::class)
 class VyneGraphBuilder(
    val schema: Schema,
    vyneGraphBuilderCache: VyneGraphBuilderCacheSettings = VyneGraphBuilderCacheSettings()
@@ -156,7 +164,7 @@ class VyneGraphBuilder(
 
    private val graphCache = CacheBuilder.newBuilder()
       .maximumSize(vyneGraphBuilderCache.graphWithFactTypesCacheSize)
-      .build<List<GraphConnection>, GraphBuildResult>()
+      .build<GraphCacheKey, GraphBuildResult>()
 
    private val baseSchemaConnectionsCache = CacheBuilder.newBuilder()
       .maximumSize(vyneGraphBuilderCache.baseSchemaGraphCacheSize) // arbitary, can tune later
@@ -196,6 +204,12 @@ class VyneGraphBuilder(
       }
    }
 
+   // for readability.  Just returns the hashcode.
+   // We used to use the List<GraphConnection> as the cache key.
+   // However, that was really memory intensive.
+   // Now using it's hashcode.
+   private fun cacheKeyForFacts(facts: List<GraphConnection>): GraphCacheKey = facts.hashCode()
+
    private fun buildGraph(
       connections: List<GraphConnection>,
       excludedEdges: List<EvaluatableEdge> = emptyList()
@@ -209,11 +223,16 @@ class VyneGraphBuilder(
          }
       }
 
-      return graphCache.get(filteredFacts) {
+      return graphCache.get(cacheKeyForFacts(filteredFacts)) {
          StrategyPerformanceProfiler.profiled("buildGraph") {
-            val graph = createCachingGraph(filteredFacts)
-            // TODO : Waiting to see if we actually use GraphBuildResult anymore, if not, just return the graph here.
-            GraphBuildResult(graph, emptyList(), emptyList())
+            val timedValue = measureTimedValue {
+               val graph = createCachingGraph(filteredFacts)
+               // TODO : Waiting to see if we actually use GraphBuildResult anymore, if not, just return the graph here.
+               GraphBuildResult(graph, emptyList(), emptyList())
+            }
+            logger.info { "Building graph for cache took ${timedValue.duration}" }
+            timedValue.value
+
          }
       }
    }
