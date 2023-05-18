@@ -15,15 +15,25 @@ import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.AttributePath
 import mu.KotlinLogging
+import java.util.*
 
 
-data class TypedObject(
+data class TypedObject private constructor(
    override val type: Type,
    private val suppliedValue: Map<String, TypedInstance>,
-   override val source: DataSource
-) : TypedInstance, Map<String, TypedInstance> {
 
-   private val combinedValues: Map<String, TypedInstance> = type.defaultValues?.plus(suppliedValue) ?: suppliedValue
+   ) : TypedInstance, Map<String, TypedInstance> {
+   constructor(
+      type: Type,
+      suppliedValue: Map<String, TypedInstance>,
+      source: DataSource
+   ) : this(type, appendDefaultValues(type, suppliedValue))
+
+   // HACK: Checking to see if data source is taking up oodles of memories.
+   override val source: DataSource = UndefinedSource
+
+   private val combinedValues =
+      suppliedValue//: Map<String, TypedInstance> = type.defaultValues?.plus(suppliedValue) ?: suppliedValue
 
    private val stringifiedValueValueMap by lazy {
       suppliedValue.map { (k, v) -> "$k-${v.type.paramaterizedName}-${v}" }
@@ -40,6 +50,14 @@ data class TypedObject(
    private val hash: Int by lazy { equality.hash() }
 
    companion object {
+      fun appendDefaultValues(type: Type, suppliedValue: Map<String, TypedInstance>): Map<String, TypedInstance> {
+         val treeMap = TreeMap<String, TypedInstance>()
+         treeMap.putAll(type.defaultValues ?: emptyMap())
+         treeMap.putAll(suppliedValue)
+         return treeMap
+//         return type.defaultValues?.plus(suppliedValue) ?: suppliedValue
+      }
+
       private val logger = KotlinLogging.logger {}
       fun fromValue(typeName: String, value: Any, schema: Schema, source: DataSource): TypedInstance {
          return fromValue(schema.type(typeName), value, schema, source = source)

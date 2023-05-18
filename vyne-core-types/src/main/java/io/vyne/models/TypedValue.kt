@@ -63,6 +63,7 @@ data class TypedValue private constructor(
    override fun toString(): String {
       return "TypedValue(type=${type.qualifiedName.longDisplayName}, value=$value)"
    }
+
    override val nodeId: String = Ids.fastUuid()
 
    init {
@@ -93,7 +94,7 @@ data class TypedValue private constructor(
                val valueToUse =
                   converter.convert(value, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!), format)
                if (valueToUse != null) {
-                  TypedValue(type, valueToUse, source, format)
+                  TypedValue(type, valueToUse, UndefinedSource, format)
                } else {
                   TypedNull.create(type, source)
                }
@@ -150,6 +151,7 @@ data class TypedValue private constructor(
       return this.type == otherTypedValue.type && this.value == other.value
 
    }
+
    override fun hashCode(): Int = hash
 
    /**

@@ -32,7 +32,7 @@ object DataSourceUpdater {
    fun update(typedInstance: TypedInstance, newDataSource: DataSource): TypedInstance {
       return when (typedInstance) {
          is TypedValue -> typedInstance.copy(source = newDataSource)
-         is TypedObject -> typedInstance.copy(source = newDataSource)
+         is TypedObject -> typedInstance // typedInstance.copy(source = newDataSource)
          is TypedCollection -> typedInstance.copy(source = newDataSource)
          is TypedEnumValue -> typedInstance.copy(source = newDataSource)
          is TypedNull -> typedInstance.copy(source = newDataSource)

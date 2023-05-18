@@ -10,6 +10,17 @@ import io.vyne.utils.log
 import mu.KotlinLogging
 import java.io.Serializable
 
+/**
+ * I replaced a bunch of backing varaibles
+ * with getters, as this class was using a huge amount of memory
+ * (over 100MB for large schemas).
+ *
+ * Genearlly, we're only using backing variables for servicing the UI,
+ * so allow the UI path to take the perf hit.
+ *
+ * Can revisit if this turns out to be wrong.
+ */
+private annotation class NoBackingVariableByDesign
 data class SchemaSet private constructor(
    val parsedPackages: List<ParsedPackage>,
    val generation: Int,
@@ -54,28 +65,36 @@ data class SchemaSet private constructor(
 //   private var _taxiSchemas: List<TaxiSchema>? = null
 
    @Transient
-   private var _rawSchemaStrings: List<String>? = null
-
-   @Transient
    private var _compositeSchema: CompositeSchema? = null
 
 
    @get:JsonIgnore
-   val validPackages = parsedPackages.filter { it.isValid }
+   @NoBackingVariableByDesign
+   val validPackages: List<ParsedPackage>
+      get() = parsedPackages.filter { it.isValid }
 
    @get:JsonIgnore
-   val invalidPackages = parsedPackages.filter { !it.isValid }
+   @NoBackingVariableByDesign
+   val invalidPackages: List<ParsedPackage>
+      get() = parsedPackages.filter { !it.isValid }
 
    @get:JsonIgnore
-   val validSources = validPackages.filter { it.isValid }.flatMap { it.sources }.map { it.source }
+   @NoBackingVariableByDesign
+   val validSources: List<VersionedSource>
+      get() = validPackages.filter { it.isValid }.flatMap { it.sources }.map { it.source }
 
    @get:JsonIgnore
-   val sourcesWithErrors = parsedPackages.filter { !it.isValid }.flatMap { it.sourcesWithErrors }
+   @NoBackingVariableByDesign
+   val sourcesWithErrors: List<ParsedSource>
+      get() = parsedPackages.filter { !it.isValid }.flatMap { it.sourcesWithErrors }
 
    @get:JsonIgnore
-   val allSources = parsedPackages.flatMap { sourcePackage -> sourcePackage.sources.map { it.source } }
+   @NoBackingVariableByDesign
+   val allSources: List<VersionedSource>
+      get() = parsedPackages.flatMap { sourcePackage -> sourcePackage.sources.map { it.source } }
 
    @get:JsonIgnore
+   @NoBackingVariableByDesign
    val packages: List<SourcePackage>
       get() {
          return this.parsedPackages.map { it.toSourcePackage() }
@@ -90,13 +109,11 @@ data class SchemaSet private constructor(
          return this._taxiSchemas ?: error("SchemaSet failed to initialize")
       }
 
+
    @get:JsonIgnore
    val rawSchemaStrings: List<String>
       get() {
-         if (this._rawSchemaStrings == null) {
-            init()
-         }
-         return this._rawSchemaStrings ?: error("SchemaSet failed to initialize")
+         return this.validSources.map { it.content }
       }
 
    @get:JsonIgnore
@@ -114,7 +131,6 @@ data class SchemaSet private constructor(
       log().info("Initializing schema set with generation $generation")
       if (this.parsedPackages.isEmpty()) {
          this._taxiSchemas = emptyList()
-         this._rawSchemaStrings = emptyList()
          this._compositeSchema = CompositeSchema(emptyList())
       } else {
          // TODO : Partway through simplifying everything to have a single schema.
@@ -123,7 +139,6 @@ data class SchemaSet private constructor(
             this._taxiSchemas = listOf(TaxiSchema.from(validPackages.map { it.toSourcePackage() }))
          }
 
-         this._rawSchemaStrings = this.validSources.map { it.content }
          this._compositeSchema = CompositeSchema(this._taxiSchemas!!)
       }
    }

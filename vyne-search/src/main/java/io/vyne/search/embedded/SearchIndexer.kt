@@ -6,7 +6,6 @@ import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.*
 import lang.taxi.CompilationException
-import lang.taxi.types.TypeKind
 import mu.KotlinLogging
 import org.apache.commons.lang3.StringUtils
 import org.apache.lucene.document.Document
@@ -75,6 +74,7 @@ class SearchIndexer(
    }
 
    internal fun createNewIndex(schemaSet: SchemaSet) {
+      return
       val stopwatch = Stopwatch.createStarted()
       val schema = try {
          schemaSet.schema
