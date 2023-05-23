@@ -1,0 +1,218 @@
+import {martyPitt} from '@/authors'
+import {BlogImageWithCaption} from "@/components/BlogImageWithCaption";
+import {SnippetGroup} from "@/components/SnippetGroup";
+import GetQuoteFunctionNoFieldNames from './get-quote-function-no-field-names.png'
+import GetQuoteFunction from './get-quote-function.png';
+import MoreFunctions from './more-functions.png';
+import TaxonomyTooling from './taxonomy-tooling.png';
+import Taxonomy from './taxonomy.png';
+
+export const meta = {
+  title: 'Semantic Metadata 101',
+  description: `A lightweight look into Semantic Metadata.`,
+  date: '2023-05-23T19:00:00.000Z',
+  authors: [martyPitt],
+}
+
+This post is a lightweight introduction to the concept of Semantic Metadata, and how it makes our enterprise services
+automatically composable.
+
+## What is Semantic Metadata?
+Semantic Metadata is a way of defining a contract around the meaning of data.  It lets teams create terms and definitions they agree on, and use those terms to better describe their APIs and analytics, and make software interoperable.
+
+Teams can use Semantic metadata to define formal definitions for fields in APIs:
+ * "This is what a first name means",
+ * "This is what a company name means"
+
+Analytical platforms such as [cube.dev](https://cube.dev) tend to expand this to include shared definitions of aggregates.
+
+*  "This is what a customer is"
+*  "This is what we mean by 'Active Customers'", etc.
+
+The core idea is that Semantic Metadata is a way for teams to create a shared understanding of what data means, independent of a single specific system.
+
+## Building a Taxonomy
+Semantic metadata is really just a collection of terms that describe our business.
+
+When grouped together, this is called a Taxonomy.
+
+<BlogImageWithCaption src={Taxonomy} addLightBackground 
+                      />
+
+
+[Taxi](https://taxilang.org) is a language-agnostic tool for building semantic taxonomies:
+
+```taxi
+type AccountNumber inherits Int
+type CreditScore inherits Decimal
+type FirstName inherits String
+// etc...
+```
+
+Semantic Metadata is designed to be shared across multiple teams.  So, just like with API technologies like OpenAPI, Protobuf, etc - it's best to have Semantic Metadata designed in a platform agnostic language.
+
+Generators can then generate bindings / SDKs / tools as required in whichever technology consuming teams are working with.
+
+<BlogImageWithCaption src={TaxonomyTooling} addLightBackground 
+                      />
+
+
+## Embedding semantic metadata
+On it's own, semantic metadata isn't very helpful - it's just a set of tags and definitions.
+
+However, embedded in API specs, it becomes much more powerful.
+
+Here's an example in OpenAPI:
+
+```yaml reviews.openapi.yml
+openapi: 3.0.1
+info:
+  title: ReviewsApi
+  version: 1.0.0
+paths:
+  https://reviews/{id}:
+    get:
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          x-taxi-type:
+            name: FilmId  # <-- Semantic metadata
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FilmReview'
+components:
+  schemas:
+    FilmReview:
+      type: object
+      properties:
+        id:
+          type: string
+          x-taxi-type:
+            name: ReviewId  # <-- Semantic metadata
+        filmId:
+          type: string
+          x-taxi-type:
+            name: FilmId  # <-- Semantic metadata
+        score:
+          type: integer
+          format: int32
+          x-taxi-type:
+            name: ReviewScore # <-- Semantic metadata
+```
+
+As teams enrich their exisitng API specs with semantic metadata, tooling can start inferring relationships between APIs and data sources.
+
+Let's look at a (very) simplifed API for an insurance company that provides quotes:
+
+<BlogImageWithCaption src={GetQuoteFunction} addLightBackground 
+                      />
+
+This takes a request payload with two inputs:
+
+```
+{
+   "noClaimsBonus" : 0.25,
+   "creditScore"  : "AAA"
+}
+```
+
+Semantically, this can be modelled as:
+
+```taxi
+type NoClaimsBonus inherits Decimal
+type CreditScore inherits String
+
+model QuoteRequest {
+  noClaimsBonus : NoClaimsBonus
+  creditScore : CreditScore
+}
+```
+
+This has added a small benefit of improved clarity in the docs.
+
+However, the real payoff is in when we're trying to get out services to work together...
+
+## The Payoff: Automating Interoperability
+This is where semantic metadata really starts to shine.
+
+With Semantic Metadata embedded in our API specs, we can start to infer relationships between APIs and data.
+
+Looking at our previous example without field names, we required two inputs - a NoClaimsBonus and a CreditScore.
+
+<BlogImageWithCaption src={GetQuoteFunctionNoFieldNames} addLightBackground 
+                      />
+
+
+If we don't have those pieces of information, we need to look them up.  Which means we need to look for services that expose this data.
+
+<BlogImageWithCaption src={MoreFunctions} addLightBackground  wide
+                      />
+
+
+As our APIs are enriched with Semantic Metadata, tooling can automatically infer relationships between systems.
+
+So, in our Insurance Quote example, while it's unlikely we have either a `NoClaimsBonus` or `CreditScore` available from our UI, we might have something else - like a `UserName` or `UserId`.
+
+Semantic Metadata lets us use tooling to automate the integration, linking from the Things We Know (`UserName`) to the Things We Want To Find Out (a `Quote`).
+
+We'll look into this in more detail in the next post.
+
+
+## A few tips & tricks...
+Semantic metadata is a simple concept, and is super easy to get going with.  Here are a few tips & tricks to take along your journey
+
+### Stay small & nimble when using distributed ownership
+Semantic Metadata is intended for wide collaboration, which can be tricky.
+
+Where individual teams are responsible for defining API definitions, semantic metadata has distributed ownership.
+
+If the idea of Distributed Ownership is giving you sweaty palms and flashbacks to Design-by-committee meetings
+when your org tried to implement [Canonical Domain Models](https://teivah.medium.com/why-is-a-canonical-data-model-an-anti-pattern-441b5c4cbff8), you might already be rolling your eyes.
+
+Therefore, it's [recommended](https://orbitalhq.com/blog/2023-01-16-using-semantic-metadata#defining-a-semantic-type) that Semantic Metadata is defined on Scalar terms only - single noun-like ideas that describe exactly one idea. eg:
+
+* `FirstName`
+* `LastName`
+* `DateOfBirth`
+* `PostCode`
+
+These are relatively un-contentious to define, and - unlike domain models (which evolve as systems mature) - semantics don't really change.
+
+
+### GitOps all the things
+Semantics are a bridge between business language and software.  There's no shortage of First-generation data catalog platforms that will sell you a glorified Wiki for defining your semantic terms.
+
+Instead, consider using Open Source tooling, that aligns with GitOps.
+
+You get peer review, audit trails, and automated workflows through all your existing Git tooling, without having to invest in expensive enterprise tooling.
+
+### Staying technology agnostic
+Organisations these days aren't "Java Shops" or ".NET Shops" anymore - they're polyglot, with tech teams
+choosing the tech stack that best fits the task and team.
+
+Likewise, most API and schema technologies (eg., OpenAPI, Protobuf, etc) are language agnostic, with bindings / generators
+allowing them to be consumed in whichever technology consuming teams are working with.
+
+[Taxi](https://github.com/taxilang/taxilang) is an example of a Semantic Metadata language, which is also platform-agnostic.
+
+
+
+
+## Summary
+This has been a high level introduction into some of the ideas behind Semantic Metadata.
+
+To go deeper, take a read into [Why we created Taxi](), and [Using Semantic Metadata for easier Integration](https://orbitalhq.com/blog/2023-01-16-using-semantic-metadata).
+
+In the next article, we'll take a look at building a simple application using Semantic Metadata to automate the orchestration.
+
+Also, if you liked this article, consider giving [Taxi a star](https://github.com/taxilang/taxilang)
+
+[![GitHub stars](https://img.shields.io/github/stars/taxilang/taxilang.svg?style=social&label=Star&maxAge=2592000)](https://GitHub.com/taxilang/taxilang/stargazers/)
