@@ -2,6 +2,7 @@ package io.vyne.queryService
 
 import com.jayway.awaitility.Awaitility
 import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldHaveSize
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.StubService
 import io.vyne.Vyne
@@ -219,6 +220,58 @@ class QueryLineageTest : BaseQueryServiceTest() {
          .map { it.targetNode }
          .distinct()
          .should.have.elements("orderId", "traderData/firstName", "traderData/lastName", "traderData/name")
+   }
+
+   @Test
+   fun `creates sankey graph showing complex request objects`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         model Quote {
+            quoteId : QuoteId inherits String
+         }
+         parameter model QuoteRequest {
+            creditScore : CreditScore inherits String
+            noClaimsBonus : NoClaimsBonus inherits Decimal
+         }
+         model ClientData {
+            creditScore : CreditScore inherits String
+            noClaimsBonus : NoClaimsBonus inherits Decimal
+         }
+         type CustomerId inherits String
+         service InsuranceQuotes {
+            operation getClientData(CustomerId):ClientData
+            operation getQuote(QuoteRequest):Quote
+         }
+      """.trimIndent()
+      )
+      stub.addResponse(
+         "getClientData",
+         vyne.parseJson("ClientData", """{ "creditScore" : "AAA", "noClaimsBonus" : 0.2 }""")
+      )
+      stub.addResponse("getQuote", vyne.parseJson("Quote", """{ "quoteId" : "123" } """))
+
+      val queryService = setupTestService(vyne, stub, buildHistoryConsumer())
+      val clientQueryId = UUID.randomUUID().toString()
+      val queryResult = queryService.submitVyneQlQuery(
+         """given { CustomerId = "123" }
+            find { Quote }
+         """,
+         clientQueryId = clientQueryId
+      ).body!!.toList()
+      Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
+         val historyRecord = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
+         historyRecord!!.endTime != null
+      }
+      var sankeyReport: List<QuerySankeyChartRow> = emptyList()
+      val queryId = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)!!.queryId
+      Thread.sleep(10000)
+      sankeyReport = sankeyChartRowRepository.findAllByQueryId(queryId)
+      Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until<Boolean> {
+         sankeyReport = sankeyChartRowRepository.findAllByQueryId(queryId)
+         sankeyReport.size == 4
+      }
+      val requestObjectRows = sankeyReport.filter { it.sourceNodeType == SankeyNodeType.RequestObject }
+      requestObjectRows.shouldHaveSize(1)
    }
 
    private fun buildHistoryConsumer(): HistoryEventConsumerProvider {
