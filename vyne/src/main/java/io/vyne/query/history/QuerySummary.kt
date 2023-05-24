@@ -9,32 +9,9 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.json.Jackson
 import io.vyne.models.serde.InstantSerializer
-import io.vyne.query.HttpExchange
-import io.vyne.query.MessageStreamExchange
-import io.vyne.query.QueryResponse
-import io.vyne.query.RemoteCall
-import io.vyne.query.RemoteCallExchangeMetadata
-import io.vyne.query.ResponseMessageType
-import io.vyne.query.SqlExchange
-import io.vyne.schemas.OperationName
-import io.vyne.schemas.OperationNames
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.QualifiedNameAsStringSerializer
-import io.vyne.schemas.ServiceName
-import jakarta.persistence.Column
-import jakarta.persistence.Convert
-import jakarta.persistence.Embeddable
-import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.IdClass
-import jakarta.persistence.Index
-import jakarta.persistence.Lob
-import jakarta.persistence.Table
-import jakarta.persistence.Transient
+import io.vyne.query.*
+import io.vyne.schemas.*
+import jakarta.persistence.*
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import java.time.Duration
@@ -252,7 +229,7 @@ data class RemoteCallResponseDto(
       }
 
    val serviceDisplayName: ServiceName
-      get() = OperationNames.serviceName(operation)
+      get() = OperationNames.serviceName(operation).fqn().shortDisplayName
 
    val operationName: OperationName
       get() = OperationNames.operationName(operation)
@@ -365,7 +342,8 @@ enum class SankeyNodeType {
    AttributeName,
    Expression,
    ExpressionInput,
-   ProvidedInput
+   ProvidedInput,
+   RequestObject
 }
 
 @Serializable

@@ -1,9 +1,8 @@
 /* eslint-disable max-len */
 import {Inject, Injectable} from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs/internal/Observable';
-import { nanoid } from 'nanoid';
-import { environment } from 'src/environments/environment';
+import {HttpClient, HttpHeaders} from '@angular/common/http';
+import {Observable} from 'rxjs/internal/Observable';
+import {nanoid} from 'nanoid';
 import {
   DataSource,
   InstanceLikeOrCollection,
@@ -14,12 +13,12 @@ import {
   TypedInstance,
   TypeNamedInstance
 } from './schema';
-import { VyneServicesModule } from './vyne-services.module';
-import { catchError, concatAll, map, shareReplay } from 'rxjs/operators';
-import { SseEventSourceService } from './sse-event-source.service';
-import { of } from 'rxjs';
-import { FailedSearchResponse, StreamingQueryMessage, ValueWithTypeName } from './models';
-import { WebsocketService } from 'src/app/services/websocket.service';
+import {VyneServicesModule} from './vyne-services.module';
+import {catchError, concatAll, map, shareReplay} from 'rxjs/operators';
+import {SseEventSourceService} from './sse-event-source.service';
+import {of} from 'rxjs';
+import {FailedSearchResponse, StreamingQueryMessage, ValueWithTypeName} from './models';
+import {WebsocketService} from 'src/app/services/websocket.service';
 import {ENVIRONMENT, Environment} from "./environment";
 
 @Injectable({
@@ -455,7 +454,7 @@ export type SankeyNodeType = 'QualifiedName' |
   'AttributeName' |
   'Expression' |
   'ExpressionInput' |
-  'ProvidedInput';
+  'ProvidedInput' | 'RequestObject';
 
 export interface QuerySankeyChartRow {
   queryId: string;

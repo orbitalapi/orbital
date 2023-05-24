@@ -1,6 +1,5 @@
-import { PrimitiveTypeNames } from './taxi';
-import { isNullOrUndefined, isString } from 'util';
-import { find } from 'rxjs/operators';
+import {PrimitiveTypeNames} from './taxi';
+import {isNullOrUndefined, isString} from 'util';
 import {PackageIdentifier} from "../package-viewer/packages.service";
 
 export function fqn(input: string): QualifiedName {
@@ -439,6 +438,8 @@ export type SchemaGraphNodeType =
   | 'ERROR'
   | 'VYNE'
   | 'CALLER'
+  | 'SOURCE_VALUE'
+  | 'REQUEST_OBJECT'
   | 'SERVICE';
 
 export interface SchemaGraphNode {

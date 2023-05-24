@@ -1,10 +1,10 @@
-import { Component, Input } from '@angular/core';
-import { BaseGraphComponent } from '../inheritence-graph/base-graph-component';
-import { QuerySankeyChartRow, SankeyNodeType, SankeyOperationNodeDetails } from '../services/query.service';
-import { SchemaGraph, SchemaGraphLink, SchemaGraphNode, SchemaGraphNodeType, SchemaNodeSet } from '../services/schema';
-import { ClusterNode } from '@swimlane/ngx-graph';
-import { isNullOrUndefined } from 'util';
-import { Subject } from 'rxjs';
+import {Component, Input} from '@angular/core';
+import {BaseGraphComponent} from '../inheritence-graph/base-graph-component';
+import {QuerySankeyChartRow, SankeyNodeType, SankeyOperationNodeDetails} from '../services/query.service';
+import {SchemaGraph, SchemaGraphLink, SchemaGraphNode, SchemaGraphNodeType, SchemaNodeSet} from '../services/schema';
+import {ClusterNode} from '@swimlane/ngx-graph';
+import {isNullOrUndefined} from 'util';
+import {Subject} from 'rxjs';
 
 @Component({
   selector: 'app-query-lineage',
@@ -100,6 +100,66 @@ export class QueryLineageComponent extends BaseGraphComponent {
     }
   }
 
+  nodeIcon(node: SchemaGraphNode) {
+    // if (node.subHeader.includes('getStreaming')) {
+    //   debugger;
+    // }
+    if (node.type !== 'OPERATION') {
+      return node.type
+    } else {
+      return this.nodeDetails(node.data)?.operationType;
+    }
+
+  }
+
+  onNodeClicked(clickedNode: SchemaGraphNode) {
+    if (clickedNode.type !== 'MEMBER') {
+      // We don't currently do drill-down for things other than members (attributes)
+      return;
+    }
+    this.filteredNode = clickedNode;
+    this.refreshChartData();
+  }
+
+  clearFilter() {
+    this.filteredNode = null;
+    this.refreshChartData();
+  }
+
+  toggleFullscreen() {
+    this.fullscreen = !this.fullscreen;
+    setTimeout(() => {
+      this.redrawChart$.next('xx');
+    });
+  }
+
+  getHtmlVerbTextColor(nodeData: QueryLineageOperationalNode) {
+    const defaultColor = '#7592a2';
+    const verb = nodeData.nodeOperationData['verb'];
+    if (!verb) {
+      return defaultColor;
+    }
+    switch (verb) {
+      // Selected some values at random from the Tailwind Css colors, using the 500 variants
+      // https://tailwindcss.com/docs/customizing-colors
+      case 'GET':
+        return '#0ea5e9';
+      case 'POST':
+        return '#f59e0b';
+      case 'PUT':
+        return '#6366f1';
+      case 'DELETE':
+        return '#ef4444';
+      default:
+        return defaultColor;
+    }
+  }
+
+  private nodeDetails(data: QueryLineageOperationalNode | null): SankeyOperationNodeDetails | null {
+    if (!data) return null;
+    return data.nodeOperationData;
+  }
+
   private generateChartData(rows: QuerySankeyChartRow[]): [SchemaNodeSet, ClusterNode[]] {
     const nodes: Map<string, SchemaGraphNode> = new Map<string, SchemaGraphNode>();
     const links: Map<number, SchemaGraphLink> = new Map<number, SchemaGraphLink>();
@@ -118,6 +178,8 @@ export class QueryLineageComponent extends BaseGraphComponent {
           return ['DATASOURCE', 'PROVIDED VALUE'];
         case 'QualifiedName':
           return ['OPERATION', 'SYSTEM'];
+        case 'RequestObject':
+          return ['REQUEST_OBJECT', 'Request'];
       }
     }
 
@@ -207,59 +269,6 @@ export class QueryLineageComponent extends BaseGraphComponent {
       }
     ];
     return [new SchemaGraph(nodes, links).toNodeSet(), clusters];
-  }
-
-  onNodeClicked(clickedNode: SchemaGraphNode) {
-    if (clickedNode.type !== 'MEMBER') {
-      // We don't currently do drill-down for things other than members (attributes)
-      return;
-    }
-    this.filteredNode = clickedNode;
-    this.refreshChartData();
-  }
-
-  clearFilter() {
-    this.filteredNode = null;
-    this.refreshChartData();
-  }
-
-  toggleFullscreen() {
-    this.fullscreen = !this.fullscreen;
-    setTimeout(() => {
-      this.redrawChart$.next('xx');
-    });
-  }
-
-  nodeIcon(node: SchemaGraphNode) {
-    // if (node.subHeader.includes('getStreaming')) {
-    //   debugger;
-    // }
-    if (node.type !== 'OPERATION') {
-      return null;
-    }
-    return this.nodeDetails(node.data)?.operationType;
-  }
-
-  private nodeDetails(data: QueryLineageOperationalNode | null): SankeyOperationNodeDetails | null {
-    if (!data) return null;
-    return data.nodeOperationData;
-  }
-
-  getHtmlVerbTextColor(nodeData:QueryLineageOperationalNode) {
-    const defaultColor = '#7592a2';
-    const verb = nodeData.nodeOperationData['verb'];
-    if (!verb) {
-      return defaultColor;
-    }
-    switch (verb) {
-      // Selected some values at random from the Tailwind Css colors, using the 500 variants
-      // https://tailwindcss.com/docs/customizing-colors
-      case 'GET': return '#0ea5e9';
-      case 'POST': return '#f59e0b';
-      case 'PUT': return '#6366f1';
-      case 'DELETE': return '#ef4444';
-      default: return defaultColor;
-    }
   }
 
 }
