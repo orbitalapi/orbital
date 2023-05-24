@@ -23,11 +23,11 @@ import java.time.Duration
 
 
 @SpringBootApplication
-class TaxiPlaygroundApp {
+class VoyagerApp {
    companion object {
       @JvmStatic
       fun main(args: Array<String>) {
-         SpringApplication.run(TaxiPlaygroundApp::class.java, *args)
+         SpringApplication.run(VoyagerApp::class.java, *args)
       }
    }
 

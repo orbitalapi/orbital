@@ -3,6 +3,7 @@ package org.taxilang.playground.parser
 import io.vyne.PackageMetadata
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
+import io.vyne.query.VyneQlGrammar
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.CompilationMessage
 import lang.taxi.errors
@@ -15,16 +16,29 @@ class ParserService {
 
    @PostMapping("/api/schema/parse")
    fun parseToSchema(@RequestBody source: String): ParsedSchema {
-      val (messages, schema) = TaxiSchema.compiled(
-         listOf(
-            SourcePackage(
-               PackageMetadata.from("unknown", "unknown", "1.0.0"),
-               listOf(
-                  VersionedSource.sourceOnly(source)
+      val buildInTypes = listOf(
+         SourcePackage(
+            PackageMetadata.from("org.taxilang", "taxiql", "0.1.0"),
+            listOf(
+               VersionedSource(
+                  "TaxiQL",
+                  version = "0.1.0",
+                  VyneQlGrammar.QUERY_TYPE_TAXI
                )
             )
          )
+
       )
+
+      val packages = listOf(
+         SourcePackage(
+            PackageMetadata.from("unknown", "unknown", "1.0.0"),
+            listOf(
+               VersionedSource.sourceOnly(source)
+            )
+         )
+      ) + buildInTypes
+      val (messages, schema) = TaxiSchema.compiled(packages)
       return ParsedSchema(schema, messages)
    }
 }
