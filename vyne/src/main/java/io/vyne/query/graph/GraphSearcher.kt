@@ -12,8 +12,8 @@ import io.vyne.query.PathExclusionCalculator
 import io.vyne.query.SearchGraphExclusion
 import io.vyne.query.excludedValues
 import io.vyne.query.graph.SearchResult.Companion.noPath
-import io.vyne.query.graph.edges.EvaluatableEdge
 import io.vyne.query.graph.display.displayGraphJson
+import io.vyne.query.graph.edges.EvaluatableEdge
 import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.query.graph.edges.PathEvaluation
 import io.vyne.schemas.QualifiedName
@@ -24,7 +24,6 @@ import io.vyne.utils.StrategyPerformanceProfiler
 import mu.KotlinLogging
 import java.util.concurrent.TimeUnit
 
-private val logger = KotlinLogging.logger {}
 
 // This class is not optimized.  Need to investigate how to speed it up.
 class GraphSearcher(
@@ -37,6 +36,7 @@ class GraphSearcher(
 
    companion object {
       const val MAX_SEARCH_COUNT = 25
+      private val logger = KotlinLogging.logger {}
    }
 
    private enum class PathPrevaliationResult {
