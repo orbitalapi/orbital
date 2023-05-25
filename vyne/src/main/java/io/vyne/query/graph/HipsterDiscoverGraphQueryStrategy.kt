@@ -90,6 +90,11 @@ class HipsterDiscoverGraphQueryStrategy(
             return key.coroutineContext.async {
                logger.debug { "Invoking search for type ${key.target.type.qualifiedName.shortDisplayName} with ${key.facts.size} provided facts: ${key.facts.joinToString { it.type.qualifiedName.shortDisplayName }}" }
 
+               val existingFacts = key.facts.filter { it.type == key.target.type }
+               if (existingFacts.isNotEmpty()) {
+                  logger.warn { "Attempting a graph search for type ${key.target.type.name.shortDisplayName} however an instance was already present in the provided facts." }
+               }
+
                // MP: 23-Sep-22: We have removed the concept of findOne / findAll, and now only support find.
                // Having made that change, EsgTest started failing, as the below wasn't being invoked.
                // Not sure why we didn't use GraphSearch when doing DISCOVER (which related to findOne).

@@ -708,6 +708,7 @@ class TypedObjectFactory(
          val fieldInstanceValidPredicate = buildSpecProvider.provide(field)
          val (additionalFacts, additionalScope) = getFactsInScopeForSearch()
          val buildResult = runBlocking {
+            logger.debug { "Initiating query to search for attribute $attributeName (${type.name.shortDisplayName})" }
             inPlaceQueryEngine.withAdditionalFacts(additionalFacts, additionalScope)
                .findType(type, fieldInstanceValidPredicate, PermittedQueryStrategies.EXCLUDE_BUILDER_AND_MODEL_SCAN)
                .toList()

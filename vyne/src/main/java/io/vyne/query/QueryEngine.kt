@@ -473,6 +473,7 @@ class StatefulQueryEngine(
                break
             }
             val stopwatch = Stopwatch.createStarted()
+            logger.debug { "Attempting strategy ${queryStrategy::class.simpleName} to resolve ${target.description}" }
             val strategyResult =
                invokeStrategy(context, queryStrategy, target, InvocationConstraints(spec, excludedOperations))
             failedAttempts.addAll(strategyResult.failedAttempts)
