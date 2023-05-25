@@ -351,7 +351,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
         label: 'Is synonym of'
       })
     } else if (isEvaluatedExpressionDataSource(node) || isFailedEvaluatedExpressionDataSource(node)) {
-      this.buildExpressionNode(node, dataSourceToNode, nodes, links, linkTo, this.instanceToNode, nodeSet);
+      this.buildExpressionNode(node, dataSourceToNode, nodes, links, linkTo, this.instanceToNode.bind(this), nodeSet);
     } else {
       const dataSource = node as DataSource;
       this.appendLoadedDataSource(dataSource);
@@ -373,7 +373,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
    * Determines if the typed instance is a request object, rather than a scalar value
    */
   private isRequestObject(instance: TypeNamedInstance) {
-    return Object.keys(instance.value).length > 0
+    return typeof instance.value === "object"
   }
 
   private appendRequestObject(nodes: SchemaGraphNode[], links: SchemaGraphLink[], requestObject: TypeNamedInstance, targetNodeId: string): SchemaGraphNode {
