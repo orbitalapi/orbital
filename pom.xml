@@ -12,7 +12,7 @@
    <parent>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-parent</artifactId>
-      <version>3.0.6</version>
+      <version>3.1.0</version>
    </parent>
 
    <url>https://orbitalhq.com</url>
@@ -24,7 +24,7 @@
    </licenses>
 
    <properties>
-      <taxi.version>1.37.0</taxi.version>
+      <taxi.version>1.38.0-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -66,6 +66,10 @@
       <junit.vintage.version>5.9.2</junit.vintage.version>
 
 
+      <!-- Critical vulnerability in SnakeYaml.
+      Due to be upgraded to 2.0 by default in Spring Boot 3.2
+      -->
+      <snakeyaml.version>2.0</snakeyaml.version>
    </properties>
 
    <modules>

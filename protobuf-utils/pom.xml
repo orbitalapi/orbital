@@ -12,7 +12,7 @@
    <artifactId>protobuf-utils</artifactId>
 
    <properties>
-      <wire.version>4.5.1</wire.version>
+      <wire.version>4.7.0</wire.version>
       <okio.version>3.3.0</okio.version>
 
 
@@ -55,6 +55,11 @@
    <dependencyManagement>
       <dependencies>
          <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-serialization-core</artifactId>
+            <version>${kotlin.serialization.version}</version>
+         </dependency>
+         <dependency>
             <groupId>com.squareup.wire</groupId>
             <artifactId>wire-bom</artifactId>
             <version>${wire.version}</version>
@@ -68,6 +73,7 @@
             <type>pom</type>
             <scope>import</scope>
          </dependency>
+
       </dependencies>
    </dependencyManagement>
 </project>
