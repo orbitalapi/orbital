@@ -12,7 +12,8 @@
    <parent>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-parent</artifactId>
-      <version>3.1.0</version>
+      <!-- Looks like 3.1.0 is breaking our native image build.  Let's wait for a couple of patch releases there -->
+      <version>3.0.7</version>
    </parent>
 
    <url>https://orbitalhq.com</url>
