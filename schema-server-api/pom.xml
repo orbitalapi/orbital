@@ -33,6 +33,13 @@
       <dependency>
          <groupId>com.orbitalhq.reactivefeign</groupId>
          <artifactId>feign-reactor-spring-configuration</artifactId>
+         <exclusions>
+            <!-- Exposes a vulnerability. Not using uploads, so should be fine -->
+            <exclusion>
+               <groupId>commons-fileupload</groupId>
+               <artifactId>commons-fileupload</artifactId>
+            </exclusion>
+         </exclusions>
       </dependency>
       <dependency>
          <groupId>io.projectreactor</groupId>

@@ -178,6 +178,12 @@
                <groupId>commons-jxpath</groupId>
                <artifactId>commons-jxpath</artifactId>
             </exclusion>
+            <!-- this has a security vulnerability.
+            We should just remove Eureka support entirely -->
+            <exclusion>
+               <groupId>org.codehaus.jettison</groupId>
+               <artifactId>jettison</artifactId>
+            </exclusion>
 
          </exclusions>
       </dependency>
