@@ -379,6 +379,11 @@
          </dependency>
          <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-serialization-core</artifactId>
+            <version>${kotlin.serialization.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-serialization-json</artifactId>
             <version>${kotlin.serialization.version}</version>
          </dependency>
