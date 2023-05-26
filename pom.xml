@@ -30,7 +30,7 @@
       <elasticsearch.version>7.5.2</elasticsearch.version>
       <kotlin-logging.version>3.0.5</kotlin-logging.version>
 
-      <reactive-feign.version>4.0.0-SNAPSHOT</reactive-feign.version>
+      <reactive-feign.version>4.0.0</reactive-feign.version>
       <!-- Use Java 17.
       Currently, Chronicle doens't support later versions.
       Based on their release cadence, it seems they're unlikely to support versions other than LTS.
