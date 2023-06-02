@@ -20,7 +20,7 @@ private object TypeFormatter {
          return null
       }
       if (typedInstance.value !is TemporalAccessor) {
-         logger.error { "Expected to find a Date (TemporalAccessor) value in type ${typedInstance.type.qualifiedName.shortDisplayName}, but found an instance of ${typedInstance.value!!::class.simpleName}.  Returning as a string, and not applying the format" }
+         logger.warn { "Expected to find a Date (TemporalAccessor) value in type ${typedInstance.type.qualifiedName.shortDisplayName}, but found an instance of ${typedInstance.value!!::class.simpleName}.  Returning as a string, and not applying the format" }
          return typedInstance.value.toString()
       }
       require(typedInstance.value is TemporalAccessor) { "Formatted types only supported on TemporalAccessors currently.  If you're seeing this error, time to do some work!" }

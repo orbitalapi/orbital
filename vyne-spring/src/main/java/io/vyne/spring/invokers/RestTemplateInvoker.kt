@@ -102,7 +102,7 @@ class RestTemplateInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String
    ): Flow<TypedInstance> {
-      logger.debug { "Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}" }
+      logger.info { "Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}" }
 
       val (_, url, method) = operation.httpOperationMetadata()
       val httpMethod = HttpMethod.valueOf(method)!!
@@ -111,7 +111,7 @@ class RestTemplateInvoker(
       val absoluteUrl = prependServiceBaseUrl(service, url)
       val uriVariables = uriVariableProvider.getUriVariables(parameters, absoluteUrl)
 
-      logger.debug { "Operation ${operation.name} resolves to $absoluteUrl" }
+      logger.info { "Operation ${operation.name} resolves to $absoluteUrl" }
       val typeInstanceParameters = parameters.map { it.second }
       val httpEntity = requestFactory.buildRequestBody(operation, typeInstanceParameters)
       val queryParams = requestFactory.buildRequestQueryParams(operation)
@@ -134,7 +134,7 @@ class RestTemplateInvoker(
          request.bodyValue(httpEntity.body)
       }
 
-      logger.debug { "[$queryId] - Performing $httpMethod to ${expandedUri.toASCIIString()}" }
+      logger.info { "[$queryId] - Performing $httpMethod to ${expandedUri.toASCIIString()}" }
 
       val remoteCallId = UUID.randomUUID().toString()
       val results = request
@@ -157,7 +157,7 @@ class RestTemplateInvoker(
                .isCompatibleWith(MediaType.TEXT_EVENT_STREAM)
             val responseMessageType = if (isEventStream) ResponseMessageType.EVENT else ResponseMessageType.FULL
 
-            logger.debug {
+            logger.info {
                "[$queryId] - $httpMethod to ${expandedUri.toASCIIString()} returned status ${clientResponse.statusCode()} and body length of ${
                   clientResponse.headers().contentLength().orElse(-1)
                } after ${duration}ms"
@@ -228,7 +228,7 @@ class RestTemplateInvoker(
             } else {
                logger.debug { "Request to ${expandedUri.toASCIIString()} is not streaming" }
                if (!firstResultReceived) {
-                  logger.debug { "Received body of non-streaming response" }
+                  logger.info { "Received body of non-streaming response from ${expandedUri.toASCIIString()}" }
                   firstResultReceived = true
                }
                clientResponse.bodyToMono(String::class.java)

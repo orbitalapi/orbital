@@ -34,5 +34,5 @@ management:
          base-path: /api/actuator
 logging:
    level:
-#     org.springframework: DEBUG
-     io.vyne: DEBUG
+      org.springframework: INFO
+      io.vyne: INFO

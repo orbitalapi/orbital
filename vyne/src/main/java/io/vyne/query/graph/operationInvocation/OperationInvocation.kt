@@ -1,13 +1,6 @@
 package io.vyne.query.graph.operationInvocation
 
-import io.vyne.models.DataSource
-import io.vyne.models.FailedEvaluation
-import io.vyne.models.FailedSearch
-import io.vyne.models.MixedSources
-import io.vyne.models.OperationResult
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
+import io.vyne.models.*
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
@@ -17,14 +10,7 @@ import io.vyne.query.graph.edges.EdgeEvaluator
 import io.vyne.query.graph.edges.EvaluatableEdge
 import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.query.graph.edges.ParameterFactory
-import io.vyne.schemas.ConstraintEvaluations
-import io.vyne.schemas.OperationInvocationException
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Relationship
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Service
-import io.vyne.schemas.fqn
+import io.vyne.schemas.*
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
@@ -229,7 +215,7 @@ class OperationInvocationEvaluator(
          val result = invokeOperation(service, operation, callArgs, context)
 
          if (result is TypedNull) {
-            logger.debug { "Operation ${operation.qualifiedName} (called with args $callArgs) returned a successful response of null.  Will treat this as a success, but won't add the result to the search context" }
+            logger.info { "Operation ${operation.qualifiedName} (called with args $callArgs) returned a successful response of null.  Will treat this as a success, but won't add the result to the search context" }
          } else {
             //ADD RESULT TO CONTEXT
             //context.addFact(result)
@@ -247,10 +233,10 @@ class OperationInvocationEvaluator(
          // Don't throw here, just report the failure
          val result = TypedNull.create(type = operation.returnType, source = dataSource)
          context.notifyOperationResult(edge, result, callArgs)
-         logger.debug { "Operation ${operation.qualifiedName} (called with $callArgs) failed with exception ${exception.message}.  This is often ok, as services throwing exceptions is expected." }
+         logger.warn { "Operation ${operation.qualifiedName} (called with $callArgs) failed with exception ${exception.message}.  This is often ok, as services throwing exceptions is expected." }
          return edge.failure(
             result,
-            failureReason = "Operation ${operation.qualifiedName} failed with exception ${exception.message}"
+            failureReason = "Operation ${operation.qualifiedName} ktor exception ${exception.message}"
          )
       }
 

@@ -8,17 +8,14 @@ import io.vyne.query.runtime.CompressedQueryResultWrapper
 import io.vyne.query.runtime.QueryMessage
 import io.vyne.query.runtime.QueryMessageCborWrapper
 import io.vyne.query.runtime.core.dispatcher.StreamingQueryDispatcher
-import io.vyne.query.runtime.core.gateway.RoutedQuery
-import io.vyne.query.runtime.core.gateway.RoutedQueryExecutor
 import io.vyne.schema.api.SchemaProvider
-import io.vyne.utils.Ids
 import io.vyne.utils.formatAsFileSize
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.*
+import org.springframework.web.reactive.function.client.WebClientResponseException.BadGateway
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
@@ -93,6 +90,22 @@ class HttpQueryDispatcher(
             logger.info { "Received result in ${result.elapsed()}- ${result.get().r.size.formatAsFileSize}" }
             result.get().decompress()
          }
+         .doOnError { error ->
+            when (error) {
+               is BadGateway -> handleBadGateway(error, message.clientQueryId)
+               else -> logger.error(error) { "Query ${message.clientQueryId} failed: ${error.message}" }
+            }
+
+         }
+   }
+
+   private fun handleBadGateway(error: BadGateway, clientQueryId: String) {
+      // Grab the tracing headers:
+      val requestId = error.headers["x-amzn-RequestId"]?.joinToString() ?: "Not provided"
+      val traceId = error.headers["X-Amzn-Trace-Id"]?.joinToString() ?: "Not provided"
+      val errorBody = error.responseBodyAsString
+
+      logger.warn { "Query $clientQueryId failed: ${error.message}. requestId = $requestId ; traceId = $traceId ; responseBody = $errorBody" }
    }
 
 
