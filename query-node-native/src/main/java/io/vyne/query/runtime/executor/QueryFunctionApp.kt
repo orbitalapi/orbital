@@ -21,11 +21,8 @@ import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.runApplication
 import org.springframework.cloud.client.discovery.DiscoveryClient
-import org.springframework.cloud.function.adapter.aws.CustomRuntimeEventLoop
-import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ImportRuntimeHints
-import org.springframework.context.annotation.Profile
 import org.springframework.web.reactive.function.client.WebClient
 import reactivefeign.spring.config.ReactiveFeignAutoConfiguration
 
@@ -66,7 +63,10 @@ fun main(args: Array<String>) {
    logger.info { "Available processors (cores): ${Runtime.getRuntime().availableProcessors()}" }
    logger.info { "Total available memory: ${Runtime.getRuntime().freeMemory().formatAsFileSize}" }
    logger.info { "Max memory: ${Runtime.getRuntime().maxMemory().formatAsFileSize}" }
+   logger.info { "Provided args: ${args.joinToString()}" }
 
+   val envArgs = System.getenv().map { (key, value) -> "$key: $value" }
+   logger.info { "Provided env variables: ${envArgs.joinToString()}" }
    runApplication<QueryFunctionApp>(*args)
 }
 

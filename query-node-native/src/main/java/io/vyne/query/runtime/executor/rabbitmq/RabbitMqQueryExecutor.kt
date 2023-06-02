@@ -9,23 +9,16 @@ import io.vyne.query.QueryResponseMessage
 import io.vyne.query.runtime.QueryMessage
 import io.vyne.query.runtime.QueryMessageCborWrapper
 import io.vyne.query.runtime.core.dispatcher.rabbitmq.RabbitAdmin
-import io.vyne.query.runtime.executor.StandaloneVyneFactory
+import io.vyne.query.runtime.executor.QueryExecutor
 import io.vyne.utils.withQueryId
 import jakarta.annotation.PostConstruct
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.reactor.asFlux
-import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import org.reactivestreams.Publisher
-import org.springframework.aot.hint.annotation.RegisterReflectionForBinding
-import reactor.core.CorePublisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.ParallelFlux
 import reactor.core.scheduler.Schedulers
 import reactor.rabbitmq.*
 import java.time.Duration
-import kotlin.coroutines.CoroutineContext
 
 /**
  * Subscribes to a RabbitMQ queue for queries, and executes a query
@@ -33,9 +26,11 @@ import kotlin.coroutines.CoroutineContext
 class RabbitMqQueryExecutor(
    private val rabbitSender: Sender,
    private val rabbitReceiver: Receiver,
-   private val vyneFactory: StandaloneVyneFactory,
+//   private val vyneFactory: StandaloneVyneFactory,
+   private val queryExecutor: QueryExecutor,
    private val objectMapper: ObjectMapper = Jackson.newObjectMapperWithDefaults(),
-   private val parallelism: Int = 1
+   private val parallelism: Int = 1,
+   private val subscribeForNewQueries: Boolean = true
 ) {
    init {
       require(parallelism > 0) { "Parallelism must be greater than 0" }
@@ -48,6 +43,10 @@ class RabbitMqQueryExecutor(
 
    @PostConstruct
    fun onStart() {
+      if (!subscribeForNewQueries) {
+         logger.info { "RabbitMQ Consumer is not subscribing for new queries - execution needs to be triggered manually" }
+         return
+      }
       logger.info { "Starting to consume queries from RabbitMQ" }
       consumeAndExecuteQueries()
          .subscribeOn(Schedulers.boundedElastic())
@@ -79,29 +78,33 @@ class RabbitMqQueryExecutor(
                .doOnRequest {
                   logger.info { "Downstream consumer has requested $it new messages" }
                }
-               .flatMap({ queryMessage ->
-                  executeQuery(queryMessage!!)
-                     // This flatMap consumes the results from the query, and sends them to Rabbit.
-                     // Keeping it inside the parent flatMap() ensures we can control the rate of consumption from
-                     // rabbit.
-
-                     .flatMap { (messageKind, outboundMessage) ->
-                        // Write the response to Rabbit.
-                        // We capture the first reciept - in theory there should be only one
-                        writeResultToRabbitMq(outboundMessage)
-                           .publishOn(Schedulers.boundedElastic())
-                           .map { outboundMessageResult -> messageKind to outboundMessageResult }
-                           .single()
-                           .timeout(Duration.ofSeconds(10))
-                           .doOnError {
-                              logger.withQueryId(outboundMessage.routingKey)
-                                 .error { "Rabbit failed to ACK a response message" }
-                           }
-                     }
-               }, false, parallelism) // Specifying the parallelism here defines the rate at which flatMap is performed.
-
+               .flatMap(
+                  { queryMessage -> executeQueryAndWriteResponsesToRabbit(queryMessage) },
+                  false,
+                  parallelism
+               ) // Specifying the parallelism here defines the rate at which flatMap is performed.
          }
    }
+
+   fun executeQueryAndWriteResponsesToRabbit(queryMessage: QueryMessage): Flux<Pair<QueryResponseMessage.QueryResponseMessageKind, OutboundMessageResult<OutboundMessage>>> =
+      executeQuery(queryMessage)
+         // This flatMap consumes the results from the query, and sends them to Rabbit.
+         // Keeping it inside the parent flatMap() ensures we can control the rate of consumption from
+         // rabbit.
+
+         .flatMap { (messageKind, outboundMessage) ->
+            // Write the response to Rabbit.
+            // We capture the first reciept - in theory there should be only one
+            writeResultToRabbitMq(outboundMessage)
+               .publishOn(Schedulers.boundedElastic())
+               .map { outboundMessageResult -> messageKind to outboundMessageResult }
+               .single()
+               .timeout(Duration.ofSeconds(10))
+               .doOnError {
+                  logger.withQueryId(outboundMessage.routingKey)
+                     .error { "Rabbit failed to ACK a response message" }
+               }
+         }
 
 
    private fun consumeQueries(): ParallelFlux<QueryMessage> {
@@ -155,27 +158,11 @@ class RabbitMqQueryExecutor(
    }
 
    private fun executeQuery(queryMessage: QueryMessage): Flux<Pair<QueryResponseMessage.QueryResponseMessageKind, OutboundMessage>> {
-      val vyne = vyneFactory.buildVyne(queryMessage)
-      val args = queryMessage.args()
-
-      logger.info { "Initializing query execution for new query ${queryMessage.clientQueryId}" }
-
-      // Runblocking here is misleading - the Vyne API is wrong.
-      // The suspend actually happens in the consumption of the results flow, not
-      // in the construction of the response.
-      val flow = runBlocking {
-         vyne.query(
-            queryMessage.query,
-            clientQueryId = queryMessage.clientQueryId,
-            arguments = args
-         ).results
-      }
-
-      return flow.asFlux()
+      return queryExecutor.executeQuery(queryMessage)
          .subscribeOn(Schedulers.boundedElastic())
          .map { result ->
             logger.debug { "Query ${queryMessage.clientQueryId} emitting result" }
-            QueryResponseMessage.streamResult(result.toRawObject())
+            QueryResponseMessage.streamResult(result)
          }
          .onErrorResume { error ->
             logger.withQueryId(queryMessage.clientQueryId).error(error) { "An error occurred in processing the query" }

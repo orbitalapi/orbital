@@ -1,14 +1,15 @@
 package io.vyne.query.runtime.executor
 
-import io.vyne.query.runtime.CompressedQueryResultWrapper
 import io.vyne.query.runtime.QueryMessage
-import io.vyne.query.runtime.QueryMessageCborWrapper
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
+import reactor.core.publisher.Flux
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 @OptIn(ExperimentalSerializationApi::class)
 @Component
@@ -19,16 +20,18 @@ class QueryExecutor(
       private val logger = KotlinLogging.logger {}
    }
 
-   fun executeQuery(messageCborWrapper: QueryMessageCborWrapper): CompressedQueryResultWrapper {
-      return try {
-         val message = messageCborWrapper.message()
-         executeQuery(message)
-      } catch (e: Exception) {
-         logger.error(e) { "Query execution failed: ${e.message}" }
-         throw e
-      }
-
-   }
+//   // TODO : Should be part of the serverless executor.
+//   fun executeQuery(messageCborWrapper: QueryMessageCborWrapper): CompressedQueryResultWrapper {
+//      return try {
+//         val message = messageCborWrapper.message()
+//         val result = executeQuery(message)
+//         val collectedResult = result.collectList().block()
+//         CompressedQueryResultWrapper.forResult(collectedResult!!)
+//      } catch (e: Exception) {
+//         logger.error(e) { "Query execution failed: ${e.message}" }
+//         throw e
+//      }
+//   }
 
    /**
     * Executes the query.
@@ -39,19 +42,19 @@ class QueryExecutor(
     *
     * As a result, large queries may result in OOM.
     */
-   fun executeQuery(message: QueryMessage): CompressedQueryResultWrapper {
+   fun executeQuery(message: QueryMessage, context: CoroutineContext = EmptyCoroutineContext): Flux<Any> {
       val vyne = vyneFactory.buildVyne(message)
       val args = message.args()
-      val result = runBlocking {
-         vyne.query(
+      return runBlocking {
+         val resultFlow = vyne.query(
             message.query,
             clientQueryId = message.clientQueryId,
             arguments = args
          )
             .rawResults as Flow<Any>
+         resultFlow.asFlux(context)
       }
-      val collectedResult = result.asFlux().collectList().block()
-      return CompressedQueryResultWrapper.forResult(collectedResult!!)
+
    }
 
 }

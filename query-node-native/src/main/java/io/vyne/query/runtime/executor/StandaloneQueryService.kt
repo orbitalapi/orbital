@@ -2,12 +2,10 @@ package io.vyne.query.runtime.executor
 
 import io.vyne.DefaultPackageMetadata
 import io.vyne.connectors.jdbc.registry.JdbcConnections
-import io.vyne.query.runtime.QueryMessage
 import io.vyne.query.runtime.QueryMessageCborWrapper
+import io.vyne.query.runtime.executor.serverless.ServerlessQueryExecutor
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.decodeFromByteArray
 import org.springframework.aot.hint.annotation.RegisterReflectionForBinding
-import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
@@ -22,7 +20,7 @@ import reactor.core.scheduler.Schedulers
 @OptIn(ExperimentalSerializationApi::class)
 @RestController
 class StandaloneQueryService(
-   private val queryExecutor: QueryExecutor
+   private val queryExecutor: ServerlessQueryExecutor
 ) {
 
    @PostMapping("/query")
@@ -33,13 +31,13 @@ class StandaloneQueryService(
       }.subscribeOn(Schedulers.boundedElastic())
    }
 
-   @PostMapping("/query/cbor", consumes = [MediaType.APPLICATION_CBOR_VALUE])
-   fun executeQuery(@RequestBody bytes: ByteArray): Any {
-      return Mono.create { sink ->
-         val queryMessage = QueryMessage.cbor.decodeFromByteArray<QueryMessage>(bytes)
-         sink.success(queryExecutor.executeQuery(queryMessage))
-      }.subscribeOn(Schedulers.boundedElastic())
-   }
+//   @PostMapping("/query/cbor", consumes = [MediaType.APPLICATION_CBOR_VALUE])
+//   fun executeQuery(@RequestBody bytes: ByteArray): Any {
+//      return Mono.create { sink ->
+//         val queryMessage = QueryMessage.cbor.decodeFromByteArray<QueryMessage>(bytes)
+//         sink.success(queryExecutor.executeQuery(queryMessage))
+//      }.subscribeOn(Schedulers.boundedElastic())
+//   }
 
 }
 

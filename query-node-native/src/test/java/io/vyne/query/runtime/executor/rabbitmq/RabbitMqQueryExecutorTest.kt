@@ -19,6 +19,7 @@ import io.vyne.query.QueryResponseMessage
 import io.vyne.query.runtime.QueryMessage
 import io.vyne.query.runtime.QueryMessageCborWrapper
 import io.vyne.query.runtime.core.dispatcher.rabbitmq.RabbitAdmin
+import io.vyne.query.runtime.executor.QueryExecutor
 import io.vyne.query.runtime.executor.StandaloneVyneFactory
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
@@ -187,10 +188,11 @@ class RabbitMqQueryExecutorTest {
    }
 
    private fun createQueryExecutor(parallelism: Int): RabbitMqQueryExecutor {
+      val executor = QueryExecutor(vyneFactory)
       return RabbitMqQueryExecutor(
          rabbitSender,
          rabbitReceiver,
-         vyneFactory,
+         executor,
          objectMapper,
          parallelism
       )
