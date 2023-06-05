@@ -6,7 +6,14 @@
 ## watches the directory where this docker-compose file is deployed.
 ##
 ## You can launch orbital directly by downloading this file, and
-## running docker-compose up
+## running docker-compose up.
+##
+## For example:
+##
+## curl https://start.orbitalhq.com -o "docker-compose.yml"
+## optionally:
+## docker-compose pull
+## docker-compose up -d
 ##
 ## Also, you can launch Orbital pre-configured from within a Taxi project
 ## by running:
