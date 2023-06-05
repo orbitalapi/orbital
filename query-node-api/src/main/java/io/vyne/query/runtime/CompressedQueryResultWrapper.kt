@@ -2,10 +2,8 @@ package io.vyne.query.runtime
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.vyne.SourcePackage
 import io.vyne.models.json.Jackson
 import io.vyne.utils.formatAsFileSize
-import kotlinx.serialization.json.decodeFromStream
 import mu.KotlinLogging
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -42,10 +40,19 @@ data class CompressedQueryResultWrapper(val r:ByteArray) {
       }
    }
 
-   fun decompress():Any {
+   fun decompress(): Any {
       val timedResult = measureTimedValue {
          val gzip = GZIPInputStream(ByteArrayInputStream(r))
          mapper.readValue<Any>(gzip)
+      }
+      logger.info { "Decompressing result took ${timedResult.duration}" }
+      return timedResult.value
+   }
+
+   fun decompressJson(): String {
+      val timedResult = measureTimedValue {
+         val gzip: GZIPInputStream = GZIPInputStream(ByteArrayInputStream(r))
+         String(gzip.readAllBytes())
       }
       logger.info { "Decompressing result took ${timedResult.duration}" }
       return timedResult.value

@@ -34,5 +34,7 @@ management:
          base-path: /api/actuator
 logging:
    level:
+      # Logs the whole message at INFO, which can be really big.
+      org.springframework.cloud.function.adapter.aws.AWSLambdaUtils: WARN
       org.springframework: INFO
       io.vyne: INFO
