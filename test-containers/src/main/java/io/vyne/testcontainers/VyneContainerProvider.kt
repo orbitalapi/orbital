@@ -28,8 +28,6 @@ object VyneContainerProvider {
    @JvmStatic
    val Postgres: DockerImageName = DockerImageName.parse("postgres")
 
-   @JvmStatic
-   val Eureka: DockerImageName = DockerImageName.parse("vyneco/eureka")
    fun vyneQueryServer(block: VyneContainer.() -> Unit = {}) = vyneQueryServer(CommonSettings.latest, block)
    fun vyneQueryServer(imageTag: DockerImageTag, block: VyneContainer.() -> Unit = {}): VyneContainer {
       val container = VyneContainer(VyneQueryServerImage.withTag(imageTag))
@@ -69,17 +67,6 @@ object VyneContainerProvider {
       return schemaServer
    }
 
-   fun eureka(block: VyneContainer.() -> Unit = {}) = eureka(CommonSettings.latest, block)
-   fun eureka(imageTag: DockerImageTag, block: VyneContainer.() -> Unit = {}): VyneContainer {
-      val eurekaContainer = VyneContainer(Eureka.withTag(imageTag))
-      eurekaContainer.setWaitStrategy(
-         HttpWaitStrategy()
-            .forPath("/eureka/apps")
-            .forStatusCode(200)
-            .withStartupTimeout(Duration.ofMinutes(eurekaContainer.startUpTimeOutInMinutes)))
-      block(eurekaContainer)
-      return eurekaContainer
-   }
 
    fun pipelineOrchestrator(block: VyneContainer.() -> Unit = {}) = pipelineOrchestrator(CommonSettings.latest, block)
    fun pipelineOrchestrator(imageTag: DockerImageTag, block: VyneContainer.() -> Unit = {}): VyneContainer {

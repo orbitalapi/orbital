@@ -13,8 +13,8 @@
 
    <properties>
       <buildNumber>0</buildNumber>
-      <maven.compiler.source>11</maven.compiler.source>
-      <maven.compiler.target>11</maven.compiler.target>
+      <maven.compiler.source>17</maven.compiler.source>
+      <maven.compiler.target>17</maven.compiler.target>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
       <app.main.class>io.orbital.station.OrbitalStationApp</app.main.class>
       <app.distribution.directory>${project.build.directory}/distributions/app</app.distribution.directory>
@@ -67,19 +67,7 @@
       </dependency>
       <dependency>
          <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter-security</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-actuator</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.security</groupId>
-         <artifactId>spring-security-oauth2-resource-server</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.security</groupId>
-         <artifactId>spring-security-oauth2-jose</artifactId>
       </dependency>
       <dependency>
          <groupId>io.micrometer</groupId>
