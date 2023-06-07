@@ -127,9 +127,6 @@ class QueryServiceApp {
       }
    }
 
-   //   @LoadBalanced
-
-
    @Bean
    fun webClientCustomizer(
       loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction,

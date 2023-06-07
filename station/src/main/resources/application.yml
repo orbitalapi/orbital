@@ -2,7 +2,10 @@ server:
    port: 9022
    error:
       include-message: always
+
 spring:
+   main:
+      web-application-type: reactive
    cloud:
       config:
          import-check:
@@ -13,38 +16,10 @@ spring:
          resourceserver:
             jwt:
                jwk-set-uri: ${vyne.security.open-ipd.jwk-set-uri:''}
-eureka:
-   uri: http://127.0.0.1:8761
-   client:
-      enabled: false
-      registryFetchIntervalSeconds: 1
-      initialInstanceInfoReplicationIntervalSeconds: 5
-      serviceUrl:
-         defaultZone: ${eureka.uri}/eureka/
-   instance:
-      leaseRenewalIntervalInSeconds: 2
-      leaseExpirationDurationInSeconds: 5
-      metadata-map:
-         rsocket-port: ${vyne.schema.server.port}
+   application:
+      name: orbital-station
 
 management:
-   metrics:
-      export:
-         prometheus:
-            enabled: false
-         influx:
-            enabled: false
-         elastic:
-            enabled: false
-         jmx:
-            enabled: false
-         graphite:
-            enabled: false
-         datadog:
-            enabled: false
-         dynatrace:
-            enabled: false
-
    endpoints:
       web:
          exposure:
