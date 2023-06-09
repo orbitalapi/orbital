@@ -1,0 +1,133 @@
+import {martyPitt} from '@/authors'
+import {BlogImageWithCaption} from "@/components/BlogImageWithCaption";
+import {SnippetGroup} from "@/components/SnippetGroup";
+import InsuranceQuoteRequest from './insurance-quote-request.png';
+import InsuranceQuoteRequestExploded from './insurance-quote-request-exploded.png';
+import InsuranceQuoteQueryPlan from './insurance-quote-query-plan.png';
+import ArchitectureDiagram from './architecture-diagram.png';
+import VsCodeInstallPlugin from './vscode-install-plugin.png';
+
+export const meta = {
+  title: 'Spring Boot and Orbital: Killing Integration Code.',
+  description: `An introduction to orchestrating Spring Boot microservices, without writing code`,
+  date: '2023-05-25T19:00:00.000Z',
+  authors: [martyPitt],
+}
+
+
+## Building a taxonomy
+The taxonomy is just a series of simple types that define shared concepts across our system.
+The rule of thumb is that Taxonomies only contain scalar elements, never anything with structure - as scalars rarely change.
+
+So:
+
+ * Data elements (scalar) that we wish to share between services are defined in the Taxonomy
+ * API Contracts (Request / Response objects) are defined in services.
+
+
+
+We're building our taxonomy in [Taxi](https://github.com/taxilang/taxilang), so first install Taxi using [SDKMan](https://sdkman.io/)
+
+```bash
+sdk install taxi
+```
+
+Then, let's create a new project:
+
+```bash
+$ taxi init
+
+Taxi 1.35.0 @641e58f 
+Project group (eg., com.acme): com.surely
+Project name: quotes
+Project version [0.1.0]: 
+Source directory [src/]: 
+Creating project com.surely/quotes v0.1.0 in directory /home/martypitt/dev/projects/insurance-demo 
+Writing config to /home/martypitt/dev/projects/insurance-demo/taxi.conf 
+Generating source directory at /home/martypitt/dev/projects/insurance-demo/src 
+Finished 
+```
+
+We'll edit the taxi project in VSCode, as there's a Taxi plugin available.  VSCode prompts us to install the plugin:
+
+<BlogImageWithCaption src={VsCodeInstallPlugin} />
+
+Inside the `src/` directory, create a file called `Quotes.taxi`, and paste the following taxi code:
+
+```taxi
+namespace com.surely.quotes
+
+type NoClaimsDiscount inherits Decimal
+
+type CreditScore inherits Int
+type OccupationCode inherits String
+
+type QuoteId inherits String
+type AnnualPremium inherits Decimal
+
+enum OccupationRatingFactor {
+   HighRisk,
+   MediumRisk,
+   LowRisk
+}
+```
+
+This defines a few types that we'll use to share between services.  
+
+### Generating Kotlin code from Taxi
+Because we're using Kotlin to define our Spring Boot services, we'll get Taxi to generate some Kotlin types
+for these Taxi types we've declared.
+
+To do this, add the [Kotlin plugin](https://taxilang.org/taxi-cli/kotlin-plugin/) into our `taxi.conf` file:
+
+
+```diff-yaml taxi.conf
+   name: com.surely/quotes
+   version: 0.1.0
+   sourceRoot: src/
+  
++   plugins {
++      "taxi/kotlin" {
++         kotlinVersion: 1.8.20
++         kotlinLanguageVersion: 1.8.20
++         jvmTarget: 17
++         maven: {
++            groupId: "com.surely"
++            artifactId: "quotes-taxonomy"
++         }
++      }
++   }
+
+```
+
+Now, running `taxi build` from the command line:
+
+```bash
+➜  insurance taxi build
+Taxi 1.35.0 @641e58f 
+Running generator @taxi/kotlin 
+Generator @taxi/kotlin generated 8 files 
+Compilation succeeded 
+Wrote 8 files to /home/martypitt/dev/projects/insurance-demo/dist 
+```
+
+Looking inside the dist folder, we'll see a fully generated Maven project, with a bunch of Kotlin source files.
+
+For example:
+
+```kotlin  NoClaimsDiscount.kt
+package com.surely.quotes
+
+@DataType(
+  value = NoClaimsDiscount,
+  imported = true
+)
+typealias NoClaimsDiscount = BigDecimal
+```
+
+## Updating our Spring Boot code with our Taxi types
+Now that we have some Kotlin types we can share across our services, we can update our Spring Boot
+code with semantic types.
+
+For example
+

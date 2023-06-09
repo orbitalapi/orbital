@@ -1,0 +1,461 @@
+import {martyPitt} from '@/authors'
+import {BlogImageWithCaption} from "@/components/BlogImageWithCaption";
+import InsuranceQuoteRequest from './insurance-quote-request.png';
+import InsuranceQuoteRequestExploded from './insurance-quote-request-exploded.png';
+import InsuranceQuoteQueryPlan from './insurance-quote-query-plan.png';
+import ArchitectureDiagram from './architecture-diagram.png';
+import Catalog from './insurance-demo-catalog.gif';
+import Profiler from './profiler.png';
+import SequenceDiagram from './sequence-diagram-insurance.png';
+import IntegrationDiagram from './integration-diagram.png';
+
+export const meta = {
+  title: 'Spring Boot and Orbital: Killing Integration Code.',
+  description: `An introduction to orchestrating Spring Boot microservices, without writing code`,
+  date: '2023-05-25T19:00:00.000Z',
+  authors: [martyPitt],
+}
+
+
+In this post, we're going to look at how to eliminate code when orchestrating microservices - specifically Spring Boot microservices.
+
+Getting rid of integration code makes our apps much faster to build, as well as keeps them decoupled from upstream API's,
+so that as those APIs change, our code doesn't need to.
+
+We'll use the example of request a car insurance quote, and build our stack in Spring Boot, using Kotlin.
+
+All the code for this example is available on GitHub, [here](https://github.com/orbitalapi/demos/tree/main/insurance-quotes-spring-boot).
+
+## What we're building
+For this demo, we're a pretend insurance company, issuing a quote to a customer.  Calculating a quote
+requires loading lots of information about the customer, each from it's own microservice.
+
+We'll use the [Orbital Kotlin SDK](https://github.com/orbitalapi/kotlin-sdk) to get an insurance
+quote, enriched with data from multiple microservices.
+
+We'll also be running the free, community edition of [Orbital](https://orbitalhq.com) to handle all the orchestration.
+
+Rather than writing code to stitch everything together, we'll issue this query to Orbital:
+
+```kotlin
+   @PostMapping("/quotes")
+   fun calculatePremium(@RequestBody quoteRequest: QuoteRequest): Mono<InsurancePremiumQuote> {
+      return given(quoteRequest)
+         .find<InsurancePremiumQuote>()
+         .run(orbitalClient)
+         .toMono()
+   }
+```
+
+That code snippet tells Orbital:
+
+> Use this quote request to build me an InsurancePremiumQuote
+
+Orbital dynamically orchestrates our microservices, fetching the required data to call the quote service.
+Rather than hand-coding all this orchestration, it's built on-the-fly, using the API definitions for each service.
+
+Let's dive in.
+
+## Getting a car insurance quote
+
+At it's simplest level, getting a car insurance quote looks a little something like this:
+
+<BlogImageWithCaption src={InsuranceQuoteRequest} addLightBackground  wide />
+
+However, that "Enrich request with risk data" box is actually doing a bunch of heavy lifting.
+
+In practice, it's actually a series of microservices, each responsible for looking up part of the
+data required to create a quote.
+
+When we explode it out, it looks a lot more like this:
+
+<BlogImageWithCaption src={InsuranceQuoteRequestExploded} addLightBackground wide />
+
+In some cases, discovering data is a multi-hop process, where we need to look up some
+additional information before we can get the actual information we need.
+
+For example, to calculate the risk associated with the make and model of a car, we
+first need to look up car information from the license plate number.
+
+There's a lot of orchestration code that gets written to wire these services together.
+
+Rather than writing orchestration code, we'll automate the orchestration, by using strongly typed API specs.
+
+Our code is all Kotlin, (though under the covers there's some [Taxi](https://github.com/taxilang/taxilang) metadata being generated), and using Orbital to handle the orchestration.
+
+If you're interested in learning more about how this works, these are a good place to start:
+
+ * [Semantic Metadata 101](/blog/2023-05-22-semantic-metadata-101)
+ * [Using Semantic Metadata](/blog/2023-01-16-using-semantic-metadata)
+
+## What is Orbital?
+Orbital is a platform for orchestrating services, without integration code.
+
+In comparison to other integration middleware (such as Mule, or Spring Integration) which are **imperative**, Orbital takes a **declarative** approach.
+
+So, rather than writing code to explicitly wire services together, Orbital uses [Taxi](https://github.com/taxilang/taxilang) metadata (often embedded in other API specs) to understand what services can do,
+and developers use the same metadata to describe what they want done.
+
+The actual integration is generated on-the-fly.  This makes integration both faster to build, and more resilient to change - Orbital automatically adapts it's integrations as services change.
+
+## Services architecture
+
+Let's get started.  Here's the architecture of our services.
+
+<BlogImageWithCaption src={ArchitectureDiagram} addLightBackground wide />
+
+ * We have a UI-facing service, that receives our users requests.
+   * Normally, this is the service that would have all the integration code, orchestrating calls between the other services. 
+ * We have a series of enrichment services, that look up additional data that's required
+ * Finally, we have a Premium Calculator service, that does all the calculations.
+
+However, instead of a bunch of orchestration calls inside our Quote UI service, we're going to use Orbital to handle
+the orchestration for us.
+
+The services themselves are all pretty similar, and look like this:
+
+```kotlin
+@RestController
+class OccupationalRiskFactorService {
+
+   @PostMapping("/enrichment/risks/occupation")
+   fun calculateOccupationalRiskFactor(@RequestBody request: OccupationRiskRequest): OccupationalRiskFactorResult {
+      // implementation omitted
+   }
+}
+
+data class OccupationRiskRequest(
+   val occupation: String
+)
+
+data class OccupationalRiskFactorResult(val risk: OccupationRatingFactor)
+```
+
+## Semantic types
+Semantic types are just more specific versions of scalar types that define shared concepts across our system.
+
+ie - `CustomerEmailAddress` instead of `String`.
+
+In order to keep our collection of types shareable and maintainable, we only declare scalar elements, never anything with structure. Scalars are more suited for sharing between systems, as they don't change anywhere nearly as frequently.
+
+As a rule of thumb:
+
+ * Data elements (scalar) that we wish to share between services are defined in the Taxonomy
+ * API Contracts (Request / Response objects) are defined in services.
+
+Our taxonomy is defined using Kotlin type aliases.  
+
+In a future post, we'll look at using Taxi to define our taxonomy (and generate the Kotlin code), so that
+the taxonomy is sharable with teams using other tech.
+
+First, we need the maven dependency:
+
+```xml
+<dependency>
+   <groupId>org.taxilang</groupId>
+   <artifactId>java-spring-taxi</artifactId>
+   <version>${taxi.version}</version>
+</dependency>
+```
+
+This pulls in the `@DataType` annotation, plus the Taxi codegen we'll be using a bit later.
+
+Here's a simple example:
+
+```kotlin
+   import lang.taxi.annotations.DataType
+  
+   @DataType
+   typealias CarLicensePlate = String
+  
+   @DataType
+   typealias QuoteId = String
+  
+   @DataType
+   typealias AnnualPremium = BigDecimal
+
+>   // We'll use this one in the next bit...
+>   @DataType
+>   typealias OccupationCode = String
+
+
+```
+
+You can see the full set of types in our Taxonomy [here](https://github.com/orbitalapi/demos/blob/main/insurance-quotes-spring-boot/enrichment-services/src/main/java/com/surely/quotes/taxonomy/Taxonomy.kt). 
+
+## Describing services with Semantic Types
+Now we have our semantic types set up, we can enrich our services with them.
+
+Let's look at the diff on one of our services:
+
+```diff-kotlin
+@RestController
+class OccupationalRiskFactorService {
+
+   @PostMapping("/enrichment/risks/occupation")
+   fun calculateOccupationalRiskFactor(@RequestBody request: OccupationRiskRequest): OccupationalRiskFactorResult {
+      // implementation omitted
+   }
+}
+  
+ /**
+ * Our request object 
+ */
++  @ParameterType
+  data class OccupationRiskRequest(
+    // Instead of using String, use a semantic type:
+-     val occupation: String
++     val occupation: OccupationCode
+  )
+  
+  /**
+   * Our result object
+  */
+  data class OccupationalRiskFactorResult(
+    val risk: OccupationRatingFactor
+  )
+```
+
+That simple change tells our system:
+
+> If you want to know the `OccupationalRiskFactorResult` (or anything it contains), you'll need
+> to provide an `OccupationCode`.
+
+
+## Publishing our services to Orbital
+
+Now we've annotated our service definitions, we can publish them to Orbital.
+There's lots of ways of achieving this (such as having Orbital poll a git directory, or read on OpenAPI spec), but in this example we'll use
+the Kotlin SDK to publish directly to Orbital.
+
+Our application will generate Taxi code, and push it directly to Orbital on startup.
+
+We already added the `java-spring-taxi` dependency earlier, which handles all the code-gen for us.
+
+In order to push to Orbital, we need the schema publisher SDK:
+
+```xml
+<dependency>
+    <!-- Orbital dependencies are published under io.vyne for historic reasons -->
+   <groupId>io.vyne</groupId>
+   <artifactId>schema-rsocket-publisher</artifactId>
+   <version>${orbital.version}</version>
+</dependency>
+```
+
+And, on startup, we'll publish the schemas to Orbital:
+
+```kotlin
+@Component
+class RegisterSchemaOnStartup(
+   @Value("\${server.port}")
+   private val serverPort: String,
+   @Value("\${spring.application.name}")
+   private val appName: String
+) {
+   init {
+       // Declare a publisher, which will connect to 
+       // Orbital over RSocket.
+       // Using RSocket is great for dev-time, as it instantly
+       // updates as we connect / reconnect.
+       // In Prod, an HTTP(s) connection is normally fine.
+      val publisher = SchemaPublisherService(
+         appName,
+         RSocketSchemaPublisherTransport(
+            TcpAddress("localhost", 7655)
+         )
+      )
+     // Generate some API specs that describe the service endpoints in our application.
+     // We pass a Base URL, which is where our stack is running - all URLs are relative to this.
+      val generatedSchema =  SpringTaxiGenerator.forBaseUrl("http://localhost:${serverPort}")
+            .forPackage(InsuranceQuoteApp::class.java) // Generate for everything in this package
+            .generate()
+
+      // Now, publish the API spec
+      publisher.publish(
+         PackageMetadata.from("com.surely", appName),
+         generatedSchema
+      ).subscribe()
+   }
+}
+```
+
+## Starting Orbital
+
+Although we have our application publishing, Orbital isn't running yet.  Let's fix that.
+
+The quickest way to get Orbital running is with docker-compose:
+
+```bash
+curl https://start.orbitalhq.com -o "docker-compose.yml"
+docker-compose up -d
+```
+
+After a minute or so, open `http://localhost:9022` in a browser, and you'll see the Orbital welcome screen.
+
+Head to the [catalog](http://localhost:9022), and click on the Services Diagram, and you can see an interactive diagram of the services we've just published.
+
+
+<BlogImageWithCaption src={Catalog} addLightBackground wide />
+
+There's lots you can do from the UI, but this tutorial is code-focussed, so let's head back to our IDE, and build an integration.
+
+## Asking for data
+
+Now it's time to ask Orbital to connect our services for us.
+
+Our use case is a request from the UI for a quote, with a form the user has filled out.
+
+Here's our initial service implementation:
+
+```kotlin
+@RestController
+class QuoteService {
+
+   @PostMapping("/quotes")
+   fun calculatePremium(@RequestBody quoteRequest: QuoteRequest): Mono<InsurancePremiumQuote> {
+       // TODO...
+   }
+}
+
+/**
+ * An example quote request, probably sent from a UI somewhere.
+ */
+data class QuoteRequest(
+    // Note that our request class is using semantic types, rather than
+    // raw primitives.
+   val quoteId: QuoteId, // String
+   val occupation: OccupationCode, // String
+   val parkingLocation: OvernightParkingLocation, // Enum
+   val postcode: PostCode, // String
+   val licensePlate: CarLicensePlate // String
+)
+```
+
+Because our `QuoteRequest` class has semantic types in it, we already know all the information needed to 
+get Orbital to perform an integration for us.
+
+We first need to wire up an Orbital query client.
+
+Add the maven dependency:
+
+```xml
+<dependency>
+   <groupId>com.orbitalhq</groupId>
+   <artifactId>kotlin-client</artifactId>
+   <version>${orbital-client.version}</version>
+</dependency>
+```
+
+And expose a query client to Spring:
+
+```kotlin
+@Configuration
+class OrbitalClientConfig {
+   @Bean
+   fun orbitalTransport(): OrbitalTransport {
+      return http("http://localhost:9022")
+   }
+}
+```
+
+Now, using the Orbital Kotlin SDK, we can ask Orbital to use the request object we receive from our UI
+to build a quote.
+
+Here's the data we want to receive:
+
+```kotlin
+data class InsurancePremiumQuote(
+   val quoteId: QuoteId,
+    // Specifically, calculate the AnnualPremium
+   val annualCost: AnnualPremium
+)
+```
+
+You can think of Orbital integration along the lines of: 
+
+> Given this thing I know (a `QuoteRequest`), find me some other thing (An `InsurancePremiumQuote`)
+
+To send the actual request, we use an orbital client, injected into our RestController:
+
+```kotlin
+// Inject the orbital client into the constructor (thanks, Spring)
+class QuoteService(private val orbitalClient: OrbitalTransport) { 
+
+   @PostMapping("/quotes")
+   @Operation(excluded = true) // Exclude this service from the services we're publishing to Orbital.
+   fun calculatePremium(@RequestBody quoteRequest: QuoteRequest): Mono<InsurancePremiumQuote> {
+     return given(quoteRequest) // Start by using the request we received from our UI
+             .find<InsurancePremiumQuote>() // Ask for an InsurancePremiumQuote
+             .run(orbitalClient) // Run it against our orbital instance
+             .toMono() // And return the result as a Mono<>   
+    }
+}
+```
+
+Most of that is self explanatory.  Let's take a look at this line:
+
+```kotlin
+ @Operation(excluded = true) 
+ fun calculatePremium(@RequestBody quoteRequest: QuoteRequest): Mono<InsurancePremiumQuote>
+```
+
+We've declared an API method that takes a quote request, and returns an `InsurancePremiumQuote`.  As this API
+technically satisfies the query of data we're looking for, we exclude it from the schema we publish, so that Orbital
+can't use this when we issue our query.
+
+## Testing it out
+Here's a request of inputs needed to calculate a quote request:
+```json
+{
+    "quoteId" : "123",
+    "occupation" : "Developer",
+    "parkingLocation": "Street",
+    "postcode" : "SW11 1NR",
+    "licensePlate" : "CODEZ4U"
+}
+```
+
+```bash
+curl --location --request POST 'http://localhost:7020/quotes' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "quoteId" : "123",
+    "occupation" : "Developer",
+    "parkingLocation": "Street",
+    "postcode" : "SW11 1NR",
+    "licensePlate" : "CODEZ4U"
+}'
+```
+
+We get the response back:
+
+```json
+{
+    "quoteId": "123",
+    "annualCost": 280.0
+}
+```
+## Visualizing the integration
+Hop into the Orbital UI, and you can see the details of what's actually gone on in this integration.
+
+In the [Query History](http://localhost:9022/query-history) the top-most query will be the one you just ran.
+
+<BlogImageWithCaption src={Profiler} addLightBackground wide />
+
+The execution diagram shows you how data flowed between our Spring Boot services to generate our insurance quote.
+
+<BlogImageWithCaption src={IntegrationDiagram} addLightBackground wide  />
+
+A sequence diagram is also available, which shows the calls between services.
+
+<BlogImageWithCaption src={SequenceDiagram} addLightBackground wide  />
+
+
+## Conclusion
+In this post, we've looked at how to stitch together Spring Boot microservices, without 
+having to write integration code, instead using the Orbital Kotlin SDK and Orbital Community Edition.
+
+Keeping integration code out of our stack means there's less code to write, and less code to maintain. As any
+of our services change their APIs, the integration we've built with Orbital will automatically adapts. 
+
