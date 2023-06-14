@@ -18,6 +18,10 @@ spring:
                jwk-set-uri: ${vyne.security.open-ipd.jwk-set-uri:''}
    application:
       name: orbital-station
+   sql:
+      init:
+         schema-locations: classpath:schema-h2.sql
+         mode: always
 
 management:
    endpoints:
