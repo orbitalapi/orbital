@@ -137,19 +137,6 @@ logging:
 #      io.vyne.query.GraphSearcher: TRACE
 #      io.vyne.query: DEBUG
       org.apache.catalina: WARN
-eureka:
-   client:
-      # You must manually opt-in to Eureka support now
-      # eg: by setting eureka.client.enabled=true in the command line
-      # options.
-      enabled: false
-      serviceUrl:
-         defaultZone: ${eureka.uri:http://127.0.0.1:8761}/eureka/
-   instance:
-      leaseRenewalIntervalInSeconds: 2
-      leaseExpirationDurationInSeconds: 5
-
-
 
 
 management:
