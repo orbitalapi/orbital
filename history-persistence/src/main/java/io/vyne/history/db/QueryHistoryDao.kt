@@ -5,11 +5,7 @@ import io.vyne.history.chart.LineageSankeyViewBuilder
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryResponse
-import io.vyne.query.history.FlowChartData
-import io.vyne.query.history.LineageRecord
-import io.vyne.query.history.QueryResultRow
-import io.vyne.query.history.QuerySummary
-import io.vyne.query.history.RemoteCallResponse
+import io.vyne.query.history.*
 import mu.KotlinLogging
 import java.sql.SQLIntegrityConstraintViolationException
 import java.time.Instant
@@ -117,6 +113,19 @@ class QueryHistoryDao(
 
    fun persistSankeyChart(queryId: String, sankeyViewBuilder: LineageSankeyViewBuilder) {
       val chartRows = sankeyViewBuilder.asChartRows(queryId)
+//      val ids = chartRows.map { it.toId() }
+      chartRows.forEach {
+         sankeyChartRowRepository.upsert(
+            it.queryId,
+            it.sourceNodeType.name,
+            it.sourceNode,
+            JsonConverter.objectMapper.writeValueAsString(it.sourceNodeOperationData),
+            it.targetNodeType.name,
+            it.targetNode,
+            JsonConverter.objectMapper.writeValueAsString(it.targetNodeOperationData),
+            it.count
+         )
+      }
       sankeyChartRowRepository.saveAll(chartRows)
    }
 
