@@ -91,7 +91,6 @@
       <module>pipelines</module>
       <module>cask-api</module>
       <module>test-cli</module>
-      <module>test-containers</module>
       <module>vyne-csv-utils</module>
       <module>regression-tests</module>
       <module>vyne-history-core</module>
