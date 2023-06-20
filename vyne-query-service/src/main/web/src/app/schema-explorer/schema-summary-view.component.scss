@@ -1,4 +1,16 @@
-@import "src/theme";
+@import "~src/theme";
+
+// These *should* be defined in the container.
+// But it's actually dynamically linked via a route, and it looks like
+// styles don't carry through.
+// TODO : Could try with ng-deep, as per https://stackoverflow.com/a/52522285
+
+:host {
+  display: flex;
+  flex-grow: 1;
+  width: 10px;
+  overflow: auto;
+}
 
 .container {
   flex-grow: 1;
