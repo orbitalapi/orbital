@@ -42,6 +42,7 @@ as-split.query-panel-split {
 
   app-catalog-explorer-panel, app-query-history-panel, app-saved-queries-panel {
     width: 400px;
+    overflow: auto;
   }
 }
 .code-editor-section {
