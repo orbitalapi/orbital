@@ -1,13 +1,12 @@
 import {Inject, Injectable, Injector} from '@angular/core';
 import {Environment, ENVIRONMENT} from 'src/app/services/environment';
 import {TuiDialogService} from '@taiga-ui/core';
-import {PackagesService} from 'src/app/package-viewer/packages.service';
 import {HttpClient} from '@angular/common/http';
-import {TypesService, UpdateDataOwnerRequest} from 'src/app/services/types.service';
-import {Metadata, PackageSourceName, Type, VersionedSource} from 'src/app/services/schema';
+import {UpdateDataOwnerRequest} from 'src/app/services/types.service';
+import {Metadata, PackageSourceName, QualifiedName, Type, VersionedSource} from 'src/app/services/schema';
 import {VyneUser} from 'src/app/services/user-info.service';
 import {Observable} from 'rxjs';
-import {switchMap, tap} from 'rxjs/operators';
+import {switchMap} from 'rxjs/operators';
 import {ChangesetService} from 'src/app/services/changeset.service';
 
 @Injectable({
@@ -65,5 +64,7 @@ export interface SaveQueryRequest {
 }
 
 export interface SavedQuery {
-  source: VersionedSource;
+  name: QualifiedName;
+  sources: VersionedSource[];
+  url: string | null;
 }

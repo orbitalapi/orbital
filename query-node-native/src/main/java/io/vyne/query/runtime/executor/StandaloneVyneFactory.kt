@@ -14,6 +14,7 @@ import io.vyne.connectors.jdbc.JdbcInvoker
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.query.QueryEngineFactory
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
+import io.vyne.query.graph.operationInvocation.OperationCacheFactory
 import io.vyne.query.runtime.QueryMessage
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.api.SchemaWithSourcesSchemaProvider
@@ -44,7 +45,8 @@ class StandaloneVyneFactory(
    private val meterRegistry: MeterRegistry,
    objectMapper: ObjectMapper,
    private val webClientBuilder: WebClient.Builder,
-   private val cacheConfiguration: VyneSpringCacheConfiguration
+   private val cacheConfiguration: VyneSpringCacheConfiguration,
+   private val operationCacheFactory: OperationCacheFactory = OperationCacheFactory()
 //   private val schemaCache: ?
 ) {
    companion object {
@@ -71,6 +73,8 @@ class StandaloneVyneFactory(
          SchemaWithSourcesSchemaProvider(schema, sources)
       }
 
+      val (query, options) = schemaProvider.schema.parseQuery(message.query)
+
       val jdbcInvoker = buildJdbcInvoker(message.connections, schemaProvider)
       val httpInvoker = buildHttpInvoker(schemaProvider, message)
 
@@ -79,7 +83,10 @@ class StandaloneVyneFactory(
          listOf(schemaProvider.schema),
          QueryEngineFactory.withOperationInvokers(
             cacheConfiguration,
-            CacheAwareOperationInvocationDecorator.decorateAll(invokers)
+            CacheAwareOperationInvocationDecorator.decorateAll(
+               invokers,
+               operationCache = operationCacheFactory.getCache(options.cachingStrategy)
+            )
          )
       )
 
