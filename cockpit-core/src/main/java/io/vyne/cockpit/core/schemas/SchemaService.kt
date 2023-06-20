@@ -8,7 +8,6 @@ import io.vyne.models.format.ModelFormatSpec
 import io.vyne.schema.api.ParsedSourceProvider
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore
-import io.vyne.schemaServer.editor.SavedQuery
 import io.vyne.schemas.*
 import io.vyne.schemas.taxi.toVyneSources
 import io.vyne.spring.http.NotFoundException

@@ -39,6 +39,9 @@ class CompositeSchema(private val schemas: List<Schema>) : Schema {
    override val sources: List<VersionedSource> = schemas.flatMap { it.sources }
    override val types: Set<Type> = schemas.flatMap { it.types }.distinctBy { it.fullyQualifiedName }.toSet()
    override val services: Set<Service> = schemas.flatMap { it.services }.distinctBy { it.qualifiedName }.toSet()
+   override val queries: Set<SavedQuery> =
+      schemas.flatMap { it.queries }.distinctBy { it.name.fullyQualifiedName }.toSet()
+
    override val dynamicMetadata: List<QualifiedName> = schemas.flatMap { it.dynamicMetadata }.distinct()
    override val metadataTypes: List<QualifiedName> = schemas.flatMap { it.metadataTypes }.distinct()
 
