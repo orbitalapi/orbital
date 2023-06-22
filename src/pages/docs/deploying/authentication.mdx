@@ -19,7 +19,7 @@ This is disabled by default, and can be configured through a series of parameter
 
 </Callout> -->
 
-To enable, pass the following config options to Vyne on the command line:
+To enable, pass the following config options to Orbital on the command line:
 
 | Parameter                           | Sample values                        | Description                                                                  |
 |-------------------------------------|--------------------------------------|------------------------------------------------------------------------------|
@@ -32,7 +32,7 @@ A typical docker config might look as follows:
 
 ```
   vyne:
-    image: vyneco/vyne:${VYNE_VERSION}
+    image: orbitalhq/orbital:${ORBITAL_VERSION}
     volumes:
       - ./vyne-config:/opt/service/config
     environment:
