@@ -2,7 +2,7 @@
 title: Configuring connections
 ---
 
-The `connections.conf` file defines connections for systems that Vyne understands how to connect to.
+The `connections.conf` file defines connections for systems that Orbital understands how to connect to.
 
 Configuration is required for most - but not - all connections.  HTTP connections are generally self-descriptive
 enough not to require additional metadata.
@@ -18,9 +18,9 @@ In those situations, configuring connections via the config file directly is the
 
 
 ## Specifying the location
-Connections are stored in a HOCON format config file.  The location can be customized by a parameter passed on the command line when starting Vyne.
+Connections are stored in a HOCON format config file.  The location can be customized by a parameter passed on the command line when starting Orbital.
 
-If this file doesn't exist when Vyne is launched, it's created the first time a connection is created via the UI.
+If this file doesn't exist when Orbital is launched, it's created the first time a connection is created via the UI.
 
 
 | Config setting                 | Default value             |
@@ -200,14 +200,14 @@ kafka {
       connectionName=my-kafka-connection
       connectionParameters {
          brokers="localhost:29092,localhost:39092"
-         groupId="vyne"
+         groupId="orbital"
       }
    }
    another-kafka-connection {
       connectionName=another-kafka-connection
       connectionParameters {
          brokers="localhost:29092,localhost:39092"
-         groupId="vyne"
+         groupId="orbital"
       }
    }
 }
@@ -224,11 +224,11 @@ The following configuration options are supported under the `connectionParameter
 ## AWS connections
 AWS connections are stored under the `aws` element.
 
-Vyne uses AWS connections for example to connect to SQS for data pipelines and other services as part of query execution.
+Orbital uses AWS connections for example to connect to SQS for data pipelines and other services as part of query execution.
 
-Vyne will use the [AWS default credentials provider](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html#credentials-default) by default. This means you can configure the access credentials and region with environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` & `AWS_DEFAULT_REGION`). When running Vyne in AWS (e.g. ECS) it'll also automatically pick up the role used to run the service and use that.
+Orbital will use the [AWS default credentials provider](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html#credentials-default) by default. This means you can configure the access credentials and region with environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` & `AWS_DEFAULT_REGION`). When running Orbital in AWS (e.g. ECS) it'll also automatically pick up the role used to run the service and use that.
 
-You can also configure the AWS connections manually which can be useful in cases where you need to connect to various different AWS accounts from a single installation of Vyne. As with all other config file value, you can either set the value explicitly, or read from an environment variable (as shown).
+You can also configure the AWS connections manually which can be useful in cases where you need to connect to various different AWS accounts from a single installation of Orbital. As with all other config file value, you can either set the value explicitly, or read from an environment variable (as shown).
 
 ```hocon
 aws {
@@ -247,6 +247,6 @@ aws {
 ```
 
 ### Testing with Localstack
-You can point Vyne at an AWS mock running on [Localstack](https://localstack.cloud/) by specifying the `endPointOverride` property
+You can point Orbital at an AWS mock running on [Localstack](https://localstack.cloud/) by specifying the `endPointOverride` property
 in the connection.
 

@@ -27,8 +27,8 @@ Kafka topics are declared in taxi as simple Operations which return a Stream of 
 
 ```taxi
 // 1: Add the required imports
-import io.vyne.kafka.KafkaService
-import io.vyne.kafka.KafkaOperation
+import io.orbital.kafka.KafkaService
+import io.orbital.kafka.KafkaOperation
 
 // 2: Annotate the service as a `KafkaService`.
 @KafkaService( connectionName = "moviesConnection" )

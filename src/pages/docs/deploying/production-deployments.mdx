@@ -6,7 +6,7 @@ description: How to Get Orbital deployed
 import {Callout} from '@/components/Callout';
 
 ## Deploying using Docker Compose
-A sample `docker-compose.yml` is maintained by the Orbital team and published at [start.vyne.co](https://start.vyne.co).
+A sample `docker-compose.yml` is maintained by the Orbital team and published at [start.orbitalhq.com](https://start.orbitalhq.com).
 
 It contains reasonable defaults for getting a local environment running.  Note that by default, Orbital does not enable
 authentication or role-based authorization, and you'll need to enable these.
@@ -62,11 +62,11 @@ Note:  If using [Eureka](#service-discovery-with-eureka), these settings have no
 
 | Component & Image                                                                                                                                            | Default network address      | Port(s)                         |
 |--------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------|---------------------------------|
-| [Vyne](https://hub.docker.com/r/vyneco/vyne) <br /> **Required** <br /> (UI and Query execution)                                                             | http://vyne                  | 80                              |
-| [Schema server](https://hub.docker.com/r/vyneco/schema-server) <br /> **Required**  <br /> (Central co-ordination of multiple schemas)                       | http://schema-server         | 80 (http) <br /> 7655 (RSocket) |
-| [Analytics server](https://hub.docker.com/r/vyneco/analytics-server) <br /> **Optional** <br /> (Stores query history and lineage, as well as pipeline logs) | http://vyne-analytics-server | 80 (http) <br /> 7654 (RSocket) |
-| [Cask](https://hub.docker.com/r/vyneco/cask) <br /> **Optional** <br/> (No-code file-to-api service)                                                         | http://cask                  | 80                              |
-| [Pipelines](https://hub.docker.com/r/vyneco/pipeline) <br /> **Optional** <br /> (Pipeline services)                                                         | http://vyne-pipeline-runner  | 80                              |
+| [Orbital](https://hub.docker.com/r/orbitalhq/orbital) <br /> **Required** <br /> (UI and Query execution)                                                             | http://orbital                  | 80                              |
+| [Schema server](https://hub.docker.com/r/orbitalhq/schema-server) <br /> **Required**  <br /> (Central co-ordination of multiple schemas)                       | http://schema-server         | 80 (http) <br /> 7655 (RSocket) |
+| [Analytics server](https://hub.docker.com/r/orbitalhq/analytics-server) <br /> **Optional** <br /> (Stores query history and lineage, as well as pipeline logs) | http://orbital-analytics-server | 80 (http) <br /> 7654 (RSocket) |
+| [Cask](https://hub.docker.com/r/orbitalhq/cask) <br /> **Optional** <br/> (No-code file-to-api service)                                                         | http://cask                  | 80                              |
+| [Pipelines](https://hub.docker.com/r/orbitalhq/pipeline) <br /> **Optional** <br /> (Pipeline services)                                                         | http://orbital-pipeline-runner  | 80                              |
 
 
 <Callout title='See also' type='note'>

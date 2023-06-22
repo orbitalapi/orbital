@@ -9,9 +9,9 @@ import NewDataSource from './new-data-source.png';
 import CreateConnectionPopup from './create-connection-popup.png';
 
 ## Overview
-Vyne can connect to databases to fetch data when running a query.
+Orbital can connect to databases to fetch data when running a query.
 
-In this guide, we'll learn how create database connections - both through the user interface, and through Vyne's config files.
+In this guide, we'll learn how create database connections - both through the user interface, and through Orbital's config files.
 
 ## Using the UI
 The UI allows you to create new connections to databases, as well as see a list of the connections already configured.
@@ -25,7 +25,7 @@ The UI allows you to create new connections to databases, as well as see a list 
 </Callout>
 
 ### Create a new connection
-There are two ways to add a new database connection in Vyne.
+There are two ways to add a new database connection in Orbital.
 
 #### Create a connection in the Connection Manager
 The connection manager is the place that allows you to create and view connections.
@@ -77,12 +77,12 @@ In order to view, create or edit database connections through the UI, users must
 See [this guide](/docs/deploying/authorization) for more information on role based security.
 
 ## Using a configuration file
-All the connections configured for Vyne are stored in a config file - including any that you configure through the UI
+All the connections configured for Orbital are stored in a config file - including any that you configure through the UI
 
-By default, this file is called `connections.conf`, and lives in the `conf/` directory under where launch Vyne from.
-If this file doesn't exist when Vyne is launched, it's created the first time a connection is created via the UI.
+By default, this file is called `connections.conf`, and lives in the `conf/` directory under where launch Orbital from.
+If this file doesn't exist when Orbital is launched, it's created the first time a connection is created via the UI.
 
-You can specify the name of the configuration file when launching Vyne, by setting the parameter `vyne.connections.config-file`.
+You can specify the name of the configuration file when launching Orbital, by setting the parameter `orbital.connections.config-file`.
 The same configuration file is used for all types of connections, not just Databases.  This includes Kafka connections, etc.
 
 ### Defining a database connection

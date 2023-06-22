@@ -43,11 +43,11 @@ version: "3.3"
 services:
   ## Other services omitted
    schema-server:
-      image: vyneco/schema-server:${VYNE_VERSION:-latest}
+      image: orbitalhq/schema-server:${ORBITAL_VERSION:-latest}
       depends_on:
          - eureka
       volumes:
-         - ${SCHEMA_PATH:-.}:/var/lib/vyne/schema-server
+         - ${SCHEMA_PATH:-.}:/var/lib/orbital/schema-server
       environment:
          OPTIONS: >-
             --server.port=80

@@ -3,7 +3,7 @@ export const generalFeatures = [
       title: 'Max endpoints',
       description: 'An "endpoint" is a database table, API, Kafka Topic, Lambda, or Pipeline Source / Sink',
       tiers: [
-         {title: 'project', value: '5'},
+         {title: 'project', value: 'Unlimited'},
          {title: 'platform', featured: true, value: 'Unlimited'},
          {title: 'enterprise', value: 'Unlimited'},
       ],
@@ -30,15 +30,15 @@ export const automatedIntegrationFeatures = [
          {title: 'enterprise', value: true},
       ],
    },
-   {
-      title: 'Schema Server',
-      description: 'Publish data schemas from a file or git repo',
-      tiers: [
-         {title: 'project', value: true},
-         {title: 'platform', featured: true, value: true},
-         {title: 'enterprise', value: true},
-      ],
-   },
+   // {
+   //    title: 'Schema Server',
+   //    description: 'Publish data schemas from a file or git repo',
+   //    tiers: [
+   //       {title: 'project', value: true},
+   //       {title: 'platform', featured: true, value: true},
+   //       {title: 'enterprise', value: true},
+   //    ],
+   // },
    // {
    //    title: 'CI / CD Tooling',
    //    description: 'Upgrade confidently with automated checks of query plans',
@@ -57,10 +57,18 @@ export const automatedIntegrationFeatures = [
          {title: 'enterprise', value: true},
       ],
    },
-
+  {
+    title: 'gRPC support',
+    description: 'Automated integration of gRPC APIs',
+    tiers: [
+      {title: 'project', value: false},
+      {title: 'platform', featured: true, value: true},
+      {title: 'enterprise', value: true},
+    ],
+  },
    {
       title: 'GraphQL Data Sources',
-      description: 'Include your existing GraphQL services in Vyne\'s data layer',
+      description: 'Include your existing GraphQL services in Orbital\'s data layer',
       tiers: [
          {title: 'project', value: false},
          {title: 'platform', featured: true, value: 'Coming soon'},
@@ -95,7 +103,7 @@ export const automatedIntegrationFeatures = [
       ],
    },
    {
-      title: 'Query message queues',
+      title: 'Message queues (Kafka & RabbitMQ)',
       description: 'Respond to streaming data sources such as Kafka and WebSockets',
       tiers: [
          {title: 'project', value: false},
@@ -107,7 +115,7 @@ export const automatedIntegrationFeatures = [
       title: 'Lambda support',
       description: 'Enrich data by invoking AWS Lambdas seamlessly within your queries',
       tiers: [
-         {title: 'project', value: true},
+         {title: 'project', value: false},
          {title: 'platform', featured: true, value: true},
          {title: 'enterprise', value: true},
       ],
@@ -125,14 +133,14 @@ export const automatedIntegrationFeatures = [
       title: 'AWS SQS / SNS Support',
       description: 'Trigger pipelines and write results to SQS and SNS endpoints',
       tiers: [
-         {title: 'project', value: true },
+         {title: 'project', value: false },
          {title: 'platform', value: true, featured: true},
          {title: 'enterprise', value: true },
       ],
    },
    {
-      title: 'Embedded Vyne',
-      description: 'For latency critical use cases, embed the full power of Vyne directly within your service (JVM only)',
+      title: 'Embedded Orbital',
+      description: 'For latency critical use cases, embed the full power of Orbital directly within your service (JVM only)',
       tiers: [
          {title: 'project', value: false},
          {title: 'platform', featured: true, value: false},
@@ -150,7 +158,7 @@ export const automatedIntegrationFeatures = [
    },
    {
       title: 'Custom Functions',
-      description: 'Extend Vyne with your own transformation functions, and use directly within Vyne\'s query engine',
+      description: 'Extend Orbital with your own transformation functions, and use directly within Orbital\'s query engine',
       tiers: [
          {title: 'project', value: false},
          {title: 'platform', featured: true, value: false},
@@ -240,48 +248,19 @@ export const dataToolingFeatures = [
       title: 'Data Lineage Retention',
       description: 'Track and visualise where your data actually came from. Not where you thought it was a year ago.',
       tiers: [
-         {title: 'project', value: '1 hour'},
+         {title: 'project', value: '1 day'},
          {title: 'platform', featured: true, value: '1 week'},
          {title: 'enterprise', featured: true, value: 'Unlimited'},
       ],
    }
 ]
 
-export const caskFeatures = [
-   {
-      title: 'Casks',
-      description: 'Our data-as-a-service container makes your offline data queryable',
-      tiers: [
-         {title: 'project', value: false},
-         {title: 'platform', featured: true, value: false},
-         {title: 'enterprise', value: true},
-      ],
-   },
-   {
-      title: 'Cask Extensions',
-      description: 'Create aggregation functions to query your Casks with additional insight',
-      tiers: [
-         {title: 'project', value: false},
-         {title: 'platform', featured: true, value: false},
-         {title: 'enterprise', value: true},
-      ],
-   },
-   {
-      title: 'Streaming data updates',
-      description: 'Receive updates when the data in your Casks is modified',
-      tiers: [
-         {title: 'project', value: false},
-         {title: 'platform', featured: true, value: false},
-         {title: 'enterprise', value: true},
-      ],
-   },
-]
 
 export const supportFeatures = [
    {
       title: 'Support',
       tiers: [
-         {title: 'project', value: 'Community'},
+         {title: 'project', value: 'Slack channel'},
          {title: 'platform', featured: true, value: '2 business days'},
          {title: 'enterprise', value: 'Platinum support. 1 business day', featured: true},
       ],
@@ -304,10 +283,6 @@ export const featureGroups = [
    {
       title: 'Security',
       features: securityFeatures
-   },
-   {
-      title: 'No-code data stores',
-      features: caskFeatures
    },
    {
       title: 'Support',
