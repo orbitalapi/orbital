@@ -33,6 +33,9 @@ interface ParsedSourceProvider : SchemaSourceProvider {
 /**
  * Responsible for exposing a Schema, based on multiple sources.
  *
+ * There's overlapping concerns between SchemaProvider and SchemaStore.
+ * Current approach is to favour SchemaProvider.  See notes on SchemaStore for why.
+ *
  * There's tech debt here, as we used to think that we'd support multiple
  * independent schemas.
  *

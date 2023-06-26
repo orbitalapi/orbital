@@ -14,7 +14,7 @@ import io.vyne.query.*
 import io.vyne.query.runtime.FailedSearchResponse
 import io.vyne.query.runtime.QueryServiceApi
 import io.vyne.query.runtime.core.monitor.ActiveQueryMonitor
-import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.QueryOptions
 import io.vyne.schemas.Schema
 import io.vyne.security.VynePrivileges
@@ -59,7 +59,7 @@ private val logger = KotlinLogging.logger {}
 @FlowPreview
 @RestController
 class QueryService(
-   private val schemaStore: SchemaStore,
+   private val schemaProvider: SchemaProvider,
    val vyneProvider: VyneProvider,
    val historyWriterProvider: HistoryEventConsumerProvider,
    val objectMapper: ObjectMapper,
@@ -253,18 +253,18 @@ class QueryService(
                .catch { throwable ->
                   when (throwable) {
                      is SearchFailedException -> {
-                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaStore))
+                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaProvider.schema))
                         logger.warn { "Query $queryId failed with a SearchFailedException. ${throwable.message!!}" }
                      }
 
                      is QueryCancelledException -> {
-                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaStore))
+                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaProvider.schema))
                         //emit(QueryCancelledType.cancelled(throwable.message ?: "No message provided"))
                         logger.info { "Query $queryId was cancelled" }
                      }
 
                      else -> {
-                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaStore))
+                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaProvider.schema))
                         logger.error { "Query $queryId failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}" }
                      }
                   }
@@ -360,7 +360,7 @@ class QueryService(
    ): Pair<QueryResponse, QueryOptions> =
       monitored(query = query, clientQueryId = clientQueryId, queryId = queryId, vyneUser = vyneUser) {
          logger.info { "[$queryId] $query" }
-         val schema = this.schemaStore.schema()
+         val schema = schemaProvider.schema
          val (taxiQlQuery, queryOptions) = schema.parseQuery(query)
          logger.info { "[$queryId] using cache ${queryOptions.cachingStrategy}" }
          val vyne = vyneProvider.createVyne(vyneUser.facts(), schema, queryOptions)

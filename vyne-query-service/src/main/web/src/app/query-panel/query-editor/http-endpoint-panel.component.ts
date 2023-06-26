@@ -69,8 +69,13 @@ export class HttpEndpointPanelComponent {
   update() {
     const originalQuery = this.context.data;
     const trimmed = originalQuery.replace(this.annotationRegex, '');
+    const lines = trimmed.split('\n')
+    const firstQueryLine = lines.findIndex(line => line.trim().startsWith('query'))
     const annotation = `@HttpOperation(url = '${this.prefix}${this.formGroup.getRawValue()['endpoint']}', method = 'GET')`
-    const updated = annotation + '\n' + trimmed;
+
+
+    lines.splice(firstQueryLine, 0, annotation)
+    const updated = lines.join('\n')
     console.log(updated)
     this.context.completeWith(updated);
   }

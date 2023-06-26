@@ -25,7 +25,7 @@ data class QueryAnalyticsConfig(
    // Mutable for testing
    var persistResults: Boolean = true,
    // Mutable for testing
-   var analyticsServerApplicationName: String = "VYNE-ANALYTICS-SERVER",
+   var analyticsServerApplicationName: String = "analytics-server",
    // Mutable for testing
    var mode: AnalyticsMode = AnalyticsMode.Inprocess
 ) {

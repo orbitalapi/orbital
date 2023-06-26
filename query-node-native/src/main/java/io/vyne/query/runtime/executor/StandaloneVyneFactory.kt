@@ -25,6 +25,7 @@ import io.vyne.spring.http.DefaultRequestFactory
 import io.vyne.spring.http.auth.AuthTokenInjectingRequestFactory
 import io.vyne.spring.invokers.RestTemplateInvoker
 import mu.KotlinLogging
+import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import kotlin.time.ExperimentalTime
@@ -61,7 +62,7 @@ class StandaloneVyneFactory(
       .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
    @OptIn(ExperimentalTime::class)
-   fun buildVyne(message: QueryMessage): Vyne {
+   fun buildVyne(message: QueryMessage): Pair<Vyne, DiscoveryClient> {
       val sources = message.sourcePackages()
       val sourcesHash = SourcePackageHasher.hash(sources)
       val schemaProvider = schemaCache.get(sourcesHash) {
@@ -74,9 +75,9 @@ class StandaloneVyneFactory(
       }
 
       val (query, options) = schemaProvider.schema.parseQuery(message.query)
-
+      val discoveryClient = StaticServicesConfigDiscoveryClient(message.services)
       val jdbcInvoker = buildJdbcInvoker(message.connections, schemaProvider)
-      val httpInvoker = buildHttpInvoker(schemaProvider, message)
+      val httpInvoker = buildHttpInvoker(schemaProvider, message, discoveryClient)
 
       val invokers = listOf(jdbcInvoker, httpInvoker)
       return Vyne(
@@ -88,15 +89,16 @@ class StandaloneVyneFactory(
                operationCache = operationCacheFactory.getCache(options.cachingStrategy)
             )
          )
-      )
+      ) to discoveryClient
 
    }
 
    private fun buildHttpInvoker(
       schemaProvider: SchemaProvider,
-      message: QueryMessage
+      message: QueryMessage,
+      discoveryClient: DiscoveryClient
    ): RestTemplateInvoker {
-      val discoveryClient = StaticServicesConfigDiscoveryClient(message.services)
+
       val builder = webClientBuilder
          // Adding filter functions mutates the builder.
          // Be sure to clone a clean one.

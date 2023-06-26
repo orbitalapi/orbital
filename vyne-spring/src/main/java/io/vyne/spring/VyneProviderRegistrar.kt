@@ -5,7 +5,6 @@ import io.vyne.VyneCacheConfiguration
 import io.vyne.auth.tokens.AuthTokenRepository
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.schema.api.SchemaProvider
-import io.vyne.schema.consumer.SchemaStore
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.DefaultRequestFactory
 import io.vyne.spring.http.auth.AuthTokenInjectingRequestFactory
@@ -24,12 +23,12 @@ annotation class EnableVyne
 class EnableVyneConfiguration {
    @Bean
    fun vyneFactory(
-      schemaStore: SchemaStore,
+      schemaProvider: SchemaProvider,
       operationInvokers: List<OperationInvoker>,
       vyneCacheConfiguration: VyneCacheConfiguration,
       vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
    ): VyneFactory {
-      return VyneFactory(schemaStore, operationInvokers, vyneCacheConfiguration, vyneSpringProjectionConfiguration)
+      return VyneFactory(schemaProvider, operationInvokers, vyneCacheConfiguration, vyneSpringProjectionConfiguration)
    }
 
    @Bean

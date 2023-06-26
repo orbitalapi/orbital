@@ -6,10 +6,10 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.vyne.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import io.vyne.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.config.jdbc.JdbcDriver
+import io.vyne.queryService.TestSchemaProvider
 import io.vyne.queryService.VyneQueryIntegrationTest
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore
-import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.spring.config.TestDiscoveryClientConfig
 import org.jose4j.jwk.RsaJsonWebKey
@@ -88,7 +88,8 @@ class VyneQuerySecurityIntegrationTest {
    class TestVyneAuthorisationConfig {
       @Bean
       @Primary
-      fun schemaProvider(): SchemaProvider = SimpleTaxiSchemaProvider(VyneQueryIntegrationTest.UserSchema.source)
+      fun schemaProvider(): SchemaProvider =
+         TestSchemaProvider.withBuiltInsAnd(VyneQueryIntegrationTest.UserSchema.schema.sources)
 
       @Bean
       fun schemaStore(): SchemaStore = LocalValidatingSchemaStoreClient()

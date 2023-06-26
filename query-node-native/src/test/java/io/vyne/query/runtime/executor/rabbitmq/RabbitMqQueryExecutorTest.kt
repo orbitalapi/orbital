@@ -76,7 +76,7 @@ class RabbitMqQueryExecutorTest {
    fun executesQueryAndWritesResponsesToRabbit() {
       initQueryExecutor(parallelism = 1)
       val (vyne, stub) = testVyne(TaxiSchema.empty())
-      whenever(vyneFactory.buildVyne(any())).thenReturn(vyne)
+      whenever(vyneFactory.buildVyne(any())).thenReturn(vyne to mock { })
       val queryId = Ids.id("query-")
 
       val query = """given { f:String = 'Hello, world' } find { response : String }"""
@@ -113,7 +113,7 @@ class RabbitMqQueryExecutorTest {
    fun `when parallel execution is disabled then queries execute sequentially`() {
       initQueryExecutor(parallelism = 5)
       val (vyne, stub) = testVyne(TaxiSchema.empty())
-      whenever(vyneFactory.buildVyne(any())).thenReturn(vyne)
+      whenever(vyneFactory.buildVyne(any())).thenReturn(vyne to mock())
 
       val query = """given { f:String = 'Hello, world' } find { response : String }"""
       val collectedMessages = mutableListOf<OutboundMessageResult<OutboundMessage>>()
@@ -188,7 +188,7 @@ class RabbitMqQueryExecutorTest {
    }
 
    private fun createQueryExecutor(parallelism: Int): RabbitMqQueryExecutor {
-      val executor = QueryExecutor(vyneFactory)
+      val executor = QueryExecutor(vyneFactory, mock { })
       return RabbitMqQueryExecutor(
          rabbitSender,
          rabbitReceiver,
