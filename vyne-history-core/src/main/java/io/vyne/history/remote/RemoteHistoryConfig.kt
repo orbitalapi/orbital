@@ -33,7 +33,7 @@ class RemoteHistoryConfig {
       discoveryClient: DiscoveryClient
    ): HistoryEventConsumerProvider {
       logger.info { "Analytics data will sent to a remote analytics server" }
-      return QueryHistoryRemoteWriter(config, rsocketStrategies, discoveryClient)
+      return QueryHistoryRSocketWriter(config, rsocketStrategies, discoveryClient)
    }
 
    @Bean

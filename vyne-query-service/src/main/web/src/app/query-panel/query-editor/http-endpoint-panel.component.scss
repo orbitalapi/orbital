@@ -1,0 +1,15 @@
+tui-notification {
+  margin-bottom: 1rem;
+}
+
+tui-select, tui-input {
+  margin-bottom: 1rem;
+}
+
+.row {
+  display: flex;
+
+  .spacer {
+    flex-grow: 1;
+  }
+}

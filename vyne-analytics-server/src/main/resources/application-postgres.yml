@@ -13,9 +13,8 @@ spring:
             dialect:  org.hibernate.dialect.PostgreSQL95Dialect
 
    datasource:
-      url: "jdbc:postgresql://localhost:5432/vyne-analytics"
-      username: "vynedb"
-      password: "vynedb"
+      url: jdbc:postgresql://localhost:5432/orbital # jdbc:h2:file:./vyne-query-analytics;COMPRESS=TRUE;MV_STORE=true;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY;DATABASE_TO_LOWER=TRUE
+      username: orbital
+      password: orbital
       driver: "org.postgresql.Driver"
       driverClassName: org.postgresql.Driver
-

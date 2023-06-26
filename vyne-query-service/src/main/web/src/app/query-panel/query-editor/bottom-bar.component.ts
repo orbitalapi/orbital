@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
-import { isNullOrUndefined } from 'util';
-import { RunningQueryStatus } from '../../services/active-queries-notification-service';
-import { Observable } from 'rxjs/internal/Observable';
-import { CopyQueryFormat } from 'src/app/query-panel/query-editor/QueryFormatter';
-import { AppInfo, AppInfoService, QueryServiceConfig } from 'src/app/services/app-info.service';
+import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
+import {isNullOrUndefined} from 'util';
+import {RunningQueryStatus} from '../../services/active-queries-notification-service';
+import {Observable} from 'rxjs/internal/Observable';
+import {CopyQueryFormat} from 'src/app/query-panel/query-editor/QueryFormatter';
+import {AppInfoService, QueryServiceConfig} from 'src/app/services/app-info.service';
 
 
 @Component({
@@ -42,6 +42,10 @@ import { AppInfo, AppInfoService, QueryServiceConfig } from 'src/app/services/ap
       <img src='assets/img/tabler/player-play.svg' class='filter-white'>
       Run
     </button>
+    <div class='running-timer' *ngIf="(currentState$ | async) === 'Generating'">
+      <span class='loader'></span>
+      <span>Thinking...&nbsp;</span>
+    </div>
     <div class='running-timer' *ngIf="(currentState$ | async) === 'Running'">
       <span class='loader'></span>
       <span>Running...&nbsp;</span>
@@ -76,7 +80,7 @@ import { AppInfo, AppInfoService, QueryServiceConfig } from 'src/app/services/ap
       <mat-icon>more_vert</mat-icon>
     </button>
     <mat-menu #moreOptionsMenu='matMenu'>
-      <button mat-menu-item (click)="publishAsHttpEndpoint.emit()">Publish query as HTTP endpoint</button>
+      <button mat-menu-item (click)="publishAsHttpEndpoint.emit()" [disabled]="!publishAsHttpEndpointEnabled">Publish query as HTTP endpoint</button>
     </mat-menu>
   `,
   styleUrls: ['./bottom-bar.component.scss']
@@ -103,6 +107,9 @@ export class BottomBarComponent {
 
   @Output()
   publishAsHttpEndpoint = new EventEmitter();
+
+  @Input()
+  publishAsHttpEndpointEnabled: boolean = false;
 
 
   @Input()
@@ -145,4 +152,4 @@ export class BottomBarComponent {
 }
 
 export type QueryLanguage = 'TaxiQL' | 'Text';
-export type QueryState = 'Editing' | 'Running' | 'Result' | 'Error' | 'Cancelling';
+export type QueryState = 'Editing' | 'Generating' | 'Running' | 'Result' | 'Error' | 'Cancelling';

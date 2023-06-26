@@ -1,9 +1,0 @@
-namespace vyne.test.containers
-
-type ProductId inherits String
-type ProductName inherits String
-model Product {
-   @Id
-   id: ProductId by column("id")
-   name: ProductName by column("name")
-}

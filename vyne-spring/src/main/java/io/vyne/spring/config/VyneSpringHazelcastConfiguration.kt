@@ -17,5 +17,4 @@ data class VyneSpringHazelcastConfiguration(
 enum class HazelcastDiscovery {
     MULTICAST,
     AWS,
-    EUREKA
 }

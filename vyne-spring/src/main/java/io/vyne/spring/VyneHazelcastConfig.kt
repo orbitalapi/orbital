@@ -4,8 +4,6 @@ import com.hazelcast.config.Config
 import com.hazelcast.config.ExecutorConfig
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
-import com.hazelcast.eureka.one.EurekaOneDiscoveryStrategyFactory
-import com.netflix.discovery.EurekaClient
 import io.vyne.schemas.DistributedSchemaConfig.vyneSchemaMapConfig
 import io.vyne.spring.config.HazelcastDiscovery
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
@@ -17,7 +15,6 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 class VyneHazelcastConfig(
    val vyneHazelcastConfiguration: VyneSpringHazelcastConfiguration,
-   val eurekaClient: EurekaClient?
 ) {
 
    @Bean("hazelcast")
@@ -28,14 +25,9 @@ class VyneHazelcastConfig(
       hazelcastConfiguration.addMapConfig(vyneSchemaMapConfig())
       hazelcastConfiguration.executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
 
-      EurekaOneDiscoveryStrategyFactory.setEurekaClient(eurekaClient)
-
       when (vyneHazelcastConfiguration.discovery) {
          HazelcastDiscovery.MULTICAST -> hazelcastConfiguration.apply { multicastHazelcastConfig(this) }
          HazelcastDiscovery.AWS -> hazelcastConfiguration.apply { awsHazelcastConfig(this) }
-         HazelcastDiscovery.EUREKA -> {
-            hazelcastConfiguration.apply { eurekaHazelcastConfig(this, vyneHazelcastConfiguration.eurekaUri) }
-         }
       }
 
       val instance = Hazelcast.newHazelcastInstance(hazelcastConfiguration)
@@ -76,30 +68,6 @@ class VyneHazelcastConfig(
       return config
    }
 
-   fun eurekaHazelcastConfig(config:Config, eurekaUri: String): Config {
-
-      config.apply {
-
-         networkConfig.join.tcpIpConfig.isEnabled = false
-         networkConfig.join.multicastConfig.isEnabled = false
-         networkConfig.join.eurekaConfig.isEnabled = true
-         networkConfig.join.eurekaConfig.setProperty("self-registration", "true")
-         networkConfig.join.eurekaConfig.setProperty("namespace", "hazelcast")
-         networkConfig.join.eurekaConfig.setProperty("use-metadata-for-host-and-port", vyneHazelcastConfiguration.useMetadataForHostAndPort)
-         networkConfig.join.eurekaConfig.setProperty("use-classpath-eureka-client-props", "false")
-         networkConfig.join.eurekaConfig.setProperty("shouldUseDns", "false")
-         networkConfig.join.eurekaConfig.setProperty("serviceUrl.default", eurekaUri)
-
-         if (vyneHazelcastConfiguration.networkInterface.isNotEmpty()) {
-            config.setProperty("hazelcast.socket.bind.any", "false")
-            networkConfig.interfaces.isEnabled = true
-            networkConfig.interfaces.interfaces = listOf(vyneHazelcastConfiguration.networkInterface)
-         }
-      }
-
-      return config
-
-   }
 
    fun projectionExecutorServiceConfig():ExecutorConfig {
 

@@ -164,23 +164,7 @@
          <version>0.9.3</version>
          <scope>test</scope>
       </dependency>
-      <dependency>
-         <groupId>org.springframework.cloud</groupId>
-         <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-         <exclusions>
-            <exclusion>
-               <groupId>commons-jxpath</groupId>
-               <artifactId>commons-jxpath</artifactId>
-            </exclusion>
 
-         </exclusions>
-      </dependency>
-      <!-- TODO Remove once spring-cloud-starter-netflix-eureka-client is updated to use at least this version (vulnerability in 1.4.18) -->
-      <dependency>
-         <groupId>com.thoughtworks.xstream</groupId>
-         <artifactId>xstream</artifactId>
-         <version>1.4.20</version>
-      </dependency>
       <dependency>
          <groupId>io.netty</groupId>
          <artifactId>netty-tcnative-boringssl-static</artifactId>
@@ -327,46 +311,13 @@
          <scope>test</scope>
       </dependency>
 
-      <!-- Monitoring and reporting -->
-
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-validation</artifactId>
+      </dependency>
       <dependency>
          <groupId>io.micrometer</groupId>
          <artifactId>micrometer-core</artifactId>
-      </dependency>
-
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-prometheus</artifactId>
-      </dependency>
-
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-influx</artifactId>
-      </dependency>
-
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-elastic</artifactId>
-      </dependency>
-
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-jmx</artifactId>
-      </dependency>
-
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-graphite</artifactId>
-      </dependency>
-
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-datadog</artifactId>
-      </dependency>
-
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-dynatrace</artifactId>
       </dependency>
 
       <dependency>

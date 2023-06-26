@@ -366,8 +366,9 @@ The following configuration parameters are available:
 |Parameter|Description|Required|Default Value|
 |---------|-----------|--------|-------------|
 |`connection`|The name of a connection, configured in Vyne's connection manager|true||
-|`targetTypeName`|The fully qualified name of the type which content being pushed to the database should be read as|true||
+|`targetTypeName`|The fully qualified name of the type which content being pushed to the database should be read as. Pass * to use the type from a querySpec|true||
 |`writeDisposition`|Whether to append new data into the existing table (APPEND), or to create a new table with a unique name and switch over the view to point to the newly created table (RECREATE).|false||
+|`querySpec`|If defined, the query return type is used as the target type.|false||
          
 
 #### Example
@@ -380,6 +381,7 @@ The following configuration parameters are available:
     "connection" : "my-connection",
     "targetTypeName" : "com.demo.Customer",
     "writeDisposition" : "APPEND",
+    "querySpec" : null,
     "targetType" : "com.demo.Customer",
     "windowDurationMs" : 500
   }

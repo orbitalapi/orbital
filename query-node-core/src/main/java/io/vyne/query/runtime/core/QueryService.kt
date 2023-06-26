@@ -14,7 +14,7 @@ import io.vyne.query.*
 import io.vyne.query.runtime.FailedSearchResponse
 import io.vyne.query.runtime.QueryServiceApi
 import io.vyne.query.runtime.core.monitor.ActiveQueryMonitor
-import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.QueryOptions
 import io.vyne.schemas.Schema
 import io.vyne.security.VynePrivileges
@@ -59,7 +59,7 @@ private val logger = KotlinLogging.logger {}
 @FlowPreview
 @RestController
 class QueryService(
-   private val schemaStore: SchemaStore,
+   private val schemaProvider: SchemaProvider,
    val vyneProvider: VyneProvider,
    val historyWriterProvider: HistoryEventConsumerProvider,
    val objectMapper: ObjectMapper,
@@ -140,8 +140,18 @@ class QueryService(
    ): ResponseEntity<Flow<String>> {
 
       val user = auth?.toVyneUser()
-      val (response,queryOptions) = vyneQLQuery(query, user, clientQueryId = clientQueryId, queryId = UUID.randomUUID().toString())
-      return queryResultToResponseEntity(response, resultMode, contentType, queryOptions) as ResponseEntity<Flow<String>>
+      val (response, queryOptions) = vyneQLQuery(
+         query,
+         user,
+         clientQueryId = clientQueryId,
+         queryId = UUID.randomUUID().toString()
+      )
+      return queryResultToResponseEntity(
+         response,
+         resultMode,
+         contentType,
+         queryOptions
+      ) as ResponseEntity<Flow<String>>
 
    }
 
@@ -163,7 +173,7 @@ class QueryService(
    ): ResponseEntity<Flow<Any>> {
 
       val user = auth?.toVyneUser()
-      val (response,queryOptions) = vyneQLQuery(
+      val (response, queryOptions) = vyneQLQuery(
          query,
          user,
          clientQueryId = clientQueryId,
@@ -228,28 +238,33 @@ class QueryService(
       }
       val user = auth?.toVyneUser()
       val queryId = UUID.randomUUID().toString()
-      val (queryResponse,queryOptions) = vyneQLQuery(query, user, clientQueryId, queryId)
+      val (queryResponse, queryOptions) = vyneQLQuery(query, user, clientQueryId, queryId)
       return when (queryResponse) {
          is FailedSearchResponse -> flowOf(queryResponse)
          is QueryResult -> {
             val resultSerializer =
-               this.queryResponseFormatter.buildStreamingSerializer(resultMode, queryResponse, contentType, queryOptions)
+               this.queryResponseFormatter.buildStreamingSerializer(
+                  resultMode,
+                  queryResponse,
+                  contentType,
+                  queryOptions
+               )
             queryResponse.results
                .catch { throwable ->
                   when (throwable) {
                      is SearchFailedException -> {
-                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaStore))
+                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaProvider.schema))
                         logger.warn { "Query $queryId failed with a SearchFailedException. ${throwable.message!!}" }
                      }
 
                      is QueryCancelledException -> {
-                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaStore))
+                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaProvider.schema))
                         //emit(QueryCancelledType.cancelled(throwable.message ?: "No message provided"))
                         logger.info { "Query $queryId was cancelled" }
                      }
 
                      else -> {
-                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaStore))
+                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaProvider.schema))
                         logger.error { "Query $queryId failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}" }
                      }
                   }
@@ -278,24 +293,38 @@ class QueryService(
             val websocketQuery = objectMapper.readValue<WebsocketQuery>(message.payloadAsText)
 
             CoroutineScope(vyneQlDispatcher).launch {
-               getVyneQlQueryStreamingResponse(
-                  websocketQuery.query,
-                  websocketQuery.resultMode,
-                  MediaType.APPLICATION_JSON_VALUE,
-                  clientQueryId = websocketQuery.clientQueryId
-               )
-                  .onCompletion { error ->
+               try {
+                  getVyneQlQueryStreamingResponse(
+                     websocketQuery.query,
+                     websocketQuery.resultMode,
+                     MediaType.APPLICATION_JSON_VALUE,
+                     clientQueryId = websocketQuery.clientQueryId
+                  ).onCompletion { error ->
                      if (error == null) {
                         sink.emitComplete(Sinks.EmitFailureHandler.FAIL_FAST)
                      } else {
                         sink.emitError(error, Sinks.EmitFailureHandler.FAIL_FAST)
                      }
                   }
-                  .collect { emittedResult ->
-                     val json = objectMapper.writeValueAsString(emittedResult)
-                     sink.emitNext(json, Sinks.EmitFailureHandler.FAIL_FAST)
-                  }
-               session.close(CloseStatus.NORMAL)
+                     .collect { emittedResult ->
+                        val json = objectMapper.writeValueAsString(emittedResult)
+                        sink.emitNext(json, Sinks.EmitFailureHandler.FAIL_FAST)
+                     }
+                  session.close(CloseStatus.NORMAL)
+               } catch (e: Exception) {
+                  // Compilation exceptions hit here, before the flow exists.
+                  val errorMessage = FailedSearchResponse(
+                     e.message!!,
+                     null,
+                     websocketQuery.clientQueryId
+                  )
+                  val json = objectMapper.writeValueAsString(errorMessage)
+                  sink.emitNext(json, Sinks.EmitFailureHandler.FAIL_FAST)
+
+                  sink.emitError(e, Sinks.EmitFailureHandler.FAIL_FAST)
+                  session.close(CloseStatus.BAD_DATA)
+               }
+
             }
          }
 
@@ -328,52 +357,60 @@ class QueryService(
       vyneUser: VyneUser? = null,
       clientQueryId: String?,
       queryId: String
-   ): Pair<QueryResponse,QueryOptions> = monitored(query = query, clientQueryId = clientQueryId, queryId = queryId, vyneUser = vyneUser) {
-      logger.info { "[$queryId] $query" }
-      val vyne = vyneProvider.createVyne(vyneUser.facts())
-      val historyWriterEventConsumer = historyWriterProvider.createEventConsumer(queryId, vyne.schema)
-      val (response,queryOptions) = try {
-         val eventDispatcherForQuery =
-            activeQueryMonitor.eventDispatcherForQuery(queryId, listOf(historyWriterEventConsumer))
-         val (taxiQlQuery, queryOptions) = vyne.parseQuery(query)
-         vyne.query(query, queryId = queryId, clientQueryId = clientQueryId, eventBroker = eventDispatcherForQuery) to queryOptions
-      } catch (e: lang.taxi.CompilationException) {
-         logger.info("The query failed compilation: ${e.message}")
-         /**
-          * Query failed due to compilation even without start execution.
-          * We need to emit the QueryStart event manually so that analytics records are persisted for query compilation as well.
-          */
-         historyWriterEventConsumer.handleEvent(
-            QueryStartEvent(
+   ): Pair<QueryResponse, QueryOptions> =
+      monitored(query = query, clientQueryId = clientQueryId, queryId = queryId, vyneUser = vyneUser) {
+         logger.info { "[$queryId] $query" }
+         val schema = schemaProvider.schema
+         val (taxiQlQuery, queryOptions) = schema.parseQuery(query)
+         logger.info { "[$queryId] using cache ${queryOptions.cachingStrategy}" }
+         val vyne = vyneProvider.createVyne(vyneUser.facts(), schema, queryOptions)
+         val historyWriterEventConsumer = historyWriterProvider.createEventConsumer(queryId, vyne.schema)
+         val (response) = try {
+            val eventDispatcherForQuery =
+               activeQueryMonitor.eventDispatcherForQuery(queryId, listOf(historyWriterEventConsumer))
+            vyne.query(
+               taxiQlQuery,
                queryId = queryId,
-               timestamp = Instant.now(),
-               taxiQuery = query,
-               query = null,
-               clientQueryId = clientQueryId ?: "",
-               message = ""
+               clientQueryId = clientQueryId,
+               eventBroker = eventDispatcherForQuery
+            ) to queryOptions
+         } catch (e: lang.taxi.CompilationException) {
+            logger.info("The query failed compilation: ${e.message}")
+            /**
+             * Query failed due to compilation even without start execution.
+             * We need to emit the QueryStart event manually so that analytics records are persisted for query compilation as well.
+             */
+            historyWriterEventConsumer.handleEvent(
+               QueryStartEvent(
+                  queryId = queryId,
+                  timestamp = Instant.now(),
+                  taxiQuery = query,
+                  query = null,
+                  clientQueryId = clientQueryId ?: "",
+                  message = ""
+               )
             )
-         )
-         val failedSearchResponse = FailedSearchResponse(
-            message = e.message!!, // Message contains the error messages from the compiler
-            profilerOperation = null,
-            clientQueryId = clientQueryId,
-            queryId = queryId
-         )
-         failedSearchResponse to QueryOptions.default()
-      } catch (e: SearchFailedException) {
-         FailedSearchResponse(e.message!!, e.profilerOperation, queryId = queryId) to QueryOptions.default()
+            val failedSearchResponse = FailedSearchResponse(
+               message = e.message!!, // Message contains the error messages from the compiler
+               profilerOperation = null,
+               clientQueryId = clientQueryId,
+               queryId = queryId
+            )
+            failedSearchResponse to QueryOptions.default()
+         } catch (e: SearchFailedException) {
+            FailedSearchResponse(e.message!!, e.profilerOperation, queryId = queryId) to queryOptions
 
-      } catch (e: NotImplementedError) {
-         // happens when Schema is empty
-         FailedSearchResponse(e.message!!, null, queryId = queryId) to QueryOptions.default()
-      } catch (e: QueryCancelledException) {
-         FailedSearchResponse(e.message!!, null, queryId = queryId) to QueryOptions.default()
-      } catch (e: Exception) {
-         FailedSearchResponse(e.message!!, null, queryId = queryId) to QueryOptions.default()
+         } catch (e: NotImplementedError) {
+            // happens when Schema is empty
+            FailedSearchResponse(e.message!!, null, queryId = queryId) to queryOptions
+         } catch (e: QueryCancelledException) {
+            FailedSearchResponse(e.message!!, null, queryId = queryId) to queryOptions
+         } catch (e: Exception) {
+            FailedSearchResponse(e.message!!, null, queryId = queryId) to queryOptions
+         }
+         QueryEventObserver(historyWriterEventConsumer, activeQueryMonitor, metricsEventConsumer)
+            .responseWithQueryHistoryListener(query, response) to queryOptions
       }
-      QueryEventObserver(historyWriterEventConsumer, activeQueryMonitor, metricsEventConsumer)
-         .responseWithQueryHistoryListener(query, response) to queryOptions
-   }
 
    private suspend fun executeQuery(query: Query, clientQueryId: String?): QueryResponse {
       val vyne = vyneProvider.createVyne()

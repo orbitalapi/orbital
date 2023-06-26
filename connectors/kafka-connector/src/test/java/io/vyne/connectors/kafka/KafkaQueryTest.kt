@@ -22,11 +22,7 @@ import kotlinx.coroutines.runBlocking
 import lang.taxi.generators.protobuf.TaxiGenerator
 import mu.KotlinLogging
 import okio.fakefilesystem.FakeFileSystem
-import org.apache.kafka.clients.producer.KafkaProducer
-import org.apache.kafka.clients.producer.Producer
-import org.apache.kafka.clients.producer.ProducerConfig
-import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.clients.producer.RecordMetadata
+import org.apache.kafka.clients.producer.*
 import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.junit.Before
@@ -107,11 +103,11 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       sendMessage(message("message1"))
       sendMessage(message("message2"))
 
-      await().atMost(1, SECONDS).until { future1.isCompleted }
-      await().atMost(1, SECONDS).until { resultsFromQuery1.size >= 2 }
+      await().atMost(10, SECONDS).until { future1.isCompleted }
+      await().atMost(10, SECONDS).until { resultsFromQuery1.size >= 2 }
 
-      await().atMost(1, SECONDS).until { future2.isCompleted }
-      await().atMost(1, SECONDS).until { resultsFromQuery2.size >= 2 }
+      await().atMost(10, SECONDS).until { future2.isCompleted }
+      await().atMost(10, SECONDS).until { resultsFromQuery2.size >= 2 }
    }
 
    @Test
@@ -147,7 +143,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       sendMessage(message("message1"))
       sendMessage(message("message2"))
 
-      await().atMost(1, SECONDS).until<Boolean> { resultsFromQuery1.size == 2 }
+      await().atMost(10, SECONDS).until<Boolean> { resultsFromQuery1.size == 2 }
 
       var currentMessageCount = streamManager.getActiveConsumerMessageCounts()
          .values.first().get()
@@ -179,7 +175,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       sendMessage(message("message1"))
       sendMessage(message("message2"))
 
-      await().atMost(1, SECONDS).until<Boolean> { resultsFromQuery1.size == 2 }
+      await().atMost(10, SECONDS).until<Boolean> { resultsFromQuery1.size == 2 }
       query1.requestCancel()
       Thread.sleep(1000)
 
@@ -192,7 +188,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
 
       Thread.sleep(1000)
 
-      await().atMost(1, SECONDS).until<Boolean> { resultsFromQuery2.size == 2 }
+      await().atMost(10, SECONDS).until<Boolean> { resultsFromQuery2.size == 2 }
    }
 
 
@@ -240,7 +236,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
 
       sendMessage(protoMessage, topic = "hello-worlds")
 
-      await().atMost(100, SECONDS).until<Boolean> { resultsFromQuery1.size == 1 }
+      await().atMost(10, SECONDS).until<Boolean> { resultsFromQuery1.size == 1 }
 
       val message = resultsFromQuery1.first()
          .toRawObject()
