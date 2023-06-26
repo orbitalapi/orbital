@@ -10,6 +10,7 @@ import io.vyne.schema.spring.config.consumer.SchemaConsumerConfigProperties
 import io.vyne.schema.spring.config.publisher.SchemaPublisherConfigProperties.Companion.PUBLISHER_METHOD
 import mu.KotlinLogging
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.cloud.client.ServiceInstance
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -53,13 +54,48 @@ class RSocketTransportConfig {
                discoveryClient,
                config.schemaServerAddress
             ) { serviceInstance ->
-               serviceInstance.metadata["rsocket-port"]?.toIntOrNull() ?: config.schemaServerRSocketPort
+               getRsocketPort(serviceInstance, config)
             }
          } else {
             val uri = URI.create(config.schemaServerAddress)
             AddressSupplier.Companion.just(TcpAddress(uri.host, config.schemaServerRSocketPort))
          } as AddressSupplier<ClientTransportAddress>
       return SchemaServerRSocketFactory(addressSupplier)
+   }
+
+   private fun getRsocketPort(
+      serviceInstance: ServiceInstance,
+      config: SchemaConfigProperties
+   ): Int {
+      // In the old days, we used to support just declaring the rsocket port.
+      // It wasn't obvious to people what it meant, so we're now asking people to declare the full
+      // uri.
+      // If they're using the old version, that's fine.
+      val legacyDeclaredRsocketPort = serviceInstance.metadata["rsocket-port"]?.let { rsocketPort ->
+         val rsocketPortInt = rsocketPort.toIntOrNull()
+         if (rsocketPortInt != null) {
+            logger.warn { "Could not parse the provided rsocket-port value ('$rsocketPort') to an int.  Using the fallback value of ${config.schemaServerRSocketPort}" }
+         }
+         rsocketPortInt ?: config.schemaServerRSocketPort
+      }
+      if (legacyDeclaredRsocketPort != null) {
+         logger.warn { "Defining the rsocket connection using rsocket-port is deprecated.  Instead declare use a URI.  Your config equivalent is a config entry of 'rsocket' within the schema-server config block with a value of tcp://${serviceInstance.host}:$legacyDeclaredRsocketPort" }
+         return legacyDeclaredRsocketPort
+      }
+
+      // Try reading the newer rsocket URI declaration
+      val rsocketMetadata = serviceInstance.metadata["rsocket"] ?: return config.schemaServerRSocketPort
+
+      // Parse the configured rsocket entry if present.
+      return try {
+         val uri = URI.create(rsocketMetadata)
+         uri.port
+      } catch (e: Exception) {
+         logger.warn { "Failed to parse a URI from schema server rsocket value of $rsocketMetadata.  Expected a uri like tcp://schema-server.com:7655. Falling back to configured value of ${config.schemaServerRSocketPort}" }
+         config.schemaServerRSocketPort
+      }
+
+
    }
 
 
