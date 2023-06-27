@@ -1,9 +1,11 @@
 package io.vyne.query.runtime.executor
 
-import io.vyne.query.QueryContextEventBroker
+import io.vyne.query.*
 import io.vyne.query.runtime.QueryMessage
+import io.vyne.query.runtime.core.QueryLifecycleEventObserver
 import io.vyne.query.runtime.executor.analytics.AnalyticsEventWriterProvider
 import io.vyne.schemas.Schema
+import io.vyne.utils.Ids
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
@@ -49,34 +51,42 @@ class QueryExecutor(
     * As a result, large queries may result in OOM.
     */
    fun executeQuery(message: QueryMessage, context: CoroutineContext = EmptyCoroutineContext): Flux<Any> {
+      val queryId = Ids.fastUuid()
       val (vyne, discoveryClient) = vyneFactory.buildVyne(message)
-      val eventBroker = buildEventBroker(message, vyne.schema, discoveryClient)
+      val (eventBroker, eventConsumer) = buildEventBroker(vyne.schema, discoveryClient, queryId)
       val args = message.args()
       return runBlocking {
-         val resultFlow = vyne.query(
+         val queryResult = vyne.query(
             message.query,
             clientQueryId = message.clientQueryId,
             arguments = args,
-            eventBroker = eventBroker
+            eventBroker = eventBroker,
+            queryId = queryId
          )
-            .rawResults as Flow<Any>
-         resultFlow.asFlux(context)
+         val observedQuery = QueryLifecycleEventObserver(eventConsumer, null)
+            .responseWithQueryHistoryListener(message.query, queryResult)
+
+         val flux = when (observedQuery) {
+            is QueryResult -> observedQuery.rawResults.let { flow -> (flow as Flow<Any>).asFlux(context) }
+            is FailedQueryResponse -> Flux.error<Any>(QueryFailedException(observedQuery.message))
+            else -> error("Received unknown type of QueryResponse: ${observedQuery::class.simpleName}")
+         }
+         flux
       }
 
    }
 
    private fun buildEventBroker(
-      message: QueryMessage,
       schema: Schema,
-      discoveryClient: DiscoveryClient
-   ): QueryContextEventBroker {
+      discoveryClient: DiscoveryClient,
+      queryId: String
+   ): Pair<QueryContextEventBroker, QueryEventConsumer> {
       val eventBroker = QueryContextEventBroker()
-      eventWriterProvider.buildAnalyticsEventConsumer(message.clientQueryId, schema, discoveryClient)
-         ?.let { eventConsumer ->
-            eventBroker.addHandler(eventConsumer)
-         }
+      val eventConsumer =
+         eventWriterProvider.buildAnalyticsEventConsumer(queryId, schema, discoveryClient)
+      eventBroker.addHandler(eventConsumer)
 
-      return eventBroker
+      return eventBroker to eventConsumer
    }
 
 }

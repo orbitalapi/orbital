@@ -12,7 +12,6 @@ import io.vyne.models.serde.InstantSerializer
 import io.vyne.query.*
 import io.vyne.schemas.*
 import jakarta.persistence.*
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import java.time.Duration
 import java.time.Instant
@@ -135,7 +134,7 @@ data class RemoteCallResponse(
    override val startTime: Instant,
    @Column(name = "duration_ms", nullable = true)
    override val durationMs: Long?,
-   @Lob
+
    @Convert(converter = RemoteCallExchangeMetadataJsonConverter::class)
    @Column(name = "exchange")
    override val exchange: RemoteCallExchangeMetadata,
@@ -300,11 +299,9 @@ data class QuerySankeyChartRow(
    val sourceNode: String,
 
    @Column(name = "source_operation_data")
-   @Lob
-   @Convert(converter = AnyJsonConverter::class)
-   @Contextual
+   @Convert(converter = SankeyOperationNodeDetailsConverter::class)
 //When the row is first created, will be a SankeyOperationNodeDetails.  When reading back from the db, will be a Map<String,Any>
-   val sourceNodeOperationData: Any? = null,
+   val sourceNodeOperationData: SankeyOperationNodeDetails? = null,
 
    @Enumerated(EnumType.STRING)
    @Column(name = "target_node_type")
@@ -316,15 +313,14 @@ data class QuerySankeyChartRow(
    val targetNode: String,
 
    @Column(name = "target_operation_data")
-   @Lob
-   @Convert(converter = AnyJsonConverter::class)
-   @Contextual
+   @Convert(converter = SankeyOperationNodeDetailsConverter::class)
    //When the row is first created, will be a SankeyOperationNodeDetails.  When reading back from the db, will be a Map<String,Any>
-   val targetNodeOperationData: Any? = null,
+   val targetNodeOperationData: SankeyOperationNodeDetails? = null,
 
    @Column(name = "node_count")
    val count: Int,
 ) : VyneHistoryRecord()
+
 
 @Embeddable
 @Serializable

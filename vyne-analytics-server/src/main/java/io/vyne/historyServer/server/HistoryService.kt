@@ -59,7 +59,8 @@ class HistoryService(
    }
 
    private fun processRemoteCallResponse(vyneHistoryRecord: RemoteCallResponse) {
-      queryHistoryDao.upsertRemoteCallResponse(vyneHistoryRecord)
+      queryHistoryDao.saveRemoteCallResponse(vyneHistoryRecord)
+//      queryHistoryDao.upsertRemoteCallResponse(vyneHistoryRecord)
    }
 
    private fun processResultRow(vyneHistoryRecord: QueryResultRow) {

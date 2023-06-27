@@ -7,3 +7,5 @@ import org.springframework.context.annotation.Configuration
 @ComponentScan
 class AnalyticsConfig {
 }
+
+

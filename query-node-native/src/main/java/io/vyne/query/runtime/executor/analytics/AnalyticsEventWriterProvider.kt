@@ -21,7 +21,7 @@ class AnalyticsEventWriterProvider(
       queryId: String,
       schema: Schema,
       discoveryClient: DiscoveryClient
-   ): QueryEventConsumer? {
+   ): QueryEventConsumer {
       // TODO :  Make this extensible, so we can use things like SNS.
       val writer = QueryHistoryRSocketWriter(
          queryAnalyticsConfig,
