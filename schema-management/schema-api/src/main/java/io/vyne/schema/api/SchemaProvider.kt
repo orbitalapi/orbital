@@ -1,11 +1,13 @@
 package io.vyne.schema.api
 
 import io.vyne.ParsedSource
+import io.vyne.PathGlob
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import lang.taxi.packages.SourcesType
 
 /**
  * Exposes individual strings of schemas from somewhere (loaded from disk, generated from code).
@@ -23,6 +25,17 @@ interface SchemaSourceProvider {
          return versionedSources.map { it.content }
       }
 
+
+   /**
+    * Additional (non-taxi) sources.
+    * Key is a source type (eg: pipelines, extensions, etc).
+    * Value is an absolute path.
+    *
+    * Return a list, rather than a map, so these can be concatenated.
+    * It's possible to have multiple entries for a key once schemas are joined together.
+    */
+   val additionalSources: List<Pair<SourcesType, PathGlob>>
+      get() = emptyList()
 }
 
 

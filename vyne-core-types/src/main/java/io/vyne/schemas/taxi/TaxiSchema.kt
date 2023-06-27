@@ -7,6 +7,7 @@ import io.vyne.models.functions.FunctionRegistry
 import io.vyne.schemas.*
 import lang.taxi.*
 import lang.taxi.messages.Severity
+import lang.taxi.packages.SourcesType
 import lang.taxi.packages.TaxiSourcesLoader
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
@@ -17,6 +18,7 @@ import lang.taxi.types.StreamType
 import mu.KotlinLogging
 import org.antlr.v4.runtime.CharStreams
 import java.nio.file.Path
+import kotlin.io.path.readText
 
 private val logger = KotlinLogging.logger {}
 
@@ -24,7 +26,8 @@ class TaxiSchema(
    @get:JsonIgnore val document: TaxiDocument,
    @get:JsonIgnore override val packages: List<SourcePackage>,
    override val functionRegistry: FunctionRegistry = FunctionRegistry.default,
-   queryCacheSize: Long = 100
+   queryCacheSize: Long = 100,
+   override val additionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
 ) : Schema {
    override val types: Set<Type>
    override val services: Set<Service>
@@ -47,6 +50,12 @@ class TaxiSchema(
    override fun hashCode(): Int {
       return equality.hash()
    }
+
+   @get:JsonIgnore
+   override val additionalSourcePaths: List<Pair<String, PathGlob>>
+      get() {
+         return this.packages.flatMap { it.additionalSourcePaths }
+      }
 
    @get:JsonIgnore
    override val typeCache: TypeCache
@@ -203,7 +212,8 @@ class TaxiSchema(
       return TaxiSchema(
          this.document.merge(schema.document),
          this.packages + schema.packages,
-         this.functionRegistry.merge(schema.functionRegistry)
+         this.functionRegistry.merge(schema.functionRegistry),
+         additionalSources = this.additionalSources.mergeLists(schema.additionalSources)
       )
    }
 
@@ -213,6 +223,9 @@ class TaxiSchema(
 
    companion object {
       const val LANGUAGE = "Taxi"
+      private val WHITELISTED_ADDITIONAL_SOURCE_TYPES = listOf(
+         "@orbital/pipelines"
+      )
 
       enum class TaxiSchemaErrorBehaviour {
          RETURN_EMPTY,
@@ -260,7 +273,8 @@ class TaxiSchema(
       fun compiled(
          packages: List<SourcePackage>,
          imports: List<TaxiSchema> = emptyList(),
-         functionRegistry: FunctionRegistry = FunctionRegistry.default
+         functionRegistry: FunctionRegistry = FunctionRegistry.default,
+         preloadedAdditionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
       ): Pair<List<CompilationError>, TaxiSchema> {
          val sources = packages.toSourcesWithPackageIdentifier()
          val stopwatch = Stopwatch.createStarted()
@@ -291,8 +305,42 @@ class TaxiSchema(
                logger.info { "Compiler provided the following messages: \n ${compilationErrors.toMessage()}" }
             }
          }
-         return compilationErrors to TaxiSchema(doc, packages, functionRegistry)
+         val loadedAdditionalSources = loadApprovedAdditionalSources(packages)
+         return compilationErrors to TaxiSchema(
+            doc,
+            packages,
+            functionRegistry,
+            additionalSources = loadedAdditionalSources.mergeLists(preloadedAdditionalSources)
+         )
 
+      }
+
+      private fun <A, B> List<Pair<A, B>>.groupByPairFirstValue(): List<Pair<A, List<B>>> {
+         return this.groupBy { it.first }
+            .map { (a, b) -> a to b.map { it.second } }
+      }
+
+      private fun loadApprovedAdditionalSources(packages: List<SourcePackage>): Map<SourcesType, List<SourcePackage>> {
+         return packages.flatMap { sourcePackage ->
+            sourcePackage.additionalSourcePaths
+               .filter { (sourceType, _) -> WHITELISTED_ADDITIONAL_SOURCE_TYPES.contains(sourceType) }
+               .map { (sourceType, pathGlob) ->
+                  val loadedSources: List<VersionedSource> = pathGlob.mapEachDirectoryEntry { path ->
+                     VersionedSource(
+                        path.toString(),
+                        sourcePackage.identifier.version,
+                        path.readText(),
+                        sourcePackage.identifier
+                     )
+                  }.values.toList()
+                  sourceType to SourcePackage(sourcePackage.packageMetadata, loadedSources)
+               }
+               .groupByPairFirstValue()
+         }.groupBy { (sourceType, sources) -> sourceType }
+            .map { (sourceType, sources: List<Pair<SourcesType, List<SourcePackage>>>) ->
+               sourceType to sources.map { it.second }.flatten()
+            }
+            .toMap()
       }
 
       /**
@@ -307,9 +355,10 @@ class TaxiSchema(
       fun from(
          packages: List<SourcePackage>,
          imports: List<TaxiSchema> = emptyList(),
-         onErrorBehaviour: TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY
+         onErrorBehaviour: TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY,
+         preloadedAdditionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
       ): TaxiSchema {
-         val (messages, schema) = compiled(packages, imports)
+         val (messages, schema) = compiled(packages, imports, preloadedAdditionalSources = preloadedAdditionalSources)
          val errors = messages.errors()
          return when {
             errors.isEmpty() -> schema
@@ -450,4 +499,16 @@ fun TaxiQlQuery.asSavedQuery(): SavedQuery {
       this.compilationUnits.toVyneSources(),
       null  // TODO : URL
    )
+}
+
+
+/**
+ * Creates a map that contains all the keys of both maps.
+ * The lists are merged, containing all elements from both maps.
+ */
+fun <K, V> Map<K, List<V>>.mergeLists(other: Map<K, List<V>>): Map<K, List<V>> {
+   return (this.keys + other.keys).associateWith { key ->
+      val merged = (this[key] ?: emptyList()) + (other[key] ?: emptyList())
+      merged
+   }
 }

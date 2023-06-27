@@ -1,15 +1,13 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import io.vyne.PackageIdentifier
-import io.vyne.SourcePackage
-import io.vyne.VersionedSource
-import io.vyne.VersionedTypeReference
+import io.vyne.*
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.assertingThat
 import lang.taxi.TaxiDocument
+import lang.taxi.packages.SourcesType
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 
@@ -56,6 +54,19 @@ interface Schema {
    @get:JsonIgnore
    val functionRegistry: FunctionRegistry
       get() = FunctionRegistry.default
+
+   @get:JsonIgnore
+   val additionalSourcePaths: List<Pair<String, PathGlob>>
+      get() {
+         return emptyList()
+      }
+
+   @get:JsonIgnore
+   val additionalSources: Map<SourcesType, List<SourcePackage>>
+      get() {
+         return emptyMap()
+      }
+
 
    val operations: Set<Operation>
       get() = services.flatMap { it.operations }.toSet()

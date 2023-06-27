@@ -5,13 +5,42 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.models.serde.InstantSerializer
 import io.vyne.utils.shaHash
-import kotlinx.serialization.Contextual
-import kotlinx.serialization.Polymorphic
+import lang.taxi.packages.SourcesType
 import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.packages.TaxiPackageSources
+import mu.KotlinLogging
 import java.io.Serializable
+import java.nio.file.Files
+import java.nio.file.Path
 import java.time.Instant
+import kotlin.io.path.forEachDirectoryEntry
 
+private val logger = KotlinLogging.logger {}
+
+@kotlinx.serialization.Serializable
+data class PathGlob(val basePath: Path, val glob: String) {
+   fun forEachDirectoryEntry(action: (Path) -> Unit) {
+      this.basePath.forEachDirectoryEntry(glob, action)
+   }
+
+   fun <T> mapEachDirectoryEntry(action: (Path) -> T): Map<Path, T> {
+      val result = mutableMapOf<Path, T>()
+      // After messing about, glob:${glob} doesn't work, but glob:**/${glob} does.
+      // Suspect this needs more digging later...
+      val pathMatcher = this.basePath.fileSystem.getPathMatcher("glob:**/${glob}")
+      Files.walk(basePath)
+         .filter { path -> pathMatcher.matches(path) }
+         .forEach { path ->
+            try {
+               result[path] = action(path)
+            } catch (e: Exception) {
+               logger.error(e) { "Failed to process path at $path: ${e.message}" }
+            }
+
+         }
+      return result
+   }
+}
 
 @kotlinx.serialization.Serializable
 data class SourcePackage(
@@ -21,7 +50,13 @@ data class SourcePackage(
     * It's preferrable to read from sourcesWithPackageIdentifier,
     * which contains sources guaranteed to have the package identifier correctly set.
     */
-   val sources: List<VersionedSource>
+   val sources: List<VersionedSource>,
+
+   /**
+    * Additional sources (eg., pipelines, extensions, etc).
+    * These aren't actively loaded, and it's left to the appropriate extensions to pull these in
+    */
+   val additionalSourcePaths: List<Pair<SourcesType, PathGlob>> = emptyList()
 ) : Serializable {
    val identifier = packageMetadata.identifier
 
@@ -181,10 +216,20 @@ fun TaxiPackageProject.toPackageMetadata(): PackageMetadata {
 fun TaxiPackageSources.asSourcePackage(): SourcePackage {
    return SourcePackage(
       this.project.toPackageMetadata(),
-      this.versionedSources()
+      this.versionedSources(),
+      this.pathGlobs()
    )
 }
 
 
 fun List<SourcePackage>.toSourcesWithPackageIdentifier(): List<VersionedSource> =
    this.flatMap { it.sourcesWithPackageIdentifier }
+
+fun TaxiPackageSources.pathGlobs(): List<Pair<SourcesType, PathGlob>> {
+   if (this.project.packageRootPath == null && this.project.additionalSources.isNotEmpty()) {
+      error("Additional sources are defined, but no base path has been set")
+   }
+   return this.project.additionalSources.map { (sourcesType, glob) ->
+      sourcesType to PathGlob(this.project.packageRootPath!!, glob)
+   }
+}
