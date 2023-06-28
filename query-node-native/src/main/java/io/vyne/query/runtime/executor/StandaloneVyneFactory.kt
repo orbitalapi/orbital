@@ -8,7 +8,7 @@ import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.SourcePackageHasher
 import io.vyne.Vyne
-import io.vyne.connectors.config.ConnectorsConfig
+import io.vyne.connectors.config.ConnectionsConfig
 import io.vyne.connectors.jdbc.HikariJdbcConnectionFactory
 import io.vyne.connectors.jdbc.JdbcInvoker
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
@@ -120,7 +120,7 @@ class StandaloneVyneFactory(
       .build<Int, HikariJdbcConnectionFactory>()
 
 
-   private fun buildJdbcInvoker(connections: ConnectorsConfig, schemaProvider: SchemaProvider): JdbcInvoker {
+   private fun buildJdbcInvoker(connections: ConnectionsConfig, schemaProvider: SchemaProvider): JdbcInvoker {
 
       val jdbcConnectionFactory = jdbcConnectionFactoryCache.get(connections.jdbcConnectionsHash) {
          val connectionRegistry = InMemoryJdbcConnectionRegistry(connections.jdbc.values.toList())

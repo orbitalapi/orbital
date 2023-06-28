@@ -2,11 +2,7 @@ package io.vyne.config
 
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigParseOptions
-import com.typesafe.config.ConfigRenderOptions
-import com.typesafe.config.ConfigResolveOptions
+import com.typesafe.config.*
 import io.github.config4k.registerCustomType
 import io.github.config4k.toConfig
 import mu.KotlinLogging
@@ -16,10 +12,16 @@ import java.nio.file.Path
 
 private object CacheKey
 
+interface HoconConfigRepository<T : Any> {
+   fun emptyConfig(): T
+
+   fun typedConfig(): T
+}
+
 abstract class BaseHoconConfigFileRepository<T : Any>(
    private val path: Path,
    private val fallback: Config = ConfigFactory.systemEnvironment()
-) {
+) : HoconConfigRepository<T> {
    companion object {
       init {
          registerCustomType(DurationHoconSupport)
@@ -35,7 +37,7 @@ abstract class BaseHoconConfigFileRepository<T : Any>(
    private val placeholderMarkerRegex = "\"\\\$\\{.*\\}\"".toRegex()
 
    abstract fun extract(config: Config): T
-   abstract fun emptyConfig(): T
+   abstract override fun emptyConfig(): T
 
    /**
     * A cache (to avoid frequently loading from disk on every read)
@@ -82,7 +84,7 @@ abstract class BaseHoconConfigFileRepository<T : Any>(
       configCache.invalidate(CacheKey)
    }
 
-   protected fun typedConfig(): T {
+   override fun typedConfig(): T {
       return configCache.get(CacheKey).second
    }
 

@@ -224,7 +224,8 @@ class TaxiSchema(
    companion object {
       const val LANGUAGE = "Taxi"
       private val WHITELISTED_ADDITIONAL_SOURCE_TYPES = listOf(
-         "@orbital/pipelines"
+         "@orbital/pipelines",
+         "@orbital/config"
       )
 
       enum class TaxiSchemaErrorBehaviour {

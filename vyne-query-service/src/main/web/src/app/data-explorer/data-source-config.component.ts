@@ -112,6 +112,7 @@ export class DataSourceConfigComponent {
     {label: 'Comma ,', value: ','},
     {label: 'Semicolon ;', value: ';'},
     {label: 'Pipe |', value: '|'},
+    {label: 'Tab', value: '\t'},
   ];
 
   @Input()

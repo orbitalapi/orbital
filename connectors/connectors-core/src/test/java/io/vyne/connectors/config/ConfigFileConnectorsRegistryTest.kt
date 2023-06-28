@@ -1,16 +1,16 @@
 package io.vyne.connectors.config
 
 import com.google.common.io.Resources
+import io.kotest.matchers.maps.shouldHaveKeys
 import io.kotest.matchers.shouldBe
+import io.vyne.config.FileHoconLoader
 import io.vyne.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.config.jdbc.JdbcDriver
-import io.vyne.connectors.config.kafka.KafkaConnection
 import io.vyne.connectors.config.kafka.KafkaConnectionConfiguration
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.cbor.Cbor
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.nio.file.Paths
 
@@ -25,9 +25,30 @@ class ConfigFileConnectorsRegistryTest {
       )
       val config = ConfigFileConnectorsRegistry(path).load()
       val bytes = Cbor.encodeToByteArray(config)
-      val fromBytes = Cbor.decodeFromByteArray<ConnectorsConfig>(bytes)
+      val fromBytes = Cbor.decodeFromByteArray<ConnectionsConfig>(bytes)
       fromBytes.shouldBe(config)
    }
+
+   @Test
+   fun `will merge multiple configs`() {
+      val path1 = Paths.get(
+         Resources.getResource("mixed-connections.conf")
+            .toURI()
+      )
+      val path2 = Paths.get(
+         Resources.getResource("connections-2.conf")
+            .toURI()
+      )
+      val config = ConfigFileConnectorsRegistry(
+         listOf(
+            FileHoconLoader(path1),
+            FileHoconLoader(path2),
+         )
+      ).load()
+      config.jdbc.shouldHaveKeys("another-connection", "connection-2", "connection-3", "connection-4")
+      config.kafka.shouldHaveKeys("kafka-connection", "kafka-connection-2")
+   }
+
    @Test
    fun `can read from disk`() {
       val path = Paths.get(
@@ -36,7 +57,7 @@ class ConfigFileConnectorsRegistryTest {
       )
       val config = ConfigFileConnectorsRegistry(path).load()
       config.shouldBe(
-         ConnectorsConfig(
+         ConnectionsConfig(
             jdbc = mapOf(
                "another-connection" to DefaultJdbcConnectionConfiguration(
                   connectionName = "another-connection",
