@@ -13,7 +13,6 @@ import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonModel
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore
-import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleVyneProvider
@@ -124,7 +123,7 @@ class VyneQueryIntegrationTest {
 
       @Bean
       @Primary
-      fun schemaProvider(): SchemaProvider = SimpleTaxiSchemaProvider(UserSchema.source)
+      fun schemaProvider(): SchemaProvider = TestSchemaProvider.withBuiltInsAnd(UserSchema.schema)
 
       @Bean
       fun schemaStore(): SchemaStore = LocalValidatingSchemaStoreClient()
@@ -248,7 +247,7 @@ str2|2"""
       headers.contentType = MediaType.APPLICATION_JSON
       headers.set("Accept", MediaType.TEXT_EVENT_STREAM_VALUE)
 
-      val entity = HttpEntity("find { Username[] }", headers)
+      val entity = HttpEntity("find { io.vyne.queryService.Username[] }", headers)
 
       val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
 
@@ -263,7 +262,7 @@ str2|2"""
       headers.contentType = MediaType.APPLICATION_JSON
       headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
 
-      val entity = HttpEntity("find { Username[] }", headers)
+      val entity = HttpEntity("find { io.vyne.Username[] }", headers)
 
       val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
 
@@ -342,7 +341,7 @@ str2|2"""
          )
          {
             id : UserId
-            name : Username
+            name : io.vyne.queryService.Username
          }[]
          """.trimMargin(), headers
       )

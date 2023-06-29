@@ -36,6 +36,8 @@ interface Schema {
 
    val policies: Set<Policy>
 
+   val queries: Set<SavedQuery>
+
    @get:JsonIgnore
    val typeCache: TypeCache
 

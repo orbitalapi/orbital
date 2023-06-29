@@ -10,6 +10,7 @@ import io.vyne.schemaServer.core.file.packages.FileSystemPackageLoader
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageWriter
 import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
 import io.vyne.schemaServer.editor.*
+import io.vyne.schemas.SavedQuery
 import io.vyne.schemas.taxi.toMessage
 import io.vyne.schemas.taxi.toVyneSources
 import io.vyne.schemas.toVyneQualifiedName
@@ -90,7 +91,8 @@ class SchemaEditorService(
             ).map {
                SavedQuery(
                   taxiQuery.name.toVyneQualifiedName(),
-                  taxiQuery.compilationUnits.toVyneSources(),
+                  // TODO : Need to handle packageIdentifiers better
+                  taxiQuery.compilationUnits.toVyneSources(request.source.packageIdentifier),
                   null // TODO : Url
                )
             }

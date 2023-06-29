@@ -1,4 +1,4 @@
-import {Component, EventEmitter, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Output} from '@angular/core';
 import {QueryHistorySummary, QueryService} from "../services/query.service";
 
 @Component({
@@ -20,7 +20,7 @@ export class QueryHistoryPanelComponent {
   constructor(private historyService: QueryService) {
     historyService.getHistory()
       .subscribe(result => {
-        this.history = result;
+        this.history = result.filter(r => r.taxiQl !== null);
       })
   }
 }

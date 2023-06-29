@@ -24,7 +24,7 @@ import {
 import {QueryLanguage, QueryState} from './bottom-bar.component';
 import {isQueryResult, QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
 import {MatDialog} from '@angular/material/dialog';
-import {findType, InstanceLike, QualifiedName, Schema, Type} from '../../services/schema';
+import {findType, InstanceLike, QualifiedName, Schema, Type, VersionedSource} from '../../services/schema';
 import {BehaviorSubject, Observable, ReplaySubject, Subject} from 'rxjs';
 import {isNullOrUndefined} from 'util';
 import {ActiveQueriesNotificationService, RunningQueryStatus} from '../../services/active-queries-notification-service';
@@ -47,7 +47,9 @@ import {TuiDialogService} from '@taiga-ui/core';
 import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
 import {appendToQuery} from "./query-code-generator";
 import {SaveQueryPanelComponent, SaveQueryPanelProps} from "./save-query-panel.component";
-import {SavedQuery} from "../../services/type-editor.service";
+import {SavedQuery, SaveQueryRequest, TypeEditorService} from "../../services/type-editor.service";
+import {MatSnackBar} from "@angular/material/snack-bar";
+import {HttpEndpointPanelComponent} from "./http-endpoint-panel.component";
 import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
 
@@ -128,7 +130,9 @@ export class QueryEditorComponent implements OnInit {
               private changeDetector: ChangeDetectorRef,
               private clipboard: Clipboard,
               @Inject(TuiDialogService) private readonly tuiDialogService: TuiDialogService,
-              @Inject(Injector) private readonly injector: Injector
+              @Inject(Injector) private readonly injector: Injector,
+              private editorService: TypeEditorService,
+              private snackbarService: MatSnackBar
   ) {
 
     this.initialQuery = this.router.getCurrentNavigation()?.extras?.state?.query;
@@ -185,22 +189,12 @@ export class QueryEditorComponent implements OnInit {
 
   }
 
-  private submitTextQuery() {
-    this.prepareToSubmitQuery();
-    this.queryParseResult = null;
-    this.queryService.textToQuery(this.chatQuery)
-      .subscribe(result => {
-        this.query = result.taxi;
-        this.queryParseResult = result;
-        // Submit the taxiQL query.  Make sure parsingQuery = true, so we don't come
-        // through this branch again,
-        this.submitTaxiQlQuery();
-      }, error => {
-        console.log('Failed to parse ChatGPT query');
-        console.log(error);
-        this.lastErrorMessage = 'A problem occurred parsing the text to a query';
-        this.currentState$.next('Error');
-      });
+  saveQuery() {
+    if (this.savedQuery == null) {
+      this.saveNewQuery();
+    } else {
+      this.saveExistingQuery();
+    }
   }
 
   private prepareToSubmitQuery() {
@@ -376,7 +370,67 @@ export class QueryEditorComponent implements OnInit {
     this.query = appendToQuery(this.query, $event);
   }
 
-  saveQuery() {
+  createHttpEndpoint() {
+    this.tuiDialogService.open<string>(new PolymorpheusComponent(HttpEndpointPanelComponent, this.injector),
+      {
+        size: 'l',
+        data: this.query,
+        dismissible: true
+      }
+    ).subscribe(result => {
+      if (result !== null) {
+        this.query = result;
+      }
+      this.changeDetector.markForCheck();
+    });
+  }
+
+  private submitTextQuery() {
+    this.prepareToSubmitQuery();
+    this.queryParseResult = null;
+    this.currentState$.next('Generating');
+    this.queryService.textToQuery(this.chatQuery)
+      .subscribe(result => {
+        this.query = result.taxi;
+        this.queryParseResult = result;
+        // Submit the taxiQL query.  Make sure parsingQuery = true, so we don't come
+        // through this branch again,
+        this.submitTaxiQlQuery();
+      }, error => {
+        console.log('Failed to parse ChatGPT query');
+        console.log(error);
+        this.lastErrorMessage = 'A problem occurred parsing the text to a query';
+        this.currentState$.next('Error');
+      });
+  }
+
+  private saveExistingQuery() {
+    const updatedSource: VersionedSource = {
+      ...this.savedQuery.sources[0],
+      content: this.query,
+    }
+    const request: SaveQueryRequest = {
+      source: updatedSource,
+      changesetName: ''
+    }
+    this.editorService.saveQuery(request)
+      .subscribe(
+        result => {
+          this.snackbarService.open('Query saved successfully');
+          this.savedQuery = result;
+        },
+        error => {
+          console.error(error);
+          this.snackbarService.open('An error occurred saving the query')
+        }
+      )
+  }
+
+  queryHistoryElementClicked($event: QueryHistorySummary) {
+    this.query = $event.taxiQl;
+  }
+
+  private saveNewQuery() {
     this.tuiDialogService.open<SavedQuery>(new PolymorpheusComponent(SaveQueryPanelComponent, this.injector),
       {
         size: 'l',
@@ -388,12 +442,8 @@ export class QueryEditorComponent implements OnInit {
       }
     ).subscribe(result => {
       this.savedQuery = result;
-      this.query = result.source.content;
+      this.query = result.sources[0].content;
       this.changeDetector.markForCheck();
     });
-  }
-
-  queryHistoryElementClicked($event: QueryHistorySummary) {
-    this.query = $event.taxiQl;
   }
 }

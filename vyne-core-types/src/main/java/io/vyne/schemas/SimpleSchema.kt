@@ -22,6 +22,7 @@ class SimpleSchema(override val types: Set<Type>, override val services: Set<Ser
    override val sources: List<VersionedSource> = emptyList()
    override val packages: List<SourcePackage> = emptyList()
    override val policies: Set<Policy> = emptySet()
+   override val queries: Set<SavedQuery> = emptySet()
    override fun hasType(name: String): Boolean {
       // Don't defer to base, which looks at the full typeCache.
       // We can use SimpleSchema to produce a subset of a schema.

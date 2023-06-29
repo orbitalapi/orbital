@@ -1,6 +1,6 @@
 package io.vyne.query.graph.operationInvocation
 
-import com.google.common.cache.CacheBuilder
+import com.google.common.cache.Cache
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.connectors.OperationInvoker
@@ -23,6 +23,7 @@ import java.time.Instant
 
 private val logger = KotlinLogging.logger {}
 
+
 /**
  * Decorates an underlying invoker to cache and replay subsequent calls to the same service.
  *
@@ -37,15 +38,16 @@ private val logger = KotlinLogging.logger {}
  */
 class CacheAwareOperationInvocationDecorator(
    private val invoker: OperationInvoker,
-   val evictWhenResultSizeExceeds: Int = 10
+   val evictWhenResultSizeExceeds: Int = 10,
+   private val actorCache: Cache<String, CachingInvocationActor> = OperationCacheFactory.newCache()
 ) :
    OperationInvoker {
 
-   private val actorCache = CacheBuilder.newBuilder()
-      .removalListener<String, CachingInvocationActor> { notification ->
-         logger.info { "Caching operation invoker removing entry for ${notification.key?.abbreviate()} for reason ${notification.cause}" }
-      }
-      .build<String, CachingInvocationActor>()
+//   private val actorCache = CacheBuilder.newBuilder()
+//      .removalListener<String, CachingInvocationActor> { notification ->
+//         logger.info { "Caching operation invoker removing entry for ${notification.key?.abbreviate()} for reason ${notification.cause}" }
+//      }
+//      .build<String, CachingInvocationActor>()
 
    val cacheSize: Long
       get() {
@@ -107,8 +109,12 @@ class CacheAwareOperationInvocationDecorator(
    }
 
    companion object {
-      fun decorateAll(invokers: List<OperationInvoker>, evictWhenResultSizeExceeds: Int = 10): List<OperationInvoker> {
-         return invokers.map { CacheAwareOperationInvocationDecorator(it, evictWhenResultSizeExceeds) }
+      fun decorateAll(
+         invokers: List<OperationInvoker>,
+         evictWhenResultSizeExceeds: Int = 10,
+         operationCache: Cache<String, CachingInvocationActor> = OperationCacheFactory.newCache()
+      ): List<OperationInvoker> {
+         return invokers.map { CacheAwareOperationInvocationDecorator(it, evictWhenResultSizeExceeds, operationCache) }
       }
 
       private fun getCacheKeyAndParamMessage(
@@ -144,7 +150,7 @@ class CacheAwareOperationInvocationDecorator(
  */
 @ExperimentalCoroutinesApi
 @ObsoleteCoroutinesApi // At the time of writing, there's no alternative provided by Kotlin
-private class CachingInvocationActor(
+class CachingInvocationActor(
    private val cacheKey: String,
    private val invoker: OperationInvoker,
    private val evictWhenResultSizeExceeds: Int
@@ -231,7 +237,7 @@ private class CachingInvocationActor(
    }
 }
 
-private data class OperationInvocationParamMessage(
+data class OperationInvocationParamMessage(
    val service: Service,
    val operation: RemoteOperation,
    val parameters: List<Pair<Parameter, TypedInstance>>,

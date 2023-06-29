@@ -54,6 +54,11 @@ class TaxiSchema(
       return taxi.type(name.parameterizedName)
    }
 
+   override val queries: Set<SavedQuery>
+      get() {
+         return document.queries.map { it.asSavedQuery() }.toSet()
+      }
+
    override val dynamicMetadata: List<QualifiedName> = document.undeclaredAnnotationNames
       .map { it.toVyneQualifiedName() }
 
@@ -415,16 +420,34 @@ fun lang.taxi.types.Type.toVyneType(schema: Schema): Type {
 }
 
 
+private fun lang.taxi.sources.SourceCode.toVyneSource(packageIdentifier: PackageIdentifier?): VersionedSource {
+   // TODO : Find the version.
+   return VersionedSource(this.sourceName, VersionedSource.DEFAULT_VERSION.toString(), this.content, packageIdentifier)
+}
+
 private fun lang.taxi.sources.SourceCode.toVyneSource(): VersionedSource {
    // TODO : Find the version.
    return VersionedSource(this.sourceName, VersionedSource.DEFAULT_VERSION.toString(), this.content)
+}
+
+
+fun List<lang.taxi.types.CompilationUnit>.toVyneSources(packageIdentifier: PackageIdentifier?): List<VersionedSource> {
+   return this.map { it.source.toVyneSource(packageIdentifier) }
 }
 
 fun List<lang.taxi.types.CompilationUnit>.toVyneSources(): List<VersionedSource> {
    return this.map { it.source.toVyneSource() }
 }
 
-
 fun List<CompilationError>.toMessage(): String {
    return this.joinToString("\n") { it.toString() }
+}
+
+
+fun TaxiQlQuery.asSavedQuery(): SavedQuery {
+   return SavedQuery(
+      this.name.toVyneQualifiedName(),
+      this.compilationUnits.toVyneSources(),
+      null  // TODO : URL
+   )
 }

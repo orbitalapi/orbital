@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Input } from '@angular/core';
-import { findType, Schema, Type } from 'src/app/services/schema';
-import { Snippet } from 'src/app/query-snippet-panel/query-snippet-panel.component';
-import { POLYMORPHEUS_CONTEXT } from '@tinkoff/ng-polymorpheus';
-import { TuiDialogContext } from '@taiga-ui/core';
-import { PrimitiveTypeNames } from 'src/app/services/taxi';
-import { isNullOrUndefined } from 'util';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Input} from '@angular/core';
+import {findType, Schema, Type} from 'src/app/services/schema';
+import {Snippet} from 'src/app/query-snippet-panel/query-snippet-panel.component';
+import {POLYMORPHEUS_CONTEXT} from '@tinkoff/ng-polymorpheus';
+import {TuiDialogContext} from '@taiga-ui/core';
+import {PrimitiveTypeNames} from 'src/app/services/taxi';
+import {isNullOrUndefined} from 'util';
+import {kotlinGenerator} from "./kotlin-generator";
 
 @Component({
   selector: 'app-query-snippet-container',
@@ -46,9 +47,9 @@ export class QuerySnippetContainerComponent {
   generators: SnippetGenerator[] = [
     // { label: 'Java', generate: typescriptGenerator },
     // { label: 'Java - Spring Boot', generate: typescriptGenerator },
-    // { label: 'Kotlin', generate: typescriptGenerator },
+    {label: 'Kotlin', generate: kotlinGenerator},
     // { label: 'Kotlin - Spring Boot', generate: typescriptGenerator },
-    { label: 'Typescript', generate: typescriptGenerator }
+    {label: 'Typescript', generate: typescriptGenerator}
     // { label: 'Typescript - NodeJS', generate: typescriptGenerator },
     // { label: 'Typescript - Angular', generate: typescriptGenerator },
     // { label: 'Typescript - NextJS', generate: typescriptGenerator },
@@ -79,7 +80,6 @@ interface SnippetGenerator {
   label: string;
   generate: (CodeGenRequest) => Snippet[];
 }
-
 
 export function typescriptGenerator(request: CodeGenRequest): Snippet[] {
   const dependency = new Snippet(

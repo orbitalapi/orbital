@@ -1,19 +1,11 @@
 package io.vyne.cockpit.core.schemas.editor
 
-import io.vyne.schema.publisher.loaders.AddChangesToChangesetResponse
-import io.vyne.schema.publisher.loaders.AvailableChangesetsResponse
-import io.vyne.schema.publisher.loaders.CreateChangesetResponse
-import io.vyne.schema.publisher.loaders.FinalizeChangesetResponse
-import io.vyne.schema.publisher.loaders.SetActiveChangesetResponse
-import io.vyne.schema.publisher.loaders.UpdateChangesetResponse
+import io.vyne.schema.publisher.loaders.*
 import io.vyne.schemaServer.editor.*
+import io.vyne.schemas.SavedQuery
 import io.vyne.spring.config.ExcludeFromOrbitalStation
 import io.vyne.spring.http.handleFeignErrors
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
 
 @ExcludeFromOrbitalStation

@@ -18,12 +18,15 @@ object QueryEditor {
       if (tokens.namedQueries.size == 1) {
          return source
       }
+      val imports = tokens.imports.joinToString("\n") { it.second.source().content }
       val querySource = tokens.anonymousQueries.single().second.source().content
 
       val indentedSource = querySource.lines().joinToString("\n") { it.prependIndent("   ") }
-      val namedQuery = """query ${source.name.removeSuffix(".taxi")} {
+      val namedQuery = """$imports
+
+query ${source.name.removeSuffix(".taxi")} {
 $indentedSource
-}"""
+}""".trim()
 
       return source.copy(content = namedQuery)
    }

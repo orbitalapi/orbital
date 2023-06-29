@@ -1,4 +1,0 @@
-logging:
-   level:
-      org.springframework: WARN
-      io.vyne: INFO

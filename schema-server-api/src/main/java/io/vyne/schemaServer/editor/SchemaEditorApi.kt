@@ -5,6 +5,7 @@ import io.vyne.PackageSourceName
 import io.vyne.VersionedSource
 import io.vyne.schema.publisher.loaders.*
 import io.vyne.schemas.Metadata
+import io.vyne.schemas.SavedQuery
 import lang.taxi.CompilationMessage
 import org.springframework.web.bind.annotation.*
 import reactivefeign.spring.config.ReactiveFeignClient
@@ -154,4 +155,10 @@ data class UpdateDataOwnerRequest(
    val id: String,
    val name: String,
    val changeset: Changeset
+)
+
+data class SaveQueryRequest(
+   val source: VersionedSource,
+   val previousPath: PackageSourceName? = null,
+   val changesetName: String = "",
 )

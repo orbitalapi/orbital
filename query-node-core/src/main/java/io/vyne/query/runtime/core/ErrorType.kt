@@ -4,15 +4,14 @@ import io.vyne.VersionedSource
 import io.vyne.VyneTypes
 import io.vyne.models.FailedSearch
 import io.vyne.models.TypedInstance
-import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.EmptyTypeCache
+import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import lang.taxi.types.PrimitiveType
 
 object ErrorType {
-   fun error(message: String, schemaStore: SchemaStore): TypedInstance {
-      val schema = schemaStore.schemaSet.schema
+   fun error(message: String, schema: Schema): TypedInstance {
       return TypedInstance.from(
          type = schema.type(ErrorTypeQualifiedName),
          value = message,

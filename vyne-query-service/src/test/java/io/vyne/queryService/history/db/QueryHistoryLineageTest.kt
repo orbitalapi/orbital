@@ -15,11 +15,12 @@ import io.vyne.query.runtime.core.QueryService
 import io.vyne.query.runtime.core.monitor.ActiveQueryMonitor
 import io.vyne.queryService.TestSpringConfig
 import io.vyne.schema.api.SchemaProvider
-import io.vyne.schema.api.SchemaSet
-import io.vyne.schemaStore.SimpleSchemaStore
+import io.vyne.schema.api.SimpleSchemaProvider
+import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -60,17 +61,22 @@ class QueryHistoryLineageTest {
    @Autowired
    lateinit var vyneProvider: VyneProvider
 
-   @Autowired
    lateinit var schemaProvider: SchemaProvider
 
+   @Autowired
+   lateinit var testSchema: TaxiSchema
 
+   @Before
+   fun setup() {
+      schemaProvider = SimpleSchemaProvider(testSchema)
+   }
 
    @Test
    fun `when query has multiple links in lineage then all are returned from history service`() {
       val queryId = UUID.randomUUID().toString()
       val meterRegistry = SimpleMeterRegistry()
       val queryService = QueryService(
-         SimpleSchemaStore(SchemaSet.from(schemaProvider.schema, 1)),
+         schemaProvider,
          vyneProvider,
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),

@@ -5,7 +5,6 @@ import io.vyne.schema.consumer.SchemaStore
 import lang.taxi.query.TaxiQlQuery
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus
-import org.springframework.http.HttpStatusCode
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.*
 import org.springframework.web.reactive.function.server.ServerResponse.status
@@ -75,7 +74,10 @@ class QueryRouteService(
          // TODO : Handle streaming queries.
          // For now, everything is a Mono<>
          .flatMap { executor.handleRoutedQuery(query).single() }
-         .flatMap { response: Any -> ServerResponse.ok().body<Any>(response) }
+         .flatMap { response: Any ->
+            logger.info { "Received response : $response" }
+            ServerResponse.ok().body<Any>(Mono.just(response))
+         }
    }
 
    override fun handle(request: ServerRequest): Mono<ServerResponse> {

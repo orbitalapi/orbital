@@ -9,11 +9,12 @@
                 (addToQueryClicked)="onAddToQueryClicked($event)"></app-catalog-explorer-panel>
             </app-panel>
             <app-panel icon="assets/img/tabler/history.svg" title="Query History">
-              <app-query-history-panel (queryHistoryElementClicked)="queryHistoryElementClicked($event)"></app-query-history-panel>
+              <app-query-history-panel
+                (queryHistoryElementClicked)="queryHistoryElementClicked($event)"></app-query-history-panel>
             </app-panel>
-            <!--            <app-panel icon="assets/img/tabler/device-floppy.svg" title="Saved queries">-->
-            <!--              <app-saved-queries-panel></app-saved-queries-panel>-->
-            <!--            </app-panel>-->
+            <app-panel icon="assets/img/tabler/device-floppy.svg" title="Saved queries">
+              <app-saved-queries-panel></app-saved-queries-panel>
+            </app-panel>
 
           </app-panelset>
           <div class='code-editor-section'>
@@ -27,6 +28,8 @@
                 (cancelQuery)='cancelQuery()'
                 (copyQuery)='copyQuery($event)'
                 (saveClicked)="saveQuery()"
+                (publishAsHttpEndpoint)="createHttpEndpoint()"
+                [publishAsHttpEndpointEnabled]="savedQuery !== null"
               >
               </app-query-editor-bottom-bar>
             </app-panel-header>

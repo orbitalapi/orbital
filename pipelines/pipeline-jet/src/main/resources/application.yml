@@ -24,18 +24,6 @@ feign:
             connectTimeout: 5000
             readTimeout: 5000
 
-eureka:
-   uri: http://127.0.0.1:8761
-   client:
-      ## Eureka client must be enabled explicitly
-      enabled: false
-      registryFetchIntervalSeconds: 1
-      initialInstanceInfoReplicationIntervalSeconds: 5
-      serviceUrl:
-         defaultZone: ${eureka.uri}/eureka/
-   instance:
-      leaseRenewalIntervalInSeconds: 2
-      leaseExpirationDurationInSeconds: 5
 
 vyne:
    graph:
