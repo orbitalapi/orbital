@@ -10,6 +10,7 @@ import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportOutputSpec
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.cask.CaskTransportOutputSpec
+import io.vyne.pipelines.jet.api.transport.file.FileWatcherStreamSourceSpec
 import io.vyne.pipelines.jet.api.transport.http.HttpListenerTransportSpec
 import io.vyne.pipelines.jet.api.transport.http.PollingTaxiOperationInputSpec
 import io.vyne.pipelines.jet.api.transport.http.TaxiOperationOutputSpec
@@ -30,7 +31,8 @@ val availableSpecs = listOf(
    AwsS3TransportInputSpec.specId,
    AwsS3TransportOutputSpec.specId,
    JdbcTransportOutputSpec.specId,
-   PollingQueryInputSpec.specId
+   PollingQueryInputSpec.specId,
+   FileWatcherStreamSourceSpec.specId
 )
 
 class PipelineJacksonModule(

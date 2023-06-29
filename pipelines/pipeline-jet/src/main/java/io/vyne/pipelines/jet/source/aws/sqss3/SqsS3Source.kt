@@ -12,11 +12,7 @@ import io.vyne.models.csv.CsvFormatFactory
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.csv.CsvFormatSpecAnnotation
 import io.vyne.models.format.FormatDetector
-import io.vyne.pipelines.jet.api.transport.CsvRecordContentProvider
-import io.vyne.pipelines.jet.api.transport.MessageContentProvider
-import io.vyne.pipelines.jet.api.transport.MessageSourceWithGroupId
-import io.vyne.pipelines.jet.api.transport.PipelineSpec
-import io.vyne.pipelines.jet.api.transport.StringContentProvider
+import io.vyne.pipelines.jet.api.transport.*
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.pipelines.jet.source.PipelineSourceType
@@ -86,9 +82,9 @@ class PollingSqsOperationSourceContext(
    val pipelineSpec: PipelineSpec<AwsSqsS3TransportInputSpec, *>,
    private val csvModelFormatAnnotation: CsvFormatSpecAnnotation?
 ) {
-   val inputSpec: AwsSqsS3TransportInputSpec = pipelineSpec.input
+   private val inputSpec: AwsSqsS3TransportInputSpec = pipelineSpec.input
 
-   var dataBuffer: LinkedBlockingQueue<Pair<MessageContentProvider, Long>> = LinkedBlockingQueue()
+   private val dataBuffer: LinkedBlockingQueue<Pair<MessageContentProvider, Long>> = LinkedBlockingQueue()
 
    @Resource
    lateinit var clock: Clock
