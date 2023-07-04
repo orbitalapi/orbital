@@ -155,7 +155,7 @@ class FileRepositoryIntegrationTest {
          eventDispatcher
       )
 
-      val path = Resources.getResource("sample-project").toURI().toPath()
+      val path = Resources.getResource("additional-sources").toURI().toPath()
       repositoryService.createFileRepository(
          CreateFileRepositoryRequest(
             path = path.absolutePathString(),

@@ -1,5 +1,6 @@
 package io.vyne.config
 
+import com.typesafe.config.Config
 import io.vyne.PackageIdentifier
 import io.vyne.PackageMetadata
 import io.vyne.SourcePackage
@@ -16,13 +17,13 @@ import kotlin.io.path.readText
 class FileHoconLoader(
    private val configFilePath: Path,
    private val fileMonitor: ReactiveFileSystemMonitor = ReactiveWatchingFileSystemMonitor(configFilePath),
-   private val packageIdentifier: PackageIdentifier = DUMMY_PACKAGE_IDENTIFIER
+   override val packageIdentifier: PackageIdentifier = LOCAL_PACKAGE_IDENTIFIER
 
-) : HoconLoader {
+) : HoconLoader, HoconWriter {
 
    companion object {
       private val logger = KotlinLogging.logger {}
-      val DUMMY_PACKAGE_IDENTIFIER = PackageIdentifier(
+      val LOCAL_PACKAGE_IDENTIFIER = PackageIdentifier(
          "local", "local", "0.1.0"
       )
 
@@ -39,6 +40,19 @@ class FileHoconLoader(
             contentCache.remove(CacheKey)
             sink.emitNext(FileHoconLoader::class.java, Sinks.EmitFailureHandler.FAIL_FAST)
          }
+   }
+
+   override fun saveConfig(config: Config) {
+      val configWithPlaceholderQuotesRemoved = config.getSafeConfigString()
+      configFilePath.toFile().writeText(configWithPlaceholderQuotesRemoved)
+      contentCache.remove(CacheKey)
+
+      // Race condition prevention.
+      // In theory, the file monitor should detect that the file has changed,
+      // invalidate the cache and emit the signal.
+      // However, it's more accurate to do it now.
+      // Tests were failing without this.
+      sink.emitNext(FileHoconLoader::class.java, Sinks.EmitFailureHandler.FAIL_FAST)
    }
 
    override fun load(): List<SourcePackage> {

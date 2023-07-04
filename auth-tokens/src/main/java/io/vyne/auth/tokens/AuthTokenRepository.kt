@@ -1,5 +1,8 @@
 package io.vyne.auth.tokens
 
+import io.vyne.auth.schemes.AuthScheme
+import io.vyne.auth.schemes.HttpHeader
+import io.vyne.auth.schemes.QueryParam
 import io.vyne.schemas.ServiceName
 import kotlinx.serialization.Serializable
 import org.springframework.http.HttpEntity
@@ -69,6 +72,11 @@ data class AuthConfig(
 
 }
 
+/**
+ * Deprecated, to use AuthScheme instead which
+ * allows richer config for advanced auth schemes like OAuth
+ */
+@Deprecated("Use AuthScheme instead")
 @Serializable
 data class AuthToken(
    val tokenType: AuthTokenType,
@@ -79,6 +87,14 @@ data class AuthToken(
    fun applyTo(httpRequest: HttpEntity<*>): HttpEntity<*> {
       return tokenType.applyTo(this, httpRequest)
    }
+
+   fun upgradeToAuthScheme(): AuthScheme {
+      return when (tokenType) {
+         AuthTokenType.Header -> HttpHeader(value, prefix = valuePrefix ?: "Bearer", headerName = paramName)
+         AuthTokenType.QueryParam -> QueryParam(this.paramName, this.value)
+         else -> error("Upgrading tokenType $tokenType is not supported")
+      }
+   }
 }
 
 data class NoCredentialsAuthToken(
@@ -86,10 +102,20 @@ data class NoCredentialsAuthToken(
    val tokenType: AuthTokenType
 )
 
+/**
+ * Provides read-only access for looking up Auth Token
+ */
+@Deprecated("Use AuthSchemeProvider")
 interface AuthTokenProvider {
    fun getToken(serviceName: ServiceName): AuthToken?
 }
 
+/**
+ * Repository that supports writing of AuthTokens.
+ * Note - AuthTokens are being replaced with AuthScheme,
+ * however a replacement of this interface isn't yet ready.
+ */
+@Deprecated("Use AuthSchemeRepository where possible (not fully implemented yet)")
 interface AuthTokenRepository : AuthTokenProvider {
    fun saveToken(serviceName: String, token: AuthToken)
 

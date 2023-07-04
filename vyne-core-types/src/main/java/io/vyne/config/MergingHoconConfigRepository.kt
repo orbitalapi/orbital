@@ -49,19 +49,32 @@ abstract class MergingHoconConfigRepository<T : Any>(
             } else {
                logger.info { "Loading config files returned ${loadedSources.size} sources" }
                val loadedConfigs = loadedSources.map { sourcePackage: SourcePackage ->
-                  // This isn't a hard requirement, but it certainly makes life simpler.
-                  // If this constraint is violated, let's explore the use-case
-                  require(sourcePackage.sources.size == 1) { "Expected a single source within the source package" }
-                  val rawConfig = sourcePackage.sources.single().content
-                  ConfigFactory
-                     .parseString(rawConfig, ConfigParseOptions.defaults())
-                     .resolveWith(fallback, ConfigResolveOptions.defaults().setAllowUnresolved(true))
+                  val rawConfig = readRawHoconSource(sourcePackage)
+                  readConfig(rawConfig, fallback)
                }
                val mergedConfig = mergeConfigs(loadedConfigs)
                extract(mergedConfig)
             }
          }
       })
+
+   protected fun readRawHoconSource(sourcePackage: SourcePackage): String {
+      // This isn't a hard requirement, but it certainly makes life simpler.
+      // If this constraint is violated, let's explore the use-case
+      require(sourcePackage.sources.size == 1) { "Expected a single source within the source package" }
+      val rawConfig = sourcePackage.sources.single().content
+      return rawConfig
+   }
+
+   protected fun unresolvedConfig(rawConfig: String): Config {
+      return ConfigFactory.parseString(rawConfig, ConfigParseOptions.defaults())
+         .resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
+   }
+
+   protected fun readConfig(rawConfig: String, fallback: Config): Config =
+      ConfigFactory
+         .parseString(rawConfig, ConfigParseOptions.defaults())
+         .resolveWith(fallback, ConfigResolveOptions.defaults().setAllowUnresolved(true))
 
    private fun mergeConfigs(loadedConfigs: List<Config>): Config {
       return loadedConfigs.reduce { acc, config -> acc.withFallback(config) }

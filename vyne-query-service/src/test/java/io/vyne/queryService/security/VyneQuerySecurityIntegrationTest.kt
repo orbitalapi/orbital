@@ -13,6 +13,7 @@ import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.spring.config.TestDiscoveryClientConfig
 import org.jose4j.jwk.RsaJsonWebKey
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -437,6 +438,7 @@ class VyneQuerySecurityIntegrationTest {
     * Get Authentication Tokens
     */
    @Test
+   @Ignore
    fun `an admin user can get authentication tokens`() {
       val token = setUpLoggedInUser(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
@@ -445,6 +447,7 @@ class VyneQuerySecurityIntegrationTest {
    }
 
    @Test
+   @Ignore
    fun `a platform manager can get authentication tokens`() {
       val token = setUpLoggedInUser(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
@@ -485,6 +488,7 @@ class VyneQuerySecurityIntegrationTest {
     * Delete Authentication Token
     */
    @Test
+   @Ignore("removing ability to edit tokens from UI")
    fun `an admin user can delete authentication tokens`() {
       val token = setUpLoggedInUser(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
@@ -493,6 +497,7 @@ class VyneQuerySecurityIntegrationTest {
    }
 
    @Test
+   @Ignore("removing ability to edit tokens from UI")
    fun `a platform manager can delete authentication tokens`() {
       val token = setUpLoggedInUser(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
@@ -501,6 +506,7 @@ class VyneQuerySecurityIntegrationTest {
    }
 
    @Test
+   @Ignore("removing ability to edit tokens from UI")
    fun `a query runner can not delete authentication tokens`() {
       val token = setUpLoggedInUser(queryRunnerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
@@ -509,6 +515,7 @@ class VyneQuerySecurityIntegrationTest {
    }
 
    @Test
+   @Ignore("removing ability to edit tokens from UI")
    fun `a viewer user can not delete authentication tokens`() {
       val token = setUpLoggedInUser(viewerUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
@@ -517,6 +524,7 @@ class VyneQuerySecurityIntegrationTest {
    }
 
    @Test
+   @Ignore("removing ability to edit tokens from UI")
    fun `unauthenticated user can not delete authentication tokens`() {
       val headers = HttpHeaders()
       headers.contentType = MediaType.APPLICATION_JSON

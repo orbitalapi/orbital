@@ -37,6 +37,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleVyneProvider
+import io.vyne.spring.http.auth.schemes.AuthWebClientCustomizer
 import io.vyne.spring.invokers.RestTemplateInvoker
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
@@ -75,6 +76,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
                RestTemplateInvoker(
                   SimpleSchemaProvider(taxiSchema),
                   WebClient.builder(),
+                  AuthWebClientCustomizer.empty()
                )
             )
          )
@@ -138,6 +140,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
                RestTemplateInvoker(
                   SimpleSchemaProvider(schema),
                   WebClient.builder(),
+                  AuthWebClientCustomizer.empty()
                )
             )
          )

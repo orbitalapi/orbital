@@ -23,6 +23,7 @@ import io.vyne.spring.config.StaticServicesConfigDiscoveryClient
 import io.vyne.spring.config.VyneSpringCacheConfiguration
 import io.vyne.spring.http.DefaultRequestFactory
 import io.vyne.spring.http.auth.AuthTokenInjectingRequestFactory
+import io.vyne.spring.http.auth.schemes.AuthWebClientCustomizer
 import io.vyne.spring.invokers.RestTemplateInvoker
 import mu.KotlinLogging
 import org.springframework.cloud.client.discovery.DiscoveryClient
@@ -112,8 +113,12 @@ class StandaloneVyneFactory(
       return RestTemplateInvoker(
          schemaProvider,
          builder,
-         requestFactory
-      )
+         // TODO : We need to add support for the new AuthTokens
+         // being sent across the wire.
+         AuthWebClientCustomizer.empty(),
+         requestFactory,
+
+         )
    }
 
    private val jdbcConnectionFactoryCache = CacheBuilder.newBuilder()

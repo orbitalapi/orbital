@@ -16,6 +16,8 @@ import io.vyne.schemas.*
 import io.vyne.spring.hasHttpMetadata
 import io.vyne.spring.http.DefaultRequestFactory
 import io.vyne.spring.http.HttpRequestFactory
+import io.vyne.spring.http.auth.schemes.AuthWebClientCustomizer
+import io.vyne.spring.http.auth.schemes.addAuthTokenAttributes
 import io.vyne.spring.isServiceDiscoveryClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -46,7 +48,7 @@ inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>(
 class RestTemplateInvoker(
    val schemaProvider: SchemaProvider,
    val webClient: WebClient,
-   private val requestFactory: HttpRequestFactory = DefaultRequestFactory()
+   private val requestFactory: HttpRequestFactory = DefaultRequestFactory(),
 ) : OperationInvoker {
    private val logger = KotlinLogging.logger {}
 
@@ -54,6 +56,7 @@ class RestTemplateInvoker(
    constructor(
       schemaProvider: SchemaProvider,
       webClientBuilder: WebClient.Builder,
+      authRequestCustomizer: AuthWebClientCustomizer,
       requestFactory: HttpRequestFactory = DefaultRequestFactory()
    )
       : this(
@@ -80,6 +83,7 @@ class RestTemplateInvoker(
                   .compress(true) // support Gzipped responses
             )
          )
+         .filter(authRequestCustomizer.authFromServiceNameAttribute)
          .build(),
       requestFactory
    )
@@ -130,6 +134,7 @@ class RestTemplateInvoker(
          .headers { consumer ->
             consumer.addAll(httpEntity.headers)
          }
+         .addAuthTokenAttributes(service.name.fullyQualifiedName)
       if (httpEntity.hasBody()) {
          request.bodyValue(httpEntity.body)
       }

@@ -25,7 +25,7 @@
    </licenses>
 
    <properties>
-      <taxi.version>1.39.0</taxi.version>
+      <taxi.version>1.40.0-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -46,7 +46,7 @@
       <!-- Coroutines 1.7.0-Beta is compatible with 1.8.10 as per https://github.com/Kotlin/kotlinx.coroutines -->
       <kotlin.coroutines.version>1.7.0-Beta</kotlin.coroutines.version>
 
-      <kotlin.serialization.version>1.5.0</kotlin.serialization.version>
+      <kotlin.serialization.version>1.5.1</kotlin.serialization.version>
 
       <spring.cloud.version>2022.0.0</spring.cloud.version>
       <arrow.version>1.1.5</arrow.version>

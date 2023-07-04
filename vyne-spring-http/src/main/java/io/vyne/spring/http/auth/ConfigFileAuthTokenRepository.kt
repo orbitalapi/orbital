@@ -28,6 +28,7 @@ private object CacheKey
  * This allows users to store sensitive values either directly in the file,
  * or injected from the env.
  */
+@Deprecated("Use HoconAuthTokensRepository instead")
 class ConfigFileAuthTokenRepository(
    path: Path,
    fallback: Config = ConfigFactory.systemEnvironment()
