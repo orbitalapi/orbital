@@ -64,20 +64,6 @@ class NoOpResultRowPersistenceStrategy : ResultRowPersistenceStrategy {
    }
 }
 
-class RemoteDatabaseResultRowPersistenceStrategy(
-   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-   private val config: QueryAnalyticsConfig
-) : DatabaseResultRowPersistenceStrategy(
-   objectMapper,
-   null,
-   config.persistRemoteCallResponses,
-   config.persistRemoteCallMetadata,
-   config.persistResults
-) {
-   override fun persistResultRowAndLineage(event: QueryResultEvent) {
-      // noop
-   }
-}
 
 @OptIn(ExperimentalTime::class)
 open class DatabaseResultRowPersistenceStrategy(

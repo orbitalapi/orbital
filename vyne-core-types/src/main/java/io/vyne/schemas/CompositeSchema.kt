@@ -1,10 +1,12 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import io.vyne.PathGlob
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.TaxiDocument
+import lang.taxi.packages.SourcesType
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 
@@ -21,6 +23,23 @@ class CompositeSchema(private val schemas: List<Schema>) : Schema {
       schemas.size == 1 -> schemas.first().taxi
       else -> error("Schema size should be  at most 1 ${schemas.size}")
    }
+
+   @get:JsonIgnore
+   override val additionalSourcePaths: List<Pair<String, PathGlob>> = this.schemas.flatMap { it.additionalSourcePaths }
+
+   override val additionalSources: Map<SourcesType, List<SourcePackage>>
+      get() {
+         // Merge the maps
+         val merged: Map<SourcesType, List<SourcePackage>> = this.schemas.map { it.additionalSources }
+            .reduce { acc, thisValue ->
+               thisValue.entries.associate { (key, values) ->
+                  val existingSources = acc[key]?.toMutableList() ?: mutableListOf()
+                  existingSources.addAll(values)
+                  key to existingSources
+               }
+            }
+         return merged
+      }
 
    @get:JsonIgnore
    override val packages: List<SourcePackage> = this.schemas.flatMap { it.packages }

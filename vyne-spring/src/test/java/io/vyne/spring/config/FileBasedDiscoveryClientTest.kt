@@ -2,6 +2,7 @@ package io.vyne.spring.config
 
 import com.jayway.awaitility.Awaitility
 import com.winterbe.expekt.should
+import io.kotest.matchers.shouldBe
 import io.vyne.config.toConfig
 import io.vyne.http.ServicesConfig
 import io.vyne.http.ServicesConfigRepository
@@ -50,8 +51,8 @@ class FileBasedDiscoveryClientTest {
       Files.exists(configFile).should.be.`true`
       client.services.should.have.size(ServicesConfig.DEFAULT.services.size)
       val schemaServer = client.getInstances("schema-server").first()
-      val rsocketPort = schemaServer.metadata["rsocket-port"]
-      rsocketPort!!.equals("7955")
+      val rsocket = schemaServer.metadata["rsocket"]
+      rsocket.shouldBe("tcp://schema-server:7655")
    }
 
    @Test

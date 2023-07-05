@@ -25,6 +25,10 @@
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
       </dependency>
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-serialization-hocon</artifactId>
+      </dependency>
    </dependencies>
 
 </project>

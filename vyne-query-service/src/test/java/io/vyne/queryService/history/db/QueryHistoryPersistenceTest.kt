@@ -30,6 +30,7 @@ import io.vyne.query.runtime.core.monitor.ActiveQueryController
 import io.vyne.queryService.BaseQueryServiceTest
 import io.vyne.queryService.TestSpringConfig
 import io.vyne.schema.api.SimpleSchemaProvider
+import io.vyne.spring.http.auth.schemes.AuthWebClientCustomizer
 import io.vyne.spring.invokers.Invoker
 import io.vyne.spring.invokers.RestTemplateInvoker
 import io.vyne.testVyne
@@ -272,6 +273,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
                RestTemplateInvoker(
                   SimpleSchemaProvider(schema),
                   WebClient.builder(),
+                  AuthWebClientCustomizer.empty(),
                )
             )
          )
@@ -360,6 +362,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
                RestTemplateInvoker(
                   SimpleSchemaProvider(schema),
                   WebClient.builder(),
+                  AuthWebClientCustomizer.empty(),
                )
             )
          )

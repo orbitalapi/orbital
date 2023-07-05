@@ -1,28 +1,13 @@
 package io.vyne.history.remote
 
 import com.google.common.cache.CacheBuilder
+import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.history.QueryResultEventMapper
 import io.vyne.history.ResultRowPersistenceStrategy
 import io.vyne.models.OperationResult
-import io.vyne.query.QueryCompletedEvent
-import io.vyne.query.QueryEvent
-import io.vyne.query.QueryEventConsumer
-import io.vyne.query.QueryFailureEvent
-import io.vyne.query.QueryResponse
-import io.vyne.query.QueryResultEvent
-import io.vyne.query.QueryStartEvent
-import io.vyne.query.RemoteCallOperationResultHandler
-import io.vyne.query.RestfulQueryExceptionEvent
-import io.vyne.query.RestfulQueryResultEvent
-import io.vyne.query.StreamingQueryCancelledEvent
-import io.vyne.query.TaxiQlQueryExceptionEvent
-import io.vyne.query.TaxiQlQueryResultEvent
-import io.vyne.query.VyneQueryStatisticsEvent
-import io.vyne.query.history.FlowChartData
-import io.vyne.query.history.QueryEndEvent
-import io.vyne.query.history.QuerySankeyChartRow
-import io.vyne.query.history.QuerySummary
-import io.vyne.query.history.VyneHistoryRecord
+import io.vyne.models.json.Jackson
+import io.vyne.query.*
+import io.vyne.query.history.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
@@ -32,19 +17,29 @@ import reactor.core.publisher.SignalType
 import reactor.core.publisher.Sinks
 import reactor.core.publisher.Sinks.EmitFailureHandler
 import reactor.core.publisher.Sinks.EmitResult
+import java.time.Duration
 import java.time.Instant
 
 private val logger = KotlinLogging.logger {}
+
 class RemoteQueryEventConsumerClient(
    private val resultRowPersistenceStrategy: ResultRowPersistenceStrategy,
-   private val scope: CoroutineScope): QueryEventConsumer, RemoteCallOperationResultHandler {
-   private val messageSink = Sinks.many().multicast().directAllOrNothing<VyneHistoryRecord>()
+   private val config: QueryAnalyticsConfig,
+   private val scope: CoroutineScope
+) : QueryEventConsumer, RemoteCallOperationResultHandler {
+   private val messageSink = Sinks.many()
+      .replay()
+      .limit<VyneHistoryRecord>(100, Duration.ofSeconds(10))
+
+   //      .directAllOrNothing<VyneHistoryRecord>()
    private val createdQuerySummaryIds = CacheBuilder.newBuilder()
       .build<String, String>()
    private val emitFailureHandler = EmitFailureHandler { _: SignalType?, emitResult: EmitResult ->
       (emitResult
          == EmitResult.FAIL_NON_SERIALIZED)
    }
+
+   private val objectMapper = Jackson.defaultObjectMapper
 
    override fun handleEvent(event: QueryEvent) {
       scope.launch {
@@ -75,13 +70,14 @@ class RemoteQueryEventConsumerClient(
       }
    }
 
-   private  fun processQueryCompletedEvent(event: QueryCompletedEvent) {
+   private fun processQueryCompletedEvent(event: QueryCompletedEvent) {
       createQuerySummaryRecord(event.queryId) { QueryResultEventMapper.toQuerySummary(event) }
       val queryEndEvent = QueryEndEvent(
-      event.queryId,
-      event.timestamp,
-      QueryResponse.ResponseStatus.COMPLETED,
-      event.recordCount)
+         event.queryId,
+         event.timestamp,
+         QueryResponse.ResponseStatus.COMPLETED,
+         event.recordCount
+      )
       emit(queryEndEvent)
    }
 
@@ -93,18 +89,21 @@ class RemoteQueryEventConsumerClient(
          event.timestamp,
          QueryResponse.ResponseStatus.ERROR,
          event.recordCount,
-         event.message)
+         event.message
+      )
       emit(queryEndEvent)
    }
 
    private fun persistQueryFailureEvent(event: QueryFailureEvent) {
-      emit(QueryEndEvent(
-         event.queryId,
-         Instant.now(),
-         QueryResponse.ResponseStatus.ERROR,
-         0,
-         event.failure.message
-      ))
+      emit(
+         QueryEndEvent(
+            event.queryId,
+            Instant.now(),
+            QueryResponse.ResponseStatus.ERROR,
+            0,
+            event.failure.message
+         )
+      )
    }
 
    private fun processTaxiQlException(event: TaxiQlQueryExceptionEvent) {
@@ -114,7 +113,8 @@ class RemoteQueryEventConsumerClient(
          event.timestamp,
          QueryResponse.ResponseStatus.ERROR,
          event.recordCount,
-         event.message)
+         event.message
+      )
       emit(queryEndEvent)
    }
 
@@ -125,22 +125,26 @@ class RemoteQueryEventConsumerClient(
          event.timestamp,
          QueryResponse.ResponseStatus.CANCELLED,
          event.recordCount,
-         event.message)
+         event.message
+      )
       emit(queryEndEvent)
    }
 
    override fun recordResult(operation: OperationResult, queryId: String) {
       val lineageRecords =
          resultRowPersistenceStrategy.createLineageRecords(listOf(operation.asOperationReferenceDataSource()), queryId)
-      if (operation.remoteCall.isFailed) {
-         // emit a remoteCall record so that we can persist the failed call in REMOTE_CALL_RESPONSE
-         resultRowPersistenceStrategy.createRemoteCallRecord(operation, queryId)?.let {
-            emit(it)
-         }
-      }
       lineageRecords.forEach { lineageRecord ->
          emit(lineageRecord)
       }
+
+      emit(
+         RemoteCallResponse.fromRemoteCall(
+            operation.remoteCall,
+            queryId,
+            objectMapper,
+            config.persistRemoteCallResponses
+         )
+      )
    }
 
    private fun processQueryResultEvent(event: QueryResultEvent, querySummary: QuerySummary) {
@@ -161,9 +165,9 @@ class RemoteQueryEventConsumerClient(
       /**
       val emitResult = messageSink.tryEmitNext(historyRecord)
       if (emitResult != EmitResult.OK) {
-         logger.error { "Failed to Emit VyneHistoryRecord! result => $emitResult record => $historyRecord" }
+      logger.error { "Failed to Emit VyneHistoryRecord! result => $emitResult record => $historyRecord" }
       }
-      */
+       */
    }
 
    @MessageMapping("analyticsRecords")

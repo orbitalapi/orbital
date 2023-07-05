@@ -6,7 +6,7 @@ import io.vyne.PackageMetadata
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.auth.tokens.AuthConfig
-import io.vyne.connectors.config.ConnectorsConfig
+import io.vyne.connectors.config.ConnectionsConfig
 import io.vyne.http.ServicesConfig
 import io.vyne.query.runtime.QueryMessage
 import io.vyne.query.runtime.QueryMessageCborWrapper
@@ -19,13 +19,17 @@ class AwsTester {
    fun getNextMessage(): String {
       val query = QueryMessage(
          query = "given { f:String = 'Hello, world' } find { response : String }",
-         sourcePackages = listOf(SourcePackage(
-            PackageMetadata.from(PackageIdentifier.fromId("com.foo/test/1.0.0")),
-            sources = listOf(VersionedSource(
-               "MyTest", "1.0.0","type Hello"
-            ))
-         )),
-         connections = ConnectorsConfig(),
+         sourcePackages = listOf(
+            SourcePackage(
+               PackageMetadata.from(PackageIdentifier.fromId("com.foo/test/1.0.0")),
+               sources = listOf(
+                  VersionedSource(
+                     "MyTest", "1.0.0", "type Hello"
+                  )
+               )
+            )
+         ),
+         connections = ConnectionsConfig(),
          authTokens = AuthConfig(),
          services = ServicesConfig.DEFAULT,
          mediaType = "application/json",

@@ -9,11 +9,11 @@ data class ServicesConfig(
    companion object {
       val DEFAULT = ServicesConfig(
          mapOf(
-            "schema-server" to mapOf("url" to "http://schema-server", "rsocket-port" to "7655"),
-            "query-server" to mapOf("url" to "http://vyne"),
-            "pipeline-runner" to mapOf("url" to "http://vyne-pipeline-runner"),
+            "schema-server" to mapOf("url" to "http://schema-server", "rsocket" to "tcp://schema-server:7655"),
+            "query-server" to mapOf("url" to "http://orbital"),
+            "pipeline-runner" to mapOf("url" to "http://orbital-pipeline-runner"),
             "cask-server" to mapOf("url" to "http://cask"),
-            "analytics-server" to mapOf("url" to "http://vyne-analytics-server")
+            "analytics-server" to mapOf("url" to "http://vyne-analytics-server", "rsocket" to "tcp://vyne-analytics-server:7654")
          )
       )
    }

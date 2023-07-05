@@ -39,7 +39,7 @@ abstract class BaseHistoryRSocketWriter(
          .flatMap { (host, port) ->
             RSocketRequester
                .builder()
-               .dataMimeType(MediaType.APPLICATION_JSON)
+               .dataMimeType(MediaType.APPLICATION_CBOR)
                .rsocketStrategies(rsocketStrategies)
                .rsocketConnector { connector ->
                   connector

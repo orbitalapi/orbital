@@ -14,7 +14,7 @@ private val logger = KotlinLogging.logger {}
 
 @Controller
 class RSocketService(private val messageSink: Sinks.Many<VyneHistoryRecord>) {
-   val mimeType = MediaType.APPLICATION_JSON
+   val mimeType = MediaType.APPLICATION_CBOR
 
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -27,10 +27,10 @@ class RSocketService(private val messageSink: Sinks.Many<VyneHistoryRecord>) {
       requester
          .route("analyticsRecords")
          .metadata { metadataSpec -> metadataSpec.metadata("", mimeType) }
-         .retrieveFlux<String>()
+         .retrieveFlux<VyneHistoryRecord>()
          .subscribe {
             logger.debug { "Received event: $it" }
-//            messageSink.tryEmitNext(it)
+            messageSink.tryEmitNext(it)
          }
       return Mono.empty()
    }

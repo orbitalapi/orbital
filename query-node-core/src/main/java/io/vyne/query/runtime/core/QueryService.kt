@@ -348,7 +348,7 @@ class QueryService(
          activeQueryMonitor.eventDispatcherForQuery(queryId, listOf(historyWriterEventConsumer))
 
       val queryResponse = queryCallback(vyne, eventDispatcherForQuery)
-      return QueryEventObserver(historyWriterEventConsumer, activeQueryMonitor, metricsEventConsumer)
+      return QueryLifecycleEventObserver(historyWriterEventConsumer, activeQueryMonitor)
          .responseWithQueryHistoryListener("Adhoc query", queryResponse)
    }
 
@@ -365,7 +365,7 @@ class QueryService(
          logger.info { "[$queryId] using cache ${queryOptions.cachingStrategy}" }
          val vyne = vyneProvider.createVyne(vyneUser.facts(), schema, queryOptions)
          val historyWriterEventConsumer = historyWriterProvider.createEventConsumer(queryId, vyne.schema)
-         val (response) = try {
+         val response = try {
             val eventDispatcherForQuery =
                activeQueryMonitor.eventDispatcherForQuery(queryId, listOf(historyWriterEventConsumer))
             vyne.query(
@@ -373,7 +373,7 @@ class QueryService(
                queryId = queryId,
                clientQueryId = clientQueryId,
                eventBroker = eventDispatcherForQuery
-            ) to queryOptions
+            )
          } catch (e: lang.taxi.CompilationException) {
             logger.info("The query failed compilation: ${e.message}")
             /**
@@ -396,19 +396,19 @@ class QueryService(
                clientQueryId = clientQueryId,
                queryId = queryId
             )
-            failedSearchResponse to QueryOptions.default()
+            failedSearchResponse
          } catch (e: SearchFailedException) {
-            FailedSearchResponse(e.message!!, e.profilerOperation, queryId = queryId) to queryOptions
+            FailedSearchResponse(e.message!!, e.profilerOperation, queryId = queryId)
 
          } catch (e: NotImplementedError) {
             // happens when Schema is empty
-            FailedSearchResponse(e.message!!, null, queryId = queryId) to queryOptions
+            FailedSearchResponse(e.message!!, null, queryId = queryId)
          } catch (e: QueryCancelledException) {
-            FailedSearchResponse(e.message!!, null, queryId = queryId) to queryOptions
+            FailedSearchResponse(e.message!!, null, queryId = queryId)
          } catch (e: Exception) {
-            FailedSearchResponse(e.message!!, null, queryId = queryId) to queryOptions
+            FailedSearchResponse(e.message!!, null, queryId = queryId)
          }
-         QueryEventObserver(historyWriterEventConsumer, activeQueryMonitor, metricsEventConsumer)
+         QueryLifecycleEventObserver(historyWriterEventConsumer, activeQueryMonitor)
             .responseWithQueryHistoryListener(query, response) to queryOptions
       }
 
@@ -441,7 +441,7 @@ class QueryService(
       }
 
 
-      return QueryEventObserver(queryEventConsumer, activeQueryMonitor, metricsEventConsumer)
+      return QueryLifecycleEventObserver(queryEventConsumer, activeQueryMonitor)
          .responseWithQueryHistoryListener(query, response)
    }
 

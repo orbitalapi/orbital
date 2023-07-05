@@ -7,6 +7,7 @@ import io.vyne.schemas.CompositeSchema
 import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
+import lang.taxi.packages.SourcesType
 import mu.KotlinLogging
 import java.io.Serializable
 
@@ -16,14 +17,19 @@ data class SchemaSet private constructor(
    @Transient
    @field:JsonIgnore
    @get:JsonIgnore
-   private var _taxiSchemas: List<TaxiSchema>? = null
+   private var _taxiSchemas: List<TaxiSchema>? = null,
+   val additionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
 
 ) : Serializable {
 
    // This constructor exists for Jackson
    @JsonCreator
-   private constructor(parsedPackages: List<ParsedPackage>,
-                          generation: Int) : this(parsedPackages, generation, null)
+   private constructor(
+      parsedPackages: List<ParsedPackage>,
+      generation: Int,
+      additionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
+   ) : this(parsedPackages, generation, null, additionalSources)
+
    val id: Int = parsedPackages.hashCode()
 
    init {
@@ -120,7 +126,14 @@ data class SchemaSet private constructor(
          // TODO : Partway through simplifying everything to have a single schema.
          // Not sure what the impact of changing this is, so will chicken out and defer
          if (this._taxiSchemas == null) {
-            this._taxiSchemas = listOf(TaxiSchema.from(validPackages.map { it.toSourcePackage() }))
+            val taxiSources = validPackages.map { it.toSourcePackage() }
+            this._taxiSchemas = listOf(
+               TaxiSchema.from(
+                  taxiSources,
+                  preloadedAdditionalSources = this.additionalSources
+               ),
+
+               )
          }
 
          this._rawSchemaStrings = this.validSources.map { it.content }
@@ -137,11 +150,16 @@ data class SchemaSet private constructor(
          return from(listOf(VersionedSource.sourceOnly(src)), -1)
       }
 
-      fun fromParsed(sources: List<ParsedPackage>, generation: Int): SchemaSet {
-         return SchemaSet(sources, generation)
+      fun fromParsed(
+         sources: List<ParsedPackage>,
+         generation: Int,
+         additionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
+      ): SchemaSet {
+         return SchemaSet(sources, generation, additionalSources = additionalSources)
       }
-      fun fromSchema(sources: List<ParsedPackage>, schema:TaxiSchema, generation: Int): SchemaSet {
-         return SchemaSet(sources, generation, listOf(schema))
+
+      fun fromSchema(sources: List<ParsedPackage>, schema: TaxiSchema, generation: Int): SchemaSet {
+         return SchemaSet(sources, generation, listOf(schema), schema.additionalSources)
       }
 
       @Deprecated("call fromParsed instead")
@@ -162,7 +180,7 @@ data class SchemaSet private constructor(
             )
          }
 
-         return fromParsed(parsed, generation)
+         return fromParsed(parsed, generation, schema.additionalSources)
       }
 
    }

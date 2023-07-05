@@ -2,29 +2,30 @@ package io.vyne.connectors.config
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import io.github.config4k.ClassContainer
-import io.github.config4k.CustomType
 import io.github.config4k.extract
-import io.vyne.config.BaseHoconConfigFileRepository
-import io.vyne.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
-import io.vyne.connectors.config.jdbc.JdbcConnectionConfiguration
+import io.vyne.config.FileHoconLoader
+import io.vyne.config.HoconLoader
+import io.vyne.config.MergingHoconConfigRepository
 import java.nio.file.Path
-import kotlin.reflect.full.isSubclassOf
 
 class ConfigFileConnectorsRegistry(
-   path: Path,
+   loaders: List<HoconLoader>,
    fallback: Config = ConfigFactory.systemEnvironment(),
-) : BaseHoconConfigFileRepository<ConnectorsConfig>(path, fallback) {
-   init {
+) : MergingHoconConfigRepository<ConnectionsConfig>(loaders, fallback) {
 
+   // for testing
+   constructor(path: Path, fallback: Config = ConfigFactory.systemEnvironment()) : this(
+      listOf(FileHoconLoader(path)),
+      fallback
+   )
+
+   override fun extract(config: Config): ConnectionsConfig = config.extract()
+
+   override fun emptyConfig(): ConnectionsConfig {
+      return ConnectionsConfig()
    }
-   override fun extract(config: Config): ConnectorsConfig = config.extract()
 
-   override fun emptyConfig(): ConnectorsConfig {
-      return ConnectorsConfig()
-   }
-
-   fun load(): ConnectorsConfig = typedConfig()
+   fun load(): ConnectionsConfig = typedConfig()
 
 }
 

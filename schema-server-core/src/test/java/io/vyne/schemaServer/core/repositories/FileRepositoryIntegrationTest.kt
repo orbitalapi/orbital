@@ -1,11 +1,14 @@
 package io.vyne.schemaServer.core.repositories
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.io.Resources
 import com.jayway.awaitility.Awaitility
 import com.winterbe.expekt.should
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.vyne.PackageIdentifier
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.rsocket.CBORJackson
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
@@ -22,6 +25,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.toPath
 import kotlin.test.assertFailsWith
 
 class FileRepositoryIntegrationTest {
@@ -124,6 +129,59 @@ class FileRepositoryIntegrationTest {
                .hasType("Hello")
          }
 
+   }
+
+   @Test
+   fun `declaring projects that contain additional sources are loaded into the schema`() {
+      // Setup: Loading the config from disk
+      val configFile = folder.root.resolve("repositories.conf")
+      val eventDispatcher = RepositoryLifecycleManager()
+      val loader = FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
+      val repositoryService = RepositoryService(loader)
+
+      // Setup: Building the file repository, which should
+      // create new repositories as config is added
+      val repositoryManager = ReactiveRepositoryManager(
+         FileSystemPackageLoaderFactory(),
+         GitSchemaPackageLoaderFactory(),
+         eventDispatcher, eventDispatcher, eventDispatcher
+      )
+
+      // Setup: A SchemaStoreClient, which will
+      // compile the taxi as it's discovered / changed
+      val schemaClient = LocalValidatingSchemaStoreClient()
+      val sourceWatchingSchemaPublisher = SourceWatchingSchemaPublisher(
+         schemaClient,
+         eventDispatcher
+      )
+
+      val path = Resources.getResource("additional-sources").toURI().toPath()
+      repositoryService.createFileRepository(
+         CreateFileRepositoryRequest(
+            path = path.absolutePathString(),
+            isEditable = false
+         )
+      ).block()
+
+      Awaitility.await()
+         .atMost(2, TimeUnit.HOURS)
+         .until<Boolean> {
+            schemaClient.schema()
+               .hasType("Hello")
+         }
+
+      val loadedSources = schemaClient.schema().additionalSources
+      loadedSources.entries.shouldHaveSize(1)
+      loadedSources["@orbital/pipelines"]!!.shouldHaveSize(1)
+      val loadedPipelines = loadedSources["@orbital/pipelines"]!!.single().sources
+      loadedPipelines.shouldHaveSize(1)
+
+      // Can we load this to/from CBOR (for sending over rsocket)?
+      val schema = schemaClient.schema()
+      val schemaSet = SchemaSet.from(schema, 1)
+      val bytes = CBORJackson.defaultMapper.writeValueAsBytes(schemaSet)
+      val deserialized = CBORJackson.defaultMapper.readValue<SchemaSet>(bytes)
+      deserialized.additionalSources.shouldBe(schemaClient.schema().additionalSources)
    }
 
    @Test

@@ -8,6 +8,7 @@ import io.vyne.spring.http.HttpRequestFactory
 import org.springframework.http.HttpEntity
 import org.springframework.util.MultiValueMap
 
+@Deprecated("use AuthWebClientCustomizer instead, which has support for async token generation, like OAuth")
 class AuthTokenInjectingRequestFactory(
    private val requestFactory: HttpRequestFactory,
    private val tokenProvider: AuthTokenProvider

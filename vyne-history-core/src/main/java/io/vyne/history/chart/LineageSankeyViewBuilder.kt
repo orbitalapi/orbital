@@ -4,6 +4,7 @@ import com.google.common.collect.MultimapBuilder
 import io.vyne.models.*
 import io.vyne.query.history.QuerySankeyChartRow
 import io.vyne.query.history.SankeyNodeType
+import io.vyne.query.history.SankeyOperationNodeDetails
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
@@ -234,34 +235,3 @@ data class SankeyNode(
 
 }
 
-/**
- * A collection of classes which provide operation specific metadata.
- * (eg., for a Kafka operation, it's broker and topic name).
- *
- * This is for usage in the UI
- */
-sealed class SankeyOperationNodeDetails(
-   val operationType: OperationNodeType,
-)
-
-data class KafkaOperationNode(
-   val connectionName: String,
-   val topic: String
-) : SankeyOperationNodeDetails(OperationNodeType.KafkaTopic)
-
-data class HttpOperationNode(
-   val operationName: QualifiedName,
-   val verb: String,
-   val path: String
-) : SankeyOperationNodeDetails(OperationNodeType.Http)
-
-data class DatabaseNode(
-   val connectionName: String,
-   val tableNames: List<String>
-) : SankeyOperationNodeDetails(OperationNodeType.Database)
-
-enum class OperationNodeType {
-   KafkaTopic,
-   Database,
-   Http
-}

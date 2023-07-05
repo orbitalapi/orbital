@@ -28,6 +28,7 @@ class QueryHistoryRSocketWriter(
       .asCoroutineDispatcher()
    private val queryEventConsumer = RemoteQueryEventConsumerClient(
       ResultRowPersistenceStrategyFactory.resultRowPersistenceStrategy(Jackson.defaultObjectMapper, null, config),
+      config,
       CoroutineScope(historyDispatcher)
    )
 

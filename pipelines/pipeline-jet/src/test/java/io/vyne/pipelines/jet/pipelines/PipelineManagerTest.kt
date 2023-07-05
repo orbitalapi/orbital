@@ -190,7 +190,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
       }
       manager.getPipelines().should.have.size(1)
 
-      manager.deletePipeline(pipelineSpec.id)
+      manager.terminatePipeline(pipelineSpec.id)
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
          val pipelineSummary = manager.getPipelines().single()
          pipelineSummary.status.status.isTerminal

@@ -13,41 +13,32 @@ import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
-import io.vyne.models.csv.CsvFormatFactory
-import io.vyne.models.csv.CsvFormatSpec
-import io.vyne.models.csv.CsvFormatSpecAnnotation
-import io.vyne.models.format.FormatDetector
 import io.vyne.pipelines.jet.BadRequestException
-import io.vyne.pipelines.jet.api.transport.CsvRecordContentProvider
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
-import io.vyne.pipelines.jet.api.transport.StringContentProvider
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportInputSpec
 import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.pipelines.jet.source.PipelineSourceType
+import io.vyne.pipelines.jet.source.TextFormatUtils
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.Resource
-import org.apache.commons.csv.CSVRecord
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
 import software.amazon.awssdk.services.s3.model.S3Object
-import java.io.BufferedReader
 import java.io.InputStream
-import java.io.InputStreamReader
 import java.io.Serializable
-import java.nio.charset.StandardCharsets
 import java.util.stream.Stream
 
 
 @Component
 class S3SourceBuilder : PipelineSourceBuilder<AwsS3TransportInputSpec> {
 
-   private val formatDetector = FormatDetector.get(listOf(CsvFormatSpec))
+   private val formatDetector = TextFormatUtils.formatDetector
    override val sourceType: PipelineSourceType
       get() = PipelineSourceType.Batch
 
@@ -60,32 +51,18 @@ class S3SourceBuilder : PipelineSourceBuilder<AwsS3TransportInputSpec> {
       inputType: Type?
    ): BatchSource<MessageContentProvider> {
       val bucketName = pipelineSpec.input.bucket
-      val csvModelFormatAnnotation = formatDetector.getFormatType(inputType!!)
-         ?.let { if (it.second is CsvFormatSpec) CsvFormatSpecAnnotation.from(it.first) else null }
-
-      val csvFormat = csvModelFormatAnnotation?.let {  CsvFormatFactory.fromParameters(csvModelFormatAnnotation.ingestionParameters) }
+      val (csvModelFormatAnnotation, csvFormat) = TextFormatUtils.getCsvFormat(inputType!!)
       // Read CSV file as a stream of Strings
       val readFileFn: FunctionEx<InputStream, Stream<out Serializable>> =
          FunctionEx<InputStream, Stream<out Serializable>> { responseInputStream ->
-            if (csvFormat != null) {
-               csvFormat.parse(responseInputStream.bufferedReader()).stream()
-            } else {
-               val reader = BufferedReader(InputStreamReader(responseInputStream, StandardCharsets.UTF_8))
-               reader.lines()
-            }
+            TextFormatUtils.readAsTextOrCsv(responseInputStream, csvFormat)
          }
 
       // Map Each CSV file to a String Content.
-
       val mapFunc: BiFunctionEx<Serializable, Serializable, MessageContentProvider> =
          BiFunctionEx<Serializable, Serializable, MessageContentProvider>
          { _, line ->
-            if (csvFormat != null) {
-               CsvRecordContentProvider(line as CSVRecord, csvModelFormatAnnotation.ingestionParameters.nullValue)
-            } else {
-               StringContentProvider(line as String)
-            }
-
+            TextFormatUtils.csvOrStringContentProvider(line, csvModelFormatAnnotation)
          }
 
 

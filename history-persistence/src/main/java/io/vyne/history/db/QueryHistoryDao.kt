@@ -6,6 +6,7 @@ import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryResponse
 import io.vyne.query.history.*
+import kotlinx.serialization.encodeToString
 import mu.KotlinLogging
 import java.sql.SQLIntegrityConstraintViolationException
 import java.time.Instant
@@ -48,12 +49,13 @@ class QueryHistoryDao(
    fun upsertLineageRecord(lineageRecord: LineageRecord) {
       try {
          lineageRecordRepository.upsertLineageRecord(
+            lineageRecord.recordId,
             lineageRecord.dataSourceId,
             lineageRecord.queryId,
             lineageRecord.dataSourceType,
             lineageRecord.dataSourceJson,
-            lineageRecord.recordId
-         )
+
+            )
       } catch (e: Exception) {
          logger.error(e) { "Error in upserting lineage record for query Id ${lineageRecord.queryId}" }
 
@@ -119,10 +121,10 @@ class QueryHistoryDao(
             it.queryId,
             it.sourceNodeType.name,
             it.sourceNode,
-            JsonConverter.objectMapper.writeValueAsString(it.sourceNodeOperationData),
+            SankeyOperationNodeDetailsConverter.json.encodeToString(it.sourceNodeOperationData),
             it.targetNodeType.name,
             it.targetNode,
-            JsonConverter.objectMapper.writeValueAsString(it.targetNodeOperationData),
+            SankeyOperationNodeDetailsConverter.json.encodeToString(it.targetNodeOperationData),
             it.count
          )
       }

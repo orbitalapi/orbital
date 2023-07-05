@@ -4,10 +4,12 @@ import com.google.common.io.Files
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
 import io.vyne.asPackage
-import io.vyne.auth.tokens.AuthToken
+import io.vyne.auth.schemes.Cookie
+import io.vyne.auth.schemes.HttpHeader
+import io.vyne.auth.schemes.QueryParam
 import io.vyne.auth.tokens.AuthTokenRepository
-import io.vyne.auth.tokens.AuthTokenType
 import io.vyne.cockpit.core.security.AuthTokenConfigurationService
+import io.vyne.config.FileHoconLoader
 import io.vyne.http.MockWebServerRule
 import io.vyne.query.runtime.core.QueryService
 import io.vyne.schema.api.SchemaProvider
@@ -62,7 +64,7 @@ class OperationAuthenticationIntegrationTest {
 
    @Before
    fun setup() {
-      taxiSchema =  TaxiSchema.from(
+      taxiSchema = TaxiSchema.from(
          """
             model Person {
                personId : PersonId inherits String
@@ -106,14 +108,14 @@ class OperationAuthenticationIntegrationTest {
    @Test
    fun `calling an operation with configured query param auth includes query param name values`(): Unit = runBlocking {
       localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources.asPackage())
-      val token = AuthToken(
-         tokenType = AuthTokenType.QueryParam,
+      val token = QueryParam(
          value = "abc123",
-         paramName = "api_key"
+         parameterName = "api_key"
       )
-      tokenService.submitToken(
+      tokenService.submitAuthScheme(
+         FileHoconLoader.LOCAL_PACKAGE_IDENTIFIER.uriSafeId,
          "PersonFindByIdService", token
-      )
+      ).block()
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(
             """{ "personId" : "123", "personName": "foo" }"""
@@ -130,15 +132,17 @@ class OperationAuthenticationIntegrationTest {
    @Test
    fun `calling a service with configured auth includes header tokens`(): Unit = runBlocking {
       localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources.asPackage())
-      val token = AuthToken(
-         tokenType = AuthTokenType.Header,
+      val authScheme = HttpHeader(
          value = "abc123",
-         paramName = "Authorization",
-         valuePrefix = "Bearer"
+         headerName = "Authorization",
+         prefix = "Bearer"
       )
-      tokenService.submitToken(
-         "PersonService", token
-      )
+      tokenService.submitAuthScheme(
+         FileHoconLoader.LOCAL_PACKAGE_IDENTIFIER.uriSafeId,
+         "PersonService", authScheme
+      ).block()
+
+
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(
             """[ { "personId" : "123" } ] """
@@ -154,14 +158,14 @@ class OperationAuthenticationIntegrationTest {
    @Test
    fun `calling a service with configured query param auth includes query param name values`(): Unit = runBlocking {
       localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources.asPackage())
-      val token = AuthToken(
-         tokenType = AuthTokenType.QueryParam,
+      val token = QueryParam(
          value = "abc123",
-         paramName = "api_key"
+         parameterName = "api_key"
       )
-      tokenService.submitToken(
+      tokenService.submitAuthScheme(
+         FileHoconLoader.LOCAL_PACKAGE_IDENTIFIER.uriSafeId,
          "PersonService", token
-      )
+      ).block()
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(
             """[ { "personId" : "123" } ] """
@@ -177,14 +181,15 @@ class OperationAuthenticationIntegrationTest {
    @Test
    fun `calling a service with cookie auth includes relevant cookie values`(): Unit = runBlocking {
       localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources.asPackage())
-      val token = AuthToken(
-         tokenType = AuthTokenType.Cookie,
+      val token = Cookie(
          value = "abc123",
-         paramName = "api_key"
+         cookieName = "api_key",
       )
-      tokenService.submitToken(
+      tokenService.submitAuthScheme(
+         FileHoconLoader.LOCAL_PACKAGE_IDENTIFIER.uriSafeId,
          "PersonService", token
-      )
+      ).block()
+
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(
             """[ { "personId" : "123" } ] """
@@ -224,7 +229,7 @@ class OperationAuthenticationIntegrationTest {
       fun schemaProvider(): SchemaProvider = SimpleTaxiSchemaProvider(VyneQueryIntegrationTest.UserSchema.source)
 
       @Bean
-      fun schemaStore():SchemaStore = LocalValidatingSchemaStoreClient()
+      fun schemaStore(): SchemaStore = LocalValidatingSchemaStoreClient()
 
 
       @Bean

@@ -15,7 +15,7 @@ import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.query.*
 import io.vyne.query.runtime.core.MetricsEventConsumer
-import io.vyne.query.runtime.core.QueryEventObserver
+import io.vyne.query.runtime.core.QueryLifecycleEventObserver
 import io.vyne.query.runtime.core.QueryResponseFormatter
 import io.vyne.query.runtime.core.QueryService
 import io.vyne.query.runtime.core.monitor.ActiveQueryMonitor
@@ -87,7 +87,7 @@ abstract class BaseQueryServiceTest {
    lateinit var queryService: QueryService
    lateinit var stubService: StubService
    lateinit var vyne: Vyne
-   lateinit var queryEventObserver: QueryEventObserver
+   lateinit var queryEventObserver: QueryLifecycleEventObserver
    lateinit var meterRegistry: SimpleMeterRegistry
 
    protected fun mockHistoryWriter(): QueryHistoryDbWriter {

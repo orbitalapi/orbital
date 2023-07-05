@@ -8,7 +8,7 @@ import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.SourcePackageHasher
 import io.vyne.Vyne
-import io.vyne.connectors.config.ConnectorsConfig
+import io.vyne.connectors.config.ConnectionsConfig
 import io.vyne.connectors.jdbc.HikariJdbcConnectionFactory
 import io.vyne.connectors.jdbc.JdbcInvoker
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
@@ -23,6 +23,7 @@ import io.vyne.spring.config.StaticServicesConfigDiscoveryClient
 import io.vyne.spring.config.VyneSpringCacheConfiguration
 import io.vyne.spring.http.DefaultRequestFactory
 import io.vyne.spring.http.auth.AuthTokenInjectingRequestFactory
+import io.vyne.spring.http.auth.schemes.AuthWebClientCustomizer
 import io.vyne.spring.invokers.RestTemplateInvoker
 import mu.KotlinLogging
 import org.springframework.cloud.client.discovery.DiscoveryClient
@@ -112,15 +113,19 @@ class StandaloneVyneFactory(
       return RestTemplateInvoker(
          schemaProvider,
          builder,
-         requestFactory
-      )
+         // TODO : We need to add support for the new AuthTokens
+         // being sent across the wire.
+         AuthWebClientCustomizer.empty(),
+         requestFactory,
+
+         )
    }
 
    private val jdbcConnectionFactoryCache = CacheBuilder.newBuilder()
       .build<Int, HikariJdbcConnectionFactory>()
 
 
-   private fun buildJdbcInvoker(connections: ConnectorsConfig, schemaProvider: SchemaProvider): JdbcInvoker {
+   private fun buildJdbcInvoker(connections: ConnectionsConfig, schemaProvider: SchemaProvider): JdbcInvoker {
 
       val jdbcConnectionFactory = jdbcConnectionFactoryCache.get(connections.jdbcConnectionsHash) {
          val connectionRegistry = InMemoryJdbcConnectionRegistry(connections.jdbc.values.toList())

@@ -6,7 +6,7 @@ import io.vyne.PackageMetadata
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.auth.tokens.AuthConfig
-import io.vyne.connectors.config.ConnectorsConfig
+import io.vyne.connectors.config.ConnectionsConfig
 import io.vyne.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.config.jdbc.JdbcDriver
 import io.vyne.http.ServicesConfig
@@ -38,7 +38,7 @@ class QueryMessageTest {
       val message = QueryMessage(
          query = "find { Hello }",
          sourcePackages = sourcePackages,
-         connections = ConnectorsConfig(
+         connections = ConnectionsConfig(
             jdbc = mapOf(
                "my-db" to DefaultJdbcConnectionConfiguration(
                   "my-db",

@@ -7,9 +7,9 @@ import io.vyne.schemaServer.core.adaptors.taxi.TaxiSchemaSourcesAdaptor
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageLoader
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
-import io.vyne.schemaServer.core.file.packages.ReactiveWatchingFileSystemMonitor
 import io.vyne.schemaServer.core.git.GitSchemaPackageLoader
 import io.vyne.schemaServer.core.git.GitSchemaPackageLoaderFactory
+import io.vyne.utils.files.ReactiveWatchingFileSystemMonitor
 import mu.KotlinLogging
 import java.nio.file.Path
 

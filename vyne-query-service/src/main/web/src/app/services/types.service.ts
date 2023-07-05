@@ -9,18 +9,22 @@ import {Policy} from '../policy-manager/policies';
 import {
   CompilationMessage,
   Message,
-  Operation, OperationKind,
+  Operation,
+  OperationKind,
   ParsedSource,
   PartialSchema,
   QualifiedName,
   Schema,
   SchemaGraph,
   SchemaGraphNode,
-  SchemaMember, SchemaMemberKind,
+  SchemaMember,
+  SchemaMemberKind,
   SchemaSpec,
-  Service, ServiceKind,
+  Service,
+  ServiceKind,
   Type,
-  TypedInstance, TypeKind,
+  TypedInstance,
+  TypeKind,
   TypeNamedInstance,
   VersionedSource,
 } from './schema';
@@ -373,6 +377,8 @@ export class CsvOptions {
       case 'csv' :
         return true;
       case 'psv' :
+        return true;
+      case 'txt' :
         return true;
       default:
         return false;

@@ -1,6 +1,6 @@
-package io.vyne.schemaServer.core.file.packages
+package io.vyne.utils.files
 
-import io.vyne.schemaServer.core.file.packages.FileSystemChangeEvent.FileSystemChangeEventType
+import io.vyne.utils.files.FileSystemChangeEvent.FileSystemChangeEventType
 import mu.KotlinLogging
 import org.apache.commons.io.filefilter.FileFilterUtils
 import org.apache.commons.io.filefilter.HiddenFileFilter

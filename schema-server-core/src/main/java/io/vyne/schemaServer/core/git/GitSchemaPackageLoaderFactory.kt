@@ -2,8 +2,8 @@ package io.vyne.schemaServer.core.git
 
 import io.vyne.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
 import io.vyne.schemaServer.core.file.FileChangeDetectionMethod
-import io.vyne.schemaServer.core.file.packages.ReactivePollingFileSystemMonitor
-import io.vyne.schemaServer.core.file.packages.ReactiveWatchingFileSystemMonitor
+import io.vyne.utils.files.ReactivePollingFileSystemMonitor
+import io.vyne.utils.files.ReactiveWatchingFileSystemMonitor
 import mu.KotlinLogging
 import java.nio.file.Paths
 import java.time.Duration

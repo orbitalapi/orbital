@@ -5,7 +5,7 @@ import io.vyne.DefaultPackageMetadata
 import io.vyne.PackageMetadata
 import io.vyne.SourcePackage
 import io.vyne.auth.tokens.AuthConfig
-import io.vyne.connectors.config.ConnectorsConfig
+import io.vyne.connectors.config.ConnectionsConfig
 import io.vyne.http.ServicesConfig
 import io.vyne.models.json.Jackson
 import io.vyne.query.ResultMode
@@ -44,7 +44,7 @@ data class QueryMessage(
    // (eg:ObjectMapper.convertValue<JdbcConnections>(connections)),
    // you need to register that type in NativeQueryNodeRuntimeHints
    // as it's not available for reflection at runtime in this image.
-   val connections: ConnectorsConfig,
+   val connections: ConnectionsConfig,
    val authTokens: AuthConfig,
    val services: ServicesConfig,
    val resultMode: ResultMode = ResultMode.RAW,
@@ -64,7 +64,7 @@ data class QueryMessage(
       // (eg:ObjectMapper.convertValue<JdbcConnections>(connections)),
       // you need to register that type in NativeQueryNodeRuntimeHints
       // as it's not available for reflection at runtime in this image.
-      connections: ConnectorsConfig,
+      connections: ConnectionsConfig,
       authTokens: AuthConfig,
       services: ServicesConfig,
       resultMode: ResultMode = ResultMode.RAW,

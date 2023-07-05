@@ -14,6 +14,7 @@ object CsvFormatFactory {
          .withIgnoreSurroundingSpaces()
          .withDelimiter(parameters.delimiter)
          .withQuote(parameters.withQuote)
+         .withRecordSeparator(parameters.recordSeparator)
          .let { csvFormat ->
             // For some reason we set nullValue up as a Set<String>
             // Not sure why ... will ask Serhat

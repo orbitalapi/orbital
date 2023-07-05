@@ -1,4 +1,4 @@
-package io.vyne.schemaServer.core.file.packages
+package io.vyne.utils.files
 
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
