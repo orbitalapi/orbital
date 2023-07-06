@@ -3,45 +3,50 @@ import {SchemaSubmissionResult, TypesService} from '../services/types.service';
 import {Message, PartialSchema, Schema} from '../services/schema';
 import {ConnectorSummary, DbConnectionService, MappedTable} from '../db-connection-editor/db-importer.service';
 import {ConvertSchemaEvent} from './schema-importer.models';
-import {SchemaImporterService} from './schema-importer.service';
+import {SchemaEdit, SchemaEditOperation, SchemaImporterService} from './schema-importer.service';
 import {Observable} from 'rxjs/internal/Observable';
 import {shareReplay} from 'rxjs/operators';
 import {appInstanceType} from 'src/app/app-config/app-instance.vyne';
+import {PackagesService, SourcePackageDescription} from "../package-viewer/packages.service";
 
 
 @Component({
   selector: 'app-schema-importer',
   styleUrls: ['./schema-importer.component.scss'],
   template: `
-      <div class="importer-step step" *ngIf="wizardStep === 'importSchema'">
-          <h2 *ngIf="title">Add a new schema</h2>
-          <div class="form-container">
-              <app-schema-source-panel
-                      [dbConnections]="connections"
-                      (dbConnectionChanged)="onDbConnectionChanged($event)"
-                      [tables$]="mappedTables$"
-                      (convertSchema)="convertSchema($event)"
-                      [schema]="schema"
-                      [working]="working"
-              ></app-schema-source-panel>
-              <tui-notification status="error" *ngIf="schemaConversionError">{{schemaConversionError}}
-              </tui-notification>
-          </div>
+    <div class="importer-step step" *ngIf="wizardStep === 'importSchema'">
+      <h2 *ngIf="title">Add a new schema</h2>
+      <div class="form-container">
+        <app-schema-source-panel
+          [packages]="packages$ | async"
+          [dbConnections]="connections"
+          (dbConnectionChanged)="onDbConnectionChanged($event)"
+          [tables$]="mappedTables$"
+          (convertSchema)="convertSchema($event)"
+          [schema]="schema"
+          [working]="working"
+        ></app-schema-source-panel>
+        <tui-notification status="error" *ngIf="schemaConversionError">{{schemaConversionError}}
+        </tui-notification>
       </div>
-      <div class="configuration-step step" *ngIf="wizardStep === 'configureTypes'">
-          <h2>Configure the schema</h2>
-          <app-schema-explorer-table [partialSchema]="schemaSubmissionResult"
-                                     [schema]="schema"
-                                     [working]="working"
-                                     [saveResultMessage]="schemaSaveResultMessage"
-                                     (save)="saveSchema($event)"
-          ></app-schema-explorer-table>
-      </div>
+    </div>
+    <div class="configuration-step step" *ngIf="wizardStep === 'configureTypes'">
+      <h2>Configure the schema</h2>
+      <app-schema-explorer-table [partialSchema]="schemaSubmissionResult"
+                                 [schema]="schema"
+                                 [working]="working"
+                                 [saveResultMessage]="schemaSaveResultMessage"
+                                 [editable]="true"
+                                 (save)="submitEdits($event)"
+      ></app-schema-explorer-table>
+    </div>
   `,
-  host: { 'class': appInstanceType.appType },
+  host: {'class': appInstanceType.appType},
 })
 export class SchemaImporterComponent {
   wizardStep: 'importSchema' | 'configureTypes' = 'importSchema';
+
+  packages$: Observable<SourcePackageDescription[]>
 
   @Input()
   title = 'Add a new schema';
@@ -57,7 +62,10 @@ export class SchemaImporterComponent {
 
   constructor(private dbService: DbConnectionService,
               private schemaService: SchemaImporterService,
-              private typeService: TypesService) {
+              private typeService: TypesService,
+              private packagesService: PackagesService,
+  ) {
+    this.packages$ = packagesService.listPackages();
     dbService.getConnections()
       .subscribe(connections => this.connections = connections);
     typeService.getTypes().subscribe(schema => this.schema = schema);
@@ -83,9 +91,15 @@ export class SchemaImporterComponent {
     });
   }
 
-  saveSchema(schema: PartialSchema) {
+  submitEdits(edits: SchemaEditOperation[]) {
+    const schemaEdit: SchemaEdit = {
+      packageIdentifier: this.schemaSubmissionResult.sourcePackage.identifier,
+      edits: edits,
+      dryRun: false
+    }
+
     this.working = true;
-    this.schemaService.submitEditedSchema(schema)
+    this.schemaService.submitSchemaEditOperation(schemaEdit)
       .subscribe(() => {
           this.working = false;
           this.schemaSaveResultMessage = {
@@ -103,4 +117,26 @@ export class SchemaImporterComponent {
         },
       );
   }
+
+  //
+  // saveSchema(schema: PartialSchema) {
+  //   this.working = true;
+  //   this.schemaService.submitEditedSchema(schema)
+  //     .subscribe(() => {
+  //         this.working = false;
+  //         this.schemaSaveResultMessage = {
+  //           message: 'The schema was updated successfully',
+  //           level: 'SUCCESS',
+  //         };
+  //       },
+  //       error => {
+  //         console.error(JSON.stringify(error));
+  //         this.schemaSaveResultMessage = {
+  //           message: error.error?.message || 'An error occurred',
+  //           level: 'FAILURE',
+  //         };
+  //         this.working = false;
+  //       },
+  //     );
+  // }
 }

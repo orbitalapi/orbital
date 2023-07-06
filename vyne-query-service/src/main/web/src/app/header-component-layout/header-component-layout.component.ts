@@ -21,7 +21,7 @@ import { Component, Input } from '@angular/core';
           </div>
       </div>
       <div class="body-container" *ngIf='displayBody'>
-        <div class="body">
+        <div class="body" [ngClass]="{'full-width' : fullWidth}">
           <ng-content></ng-content>
         </div>
       </div>
@@ -50,4 +50,11 @@ export class HeaderComponentLayoutComponent {
    */
   @Input()
   displayBody = true;
+
+  /**
+   * Allow the body to expand to full width.
+   * Otherwise, uses a comfortable width of 1280px or so.
+   */
+  @Input()
+  fullWidth: boolean = false;
 }

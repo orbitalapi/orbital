@@ -3,12 +3,18 @@ import {ConnectorSummary, MappedTable} from '../../db-connection-editor/db-impor
 import {ConvertSchemaEvent} from '../schema-importer.models';
 import {Observable} from 'rxjs/internal/Observable';
 import {Schema} from '../../services/schema';
+import {SourcePackageDescription} from "../../package-viewer/packages.service";
 
 @Component({
   selector: 'app-schema-source-panel',
   styleUrls: ['./schema-source-panel.component.scss'],
   template: `
     <div>
+      <app-project-selector
+        prompt="Select a project to save the schema to"
+        [packages]="packages"
+        [(ngModel)]="selectedPackage"
+      ></app-project-selector>
       <tui-select
         [stringify]="stringify"
         [(ngModel)]="schemaType"
@@ -22,16 +28,19 @@ import {Schema} from '../../services/schema';
       </tui-select>
       <div [ngSwitch]="schemaType?.id" class="config-container">
         <app-swagger-config *ngSwitchCase="'swagger'"
+                            [packageIdentifier]="selectedPackage?.identifier"
                             (loadSchema)="convertSchema.emit($event)"
                             [working]="working">
         </app-swagger-config>
         <app-jsonschema-config *ngSwitchCase="'jsonSchema'"
+                               [packageIdentifier]="selectedPackage?.identifier"
                                [working]="working"
                                (loadSchema)="convertSchema.emit($event)">
         </app-jsonschema-config>
         <app-database-table-config [connections]="dbConnections | databases"
                                    *ngSwitchCase="'databaseTable'"
                                    [tables$]="tables$"
+                                   [packageIdentifier]="selectedPackage?.identifier"
                                    (connectionChanged)="dbConnectionChanged.emit($event)"
                                    (loadSchema)="convertSchema.emit($event)"
                                    [working]="working"
@@ -39,11 +48,13 @@ import {Schema} from '../../services/schema';
         <app-kafka-topic-config [connections]="dbConnections | messageBrokers"
                                 [schema]="schema"
                                 [working]="working"
+                                [packageIdentifier]="selectedPackage?.identifier"
                                 (loadSchema)="convertSchema.emit($event)"
                                 *ngSwitchCase="'kafkaTopic'"></app-kafka-topic-config>
-        <app-protobuf-config    [working]="working"
-                                (loadSchema)="convertSchema.emit($event)"
-                                *ngSwitchCase="'protobuf'"
+        <app-protobuf-config [working]="working"
+                             [packageIdentifier]="selectedPackage?.identifier"
+                             (loadSchema)="convertSchema.emit($event)"
+                             *ngSwitchCase="'protobuf'"
         ></app-protobuf-config>
       </div>
     </div>
@@ -65,6 +76,11 @@ export class SchemaSourcePanelComponent {
   schemaType: SchemaType
 
   readonly stringify = (item: SchemaType) => item.label;
+
+  @Input()
+  packages: SourcePackageDescription[];
+
+  selectedPackage: SourcePackageDescription
 
   @Input()
   working: boolean = false;

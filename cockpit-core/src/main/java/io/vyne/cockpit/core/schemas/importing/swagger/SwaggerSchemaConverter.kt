@@ -1,8 +1,6 @@
 package io.vyne.cockpit.core.schemas.importing.swagger
 
-import io.vyne.cockpit.core.schemas.importing.BaseUrlLoadingSchemaConverter
-import io.vyne.cockpit.core.schemas.importing.SchemaConversionRequest
-import io.vyne.cockpit.core.schemas.importing.SchemaConverter
+import io.vyne.cockpit.core.schemas.importing.*
 import lang.taxi.generators.GeneratedTaxiCode
 import lang.taxi.generators.openApi.GeneratorOptions
 import lang.taxi.generators.openApi.TaxiGenerator
@@ -33,14 +31,17 @@ class SwaggerSchemaConverter(
    override val supportedFormats = listOf(SWAGGER_FORMAT)
    private val swaggerToTaxiGenerator = TaxiGenerator()
 
-   override fun convert(request: SchemaConversionRequest, options: SwaggerConverterOptions): Mono<GeneratedTaxiCode> {
+   override fun convert(
+      request: SchemaConversionRequest,
+      options: SwaggerConverterOptions
+   ): Mono<SourcePackageWithMessages> {
       return loadSwaggerContents(options)
          .map { swagger ->
             swaggerToTaxiGenerator.generateAsStrings(
                swagger, options.defaultNamespace, GeneratorOptions(
                   options.serviceBasePath
                )
-            )
+            ).toSourcePackageWithMessages(request.packageIdentifier, generatedImportedFileName("OpenApi"))
          }
 
    }

@@ -1,8 +1,6 @@
 package io.vyne.cockpit.core.schemas.importing.protobuf
 
-import io.vyne.cockpit.core.schemas.importing.BaseUrlLoadingSchemaConverter
-import io.vyne.cockpit.core.schemas.importing.SchemaConversionRequest
-import io.vyne.cockpit.core.schemas.importing.SchemaConverter
+import io.vyne.cockpit.core.schemas.importing.*
 import lang.taxi.generators.GeneratedTaxiCode
 import lang.taxi.generators.protobuf.ProtobufUtils
 import lang.taxi.generators.protobuf.TaxiGenerator
@@ -30,7 +28,7 @@ class ProtobufSchemaConverter(
    override fun convert(
       request: SchemaConversionRequest,
       options: ProtobufSchemaConverterOptions
-   ): Mono<GeneratedTaxiCode> {
+   ): Mono<SourcePackageWithMessages> {
       val fileSystem = if (options.url != null) {
          loadFromUrl(options)
       } else {
@@ -41,6 +39,8 @@ class ProtobufSchemaConverter(
          TaxiGenerator(fs)
             .addSchemaRoot("/")
             .generate()
+      }.map { taxiCode ->
+         taxiCode.toSourcePackageWithMessages(request.packageIdentifier, generatedImportedFileName("Protobuf"))
       }
 
 

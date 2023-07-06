@@ -1,8 +1,6 @@
 package io.vyne.cockpit.core.schemas.importing.jsonschema
 
-import io.vyne.cockpit.core.schemas.importing.BaseUrlLoadingSchemaConverter
-import io.vyne.cockpit.core.schemas.importing.SchemaConversionRequest
-import io.vyne.cockpit.core.schemas.importing.SchemaConverter
+import io.vyne.cockpit.core.schemas.importing.*
 import lang.taxi.generators.GeneratedTaxiCode
 import lang.taxi.generators.jsonSchema.TaxiGenerator
 import org.everit.json.schema.loader.SchemaLoader
@@ -27,7 +25,7 @@ class JsonSchemaConverter(
    override fun convert(
       request: SchemaConversionRequest,
       options: JsonSchemaConverterOptions
-   ): Mono<GeneratedTaxiCode> {
+   ): Mono<SourcePackageWithMessages> {
 
       val schemaLoaderBuilder = createSchemaLoaderBuilder(options)
       val generator = TaxiGenerator(schemaLoader = schemaLoaderBuilder)
@@ -45,7 +43,11 @@ class JsonSchemaConverter(
 
             else -> error("Expected either url or jsonSchema to be provided")
          }
-         sink.success(generatedCode)
+         val sourcePackage = generatedCode.toSourcePackageWithMessages(
+            request.packageIdentifier,
+            generatedImportedFileName("JsonSchema")
+         )
+         sink.success(sourcePackage)
       }
 
    }

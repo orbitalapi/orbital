@@ -1,10 +1,14 @@
 package io.vyne.cockpit.core.schemas.editor
 
 
+import arrow.core.*
 import com.google.common.collect.Sets
 import io.vyne.PackageIdentifier
+import io.vyne.PackageMetadata
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.cockpit.core.schemas.editor.generator.VyneSchemaToTaxiGenerator
+import io.vyne.cockpit.core.schemas.editor.operations.SchemaEdit
 import io.vyne.cockpit.core.schemas.editor.splitter.SingleTypePerFileSplitter
 import io.vyne.cockpit.core.schemas.editor.splitter.SourceSplitter
 import io.vyne.schema.consumer.SchemaStore
@@ -48,12 +52,68 @@ class LocalSchemaEditingService(
    }
 
    /**
+    * Submits an edit to the source of a schema.
+    *
+    * This approach is experimental, but intended to replace submitEditedSchema,
+    * which relies on Vyne Schema -> Taxi generation, and gets complex with
+    * schemas that are merged together.
+    *
+    * Instead, this approach is intended to provide small edits to source files.
+    */
+   @PostMapping("/api/schemas/edits")
+   fun submitSchemaEditOperation(
+      @RequestBody edit: SchemaEdit
+   ): Mono<SchemaSubmissionResult> {
+      val schema = schemaStore.schema()
+      return packagesServiceApi.loadPackage(edit.packageIdentifier.uriSafeId)
+         .flatMap { packageWithDescription ->
+            val currentSourcePackage = packageWithDescription.parsedPackage.toSourcePackage()
+            val initial: Either<CompilationException, Pair<SourcePackage, TaxiDocument>> =
+               (currentSourcePackage to schema.asTaxiSchema().taxi).right()
+            val editResult = edit.edits
+               .fold(initial) { acc, editOperation ->
+                  acc.flatMap { (currentSource, currentTaxi) ->
+                     editOperation.applyTo(currentSource, currentTaxi)
+                  }
+               }
+
+            val (updatedSourcePackage, updatedTaxi) = editResult.getOrElse { throw it }
+            val (compilationMessages, updatedTaxiSchema) = TaxiSchema.compiled(
+               listOf(updatedSourcePackage),
+               imports = listOf(schema.asTaxiSchema())
+            )
+
+            val pendingUpdates = if (edit.dryRun) {
+               edit.edits
+            } else {
+               emptyList()
+            }
+            val submissionResult = SchemaSubmissionResult(
+               updatedTaxiSchema.types,
+               updatedTaxiSchema.services,
+               compilationMessages,
+               "",
+               edit.dryRun,
+               updatedSourcePackage,
+               pendingUpdates
+            )
+
+            if (edit.dryRun) {
+               Mono.just(submissionResult)
+            } else {
+               submitEdits(updatedSourcePackage).map { submissionResult }
+            }
+         }
+   }
+
+   /**
     * Submits an actual schema (a subset of it - just types and services/operations).
     * The schema is used to generate taxi.
     * Note that any taxi present in the types & services is ignored.
     * This operation is used when importing / editing from the UI, and is an approach which
     * reduces / eliminates the need for client-side taxi generation code.
     */
+   @Deprecated("use submitSchemaEditOperation instead")
    @PostMapping("/api/schemas/edit", consumes = [MediaType.APPLICATION_JSON_VALUE])
    fun submitEditedSchema(
       @RequestBody editedSchema: EditedSchema,
@@ -194,6 +254,10 @@ class LocalSchemaEditingService(
       return doSubmit(GeneratedTaxiCode(listOf(taxi), emptyList()), validateOnly, rawPackageIdentifier)
    }
 
+   fun submitEdits(sourcePackage: SourcePackage): Mono<SchemaEditResponse> {
+      return submitEdits(sourcePackage.sources, sourcePackage.identifier)
+   }
+
    fun submitEdits(
       versionedSources: List<VersionedSource>,
       packageIdentifier: PackageIdentifier
@@ -229,7 +293,11 @@ class LocalSchemaEditingService(
       val vyneServices = servicesInThisRequest.map { (service, _) -> updatedSchema.service(service.qualifiedName) }
       val submissionResult = SchemaSubmissionResult(
          vyneTypes.toSet(), vyneServices.toSet(), messages, generatedSource.concatenatedSource,
-         dryRun = validateOnly
+         dryRun = validateOnly,
+         // TODO : I think this whole doSubmit() method is about to be killed,
+         // so stubbing these values for now.
+         SourcePackage(PackageMetadata.from(packageIdentifier), emptyList()),
+         emptyList()
       )
       return if (persist) {
          submitEdits(versionedSources, packageIdentifier)
@@ -292,5 +360,10 @@ class LocalSchemaEditingService(
       // we don't have to worry about insertions / modification within the middle of a file.
       val splitter: SourceSplitter = SingleTypePerFileSplitter
       return splitter.toVersionedSources(typesAndSources)
+   }
+
+   fun getSourcePackage(packageIdentifier: PackageIdentifier): Mono<SourcePackage> {
+      return packagesServiceApi.loadPackage(packageIdentifier.uriSafeId)
+         .map { it.parsedPackage.toSourcePackage() }
    }
 }

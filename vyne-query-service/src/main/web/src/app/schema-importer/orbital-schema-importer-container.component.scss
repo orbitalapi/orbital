@@ -6,3 +6,11 @@
   height: 100vh;
   flex-direction: column;
 }
+
+app-header-component-layout {
+  height: 100%;
+}
+
+app-schema-code-preview {
+  flex-grow: 1;
+}

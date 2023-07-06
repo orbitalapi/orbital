@@ -1,5 +1,5 @@
 import {TableTaxiGenerationRequest} from '../db-connection-editor/db-importer.service';
-import {SchemaSubmissionResult} from '../services/types.service';
+import {SchemaSubmissionResult, SourcePackage} from '../services/types.service';
 import {Schema} from '../services/schema';
 
 export const schemaWithNestedTypes = {
@@ -1522,6 +1522,8 @@ export const schemaWithNestedTypes = {
 } as Schema;
 
 export const importedSchema = {
+  pendingEdits: [],
+  sourcePackage: {} as SourcePackage,
   'types': [
     {
       'name': {

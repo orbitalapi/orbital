@@ -1,9 +1,19 @@
 package io.vyne.cockpit.core.schemas.importing
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.vyne.PackageIdentifier
+import io.vyne.PackageMetadata
+import io.vyne.SourcePackage
+import io.vyne.VersionedSource
 import io.vyne.cockpit.core.schemas.editor.LocalSchemaEditingService
 import io.vyne.cockpit.core.schemas.editor.SchemaSubmissionResult
+import io.vyne.cockpit.core.schemas.editor.operations.Append
+import io.vyne.cockpit.core.schemas.editor.operations.CreateOrReplaceSource
+import io.vyne.cockpit.core.schemas.editor.operations.SchemaEdit
+import io.vyne.utils.Ids
 import lang.taxi.generators.GeneratedTaxiCode
+import lang.taxi.generators.Message
+import lang.taxi.generators.hasErrors
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
@@ -37,19 +47,29 @@ class CompositeSchemaImporter(
       }
 
 
+
       return Mono.zip(
          importer.convert(request, options),
-         // TODO : We should be caching this editor config, no need to load it every time.
-         schemaEditor.getEditorConfig()
+         schemaEditor.getSourcePackage(request.packageIdentifier)
       )
          .flatMap { tuple2 ->
-            val generatedTaxi = tuple2.t1
-            val editorConfig = tuple2.t2
-            schemaEditor.submit(
-               generatedTaxi.concatenatedSource,
-               validateOnly,
-               editorConfig.editablePackages.single().id
+            val sourcePackageWithMessages = tuple2.t1
+            val existingSourcePackage = tuple2.t2
+
+            // TODO : Convert generated sources to SourcePackage
+            schemaEditor.submitSchemaEditOperation(
+               SchemaEdit(
+                  existingSourcePackage.identifier,
+                  listOf(CreateOrReplaceSource(sourcePackageWithMessages.sourcePackage.sources))
+               )
             )
+
+
+//            schemaEditor.submit(
+//               sourcePackageWithMessages.concatenatedSource,
+//               validateOnly,
+//               editorConfig.editablePackages.single().id
+//            )
          }
 
 
@@ -72,10 +92,58 @@ interface SchemaConverter<TConversionParams : Any> {
    /**
     * Converts a schema to Taxi
     */
-   fun convert(request: SchemaConversionRequest, options: TConversionParams): Mono<GeneratedTaxiCode>
+   fun convert(request: SchemaConversionRequest, options: TConversionParams): Mono<SourcePackageWithMessages>
 }
 
 data class SchemaConversionRequest(
    val format: String,
-   val options: Any = emptyMap<String, Any>()
+   val options: Any = emptyMap<String, Any>(),
+   val packageIdentifier: PackageIdentifier
 )
+
+/**
+ * The result of a generation / edit operation.
+ * Contains the generated code (wrapped in a source package), along with
+ * any messages from the generators.
+ */
+data class SourcePackageWithMessages(
+   val sourcePackage: SourcePackage,
+   val messages: List<Message>
+)
+
+// Used for testing, to be backwards compatible with what came before
+val SourcePackageWithMessages.concatenatedSource: String
+   get() {
+      return this.sourcePackage.sources.joinToString("\n") { it.content }
+   }
+
+// Used for testing, to be backwards compatible with what came before
+val SourcePackageWithMessages.hasErrors: Boolean
+   get() {
+      return this.messages.hasErrors()
+   }
+
+fun GeneratedTaxiCode.toSourcePackageWithMessages(
+   identifier: PackageIdentifier,
+   baseFileName: String
+): SourcePackageWithMessages {
+   return SourcePackageWithMessages(
+      messages = this.messages,
+      sourcePackage = SourcePackage(
+         PackageMetadata.from(identifier),
+         sources = this.taxi.mapIndexed { idx, source ->
+            val fileName = if (idx == 0) "${baseFileName}.taxi" else "${baseFileName}${idx}.taxi"
+            VersionedSource(
+               fileName,
+               identifier.version,
+               source
+            )
+         }
+
+      ))
+}
+
+
+fun generatedImportedFileName(baseName: String): String {
+   return baseName + Ids.id("Imported", 4)
+}

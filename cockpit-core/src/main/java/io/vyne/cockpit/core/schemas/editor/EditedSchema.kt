@@ -26,7 +26,12 @@ class EditedSchema(
    @JsonDeserialize(contentAs = EditedService::class)
    override val services: Set<PartialService> = emptySet(),
    val removedTypes: Set<QualifiedName> = emptySet(),
-   val removedServices: Set<QualifiedName> = emptySet()
+   val removedServices: Set<QualifiedName> = emptySet(),
+   /**
+    * If the taxi is sent, we use that directly,
+    * rather than the other values
+    */
+   val taxi: String? = null
 ) : PartialSchema {
    companion object {
       // used for testing

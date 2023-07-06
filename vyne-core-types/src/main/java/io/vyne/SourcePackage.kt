@@ -106,6 +106,11 @@ data class PackageIdentifier(
    val uriSafeId = toUriSafeId(this)
 
    companion object {
+      /**
+       * Generates a package id from a slash delimited id.
+       * eg:
+       * com.acme/foo/1.0.0
+       */
       fun fromId(id: String): PackageIdentifier {
          val parts = id.split("/")
          require(parts.size == 3) { "Invalid id provided ($id) - expected three parts with / delimiters" }
@@ -117,6 +122,11 @@ data class PackageIdentifier(
          return identifier.toString().replace("/", ":")
       }
 
+      /**
+       * Generates a package id from a colon delimited id
+       * eg:
+       * com.acme:foo:1.0.0
+       */
       fun fromUriSafeId(uriSafeId: UriSafePackageIdentifier): PackageIdentifier {
          return fromId(uriSafeId.replace(":", "/"))
       }

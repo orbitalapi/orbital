@@ -3,8 +3,7 @@ package io.vyne.cockpit.core.schemas.importing.kafka
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.cockpit.core.schemas.editor.EditedSchema
 import io.vyne.cockpit.core.schemas.editor.generator.VyneSchemaToTaxiGenerator
-import io.vyne.cockpit.core.schemas.importing.SchemaConversionRequest
-import io.vyne.cockpit.core.schemas.importing.SchemaConverter
+import io.vyne.cockpit.core.schemas.importing.*
 import io.vyne.connectors.kafka.KafkaConnectorTaxi
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Operation
@@ -47,7 +46,7 @@ class KafkaTopicImporter(val schemaProvider: SchemaProvider) : SchemaConverter<K
    override fun convert(
       request: SchemaConversionRequest,
       options: KafkaTopicConverterOptions
-   ): Mono<GeneratedTaxiCode> {
+   ): Mono<SourcePackageWithMessages> {
       val generator = StreamingMessageServiceGenerator()
       val schema = schemaProvider.schema
       val returnType = schema.type(options.messageType)
@@ -72,6 +71,9 @@ class KafkaTopicImporter(val schemaProvider: SchemaProvider) : SchemaConverter<K
             mappingRequest,
             returnType,
             schema
+         ).toSourcePackageWithMessages(
+            request.packageIdentifier,
+            generatedImportedFileName(options.connectionName + options.topicName)
          )
       )
    }

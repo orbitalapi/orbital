@@ -67,6 +67,7 @@ import {DisableControlModule} from "../disable-control/disable-control.module";
 import {QueryHistoryPanelModule} from "../query-history-panel/query-history-panel.module";
 import {SavedQueriesPanelModule} from "../saved-queries-panel/saved-queries-panel.module";
 import {HttpEndpointPanelComponent} from "./query-editor/http-endpoint-panel.component";
+import {ProjectSelectorModule} from "../project-selector/project-selector.module";
 
 @NgModule({
   imports: [
@@ -124,6 +125,7 @@ import {HttpEndpointPanelComponent} from "./query-editor/http-endpoint-panel.com
     DisableControlModule,
     QueryHistoryPanelModule,
     SavedQueriesPanelModule,
+    ProjectSelectorModule,
 
   ],
   exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent,

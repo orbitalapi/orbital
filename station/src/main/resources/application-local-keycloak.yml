@@ -1,0 +1,8 @@
+vyne:
+   security:
+      openIdp:
+         enabled: true
+         jwk-set-uri: http://localhost:8080/realms/Vyne/protocol/openid-connect/certs
+         issuerUrl: http://localhost:8080/realms/Vyne
+         clientId: vyne-spa
+         scope: openid profile

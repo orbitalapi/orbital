@@ -15,7 +15,7 @@ spring:
       oauth2:
          resourceserver:
             jwt:
-               jwk-set-uri: ${vyne.security.open-ipd.jwk-set-uri:''}
+               jwk-set-uri: ${vyne.security.open-idp.jwk-set-uri:''}
    application:
       name: orbital-station
    sql:
@@ -37,3 +37,4 @@ vyne:
          method: local
    analytics:
       mode: Inprocess
+orbital:

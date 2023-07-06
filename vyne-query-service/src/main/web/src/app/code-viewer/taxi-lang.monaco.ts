@@ -9,13 +9,7 @@ export const taxiLanguageConfiguration: LanguageConfiguration = {
   wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
   comments: {
     lineComment: '//',
-    blockComment: ['/*', '*/'],
-  },
-  __electricCharacterSupport: {
-    docComment: {
-      open: '[[',
-      close: ']]'
-    }
+    blockComment: ['[[', ']]'],
   },
   brackets: [
     ['{', '}'],
@@ -130,6 +124,7 @@ export const taxiLanguageTokenProvider = <IMonarchLanguage>{
     whitespace: [
       [/[ \t\r\n]+/, ''],
       [/\/\*\*(?!\/)/, 'comment.doc', '@javadoc'],
+      [/\[\[(?!\])/, 'comment.taxidoc', '@taxidoc'],
       [/\/\*/, 'comment', '@comment'],
       [/\/\/.*$/, 'comment'],
     ],
@@ -147,6 +142,13 @@ export const taxiLanguageTokenProvider = <IMonarchLanguage>{
       [/\/\*/, 'comment.doc.invalid'],
       [/\*\//, 'comment.doc', '@pop'],
       [/[\/*]/, 'comment.doc']
+    ],
+    taxidoc: [
+      [/[^\[\]]+/, 'comment.taxidoc'],
+      [/\[\[/, 'comment.taxidoc', '@push'],
+      [/\[\[/, 'comment.taxidoc.invalid'],
+      [/\]\]/, 'comment.taxidoc', '@pop'],
+      [/[\[\]]/, 'comment.taxidoc']
     ],
 
     string: [

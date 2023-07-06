@@ -36,8 +36,11 @@ class WebConfig(private val objectMapper: ObjectMapper) : WebFluxConfigurer {
    override fun addCorsMappings(registry: CorsRegistry) {
       if (!corsEnabled) {
          logger.warn { "CORS is disabled.  Allowing all access" }
-         registry
-            .addMapping("/**")
+         registry.addMapping("/**")
+            .allowedOrigins("*")
+            .allowedHeaders("*")
+            .exposedHeaders("*")
+            .allowedMethods("*")
       }
    }
 

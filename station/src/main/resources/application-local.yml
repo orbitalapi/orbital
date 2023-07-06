@@ -9,10 +9,20 @@ management:
 
 spring:
    datasource:
-      url: "jdbc:postgresql://localhost:5432/voyager"
-      username: "vynedb"
-      password: "vynedb"
+      url: "jdbc:postgresql://localhost:5432/orbital-station"
+      username: "martypitt"
+      password: "password"
       driver: "org.postgresql.Driver"
       driverClassName: org.postgresql.Driver
+   sql:
+      init:
+         mode: never
+   flyway:
+      enabled: true
+      url: ${spring.datasource.url}
+      user: ${spring.datasource.username}
+      password: ${spring.datasource.password}
+      locations: classpath:db/postgres
 orbital:
-   cors.enabled: false
+   cors:
+      enabled: false

@@ -56,6 +56,9 @@ import {CdPipelineInstructionsComponent} from './push-panel/cd-pipeline-instruct
 import {ApplicationPushInstructionsComponent} from './push-panel/application-push-instructions.component';
 import {HeaderComponentLayoutModule} from 'src/app/header-component-layout/header-component-layout.module';
 import {SchemaSourceConfigModule} from 'src/app/schema-source-config/schema-source-config.module';
+import {ExpandingPanelSetModule} from "../expanding-panelset/expanding-panel-set.module";
+import {CodeEditorModule} from "../code-editor/code-editor.module";
+import {ProjectSelectorModule} from "../project-selector/project-selector.module";
 
 
 @NgModule({
@@ -119,7 +122,10 @@ import {SchemaSourceConfigModule} from 'src/app/schema-source-config/schema-sour
     TuiAvatarModule,
     ReactiveFormsModule,
     TuiCheckboxModule,
-    HeaderComponentLayoutModule
+    HeaderComponentLayoutModule,
+    ExpandingPanelSetModule,
+    CodeEditorModule,
+    ProjectSelectorModule
   ]
 })
 export class SchemaImporterModule {

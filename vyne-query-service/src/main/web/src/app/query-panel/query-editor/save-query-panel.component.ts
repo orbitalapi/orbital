@@ -23,21 +23,31 @@ export interface SaveQueryPanelProps {
         [routerLink]="['schemas']">Schemas</a> view
       </tui-notification>
       <form [formGroup]="formGroup">
-        <tui-select
-          [stringify]="stringify"
-          formControlName="schemaPackage"
 
+
+        <app-project-selector formControlName="schemaPackage"
+                              [disabled]="!hasEditablePackages"
+                              [packages]="editablePackages"
+                              prompt="Select a project to save the query to"
         >
-          Select a project to save the query to
-          <input
-            tuiTextfield [disableControl]="!hasEditablePackages"
-          />
-          <tui-data-list-wrapper
-            *tuiDataList
-            [items]="editablePackages | tuiFilterByInputWith : stringify"
-            [itemContent]="stringify | tuiStringifyContent"
-          ></tui-data-list-wrapper>
-        </tui-select>
+
+
+        </app-project-selector>
+        <!--              <tui-select-->
+        <!--                      [stringify]="stringify"-->
+        <!--                      formControlName="schemaPackage"-->
+
+        <!--              >-->
+        <!--                  Select a project to save the query to-->
+        <!--                  <input-->
+        <!--                          tuiTextfield [disableControl]="!hasEditablePackages"-->
+        <!--                  />-->
+        <!--                  <tui-data-list-wrapper-->
+        <!--                          *tuiDataList-->
+        <!--                          [items]="editablePackages | tuiFilterByInputWith : stringify"-->
+        <!--                          [itemContent]="stringify | tuiStringifyContent"-->
+        <!--                  ></tui-data-list-wrapper>-->
+        <!--              </tui-select>-->
         <tui-error
           formControlName="schemaPackage"
           [error]="[] | tuiFieldError | async"

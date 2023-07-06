@@ -12,12 +12,15 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseCookie
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.context.ReactiveSecurityContextHolder
 import org.springframework.security.core.context.SecurityContext
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
+import reactor.kotlin.core.publisher.switchIfEmpty
 import java.time.Duration
 import java.time.Instant
 
@@ -41,22 +44,27 @@ class UserService(
    }
 
    @GetMapping("/api/user")
-   fun currentUserInfo(
-   ): Mono<ResponseEntity<VyneUser>> {
+   fun currentUserInfo(@AuthenticationPrincipal auth: Mono<Authentication>): Mono<ResponseEntity<VyneUser>> {
       return if (this.openIdpConfiguration.enabled) {
-         ReactiveSecurityContextHolder
-            .getContext()
-            .map { securityContext: SecurityContext? ->
-               val auth = securityContext?.authentication
-               if (auth == null) {
+         auth
+            .switchIfEmpty {
+               error("Not Authorized")
+            }
+            .map { authentication ->
+               if (authentication == null) {
                   ResponseEntity
                      .ok()
                      .body(VyneUser.anonymousUser(allGrantedAuthorities()))
                } else {
-                  val vyneUserWithAuthorisation = withGrantedAuthorities(auth.toVyneUser())
+                  val vyneUserWithAuthorisation = withGrantedAuthorities(authentication.toVyneUser())
                   val response = ResponseEntity
                      .ok()
-                  buildAuthCookie(auth)?.let { cookie -> response.header(HttpHeaders.SET_COOKIE, cookie.toString()) }
+                  buildAuthCookie(authentication)?.let { cookie ->
+                     response.header(
+                        HttpHeaders.SET_COOKIE,
+                        cookie.toString()
+                     )
+                  }
                   response.body(vyneUserWithAuthorisation)
                }
             }

@@ -134,3 +134,12 @@ fun TaxiPackageSources.versionedSources(): List<VersionedSource> {
 fun SourceCode.asVersionedSource(version: String = VersionedSource.DEFAULT_VERSION.toString()): VersionedSource {
    return VersionedSource(this.sourceName, version, this.content)
 }
+
+fun VersionedSource.asTaxiSource(): SourceCode {
+   return SourceCode(
+      sourceName = this.name,
+      content = content
+   )
+}
+
+fun List<VersionedSource>.asTaxiSource(): List<SourceCode> = this.map { it.asTaxiSource() }

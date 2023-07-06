@@ -4,6 +4,7 @@ import {NgxFileDropEntry} from 'ngx-file-drop';
 import {readSingleFile} from '../../../utils/files';
 import {Observable} from 'rxjs/internal/Observable';
 import {isNullOrUndefined} from 'util';
+import {PackageIdentifier} from "../../../package-viewer/packages.service";
 
 @Component({
   selector: 'app-jsonschema-config',
@@ -115,11 +116,14 @@ export class JsonSchemaConfigComponent {
   loadSchema = new EventEmitter<ConvertSchemaEvent>()
 
   @Input()
+  packageIdentifier: PackageIdentifier;
+
+  @Input()
   working: boolean = false;
 
   doCreate() {
     console.log(JSON.stringify(this.jsonSchemaConverterOptions, null, 2));
-    this.loadSchema.next(new ConvertSchemaEvent('jsonSchema', this.jsonSchemaConverterOptions));
+    this.loadSchema.next(new ConvertSchemaEvent('jsonSchema', this.jsonSchemaConverterOptions, this.packageIdentifier));
   }
 
   handleSchemaFileDropped($event: NgxFileDropEntry) {

@@ -5,7 +5,7 @@ import { Component } from '@angular/core';
   template: `
     <app-header-bar>
     </app-header-bar>
-    <app-header-component-layout title="Add new schemas" [padBottom]="false">
+    <app-header-component-layout title="Add new schemas" [padBottom]="false" [fullWidth]="activeTabIndex===3">
       <ng-container ngProjectAs="header-components">
         <tui-tabs [(activeItemIndex)]="activeTabIndex">
           <!--          <button tuiTab>Push from application</button>-->

@@ -3,6 +3,7 @@ import {NgxFileDropEntry} from 'ngx-file-drop';
 import {readSingleFile} from '../../../utils/files';
 import {ConvertSchemaEvent, ProtobufSchemaConverterOptions} from '../../schema-importer.models';
 import {isNullOrUndefined} from 'util';
+import {PackageIdentifier} from "../../../package-viewer/packages.service";
 
 @Component({
   selector: 'app-protobuf-config',
@@ -61,6 +62,9 @@ export class ProtobufConfigComponent {
   @Output()
   loadSchema = new EventEmitter<ConvertSchemaEvent>()
 
+  @Input()
+  packageIdentifier: PackageIdentifier;
+
   handleSchemaFileDropped($event: NgxFileDropEntry) {
     this.protobufSchemaConverterOptions.url = null;
   }
@@ -71,6 +75,6 @@ export class ProtobufConfigComponent {
 
   doCreate() {
     console.log(JSON.stringify(this.protobufSchemaConverterOptions, null, 2));
-    this.loadSchema.next(new ConvertSchemaEvent('protobuf', this.protobufSchemaConverterOptions));
+    this.loadSchema.next(new ConvertSchemaEvent('protobuf', this.protobufSchemaConverterOptions, this.packageIdentifier));
   }
 }

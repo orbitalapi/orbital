@@ -7,11 +7,16 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.willAnswer
 import com.winterbe.expekt.should
 import io.kotest.matchers.shouldBe
+import io.vyne.PackageIdentifier
 import io.vyne.PackageMetadata
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.cockpit.core.schemas.BuiltInTypesProvider
-import io.vyne.cockpit.core.schemas.editor.EditedSchema
-import io.vyne.cockpit.core.schemas.editor.LocalSchemaEditingService
+import io.vyne.cockpit.core.schemas.editor.*
+import io.vyne.cockpit.core.schemas.editor.operations.ChangeFieldType
+import io.vyne.cockpit.core.schemas.editor.operations.ChangeOperationParameterType
+import io.vyne.cockpit.core.schemas.editor.operations.CreateOrReplaceSource
+import io.vyne.cockpit.core.schemas.editor.operations.SchemaEdit
 import io.vyne.queryService.schemas.SubmitEditJson
 import io.vyne.schema.publisher.PublisherHealth
 import io.vyne.schema.publisher.PublisherType
@@ -21,6 +26,8 @@ import io.vyne.schemaServer.editor.SchemaEditorApi
 import io.vyne.schemaServer.packages.PackagesServiceApi
 import io.vyne.schemaServer.packages.SourcePackageDescription
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
+import io.vyne.schemas.OperationNames
+import io.vyne.schemas.fqn
 import io.vyne.spring.http.BadRequestException
 import io.vyne.utils.withoutWhitespace
 import org.junit.Before
@@ -45,6 +52,161 @@ class LocalSchemaEditingServiceTest {
          BuiltInTypesProvider.sourcePackage.sources
       )
       editorService = LocalSchemaEditingService(packagesServiceApi, schemaEditorApi, schemaStore)
+   }
+
+   @Test
+   fun `can change the field of a type to an existing field in the same schema`() {
+      val result = editorService.submitSchemaEditOperation(
+         SchemaEdit(
+            sourcePackageOf(
+               """
+            namespace com.films {
+
+               type FilmTitle inherits String
+               model Film {
+                  title : String
+               }
+            }
+         """
+            ),
+            edits = listOf(
+               ChangeFieldType("com.films.Film".fqn(), "title", "com.films.FilmTitle".fqn())
+            )
+         )
+      ).block()!!
+
+      result.sourcePackage.shouldHaveSourceEqualTo(
+         """
+      namespace com.films {
+
+         type FilmTitle inherits String
+         model Film {
+            title : com.films.FilmTitle
+         }
+      }
+      """.trimIndent()
+      )
+
+   }
+
+   private fun sourcePackageOf(
+      source: String,
+      packageIdentifier: PackageIdentifier = PackageIdentifier.fromId("test/test/1.0.0")
+   ): SourcePackage {
+      return SourcePackage(
+         PackageMetadata.from(packageIdentifier),
+         listOf(
+            VersionedSource(
+               "TestSrc", "1.0.0", source
+            )
+         )
+      )
+   }
+
+   @Test
+   fun `can change the field of a type to a new type`() {
+      val result = editorService.submitSchemaEditOperation(
+         SchemaEdit(
+            sourcePackageOf(
+               """
+            namespace com.films {
+
+               model Film {
+                  title : String
+               }
+            }
+         """
+            ),
+            edits = listOf(
+               CreateOrReplaceSource(
+                  listOf(
+                     VersionedSource(
+                        "FilmTitle", "1.0.0", """
+                  namespace com.films {
+                     type FilmTitle inherits String
+                  }
+               """
+                     )
+                  )
+               ),
+               ChangeFieldType("com.films.Film".fqn(), "title", "com.films.FilmTitle".fqn())
+            )
+         )
+      ).block()!!
+
+      result.sourcePackage.shouldHaveSourceEqualTo(
+         """
+      namespace com.films {
+         model Film {
+            title : com.films.FilmTitle
+         }
+      }
+
+      namespace com.films {
+         type FilmTitle inherits String
+      }
+      """.trimIndent()
+      )
+
+   }
+
+   @Test
+   fun `can change the field of a type to an existing field in another schema`() {
+
+   }
+
+   @Test
+   fun `can change the type of an operation parameter`() {
+      val result = editorService.submitSchemaEditOperation(
+         SchemaEdit(
+            sourcePackageOf(
+               """
+            namespace com.films {
+
+               model Film {
+                  title : String
+                  filmId: FilmId inherits Int
+               }
+               service FilmsService {
+                  operation findById(id:String):Film
+               }
+            }
+         """
+            ),
+            edits = listOf(
+               ChangeOperationParameterType(
+                  OperationNames.qualifiedName("com.films.FilmsService", "findById"),
+                  "id",
+                  "com.films.FilmId".fqn()
+               )
+            )
+         )
+      ).block()!!
+
+      result.sourcePackage.shouldHaveSourceEqualTo(
+         """
+            namespace com.films {
+
+               model Film {
+                  title : String
+                  filmId: FilmId inherits Int
+               }
+               service FilmsService {
+                  operation findById(id:com.films.FilmId):Film
+               }
+            }
+         """
+      )
+   }
+
+   @Test
+   fun `can rename a type`() {
+
+   }
+
+   @Test
+   fun `can change the return type of an operation`() {
+
    }
 
    @Test
@@ -155,14 +317,16 @@ class LocalSchemaEditingServiceTest {
       editorService.submitEditedSchema(editedSchema, "io.vyne/movies/0.1.0").block()
       expectedRequest!!.edits.size.shouldBe(7)
       expectedRequest!!.edits.first { it.name == "io/vyne/demos/film/StreamingProvider.taxi" }.content
-         .trimIndent().trimMargin().withoutWhitespace().trim().should.equal("""
+         .trimIndent().trimMargin().withoutWhitespace().trim().should.equal(
+            """
             namespace io.vyne.demos.film {
                model StreamingProvider {
                      name : String?
                      pricePerMonth : Decimal?
                   }
             }
-         """.trimIndent().trimMargin().withoutWhitespace().trim())
+         """.trimIndent().trimMargin().withoutWhitespace().trim()
+         )
    }
 
    private fun setListPackagesResponse(packageMetadata: PackageMetadata, isEditable: Boolean = true) {
@@ -189,4 +353,11 @@ class LocalSchemaEditingServiceTest {
          null
       )
    }
+}
+
+private fun SourcePackage.shouldHaveSourceEqualTo(expected: String) {
+   val concatenatedSources = this.sources.joinToString("\n") { it.content }
+   val expectedWithoutWhitespace = expected.withoutWhitespace()
+   val actualWithoutWhitespace = concatenatedSources.withoutWhitespace()
+   actualWithoutWhitespace.shouldBe(expectedWithoutWhitespace)
 }

@@ -2,6 +2,7 @@ package io.vyne.queryService.schemas.importing.protobuf
 
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
+import io.vyne.PackageIdentifier
 import io.vyne.cockpit.core.schemas.importing.SchemaConversionRequest
 import io.vyne.cockpit.core.schemas.importing.protobuf.ProtobufSchemaConverter
 import io.vyne.cockpit.core.schemas.importing.protobuf.ProtobufSchemaConverterOptions
@@ -37,7 +38,8 @@ message Person {
             ProtobufSchemaConverter.PROTOBUF_FORMAT,
             ProtobufSchemaConverterOptions(
                url = server.url("/sample.proto").toString()
-            )
+            ),
+            packageIdentifier = PackageIdentifier.fromId("foo/test/1.0.0")
          )
       ).block(Duration.ofSeconds(100))!!
 
@@ -55,7 +57,8 @@ message Person {
             ProtobufSchemaConverter.PROTOBUF_FORMAT,
             ProtobufSchemaConverterOptions(
                url = server.url("/sample.proto").toString()
-            )
+            ),
+            packageIdentifier = PackageIdentifier.fromId("foo/test/1.0.0")
          )
       ).block(Duration.ofSeconds(100))!!
 

@@ -32,6 +32,8 @@ import {SchemaNotificationService, SchemaUpdatedNotification} from './schema-not
 import {ValueWithTypeName} from './models';
 import {ENVIRONMENT, Environment} from './environment';
 import {TuiDialogService} from '@taiga-ui/core';
+import {PackageIdentifier, PackageMetadata, SourcePackageDescription} from "../package-viewer/packages.service";
+import {SchemaEditOperation} from "../schema-importer/schema-importer.service";
 
 
 @Injectable({
@@ -428,7 +430,14 @@ export interface ContentWithSchemaParseResponse {
 
 export interface SchemaSubmissionResult extends PartialSchema {
   messages: CompilationMessage[];
-  taxi: string;
+  sourcePackage: SourcePackage
+  pendingEdits: SchemaEditOperation[]
+}
+
+export interface SourcePackage {
+  packageMetadata: PackageMetadata
+  sources: VersionedSource[]
+  identifier: PackageIdentifier
 }
 
 export interface OperationQueryResult {

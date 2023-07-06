@@ -15,7 +15,9 @@ package io.vyne.queryService.schemas.importing.swagger
 
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
+import io.vyne.PackageIdentifier
 import io.vyne.cockpit.core.schemas.importing.SchemaConversionRequest
+import io.vyne.cockpit.core.schemas.importing.hasErrors
 import io.vyne.cockpit.core.schemas.importing.swagger.SwaggerConverterOptions
 import io.vyne.cockpit.core.schemas.importing.swagger.SwaggerSchemaConverter
 import io.vyne.http.MockWebServerRule
@@ -43,7 +45,12 @@ class SwaggerSchemaConverterTest : BaseSchemaConverterServiceTest() {
       val conversionResponse = converterService.import(
          SchemaConversionRequest(
             SwaggerSchemaConverter.SWAGGER_FORMAT,
-            SwaggerConverterOptions(defaultNamespace = "com.vyne.petstore", serviceBasePath = "http://petstore.com", url = server.url("/").toString())
+            SwaggerConverterOptions(
+               defaultNamespace = "com.vyne.petstore",
+               serviceBasePath = "http://petstore.com",
+               url = server.url("/").toString()
+            ),
+            packageIdentifier = PackageIdentifier.fromId("foo/test/1.0.0")
          )
       ).block(Duration.ofSeconds(1))!!
 
@@ -60,7 +67,12 @@ class SwaggerSchemaConverterTest : BaseSchemaConverterServiceTest() {
       val conversionResponse = converterService.import(
          SchemaConversionRequest(
             SwaggerSchemaConverter.SWAGGER_FORMAT,
-            SwaggerConverterOptions(defaultNamespace = "com.vyne.petstore", serviceBasePath = "http://petstore.com", swagger = swagger)
+            SwaggerConverterOptions(
+               defaultNamespace = "com.vyne.petstore",
+               serviceBasePath = "http://petstore.com",
+               swagger = swagger
+            ),
+            packageIdentifier = PackageIdentifier.fromId("foo/test/1.0.0")
          )
       ).block(Duration.ofSeconds(1))!!
       conversionResponse.dryRun.should.be.`false`
@@ -80,6 +92,7 @@ class SwaggerSchemaConverterTest : BaseSchemaConverterServiceTest() {
       val generatedTaxiCode = converter.convert(
          SchemaConversionRequest(
             SwaggerSchemaConverter.SWAGGER_FORMAT,
+            packageIdentifier = PackageIdentifier.fromId("foo/test/1.0.0")
          ),
          SwaggerConverterOptions(defaultNamespace = "com.vyne.petstore", serviceBasePath = "http://myjira.com", swagger = swagger)
 
@@ -96,7 +109,12 @@ class SwaggerSchemaConverterTest : BaseSchemaConverterServiceTest() {
       val conversionResponse = converterService.preview(
          SchemaConversionRequest(
             SwaggerSchemaConverter.SWAGGER_FORMAT,
-            SwaggerConverterOptions(defaultNamespace = "com.vyne.petstore", serviceBasePath = "http://myjira.com", swagger = swagger)
+            SwaggerConverterOptions(
+               defaultNamespace = "com.vyne.petstore",
+               serviceBasePath = "http://myjira.com",
+               swagger = swagger
+            ),
+            packageIdentifier = PackageIdentifier.fromId("foo/test/1.0.0")
          )
       ).block(Duration.ofSeconds(1))!!
       conversionResponse.dryRun.should.be.`true`

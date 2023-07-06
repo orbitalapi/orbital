@@ -30,6 +30,8 @@ import org.springframework.security.web.server.SecurityWebFilterChain
 import org.springframework.security.web.server.header.XFrameOptionsServerHttpHeadersWriter
 import org.springframework.security.web.server.util.matcher.NegatedServerWebExchangeMatcher
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
 import org.springframework.web.server.ServerWebExchange
 
 private val logger = KotlinLogging.logger { }
@@ -122,6 +124,17 @@ class VyneInSecurityAutoConfig {
                ).matches(it)
             }
             .csrf().disable()
+            .cors().configurationSource(
+               UrlBasedCorsConfigurationSource().let { configSrc ->
+                  val config = CorsConfiguration()
+                  config.addAllowedOrigin("*")
+                  config.addAllowedHeader("*")
+                  config.addExposedHeader("*")
+                  config.addAllowedMethod("")
+                  configSrc.registerCorsConfiguration("/**", config)
+                  configSrc
+               }
+            ).and()
             .headers().frameOptions().mode(XFrameOptionsServerHttpHeadersWriter.Mode.SAMEORIGIN).and()
             .authorizeExchange()
             // End points for Cask and other vyne based services to fetch the schema in EUREKA schema discovery mode.
