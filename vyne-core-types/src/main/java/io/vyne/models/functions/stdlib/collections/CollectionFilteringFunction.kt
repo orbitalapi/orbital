@@ -11,42 +11,54 @@ import lang.taxi.types.PrimitiveType
 
 open class CollectionFilteringFunction {
    protected fun failed(
-       returnType: Type,
-       function: FunctionAccessor,
-       inputValues: List<TypedInstance>,
-       message: String,
-       inputInError: TypedInstance? = null,
-       cause: DataSource? = null,
+      returnType: Type,
+      function: FunctionAccessor,
+      inputValues: List<TypedInstance>,
+      message: String,
+      inputInError: TypedInstance? = null,
+      cause: DataSource? = null,
    ): TypedNull {
       return TypedNull.create(
-          returnType,
-          FailedEvaluatedExpression(function.asTaxi(), inputValues, message, inputInError = inputInError, cause = cause)
+         returnType,
+         FailedEvaluatedExpression(function.asTaxi(), inputValues, message, inputInError = inputInError, cause = cause)
+      )
+   }
+
+   protected fun createFailureWithTypedNull(
+      message: String,
+      returnType: Type,
+      function: FunctionAccessor,
+      inputValues: List<TypedInstance>
+   ): TypedNull {
+      return TypedNull.create(
+         returnType,
+         FailedEvaluatedExpression(
+            function.asTaxi(),
+            inputValues,
+            message
+         )
       )
    }
 
    protected fun applyFilter(
-       inputValues: List<TypedInstance>,
-       schema: Schema,
-       returnType: Type,
-       function: FunctionAccessor,
-       objectFactory: EvaluationValueSupplier,
-       rawMessageBeingParsed: Any?
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier,
+      rawMessageBeingParsed: Any?
    ): Either<TypedNull, List<TypedInstance>> {
-      fun createTypeNullFailure(message:String):TypedNull {
-         return TypedNull.create(
-            returnType,
-            FailedEvaluatedExpression(
-               function.asTaxi(),
-               inputValues,
-               message
-            )
+      fun createTypeNullFailure(message: String): TypedNull {
+         return createFailureWithTypedNull(
+            message, returnType, function, inputValues
          )
       }
 
-      val collection =  when (val collection =  inputValues[0]) {
+      val collection = when (val collection = inputValues[0]) {
          is TypedNull -> {
             return createTypeNullFailure("Expected a collection in param 0, but got null.").left()
          }
+
          is TypedCollection -> collection
          else -> error("Expected either a TypedNull or a TypedCollection in param 0.  Got a ${collection::class.simpleName}")
       }

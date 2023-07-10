@@ -13,10 +13,13 @@ data class ChangeFieldType(
    val fieldName: String,
    val newReturnType: QualifiedName
 ) : SchemaEditOperation() {
+   override val loadExistingState: Boolean = true
+
    override fun applyTo(
       sourcePackage: SourcePackage,
       taxiDocument: TaxiDocument
    ): Either<CompilationException, Pair<SourcePackage, TaxiDocument>> {
+
 
       val compiler = buildCompiler(sourcePackage, taxiDocument)
       val (_, typeDefinition) = compiler.tokens.unparsedTypes[symbol.fullyQualifiedName]

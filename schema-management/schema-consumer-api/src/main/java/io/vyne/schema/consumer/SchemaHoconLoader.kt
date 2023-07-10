@@ -2,6 +2,7 @@ package io.vyne.schema.consumer
 
 import io.vyne.SourcePackage
 import io.vyne.config.HoconLoader
+import io.vyne.schemas.Schema
 import lang.taxi.packages.SourcesType
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
@@ -28,17 +29,26 @@ class SchemaHoconLoader(
    init {
       Flux.from(schemaEventSource.schemaChanged)
          .subscribe { event ->
-            val filename = Paths.get(filename).fileName.toString()
-            val sources = event.newSchemaSet.schema.additionalSources[sourceType] ?: emptyList()
-            val hoconSources = sources.map { sourcePackage ->
-               val requestedSources = sourcePackage.sources
-                  .filter { Paths.get(it.name).fileName.toString() == filename }
-               sourcePackage.copy(sources = requestedSources)
-            }
-            contentCache[CacheKey] = hoconSources
-            sink.emitNext(SchemaHoconLoader::class.java, Sinks.EmitFailureHandler.FAIL_FAST)
+            val schema = event.newSchemaSet.schema
+            load(schema)
          }
+      if (schemaEventSource is SchemaStore) {
+         load(schemaEventSource.schema())
+      } else {
+         logger.info { "Not loading initial schema, as provided event source is not a schema store.  Will wait for an update event" }
+      }
+   }
 
+   private fun load(schema: Schema) {
+      val filename = Paths.get(filename).fileName.toString()
+      val sources = schema.additionalSources[sourceType] ?: emptyList()
+      val hoconSources = sources.map { sourcePackage ->
+         val requestedSources = sourcePackage.sources
+            .filter { Paths.get(it.name).fileName.toString() == filename }
+         sourcePackage.copy(sources = requestedSources)
+      }
+      contentCache[CacheKey] = hoconSources
+      sink.emitNext(SchemaHoconLoader::class.java, Sinks.EmitFailureHandler.FAIL_FAST)
    }
 
    override fun load(): List<SourcePackage> {

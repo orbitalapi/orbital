@@ -30,7 +30,11 @@ class CompositeSchema(private val schemas: List<Schema>) : Schema {
    override val additionalSources: Map<SourcesType, List<SourcePackage>>
       get() {
          // Merge the maps
-         val merged: Map<SourcesType, List<SourcePackage>> = this.schemas.map { it.additionalSources }
+         val allAdditionalSources = this.schemas.map { it.additionalSources }
+         if (allAdditionalSources.isEmpty()) {
+            return emptyMap()
+         }
+         val merged: Map<SourcesType, List<SourcePackage>> = allAdditionalSources
             .reduce { acc, thisValue ->
                thisValue.entries.associate { (key, values) ->
                   val existingSources = acc[key]?.toMutableList() ?: mutableListOf()

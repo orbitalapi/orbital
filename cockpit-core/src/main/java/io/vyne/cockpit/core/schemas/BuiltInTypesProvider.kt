@@ -1,10 +1,6 @@
 package io.vyne.cockpit.core.schemas
 
-import io.vyne.ErrorType
-import io.vyne.PackageMetadata
-import io.vyne.SourcePackage
-import io.vyne.UserType
-import io.vyne.VersionedSource
+import io.vyne.*
 import io.vyne.cockpit.core.catalog.DataOwnerAnnotations
 import io.vyne.connectors.aws.lambda.LambdaConnectorTaxi
 import io.vyne.connectors.aws.s3.S3ConnectorTaxi
@@ -73,7 +69,8 @@ object BuiltInTypesProvider {
             "0.1.0",
             CsvAnnotationSpec.taxi
          )
-      )
+      ),
+      emptyMap()
    )
    private val builtInTypesSource = builtInSources.sources.joinToString("\n") { it.content }
    val sourcePackage = builtInSources

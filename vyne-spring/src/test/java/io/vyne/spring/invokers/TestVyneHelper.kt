@@ -1,14 +1,8 @@
 package io.vyne.spring.invokers
 
-import io.vyne.PackageMetadata
-import io.vyne.ParsedPackage
-import io.vyne.ParsedSource
-import io.vyne.VersionedSource
 import io.vyne.Vyne
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
-import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.api.SimpleSchemaProvider
-import io.vyne.schemaStore.SimpleSchemaStore
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 
@@ -36,14 +30,4 @@ fun testVyne(schema: String, invoker: Invoker): Vyne {
       }
       listOf(invoker)
    }
-}
-
-fun SimpleSchemaStore.createPackageAndSetSchema(
-   sources: List<VersionedSource>,
-   generation: Int = 1
-): SimpleSchemaStore {
-   return this.setSchemaSet(SchemaSet.fromParsed(listOf(
-      ParsedPackage(PackageMetadata.from("io.vyne", "test", "1.0.0"),
-         sources.map { ParsedSource(it) }
-      )), 1))
 }

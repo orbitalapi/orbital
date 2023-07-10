@@ -287,6 +287,7 @@ export interface Parameter {
   name: string;
   metadata: Array<Metadata>;
   constraints: Array<any>;
+  typeDoc?: string | null;
 }
 
 export interface Metadata {

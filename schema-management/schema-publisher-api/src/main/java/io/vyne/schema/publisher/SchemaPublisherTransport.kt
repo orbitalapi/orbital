@@ -3,9 +3,7 @@ package io.vyne.schema.publisher
 import arrow.core.Either
 import arrow.core.right
 import io.vyne.PackageIdentifier
-import io.vyne.PackageMetadata
 import io.vyne.SourcePackage
-import io.vyne.VersionedSource
 import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.Ids
@@ -30,8 +28,8 @@ interface SchemaPublisherTransport {
    // We need to rationalize.
 
 
-   fun submitSchema(packageMetadata: PackageMetadata, versionedSource: VersionedSource) =
-      submitSchemas(packageMetadata, listOf(versionedSource))
+//   fun submitSchema(packageMetadata: PackageMetadata, versionedSource: VersionedSource) =
+//      submitSchemas(packageMetadata, listOf(versionedSource))
 
    /**
     * Allows the transport to enrich a schema submission with KeepAlive information.
@@ -48,10 +46,10 @@ interface SchemaPublisherTransport {
       )
    }
 
-   fun submitSchemas(
-      packageMetadata: PackageMetadata,
-      versionedSources: List<VersionedSource>
-   ): Either<CompilationException, Schema> = submitPackage(SourcePackage(packageMetadata, versionedSources))
+//   fun submitSchemas(
+//      packageMetadata: PackageMetadata,
+//      versionedSources: List<VersionedSource>
+//   ): Either<CompilationException, Schema> = submitPackage(SourcePackage(packageMetadata, versionedSources))
 
    fun submitMonitoredPackage(submission: KeepAlivePackageSubmission): Either<CompilationException, Schema>
    fun submitPackage(submission: SourcePackage): Either<CompilationException, Schema>
@@ -120,14 +118,14 @@ interface AsyncSchemaPublisherTransport : SchemaPublisherTransport {
          .asEither()
    }
 
-   override fun submitSchemas(
-      packageMetadata: PackageMetadata,
-      versionedSources: List<VersionedSource>,
-   ): Either<CompilationException, Schema> {
-      return submitSchemaOnConnection(SourcePackage(packageMetadata, versionedSources))
-         .blockFirst()!!
-         .asEither()
-   }
+//   override fun submitSchemas(
+//      packageMetadata: PackageMetadata,
+//      versionedSources: List<VersionedSource>,
+//   ): Either<CompilationException, Schema> {
+//      return submitSchemaOnConnection(SourcePackage(packageMetadata, versionedSources))
+//         .blockFirst()!!
+//         .asEither()
+//   }
 
 //   override fun submitSchemaPackage(submission: KeepAlivePackageSubmission): Either<CompilationException, Schema> {
 //      return submitSchemaOnConnection(submission)

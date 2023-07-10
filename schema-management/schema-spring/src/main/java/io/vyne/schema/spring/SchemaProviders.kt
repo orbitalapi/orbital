@@ -52,7 +52,7 @@ class SimpleTaxiSchemaProvider(var source: String, var identifer: PackageIdentif
 
    override val packages: List<SourcePackage>
       get() {
-         return listOf(SourcePackage(PackageMetadata.from(identifer), sources = versionedSources))
+         return listOf(SourcePackage(PackageMetadata.from(identifer), sources = versionedSources, emptyMap()))
       }
 
    override val versionedSources: List<VersionedSource>

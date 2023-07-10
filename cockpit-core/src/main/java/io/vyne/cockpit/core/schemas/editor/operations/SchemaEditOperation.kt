@@ -8,7 +8,10 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.asTaxiSource
-import lang.taxi.*
+import lang.taxi.CompilationException
+import lang.taxi.Compiler
+import lang.taxi.TaxiDocument
+import lang.taxi.errors
 import org.antlr.v4.runtime.ParserRuleContext
 
 enum class EditKind(
@@ -40,6 +43,15 @@ abstract class SchemaEditOperation {
    ): Either<CompilationException, Pair<SourcePackage, TaxiDocument>>
 
    abstract val editKind: EditKind
+
+   /**
+    * Indicates if this edit should be applied by first
+    * loading the current state from the source repository.
+    *
+    * true when we're applying an edit to existing source.
+    * false when we're creating / appending new source.
+    */
+   abstract val loadExistingState: Boolean
 
    protected fun buildCompiler(sourcePackage: SourcePackage, source: TaxiDocument): Compiler {
       val sourceCode = sourcePackage.sources.asTaxiSource()

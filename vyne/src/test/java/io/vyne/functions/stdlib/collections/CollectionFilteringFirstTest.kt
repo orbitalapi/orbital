@@ -1,21 +1,23 @@
-package io.vyne
+package io.vyne.functions.stdlib.collections
 
-import com.winterbe.expekt.should
+import io.kotest.common.runBlocking
+import io.kotest.matchers.shouldBe
 import io.vyne.models.TypedObject
 import io.vyne.models.json.parseJson
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.testVyne
+import io.vyne.typedObjects
 import io.vyne.utils.asA
-import kotlinx.coroutines.runBlocking
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
-class CollectionFilteringTest {
+class CollectionFilteringFirstTest {
    val schema = TaxiSchema.from(
       """
-       closed model Person {
+       model Person {
            id : PersonId inherits Int
            name : PersonName inherits String
           }
-          closed model Movie {
+          model Movie {
             cast : Person[]
          }
           service PersonService {
@@ -33,21 +35,25 @@ class CollectionFilteringTest {
    """.trimMargin()
 
    @Test
-   fun `can filter a list of types from a property on the projected type`():Unit = runBlocking{
-      val (vyne,stub) = testVyne(schema)
+   fun `can select the first entry from a collection`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(schema)
       stub.addResponse("getAll", vyne.parseJson("Movie[]", movieJson))
-      val results = vyne.query("""find { Movie[] } as {
-         | cast : Person[]
-         | // Filtering directly on a field on this type.
-         | aListers : filterAll(this.cast, (Person) -> containsString(PersonName, 'a') )
-         |}[]
-      """.trimMargin())
+      val results = vyne.query(
+         """find { Movie[] } as {
+          // Selecting the first person as the star
+          starring : Person = first(Person[])
+         }[]
+      """
+      )
          .typedObjects()
       val movie = results.single().asA<TypedObject>()
-      val starring = movie.get("aListers").toRawObject()
-      starring.should.equal(listOf(
-         mapOf("id" to 1, "name" to "Jack"),
-         mapOf("id" to 2, "name" to "Sparrow"),
-      ))
+      movie.toRawObject().shouldBe(
+         mapOf(
+            "starring" to mapOf(
+               "id" to 1,
+               "name" to "Jack"
+            )
+         )
+      )
    }
 }

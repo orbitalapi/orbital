@@ -67,9 +67,28 @@ class LocalSchemaEditingService(
       val schema = schemaStore.schema()
       return packagesServiceApi.loadPackage(edit.packageIdentifier.uriSafeId)
          .flatMap { packageWithDescription ->
-            val currentSourcePackage = packageWithDescription.parsedPackage.toSourcePackage()
+
+            // Grab the current state, if applicable.
+            // Currently, we look at the first edit, and determine if this requires us loading initial state.
+            // (eg., for an edit operation).
+            // For an import, we don't load the initial state.
+            // This is for cosmetic reasons.
+            // We return the result of all the edits back to the UI.
+            // Generally, we only want to show the edited source that's relevant to this operation.
+            // If this an insert-with-subsequent-edits, then we don't really wanna show all the other source in the package.
+            // However, I suspect this will break thigns down the line.
+            // This choice is cosmetic, and can be revisited.
+            val firstEdit = edit.edits.first()
+            val currentSourcePackage = if (firstEdit.loadExistingState) {
+               packageWithDescription.parsedPackage.toSourcePackage()
+            } else {
+               // If we're not loading the sources, start with an empty source package.
+               SourcePackage(packageWithDescription.parsedPackage.metadata, emptyList(), emptyMap())
+            }
             val initial: Either<CompilationException, Pair<SourcePackage, TaxiDocument>> =
                (currentSourcePackage to schema.asTaxiSchema().taxi).right()
+
+            // Apply all the edits, incrementally.
             val editResult = edit.edits
                .fold(initial) { acc, editOperation ->
                   acc.flatMap { (currentSource, currentTaxi) ->
@@ -92,7 +111,6 @@ class LocalSchemaEditingService(
                updatedTaxiSchema.types,
                updatedTaxiSchema.services,
                compilationMessages,
-               "",
                edit.dryRun,
                updatedSourcePackage,
                pendingUpdates
@@ -292,11 +310,11 @@ class LocalSchemaEditingService(
       val vyneTypes = typesInThisRequest.map { (type, _) -> updatedSchema.type(type) }
       val vyneServices = servicesInThisRequest.map { (service, _) -> updatedSchema.service(service.qualifiedName) }
       val submissionResult = SchemaSubmissionResult(
-         vyneTypes.toSet(), vyneServices.toSet(), messages, generatedSource.concatenatedSource,
+         vyneTypes.toSet(), vyneServices.toSet(), messages,
          dryRun = validateOnly,
          // TODO : I think this whole doSubmit() method is about to be killed,
          // so stubbing these values for now.
-         SourcePackage(PackageMetadata.from(packageIdentifier), emptyList()),
+         SourcePackage(PackageMetadata.from(packageIdentifier), emptyList(), emptyMap()),
          emptyList()
       )
       return if (persist) {

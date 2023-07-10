@@ -13,7 +13,7 @@ class SimpleSchemaProvider(
 ) : SchemaProvider {
    override val packages: List<SourcePackage>
       get() {
-         return listOf(SourcePackage(PackageMetadata.from(identifer), versionedSources))
+         return listOf(SourcePackage(PackageMetadata.from(identifer), versionedSources, emptyMap()))
       }
    override val versionedSources: List<VersionedSource>
       get() {

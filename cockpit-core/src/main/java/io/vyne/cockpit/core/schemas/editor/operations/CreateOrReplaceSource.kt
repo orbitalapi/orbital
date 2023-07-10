@@ -9,6 +9,7 @@ import lang.taxi.TaxiDocument
 data class CreateOrReplaceSource(
    val sources: List<VersionedSource>
 ) : SchemaEditOperation() {
+   override val loadExistingState: Boolean = false
    override fun applyTo(
       sourcePackage: SourcePackage,
       taxiDocument: TaxiDocument

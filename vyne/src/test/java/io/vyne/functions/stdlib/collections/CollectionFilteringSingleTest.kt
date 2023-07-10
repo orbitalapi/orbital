@@ -1,11 +1,11 @@
-package io.vyne
+package io.vyne.functions.stdlib.collections
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.winterbe.expekt.should
 import io.vyne.models.TypedObject
 import io.vyne.models.json.parseJson
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.testVyne
+import io.vyne.typedObjects
 import io.vyne.utils.asA
 import kotlinx.coroutines.runBlocking
 import org.junit.Test

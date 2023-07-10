@@ -45,7 +45,7 @@ class SchemaPublisherService(
       converter: (GeneratedTaxiCode, Int) -> VersionedSource = ::defaultConverter
    ): Flux<SourceSubmissionResponse> {
       val versionedSources = sources.mapIndexed { index, source -> converter(source, index) }
-      return publish(SourcePackage(packageMetadata, versionedSources))
+      return publish(SourcePackage(packageMetadata, versionedSources, emptyMap()))
    }
 
 //   fun loadAndPublish(

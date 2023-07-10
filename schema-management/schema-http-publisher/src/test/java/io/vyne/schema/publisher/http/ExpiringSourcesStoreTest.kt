@@ -34,7 +34,8 @@ class ExpiringSourcesStoreTest {
    private val sourcePackageSubmission = KeepAlivePackageSubmission(
       SourcePackage(
          PackageMetadata.from("com.foo", "test"),
-         listOf(brokerOrderTaxi)
+         listOf(brokerOrderTaxi),
+         emptyMap()
       ),
       publisherConfiguration().keepAlive
    )

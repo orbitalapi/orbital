@@ -69,7 +69,8 @@ class FileHoconLoader(
                      packageIdentifier.version,
                      configFilePath.readText()
                   )
-               )
+               ),
+               emptyMap()
             )
          )
       }

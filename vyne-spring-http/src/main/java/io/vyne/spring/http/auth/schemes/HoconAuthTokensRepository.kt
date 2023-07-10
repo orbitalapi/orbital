@@ -83,6 +83,19 @@ class HoconAuthTokensRepository(
 
    override fun getAuthScheme(serviceName: ServiceName): AuthScheme? {
       return typedConfig().authenticationTokens[serviceName]
+         ?: getWildcardMatch(serviceName)
+
+   }
+
+   private fun getWildcardMatch(serviceName: String): AuthScheme? {
+      val authTokens = typedConfig()
+      val keysWithWildcards = authTokens.authenticationTokens.keys
+         .filter { it.contains("*") }
+         .asSequence()
+         .firstOrNull { tokenServiceNameWildcard -> tokenServiceNameWildcard.toRegex().matches(serviceName) }
+
+      return keysWithWildcards?.let { key -> authTokens.authenticationTokens[key] }
+
    }
 
 

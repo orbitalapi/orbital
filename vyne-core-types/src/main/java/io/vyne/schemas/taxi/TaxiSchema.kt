@@ -18,7 +18,6 @@ import lang.taxi.types.StreamType
 import mu.KotlinLogging
 import org.antlr.v4.runtime.CharStreams
 import java.nio.file.Path
-import kotlin.io.path.readText
 
 private val logger = KotlinLogging.logger {}
 
@@ -27,7 +26,7 @@ class TaxiSchema(
    @get:JsonIgnore override val packages: List<SourcePackage>,
    override val functionRegistry: FunctionRegistry = FunctionRegistry.default,
    queryCacheSize: Long = 100,
-   override val additionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
+//   override val additionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
 ) : Schema {
    override val types: Set<Type>
    override val services: Set<Service>
@@ -50,12 +49,6 @@ class TaxiSchema(
    override fun hashCode(): Int {
       return equality.hash()
    }
-
-   @get:JsonIgnore
-   override val additionalSourcePaths: List<Pair<String, PathGlob>>
-      get() {
-         return this.packages.flatMap { it.additionalSourcePaths }
-      }
 
    @get:JsonIgnore
    override val typeCache: TypeCache
@@ -193,7 +186,8 @@ class TaxiSchema(
          type = type,
          name = taxiParam.name,
          metadata = parseAnnotationsToMetadata(taxiParam.annotations),
-         constraints = constraintConverter.buildConstraints(type, taxiParam.constraints)
+         constraints = constraintConverter.buildConstraints(type, taxiParam.constraints),
+         typeDoc = taxiParam.typeDoc
       )
    }
 
@@ -213,7 +207,7 @@ class TaxiSchema(
          this.document.merge(schema.document),
          this.packages + schema.packages,
          this.functionRegistry.merge(schema.functionRegistry),
-         additionalSources = this.additionalSources.mergeLists(schema.additionalSources)
+//         additionalSources = this.additionalSources.mergeLists(schema.additionalSources)
       )
    }
 
@@ -306,12 +300,12 @@ class TaxiSchema(
                logger.info { "Compiler provided the following messages: \n ${compilationErrors.toMessage()}" }
             }
          }
-         val loadedAdditionalSources = loadApprovedAdditionalSources(packages)
+//         val loadedAdditionalSources = loadApprovedAdditionalSources(packages)
          return compilationErrors to TaxiSchema(
             doc,
             packages,
             functionRegistry,
-            additionalSources = loadedAdditionalSources.mergeLists(preloadedAdditionalSources)
+//            additionalSources = loadedAdditionalSources.mergeLists(preloadedAdditionalSources)
          )
 
       }
@@ -321,28 +315,6 @@ class TaxiSchema(
             .map { (a, b) -> a to b.map { it.second } }
       }
 
-      private fun loadApprovedAdditionalSources(packages: List<SourcePackage>): Map<SourcesType, List<SourcePackage>> {
-         return packages.flatMap { sourcePackage ->
-            sourcePackage.additionalSourcePaths
-               .filter { (sourceType, _) -> WHITELISTED_ADDITIONAL_SOURCE_TYPES.contains(sourceType) }
-               .map { (sourceType, pathGlob) ->
-                  val loadedSources: List<VersionedSource> = pathGlob.mapEachDirectoryEntry { path ->
-                     VersionedSource(
-                        path.toString(),
-                        sourcePackage.identifier.version,
-                        path.readText(),
-                        sourcePackage.identifier
-                     )
-                  }.values.toList()
-                  sourceType to SourcePackage(sourcePackage.packageMetadata, loadedSources)
-               }
-               .groupByPairFirstValue()
-         }.groupBy { (sourceType, sources) -> sourceType }
-            .map { (sourceType, sources: List<Pair<SourcesType, List<SourcePackage>>>) ->
-               sourceType to sources.map { it.second }.flatten()
-            }
-            .toMap()
-      }
 
       /**
        * Returns a schema.  If compilation errors exist, defers to the onErrorBehaviour.
@@ -448,7 +420,7 @@ class TaxiSchema(
       }
 
       private fun List<VersionedSource>.asDummySourcePackages(): List<SourcePackage> {
-         return listOf(SourcePackage(PackageMetadata.from("io.vyne", "dummy", "0.1.0"), this))
+         return listOf(SourcePackage(PackageMetadata.from("io.vyne", "dummy", "0.1.0"), this, emptyMap()))
       }
    }
 }

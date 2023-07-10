@@ -18,7 +18,7 @@ data class SchemaSet private constructor(
    @field:JsonIgnore
    @get:JsonIgnore
    private var _taxiSchemas: List<TaxiSchema>? = null,
-   val additionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
+//   val additionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
 
 ) : Serializable {
 
@@ -27,8 +27,8 @@ data class SchemaSet private constructor(
    private constructor(
       parsedPackages: List<ParsedPackage>,
       generation: Int,
-      additionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
-   ) : this(parsedPackages, generation, null, additionalSources)
+//      additionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
+   ) : this(parsedPackages, generation, null)
 
    val id: Int = parsedPackages.hashCode()
 
@@ -130,7 +130,6 @@ data class SchemaSet private constructor(
             this._taxiSchemas = listOf(
                TaxiSchema.from(
                   taxiSources,
-                  preloadedAdditionalSources = this.additionalSources
                ),
 
                )
@@ -155,11 +154,11 @@ data class SchemaSet private constructor(
          generation: Int,
          additionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
       ): SchemaSet {
-         return SchemaSet(sources, generation, additionalSources = additionalSources)
+         return SchemaSet(sources, generation)
       }
 
       fun fromSchema(sources: List<ParsedPackage>, schema: TaxiSchema, generation: Int): SchemaSet {
-         return SchemaSet(sources, generation, listOf(schema), schema.additionalSources)
+         return SchemaSet(sources, generation, listOf(schema))
       }
 
       @Deprecated("call fromParsed instead")
@@ -176,7 +175,9 @@ data class SchemaSet private constructor(
          val parsed = schema.packages.map { sourcePackage ->
             ParsedPackage(
                sourcePackage.packageMetadata,
-               sourcePackage.sourcesWithPackageIdentifier.map { src -> ParsedSource(src) }
+               sourcePackage.sourcesWithPackageIdentifier.map { src -> ParsedSource(src) },
+               sourcePackage.additionalSources
+
             )
          }
 

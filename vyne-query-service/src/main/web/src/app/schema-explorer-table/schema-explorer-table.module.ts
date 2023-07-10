@@ -9,6 +9,7 @@ import {TypeViewerModule} from 'src/app/type-viewer/type-viewer.module';
 import {OperationViewModule} from 'src/app/operation-view/operation-view.module';
 import {FormsModule} from "@angular/forms";
 import {CodeEditorModule} from "../code-editor/code-editor.module";
+import {CodeViewerModule} from "../code-viewer/code-viewer.module";
 
 
 @NgModule({
@@ -32,7 +33,8 @@ import {CodeEditorModule} from "../code-editor/code-editor.module";
     TuiRadioBlockModule,
     TuiGroupModule,
     FormsModule,
-    CodeEditorModule
+    CodeEditorModule,
+    CodeViewerModule
   ]
 })
 export class SchemaExplorerTableModule {

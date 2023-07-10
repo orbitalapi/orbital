@@ -66,7 +66,7 @@ class TaxiSchemaValidator :
                   .map { it.third }
                ParsedSource(versionedSource, errors)
             }
-            ParsedPackage(sourcePackage.packageMetadata, parsedSources)
+            ParsedPackage(sourcePackage.packageMetadata, parsedSources, sourcePackage.additionalSources)
          }
          if (errors.isNotEmpty()) {
             logger.error("Schema contained compilation exception: \n${errors.joinToString("\n")}")
@@ -85,7 +85,7 @@ class TaxiSchemaValidator :
                   listOf(CompilationError(SourceLocation.UNKNOWN_POSITION, message, it.name))
                )
             }
-            ParsedPackage(sourcePackage.packageMetadata, parsedSources)
+            ParsedPackage(sourcePackage.packageMetadata, parsedSources, sourcePackage.additionalSources)
 
 
          }

@@ -44,13 +44,19 @@ abstract class MergingHoconConfigRepository<T : Any>(
          override fun load(key: CacheKey): T {
             val loadedSources = loaders.flatMap { it.load() }
             return if (loadedSources.isEmpty()) {
-               logger.info { "Loaders returned no config sources, so starting with an empty one." }
+               logger.info { "(${this::class.simpleName}) - Loaders returned no config sources, so starting with an empty one." }
                emptyConfig()
             } else {
-               logger.info { "Loading config files returned ${loadedSources.size} sources" }
+               logger.info { "(${this::class.simpleName}) - Loading config files returned ${loadedSources.size} sources" }
                val loadedConfigs = loadedSources.map { sourcePackage: SourcePackage ->
                   val rawConfig = readRawHoconSource(sourcePackage)
-                  readConfig(rawConfig, fallback)
+                  try {
+                     readConfig(rawConfig, fallback)
+                  } catch (e: Exception) {
+                     logger.error(e) { "(${this::class.simpleName}) - Parsing the config from source package ${sourcePackage.packageMetadata.identifier.id} failed: ${e.message}" }
+                     throw e
+                  }
+
                }
                val mergedConfig = mergeConfigs(loadedConfigs)
                extract(mergedConfig)
@@ -83,9 +89,14 @@ abstract class MergingHoconConfigRepository<T : Any>(
    init {
       val allFluxes = loaders.map { it.contentUpdated }
       Flux.merge(allFluxes).subscribe {
-         logger.info { "Loader ${it.simpleName} indicates sources have changed. Invalidating caches" }
+         logger.info { "(${this::class.simpleName}) - Loader ${it.simpleName} indicates sources have changed. Invalidating caches" }
          configCache.invalidateAll()
+         configCache.cleanUp()
+         // Design choice:  Immediately reload the config, so that we get notified early if the config is invalid.
+         typedConfig()
       }
+      // Design choice:  Immediately reload the config, so that we get notified early if the config is invalid.
+      typedConfig()
 
    }
 }

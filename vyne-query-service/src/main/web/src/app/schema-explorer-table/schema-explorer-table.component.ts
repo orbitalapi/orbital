@@ -1,10 +1,9 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
-import {Message, Operation, PartialSchema, Schema, ServiceMember, Type} from 'src/app/services/schema';
+import {ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
+import {Message, Operation, PartialSchema, Schema, ServiceMember, Type, VersionedSource} from 'src/app/services/schema';
 import {Observable, ReplaySubject} from 'rxjs';
 import {tap} from 'rxjs/operators';
-import {IMPORT_RESULT} from "../schema-importer/schema-code-preview/sample";
 import {SchemaSubmissionResult} from "../services/types.service";
-import {SchemaEdit, SchemaEditOperation} from "../schema-importer/schema-importer.service";
+import {SchemaEditOperation} from "../schema-importer/schema-importer.service";
 
 @Component({
   selector: 'app-schema-explorer-table',
@@ -18,8 +17,8 @@ import {SchemaEdit, SchemaEditOperation} from "../schema-importer/schema-importe
           ></app-schema-entry-table>
         </as-split-area>
         <as-split-area size="*">
-          <div class="documentation-content-container" *ngIf="hasCodeView">
-            <div tuiGroup [collapsed]="true" class="radio-bar-container">
+          <div class="documentation-content-container">
+            <div tuiGroup [collapsed]="true" class="radio-bar-container" *ngIf="hasCodeView">
               <tui-radio-block size="s" [hideRadio]="true" item="docs" [(ngModel)]="displayMode">
                 Documentation
               </tui-radio-block>
@@ -50,11 +49,11 @@ import {SchemaEdit, SchemaEditOperation} from "../schema-importer/schema-importe
                 Select a schema member from the panel on the left to view here.
               </div>
             </div>
-            <app-code-editor
+            <app-code-viewer
               *ngIf="displayMode === 'code'"
               class='code-editor'
-              readOnly
-              [content]='taxi' #editor></app-code-editor>
+              [sources]="versionedSources"
+            ></app-code-viewer>
           </div>
 
         </as-split-area>
@@ -74,7 +73,7 @@ import {SchemaEdit, SchemaEditOperation} from "../schema-importer/schema-importe
 
   `,
   styleUrls: ['./schema-explorer-table.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  // changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SchemaExplorerTableComponent {
 
@@ -98,13 +97,12 @@ export class SchemaExplorerTableComponent {
   @Input()
   allowTryItOut: boolean = false;
 
-  get taxi(): string {
+  get versionedSources(): VersionedSource[] {
     if (!this._partialSchema) {
       return null;
     }
     const submission = this._partialSchema as SchemaSubmissionResult
-    return submission.sourcePackage.sources.map(s => s.content)
-      .join('\n')
+    return submission.sourcePackage.sources;
   }
 
 
@@ -114,7 +112,7 @@ export class SchemaExplorerTableComponent {
   }
 
   get hasCodeView(): boolean {
-    return this._partialSchema && "taxi" in this._partialSchema;
+    return this._partialSchema && "sourcePackage" in this._partialSchema;
   }
 
   @Input()

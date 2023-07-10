@@ -216,6 +216,4 @@ class CollectionProjectionTest {
          reviews.should.have.size(6)
       }
    }
-
-
 }

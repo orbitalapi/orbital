@@ -181,7 +181,7 @@ class FileRepositoryIntegrationTest {
       val schemaSet = SchemaSet.from(schema, 1)
       val bytes = CBORJackson.defaultMapper.writeValueAsBytes(schemaSet)
       val deserialized = CBORJackson.defaultMapper.readValue<SchemaSet>(bytes)
-      deserialized.additionalSources.shouldBe(schemaClient.schema().additionalSources)
+      deserialized.schema.additionalSources.shouldBe(schemaClient.schema().additionalSources)
    }
 
    @Test

@@ -26,12 +26,9 @@ import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import org.springframework.test.util.TestSocketUtils
-import reactor.core.Disposable
 import reactor.core.publisher.Mono
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
-import kotlin.random.Random
-import kotlin.random.nextInt
 
 
 class RSocketSchemaPublisherTransportTest {
@@ -255,7 +252,8 @@ class RSocketSchemaPublisherTransportTest {
    ): SourcePackage {
       return SourcePackage(
          PackageMetadata.from(organisation, name, version),
-         listOf(this)
+         listOf(this),
+         emptyMap()
       )
    }
 

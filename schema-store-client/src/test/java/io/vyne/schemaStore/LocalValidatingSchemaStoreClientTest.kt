@@ -23,13 +23,15 @@ class LocalValidatingSchemaStoreClientTest {
          }
       """.trimIndent()
             )
-         )
+         ),
+         additionalSources = emptyMap()
       )
       localValidatingSchemaStoreClient.submitPackage(ordersPackageV1)
       val result = localValidatingSchemaStoreClient.submitPackage(ordersPackageV1)
       val schema = result.orNull()!!
       schema.hasType("Order").should.be.`true`
    }
+
 
    @Test
    fun `updating a package removes previous sources`() {
@@ -46,7 +48,8 @@ class LocalValidatingSchemaStoreClientTest {
          }
       """.trimIndent()
             )
-         )
+         ),
+         additionalSources = emptyMap()
       )
 
 

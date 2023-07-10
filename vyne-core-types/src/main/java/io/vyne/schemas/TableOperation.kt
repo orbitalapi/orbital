@@ -48,7 +48,7 @@ data class TableOperation private constructor(
          typeDoc: String? = null,
          schema: Schema
       ): TableOperation {
-         val tableOperationQueryParam = Parameter(schema.type(VyneQlGrammar.QUERY_TYPE_NAME), "body")
+         val tableOperationQueryParam = Parameter(schema.type(VyneQlGrammar.QUERY_TYPE_NAME), "body", typeDoc = null)
          val queryOperations = buildQueryOperations(qualifiedName, returnType, tableOperationQueryParam)
          return TableOperation(
             qualifiedName, returnType, metadata, typeDoc, queryOperations

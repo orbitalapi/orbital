@@ -7,7 +7,6 @@ import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.cockpit.core.schemas.editor.LocalSchemaEditingService
 import io.vyne.cockpit.core.schemas.editor.SchemaSubmissionResult
-import io.vyne.cockpit.core.schemas.editor.operations.Append
 import io.vyne.cockpit.core.schemas.editor.operations.CreateOrReplaceSource
 import io.vyne.cockpit.core.schemas.editor.operations.SchemaEdit
 import io.vyne.utils.Ids
@@ -138,12 +137,13 @@ fun GeneratedTaxiCode.toSourcePackageWithMessages(
                identifier.version,
                source
             )
-         }
-
-      ))
+         },
+         emptyMap()
+      ),
+   )
 }
 
 
 fun generatedImportedFileName(baseName: String): String {
-   return baseName + Ids.id("Imported", 4)
+   return baseName + Ids.id("Imported-", 4)
 }

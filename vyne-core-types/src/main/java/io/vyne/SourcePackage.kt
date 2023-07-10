@@ -14,6 +14,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import kotlin.io.path.forEachDirectoryEntry
+import kotlin.io.path.readText
 
 private val logger = KotlinLogging.logger {}
 
@@ -53,10 +54,9 @@ data class SourcePackage(
    val sources: List<VersionedSource>,
 
    /**
-    * Additional sources (eg., pipelines, extensions, etc).
-    * These aren't actively loaded, and it's left to the appropriate extensions to pull these in
+    * Additional sources (eg., config, pipelines, extensions, etc).
     */
-   val additionalSourcePaths: List<Pair<SourcesType, PathGlob>> = emptyList()
+   val additionalSources: Map<SourcesType, List<VersionedSource>>
 ) : Serializable {
    val identifier = packageMetadata.identifier
 
@@ -66,6 +66,37 @@ data class SourcePackage(
    @get:JsonIgnore
    val sourcesWithPackageIdentifier: List<VersionedSource> =
       this.sources.map { it.copy(packageIdentifier = this.packageMetadata.identifier) }
+
+   companion object {
+      fun withAdditionalSources(
+         packageMetadata: PackageMetadata,
+         /**
+          * Contains the sources as they were provided.
+          * It's preferrable to read from sourcesWithPackageIdentifier,
+          * which contains sources guaranteed to have the package identifier correctly set.
+          */
+         sources: List<VersionedSource>,
+
+         /**
+          * Additional sources (eg., config, pipelines, extensions, etc).
+          * These aren't actively loaded, and it's left to the appropriate extensions to pull these in
+          */
+         additionalSourcePaths: List<Pair<SourcesType, PathGlob>> = emptyList()
+      ): SourcePackage {
+         val additionalSources = additionalSourcePaths.associate { (sourceType, pathGlob) ->
+            val sources = pathGlob.mapEachDirectoryEntry { path ->
+               VersionedSource(
+                  path.toString(),
+                  packageMetadata.identifier.version,
+                  path.readText(),
+                  packageMetadata.identifier
+               )
+            }.values.toList()
+            sourceType to sources
+         }
+         return SourcePackage(packageMetadata, sources, additionalSources)
+      }
+   }
 }
 
 object SourcePackageHasher {
@@ -144,15 +175,23 @@ data class PackageIdentifier(
 
 data class ParsedPackage(
    val metadata: PackageMetadata,
-   val sources: List<ParsedSource>
+   val sources: List<ParsedSource>,
+   /**
+    * Additional sources (eg., config, pipelines, extensions, etc).
+    * These aren't actively loaded, and it's left to the appropriate extensions to pull these in
+    */
+   val additionalSources: Map<SourcesType, List<VersionedSource>>
 ) : Serializable {
    val isValid = sources.all { it.isValid }
    val identifier = metadata.identifier
    val sourcesWithErrors = sources.filter { !it.isValid }
 
    fun toSourcePackage(): SourcePackage {
-      return SourcePackage(metadata,
-         sources.map { it.source })
+      return SourcePackage(
+         metadata,
+         sources.map { it.source },
+         this.additionalSources
+      )
    }
 }
 
@@ -224,7 +263,7 @@ fun TaxiPackageProject.toPackageMetadata(): PackageMetadata {
 }
 
 fun TaxiPackageSources.asSourcePackage(): SourcePackage {
-   return SourcePackage(
+   return SourcePackage.withAdditionalSources(
       this.project.toPackageMetadata(),
       this.versionedSources(),
       this.pathGlobs()

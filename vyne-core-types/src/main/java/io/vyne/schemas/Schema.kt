@@ -64,7 +64,14 @@ interface Schema {
    @get:JsonIgnore
    val additionalSources: Map<SourcesType, List<SourcePackage>>
       get() {
-         return emptyMap()
+         // Grabs all the additional sources in the sourcePackages,
+         // and flattens / combines them into a map, based on the source type
+         val loadedSources = this.packages.flatMap { sourcePackage ->
+            sourcePackage.additionalSources.map { (sourcesType, sources) ->
+               sourcesType to SourcePackage(sourcePackage.packageMetadata, sources, emptyMap())
+            }
+         }.groupBy({ it.first }, { it.second })
+         return loadedSources
       }
 
 

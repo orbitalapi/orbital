@@ -13,6 +13,7 @@ data class ChangeOperationParameterType(
    val parameterName: String,
    val newType: QualifiedName
 ) : SchemaEditOperation() {
+   override val loadExistingState: Boolean = true
    override fun applyTo(
       sourcePackage: SourcePackage,
       taxiDocument: TaxiDocument

@@ -7,7 +7,7 @@ fun List<VersionedSource>.asPackage(
    organisation: String = "com.foo",
    name: String = "test",
    version: String = "1.0.0"
-): SourcePackage = SourcePackage(PackageMetadata.from(organisation, name, version), this)
+): SourcePackage = SourcePackage(PackageMetadata.from(organisation, name, version), this, emptyMap())
 
 fun VersionedSource.asPackage(
    organisation: String = "com.foo",
@@ -17,7 +17,8 @@ fun VersionedSource.asPackage(
 ): SourcePackage {
    return SourcePackage(
       PackageMetadata.from(PackageIdentifier(organisation, name, version), submissionDate),
-      listOf(this)
+      listOf(this),
+      emptyMap()
    )
 }
 
@@ -29,7 +30,9 @@ fun ParsedSource.asParsedPackage(
 ): ParsedPackage {
    return ParsedPackage(
       PackageMetadata.from(organisation, name, version),
-      listOf(this)
+      listOf(this),
+      emptyMap()
+
    )
 }
 
@@ -38,7 +41,8 @@ fun SourcePackage.toParsedPackages(): List<ParsedPackage> = listOf(this.toParsed
 fun SourcePackage.toParsedPackage(): ParsedPackage {
    return ParsedPackage(
       this.packageMetadata,
-      this.sourcesWithPackageIdentifier.map { ParsedSource(it) }
+      this.sourcesWithPackageIdentifier.map { ParsedSource(it) },
+      this.additionalSources
    )
 }
 
@@ -47,7 +51,7 @@ fun List<ParsedSource>.asParsedPackage(
    name: String = "test",
    version: String = "1.0.0"
 ): ParsedPackage {
-   return ParsedPackage(PackageMetadata.from(organisation, name, version), this)
+   return ParsedPackage(PackageMetadata.from(organisation, name, version), this, emptyMap())
 }
 
 fun List<ParsedSource>.asParsedPackages(
