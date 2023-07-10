@@ -4,27 +4,11 @@ import app.cash.turbine.testIn
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.models.DataSource
-import io.vyne.models.FailedEvaluatedExpression
-import io.vyne.models.Provided
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
+import io.kotest.matchers.nulls.shouldBeNull
+import io.vyne.models.*
 import io.vyne.models.functions.FunctionRegistry
-import io.vyne.models.json.addJson
-import io.vyne.models.json.addJsonModel
-import io.vyne.models.json.addKeyValuePair
-import io.vyne.models.json.parseJson
-import io.vyne.models.json.parseJsonCollection
-import io.vyne.models.json.parseJsonModel
-import io.vyne.models.json.parseKeyValuePair
-import io.vyne.query.QueryContext
-import io.vyne.query.QueryEngineFactory
-import io.vyne.query.QueryParser
-import io.vyne.query.QueryResult
-import io.vyne.query.QuerySpecTypeNode
-import io.vyne.query.TypeNameQueryExpression
+import io.vyne.models.json.*
+import io.vyne.query.*
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.query.projection.LocalProjectionProvider
@@ -39,6 +23,7 @@ import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
 import org.skyscreamer.jsonassert.JSONAssert
 import java.time.Instant
 import java.time.LocalDate
@@ -2084,7 +2069,34 @@ service ClientService {
       """.trimIndent()
          )
       }
+   }
 
+   @Test
+   fun `untyped primitives are not used when calling services`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """model Person {
+            | personId : String
+            | name : String
+            |}
+            |
+            |closed model PersonDetails {
+            |  age : Age inherits Int
+            |}
+            |
+            | // Schemas like this can be produced from code-gen tasks,
+            |  // where everything is not semantically typed.
+            |service PeopleService {
+            |  operation findPerson(): Person
+            |  operation getDetails(personId: String):PersonDetails
+            |}
+         """.trimMargin()
+      )
+      stub.addResponse("getDetails", vyne.parseJson("PersonDetails", """{ "age" : 33 }"""))
+      assertThrows<UnresolvedTypeInQueryException>() {
+         vyne.query("""given { personId : String = 'abc' } find { PersonDetails }""")
+            .rawObjects()
+      }
+      stub.invocations["getDetails"].shouldBeNull()
    }
 
    @Test

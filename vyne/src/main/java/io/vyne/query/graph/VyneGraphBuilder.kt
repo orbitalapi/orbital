@@ -337,6 +337,9 @@ class VyneGraphBuilder(
          .forEach { service: Service ->
             service.remoteOperations
                .filter { !excludedOperations.contains(it.qualifiedName) }
+               // Don't include services that accept a raw primitive,
+               // such as "string" - as we'll end up feeding it junk
+               .filter { !hasRawPrimitivesForInputs(it) }
                .forEach { operation ->
                   val operationNode = operation(service, operation)
                   when (operation) {
@@ -356,6 +359,10 @@ class VyneGraphBuilder(
          }
 
       return connections
+   }
+
+   private fun hasRawPrimitivesForInputs(operation: RemoteOperation): Boolean {
+      return operation.parameters.any { it.type.isPrimitive }
    }
 
    private fun buildTableOperationConnections(
