@@ -1,6 +1,9 @@
 package io.vyne
 
+import io.vyne.models.TypedInstance
 import io.vyne.schemas.Schema
+import lang.taxi.query.TaxiQLQueryString
+import lang.taxi.query.TaxiQlQuery
 import reactor.core.publisher.Flux
 
 inline fun <reified T : Any> VyneClient.query(query: String): Flux<T> {
@@ -9,6 +12,10 @@ inline fun <reified T : Any> VyneClient.query(query: String): Flux<T> {
 
 interface VyneClient {
    fun <T : Any> queryWithType(query: String, type: Class<T>): Flux<T>
+
+   fun queryAsTypedInstance(query: TaxiQLQueryString): Flux<TypedInstance>
+
+   fun compile(query: TaxiQLQueryString): TaxiQlQuery
 }
 
 interface VyneClientWithSchema : VyneClient {

@@ -3,7 +3,7 @@ package io.vyne.connectors.config
 import com.google.common.io.Resources
 import io.kotest.matchers.maps.shouldHaveKeys
 import io.kotest.matchers.shouldBe
-import io.vyne.config.FileHoconLoader
+import io.vyne.config.FileConfigSourceLoader
 import io.vyne.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.config.jdbc.JdbcDriver
 import io.vyne.connectors.config.kafka.KafkaConnectionConfiguration
@@ -41,8 +41,8 @@ class ConfigFileConnectorsRegistryTest {
       )
       val config = ConfigFileConnectorsRegistry(
          listOf(
-            FileHoconLoader(path1),
-            FileHoconLoader(path2),
+            FileConfigSourceLoader(path1),
+            FileConfigSourceLoader(path2),
          )
       ).load()
       config.jdbc.shouldHaveKeys("another-connection", "connection-2", "connection-3", "connection-4")

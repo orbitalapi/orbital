@@ -110,7 +110,7 @@ class TypedObjectTest {
          """
          model Person {
             firstName : FirstName as String
-            title : Title as String by default("foo")
+            title : Title as String = "foo"
          }
       """.trimIndent()
       )
@@ -125,7 +125,7 @@ class TypedObjectTest {
          """
          model Person {
             firstName : FirstName as String
-            title : Title as String by default("")
+            title : Title as String = ""
          }
       """.trimIndent()
       )

@@ -1,11 +1,9 @@
-package io.vyne.schemaStore
+package io.vyne.schema.consumer
 
 import io.vyne.schema.api.SchemaSet
-import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import org.reactivestreams.Publisher
-import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 
 /**

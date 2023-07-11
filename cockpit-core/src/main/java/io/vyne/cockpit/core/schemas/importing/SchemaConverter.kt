@@ -59,8 +59,10 @@ class CompositeSchemaImporter(
             schemaEditor.submitSchemaEditOperation(
                SchemaEdit(
                   existingSourcePackage.identifier,
-                  listOf(CreateOrReplaceSource(sourcePackageWithMessages.sourcePackage.sources))
+                  listOf(CreateOrReplaceSource(sourcePackageWithMessages.sourcePackage.sources)),
+                  dryRun = validateOnly
                )
+
             )
 
 

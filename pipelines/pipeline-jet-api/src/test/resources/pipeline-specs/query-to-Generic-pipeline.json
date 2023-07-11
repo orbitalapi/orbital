@@ -7,6 +7,7 @@
     "pollSchedule" : "* 0 * * * *",
     "preventConcurrentExecution" : false
   },
+  "transformation" : null,
   "outputs" : [ {
     "type" : "Generic",
     "direction" : "OUTPUT"

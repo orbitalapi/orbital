@@ -18,7 +18,6 @@ data class Field(
    @get:JsonIgnore
    val readCondition: FieldSetExpression?,
    val typeDoc: String?,
-   val defaultValue: Any? = null,
 //   @get:JsonIgnore
 //   val formula: Formula? = null,
    val nullable: Boolean = false,

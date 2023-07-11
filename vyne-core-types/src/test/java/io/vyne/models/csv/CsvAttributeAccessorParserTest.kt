@@ -1,10 +1,8 @@
 package io.vyne.models.csv
 
 import com.winterbe.expekt.should
-import io.vyne.models.FailedParsingSource
-import io.vyne.models.Provided
-import io.vyne.models.TypedNull
-import io.vyne.models.UndefinedSource
+import io.kotest.matchers.shouldBe
+import io.vyne.models.*
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.accessors.ColumnAccessor
 import org.apache.commons.csv.CSVFormat
@@ -14,9 +12,28 @@ import java.io.StringWriter
 
 class CsvAttributeAccessorParserTest {
 
+
+   @Test
+   fun `when a model has column defined can still parse from a map`() {
+      val schema = TaxiSchema.from(
+         """
+         model Movie {
+            movieTitle : MovieTitle inherits String by column("title")
+            rating : MovieRating inherits String by column("rating")
+         }
+      """.trimIndent()
+      )
+      val map = mapOf("movieTitle" to "Star Wars", "rating" to "G")
+      val instance = TypedInstance.from(schema.type("Movie"), map, schema)
+         as TypedObject
+      instance.toRawObject().shouldBe(map)
+
+   }
+
    @Test
    fun `When there is a parsing error for a nullable field its value is set to null`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          enum Country {
             UK("United Kingdom"),
             DE("Germany")
@@ -41,7 +58,7 @@ class CsvAttributeAccessorParserTest {
       val parser = CsvAttributeAccessorParser()
       val result = parser.parseToType(
           typeCountry,
-          ColumnAccessor("country", null, typeCountry.taxiType),
+          ColumnAccessor("country", typeCountry.taxiType),
           targetCsvRecord,
           schema,
           emptySet(),

@@ -3,6 +3,7 @@ package io.vyne.cockpit.core.schemas.editor.operations
 import arrow.core.Either
 import io.vyne.SourcePackage
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.SchemaMemberKind
 import lang.taxi.CompilationException
 import lang.taxi.TaxiDocument
 import lang.taxi.TaxiParser
@@ -15,6 +16,9 @@ data class ChangeFieldType(
 ) : SchemaEditOperation() {
    override val loadExistingState: Boolean = true
 
+   override fun calculateAffectedTypes(): List<Pair<SchemaMemberKind, QualifiedName>> {
+      return listOf(SchemaMemberKind.TYPE to symbol)
+   }
    override fun applyTo(
       sourcePackage: SourcePackage,
       taxiDocument: TaxiDocument

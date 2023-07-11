@@ -24,22 +24,22 @@ abstract class BaseTypeCache : TypeCache {
          return this.cache.values.toSet()
       }
 
-   private fun populateDefaultValuesForType(type: Type) {
-      defaultValueCache[type.qualifiedName] = (type.taxiType as? ObjectType)
-         ?.fields
-         ?.filter { field -> field.defaultValue != null }
-         ?.map { field ->
-            Pair(
-               field.name,
-               TypedValue.from(
-                  type = type(field.type.qualifiedName.fqn()),
-                  value = field.defaultValue!!,
-                  converter = ConversionService.DEFAULT_CONVERTER, source = DefinedInSchema
-               )
-            )
-         }
-         ?.toMap()
-   }
+//   private fun populateDefaultValuesForType(type: Type) {
+//      defaultValueCache[type.qualifiedName] = (type.taxiType as? ObjectType)
+//         ?.fields
+//         ?.filter { field -> field.defaultValue != null }
+//         ?.map { field ->
+//            Pair(
+//               field.name,
+//               TypedValue.from(
+//                  type = type(field.type.qualifiedName.fqn()),
+//                  value = field.defaultValue!!,
+//                  converter = ConversionService.DEFAULT_CONVERTER, source = DefinedInSchema
+//               )
+//            )
+//         }
+//         ?.toMap()
+//   }
 
    /**
     * Adds the type to the cache, and returns a new copy, with the
@@ -58,7 +58,7 @@ abstract class BaseTypeCache : TypeCache {
             existingList
          }
       }
-      populateDefaultValuesForType(withReference)
+//      populateDefaultValuesForType(withReference)
       return withReference
    }
 

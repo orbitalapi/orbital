@@ -4,6 +4,7 @@
     "type" : "Generic",
     "direction" : "INPUT"
   },
+  "transformation" : null,
   "outputs" : [ {
     "type" : "taxiOperation",
     "direction" : "OUTPUT",

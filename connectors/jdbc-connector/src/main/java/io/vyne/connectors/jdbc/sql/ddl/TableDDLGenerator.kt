@@ -7,17 +7,10 @@ import io.vyne.connectors.jdbc.sqlBuilder
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
-import lang.taxi.types.ArrayType
+import lang.taxi.types.*
 import lang.taxi.types.EnumType
-import lang.taxi.types.ObjectType
-import lang.taxi.types.PrimitiveType
-import lang.taxi.types.TypeAlias
 import mu.KotlinLogging
-import org.jooq.Constraint
-import org.jooq.CreateIndexIncludeStep
-import org.jooq.CreateTableFinalStep
-import org.jooq.DSLContext
-import org.jooq.DataType
+import org.jooq.*
 import org.jooq.impl.DSL.*
 import org.jooq.impl.SQLDataType
 
@@ -33,8 +26,14 @@ class TableGenerator(private val schema: Schema) {
       return result
    }
 
-   fun generate(type: Type, dsl: DSLContext, tableNameSuffix: String? = null): TableDDLData {
-      val tableName = SqlUtils.tableNameOrTypeName(type.taxiType, tableNameSuffix)
+   fun generate(
+      type: Type,
+      dsl: DSLContext,
+      tableNameSuffix: String? = null,
+      providedTableName: String? = null
+   ): TableDDLData {
+      // see tableNameOrTypeName() for justification of .lowercase()
+      val tableName = providedTableName?.lowercase() ?: SqlUtils.tableNameOrTypeName(type.taxiType, tableNameSuffix)
 
       val columns = type.attributes.map { (attributeName, typeField) ->
          val sqlType =

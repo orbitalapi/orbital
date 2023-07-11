@@ -592,8 +592,8 @@ model Order {}
 model Trade {}
 
 type extension CommonOrder {
-   identifierType: IdentifierClass by default('ISIN')
-   direction: Direction by default (Direction.SELL)
+   identifierType: IdentifierClass = 'ISIN'
+   direction: Direction = Direction.SELL
 }
 
 // Broker specific types
@@ -1449,7 +1449,7 @@ service Broker1Service {
          type FilledNotional inherits Decimal
 
          model InputModel {
-           multiplier: UnitMultiplier by default(2)
+           multiplier: UnitMultiplier = 2
            qtyFill: QtyFill
          }
 
@@ -1556,7 +1556,7 @@ service Broker1Service {
          type InputId inherits String
 
          model InputModel {
-           multiplier: UnitMultiplier by default(2)
+           multiplier: UnitMultiplier = 2
            qtyFill: QtyFill
            id: InputId
          }
@@ -1615,7 +1615,7 @@ service Broker1Service {
          type TraderSurname inherits String
 
          model InputModel {
-           multiplier: UnitMultiplier by default(2)
+           multiplier: UnitMultiplier =2
            qtyFill: QtyFill
            id: InputId
            traderId: TraderId
@@ -1723,7 +1723,7 @@ service Broker1Service {
          type TraderSurname inherits String
 
          model InputModel {
-           multiplier: UnitMultiplier by default(2)
+           multiplier: UnitMultiplier = 2
            qtyFill: QtyFill
            id: InputId
          }
@@ -1732,7 +1732,7 @@ service Broker1Service {
             qtyHit : QtyFill?
             unitMultiplier: UnitMultiplier?
             filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
-            traderId: TraderId by default("id1")
+            traderId: TraderId = "id1"
          }
 
          model TraderInfo {
@@ -1834,7 +1834,7 @@ service Broker1Service {
          type TraderSurname inherits String
 
          model InputModel {
-           multiplier: UnitMultiplier by default(2)
+           multiplier: UnitMultiplier  = 2
            qtyFill: QtyFill
            id: InputId
          }
@@ -1843,7 +1843,7 @@ service Broker1Service {
             qtyHit : QtyFill?
             unitMultiplier: UnitMultiplier?
             filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
-            traderId: TraderId by default("id1")
+            traderId: TraderId = "id1"
          }
 
          model TraderInfo {
@@ -1946,7 +1946,7 @@ service Broker1Service {
          type TraderSurname inherits String
 
          model InputModel {
-           multiplier: UnitMultiplier by default(2)
+           multiplier: UnitMultiplier = 2
            qtyFill: QtyFill
            id: InputId
            traderId: TraderId
@@ -2141,7 +2141,7 @@ service Broker1Service {
          model InputModel {
            id: InputId
            ric : Ric?
-           instrumentType: InstrumentIdentifierType? by default("Ric")
+           instrumentType: InstrumentIdentifierType? = "Ric"
          }
 
          model OutputModel {

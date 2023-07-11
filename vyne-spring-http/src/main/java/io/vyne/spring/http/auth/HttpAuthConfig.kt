@@ -2,9 +2,9 @@ package io.vyne.spring.http.auth
 
 import io.vyne.auth.schemes.AuthSchemeProvider
 import io.vyne.auth.tokens.AuthTokenRepository
-import io.vyne.config.FileHoconLoader
+import io.vyne.config.FileConfigSourceLoader
 import io.vyne.schema.consumer.SchemaChangedEventProvider
-import io.vyne.schema.consumer.SchemaHoconLoader
+import io.vyne.schema.consumer.SchemaConfigSourceLoader
 import io.vyne.spring.http.auth.schemes.AuthWebClientCustomizer
 import io.vyne.spring.http.auth.schemes.HoconAuthTokensRepository
 import io.vyne.spring.http.auth.schemes.HoconOAuthClientRegistrationRepository
@@ -41,8 +41,8 @@ class HttpAuthConfig {
       logger.info { "Using auth config file at ${config.configFile.toFile().canonicalPath}" }
       return HoconAuthTokensRepository(
          listOf(
-            FileHoconLoader(config.configFile),
-            SchemaHoconLoader(eventProvider, "auth.conf")
+            FileConfigSourceLoader(config.configFile),
+            SchemaConfigSourceLoader(eventProvider, "auth.conf")
          )
       )
    }

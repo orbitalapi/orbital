@@ -218,7 +218,7 @@ class VyneSchemaToTaxiSchemaMapper(
                null
             },
             field.typeDoc,
-            field.defaultValue,
+//            field.defaultValue,
             null,
             null,
             field.format,

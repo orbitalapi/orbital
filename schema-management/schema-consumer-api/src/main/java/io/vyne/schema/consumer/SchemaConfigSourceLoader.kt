@@ -1,7 +1,7 @@
 package io.vyne.schema.consumer
 
 import io.vyne.SourcePackage
-import io.vyne.config.HoconLoader
+import io.vyne.config.ConfigSourceLoader
 import io.vyne.schemas.Schema
 import lang.taxi.packages.SourcesType
 import mu.KotlinLogging
@@ -10,13 +10,18 @@ import reactor.core.publisher.Sinks
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
 
-class SchemaHoconLoader(
+class SchemaConfigSourceLoader(
    schemaEventSource: SchemaChangedEventProvider,
-   private val filename: String,
+   /**
+    * Generally, this is the name of the config file you want to load (eg., auth.conf).
+    * However, can also be a file pattern (eg *.pipeline.json) to support
+    * loading multiple files
+    */
+   private val filePattern: String,
    private val sourceType: SourcesType = "@orbital/config"
-) : HoconLoader {
+) : ConfigSourceLoader {
 
-   private val sink = Sinks.many().multicast().directBestEffort<Class<out HoconLoader>>()
+   private val sink = Sinks.many().multicast().directBestEffort<Class<out ConfigSourceLoader>>()
 
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -40,15 +45,27 @@ class SchemaHoconLoader(
    }
 
    private fun load(schema: Schema) {
-      val filename = Paths.get(filename).fileName.toString()
+      // This is a hack, and should find a tidier way.
+      // Need to support passing a filename - eg: auth.conf,
+      // which should match /a/b/c/auth.conf and auth.conf
+      // However, also want to support passing *.conf, which should support /a/b/c/foo.conf and foo.conf
+      // So, expanding *.conf to **.conf and auth.conf to **auth.conf.
+      // This is a hack, but there's test coverage, so feel free to improve.
+      val pathGlob = if (filePattern.startsWith("*")) {
+         "glob:*$filePattern"
+      } else {
+         "glob:**$filePattern"
+      }
+      val pathMatcher = Paths.get(filePattern).fileSystem.getPathMatcher(pathGlob)
+      val filename = Paths.get(filePattern).fileName.toString()
       val sources = schema.additionalSources[sourceType] ?: emptyList()
       val hoconSources = sources.map { sourcePackage ->
          val requestedSources = sourcePackage.sources
-            .filter { Paths.get(it.name).fileName.toString() == filename }
+            .filter { pathMatcher.matches(Paths.get(it.name)) }
          sourcePackage.copy(sources = requestedSources)
       }
       contentCache[CacheKey] = hoconSources
-      sink.emitNext(SchemaHoconLoader::class.java, Sinks.EmitFailureHandler.FAIL_FAST)
+      sink.emitNext(SchemaConfigSourceLoader::class.java, Sinks.EmitFailureHandler.FAIL_FAST)
    }
 
    override fun load(): List<SourcePackage> {
@@ -61,6 +78,6 @@ class SchemaHoconLoader(
       }
    }
 
-   override val contentUpdated: Flux<Class<out HoconLoader>>
+   override val contentUpdated: Flux<Class<out ConfigSourceLoader>>
       get() = sink.asFlux()
 }

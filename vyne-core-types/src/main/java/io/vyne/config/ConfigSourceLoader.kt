@@ -3,7 +3,7 @@ package io.vyne.config
 import io.vyne.SourcePackage
 import reactor.core.publisher.Flux
 
-interface HoconLoader {
+interface ConfigSourceLoader {
    /**
     * Returns the source of the hocon file(s).
     * Some loaders - such as schema loader
@@ -27,7 +27,7 @@ interface HoconLoader {
     * A flux that emits a signal whenever the sources have changed.
     * The class of this Hocon loader is returned, to help with logging
     */
-   val contentUpdated: Flux<Class<out HoconLoader>>
+   val contentUpdated: Flux<Class<out ConfigSourceLoader>>
 }
 
 

@@ -4,8 +4,8 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.vyne.PackageIdentifier
 import io.vyne.auth.schemes.*
-import io.vyne.config.HoconLoader
-import io.vyne.config.HoconWriter
+import io.vyne.config.ConfigSourceLoader
+import io.vyne.config.ConfigSourceWriter
 import io.vyne.config.MergingHoconConfigRepository
 import io.vyne.schemas.ServiceName
 import org.http4k.quoted
@@ -16,11 +16,11 @@ import org.http4k.quoted
  * to allow support for OAuth etc.
  */
 class HoconAuthTokensRepository(
-   private val loaders: List<HoconLoader>,
+   private val loaders: List<ConfigSourceLoader>,
    fallback: Config = ConfigFactory.systemEnvironment(),
 ) : AuthSchemeProvider, AuthSchemeRepository, MergingHoconConfigRepository<AuthTokens>(loaders, fallback) {
 
-   private val writers = loaders.filterIsInstance<HoconWriter>()
+   private val writers = loaders.filterIsInstance<ConfigSourceWriter>()
 
    override fun extract(config: Config): AuthTokens {
       return AuthTokens.fromConfig(config)
@@ -56,7 +56,7 @@ class HoconAuthTokensRepository(
       return "${AuthTokens::authenticationTokens.name}.${serviceName.quoted()}"
    }
 
-   private fun loadUnresolvedConfig(writer: HoconWriter, targetPackage: PackageIdentifier): Config {
+   private fun loadUnresolvedConfig(writer: ConfigSourceWriter, targetPackage: PackageIdentifier): Config {
       val sourcePackages = writer.load()
          .filter { it.identifier == targetPackage }
       // Not a hard requirement, but I need to understand the use case of why this

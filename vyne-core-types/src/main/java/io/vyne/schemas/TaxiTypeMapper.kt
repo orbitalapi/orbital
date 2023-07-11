@@ -51,7 +51,6 @@ object TaxiTypeMapper {
                      accessor = field.accessor,
                      readCondition = field.readExpression,
                      typeDoc = field.typeDoc,
-                     defaultValue = field.defaultValue,
 //                     formula = field.formula,
                      nullable = field.nullable,
                      metadata = parseAnnotationsToMetadata(field.annotations),

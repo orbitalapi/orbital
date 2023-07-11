@@ -12,6 +12,7 @@ import io.vyne.models.json.Jackson
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.Ids
+import lang.taxi.query.TaxiQLQueryString
 import org.apache.commons.csv.CSVRecord
 import java.io.Serializable
 
@@ -19,6 +20,23 @@ data class PipelineSpec<I : PipelineTransportSpec, O : PipelineTransportSpec>(
    val name: String,
    @JsonDeserialize(using = PipelineTransportSpecDeserializer::class)
    val input: I,
+   /**
+    * Allows defining an optional query that is used to transform the given
+    * Input to the Output.
+    *
+    * The query has a given {} clause prepended, which attaches the value
+    * of the input.
+    *
+    * At present, it is invalid to define a query with it's own given{} clause, though
+    * this may change in the future.
+    *
+    * If defined, then the output of this query is used as the input into the Output phase,
+    * where it can be further transformed.
+    *
+    * The output can optionally define the target type as "*" to inherit the output type from this
+    * phase.
+    */
+   val transformation: TaxiQLQueryString? = null,
    @JsonDeserialize(using = PipelineListTransportSpecDeserializer::class)
    val outputs: List<O>,
    val id: String = Ids.id("pipeline-")

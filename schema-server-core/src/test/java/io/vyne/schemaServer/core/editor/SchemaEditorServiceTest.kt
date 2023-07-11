@@ -6,12 +6,12 @@ import io.vyne.PackageIdentifier
 import io.vyne.PackageSourceName
 import io.vyne.VersionedSource
 import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.consumer.SimpleSchemaStore
 import io.vyne.schema.publisher.loaders.Changeset
 import io.vyne.schemaServer.core.file.deployProject
 import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
 import io.vyne.schemaServer.editor.SaveQueryRequest
 import io.vyne.schemaServer.editor.UpdateTypeAnnotationRequest
-import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.Metadata
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema

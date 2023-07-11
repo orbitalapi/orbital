@@ -1,5 +1,7 @@
 package io.vyne.pipelines.jet.pipelines
 
+import io.vyne.PackageIdentifier
+import io.vyne.UriSafePackageIdentifier
 import io.vyne.pipelines.jet.api.*
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.schema.consumer.SchemaChangedEventProvider
@@ -72,13 +74,23 @@ class PipelineService(
    @PostMapping("/api/pipelines/scheduled")
    fun triggerScheduledPipeline(@RequestBody triggerScheduledPipelineRequest: TriggerScheduledPipelineRequest): Mono<TriggerScheduledPipelineResponse> {
       logger.info { "Received request to trigger a schedule pipeline manually => $triggerScheduledPipelineRequest" }
-      return Mono.just(TriggerScheduledPipelineResponse(pipelineManager.triggerScheduledPipeline(triggerScheduledPipelineRequest.pipelineSpecId)))
+      return Mono.just(
+         TriggerScheduledPipelineResponse(
+            pipelineManager.triggerScheduledPipeline(
+               triggerScheduledPipelineRequest.pipelineSpecId
+            )
+         )
+      )
    }
 
-   @PostMapping("/api/pipelines")
-   override fun submitPipeline(@RequestBody pipelineSpec: PipelineSpec<*, *>): Mono<SubmittedPipeline> {
+   @PostMapping("/api/pipelines/{packageIdentifier}")
+   override fun submitPipeline(
+      @PathVariable("packageIdentifier") packageUri: UriSafePackageIdentifier,
+      @RequestBody pipelineSpec: PipelineSpec<*, *>
+   ): Mono<SubmittedPipeline> {
+      val packageIdentifier = PackageIdentifier.fromUriSafeId(packageUri)
       logger.info { "Received new pipelineSpec: \n${pipelineSpec}" }
-      pipelineRepository.save(pipelineSpec)
+      pipelineRepository.save(packageIdentifier, pipelineSpec)
       val (submittedPipeline) = pipelineManager.startPipeline(pipelineSpec)
 
       return Mono.just(submittedPipeline)

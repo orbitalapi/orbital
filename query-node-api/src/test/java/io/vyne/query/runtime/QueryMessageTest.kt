@@ -32,7 +32,8 @@ class QueryMessageTest {
                   version = "1.0.90",
                   content = "type Hello"
                )
-            )
+            ),
+            additionalSources = emptyMap()
          )
       )
       val message = QueryMessage(

@@ -74,6 +74,13 @@ object BuiltInTypesProvider {
    )
    private val builtInTypesSource = builtInSources.sources.joinToString("\n") { it.content }
    val sourcePackage = builtInSources
+
+
+   // TODO  :Add the others here
+   private val builtInNamespaces = listOf("io.vyne", "taxi.stdlib")
+   fun isInternalNamespace(namespace: String): Boolean {
+      return builtInNamespaces.any { namespace.startsWith(it) }
+   }
 }
 
 

@@ -3,7 +3,7 @@ package io.vyne.query.runtime.core.gateway
 import com.jayway.awaitility.Awaitility
 import com.nhaarman.mockito_kotlin.*
 import io.kotest.matchers.shouldBe
-import io.vyne.schemaStore.SimpleSchemaStore
+import io.vyne.schema.consumer.SimpleSchemaStore
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
 import org.junit.Ignore
@@ -20,7 +20,6 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.returnResult
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 import java.util.concurrent.TimeUnit
 
 //@SpringBootTest

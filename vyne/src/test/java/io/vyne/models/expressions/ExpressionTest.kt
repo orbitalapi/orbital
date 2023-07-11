@@ -1,29 +1,109 @@
 package io.vyne.models.expressions
 
 import com.winterbe.expekt.should
-import io.vyne.*
-import io.vyne.models.EvaluatedExpression
-import io.vyne.models.FailedEvaluatedExpression
-import io.vyne.models.OperationResult
-import io.vyne.models.OperationResultDataSourceWrapper
-import io.vyne.models.OperationResultReference
-import io.vyne.models.Provided
-import io.vyne.models.TypeNamedInstance
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
+import io.kotest.matchers.shouldBe
+import io.vyne.firstRawObject
+import io.vyne.models.*
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.functions.functionOf
 import io.vyne.models.functions.stdlib.withoutWhitespace
 import io.vyne.models.json.parseJson
+import io.vyne.rawObjects
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.testVyne
+import io.vyne.typedObjects
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.time.LocalDate
 import java.time.Period
 
 class ExpressionTest {
+
+   @Test
+   fun `when default values are provided they are used`() {
+      val schema = TaxiSchema.from(
+         """
+         enum Foo {
+            One,
+            Two
+         }
+         type FirstName inherits String
+         type Age inherits Int
+         type Height inherits Decimal
+         model Person {
+            name : FirstName = "jimmy"
+            age: Age = 42
+            foo: Foo = Foo.One
+            decimal : Decimal = 12.34
+            decimal2 : Decimal = 1000000.0
+            negativeInt : Int = -10
+            negativeDecimal : Decimal  = -12.34
+         }
+        """
+      )
+
+      val person = TypedInstance.from(schema.type("Person"), """{}""", schema)
+      val raw = person.toRawObject()
+      raw.shouldBe(
+         mapOf(
+            "name" to "jimmy",
+            "age" to 42,
+            "foo" to "One",
+            "decimal" to 12.34.toBigDecimal(),
+            "decimal2" to 1000000.0.toBigDecimal(),
+            "negativeInt" to -10,
+            "negativeDecimal" to (-12.34).toBigDecimal()
+         )
+      )
+   }
+
+   @Test
+   fun `when default values are provided they are not used if actual value provided`() {
+      val schema = TaxiSchema.from(
+         """
+         enum Foo {
+            One,
+            Two
+         }
+         type FirstName inherits String
+         type Age inherits Int
+         type Height inherits Decimal
+         model Person {
+            name : FirstName = "jimmy"
+            age: Age = 42
+            foo: Foo = Foo.One
+            decimal : Decimal = 12.34
+            decimal2 : Decimal = 1000000.0
+            negativeInt : Int = -10
+            negativeDecimal : Decimal  = -12.34
+         }
+        """
+      )
+
+      val person = TypedInstance.from(
+         schema.type("Person"), """{
+         | "name" : "Jack",
+         | "age" : 33,
+         | "foo" : "Two",
+         | "decimal" : 80.0,
+         | "decimal2" : 1000.0,
+         | "negativeInt" : -100,
+         | "negativeDecimal" : -255.30
+         |}""".trimMargin(), schema
+      )
+      val raw = person.toRawObject()
+      raw.shouldBe(
+         mapOf(
+            "name" to "Jack",
+            "age" to 33,
+            "foo" to "Two",
+            "decimal" to 80.0.toBigDecimal(),
+            "decimal2" to 1000.0.toBigDecimal(),
+            "negativeInt" to -100,
+            "negativeDecimal" to (-255.30).toBigDecimal()
+         )
+      )
+   }
 
    @Test
    fun `can discover inputs from services`(): Unit = runBlocking {
@@ -669,18 +749,22 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
       )
 
       // if we ask for a collection of values, we should match...
-      val positiveResult = vyne.query("""find { Catalog } as {
+      val positiveResult = vyne.query(
+         """find { Catalog } as {
          | filmIds : (FilmCatalog::FilmId)[]
          |}
-      """.trimMargin())
+      """.trimMargin()
+      )
          .firstRawObject()
-      positiveResult["filmIds"].should.equal(listOf(1,2))
+      positiveResult["filmIds"].should.equal(listOf(1, 2))
 
       // ... but if we ask for an array, we shouldn't, as there is no FilmId[] present
-      val negativeResult = vyne.query("""find { Catalog } as {
+      val negativeResult = vyne.query(
+         """find { Catalog } as {
          | filmIds : FilmCatalog::FilmId[]
          |}
-      """.trimMargin())
+      """.trimMargin()
+      )
          .firstRawObject()
       negativeResult["filmIds"].should.be.`null`
    }

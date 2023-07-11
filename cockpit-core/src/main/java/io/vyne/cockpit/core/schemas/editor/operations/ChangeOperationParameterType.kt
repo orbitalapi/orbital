@@ -4,6 +4,7 @@ import arrow.core.Either
 import io.vyne.SourcePackage
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.SchemaMemberKind
 import lang.taxi.CompilationException
 import lang.taxi.TaxiDocument
 import lang.taxi.source
@@ -41,5 +42,11 @@ data class ChangeOperationParameterType(
    }
 
    override val editKind: EditKind = EditKind.ChangeOperationParameterType
+
+   override fun calculateAffectedTypes(): List<Pair<SchemaMemberKind, QualifiedName>> {
+      return listOf(
+         SchemaMemberKind.OPERATION to symbol
+      )
+   }
 
 }

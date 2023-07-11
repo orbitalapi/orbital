@@ -3,7 +3,7 @@ package io.vyne.pipelines.jet
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
 import io.micrometer.core.instrument.MeterRegistry
-import io.vyne.config.FileHoconLoader
+import io.vyne.config.FileConfigSourceLoader
 import io.vyne.connectors.VyneConnectionsConfig
 import io.vyne.connectors.aws.core.registry.AwsConfigFileConnectionRegistry
 import io.vyne.connectors.azure.blob.registry.AzureStoreConnectionFileRegistry
@@ -14,7 +14,7 @@ import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.connectors.jdbc.registry.ReloadingJdbcConnectionRegistry
 import io.vyne.connectors.kafka.registry.KafkaConfigFileConnectorRegistry
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
-import io.vyne.schema.consumer.SchemaHoconLoader
+import io.vyne.schema.consumer.SchemaConfigSourceLoader
 import io.vyne.schema.consumer.SchemaStore
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
@@ -31,8 +31,8 @@ class ConnectionsConfiguration {
    ): ConfigFileConnectorsRegistry {
       return ConfigFileConnectorsRegistry(
          listOf(
-            FileHoconLoader(config.configFile),
-            SchemaHoconLoader(schemaStore, "connections.conf")
+            FileConfigSourceLoader(config.configFile),
+            SchemaConfigSourceLoader(schemaStore, "connections.conf")
          )
       )
    }

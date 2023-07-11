@@ -25,7 +25,8 @@ class ParserService {
                   version = "0.1.0",
                   VyneQlGrammar.QUERY_TYPE_TAXI
                )
-            )
+            ),
+            additionalSources = emptyMap()
          )
 
       )
@@ -35,7 +36,8 @@ class ParserService {
             PackageMetadata.from("unknown", "unknown", "1.0.0"),
             listOf(
                VersionedSource.sourceOnly(source)
-            )
+            ),
+            additionalSources = emptyMap()
          )
       ) + buildInTypes
       val (messages, schema) = TaxiSchema.compiled(packages)

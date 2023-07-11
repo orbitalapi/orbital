@@ -89,8 +89,8 @@ model UpsertTestMultiPk {
    val schemaWithDefaultValueSource = """
       model ModelWithDefaults {
          field1: String by column("FIRST_COLUMN")
-         defaultString: String by default("Default String")
-         defaultDecimal: Decimal by default(1000000.0)
+         defaultString: String ?: "Default String"
+         defaultDecimal: Decimal ?: 1000000.0
       }
 
    """.trimIndent()
@@ -113,9 +113,9 @@ model UpsertTestMultiPk {
    val schemaWithConcatAndDefaultSource = """
       model ModelWithDefaultsConcat {
          field1: String by column("FIRST_COLUMN")
-         defaultString: String by default("Default String")
-         defaultDecimal: Decimal by default(1000000.0)
-         concatField: String by concat(column("FIRST_COLUMN"), "-", column("SECOND_COLUMN"), "-", column("THIRD_COLUMN"))
+         defaultString: String ?: "Default String"
+         defaultDecimal: Decimal ?: 1000000.0
+         concatField: String by concat(fcolumn("FIRST_COLUMN"), "-", column("SECOND_COLUMN"), "-", column("THIRD_COLUMN"))
       }
    """.trimIndent()
 

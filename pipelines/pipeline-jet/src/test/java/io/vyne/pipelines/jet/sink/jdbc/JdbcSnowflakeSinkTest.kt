@@ -103,7 +103,7 @@ class JdbcSnowflakeSinkTest : BaseJetIntegrationTest() {
 
       val postgresDdlGenerator = PostgresDdlGenerator()
       val targetTable = postgresDdlGenerator.generateDdl(
-         testSetup.schema.versionedType(pipelineSpec.outputs.first().targetType.typeName),
+         testSetup.schema.versionedType(pipelineSpec.outputs.first().targetType!!.typeName),
          testSetup.schema
       )
 

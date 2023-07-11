@@ -538,7 +538,10 @@ class TypedObjectFactory(
       // When parsing content from a cask, which has already been processed, what we
       // receive is a TypedObject.  The accessors should be ignored in this scenario.
       // By default, we want to cosndier them.
-      val considerAccessor = field.accessor != null && evaluateAccessors && !accessorEvaluationSupressed
+      val considerAccessor =
+         field.accessor != null && evaluateAccessors && !accessorEvaluationSupressed && field.accessor.enabledForValueType(
+            value
+         )
       val evaluateTypeExpression = fieldType.hasExpression && evaluateAccessors
 
       // Questionable design choice: Favour directly supplied values over accessors and conditions.
@@ -599,13 +602,13 @@ class TypedObjectFactory(
          valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, fieldType, field.format)
 
          // Is there a default?
-         field.defaultValue != null -> TypedValue.from(
-            fieldType,
-            field.defaultValue,
-            ConversionService.DEFAULT_CONVERTER,
-            source = DefinedInSchema,
-            parsingErrorBehaviour
-         )
+//         field.defaultValue != null -> TypedValue.from(
+//            fieldType,
+//            field.defaultValue,
+//            ConversionService.DEFAULT_CONVERTER,
+//            source = DefinedInSchema,
+//            parsingErrorBehaviour
+//         )
 
          // 2-Nov-22: Added this when trying to build inline
          // projections.  However, concerned about knock-on effects...

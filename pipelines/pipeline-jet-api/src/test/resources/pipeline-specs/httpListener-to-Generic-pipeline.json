@@ -8,6 +8,7 @@
     "payloadTypeName" : "com.vyne.MyTestPayload",
     "payloadType" : "com.vyne.MyTestPayload"
   },
+  "transformation" : null,
   "outputs" : [ {
     "type" : "Generic",
     "direction" : "OUTPUT"

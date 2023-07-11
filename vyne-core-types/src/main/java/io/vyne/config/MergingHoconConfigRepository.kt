@@ -21,7 +21,7 @@ import reactor.core.publisher.Flux
  * as the merging nature makes this complex.
  */
 abstract class MergingHoconConfigRepository<T : Any>(
-   loaders: List<HoconLoader>,
+   loaders: List<ConfigSourceLoader>,
    fallback: Config = ConfigFactory.systemEnvironment()
 ) : HoconConfigRepository<T> {
    abstract fun extract(config: Config): T
@@ -43,6 +43,7 @@ abstract class MergingHoconConfigRepository<T : Any>(
       .build(object : CacheLoader<CacheKey, T>() {
          override fun load(key: CacheKey): T {
             val loadedSources = loaders.flatMap { it.load() }
+               .filter { it.sources.isNotEmpty() }
             return if (loadedSources.isEmpty()) {
                logger.info { "(${this::class.simpleName}) - Loaders returned no config sources, so starting with an empty one." }
                emptyConfig()

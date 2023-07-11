@@ -8,6 +8,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.asTaxiSource
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.SchemaMemberKind
 import lang.taxi.CompilationException
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
@@ -53,10 +55,13 @@ abstract class SchemaEditOperation {
     */
    abstract val loadExistingState: Boolean
 
+   abstract fun calculateAffectedTypes():List<Pair<SchemaMemberKind, QualifiedName>>
+
    protected fun buildCompiler(sourcePackage: SourcePackage, source: TaxiDocument): Compiler {
       val sourceCode = sourcePackage.sources.asTaxiSource()
       return Compiler(sourceCode, importSources = listOf(source))
    }
+
 
    protected fun applyEditAndCompile(
       edits: List<SourcePackageEdit>,
@@ -74,7 +79,7 @@ abstract class SchemaEditOperation {
       }
    }
 
-   protected fun applyEdit(edit: SourcePackageEdit, sourcePackage: SourcePackage): SourcePackage {
+   private fun applyEdit(edit: SourcePackageEdit, sourcePackage: SourcePackage): SourcePackage {
       val expectSource = edit.range.splicesExistingText
 
       val versionedSource = sourcePackage.sources.firstOrNull { it.name == edit.sourceName }

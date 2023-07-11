@@ -8,7 +8,7 @@ import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.from
 import io.vyne.schema.api.SchemaSet
-import io.vyne.schemaStore.SimpleSchemaStore
+import io.vyne.schema.consumer.SimpleSchemaStore
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
@@ -73,22 +73,22 @@ object TestSchemas {
             @Between
             @Format( "MM/dd/yy HH:mm:ss")
 		      orderDateTime: OrderEventDateTime by column("Time Submitted")
-            orderType: OrderType by default("Market")
+            orderType: OrderType ?: "Market"
             subSecurityType: SecurityDescription? by column("Instrument Desc")
             requestedQuantity: RequestedQuantity? by column("Size")
             remainingQuantity: RemainingQuantity? by column("Size")
             displayedQuantity: DisplayedQuantity? by column("Size")
-            entryType: OrderStatus by default("New")
-            bankDirection: OrderBankDirection by default("BankBuys")
+            entryType: OrderStatus  ?: "New"
+            bankDirection: OrderBankDirection ?: "BankBuys"
          }
 
          model OrderFill {
            @Id
            fillOrderId: FillOrderId
-           orderType: OrderType by default("Market")
+           orderType: OrderType ?: "Market"
            subSecurityType: SecurityDescription? by column("Instrument Desc")
            executedQuantity: DecimalFieldOrderFilled? by column("Quantity")
-           entryType: OrderStatus by default("Filled")
+           entryType: OrderStatus ?: "Filled"
            tradeNo: TradeNo by column("TradeNo")
            orderBuy: DealerwebOrderBuy by column("bankbuys")
            orderSell: DealerwebOrderSell by column("ordersell")
@@ -315,4 +315,5 @@ data class TestView(
    val taxiSchema: TaxiSchema,
    val schemaStore: SimpleSchemaStore,
    val taxiView: View,
-   val tableNameMap: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>)
+   val tableNameMap: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>
+)

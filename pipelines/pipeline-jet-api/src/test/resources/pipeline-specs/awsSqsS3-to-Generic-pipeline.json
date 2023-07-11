@@ -10,6 +10,7 @@
     "preventConcurrentExecution" : false,
     "targetType" : "foo"
   },
+  "transformation" : null,
   "outputs" : [ {
     "type" : "Generic",
     "direction" : "OUTPUT"

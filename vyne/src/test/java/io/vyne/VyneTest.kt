@@ -892,18 +892,18 @@ class VyneTest {
    fun canInvokeServiceWithParamMatchingOnType() {
       val schema = """
          type Pet {
-            id : Int
+            id : PetId inherits Int
          }
          service PetService {
             @HttpOperation(method = "GET" , url = "http://petstore.swagger.io/api/pets/{id}")
-            operation findPetById(  id : Int ) : Pet
+            operation findPetById(  id : PetId ) : Pet
          }
       """.trimIndent()
 
       runBlocking {
          val (vyne, stubService) = testVyne(schema)
          stubService.addResponse("findPetById", vyne.typedValue("Pet", mapOf("id" to 100)))
-         vyne.addKeyValuePair("lang.taxi.Int", 100)
+         vyne.addKeyValuePair("PetId", 100)
          val result = vyne.query().find("Pet").results.toList()
 
          //expect(result.isFullyResolved).to.be.`true`
@@ -1700,7 +1700,7 @@ service ClientService {
             username : String by concat(this.firstName,this.lastName)
             firstName : FirstName as String
             lastName : LastName as String
-            favouriteCoffee : String by default("Latte")
+            favouriteCoffee : String = "Latte"
          }
          model InputModel {
             firstName : FirstName

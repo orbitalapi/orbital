@@ -20,9 +20,6 @@ private val logger = KotlinLogging.logger {}
 
 @kotlinx.serialization.Serializable
 data class PathGlob(val basePath: Path, val glob: String) {
-   fun forEachDirectoryEntry(action: (Path) -> Unit) {
-      this.basePath.forEachDirectoryEntry(glob, action)
-   }
 
    fun <T> mapEachDirectoryEntry(action: (Path) -> T): Map<Path, T> {
       val result = mutableMapOf<Path, T>()
@@ -56,7 +53,7 @@ data class SourcePackage(
    /**
     * Additional sources (eg., config, pipelines, extensions, etc).
     */
-   val additionalSources: Map<SourcesType, List<VersionedSource>>
+   val additionalSources: Map<SourcesType, List<VersionedSource>> = emptyMap()
 ) : Serializable {
    val identifier = packageMetadata.identifier
 

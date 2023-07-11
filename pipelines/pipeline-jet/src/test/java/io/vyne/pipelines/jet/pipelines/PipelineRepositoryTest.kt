@@ -1,6 +1,7 @@
 package io.vyne.pipelines.jet.pipelines
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.google.common.io.Resources
 import com.winterbe.expekt.should
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.GenericPipelineTransportSpec
@@ -137,6 +138,17 @@ class PipelineRepositoryTest : BaseJetIntegrationTest() {
          jackson,
       )
       // We should return one file, since one is invalid.
+      loader.loadPipelines().should.have.size(1)
+   }
+
+   @Test
+   fun `reads hocon specs`() {
+      val configFile = folder.newFile("hocon.conf")
+      Resources.copy(Resources.getResource("hocon-pipeline-spec.conf"), configFile.outputStream())
+      val loader = PipelineRepository(
+         folder.root.toPath(),
+         jackson,
+      )
       loader.loadPipelines().should.have.size(1)
    }
 }

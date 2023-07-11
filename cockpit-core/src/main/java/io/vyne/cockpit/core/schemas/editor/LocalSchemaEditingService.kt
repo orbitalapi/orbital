@@ -7,6 +7,7 @@ import io.vyne.PackageIdentifier
 import io.vyne.PackageMetadata
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
+import io.vyne.cockpit.core.schemas.BuiltInTypesProvider
 import io.vyne.cockpit.core.schemas.editor.generator.VyneSchemaToTaxiGenerator
 import io.vyne.cockpit.core.schemas.editor.operations.SchemaEdit
 import io.vyne.cockpit.core.schemas.editor.splitter.SingleTypePerFileSplitter
@@ -67,6 +68,9 @@ class LocalSchemaEditingService(
       val schema = schemaStore.schema()
       return packagesServiceApi.loadPackage(edit.packageIdentifier.uriSafeId)
          .flatMap { packageWithDescription ->
+            if (!packageWithDescription.description.editable)     {
+               return@flatMap Mono.error(BadRequestException("${edit.packageIdentifier.id} is not editable"))
+            }
 
             // Grab the current state, if applicable.
             // Currently, we look at the first edit, and determine if this requires us loading initial state.
@@ -78,13 +82,19 @@ class LocalSchemaEditingService(
             // If this an insert-with-subsequent-edits, then we don't really wanna show all the other source in the package.
             // However, I suspect this will break thigns down the line.
             // This choice is cosmetic, and can be revisited.
+            // Revisting:  This didn't work, as when we're doing something like
+            // Modify an existing type with a new type I just created, then the
+            // first edit is "new type I just created", but I need the existing type.
+            // Find another way to solve the cosmetics.
             val firstEdit = edit.edits.first()
-            val currentSourcePackage = if (firstEdit.loadExistingState) {
-               packageWithDescription.parsedPackage.toSourcePackage()
-            } else {
-               // If we're not loading the sources, start with an empty source package.
-               SourcePackage(packageWithDescription.parsedPackage.metadata, emptyList(), emptyMap())
-            }
+
+            val currentSourcePackage = packageWithDescription.parsedPackage.toSourcePackage()
+//            val currentSourcePackage = if (firstEdit.loadExistingState) {
+//               packageWithDescription.parsedPackage.toSourcePackage()
+//            } else {
+//               // If we're not loading the sources, start with an empty source package.
+//               SourcePackage(packageWithDescription.parsedPackage.metadata, emptyList(), emptyMap())
+//            }
             val initial: Either<CompilationException, Pair<SourcePackage, TaxiDocument>> =
                (currentSourcePackage to schema.asTaxiSchema().taxi).right()
 
@@ -107,9 +117,21 @@ class LocalSchemaEditingService(
             } else {
                emptyList()
             }
+
+            val affectedSymbols = edit.edits.flatMap { it.calculateAffectedTypes() }
+            val editedTypes = affectedSymbols.filter { (kind, _) -> kind == SchemaMemberKind.TYPE }
+               .filter { (_,name) -> !BuiltInTypesProvider.isInternalNamespace(name.namespace) }
+               .map { (_,name) -> name }
+               .let { affectedTypeNames: List<QualifiedName> -> updatedTaxiSchema.types.filter { affectedTypeNames.contains(it.name) } }
+
+            val editedServices = affectedSymbols.filter { (kind, _) -> kind == SchemaMemberKind.SERVICE }
+               .filter { (_,name) -> !BuiltInTypesProvider.isInternalNamespace(name.namespace) }
+               .map { (_,name) -> name }
+               .let { affectedTypeNames: List<QualifiedName> -> updatedTaxiSchema.services.filter { affectedTypeNames.contains(it.name) } }
+
             val submissionResult = SchemaSubmissionResult(
-               updatedTaxiSchema.types,
-               updatedTaxiSchema.services,
+               editedTypes.toSet(),
+               editedServices.toSet(),
                compilationMessages,
                edit.dryRun,
                updatedSourcePackage,

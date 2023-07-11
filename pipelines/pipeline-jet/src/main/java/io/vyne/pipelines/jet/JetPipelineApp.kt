@@ -5,6 +5,8 @@ import com.hazelcast.config.Config
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.spring.context.SpringManagedContext
+import io.vyne.config.ConfigSourceLoader
+import io.vyne.config.FileConfigSourceLoader
 import io.vyne.connectors.VyneConnectionsConfig
 import io.vyne.monitoring.EnableCloudMetrics
 import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
@@ -13,6 +15,8 @@ import io.vyne.pipelines.jet.sink.PipelineSinkBuilder
 import io.vyne.pipelines.jet.sink.PipelineSinkProvider
 import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.pipelines.jet.source.PipelineSourceProvider
+import io.vyne.schema.consumer.SchemaChangedEventProvider
+import io.vyne.schema.consumer.SchemaConfigSourceLoader
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.config.ConditionallyLoadBalancedExchangeFilterFunction
@@ -95,15 +99,22 @@ class JetPipelineApp {
    @Bean
    fun pipelineRepository(
       config: PipelineConfig,
-      mapper: ObjectMapper
+      mapper: ObjectMapper,
+      schemaChangedEventProvider: SchemaChangedEventProvider
    ): PipelineRepository {
-      if (!Files.exists(config.pipelinePath)) {
-         logger.info { "Pipelines config path ${config.pipelinePath.toFile().canonicalPath} does not exist, creating" }
-         config.pipelinePath.toFile().mkdirs()
-      } else {
-         logger.info { "Using pipelines stored at ${config.pipelinePath.toFile().canonicalPath}" }
+
+      val loaders = mutableListOf<ConfigSourceLoader>()
+      if (config.pipelinePath != null) {
+         if (!Files.exists(config.pipelinePath)) {
+            logger.info { "Pipelines config path ${config.pipelinePath.toFile().canonicalPath} does not exist, creating" }
+            config.pipelinePath.toFile().mkdirs()
+         } else {
+            logger.info { "Using pipelines stored at ${config.pipelinePath.toFile().canonicalPath}" }
+         }
+         loaders.add(FileConfigSourceLoader(config.pipelinePath))
       }
-      return PipelineRepository(config.pipelinePath, mapper)
+      loaders.add(SchemaConfigSourceLoader(schemaChangedEventProvider, "*.conf", sourceType = "@orbital/pipelines"))
+      return PipelineRepository(loaders, mapper)
    }
 
    @Bean

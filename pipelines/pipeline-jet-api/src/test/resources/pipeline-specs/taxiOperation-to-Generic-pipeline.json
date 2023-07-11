@@ -9,6 +9,7 @@
       "searchStartDate" : "$LAST_POLL_TIME"
     }
   },
+  "transformation" : null,
   "outputs" : [ {
     "type" : "Generic",
     "direction" : "OUTPUT"

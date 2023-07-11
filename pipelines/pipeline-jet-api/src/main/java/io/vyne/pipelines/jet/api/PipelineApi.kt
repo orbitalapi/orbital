@@ -1,5 +1,6 @@
 package io.vyne.pipelines.jet.api
 
+import io.vyne.UriSafePackageIdentifier
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import org.springframework.web.bind.annotation.*
 import reactivefeign.spring.config.ReactiveFeignClient
@@ -12,14 +13,17 @@ import reactor.core.publisher.Mono
  */
 @ReactiveFeignClient("\${vyne.pipelinesJetRunner.name:pipeline-runner}", url = "\${vyne.pipelinesJetRunner.url:}")
 interface PipelineApi {
-   @PostMapping("/api/pipelines")
-   fun submitPipeline(@RequestBody pipelineSpec: PipelineSpec<*, *>): Mono<SubmittedPipeline>
+   @PostMapping("/api/pipelines/{packageIdentifier}")
+   fun submitPipeline(
+      @PathVariable("packageIdentifier") packageUri: UriSafePackageIdentifier,
+      @RequestBody pipelineSpec: PipelineSpec<*, *>
+   ): Mono<SubmittedPipeline>
 
    @GetMapping("/api/pipelines")
    fun getPipelines(): Mono<List<RunningPipelineSummary>>
 
    @GetMapping("/api/pipelines/{pipelineSpecId}")
-   fun getPipeline(@PathVariable("pipelineSpecId") pipelineSpecId:String):Mono<RunningPipelineSummary>;
+   fun getPipeline(@PathVariable("pipelineSpecId") pipelineSpecId: String): Mono<RunningPipelineSummary>;
 
    @DeleteMapping("/api/pipelines/{pipelineSpecId}")
    fun deletePipeline(@PathVariable("pipelineSpecId") pipelineSpecId: String): Mono<PipelineStatus>

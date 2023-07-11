@@ -2,8 +2,11 @@ package io.vyne.remote
 
 import io.vyne.VyneClient
 import io.vyne.VyneClientWithSchema
+import io.vyne.models.TypedInstance
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.Schema
+import lang.taxi.query.TaxiQLQueryString
+import lang.taxi.query.TaxiQlQuery
 import reactor.core.publisher.Flux
 
 /**
@@ -15,6 +18,14 @@ open class RemoteVyneClient(
 ) : VyneClient {
    override fun <T : Any> queryWithType(query: String, type: Class<T>): Flux<T> {
       return queryService.queryWithType(query, type)
+   }
+
+   override fun queryAsTypedInstance(query: TaxiQLQueryString): Flux<TypedInstance> {
+      TODO("Not implemented yet")
+   }
+
+   override fun compile(query: TaxiQLQueryString): TaxiQlQuery {
+      TODO("Not yet implemented")
    }
 }
 

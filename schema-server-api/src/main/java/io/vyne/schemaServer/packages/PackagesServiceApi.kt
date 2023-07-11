@@ -1,6 +1,7 @@
 package io.vyne.schemaServer.packages
 
 import io.vyne.PackageIdentifier
+import io.vyne.PackageMetadata
 import io.vyne.ParsedPackage
 import io.vyne.UriSafePackageIdentifier
 import io.vyne.schema.publisher.PublisherHealth
@@ -24,6 +25,10 @@ data class SourcePackageDescription(
    // TODO : Other things for visualisation
 ) {
    val uriPath: String = PackageIdentifier.toUriSafeId(identifier)
+
+   companion object {
+   }
+
 }
 
 
@@ -50,4 +55,28 @@ interface PackagesServiceApi {
 data class PackageWithDescription(
    val parsedPackage: ParsedPackage,
    val description: SourcePackageDescription
-)
+) {
+   companion object {
+      // for testing
+      fun empty(packageIdentifier: PackageIdentifier): PackageWithDescription {
+         return PackageWithDescription(
+            ParsedPackage(
+               PackageMetadata.from(packageIdentifier),
+               emptyList(),
+               emptyMap()
+            ),
+            SourcePackageDescription(
+               packageIdentifier,
+               PublisherHealth(PublisherHealth.Status.Healthy),
+               0,
+               0,
+               0,
+               PublisherType.FileSystem,
+               true,
+               null
+            )
+         )
+
+      }
+   }
+}

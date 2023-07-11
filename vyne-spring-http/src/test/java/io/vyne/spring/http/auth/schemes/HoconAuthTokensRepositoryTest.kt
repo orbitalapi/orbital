@@ -3,14 +3,14 @@ package io.vyne.spring.http.auth.schemes
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.vyne.VersionedSource
-import io.vyne.config.SimpleHoconLoader
+import io.vyne.config.SimpleConfigSourceLoader
 import org.junit.jupiter.api.Test
 
 class HoconAuthTokensRepositoryTest {
 
    @Test
    fun `when a token is defined with a wildcard then it is returned`() {
-      val loader = SimpleHoconLoader(
+      val loader = SimpleConfigSourceLoader(
          VersionedSource(
             "auth.conf",
             "1.0.0",

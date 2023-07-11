@@ -3,7 +3,9 @@ package io.vyne.schema.publisher
 import arrow.core.Either
 import arrow.core.right
 import io.vyne.PackageIdentifier
+import io.vyne.PackageMetadata
 import io.vyne.SourcePackage
+import io.vyne.VersionedSource
 import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.Ids
@@ -46,10 +48,10 @@ interface SchemaPublisherTransport {
       )
    }
 
-//   fun submitSchemas(
-//      packageMetadata: PackageMetadata,
-//      versionedSources: List<VersionedSource>
-//   ): Either<CompilationException, Schema> = submitPackage(SourcePackage(packageMetadata, versionedSources))
+   fun submitSchemas(
+      packageMetadata: PackageMetadata,
+      versionedSources: List<VersionedSource>
+   ): Either<CompilationException, Schema> = submitPackage(SourcePackage(packageMetadata, versionedSources))
 
    fun submitMonitoredPackage(submission: KeepAlivePackageSubmission): Either<CompilationException, Schema>
    fun submitPackage(submission: SourcePackage): Either<CompilationException, Schema>

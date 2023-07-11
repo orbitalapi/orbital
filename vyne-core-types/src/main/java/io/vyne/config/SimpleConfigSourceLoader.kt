@@ -9,10 +9,10 @@ import reactor.core.publisher.Flux
 /**
  * Used for testing mainly
  */
-class SimpleHoconLoader(
+class SimpleConfigSourceLoader(
    private val sources: List<VersionedSource>,
    packageIdentifier: PackageIdentifier = PackageIdentifier.fromId("test/test/1.0.0")
-) : HoconLoader {
+) : ConfigSourceLoader {
    constructor(source: VersionedSource) : this(listOf(source))
 
    private val sourcePackage = SourcePackage(
@@ -25,5 +25,5 @@ class SimpleHoconLoader(
       return listOf(sourcePackage)
    }
 
-   override val contentUpdated: Flux<Class<out HoconLoader>> = Flux.never()
+   override val contentUpdated: Flux<Class<out ConfigSourceLoader>> = Flux.never()
 }

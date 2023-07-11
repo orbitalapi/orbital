@@ -65,7 +65,7 @@ class KafkaTopicImporterTest : BaseSchemaConverterServiceTest() {
       val importer = KafkaTopicImporter(schemaProvider)
       val converterService = createConverterService(importer, schemaProvider = schemaProvider)
 
-      val result = converterService.import(
+      val result = converterService.preview(
          SchemaConversionRequest(
             KafkaTopicImporter.SUPPORTED_FORMAT,
             KafkaTopicConverterOptions(
@@ -73,7 +73,7 @@ class KafkaTopicImporterTest : BaseSchemaConverterServiceTest() {
                "my-topic",
                KafkaConnectorTaxi.Annotations.KafkaOperation.Offset.EARLIEST,
                "Person".fqn(),
-               "io.vyne.test.kafka",
+               "io.foo.test.kafka",
             ), packageIdentifier = PackageIdentifier.fromId("foo/test/1.0.0")
          )
       ).block()

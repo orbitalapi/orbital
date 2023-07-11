@@ -11,9 +11,9 @@ import {
   splitOperationQualifiedName,
   Type
 } from '../../services/schema';
-import { AppendLinksHandler, NodeType, SchemaMemberClickHandler } from './schema-flow.react';
-import { Edge, Node, Position, XYPosition } from 'reactflow';
-import { CSSProperties } from 'react';
+import {AppendLinksHandler, NodeType, SchemaMemberClickHandler} from './schema-flow.react';
+import {Edge, Node, Position, XYPosition} from 'reactflow';
+import {CSSProperties} from 'react';
 
 export function getNodeKind(member: SchemaMember): NodeType {
   if (member.kind === 'TYPE') {
@@ -84,7 +84,8 @@ function buildModelLinks(type: Type, schema: Schema, operations: ServiceMember[]
   const attributeLinks: { [key: string]: Links } = {};
   Object.keys(type.attributes).map(fieldName => {
     const fieldType = type.attributes[fieldName].type;
-    attributeLinks[fieldName] = buildLinksForType(fieldType, schema, operations, {
+    const fieldTypeName = arrayMemberTypeNameOrTypeNameFromName(fieldType);
+    attributeLinks[fieldName] = buildLinksForType(fieldTypeName, schema, operations, {
       name: type.name,
       nodeId: thisNodeId,
       field: fieldName
@@ -190,9 +191,9 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
         return false;
       }
       // ... or the parent type
-      if (typeInSchema.name.fullyQualifiedName === parent?.name?.fullyQualifiedName) {
-        return false;
-      }
+      // if (typeInSchema.name.fullyQualifiedName === parent?.name?.fullyQualifiedName) {
+      //   return false;
+      // }
       return true;
     })
     .forEach(typeInSchema => {
@@ -201,7 +202,14 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
         const fieldTypeName = arrayMemberTypeNameOrTypeNameFromName(field.type);
         if (fieldTypeName.fullyQualifiedName === typeName.fullyQualifiedName) {
           const link = {
-            ...source,
+            // Always link model types consistently.
+            // Source = The Type.
+            // Target = A field on another type.
+            sourceNodeId: typeNodeId,
+            sourceNodeName: typeName,
+            sourceHandleId: HandleIds.modelOutbound(typeName),
+            sourceMemberType: 'TYPE' as SchemaMemberKind,
+            inverseSourceHandleId: HandleIds.modelInbound(typeName),
 
             targetNodeId: getNodeId('TYPE', typeInSchema.name),
             targetNodeName: typeInSchema.name,

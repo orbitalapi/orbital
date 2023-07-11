@@ -10,7 +10,17 @@ import io.vyne.schemas.Schema
 
 interface PipelineSinkBuilder<O : PipelineTransportSpec, TSinkType> {
    fun canSupport(pipelineTransportSpec: PipelineTransportSpec): Boolean
-   fun getRequiredType(pipelineTransportSpec: O, schema: Schema): QualifiedName
+
+   /**
+    * Defines the target type.
+    * Sinks can return null here to indicate that they'll inherit the type upstream,
+    * from the transformation stage.
+    *
+    * This allows transformations to emit anonymous types.
+    *
+    * If null is returned here, then there must be a transformation stage defined.
+    */
+   fun getRequiredType(pipelineTransportSpec: O, schema: Schema): QualifiedName?
    fun build(pipelineId: String, pipelineName: String, pipelineTransportSpec: O): Sink<TSinkType>
 }
 

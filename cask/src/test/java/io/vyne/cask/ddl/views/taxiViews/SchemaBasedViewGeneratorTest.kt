@@ -12,7 +12,7 @@ import io.vyne.cask.ddl.views.taxiViews.TestSchemas.viewWithConstraints
 import io.vyne.cask.ddl.views.taxiViews.TestSchemas.viewWithMultipleConstraints
 import io.vyne.from
 import io.vyne.schema.api.SchemaSet
-import io.vyne.schemaStore.SimpleSchemaStore
+import io.vyne.schema.consumer.SimpleSchemaStore
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.toParsedPackages
