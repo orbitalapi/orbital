@@ -12,6 +12,9 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.*
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
+import io.vyne.connectors.config.ConnectionsConfig
+import io.vyne.connectors.config.IConnectionsConfig
+import io.vyne.connectors.config.MutableConnectionsConfig
 import io.vyne.connectors.config.jdbc.JdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.connectors.kafka.registry.InMemoryKafkaConnectorRegistry
@@ -62,6 +65,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
    val pipelineSourceProvider = PipelineSourceProvider.default(kafkaConnectionRegistry)
    val pipelineSinkProvider = PipelineSinkProvider.default(kafkaConnectionRegistry, awsConnectionRegistry)
    val meterRegistry = SimpleMeterRegistry()
+   val connectionConfig = MutableConnectionsConfig()
 
    fun jetWithSpringAndVyne(
        schema: String,
@@ -87,6 +91,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       springApplicationContext.registerBean(Schema::class.java, Supplier { vyne.schema })
       springApplicationContext.registerBean(SimpleSchemaStore::class.java, SchemaSet.from(vyne.schema, 1))
       springApplicationContext.register(EmbeddedVyneClientWithSchema::class.java)
+      springApplicationContext.register( MutableConnectionsConfig::class.java)
       springApplicationContext.registerBean(
          "jdbcConnectionRegistry",
          InMemoryJdbcConnectionRegistry::class.java,

@@ -336,6 +336,17 @@
          <artifactId>kotlinx-serialization-core-jvm</artifactId>
          <version>${kotlin.serialization.version}</version>
       </dependency>
+
+
+      <!-- GCP support -->
+      <dependency>
+         <groupId>com.google.cloud</groupId>
+         <artifactId>google-cloud-storage</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.google.cloud</groupId>
+         <artifactId>google-cloud-pubsub</artifactId>
+      </dependency>
    </dependencies>
 
 
@@ -345,6 +356,13 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>bom</artifactId>
             <version>2.20.8</version>
+            <type>pom</type>
+            <scope>import</scope>
+         </dependency>
+         <dependency>
+            <groupId>com.google.cloud</groupId>
+            <artifactId>libraries-bom</artifactId>
+            <version>26.18.0</version>
             <type>pom</type>
             <scope>import</scope>
          </dependency>

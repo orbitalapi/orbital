@@ -3,6 +3,7 @@ package io.vyne.pipelines.jet.source
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
+import io.vyne.pipelines.jet.api.transport.gcp.pubsub.GcpStoragePubSubTransport
 import io.vyne.pipelines.jet.source.aws.s3.S3SourceBuilder
 import io.vyne.pipelines.jet.source.aws.sqss3.SqsS3SourceBuilder
 import io.vyne.pipelines.jet.source.file.FileWatcherStreamSourceBuilder
@@ -10,6 +11,7 @@ import io.vyne.pipelines.jet.source.fixed.BatchSourceBuilder
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceBuilder
 import io.vyne.pipelines.jet.source.fixed.ItemStreamSourceBuilder
 import io.vyne.pipelines.jet.source.fixed.ScheduledSourceBuilder
+import io.vyne.pipelines.jet.source.gcp.pubsub.GcpStoragePubSubSourceBuilder
 import io.vyne.pipelines.jet.source.http.poll.PollingTaxiOperationSourceBuilder
 import io.vyne.pipelines.jet.source.kafka.KafkaSourceBuilder
 import io.vyne.pipelines.jet.source.query.PollingQuerySourceBuilder
@@ -42,7 +44,8 @@ class PipelineSourceProvider(
                SqsS3SourceBuilder(),
                KafkaSourceBuilder(kafkaConnectionRegistry),
                PollingQuerySourceBuilder(),
-               FileWatcherStreamSourceBuilder()
+               FileWatcherStreamSourceBuilder(),
+               GcpStoragePubSubSourceBuilder(),
             )
          )
       }

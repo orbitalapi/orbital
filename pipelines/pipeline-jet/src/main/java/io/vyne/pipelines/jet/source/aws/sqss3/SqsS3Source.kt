@@ -5,6 +5,7 @@ import com.hazelcast.jet.pipeline.BatchSource
 import com.hazelcast.jet.pipeline.SourceBuilder
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
+import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
@@ -13,7 +14,6 @@ import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.csv.CsvFormatSpecAnnotation
 import io.vyne.models.format.FormatDetector
 import io.vyne.pipelines.jet.api.transport.*
-import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.pipelines.jet.source.PipelineSourceType
 import io.vyne.schemas.QualifiedName
@@ -201,7 +201,7 @@ class PollingSqsOperationSourceContext(
       }
    }
 
-   fun doWork() {
+   private fun doWork() {
       val sqsClient = createSqsClient()
       val s3EventNotificationAndSqsReceiptHandler = fetchSqsMessages(sqsClient)
       if (s3EventNotificationAndSqsReceiptHandler == null) {

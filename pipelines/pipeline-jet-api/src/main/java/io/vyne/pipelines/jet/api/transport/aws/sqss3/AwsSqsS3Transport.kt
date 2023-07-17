@@ -27,7 +27,7 @@ object AwsSqsS3Transport {
    maturity = Maturity.BETA
 )
 open class AwsSqsS3TransportInputSpec(
-   @PipelineParam("The name of the connection, as registered in Vyne's connection manager")
+   @PipelineParam("The name of the connection, as registered in Orbital's connection manager")
    val connection: String,
    @PipelineParam("The name of the type that content from the S3 bucket should be consumed as")
    val targetTypeName: String,

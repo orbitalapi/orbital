@@ -81,6 +81,7 @@ import {AppInfoService, QueryServiceConfig} from 'src/app/services/app-info.serv
     </button>
     <mat-menu #moreOptionsMenu='matMenu'>
       <button mat-menu-item (click)="publishAsHttpEndpoint.emit()" [disabled]="!publishAsHttpEndpointEnabled">Publish query as HTTP endpoint</button>
+      <button mat-menu-item [disabled]="!publishAsHttpEndpointEnabled">Deploy as data pipeline</button>
     </mat-menu>
   `,
   styleUrls: ['./bottom-bar.component.scss']
