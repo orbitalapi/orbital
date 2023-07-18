@@ -8,6 +8,7 @@ import lang.taxi.packages.GlobPattern
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.isDirectory
@@ -21,7 +22,8 @@ class FileConfigSourceLoader(
    /**
     * Optionally pass a glob pattern if configFilePath is a directory
     */
-   private val glob: GlobPattern? = null
+   private val glob: GlobPattern? = null,
+   private val failIfNotFound: Boolean = true
 
 ) : ConfigSourceLoader, ConfigSourceWriter {
 
@@ -51,16 +53,26 @@ class FileConfigSourceLoader(
 
    override fun saveConfig(config: Config) {
       val configWithPlaceholderQuotesRemoved = config.getSafeConfigString()
-      writeText(configWithPlaceholderQuotesRemoved)
+      require(configFilePath.isRegularFile()) { "Expected the configured file path to be a file, but found a directory at $configFilePath" }
+      writeText(configFilePath, configWithPlaceholderQuotesRemoved)
    }
 
    override fun save(source: VersionedSource) {
-      require(source.name == configFilePath.toFile().name) { "This writer can only write to ${configFilePath.fileName}" }
-      writeText(source.content)
+      val path = if (glob == null) {
+         require(source.name == configFilePath.toFile().name) { "This writer can only write to ${configFilePath.fileName}" }
+         configFilePath
+      } else {
+         require(configFilePath.isDirectory()) { "When writing source with a glob pattern, the provided path is expected to be a directory" }
+         configFilePath.resolve(source.name)
+      }
+
+
+      writeText(path, source.content)
    }
 
-   private fun writeText(text: String) {
-      configFilePath.toFile().writeText(text)
+   private fun writeText(path: Path, text: String) {
+      logger.info { "Saving updated config to $path and invalidating caches" }
+      path.toFile().writeText(text)
       contentCache.remove(CacheKey)
 
       // Race condition prevention.
@@ -89,10 +101,20 @@ class FileConfigSourceLoader(
    }
 
    private fun getSources(configFilePath: Path): List<VersionedSource> {
+      if (!Files.exists(configFilePath)) {
+         if (failIfNotFound) {
+            throw kotlin.io.NoSuchFileException(configFilePath.toFile())
+         } else {
+            logger.info { "No file found at $configFilePath.  Will ignore this source." }
+            return emptyList()
+         }
+      }
+
 
       return if (configFilePath.isDirectory()) {
-         val result = PathGlob(configFilePath, glob ?: "*.*").mapEachDirectoryEntry { path -> loadVersionedSource(path) }
-            .values.toList()
+         val result =
+            PathGlob(configFilePath, glob ?: "*.*").mapEachDirectoryEntry { path -> loadVersionedSource(path) }
+               .values.toList()
          result
       } else {
          listOf(loadVersionedSource(configFilePath))

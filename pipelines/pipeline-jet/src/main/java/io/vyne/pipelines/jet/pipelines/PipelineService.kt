@@ -4,41 +4,69 @@ import io.vyne.PackageIdentifier
 import io.vyne.UriSafePackageIdentifier
 import io.vyne.pipelines.jet.api.*
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
-import io.vyne.schema.consumer.SchemaChangedEventProvider
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.taxi.TaxiSchema
 import jakarta.annotation.PostConstruct
 import mu.KotlinLogging
 import org.springframework.web.bind.annotation.*
-import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 @RestController
 class PipelineService(
    private val pipelineManager: PipelineManager,
-   private val pipelineRepository: PipelineRepository,
-   private val schemaStore: SchemaChangedEventProvider,
+   private val pipelineRepository: PipelineConfigRepository,
+   private val schemaStore: SchemaStore,
 ) : PipelineApi {
 
    private val logger = KotlinLogging.logger {}
 
+   init {
+//      Flux.from(schemaStore.schemaChanged).subscribe { schemaChangedEvent ->
+//         val pipelines = pipelineRepository.loadPipelines()
+//         val schema = schemaChangedEvent.newSchemaSet.schema.asTaxiSchema()
+//         checkReceivedTypesForPipelinesAndStartAppropriateOnes(
+//            pipelines,
+//            schema
+//         )
+//      }
+//
+      pipelineRepository.configUpdated.subscribe {
+         logger.info { "Pipeline sources have changed, resubmitting pipelines" }
+         loadAndSubmitPipelines()
+      }
+
+      logger.info { "Triggering load of pipelines on startup" }
+      loadAndSubmitPipelines()
+
+   }
+
+   private fun loadAndSubmitPipelines() {
+      val pipelines = pipelineRepository.loadPipelines()
+      val schema = schemaStore.schema().asTaxiSchema()
+      checkReceivedTypesForPipelinesAndStartAppropriateOnes(
+         pipelines,
+         schema
+      )
+   }
+
    @PostConstruct
    fun loadAndSubmitExistingPipelines() {
-      var remainingPipelines = pipelineRepository.loadPipelines()
-      Flux.from(schemaStore.schemaChanged)
-         .subscribe { schemaChangedEvent ->
-            val schema = schemaChangedEvent.newSchemaSet.schema.asTaxiSchema()
-            remainingPipelines = checkReceivedTypesForPipelinesAndStartAppropriateOnes(
-               remainingPipelines,
-               schema
-            )
 
-            // Load the pipelines from the schema
-            val pipelineSourcePackages = schema.additionalSources["@orbital/pipelines"] ?: emptyList()
-            val sources = pipelineSourcePackages.flatMap { it.sources }
-            val pipelines = pipelineRepository.loadPipelines(sources)
-            logger.info { "The schema contains ${sources.size} files containing pipeline definitions, which generated ${pipelines.size} pipelines" }
-            checkReceivedTypesForPipelinesAndStartAppropriateOnes(pipelines, schema)
-         }
+//      Flux.from(schemaStore.schemaChanged)
+//         .subscribe { schemaChangedEvent ->
+//            val schema = schemaChangedEvent.newSchemaSet.schema.asTaxiSchema()
+//            remainingPipelines = checkReceivedTypesForPipelinesAndStartAppropriateOnes(
+//               remainingPipelines,
+//               schema
+//            )
+//
+//             Load the pipelines from the schema
+//            val pipelineSourcePackages = schema.additionalSources["@orbital/pipelines"] ?: emptyList()
+//            val sources = pipelineSourcePackages.flatMap { it.sources }
+//            val pipelines = pipelineRepository.loadPipelines(sources)
+//            logger.info { "The schema contains ${sources.size} files containing pipeline definitions, which generated ${pipelines.size} pipelines" }
+//            checkReceivedTypesForPipelinesAndStartAppropriateOnes(pipelines, schema)
+//         }
    }
 
    private fun checkReceivedTypesForPipelinesAndStartAppropriateOnes(
@@ -110,11 +138,12 @@ class PipelineService(
    @DeleteMapping("/api/pipelines/{pipelineId}")
    override fun deletePipeline(@PathVariable("pipelineId") pipelineSpecId: String): Mono<PipelineStatus> {
       val status = pipelineManager.terminatePipeline(pipelineSpecId)
-      if (status.status != JobStatus.RUNNING && status.status != JobStatus.SCHEDULED) {
-         val pipeline = pipelineManager.getPipeline(pipelineSpecId)
-         pipelineRepository.deletePipeline(pipeline.pipeline!!.spec)
-      }
-      return Mono.just(status)
+      TODO("Deleting pipelines not supported whilst we migrate to using schema loaders")
+//      if (status.status != JobStatus.RUNNING && status.status != JobStatus.SCHEDULED) {
+//         val pipeline = pipelineManager.getPipeline(pipelineSpecId)
+//         pipelineRepository.deletePipeline(pipeline.pipeline!!.spec)
+//      }
+//      return Mono.just(status)
    }
 
 }

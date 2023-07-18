@@ -16,21 +16,25 @@ import io.vyne.connectors.kafka.registry.KafkaConfigFileConnectorRegistry
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
 import io.vyne.schema.consumer.SchemaConfigSourceLoader
 import io.vyne.schema.consumer.SchemaStore
+import io.vyne.spring.config.EnvVariablesConfig
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
-@EnableConfigurationProperties(VyneConnectionsConfig::class)
+@EnableConfigurationProperties(VyneConnectionsConfig::class, EnvVariablesConfig::class)
 class ConnectionsConfiguration {
 
    @Bean
    fun configFileConnectorsRegistry(
       config: VyneConnectionsConfig,
-      schemaStore: SchemaStore
+      schemaStore: SchemaStore,
+      envVariablesConfig: EnvVariablesConfig
    ): ConfigFileConnectorsRegistry {
       return ConfigFileConnectorsRegistry(
          listOf(
+            FileConfigSourceLoader(envVariablesConfig.envVariablesPath, failIfNotFound = false),
+            SchemaConfigSourceLoader(schemaStore, "env.conf"),
             FileConfigSourceLoader(config.configFile),
             SchemaConfigSourceLoader(schemaStore, "connections.conf")
          )

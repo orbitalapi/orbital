@@ -13,12 +13,14 @@ import io.vyne.config.*
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import mu.KotlinLogging
 import org.apache.commons.io.FilenameUtils
+import reactor.core.publisher.Flux
 import java.nio.file.Path
 
 /**
  * Loads pipeline definitions from disk.
  *
  */
+@Deprecated("Replaced by PipelineConfigRepository")
 class PipelineRepository(
    private val loaders: List<ConfigSourceLoader>,
    private val mapper: ObjectMapper,
@@ -28,6 +30,13 @@ class PipelineRepository(
       listOf(FileConfigSourceLoader(path)),
       mapper
    )
+
+   val sourcesChanged: Flux<Class<out ConfigSourceLoader>>
+
+   init {
+      val triggers = loaders.map { it.contentUpdated }
+      sourcesChanged = Flux.concat(triggers)
+   }
 
    private val logger = KotlinLogging.logger {}
 
@@ -77,26 +86,6 @@ class PipelineRepository(
             null
          }
       }
-   }
-
-   private fun loadPipelineSpecs(pipelineSpecPath: Path): List<PipelineSpec<*, *>> {
-      val sources = pipelineSpecPath
-         .toFile()
-         .walk()
-         .filter { it.name.endsWith(".pipeline.json") || it.name.endsWith(".conf") }
-         .mapNotNull { file ->
-            try {
-               VersionedSource(
-                  name = file.canonicalPath,
-                  version = VersionedSource.DEFAULT_VERSION.toString(),
-                  file.readText()
-               )
-            } catch (e: Exception) {
-               logger.error { "Failed to read pipeline spec at ${file.canonicalPath}: ${e.message}." }
-               null
-            }
-         }.toList()
-      return loadPipelines(sources)
    }
 
    fun save(packageIdentifier: PackageIdentifier, pipelineSpec: PipelineSpec<*, *>) {

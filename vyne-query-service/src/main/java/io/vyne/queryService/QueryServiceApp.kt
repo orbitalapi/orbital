@@ -80,7 +80,8 @@ import java.util.concurrent.TimeUnit
    VyneSpringProjectionConfiguration::class,
    VyneSpringHazelcastConfiguration::class,
    VyneUserConfig::class,
-   FeatureTogglesConfig::class
+   FeatureTogglesConfig::class,
+   EnvVariablesConfig::class
 )
 @Import(
    HttpAuthConfig::class,

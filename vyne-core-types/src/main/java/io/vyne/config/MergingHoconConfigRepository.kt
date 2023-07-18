@@ -9,6 +9,7 @@ import com.typesafe.config.ConfigResolveOptions
 import io.vyne.SourcePackage
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
 
 
 /**
@@ -26,6 +27,11 @@ abstract class MergingHoconConfigRepository<T : Any>(
 ) : HoconConfigRepository<T> {
    abstract fun extract(config: Config): T
 
+   private val loaderTypeName: String = this::class.java.name
+   private val configUpdatedSink = Sinks.many().multicast().directBestEffort<T>()
+
+   val configUpdated = configUpdatedSink.asFlux()
+
    companion object {
       private object CacheKey
 
@@ -36,6 +42,8 @@ abstract class MergingHoconConfigRepository<T : Any>(
       return configCache[CacheKey]
    }
 
+   protected fun invalidateCache() = configCache.invalidateAll()
+
    /**
     * A cache of loaded, merged config.
     */
@@ -45,21 +53,22 @@ abstract class MergingHoconConfigRepository<T : Any>(
             val loadedSources = loaders.flatMap { it.load() }
                .filter { it.sources.isNotEmpty() }
             return if (loadedSources.isEmpty()) {
-               logger.info { "(${this::class.simpleName}) - Loaders returned no config sources, so starting with an empty one." }
+               logger.info { "($loaderTypeName) - Loaders returned no config sources, so starting with an empty one." }
                emptyConfig()
             } else {
-               logger.info { "(${this::class.simpleName}) - Loading config files returned ${loadedSources.size} sources" }
-               val loadedConfigs = loadedSources.map { sourcePackage: SourcePackage ->
-                  val rawConfig = readRawHoconSource(sourcePackage)
+               logger.info { "($loaderTypeName) - Loading config files returned ${loadedSources.size} sources" }
+               val mergedConfig = loadedSources.map { sourcePackage: SourcePackage ->
+                  val hoconSource = readRawHoconSource(sourcePackage)
                   try {
-                     readConfig(rawConfig, fallback)
+                     readConfig(hoconSource, fallback)
                   } catch (e: Exception) {
-                     logger.error(e) { "(${this::class.simpleName}) - Parsing the config from source package ${sourcePackage.packageMetadata.identifier.id} failed: ${e.message}" }
+                     logger.error(e) { "($loaderTypeName) - Parsing the config from source package ${sourcePackage.packageMetadata.identifier.id} failed: ${e.message}" }
                      throw e
                   }
-
-               }
-               val mergedConfig = mergeConfigs(loadedConfigs)
+               }.reduce { acc, config ->
+                  // when merging, "config" values beat "acc" values.
+                  config.withFallback(acc)
+               }.resolve()
                extract(mergedConfig)
             }
          }
@@ -78,26 +87,23 @@ abstract class MergingHoconConfigRepository<T : Any>(
          .resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
    }
 
-   protected fun readConfig(rawConfig: String, fallback: Config): Config =
+   protected open fun readConfig(rawConfig: String, fallback: Config): Config =
       ConfigFactory
          .parseString(rawConfig, ConfigParseOptions.defaults())
          .resolveWith(fallback, ConfigResolveOptions.defaults().setAllowUnresolved(true))
 
-   private fun mergeConfigs(loadedConfigs: List<Config>): Config {
-      return loadedConfigs.reduce { acc, config -> acc.withFallback(config) }
-   }
 
    init {
       val allFluxes = loaders.map { it.contentUpdated }
       Flux.merge(allFluxes).subscribe {
-         logger.info { "(${this::class.simpleName}) - Loader ${it.simpleName} indicates sources have changed. Invalidating caches" }
+         logger.info { "($loaderTypeName) - Loader ${it.simpleName} indicates sources have changed. Invalidating caches" }
          configCache.invalidateAll()
          configCache.cleanUp()
          // Design choice:  Immediately reload the config, so that we get notified early if the config is invalid.
-         typedConfig()
+         configUpdatedSink.emitNext(typedConfig(), Sinks.EmitFailureHandler.FAIL_FAST)
       }
       // Design choice:  Immediately reload the config, so that we get notified early if the config is invalid.
       typedConfig()
-
    }
+
 }
