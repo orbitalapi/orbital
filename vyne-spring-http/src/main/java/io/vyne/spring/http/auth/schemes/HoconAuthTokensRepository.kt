@@ -71,7 +71,7 @@ class HoconAuthTokensRepository(
    }
 
    override fun getAllTokens(): AuthTokens {
-      TODO("Not yet implemented")
+      return typedConfig()
    }
 
    override fun listPackages(): List<PackageIdentifier> {
@@ -88,16 +88,9 @@ class HoconAuthTokensRepository(
    }
 
    private fun getWildcardMatch(serviceName: String): AuthScheme? {
-      val authTokens = typedConfig()
-      val keysWithWildcards = authTokens.authenticationTokens.keys
-         .filter { it.contains("*") }
-         .asSequence()
-         .firstOrNull { tokenServiceNameWildcard -> tokenServiceNameWildcard.toRegex().matches(serviceName) }
-
-      return keysWithWildcards?.let { key -> authTokens.authenticationTokens[key] }
-
+      return getWildcardMatch(serviceName, typedConfig())
    }
-
-
 }
+
+
 

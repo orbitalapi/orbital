@@ -2,6 +2,7 @@ package io.vyne.query.runtime.core.dispatcher.aws.sqs
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.vyne.auth.schemes.AuthSchemeRepository
 import io.vyne.auth.tokens.AuthTokenRepository
 import io.vyne.connectors.config.ConfigFileConnectorsRegistry
 import io.vyne.http.ServicesConfigRepository
@@ -32,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 class AwsSqsQueryDispatcher(
    private val servicesRepository: ServicesConfigRepository,
-   private val authTokenRepository: AuthTokenRepository,
+   private val authTokenRepository: AuthSchemeRepository,
    private val connectionsConfigProvider: ConfigFileConnectorsRegistry,
    private val schemaProvider: SchemaProvider,
    private val sqsClient: SqsAsyncClient,

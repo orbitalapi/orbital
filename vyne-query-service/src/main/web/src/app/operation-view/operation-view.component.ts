@@ -21,7 +21,7 @@ import {methodClassFromName} from 'src/app/service-view/service-view-class-utils
               <a [routerLink]="['/services',operationSummary?.serviceName]">{{operationSummary?.serviceName}}</a>
             </span>
           <span class="separator-slash">/</span>
-          <span class="mono-badge">{{operation?.name}}</span>
+          <span class="mono-badge">{{operationSummary?.name}}</span>
         </div>
 
       </div>

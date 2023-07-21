@@ -3,6 +3,7 @@ package io.vyne.query.runtime.core.gateway
 import com.jayway.awaitility.Awaitility
 import com.nhaarman.mockito_kotlin.*
 import io.kotest.matchers.shouldBe
+import io.vyne.models.json.parseJson
 import io.vyne.schema.consumer.SimpleSchemaStore
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
@@ -19,16 +20,17 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.returnResult
+import org.springframework.web.reactive.function.BodyInserters
 import reactor.core.publisher.Flux
 import java.util.concurrent.TimeUnit
 
 //@SpringBootTest
 @RunWith(SpringRunner::class)
-//@WebFluxTest(QueryRequestHandler::class)
 @SpringBootTest(
    classes = [QueryRequestHandlerTest.TestConfig::class],
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-   properties = ["spring.main.web-application-type=reactive",
+   properties = [
+      "spring.main.web-application-type=reactive",
    ]
 )
 @Ignore("Can't work out how to get this to work")
@@ -86,6 +88,58 @@ class QueryRequestHandlerTest {
       }
    }
 
+   @Test
+   fun `can send json in payload and project`() {
+      schemaStore.setSchema(
+         TaxiSchema.from(
+            """
+
+         model Film {
+            id : FilmId inherits Int
+            title : FilmTitle inherits String
+         }
+
+         type FilmRating inherits String
+
+         model FilmInputFeed {
+            id: FilmId
+            rating: FilmRating
+         }
+
+
+         service Films {
+            operation findFilm(FilmId):Film
+         }
+
+         @HttpOperation( method = "POST" , url = "/films" )
+         query FindFilm( @RequestBody input : FilmInputFeed[] )
+            find {
+              id: FilmId
+              rating: FilmRating
+              title: FilmTitle
+             }[]
+         }
+      """.trimIndent()
+         )
+      )
+      val (vyne, stub) = testVyne(schemaStore.schemaSet.schema.asTaxiSchema())
+      stub.addResponse("findFilm", vyne.parseJson("Film", """{ "id" : 123 , "title" : "Star Wars"  }"""))
+
+      Awaitility.await().atMost(2, TimeUnit.SECONDS).until<Boolean> { handler.routes.isNotEmpty() }
+
+      val result = webClient.post()
+         .uri("/films/123")
+         .contentType(MediaType.APPLICATION_JSON)
+         .body(BodyInserters.fromValue("""[ { "id" : 123, "rating" : "G" } , {  "id" : 345, "rating" : "PG"} ]"""))
+         .accept(MediaType.APPLICATION_JSON)
+         .exchange()
+         .expectStatus().isOk
+         .returnResult<Map<String, Any>>()
+
+      val responseBody = result.responseBody.blockLast()
+      TODO()
+   }
+
 
    @SpringBootApplication
    @TestConfiguration
@@ -93,9 +147,9 @@ class QueryRequestHandlerTest {
    class TestConfig {
 
       @Bean
-      fun queryExecutor():RoutedQueryExecutor {
-         val executor= mock<RoutedQueryExecutor> {
-            on { handleRoutedQuery(any())} doReturn Flux.just("Hello")
+      fun queryExecutor(): RoutedQueryExecutor {
+         val executor = mock<RoutedQueryExecutor> {
+            on { handleRoutedQuery(any()) } doReturn Flux.just("Hello")
          }
          return executor
       }

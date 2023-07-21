@@ -4,6 +4,7 @@ import io.vyne.schema.consumer.rsocket.RSocketSchemaStore
 import io.vyne.schema.rsocket.CBORJackson
 import io.vyne.schema.rsocket.SchemaServerRSocketFactory
 import io.vyne.schema.spring.config.RSocketTransportConfig
+import io.vyne.schemas.readers.SourceConverterRegistry
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -14,10 +15,14 @@ import org.springframework.context.annotation.Import
 @Import(RSocketTransportConfig::class)
 class VyneRSocketSchemaStoreConfig {
    @Bean
-   fun rsocketSchemaStore(rsocketFactory: SchemaServerRSocketFactory): RSocketSchemaStore {
+   fun rsocketSchemaStore(
+      rsocketFactory: SchemaServerRSocketFactory,
+      sourceConverterRegistry: SourceConverterRegistry
+   ): RSocketSchemaStore {
       return RSocketSchemaStore(
-          rsocketFactory,
-          CBORJackson.defaultMapper
+         rsocketFactory,
+         CBORJackson.defaultMapper,
+         sourceConverterRegistry
       )
    }
 }

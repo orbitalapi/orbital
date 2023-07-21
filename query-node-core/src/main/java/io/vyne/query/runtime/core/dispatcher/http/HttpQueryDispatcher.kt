@@ -1,5 +1,6 @@
 package io.vyne.query.runtime.core.dispatcher.http
 
+import io.vyne.auth.schemes.AuthSchemeRepository
 import io.vyne.auth.tokens.AuthTokenRepository
 import io.vyne.connectors.config.ConfigFileConnectorsRegistry
 import io.vyne.http.ServicesConfigRepository
@@ -32,7 +33,7 @@ import reactor.kotlin.core.publisher.toFlux
 class HttpQueryDispatcher(
    private val webClient: WebClient.Builder,
    private val servicesRepository: ServicesConfigRepository,
-   private val authTokenRepository: AuthTokenRepository,
+   private val authTokenRepository: AuthSchemeRepository,
    private val connectionsConfigProvider: ConfigFileConnectorsRegistry,
    private val schemaProvider: SchemaProvider,
    @Value("\${vyne.dispatcher.http.url}") private val queryRouterUrl: String

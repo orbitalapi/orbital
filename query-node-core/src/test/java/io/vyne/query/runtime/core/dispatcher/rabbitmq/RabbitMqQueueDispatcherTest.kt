@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.rabbitmq.client.Address
 import com.rabbitmq.client.ConnectionFactory
 import io.kotest.matchers.shouldBe
+import io.vyne.auth.schemes.EmptyAuthSchemeRepository
 import io.vyne.connectors.config.ConfigFileConnectorsRegistry
 import io.vyne.http.ServicesConfigRepository
 import io.vyne.models.json.Jackson
@@ -200,7 +201,7 @@ class RabbitMqQueueDispatcherTest {
          rabbitSender,
          rabbitReceiver,
          ServicesConfigRepository(configRoot!!.root.resolve("services.conf").toPath()),
-         EmptyAuthTokenRepository,
+         EmptyAuthSchemeRepository,
          ConfigFileConnectorsRegistry(configRoot!!.root.resolve("connections.conf").toPath()),
          schemaProvider,
       )

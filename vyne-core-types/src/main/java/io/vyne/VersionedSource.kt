@@ -9,6 +9,8 @@ import lang.taxi.CompilationError
 import lang.taxi.errors
 import lang.taxi.packages.TaxiPackageSources
 import lang.taxi.sources.SourceCode
+import lang.taxi.sources.SourceCodeLanguage
+import lang.taxi.sources.SourceCodeLanguages
 import java.io.Serializable
 import java.time.Instant
 
@@ -23,23 +25,32 @@ data class PackageSourceName(
    val packageQualifiedName = VersionedSource.prependPackageIdentifier(packageIdentifier, sourceName)
 }
 
+
 @kotlinx.serialization.Serializable
 data class VersionedSource(
    val name: String,
    val version: String,
    val content: String,
-   val packageIdentifier: PackageIdentifier?
+   val packageIdentifier: PackageIdentifier?,
+   val language: SourceCodeLanguage = SourceCodeLanguages.TAXI
 ) : Serializable {
    constructor(
-      name: String, version: String, content: String
-   ) : this(splitPackageIdentifier(name).second, version, content, splitPackageIdentifier(name).first)
+      name: String, version: String, content: String, language: SourceCodeLanguage = SourceCodeLanguages.TAXI
+   ) : this(
+      splitPackageIdentifier(name).second,
+      version,
+      content,
+      splitPackageIdentifier(name).first,
+      language = language
+   )
 
    constructor(
-      name: PackageSourceName, content: String
+      name: PackageSourceName, content: String, language: SourceCodeLanguage = SourceCodeLanguages.TAXI
    ) : this(
       name.sourceName,
       name.packageIdentifier.version, content,
-      name.packageIdentifier
+      name.packageIdentifier,
+      language = language
    )
 
    val packageQualifiedName = prependPackageIdentifier(packageIdentifier, name)

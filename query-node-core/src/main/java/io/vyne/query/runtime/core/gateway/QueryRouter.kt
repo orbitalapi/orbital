@@ -27,7 +27,6 @@ class QueryRouter private constructor(val routes: List<RoutableQuery>) {
        * an @HttpOperation annotation.
        */
       fun build(queries: Iterable<TaxiQlQuery>): QueryRouter {
-
          val routes = queries.mapNotNull { query ->
             val httpAnnotation = query.annotations.singleOrNull { annotation -> annotation.name == HttpOperation.NAME }
             if (httpAnnotation != null) {

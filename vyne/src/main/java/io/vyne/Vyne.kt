@@ -1,12 +1,12 @@
 package io.vyne
 
 import com.google.common.annotations.VisibleForTesting
-import com.google.common.base.Stopwatch
 import io.vyne.models.DefinedInSchema
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObjectFactory
 import io.vyne.models.facts.ScopedFact
+import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.query.*
 import io.vyne.query.graph.Algorithms
@@ -18,7 +18,6 @@ import io.vyne.utils.Ids
 import io.vyne.utils.log
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.job
-import lang.taxi.Compiler
 import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.query.FactValue
 import lang.taxi.query.TaxiQLQueryString
@@ -47,6 +46,7 @@ interface ModelContainer : SchemaContainer {
 class Vyne(
    schemas: List<Schema>,
    private val queryEngineFactory: QueryEngineFactory,
+   private val formatSpecs: List<ModelFormatSpec> = emptyList()
 ) : ModelContainer {
 
    init {
@@ -68,7 +68,7 @@ class Vyne(
       schema: Schema = this.schema
    ): StatefulQueryEngine {
       val factSetForQueryEngine: FactSetMap = FactSetMap.create()
-      factSetForQueryEngine.putAll(this.factSets.filterFactSets(factSetIds))
+      factSetForQueryEngine.putAll(this.factSets.retainFactsFromFactSet(factSetIds))
       factSetForQueryEngine.putAll(FactSets.DEFAULT, additionalFacts)
       return queryEngineFactory.queryEngine(schema, factSetForQueryEngine)
    }
@@ -104,6 +104,7 @@ class Vyne(
          lang.taxi.query.QueryMode.FIND_ALL -> queryContext.findAll(expression)
          lang.taxi.query.QueryMode.FIND_ONE -> queryContext.find(expression)
          lang.taxi.query.QueryMode.STREAM -> queryContext.findAll(expression)
+         lang.taxi.query.QueryMode.MAP -> queryContext.doMap(expression)
       }
    }
 
@@ -125,13 +126,13 @@ class Vyne(
    ): Pair<QueryContext, QueryExpression> {
       val additionalFacts = taxiQl.facts.map { variable ->
          TypedInstance.from(
-            schema.type(variable.value.typedValue.fqn.fullyQualifiedName),
+            schema.type(variable.value.typedValue.fqn.parameterizedName),
             variable.value.typedValue.value,
             schema,
             source = Provided
          )
       }.toSet()
-      val scopedFacts = extractArgumentsFromQuery(taxiQl, arguments)
+      val scopedFacts = extractArgumentsFromQuery(taxiQl, arguments, formatSpecs)
 
       val queryContext = query(
          additionalFacts = additionalFacts,
@@ -185,14 +186,16 @@ class Vyne(
 
    private fun extractArgumentsFromQuery(
       taxiQl: TaxiQlQuery,
-      arguments: Map<String, Any?>
+      arguments: Map<String, Any?>,
+      formatSpecs: List<ModelFormatSpec>
    ) = taxiQl.parameters.map { parameter ->
       val argValue = when {
          arguments.containsKey(parameter.name) -> TypedInstance.from(
             schema.type(parameter.type),
             arguments[parameter.name],
             schema,
-            source = Provided
+            source = Provided,
+            formatSpecs = formatSpecs
          )
 
          parameter.value is FactValue.Constant -> TypedInstance.from(
@@ -262,9 +265,10 @@ class Vyne(
 
 
    //   fun queryContext(): QueryContext = QueryContext(schema, facts, this)
-   constructor(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default()) : this(
+   constructor(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default(), formatSpecs: List<ModelFormatSpec> = emptyList()) : this(
       emptyList(),
-      queryEngineFactory
+      queryEngineFactory,
+      formatSpecs
    )
 
    override fun addModel(model: TypedInstance, factSetId: FactSetId): Vyne {

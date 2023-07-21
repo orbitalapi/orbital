@@ -13,6 +13,11 @@
 
    <dependencies>
       <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>taxi-to-openapi-plugin</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>chatgpt</artifactId>
          <version>${project.version}</version>

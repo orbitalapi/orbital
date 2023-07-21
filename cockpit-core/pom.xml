@@ -26,6 +26,11 @@
 
    <dependencies>
       <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>soap-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>com.github.ben-manes.caffeine</groupId>
          <artifactId>caffeine</artifactId>
       </dependency>

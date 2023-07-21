@@ -60,9 +60,21 @@
          <artifactId>vyne-spring</artifactId>
          <version>${project.version}</version>
       </dependency>
+
+      <!-- Soap connector is required to allow us to load WSDL schema projects -->
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>soap-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>swagger2taxi</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>soap-to-taxi</artifactId>
          <version>${taxi.version}</version>
       </dependency>
       <dependency>

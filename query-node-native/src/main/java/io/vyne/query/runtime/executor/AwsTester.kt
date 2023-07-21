@@ -5,6 +5,7 @@ import io.vyne.PackageIdentifier
 import io.vyne.PackageMetadata
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
+import io.vyne.auth.schemes.AuthTokens
 import io.vyne.auth.tokens.AuthConfig
 import io.vyne.connectors.config.ConnectionsConfig
 import io.vyne.http.ServicesConfig
@@ -30,7 +31,7 @@ class AwsTester {
             )
          ),
          connections = ConnectionsConfig(),
-         authTokens = AuthConfig(),
+         authTokens = AuthTokens.empty(),
          services = ServicesConfig.DEFAULT,
          mediaType = "application/json",
          clientQueryId = "123"

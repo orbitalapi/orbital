@@ -109,6 +109,11 @@
          <groupId>org.jetbrains.kotlinx</groupId>
          <artifactId>kotlinx-coroutines-reactive</artifactId>
       </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>protobuf-utils</artifactId>
+         <version>${project.version}</version>
+      </dependency>
 
       <dependency>
          <groupId>com.squareup.okhttp3</groupId>

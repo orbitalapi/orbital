@@ -5,18 +5,19 @@ import com.google.common.base.Stopwatch
 import io.vyne.*
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.schemas.*
+import io.vyne.schemas.readers.SourceToTaxiConverter
+import io.vyne.schemas.readers.TaxiSourceConverter
 import lang.taxi.*
 import lang.taxi.messages.Severity
-import lang.taxi.packages.SourcesType
 import lang.taxi.packages.TaxiSourcesLoader
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
+import lang.taxi.sources.SourceCodeLanguages
 import lang.taxi.types.Annotation
 import lang.taxi.types.ArrayType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.StreamType
 import mu.KotlinLogging
-import org.antlr.v4.runtime.CharStreams
 import java.nio.file.Path
 
 private val logger = KotlinLogging.logger {}
@@ -130,9 +131,10 @@ class TaxiSchema(
             },
             operations = taxiService.operations.map { taxiOperation ->
                val returnType = this.type(taxiOperation.returnType.toVyneQualifiedName())
+               val parameters = taxiOperation.parameters.map { taxiParam -> parseOperationParameter(taxiParam) }
                Operation(
                   OperationNames.qualifiedName(taxiService.qualifiedName, taxiOperation.name),
-                  taxiOperation.parameters.map { taxiParam -> parseOperationParameter(taxiParam) },
+                  parameters,
                   operationType = taxiOperation.scope,
                   returnType = returnType,
                   metadata = parseAnnotationsToMetadata(taxiOperation.annotations),
@@ -216,12 +218,6 @@ class TaxiSchema(
    }
 
    companion object {
-      const val LANGUAGE = "Taxi"
-      private val WHITELISTED_ADDITIONAL_SOURCE_TYPES = listOf(
-         "@orbital/pipelines",
-         "@orbital/config"
-      )
-
       enum class TaxiSchemaErrorBehaviour {
          RETURN_EMPTY,
          THROW_EXCEPTION
@@ -260,23 +256,57 @@ class TaxiSchema(
       fun fromPackages(
          packages: List<SourcePackage>,
          imports: List<TaxiSchema> = emptyList(),
-         functionRegistry: FunctionRegistry = FunctionRegistry.default
+         functionRegistry: FunctionRegistry = FunctionRegistry.default,
+         sourceConverters: List<SourceToTaxiConverter> = listOf(TaxiSourceConverter)
       ): Pair<List<CompilationError>, TaxiSchema> {
-         return this.compiled(packages, imports, functionRegistry)
+         return this.compiled(packages, imports, functionRegistry, sourceConverters)
       }
 
       fun compiled(
          packages: List<SourcePackage>,
          imports: List<TaxiSchema> = emptyList(),
          functionRegistry: FunctionRegistry = FunctionRegistry.default,
-         preloadedAdditionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
+         sourceConverters: List<SourceToTaxiConverter> = listOf(TaxiSourceConverter)
       ): Pair<List<CompilationError>, TaxiSchema> {
-         val sources = packages.toSourcesWithPackageIdentifier()
          val stopwatch = Stopwatch.createStarted()
-         val (compilationErrors, doc) =
-            Compiler(
-               sources.map { CharStreams.fromString(it.content, it.packageQualifiedName) },
-               imports.map { it.document }).compileWithMessages()
+
+         if (sourceConverters.size == 1) {
+            logger.warn { "Taxi Schema compilation started, but looks like we're missing some loaders" }
+         }
+
+         // TODO : We need to improve the processing order here, to consider
+         // import / dependencies between projects.
+         val packagesByLanguage = packages
+            .filter { it.languages.isNotEmpty() }
+            .groupBy {
+            it.languages.singleOrNull()
+               ?: error("Package ${it.identifier} contains multiple languages, which is not currently supported")
+         }.toSortedMap(Comparator { o1, o2 ->
+            when {
+               o1 == SourceCodeLanguages.TAXI && o2 == SourceCodeLanguages.TAXI -> 0
+               o1 == SourceCodeLanguages.TAXI && o2 != SourceCodeLanguages.TAXI -> -1
+               o1 != SourceCodeLanguages.TAXI && o2 == SourceCodeLanguages.TAXI -> 1
+               else -> 0
+            }
+         })
+
+
+         val empty = emptyList<CompilationError>() to TaxiDocument.empty()
+         val (compilationErrors, doc) = packagesByLanguage.values.fold(empty) { acc, sourcePackages ->
+            val (accErrors, accTaxiDoc) = acc
+            val firstSourcePackage = sourcePackages.first()
+            val converter = sourceConverters.firstOrNull { it.canLoad(firstSourcePackage) }
+            if (converter == null) {
+               logger.warn { "No converters provided capable of converting sources of languages(s): ${firstSourcePackage.languages.joinToString()}. This source package is being ignored." }
+               acc
+            } else {
+               val (errors, doc) = converter.loadAll(sourcePackages, listOf(accTaxiDoc))
+               errors to accTaxiDoc.merge(doc)
+            }
+
+         }
+
+
          logger.debug { "Compilation of TaxiSchema took ${stopwatch.elapsed().toMillis()}ms" }
 
          // This is to prevent startup errors if there are compilation errors.
@@ -300,12 +330,10 @@ class TaxiSchema(
                logger.info { "Compiler provided the following messages: \n ${compilationErrors.toMessage()}" }
             }
          }
-//         val loadedAdditionalSources = loadApprovedAdditionalSources(packages)
          return compilationErrors to TaxiSchema(
             doc,
             packages,
             functionRegistry,
-//            additionalSources = loadedAdditionalSources.mergeLists(preloadedAdditionalSources)
          )
 
       }
@@ -329,9 +357,9 @@ class TaxiSchema(
          packages: List<SourcePackage>,
          imports: List<TaxiSchema> = emptyList(),
          onErrorBehaviour: TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY,
-         preloadedAdditionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
+         sourceConverters: List<SourceToTaxiConverter> = listOf(TaxiSourceConverter)
       ): TaxiSchema {
-         val (messages, schema) = compiled(packages, imports, preloadedAdditionalSources = preloadedAdditionalSources)
+         val (messages, schema) = compiled(packages, imports, sourceConverters = sourceConverters)
          val errors = messages.errors()
          return when {
             errors.isEmpty() -> schema
@@ -444,12 +472,23 @@ fun lang.taxi.types.Type.toVyneType(schema: Schema): Type {
 
 private fun lang.taxi.sources.SourceCode.toVyneSource(packageIdentifier: PackageIdentifier?): VersionedSource {
    // TODO : Find the version.
-   return VersionedSource(this.sourceName, VersionedSource.DEFAULT_VERSION.toString(), this.content, packageIdentifier)
+   return VersionedSource(
+      this.sourceName,
+      VersionedSource.DEFAULT_VERSION.toString(),
+      this.content,
+      packageIdentifier,
+      language = this.language
+   )
 }
 
 private fun lang.taxi.sources.SourceCode.toVyneSource(): VersionedSource {
    // TODO : Find the version.
-   return VersionedSource(this.sourceName, VersionedSource.DEFAULT_VERSION.toString(), this.content)
+   return VersionedSource(
+      this.sourceName,
+      VersionedSource.DEFAULT_VERSION.toString(),
+      this.content,
+      language = this.language
+   )
 }
 
 

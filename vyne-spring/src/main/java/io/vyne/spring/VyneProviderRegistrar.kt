@@ -7,6 +7,7 @@ import io.vyne.schema.api.SchemaProvider
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.auth.schemes.AuthWebClientCustomizer
 import io.vyne.spring.invokers.RestTemplateInvoker
+import io.vyne.spring.query.formats.FormatSpecRegistry
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -24,9 +25,10 @@ class EnableVyneConfiguration {
       schemaProvider: SchemaProvider,
       operationInvokers: List<OperationInvoker>,
       vyneCacheConfiguration: VyneCacheConfiguration,
-      vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
+      vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration,
+      formatSpecRegistry: FormatSpecRegistry
    ): VyneFactory {
-      return VyneFactory(schemaProvider, operationInvokers, vyneCacheConfiguration, vyneSpringProjectionConfiguration)
+      return VyneFactory(schemaProvider, operationInvokers, vyneCacheConfiguration, vyneSpringProjectionConfiguration, formatSpecRegistry = formatSpecRegistry)
    }
 
    @Bean

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.DefaultPackageMetadata
 import io.vyne.PackageMetadata
 import io.vyne.SourcePackage
+import io.vyne.auth.schemes.AuthTokens
 import io.vyne.auth.tokens.AuthConfig
 import io.vyne.connectors.config.ConnectionsConfig
 import io.vyne.http.ServicesConfig
@@ -45,7 +46,7 @@ data class QueryMessage(
    // you need to register that type in NativeQueryNodeRuntimeHints
    // as it's not available for reflection at runtime in this image.
    val connections: ConnectionsConfig,
-   val authTokens: AuthConfig,
+   val authTokens: AuthTokens,
    val services: ServicesConfig,
    val resultMode: ResultMode = ResultMode.RAW,
    val mediaType: String,
@@ -65,7 +66,7 @@ data class QueryMessage(
       // you need to register that type in NativeQueryNodeRuntimeHints
       // as it's not available for reflection at runtime in this image.
       connections: ConnectionsConfig,
-      authTokens: AuthConfig,
+      authTokens: AuthTokens,
       services: ServicesConfig,
       resultMode: ResultMode = ResultMode.RAW,
       mediaType: String,

@@ -17,6 +17,11 @@
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>soap-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>vyne-history-core</artifactId>
          <version>${project.version}</version>
       </dependency>

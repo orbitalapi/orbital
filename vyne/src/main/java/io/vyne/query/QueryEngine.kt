@@ -41,6 +41,17 @@ class UnresolvedTypeInQueryException(
 interface QueryEngine {
    val operationInvocationService: OperationInvocationService
    val schema: Schema
+
+   // This is a workaround, as state seems to be leaking all over the place.
+   // We really want to either:
+   // A) Entirely encapsulate state on the QueryContext
+   //    (should be easier as the idea of ScopedFactMaps have evolved signficantly since
+   //     the original StatefulQueryEngine was written)
+   // or:
+   // B) Understand why (A) isn't possible.
+   fun newEngine(): QueryEngine
+   fun newEngine(factSetMapFilter: (FactSetMap) -> FactSetMap): QueryEngine
+
    suspend fun find(
       type: Type,
       context: QueryContext,
@@ -125,6 +136,7 @@ class StatefulQueryEngine(
    companion object {
       private val logger = KotlinLogging.logger {}
    }
+
    private val factSets: FactSetMap = FactSetMap.create()
 
 
@@ -132,6 +144,20 @@ class StatefulQueryEngine(
       factSets.putAll(initialState)
    }
 
+   override fun newEngine(): QueryEngine {
+      return StatefulQueryEngine(
+         FactSetMap.create(),
+         schema, strategies, profiler, projectionProvider, operationInvocationService, formatSpecs
+      )
+   }
+
+   override fun newEngine(factSetMapFilter: (FactSetMap) -> FactSetMap): QueryEngine {
+      val newFacts = factSetMapFilter(this.initialState)
+      return StatefulQueryEngine(
+         newFacts,
+         schema, strategies, profiler, projectionProvider, operationInvocationService, formatSpecs
+      )
+   }
 
    override fun addModel(model: TypedInstance, factSetId: FactSetId): StatefulQueryEngine {
       this.factSets[factSetId].add(model)
@@ -145,9 +171,9 @@ class StatefulQueryEngine(
       queryId: String,
       clientQueryId: String?,
       eventBroker: QueryContextEventBroker,
-      scopedFacts:List<ScopedFact>
+      scopedFacts: List<ScopedFact>
    ): QueryContext {
-      val facts = this.factSets.filterFactSets(factSetIds).values().toSet()
+      val facts = this.factSets.retainFactsFromFactSet(factSetIds).values().toSet()
       return QueryContext.from(
          schema,
          facts + additionalFacts,
@@ -230,6 +256,7 @@ class StatefulQueryEngine(
                MixedSources.singleSourceOrMixedSources(context.facts)
             )
          }
+
          else -> {
             context.isProjecting = true
             objectBuilder(context, targetType).build()
@@ -518,11 +545,18 @@ class StatefulQueryEngine(
             } else ""
             val message = "No data sources were found that can return ${target.description} $constraintsSuffix".trim()
             logger.debug { message }
+
+            // Alt impl which doesn't throw an exception:
+            //             send(
+            //               TypedNull.create(
+            //                  target.type,
+            //                  source = FailedSearch(message, failedAttempts)
+            //               )
+            //            )
             if (strategyProvidedFlow) {
                // We found a strategy which provided a flow of data, but the flow didn't yield any results.
                // TODO : Should we just be closing here?  Perhaps we should emit some form of TypedNull,
                // which would allow us to communicate the failed attempts?
-
                close()
             } else {
                // We didn't find a strategy to provide any data.

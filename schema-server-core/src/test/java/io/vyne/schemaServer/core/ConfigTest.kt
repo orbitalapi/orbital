@@ -3,13 +3,16 @@ package io.vyne.schemaServer.core
 import com.google.common.io.Resources
 import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
-import io.vyne.schemaServer.packages.OpenApiPackageLoaderSpec
+import io.kotest.matchers.shouldBe
+import io.vyne.PackageIdentifier
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
 import io.vyne.schemaServer.core.git.GitSchemaRepositoryConfig
 import io.vyne.schemaServer.core.repositories.FileSchemaRepositoryConfigLoader
 import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfig
+import io.vyne.schemaServer.packages.OpenApiPackageLoaderSpec
+import io.vyne.schemaServer.packages.SoapPackageLoaderSpec
 import org.apache.commons.io.IOUtils
 import org.junit.Rule
 import org.junit.Test
@@ -92,10 +95,12 @@ class ConfigTest {
          eventDispatcher = mock { })
       val config = configRepo.load()
 
-      config.file!!.projects.should.have.size(2)
+      config.file!!.projects.should.have.size(3)
       val loader = config.file!!.projects[1].loader as OpenApiPackageLoaderSpec
       loader.uri.toString().should.equal("http://acme.com/api/open-api")
 
+      val soapSpec = config.file!!.projects[2].loader as SoapPackageLoaderSpec
+      soapSpec.identifier.shouldBe(PackageIdentifier.fromId("com.acme/MySoap/0.1.20"))
       configRepo.save(config)
    }
 

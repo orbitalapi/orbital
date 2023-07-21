@@ -9,6 +9,7 @@ import io.vyne.auth.tokens.NoCredentialsAuthToken
  * A default token repository for use when no backing file
  * has been configured.
  */
+@Deprecated("Use EmptyAuthSchemeRepository instead")
 object EmptyAuthTokenRepository : AuthTokenRepository {
    override val writeSupported: Boolean = false
    override fun getToken(serviceName: String): AuthToken? {

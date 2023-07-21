@@ -5,12 +5,8 @@ import io.vyne.schemaServer.core.git.GitOperations
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
 import io.vyne.schemaServer.packages.OpenApiPackageLoaderSpec
 import io.vyne.schemaServer.packages.PackageType
-import io.vyne.schemaServer.repositories.CreateFileRepositoryRequest
-import io.vyne.schemaServer.repositories.FileRepositoryTestRequest
-import io.vyne.schemaServer.repositories.FileRepositoryTestResponse
-import io.vyne.schemaServer.repositories.GitConnectionTestRequest
-import io.vyne.schemaServer.repositories.GitConnectionTestResult
-import io.vyne.schemaServer.repositories.RepositoryServiceApi
+import io.vyne.schemaServer.packages.SoapPackageLoaderSpec
+import io.vyne.schemaServer.repositories.*
 import io.vyne.schemaServer.repositories.git.GitRepositoryChangeRequest
 import io.vyne.spring.http.BadRequestException
 import io.vyne.toVynePackageIdentifier
@@ -45,6 +41,7 @@ class RepositoryService(private val configRepo: SchemaRepositoryConfigLoader) : 
          PackageType.Taxi -> request.newProjectIdentifier
 
          PackageType.OpenApi -> (request.loader as OpenApiPackageLoaderSpec).identifier
+         PackageType.Soap -> (request.loader as SoapPackageLoaderSpec).identifier
          else -> error("Package type of ${request.loader.packageType} is not yet supported")
       }
 

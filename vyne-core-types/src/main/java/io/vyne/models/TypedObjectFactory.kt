@@ -79,7 +79,7 @@ class TypedObjectFactory(
 
    init {
       if (type.isScalar) {
-         logger.warn { "TypedObjectFactory constructed for scalar type ${type.qualifiedName.shortDisplayName} - TypedObjectFactory is intended for object types - this probably indicates an upstream bug" }
+//         logger.warn { "TypedObjectFactory constructed for scalar type ${type.qualifiedName.shortDisplayName} - TypedObjectFactory is intended for object types - this probably indicates an upstream bug" }
       }
    }
 

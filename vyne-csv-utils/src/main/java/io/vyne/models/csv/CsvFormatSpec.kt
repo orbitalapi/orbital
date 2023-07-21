@@ -23,6 +23,7 @@ object CsvAnnotationSpec {
             ignoreContentBefore : String?
             useFieldNamesAsColumnNames: Boolean?
             withQuote: String?
+            recordSeparator: String?
          }
 
       }
@@ -47,7 +48,8 @@ class CsvFormatSpecAnnotation(
     * as query results, but should be avoided on actual models.
     */
    val useFieldNamesAsColumnNames: Boolean = false,
-   val withQuote: Char? = '"'
+   val withQuote: Char? = '"',
+   val recordSeparator: String = "\r\n"
 ) : Serializable, AnnotationWrapper {
    override fun asAnnotation(schema: TaxiDocument): Annotation {
       TODO("Not yet implemented")
@@ -59,7 +61,8 @@ class CsvFormatSpecAnnotation(
       nullValue = nullValue?.let { setOf(it) } ?: emptySet(),
       containsTrailingDelimiters = containsTrailingDelimiters,
       ignoreContentBefore = ignoreContentBefore,
-      withQuote = withQuote
+      withQuote = withQuote,
+      recordSeparator = recordSeparator
    )
 
 
@@ -81,6 +84,7 @@ class CsvFormatSpecAnnotation(
          val containsTrailingDelimiters: Boolean = metadata.params["containsTrailingDelimiters"] as Boolean? ?: false
          val ignoreContentBefore = metadata.params["ignoreContentBefore"] as String?
          val useFieldNamesAsColumnNames = metadata.params["useFieldNamesAsColumnNames"] as Boolean? ?: false
+         val recordSeparator = metadata.params["recordSeparator"] as String? ?: "\r\n"
          return CsvFormatSpecAnnotation(
             delimiter,
             firstRecordAsHeader,
@@ -88,7 +92,8 @@ class CsvFormatSpecAnnotation(
             containsTrailingDelimiters,
             ignoreContentBefore,
             useFieldNamesAsColumnNames,
-            withQuote
+            withQuote,
+            recordSeparator
          )
       }
    }
@@ -96,8 +101,7 @@ class CsvFormatSpecAnnotation(
 
 }
 
-object
-CsvFormatSpec : ModelFormatSpec {
+object CsvFormatSpec : ModelFormatSpec {
    override val annotations: List<QualifiedName> = listOf(CsvAnnotationSpec.NAME)
    override val serializer: CsvFormatSerializer = CsvFormatSerializer
    override val deserializer: CsvFormatDeserializer = CsvFormatDeserializer

@@ -8,10 +8,7 @@ import io.github.config4k.ClassContainer
 import io.github.config4k.CustomType
 import io.github.config4k.extract
 import io.github.config4k.toConfig
-import io.vyne.schemaServer.packages.TaxiPackageLoaderSpec
-import io.vyne.schemaServer.packages.OpenApiPackageLoaderSpec
-import io.vyne.schemaServer.packages.PackageLoaderSpec
-import io.vyne.schemaServer.packages.PackageType
+import io.vyne.schemaServer.packages.*
 import java.net.URI
 import java.time.Instant
 import kotlin.reflect.full.isSubclassOf
@@ -68,6 +65,7 @@ object PackageLoaderSpecHoconSupport : CustomType {
       return when (packageType) {
          PackageType.OpenApi -> loaderConfig.extract<OpenApiPackageLoaderSpec>()
          PackageType.Taxi -> TaxiPackageLoaderSpec
+         PackageType.Soap -> loaderConfig.extract<SoapPackageLoaderSpec>()
          else -> TODO("Not yet implemented: $packageType")
       }
 

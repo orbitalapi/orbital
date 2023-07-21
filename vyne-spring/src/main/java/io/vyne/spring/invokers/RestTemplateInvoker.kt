@@ -146,9 +146,35 @@ class RestTemplateInvoker(
          .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
          .exchange()
          .onErrorMap { error ->
-            OperationRequestFailedException(
+            val remoteCall = RemoteCall(
+               remoteCallId = remoteCallId,
+               responseId = UUID.randomUUID().toString(),
+               service = service.name,
+               address = expandedUri.toASCIIString(),
+               operation = operation.name,
+               responseTypeName = operation.returnType.name,
+               method = httpMethod.name(),
+               requestBody = httpEntity.body,
+               resultCode = -1,
+               durationMs = 0,
+               response = null,
+               timestamp = Instant.now(),
+               responseMessageType = ResponseMessageType.FULL,
+               isFailed = true,
+               exchange = HttpExchange(
+                  url = expandedUri.toASCIIString(),
+                  verb = httpMethod.name(),
+                  requestBody = httpEntity.body?.toString(),
+                  responseCode = -1,
+                  responseSize = 0
+               )
+            )
+            eventDispatcher.reportRemoteOperationInvoked(OperationResult.from(parameters, remoteCall), queryId)
+            OperationInvocationException(
                "Failed to invoke service ${operation.name} at url $absoluteUrl - ${error.message ?: "No message in instance of ${error::class.simpleName}"}",
-               error
+               0,
+               remoteCall,
+               parameters
             )
          }
          .metrics()
@@ -163,9 +189,7 @@ class RestTemplateInvoker(
             val responseMessageType = if (isEventStream) ResponseMessageType.EVENT else ResponseMessageType.FULL
 
             logger.info {
-               "[$queryId] - $httpMethod to ${expandedUri.toASCIIString()} returned status ${clientResponse.statusCode()} and body length of ${
-                  clientResponse.headers().contentLength().orElse(-1)
-               } after ${duration}ms"
+               "[$queryId] - $httpMethod to ${expandedUri.toASCIIString()} returned status ${clientResponse.statusCode()} after ${duration}ms"
             }
 
             fun remoteCall(responseBody: String, failed: Boolean = false): RemoteCall {

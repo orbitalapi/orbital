@@ -4,9 +4,11 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.io.Resources
 import com.jayway.awaitility.Awaitility
 import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.vyne.PackageIdentifier
+import io.vyne.connectors.soap.SoapWsdlSourceConverter
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.rsocket.CBORJackson
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
@@ -17,9 +19,13 @@ import io.vyne.schemaServer.core.publisher.SourceWatchingSchemaPublisher
 import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
 import io.vyne.schemaServer.core.repositories.lifecycle.RepositoryLifecycleManager
 import io.vyne.schemaServer.packages.OpenApiPackageLoaderSpec
+import io.vyne.schemaServer.packages.SoapPackageLoaderSpec
 import io.vyne.schemaServer.packages.TaxiPackageLoaderSpec
 import io.vyne.schemaServer.repositories.CreateFileRepositoryRequest
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
+import io.vyne.schemaStore.TaxiSchemaValidator
+import io.vyne.schemas.readers.TaxiSourceConverter
+import lang.taxi.generators.soap.SoapLanguage
 import lang.taxi.packages.TaxiPackageLoader
 import org.junit.Rule
 import org.junit.Test
@@ -74,33 +80,51 @@ class FileRepositoryIntegrationTest {
             )
          )
       )
+   }
+
+   @Test
+   fun `can add a soap spec`() {
+      val (repositoryService, repositoryManager, schemaClient) = setupServices()
+
+      // First, create the new repository
+      val projectFolder = folder.newFolder("my-project")
+      val targetFile = projectFolder.resolve("src/country-info.wsdl")
+      targetFile.parentFile.mkdirs()
+      targetFile.createNewFile()
+      Resources.copy(Resources.getResource("soap/TrimmedCountryInfoServiceSpec.wsdl"), targetFile.outputStream())
 
 
+      repositoryService.createFileRepository(
+         CreateFileRepositoryRequest(
+            projectFolder.canonicalPath,
+            true,
+            loader = SoapPackageLoaderSpec(
+               PackageIdentifier.fromId("com/foo/1.0.0")
+            ),
+            newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
+         )
+      )
+
+      repositoryManager.fileLoaders.should.have.size(1)
+      schemaClient.schema()
+         .hasType("Hello")
+         .should.be.`false`
+
+      Awaitility.await()
+         .atMost(2, TimeUnit.SECONDS)
+         .until<Boolean> {
+            schemaClient.schema()
+               .services.isNotEmpty()
+         }
+      val schema = schemaClient.schema()
+      schema.services.shouldHaveSize(1)
+      val service = schema.services.single()
+      service.sourceCode.shouldHaveSingleElement { it.language == SoapLanguage.WSDL }
    }
 
    @Test
    fun `configure a file repository at runtime and when files are changes then schema updates are emitted`() {
-      // Setup: Loading the config from disk
-      val configFile = folder.root.resolve("repositories.conf")
-      val eventDispatcher = RepositoryLifecycleManager()
-      val loader = FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
-      val repositoryService = RepositoryService(loader)
-
-      // Setup: Building the file repository, which should
-      // create new repositories as config is added
-      val repositoryManager = ReactiveRepositoryManager(
-         FileSystemPackageLoaderFactory(),
-         GitSchemaPackageLoaderFactory(),
-         eventDispatcher, eventDispatcher, eventDispatcher
-      )
-
-      // Setup: A SchemaStoreClient, which will
-      // compile the taxi as it's discovered / changed
-      val schemaClient = LocalValidatingSchemaStoreClient()
-      val sourceWatchingSchemaPublisher = SourceWatchingSchemaPublisher(
-         schemaClient,
-         eventDispatcher
-      )
+      val (repositoryService, repositoryManager, schemaClient) = setupServices()
 
       // First, create the new repository
       val projectFolder = folder.newFolder("my-project")
@@ -129,6 +153,39 @@ class FileRepositoryIntegrationTest {
                .hasType("Hello")
          }
 
+   }
+
+   private fun setupServices(): Triple<RepositoryService, ReactiveRepositoryManager, LocalValidatingSchemaStoreClient> {
+      // Setup: Loading the config from disk
+      val configFile = folder.root.resolve("repositories.conf")
+      val eventDispatcher = RepositoryLifecycleManager()
+      val loader = FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
+      val repositoryService = RepositoryService(loader)
+
+      // Setup: Building the file repository, which should
+      // create new repositories as config is added
+      val repositoryManager = ReactiveRepositoryManager(
+         FileSystemPackageLoaderFactory(),
+         GitSchemaPackageLoaderFactory(),
+         eventDispatcher, eventDispatcher, eventDispatcher
+      )
+
+      // Setup: A SchemaStoreClient, which will
+      // compile the taxi as it's discovered / changed
+      val schemaClient = LocalValidatingSchemaStoreClient(
+         schemaValidator = TaxiSchemaValidator(
+            listOf(
+               TaxiSourceConverter,
+               SoapWsdlSourceConverter
+            )
+         )
+
+      )
+      val sourceWatchingSchemaPublisher = SourceWatchingSchemaPublisher(
+         schemaClient,
+         eventDispatcher
+      )
+      return Triple(repositoryService, repositoryManager, schemaClient)
    }
 
    @Test

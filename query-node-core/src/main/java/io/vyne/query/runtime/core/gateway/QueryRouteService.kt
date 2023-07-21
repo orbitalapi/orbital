@@ -87,8 +87,11 @@ class QueryRouteService(
          status(HttpStatus.NOT_FOUND).build()
       } else {
          val querySource = query.compilationUnits.single().source.content
-         val routedQuery = RoutedQuery.build(query, querySource, request)
-         handleQuery(request, routedQuery)
+         RoutedQuery.build(query, querySource, request)
+            .flatMap { routedQuery ->
+               handleQuery(request, routedQuery)
+            }
+
       }
    }
 }

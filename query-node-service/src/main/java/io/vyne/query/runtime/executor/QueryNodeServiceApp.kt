@@ -2,18 +2,18 @@ package io.vyne.query.runtime.executor
 
 import com.fasterxml.jackson.databind.MapperFeature
 import io.micrometer.core.instrument.MeterRegistry
+import io.vyne.connectors.soap.SoapWsdlSourceConverter
 import io.vyne.history.AnalyticsConfig
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
 import io.vyne.query.runtime.core.EnableVyneQueryNode
+import io.vyne.schemas.readers.SourceConverterRegistry
+import io.vyne.schemas.readers.TaxiSourceConverter
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
-import io.vyne.spring.config.ConditionallyLoadBalancedExchangeFilterFunction
-import io.vyne.spring.config.DiscoveryClientConfig
-import io.vyne.spring.config.VyneSpringCacheConfiguration
-import io.vyne.spring.config.VyneSpringProjectionConfiguration
+import io.vyne.spring.config.*
 import io.vyne.spring.http.auth.HttpAuthConfig
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Autowired
@@ -72,6 +72,7 @@ class QueryNodeServiceApp {
 @EnableConfigurationProperties(
    VyneSpringCacheConfiguration::class,
    VyneSpringProjectionConfiguration::class,
+   EnvVariablesConfig::class
 )
 class VyneConfig
 
@@ -95,6 +96,14 @@ class WebConfig {
       }
    }
 
+   @Bean
+   fun sourceConverterRegistry(): SourceConverterRegistry = SourceConverterRegistry(
+      setOf(
+         TaxiSourceConverter,
+         SoapWsdlSourceConverter
+      ),
+      registerWithStaticRegistry = true
+   )
    //   @LoadBalanced
    @Bean
    fun webClientCustomizer(

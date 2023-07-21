@@ -40,6 +40,7 @@ import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.spring.config.*
 import io.vyne.spring.http.auth.HttpAuthConfig
 import io.vyne.spring.projection.ApplicationContextProvider
+import io.vyne.spring.query.formats.FormatSpecRegistry
 import io.vyne.spring.utils.versionOrDev
 import io.vyne.utils.log
 import okhttp3.OkHttpClient
@@ -127,6 +128,9 @@ class QueryServiceApp {
          )
       }
    }
+
+   @Bean
+   fun formatSpecRegistry(): FormatSpecRegistry = FormatSpecRegistry.default()
 
    @Bean
    fun webClientCustomizer(

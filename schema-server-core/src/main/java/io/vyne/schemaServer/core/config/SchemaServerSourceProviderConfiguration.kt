@@ -3,14 +3,17 @@ package io.vyne.schemaServer.core.config
 import io.rsocket.core.RSocketServer
 import io.rsocket.transport.netty.server.CloseableChannel
 import io.rsocket.transport.netty.server.TcpServerTransport
-import io.vyne.schema.api.SchemaSet
+import io.vyne.connectors.soap.SoapWsdlSourceConverter
 import io.vyne.schema.publisher.ExpiringSourcesStore
 import io.vyne.schema.publisher.KeepAliveStrategyMonitor
 import io.vyne.schema.publisher.NoneKeepAliveStrategyMonitor
 import io.vyne.schema.publisher.http.HttpPollKeepAliveStrategyMonitor
 import io.vyne.schema.publisher.rsocket.RSocketPublisherKeepAliveStrategyMonitor
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
+import io.vyne.schemaStore.TaxiSchemaValidator
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
+import io.vyne.schemas.readers.SourceConverterRegistry
+import io.vyne.schemas.readers.TaxiSourceConverter
 import mu.KotlinLogging
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.beans.factory.annotation.Value
@@ -23,9 +26,6 @@ import org.springframework.messaging.rsocket.RSocketStrategies
 import org.springframework.messaging.rsocket.annotation.support.RSocketMessageHandler
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.util.pattern.PathPatternRouteMatcher
-import reactor.core.publisher.Flux
-import reactor.core.publisher.SignalType
-import reactor.core.publisher.Sinks
 import java.time.Duration
 
 @Configuration
@@ -34,6 +34,15 @@ class SchemaServerSourceProviderConfiguration {
    fun rsocketMessageHandler(rsocketStrategies: RSocketStrategies) = RSocketMessageHandler().apply {
       rSocketStrategies = rsocketStrategies
    }
+
+   @Bean
+   fun sourceConverterRegistry(): SourceConverterRegistry = SourceConverterRegistry(
+      setOf(
+         TaxiSourceConverter,
+         SoapWsdlSourceConverter
+      ),
+      registerWithStaticRegistry = true
+   )
 
    @Bean
    fun rsocketStrategies() = RSocketStrategies.builder()
@@ -54,7 +63,12 @@ class SchemaServerSourceProviderConfiguration {
 
    @Bean
    @ConditionalOnExpression("!'\${vyne.schema.server.clustered:false}'")
-   fun localValidatingSchemaStoreClient(): ValidatingSchemaStoreClient = LocalValidatingSchemaStoreClient()
+   fun localValidatingSchemaStoreClient(sourceConverterRegistry: SourceConverterRegistry): ValidatingSchemaStoreClient =
+      LocalValidatingSchemaStoreClient(
+         TaxiSchemaValidator(
+            sourceLoaders = sourceConverterRegistry.converters
+         )
+      )
 
 //   @Bean
 //   fun httpPollKeepAliveStrategyPollUrlResolver(discoveryClient: Optional<DiscoveryClient>) =

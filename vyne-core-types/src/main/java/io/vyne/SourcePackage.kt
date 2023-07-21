@@ -13,7 +13,6 @@ import java.io.Serializable
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
-import kotlin.io.path.forEachDirectoryEntry
 import kotlin.io.path.readText
 
 private val logger = KotlinLogging.logger {}
@@ -53,9 +52,16 @@ data class SourcePackage(
    /**
     * Additional sources (eg., config, pipelines, extensions, etc).
     */
-   val additionalSources: Map<SourcesType, List<VersionedSource>> = emptyMap()
+   val additionalSources: Map<SourcesType, List<VersionedSource>> = emptyMap(),
 ) : Serializable {
    val identifier = packageMetadata.identifier
+
+   /**
+    * The languages present within this source package.
+    * Note that at present, it is invalid for a package to expose sources in
+    * more than one language, as it makes loading complex, though we can revisit this later if required.
+    */
+   val languages = sources.map { it.language }.distinct()
 
    // Note: Originally this was a lazy property.
    // However, it was generating duplicates, (ie., a sources.size == 1, sourceswithPackageIdentitfier.size == 2)

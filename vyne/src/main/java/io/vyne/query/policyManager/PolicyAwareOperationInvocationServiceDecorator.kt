@@ -1,16 +1,13 @@
 package io.vyne.query.policyManager
 
-import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
 import io.vyne.query.QueryContext
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import lang.taxi.policies.OperationScope
 
 class PolicyAwareOperationInvocationServiceDecorator(private val operationService: OperationInvocationService, private val evaluator: PolicyEvaluator = PolicyEvaluator()) : OperationInvocationService {
@@ -35,8 +32,12 @@ class PolicyAwareOperationInvocationServiceDecorator(private val operationServic
    }
 
 
-   private suspend fun process(value: Flow<TypedInstance>, context: QueryContext, executionScope: ExecutionScope): Flow<TypedInstance> {
-      return value.map {t ->
+   private fun process(
+      value: Flow<TypedInstance>,
+      context: QueryContext,
+      executionScope: ExecutionScope
+   ): Flow<TypedInstance> {
+      return value.map { t ->
          applyPolicyInstruction(t, context, executionScope)
       }
    }
@@ -56,7 +57,11 @@ class PolicyAwareOperationInvocationServiceDecorator(private val operationServic
       return TypedObject(typedObject.type, processedAttributes, typedObject.source)
    }
 */
-   private suspend fun applyPolicyInstruction(value: TypedInstance, context: QueryContext, executionScope: ExecutionScope): TypedInstance {
+   private fun applyPolicyInstruction(
+      value: TypedInstance,
+      context: QueryContext,
+      executionScope: ExecutionScope
+   ): TypedInstance {
       val instruction = evaluator.evaluate(value, context, executionScope)
       val processed = InstructionExecutors.get(instruction).execute(instruction, value)
       return processed

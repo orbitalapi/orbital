@@ -18,6 +18,7 @@ import io.vyne.schemas.Schema
 import io.vyne.spring.config.ProjectionDistribution
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.projection.HazelcastProjectionProvider
+import io.vyne.spring.query.formats.FormatSpecRegistry
 import org.springframework.beans.factory.FactoryBean
 
 // To make testing easier
@@ -36,12 +37,12 @@ class VyneFactory(
    private val operationInvokers: List<OperationInvoker>,
    private val vyneCacheConfiguration: VyneCacheConfiguration,
    private val vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration,
-   private val operationCacheFactory: OperationCacheFactory = OperationCacheFactory()
+   private val operationCacheFactory: OperationCacheFactory = OperationCacheFactory(),
+   private val formatSpecRegistry: FormatSpecRegistry
 ) : FactoryBean<Vyne>, VyneProvider {
 
    override fun isSingleton() = true
    override fun getObjectType() = Vyne::class.java
-
 
    override fun getObject(): Vyne {
       return buildVyne()
@@ -74,7 +75,8 @@ class VyneFactory(
                operationInvokers,
                operationCache = operationCacheFactory.getCache(queryOptions.cachingStrategy)
             ),
-            projectionProvider = projectionProvider
+            projectionProvider = projectionProvider,
+            formatSpecs = formatSpecRegistry.formats
          ),
       )
       facts.forEach { fact ->

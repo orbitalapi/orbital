@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.*
 import io.vyne.schemas.CompositeSchema
 import io.vyne.schemas.Schema
+import io.vyne.schemas.readers.StaticSourceConverterRegistry
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import lang.taxi.packages.SourcesType
@@ -18,8 +19,6 @@ data class SchemaSet private constructor(
    @field:JsonIgnore
    @get:JsonIgnore
    private var _taxiSchemas: List<TaxiSchema>? = null,
-//   val additionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
-
 ) : Serializable {
 
    // This constructor exists for Jackson
@@ -130,6 +129,7 @@ data class SchemaSet private constructor(
             this._taxiSchemas = listOf(
                TaxiSchema.from(
                   taxiSources,
+                  sourceConverters = StaticSourceConverterRegistry.registry.converters
                ),
 
                )

@@ -6,6 +6,7 @@ import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import org.junit.Test
 import org.springframework.mock.web.reactive.function.server.MockServerRequest
+import reactor.core.publisher.Mono
 
 class RoutedQueryTest {
    val src = """
@@ -18,6 +19,7 @@ class RoutedQueryTest {
    fun `converts path variables to facts`() {
       val (query, querySrc) = query(
          src, """
+
          @HttpOperation(method = "GET", url = "/films/{filmId}")
          query findFilm( @PathVariable("filmId") filmId : FilmId ) {
             find { Film( FilmId == filmId ) }
@@ -30,8 +32,29 @@ class RoutedQueryTest {
          .build()
 
       val routedQuery = RoutedQuery.build(query, querySrc, request)
-      routedQuery.arguments.entries.single().value.typedValue.value
+      routedQuery.block().arguments.entries.single().value.typedValue.value
          .shouldBe("123")
+   }
+
+   @Test
+   fun `converts request body to facts`() {
+      val (query, querySrc) = query(
+         src, """
+
+         @HttpOperation(method = "GET", url = "/films/{filmId}")
+         query findFilm( @RequestBody film : Film ) {
+            find { Film }
+         }
+      """.trimIndent()
+      )
+
+      val requestBody = """{ "id" : 123 }"""
+      val request = MockServerRequest.builder()
+         .body(Mono.just(requestBody))
+
+      val routedQuery = RoutedQuery.build(query, querySrc, request)
+      routedQuery.block().arguments.entries.single().value.typedValue.value
+         .shouldBe(requestBody)
    }
 
 }

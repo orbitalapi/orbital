@@ -18,6 +18,7 @@
       <module>aws-connectors</module>
       <module>azure-connectors</module>
       <module>connectors-calcite</module>
+       <module>soap-connector</module>
    </modules>
 
 </project>

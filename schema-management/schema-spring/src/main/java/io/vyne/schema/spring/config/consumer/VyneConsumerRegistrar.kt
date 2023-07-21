@@ -13,7 +13,10 @@ import org.springframework.context.annotation.Configuration
    SchemaConfigProperties::class
 )
 class SchemaConsumerConfig {
+
    @Bean
-   fun schemaProvider(schemaStore: SchemaStore) = StoreBackedSchemaProvider(schemaStore)
+   fun schemaProvider(schemaStore: SchemaStore): StoreBackedSchemaProvider {
+      return StoreBackedSchemaProvider(schemaStore)
+   }
 }
 

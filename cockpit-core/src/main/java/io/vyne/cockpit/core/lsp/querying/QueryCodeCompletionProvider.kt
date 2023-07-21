@@ -10,6 +10,7 @@ import io.vyne.schemas.toTaxiQualifiedName
 import io.vyne.schemas.toVyneQualifiedName
 import lang.taxi.TaxiParser.ArrayMarkerContext
 import lang.taxi.TaxiParser.ConditionalTypeStructureDeclarationContext
+import lang.taxi.TaxiParser.FactContext
 import lang.taxi.TaxiParser.FactListContext
 import lang.taxi.TaxiParser.FieldDeclarationContext
 import lang.taxi.TaxiParser.FieldTypeDeclarationContext
@@ -127,6 +128,10 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
             // or listing fields we want to add to the query.
             if (contextAtCursor.searchUpForRule(ConditionalTypeStructureDeclarationContext::class.java) != null) {
                suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
+            } else if (contextAtCursor.searchUpForRule<FactContext>() != null) {
+               schema.types
+                  .filter { it.isScalar }
+                  .map { type -> typeProvider.buildCompletionItem(type.taxiType, listOf(importDecorator)) }
             } else {
                val typesInQuery = findTypesDeclaredInQuery(contextAtCursor, compilationResult)
                // If the user has provided facts, (either in a Given clause, or in the body of the query),

@@ -1,5 +1,6 @@
 package io.vyne.query.runtime.core.dispatcher.rabbitmq
 
+import io.vyne.auth.schemes.AuthSchemeRepository
 import io.vyne.auth.tokens.AuthTokenRepository
 import io.vyne.connectors.config.ConfigFileConnectorsRegistry
 import io.vyne.http.ServicesConfigRepository
@@ -22,7 +23,7 @@ class RabbitDispatcherConfig {
    fun rabbitDispatcher(
       @Value("\${vyne.dispatcher.rabbit.address}") rabbitAddress: String,
       servicesRepository: ServicesConfigRepository,
-      authTokenRepository: AuthTokenRepository,
+      authTokenRepository: AuthSchemeRepository,
       connectionsConfigProvider: ConfigFileConnectorsRegistry,
       schemaProvider: SchemaProvider,
       @Value("\${vyne.dispatcher.rabbit.username:''}") rabbitUsername: String = "",

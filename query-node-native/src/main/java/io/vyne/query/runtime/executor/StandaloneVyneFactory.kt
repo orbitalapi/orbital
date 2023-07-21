@@ -12,19 +12,21 @@ import io.vyne.connectors.config.ConnectionsConfig
 import io.vyne.connectors.jdbc.HikariJdbcConnectionFactory
 import io.vyne.connectors.jdbc.JdbcInvoker
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
+import io.vyne.connectors.soap.SoapInvoker
 import io.vyne.query.QueryEngineFactory
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.query.graph.operationInvocation.OperationCacheFactory
 import io.vyne.query.runtime.QueryMessage
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.api.SchemaWithSourcesSchemaProvider
+import io.vyne.schemas.readers.SourceConverterRegistry
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.config.StaticServicesConfigDiscoveryClient
 import io.vyne.spring.config.VyneSpringCacheConfiguration
 import io.vyne.spring.http.DefaultRequestFactory
-import io.vyne.spring.http.auth.AuthTokenInjectingRequestFactory
 import io.vyne.spring.http.auth.schemes.AuthWebClientCustomizer
 import io.vyne.spring.invokers.RestTemplateInvoker
+import io.vyne.spring.query.formats.FormatSpecRegistry
 import mu.KotlinLogging
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.stereotype.Component
@@ -48,7 +50,9 @@ class StandaloneVyneFactory(
    objectMapper: ObjectMapper,
    private val webClientBuilder: WebClient.Builder,
    private val cacheConfiguration: VyneSpringCacheConfiguration,
-   private val operationCacheFactory: OperationCacheFactory = OperationCacheFactory()
+   private val operationCacheFactory: OperationCacheFactory = OperationCacheFactory(),
+   private val formatSpecRegistry: FormatSpecRegistry,
+   private val sourceConverterRegistry: SourceConverterRegistry
 //   private val schemaCache: ?
 ) {
    companion object {
@@ -68,7 +72,7 @@ class StandaloneVyneFactory(
       val sourcesHash = SourcePackageHasher.hash(sources)
       val schemaProvider = schemaCache.get(sourcesHash) {
          val timedSchema = measureTimedValue {
-            TaxiSchema.from(sources)
+            TaxiSchema.from(sources, sourceConverters = sourceConverterRegistry.converters )
          }
          logger.info { "Building schema took ${timedSchema.duration}" }
          val schema = timedSchema.value
@@ -79,8 +83,8 @@ class StandaloneVyneFactory(
       val discoveryClient = StaticServicesConfigDiscoveryClient(message.services)
       val jdbcInvoker = buildJdbcInvoker(message.connections, schemaProvider)
       val httpInvoker = buildHttpInvoker(schemaProvider, message, discoveryClient)
-
-      val invokers = listOf(jdbcInvoker, httpInvoker)
+      val soapInvoker = buildSoapInvoker(schemaProvider, discoveryClient)
+      val invokers = listOf(jdbcInvoker, httpInvoker, soapInvoker)
       return Vyne(
          listOf(schemaProvider.schema),
          QueryEngineFactory.withOperationInvokers(
@@ -89,9 +93,19 @@ class StandaloneVyneFactory(
                invokers,
                operationCache = operationCacheFactory.getCache(options.cachingStrategy)
             )
-         )
+         ),
+         formatSpecRegistry.formats
       ) to discoveryClient
 
+   }
+
+   private fun buildSoapInvoker(
+      schemaProvider: SchemaProvider,
+      discoveryClient: StaticServicesConfigDiscoveryClient
+   ): SoapInvoker {
+      return SoapInvoker(
+         schemaProvider
+      )
    }
 
    private fun buildHttpInvoker(
@@ -106,17 +120,11 @@ class StandaloneVyneFactory(
          .clone()
          .filter(LoadBalancerFilterFunction(discoveryClient))
 
-      val requestFactory = AuthTokenInjectingRequestFactory(
-         DefaultRequestFactory(),
-         message.authTokens
-      )
       return RestTemplateInvoker(
          schemaProvider,
          builder,
-         // TODO : We need to add support for the new AuthTokens
-         // being sent across the wire.
-         AuthWebClientCustomizer.empty(),
-         requestFactory,
+         AuthWebClientCustomizer.forTokens(message.authTokens),
+         DefaultRequestFactory()
 
          )
    }

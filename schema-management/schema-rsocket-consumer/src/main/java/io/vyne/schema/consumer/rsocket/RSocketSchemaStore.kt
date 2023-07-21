@@ -2,7 +2,6 @@ package io.vyne.schema.consumer.rsocket
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufAllocator
 import io.netty.buffer.EmptyByteBuf
 import io.rsocket.util.DefaultPayload
@@ -11,6 +10,8 @@ import io.vyne.schema.consumer.SchemaSetChangedEventRepository
 import io.vyne.schema.rsocket.CBORJackson
 import io.vyne.schema.rsocket.RSocketRoutes
 import io.vyne.schema.rsocket.SchemaServerRSocketFactory
+import io.vyne.schemas.readers.SourceConverterRegistry
+import io.vyne.schemas.readers.StaticSourceConverterRegistry
 import mu.KotlinLogging
 import reactor.core.scheduler.Schedulers
 
@@ -19,7 +20,15 @@ private val logger = KotlinLogging.logger { }
 
 class RSocketSchemaStore(
    rSocketFactory: SchemaServerRSocketFactory,
-   objectMapper: ObjectMapper = CBORJackson.defaultMapper
+   objectMapper: ObjectMapper = CBORJackson.defaultMapper,
+
+   // HACK: We don't strictly need this, because we can't
+   // inject into the deserialization process when we recieve a new schemaSet over the wire.
+   // However, injecting it here does two things:
+   // a) documents the otherwise unclear relationship,
+   // b) Ensures that the registry is created before this object, which triggers registration
+   //    with the static provider.
+   private val sourceConverterRegistry: SourceConverterRegistry = StaticSourceConverterRegistry.registry
 ) : SchemaSetChangedEventRepository() {
 
    private val logger = KotlinLogging.logger {}

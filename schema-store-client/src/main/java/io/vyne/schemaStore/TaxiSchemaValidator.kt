@@ -7,6 +7,8 @@ import io.vyne.*
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.api.SchemaValidator
 import io.vyne.schemas.Schema
+import io.vyne.schemas.readers.SourceToTaxiConverter
+import io.vyne.schemas.readers.TaxiSourceConverter
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.CompilationError
 import lang.taxi.errors
@@ -17,8 +19,21 @@ import org.springframework.stereotype.Component
 private val logger = KotlinLogging.logger { }
 
 @Component
-class TaxiSchemaValidator :
+class TaxiSchemaValidator(
+   private val sourceLoaders: List<SourceToTaxiConverter> = listOf(TaxiSourceConverter)
+) :
    SchemaValidator {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+
+   init {
+      // Temp: Remove once I've caught all the initializer paths.
+      if (sourceLoaders.size == 1) {
+         logger.warn { "TaxiSchemaValidator initialized, but looks like we're missing some loaders." }
+      }
+   }
+
    override fun validateAndParse(
       existing: SchemaSet,
       updatedPackage: SourcePackage?,
@@ -49,7 +64,7 @@ class TaxiSchemaValidator :
          // But, this could cause problems as schemas are removed, as a schema may reference
          // an import from a removed schema, causing all compilation to fail.
          // Need to consider this, and find a solution.
-         val (messages, schema) = TaxiSchema.fromPackages(packages)
+         val (messages, schema) = TaxiSchema.fromPackages(packages, sourceConverters = sourceLoaders)
          val errors = messages.errors()
          val errorsByPackage = messages.errors().map { compilationError ->
             val compilationErrorSourceName = compilationError.sourceName

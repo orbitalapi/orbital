@@ -233,7 +233,7 @@ class OperationInvocationEvaluator(
          // Don't throw here, just report the failure
          val result = TypedNull.create(type = operation.returnType, source = dataSource)
          context.notifyOperationResult(edge, result, callArgs)
-         logger.warn { "Operation ${operation.qualifiedName} (called with $callArgs) failed with exception ${exception.message}.  This is often ok, as services throwing exceptions is expected." }
+         logger.warn { "Operation ${operation.qualifiedName} (called with $callArgs) failed with exception ${exception.message}. " }
          return edge.failure(
             result,
             failureReason = "Operation ${operation.qualifiedName} ktor exception ${exception.message}"

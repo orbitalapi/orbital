@@ -3,6 +3,7 @@ package io.vyne.query.runtime.core.dispatcher.rabbitmq
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.rabbitmq.client.AMQP
+import io.vyne.auth.schemes.AuthSchemeRepository
 import io.vyne.auth.tokens.AuthTokenRepository
 import io.vyne.connectors.config.ConfigFileConnectorsRegistry
 import io.vyne.http.ServicesConfigRepository
@@ -31,7 +32,7 @@ class RabbitMqQueueDispatcher(
    private val rabbitSender: Sender,
    private val rabbitReceiver: Receiver,
    private val servicesRepository: ServicesConfigRepository,
-   private val authTokenRepository: AuthTokenRepository,
+   private val authTokenRepository: AuthSchemeRepository,
    private val connectionsConfigProvider: ConfigFileConnectorsRegistry,
    private val schemaProvider: SchemaProvider,
    private val objectMapper: ObjectMapper = Jackson.newObjectMapperWithDefaults(),

@@ -19,6 +19,8 @@ data class AuthTokens(
    companion object {
       private val logger = KotlinLogging.logger {}
 
+      fun empty() = AuthTokens(emptyMap())
+
       /**
        * Workaround to https://github.com/Kotlin/kotlinx.serialization/issues/1581
        * HOCON serialization doesn't support polymorphism.

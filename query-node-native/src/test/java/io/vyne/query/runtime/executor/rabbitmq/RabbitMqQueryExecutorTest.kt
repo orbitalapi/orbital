@@ -11,6 +11,7 @@ import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.vyne.auth.schemes.AuthTokens
 import io.vyne.auth.tokens.AuthConfig
 import io.vyne.connectors.config.ConnectionsConfig
 import io.vyne.http.ServicesConfig
@@ -168,7 +169,7 @@ class RabbitMqQueryExecutorTest {
             query,
             emptyList(),
             ConnectionsConfig.empty(),
-            AuthConfig(),
+            AuthTokens.empty(),
             ServicesConfig.DEFAULT,
             mediaType = MediaType.APPLICATION_JSON_VALUE,
             clientQueryId = queryId,

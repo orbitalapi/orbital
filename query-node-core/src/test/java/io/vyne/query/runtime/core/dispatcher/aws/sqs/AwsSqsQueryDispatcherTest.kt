@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.jayway.awaitility.Awaitility
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import io.vyne.auth.schemes.EmptyAuthSchemeRepository
 import io.vyne.connectors.config.ConfigFileConnectorsRegistry
 import io.vyne.http.ServicesConfigRepository
 import io.vyne.models.json.Jackson
@@ -13,7 +14,6 @@ import io.vyne.query.runtime.QueryMessage
 import io.vyne.query.runtime.QueryMessageCborWrapper
 import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.spring.http.auth.EmptyAuthTokenRepository
 import io.vyne.utils.Ids
 import org.junit.Before
 import org.junit.Ignore
@@ -203,7 +203,7 @@ class AwsSqsQueryDispatcherTest {
       val schemaProvider = SimpleSchemaProvider(TaxiSchema.empty())
       return AwsSqsQueryDispatcher(
          ServicesConfigRepository(configRoot!!.root.resolve("services.conf").toPath()),
-         EmptyAuthTokenRepository,
+         EmptyAuthSchemeRepository,
          ConfigFileConnectorsRegistry(configRoot!!.root.resolve("connections.conf").toPath()),
          schemaProvider,
          sqsClient,

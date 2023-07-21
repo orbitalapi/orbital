@@ -3,13 +3,17 @@ package io.vyne.query.runtime.executor
 import com.zaxxer.hikari.HikariConfig
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.connectors.jdbc.registry.JdbcConnections
+import io.vyne.connectors.soap.SoapWsdlSourceConverter
 import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.models.facts.CascadingFactBag
 import io.vyne.query.QueryResponseMessage
 import io.vyne.query.runtime.QueryMessage
+import io.vyne.schemas.readers.SourceConverterRegistry
+import io.vyne.schemas.readers.TaxiSourceConverter
 import io.vyne.spring.config.VyneSpringCacheConfiguration
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
+import io.vyne.spring.query.formats.FormatSpecRegistry
 import io.vyne.utils.formatAsFileSize
 import mu.KotlinLogging
 import org.springframework.aot.hint.*
@@ -57,6 +61,18 @@ class QueryFunctionApp {
    fun webClientBuilder(discoveryClient: DiscoveryClient): WebClient.Builder {
       return WebClient.builder()
    }
+
+   @Bean
+   fun formatSpecRegistry():FormatSpecRegistry = FormatSpecRegistry.default()
+
+   @Bean
+   fun sourceConverterRegistry(): SourceConverterRegistry = SourceConverterRegistry(
+      setOf(
+         TaxiSourceConverter,
+         SoapWsdlSourceConverter
+      ),
+      registerWithStaticRegistry = true
+   )
 }
 
 fun main(args: Array<String>) {

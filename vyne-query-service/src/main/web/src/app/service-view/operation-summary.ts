@@ -17,7 +17,7 @@ export function toOperationSummary(operation: Operation): OperationSummary {
   const nameParts = splitOperationQualifiedName(operation.qualifiedName.fullyQualifiedName);
   const serviceName = nameParts.serviceName;
   return {
-    name: operation.name,
+    name: nameParts.operationName,
     method: method,
     url: url,
     typeDoc: operation.typeDoc,
