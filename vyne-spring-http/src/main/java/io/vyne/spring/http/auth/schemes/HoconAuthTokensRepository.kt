@@ -33,8 +33,9 @@ class HoconAuthTokensRepository(
       serviceName: String,
       token: AuthScheme
    ): SanitizedAuthScheme {
-      val writer = writers.firstOrNull { it.packageIdentifier == targetPackage }
-         ?: error("No writers found that can write to package ${targetPackage.id}")
+      val writers = writers.filter { it.packageIdentifier == targetPackage }
+      val writer = writers.singleOrNull()
+         ?: error("Expected to find exactly 1 writer for package ${targetPackage.id}, but found ${writers.size}")
       val existingValues = loadUnresolvedConfig(writer, targetPackage)
 
       // Note: calling asHocon(), which defers to the AuthScheme kotlin-specific
@@ -48,6 +49,7 @@ class HoconAuthTokensRepository(
          .withFallback(existingValues)
 
       writer.saveConfig(updated)
+      invalidateCache()
 
       return token.sanitized()
    }
@@ -62,8 +64,15 @@ class HoconAuthTokensRepository(
       // Not a hard requirement, but I need to understand the use case of why this
       // wouldn't be a single value.
       require(sourcePackages.size == 1) { "Expected a single source package, but found ${sourcePackages.size}" }
-      val rawSource = readRawHoconSource(sourcePackages.single())
-      return unresolvedConfig(rawSource)
+
+      val sourcePackage = sourcePackages.single()
+      return if (sourcePackage.sources.isEmpty()) {
+         ConfigFactory.empty()
+      } else {
+         val rawSource = readRawHoconSource(sourcePackage)
+         unresolvedConfig(rawSource)
+      }
+
    }
 
    override fun deleteToken(targetPackage: PackageIdentifier, serviceName: String) {

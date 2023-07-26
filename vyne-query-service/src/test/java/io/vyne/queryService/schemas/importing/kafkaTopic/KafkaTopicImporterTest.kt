@@ -74,7 +74,8 @@ class KafkaTopicImporterTest : BaseSchemaConverterServiceTest() {
                KafkaConnectorTaxi.Annotations.KafkaOperation.Offset.EARLIEST,
                "Person".fqn(),
                "io.foo.test.kafka",
-            ), packageIdentifier = PackageIdentifier.fromId("foo/test/1.0.0")
+            ),
+            packageIdentifier = PackageIdentifier.fromId("foo/test/1.0.0")
          )
       ).block()
       result.services.should.have.size(1)

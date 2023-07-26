@@ -11,6 +11,7 @@ import reactor.core.publisher.Sinks
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.io.path.createFile
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
@@ -18,7 +19,7 @@ import kotlin.io.path.readText
 class FileConfigSourceLoader(
    private val configFilePath: Path,
    private val fileMonitor: ReactiveFileSystemMonitor = ReactiveWatchingFileSystemMonitor(configFilePath),
-   override val packageIdentifier: PackageIdentifier = LOCAL_PACKAGE_IDENTIFIER,
+   override val packageIdentifier: PackageIdentifier, /*= LOCAL_PACKAGE_IDENTIFIER, */
    /**
     * Optionally pass a glob pattern if configFilePath is a directory
     */
@@ -29,6 +30,7 @@ class FileConfigSourceLoader(
 
    companion object {
       private val logger = KotlinLogging.logger {}
+      // For testing really.
       val LOCAL_PACKAGE_IDENTIFIER = PackageIdentifier(
          "local", "local", "0.1.0"
       )
@@ -40,6 +42,9 @@ class FileConfigSourceLoader(
    private val contentCache = ConcurrentHashMap<CacheKey, List<SourcePackage>>()
 
    init {
+      if (packageIdentifier == LOCAL_PACKAGE_IDENTIFIER) {
+         logger.warn { "Loader for path $configFilePath was configured without a source package.  This can lead to sources being persisted to the wrong place." }
+      }
       if (glob != null && configFilePath.isRegularFile()) {
          error("Glob patterns are only supported when the provided path is a directory")
       }
@@ -53,7 +58,11 @@ class FileConfigSourceLoader(
 
    override fun saveConfig(config: Config) {
       val configWithPlaceholderQuotesRemoved = config.getSafeConfigString()
-      require(configFilePath.isRegularFile()) { "Expected the configured file path to be a file, but found a directory at $configFilePath" }
+      if (!Files.exists(configFilePath)) {
+         configFilePath.createFile()
+      } else {
+         require(configFilePath.isRegularFile()) { "Expected the configured file path to be a file, but found a directory at $configFilePath" }
+      }
       writeText(configFilePath, configWithPlaceholderQuotesRemoved)
    }
 

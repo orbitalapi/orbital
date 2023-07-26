@@ -155,7 +155,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
             .where(condition("id = 123"))
             .fetch()
             .single()
-         upsertedRecord["lastname"] == "Poopyface"
+         upsertedRecord["lastName"] == "Poopyface"
       }
 
    }

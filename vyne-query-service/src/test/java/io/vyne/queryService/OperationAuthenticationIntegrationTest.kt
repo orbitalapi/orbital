@@ -7,6 +7,7 @@ import io.vyne.asPackage
 import io.vyne.auth.schemes.Cookie
 import io.vyne.auth.schemes.HttpHeader
 import io.vyne.auth.schemes.QueryParam
+import io.vyne.auth.tokens.AuthConfig
 import io.vyne.auth.tokens.AuthTokenRepository
 import io.vyne.cockpit.core.security.AuthTokenConfigurationService
 import io.vyne.config.FileConfigSourceLoader
@@ -113,7 +114,7 @@ class OperationAuthenticationIntegrationTest {
          parameterName = "api_key"
       )
       tokenService.submitAuthScheme(
-         FileConfigSourceLoader.LOCAL_PACKAGE_IDENTIFIER.uriSafeId,
+         VyneHttpAuthConfig.PACKAGE_IDENTIFIER.uriSafeId,
          "PersonFindByIdService", token
       ).block()
       server.prepareResponse { response ->
@@ -138,7 +139,7 @@ class OperationAuthenticationIntegrationTest {
          prefix = "Bearer"
       )
       tokenService.submitAuthScheme(
-         FileConfigSourceLoader.LOCAL_PACKAGE_IDENTIFIER.uriSafeId,
+         VyneHttpAuthConfig.PACKAGE_IDENTIFIER.uriSafeId,
          "PersonService", authScheme
       ).block()
 
@@ -163,7 +164,7 @@ class OperationAuthenticationIntegrationTest {
          parameterName = "api_key"
       )
       tokenService.submitAuthScheme(
-         FileConfigSourceLoader.LOCAL_PACKAGE_IDENTIFIER.uriSafeId,
+         VyneHttpAuthConfig.PACKAGE_IDENTIFIER.uriSafeId,
          "PersonService", token
       ).block()
       server.prepareResponse { response ->
@@ -186,7 +187,7 @@ class OperationAuthenticationIntegrationTest {
          cookieName = "api_key",
       )
       tokenService.submitAuthScheme(
-         FileConfigSourceLoader.LOCAL_PACKAGE_IDENTIFIER.uriSafeId,
+         VyneHttpAuthConfig.PACKAGE_IDENTIFIER.uriSafeId,
          "PersonService", token
       ).block()
 

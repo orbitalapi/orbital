@@ -6,6 +6,7 @@ import io.github.config4k.extract
 import io.vyne.config.ConfigSourceLoader
 import io.vyne.config.FileConfigSourceLoader
 import io.vyne.config.MergingHoconConfigRepository
+import io.vyne.connectors.VyneConnectionsConfig
 import java.nio.file.Path
 
 class ConfigFileConnectorsRegistry(
@@ -15,7 +16,7 @@ class ConfigFileConnectorsRegistry(
 
    // for testing
    constructor(path: Path, fallback: Config = ConfigFactory.systemEnvironment()) : this(
-      listOf(FileConfigSourceLoader(path)),
+      listOf(FileConfigSourceLoader(path, packageIdentifier = VyneConnectionsConfig.PACKAGE_IDENTIFIER)),
       fallback
    )
 

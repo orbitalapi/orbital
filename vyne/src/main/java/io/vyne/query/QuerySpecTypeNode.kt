@@ -3,6 +3,7 @@ package io.vyne.query
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.vyne.schemas.OutputConstraint
 import io.vyne.schemas.Type
+import lang.taxi.mutations.Mutation
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 
@@ -19,6 +20,8 @@ import mu.KotlinLogging
  *
  */
 // TODO : Why isn't the type enough, given that has children?  Why do I need to explicitly list the children I want?
+// TODO : This concept feels largely deprecated, and should be replaced by something like QueryExpression.
+// This was created before we had TaxiQL, and there are better implementations of it's concepts now.
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class QuerySpecTypeNode(
    val type: Type,
@@ -28,7 +31,8 @@ data class QuerySpecTypeNode(
    // Note: Not really convinced these need to be OutputCOnstraints (vs Constraints).
    // Revisit later
    val dataConstraints: List<OutputConstraint> = emptyList(),
-   val projection: Projection? = null
+   val projection: Projection? = null,
+   val mutation: Mutation? = null
 ) {
 
    fun anonymousTypes(): Set<Type> {

@@ -37,7 +37,7 @@ class InsertStatementGeneratorTest {
       val insert = InsertStatementGenerator(schema).generateInsertWithoutConnecting(typedInstance, connectionDetails)
       val sql = insert.toString()
       sql.withoutWhitespace().should.equal(
-         """insert into Person (  firstName,  lastName,  age,  fullName )
+         """insert into Person (  "firstName",  "lastName",  "age",  "fullName" )
             values (   'Jimmy',  'Schmitts',   28,    'Jimmy Schmitts')""".withoutWhitespace()
       )
    }
@@ -70,12 +70,12 @@ class InsertStatementGeneratorTest {
       )
       val sql = insert.toString()
       sql.withoutWhitespace().should.equal(
-         """insert into Person (  personId, firstName, lastName, age, fullName )
+         """insert into Person (  "personId", "firstName", "lastName", "age", "fullName" )
 values ( 123, 'Jimmy', 'Schmitts', 28, 'Jimmy Schmitts')
-on conflict (personId, firstName) do update
-set lastName = 'Schmitts',
-    age = 28,
-    fullName = 'Jimmy Schmitts'""".withoutWhitespace()
+on conflict ("personId", "firstName") do update
+set "lastName" = 'Schmitts',
+    "age" = 28,
+    "fullName" = 'Jimmy Schmitts'""".withoutWhitespace()
       )
    }
 }

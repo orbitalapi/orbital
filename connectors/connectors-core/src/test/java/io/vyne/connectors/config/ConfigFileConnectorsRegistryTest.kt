@@ -41,8 +41,8 @@ class ConfigFileConnectorsRegistryTest {
       )
       val config = ConfigFileConnectorsRegistry(
          listOf(
-            FileConfigSourceLoader(path1),
-            FileConfigSourceLoader(path2),
+            FileConfigSourceLoader(path1, packageIdentifier = FileConfigSourceLoader.LOCAL_PACKAGE_IDENTIFIER),
+            FileConfigSourceLoader(path2, packageIdentifier = FileConfigSourceLoader.LOCAL_PACKAGE_IDENTIFIER),
          )
       ).load()
       config.jdbc.shouldHaveKeys("another-connection", "connection-2", "connection-3", "connection-4")

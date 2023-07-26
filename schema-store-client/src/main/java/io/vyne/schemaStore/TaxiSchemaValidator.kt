@@ -27,13 +27,6 @@ class TaxiSchemaValidator(
       private val logger = KotlinLogging.logger {}
    }
 
-   init {
-      // Temp: Remove once I've caught all the initializer paths.
-      if (sourceLoaders.size == 1) {
-         logger.warn { "TaxiSchemaValidator initialized, but looks like we're missing some loaders." }
-      }
-   }
-
    override fun validateAndParse(
       existing: SchemaSet,
       updatedPackage: SourcePackage?,

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.query.VyneQlGrammar
+import lang.taxi.services.OperationScope
 import lang.taxi.services.QueryOperationCapability
 
 /**
@@ -32,7 +33,7 @@ data class TableOperation private constructor(
 ) : PartialOperation, MetadataTarget, SchemaMember, RemoteOperation {
    override val parameters: List<Parameter> = emptyList()
    override val contract = OperationContract(returnType)
-   override val operationType: String? = null
+   override val operationType: OperationScope = OperationScope.READ_ONLY
    override val returnTypeName: QualifiedName = returnType.name
    override val schemaMemberKind: SchemaMemberKind = SchemaMemberKind.OPERATION
    override val operationKind: OperationKind = OperationKind.Table

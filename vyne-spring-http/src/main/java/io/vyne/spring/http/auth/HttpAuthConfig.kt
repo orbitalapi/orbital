@@ -1,5 +1,6 @@
 package io.vyne.spring.http.auth
 
+import io.vyne.PackageIdentifier
 import io.vyne.auth.schemes.AuthSchemeProvider
 import io.vyne.auth.tokens.AuthTokenRepository
 import io.vyne.config.FileConfigSourceLoader
@@ -25,7 +26,12 @@ import java.nio.file.Paths
 @ConfigurationProperties(prefix = "vyne.auth")
 data class VyneHttpAuthConfig(
    val configFile: Path = Paths.get("auth.conf")
-)
+) {
+   companion object {
+      val PACKAGE_IDENTIFIER = PackageIdentifier.fromId("com.orbitalhq.config/auth/1.0.0")
+   }
+
+}
 
 @Configuration
 @EnableConfigurationProperties(VyneHttpAuthConfig::class)
@@ -43,9 +49,9 @@ class HttpAuthConfig {
       logger.info { "Using auth config file at ${config.configFile.toFile().canonicalPath}" }
       return HoconAuthTokensRepository(
          listOf(
-            FileConfigSourceLoader(envVariablesConfig.envVariablesPath, failIfNotFound = false),
+            FileConfigSourceLoader(envVariablesConfig.envVariablesPath, failIfNotFound = false, packageIdentifier = EnvVariablesConfig.PACKAGE_IDENTIFIER),
             SchemaConfigSourceLoader(eventProvider, "env.conf"),
-            FileConfigSourceLoader(config.configFile),
+            FileConfigSourceLoader(config.configFile, packageIdentifier = VyneHttpAuthConfig.PACKAGE_IDENTIFIER),
             SchemaConfigSourceLoader(eventProvider, "auth.conf")
          )
       )

@@ -1,5 +1,6 @@
 package io.vyne.spring.config
 
+import io.vyne.PackageIdentifier
 import org.springframework.boot.context.properties.ConfigurationProperties
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -21,4 +22,9 @@ import java.nio.file.Paths
 @ConfigurationProperties(prefix = "vyne")
 data class EnvVariablesConfig(
    val envVariablesPath: Path = Paths.get("config/env.conf")
-)
+) {
+   companion object {
+      val PACKAGE_IDENTIFIER = PackageIdentifier.fromId("com.orbitalhq.config/env/1.0.0")
+   }
+}
+

@@ -14,6 +14,7 @@ import io.vyne.testVyne
 import io.vyne.typedObjects
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import kotlinx.coroutines.runBlocking
 import org.junit.Before

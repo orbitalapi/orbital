@@ -17,6 +17,7 @@ import io.vyne.schemas.fqn
 import lang.taxi.generators.GeneratedTaxiCode
 import lang.taxi.generators.NamingUtils.replaceIllegalCharacters
 import lang.taxi.generators.NamingUtils.toCapitalizedWords
+import lang.taxi.services.OperationScope
 import lang.taxi.types.StreamType
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
@@ -116,7 +117,8 @@ class StreamingMessageServiceGenerator(
                mapping.offset
             ).asMetadata()
          ),
-         sources = emptyList()
+         sources = emptyList(),
+         operationType = OperationScope.READ_ONLY
       )
 
       val service = Service(

@@ -130,7 +130,8 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
                suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
             } else if (contextAtCursor.searchUpForRule<FactContext>() != null) {
                schema.types
-                  .filter { it.isScalar }
+                  // MP 27-Jul-23: Why did I think filtering for Scalars was a good idea?
+//                  .filter { it.isScalar }
                   .map { type -> typeProvider.buildCompletionItem(type.taxiType, listOf(importDecorator)) }
             } else {
                val typesInQuery = findTypesDeclaredInQuery(contextAtCursor, compilationResult)

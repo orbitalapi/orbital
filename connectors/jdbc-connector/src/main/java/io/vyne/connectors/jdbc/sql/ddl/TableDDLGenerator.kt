@@ -1,16 +1,19 @@
 package io.vyne.connectors.jdbc.sql.ddl
 
 import io.vyne.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
+import io.vyne.connectors.jdbc.JdbcConnectorTaxi
 import io.vyne.connectors.jdbc.SqlUtils
 import io.vyne.connectors.jdbc.sql.ddl.TableGenerator.TaxiTypeToJooqType.PkSuffix
 import io.vyne.connectors.jdbc.sqlBuilder
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
+import lang.taxi.jvm.common.PrimitiveTypes
 import lang.taxi.types.*
 import lang.taxi.types.EnumType
 import mu.KotlinLogging
 import org.jooq.*
+import org.jooq.impl.DSL
 import org.jooq.impl.DSL.*
 import org.jooq.impl.SQLDataType
 
@@ -19,6 +22,10 @@ import org.jooq.impl.SQLDataType
  * statement for the target type
  */
 class TableGenerator(private val schema: Schema) {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+
    fun execute(type: Type, dsl: DSLContext, tableNameSuffix: String? = null): Int {
       val (_, statement, indexes) = generate(type, dsl, tableNameSuffix)
       val result = statement.execute()
@@ -36,9 +43,17 @@ class TableGenerator(private val schema: Schema) {
       val tableName = providedTableName?.lowercase() ?: SqlUtils.tableNameOrTypeName(type.taxiType, tableNameSuffix)
 
       val columns = type.attributes.map { (attributeName, typeField) ->
-         val sqlType =
-            TaxiTypeToJooqType.getSqlType(typeField.resolveType(schema).taxiType, nullable = typeField.nullable)
-         field(attributeName, sqlType)
+         val taxiType = typeField.resolveType(schema).taxiType
+         val sqlType = TaxiTypeToJooqType.getSqlType(taxiType, nullable = typeField.nullable)
+            .let { dataType ->
+               if (typeField.hasMetadata(JdbcConnectorTaxi.Annotations.GeneratedIdAnnotationName.fqn())) {
+                  addAutoGeneration(dataType, taxiType)
+               } else {
+                  dataType
+               }
+
+            }
+         field(DSL.name(attributeName), sqlType)
       }
 
       val attributesWithIdAnnotation = type.getAttributesWithAnnotation("Id".fqn())
@@ -50,20 +65,29 @@ class TableGenerator(private val schema: Schema) {
       val primaryKeyFields = columns
          .filter { column -> attributesWithIdAnnotation.contains(column.name) }
 
-     val primaryKeyConstraints =  when (primaryKeyFields.size) {
+      val primaryKeyConstraints = when (primaryKeyFields.size) {
          0 -> emptyList<Constraint>()
          else -> listOf(constraint("${tableName}$PkSuffix").primaryKey(*primaryKeyFields.toTypedArray()))
       }
 
-     val indexStatements = indexedFields.map { indexedField ->
-        dsl.createIndexIfNotExists("$tableName${indexedField.name}_ix").on(table(name(tableName)), indexedField)
-     }
+      val indexStatements = indexedFields.map { indexedField ->
+         dsl.createIndexIfNotExists("$tableName${indexedField.name}_ix").on(table(name(tableName)), indexedField)
+      }
 
-      val sqlDsl = dsl.createTableIfNotExists(tableName)
+      val sqlDsl = dsl.createTableIfNotExists(name(tableName))
          .columns(columns)
          .constraints(primaryKeyConstraints)
 
       return TableDDLData(tableName, sqlDsl, indexStatements)
+   }
+
+   private fun addAutoGeneration(dataType: DataType<out Any>, taxiType: lang.taxi.types.Type): DataType<out Any> {
+      return if (PrimitiveType.isNumberType(taxiType)) {
+         (dataType as DataType<Int>).identity(true)
+      } else {
+         logger.warn { "Auto generation is not supported in primitive types of ${taxiType.toQualifiedName().typeName}" }
+         dataType
+      }
    }
 
    /**
@@ -97,6 +121,7 @@ class TableGenerator(private val schema: Schema) {
                require(type.basePrimitive != null) { "Type ${type.qualifiedName} is scalar, but does not have a primitive type.  This is unexpected" }
                getSqlType(type.basePrimitive!!)
             }
+
             else -> error("Add support for Taxi type ${type::class.simpleName}")
          }
       }
@@ -126,4 +151,8 @@ class TableGenerator(private val schema: Schema) {
    }
 }
 
-data class TableDDLData(val tableName: String, val ddlStatement: CreateTableFinalStep, val indexStatements: List<CreateIndexIncludeStep>)
+data class TableDDLData(
+   val tableName: String,
+   val ddlStatement: CreateTableFinalStep,
+   val indexStatements: List<CreateIndexIncludeStep>
+)

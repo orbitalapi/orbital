@@ -7,6 +7,7 @@ import io.vyne.VersionedSource
 import io.vyne.models.TypedInstance
 import io.vyne.query.RemoteCall
 import io.vyne.utils.ImmutableEquality
+import lang.taxi.services.OperationScope
 import lang.taxi.types.Documented
 import java.io.Serializable
 
@@ -120,7 +121,7 @@ data class Operation(
    @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
    override val returnType: Type,
    // similar to scope in taxi - ie., read / write
-   override val operationType: String? = null,
+   override val operationType: OperationScope,
    override val metadata: List<Metadata> = emptyList(),
    override val contract: OperationContract = OperationContract(returnType),
    @get:JsonIgnore
@@ -156,7 +157,7 @@ interface RemoteOperation : MetadataTarget, Documented, SchemaMember {
    val returnType: Type
    val contract: OperationContract
 
-   val operationType: String?
+   val operationType: OperationScope
 
    val operationKind:OperationKind
 

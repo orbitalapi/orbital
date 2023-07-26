@@ -14,6 +14,7 @@ import io.vyne.query.graph.edges.EvaluatableEdge
 import io.vyne.schemas.*
 import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.StrategyPerformanceProfiler
+import lang.taxi.services.OperationScope
 import mu.KotlinLogging
 import java.util.*
 import kotlin.time.ExperimentalTime
@@ -337,6 +338,7 @@ class VyneGraphBuilder(
          .forEach { service: Service ->
             service.remoteOperations
                .filter { !excludedOperations.contains(it.qualifiedName) }
+               .filter { isReadOnlyOperation(it) }
                // Don't include services that accept a raw primitive,
                // such as "string" - as we'll end up feeding it junk
                .filter { !hasRawPrimitivesForInputs(it) }
@@ -360,6 +362,8 @@ class VyneGraphBuilder(
 
       return connections
    }
+
+   private fun isReadOnlyOperation(operation: RemoteOperation) = operation.operationType == OperationScope.READ_ONLY
 
    private fun hasRawPrimitivesForInputs(operation: RemoteOperation): Boolean {
       return operation.parameters.any { it.type.isPrimitive }
@@ -597,7 +601,10 @@ class VyneGraphBuilder(
          // builder.connect(provider).to(providedInstance).withEdge(Relationship.PROVIDES)
       }
 
-      val type = schema.type(instanceFqn)
+      // Favour taking the type from the instance, as
+      // it may be anonymous, and not in the schema
+      val type = value?.type ?: schema.type(instanceFqn)
+
       // Note - We don't link provided instances to their instance types, as it creates a
       // link that can't be removed later.
       // eg - this is a problem:
@@ -711,7 +718,7 @@ class VyneGraphBuilder(
       if (instance !is TypedObject) {
          return connections
       }
-      schema.type(instanceFqn).attributes.forEach { (attributeName, field) ->
+      instance.type.attributes.forEach { (attributeName, field) ->
          val fieldValue = if (instance.hasAttribute(attributeName)) instance[attributeName] else null
          when {
             fieldValue?.value != null && fieldValue.value != "" ->

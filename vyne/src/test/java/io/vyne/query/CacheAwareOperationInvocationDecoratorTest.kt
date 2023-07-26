@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import lang.taxi.services.OperationScope
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 import org.junit.Test
@@ -64,7 +65,8 @@ class CacheAwareOperationInvocationDecoratorTest {
          qualifiedName = QualifiedName.from("op1@@op1"),
          returnType = type,
          parameters = listOf(),
-         sources = listOf()
+         sources = listOf(),
+         operationType = OperationScope.READ_ONLY
       )
       val params = listOf(
          element = Pair(

@@ -10,6 +10,7 @@ import io.vyne.pipelines.jet.api.transport.GenericPipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.PipelineDirection
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.file.FileWatcherStreamSourceSpec
+import io.vyne.spring.config.EnvVariablesConfig
 import io.vyne.utils.asA
 import org.junit.Rule
 import org.junit.Test
@@ -37,6 +38,7 @@ class PipelineConfigRepositoryTest {
          listOf(
             FileConfigSourceLoader(
                folder.root.resolve("env.conf").toPath(),
+               packageIdentifier = EnvVariablesConfig.PACKAGE_IDENTIFIER
             ),
             FileConfigSourceLoader(
                folder.root.resolve("pipelines").toPath(),

@@ -36,6 +36,7 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
    }
 
    suspend fun build(
+      // Pass the actual CollectionType here, not the member type.
       targetType: Type,
       spec: TypedInstanceValidPredicate
    ): TypedInstance? {

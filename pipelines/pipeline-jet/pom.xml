@@ -21,6 +21,11 @@
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>soap-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>vyne-client</artifactId>
          <version>${project.version}</version>
       </dependency>

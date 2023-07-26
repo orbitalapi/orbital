@@ -1,6 +1,7 @@
 package io.vyne.connectors.jdbc.sql.dml
 
 import io.vyne.connectors.config.jdbc.JdbcConnectionConfiguration
+import io.vyne.connectors.jdbc.JdbcConnectorTaxi
 import io.vyne.connectors.jdbc.SqlUtils
 import io.vyne.connectors.jdbc.sqlBuilder
 import io.vyne.models.TypedCollection
@@ -11,12 +12,9 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import mu.KotlinLogging
-import org.jooq.DSLContext
-import org.jooq.Field
-import org.jooq.InsertValuesStepN
-import org.jooq.Record
-import org.jooq.impl.DSL.field
-import org.jooq.impl.DSL.table
+import org.jooq.*
+import org.jooq.impl.DSL
+import org.jooq.impl.DSL.*
 
 class InsertStatementGenerator(private val schema: Schema) {
 
@@ -30,14 +28,47 @@ class InsertStatementGenerator(private val schema: Schema) {
       generateInsertWithoutConnecting(listOf(typedInstance), connection, useUpsertSemantics).single()
 
    /**
-    * Generates an insert using the provided dsl context.
-    * If the context itself is connected to a db, the returned sql statement is executable
+    * Generates a single statement inserting many rows.
+    * Genertaed values (ie., db-assigned IDs) are returned.
     */
-   fun generateInserts(value: TypedInstance, dslContext: DSLContext) = generateInserts(listOf(value), dslContext)
+   fun generateInsertAsSingleStatement(
+      values: List<TypedInstance>,
+      sql: DSLContext,
+      useUpsertSemantics: Boolean = false,
+      tableNameSuffix: String? = null,
+      tableName: String? = null
+   ): InsertResultStep<Record> {
+      require(values.isNotEmpty()) { "No values provided to persist." }
+      val recordType = assertAllValuesHaveSameType(values)
+
+      val actualTableName = tableName ?: SqlUtils.tableNameOrTypeName(recordType.taxiType, tableNameSuffix)
+      val fields = findFieldsToInsert(recordType)
+      val sqlFields = fields.map { it.second }
+
+      val generatedFields = recordType.getAttributesWithAnnotation(JdbcConnectorTaxi.Annotations.GeneratedIdAnnotationName.fqn())
+         .map { DSL.field(DSL.name(it.key))}
+
+      val rows = values.map {typedInstance ->
+         val rowValues = fields.map { (fieldName,_) ->
+            require(typedInstance is TypedObject) { "Expected to receive a TypedObject, but got a ${typedInstance::class.simpleName}"}
+            typedInstance[fieldName].value
+         }
+         row(rowValues)
+      }
+      return sql.insertInto(table(DSL.name(actualTableName)), *sqlFields.toTypedArray())
+         .valuesOfRows(*rows.toTypedArray())
+         .returning(*generatedFields.toTypedArray())
+   }
 
    /**
     * Generates an insert using the provided dsl context.
     * If the context itself is connected to a db, the returned sql statement is executable
+    *
+    * Returns multiple Insert statements, intended to be executed in a batch.
+    * As a result, db-generated values are not returned.
+    *
+    * Where possible prefer using generateInsertAsSingleStatement.
+    * That approach
     */
    fun generateInserts(
       values: List<TypedInstance>,
@@ -66,7 +97,7 @@ class InsertStatementGenerator(private val schema: Schema) {
       }
 
       val primaryKeyFields = recordType.getAttributesWithAnnotation("Id".fqn())
-         .map { field(it.key) }
+         .map { field(name(it.key)) }
       // There are nicer syntaxes for inserting multiple rows (using Records)
       // in later versions, but locked to 3.13 because of old spring dependencies.
       val insertStatements = rowsToInsert.map { row: List<Pair<AttributeName, Any?>> ->
@@ -105,9 +136,9 @@ class InsertStatementGenerator(private val schema: Schema) {
             nonPrimaryKeyFields
                .forEach { (fieldName, value) ->
                   if (value != null) {
-                     insertBuilder.set(field(fieldName), value)
+                     insertBuilder.set(field(name(fieldName)), value)
                   } else {
-                     insertBuilder.setNull(field(fieldName))
+                     insertBuilder.setNull(field(name(fieldName)))
                   }
                }
          }
@@ -119,20 +150,19 @@ class InsertStatementGenerator(private val schema: Schema) {
     * executable.
     * Useful for testing.
     */
-   fun generateInsertWithoutConnecting(
+   private fun generateInsertWithoutConnecting(
        values: List<TypedInstance>,
        connection: JdbcConnectionConfiguration,
        useUpsertSemantics: Boolean = false
    ) = generateInserts(values, connection.sqlBuilder(), useUpsertSemantics)
 
    private fun assertAllValuesHaveSameType(values: List<TypedInstance>): Type {
-      val types = values.map { it.type }
+      val types = values.map { it.type.collectionType ?: it.type }
          .distinct()
 
-      val allTypesAreAnonymous = values
+      val allTypesAreAnonymous = types
          // Exclude collection types, as some are Any[] when projecting to anonymous types
-         .filter { !it.type.isCollection }
-         .all { it.type.taxiType.anonymous }
+         .all { it.taxiType.anonymous }
       if (allTypesAreAnonymous) {
          return values.first().type
       }
@@ -143,9 +173,13 @@ class InsertStatementGenerator(private val schema: Schema) {
 
    private fun findFieldsToInsert(type: Type): List<Pair<AttributeName, Field<Any>>> {
       return type.attributes
+         .filter { (name, field) ->
+            // Don't insert fields that are auto generated.
+            !field.hasMetadata(JdbcConnectorTaxi.Annotations.GeneratedIdAnnotationName.fqn())
+         }
          // TODO : Currently we persist everything. Does this make sense for evaluated fields?
          .map { (name, field) ->
-            name to field(name)
+            name to field(DSL.name(name))
          }
    }
 }

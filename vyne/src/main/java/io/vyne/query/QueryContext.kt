@@ -3,7 +3,6 @@ package io.vyne.query
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
 import com.google.common.collect.HashMultimap
-import io.vyne.FactSetMap
 import io.vyne.FactSets
 import io.vyne.retainFactsFromFactSet
 import io.vyne.models.*
@@ -76,6 +75,25 @@ data class SerializableVyneQueryStatistics(
    }
 }
 
+enum class FailureBehaviour {
+
+   /**
+    * Throwing is the original behaviour. However, this becomes destructive
+    * when throwing inside a mapping operation, as it kills the other
+    * active mapping operations.
+    */
+   THROW,
+
+   /**
+    * If a query fails, send a typed null, with a DataSource of
+    * FailedSearch.
+    *
+    * This is less destructive than throwing an exception, but
+    * can be ambiguous for consumers.
+    */
+   SEND_TYPED_NULL;
+}
+
 object QueryCancellationRequest
 // Design choice:
 // Query Context's don't have a concept of FactSets, everything is just flattened to facts.
@@ -115,7 +133,9 @@ data class QueryContext(
 
    val vyneQueryStatistics: VyneQueryStatistics = VyneQueryStatistics(),
 
-   val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = ConcurrentHashMap()
+   val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = ConcurrentHashMap(),
+
+//   val failureBehaviour: FailureBehaviour = FailureBehaviour.THROW
 
 ) : ProfilerOperation by profiler, FactBag by facts, QueryContextEventDispatcher by eventBroker, InPlaceQueryEngine {
 
@@ -170,20 +190,23 @@ data class QueryContext(
 
    suspend fun find(
       queryString: QueryExpression,
-      permittedStrategy: PermittedQueryStrategies = PermittedQueryStrategies.EVERYTHING
+      permittedStrategy: PermittedQueryStrategies = PermittedQueryStrategies.EVERYTHING,
+      failureBehaviour: FailureBehaviour = FailureBehaviour.THROW
    ): QueryResult = queryEngine.find(
       queryString,
       this.newSearchContext(),
-      applicableStrategiesPredicate = PermittedQueryStrategyPredicate.forEnum(permittedStrategy)
+      applicableStrategiesPredicate = PermittedQueryStrategyPredicate.forEnum(permittedStrategy),
+      failureBehaviour = failureBehaviour
    )
 
-   suspend fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this.newSearchContext())
-   suspend fun find(target: Set<QuerySpecTypeNode>): QueryResult = queryEngine.find(target, this.newSearchContext())
+   suspend fun find(target: QuerySpecTypeNode, failureBehaviour: FailureBehaviour = FailureBehaviour.THROW): QueryResult = queryEngine.find(target, this.newSearchContext(), failureBehaviour = failureBehaviour)
+   suspend fun find(target: Set<QuerySpecTypeNode>, failureBehaviour: FailureBehaviour = FailureBehaviour.THROW): QueryResult = queryEngine.find(target, this.newSearchContext(), failureBehaviour = failureBehaviour)
    suspend fun find(
       target: QuerySpecTypeNode,
-      excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>
+      excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
+      failureBehaviour:FailureBehaviour = FailureBehaviour.THROW
    ): QueryResult =
-      queryEngine.find(target, this.newSearchContext(), excludedOperations)
+      queryEngine.find(target, this.newSearchContext(), excludedOperations, failureBehaviour = failureBehaviour)
 
    suspend fun build(typeName: QualifiedName): QueryResult = build(typeName.parameterizedName)
    suspend fun build(typeName: String): QueryResult =
@@ -199,6 +222,7 @@ data class QueryContext(
       queryEngine.findAll(queryString, this.newSearchContext())
 
    suspend fun doMap(expression: QueryExpression): QueryResult {
+      val querySpec = queryEngine.parse(expression)
       val sourceFacts = when {
          // Don't use .isEmpty(), as it also considers scoped facts
          @Suppress("ReplaceSizeZeroCheckWithIsEmpty")
@@ -215,8 +239,11 @@ data class QueryContext(
             // as that can break things where we expect to find a single result.
             val scopedFactsWithoutInput = this.scopedFacts.filter { it.fact != sourceCollection }
 
+
             val mappingQueryContext = this.only(inputValue, scopedFactsWithoutInput)
-               .copy(parent = null)
+               .copy(
+                  parent = null,
+               )
 
             val mappingQueryEngine = queryEngine.newEngine { existingFacts ->
                // Only retain user info, drop all other facts (like initial state)
@@ -224,12 +251,16 @@ data class QueryContext(
                newState.put(FactSets.DEFAULT, inputValue)
                newState
             }
-            mappingQueryEngine.find(expression, mappingQueryContext)
-//            mappingQueryContext.findAll(expression)
-         } catch (e:Exception) {
-            val failedSpec = queryEngine.parse(expression)
+            // Don't throw errors inside a mapping operation,
+            // as it takes down the other maps that are running
+            mappingQueryEngine.find(
+               expression,
+               mappingQueryContext,
+               failureBehaviour = FailureBehaviour.SEND_TYPED_NULL
+            )
+         } catch (e: Exception) {
             QueryResult(
-               failedSpec.first(),
+               querySpec.first(),
                emptyFlow(),
                null,
                false,
@@ -243,9 +274,20 @@ data class QueryContext(
       }
       // HACK: Just reusing the first result, but rewiring the result, and a few params
       // like ids, etc.
-      val firstResult = mappingResult.first()
-      val combinedResultsFlow = mappingResult.map { it.results }.merge()
-      return firstResult.copy(results = combinedResultsFlow, queryId = this.queryId, clientQueryId = this.clientQueryId)
+      return if (mappingResult.isEmpty()) {
+         QueryResult(
+            querySpec.first(),
+            emptyFlow(),
+            null,
+            false,
+            emptySet(),
+            clientQueryId, queryId
+         )
+      } else {
+         val firstResult = mappingResult.first()
+         val combinedResultsFlow = mappingResult.map { it.results }.merge()
+         firstResult.copy(results = combinedResultsFlow, queryId = this.queryId, clientQueryId = this.clientQueryId)
+      }
    }
 
 
@@ -471,6 +513,15 @@ data class QueryContext(
       return queryEngine.invokeOperation(
          service, operation, preferredParams, this, providedParamValues
       )
+   }
+
+   /**
+    * Call this function at the mutate phase of the query execution.
+    */
+   suspend fun mutate(expression: MutatingQueryExpression): QueryResult {
+      val querySpec = parseQuery(expression).single()
+      return queryEngine.mutate(expression.mutation!!, querySpec, this, inputValue = null)
+
    }
 }
 

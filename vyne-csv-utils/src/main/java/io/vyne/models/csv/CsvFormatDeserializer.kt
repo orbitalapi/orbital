@@ -18,7 +18,7 @@ object CsvFormatDeserializer : ModelFormatDeserializer {
       val content = CsvImporterUtil.trimContent(value, csvAnnotation.ingestionParameters.ignoreContentBefore)
       val parsed = CSVParser.parse(content, format)
       val records = parsed.records
-         .filter { parsed.headerNames == null || parsed.headerNames.isEmpty() || parsed.headerNames.size == it.size() }
+//         .filter { parsed.headerNames == null || parsed.headerNames.isEmpty() || parsed.headerNames.size == it.size() }
       return records
    }
 

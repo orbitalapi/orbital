@@ -21,9 +21,9 @@ class ConnectorsConfig {
    ): ConfigFileConnectorsRegistry {
       return ConfigFileConnectorsRegistry(
          listOf(
-            FileConfigSourceLoader(envVariablesConfig.envVariablesPath, failIfNotFound = false),
+            FileConfigSourceLoader(envVariablesConfig.envVariablesPath, failIfNotFound = false, packageIdentifier = EnvVariablesConfig.PACKAGE_IDENTIFIER),
             SchemaConfigSourceLoader(schemaStore, "env.conf"),
-            FileConfigSourceLoader(config.configFile),
+            FileConfigSourceLoader(config.configFile, packageIdentifier = VyneConnectionsConfig.PACKAGE_IDENTIFIER),
             SchemaConfigSourceLoader(schemaStore, "connections.conf")
          )
       )

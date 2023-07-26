@@ -8,14 +8,14 @@ import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import lang.taxi.policies.OperationScope
+import lang.taxi.policies.PolicyOperationScope
 
 class PolicyAwareOperationInvocationServiceDecorator(private val operationService: OperationInvocationService, private val evaluator: PolicyEvaluator = PolicyEvaluator()) : OperationInvocationService {
    override suspend fun invokeOperation(service: Service, operation: RemoteOperation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): Flow<TypedInstance> {
       // For now, treating everything as external.
       // Need to update the query manager to differentiate between external
       // TODO: Get these from the operation (operationType) and query engine (scope)
-      val executionScope = ExecutionScope(operationType = operation.operationType, operationScope = OperationScope.EXTERNAL)
+      val executionScope = ExecutionScope(operationType = operation.operationType, policyOperationScope = PolicyOperationScope.EXTERNAL)
 
 
       // We invoke the operation regardless, as current thinking is that we're

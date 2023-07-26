@@ -10,6 +10,7 @@ import com.typesafe.config.ConfigResolveOptions
 import io.vyne.PackageIdentifier
 import io.vyne.VersionedSource
 import io.vyne.config.*
+import io.vyne.pipelines.jet.PipelineConfig
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import mu.KotlinLogging
 import org.apache.commons.io.FilenameUtils
@@ -27,7 +28,7 @@ class PipelineRepository(
    private val fallback: Config = ConfigFactory.systemEnvironment()
 ) {
    constructor(path: Path, mapper: ObjectMapper) : this(
-      listOf(FileConfigSourceLoader(path)),
+      listOf(FileConfigSourceLoader(path, packageIdentifier = PipelineConfig.PACKAGE_IDENTIFIER)),
       mapper
    )
 

@@ -281,15 +281,16 @@ class TaxiSchema(
             .groupBy {
             it.languages.singleOrNull()
                ?: error("Package ${it.identifier} contains multiple languages, which is not currently supported")
-         }.toSortedMap(Comparator { o1, o2 ->
-            when {
-               o1 == SourceCodeLanguages.TAXI && o2 == SourceCodeLanguages.TAXI -> 0
-               o1 == SourceCodeLanguages.TAXI && o2 != SourceCodeLanguages.TAXI -> -1
-               o1 != SourceCodeLanguages.TAXI && o2 == SourceCodeLanguages.TAXI -> 1
-               else -> 0
+         }.toSortedMap { o1, o2 ->
+               when {
+                  o1 == SourceCodeLanguages.TAXI && o2 == SourceCodeLanguages.TAXI -> 0
+                  o1 == SourceCodeLanguages.TAXI && o2 != SourceCodeLanguages.TAXI -> -1
+                  o1 != SourceCodeLanguages.TAXI && o2 == SourceCodeLanguages.TAXI -> 1
+                  else -> 0
+               }
             }
-         })
 
+         val importedTaxiDocs = imports.map { it.taxi }
 
          val empty = emptyList<CompilationError>() to TaxiDocument.empty()
          val (compilationErrors, doc) = packagesByLanguage.values.fold(empty) { acc, sourcePackages ->
@@ -300,8 +301,14 @@ class TaxiSchema(
                logger.warn { "No converters provided capable of converting sources of languages(s): ${firstSourcePackage.languages.joinToString()}. This source package is being ignored." }
                acc
             } else {
-               val (errors, doc) = converter.loadAll(sourcePackages, listOf(accTaxiDoc))
-               errors to accTaxiDoc.merge(doc)
+               val (errors, doc) = converter.loadAll(sourcePackages, listOf(accTaxiDoc) + importedTaxiDocs)
+               // TODO : Need to get smarter about how errors are handled.
+               // Currently, an error in an earlier compilation may be resolved by a later compilation.
+               // However, it may not be, and at present, it may not be re-reported, as it's part of the
+               // compiled imports.
+               // Basically, this approach is wrong.  We don't report some errors, and we report other errors
+               // incorrectly.
+               (errors + accErrors) to accTaxiDoc.merge(doc)
             }
 
          }

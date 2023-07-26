@@ -8,6 +8,7 @@ import com.hazelcast.spring.context.SpringManagedContext
 import io.vyne.config.ConfigSourceLoader
 import io.vyne.config.FileConfigSourceLoader
 import io.vyne.connectors.VyneConnectionsConfig
+import io.vyne.connectors.soap.SoapWsdlSourceConverter
 import io.vyne.monitoring.EnableCloudMetrics
 import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
 import io.vyne.pipelines.jet.pipelines.PipelineConfigRepository
@@ -17,10 +18,13 @@ import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.schema.consumer.SchemaChangedEventProvider
 import io.vyne.schema.consumer.SchemaConfigSourceLoader
+import io.vyne.schemas.readers.SourceConverterRegistry
+import io.vyne.schemas.readers.TaxiSourceConverter
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.config.*
 import io.vyne.spring.http.auth.HttpAuthConfig
+import io.vyne.spring.query.formats.FormatSpecRegistry
 import mu.KotlinLogging
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -66,6 +70,18 @@ class JetPipelineApp {
    }
 
    @Bean
+   fun sourceConverterRegistry(): SourceConverterRegistry = SourceConverterRegistry(
+      setOf(
+         TaxiSourceConverter,
+         SoapWsdlSourceConverter
+      ),
+      registerWithStaticRegistry = true
+   )
+
+   @Bean
+   fun formatSpecRegistry(): FormatSpecRegistry = FormatSpecRegistry.default()
+
+   @Bean
    fun pipelineModule() = PipelineJacksonModule()
 
    @Bean
@@ -103,7 +119,7 @@ class JetPipelineApp {
    ): PipelineConfigRepository {
 
       val loaders = mutableListOf<ConfigSourceLoader>(
-         FileConfigSourceLoader(envVariablesConfig.envVariablesPath, failIfNotFound = false),
+         FileConfigSourceLoader(envVariablesConfig.envVariablesPath, failIfNotFound = false, packageIdentifier = EnvVariablesConfig.PACKAGE_IDENTIFIER),
          SchemaConfigSourceLoader(schemaChangedEventProvider, "env.conf")
       )
       if (config.pipelinePath != null) {
@@ -114,7 +130,7 @@ class JetPipelineApp {
             logger.info { "Using pipelines stored at ${config.pipelinePath.toFile().canonicalPath}" }
          }
 
-         loaders.add(FileConfigSourceLoader(config.pipelinePath))
+         loaders.add(FileConfigSourceLoader(config.pipelinePath, packageIdentifier = PipelineConfig.PACKAGE_IDENTIFIER))
       }
       loaders.add(SchemaConfigSourceLoader(schemaChangedEventProvider, "*.conf", sourceType = "@orbital/pipelines"))
       return PipelineConfigRepository(loaders)

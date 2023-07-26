@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.utils.ImmutableEquality
 import lang.taxi.services.FilterCapability
+import lang.taxi.services.OperationScope
 import lang.taxi.services.QueryOperationCapability
 
 @JsonDeserialize(`as` = QueryOperation::class)
@@ -18,7 +19,7 @@ data class QueryOperation(
    override val typeDoc: String? = null
 ) : MetadataTarget, SchemaMember, RemoteOperation, PartialQueryOperation {
    override val contract = OperationContract(returnType)
-   override val operationType: String? = null
+   override val operationType: OperationScope = OperationScope.READ_ONLY
    private val filterCapability: FilterCapability? = capabilities
       .filterIsInstance<FilterCapability>()
       .firstOrNull()

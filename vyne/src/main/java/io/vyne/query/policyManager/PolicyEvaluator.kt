@@ -2,22 +2,22 @@ package io.vyne.query.policyManager
 
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
-import io.vyne.query.OperationType
 import io.vyne.query.QueryContext
 import io.vyne.schemas.Policy
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import lang.taxi.policies.Instruction
-import lang.taxi.policies.OperationScope
+import lang.taxi.policies.PolicyOperationScope
 import lang.taxi.policies.PermitInstruction
+import lang.taxi.services.OperationScope
 
 /**
  * Similar to a policy scope, exception the operationType may not have been defined.
  * Current thinking is that operationScope should always be inferrable, as the engine
  * knows if we're doing an internal or external call.
  */
-data class ExecutionScope(val operationType: String?, val operationScope: OperationScope)
+data class ExecutionScope(val operationType: OperationScope, val policyOperationScope: PolicyOperationScope)
 
 class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator = PolicyStatementEvaluator(), private val defaultInstruction: Instruction = PermitInstruction) {
 

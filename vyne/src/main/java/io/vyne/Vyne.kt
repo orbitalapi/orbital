@@ -14,6 +14,7 @@ import io.vyne.schemas.*
 import io.vyne.schemas.taxi.TaxiConstraintConverter
 import io.vyne.schemas.taxi.TaxiSchemaAggregator
 import io.vyne.schemas.taxi.compileExpression
+import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.Ids
 import io.vyne.utils.log
 import kotlinx.coroutines.currentCoroutineContext
@@ -22,6 +23,7 @@ import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.query.FactValue
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
+import lang.taxi.types.Arrays
 import java.util.*
 
 enum class NodeTypes {
@@ -105,15 +107,21 @@ class Vyne(
          lang.taxi.query.QueryMode.FIND_ONE -> queryContext.find(expression)
          lang.taxi.query.QueryMode.STREAM -> queryContext.findAll(expression)
          lang.taxi.query.QueryMode.MAP -> queryContext.doMap(expression)
+         lang.taxi.query.QueryMode.MUTATE -> queryContext.mutate(expression as MutatingQueryExpression)
       }
    }
 
    @VisibleForTesting
    internal fun deriveResponseType(taxiQl: TaxiQlQuery): String {
-      return taxiQl.projectedType?.let { projectedType ->
-         val type = ProjectionAnonymousTypeProvider.projectedTo(projectedType, schema)
-         type.collectionType?.fullyQualifiedName ?: type.fullyQualifiedName
-      } ?: taxiQl.typesToFind.first().typeName.firstTypeParameterOrSelf
+
+      return taxiQl.unwrappedReturnType.qualifiedName
+      // 25-Jul-23: Was below.  I think the new impl. is more correct (and encapsulated),
+      // but might've missed some edge cases.
+      // Important to note the below did not consider the return type of mutations.
+//      return taxiQl.projectedType?.let { projectedType ->
+//         val type = ProjectionAnonymousTypeProvider.projectedTo(projectedType, schema)
+//         type.collectionType?.fullyQualifiedName ?: type.fullyQualifiedName
+//      } ?: taxiQl.typesToFind.first().typeName.firstTypeParameterOrSelf
    }
 
    @VisibleForTesting
@@ -164,22 +172,33 @@ class Vyne(
          expression
       }
 
-      if (queryExpressions.size > 1) {
-         TODO("Handle multiple target types in VyneQL")
-      }
-      val expression = queryExpressions.first().let { expression ->
-         if (taxiQl.projectedType != null) {
-            ProjectedExpression(
-               expression,
-               Projection(
-                  ProjectionAnonymousTypeProvider.projectedTo(taxiQl.projectedType!!, schema),
-                  taxiQl.projectionScope
+      val expression: QueryExpression = when {
+         queryExpressions.size > 1 -> TODO("Handle multiple target types in VyneQL")
+         queryExpressions.size == 1 -> queryExpressions.first().let { expression ->
+            if (taxiQl.projectedType != null) {
+               ProjectedExpression(
+                  expression,
+                  Projection(
+                     ProjectionAnonymousTypeProvider.projectedTo(taxiQl.projectedType!!, schema),
+                     taxiQl.projectionScope,
+                  )
                )
-            )
-         } else {
-            expression
+            } else {
+               expression
+            }
          }
+
+         else -> null
+      }.let { possibleQueryExpression ->
+         // At this point we have either:
+         // Mutation -only query.
+         // Query-only query.
+         // Query-then-mutate query.
+         // Decorate encapsulates those and returns the correct expression
+         MutatingQueryExpression.decorate(possibleQueryExpression, taxiQl.mutation)
       }
+
+
 
       return Pair(queryContext, expression)
    }
@@ -202,7 +221,8 @@ class Vyne(
             schema.type(parameter.type),
             parameter.value.typedValue.value,
             schema,
-            source = DefinedInSchema
+            source = DefinedInSchema,
+            formatSpecs = formatSpecs
          )
 
          else -> error("No value was provided for parameter ${parameter.name} ")
@@ -265,7 +285,10 @@ class Vyne(
 
 
    //   fun queryContext(): QueryContext = QueryContext(schema, facts, this)
-   constructor(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default(), formatSpecs: List<ModelFormatSpec> = emptyList()) : this(
+   constructor(
+      queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default(),
+      formatSpecs: List<ModelFormatSpec> = emptyList()
+   ) : this(
       emptyList(),
       queryEngineFactory,
       formatSpecs
