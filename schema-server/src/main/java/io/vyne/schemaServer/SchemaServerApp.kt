@@ -52,7 +52,7 @@ class SchemaServerApp {
          return InMemorySchemaRepositoryConfigLoader(
             SchemaRepositoryConfig(
                FileSystemSchemaRepositoryConfig(
-                  projects = listOf(FileSystemPackageSpec(repositoryHome))
+                  projects = listOf(FileSystemPackageSpec(repositoryHome, isEditable = true)),
                )
             ),
             eventDispatcher
