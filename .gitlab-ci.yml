@@ -387,20 +387,20 @@ terraform-validate:
    needs: [ ]
    stage: build
 
-build-helm:
-   stage: build
-   image:
-      name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/alpine/helm:3.11.1
-      entrypoint: [ "" ]
-   script:
-      - cd ${CI_PROJECT_DIR}/infra/helm/vyne-helm
-      - helm package .
-      - helm repo index .
-      - cp *.tgz charts
-      - cp artifacthub-repo.yml index.yaml charts
-   artifacts:
-      paths:
-         - infra/helm/vyne-helm/charts
+#build-helm:
+#   stage: build
+#   image:
+#      name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/alpine/helm:3.11.1
+#      entrypoint: [ "" ]
+#   script:
+#      - cd ${CI_PROJECT_DIR}/infra/helm/vyne-helm
+#      - helm package .
+#      - helm repo index .
+#      - cp *.tgz charts
+#      - cp artifacthub-repo.yml index.yaml charts
+#   artifacts:
+#      paths:
+#         - infra/helm/vyne-helm/charts
 
 .terraform-deploy:
   extends: .terraform:deploy
