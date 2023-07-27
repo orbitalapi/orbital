@@ -16,7 +16,13 @@ class ConfigFileConnectorsRegistry(
 
    // for testing
    constructor(path: Path, fallback: Config = ConfigFactory.systemEnvironment()) : this(
-      listOf(FileConfigSourceLoader(path, packageIdentifier = VyneConnectionsConfig.PACKAGE_IDENTIFIER)),
+      listOf(
+         FileConfigSourceLoader(
+            path,
+            packageIdentifier = VyneConnectionsConfig.PACKAGE_IDENTIFIER,
+            failIfNotFound = false
+         )
+      ),
       fallback
    )
 

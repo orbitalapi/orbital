@@ -51,7 +51,11 @@ class HttpAuthConfig {
          listOf(
             FileConfigSourceLoader(envVariablesConfig.envVariablesPath, failIfNotFound = false, packageIdentifier = EnvVariablesConfig.PACKAGE_IDENTIFIER),
             SchemaConfigSourceLoader(eventProvider, "env.conf"),
-            FileConfigSourceLoader(config.configFile, packageIdentifier = VyneHttpAuthConfig.PACKAGE_IDENTIFIER),
+            FileConfigSourceLoader(
+               config.configFile,
+               packageIdentifier = VyneHttpAuthConfig.PACKAGE_IDENTIFIER,
+               failIfNotFound = false
+            ),
             SchemaConfigSourceLoader(eventProvider, "auth.conf")
          )
       )

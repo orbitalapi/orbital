@@ -35,7 +35,11 @@ class ConnectionsConfiguration {
          listOf(
             FileConfigSourceLoader(envVariablesConfig.envVariablesPath, failIfNotFound = false, packageIdentifier = EnvVariablesConfig.PACKAGE_IDENTIFIER),
             SchemaConfigSourceLoader(schemaStore, "env.conf"),
-            FileConfigSourceLoader(config.configFile, packageIdentifier = VyneConnectionsConfig.PACKAGE_IDENTIFIER),
+            FileConfigSourceLoader(
+               config.configFile,
+               packageIdentifier = VyneConnectionsConfig.PACKAGE_IDENTIFIER,
+               failIfNotFound = false
+            ),
             SchemaConfigSourceLoader(schemaStore, "connections.conf")
          )
       )
