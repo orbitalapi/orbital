@@ -1,5 +1,7 @@
 package io.vyne.auth.schemes
 
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigObject
 import io.github.config4k.extract
@@ -65,7 +67,22 @@ data class AuthTokens(
 
 typealias SanitizedAuthScheme = AuthScheme
 
+// We're using a mix of Kotlin serialization in some places,
+// And Jackson in others (primarily when sending to the UI).  Make sure the Jackson subtype
+// stuff here matches the kotlin impl., otherwise stuff will break
 @Serializable
+@JsonTypeInfo(
+   use = JsonTypeInfo.Id.NAME,
+   include = JsonTypeInfo.As.PROPERTY,
+   property = "type"
+)
+@JsonSubTypes(
+   JsonSubTypes.Type(BasicAuth::class, name = "Basic"),
+   JsonSubTypes.Type(HttpHeader::class, name = "HttpHeader"),
+   JsonSubTypes.Type(QueryParam::class, name = "QueryParam"),
+   JsonSubTypes.Type(Cookie::class, name = "Cookie"),
+   JsonSubTypes.Type(OAuth2::class, name = "OAuth2"),
+)
 sealed class AuthScheme(
 ) {
    abstract fun sanitized(): SanitizedAuthScheme

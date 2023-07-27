@@ -49,6 +49,9 @@ class QueryRouteService(
    fun router(): RouterFunction<ServerResponse> {
       return RouterFunctions.route({ request ->
          val query = queryRouter.getQuery(request)
+         if (request.path().startsWith("/api/q") && query == null) {
+            logger.warn { "Request $request received did not match any queries" }
+         }
          if (query != null) {
             logger.debug { "Request $request mapped to query ${query.name}" }
             request.attributes()[MATCHED_QUERY] = query
@@ -60,7 +63,7 @@ class QueryRouteService(
    private fun buildQueryIndex(schemaSet: SchemaSet) {
       logger.info { "Schema changed, rebuilding query handlers for schema generation ${schemaSet.generation}" }
       queryRouter = QueryRouter.build(schemaSet.schema.taxi.queries)
-      logger.info { "Router updated, now contains the following routes: \n ${queryRouter.routes.joinToString("\n")}" }
+      logger.info { "Router updated, now contains the following routes: \n${queryRouter.routes.joinToString("\n")}" }
    }
 
    fun handleQuery(request: ServerRequest, query: RoutedQuery): Mono<ServerResponse> {

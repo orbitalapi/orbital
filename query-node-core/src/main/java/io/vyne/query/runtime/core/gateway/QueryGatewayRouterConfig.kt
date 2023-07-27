@@ -1,5 +1,6 @@
 package io.vyne.query.runtime.core.gateway
 
+import mu.KotlinLogging
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -11,11 +12,15 @@ import org.springframework.web.reactive.function.server.ServerResponse
  * for saved queries containing an HttpOperation annotation
  */
 @Configuration
-@ConditionalOnProperty("vyne.query-router-url")
+@ConditionalOnProperty("vyne.dispatcher.http.enabled", havingValue = "true", matchIfMissing = false)
 class QueryGatewayRouterConfig {
 
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
    @Bean
    fun buildRoutes(requestHandler: QueryRouteService): RouterFunction<ServerResponse> {
+      logger.info { "Exposing router for handling inbound queries" }
       return requestHandler.router()
    }
 }

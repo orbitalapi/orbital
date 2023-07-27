@@ -14,7 +14,7 @@ import {
   template: `
       <app-header-component-layout
 
-        title="Authentication Manager" description="These authentication tokens will be used when Vyne makes calls to services. The values of the tokens are not shown, but can be edited or deleted.">
+        title="Authentication Manager" description="These authentication tokens will be used when Orbital makes calls to services. The values of the tokens are not shown, but can be edited or deleted.">
             <ng-container ngProjectAs="buttons">
               <button tuiButton size="m" appearance="outline" (click)="showCreateTokenPopup()">Create new token
               </button>
@@ -46,7 +46,7 @@ import {
           <div class="empty-state-container">
               <img src="assets/img/illustrations/authentication.svg">
               <p>
-                  These authentication tokens will be used when Vyne makes calls to services. The values of the tokens
+                  These authentication tokens will be used when Orbital makes calls to services. The values of the tokens
                   are not
                   shown, but can be edited or deleted.
               </p>
