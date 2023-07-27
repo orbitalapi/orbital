@@ -300,6 +300,13 @@ publish-pipeline-jet-to-docker-hub:
       microservice_vyne: pipeline
       microservice_orbital: pipelines
 
+publish-query-node-to-docker-hub:
+   extends: .publish-to-docker-hub
+   variables:
+      projectDir: query-node-native
+      microservice_vyne: query-node
+      microservice_orbital: query-node
+
 publish-schema-server-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
