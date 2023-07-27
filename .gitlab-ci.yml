@@ -86,9 +86,9 @@ default:
          - "vyne-analytics-server/target/vyne-analytics-server.jar"
          - "query-node-native/target/query-node-native.jar"
          - "vyne-query-service/target/vyne.zip"
-         - "station/target/orbital.zip"
+#         - "station/target/orbital.zip"
          - "test-cli/target/*.zip"
-         - "voyager/target/voyager.jar"
+#         - "voyager/target/voyager.jar"
       expire_in: 1 hours
       reports:
          junit:
@@ -336,13 +336,13 @@ publish-schema-server-to-gitlab-container-registry:
       microservice_vyne: schema-server
       microservice_orbital: schema-server
 
-publish-voyager-to-gitlab-container-registry:
-   extends: .publish-to-gitlab-container-registry
-   variables:
-      projectDir: voyager
-      microservice_vyne: voyager
-      microservice_orbital: voyager
-   when: manual
+#publish-voyager-to-gitlab-container-registry:
+#   extends: .publish-to-gitlab-container-registry
+#   variables:
+#      projectDir: voyager
+#      microservice_vyne: voyager
+#      microservice_orbital: voyager
+#   when: manual
 
 .publish-docker-gitlab:
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.8-0.6.3
