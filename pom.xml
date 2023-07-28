@@ -273,6 +273,16 @@
             <artifactId>kafka-clients</artifactId>
             <version>${kafka.version}</version>
          </dependency>
+         <!-- https://security.snyk.io/vuln/SNYK-JAVA-COMGOOGLEPROTOBUF-3167772
+         Transitive from wire-compiler 4.8.0 -->
+         <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>3.19.6</version>
+         </dependency>
+
+
+
 
          <dependency>
             <groupId>software.amazon.awssdk</groupId>

@@ -547,6 +547,16 @@
             <groupId>org.owasp</groupId>
             <artifactId>dependency-check-maven</artifactId>
             <version>8.3.1</version>
+            <configuration>
+               <skipTestScope>true</skipTestScope>
+               <skipDependencyManagement>true</skipDependencyManagement>
+               <skipProvidedScope>true</skipProvidedScope>
+               <skipSystemScope>true</skipSystemScope>
+               <formats>
+                  <format>HTML</format>
+                  <format>JSON</format>
+               </formats>
+            </configuration>
             <executions>
                <execution>
                   <goals>
