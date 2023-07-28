@@ -12,8 +12,8 @@
    <artifactId>protobuf-utils</artifactId>
 
    <properties>
-      <wire.version>4.7.0</wire.version>
-      <okio.version>3.3.0</okio.version>
+      <wire.version>4.8.0</wire.version>
+      <okio.version>3.4.0</okio.version>
 
 
    </properties>
