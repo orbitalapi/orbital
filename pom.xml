@@ -54,7 +54,7 @@
 
       <http4k.version>4.39.0.0</http4k.version>
       <hazelcast-jet.version>4.5</hazelcast-jet.version>
-      <hazelcast.version>5.2.2</hazelcast.version>
+      <hazelcast.version>5.2.4</hazelcast.version>
       <testcontainers.version>1.16.2</testcontainers.version>
       <h2.version>2.1.214</h2.version>
       <reactor-bom.version>2022.0.5</reactor-bom.version>

@@ -322,19 +322,19 @@ publish-analytics-server-to-docker-hub:
       microservice_vyne: analytics-server
       microservice_orbital: analytics-server
 
-publish-vyne-to-gitlab-container-registry:
-   extends: .publish-to-gitlab-container-registry
-   variables:
-      projectDir: vyne-query-service
-      microservice_vyne: vyne
-      microservice_orbital: orbital
-
-publish-schema-server-to-gitlab-container-registry:
-   extends: .publish-to-gitlab-container-registry
-   variables:
-      projectDir: schema-server
-      microservice_vyne: schema-server
-      microservice_orbital: schema-server
+#publish-vyne-to-gitlab-container-registry:
+#   extends: .publish-to-gitlab-container-registry
+#   variables:
+#      projectDir: vyne-query-service
+#      microservice_vyne: vyne
+#      microservice_orbital: orbital
+#
+#publish-schema-server-to-gitlab-container-registry:
+#   extends: .publish-to-gitlab-container-registry
+#   variables:
+#      projectDir: schema-server
+#      microservice_vyne: schema-server
+#      microservice_orbital: schema-server
 
 #publish-voyager-to-gitlab-container-registry:
 #   extends: .publish-to-gitlab-container-registry
@@ -375,12 +375,12 @@ publish-schema-server-to-gitlab-container-registry:
          -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${tag}"
          -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${CI_COMMIT_SHORT_SHA}" .
 
-publish-pipelines-to-gitlab-container-registry:
-   extends: .publish-to-gitlab-container-registry
-   variables:
-      projectDir: pipelines/pipeline-jet
-      microservice_vyne: pipeline
-      microservice_orbital: pipelines
+#publish-pipelines-to-gitlab-container-registry:
+#   extends: .publish-to-gitlab-container-registry
+#   variables:
+#      projectDir: pipelines/pipeline-jet
+#      microservice_vyne: pipeline
+#      microservice_orbital: pipelines
 
 terraform-validate:
    extends: .terraform:validate
@@ -570,63 +570,3 @@ terraform-deploy-prod-voyager:
       TF_VAR_environment: $TF_STATE_NAME_PROD
       TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
    when: manual
-
-publish-snyk-to-gitlab-container-registry:
-   extends: .publish-to-gitlab-container-registry
-   script:
-      - cd snyk/
-      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-      - docker build -t "${registry_orbital}/snyk:latest" .
-      - docker push ${registry_orbital}/snyk:latest
-
-.snyk:
-   stage: verify
-   image: $CI_REGISTRY_IMAGE/snyk:latest
-   only:
-      - develop
-   when: manual
-   variables:
-      SNYK_TOKEN: ea48d8a0-a809-4381-97cb-e54c20a21ad1 # TODO This won't be picked up unless explicitly specified here?
-   before_script:
-      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-      - snyk auth $SNYK_TOKEN
-      - PROJECT_VERSION=$(cat build-version.txt)
-      - |
-         if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
-           tag="latest"
-           versionTag="$PROJECT_VERSION"
-         elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
-            tag="latest-preview"
-            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
-         else
-            tag="$CI_COMMIT_BRANCH"
-            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
-         fi
-         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
-         echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
-   script:
-      - snyk container test --app-vulns ${CI_REGISTRY_IMAGE}/$image:$versionTag --severity-threshold=high
-
-snyk-schema-server:
-   extends: .snyk
-   dependencies:
-      - publish-schema-server-to-gitlab-container-registry
-      - build-jvm-develop
-   variables:
-      image: schema-server
-
-snyk-query-server:
-   extends: .snyk
-   dependencies:
-      - publish-vyne-to-gitlab-container-registry
-      - build-jvm-develop
-   variables:
-      image: vyne
-
-snyk-pipelines:
-   extends: .snyk
-   dependencies:
-      - publish-pipelines-to-gitlab-container-registry
-      - build-jvm-develop
-   variables:
-      image: pipelines
