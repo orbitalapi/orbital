@@ -49,7 +49,8 @@ class PublishSchemaTask(val specPath: Path, val serverUri: URI, val taxiConfPath
                   taxiConf.version,
                   generatedTaxi.concatenatedSource
                )
-            )
+            ),
+            emptyMap()
          )
       ).subscribe()
    }

@@ -1,11 +1,11 @@
-import { Component } from '@angular/core';
-import { ExpandableSearchResult, SearchResult, SearchService } from '../../search/search.service';
+import {Component} from '@angular/core';
+import {ExpandableSearchResult, SearchResult, SearchService} from '../../search/search.service';
 
-import { Observable, of } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
-import { ActivatedRoute, Router } from '@angular/router';
-import { TypesService } from 'src/app/services/types.service';
-import { Schema } from 'src/app/services/schema';
+import {Observable, of} from 'rxjs';
+import {map, tap} from 'rxjs/operators';
+import {ActivatedRoute, Router} from '@angular/router';
+import {TypesService} from 'src/app/services/types.service';
+import {Schema} from 'src/app/services/schema';
 
 @Component({
   selector: 'app-data-catalog-container',
@@ -13,7 +13,7 @@ import { Schema } from 'src/app/services/schema';
     <app-header-bar>
     </app-header-bar>
     <app-header-component-layout title='Catalog'
-                                 description='The data catalog contains all models, attributes, services and operations published to Vyne. You can search by
+                                 description='The data catalog contains all models, attributes, services and operations published to Orbital. You can search by
           name, or search for tags using # (eg: #MyTag)' [padBottom]='false' [displayBody]='false'>
       <ng-container ngProjectAs='header-components'>
         <tui-tabs [(activeItemIndex)]='activeTabIndex'>

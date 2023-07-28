@@ -13,19 +13,14 @@ import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
-import io.vyne.query.HistoryEventConsumerProvider
-import io.vyne.query.Query
-import io.vyne.query.QueryEventConsumer
-import io.vyne.query.QueryMode
-import io.vyne.query.TypeNameListQueryExpression
+import io.vyne.query.*
 import io.vyne.query.runtime.core.MetricsEventConsumer
-import io.vyne.query.runtime.core.QueryEventObserver
+import io.vyne.query.runtime.core.QueryLifecycleEventObserver
 import io.vyne.query.runtime.core.QueryResponseFormatter
 import io.vyne.query.runtime.core.QueryService
 import io.vyne.query.runtime.core.monitor.ActiveQueryMonitor
-import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.api.SimpleSchemaProvider
-import io.vyne.schemaStore.SimpleSchemaStore
+import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.config.TestDiscoveryClientConfig
 import io.vyne.testVyne
@@ -92,7 +87,7 @@ abstract class BaseQueryServiceTest {
    lateinit var queryService: QueryService
    lateinit var stubService: StubService
    lateinit var vyne: Vyne
-   lateinit var queryEventObserver: QueryEventObserver
+   lateinit var queryEventObserver: QueryLifecycleEventObserver
    lateinit var meterRegistry: SimpleMeterRegistry
 
    protected fun mockHistoryWriter(): QueryHistoryDbWriter {
@@ -125,7 +120,7 @@ abstract class BaseQueryServiceTest {
       this.meterRegistry = SimpleMeterRegistry()
 
       queryService = QueryService(
-         SimpleSchemaStore(SchemaSet.Companion.from(vyne.schema, 1)),
+         SimpleSchemaProvider(vyne.schema),
          SimpleVyneProvider(vyne),
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),
@@ -194,11 +189,10 @@ fun ResponseEntity<StreamingResponseBody>.contentString(): String {
 @TestConfiguration
 @Import(TestDiscoveryClientConfig::class)
 class TestSpringConfig {
+
    @Bean
-   @Primary
-   fun vyneProvider(): VyneProvider {
-      val (vyne, stub) = testVyne(
-         """
+   fun taxiSchema(): TaxiSchema = TaxiSchema.from(
+      """
          type EmailAddress inherits String
          type PersonId inherits Int
          type LoyaltyCardNumber inherits String
@@ -212,7 +206,12 @@ class TestSpringConfig {
             operation findBalance(LoyaltyCardNumber):AccountBalance
          }
       """
-      )
+   )
+
+   @Bean
+   @Primary
+   fun vyneProvider(taxiSchema: TaxiSchema): VyneProvider {
+      val (vyne, stub) = testVyne(taxiSchema)
       // setup stubs
       stub.addResponse(
          "findPersonIdByEmail",

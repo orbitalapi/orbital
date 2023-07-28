@@ -1,18 +1,10 @@
 package io.vyne.history.chart
 
 import com.google.common.collect.MultimapBuilder
-import io.vyne.models.DataSource
-import io.vyne.models.EvaluatedExpression
-import io.vyne.models.FailedSearch
-import io.vyne.models.OperationResult
-import io.vyne.models.Provided
-import io.vyne.models.TypeNamedInstance
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
+import io.vyne.models.*
 import io.vyne.query.history.QuerySankeyChartRow
 import io.vyne.query.history.SankeyNodeType
+import io.vyne.query.history.SankeyOperationNodeDetails
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
@@ -27,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap
  * Here, we generate data flows on between systems per attribute for a TypedInstance
  *
  */
-class LineageSankeyViewBuilder(schema: Schema) {
+class LineageSankeyViewBuilder(private val schema: Schema) {
    private val logger = KotlinLogging.logger {}
    private val operationNodeBuilder = LineageSankeyOperationNodeBuilder(schema)
 
@@ -51,23 +43,28 @@ class LineageSankeyViewBuilder(schema: Schema) {
                val target = SankeyNode.forAttribute(attributeName, prefixes)
                appendDataSource(instance.source, target)
             }
+
             instance is TypedObject -> {
                buildForObject(instance, prefixes + attributeName)
             }
+
             instance is TypedCollection -> {
                instance.value
                   .filterIsInstance<TypedObject>()
                   .forEach { collectionMember -> buildForObject(collectionMember, prefixes) }
             }
+
             instance is TypedNull -> {
                // Do nothing, I guess?
             }
+
             else -> {
                logger.warn { "Appending sankey chart data failed.  Expected either a scalar value, or a TypedObject - but neither condition was true.  ValueType = ${instance::class.simpleName}" }
             }
          }
       }
    }
+
 
    private fun appendDataSource(source: DataSource, targetNode: SankeyNode) {
       // Ignored data sources..
@@ -90,6 +87,7 @@ class LineageSankeyViewBuilder(schema: Schema) {
             }
             expressionNode
          }
+
          else -> dataSourceIdsToNodes[source.id]
       }
       if (sourceNode == null) {
@@ -145,18 +143,56 @@ class LineageSankeyViewBuilder(schema: Schema) {
       operationResult.inputs.forEach { operationParam ->
          when (operationParam.value) {
             is TypeNamedInstance -> {
-               val sourceDataSourceId = (operationParam.value as TypeNamedInstance).dataSourceId
-               val source = lookupSource(sourceDataSourceId)
+               val paramTypedInstance = operationParam.value as TypeNamedInstance
+               val sourceDataSourceId = paramTypedInstance.dataSourceId
+               val source = if (isMixedSourcesAndShouldIntrospect(paramTypedInstance)) {
+                  // For request objects, we create a new node on the graph, with all the properties
+                  // individually linked to the request object.
+                  appendParameterRequestObject(paramTypedInstance, operationResult)
+               } else {
+                  // For scalar inputs, we just use the value, not a request object
+                  lookupSource(sourceDataSourceId)
+               }
                if (source == null) {
                   logger.warn { "Received dataSourceId ${sourceDataSourceId.orElse("null")} for input parameter ${operationParam.parameterName} on operation $operationQualifiedName but that has not yet been mapped.  No entry will be added for this pair" }
                } else {
                   incrementSankeyCount(source, SankeyNode(operationQualifiedName))
                }
             }
+
             null -> logger.debug { "Not recording null value as input to param ${operationParam.parameterName}" }// do nothing for null.  In the future, we might want to capture this somehow
             else -> logger.warn { "Unhandled type of operationParam value: ${operationParam.value!!::class.simpleName}" }
          }
       }
+   }
+
+   private fun isMixedSourcesAndShouldIntrospect(typeNamedInstance: TypeNamedInstance): Boolean {
+      return if (typeNamedInstance.value !is HashMap<*, *>) {
+         false
+      } else {
+         (typeNamedInstance.value as HashMap<*, *>).values.any { it is TypeNamedInstance }
+      }
+   }
+
+   private fun appendParameterRequestObject(value: TypeNamedInstance, operationResult: OperationResult): SankeyNode {
+      val requestObjectNodeId = "RequestForOperation${operationResult.id}"
+      val requestParamNode = dataSourceIdsToNodes.getOrPut(requestObjectNodeId) {
+         SankeyNode(
+            SankeyNodeType.RequestObject,
+            value = value.typeName.fqn().shortDisplayName,
+            id = requestObjectNodeId
+         )
+      }
+      val requestParam = value.value as Map<String, TypeNamedInstance>
+      requestParam.values.forEach { paramValue ->
+         val sourceNode = lookupSource(paramValue.dataSourceId)
+         if (sourceNode == null) {
+            logger.warn { "Unable to find source node with id ${paramValue.dataSourceId}" }
+         } else {
+            incrementSankeyCount(sourceNode, requestParamNode)
+         }
+      }
+      return requestParamNode
    }
 
 
@@ -199,34 +235,3 @@ data class SankeyNode(
 
 }
 
-/**
- * A collection of classes which provide operation specific metadata.
- * (eg., for a Kafka operation, it's broker and topic name).
- *
- * This is for usage in the UI
- */
-sealed class SankeyOperationNodeDetails(
-   val operationType: OperationNodeType,
-)
-
-data class KafkaOperationNode(
-   val connectionName: String,
-   val topic: String
-) : SankeyOperationNodeDetails(OperationNodeType.KafkaTopic)
-
-data class HttpOperationNode(
-   val operationName: QualifiedName,
-   val verb: String,
-   val path: String
-) : SankeyOperationNodeDetails(OperationNodeType.Http)
-
-data class DatabaseNode(
-   val connectionName: String,
-   val tableNames: List<String>
-) : SankeyOperationNodeDetails(OperationNodeType.Database)
-
-enum class OperationNodeType {
-   KafkaTopic,
-   Database,
-   Http
-}

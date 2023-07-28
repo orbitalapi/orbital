@@ -1,19 +1,7 @@
 package io.vyne.historyServer.server
 
-import io.vyne.history.db.LineageRecordRepository
-import io.vyne.history.db.QueryHistoryDao
-import io.vyne.history.db.QueryHistoryRecordRepository
-import io.vyne.history.db.QueryResultRowRepository
-import io.vyne.history.db.QuerySankeyChartRowRepository
-import io.vyne.history.db.RemoteCallResponseRepository
-import io.vyne.query.history.FlowChartData
-import io.vyne.query.history.LineageRecord
-import io.vyne.query.history.QueryEndEvent
-import io.vyne.query.history.QueryResultRow
-import io.vyne.query.history.QuerySankeyChartRow
-import io.vyne.query.history.QuerySummary
-import io.vyne.query.history.RemoteCallResponse
-import io.vyne.query.history.VyneHistoryRecord
+import io.vyne.history.db.*
+import io.vyne.query.history.*
 import mu.KotlinLogging
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.stereotype.Component
@@ -21,12 +9,14 @@ import reactor.core.publisher.Sinks
 import reactor.core.scheduler.Schedulers
 
 @Component
-class HistoryService(queryHistoryRecordRepository: QueryHistoryRecordRepository,
-                     resultRowRepository: QueryResultRowRepository,
-                     lineageRecordRepository: LineageRecordRepository,
-                     remoteCallResponseRepository: RemoteCallResponseRepository,
-                     sankeyChartRowRepository: QuerySankeyChartRowRepository,
-                     private val messageSink: Sinks.Many<VyneHistoryRecord>): InitializingBean {
+class HistoryService(
+   queryHistoryRecordRepository: QueryHistoryRecordRepository,
+   resultRowRepository: QueryResultRowRepository,
+   lineageRecordRepository: LineageRecordRepository,
+   remoteCallResponseRepository: RemoteCallResponseRepository,
+   sankeyChartRowRepository: QuerySankeyChartRowRepository,
+   private val messageSink: Sinks.Many<VyneHistoryRecord>
+) : InitializingBean {
 
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -46,8 +36,8 @@ class HistoryService(queryHistoryRecordRepository: QueryHistoryRecordRepository,
          .publishOn(Schedulers.boundedElastic())
          .subscribe { vyneHistoryRecord ->
             logger.info { "processing ${vyneHistoryRecord.describe()}" }
-         processHistoryRecord(vyneHistoryRecord)
-      }
+            processHistoryRecord(vyneHistoryRecord)
+         }
    }
 
    private fun processHistoryRecord(vyneHistoryRecord: VyneHistoryRecord) {
@@ -69,7 +59,8 @@ class HistoryService(queryHistoryRecordRepository: QueryHistoryRecordRepository,
    }
 
    private fun processRemoteCallResponse(vyneHistoryRecord: RemoteCallResponse) {
-      queryHistoryDao.upsertRemoteCallResponse(vyneHistoryRecord)
+      queryHistoryDao.saveRemoteCallResponse(vyneHistoryRecord)
+//      queryHistoryDao.upsertRemoteCallResponse(vyneHistoryRecord)
    }
 
    private fun processResultRow(vyneHistoryRecord: QueryResultRow) {
@@ -81,7 +72,7 @@ class HistoryService(queryHistoryRecordRepository: QueryHistoryRecordRepository,
    }
 
    private fun processQuerySummary(vyneHistoryRecord: QuerySummary) {
-      try  {
+      try {
          queryHistoryDao.saveQuerySummary(vyneHistoryRecord)
       } catch (e: Exception) {
          logger.error(e) { "Error in saving QuerySummary for query Id  ${vyneHistoryRecord.queryId}" }
@@ -90,7 +81,13 @@ class HistoryService(queryHistoryRecordRepository: QueryHistoryRecordRepository,
 
    private fun processQueryEndEvent(vyneHistoryRecord: QueryEndEvent) {
       try {
-         queryHistoryDao.setQueryEnded(vyneHistoryRecord.queryId, vyneHistoryRecord.endTime, vyneHistoryRecord.status, vyneHistoryRecord.recordCount, vyneHistoryRecord.message)
+         queryHistoryDao.setQueryEnded(
+            vyneHistoryRecord.queryId,
+            vyneHistoryRecord.endTime,
+            vyneHistoryRecord.status,
+            vyneHistoryRecord.recordCount,
+            vyneHistoryRecord.message
+         )
       } catch (e: Exception) {
          logger.error(e) { "Error in saving QueryEndEvent for query Id  ${vyneHistoryRecord.queryId}" }
       }

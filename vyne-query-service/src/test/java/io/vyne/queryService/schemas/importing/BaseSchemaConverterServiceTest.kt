@@ -15,7 +15,9 @@ package io.vyne.queryService.schemas.importing
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.io.Resources
-import com.nhaarman.mockito_kotlin.mock
+import io.vyne.PackageIdentifier
+import io.vyne.PackageMetadata
+import io.vyne.ParsedPackage
 import io.vyne.UriSafePackageIdentifier
 import io.vyne.cockpit.core.schemas.editor.LocalSchemaEditingService
 import io.vyne.cockpit.core.schemas.importing.CompositeSchemaImporter
@@ -23,12 +25,12 @@ import io.vyne.cockpit.core.schemas.importing.SchemaConverter
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.consumer.SimpleSchemaStore
 import io.vyne.schemaServer.core.editor.SchemaEditorService
 import io.vyne.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
 import io.vyne.schemaServer.packages.PackageWithDescription
 import io.vyne.schemaServer.packages.PackagesServiceApi
 import io.vyne.schemaServer.packages.SourcePackageDescription
-import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.PartialSchema
 import org.apache.commons.io.FileUtils
 import org.junit.Rule
@@ -60,19 +62,24 @@ abstract class BaseSchemaConverterServiceTest {
       val schemaEditorService = SchemaEditorService(
          ReactiveRepositoryManager.testWithFileRepo(
             tempFolder.root.toPath(),
-            isEditable = true,
-            configRepo = mock { }
+            isEditable = true
          ),
          schemaStore
       )
       val editingService = LocalSchemaEditingService(
-         object: PackagesServiceApi {
+         object : PackagesServiceApi {
             override fun listPackages(): Mono<List<SourcePackageDescription>> {
                return Mono.just(listOf())
             }
 
             override fun loadPackage(packageUri: String): Mono<PackageWithDescription> {
-               TODO("Not yet implemented")
+               return Mono.just(
+                  PackageWithDescription.empty(
+                     PackageIdentifier.fromUriSafeId(
+                        packageUri
+                     )
+                  )
+               )
             }
 
             override fun getPartialSchemaForPackage(packageUri: UriSafePackageIdentifier): Mono<PartialSchema> {

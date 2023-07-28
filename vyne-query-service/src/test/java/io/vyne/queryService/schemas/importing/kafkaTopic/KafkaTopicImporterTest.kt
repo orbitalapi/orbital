@@ -1,7 +1,9 @@
 package io.vyne.queryService.schemas.importing.kafkaTopic
 
 import com.winterbe.expekt.should
+import io.vyne.PackageIdentifier
 import io.vyne.cockpit.core.schemas.importing.SchemaConversionRequest
+import io.vyne.cockpit.core.schemas.importing.concatenatedSource
 import io.vyne.cockpit.core.schemas.importing.kafka.KafkaTopicConverterOptions
 import io.vyne.cockpit.core.schemas.importing.kafka.KafkaTopicImporter
 import io.vyne.connectors.kafka.KafkaConnectorTaxi
@@ -24,12 +26,16 @@ class KafkaTopicImporterTest : BaseSchemaConverterServiceTest() {
       """.trimIndent()
       )
    )
+
    @Test
    fun `generates expected taxi`() {
 
       val importer = KafkaTopicImporter(schemaProvider)
       val generated = importer.convert(
-         SchemaConversionRequest(KafkaTopicImporter.SUPPORTED_FORMAT),
+         SchemaConversionRequest(
+            KafkaTopicImporter.SUPPORTED_FORMAT,
+            packageIdentifier = PackageIdentifier.fromId("foo/test/1.0.0")
+         ),
          KafkaTopicConverterOptions(
             "my-kafka-connection",
             "my-topic",
@@ -52,22 +58,26 @@ class KafkaTopicImporterTest : BaseSchemaConverterServiceTest() {
       // in that asserter
       generated!!.concatenatedSource.withoutWhitespace().should.equal(expected.withoutWhitespace())
    }
+
    @Test
    fun `can convert kafka topic to operation`() {
 
       val importer = KafkaTopicImporter(schemaProvider)
       val converterService = createConverterService(importer, schemaProvider = schemaProvider)
 
-      val result = converterService.import(SchemaConversionRequest(
-         KafkaTopicImporter.SUPPORTED_FORMAT,
-         KafkaTopicConverterOptions(
-            "my-kafka-connection",
-            "my-topic",
-            KafkaConnectorTaxi.Annotations.KafkaOperation.Offset.EARLIEST,
-            "Person".fqn(),
-            "io.vyne.test.kafka",
+      val result = converterService.preview(
+         SchemaConversionRequest(
+            KafkaTopicImporter.SUPPORTED_FORMAT,
+            KafkaTopicConverterOptions(
+               "my-kafka-connection",
+               "my-topic",
+               KafkaConnectorTaxi.Annotations.KafkaOperation.Offset.EARLIEST,
+               "Person".fqn(),
+               "io.foo.test.kafka",
+            ),
+            packageIdentifier = PackageIdentifier.fromId("foo/test/1.0.0")
          )
-      )).block()
+      ).block()
       result.services.should.have.size(1)
       result.services.single().operations.should.have.size(1)
    }

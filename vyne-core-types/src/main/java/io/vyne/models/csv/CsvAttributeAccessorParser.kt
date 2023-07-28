@@ -87,7 +87,6 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
                   null
                }
             }
-            accessor.defaultValue != null -> accessor.defaultValue!!
             else -> throw IllegalArgumentException("Index type must be either Int or String.")
          }
 

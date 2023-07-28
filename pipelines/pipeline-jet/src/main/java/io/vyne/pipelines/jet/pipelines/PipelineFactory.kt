@@ -1,22 +1,14 @@
 package io.vyne.pipelines.jet.pipelines
 
 import com.hazelcast.jet.aggregate.AggregateOperations
-import com.hazelcast.jet.pipeline.GeneralStage
-import com.hazelcast.jet.pipeline.Pipeline
+import com.hazelcast.jet.pipeline.*
 import com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService
-import com.hazelcast.jet.pipeline.ServiceFactory
-import com.hazelcast.jet.pipeline.StreamStage
-import com.hazelcast.jet.pipeline.WindowDefinition
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.VyneClientWithSchema
-import io.vyne.models.validation.MandatoryFieldNotNull
-import io.vyne.models.validation.ValidationRule
-import io.vyne.models.validation.failValidationViolationHandler
-import io.vyne.models.validation.noOpViolationHandler
-import io.vyne.models.validation.validate
+import io.vyne.models.validation.*
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
@@ -29,9 +21,10 @@ import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.pipelines.jet.source.PipelineSourceType
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
+import jakarta.annotation.Resource
+import lang.taxi.query.TaxiQLQueryString
 import org.springframework.stereotype.Component
 import java.io.Serializable
-import javax.annotation.Resource
 
 @Component
 class PipelineFactory(
@@ -56,7 +49,13 @@ class PipelineFactory(
 
       pipelineSpec.outputs.forEach { output ->
          buildTransformAndSinkStageForOutput(
-            inputTypeName, schema, pipelineSpec.id, pipelineSpec.name, output, jetPipelineBuilder
+            inputTypeName,
+            schema,
+            pipelineSpec.id,
+            pipelineSpec.name,
+            output,
+            jetPipelineBuilder,
+            pipelineSpec.transformation
          )
       }
 
@@ -69,29 +68,47 @@ class PipelineFactory(
       pipelineId: String,
       pipelineName: String,
       pipelineTransportSpec: PipelineTransportSpec,
-      jetPipelineBuilder: GeneralStage<out MessageContentProvider>
+      jetPipelineBuilder: GeneralStage<out MessageContentProvider>,
+      transformation: TaxiQLQueryString?
    ) {
       val sinkBuilder = sinkProvider.getPipelineSink(pipelineTransportSpec)
       val outputTypeName = sinkBuilder.getRequiredType(pipelineTransportSpec, schema)
       val jetPipelineWithValidation = buildValidationStage(inputType, jetPipelineBuilder, pipelineName)
-      val jetPipelineWithTransformation = buildTransformStage(inputType, outputTypeName, jetPipelineWithValidation)
+      val jetPipelineWithTransformation =
+         buildTransformStage(inputType, outputTypeName, jetPipelineWithValidation, transformation)
       buildSink(pipelineId, pipelineName, pipelineTransportSpec, sinkBuilder, jetPipelineWithTransformation)
    }
 
    private fun buildTransformStage(
       inputType: QualifiedName?,
-      outputTypeName: QualifiedName,
-      jetPipelineBuilder: GeneralStage<out MessageContentProvider>
+      outputTypeName: QualifiedName?,
+      jetPipelineBuilder: GeneralStage<out MessageContentProvider>,
+      transformation: TaxiQLQueryString?
    ): GeneralStage<out MessageContentProvider> {
-      val jetPipelineWithTransformation = if (inputType != null && inputType != outputTypeName) {
-         jetPipelineBuilder.mapUsingServiceAsync(
-            VyneTransformationService.serviceFactory()
-         ) { transformationService, messageContentProvider ->
-            transformationService.transformWithVyne(messageContentProvider, inputType, outputTypeName)
-         }.setName("Transform ${inputType.shortDisplayName} to ${outputTypeName.shortDisplayName} using Vyne")
-      } else {
-         jetPipelineBuilder.map { message -> message }
+      if (outputTypeName == null) {
+         require(transformation != null) { "If the output type is not provided, then a transformation must be provided" }
       }
+
+      val jetPipelineWithTransformation =
+         if (inputType != null && (inputType != outputTypeName || transformation != null)) {
+            val stage =
+               jetPipelineBuilder.mapUsingServiceAsync(VyneTransformationService.serviceFactory()) { transformationService, messageContentProvider ->
+                  transformationService.transformWithVyne(
+                     messageContentProvider,
+                     inputType,
+                     outputTypeName,
+                     transformation
+                  )
+               }
+            if (transformation == null) {
+               stage.setName("Transform ${inputType.shortDisplayName} to ${outputTypeName!!.shortDisplayName}")
+            } else {
+               stage.setName("Transform ${inputType.shortDisplayName} using a TaxiQL query")
+            }
+
+         } else {
+            jetPipelineBuilder.map { message -> message }
+         }
       return jetPipelineWithTransformation
    }
 

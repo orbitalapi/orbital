@@ -1,49 +1,22 @@
 package io.vyne.query
 
 import com.google.common.base.Stopwatch
-import io.vyne.FactSetId
-import io.vyne.FactSetMap
-import io.vyne.FactSets
-import io.vyne.ModelContainer
-import io.vyne.filterFactSets
-import io.vyne.models.DataSource
-import io.vyne.models.DataSourceUpdater
-import io.vyne.models.MixedSources
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
+import io.vyne.*
+import io.vyne.models.*
+import io.vyne.models.facts.ScopedFact
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.graph.edges.EvaluatedEdge
+import io.vyne.query.graph.edges.ParameterFactory
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.query.projection.ProjectionProvider
-import io.vyne.schemas.Operation
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Service
-import io.vyne.schemas.Type
-import io.vyne.toFactBag
+import io.vyne.schemas.*
 import io.vyne.utils.StrategyPerformanceProfiler
+import io.vyne.utils.TimeBucketed
 import io.vyne.utils.timeBucketAsync
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.collectIndexed
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.takeWhile
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import lang.taxi.mutations.Mutation
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -67,32 +40,47 @@ class UnresolvedTypeInQueryException(
 interface QueryEngine {
    val operationInvocationService: OperationInvocationService
    val schema: Schema
+
+   // This is a workaround, as state seems to be leaking all over the place.
+   // We really want to either:
+   // A) Entirely encapsulate state on the QueryContext
+   //    (should be easier as the idea of ScopedFactMaps have evolved signficantly since
+   //     the original StatefulQueryEngine was written)
+   // or:
+   // B) Understand why (A) isn't possible.
+   fun newEngine(): QueryEngine
+   fun newEngine(factSetMapFilter: (FactSetMap) -> FactSetMap): QueryEngine
+
    suspend fun find(
       type: Type,
       context: QueryContext,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate,
+      failureBehaviour: FailureBehaviour = FailureBehaviour.THROW
    ): QueryResult
 
    suspend fun find(
       queryString: QueryExpression,
       context: QueryContext,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate,
+      failureBehaviour: FailureBehaviour = FailureBehaviour.THROW
    ): QueryResult
 
    suspend fun find(
       target: QuerySpecTypeNode,
       context: QueryContext,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate,
+      failureBehaviour: FailureBehaviour = FailureBehaviour.THROW
    ): QueryResult
 
    suspend fun find(
       target: Set<QuerySpecTypeNode>,
       context: QueryContext,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate,
+      failureBehaviour: FailureBehaviour = FailureBehaviour.THROW
    ): QueryResult
 
    suspend fun find(
@@ -100,7 +88,8 @@ interface QueryEngine {
       context: QueryContext,
       excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate,
+      failureBehaviour: FailureBehaviour = FailureBehaviour.THROW
    ): QueryResult
 
    suspend fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult
@@ -110,13 +99,23 @@ interface QueryEngine {
       additionalFacts: Set<TypedInstance> = emptySet(),
       queryId: String,
       clientQueryId: String?,
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker()
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
+      scopedFacts: List<ScopedFact> = emptyList()
    ): QueryContext
 
    suspend fun build(type: Type, context: QueryContext): QueryResult =
       build(TypeNameQueryExpression(type.fullyQualifiedName), context)
 
    suspend fun build(query: QueryExpression, context: QueryContext): QueryResult
+
+   // The inputValue allows for passing the result from a query.
+   // Pass null if no upstream query exists
+   suspend fun mutate(
+      mutation: Mutation,
+      spec: QuerySpecTypeNode,
+      context: QueryContext,
+      inputValue: TypedInstance?
+   ): QueryResult
 
    fun parse(queryExpression: QueryExpression): Set<QuerySpecTypeNode>
    suspend fun invokeOperation(
@@ -150,6 +149,7 @@ class StatefulQueryEngine(
    companion object {
       private val logger = KotlinLogging.logger {}
    }
+
    private val factSets: FactSetMap = FactSetMap.create()
 
 
@@ -157,6 +157,20 @@ class StatefulQueryEngine(
       factSets.putAll(initialState)
    }
 
+   override fun newEngine(): QueryEngine {
+      return StatefulQueryEngine(
+         FactSetMap.create(),
+         schema, strategies, profiler, projectionProvider, operationInvocationService, formatSpecs
+      )
+   }
+
+   override fun newEngine(factSetMapFilter: (FactSetMap) -> FactSetMap): QueryEngine {
+      val newFacts = factSetMapFilter(this.initialState)
+      return StatefulQueryEngine(
+         newFacts,
+         schema, strategies, profiler, projectionProvider, operationInvocationService, formatSpecs
+      )
+   }
 
    override fun addModel(model: TypedInstance, factSetId: FactSetId): StatefulQueryEngine {
       this.factSets[factSetId].add(model)
@@ -169,9 +183,10 @@ class StatefulQueryEngine(
       additionalFacts: Set<TypedInstance>,
       queryId: String,
       clientQueryId: String?,
-      eventBroker: QueryContextEventBroker
+      eventBroker: QueryContextEventBroker,
+      scopedFacts: List<ScopedFact>
    ): QueryContext {
-      val facts = this.factSets.filterFactSets(factSetIds).values().toSet()
+      val facts = this.factSets.retainFactsFromFactSet(factSetIds).values().toSet()
       return QueryContext.from(
          schema,
          facts + additionalFacts,
@@ -179,7 +194,8 @@ class StatefulQueryEngine(
          profiler,
          queryId = queryId,
          clientQueryId = clientQueryId,
-         eventBroker = eventBroker
+         eventBroker = eventBroker,
+         scopedFacts = scopedFacts
       )
    }
 
@@ -202,16 +218,31 @@ class StatefulQueryEngine(
    // some, but not all, of the facts up front, and then use Vyne to polyfill.
    // Build starts by using facts known in it's current context to build the target type
    override suspend fun build(query: QueryExpression, context: QueryContext): QueryResult {
-      // Note - this should be trivial to expand to TypeListQueryExpression too
-      val typeNameQueryExpression = when (query) {
-         is TypeNameQueryExpression -> query
+
+      val targetType = when (query) {
+         is TypeNameQueryExpression -> {
+            context.schema.type(query.typeName)
+         }
+
          is TypeNameListQueryExpression -> {
             require(query.typeNames.size == 1) { "Currently, build only supports TypeNameQueryExpression, or a list of a single type" }
-            TypeNameQueryExpression(query.typeNames.first())
+            context.schema.type(query.typeNames.first())
          }
+
+         is TypeQueryExpression -> query.type
          else -> error("Currently, build only supports TypeNameQueryExpression")
+
       }
-      val targetType = context.schema.type(typeNameQueryExpression.typeName)
+      // Note - this should be trivial to expand to TypeListQueryExpression too
+//      val typeNameQueryExpression = when (query) {
+//         is TypeNameQueryExpression -> query
+//         is TypeNameListQueryExpression -> {
+//            require(query.typeNames.size == 1) { "Currently, build only supports TypeNameQueryExpression, or a list of a single type" }
+//            TypeNameQueryExpression(query.typeNames.first())
+//         }
+//         else -> error("Currently, build only supports TypeNameQueryExpression")
+//      }
+//      val targetType = context.schema.type(typeNameQueryExpression.typeName)
       return projectTo(targetType, context)
    }
 
@@ -238,6 +269,7 @@ class StatefulQueryEngine(
                MixedSources.singleSourceOrMixedSources(context.facts)
             )
          }
+
          else -> {
             context.isProjecting = true
             objectBuilder(context, targetType).build()
@@ -255,7 +287,7 @@ class StatefulQueryEngine(
             resultFlow,
             isFullyResolved = true,
             profilerOperation = context.profiler.root,
-            anonymousTypes = context.schema.typeCache.anonymousTypes(),
+            anonymousTypes = targetType.anonymousTypes,
             queryId = context.queryId,
             responseType = targetType.fullyQualifiedName,
             onCancelRequestHandler = { context.requestCancel() }
@@ -268,11 +300,50 @@ class StatefulQueryEngine(
             profilerOperation = context.profiler.root,
             queryId = context.queryId,
             clientQueryId = context.clientQueryId,
-            anonymousTypes = context.schema.typeCache.anonymousTypes(),
+            anonymousTypes = targetType.anonymousTypes,
             responseType = targetType.fullyQualifiedName,
             onCancelRequestHandler = { context.requestCancel() }
          )
       }
+   }
+
+   override suspend fun mutate(
+      mutation: Mutation,
+      spec: QuerySpecTypeNode,
+      context: QueryContext,
+      inputValue: TypedInstance?
+   ): QueryResult {
+      val service = schema.service(mutation.service.qualifiedName)
+      val operation = service.operation(mutation.operation.name)
+
+      val searchContext = if (inputValue != null) {
+         context.only(inputValue)
+      } else {
+         context
+      }
+      val paramValues = ParameterFactory().discoverAll(operation, searchContext)
+
+      // First pass.
+      // TODO : Work out how to pass context (like facts from given clauses etc) into this.
+      val resultFlow = invokeOperation(
+         service,
+         operation,
+         // Current best guess of how to pass context
+         setOfNotNull(inputValue),
+         searchContext,
+         paramValues
+      )
+
+      return QueryResult(
+         spec,
+         resultFlow,
+         isFullyResolved = true,
+         profilerOperation = context.profiler.root,
+         anonymousTypes = spec.anonymousTypes(),
+         queryId = context.queryId,
+         responseType = spec.type.paramaterizedName,
+         onCancelRequestHandler = { context.requestCancel() }
+      )
    }
 
    private fun objectBuilder(
@@ -351,38 +422,42 @@ class StatefulQueryEngine(
       queryString: QueryExpression,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
+      failureBehaviour: FailureBehaviour
    ): QueryResult {
       val target = queryParser.parse(queryString)
-      return find(target, context, spec, applicableStrategiesPredicate)
+      return find(target, context, spec, applicableStrategiesPredicate, failureBehaviour)
    }
 
    override suspend fun find(
       type: Type,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
+      failureBehaviour: FailureBehaviour
    ): QueryResult {
-      return find(TypeNameQueryExpression(type.name.parameterizedName), context, spec, applicableStrategiesPredicate)
+      return find(TypeQueryExpression(type), context, spec, applicableStrategiesPredicate, failureBehaviour)
    }
 
    override suspend fun find(
       target: QuerySpecTypeNode,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
+      failureBehaviour: FailureBehaviour
    ): QueryResult {
-      return find(setOf(target), context, spec, applicableStrategiesPredicate)
+      return find(setOf(target), context, spec, applicableStrategiesPredicate, failureBehaviour)
    }
 
    override suspend fun find(
       target: Set<QuerySpecTypeNode>,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
+      failureBehaviour: FailureBehaviour
    ): QueryResult {
       try {
-         return doFind(target, context, spec, applicableStrategiesPredicate)
+         return doFind(target, context, spec, applicableStrategiesPredicate, failureBehaviour)
       } catch (e: QueryCancelledException) {
          logger.info("QueryCancelled. Coroutine active state: ${currentCoroutineContext().isActive}")
          throw e
@@ -397,10 +472,18 @@ class StatefulQueryEngine(
       context: QueryContext,
       excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
       spec: TypedInstanceValidPredicate,
-      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
+      failureBehaviour: FailureBehaviour
    ): QueryResult {
       try {
-         return doFind(target, context, spec, excludedOperations, applicableStrategiesPredicate)
+         return doFind(
+            target,
+            context,
+            spec,
+            excludedOperations,
+            applicableStrategiesPredicate,
+            failureBehaviour = failureBehaviour
+         )
       } catch (e: QueryCancelledException) {
          throw e
       } catch (e: Exception) {
@@ -415,17 +498,18 @@ class StatefulQueryEngine(
       target: Set<QuerySpecTypeNode>,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
+      failureBehaviour: FailureBehaviour = FailureBehaviour.THROW
    ): QueryResult {
 
-
-      // TODO : BIG opportunity to optimize this by evaluating multiple querySpecNodes at once.
-      // Which would allow us to be smarter about results we collect from rest calls.
-      // Optimize later.
-      //target.get(0).map { doFind(it, context, spec) }
-
       val queryResult =
-         doFind(target.first(), context, spec, applicableStrategiesPredicate = applicableStrategiesPredicate)
+         doFind(
+            target.first(),
+            context,
+            spec,
+            applicableStrategiesPredicate = applicableStrategiesPredicate,
+            failureBehaviour = failureBehaviour
+         )
 
       return QueryResult(
          querySpec = queryResult.querySpec,
@@ -447,7 +531,8 @@ class StatefulQueryEngine(
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
       excludedOperations: Set<SearchGraphExclusion<RemoteOperation>> = emptySet(),
-      applicableStrategiesPredicate: PermittedQueryStrategyPredicate
+      applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
+      failureBehaviour: FailureBehaviour = FailureBehaviour.THROW,
    ): QueryResult {
       logger.debug { "Initiating find for ${target.description}" }
       if (context.cancelRequested) {
@@ -472,7 +557,7 @@ class StatefulQueryEngine(
       val failedAttempts = mutableListOf<DataSource>()
       val resultsFlow: Flow<TypedInstance> = channelFlow {
          if (!isActive) {
-            logger.warn { "Query  Cancelled exiting!" }
+            logger.warn { "Query ${context.queryId} has been cancelled - exiting" }
          }
 
          val applicableStrategies = strategies.filter { applicableStrategiesPredicate.isApplicable(it) }
@@ -481,6 +566,7 @@ class StatefulQueryEngine(
                break
             }
             val stopwatch = Stopwatch.createStarted()
+            logger.debug { "Attempting strategy ${queryStrategy::class.simpleName} to resolve ${target.description}" }
             val strategyResult =
                invokeStrategy(context, queryStrategy, target, InvocationConstraints(spec, excludedOperations))
             failedAttempts.addAll(strategyResult.failedAttempts)
@@ -523,22 +609,44 @@ class StatefulQueryEngine(
             val constraintsSuffix = if (target.dataConstraints.isNotEmpty()) {
                "with the ${target.dataConstraints.size} constraints provided"
             } else ""
-            logger.debug { "No strategy found for discovering type ${target.description} $constraintsSuffix".trim() }
-            if (strategyProvidedFlow) {
-               // We found a strategy which provided a flow of data, but the flow didn't yield any results.
-               // TODO : Should we just be closing here?  Perhaps we should emit some form of TypedNull,
-               // which would allow us to communicate the failed attempts?
+            val message = "No data sources were found that can return ${target.description} $constraintsSuffix".trim()
+            logger.debug { message }
 
-               close()
-            } else {
-               // We didn't find a strategy to provide any data.
-               throw UnresolvedTypeInQueryException(
-                  "No strategy found for discovering type ${target.description} $constraintsSuffix".trim(),
-                  target.type.name,
-                  emptyList(),
-                  context,
-                  failedAttempts
-               )
+
+            // I couldn't work out how to handle this.
+            // When mapping, throwing an exception kills the other
+            // mapping operations that are going on.
+            // However, attempts to catch the exception haven't worked,
+            // as we're not in the callers thread anymore, but inside an
+            // async channel flow, somewhere.
+            // So, leaving it to callers.
+            when (failureBehaviour) {
+               FailureBehaviour.SEND_TYPED_NULL -> {
+                  send(
+                     TypedNull.create(
+                        target.type,
+                        source = FailedSearch(message, failedAttempts)
+                     )
+                  )
+               }
+
+               FailureBehaviour.THROW -> {
+                  if (strategyProvidedFlow) {
+                     // We found a strategy which provided a flow of data, but the flow didn't yield any results.
+                     // TODO : Should we just be closing here?  Perhaps we should emit some form of TypedNull,
+                     // which would allow us to communicate the failed attempts?
+                     close()
+                  } else {
+                     // We didn't find a strategy to provide any data.
+                     throw UnresolvedTypeInQueryException(
+                        message,
+                        target.type.name,
+                        emptyList(),
+                        context,
+                        failedAttempts
+                     )
+                  }
+               }
             }
          }
 
@@ -548,7 +656,7 @@ class StatefulQueryEngine(
          }
       }
 
-      val results: Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (target.projection) {
+      val projectedResults: Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (target.projection) {
          null -> resultsFlow.map { it to context.vyneQueryStatistics }
          else -> {
             // Pick the facts that we want to make available during projection.
@@ -567,15 +675,28 @@ class StatefulQueryEngine(
          target
       }
 
+      val mutatedResults: Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (target.mutation) {
+         null -> projectedResults
+         else -> {
+            // At this point, any queries have been executed, and we're ready
+            // to invoke mutations.
+            projectedResults.flatMapConcat { (queryResult, stats) ->
+               mutate(target.mutation, target, context, queryResult)
+                  .results.map {
+                     it to stats
+                  }
+            }
+         }
+      }
       val statisticsFlow = MutableSharedFlow<VyneQueryStatistics>(replay = 0)
       return QueryResult(
          querySpecTypeNode,
-         results.onEach { statisticsFlow.emit(it.second) }.map { it.first },
+         mutatedResults.onEach { statisticsFlow.emit(it.second) }.map { it.first },
          isFullyResolved = true,
          profilerOperation = context.profiler.root,
          queryId = context.queryId,
          clientQueryId = context.clientQueryId,
-         anonymousTypes = context.schema.typeCache.anonymousTypes(),
+         anonymousTypes = target.anonymousTypes(),
          statistics = statisticsFlow,
          responseType = context.responseType,
          onCancelRequestHandler = { context.requestCancel() }
@@ -610,11 +731,32 @@ class StatefulQueryEngine(
       target: QuerySpecTypeNode,
       invocationConstraints: InvocationConstraints
    ): QueryStrategyResult {
-      return timeBucketAsync("Call ${queryStrategy::class.simpleName} for target ${target.type.name.shortDisplayName}") { queryStrategy.invoke(setOf(target), context, invocationConstraints) }
+      val sw = Stopwatch.createStarted()
+      val result =
+         timeBucketAsync("Call ${queryStrategy::class.simpleName} for target ${target.type.name.shortDisplayName}") {
+            queryStrategy.invoke(
+               setOf(target),
+               context,
+               invocationConstraints
+            )
+         }
+      val bucket = TimeBucketed.DEFAULT
+      val successful = if (result.hasMatchesNodes()) {
+         "Success"
+      } else {
+         "Failed"
+      }
+      val name = "Query Strategy ${queryStrategy::class.simpleName} - $successful"
+      bucket.addActivity(name, sw.elapsed())
+      val detailedName =
+         "Invoke Query Strategy ${queryStrategy::class.simpleName} for target ${target.type.name.shortDisplayName} - $successful"
+      bucket.addActivity(detailedName, sw.elapsed())
+      return result
+
    }
 }
 
 class QueryCancelledException(message: String = "Query has been cancelled") : Exception(message)
 
 
-
+class QueryFailedException(message: String) : Exception(message)

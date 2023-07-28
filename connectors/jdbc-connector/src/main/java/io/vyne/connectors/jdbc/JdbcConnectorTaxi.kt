@@ -1,6 +1,7 @@
 package io.vyne.connectors.jdbc
 
 import io.vyne.annotations.AnnotationWrapper
+import io.vyne.schemas.Metadata
 import lang.taxi.TaxiDocument
 import lang.taxi.types.Annotation
 import lang.taxi.types.QualifiedName
@@ -9,6 +10,9 @@ object JdbcConnectorTaxi {
    object Annotations {
       internal const val namespace = "io.vyne.jdbc"
       const val Column = "$namespace.Column"
+
+      const val UpsertOperationAnnotationName = "UpsertOperation"
+      const val GeneratedIdAnnotationName = "GeneratedId"
 
       data class DatabaseOperation(val connectionName: String) : AnnotationWrapper {
          companion object {

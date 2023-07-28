@@ -5,9 +5,20 @@
 ## The Schema Server will deploy a single file-based schema, which by default
 ## watches the directory where this docker-compose file is deployed.
 ##
-## A typical workflow for this file is:
-## taxi init
-## taxi vyne
+## You can launch orbital directly by downloading this file, and
+## running docker-compose up.
+##
+## For example:
+##
+## curl https://start.orbitalhq.com -o "docker-compose.yml"
+## optionally:
+## docker-compose pull
+## docker-compose up -d
+##
+## Also, you can launch Orbital pre-configured from within a Taxi project
+## by running:
+##
+## taxi orbital
 ##
 ## The following variables can be set in a .env file:
 ##
@@ -28,7 +39,7 @@ services:
       ports:
          - "9022:9022"
       volumes:
-         - ~/.orbital/license:/opt/var/vyne/license
+         - ~/.orbital/license:/opt/var/orbital/license
          - ./orbital/config:/opt/service/config
       deploy:
          resources:
@@ -42,10 +53,8 @@ services:
       environment:
          OPTIONS: >-
             --server.port=80
-            --vyne.repositories.repository-path=/var/lib/vyne/schema-server
-            ## --vyne.repositories.config-file=/var/lib/vyne/schema-server/schema-server.conf
-            --eureka.uri=http://eureka
-            --eureka.instance.preferIpAddress=true
+            --vyne.repositories.repository-path=/var/lib/orbital/schema-server
+            ## --vyne.repositories.config-file=/var/lib/orbital/schema-server/schema-server.conf
       deploy:
          resources:
             limits:

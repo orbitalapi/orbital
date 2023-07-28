@@ -7,6 +7,9 @@ object CollectionFiltering {
       Single,
       SingleBy,
       FilterAll,
+      First,
+      Last,
+      GetAtIndex
    )
 }
 

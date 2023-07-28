@@ -1,25 +1,28 @@
 package io.orbital.station
 
+import io.vyne.cockpit.core.FeatureTogglesConfig
 import io.vyne.cockpit.core.lsp.LanguageServerConfig
 import io.vyne.cockpit.core.pipelines.PipelineConfig
 import io.vyne.cockpit.core.security.VyneUserConfig
 import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.licensing.LicenseConfig
+import io.vyne.query.chat.ChatQueryParser
 import io.vyne.schemaServer.core.VersionedSourceLoader
-import io.vyne.spring.config.DiscoveryClientConfig
-import io.vyne.spring.config.VyneSpringCacheConfiguration
-import io.vyne.spring.config.VyneSpringHazelcastConfiguration
-import io.vyne.spring.config.VyneSpringProjectionConfiguration
+import io.vyne.spring.config.*
 import io.vyne.spring.http.auth.HttpAuthConfig
 import io.vyne.spring.projection.ApplicationContextProvider
 import mu.KotlinLogging
+import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
+import java.util.concurrent.TimeUnit
 
 @SpringBootApplication(
    scanBasePackageClasses = [OrbitalStationApp::class, VersionedSourceLoader::class]
@@ -32,6 +35,7 @@ import org.springframework.context.annotation.Import
    VyneSpringProjectionConfiguration::class,
    VyneSpringHazelcastConfiguration::class,
    VyneUserConfig::class,
+   FeatureTogglesConfig::class
 )
 @Import(
    HttpAuthConfig::class,
@@ -42,6 +46,7 @@ import org.springframework.context.annotation.Import
 //@EnableWebFluxSecurity
 class OrbitalStationApp {
    private val logger = KotlinLogging.logger {}
+
    companion object {
       @JvmStatic
       fun main(args: Array<String>) {
@@ -50,6 +55,13 @@ class OrbitalStationApp {
          app.run(*args)
       }
    }
+
+
+   @Bean
+   fun chatGptService(@Value("\${vyne.chat-gpt.api-key:''}") apiKey: String): ChatQueryParser {
+      return ChatQueryParser(apiKey, OkHttpClient().newBuilder().readTimeout(30, TimeUnit.SECONDS).build())
+   }
+
 
    @Autowired
    fun logInfo(@Autowired(required = false) buildInfo: BuildProperties? = null) {

@@ -133,7 +133,7 @@ class QueryOperationInvocationStrategy(
       val operationReturnParameterisedType =
          if (operationReturnType.isCollection) operationReturnType.typeParameters[0] else operationReturnType
       return operationReturnParameterisedType.attributes.values.any { field ->
-         val fieldVyneType = schema.type(field.type)
+         val fieldVyneType = field.resolveType(schema)
          fieldVyneType == propertyConstraintVyneType || propertyConstraintVyneType.inheritsFrom(fieldVyneType)
       }
    }

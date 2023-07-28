@@ -4,7 +4,13 @@ import com.google.common.io.Files
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
 import io.vyne.asPackage
+import io.vyne.auth.schemes.Cookie
+import io.vyne.auth.schemes.HttpHeader
+import io.vyne.auth.schemes.QueryParam
+import io.vyne.auth.tokens.AuthConfig
+import io.vyne.auth.tokens.AuthTokenRepository
 import io.vyne.cockpit.core.security.AuthTokenConfigurationService
+import io.vyne.config.FileConfigSourceLoader
 import io.vyne.http.MockWebServerRule
 import io.vyne.query.runtime.core.QueryService
 import io.vyne.schema.api.SchemaProvider
@@ -13,9 +19,6 @@ import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.config.TestDiscoveryClientConfig
-import io.vyne.spring.http.auth.AuthToken
-import io.vyne.spring.http.auth.AuthTokenRepository
-import io.vyne.spring.http.auth.AuthTokenType
 import io.vyne.spring.http.auth.ConfigFileAuthTokenRepository
 import io.vyne.spring.http.auth.VyneHttpAuthConfig
 import kotlinx.coroutines.flow.toList
@@ -35,6 +38,7 @@ import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 
 @RunWith(SpringRunner::class)
@@ -48,6 +52,7 @@ import org.springframework.test.context.junit4.SpringRunner
       "vyne.search.directory=./search/\${random.int}"
    ]
 )
+@ActiveProfiles("test")
 class OperationAuthenticationIntegrationTest {
    private lateinit var taxiSchema: TaxiSchema
 
@@ -60,7 +65,7 @@ class OperationAuthenticationIntegrationTest {
 
    @Before
    fun setup() {
-      taxiSchema =  TaxiSchema.from(
+      taxiSchema = TaxiSchema.from(
          """
             model Person {
                personId : PersonId inherits String
@@ -104,21 +109,21 @@ class OperationAuthenticationIntegrationTest {
    @Test
    fun `calling an operation with configured query param auth includes query param name values`(): Unit = runBlocking {
       localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources.asPackage())
-      val token = AuthToken(
-         tokenType = AuthTokenType.QueryParam,
+      val token = QueryParam(
          value = "abc123",
-         paramName = "api_key"
+         parameterName = "api_key"
       )
-      tokenService.submitToken(
+      tokenService.submitAuthScheme(
+         VyneHttpAuthConfig.PACKAGE_IDENTIFIER.uriSafeId,
          "PersonFindByIdService", token
-      )
+      ).block()
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(
             """{ "personId" : "123", "personName": "foo" }"""
          )
       }
       val response = queryService.submitVyneQlQuery("""find { Person(PersonId == "123") }""")
-         .body.toList()
+         .body!!.toList()
       response.should.not.be.`null`
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION).should.be.`null`
@@ -128,22 +133,24 @@ class OperationAuthenticationIntegrationTest {
    @Test
    fun `calling a service with configured auth includes header tokens`(): Unit = runBlocking {
       localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources.asPackage())
-      val token = AuthToken(
-         tokenType = AuthTokenType.Header,
+      val authScheme = HttpHeader(
          value = "abc123",
-         paramName = "Authorization",
-         valuePrefix = "Bearer"
+         headerName = "Authorization",
+         prefix = "Bearer"
       )
-      tokenService.submitToken(
-         "PersonService", token
-      )
+      tokenService.submitAuthScheme(
+         VyneHttpAuthConfig.PACKAGE_IDENTIFIER.uriSafeId,
+         "PersonService", authScheme
+      ).block()
+
+
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(
             """[ { "personId" : "123" } ] """
          )
       }
       val response = queryService.submitVyneQlQuery("""find { Person[] } """)
-         .body.toList()
+         .body!!.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION)
          .should.equal("Bearer abc123")
@@ -152,21 +159,21 @@ class OperationAuthenticationIntegrationTest {
    @Test
    fun `calling a service with configured query param auth includes query param name values`(): Unit = runBlocking {
       localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources.asPackage())
-      val token = AuthToken(
-         tokenType = AuthTokenType.QueryParam,
+      val token = QueryParam(
          value = "abc123",
-         paramName = "api_key"
+         parameterName = "api_key"
       )
-      tokenService.submitToken(
+      tokenService.submitAuthScheme(
+         VyneHttpAuthConfig.PACKAGE_IDENTIFIER.uriSafeId,
          "PersonService", token
-      )
+      ).block()
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(
             """[ { "personId" : "123" } ] """
          )
       }
       val response = queryService.submitVyneQlQuery("""find { Person[] } """)
-         .body.toList()
+         .body!!.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION).should.be.`null`
       submittedRequest.requestUrl!!.query.should.equal("api_key=abc123")
@@ -175,14 +182,15 @@ class OperationAuthenticationIntegrationTest {
    @Test
    fun `calling a service with cookie auth includes relevant cookie values`(): Unit = runBlocking {
       localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources.asPackage())
-      val token = AuthToken(
-         tokenType = AuthTokenType.Cookie,
+      val token = Cookie(
          value = "abc123",
-         paramName = "api_key"
+         cookieName = "api_key",
       )
-      tokenService.submitToken(
+      tokenService.submitAuthScheme(
+         VyneHttpAuthConfig.PACKAGE_IDENTIFIER.uriSafeId,
          "PersonService", token
-      )
+      ).block()
+
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(
             """[ { "personId" : "123" } ] """
@@ -190,7 +198,7 @@ class OperationAuthenticationIntegrationTest {
       }
 
       val response = queryService.submitVyneQlQuery("""find { Person[] } """)
-         .body.toList()
+         .body!!.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.COOKIE)
          .should.equal("api_key=abc123")
@@ -205,7 +213,7 @@ class OperationAuthenticationIntegrationTest {
          )
       }
       val response = queryService.submitVyneQlQuery("""find { Address[] } """)
-         .body.toList()
+         .body!!.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION)
          .should.be.`null`
@@ -222,7 +230,7 @@ class OperationAuthenticationIntegrationTest {
       fun schemaProvider(): SchemaProvider = SimpleTaxiSchemaProvider(VyneQueryIntegrationTest.UserSchema.source)
 
       @Bean
-      fun schemaStore():SchemaStore = LocalValidatingSchemaStoreClient()
+      fun schemaStore(): SchemaStore = LocalValidatingSchemaStoreClient()
 
 
       @Bean

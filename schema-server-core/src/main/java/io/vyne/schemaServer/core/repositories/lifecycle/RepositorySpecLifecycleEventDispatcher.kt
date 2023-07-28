@@ -13,3 +13,14 @@ interface RepositorySpecLifecycleEventDispatcher {
 
    fun schemaSourceRemoved(packages: List<PackageIdentifier>)
 }
+
+object NoOpRepositorySpecLifecycleEventDispatcher : RepositorySpecLifecycleEventDispatcher {
+   override fun fileRepositorySpecAdded(spec: FileSpecAddedEvent) {
+   }
+
+   override fun gitRepositorySpecAdded(spec: GitSpecAddedEvent) {
+   }
+
+   override fun schemaSourceRemoved(packages: List<PackageIdentifier>) {
+   }
+}

@@ -16,7 +16,8 @@ class SchemaSetTest {
       val packages = schemaSet.getPackagesAfterUpdate(
          SourcePackage(
             packageMetadata = PackageMetadata.from("com.acme", "films", "1.0.0"),
-            emptyList()
+            emptyList(),
+            emptyMap()
          )
       )
 
@@ -25,7 +26,8 @@ class SchemaSetTest {
       schemaSet.getPackagesAfterUpdate(
          SourcePackage(
             packageMetadata = PackageMetadata.from("com.acme", "films", "2.0.0"),
-            emptyList()
+            emptyList(),
+            emptyMap()
          )
       ).shouldContainExactly(
          PackageIdentifier("com.acme", "films", "2.0.0")
@@ -39,7 +41,8 @@ class SchemaSetTest {
          listOf(
             ParsedPackage(
                PackageMetadata.from("com.acme", "films", "1.0.0"),
-               emptyList()
+               emptyList(),
+               emptyMap()
             )
          ),
          1
@@ -48,7 +51,8 @@ class SchemaSetTest {
       val result = schemaSet.getPackagesAfterUpdate(
          SourcePackage(
             packageMetadata = PackageMetadata.from("com.acme", "actors", "2.0.0"),
-            emptyList()
+            emptyList(),
+            emptyMap()
          )
       )
       result.shouldContainExactly(
@@ -61,8 +65,10 @@ class SchemaSetTest {
    fun `can remove schema`() {
       val schemaSet = SchemaSet.fromParsed(
          listOf(
-            ParsedPackage(PackageMetadata.from("com.acme", "films", "1.0.0"), emptyList()),
-            ParsedPackage(PackageMetadata.from("com.acme", "actors", "2.0.0"), emptyList())
+            ParsedPackage(
+               PackageMetadata.from("com.acme", "films", "1.0.0"), emptyList(), emptyMap()
+            ),
+            ParsedPackage(PackageMetadata.from("com.acme", "actors", "2.0.0"), emptyList(), emptyMap())
          ),
          1
       )
@@ -78,14 +84,21 @@ class SchemaSetTest {
    fun `can read and write a schemaset to-from json`() {
       val schemaSet = SchemaSet.fromParsed(
          listOf(
-            ParsedPackage(PackageMetadata.from("com.acme", "films", "1.0.0"),listOf(ParsedSource(VersionedSource.sourceOnly(
-               """model HelloWorld {
+            ParsedPackage(
+               PackageMetadata.from("com.acme", "films", "1.0.0"), listOf(
+                  ParsedSource(
+                     VersionedSource.sourceOnly(
+                        """model HelloWorld {
                   | firstName : String
                   | lastName : String
                   | fullName : concat(this.firstName, this.lastName)
                   |}
                """.trimMargin()
-            )))),
+                     )
+                  )
+               ),
+               emptyMap()
+            ),
          ),
          generation = 1
       )
@@ -102,14 +115,21 @@ class SchemaSetTest {
    fun `can read and write a schemaset to-from cbor`() {
       val schemaSet = SchemaSet.fromParsed(
          listOf(
-            ParsedPackage(PackageMetadata.from("com.acme", "films", "1.0.0"),listOf(ParsedSource(VersionedSource.sourceOnly(
-               """model HelloWorld {
+            ParsedPackage(
+               PackageMetadata.from("com.acme", "films", "1.0.0"), listOf(
+                  ParsedSource(
+                     VersionedSource.sourceOnly(
+                        """model HelloWorld {
                   | firstName : String
                   | lastName : String
                   | fullName : concat(this.firstName, this.lastName)
                   |}
                """.trimMargin()
-            )))),
+                     )
+                  )
+               ),
+               emptyMap()
+            ),
          ),
          generation = 1
       )
@@ -119,7 +139,6 @@ class SchemaSetTest {
       val fromCbor = mapper.readValue<SchemaSet>(cbor)
       fromCbor.schema.taxi.should.equal(schemaSet.schema.taxi)
    }
-
 
 
    private fun List<SourcePackage>.shouldContainExactly(vararg identifiers: PackageIdentifier) {

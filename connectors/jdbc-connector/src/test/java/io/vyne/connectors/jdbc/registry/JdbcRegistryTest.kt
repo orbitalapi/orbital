@@ -2,8 +2,8 @@ package io.vyne.connectors.jdbc.registry
 
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
-import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
-import io.vyne.connectors.jdbc.JdbcDriver
+import io.vyne.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
+import io.vyne.connectors.config.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.builders.PostgresJdbcUrlBuilder
 import org.apache.commons.io.FileUtils
 import org.junit.Rule

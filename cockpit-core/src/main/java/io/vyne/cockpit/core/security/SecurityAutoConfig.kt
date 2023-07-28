@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.core.convert.converter.Converter
 import org.springframework.core.io.ClassPathResource
 import org.springframework.http.HttpMethod
+import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.core.GrantedAuthority
@@ -29,12 +30,15 @@ import org.springframework.security.web.server.SecurityWebFilterChain
 import org.springframework.security.web.server.header.XFrameOptionsServerHttpHeadersWriter
 import org.springframework.security.web.server.util.matcher.NegatedServerWebExchangeMatcher
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
 import org.springframework.web.server.ServerWebExchange
 
 private val logger = KotlinLogging.logger { }
 
 @EnableWebFluxSecurity
 @EnableConfigurationProperties(VyneAuthorisationConfig::class, VyneOpenIdpConnectConfig::class)
+@Configuration
 class VyneInSecurityAutoConfig {
 
    fun getURLsForDisabledCSRF(): NegatedServerWebExchangeMatcher? {
@@ -88,6 +92,10 @@ class VyneInSecurityAutoConfig {
 
    @ConditionalOnProperty("vyne.security.openIdp.enabled", havingValue = "true", matchIfMissing = false)
    @Configuration
+   // useAuthorizationManager = false required for support for method based PreAuthorize when returning a Kotlin Flow
+// see: https://github.com/spring-projects/spring-security/issues/12821
+   @EnableReactiveMethodSecurity(useAuthorizationManager = false)
+
    class VyneReactiveSecurityConfig {
       @Bean
       fun grantedAuthoritiesExtractor(
@@ -116,6 +124,17 @@ class VyneInSecurityAutoConfig {
                ).matches(it)
             }
             .csrf().disable()
+            .cors().configurationSource(
+               UrlBasedCorsConfigurationSource().let { configSrc ->
+                  val config = CorsConfiguration()
+                  config.addAllowedOrigin("*")
+                  config.addAllowedHeader("*")
+                  config.addExposedHeader("*")
+                  config.addAllowedMethod("")
+                  configSrc.registerCorsConfiguration("/**", config)
+                  configSrc
+               }
+            ).and()
             .headers().frameOptions().mode(XFrameOptionsServerHttpHeadersWriter.Mode.SAMEORIGIN).and()
             .authorizeExchange()
             // End points for Cask and other vyne based services to fetch the schema in EUREKA schema discovery mode.

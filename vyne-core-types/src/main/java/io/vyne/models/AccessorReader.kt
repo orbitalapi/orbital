@@ -218,7 +218,9 @@ class AccessorReader(
          is JsonPathAccessor -> parseJson(value, targetType, schema, accessor, source, format)
          is XpathAccessor -> parseXml(value, targetType, schema, accessor, source, nullable, format)
          is DestructuredAccessor -> parseDestructured(value, targetType, schema, accessor, source, format)
-         is ColumnAccessor -> {
+         is ColumnAccessor -> parseColumnData(value, targetType, schema, accessor, nullValues, source, nullable, format)
+         /* was: (before removing the concept of "by default()"
+         {
             if (accessor.index == null && accessor.defaultValue != null) {
                // This is some tech debt.
                // Default values (defined as by default("foo") turn up as ColumnAccessors.
@@ -228,6 +230,7 @@ class AccessorReader(
             }
 
          }
+      */
 
          is ConditionalAccessor -> evaluateConditionalAccessor(value, targetType, schema, accessor, nullValues, source)
          is ReadFunctionFieldAccessor -> evaluateReadFunctionAccessor(
@@ -380,23 +383,6 @@ class AccessorReader(
          queryIfNotFound = allowContextQuerying
       )
       return result
-   }
-
-   private fun readWithDefaultValue(
-      value: Any,
-      targetType: Type,
-      schema: Schema,
-      accessor: ColumnAccessor,
-      nullValues: Set<String>,
-      source: DataSource,
-      nullable: Boolean
-   ): TypedInstance {
-      val value = objectFactory.getValue(targetType.qualifiedName, allowAccessorEvaluation = false)
-      return if (value is TypedNull) {
-         TypedInstance.from(targetType, accessor.defaultValue, schema, nullValues = nullValues, source = source)
-      } else {
-         value
-      }
    }
 
    private fun readScopedReferenceSelector(accessor: ArgumentSelector): TypedInstance {
@@ -663,14 +649,6 @@ class AccessorReader(
          value is String -> csvParser.parse(value, targetType, accessor, schema, source, nullable, format)
          // Efficient parsing where we've already parsed the record once (eg., streaming from disk).
          value is CSVRecord -> csvParser.parseToType(targetType, accessor, value, schema, nullValues, source, nullable, format)
-         accessor.defaultValue != null -> TypedInstance.from(
-            targetType,
-            accessor.defaultValue.toString(),
-            schema,
-            nullValues = nullValues,
-            source = source,
-            format = format
-         )
 
          else -> {
             if (nullable) {
@@ -919,6 +897,11 @@ class AccessorReader(
             return TypedInstance.from(returnType, true, schema, source = lhs.source)
          }
       }
+      if (expression.operator == FormulaOperator.Coalesce && lhs !is TypedNull) {
+         // No need to calculate rhs as we have our value.
+         return lhs
+      }
+
       val rhs = evaluate(
          value,
          rhsReturnType,
@@ -928,6 +911,11 @@ class AccessorReader(
          dataSource,
          format
       )
+      // Doesn't really matter what the rhs value is.  Lhs was null, so return rhs.
+      if (expression.operator == FormulaOperator.Coalesce) {
+         return rhs
+      }
+
       return OperatorExpressionCalculator.calculate(
          lhs,
          rhs,

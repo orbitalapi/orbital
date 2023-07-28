@@ -38,7 +38,7 @@ export type SchemaConverterOptions =
 export type SchemaType = 'jsonSchema' | 'swagger' | 'databaseTable' | 'kafkaTopic' | 'protobuf';
 
 export class ConvertSchemaEvent {
-  constructor(public readonly schemaType: SchemaType, public readonly options: SchemaConverterOptions) {
+  constructor(public readonly schemaType: SchemaType, public readonly options: SchemaConverterOptions, public readonly packageIdentifier: PackageIdentifier) {
   }
 }
 

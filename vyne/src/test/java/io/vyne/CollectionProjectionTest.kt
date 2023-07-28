@@ -8,6 +8,7 @@ import io.vyne.utils.asA
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
+// See also CollectionMapTest
 class CollectionProjectionTest {
    val schema =
       """
@@ -88,6 +89,8 @@ class CollectionProjectionTest {
          )
       )
    }
+
+
 
    @Test
    fun `can project a collection selected by its base type`(): Unit = runBlocking {
@@ -216,6 +219,4 @@ class CollectionProjectionTest {
          reviews.should.have.size(6)
       }
    }
-
-
 }

@@ -12,6 +12,17 @@
   height: 10px;
 }
 
+::ng-deep tui-text-area.flat {
+  tui-wrapper[data-appearance=textfield] {
+    box-shadow:  0 0 0 rgb(19 20 22 / 10%);
+  }
+}
+
+.query-input {
+  flex-grow: 1;
+}
+
+
 as-split {
   flex-grow: 1;
 
@@ -24,9 +35,19 @@ as-split.query-panel-split {
   //height: 10px;
 }
 
-.code-editor-section {
+.code-editor-panel-container {
+  display: flex;
   width: 100%;
   height: 100%;
+
+  app-catalog-explorer-panel, app-query-history-panel, app-saved-queries-panel {
+    width: 400px;
+    overflow: auto;
+  }
+}
+.code-editor-section {
+  flex-grow: 1;
+  width: 10px;
   display: flex;
   flex-direction: column;
 }

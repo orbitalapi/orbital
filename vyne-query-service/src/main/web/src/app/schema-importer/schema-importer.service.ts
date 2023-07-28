@@ -4,9 +4,9 @@ import { HttpClient } from '@angular/common/http';
 import { ConvertSchemaEvent, FileSystemPackageSpec, GitRepositoryConfig } from './schema-importer.models';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs/internal/Observable';
-import { SchemaSubmissionResult } from '../services/types.service';
-import { PartialSchema } from '../services/schema';
-import { PackageIdentifier, PackagesService, SourcePackageDescription } from '../package-viewer/packages.service';
+import {SchemaSubmissionResult} from '../services/types.service';
+import {PartialSchema, VersionedSource} from '../services/schema';
+import {PackageIdentifier, PackagesService, SourcePackageDescription} from '../package-viewer/packages.service';
 import { switchMap } from 'rxjs/operators';
 
 @Injectable({
@@ -22,7 +22,12 @@ export class SchemaImporterService {
     return this.httpClient.post<SchemaSubmissionResult>(`${environment.serverUrl}/api/schemas/import?validateOnly=true`, {
       format: event.schemaType,
       options: event.options,
+      packageIdentifier: event.packageIdentifier
     } as SchemaConversionRequest);
+  }
+
+  submitSchemaEditOperation(edit: SchemaEdit): Observable<SchemaSubmissionResult> {
+    return this.httpClient.post<SchemaSubmissionResult>(`${environment.serverUrl}/api/schemas/edits`, edit)
   }
 
   submitEditedSchema(schema: PartialSchema): Observable<any> {
@@ -55,6 +60,21 @@ export class SchemaImporterService {
   removeRepository(packageDescription: SourcePackageDescription): Observable<any> {
     return this.httpClient.delete<any>(`${environment.serverUrl}/api/packages/${packageDescription.identifier.uriSafeId}`)
   }
+}
+
+export interface SchemaEdit {
+  packageIdentifier: PackageIdentifier
+  edits: SchemaEditOperation[]
+  dryRun: boolean
+}
+
+export interface SchemaEditOperation {
+  editKind: 'CreateOrReplace' | 'ChangeFieldType' | 'ChangeOperationParameterType';
+}
+
+export interface CreateOrReplaceSource extends SchemaEditOperation {
+  editKind: 'CreateOrReplace'
+  sources: VersionedSource[]
 }
 
 export interface SchemaConversionRequest {

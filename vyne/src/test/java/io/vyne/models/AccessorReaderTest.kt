@@ -73,8 +73,8 @@ type LegacyTradeNotification {
       val (vyne,_) = testVyne("""
          type Person {
             name : String by column(1)
-            sleepy : String by default("Yep")
-            age : Int by default(30)
+            sleepy : String  = "Yep"
+            age : Int = 30
          }
       """)
       val instance = TypedInstance.from(vyne.type("Person"), "Jimmy", vyne.schema, source = Provided) as TypedObject
@@ -87,8 +87,8 @@ type LegacyTradeNotification {
       val (vyne,_) = testVyne("""
          type Person {
             name : String by jsonPath("/name")
-            sleepy : String by default("Yep")
-            age : Int by default(30)
+            sleepy : String = "Yep"
+            age : Int = 30
          }
       """)
       val sourceJson = """{ "name" : "Jimmy" }"""
@@ -98,6 +98,24 @@ type LegacyTradeNotification {
       instance["age"].value.should.equal(30)
    }
 
+   @Test
+   fun `json with default value returns value if provided`() {
+      val (vyne,_) = testVyne("""
+         type Person {
+            name : String by jsonPath("/name")
+            sleepy : String = "Yep"
+            age : Int = 30
+         }
+      """)
+      val sourceJson = """{ "name" : "Jimmy" , "sleepy" : "Nope" , "age" : 20}"""
+      val instance = TypedInstance.from(vyne.type("Person"), sourceJson, vyne.schema, source = Provided) as TypedObject
+      instance["name"].value.should.equal("Jimmy")
+      instance["sleepy"].value.should.equal("Nope")
+      instance["age"].value.should.equal(20)
+   }
+
+
+
 
    // Cask seems to ingest data records as JSONNode, rather than Map<>
    // Add this test to cover it, but need to look at why
@@ -106,8 +124,8 @@ type LegacyTradeNotification {
       val (vyne,_) = testVyne("""
          type Person {
             name : String by jsonPath("/name")
-            sleepy : String by default("Yep")
-            age : Int by default(30)
+            sleepy : String = "Yep"
+            age : Int = 30
          }
       """
       )
@@ -135,11 +153,12 @@ type LegacyTradeNotification {
             nullValue = "NULL",
             useFieldNamesAsColumnNames = true
          )
+         type Age inherits Int
          model Target {
-            personId : PersonId by default(0)
-            givenName : FirstName by default("Jack")
-            surname : LastName by default("Spratt")
-            age : Age inherits Int by default(23) // Not provided, use the Default
+            personId : PersonId ?: 0
+            givenName : FirstName ?: "Jack"
+            surname : LastName ?: "Spratt"
+            age : Age  ?: 23 // Not provided, use the Default
          }"""
       )
       val targetType = vyne.type("Target")

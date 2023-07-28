@@ -82,7 +82,8 @@ class OpenApiSchemaSourcesAdaptor(private val spec: OpenApiPackageLoaderSpec) : 
                packageMetadata.identifier.version,
                taxiSourceFile
             )
-         }
+         },
+         emptyMap()
       ))
    }
 }

@@ -18,14 +18,14 @@ import io.vyne.query
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import jakarta.annotation.PostConstruct
+import jakarta.annotation.Resource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.springframework.stereotype.Component
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
-import javax.annotation.PostConstruct
-import javax.annotation.Resource
 
 private const val CAPACITY = 1024
 

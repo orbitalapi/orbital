@@ -7,7 +7,7 @@ import {
   OnDestroy,
   ViewChild
 } from '@angular/core';
-import { editor } from 'monaco-editor';
+import {editor} from 'monaco-editor';
 
 
 // Import the core monaco editor
@@ -26,8 +26,8 @@ import * as monacoFeature7
   from 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneCommandsQuickAccess.js';
 import * as monacoFeature8
   from 'monaco-editor/esm/vs/editor/standalone/browser/quickInput/standaloneQuickInputService.js';
-import { JSONPathFinder } from 'src/app/json-viewer/JsonPathFinder';
-import { Clipboard } from '@angular/cdk/clipboard';
+import {JSONPathFinder} from 'src/app/json-viewer/JsonPathFinder';
+import {Clipboard} from '@angular/cdk/clipboard';
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 import ITextModel = editor.ITextModel;
 
@@ -74,7 +74,13 @@ export class JsonViewerComponent implements OnDestroy {
       return;
     }
     this._json = value;
-    this.pathFinder = new JSONPathFinder(this.json)
+    try {
+      this.pathFinder = new JSONPathFinder(this.json)
+    } catch (e) {
+      console.error(`Failed to build JSON Path finder: ${e}`)
+      this.pathFinder = null;
+    }
+
     this.createOrUpdateEditor()
   }
 
@@ -159,12 +165,16 @@ export class JsonViewerComponent implements OnDestroy {
       })
 
       this.monacoEditor.onDidChangeCursorPosition(e => {
-        const position = this.pathFinder.getPath(e.position.lineNumber, e.position.column);
-        console.log('New position: ' + position)
+        if (this.pathFinder != null) {
+          const position = this.pathFinder.getPath(e.position.lineNumber, e.position.column);
+          console.log('New position: ' + position)
+        }
       });
       this.monacoEditor.onDidChangeModelContent(e => {
-        console.log('Model change');
-        this.pathFinder = new JSONPathFinder(this.monacoEditor.getModel().getValue());
+        if (this.pathFinder != null) {
+          console.log('Model change');
+          this.pathFinder = new JSONPathFinder(this.monacoEditor.getModel().getValue());
+        }
       })
     }
   }

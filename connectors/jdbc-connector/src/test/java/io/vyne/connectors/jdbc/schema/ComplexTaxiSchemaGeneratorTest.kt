@@ -3,9 +3,9 @@ package io.vyne.connectors.jdbc.schema
 import com.google.common.io.Resources
 import io.vyne.connectors.jdbc.DatabaseMetadataService
 import io.vyne.connectors.jdbc.JdbcConnectorTaxi
-import io.vyne.connectors.jdbc.JdbcDriver
-import io.vyne.connectors.jdbc.JdbcUrlAndCredentials
-import io.vyne.connectors.jdbc.JdbcUrlCredentialsConnectionConfiguration
+import io.vyne.connectors.config.jdbc.JdbcDriver
+import io.vyne.connectors.config.jdbc.JdbcUrlAndCredentials
+import io.vyne.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
 import io.vyne.connectors.jdbc.SimpleJdbcConnectionFactory
 import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
 import io.vyne.query.VyneQlGrammar

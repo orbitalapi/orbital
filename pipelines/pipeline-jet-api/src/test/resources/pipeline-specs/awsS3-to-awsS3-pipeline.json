@@ -9,6 +9,7 @@
     "targetTypeName" : "OrderWindowSummary",
     "targetType" : "OrderWindowSummary"
   },
+  "transformation" : null,
   "outputs" : [ {
     "type" : "awsS3",
     "direction" : "OUTPUT",

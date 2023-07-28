@@ -70,10 +70,6 @@ id,firstName,lastName,country
           writer.convert(File(resource).inputStream(), file.toPath()).collectList().block()
     }
 
-    @Test
-    fun instance() {
-        val now = Instant.now()
-        println(now)
-    }
+
 }
 

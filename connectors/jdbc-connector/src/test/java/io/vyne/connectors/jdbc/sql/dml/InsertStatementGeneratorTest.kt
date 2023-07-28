@@ -1,9 +1,9 @@
 package io.vyne.connectors.jdbc.sql.dml
 
 import com.winterbe.expekt.should
-import io.vyne.connectors.jdbc.JdbcDriver
-import io.vyne.connectors.jdbc.JdbcUrlAndCredentials
-import io.vyne.connectors.jdbc.JdbcUrlCredentialsConnectionConfiguration
+import io.vyne.connectors.config.jdbc.JdbcDriver
+import io.vyne.connectors.config.jdbc.JdbcUrlAndCredentials
+import io.vyne.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
 import io.vyne.models.TypedInstance
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.withoutWhitespace
@@ -37,7 +37,7 @@ class InsertStatementGeneratorTest {
       val insert = InsertStatementGenerator(schema).generateInsertWithoutConnecting(typedInstance, connectionDetails)
       val sql = insert.toString()
       sql.withoutWhitespace().should.equal(
-         """insert into Person (  firstName,  lastName,  age,  fullName )
+         """insert into Person (  "firstName",  "lastName",  "age",  "fullName" )
             values (   'Jimmy',  'Schmitts',   28,    'Jimmy Schmitts')""".withoutWhitespace()
       )
    }
@@ -70,12 +70,12 @@ class InsertStatementGeneratorTest {
       )
       val sql = insert.toString()
       sql.withoutWhitespace().should.equal(
-         """insert into Person (  personId, firstName, lastName, age, fullName )
+         """insert into Person (  "personId", "firstName", "lastName", "age", "fullName" )
 values ( 123, 'Jimmy', 'Schmitts', 28, 'Jimmy Schmitts')
-on conflict (personId, firstName) do update
-set lastName = 'Schmitts',
-    age = 28,
-    fullName = 'Jimmy Schmitts'""".withoutWhitespace()
+on conflict ("personId", "firstName") do update
+set "lastName" = 'Schmitts',
+    "age" = 28,
+    "fullName" = 'Jimmy Schmitts'""".withoutWhitespace()
       )
    }
 }

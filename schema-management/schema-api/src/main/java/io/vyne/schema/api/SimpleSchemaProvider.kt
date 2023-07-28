@@ -13,7 +13,7 @@ class SimpleSchemaProvider(
 ) : SchemaProvider {
    override val packages: List<SourcePackage>
       get() {
-         return listOf(SourcePackage(PackageMetadata.from(identifer), versionedSources))
+         return listOf(SourcePackage(PackageMetadata.from(identifer), versionedSources, emptyMap()))
       }
    override val versionedSources: List<VersionedSource>
       get() {
@@ -21,3 +21,15 @@ class SimpleSchemaProvider(
       }
 
 }
+
+class SchemaWithSourcesSchemaProvider(
+   override val schema: Schema,
+   override val packages: List<SourcePackage>
+) : SchemaProvider {
+   override val versionedSources: List<VersionedSource>
+      get() {
+         return packages.flatMap { it.sources }
+      }
+
+}
+

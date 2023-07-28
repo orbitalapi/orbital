@@ -7,6 +7,7 @@ import java.time.Instant
 
 interface QueryEventConsumer : RemoteCallOperationResultHandler {
    fun handleEvent(event: QueryEvent)
+   fun shutdown() {}
 }
 
 sealed class QueryEvent

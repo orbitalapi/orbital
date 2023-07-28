@@ -1,15 +1,16 @@
-import { Inject, Injectable, Injector } from '@angular/core';
-import { Observable, ReplaySubject, Subject } from 'rxjs';
+import {Inject, Injectable, Injector} from '@angular/core';
+import {Observable, ReplaySubject, Subject} from 'rxjs';
 
 import * as _ from 'lodash';
-import { HttpClient } from '@angular/common/http';
+import {HttpClient} from '@angular/common/http';
 
-import { concatAll, map, shareReplay } from 'rxjs/operators';
-import { Policy } from '../policy-manager/policies';
+import {concatAll, map, shareReplay} from 'rxjs/operators';
+import {Policy} from '../policy-manager/policies';
 import {
   CompilationMessage,
   Message,
   Operation,
+  OperationKind,
   ParsedSource,
   PartialSchema,
   QualifiedName,
@@ -17,17 +18,22 @@ import {
   SchemaGraph,
   SchemaGraphNode,
   SchemaMember,
+  SchemaMemberKind,
   SchemaSpec,
   Service,
+  ServiceKind,
   Type,
   TypedInstance,
+  TypeKind,
   TypeNamedInstance,
   VersionedSource,
 } from './schema';
-import { SchemaNotificationService, SchemaUpdatedNotification } from './schema-notification.service';
-import { ValueWithTypeName } from './models';
-import { ENVIRONMENT, Environment } from './environment';
-import { TuiDialogService } from '@taiga-ui/core';
+import {SchemaNotificationService, SchemaUpdatedNotification} from './schema-notification.service';
+import {ValueWithTypeName} from './models';
+import {ENVIRONMENT, Environment} from './environment';
+import {TuiDialogService} from '@taiga-ui/core';
+import {PackageIdentifier, PackageMetadata, SourcePackageDescription} from "../package-viewer/packages.service";
+import {SchemaEditOperation} from "../schema-importer/schema-importer.service";
 
 
 @Injectable({
@@ -44,8 +50,7 @@ export class TypesService {
     @Inject(Injector) private readonly injector: Injector,
     private http: HttpClient,
     private schemaNotificationService: SchemaNotificationService,
-
-    ) {
+  ) {
 
     this.getTypes().subscribe(schema => {
       this.schema = schema;
@@ -124,6 +129,16 @@ export class TypesService {
 
   getOperation(serviceName: string, operationName: string): Observable<Operation> {
     return this.http.get<Operation>(`${this.environment.serverUrl}/api/services/${serviceName}/${operationName}`);
+  }
+
+  getSchemaTree(nodeName: string | null): Observable<SchemaTreeNode[]> {
+    if (nodeName) {
+      return this.http.get<SchemaTreeNode[]>(`${this.environment.serverUrl}/api/schema/tree?node=${nodeName}`);
+    } else {
+      return this.http.get<SchemaTreeNode[]>(`${this.environment.serverUrl}/api/schema/tree`);
+    }
+
+
   }
 
   parse(content: string, type: Type): Observable<ParsedTypeInstance[]> {
@@ -210,7 +225,7 @@ export class TypesService {
       // therefore, concatAll() seems to do this.
       // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
       concatAll(),
-      shareReplay({ bufferSize: 500, refCount: false }),
+      shareReplay({bufferSize: 500, refCount: false}),
     );
 
   }
@@ -325,7 +340,6 @@ export interface SchemaEditRequest {
 }
 
 
-
 export interface SchemaPreview {
   spec: SchemaSpec;
   content: string;
@@ -365,6 +379,8 @@ export class CsvOptions {
       case 'csv' :
         return true;
       case 'psv' :
+        return true;
+      case 'txt' :
         return true;
       default:
         return false;
@@ -414,7 +430,14 @@ export interface ContentWithSchemaParseResponse {
 
 export interface SchemaSubmissionResult extends PartialSchema {
   messages: CompilationMessage[];
-  taxi: string;
+  sourcePackage: SourcePackage
+  pendingEdits: SchemaEditOperation[]
+}
+
+export interface SourcePackage {
+  packageMetadata: PackageMetadata
+  sources: VersionedSource[]
+  identifier: PackageIdentifier
 }
 
 export interface OperationQueryResult {
@@ -434,3 +457,15 @@ export interface UpdateDataOwnerRequest {
   name: string;
 }
 
+export interface SchemaTreeNode {
+  element: QualifiedName;
+  schemaMemberKind: SchemaMemberKind;
+  hasChildren: boolean;
+  typeDoc: string | null;
+  serviceKind: ServiceKind | null;
+  typeKind: TypeKind | null;
+  operationKind: OperationKind | null;
+  fieldName: string | null;
+  primitiveType: QualifiedName | null;
+
+}

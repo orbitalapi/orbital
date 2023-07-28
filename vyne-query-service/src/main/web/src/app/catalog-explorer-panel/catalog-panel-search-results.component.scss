@@ -1,0 +1,41 @@
+@import "src/theme";
+
+.row {
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+
+  img {
+    margin-right: 0.5rem;
+  }
+
+  .flex-grow {
+    flex-grow: 1;
+  }
+}
+
+
+
+.search-result {
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  color: $slate-700;
+  cursor: pointer;
+
+  .add-to-query-button {
+    visibility: hidden;
+  }
+
+  &:hover {
+    background-color: $slate-50;
+
+    .add-to-query-button {
+      visibility: visible;
+    }
+  }
+}
+
+.no-docs {
+  font-size: 0.8rem;
+  color: $slate-400;
+}

@@ -169,7 +169,7 @@ class CaskViewService(val viewBuilderFactory: CaskViewBuilderFactory,
    }
 }
 
-@ConstructorBinding
+//@ConstructorBinding
 @ConfigurationProperties(prefix = "cask")
 data class CaskViewConfig(
    val views: List<CaskViewDefinition> = emptyList()

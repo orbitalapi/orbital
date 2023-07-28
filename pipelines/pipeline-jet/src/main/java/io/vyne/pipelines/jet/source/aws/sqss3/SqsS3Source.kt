@@ -1,5 +1,6 @@
 package io.vyne.pipelines.jet.source.aws.sqss3
 
+import com.amazonaws.services.s3.event.S3EventNotification
 import com.hazelcast.jet.pipeline.BatchSource
 import com.hazelcast.jet.pipeline.SourceBuilder
 import com.hazelcast.logging.ILogger
@@ -11,18 +12,15 @@ import io.vyne.models.csv.CsvFormatFactory
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.csv.CsvFormatSpecAnnotation
 import io.vyne.models.format.FormatDetector
-import io.vyne.pipelines.jet.api.transport.CsvRecordContentProvider
-import io.vyne.pipelines.jet.api.transport.MessageContentProvider
-import io.vyne.pipelines.jet.api.transport.MessageSourceWithGroupId
-import io.vyne.pipelines.jet.api.transport.PipelineSpec
-import io.vyne.pipelines.jet.api.transport.StringContentProvider
+import io.vyne.pipelines.jet.api.transport.*
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.pipelines.jet.source.PipelineSourceType
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
-import net.snowflake.client.jdbc.internal.amazonaws.services.s3.event.S3EventNotification
+import jakarta.annotation.PostConstruct
+import jakarta.annotation.Resource
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
@@ -37,8 +35,6 @@ import java.nio.charset.StandardCharsets
 import java.time.Clock
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.logging.Level
-import javax.annotation.PostConstruct
-import javax.annotation.Resource
 
 data class S3SourceMetadata(val etag: String) : MessageSourceWithGroupId {
    override val groupId = etag
@@ -86,9 +82,9 @@ class PollingSqsOperationSourceContext(
    val pipelineSpec: PipelineSpec<AwsSqsS3TransportInputSpec, *>,
    private val csvModelFormatAnnotation: CsvFormatSpecAnnotation?
 ) {
-   val inputSpec: AwsSqsS3TransportInputSpec = pipelineSpec.input
+   private val inputSpec: AwsSqsS3TransportInputSpec = pipelineSpec.input
 
-   var dataBuffer: LinkedBlockingQueue<Pair<MessageContentProvider, Long>> = LinkedBlockingQueue()
+   private val dataBuffer: LinkedBlockingQueue<Pair<MessageContentProvider, Long>> = LinkedBlockingQueue()
 
    @Resource
    lateinit var clock: Clock

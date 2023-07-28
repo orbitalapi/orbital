@@ -30,11 +30,14 @@ enum class WriteDisposition(val value: String) {
 data class JdbcTransportOutputSpec(
    @PipelineParam("The name of a connection, configured in Vyne's connection manager")
    val connection: String,
-   @PipelineParam("The fully qualified name of the type which content being pushed to the database should be read as")
-   val targetTypeName: String,
+   @PipelineParam("The fully qualified name of the type which content being pushed to the database should be read as. Leave as null to use type inherited from upstream in the transformation phase")
+   val targetTypeName: String?,
    @PipelineParam("Whether to append new data into the existing table (APPEND), or to create a new table with a unique name and switch over the view to point to the newly created table (RECREATE).")
    val writeDisposition: WriteDisposition = WriteDisposition.APPEND,
-) : WindowingPipelineTransportSpec {
+   @PipelineParam("The name of the table to write to. By default will use the name of the type")
+   val tableName: String? = null,
+
+   ) : WindowingPipelineTransportSpec {
    constructor(
       connection: String,
       targetType: VersionedTypeReference
@@ -84,13 +87,13 @@ The default write disposition is `APPEND`.
 """
    }
 
-   val targetType: VersionedTypeReference
+   val targetType: VersionedTypeReference?
       get() {
-         return VersionedTypeReference.parse(this.targetTypeName)
+         return this.targetTypeName?.let { VersionedTypeReference.parse(it) }
       }
 
    override val requiredSchemaTypes: List<String>
-      get() = listOf(targetTypeName)
+      get() = listOfNotNull(targetTypeName)
 
    override val description: String = "Jdbc connection $connection"
 

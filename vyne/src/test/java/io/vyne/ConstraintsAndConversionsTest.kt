@@ -129,7 +129,10 @@ service TestService {
 
       val queryEngine = vyne.queryEngine()
       queryEngine.addModel(vyne.parseKeyValuePair("UkSic2003","SickOf2003"))
-      val resultList = runBlocking { queryEngine.queryContext(queryId = UUID.randomUUID().toString(), clientQueryId = null).find("Foo").results.toList() }
+      val resultList = runBlocking { queryEngine.queryContext(
+         queryId = UUID.randomUUID().toString(),
+         clientQueryId = null
+      ).find("Foo").results.toList() }
 
       expect( (resultList.get(0) as TypedValue).value).to.equal("Hello")
       // Assert correct params were passed

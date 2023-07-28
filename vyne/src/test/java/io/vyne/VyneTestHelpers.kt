@@ -2,6 +2,7 @@ package io.vyne
 
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.query.QueryContext
 import io.vyne.query.QueryResult
@@ -39,6 +40,9 @@ suspend fun QueryResult.rawObjects(): List<Map<String,Any?>> {
    return this.typedObjects().map { it.toRawObject() as Map<String,Any?> }
 }
 
+suspend fun QueryResult.expectReturnsNull():TypedNull {
+   return this.typedInstances().first() as TypedNull
+}
 suspend fun QueryResult.firstRawObject():Map<String,Any?> {
    return this.rawObjects().first()
 }

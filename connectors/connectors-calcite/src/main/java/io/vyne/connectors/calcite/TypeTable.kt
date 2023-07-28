@@ -23,7 +23,7 @@ class TypeTable(private val type: Type, private val dataSource: Stream<TypedInst
    override fun getRowType(relDataTypeFactory: RelDataTypeFactory): RelDataType {
       val structure =  type.attributes.map { (fieldName, field) ->
          val relDataType =
-         relDataTypeFactory.createJavaType( CalciteMapping.getJavaType(schema.type(field.type).taxiType))
+         relDataTypeFactory.createJavaType( CalciteMapping.getJavaType(field.resolveType(schema).taxiType))
          fieldName to relDataType
       }.toMap().entries.toList()
      return  relDataTypeFactory.createStructType(structure)

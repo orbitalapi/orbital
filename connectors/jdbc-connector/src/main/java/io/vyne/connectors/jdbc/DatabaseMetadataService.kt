@@ -11,6 +11,7 @@ import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.Schema
 import lang.taxi.generators.GeneratedTaxiCode
 import mu.KotlinLogging
+import org.springframework.core.NestedRuntimeException
 import org.springframework.jdbc.core.JdbcTemplate
 import schemacrawler.schema.Catalog
 import schemacrawler.schemacrawler.LoadOptionsBuilder
@@ -39,7 +40,8 @@ class DatabaseMetadataService(
             logger.info { "Test query did not return any rows - treating as a failure" }
             "Connection succeeded, but test query returned no rows.  Possibly a bug in the adaptor?".left()
          }
-
+      } catch (e: NestedRuntimeException) {
+         e.mostSpecificCause.message?.left() ?: "An unhandled exception occurred: ${e::class.simpleName}".left()
       } catch (e: Exception) {
          e.message?.left() ?: "An unhandled exception occurred: ${e::class.simpleName}".left()
       }

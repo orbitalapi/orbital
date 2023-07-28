@@ -5,14 +5,13 @@
    <parent>
       <artifactId>connectors</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.23.0</version>
+      <version>0.24.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>kafka-connector</artifactId>
    <properties>
       <schemacrawler.version>16.19.7</schemacrawler.version>
-      <kafka.version>2.8.2</kafka.version>
    </properties>
 
    <dependencies>
@@ -175,4 +174,17 @@
          <version>1.17.6</version>
       </dependency>
    </dependencies>
+
+   <dependencyManagement>
+      <dependencies>
+         <!-- Protobuf-utils depends on wire, which is exporting an old version of kotlinx-serialization-core.
+         Not sure why upstream dependency management isn't solving this, but here we are.
+         -->
+         <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-serialization-core</artifactId>
+            <version>${kotlin.serialization.version}</version>
+         </dependency>
+      </dependencies>
+   </dependencyManagement>
 </project>

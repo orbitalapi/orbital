@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {ChangeDetectorRef, Component} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {QueryHistorySummary, QueryResult, QueryService} from '../services/query.service';
 import {QueryFailure} from './query-wizard/query-wizard.component';
@@ -21,12 +21,12 @@ export class QueryPanelComponent extends BaseQueryResultDisplayComponent {
   loading = false;
 
   links: { label: string, link: string }[] = [
-    { label: 'Query Builder', link: 'builder'},
-    { label: 'Query Editor', link: 'editor'},
+    {label: 'Query Builder', link: 'builder'},
+    {label: 'Query Editor', link: 'editor'},
   ];
 
-  constructor(private router: Router, queryService: QueryService, typeService: TypesService, activatedRoute: ActivatedRoute) {
-    super(queryService, typeService);
+  constructor(private router: Router, queryService: QueryService, typeService: TypesService, activatedRoute: ActivatedRoute, changeDetector: ChangeDetectorRef) {
+    super(queryService, typeService, changeDetector);
     // https://angular.io/api/router/NavigationExtras#state
     const navigationState = this.router.getCurrentNavigation() && this.router.getCurrentNavigation().extras
       ? this.router.getCurrentNavigation().extras.state

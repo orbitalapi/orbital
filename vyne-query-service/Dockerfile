@@ -1,5 +1,5 @@
 ARG REGISTRY
-FROM ${REGISTRY}eclipse-temurin:18.0.2.1_1-jre-focal
+FROM ${REGISTRY}eclipse-temurin:17-jre-jammy
 
 RUN apt-get update && apt-get install zip -y
 

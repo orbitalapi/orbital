@@ -5,11 +5,8 @@ import io.vyne.history.chart.LineageSankeyViewBuilder
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryResponse
-import io.vyne.query.history.FlowChartData
-import io.vyne.query.history.LineageRecord
-import io.vyne.query.history.QueryResultRow
-import io.vyne.query.history.QuerySummary
-import io.vyne.query.history.RemoteCallResponse
+import io.vyne.query.history.*
+import kotlinx.serialization.encodeToString
 import mu.KotlinLogging
 import java.sql.SQLIntegrityConstraintViolationException
 import java.time.Instant
@@ -52,12 +49,13 @@ class QueryHistoryDao(
    fun upsertLineageRecord(lineageRecord: LineageRecord) {
       try {
          lineageRecordRepository.upsertLineageRecord(
+            lineageRecord.recordId,
             lineageRecord.dataSourceId,
             lineageRecord.queryId,
             lineageRecord.dataSourceType,
             lineageRecord.dataSourceJson,
-            lineageRecord.recordId
-         )
+
+            )
       } catch (e: Exception) {
          logger.error(e) { "Error in upserting lineage record for query Id ${lineageRecord.queryId}" }
 
@@ -117,6 +115,19 @@ class QueryHistoryDao(
 
    fun persistSankeyChart(queryId: String, sankeyViewBuilder: LineageSankeyViewBuilder) {
       val chartRows = sankeyViewBuilder.asChartRows(queryId)
+//      val ids = chartRows.map { it.toId() }
+      chartRows.forEach {
+         sankeyChartRowRepository.upsert(
+            it.queryId,
+            it.sourceNodeType.name,
+            it.sourceNode,
+            SankeyOperationNodeDetailsConverter.json.encodeToString(it.sourceNodeOperationData),
+            it.targetNodeType.name,
+            it.targetNode,
+            SankeyOperationNodeDetailsConverter.json.encodeToString(it.targetNodeOperationData),
+            it.count
+         )
+      }
       sankeyChartRowRepository.saveAll(chartRows)
    }
 

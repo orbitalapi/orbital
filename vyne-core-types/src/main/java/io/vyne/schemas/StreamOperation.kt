@@ -2,6 +2,7 @@ package io.vyne.schemas
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import lang.taxi.services.OperationScope
 
 /**
  * A StreamOperation is an operation that connects to a streaming data source.
@@ -29,7 +30,9 @@ data class StreamOperation(
 ) : PartialOperation, MetadataTarget, SchemaMember, RemoteOperation {
    override val parameters: List<Parameter> = emptyList()
    override val contract = OperationContract(returnType)
-   override val operationType: String? = null
+   override val operationType: OperationScope = OperationScope.READ_ONLY
 
    override val returnTypeName: QualifiedName = returnType.name
+   override val schemaMemberKind: SchemaMemberKind = SchemaMemberKind.OPERATION
+   override val operationKind: OperationKind = OperationKind.Stream
 }

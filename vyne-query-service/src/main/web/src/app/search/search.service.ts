@@ -1,8 +1,8 @@
-import { Metadata, QualifiedName } from '../services/schema';
-import { Injectable } from '@angular/core';
+import {Metadata, QualifiedName, ServiceKind} from '../services/schema';
+import {Inject, Injectable} from '@angular/core';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../environments/environment';
+import {ENVIRONMENT, Environment} from "../services/environment";
 
 
 export interface SearchResult {
@@ -14,6 +14,10 @@ export interface SearchResult {
   producers: QualifiedName[];
   metadata: Metadata[];
   matchedFieldName?: string;
+
+  serviceKind?:ServiceKind
+  typeKind?: 'Type' | 'Model';
+  primitiveType?: QualifiedName;
 }
 
 export interface ExpendableProducersConsumers {
@@ -37,11 +41,11 @@ export type SearchField = 'QUALIFIED_NAME' | 'NAME' | 'TYPEDOC';
 })
 export class SearchService {
 
-  constructor(private httpClient: HttpClient) {
+  constructor(private httpClient: HttpClient, @Inject(ENVIRONMENT) private environment: Environment) {
   }
 
   search(term: string): Observable<SearchResult[]> {
     const encodedTerm = encodeURIComponent(term);
-    return this.httpClient.get<SearchResult[]>(`${environment.serverUrl}/api/search?query=${encodedTerm}`);
+    return this.httpClient.get<SearchResult[]>(`${this.environment.serverUrl}/api/search?query=${encodedTerm}`);
   }
 }

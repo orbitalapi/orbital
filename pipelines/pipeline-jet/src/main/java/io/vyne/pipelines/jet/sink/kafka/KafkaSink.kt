@@ -2,8 +2,9 @@ package io.vyne.pipelines.jet.sink.kafka
 
 import com.hazelcast.jet.kafka.KafkaSinks
 import com.hazelcast.jet.pipeline.Sink
-import io.vyne.connectors.kafka.asKafkaProperties
+import io.vyne.connectors.config.kafka.asKafkaProperties
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
+import io.vyne.connectors.kafka.registry.toProducerProps
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportOutputSpec

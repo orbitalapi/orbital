@@ -7,6 +7,8 @@ import io.vyne.VersionedSource
 import io.vyne.models.TypedInstance
 import io.vyne.query.RemoteCall
 import io.vyne.utils.ImmutableEquality
+import lang.taxi.services.OperationScope
+import lang.taxi.types.Documented
 import java.io.Serializable
 
 
@@ -88,7 +90,8 @@ data class Parameter(
    val type: Type,
    override val name: String? = null,
    override val metadata: List<Metadata> = emptyList(),
-   val constraints: List<InputConstraint> = emptyList()
+   val constraints: List<InputConstraint> = emptyList(),
+   val typeDoc: String? = null,
 ) : MetadataTarget, PartialParameter {
    fun isNamed(name: String): Boolean {
       return this.name != null && this.name == name
@@ -118,7 +121,7 @@ data class Operation(
    @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
    override val returnType: Type,
    // similar to scope in taxi - ie., read / write
-   override val operationType: String? = null,
+   override val operationType: OperationScope,
    override val metadata: List<Metadata> = emptyList(),
    override val contract: OperationContract = OperationContract(returnType),
    @get:JsonIgnore
@@ -133,6 +136,9 @@ data class Operation(
       return equality.hash()
    }
 
+   override val operationKind: OperationKind = OperationKind.ApiCall
+   override val schemaMemberKind: SchemaMemberKind = SchemaMemberKind.OPERATION
+
    fun parameter(name: String): Parameter? {
       return this.parameters.firstOrNull { it.name == name }
    }
@@ -145,18 +151,26 @@ data class Operation(
  * ( Operation ), and query operations (QueryOperation)
  *
  */
-interface RemoteOperation : MetadataTarget {
+interface RemoteOperation : MetadataTarget, Documented, SchemaMember {
    val qualifiedName: QualifiedName
    val parameters: List<Parameter>
    val returnType: Type
    val contract: OperationContract
 
-   val operationType: String?
+   val operationType: OperationScope
+
+   val operationKind:OperationKind
 
    val name: String
       get() = OperationNames.operationName(qualifiedName)
 }
 
+enum class OperationKind {
+   ApiCall,
+   Query,
+   Stream,
+   Table
+}
 
 // Need to use @JsonDeserialize on this type, as the PartialXxxx
 // interface is overriding default deserialization behaviour
@@ -256,6 +270,8 @@ data class Service(
       Service::metadata
    )
 
+   override val schemaMemberKind: SchemaMemberKind = SchemaMemberKind.SERVICE
+
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
    override fun hashCode(): Int = equality.hash()
 
@@ -318,6 +334,16 @@ fun RemoteOperation.httpOperationMetadata(): VyneHttpOperation {
 }
 
 data class VyneHttpOperation(val httpOperationMetadata: Metadata, val url: String, val method: String)
+
+/**
+ * Use this exception when we failed to actually send the request.
+ * There's no response code or remote call, because we never got the request away
+ * (eg., when there's a malformed address).
+ */
+class OperationRequestFailedException(
+   message: String,
+   throwable: Throwable?
+) : RuntimeException(message, throwable)
 
 class OperationInvocationException(
    message: String,

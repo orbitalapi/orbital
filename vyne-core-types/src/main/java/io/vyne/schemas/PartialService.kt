@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import lang.taxi.Operator
 import lang.taxi.services.FilterCapability
+import lang.taxi.services.OperationScope
 import lang.taxi.services.QueryOperationCapability
 import lang.taxi.services.SimpleQueryCapability
 
@@ -43,6 +44,7 @@ interface PartialOperation {
    val metadata: List<Metadata>
    val typeDoc: String?
    val returnTypeName: QualifiedName
+   val operationType: OperationScope
 }
 
 data class DefaultPartialOperation(
@@ -50,7 +52,8 @@ data class DefaultPartialOperation(
    override val parameters: List<out PartialParameter>,
    override val metadata: List<Metadata>,
    override val typeDoc: String?,
-   override val returnTypeName: QualifiedName
+   override val returnTypeName: QualifiedName,
+   override val operationType: OperationScope = OperationScope.READ_ONLY
 ) : PartialOperation
 
 @JsonDeserialize(`as` = DefaultPartialParameter::class)
@@ -88,7 +91,9 @@ data class DefaultPartialQueryOperation(
    override val capabilities: List<QueryOperationCapability>,
    override val hasFilterCapability: Boolean,
    override val supportedFilterOperations: List<Operator>
-) : PartialQueryOperation
+) : PartialQueryOperation {
+   override val operationType: OperationScope = OperationScope.READ_ONLY
+}
 
 
 class QueryOperationCapabilityDeserializer : JsonDeserializer<QueryOperationCapability>() {

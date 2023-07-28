@@ -9,6 +9,7 @@ import {
 } from '../../../db-connection-editor/db-connection-editor-dialog.component';
 import {TuiDialogService} from '@taiga-ui/core';
 import {isNullOrUndefined} from 'util';
+import {PackageIdentifier} from "../../../package-viewer/packages.service";
 
 @Component({
   selector: 'app-kafka-topic-config',
@@ -166,6 +167,9 @@ export class KafkaTopicConfigComponent {
   @Input()
   schema: Schema;
 
+  @Input()
+  packageIdentifier: PackageIdentifier;
+
   modelType: Type;
 
 
@@ -173,7 +177,7 @@ export class KafkaTopicConfigComponent {
 
   doCreate() {
     console.log(this.kafkaTopicOptions);
-    this.loadSchema.next(new ConvertSchemaEvent('kafkaTopic', this.kafkaTopicOptions));
+    this.loadSchema.next(new ConvertSchemaEvent('kafkaTopic', this.kafkaTopicOptions, this.packageIdentifier));
   }
 
   createNewConnection() {

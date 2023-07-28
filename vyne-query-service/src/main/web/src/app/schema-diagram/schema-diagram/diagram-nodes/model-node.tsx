@@ -12,6 +12,12 @@ function ModelNode(node: Node<MemberWithLinks>) {
 
   const modelLinks = links.inputs.concat(links.outputs);
 
+  const clickHandler = (event) => {
+    node.data.clickHandler(node.data.member);
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
   return (
     <SchemaNodeContainer>
       <table>
@@ -23,7 +29,7 @@ function ModelNode(node: Node<MemberWithLinks>) {
           <th colSpan={2}>
             <div className={'handle-container'}>
               <LinkHandle node={node} links={modelLinks} position={Position.Left} allowConnectionToFloat></LinkHandle>
-              {node.data.member.name.shortDisplayName}
+              <a href='#' onClick={(event) => clickHandler(event)}>{node.data.member.name.shortDisplayName}</a>
               <LinkHandle node={node} links={modelLinks} position={Position.Right}  allowConnectionToFloat></LinkHandle>
             </div>
           </th>

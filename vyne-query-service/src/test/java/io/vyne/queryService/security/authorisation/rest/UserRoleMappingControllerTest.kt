@@ -1,6 +1,7 @@
 package io.vyne.queryService.security.authorisation.rest
 
 import io.vyne.cockpit.core.security.authorisation.VyneAuthorisationConfig
+import io.vyne.queryService.CustomWebFluxConfigSupport
 import io.vyne.spring.config.TestDiscoveryClientConfig
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -10,6 +11,7 @@ import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.reactive.server.WebTestClient
 import reactor.test.StepVerifier
@@ -25,13 +27,15 @@ import java.io.File
       "vyne.search.directory=./search/\${random.int}",
       "vyne.telemetry.enabled=false",
       "spring.datasource.url=jdbc:h2:mem:UserRoleMappingControllerTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY",
-   ])
+   ]
+)
+@ActiveProfiles("test")
 class UserRoleMappingControllerTest {
    @Autowired
    private lateinit var webClient: WebTestClient
 
    @TestConfiguration
-   @Import(TestDiscoveryClientConfig::class)
+   @Import(TestDiscoveryClientConfig::class, CustomWebFluxConfigSupport::class)
    class TestVyneAuthorisationConfig {
       @Primary
       @Bean

@@ -2,12 +2,7 @@ package io.vyne.schemas
 
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
-import lang.taxi.TaxiDocument
-import lang.taxi.services.operations.constraints.ConstantValueExpression
-import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
-import lang.taxi.services.operations.constraints.PropertyIdentifier
-import lang.taxi.services.operations.constraints.RelativeValueExpression
-import lang.taxi.services.operations.constraints.ValueExpression
+import lang.taxi.services.operations.constraints.*
 import lang.taxi.types.ObjectType
 
 object ReplaceValueUpdater : ConstraintViolationValueUpdater {
@@ -78,5 +73,6 @@ private fun ValueExpression.asParameterIdentifier(): PropertyIdentifier {
    return when (this) {
       is ConstantValueExpression -> error("I don't know what to do in this situation yet, let's see what the scneario looks like")
       is RelativeValueExpression -> PropertyFieldNameIdentifier(this.path)
+      is ArgumentExpression ->  error("I don't know what to do in this situation yet, let's see what the scneario looks like")
    }
 }

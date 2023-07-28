@@ -15,6 +15,7 @@ interface PackageLoaderSpec {
 enum class PackageType {
    OpenApi,
    Taxi,
+   Soap,
    Protobuf,
    JsonSchema
 }

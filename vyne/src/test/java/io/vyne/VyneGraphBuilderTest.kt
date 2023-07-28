@@ -1,15 +1,15 @@
 package io.vyne
 
 import es.usc.citius.hipster.graph.GraphEdge
-import io.vyne.query.graph.Element
-import io.vyne.query.graph.VyneGraphBuilder
-import io.vyne.query.graph.operation
-import io.vyne.query.graph.type
+import io.kotest.matchers.booleans.shouldBeFalse
+import io.vyne.models.TypedInstance
+import io.vyne.query.graph.*
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Relationship.REQUIRES_PARAMETER
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import lang.taxi.types.PrimitiveType
 import org.junit.Test
 
 class VyneGraphBuilderTest {
@@ -49,13 +49,59 @@ class VyneGraphBuilderTest {
       """.trimIndent()
 
       val taxiSchema = TaxiSchema.from(taxiDef)
-      val (service,operation) = taxiSchema.operation(OperationNames.name("CustomerService", "getCustomerByEmail").fqn())
+      val (service, operation) = taxiSchema.operation(
+         OperationNames.name("CustomerService", "getCustomerByEmail").fqn()
+      )
       val graph =
          VyneGraphBuilder(taxiSchema, VyneGraphBuilderCacheSettings(100L, 100L, 100L)).buildDisplayGraph()
       val edges = graph.outgoingEdgesOf(operation(service, operation))
 
       edges.shouldContain(REQUIRES_PARAMETER, type("CustomerEmailAddress"))
 
+   }
+
+   @Test
+   fun `should not generate paths to services accepting primitives as input`() {
+      val schema = TaxiSchema.from(
+         """
+            | // Schemas like this can be produced from code-gen tasks,
+            |  // where everything is not semantically typed.
+            |model Person {
+            |   id : String
+            |}
+            |model PersonDetails {
+            |   age : Int
+            |}
+            |
+            |service PeopleService {
+            |  operation getDetails(personId: String):PersonDetails
+            |}
+         """.trimMargin()
+      )
+      val graph =
+         VyneGraphBuilder(schema, VyneGraphBuilderCacheSettings(100L, 100L, 100L))
+            .buildDisplayGraph()
+
+      graph.vertices().any {
+         it.elementType == ElementType.OPERATION && it.value == OperationNames.name(
+            "PeopleService",
+            "getDetails"
+         )
+      }
+         .shouldBeFalse()
+
+      val startFact = TypedInstance.from(schema.type(PrimitiveType.STRING.qualifiedName), "jimmy", schema)
+
+      val graphWithStartFact =
+         VyneGraphBuilder(schema, VyneGraphBuilderCacheSettings(100L, 100L, 100L))
+            .build(facts = listOf(startFact), excludedEdges = emptyList(), excludedServices = emptySet())
+      graphWithStartFact.graph.vertices().any {
+         it.elementType == ElementType.OPERATION && it.value == OperationNames.name(
+            "PeopleService",
+            "getDetails"
+         )
+      }
+         .shouldBeFalse()
    }
 
 //   @Test

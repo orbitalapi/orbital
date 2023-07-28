@@ -1,15 +1,11 @@
 package io.vyne.spring.config
 
+import io.vyne.http.ServicesConfigRepository
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.cloud.client.DefaultServiceInstance
-import org.springframework.cloud.client.ServiceInstance
-import org.springframework.cloud.client.discovery.DiscoveryClient
-import org.springframework.cloud.client.serviceregistry.ServiceRegistry
 import org.springframework.context.annotation.*
 import org.springframework.stereotype.Component
-import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 

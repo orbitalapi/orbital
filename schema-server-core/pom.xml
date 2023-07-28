@@ -5,7 +5,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.23.0</version>
+      <version>0.24.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -60,9 +60,21 @@
          <artifactId>vyne-spring</artifactId>
          <version>${project.version}</version>
       </dependency>
+
+      <!-- Soap connector is required to allow us to load WSDL schema projects -->
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>soap-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>swagger2taxi</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>soap-to-taxi</artifactId>
          <version>${taxi.version}</version>
       </dependency>
       <dependency>
@@ -73,19 +85,6 @@
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-webflux</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.cloud</groupId>
-         <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.cloud</groupId>
-         <artifactId>spring-cloud-starter-config</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-configuration-processor</artifactId>
-         <optional>true</optional>
       </dependency>
       <dependency>
          <groupId>net.logstash.logback</groupId>

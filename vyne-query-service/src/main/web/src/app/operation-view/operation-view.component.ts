@@ -1,14 +1,5 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {
-  getDisplayName,
-  InstanceLike,
-  Operation,
-  Parameter,
-  QualifiedName,
-  Schema,
-  Type,
-  TypedInstance
-} from '../services/schema';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {getDisplayName, InstanceLike, Operation, Parameter, QualifiedName, Schema, Type} from '../services/schema';
 import {Fact} from '../services/query.service';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Observable} from 'rxjs';
@@ -16,8 +7,8 @@ import {BaseDeferredEditComponent} from '../type-viewer/base-deferred-edit.compo
 import {MatDialog} from '@angular/material/dialog';
 import {openTypeSearch} from '../type-viewer/model-attribute-tree-list/base-schema-member-display';
 import {isNullOrUndefined} from 'util';
-import { OperationSummary, toOperationSummary } from 'src/app/service-view/operation-summary';
-import { methodClassFromName } from 'src/app/service-view/service-view-class-utils';
+import {OperationSummary, toOperationSummary} from 'src/app/service-view/operation-summary';
+import {methodClassFromName} from 'src/app/service-view/service-view-class-utils';
 
 @Component({
   selector: 'app-operation-view',
@@ -30,7 +21,7 @@ import { methodClassFromName } from 'src/app/service-view/service-view-class-uti
               <a [routerLink]="['/services',operationSummary?.serviceName]">{{operationSummary?.serviceName}}</a>
             </span>
           <span class="separator-slash">/</span>
-          <span class="mono-badge">{{operation?.name}}</span>
+          <span class="mono-badge">{{operationSummary?.name}}</span>
         </div>
 
       </div>
@@ -88,7 +79,7 @@ import { methodClassFromName } from 'src/app/service-view/service-view-class-uti
                 >{{ displayName(param.typeName, showFullTypeNames) }}</button>
 
               </td>
-              <td>-</td>
+              <td><markdown [data]="param.typeDoc"></markdown></td>
               <td *ngIf="tryMode">
                 <input (change)="updateModel(param, $event)">
               </td>

@@ -9,36 +9,12 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.json.Jackson
 import io.vyne.models.serde.InstantSerializer
-import io.vyne.query.HttpExchange
-import io.vyne.query.MessageStreamExchange
-import io.vyne.query.QueryResponse
-import io.vyne.query.RemoteCall
-import io.vyne.query.RemoteCallExchangeMetadata
-import io.vyne.query.ResponseMessageType
-import io.vyne.query.SqlExchange
-import io.vyne.schemas.OperationName
-import io.vyne.schemas.OperationNames
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.QualifiedNameAsStringSerializer
-import io.vyne.schemas.ServiceName
-import kotlinx.serialization.Contextual
+import io.vyne.query.*
+import io.vyne.schemas.*
+import jakarta.persistence.*
 import kotlinx.serialization.Serializable
 import java.time.Duration
 import java.time.Instant
-import javax.persistence.Column
-import javax.persistence.Convert
-import javax.persistence.Embeddable
-import javax.persistence.Entity
-import javax.persistence.EnumType
-import javax.persistence.Enumerated
-import javax.persistence.GeneratedValue
-import javax.persistence.GenerationType
-import javax.persistence.Id
-import javax.persistence.IdClass
-import javax.persistence.Index
-import javax.persistence.Lob
-import javax.persistence.Table
-import javax.persistence.Transient
 
 
 @Entity(name = "QUERY_SUMMARY")
@@ -158,7 +134,7 @@ data class RemoteCallResponse(
    override val startTime: Instant,
    @Column(name = "duration_ms", nullable = true)
    override val durationMs: Long?,
-   @Lob
+
    @Convert(converter = RemoteCallExchangeMetadataJsonConverter::class)
    @Column(name = "exchange")
    override val exchange: RemoteCallExchangeMetadata,
@@ -252,7 +228,7 @@ data class RemoteCallResponseDto(
       }
 
    val serviceDisplayName: ServiceName
-      get() = OperationNames.serviceName(operation)
+      get() = OperationNames.serviceName(operation).fqn().shortDisplayName
 
    val operationName: OperationName
       get() = OperationNames.operationName(operation)
@@ -323,11 +299,9 @@ data class QuerySankeyChartRow(
    val sourceNode: String,
 
    @Column(name = "source_operation_data")
-   @Lob
-   @Convert(converter = AnyJsonConverter::class)
-   @Contextual
+   @Convert(converter = SankeyOperationNodeDetailsConverter::class)
 //When the row is first created, will be a SankeyOperationNodeDetails.  When reading back from the db, will be a Map<String,Any>
-   val sourceNodeOperationData: Any? = null,
+   val sourceNodeOperationData: SankeyOperationNodeDetails? = null,
 
    @Enumerated(EnumType.STRING)
    @Column(name = "target_node_type")
@@ -339,15 +313,14 @@ data class QuerySankeyChartRow(
    val targetNode: String,
 
    @Column(name = "target_operation_data")
-   @Lob
-   @Convert(converter = AnyJsonConverter::class)
-   @Contextual
+   @Convert(converter = SankeyOperationNodeDetailsConverter::class)
    //When the row is first created, will be a SankeyOperationNodeDetails.  When reading back from the db, will be a Map<String,Any>
-   val targetNodeOperationData: Any? = null,
+   val targetNodeOperationData: SankeyOperationNodeDetails? = null,
 
    @Column(name = "node_count")
    val count: Int,
 ) : VyneHistoryRecord()
+
 
 @Embeddable
 @Serializable
@@ -365,7 +338,8 @@ enum class SankeyNodeType {
    AttributeName,
    Expression,
    ExpressionInput,
-   ProvidedInput
+   ProvidedInput,
+   RequestObject
 }
 
 @Serializable

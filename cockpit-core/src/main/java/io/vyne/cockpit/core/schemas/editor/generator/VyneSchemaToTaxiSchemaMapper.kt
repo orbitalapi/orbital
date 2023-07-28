@@ -97,7 +97,7 @@ class VyneSchemaToTaxiSchemaMapper(
    private fun generateOperation(source: PartialOperation): Operation {
       return Operation(
          OperationNames.operationName(source.qualifiedName),
-         null, // scope
+         source.operationType,
          convertAnnotations(source.metadata),
          source.parameters.map { sourceParam -> convertParameter(sourceParam) },
          getOrCreateType(source.returnTypeName),
@@ -218,7 +218,7 @@ class VyneSchemaToTaxiSchemaMapper(
                null
             },
             field.typeDoc,
-            field.defaultValue,
+//            field.defaultValue,
             null,
             null,
             field.format,

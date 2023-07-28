@@ -5,7 +5,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.23.0</version>
+      <version>0.24.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -62,31 +62,6 @@
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-webflux</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.cloud</groupId>
-         <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-         <exclusions>
-            <exclusion>
-               <groupId>commons-jxpath</groupId>
-               <artifactId>commons-jxpath</artifactId>
-            </exclusion>
-         </exclusions>
-      </dependency>
-      <!-- TODO Remove once spring-cloud-starter-netflix-eureka-client is updated to use at least this version (vulnerability in 1.4.18) -->
-      <dependency>
-         <groupId>com.thoughtworks.xstream</groupId>
-         <artifactId>xstream</artifactId>
-         <version>1.4.20</version>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.cloud</groupId>
-         <artifactId>spring-cloud-starter-config</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-configuration-processor</artifactId>
-         <optional>true</optional>
       </dependency>
       <dependency>
          <groupId>net.logstash.logback</groupId>

@@ -1,5 +1,6 @@
 include:
-   -  template: Terraform/Base.gitlab-ci.yml
+   - template: Terraform/Base.gitlab-ci.yml
+   - template: Security/Dependency-Scanning.gitlab-ci.yml
 
 variables:
    # This will suppress any download for dependencies and plugins or upload messages which would clutter the console log.
@@ -17,8 +18,6 @@ variables:
    # https://docs.gitlab.com/ee/ci/large_repositories/#shallow-cloning
    GIT_DEPTH: 10
 
-   TF_ROOT_DEV: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/dev
-   TF_ROOT_PROD: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/prod
    TF_STATE_NAME_DEV: dev
    TF_STATE_NAME_PROD: prod
 
@@ -30,6 +29,7 @@ variables:
 
 stages:
    - build
+   - test
    - publish
    - deploy
    - verify
@@ -66,8 +66,8 @@ default:
       - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'mvn $MAVEN_CLI_OPTS -version'
-      - 'mvn $MAVEN_CLI_OPTS -T1C -DbuildNumber=$CI_BUILD_ID $MAVEN_EXTRA_ARGS -P fastTestsOnly $MAVEN_GOALS'
-      - 'mvn $MAVEN_CLI_OPTS -DbuildNumber=$CI_BUILD_ID $MAVEN_EXTRA_ARGS -pl vyne-history-core,pipelines/pipeline-jet,vyne-analytics-server test'
+      - 'mvn $MAVEN_CLI_OPTS -T1C -DbuildNumber=$CI_JOB_ID $MAVEN_EXTRA_ARGS -P fastTestsOnly $MAVEN_GOALS'
+      - 'mvn $MAVEN_CLI_OPTS -DbuildNumber=$CI_JOB_ID $MAVEN_EXTRA_ARGS -pl vyne-history-core,pipelines/pipeline-jet,vyne-analytics-server test'
 
       #   Read the POM, grab the version, and set to an env variable
       #   https://stackoverflow.com/a/52241594
@@ -86,10 +86,11 @@ default:
          - "pipelines/pipeline-jet/target/pipeline-jet.jar"
          - "schema-server/target/schema-server.jar"
          - "vyne-analytics-server/target/vyne-analytics-server.jar"
+         - "query-node-native/target/query-node-native.jar"
          - "vyne-query-service/target/vyne.zip"
-         - "station/target/orbital.zip"
+#         - "station/target/orbital.zip"
          - "test-cli/target/*.zip"
-         - "taxi-playground/target/taxi-playground.jar"
+#         - "voyager/target/voyager.jar"
       expire_in: 1 hours
       reports:
          junit:
@@ -130,7 +131,7 @@ build-voyager-ui:
       - npm run-script build-prod-voyager
    artifacts:
       paths:
-         - "taxi-playground/target/classes/static"
+         - "voyager/target/classes/static"
       expire_in: 1 hours
 
 
@@ -302,6 +303,13 @@ publish-pipeline-jet-to-docker-hub:
       microservice_vyne: pipeline
       microservice_orbital: pipelines
 
+publish-query-node-to-docker-hub:
+   extends: .publish-to-docker-hub
+   variables:
+      projectDir: query-node-native
+      microservice_vyne: query-node
+      microservice_orbital: query-node
+
 publish-schema-server-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
@@ -316,27 +324,27 @@ publish-analytics-server-to-docker-hub:
       microservice_vyne: analytics-server
       microservice_orbital: analytics-server
 
-publish-vyne-to-gitlab-container-registry:
-   extends: .publish-to-gitlab-container-registry
-   variables:
-      projectDir: vyne-query-service
-      microservice_vyne: vyne
-      microservice_orbital: orbital
+#publish-vyne-to-gitlab-container-registry:
+#   extends: .publish-to-gitlab-container-registry
+#   variables:
+#      projectDir: vyne-query-service
+#      microservice_vyne: vyne
+#      microservice_orbital: orbital
+#
+#publish-schema-server-to-gitlab-container-registry:
+#   extends: .publish-to-gitlab-container-registry
+#   variables:
+#      projectDir: schema-server
+#      microservice_vyne: schema-server
+#      microservice_orbital: schema-server
 
-publish-schema-server-to-gitlab-container-registry:
-   extends: .publish-to-gitlab-container-registry
-   variables:
-      projectDir: schema-server
-      microservice_vyne: schema-server
-      microservice_orbital: schema-server
-
-publish-voyager-to-gitlab-container-registry:
-   extends: .publish-to-gitlab-container-registry
-   variables:
-      projectDir: taxi-playground
-      microservice_vyne: taxi-playground
-      microservice_orbital: taxi-playground
-   when: manual
+#publish-voyager-to-gitlab-container-registry:
+#   extends: .publish-to-gitlab-container-registry
+#   variables:
+#      projectDir: voyager
+#      microservice_vyne: voyager
+#      microservice_orbital: voyager
+#   when: manual
 
 .publish-docker-gitlab:
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.8-0.6.3
@@ -350,7 +358,7 @@ publish-voyager-to-gitlab-container-registry:
    before_script:
       - docker info
       - docker buildx create --use
-      - echo "$DOCKER_REGISTRY_PASS" | docker login --username $DOCKER_REGISTRY_USER --password-stdin
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
       - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
       - |
          if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
@@ -369,54 +377,41 @@ publish-voyager-to-gitlab-container-registry:
          -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${tag}"
          -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${CI_COMMIT_SHORT_SHA}" .
 
-publish-voyager:
-   extends: .publish-docker-gitlab
-   stage: publish
-   variables:
-      projectDir: taxi-playground
-      microservice: taxi-playground
-   when: manual
-
-publish-pipelines-to-gitlab-container-registry:
-   extends: .publish-to-gitlab-container-registry
-   variables:
-      projectDir: pipelines/pipeline-jet
-      microservice_vyne: pipeline
-      microservice_orbital: pipelines
-
-terraform-fmt:
-   extends: .terraform:fmt
-   needs: [ ]
-   stage: build
+#publish-pipelines-to-gitlab-container-registry:
+#   extends: .publish-to-gitlab-container-registry
+#   variables:
+#      projectDir: pipelines/pipeline-jet
+#      microservice_vyne: pipeline
+#      microservice_orbital: pipelines
 
 terraform-validate:
    extends: .terraform:validate
    needs: [ ]
    stage: build
 
-build-helm:
-   stage: build
-   image:
-      name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/alpine/helm:3.11.1
-      entrypoint: [ "" ]
-   script:
-      - cd ${CI_PROJECT_DIR}/infra/helm/vyne-helm
-      - helm package .
-      - helm repo index .
-      - cp *.tgz charts
-      - cp artifacthub-repo.yml index.yaml charts
-   artifacts:
-      paths:
-         - infra/helm/vyne-helm/charts
+#build-helm:
+#   stage: build
+#   image:
+#      name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/alpine/helm:3.11.1
+#      entrypoint: [ "" ]
+#   script:
+#      - cd ${CI_PROJECT_DIR}/infra/helm/vyne-helm
+#      - helm package .
+#      - helm repo index .
+#      - cp *.tgz charts
+#      - cp artifacthub-repo.yml index.yaml charts
+#   artifacts:
+#      paths:
+#         - infra/helm/vyne-helm/charts
 
-#.terraform-deploy:
-#   extends: .terraform:deploy
-#   stage: deploy
-#   before_script:
-#      - echo ${TF_ROOT}
-#      - cd ${TF_ROOT}
-#      - gitlab-terraform plan
-#      - gitlab-terraform plan-json
+.terraform-deploy:
+  extends: .terraform:deploy
+  stage: deploy
+  before_script:
+     - echo ${TF_ROOT}
+     - cd ${TF_ROOT}
+     - gitlab-terraform plan
+     - gitlab-terraform plan-json
 #
 #terraform-deploy-dev:
 #   extends: .terraform-deploy
@@ -446,77 +441,77 @@ build-helm:
 #   rules:
 #      -  if: $CI_COMMIT_BRANCH == "main"
 
-.e2e-tests:
-   stage: verify
-   #   Disabling e2e tests for a bit.
-   when: manual
-   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:23.0.1
-   tags:
-      - docker-heavy
-   #   retry: 2
-   before_script:
-      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-      - PROJECT_VERSION=$(cat build-version.txt)
-      - |
-         if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
-           tag="latest"
-           versionTag="$PROJECT_VERSION"
-         elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
-            tag="latest-preview"
-            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
-         else
-            tag="$CI_COMMIT_BRANCH"
-            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
-         fi
-         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
-         echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
-      - cd e2e-tests/
-      - docker build -t e2e .
-   script:
-      - cd demos/
-      - mkdir -p vyne/schema-server/projects
-      - mkdir -p vyne/config
-      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker-compose.yml
-      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/schema-server.conf -P vyne/schema-server
-      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/projects/taxi.conf -P vyne/schema-server/projects
-      - wget https://gitlab.com/vyne/demos/-/raw/master/films/services.conf -P vyne/config
-      - |
-         VYNE_VERSION=$versionTag \
-            docker compose -f docker-compose.yml -f e2e.docker-compose.yml up --exit-code-from e2e
+#.e2e-tests:
+#   stage: verify
+#   #   Disabling e2e tests for a bit.
+#   when: manual
+#   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:23.0.1
+#   tags:
+#      - docker-heavy
+#   #   retry: 2
+#   before_script:
+#      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
+#      - PROJECT_VERSION=$(cat build-version.txt)
+#      - |
+#         if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
+#           tag="latest"
+#           versionTag="$PROJECT_VERSION"
+#         elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
+#            tag="latest-preview"
+#            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
+#         else
+#            tag="$CI_COMMIT_BRANCH"
+#            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
+#         fi
+#         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+#         echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
+#      - cd e2e-tests/
+#      - docker build -t e2e .
+#   script:
+#      - cd demos/
+#      - mkdir -p vyne/schema-server/projects
+#      - mkdir -p vyne/config
+#      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker-compose.yml
+#      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/schema-server.conf -P vyne/schema-server
+#      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/projects/taxi.conf -P vyne/schema-server/projects
+#      - wget https://gitlab.com/vyne/demos/-/raw/master/films/services.conf -P vyne/config
+#      - |
+#         VYNE_VERSION=$versionTag \
+#            docker compose -f docker-compose.yml -f e2e.docker-compose.yml up --exit-code-from e2e
 
-e2e-tests-master:
-   extends: .e2e-tests
-   only:
-      - master
-   needs:
-      - build-jvm-master
-      - publish-vyne-to-gitlab-container-registry
-      - publish-schema-server-to-gitlab-container-registry
-   dependencies:
-      - build-jvm-master
-
-e2e-tests-develop:
-   extends: .e2e-tests
-   only:
-      - develop
-   needs:
-      - build-jvm-develop
-      - publish-vyne-to-gitlab-container-registry
-      - publish-schema-server-to-gitlab-container-registry
-   dependencies:
-      - build-jvm-develop
-
-e2e-tests-other-branches:
-   extends: .e2e-tests
-   except:
-      - develop
-      - master
-   needs:
-      - build-jvm-branch
-      - publish-vyne-to-gitlab-container-registry
-      - publish-schema-server-to-gitlab-container-registry
-   dependencies:
-      - build-jvm-branch
+#e2e-tests-master:
+#   extends: .e2e-tests
+#   only:
+#      - master
+#   needs:
+#      - build-jvm-master
+#      - publish-vyne-to-gitlab-container-registry
+#      - publish-schema-server-to-gitlab-container-registry
+#   dependencies:
+#      - build-jvm-master
+#
+#e2e-tests-develop:
+#   extends: .e2e-tests
+#   only:
+#      - develop
+#   needs:
+#      - build-jvm-develop
+#      - publish-vyne-to-gitlab-container-registry
+#      - publish-schema-server-to-gitlab-container-registry
+#   dependencies:
+#      - build-jvm-develop
+#
+#e2e-tests-other-branches:
+#   extends: .e2e-tests
+#   except:
+#      - develop
+#      - master
+#   needs:
+#      - build-jvm-branch
+#      - publish-vyne-to-gitlab-container-registry
+#      - publish-schema-server-to-gitlab-container-registry
+#   dependencies:
+#      - build-jvm-branch
 
 #terraform-deploy-dev-voyager:
 #   extends: .terraform-deploy
@@ -524,7 +519,7 @@ e2e-tests-other-branches:
 #   environment:
 #      name: $TF_STATE_NAME_DEV
 #   variables:
-#      TF_ROOT: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/$TF_STATE_NAME_DEV
+#      TF_ROOT: ${CI_PROJECT_DIR}/voyager/terraform/environments/$TF_STATE_NAME_DEV
 #      TF_STATE_NAME: taxi_playground_$TF_STATE_NAME_DEV
 #      TF_VAR_environment: $TF_STATE_NAME_DEV
 #      TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
@@ -542,7 +537,7 @@ e2e-tests-other-branches:
 #   environment:
 #      name: $TF_STATE_NAME_PROD
 #   variables:
-#      TF_ROOT: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/$TF_STATE_NAME_PROD
+#      TF_ROOT: ${CI_PROJECT_DIR}/voyager/terraform/environments/$TF_STATE_NAME_PROD
 #      TF_STATE_NAME: taxi_playground_$TF_STATE_NAME_PROD
 #      TF_VAR_environment: $TF_STATE_NAME_PROD
 #      TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
@@ -554,62 +549,26 @@ e2e-tests-other-branches:
 #      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
 #         when: 'never'
 
-publish-snyk-to-gitlab-container-registry:
-   extends: .publish-to-gitlab-container-registry
-   script:
-      - cd snyk/
-      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-      - docker build -t "${registry_orbital}/snyk:latest" .
-      - docker push ${registry_orbital}/snyk:latest
-
-.snyk:
-   stage: verify
-   image: $CI_REGISTRY_IMAGE/snyk:latest
-   only:
-      - develop
+terraform-deploy-dev-voyager:
+   extends: .terraform-deploy
+   stage: deploy
+   environment:
+      name: $TF_STATE_NAME_DEV
+   variables:
+      TF_ROOT: ${CI_PROJECT_DIR}/voyager/terraform/environments/orbital_$TF_STATE_NAME_DEV
+      TF_STATE_NAME: voyager_$TF_STATE_NAME_DEV
+      TF_VAR_environment: $TF_STATE_NAME_DEV
+      TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
    when: manual
-   variables:
-      SNYK_TOKEN: ea48d8a0-a809-4381-97cb-e54c20a21ad1 # TODO This won't be picked up unless explicitly specified here?
-   before_script:
-      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-      - snyk auth $SNYK_TOKEN
-      - PROJECT_VERSION=$(cat build-version.txt)
-      - |
-         if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
-           tag="latest"
-           versionTag="$PROJECT_VERSION"
-         elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
-            tag="latest-preview"
-            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
-         else
-            tag="$CI_COMMIT_BRANCH"
-            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
-         fi
-         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
-         echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
-   script:
-      - snyk container test --app-vulns ${CI_REGISTRY_IMAGE}/$image:$versionTag --severity-threshold=high
 
-snyk-schema-server:
-   extends: .snyk
-   dependencies:
-      - publish-schema-server-to-gitlab-container-registry
-      - build-jvm-develop
+terraform-deploy-prod-voyager:
+   extends: .terraform-deploy
+   stage: deploy
+   environment:
+      name: $TF_STATE_NAME_PROD
    variables:
-      image: schema-server
-
-snyk-query-server:
-   extends: .snyk
-   dependencies:
-      - publish-vyne-to-gitlab-container-registry
-      - build-jvm-develop
-   variables:
-      image: vyne
-
-snyk-pipelines:
-   extends: .snyk
-   dependencies:
-      - publish-pipelines-to-gitlab-container-registry
-      - build-jvm-develop
-   variables:
-      image: pipelines
+      TF_ROOT: ${CI_PROJECT_DIR}/voyager/terraform/environments/orbital_$TF_STATE_NAME_PROD
+      TF_STATE_NAME: voyager_$TF_STATE_NAME_PROD
+      TF_VAR_environment: $TF_STATE_NAME_PROD
+      TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
+   when: manual

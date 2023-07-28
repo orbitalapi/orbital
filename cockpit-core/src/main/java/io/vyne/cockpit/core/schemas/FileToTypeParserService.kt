@@ -1,18 +1,27 @@
 package io.vyne.cockpit.core.schemas
 
+import io.vyne.models.csv.CsvImporterUtil
+import io.vyne.models.csv.CsvIngestionParameters
+import io.vyne.models.csv.ParsedTypeInstance
+import io.vyne.schema.api.SchemaProvider
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
+
 // Commenting this out for now.
 // Not heavily used, and has a dependency on the query service,
 // that we want to exclude from cockpit-core.
 
 
-//@RestController
-//class FileToTypeParserService(
-//   val schemaProvider: SchemaProvider,
+@RestController
+class FileToTypeParserService(
+   val schemaProvider: SchemaProvider,
 //   val objectMapper: ObjectMapper,
 //   val queryService: QueryService,
 //   private val queryResponseFormatter: QueryResponseFormatter
-//) {
-//
+) {
+   //
 //   @PostMapping("/api/content/parse")
 //   fun parseFileToType(
 //      @RequestBody rawContent: String,
@@ -156,38 +165,38 @@ package io.vyne.cockpit.core.schemas
 //      return Pair(compositeSchema, typesInTempSchema)
 //   }
 //
-//   @PostMapping("/api/csv/parse")
-//   fun parseCsvToType(
-//      @RequestBody rawContent: String,
-//      @RequestParam("type") typeName: String,
-//      @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
-//      @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
-//      @RequestParam("nullValue", required = false) nullValue: String? = null,
-//      @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
-//      @RequestParam(
-//         "containsTrailingDelimiters",
-//         required = false,
-//         defaultValue = "false"
-//      ) containsTrailingDelimiters: Boolean = false
-//   ): List<ParsedTypeInstance> {
-//      // TODO : We need to find a better way to pass the metadata of how to parse a CSV into the TypedInstance.parse()
-//      // method.
-//      val parameters = CsvIngestionParameters(
-//         csvDelimiter,
-//         firstRecordAsHeader,
-//         setOf(nullValue).filterNotNull().toSet(),
-//         ignoreContentBefore,
-//         containsTrailingDelimiters
-//      )
-//
-//
-//      return CsvImporterUtil.parseCsvToType(
-//         rawContent,
-//         parameters,
-//         schemaProvider.schema,
-//         typeName
-//      )
-//   }
+   @PostMapping("/api/csv/parse")
+   fun parseCsvToType(
+      @RequestBody rawContent: String,
+      @RequestParam("type") typeName: String,
+      @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
+      @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
+      @RequestParam("nullValue", required = false) nullValue: String? = null,
+      @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
+      @RequestParam(
+         "containsTrailingDelimiters",
+         required = false,
+         defaultValue = "false"
+      ) containsTrailingDelimiters: Boolean = false
+   ): List<ParsedTypeInstance> {
+      // TODO : We need to find a better way to pass the metadata of how to parse a CSV into the TypedInstance.parse()
+      // method.
+      val parameters = CsvIngestionParameters(
+         csvDelimiter,
+         firstRecordAsHeader,
+         setOf(nullValue).filterNotNull().toSet(),
+         ignoreContentBefore,
+         containsTrailingDelimiters
+      )
+
+
+      return CsvImporterUtil.parseCsvToType(
+         rawContent,
+         parameters,
+         schemaProvider.schema,
+         typeName
+      )
+   }
 //
 //   @PostMapping("/api/csv")
 //   fun parseCsvToRaw(
@@ -399,7 +408,7 @@ package io.vyne.cockpit.core.schemas
 //         throw ResponseStatusException(HttpStatus.BAD_REQUEST, e.message, e)
 //      }
 //   }
-//}
+}
 
 //data class ContentWithSchemaParseRequest(
 //   val content: String,

@@ -9,12 +9,13 @@ import {RouterModule} from '@angular/router';
 import {MatButtonModule} from '@angular/material/button';
 import {MatInputModule} from '@angular/material/input';
 import {QueryPanelModule} from '../query-panel/query-panel.module';
-import { OperationErrorComponent } from './operation-error.component';
+import {OperationErrorComponent} from './operation-error.component';
 import {ObjectViewModule} from '../object-view/object-view.module';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {TuiLinkModule} from '@taiga-ui/core';
 import {TuiToggleModule} from '@taiga-ui/kit';
 import {FormsModule} from '@angular/forms';
+import {MarkdownModule} from "ngx-markdown";
 
 
 @NgModule({
@@ -31,7 +32,8 @@ import {FormsModule} from '@angular/forms';
     MatProgressSpinnerModule,
     TuiLinkModule,
     TuiToggleModule,
-    FormsModule
+    FormsModule,
+    MarkdownModule
   ],
   exports: [OperationViewComponent, OperationViewContainerComponent],
   declarations: [OperationViewComponent, OperationViewContainerComponent, OperationErrorComponent],

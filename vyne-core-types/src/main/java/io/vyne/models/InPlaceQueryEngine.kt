@@ -38,11 +38,11 @@ interface InPlaceQueryEngine {
       permittedStrategy: PermittedQueryStrategies = PermittedQueryStrategies.EVERYTHING
    ): Flow<TypedInstance>
 
-   fun only(fact: TypedInstance, scopedFacts: List<ScopedFact> = emptyList()): InPlaceQueryEngine {
-      return only(listOf(fact), scopedFacts)
+   fun only(fact: TypedInstance, scopedFacts: List<ScopedFact> = emptyList(), inheritParent: Boolean = true): InPlaceQueryEngine {
+      return only(listOf(fact), scopedFacts, inheritParent)
    }
 
-   fun only(facts: List<TypedInstance>, scopedFacts: List<ScopedFact> = emptyList()): InPlaceQueryEngine
+   fun only(facts: List<TypedInstance>, scopedFacts: List<ScopedFact> = emptyList(), inheritParent: Boolean = true): InPlaceQueryEngine
 
    fun withAdditionalFacts(facts: List<TypedInstance>, scopedFacts: List<ScopedFact>): InPlaceQueryEngine
 }

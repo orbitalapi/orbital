@@ -1,0 +1,68 @@
+<img class="logo" src="assets/img/orbital_integrator_aqua_transparent-128x128.png">
+<span class="title">Voyager</span>
+
+<span class="nav-link">
+  <a tuiLink (click)="openNewSite('https://taxilang.org/')">
+    Taxi Language Reference
+  </a>
+</span>
+
+<span class="examples">Examples</span>
+<tui-select
+  tuiTextfieldSize="s"
+  [ngModel]="selectedExample"
+  (ngModelChange)="setExample($event)"
+>
+  Examples
+  <input
+    tuiTextfield
+    placeholder="Select an example"
+  />
+  <tui-data-list-wrapper
+    *tuiDataList
+    [items]="examples"
+  ></tui-data-list-wrapper>
+</tui-select>
+
+<div class="spacer"></div>
+<button tuiButton type="button" appearance="secondary" size="s" class="header-icon-spacer "
+        (click)="subscribeForUpdates()">
+  Get updates
+</button>
+<button class="header-icon-button header-icon-button-with-text header-icon-spacer "
+        tuiHintAppearance="onDark"
+        tuiHintDirection="left"
+        (click)="generateShareUrl.emit()">
+  <mat-icon svgIcon="share"></mat-icon>
+  Share
+</button>
+
+<button class="header-icon-button"
+        tuiHintAppearance="onDark"
+        tuiHintDirection="left"
+        [tuiHint]="githubTooltip">
+  <a (click)="openNewSite('https://github.com/vyneco/voyager')">
+    <mat-icon svgIcon="brandGitHub"></mat-icon>
+  </a>
+</button>
+<button class="header-icon-button" (click)="slackInvite()">
+  <mat-icon svgIcon="slack"></mat-icon>
+</button>
+
+<button [tuiHint]="vyneTooltip"
+        class="header-icon-button built-by-orbital"
+        tuiHintAppearance="onDark"
+        tuiHintDirection="left">
+  <a (click)="openNewSite('https://orbitalhq.com')">
+    <span>Built by</span>
+    <mat-icon svgIcon="orbital"></mat-icon>
+    <!--    <img src="assets/img/orbital_integrator_citrus_transparent-256x256.png" class="icon">-->
+  </a>
+</button>
+<ng-template #vyneTooltip>
+  Orbital
+</ng-template>
+
+<ng-template #githubTooltip>
+  Issues & Roadmap
+</ng-template>

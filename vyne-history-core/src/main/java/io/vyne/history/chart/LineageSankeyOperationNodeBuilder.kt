@@ -1,11 +1,11 @@
 package io.vyne.history.chart
 
 import io.vyne.models.OperationResult
-import io.vyne.schemas.QueryOperation
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Service
-import io.vyne.schemas.fqn
+import io.vyne.query.history.DatabaseNode
+import io.vyne.query.history.HttpOperationNode
+import io.vyne.query.history.KafkaOperationNode
+import io.vyne.query.history.SankeyOperationNodeDetails
+import io.vyne.schemas.*
 import mu.KotlinLogging
 
 /**
@@ -35,7 +35,8 @@ class LineageSankeyOperationNodeBuilder(private val schema: Schema) {
       operationResult: OperationResult
    ): SankeyOperationNodeDetails? {
       val connectionName =
-         service.metadata("io.vyne.jdbc.DatabaseService")?.params?.get("connection") as? String? ?: "Unknown Db Connection"
+         service.metadata("io.vyne.jdbc.DatabaseService")?.params?.get("connection") as? String?
+            ?: "Unknown Db Connection"
       val memberType = operation.returnType.collectionType ?: operation.returnType
 
       // TODO : This is going to be complex once support for Join types is merged.

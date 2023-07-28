@@ -5,15 +5,15 @@ import {
   QualifiedName,
   Schema,
   SchemaMember,
-  SchemaMemberType,
+  SchemaMemberKind,
   Service,
   ServiceMember,
   splitOperationQualifiedName,
   Type
 } from '../../services/schema';
-import { AppendLinksHandler, NodeType } from './schema-flow.react';
-import { Edge, Node, Position, XYPosition } from 'reactflow';
-import { CSSProperties } from 'react';
+import {AppendLinksHandler, NodeType, SchemaMemberClickHandler} from './schema-flow.react';
+import {Edge, Node, Position, XYPosition} from 'reactflow';
+import {CSSProperties} from 'react';
 
 export function getNodeKind(member: SchemaMember): NodeType {
   if (member.kind === 'TYPE') {
@@ -84,7 +84,8 @@ function buildModelLinks(type: Type, schema: Schema, operations: ServiceMember[]
   const attributeLinks: { [key: string]: Links } = {};
   Object.keys(type.attributes).map(fieldName => {
     const fieldType = type.attributes[fieldName].type;
-    attributeLinks[fieldName] = buildLinksForType(fieldType, schema, operations, {
+    const fieldTypeName = arrayMemberTypeNameOrTypeNameFromName(fieldType);
+    attributeLinks[fieldName] = buildLinksForType(fieldTypeName, schema, operations, {
       name: type.name,
       nodeId: thisNodeId,
       field: fieldName
@@ -129,12 +130,12 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
     sourceNodeName: parent.name,
     sourceHandleId: HandleIds.modelFieldOutbound(parent.name, parent.field),
     inverseSourceHandleId: HandleIds.modelFieldInbound(parent.name, parent.field),
-    sourceMemberType: 'TYPE' as SchemaMemberType
+    sourceMemberType: 'TYPE' as SchemaMemberKind
   } : {
     sourceNodeId: typeNodeId,
     sourceNodeName: typeName,
     sourceHandleId: HandleIds.modelOutbound(typeName),
-    sourceMemberType: 'TYPE' as SchemaMemberType,
+    sourceMemberType: 'TYPE' as SchemaMemberKind,
     inverseSourceHandleId: HandleIds.modelInbound(typeName)
   };
 
@@ -190,9 +191,9 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
         return false;
       }
       // ... or the parent type
-      if (typeInSchema.name.fullyQualifiedName === parent?.name?.fullyQualifiedName) {
-        return false;
-      }
+      // if (typeInSchema.name.fullyQualifiedName === parent?.name?.fullyQualifiedName) {
+      //   return false;
+      // }
       return true;
     })
     .forEach(typeInSchema => {
@@ -201,7 +202,14 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
         const fieldTypeName = arrayMemberTypeNameOrTypeNameFromName(field.type);
         if (fieldTypeName.fullyQualifiedName === typeName.fullyQualifiedName) {
           const link = {
-            ...source,
+            // Always link model types consistently.
+            // Source = The Type.
+            // Target = A field on another type.
+            sourceNodeId: typeNodeId,
+            sourceNodeName: typeName,
+            sourceHandleId: HandleIds.modelOutbound(typeName),
+            sourceMemberType: 'TYPE' as SchemaMemberKind,
+            inverseSourceHandleId: HandleIds.modelInbound(typeName),
 
             targetNodeId: getNodeId('TYPE', typeInSchema.name),
             targetNodeName: typeInSchema.name,
@@ -287,12 +295,12 @@ export interface Link {
   sourceNodeName: QualifiedName;
   sourceNodeId: string;
   sourceHandleId: string;
-  sourceMemberType: SchemaMemberType;
+  sourceMemberType: SchemaMemberKind;
 
   targetNodeName: QualifiedName;
   targetNodeId: string;
   targetHandleId: string;
-  targetMemberType: SchemaMemberType;
+  targetMemberType: SchemaMemberKind;
 
   linkStyle?: CSSProperties;
 
@@ -352,11 +360,11 @@ function buildLinks(member: SchemaMember, schema: Schema, operations: ServiceMem
   }
 }
 
-export function getNodeId(schemaMemberType: SchemaMemberType, name: QualifiedName): string {
+export function getNodeId(schemaMemberType: SchemaMemberKind, name: QualifiedName): string {
   return `${schemaMemberType.toLowerCase()}-${name.fullyQualifiedName}`;
 }
 
-export function buildSchemaNode(schema: Schema, member: SchemaMember, operations: ServiceMember[], appendLinksHandler: AppendLinksHandler, position: XYPosition = {
+export function buildSchemaNode(schema: Schema, member: SchemaMember, operations: ServiceMember[], appendLinksHandler: AppendLinksHandler, clickHandler: SchemaMemberClickHandler, position: XYPosition = {
   x: 100,
   y: 100
 }): Node<MemberWithLinks> {
@@ -369,7 +377,8 @@ export function buildSchemaNode(schema: Schema, member: SchemaMember, operations
     data: {
       member,
       links,
-      appendNodesHandler: appendLinksHandler
+      appendNodesHandler: appendLinksHandler,
+      clickHandler: clickHandler
     },
     type: getNodeKind(member),
     position
@@ -382,6 +391,7 @@ export interface MemberWithLinks {
   links: Links;
 
   appendNodesHandler: AppendLinksHandler;
+  clickHandler: SchemaMemberClickHandler;
 }
 
 

@@ -11,6 +11,7 @@ import { TuiButtonModule, TuiRootModule } from '@taiga-ui/core';
 import { DraftManagementBarComponent } from '../draft-management-bar/draft-management-bar.component';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatIconModule } from '@angular/material/icon';
+import {PolymorpheusModule} from "@tinkoff/ng-polymorpheus";
 
 @NgModule({
   imports: [
@@ -23,7 +24,6 @@ import { MatIconModule } from '@angular/material/icon';
     MatTooltipModule,
     MatIconModule,
     SystemAlertModule,
-    TuiRootModule,
     TuiButtonModule,
   ],
   exports: [VyneComponent],

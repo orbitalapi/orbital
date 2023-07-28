@@ -1,27 +1,12 @@
-import {Component, OnInit} from '@angular/core';
-import {
-  CsvOptions,
-  ContentWithSchemaParseResponse,
-  ParsedCsvContent,
-  TypesService,
-  ParsedTypeInstance
-} from '../services/types.service';
+import {ChangeDetectorRef, Component} from '@angular/core';
+import {ContentWithSchemaParseResponse, CsvOptions, ParsedCsvContent, TypesService} from '../services/types.service';
 import {Observable} from 'rxjs/internal/Observable';
-import {
-  findType,
-  isTypedInstance,
-  isTypeNamedInstance,
-  isUntypedInstance,
-  Schema,
-  Type,
-  TypeNamedInstance
-} from '../services/schema';
+import {Type} from '../services/schema';
 import {FileSourceChangedEvent} from './data-source-panel/data-source-panel.component';
 import {ReplaySubject, Subject} from 'rxjs';
 import {debounceTime, throttleTime} from 'rxjs/operators';
 import {ParseContentToTypeRequest} from './data-workbook.component';
 import {ValueWithTypeName} from '../services/models';
-import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
 import {QueryProfileData, QueryService, randomId} from '../services/query.service';
 import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDisplayComponent';
 
@@ -78,8 +63,8 @@ export class DataWorkbookContainerComponent extends BaseQueryResultDisplayCompon
   parseToTypeErrorMessage: string = null;
   parseToTypeWorking = false;
 
-  constructor(typeService: TypesService, queryService: QueryService) {
-    super(queryService, typeService);
+  constructor(typeService: TypesService, queryService: QueryService, changeDetector: ChangeDetectorRef) {
+    super(queryService, typeService, changeDetector);
     this.debouncedParsingSchemaChanges
       .pipe(debounceTime(1000))
       .subscribe(schema => {

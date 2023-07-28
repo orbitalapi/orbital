@@ -11,7 +11,7 @@ import mu.KotlinLogging
 import org.apache.commons.lang3.ClassUtils
 
 interface ConversionService {
-   fun <T> convert(source: Any?, targetType: Class<T>, format: FormatsAndZoneOffset?): T
+   fun <T> convert(source: Any?, targetType: Class<T>, format: FormatsAndZoneOffset?): T?
 
    companion object {
       var DEFAULT_CONVERTER: ConversionService = NoOpConversionService
@@ -92,7 +92,12 @@ data class TypedValue private constructor(
             return try {
                val valueToUse =
                   converter.convert(value, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!), format)
-               TypedValue(type, valueToUse, source, format)
+               if (valueToUse != null) {
+                  TypedValue(type, valueToUse, source, format)
+               } else {
+                  TypedNull.create(type, source)
+               }
+
             } catch (exception: Exception) {
                val messageFormatPart = if (format != null) {
                   "with formats ${format.patterns.joinToString(" , ")}"

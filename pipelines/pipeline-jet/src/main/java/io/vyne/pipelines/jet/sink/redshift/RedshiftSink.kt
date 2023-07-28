@@ -5,6 +5,7 @@ import com.hazelcast.jet.pipeline.SinkBuilder
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.VyneClientWithSchema
+import io.vyne.connectors.jdbc.buildUrlAndCredentials
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
@@ -15,11 +16,11 @@ import io.vyne.pipelines.jet.pipelines.PostgresDdlGenerator
 import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
+import jakarta.annotation.Resource
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import java.sql.DriverManager
 import java.util.*
-import javax.annotation.Resource
 
 @Component
 class RedshiftSinkBuilder :
@@ -86,7 +87,7 @@ class RedshiftSinkBuilder :
             val connectionConfiguration = context.jdbcConnectionRegistry.getConnection(context.outputSpec.connection)
 
             val urlCredentials = connectionConfiguration.buildUrlAndCredentials()
-            val url = connectionConfiguration.buildUrlAndCredentials().url
+            val url = urlCredentials.url
 
             val connection = DriverManager.getConnection(url, urlCredentials.username, urlCredentials.password)
             val statement = connection.createStatement()

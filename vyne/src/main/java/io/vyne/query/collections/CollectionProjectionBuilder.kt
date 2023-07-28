@@ -1,13 +1,9 @@
 package io.vyne.query.collections
 
-import io.vyne.models.AccessorHandler
-import io.vyne.models.DataSource
-import io.vyne.models.EvaluationValueSupplier
+import io.vyne.models.*
 import io.vyne.models.facts.FactDiscoveryStrategy
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
 import io.vyne.query.QueryContext
+import io.vyne.query.TypeQueryExpression
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.toVyneType
@@ -63,8 +59,8 @@ class CollectionProjectionBuilder(val queryContext: QueryContext) :
       val buildResults = runBlocking {
          collectionToIterate.asFlow()
             .flatMapConcat { collectionMember ->
-               queryContext.only( listOf(collectionMember) + additionalScopeFacts )
-                  .build(targetMemberType.qualifiedName.parameterizedName).results
+               queryContext.only(listOf(collectionMember) + additionalScopeFacts)
+                  .build(TypeQueryExpression(targetMemberType)).results
             }.toList()
       }
 

@@ -366,8 +366,9 @@ The following configuration parameters are available:
 |Parameter|Description|Required|Default Value|
 |---------|-----------|--------|-------------|
 |`connection`|The name of a connection, configured in Vyne's connection manager|true||
-|`targetTypeName`|The fully qualified name of the type which content being pushed to the database should be read as|true||
+|`targetTypeName`|The fully qualified name of the type which content being pushed to the database should be read as. Leave as null to use type inherited from upstream in the transformation phase|true||
 |`writeDisposition`|Whether to append new data into the existing table (APPEND), or to create a new table with a unique name and switch over the view to point to the newly created table (RECREATE).|false||
+|`tableName`|The name of the table to write to. By default will use the name of the type|false||
          
 
 #### Example
@@ -380,6 +381,7 @@ The following configuration parameters are available:
     "connection" : "my-connection",
     "targetTypeName" : "com.demo.Customer",
     "writeDisposition" : "APPEND",
+    "tableName" : null,
     "targetType" : "com.demo.Customer",
     "windowDurationMs" : 500
   }

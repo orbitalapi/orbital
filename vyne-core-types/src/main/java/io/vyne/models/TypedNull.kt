@@ -35,6 +35,10 @@ data class TypedNull private constructor(private val wrapper: TypedNullWrapper,
          val wrapper = internedWrappers.intern(TypedNullWrapper(type))
          return TypedNull(wrapper, source)
       }
+
+      fun isFailedSearch(typedInstance: TypedInstance):Boolean {
+         return typedInstance is TypedNull && typedInstance.source is FailedSearch
+      }
    }
 
    override val type: Type = wrapper.type

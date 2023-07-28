@@ -18,10 +18,13 @@ import io.vyne.query.graph.edges.PathEvaluation
 import io.vyne.query.graph.edges.StartingEdge
 import io.vyne.schemas.*
 import io.vyne.utils.ImmutableEquality
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.*
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -86,6 +89,11 @@ class HipsterDiscoverGraphQueryStrategy(
          override fun load(key: StrategyInvocationCacheKey): Deferred<QueryStrategyResult> {
             return key.coroutineContext.async {
                logger.debug { "Invoking search for type ${key.target.type.qualifiedName.shortDisplayName} with ${key.facts.size} provided facts: ${key.facts.joinToString { it.type.qualifiedName.shortDisplayName }}" }
+
+               val existingFacts = key.facts.filter { it.type == key.target.type }
+               if (existingFacts.isNotEmpty()) {
+                  logger.warn { "Attempting a graph search for type ${key.target.type.name.shortDisplayName} however an instance was already present in the provided facts." }
+               }
 
                // MP: 23-Sep-22: We have removed the concept of findOne / findAll, and now only support find.
                // Having made that change, EsgTest started failing, as the below wasn't being invoked.
@@ -157,7 +165,7 @@ class HipsterDiscoverGraphQueryStrategy(
          //    .filter { it is TypedObject }
          .mapNotNull { fact ->
             val startFact = providedInstance(fact)
-            val targetType = context.schema.type(targetElement.value as String)
+            val targetType = targetElement.instanceValue as? Type? ?: context.schema.type(targetElement.value as String)
             // Excluding paths is done by the type, not the fact.
             // Graph searches work based off of links from types, therefore
             // we should exclude based on the type, regardless of the value.

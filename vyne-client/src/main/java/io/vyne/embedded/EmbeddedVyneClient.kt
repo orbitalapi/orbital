@@ -9,9 +9,13 @@ import io.vyne.query.QueryContextEventBroker
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.Schema
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
+import lang.taxi.query.TaxiQLQueryString
+import lang.taxi.query.TaxiQlQuery
 import reactor.core.publisher.Flux
+import reactor.kotlin.core.publisher.toFlux
 import java.util.*
 
 /**
@@ -31,6 +35,24 @@ open class EmbeddedVyneClient(
             flow.asFlux()
          }
       }
+   }
+
+   override fun compile(query: TaxiQLQueryString): TaxiQlQuery {
+      val (parseResult, _) = vyneProvider.createVyne().parseQuery(query)
+      return parseResult
+   }
+
+
+   override fun queryAsTypedInstance(query: TaxiQLQueryString): Flux<TypedInstance> {
+      // This is obviously not correct.
+      // We're run blocking, and then wrapping a list to a flux, it's all sorts of level of messed up
+      // But, it works. We REALLY need to get this async shit sorted out.
+      val flow = runBlocking {
+         vyneProvider.createVyne().query(query).results
+            .toList()
+
+      }
+      return flow.toFlux()
    }
 
    fun from(

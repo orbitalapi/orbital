@@ -1,17 +1,11 @@
 package io.vyne.schema.publisher.loaders
 
-import io.vyne.SourcePackage
-import io.vyne.VersionedSource
-import io.vyne.asSourcePackage
-import io.vyne.asVersionedSource
+import io.vyne.*
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.Ids
-import lang.taxi.packages.ProjectName
-import lang.taxi.packages.TaxiPackageProject
-import lang.taxi.packages.TaxiPackageSources
-import lang.taxi.packages.TaxiSourcesLoader
+import lang.taxi.packages.*
 import mu.KotlinLogging
 import java.nio.file.Files
 import java.nio.file.Path
@@ -57,6 +51,15 @@ class FileSchemaSourceProvider(private val resourcePath: Path) : SchemaProvider 
    override val versionedSources: List<VersionedSource> by lazy {
       taxiProject.sources.map { it.asVersionedSource() }
    }
+   override val additionalSources: List<Pair<SourcesType, PathGlob>>
+      get() {
+         return this.taxiProject.pathGlobs()
+      }
+
+//   override val additionalSources: List<Pair<String, Path>>
+//      get() {
+//         return taxiProject.project.additionalSources.toList()
+//      }
 
    override val schema: Schema by lazy {
       TaxiSchema.from(this.packages)

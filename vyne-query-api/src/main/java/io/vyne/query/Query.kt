@@ -8,6 +8,8 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import lang.taxi.accessors.ProjectionFunctionScope
+import lang.taxi.mutations.Mutation
+import mu.KotlinLogging
 import java.util.*
 
 
@@ -50,6 +52,22 @@ data class Query(
 @JsonDeserialize(`as` = TypeNameListQueryExpression::class)
 interface QueryExpression
 
+interface MutatingQueryExpression : QueryExpression {
+   val mutation: Mutation?
+
+   companion object {
+      fun decorate(expression: QueryExpression?, mutation: Mutation?): QueryExpression {
+         return when {
+            expression == null && mutation == null -> error("Neither a query expression nor a mutation were provided")
+            expression == null && mutation != null -> MutationOnlyExpression(mutation)
+            expression != null && mutation == null -> expression
+            expression != null && mutation != null -> QueryAndMutateExpression(expression, mutation)
+            else -> error("Unhandled branch in constructing possibly mutating expression")
+         }
+      }
+   }
+}
+
 data class ConstrainedTypeNameQueryExpression(
    val typeName: String,
    // Note: Not convinced this needs to be OutputConstraint (vs plain old
@@ -57,10 +75,25 @@ data class ConstrainedTypeNameQueryExpression(
    val constraint: List<OutputConstraint>
 ) : QueryExpression
 
+data class TypeQueryExpression(val type: Type) : QueryExpression {
+
+}
+
 data class TypeNameQueryExpression(val typeName: String) : QueryExpression {
+   init {
+      logger.warn { "TypeNameQueryExpression shouldn't be called - prefer TypeQueryExpression where possible" }
+   }
+
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+
    val qualifiedTypeNames: QualifiedName = typeName.fqn()
 }
-data class ProjectedExpression(val source: QueryExpression, val projection: Projection) : QueryExpression
+
+data class MutationOnlyExpression(override val mutation: Mutation) : MutatingQueryExpression
+data class QueryAndMutateExpression(val query: QueryExpression, override val mutation: Mutation): MutatingQueryExpression
+data class ProjectedExpression(val source: QueryExpression, val projection: Projection): QueryExpression
 
 data class Projection(val type: Type, val scope: ProjectionFunctionScope?)
 
@@ -89,7 +122,7 @@ enum class QueryMode {
     * Build an instance, using the data provided,
     * polyfilling where required
     */
-   BUILD
+   BUILD,
 }
 
 enum class ResultMode {

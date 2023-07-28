@@ -14,6 +14,7 @@ import {
   DbConnectionEditorDialogComponent
 } from '../../../db-connection-editor/db-connection-editor-dialog.component';
 import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
+import {PackageIdentifier} from "../../../package-viewer/packages.service";
 
 @Component({
   selector: 'app-database-table-config',
@@ -107,6 +108,9 @@ export class DatabaseTableConfigComponent {
   @Input()
   tables$: Observable<MappedTable[]>;
 
+  @Input()
+  packageIdentifier: PackageIdentifier;
+
   @Output()
   connectionChanged = new EventEmitter<ConnectorSummary>();
 
@@ -126,7 +130,7 @@ export class DatabaseTableConfigComponent {
       defaultNamespace: this.defaultNamespace
     }];
     tableSchemaConverterOptions.connectionName = this.selectedConnection.connectionName;
-    this.loadSchema.next(new ConvertSchemaEvent('databaseTable', tableSchemaConverterOptions));
+    this.loadSchema.next(new ConvertSchemaEvent('databaseTable', tableSchemaConverterOptions, this.packageIdentifier));
   }
 
   readonly stringifyConnection = (item: ConnectorSummary) => item.connectionName;

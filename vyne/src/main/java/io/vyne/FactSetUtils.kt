@@ -9,10 +9,10 @@ import io.vyne.schemas.Schema
 typealias FactSetMap = HashMultimap<FactSetId, TypedInstance>
 
 fun FactSetMap.toFactBag(schema:Schema, factSetIds: Set<FactSetId> = setOf(FactSets.ALL)):FactBag {
-   val factset = filterFactSets(factSetIds)
+   val factset = retainFactsFromFactSet(factSetIds)
    return FactBag.of(factset.values().toList(), schema)
 }
-fun FactSetMap.filterFactSets(factSetIds: Set<FactSetId>): FactSetMap {
+fun FactSetMap.retainFactsFromFactSet(factSetIds: Set<FactSetId>): FactSetMap {
 
    return when {
       factSetIds.contains(FactSets.ALL) -> this

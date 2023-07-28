@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input} from '@angular/core';
 import {
   EvaluatedExpressionDataSource,
   FailedEvaluatedExpressionDataSource,
@@ -23,17 +23,18 @@ import {
   SchemaNodeSet,
   TypeNamedInstance
 } from '../services/schema';
-import { BaseGraphComponent } from '../inheritence-graph/base-graph-component';
-import { Subject } from 'rxjs';
-import { isNullOrUndefined } from 'util';
-import { QueryResultMemberCoordinates } from '../query-panel/instance-selected-event';
+import {BaseGraphComponent} from '../inheritence-graph/base-graph-component';
+import {Subject} from 'rxjs';
+import {isNullOrUndefined} from 'util';
+import {QueryResultMemberCoordinates} from '../query-panel/instance-selected-event';
 
 type LineageElement = TypeNamedInstance | TypeNamedInstance[] | DataSource;
 
 @Component({
   selector: 'app-lineage-display',
   templateUrl: './lineage-display.component.html',
-  styleUrls: ['./lineage-display.component.scss']
+  styleUrls: ['./lineage-display.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LineageDisplayComponent extends BaseGraphComponent {
   static NODE_ID = '__nodeId';
@@ -41,8 +42,14 @@ export class LineageDisplayComponent extends BaseGraphComponent {
   private _dataSource: DataSource;
   private _instance: TypeNamedInstance;
 
-  constructor(private queryHistoryService: QueryService) {
+  constructor(private queryHistoryService: QueryService, private changeDetector: ChangeDetectorRef) {
     super();
+  }
+
+  fullscreen = false;
+
+  toggleFullscreen() {
+    this.fullscreen = !this.fullscreen;
   }
 
   @Input()
@@ -142,6 +149,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       const newNodes = this.buildGraph(source, linkTo)
       this.appendNodeSet(newNodes, this.schemaGraph);
       this.graphNodesChanged.next(true);
+      this.changeDetector.markForCheck();
     })
   }
 
@@ -153,6 +161,37 @@ export class LineageDisplayComponent extends BaseGraphComponent {
     const dataSource = node.value as OperationResultReference;
     return dataSource.operationDisplayName
   }
+
+  nodeId(instance: any, generator: () => string): string {
+    if (!instance[LineageDisplayComponent.NODE_ID]) {
+      instance[LineageDisplayComponent.NODE_ID] = this.makeSafeId(generator());
+    }
+    return instance[LineageDisplayComponent.NODE_ID];
+  }
+
+  instanceToNode(instance: TypeNamedInstance, displayedValue: any | null = null): SchemaGraphNode {
+    if (instance.source) {
+      this.appendLoadedDataSource(instance.source);
+    }
+    const instanceId = this.nodeId(instance, () => {
+      return (Array.isArray(instance)) ? 'Array' + (Math.random() * 10000) : instance.typeName + (Math.random() * 10000)
+    });
+    let label = '';
+    if (Array.isArray(instance)) {
+      label = 'Multiple values';
+    } else {
+      label = isNullOrUndefined(instance.value) ? 'Null value' : displayedValue || instance.value;
+    }
+    const shortDisplayName = Array.isArray(instance) ? 'Array' : instance.typeName.split('.').pop();
+    return {
+      id: instanceId,
+      nodeId: instanceId,
+      label: label,
+      subHeader: shortDisplayName,
+      value: instance,
+      type: 'TYPE'
+    } as SchemaGraphNode;
+  };
 
   private buildGraph(node: LineageElement, linkTo: SchemaGraphNode = null, nodesUnderConstruction: LineageElement[] = []): SchemaNodeSet {
     if (!node || !this.dataSource) {
@@ -168,43 +207,12 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       return this.emptyGraph()
     }
 
-    function nodeId(instance: any, generator: () => string): string {
-      if (!instance[LineageDisplayComponent.NODE_ID]) {
-        instance[LineageDisplayComponent.NODE_ID] = self.makeSafeId(generator());
-      }
-      return instance[LineageDisplayComponent.NODE_ID];
-    }
 
-
-    function instanceToNode(instance: TypeNamedInstance): SchemaGraphNode {
-      if (instance.source) {
-        self.appendLoadedDataSource(instance.source);
-      }
-      const instanceId = nodeId(instance, () => {
-        return (Array.isArray(instance)) ? 'Array' + (Math.random() * 10000) : instance.typeName + (Math.random() * 10000)
-      });
-      let label = '';
-      if (Array.isArray(instance)) {
-        label = 'Multiple values';
-      } else {
-        label = isNullOrUndefined(instance.value) ? 'Null value' : instance.value;
-      }
-      const shortDisplayName = Array.isArray(instance) ? 'Array' : instance.typeName.split('.').pop();
-      return {
-        id: instanceId,
-        nodeId: instanceId,
-        label: label,
-        subHeader: shortDisplayName,
-        value: instance,
-        type: 'TYPE'
-      } as SchemaGraphNode;
-    }
-
-    function collectionToNode(instance: TypeNamedInstance[]): SchemaGraphNode {
+    const collectionToNode = (instance: TypeNamedInstance[]): SchemaGraphNode => {
       var typeName = instance[0] ? instance[0].typeName : 'asd'
       var value = instance.map(instance => instance.value)
 
-      const instanceId = nodeId(instance, () => typeName + new Date().getTime());
+      const instanceId = this.nodeId(instance, () => typeName + new Date().getTime());
       return {
         id: instanceId,
         nodeId: instanceId,
@@ -213,11 +221,11 @@ export class LineageDisplayComponent extends BaseGraphComponent {
         value: instance,
         type: 'TYPE'
       } as SchemaGraphNode;
-    }
+    };
 
     function remoteCallToNode(dataSource: OperationResultReference): SchemaGraphNode {
       self.appendLoadedDataSource(dataSource);
-      const instanceId = nodeId(dataSource, () => dataSource.operationName.fullyQualifiedName + new Date().getTime());
+      const instanceId = self.nodeId(dataSource, () => dataSource.operationName.fullyQualifiedName + new Date().getTime());
       return {
         id: instanceId,
         nodeId: instanceId,
@@ -230,7 +238,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
 
     function dataSourceToNode(dataSource: DataSource): SchemaGraphNode {
       self.appendLoadedDataSource(dataSource);
-      const instanceId = nodeId(dataSource, () => dataSource.id || (dataSource.dataSourceName + new Date().getTime()));
+      const instanceId = self.nodeId(dataSource, () => dataSource.id || (dataSource.dataSourceName + new Date().getTime()));
       let label: string;
       let subHeader = 'Fixed';
       let type: SchemaGraphNodeType = 'DATASOURCE';
@@ -284,7 +292,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
     nodesUnderConstruction.push(node)
 
     if (isTypeNamedInstance(node)) {
-      const typedInstanceNode = instanceToNode(node);
+      const typedInstanceNode = this.instanceToNode(node);
       nodes.push(typedInstanceNode);
 
       if (node.source) {
@@ -317,8 +325,10 @@ export class LineageDisplayComponent extends BaseGraphComponent {
           let inputNode = undefined;
           if (Array.isArray(param.value)) {
             inputNode = collectionToNode(param.value);
+          } else if (this.isRequestObject(param.value)) {
+            inputNode = this.appendRequestObject(nodes, links, param.value, remoteCallNode.nodeId)
           } else {
-            inputNode = instanceToNode(param.value);
+            inputNode = this.instanceToNode(param.value);
           }
           nodes.push(inputNode);
           links.push({
@@ -333,7 +343,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       }
     } else if (isMappedSynonym(node)) {
       const synonymSource = node.source
-      const inputNode = instanceToNode(synonymSource);
+      const inputNode = this.instanceToNode(synonymSource);
       nodes.push(inputNode)
       links.push({
         source: inputNode.nodeId,
@@ -341,7 +351,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
         label: 'Is synonym of'
       })
     } else if (isEvaluatedExpressionDataSource(node) || isFailedEvaluatedExpressionDataSource(node)) {
-      this.buildExpressionNode(node, dataSourceToNode, nodes, links, linkTo, instanceToNode, nodeSet);
+      this.buildExpressionNode(node, dataSourceToNode, nodes, links, linkTo, this.instanceToNode.bind(this), nodeSet);
     } else {
       const dataSource = node as DataSource;
       this.appendLoadedDataSource(dataSource);
@@ -359,5 +369,28 @@ export class LineageDisplayComponent extends BaseGraphComponent {
     return nodeSet;
   }
 
+  /**
+   * Determines if the typed instance is a request object, rather than a scalar value
+   */
+  private isRequestObject(instance: TypeNamedInstance) {
+    return typeof instance.value === "object"
+  }
+
+  private appendRequestObject(nodes: SchemaGraphNode[], links: SchemaGraphLink[], requestObject: TypeNamedInstance, targetNodeId: string): SchemaGraphNode {
+    const requestObjectNode = this.instanceToNode(requestObject, "Request Payload")
+    nodes.push(requestObjectNode);
+
+    Object.keys(requestObject.value).forEach(fieldName => {
+      const fieldValue = requestObject.value[fieldName] as TypeNamedInstance;
+      const fieldValueNode = this.instanceToNode(fieldValue);
+      nodes.push(fieldValueNode);
+      links.push({
+        source: fieldValueNode.nodeId,
+        target: requestObjectNode.nodeId,
+        label: fieldName
+      });
+    })
+    return requestObjectNode;
+  }
 }
 

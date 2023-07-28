@@ -4,9 +4,10 @@ import io.vyne.VyneCacheConfiguration
 import io.vyne.VyneClient
 import io.vyne.embedded.EmbeddedVyneClient
 import io.vyne.query.connectors.OperationInvoker
-import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
+import io.vyne.spring.query.formats.FormatSpecRegistry
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -21,17 +22,19 @@ class EnableEmbeddedVyneClientConfiguration {
    @Bean
    fun vyneClient(
       schema: Schema,
-      schemaStore: SchemaStore,
+      schemaProvider: SchemaProvider,
       operationInvokers: List<OperationInvoker>,
       vyneCacheConfiguration: VyneCacheConfiguration,
-      vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
+      vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration,
+      formatSpecRegistry: FormatSpecRegistry
    ): VyneClient {
       return EmbeddedVyneClient(
          VyneFactory(
-            schemaStore,
+            schemaProvider,
             operationInvokers,
             vyneCacheConfiguration,
-            vyneSpringProjectionConfiguration
+            vyneSpringProjectionConfiguration,
+            formatSpecRegistry = formatSpecRegistry
          )
       )
    }

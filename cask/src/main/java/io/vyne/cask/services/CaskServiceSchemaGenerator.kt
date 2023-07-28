@@ -9,14 +9,11 @@ import io.vyne.query.graph.ServiceParams
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.VersionedType
 import lang.taxi.TaxiDocument
+import lang.taxi.annotations.HttpService
 import lang.taxi.services.Service
 import lang.taxi.services.ServiceMember
+import lang.taxi.types.*
 import lang.taxi.types.Annotation
-import lang.taxi.types.CompilationUnit
-import lang.taxi.types.Field
-import lang.taxi.types.ObjectType
-import lang.taxi.types.QualifiedName
-import lang.taxi.types.Type
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
@@ -34,7 +31,7 @@ class CaskServiceSchemaGenerator(
     @Value("\${spring.application.name}") private val appName: String = "cask"
    ) {
    private val serviceAnnotations =
-      listOf(Annotation("ServiceDiscoveryClient", mapOf("serviceName" to appName))) +
+      listOf(HttpService(baseUrl = "http://$appName").toAnnotation()) +
          (caskServiceAnnotations?.split(",")?.map { Annotation(it.trim()) } ?: listOf())
 
 
@@ -109,6 +106,7 @@ class CaskServiceSchemaGenerator(
       private fun fullyQualifiedCaskServiceName(type: Type) = "${DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE}.${type.toQualifiedName()}CaskService"
       fun fullyQualifiedCaskServiceName(qualifiedName: String) = "${DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE}.${qualifiedName}CaskService"
       const val CaskApiRootPath = "/api/cask/"
+      const val CaskServiceRootPath = "http://cask/$CaskApiRootPath"
       fun caskServiceSchemaName(versionedType: VersionedType): String {
          return caskServiceSchemaName(versionedType.fullyQualifiedName)
       }

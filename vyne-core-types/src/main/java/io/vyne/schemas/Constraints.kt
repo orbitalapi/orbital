@@ -6,12 +6,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
 import lang.taxi.Operator
-import lang.taxi.expressions.Expression
-import lang.taxi.services.operations.constraints.ConstantValueExpression
-import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
-import lang.taxi.services.operations.constraints.PropertyIdentifier
-import lang.taxi.services.operations.constraints.RelativeValueExpression
-import lang.taxi.services.operations.constraints.ValueExpression
+import lang.taxi.services.operations.constraints.*
 import lang.taxi.types.AttributePath
 
 typealias TaxiConstraint = lang.taxi.services.operations.constraints.Constraint
@@ -103,7 +98,7 @@ data class NestedAttributeConstraint(val fieldName: String, val constraint: Inpu
       if (value !is TypedObject) throw IllegalArgumentException("NestedAttributeConstraint must be evaluated against a TypedObject")
       val nestedAttribute = value.get(fieldName)
       val field = argumentType.attributes.getValue(fieldName)
-      val nestedType = schema.type(field.type)
+      val nestedType = field.resolveType(schema)
       // This is probably wrong - find the argument type of the nested field
       return NestedConstraintEvaluation(value, fieldName, constraint.evaluate(nestedType, nestedAttribute, schema))
    }
@@ -171,9 +166,10 @@ class PropertyToParameterConstraint(propertyIdentifier: PropertyIdentifier,
       return when (expectedValue) {
          is ConstantValueExpression -> {
             // We expected a constant value.  Convert the value we were given into the appropriate type
-            val type = schema.type(argumentType.attribute(propertyIdentifier).type)
+            val type = argumentType.attribute(propertyIdentifier).resolveType(schema)
             TypedInstance.from(type, (expectedValue as ConstantValueExpression).value, schema, source = DefinedInSchema)
          }
+
          is RelativeValueExpression -> {
             when (value) {
                // This seems wrong - we shouldn't be accessing the the expected value path against value,
@@ -183,14 +179,11 @@ class PropertyToParameterConstraint(propertyIdentifier: PropertyIdentifier,
                else -> error("Relative value expressions are not supported on values of type ${value::class.simpleName}")
             }
          }
+
+         is ArgumentExpression -> {
+            TODO()
+         }
       }
-   }
-
-}
-
-data class ExpressionConstraint(private val expression: Expression): OutputConstraint, InputConstraint {
-   override fun evaluate(argumentType: Type, value: TypedInstance, schema: Schema): ConstraintEvaluation {
-      TODO("Not yet implemented")
    }
 
 }

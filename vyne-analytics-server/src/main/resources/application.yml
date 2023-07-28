@@ -31,8 +31,8 @@ spring:
       driverClassName: org.h2.Driver
    sql:
       init:
-         schema-locations: classpath:schema.sql
-         mode: always
+         schema-locations: classpath:schema-h2.sql
+         mode: embedded
 
 server:
    port: 9405
@@ -43,23 +43,9 @@ feign:
          default:
             connectTimeout: 5000
             readTimeout: 5000
-eureka:
-   uri: http://127.0.0.1:8761
-   client:
-      # Eureka must be enabled explicitly
-      enabled: false
-      registryFetchIntervalSeconds: 1
-      initialInstanceInfoReplicationIntervalSeconds: 5
-      serviceUrl:
-         defaultZone: ${eureka.uri}/eureka/
-   instance:
-      leaseRenewalIntervalInSeconds: 2
-      leaseExpirationDurationInSeconds: 5
-      metadata-map:
-         vyne-analytics-port: ${vyne.analytics-server.port}
 
 vyne:
-   history:
+   analytics:
       persistRemoteCallResponses: true
       persistResults: true
    analytics-server:
@@ -68,31 +54,3 @@ vyne:
 # Actuators + prometheus metrics configuration
 
 management.endpoints.web.base-path: /api/actuator
-management:
-   metrics:
-      export:
-         prometheus:
-            enabled: false
-         influx:
-            enabled: false
-         elastic:
-            enabled: false
-         jmx:
-            enabled: false
-         graphite:
-            enabled: false
-         datadog:
-            enabled: false
-         dynatrace:
-            enabled: false
-
-   endpoint:
-      metrics:
-         enabled: true
-      prometheus:
-         enabled: false
-
-   endpoints:
-      web:
-         exposure:
-            include: prometheus,metrics,info,health

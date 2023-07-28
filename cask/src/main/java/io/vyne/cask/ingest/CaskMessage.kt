@@ -1,9 +1,9 @@
 package io.vyne.cask.ingest
 
 import io.vyne.cask.api.ContentType
+import jakarta.persistence.*
 import org.springframework.data.jpa.repository.JpaRepository
 import java.time.Instant
-import javax.persistence.*
 
 @Entity
 data class CaskMessage(

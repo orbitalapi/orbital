@@ -1,6 +1,6 @@
 package io.vyne.query.graph.operationInvocation
 
-import com.google.common.cache.CacheBuilder
+import com.google.common.cache.Cache
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.connectors.OperationInvoker
@@ -9,14 +9,8 @@ import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.abbreviate
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.ObsoleteCoroutinesApi
-import kotlinx.coroutines.async
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.actor
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onCompletion
@@ -28,6 +22,7 @@ import java.time.Duration
 import java.time.Instant
 
 private val logger = KotlinLogging.logger {}
+
 
 /**
  * Decorates an underlying invoker to cache and replay subsequent calls to the same service.
@@ -43,15 +38,16 @@ private val logger = KotlinLogging.logger {}
  */
 class CacheAwareOperationInvocationDecorator(
    private val invoker: OperationInvoker,
-   val evictWhenResultSizeExceeds: Int = 10
+   val evictWhenResultSizeExceeds: Int = 10,
+   private val actorCache: Cache<String, CachingInvocationActor> = OperationCacheFactory.newCache()
 ) :
    OperationInvoker {
 
-   private val actorCache = CacheBuilder.newBuilder()
-      .removalListener<String, CachingInvocationActor> { notification ->
-         logger.info { "Caching operation invoker removing entry for ${notification.key?.abbreviate()} for reason ${notification.cause}" }
-      }
-      .build<String, CachingInvocationActor>()
+//   private val actorCache = CacheBuilder.newBuilder()
+//      .removalListener<String, CachingInvocationActor> { notification ->
+//         logger.info { "Caching operation invoker removing entry for ${notification.key?.abbreviate()} for reason ${notification.cause}" }
+//      }
+//      .build<String, CachingInvocationActor>()
 
    val cacheSize: Long
       get() {
@@ -113,6 +109,14 @@ class CacheAwareOperationInvocationDecorator(
    }
 
    companion object {
+      fun decorateAll(
+         invokers: List<OperationInvoker>,
+         evictWhenResultSizeExceeds: Int = 10,
+         operationCache: Cache<String, CachingInvocationActor> = OperationCacheFactory.newCache()
+      ): List<OperationInvoker> {
+         return invokers.map { CacheAwareOperationInvocationDecorator(it, evictWhenResultSizeExceeds, operationCache) }
+      }
+
       private fun getCacheKeyAndParamMessage(
          service: Service,
          operation: RemoteOperation,
@@ -146,7 +150,7 @@ class CacheAwareOperationInvocationDecorator(
  */
 @ExperimentalCoroutinesApi
 @ObsoleteCoroutinesApi // At the time of writing, there's no alternative provided by Kotlin
-private class CachingInvocationActor(
+class CachingInvocationActor(
    private val cacheKey: String,
    private val invoker: OperationInvoker,
    private val evictWhenResultSizeExceeds: Int
@@ -215,7 +219,7 @@ private class CachingInvocationActor(
                   .collect {
                      sink.next(it)
                   }
-            } catch(exception:Exception) {
+            } catch (exception: Exception) {
                logger.error(exception) { "An exception was thrown inside the invoker (${invoker::class.simpleName} calling ${operation.name})" }
                // This is an exception thrown in the invoke method, but not within the flux / flow.
                // ie., something has gone wrong internally, not in the service.
@@ -233,7 +237,7 @@ private class CachingInvocationActor(
    }
 }
 
-private data class OperationInvocationParamMessage(
+data class OperationInvocationParamMessage(
    val service: Service,
    val operation: RemoteOperation,
    val parameters: List<Pair<Parameter, TypedInstance>>,

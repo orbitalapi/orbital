@@ -15,15 +15,34 @@ object CsvImporterUtil {
                       typeName: String,
                       functionRegistry: FunctionRegistry = FunctionRegistry.default
    ): List<ParsedTypeInstance> {
-      val format = CsvFormatFactory.fromParameters(parameters)
+
+      val format = CsvFormatFactory.fromParameters(parameters.withGuessedRecordSeparator(rawContent))
+
       val content = trimContent(rawContent, parameters.ignoreContentBefore)
+      // This is very odd, but finding in debugging that sometimes
+      // when using parsed.records, we get an empty list,
+      // but CSVParser.parse(content,format).records returns a populated list.
+      // Speicifcally happens when parsing a tab delimited file with \n as the line delimiter.
+      // Can't explain it.  Possibly a stream issue?
+      // Anyway...right now we're parsing twice.  Not great.
       val parsed = CSVParser.parse(content, format)
+      val parsedRecords = CSVParser.parse(content, format).records
       val targetType = schema.type(typeName)
       val nullValues = parameters.nullValue
-      val records = parsed.records
-         .filter { parsed.headerNames == null || parsed.headerNames.isEmpty() || parsed.headerNames.size == it.size() }
+      val records = parsedRecords
+//         .filter { parsed.headerNames == null || parsed.headerNames.isEmpty() || parsed.headerNames.size == it.size() }
          .map { csvRecord ->
-            ParsedTypeInstance(TypedObjectFactory(targetType, csvRecord, schema, nullValues, source = Provided, functionRegistry = functionRegistry, formatSpecs = emptyList()).build())
+            ParsedTypeInstance(
+               TypedObjectFactory(
+                  targetType,
+                  csvRecord,
+                  schema,
+                  nullValues,
+                  source = Provided,
+                  functionRegistry = functionRegistry,
+                  formatSpecs = emptyList()
+               ).build()
+            )
          }
       return records
    }

@@ -4,7 +4,6 @@ import com.jayway.awaitility.Awaitility.await
 import io.vyne.schemaServer.core.file.FileChangeDetectionMethod
 import io.vyne.schemaServer.core.file.deployProject
 import io.vyne.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
-import io.vyne.schemaServer.core.file.packages.ReactivePollingFileSystemMonitor
 import io.vyne.schemaServer.core.git.GitSchemaPackageLoaderFactory
 import io.vyne.schemaServer.core.git.GitSchemaRepositoryConfig
 import io.vyne.schemaServer.core.publisher.SourceWatchingSchemaPublisher
@@ -16,6 +15,7 @@ import io.vyne.schemaServer.core.repositories.lifecycle.RepositoryLifecycleManag
 import io.vyne.schemaServer.repositories.git.GitRepositoryChangeRequest
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.utils.asA
+import io.vyne.utils.files.ReactivePollingFileSystemMonitor
 import org.eclipse.jgit.api.Git
 import org.junit.Before
 import org.junit.Rule

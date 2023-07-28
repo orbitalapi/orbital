@@ -3,10 +3,10 @@ package io.vyne.queryService.security
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.vyne.cockpit.core.security.authorisation.VyneAuthorisationConfig
+import io.vyne.queryService.TestSchemaProvider
 import io.vyne.queryService.VyneQueryIntegrationTest
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore
-import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.spring.config.TestDiscoveryClientConfig
 import mu.KotlinLogging
@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import java.io.File
 
@@ -43,7 +44,9 @@ private val logger = KotlinLogging.logger {  }
       "vyne.telemetry.enabled=false",
       "wiremock.server.baseUrl=http://localhost:\${wiremock.server.port}",
       "logging.level.org.springframework.security=DEBUG",
-   ])
+   ]
+)
+@ActiveProfiles("test")
 class VyneQuerySecurityFirstTimeApiClientLoginIntegrationTest {
    private var rsaJsonWebKey: RsaJsonWebKey? = null
    private var jwsBuilder: JWSBuilder? = null
@@ -62,7 +65,8 @@ class VyneQuerySecurityFirstTimeApiClientLoginIntegrationTest {
    class TestVyneAuthorisationConfig {
       @Bean
       @Primary
-      fun schemaProvider(): SchemaProvider = SimpleTaxiSchemaProvider(VyneQueryIntegrationTest.UserSchema.source)
+      fun schemaProvider(): SchemaProvider =
+         TestSchemaProvider.withBuiltInsAnd(VyneQueryIntegrationTest.UserSchema.schema)
 
       @Bean
       fun schemaStore(): SchemaStore = LocalValidatingSchemaStoreClient()

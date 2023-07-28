@@ -2,6 +2,7 @@ import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {ConvertSchemaEvent, SwaggerConverterOptions} from '../../schema-importer.models';
 import {NgxFileDropEntry} from 'ngx-file-drop';
 import {readSingleFile} from '../../../utils/files';
+import {PackageIdentifier} from "../../../package-viewer/packages.service";
 
 @Component({
   selector: 'app-swagger-config',
@@ -10,9 +11,9 @@ import {readSingleFile} from '../../../utils/files';
       <div class="form-body">
         <div class="form-row">
           <div class="form-item-description-container">
-            <h3>Swagger source</h3>
+            <h3>OpenAPI spec source</h3>
             <div class="help-text">
-              Select where to load the swagger from - either upload the schema directly, or specify a url
+              Select where to load the OpenAPI spec from - either upload the schema directly, or specify a url
             </div>
           </div>
           <div class="form-element">
@@ -28,7 +29,7 @@ import {readSingleFile} from '../../../utils/files';
             </tui-tabs>
             <div [ngSwitch]="activeTabIndex">
               <div *ngSwitchCase="0" class="tab-panel">
-                <app-data-source-upload promptText="Drop your swagger schema file here"
+                <app-data-source-upload promptText="Drop your OpenAPI schema file here"
                                         (fileSelected)="handleSchemaFileDropped($event)"></app-data-source-upload>
               </div>
               <div *ngSwitchCase="1" class="tab-panel">
@@ -57,7 +58,7 @@ import {readSingleFile} from '../../../utils/files';
         <div class="form-item-description-container">
           <h3>Base Url</h3>
           <div class="help-text">
-            Define a base url, which services are relative to. Only required if the swagger spec doesn't define this
+            Define a base url, which services are relative to. Only required if the OpenAPI spec doesn't define this
             itself
           </div>
         </div>
@@ -87,9 +88,12 @@ export class SwaggerConfigComponent {
   @Output()
   loadSchema = new EventEmitter<ConvertSchemaEvent>()
 
+  @Input()
+  packageIdentifier: PackageIdentifier;
+
   doCreate() {
     console.log(JSON.stringify(this.swaggerOptions, null, 2));
-    this.loadSchema.next(new ConvertSchemaEvent('swagger', this.swaggerOptions));
+    this.loadSchema.next(new ConvertSchemaEvent('swagger', this.swaggerOptions, this.packageIdentifier));
   }
 
   handleSchemaFileDropped($event: NgxFileDropEntry) {

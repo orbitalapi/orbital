@@ -8,6 +8,7 @@
     "targetTypeName" : "com.foo.bar.InputType",
     "targetType" : "com.foo.bar.InputType"
   },
+  "transformation" : null,
   "outputs" : [ {
     "type" : "kafka",
     "direction" : "OUTPUT",

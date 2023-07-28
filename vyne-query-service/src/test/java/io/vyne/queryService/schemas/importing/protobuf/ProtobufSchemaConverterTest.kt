@@ -2,6 +2,7 @@ package io.vyne.queryService.schemas.importing.protobuf
 
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
+import io.vyne.PackageIdentifier
 import io.vyne.cockpit.core.schemas.importing.SchemaConversionRequest
 import io.vyne.cockpit.core.schemas.importing.protobuf.ProtobufSchemaConverter
 import io.vyne.cockpit.core.schemas.importing.protobuf.ProtobufSchemaConverterOptions
@@ -32,14 +33,15 @@ message Person {
 }"""
       server.prepareResponse { response -> response.setBody(protobuf) }
 
-      val conversionResponse = converterService.import(
+      val conversionResponse = converterService.preview(
          SchemaConversionRequest(
             ProtobufSchemaConverter.PROTOBUF_FORMAT,
             ProtobufSchemaConverterOptions(
                url = server.url("/sample.proto").toString()
-            )
+            ),
+            packageIdentifier = PackageIdentifier.fromId("foo/test/1.0.0")
          )
-      ).block(Duration.ofSeconds(100))!!
+      ).block(Duration.ofSeconds(5))!!
 
       conversionResponse.types.should.have.size(1)
    }
@@ -50,14 +52,15 @@ message Person {
       val protobuf = Resources.getResource("schemas/protobuf/simple-schema.proto").readText()
       server.prepareResponse { response -> response.setBody(protobuf) }
 
-      val conversionResponse = converterService.import(
+      val conversionResponse = converterService.preview(
          SchemaConversionRequest(
             ProtobufSchemaConverter.PROTOBUF_FORMAT,
             ProtobufSchemaConverterOptions(
                url = server.url("/sample.proto").toString()
-            )
+            ),
+            packageIdentifier = PackageIdentifier.fromId("foo/test/1.0.0")
          )
-      ).block(Duration.ofSeconds(100))!!
+      ).block(Duration.ofSeconds(5))!!
 
       conversionResponse.types.should.have.size(4)
    }

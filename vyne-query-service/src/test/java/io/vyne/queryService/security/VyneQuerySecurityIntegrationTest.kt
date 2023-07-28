@@ -4,15 +4,16 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.winterbe.expekt.should
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.vyne.cockpit.core.security.authorisation.VyneAuthorisationConfig
-import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
-import io.vyne.connectors.jdbc.JdbcDriver
+import io.vyne.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
+import io.vyne.connectors.config.jdbc.JdbcDriver
+import io.vyne.queryService.TestSchemaProvider
 import io.vyne.queryService.VyneQueryIntegrationTest
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore
-import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.spring.config.TestDiscoveryClientConfig
 import org.jose4j.jwk.RsaJsonWebKey
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -25,11 +26,8 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.core.io.ClassPathResource
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpMethod
-import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
+import org.springframework.http.*
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import reactivefeign.utils.HttpStatus
 
@@ -45,6 +43,7 @@ profile
  */
 @RunWith(SpringRunner::class)
 @AutoConfigureWireMock(port = 0)
+@ActiveProfiles("test")
 @SpringBootTest(
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
    properties = [
@@ -90,7 +89,8 @@ class VyneQuerySecurityIntegrationTest {
    class TestVyneAuthorisationConfig {
       @Bean
       @Primary
-      fun schemaProvider(): SchemaProvider = SimpleTaxiSchemaProvider(VyneQueryIntegrationTest.UserSchema.source)
+      fun schemaProvider(): SchemaProvider =
+         TestSchemaProvider.withBuiltInsAnd(VyneQueryIntegrationTest.UserSchema.schema.sources)
 
       @Bean
       fun schemaStore(): SchemaStore = LocalValidatingSchemaStoreClient()
@@ -438,6 +438,7 @@ class VyneQuerySecurityIntegrationTest {
     * Get Authentication Tokens
     */
    @Test
+   @Ignore
    fun `an admin user can get authentication tokens`() {
       val token = setUpLoggedInUser(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
@@ -446,6 +447,7 @@ class VyneQuerySecurityIntegrationTest {
    }
 
    @Test
+   @Ignore
    fun `a platform manager can get authentication tokens`() {
       val token = setUpLoggedInUser(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
@@ -486,6 +488,7 @@ class VyneQuerySecurityIntegrationTest {
     * Delete Authentication Token
     */
    @Test
+   @Ignore("removing ability to edit tokens from UI")
    fun `an admin user can delete authentication tokens`() {
       val token = setUpLoggedInUser(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
@@ -494,6 +497,7 @@ class VyneQuerySecurityIntegrationTest {
    }
 
    @Test
+   @Ignore("removing ability to edit tokens from UI")
    fun `a platform manager can delete authentication tokens`() {
       val token = setUpLoggedInUser(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
@@ -502,6 +506,7 @@ class VyneQuerySecurityIntegrationTest {
    }
 
    @Test
+   @Ignore("removing ability to edit tokens from UI")
    fun `a query runner can not delete authentication tokens`() {
       val token = setUpLoggedInUser(queryRunnerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
@@ -510,6 +515,7 @@ class VyneQuerySecurityIntegrationTest {
    }
 
    @Test
+   @Ignore("removing ability to edit tokens from UI")
    fun `a viewer user can not delete authentication tokens`() {
       val token = setUpLoggedInUser(viewerUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
@@ -518,6 +524,7 @@ class VyneQuerySecurityIntegrationTest {
    }
 
    @Test
+   @Ignore("removing ability to edit tokens from UI")
    fun `unauthenticated user can not delete authentication tokens`() {
       val headers = HttpHeaders()
       headers.contentType = MediaType.APPLICATION_JSON

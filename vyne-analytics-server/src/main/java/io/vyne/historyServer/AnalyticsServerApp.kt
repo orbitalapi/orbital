@@ -4,12 +4,16 @@ import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.history.VyneHistoryRecord
+import io.vyne.schemas.readers.SourceConverterRegistry
+import io.vyne.schemas.readers.TaxiSourceConverter
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.spring.config.DiscoveryClientConfig
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.spring.http.VyneQueryServiceExceptionProvider
+import io.vyne.spring.query.formats.FormatSpecRegistry
 import io.vyne.utils.log
+import jakarta.annotation.PostConstruct
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.SpringApplication
@@ -21,7 +25,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import reactor.core.publisher.Sinks
 import java.util.*
-import javax.annotation.PostConstruct
 
 private val logger = KotlinLogging.logger {}
 
@@ -85,4 +88,17 @@ class AnalyticsServiceConfig {
 
    @Bean
    fun csvFormatSpec(): ModelFormatSpec = CsvFormatSpec
+
+   @Bean
+   fun formatSpecRegistry(): FormatSpecRegistry = FormatSpecRegistry.default()
+
+   @Bean
+   fun sourceConverterRegistry(): SourceConverterRegistry = SourceConverterRegistry(
+      setOf(
+         TaxiSourceConverter,
+//         SoapWsdlSourceConverter
+      ),
+      registerWithStaticRegistry = true
+   )
+
 }

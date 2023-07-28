@@ -1,0 +1,40 @@
+# management.endpoints.web.exposure.include=functions.
+server:
+   port: 9023
+   compression:
+      enabled: true
+      mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+      min-response-size: 1024
+   error:
+      include-message: always
+spring:
+   cloud:
+      function:
+         web:
+            export:
+               enabled: false
+
+   application:
+      name: query-function
+   #   autoconfigure:
+   #      exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration, org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
+   mvc:
+      async:
+         request-timeout: 18000000
+   main:
+      banner-mode: off
+      web-application-type: reactive
+   codec:
+      max-in-memory-size: 100MB
+management:
+   endpoints:
+      web:
+         exposure:
+            include: functions,prometheus,metrics,info,health,logfile,loggers
+         base-path: /api/actuator
+logging:
+   level:
+      # Logs the whole message at INFO, which can be really big.
+      org.springframework.cloud.function.adapter.aws.AWSLambdaUtils: WARN
+      org.springframework: INFO
+      io.vyne: INFO

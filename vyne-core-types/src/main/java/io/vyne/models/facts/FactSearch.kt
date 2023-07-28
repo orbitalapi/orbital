@@ -220,7 +220,7 @@ enum class FactDiscoveryStrategy {
                      toCollectionIfRequested(nonNullMatches.first(), search.targetType)
                   } else {
                      logger.debug {
-                        "ANY_DEPTH_EXPECT_ONE strategy found ${matches.size} of search ${search.name}, so returning null"
+                        "ANY_DEPTH_EXPECT_ONE_DISTINCT strategy found ${matches.size} of search ${search.name}, so returning null"
                      }
                      null
                   }

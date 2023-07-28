@@ -9,8 +9,8 @@ import io.vyne.schema.consumer.SchemaSetChangedEventRepository
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.publisher.*
 import io.vyne.schemas.Schema
-import lang.taxi.CompilationError
 import io.vyne.schemas.taxi.TaxiSchema
+import lang.taxi.CompilationError
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
 import mu.KotlinLogging
@@ -98,10 +98,12 @@ operation findByDateBetween...
 }
 
  */
-class LocalValidatingSchemaStoreClient : ValidatingSchemaStoreClient(
-   schemaSetHolder = ConcurrentHashMap(),
-   packagesById = ConcurrentHashMap()
-) {
+class LocalValidatingSchemaStoreClient(schemaValidator: SchemaValidator = TaxiSchemaValidator()) :
+   ValidatingSchemaStoreClient(
+      schemaValidator = schemaValidator,
+      schemaSetHolder = ConcurrentHashMap(),
+      packagesById = ConcurrentHashMap()
+   ) {
    private val generationCounter = AtomicInteger(0)
    override fun incrementGenerationCounterAndGet(): Int = generationCounter.incrementAndGet()
    override val generation: Int

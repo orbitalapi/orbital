@@ -4,10 +4,10 @@ import com.google.common.io.Resources
 import com.winterbe.expekt.should
 import io.vyne.PackageIdentifier
 import io.vyne.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
-import io.vyne.schemaServer.core.file.packages.ReactivePollingFileSystemMonitor
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
 import io.vyne.schemaServer.core.git.GitSchemaPackageLoader
 import io.vyne.schemaServer.packages.OpenApiPackageLoaderSpec
+import io.vyne.utils.files.ReactivePollingFileSystemMonitor
 import org.apache.commons.io.FileUtils
 import org.eclipse.jgit.api.Git
 import org.junit.Before

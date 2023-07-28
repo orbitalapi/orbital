@@ -8,11 +8,8 @@ import io.vyne.models.format.ModelFormatSpec
 import io.vyne.schema.api.ParsedSourceProvider
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore
-import io.vyne.schemas.Operation
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Service
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
+import io.vyne.schemas.taxi.toVyneSources
 import io.vyne.spring.http.NotFoundException
 import lang.taxi.generators.SourceFormatter
 import org.springframework.http.ResponseEntity
@@ -62,6 +59,17 @@ class SchemaService(
       } else {
          emptyList()
       }
+   }
+
+   @GetMapping("/api/schemas/queries")
+   fun getSavedQueries(): List<SavedQuery> {
+      return schemaProvider.schema.asTaxiSchema().taxi.queries
+         .map { query ->
+            SavedQuery(
+               query.name.toVyneQualifiedName(),
+               query.compilationUnits.toVyneSources()
+            )
+         }
    }
 
    @GetMapping(path = ["/api/types/{typeName}"])
@@ -140,6 +148,19 @@ class SchemaService(
       val taxi = typeSource + "\n\n" + operationSource
 
       return SchemaWithTaxi(schema, taxi)
+   }
+
+   @GetMapping("/api/schema/tree")
+   fun getSchemaTree(): List<SchemaTreeNode> {
+      val schema = schemaProvider.schema
+      return SchemaTreeUtils.getRootNodes(schema)
+   }
+
+   @GetMapping("/api/schema/tree", params = ["node"])
+   fun getSchemaTree(@RequestParam("node") parentQualifiedName: String): List<SchemaTreeNode> {
+      val schema = schemaProvider.schema
+      val parentFqn = parentQualifiedName.fqn()
+      return SchemaTreeUtils.getChildNodes(parentFqn, schema)
    }
 
    @GetMapping(path = ["/api/schema/annotations"])

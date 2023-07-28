@@ -1,11 +1,7 @@
-import { Component, ElementRef, EventEmitter, Inject, Input, OnDestroy, Output, ViewChild } from '@angular/core';
-import { debounceTime } from 'rxjs/operators';
-import {
-  TAXI_LANGUAGE_ID,
-  taxiLanguageConfiguration,
-  taxiLanguageTokenProvider
-} from '../code-viewer/taxi-lang.monaco';
-import { toSocket, WebSocketMessageReader, WebSocketMessageWriter } from 'vscode-ws-jsonrpc';
+import {Component, ElementRef, EventEmitter, Inject, Input, OnDestroy, Output, ViewChild} from '@angular/core';
+import {debounceTime} from 'rxjs/operators';
+import {TAXI_LANGUAGE_ID, taxiLanguageConfiguration, taxiLanguageTokenProvider} from '../code-viewer/taxi-lang.monaco';
+import {toSocket, WebSocketMessageReader, WebSocketMessageWriter} from 'vscode-ws-jsonrpc';
 import {
   CloseAction,
   DidOpenTextDocumentNotification,
@@ -13,8 +9,8 @@ import {
   MonacoLanguageClient,
   MonacoServices
 } from 'monaco-languageclient';
-import { iplastic_theme } from './themes/iplastic';
-import { editor } from 'monaco-editor';
+import {iplastic_theme} from './themes/iplastic';
+import {editor} from 'monaco-editor';
 
 
 // Import the core monaco editor
@@ -33,7 +29,6 @@ import * as monacoFeature7
   from 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneCommandsQuickAccess.js';
 import * as monacoFeature8
   from 'monaco-editor/esm/vs/editor/standalone/browser/quickInput/standaloneQuickInputService.js';
-
 import ITextModel = editor.ITextModel;
 import IModelContentChangedEvent = editor.IModelContentChangedEvent;
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
@@ -151,7 +146,16 @@ export class CodeEditorComponent implements OnDestroy {
     const features = [monadoEditorAll, monacoFeature4, monacoFeature5, monacoFeature6, monacoFeature7, monacoFeature8, languageFeatureService];
 
     this.monacoModel = monaco.editor.createModel(this.content, TAXI_LANGUAGE_ID, monaco.Uri.parse('inmemory://query.taxi'));
-    monaco.languages.register({ id: TAXI_LANGUAGE_ID });
+    monaco.languages.register({id: TAXI_LANGUAGE_ID});
+    // monaco.languages.registerHoverProvider(TAXI_LANGUAGE_ID, {
+    //   provideHover(model: editor.ITextModel, position, token: CancellationToken): languages.ProviderResult<languages.Hover> {
+    //     return {
+    //       contents: [{
+    //         value: '## Hello\nWorld'
+    //       }]
+    //     }
+    //   }
+    // })
 
     monaco.languages.setLanguageConfiguration(TAXI_LANGUAGE_ID, taxiLanguageConfiguration);
     monaco.languages.setMonarchTokensProvider(TAXI_LANGUAGE_ID, taxiLanguageTokenProvider);

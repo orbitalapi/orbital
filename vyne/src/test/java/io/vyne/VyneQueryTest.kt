@@ -163,6 +163,7 @@ class VyneQueryTest {
       assertFails {
          val result = vyne.query("find { Person[] }")
             .typedObjects()
+         result!!
       }
    }
 

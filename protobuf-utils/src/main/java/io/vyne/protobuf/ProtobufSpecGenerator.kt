@@ -50,7 +50,7 @@ class ProtobufSpecGenerator(private val vyneSchema: io.vyne.schemas.Schema) {
 
          specUnderConstruction.fields = type.attributes.map { (name, attribute) ->
             val metadata = attribute.getMetadata(ProtobufFieldAnnotation.NAME.fqn())
-            val fieldType = vyneSchema.type(attribute.type)
+            val fieldType = attribute.resolveType(vyneSchema)
             if (!fieldType.isPrimitive) {
                // Add the type to set of generated fields
                val fieldTypeMessageSpec = getOrGenerateProtoSpec(fieldType)

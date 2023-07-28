@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.orbital.station.OrbitalStationConfig
 import io.vyne.cask.api.CaskApi
 import io.vyne.cockpit.core.CockpitCoreConfig
+import io.vyne.cockpit.core.FeatureTogglesConfig
 import io.vyne.cockpit.core.WebUiUrlSupportFilter
 import io.vyne.cockpit.core.lsp.LanguageServerConfig
 import io.vyne.cockpit.core.pipelines.PipelineConfig
@@ -13,6 +14,8 @@ import io.vyne.cockpit.core.security.VyneUserConfig
 import io.vyne.cockpit.core.telemetry.TelemetryConfig
 import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.history.db.InProcessHistoryConfiguration
+import io.vyne.history.noop.NoopQueryEventConsumerConfiguration
+import io.vyne.history.remote.RemoteHistoryConfig
 import io.vyne.history.rest.QueryHistoryRestConfig
 import io.vyne.licensing.LicenseConfig
 import io.vyne.models.csv.CsvFormatSpec
@@ -22,6 +25,7 @@ import io.vyne.pipelines.jet.api.PipelineApi
 import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
+import io.vyne.query.chat.ChatQueryParser
 import io.vyne.query.runtime.core.EnableVyneQueryNode
 import io.vyne.schema.publisher.SchemaPublisherService
 import io.vyne.schemaServer.changelog.ChangelogApi
@@ -33,23 +37,22 @@ import io.vyne.search.embedded.EnableVyneEmbeddedSearch
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
-import io.vyne.spring.config.ConditionallyLoadBalancedExchangeFilterFunction
-import io.vyne.spring.config.DiscoveryClientConfig
-import io.vyne.spring.config.VyneSpringCacheConfiguration
-import io.vyne.spring.config.VyneSpringHazelcastConfiguration
-import io.vyne.spring.config.VyneSpringProjectionConfiguration
+import io.vyne.spring.config.*
 import io.vyne.spring.http.auth.HttpAuthConfig
 import io.vyne.spring.projection.ApplicationContextProvider
+import io.vyne.spring.query.formats.FormatSpecRegistry
 import io.vyne.spring.utils.versionOrDev
 import io.vyne.utils.log
+import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
-import org.springframework.boot.actuate.metrics.web.reactive.client.MetricsWebClientCustomizer
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
+import org.springframework.boot.web.reactive.function.client.WebClientCustomizer
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
 import org.springframework.context.annotation.Bean
@@ -64,9 +67,9 @@ import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.http.codec.json.KotlinSerializationJsonEncoder
 import org.springframework.web.reactive.config.WebFluxConfigurer
-import org.springframework.web.reactive.function.client.WebClient
 import reactivefeign.spring.config.EnableReactiveFeignClients
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 
 @SpringBootApplication(scanBasePackageClasses = [QueryServiceApp::class, OrbitalStationConfig::class])
@@ -78,6 +81,8 @@ import java.util.*
    VyneSpringProjectionConfiguration::class,
    VyneSpringHazelcastConfiguration::class,
    VyneUserConfig::class,
+   FeatureTogglesConfig::class,
+   EnvVariablesConfig::class
 )
 @Import(
    HttpAuthConfig::class,
@@ -85,6 +90,7 @@ import java.util.*
    LicenseConfig::class,
    DiscoveryClientConfig::class,
    TelemetryConfig::class
+
 )
 class QueryServiceApp {
 
@@ -97,6 +103,11 @@ class QueryServiceApp {
          app.setBannerMode(Banner.Mode.OFF)
          app.run(*args)
       }
+   }
+
+   @Bean
+   fun chatGptService(@Value("\${vyne.chat-gpt.api-key:''}") apiKey: String): ChatQueryParser {
+      return ChatQueryParser(apiKey, OkHttpClient().newBuilder().readTimeout(30, TimeUnit.SECONDS).build())
    }
 
 
@@ -118,24 +129,23 @@ class QueryServiceApp {
       }
    }
 
-   //   @LoadBalanced
    @Bean
-   fun webClientFactory(
+   fun formatSpecRegistry(): FormatSpecRegistry = FormatSpecRegistry.default()
+
+   @Bean
+   fun webClientCustomizer(
       loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction,
-      metricsCustomizer: MetricsWebClientCustomizer,
       discoveryClient: DiscoveryClient
-   ): WebClient.Builder {
 
-
-      val builder = WebClient.builder()
-         .filter(
+   ): WebClientCustomizer {
+      return WebClientCustomizer { webClientBuilder ->
+         webClientBuilder.filter(
             ConditionallyLoadBalancedExchangeFilterFunction.onlyKnownHosts(
                discoveryClient.services,
                loadBalancingFilterFunction
             )
          )
-      metricsCustomizer.customize(builder)
-      return builder
+      }
    }
 
    @Autowired
@@ -143,6 +153,7 @@ class QueryServiceApp {
       log().info("Orbital Query Server v ${buildInfo.versionOrDev()}")
    }
 }
+
 
 @Configuration
 @EnableVyne
@@ -153,7 +164,9 @@ class QueryServiceApp {
 @EnableCloudMetrics
 @Import(
    InProcessHistoryConfiguration::class,
+   NoopQueryEventConsumerConfiguration::class,
    QueryHistoryRestConfig::class,
+   RemoteHistoryConfig::class,
    CockpitCoreConfig::class,
    WebUiUrlSupportFilter::class
 )
@@ -237,7 +250,7 @@ class WebFluxWebConfig(private val objectMapper: ObjectMapper) : WebFluxConfigur
  * https://github.com/spring-projects/spring-framework/issues/28856
  */
 @Configuration
-class CustomerWebFluxConfigSupport {
+class CustomWebFluxConfigSupport {
 
    @Bean
    @Primary

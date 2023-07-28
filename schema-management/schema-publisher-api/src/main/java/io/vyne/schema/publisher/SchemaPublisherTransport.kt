@@ -30,8 +30,8 @@ interface SchemaPublisherTransport {
    // We need to rationalize.
 
 
-   fun submitSchema(packageMetadata: PackageMetadata, versionedSource: VersionedSource) =
-      submitSchemas(packageMetadata, listOf(versionedSource))
+//   fun submitSchema(packageMetadata: PackageMetadata, versionedSource: VersionedSource) =
+//      submitSchemas(packageMetadata, listOf(versionedSource))
 
    /**
     * Allows the transport to enrich a schema submission with KeepAlive information.
@@ -120,14 +120,14 @@ interface AsyncSchemaPublisherTransport : SchemaPublisherTransport {
          .asEither()
    }
 
-   override fun submitSchemas(
-      packageMetadata: PackageMetadata,
-      versionedSources: List<VersionedSource>,
-   ): Either<CompilationException, Schema> {
-      return submitSchemaOnConnection(SourcePackage(packageMetadata, versionedSources))
-         .blockFirst()!!
-         .asEither()
-   }
+//   override fun submitSchemas(
+//      packageMetadata: PackageMetadata,
+//      versionedSources: List<VersionedSource>,
+//   ): Either<CompilationException, Schema> {
+//      return submitSchemaOnConnection(SourcePackage(packageMetadata, versionedSources))
+//         .blockFirst()!!
+//         .asEither()
+//   }
 
 //   override fun submitSchemaPackage(submission: KeepAlivePackageSubmission): Either<CompilationException, Schema> {
 //      return submitSchemaOnConnection(submission)

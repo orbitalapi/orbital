@@ -15,7 +15,7 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
 import io.vyne.rawObjects
-import io.vyne.schemaStore.SimpleSchemaStore
+import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.typedObjects
@@ -85,9 +85,8 @@ namespace vyne {
     }
 
 
-    @ServiceDiscoveryClient(serviceName = "localhost:{{PORT}}")
     service CreditCostService {
-        @HttpOperation(method = "POST",url = "/costs/{vyne.ClientId}/doCalculate")
+        @HttpOperation(method = "POST",url = "http://localhost:{{PORT}}/costs/{vyne.ClientId}/doCalculate")
         operation calculateCreditCosts(@RequestBody CreditCostRequest, ClientId ) : CreditCostResponse
     }
 
@@ -96,9 +95,8 @@ namespace vyne {
       operation getPetById( petId : Int ):Pet
     }
 
-    @ServiceDiscoveryClient(serviceName = "localhost:{{PORT}}")
     service ClientDataService {
-        @HttpOperation(method = "GET",url = "/clients/{vyne.ClientName}")
+        @HttpOperation(method = "GET",url = "http://localhost:{{PORT}}/clients/{vyne.ClientName}")
         operation getContactsForClient( clientName: String ) : Client
     }
 }      """
@@ -154,7 +152,7 @@ namespace vyne {
       runTest {
          val turbine = RestTemplateInvoker(
             webClient = webClient,
-            schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources, 1)
+            schemaProvider = SimpleSchemaProvider(schema)
          )
             .invoke(
                service, operation, listOf(
@@ -398,7 +396,7 @@ namespace vyne {
       runTest {
          val turbine = RestTemplateInvoker(
             webClient = webClient,
-            schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources, 1)
+            schemaProvider = SimpleSchemaProvider(schema)
          ).invoke(
             service, operation, listOf(
                paramAndType("vyne.ClientId", "myClientId", schema),
@@ -414,7 +412,7 @@ namespace vyne {
          expectRequestCount(1)
          expectRequest { request ->
             assertEquals("/costs/myClientId/doCalculate", request.path)
-            assertEquals(HttpMethod.POST.name, request.method)
+            assertEquals(HttpMethod.POST.name(), request.method)
             assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
          }
       }
@@ -454,7 +452,7 @@ namespace vyne {
       runTest {
          val turbine = RestTemplateInvoker(
             webClient = webClient,
-            schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources, 1)
+            schemaProvider = SimpleSchemaProvider(schema)
             //SchemaProvider.from(schema)
          ).invoke(
             service, operation, listOf(
@@ -469,7 +467,7 @@ namespace vyne {
          expectRequestCount(1)
          expectRequest { request ->
             assertEquals("/pets/100", request.path)
-            assertEquals(HttpMethod.GET.name, request.method)
+            assertEquals(HttpMethod.GET.name(), request.method)
             assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
          }
       }
@@ -495,7 +493,7 @@ namespace vyne {
       runTest {
          val turbine = RestTemplateInvoker(
             webClient = webClient,
-            schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources, 1)
+            schemaProvider = SimpleSchemaProvider(schema)
          ).invoke(
             service, operation, listOf(
                paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
@@ -508,7 +506,7 @@ namespace vyne {
          expectRequestCount(1)
          expectRequest { request ->
             assertEquals("/pets/100", request.path)
-            assertEquals(HttpMethod.GET.name, request.method)
+            assertEquals(HttpMethod.GET.name(), request.method)
             assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
          }
 
@@ -554,7 +552,7 @@ namespace vyne {
       runTest {
          val turbine = RestTemplateInvoker(
             webClient = webClient,
-            schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources, 1)
+            schemaProvider = SimpleSchemaProvider(schema)
          )
             .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID")
             .testIn(this)
@@ -565,7 +563,7 @@ namespace vyne {
          expectRequestCount(1)
          expectRequest { request ->
             assertEquals("/pets", request.path)
-            assertEquals(HttpMethod.GET.name, request.method)
+            assertEquals(HttpMethod.GET.name(), request.method)
             assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
          }
       }
@@ -609,7 +607,7 @@ namespace vyne {
       runTest {
          val turbine = RestTemplateInvoker(
             webClient = webClient,
-            schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources, 1)
+            schemaProvider = SimpleSchemaProvider(schema)
          )
             .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID")
             .testIn(this)
@@ -621,7 +619,7 @@ namespace vyne {
          expectRequestCount(1)
          expectRequest { request ->
             assertEquals("/pets", request.path)
-            assertEquals(HttpMethod.GET.name, request.method)
+            assertEquals(HttpMethod.GET.name(), request.method)
             assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
          }
       }
@@ -754,7 +752,7 @@ namespace vyne {
       expectRequestCount(1)
       expectRequest { request ->
          assertEquals("/people?apiKey=hello", request.path)
-         assertEquals(HttpMethod.GET.name, request.method)
+         assertEquals(HttpMethod.GET.name(), request.method)
       }
    }
 
@@ -783,7 +781,7 @@ namespace vyne {
       expectRequestCount(1)
       expectRequest { request ->
          assertEquals("/hello/people", request.path)
-         assertEquals(HttpMethod.GET.name, request.method)
+         assertEquals(HttpMethod.GET.name(), request.method)
       }
    }
 

@@ -30,12 +30,20 @@ fun isJsonArray(value: Any): Boolean {
 }
 
 object Jackson {
-   val defaultObjectMapper: ObjectMapper by lazy {
+   fun newObjectMapperWithDefaults() =
       jacksonObjectMapper()
          .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,false)
          .registerModule(JavaTimeModule())
          .registerModule(SimpleModule().addSerializer(DeferredTypedInstanceSerializer()))
-   }
+
+   val defaultObjectMapper: ObjectMapper = newObjectMapperWithDefaults()
+
+   /**
+    * An object writer intended for outputting objects in a TaxiQL query,
+    * which is basically just JSON, but without quoted names.
+    */
+   val taxiQlObjectWriter = newObjectMapperWithDefaults()
+      .configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, false)
 }
 
 

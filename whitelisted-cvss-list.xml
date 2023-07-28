@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+   <suppress>
+      <notes><![CDATA[
+   file name: wire-grpc-server-4.8.0.jar
+   False positives seem to think this is a messaging app, not a protobuf stack
+   ]]></notes>
+      <packageUrl regex="true">^pkg:maven/com\.squareup\.wire/wire\-grpc\-server@.*$</packageUrl>
+      <cpe>cpe:/a:wire:wire-server</cpe>
+      <cpe>cpe:/a:wire:wire</cpe>
+      <cpe>cpe:/a:wire:wire-server</cpe>
+      <cpe>cpe:/a:wire:wire_server</cpe>
+   </suppress>
+   <suppress>
+      <notes><![CDATA[
+   file name: wire-schema-4.8.0.jar
+   ]]></notes>
+      <packageUrl regex="true">^pkg:maven/com\.squareup\.wire/wire\-schema@.*$</packageUrl>
+      <cpe>cpe:/a:wire:wire</cpe>
+   </suppress>
+   <suppress>
+      <notes><![CDATA[
+   file name: wire-runtime-4.8.0.jar
+   ]]></notes>
+      <packageUrl regex="true">^pkg:maven/com\.squareup\.wire/wire\-runtime@.*$</packageUrl>
+      <cpe>cpe:/a:wire:wire</cpe>
+   </suppress>
+   <suppress>
+      <notes><![CDATA[
+   file name: wire-grpc-server-generator-4.8.0.jar
+   ]]></notes>
+      <packageUrl regex="true">^pkg:maven/com\.squareup\.wire/wire\-grpc\-server\-generator@.*$</packageUrl>
+      <cve>CVE-2021-41100</cve>
+   </suppress>
+   <suppress>
+      <notes><![CDATA[
+   file name: swagger-parser-safe-url-resolver-2.1.16.jar
+   Supressed as false positive - this is a javascript library
+   ]]></notes>
+      <packageUrl regex="true">^pkg:maven/io\.swagger\.parser\.v3/swagger\-parser\-safe\-url\-resolver@.*$</packageUrl>
+      <cpe>cpe:/a:parse-url_project:parse-url</cpe>
+   </suppress>
+</suppressions>

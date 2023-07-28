@@ -4,9 +4,10 @@ import arrow.core.getOrHandle
 import io.vyne.cockpit.core.connectors.ConnectionTestedSuccessfully
 import io.vyne.cockpit.core.connectors.jdbc.BadConnectionException
 import io.vyne.connectors.ConnectorUtils
-import io.vyne.connectors.kafka.KafkaConnection
-import io.vyne.connectors.kafka.KafkaConnectionConfiguration
+import io.vyne.connectors.config.kafka.KafkaConnection
+import io.vyne.connectors.config.kafka.KafkaConnectionConfiguration
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
+import io.vyne.connectors.kafka.registry.test
 import io.vyne.connectors.registry.ConnectorConfigurationSummary
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody

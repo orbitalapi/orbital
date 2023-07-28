@@ -21,10 +21,6 @@ class DefaultTypeCacheTest {
             model Model {
               name:  FirstName
             }
-
-            type extension Model {
-              name:  FirstName by default ('jimmy')
-            }
          }
       """.trimIndent()
    val schema = TaxiSchema.from(
@@ -53,11 +49,6 @@ class DefaultTypeCacheTest {
       val fooModel = cache.type("foo.Model")
       fooModel.should.not.be.`null`
       fooModel.attributes["age"].should.not.be.not
-   }
-
-   @Test
-   fun `should cache default values`() {
-      cache.defaultValues("bar.Model".fqn())!!.values.first().value.should.equal("jimmy")
    }
 
    @Test

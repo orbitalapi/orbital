@@ -8,10 +8,7 @@ import io.vyne.query.ResultMode
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.runtime.OperationServiceApi
 import io.vyne.schema.api.SchemaProvider
-import io.vyne.schemas.Operation
-import io.vyne.schemas.OperationInvocationException
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.Service
+import io.vyne.schemas.*
 import io.vyne.spring.http.BadRequestException
 import io.vyne.spring.http.NotFoundException
 import kotlinx.coroutines.flow.Flow
@@ -19,11 +16,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 import java.util.*
 
@@ -52,7 +45,7 @@ class OperationService(
             it.canSupport(service, operation)
          } ?: error("No invoker found for operation ${operation.qualifiedName.shortDisplayName}")
          val invocationId = UUID.randomUUID().toString()
-         val serialiser = FirstEntryMetadataResultSerializer(queryId = invocationId)
+         val serialiser = FirstEntryMetadataResultSerializer(queryId = invocationId, queryOptions = QueryOptions.default())
          val operationResult = operationInvoker.invoke(
             service,
             operation,

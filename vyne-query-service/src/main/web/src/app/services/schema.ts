@@ -1,6 +1,6 @@
-import { PrimitiveTypeNames } from './taxi';
-import { isNullOrUndefined, isString } from 'util';
-import { find } from 'rxjs/operators';
+import {PrimitiveTypeNames} from './taxi';
+import {isNullOrUndefined, isString} from 'util';
+import {PackageIdentifier} from "../package-viewer/packages.service";
 
 export function fqn(input: string): QualifiedName {
   return QualifiedName.from(input);
@@ -287,6 +287,7 @@ export interface Parameter {
   name: string;
   metadata: Array<Metadata>;
   constraints: Array<any>;
+  typeDoc?: string | null;
 }
 
 export interface Metadata {
@@ -314,7 +315,9 @@ export interface Operation extends SchemaMemberNamed, Functional {
   operationType: string | null;
 }
 
-export type ServiceKind = 'Api' | 'Database' | 'Kafka';
+export type TypeKind = 'Model' | 'Type';
+export type ServiceKind = 'API' | 'Database' | 'Kafka';
+export type OperationKind = 'ApiCall' | 'Query' | 'Stream' | 'Table';
 
 export interface Version {
   version: string
@@ -436,6 +439,8 @@ export type SchemaGraphNodeType =
   | 'ERROR'
   | 'VYNE'
   | 'CALLER'
+  | 'SOURCE_VALUE'
+  | 'REQUEST_OBJECT'
   | 'SERVICE';
 
 export interface SchemaGraphNode {
@@ -533,7 +538,7 @@ export interface SchemaNodeSet {
 export class SchemaMember {
   constructor(
     public readonly name: QualifiedName,
-    public readonly kind: SchemaMemberType,
+    public readonly kind: SchemaMemberKind,
     public readonly aliasForType: string,
     public readonly member: Type | Service | Operation,
     public readonly sources: VersionedSource[],
@@ -615,19 +620,26 @@ export class SchemaMember {
   }
 }
 
-export type SchemaMemberType = 'SERVICE' | 'TYPE' | 'OPERATION';
+export type SchemaMemberKind = 'SERVICE' | 'TYPE' | 'OPERATION';
 
 export interface TypedInstance {
   type: Type;
   value: any;
 }
 
+export interface PackageSourceName {
+  packageIdentifier: PackageIdentifier;
+  sourceName: string;
+
+  packageQualifiedName: string;
+}
 export interface VersionedSource {
   name: string;
   version: string;
   content: string;
   id?: string;
   contentHash?: string;
+  packageIdentifier?: PackageIdentifier
 }
 
 

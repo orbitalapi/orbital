@@ -6,7 +6,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.23.0</version>
+      <version>0.24.0-SNAPSHOT</version>
    </parent>
 
    <artifactId>query-node-service</artifactId>
@@ -15,6 +15,11 @@
    </properties>
 
    <dependencies>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>soap-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-history-core</artifactId>
@@ -27,7 +32,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>query-node-core</artifactId>
-         <version>0.23.0</version>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>org.springframework.boot</groupId>
@@ -36,7 +41,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-spring</artifactId>
-         <version>0.23.0</version>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>org.springframework.boot</groupId>
@@ -48,5 +53,21 @@
       </dependency>
 
    </dependencies>
+   <build>
+      <finalName>${project.artifactId}</finalName>
+      <plugins>
+         <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <executions>
+               <execution>
+                  <goals>
+                     <goal>build-info</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+      </plugins>
+   </build>
 
 </project>

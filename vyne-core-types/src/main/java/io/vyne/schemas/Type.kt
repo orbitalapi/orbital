@@ -6,11 +6,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.common.cache.CacheBuilder
 import com.google.common.collect.Interners
 import io.vyne.VersionedSource
+import io.vyne.models.*
 import io.vyne.models.DataSource
-import io.vyne.models.DefinedInSchema
-import io.vyne.models.EnumValueKind
-import io.vyne.models.TypedEnumValue
-import io.vyne.models.TypedInstance
 import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.ImmutableEquality
 import lang.taxi.expressions.Expression
@@ -18,7 +15,6 @@ import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.*
-import lang.taxi.utils.log
 import lang.taxi.utils.takeHead
 import mu.KotlinLogging
 
@@ -78,7 +74,11 @@ data class Type(
    override val typeDoc: String?,
 
    @JsonIgnore
-   val typeCache: TypeCache = EmptyTypeCache
+   val typeCache: TypeCache = EmptyTypeCache,
+
+   // if this is a collection of anonymous types, we can't resovle
+   // the type from the typeCache, so pass it here
+   private val collectionAnonymousType: Type? = null,
 ) : SchemaMember, PartialType, CompareByDefinition<Type> {
    constructor(
       name: String,
@@ -112,6 +112,8 @@ data class Type(
       private val internedParameterizedNames = Interners.newStrongInterner<String>()
    }
 
+   override val schemaMemberKind: SchemaMemberKind = SchemaMemberKind.TYPE
+
    // Interned, so that can be used for equality checks
    val paramaterizedName: String = internedParameterizedNames.intern(qualifiedName.parameterizedName)
 
@@ -128,6 +130,21 @@ data class Type(
 //      Type::attributes,
 //      Type::typeDoc
    )
+
+   @JsonIgnore
+   val anonymousTypes: Set<Type>
+
+   private fun collectAnonymousTypes(): Set<Type> {
+      val result = mutableSetOf<Type>()
+      if (this.taxiType.anonymous) {
+         result.add(this)
+      }
+      if (this.collectionAnonymousType != null) {
+         result.add(collectionAnonymousType)
+      }
+      this.attributes.values.mapNotNullTo(result) { it.anonymousType }
+      return result
+   }
 
 
    override fun isDefinedSameAs(other: Type): Boolean {
@@ -200,8 +217,9 @@ data class Type(
       this.aliasForTypeName?.let { typeCache.type(it) }
 
    @get:JsonIgnore
-   val typeParameters: List<Type> =
-      this.typeParametersTypeNames.map { typeCache.type(it) }
+   val typeParameters: List<Type> = if (this.collectionAnonymousType != null) {
+      listOf(this.collectionAnonymousType)
+   } else this.typeParametersTypeNames.map { typeCache.type(it) }
 
    // TODO : This name sucks.  Need a consistent term for "the real thing, unwrapping the aliases if they exist"
    @get:JsonIgnore
@@ -226,6 +244,8 @@ data class Type(
       this.resolvedAlias = calculateResolvedAliases()
       this.underlyingTypeParameters = this.resolvedAlias.typeParameters
       this.underlyingTypeParameterNames = this.underlyingTypeParameters.map { it.name }
+      this.anonymousTypes = collectAnonymousTypes()
+
    }
 
    fun enumTypedInstance(value: Any, source: DataSource): TypedEnumValue {
@@ -320,7 +340,8 @@ data class Type(
    @get:JsonIgnore
    val collectionType: Type? =
       if (isCollection || isStream) {
-         underlyingTypeParameters.firstOrNull() ?: typeCache.type(PrimitiveType.ANY.qualifiedName.fqn())
+         collectionAnonymousType ?: underlyingTypeParameters.firstOrNull()
+         ?: typeCache.type(PrimitiveType.ANY.qualifiedName.fqn())
       } else {
          null
       }
@@ -612,6 +633,18 @@ data class Type(
    }
 
    fun asArrayType(): Type {
+      // Don't create anonymous taxiTypes from the cache
+      if (this.taxiType.anonymous) {
+         val baseType = this.typeCache.type(ArrayType.NAME)
+         val parameterisedType =
+            baseType.copy(
+               name = Arrays.nameOfArray(this.name.toTaxiQualifiedName()).toVyneQualifiedName(),
+               typeParametersTypeNames = listOf(this.name),
+               collectionAnonymousType = this,
+            )
+
+         return parameterisedType
+      }
       return this.typeCache.type(QualifiedName.from("lang.taxi.Array", listOf(this.name.parameterizedName.fqn())))
    }
 
@@ -635,6 +668,16 @@ data class Type(
 
    fun hasAttribute(name: String): Boolean {
       return this.attributes.containsKey(name)
+   }
+
+   fun findAttributeForType(type: Type): List<Pair<AttributeName, Field>> {
+      return this.attributes.filter { (name, field) ->
+         type.isAssignableTo(field.type)
+      }.map { it.key to it.value }
+   }
+
+   fun hasAttributeWithType(type: Type): Boolean {
+      return findAttributeForType(type).isNotEmpty()
    }
 }
 

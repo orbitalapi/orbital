@@ -325,11 +325,11 @@ object Algorithms {
          .`in`(graph)
          .takeCostsFromEdges()
          .build()
-//      val json = graph.displayGraphJson()
+      val json = graph.displayGraphJson()
       // Look at all the operations, and the types they return.  Then try to build
       // a path from our start fact to the return type.
       val validPaths = returnTypesFromOperations.mapNotNull { returnType ->
-         val targetType = type(returnType.parameterizedName)
+         val targetType = type(schema.type(returnType.parameterizedName))
          val solution = Hipster.createAStar(searchProblem).search(targetType)
          if (solution.goalNode.state() == targetType) {
             SchemaSearchResultWithPath(
@@ -361,7 +361,7 @@ object Algorithms {
    private fun defaultValueForType(type: Type, schema: Schema): Any {
       if (type.attributes.isNotEmpty()) {
          return type.attributes.map { attribute ->
-            val attrType = schema.type(attribute.value.type)
+            val attrType = attribute.value.resolveType(schema)
             attribute.key to defaultValueForType(attrType, schema)
          }.toMap()
       }

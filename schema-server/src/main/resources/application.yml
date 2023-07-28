@@ -9,19 +9,6 @@ spring:
    codec:
       max-in-memory-size: 1024MB
    cloud.config.enabled: false
-eureka:
-   uri: http://127.0.0.1:8761
-   client:
-      enabled: false
-      registryFetchIntervalSeconds: 1
-      initialInstanceInfoReplicationIntervalSeconds: 5
-      serviceUrl:
-         defaultZone: ${eureka.uri}/eureka/
-   instance:
-      leaseRenewalIntervalInSeconds: 2
-      leaseExpirationDurationInSeconds: 5
-      metadata-map:
-         rsocket-port: ${vyne.schema.server.port}
 vyne:
    schema:
       server:

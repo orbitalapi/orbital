@@ -3,17 +3,11 @@ package io.vyne.spring
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.VyneCacheConfiguration
 import io.vyne.query.connectors.OperationInvoker
-import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
-import io.vyne.spring.http.DefaultRequestFactory
-import io.vyne.spring.http.auth.AuthTokenInjectingRequestFactory
-import io.vyne.spring.http.auth.AuthTokenRepository
-import io.vyne.spring.invokers.AbsoluteUrlResolver
+import io.vyne.spring.http.auth.schemes.AuthWebClientCustomizer
 import io.vyne.spring.invokers.RestTemplateInvoker
-import io.vyne.spring.invokers.ServiceDiscoveryClientUrlResolver
-import io.vyne.spring.invokers.ServiceUrlResolver
-import io.vyne.spring.invokers.SpringServiceDiscoveryClient
-import org.springframework.cloud.client.discovery.DiscoveryClient
+import io.vyne.spring.query.formats.FormatSpecRegistry
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -28,38 +22,27 @@ annotation class EnableVyne
 class EnableVyneConfiguration {
    @Bean
    fun vyneFactory(
-      schemaStore: SchemaStore,
+      schemaProvider: SchemaProvider,
       operationInvokers: List<OperationInvoker>,
       vyneCacheConfiguration: VyneCacheConfiguration,
-      vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
+      vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration,
+      formatSpecRegistry: FormatSpecRegistry
    ): VyneFactory {
-      return VyneFactory(schemaStore, operationInvokers, vyneCacheConfiguration, vyneSpringProjectionConfiguration)
+      return VyneFactory(schemaProvider, operationInvokers, vyneCacheConfiguration, vyneSpringProjectionConfiguration, formatSpecRegistry = formatSpecRegistry)
    }
 
    @Bean
    fun restTemplateOperationInvoker(
-      schemaStore: SchemaStore,
+      schemaProvider: SchemaProvider,
       webClientBuilder: WebClient.Builder,
-      serviceUrlResolvers: List<ServiceUrlResolver>,
-      authTokenRepository: AuthTokenRepository,
-      meterRegistry: MeterRegistry
+      authWebClientCustomizer: AuthWebClientCustomizer,
+      meterRegistry: MeterRegistry,
    ): RestTemplateInvoker {
-      val requestFactory = AuthTokenInjectingRequestFactory(
-         DefaultRequestFactory(),
-         authTokenRepository
-      )
-      return RestTemplateInvoker(schemaStore, webClientBuilder, serviceUrlResolvers, requestFactory)
-   }
-
-
-   @Bean
-   fun serviceDiscoveryUrlResolver(discoveryClient: DiscoveryClient): ServiceDiscoveryClientUrlResolver {
-      return ServiceDiscoveryClientUrlResolver(SpringServiceDiscoveryClient(discoveryClient))
-   }
-
-   @Bean
-   fun absoluteUrlResolver(): AbsoluteUrlResolver {
-      return AbsoluteUrlResolver()
+//      val requestFactory = AuthTokenInjectingRequestFactory(
+//         DefaultRequestFactory(),
+//         authTokenRepository
+//      )
+      return RestTemplateInvoker(schemaProvider, webClientBuilder, authWebClientCustomizer)
    }
 
 }

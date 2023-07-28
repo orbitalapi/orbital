@@ -7,6 +7,7 @@ import io.vyne.VersionedSource
 import io.vyne.schemas.*
 import lang.taxi.Operator
 import lang.taxi.expressions.Expression
+import lang.taxi.services.OperationScope
 import lang.taxi.services.QueryOperationCapability
 import lang.taxi.types.FormatsAndZoneOffset
 
@@ -26,7 +27,12 @@ class EditedSchema(
    @JsonDeserialize(contentAs = EditedService::class)
    override val services: Set<PartialService> = emptySet(),
    val removedTypes: Set<QualifiedName> = emptySet(),
-   val removedServices: Set<QualifiedName> = emptySet()
+   val removedServices: Set<QualifiedName> = emptySet(),
+   /**
+    * If the taxi is sent, we use that directly,
+    * rather than the other values
+    */
+   val taxi: String? = null
 ) : PartialSchema {
    companion object {
       // used for testing
@@ -90,7 +96,8 @@ data class EditedOperation(
    override val parameters: List<EditedOperationParameter>,
    override val metadata: List<Metadata>,
    override val typeDoc: String?,
-   override val returnTypeName: QualifiedName
+   override val returnTypeName: QualifiedName,
+   override val operationType: OperationScope = OperationScope.READ_ONLY
 ) : PartialOperation
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -114,6 +121,8 @@ data class EditedQueryOperation(
    override val capabilities: List<QueryOperationCapability>,
    override val hasFilterCapability: Boolean,
    override val supportedFilterOperations: List<Operator>
-) : PartialQueryOperation
+) : PartialQueryOperation {
+   override val operationType: OperationScope = OperationScope.READ_ONLY
+}
 
 

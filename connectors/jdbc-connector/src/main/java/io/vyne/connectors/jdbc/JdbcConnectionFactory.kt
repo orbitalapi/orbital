@@ -4,9 +4,12 @@ import com.google.common.cache.CacheBuilder
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
+import io.vyne.connectors.config.jdbc.JdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import mu.KotlinLogging
 import org.jooq.DSLContext
+import org.jooq.conf.RenderQuotedNames
+import org.jooq.conf.Settings
 import org.jooq.impl.DSL
 import org.jooq.tools.jdbc.JDBCUtils
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
@@ -24,13 +27,18 @@ interface JdbcConnectionFactory {
    fun config(connectionName: String): JdbcConnectionConfiguration
 
    fun dsl(connectionConfiguration: JdbcConnectionConfiguration): DSLContext {
+      connectionConfiguration.jdbcDriver
       val dialect = JDBCUtils.dialect(connectionConfiguration.buildUrlAndCredentials().url)
       val datasource = dataSource(connectionConfiguration)
-      return DSL.using(datasource, dialect)
+      return DSL.using(
+         datasource, dialect, Settings()
+            .withRenderQuotedNames(RenderQuotedNames.ALWAYS)
+      )
    }
 }
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
+
 /**
  * A Vyne JdbcConnectionFactory which wraps access into a Hikari connection pool.
  * Prefer using this implementation in prod code whenever doing anything like querying / inserting
@@ -42,6 +50,10 @@ class HikariJdbcConnectionFactory(
 ) : JdbcConnectionFactory {
    private val dataSourceCache = CacheBuilder.newBuilder()
       .build<String, DataSource>()
+
+   init {
+      logger.info { "New HikariJdbcConnectionFactory created" }
+   }
 
    override fun config(connectionName: String): JdbcConnectionConfiguration =
       connectionRegistry.getConnection(connectionName)

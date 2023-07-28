@@ -1,3 +1,4 @@
+_HANDLER: 'foo'
 server:
    port: 9500
 

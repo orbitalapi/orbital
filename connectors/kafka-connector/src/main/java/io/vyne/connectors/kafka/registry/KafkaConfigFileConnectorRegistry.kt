@@ -3,9 +3,8 @@ package io.vyne.connectors.kafka.registry
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
-import io.vyne.connectors.kafka.KafkaConnectionConfiguration
+import io.vyne.connectors.config.kafka.KafkaConnectionConfiguration
 import io.vyne.connectors.registry.ConfigFileConnectorRegistry
-import io.vyne.connectors.registry.ConnectionConfigMap
 import java.nio.file.Path
 
 class KafkaConfigFileConnectorRegistry(path: Path, fallback: Config = ConfigFactory.systemEnvironment()) :
@@ -37,10 +36,3 @@ class KafkaConfigFileConnectorRegistry(path: Path, fallback: Config = ConfigFact
 
 }
 
-data class KafkaConnections(
-   val kafka: MutableMap<String, KafkaConnectionConfiguration> = mutableMapOf()
-) : ConnectionConfigMap {
-   companion object {
-      val CONFIG_PREFIX = KafkaConnections::kafka.name  // must match the name of the param in the constructor
-   }
-}

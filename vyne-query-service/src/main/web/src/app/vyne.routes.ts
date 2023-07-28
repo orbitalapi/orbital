@@ -1,8 +1,7 @@
-import { RouterModule } from '@angular/router';
-import { AuthGuard } from 'src/app/services/auth.guard';
-import { VynePrivileges } from 'src/app/services/user-info.service';
-import { LandingPageContainerComponent } from 'src/app/landing-page/landing-page-container.component';
-import { QueryPanelRouteModule } from 'src/app/query-panel/query-panel.route.module';
+import {RouterModule} from '@angular/router';
+import {AuthGuard} from 'src/app/services/auth.guard';
+import {VynePrivileges} from 'src/app/services/user-info.service';
+import {LandingPageContainerComponent} from 'src/app/landing-page/landing-page-container.component';
 
 export const VYNE_ROUTES = RouterModule.forRoot(
   [
@@ -75,7 +74,7 @@ export const VYNE_ROUTES = RouterModule.forRoot(
       data: { requiredAuthority: VynePrivileges.ViewAuthenticationTokens }
     },
     {
-      path: 'pipeline-manager',
+      path: 'pipelines',
       loadChildren: () => import('./pipelines/pipelines.module').then(m => m.PipelinesModule)
     }
   ],

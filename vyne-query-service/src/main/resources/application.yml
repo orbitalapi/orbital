@@ -9,8 +9,6 @@ server:
 spring:
    application:
       name: query-service
-#   autoconfigure:
-#      exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration, org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
    mvc:
       async:
          request-timeout: 18000000
@@ -21,9 +19,6 @@ spring:
       max-in-memory-size: 100MB
 
    jpa:
-      hibernate:
-         use-new-id-generator-mappings: false
-      #      show-sql: true
       hibernate.ddl-auto: none
 
       properties:
@@ -36,8 +31,8 @@ spring:
       url: jdbc:h2:file:./vyne-query-analytics;COMPRESS=TRUE;MV_STORE=true;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY;DATABASE_TO_LOWER=TRUE
       username: sa
       password:
-      driverClassName: org.h2.Driver
-      database-platform: org.hibernate.dialect.H2Dialect
+   #      driverClassName: org.h2.Driver
+   #      database-platform: org.hibernate.dialect.H2Dialect
    security:
       oauth2:
          resourceserver:
@@ -47,7 +42,7 @@ spring:
    cloud.config.enabled: false
    sql:
       init:
-         schema-locations: classpath:schema.sql
+         schema-locations: classpath:schema-h2.sql
          mode: always
 
 #   cloud:
@@ -81,6 +76,7 @@ vyne:
       mode: Inprocess
       persistRemoteCallResponses: false
       persistResults: false
+      persistRemoteCallMetadata: true
       url: http://vyne-analytics-server
    schema-server:
       url: http://schema-server
@@ -136,43 +132,14 @@ logging:
       com.netflix: WARN
       com.hazelcast: WARN
       io.vyne: INFO
+      io.vyne.query.chat: DEBUG
 #       Enable this to get graph debug schemas:
 #      io.vyne.query.GraphSearcher: TRACE
 #      io.vyne.query: DEBUG
       org.apache.catalina: WARN
-eureka:
-   client:
-      # You must manually opt-in to Eureka support now
-      # eg: by setting eureka.client.enabled=true in the command line
-      # options.
-      enabled: false
-      serviceUrl:
-         defaultZone: ${eureka.uri:http://127.0.0.1:8761}/eureka/
-   instance:
-      leaseRenewalIntervalInSeconds: 2
-      leaseExpirationDurationInSeconds: 5
-
-
 
 
 management:
-   metrics:
-      export:
-         prometheus:
-            enabled: false
-         influx:
-            enabled: false
-         elastic:
-            enabled: false
-         jmx:
-            enabled: false
-         graphite:
-            enabled: false
-         datadog:
-            enabled: false
-         dynatrace:
-            enabled: false
-
    endpoints:
       web:
          exposure:
@@ -187,3 +154,31 @@ management:
       health:
          show-details: always
          show-components: always
+   prometheus:
+      metrics:
+         export:
+            enabled: false
+   influx:
+      metrics:
+         export:
+            enabled: false
+   dynatrace:
+      metrics:
+         export:
+            enabled: false
+   datadog:
+      metrics:
+         export:
+            enabled: false
+   elastic:
+      metrics:
+         export:
+            enabled: false
+   jmx:
+      metrics:
+         export:
+            enabled: false
+   graphite:
+      metrics:
+         export:
+            enabled: false

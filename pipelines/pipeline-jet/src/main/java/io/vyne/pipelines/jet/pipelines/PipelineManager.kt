@@ -3,17 +3,10 @@ package io.vyne.pipelines.jet.pipelines
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.jet.Job
 import com.hazelcast.jet.Util
-import com.hazelcast.jet.config.JobConfig
 import com.hazelcast.jet.core.JobNotFoundException
-import com.hazelcast.jet.impl.JobRecord
-import com.hazelcast.jet.impl.JobResult
 import com.hazelcast.map.IMap
 import com.hazelcast.query.Predicates
-import io.vyne.pipelines.jet.api.JobStatus
-import io.vyne.pipelines.jet.api.PipelineMetrics
-import io.vyne.pipelines.jet.api.PipelineStatus
-import io.vyne.pipelines.jet.api.RunningPipelineSummary
-import io.vyne.pipelines.jet.api.SubmittedPipeline
+import io.vyne.pipelines.jet.api.*
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.ScheduledPipelineTransportSpec
 import io.vyne.pipelines.jet.badRequest
@@ -51,6 +44,7 @@ class PipelineManager(
       hazelcastInstance.getMap("scheduledPipelines")
 
    fun startPipeline(pipelineSpec: PipelineSpec<*, *>): Pair<SubmittedPipeline, Job?> {
+      cancelPipelineIfActive(pipelineSpec)
       val pipeline = pipelineFactory.createJetPipeline(pipelineSpec)
       logger.info { "Initializing pipeline \"${pipelineSpec.name}\"." }
       return if (pipelineSpec.input is ScheduledPipelineTransportSpec) {
@@ -70,6 +64,12 @@ class PipelineManager(
          )
          storeSubmittedPipeline(job.idString, submittedPipeline)
          submittedPipeline to job
+      }
+   }
+
+   private fun cancelPipelineIfActive(pipelineSpec: PipelineSpec<*, *>) {
+      if (hasPipeline(pipelineSpec.id)) {
+         terminatePipeline(pipelineSpec.id, deletePipelineRecord = true)
       }
    }
 
@@ -236,7 +236,7 @@ class PipelineManager(
       )
    }
 
-   fun deletePipeline(pipelineId: String): PipelineStatus {
+   fun terminatePipeline(pipelineId: String, deletePipelineRecord: Boolean = false): PipelineStatus {
       if (scheduledPipelines.containsKey(pipelineId)) {
          scheduledPipelines.remove(pipelineId)
          return PipelineStatus(
@@ -247,13 +247,23 @@ class PipelineManager(
             PipelineMetrics(emptyList(), emptyList(), emptyList(), emptyList())
          )
       } else {
+         logger.info { "Terminating running pipeline $pipelineId" }
          val submittedPipeline = getSubmittedPipeline(pipelineId)
          val job = getPipelineJob(submittedPipeline)
          job.cancel()
-         val cancelledJob = submittedPipeline.copy(cancelled = true)
-         storeSubmittedPipeline(job.idString, cancelledJob)
+         if (deletePipelineRecord) {
+            submittedPipelines.remove(job.idString)
+         } else {
+            val cancelledJob = submittedPipeline.copy(cancelled = true)
+            storeSubmittedPipeline(job.idString, cancelledJob)
+         }
          return pipelineStatus(job, submittedPipeline)
       }
+   }
+
+   private fun hasPipeline(pipelineId: String): Boolean {
+      val matchingPipelines = submittedPipelines.values(Predicates.sql("pipelineSpecId = '$pipelineId'"))
+      return matchingPipelines.isNotEmpty()
    }
 
    private fun getSubmittedPipeline(pipelineId: String): SubmittedPipeline {

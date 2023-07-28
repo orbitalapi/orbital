@@ -5,7 +5,6 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.firstTypedObject
-import io.vyne.models.json.JsonModelParser
 import io.vyne.models.json.parseJson
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
@@ -15,11 +14,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import kotlin.test.fail
 
 class TypedObjectTest {
 
@@ -116,7 +110,7 @@ class TypedObjectTest {
          """
          model Person {
             firstName : FirstName as String
-            title : Title as String by default("foo")
+            title : Title as String = "foo"
          }
       """.trimIndent()
       )
@@ -131,7 +125,7 @@ class TypedObjectTest {
          """
          model Person {
             firstName : FirstName as String
-            title : Title as String by default("")
+            title : Title as String = ""
          }
       """.trimIndent()
       )

@@ -2,8 +2,9 @@ package io.vyne.query.history
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import javax.persistence.AttributeConverter
-import javax.persistence.Converter
+import jakarta.persistence.AttributeConverter
+import jakarta.persistence.Converter
+import kotlinx.serialization.json.JsonNull
 
 abstract class JsonConverter<T> : AttributeConverter<T, String> {
    companion object {
@@ -14,12 +15,16 @@ abstract class JsonConverter<T> : AttributeConverter<T, String> {
       if (attribute == null) {
          return null
       }
+      return toJson(attribute)
+   }
+
+   protected open fun toJson(attribute: T): String {
       return objectMapper.writeValueAsString(attribute)
    }
 
    abstract fun fromJson(json: String): T
    override fun convertToEntityAttribute(dbData: String?): T? {
-      if (dbData == null) {
+      if (dbData == null || dbData == JsonNull.content) {
          return null
       }
       return fromJson(dbData)
@@ -35,3 +40,4 @@ abstract class JsonConverter<T> : AttributeConverter<T, String> {
 class AnyJsonConverter : JsonConverter<Any>() {
    override fun fromJson(json: String): Any = objectMapper.readValue(json)
 }
+

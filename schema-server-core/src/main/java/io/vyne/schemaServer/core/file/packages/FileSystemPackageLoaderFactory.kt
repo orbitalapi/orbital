@@ -4,6 +4,9 @@ import io.vyne.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
 import io.vyne.schemaServer.core.file.FileChangeDetectionMethod
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
+import io.vyne.utils.files.ReactiveFileSystemMonitor
+import io.vyne.utils.files.ReactivePollingFileSystemMonitor
+import io.vyne.utils.files.ReactiveWatchingFileSystemMonitor
 import mu.KotlinLogging
 
 /**

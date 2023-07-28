@@ -7,18 +7,7 @@ import io.vyne.history.QueryResultEventMapper
 import io.vyne.history.ResultRowPersistenceStrategyFactory
 import io.vyne.models.OperationResult
 import io.vyne.models.json.Jackson
-import io.vyne.query.QueryCompletedEvent
-import io.vyne.query.QueryEvent
-import io.vyne.query.QueryEventConsumer
-import io.vyne.query.QueryFailureEvent
-import io.vyne.query.QueryStartEvent
-import io.vyne.query.RemoteCallOperationResultHandler
-import io.vyne.query.RestfulQueryExceptionEvent
-import io.vyne.query.RestfulQueryResultEvent
-import io.vyne.query.StreamingQueryCancelledEvent
-import io.vyne.query.TaxiQlQueryExceptionEvent
-import io.vyne.query.TaxiQlQueryResultEvent
-import io.vyne.query.VyneQueryStatisticsEvent
+import io.vyne.query.*
 import io.vyne.query.history.RemoteCallResponse
 import io.vyne.schemas.Schema
 import kotlinx.coroutines.CoroutineScope
@@ -109,6 +98,10 @@ class PersistingQueryEventConsumer(
    }
 
    override fun recordResult(operation: OperationResult, queryId: String) {
+      if (!config.persistRemoteCallMetadata && !config.persistRemoteCallResponses && !config.persistResults) {
+         return
+      }
+
       // Here, we're writing the operation invocations.
       // These can also be persisted during persistence of the result record.
       // However, Traversing all the OperationResult entries to get the

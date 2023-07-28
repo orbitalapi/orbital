@@ -1,4 +1,13 @@
-<div #chartOuterContianer class="chart-outer-container" *ngIf="schemaGraph?.nodes?.length > 0">
+<div #chartOuterContianer *ngIf="schemaGraph?.nodes?.length > 0" [class.fullscreen]="fullscreen"
+     class="chart-outer-container"
+>
+  <div class="toolbar">
+    <div class="spacer"></div>
+    <button (click)="toggleFullscreen()" class="fullscreen-toggle" mat-icon-button>
+      <img *ngIf="!fullscreen" src="assets/img/full-screen-on.svg">
+      <img *ngIf="fullscreen" src="assets/img/full-screen-off.svg">
+    </button>
+  </div>
   <ngx-graph class="chart-container"
              [view]="[chartOuterContianer.offsetWidth, chartOuterContianer.offsetHeight]"
              [links]="schemaGraph.links"

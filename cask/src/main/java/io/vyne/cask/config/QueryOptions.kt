@@ -19,7 +19,7 @@ enum class QueryMatchesNoneBehaviour {
  *  - Use enums that are self-describing versus a series of true/false flags
  *  - Populate with reasonable defaults
  */
-@ConstructorBinding
+//@ConstructorBinding
 @ConfigurationProperties(prefix = "cask.query-options")
 data class CaskQueryOptions(
    /**
@@ -38,7 +38,7 @@ data class CaskQueryOptions(
  *  - Use enums that are self-describing versus a series of true/false flags
  *  - Populate with reasonable defaults
  */
-@ConstructorBinding
+//@ConstructorBinding
 @ConfigurationProperties(prefix = "cask.dispatcher")
 data class CaskQueryDispatcherConfiguration(
    /**

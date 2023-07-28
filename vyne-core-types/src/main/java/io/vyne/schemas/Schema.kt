@@ -1,15 +1,15 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import io.vyne.PackageIdentifier
-import io.vyne.SourcePackage
-import io.vyne.VersionedSource
-import io.vyne.VersionedTypeReference
+import io.vyne.*
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.assertingThat
 import lang.taxi.TaxiDocument
+import lang.taxi.packages.SourcesType
+import lang.taxi.query.TaxiQLQueryString
+import lang.taxi.query.TaxiQlQuery
 
 
 /**
@@ -34,6 +34,8 @@ interface Schema {
 
    val policies: Set<Policy>
 
+   val queries: Set<SavedQuery>
+
    @get:JsonIgnore
    val typeCache: TypeCache
 
@@ -53,18 +55,41 @@ interface Schema {
    val functionRegistry: FunctionRegistry
       get() = FunctionRegistry.default
 
+   @get:JsonIgnore
+   val additionalSourcePaths: List<Pair<String, PathGlob>>
+      get() {
+         return emptyList()
+      }
+
+   @get:JsonIgnore
+   val additionalSources: Map<SourcesType, List<SourcePackage>>
+      get() {
+         // Grabs all the additional sources in the sourcePackages,
+         // and flattens / combines them into a map, based on the source type
+         val loadedSources = this.packages.flatMap { sourcePackage ->
+            sourcePackage.additionalSources.map { (sourcesType, sources) ->
+               sourcesType to SourcePackage(sourcePackage.packageMetadata, sources, emptyMap())
+            }
+         }.groupBy({ it.first }, { it.second })
+         return loadedSources
+      }
+
+
    val operations: Set<Operation>
       get() = services.flatMap { it.operations }.toSet()
+
 
    val queryOperations: Set<QueryOperation>
       get() = services.flatMap { it.queryOperations }.toSet()
 
+   val tableOperations: Set<TableOperation>
+      get() = services.flatMap { it.tableOperations }.toSet()
    val streamOperations: Set<StreamOperation>
       get() = services.flatMap { it.streamOperations }.toSet()
 
    @get:JsonIgnore
    val remoteOperations: Set<RemoteOperation>
-      get() = (operations + queryOperations).toSet()
+      get() = services.flatMap { it.remoteOperations }.toSet()
 
    fun operationsWithReturnType(
       requiredType: Type,
@@ -183,6 +208,20 @@ interface Schema {
          ?: throw IllegalArgumentException("Service $serviceName was not found within this schema")
    }
 
+   fun serviceOrNull(serviceName: QualifiedName): Service? {
+      return if (hasService(serviceName.fullyQualifiedName)) service(serviceName.fullyQualifiedName) else null
+   }
+
+   fun typeOrNull(typeName: String): Type? {
+      return if (hasType(typeName)) {
+         type(typeName)
+      } else null
+   }
+
+   fun typeOrNull(typeName: QualifiedName): Type? {
+      return typeOrNull(typeName.fullyQualifiedName)
+   }
+
    fun policy(type: Type): Policy? {
       return this.policies.firstOrNull { it.targetType.fullyQualifiedName == type.fullyQualifiedName }
    }
@@ -235,8 +274,9 @@ interface Schema {
 
    fun getPartialSchemaForPackage(rawPackageIdentifier: String): PartialSchema {
       val sourcePackageOrNull = this.getSourcePackageOrNull(rawPackageIdentifier)
-      val types = sourcePackageOrNull?.let {sourcePackage -> this.types
-         .filter { it.sources.any { source -> source.packageIdentifier == sourcePackage.identifier } }
+      val types = sourcePackageOrNull?.let { sourcePackage ->
+         this.types
+            .filter { it.sources.any { source -> source.packageIdentifier == sourcePackage.identifier } }
       } ?: emptySet()
       val services = sourcePackageOrNull?.let { sourcePackage ->
          this.services
@@ -248,5 +288,20 @@ interface Schema {
       )
    }
 
+   fun getMember(name: QualifiedName): SchemaMember {
+      return if (OperationNames.isName(name)) {
+         val (serviceName, operation) = OperationNames.serviceAndOperation(name)
+         val service = this.service(serviceName)
+         service.remoteOperation(operation)
+      } else {
+         this.serviceOrNull(name) ?: this.typeOrNull(name)
+         ?: error("No schema member named ${name.fullyQualifiedName} found")
+      }
+
+   }
+
+   fun parseQuery(vyneQlQuery: TaxiQLQueryString): Pair<TaxiQlQuery, QueryOptions>
+
 }
+
 

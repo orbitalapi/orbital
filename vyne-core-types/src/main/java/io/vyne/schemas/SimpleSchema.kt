@@ -4,16 +4,25 @@ import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.TaxiDocument
+import lang.taxi.query.TaxiQLQueryString
+import lang.taxi.query.TaxiQlQuery
 
 class SimpleSchema(override val types: Set<Type>, override val services: Set<Service>, override val typeCache: TypeCache) : Schema {
    companion object {
       val EMPTY = SimpleSchema(emptySet(), emptySet(), DefaultTypeCache())
    }
+
+   private val queryCompiler = DefaultQueryCompiler(this, 100)
+   override fun parseQuery(vyneQlQuery: TaxiQLQueryString): Pair<TaxiQlQuery, QueryOptions> {
+      return queryCompiler.compile(vyneQlQuery)
+   }
+
    override val taxi: TaxiDocument
       get() = TODO("Not yet implemented")
    override val sources: List<VersionedSource> = emptyList()
    override val packages: List<SourcePackage> = emptyList()
    override val policies: Set<Policy> = emptySet()
+   override val queries: Set<SavedQuery> = emptySet()
    override fun hasType(name: String): Boolean {
       // Don't defer to base, which looks at the full typeCache.
       // We can use SimpleSchema to produce a subset of a schema.

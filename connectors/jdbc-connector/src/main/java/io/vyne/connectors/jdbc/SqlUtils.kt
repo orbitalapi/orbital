@@ -1,5 +1,6 @@
 package io.vyne.connectors.jdbc
 
+import io.vyne.connectors.config.jdbc.JdbcConnectionConfiguration
 import lang.taxi.types.Annotatable
 import lang.taxi.types.Type
 import org.jooq.DSLContext

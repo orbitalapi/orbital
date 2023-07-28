@@ -1,43 +1,19 @@
 package io.vyne.cask.services
 
 import com.google.common.util.concurrent.MoreExecutors
-import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.argumentCaptor
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.times
-import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.whenever
+import com.nhaarman.mockito_kotlin.*
 import com.winterbe.expekt.should
 import io.kotest.matchers.shouldBe
 import io.vyne.*
-import io.vyne.cask.config.CaskConfigRepository
-import io.vyne.cask.config.schema
-import io.vyne.cask.ddl.views.taxiViews.SchemaBasedViewGenerator
-import io.vyne.cask.query.generators.FindAllGenerator
-import io.vyne.cask.query.generators.FindBetweenInsertedAtOperationGenerator
-import io.vyne.cask.query.generators.FindByFieldIdOperationGenerator
-import io.vyne.cask.query.generators.FindByIdGenerators
-import io.vyne.cask.query.generators.FindByMultipleGenerator
-import io.vyne.cask.query.generators.FindBySingleResultGenerator
-import io.vyne.cask.query.generators.InsertedAtGreaterThanOrEqualsToStartLessThanOrEqualsToEndOperationGenerator
-import io.vyne.cask.query.generators.InsertedAtGreaterThanStartLessThanEndOperationGenerator
-import io.vyne.cask.query.generators.InsertedAtGreaterThanStartLessThanOrEqualsToEndOperationGenerator
-import io.vyne.cask.query.generators.OperationAnnotation
-import io.vyne.cask.query.generators.OperationGeneratorConfig
-import io.vyne.cask.query.generators.VyneQlOperationGenerator
+import io.vyne.cask.query.generators.*
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.publisher.SchemaPublisherTransport
-import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.withoutWhitespace
 import lang.taxi.types.QualifiedName
 import org.junit.Test
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.fail
-import org.reactivestreams.Publisher
-import reactor.core.publisher.Sinks
 
 class CaskServiceSchemaGeneratorTest {
    val schemaProvider = mock<SchemaStore>()
@@ -135,7 +111,7 @@ namespace vyne.cask {
       caskMessageId : CaskMessageId
    }
 
-   @ServiceDiscoveryClient(serviceName = "cask")
+   @HttpService(baseUrl = "http://cask")
    @Datasource
    service OrderWindowSummaryCsvCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummaryCsv")
@@ -192,7 +168,7 @@ namespace vyne.cask {
       caskMessageId : CaskMessageId
    }
 
-   @ServiceDiscoveryClient(serviceName = "cask")
+   @HttpService(baseUrl = "http://cask")
    @Datasource
    service OrderWindowSummaryCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummary")
@@ -295,7 +271,7 @@ namespace vyne.cask {
       caskMessageId : CaskMessageId
    }
 
-   @ServiceDiscoveryClient(serviceName = "cask")
+   @HttpService(baseUrl = "http://cask")
    @Datasource
    service SimpleCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/Simple")
@@ -319,109 +295,6 @@ namespace vyne.cask {
          .withoutWhitespace()
          .should
          .equal(schemasByName["vyne.cask.Simple"]!!.content.withoutWhitespace())
-   }
-
-   @Test
-   fun `Cask can generate operations for taxi View config`() {
-      val simpleSchema = """
-         type Id inherits String
-         type Name inherits String
-         type LogDate inherits Instant
-         type LogDatePlus inherits LogDate
-
-         model Simple {
-            id : Id
-            name: Name
-            logDatePlus: LogDatePlus
-         }
-
-         view SimpleView with query {
-            find { Simple[] } as {
-               id: Simple::Id
-            }
-         }
-      """.trimIndent()
-      // given
-      val typeSchema = lang.taxi.Compiler(simpleSchema).compile()
-      val taxiSchema = TaxiSchema(typeSchema, listOf(VersionedSource.sourceOnly(simpleSchema).asPackage()))
-      val sources = taxiSchema.sources.map { ParsedSource(it) }
-      val schemaStore = object : SchemaStore {
-          override val schemaSet: SchemaSet
-              get() {
-                  return SchemaSet.fromParsed(sources.asParsedPackages(), 1)
-              }
-
-         override val generation: Int
-            get() = 1
-
-         val schemaSetChangedEventSink = Sinks.many().replay().latest<SchemaSetChangedEvent>()
-         override val schemaChanged: Publisher<SchemaSetChangedEvent>
-            get() = schemaSetChangedEventSink.asFlux()
-
-      }
-      val configRepo = mock<CaskConfigRepository>()
-      val viewGenerator = SchemaBasedViewGenerator(configRepo, schemaStore)
-      val viewCaskConfig = viewGenerator.generateCaskConfig(taxiSchema.document.views.first())
-      val viewModel = viewGenerator.typeFromView(taxiSchema.document.views.first())
-
-      whenever(schemaProvider.schemaSet).thenReturn(SchemaSet.fromParsed(sources.asParsedPackages(), 1))
-      val config = OperationGeneratorConfig(
-         listOf(
-            OperationGeneratorConfig.OperationConfigDefinition("String", OperationAnnotation.Id),
-            OperationGeneratorConfig.OperationConfigDefinition("LogDate", OperationAnnotation.Between),
-            OperationGeneratorConfig.OperationConfigDefinition("Name", OperationAnnotation.After)))
-      val (serviceSchemaGenerator, _) = schemaGeneratorFor(simpleSchema, config)
-      val schemas = argumentCaptor<SourcePackage>()
-      val removedSchemaIds = argumentCaptor<List<SchemaId>>()
-
-      val caskSchema = viewCaskConfig.schema(TaxiSchema.from(simpleSchema))
-      val type = caskSchema.versionedType(viewCaskConfig.qualifiedTypeName.fqn())
-      // When
-      serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(type, excludedCaskServices = setOf(QualifiedName.from("Service1"), QualifiedName.from("Service2"))))
-      // Then
-      verify(schemaStoreClient, times(1)).submitPackage(schemas.capture())
-      val submittedSchemas = schemas.firstValue.sources
-      val schemasByName = submittedSchemas.associateBy { it.name }
-      val actual = schemasByName["vyne.cask.SimpleView"]!!.content
-      val expected = """
-import SimpleView
-import vyne.cask.CaskInsertedAt
-
-namespace vyne.cask {
-   [[ Generated by Cask.  Source type is SimpleView} ]]
-   @Generated
-   model SimpleView inherits SimpleView {
-      caskInsertedAt : CaskInsertedAt
-      caskMessageId : CaskMessageId
-   }
-
-   @ServiceDiscoveryClient(serviceName = "cask")
-   @Datasource(exclude = "[[Service1, Service2]]")
-   service SimpleViewCaskService {
-      @HttpOperation(method = "GET" , url = "/api/cask/findAll/SimpleView")
-      operation getAll(  ) : SimpleView[]
-      @HttpOperation(method = "POST", url = "/api/vyneQl")
-      vyneQl query vyneQlQuerySimpleView(@RequestBody body: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<SimpleView> with capabilities {
-         filter(==,!=,in,like,>,<,>=,<=)
-      }
-      @HttpOperation(method = "GET" , url = "/api/cask/SimpleView/CaskInsertedAt/Between/{start}/{end}")
-      operation findByCaskInsertedAtBetween( @PathVariable(name = "start") start : CaskInsertedAt, @PathVariable(name = "end") end : CaskInsertedAt ) : SimpleView[]( vyne.cask.CaskInsertedAt >= start, vyne.cask.CaskInsertedAt < end )
-      @HttpOperation(method = "GET" , url = "/api/cask/SimpleView/CaskInsertedAt/BetweenGtLt/{start}/{end}")
-      operation findByCaskInsertedAtBetweenGtLt( @PathVariable(name = "start") start : CaskInsertedAt, @PathVariable(name = "end") end : CaskInsertedAt ) : SimpleView[]( vyne.cask.CaskInsertedAt > start, vyne.cask.CaskInsertedAt < end )
-      @HttpOperation(method = "GET" , url = "/api/cask/SimpleView/CaskInsertedAt/BetweenGtLte/{start}/{end}")
-      operation findByCaskInsertedAtBetweenGtLte( @PathVariable(name = "start") start : CaskInsertedAt, @PathVariable(name = "end") end : CaskInsertedAt ) : SimpleView[]( vyne.cask.CaskInsertedAt > start, vyne.cask.CaskInsertedAt <= end )
-      @HttpOperation(method = "GET" , url = "/api/cask/SimpleView/CaskInsertedAt/BetweenGteLte/{start}/{end}")
-      operation findByCaskInsertedAtBetweenGteLte( @PathVariable(name = "start") start : CaskInsertedAt, @PathVariable(name = "end") end : CaskInsertedAt ) : SimpleView[]( vyne.cask.CaskInsertedAt >= start, vyne.cask.CaskInsertedAt <= end )
-   }
-}
-
-      """.trimIndent()
-         .trimMargin()
-         .withoutWhitespace()
-         .trim()
-
-      actual.trimIndent().trimMargin().withoutWhitespace().trim()
-         .shouldBe(expected)
    }
 
    @Test

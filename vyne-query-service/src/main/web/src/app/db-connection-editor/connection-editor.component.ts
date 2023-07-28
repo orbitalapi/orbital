@@ -1,14 +1,16 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {
+  ConnectionDriverConfigOptions,
   ConnectorSummary,
+  ConnectorType,
   DbConnectionService,
-  JdbcConnectionConfiguration,
-  ConnectionDriverConfigOptions, ConnectorType
+  JdbcConnectionConfiguration
 } from './db-importer.service';
 import {ComponentType, DynamicFormComponentSpec} from './dynamic-form-component.component';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
-import {TuiInputModeT, TuiInputTypeT} from '@taiga-ui/cdk';
+// import {TuiInputModeT, TuiInputTypeT} from '@taiga-ui/cdk';
 import {isNullOrUndefined} from 'util';
+import {TuiInputMode, TuiInputType} from "@taiga-ui/cdk";
 
 export type ConnectionEditorMode = 'create' | 'edit';
 
@@ -112,19 +114,19 @@ export class ConnectionEditorComponent {
     const elements: DynamicFormComponentSpec[] = this.selectedDriver.parameters
         .filter(param => param.visible)
         .map(param => {
-      let componentType: ComponentType = 'input';
-      let textFieldType: TuiInputTypeT = 'text';
-      let textFieldMode: TuiInputModeT = 'text';
-      if (param.dataType === 'STRING' && param.sensitive) {
-        textFieldType = 'password';
-      } else if (param.dataType === 'NUMBER') {
-        textFieldMode = 'numeric';
-      } else if (param.dataType === 'BOOLEAN') {
-        componentType = 'checkbox';
-        textFieldType = null;
-      }
-      return new DynamicFormComponentSpec(
-        componentType,
+          let componentType: ComponentType = 'input';
+          let textFieldType: TuiInputType = 'text';
+          let textFieldMode: TuiInputMode = 'text';
+          if (param.dataType === 'STRING' && param.sensitive) {
+            textFieldType = 'password';
+          } else if (param.dataType === 'NUMBER') {
+            textFieldMode = 'numeric';
+          } else if (param.dataType === 'BOOLEAN') {
+            componentType = 'checkbox';
+            textFieldType = null;
+          }
+          return new DynamicFormComponentSpec(
+            componentType,
         param.templateParamName,
         param.displayName,
         param.required,
