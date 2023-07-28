@@ -1,6 +1,7 @@
 include:
    - template: Terraform/Base.gitlab-ci.yml
-   - template: Security/Dependency-Scanning.gitlab-ci.yml
+#  This doesn't seem to work.
+#   - template: Security/Dependency-Scanning.gitlab-ci.yml
 
 variables:
    # This will suppress any download for dependencies and plugins or upload messages which would clutter the console log.
