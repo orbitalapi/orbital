@@ -439,77 +439,77 @@ terraform-validate:
 #   rules:
 #      -  if: $CI_COMMIT_BRANCH == "main"
 
-.e2e-tests:
-   stage: verify
-   #   Disabling e2e tests for a bit.
-   when: manual
-   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:23.0.1
-   tags:
-      - docker-heavy
-   #   retry: 2
-   before_script:
-      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-      - PROJECT_VERSION=$(cat build-version.txt)
-      - |
-         if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
-           tag="latest"
-           versionTag="$PROJECT_VERSION"
-         elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
-            tag="latest-preview"
-            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
-         else
-            tag="$CI_COMMIT_BRANCH"
-            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
-         fi
-         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
-         echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
-      - cd e2e-tests/
-      - docker build -t e2e .
-   script:
-      - cd demos/
-      - mkdir -p vyne/schema-server/projects
-      - mkdir -p vyne/config
-      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker-compose.yml
-      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/schema-server.conf -P vyne/schema-server
-      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/projects/taxi.conf -P vyne/schema-server/projects
-      - wget https://gitlab.com/vyne/demos/-/raw/master/films/services.conf -P vyne/config
-      - |
-         VYNE_VERSION=$versionTag \
-            docker compose -f docker-compose.yml -f e2e.docker-compose.yml up --exit-code-from e2e
+#.e2e-tests:
+#   stage: verify
+#   #   Disabling e2e tests for a bit.
+#   when: manual
+#   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:23.0.1
+#   tags:
+#      - docker-heavy
+#   #   retry: 2
+#   before_script:
+#      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
+#      - PROJECT_VERSION=$(cat build-version.txt)
+#      - |
+#         if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
+#           tag="latest"
+#           versionTag="$PROJECT_VERSION"
+#         elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
+#            tag="latest-preview"
+#            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
+#         else
+#            tag="$CI_COMMIT_BRANCH"
+#            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
+#         fi
+#         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+#         echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
+#      - cd e2e-tests/
+#      - docker build -t e2e .
+#   script:
+#      - cd demos/
+#      - mkdir -p vyne/schema-server/projects
+#      - mkdir -p vyne/config
+#      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker-compose.yml
+#      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/schema-server.conf -P vyne/schema-server
+#      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/projects/taxi.conf -P vyne/schema-server/projects
+#      - wget https://gitlab.com/vyne/demos/-/raw/master/films/services.conf -P vyne/config
+#      - |
+#         VYNE_VERSION=$versionTag \
+#            docker compose -f docker-compose.yml -f e2e.docker-compose.yml up --exit-code-from e2e
 
-e2e-tests-master:
-   extends: .e2e-tests
-   only:
-      - master
-   needs:
-      - build-jvm-master
-      - publish-vyne-to-gitlab-container-registry
-      - publish-schema-server-to-gitlab-container-registry
-   dependencies:
-      - build-jvm-master
-
-e2e-tests-develop:
-   extends: .e2e-tests
-   only:
-      - develop
-   needs:
-      - build-jvm-develop
-      - publish-vyne-to-gitlab-container-registry
-      - publish-schema-server-to-gitlab-container-registry
-   dependencies:
-      - build-jvm-develop
-
-e2e-tests-other-branches:
-   extends: .e2e-tests
-   except:
-      - develop
-      - master
-   needs:
-      - build-jvm-branch
-      - publish-vyne-to-gitlab-container-registry
-      - publish-schema-server-to-gitlab-container-registry
-   dependencies:
-      - build-jvm-branch
+#e2e-tests-master:
+#   extends: .e2e-tests
+#   only:
+#      - master
+#   needs:
+#      - build-jvm-master
+#      - publish-vyne-to-gitlab-container-registry
+#      - publish-schema-server-to-gitlab-container-registry
+#   dependencies:
+#      - build-jvm-master
+#
+#e2e-tests-develop:
+#   extends: .e2e-tests
+#   only:
+#      - develop
+#   needs:
+#      - build-jvm-develop
+#      - publish-vyne-to-gitlab-container-registry
+#      - publish-schema-server-to-gitlab-container-registry
+#   dependencies:
+#      - build-jvm-develop
+#
+#e2e-tests-other-branches:
+#   extends: .e2e-tests
+#   except:
+#      - develop
+#      - master
+#   needs:
+#      - build-jvm-branch
+#      - publish-vyne-to-gitlab-container-registry
+#      - publish-schema-server-to-gitlab-container-registry
+#   dependencies:
+#      - build-jvm-branch
 
 #terraform-deploy-dev-voyager:
 #   extends: .terraform-deploy

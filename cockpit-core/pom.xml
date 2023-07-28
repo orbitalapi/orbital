@@ -205,11 +205,11 @@
          <artifactId>swagger2taxi</artifactId>
          <version>${taxi.version}</version>
       </dependency>
-      <dependency>
-         <groupId>org.taxilang</groupId>
-         <artifactId>jsonSchema-to-taxi</artifactId>
-         <version>${taxi.version}</version>
-      </dependency>
+<!--      <dependency>-->
+<!--         <groupId>org.taxilang</groupId>-->
+<!--         <artifactId>jsonSchema-to-taxi</artifactId>-->
+<!--         <version>${taxi.version}</version>-->
+<!--      </dependency>-->
       <dependency>
          <groupId>com.google.guava</groupId>
          <artifactId>guava</artifactId>
