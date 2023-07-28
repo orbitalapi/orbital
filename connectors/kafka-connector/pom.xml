@@ -12,7 +12,6 @@
    <artifactId>kafka-connector</artifactId>
    <properties>
       <schemacrawler.version>16.19.7</schemacrawler.version>
-      <kafka.version>3.5.1</kafka.version>
    </properties>
 
    <dependencies>

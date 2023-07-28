@@ -71,6 +71,8 @@
       Due to be upgraded to 2.0 by default in Spring Boot 3.2
       -->
       <snakeyaml.version>2.0</snakeyaml.version>
+
+      <kafka.version>3.5.1</kafka.version>
    </properties>
 
    <modules>
@@ -262,6 +264,16 @@
 
    <dependencyManagement>
       <dependencies>
+         <!-- managing this here, as query-service is picking up an
+         out-of-date kafka-clients version, and can't work out why.
+         The old version has a CVS published against it, so needs to be managed
+         -->
+         <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>${kafka.version}</version>
+         </dependency>
+
          <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>bom</artifactId>
