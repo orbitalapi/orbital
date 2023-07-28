@@ -29,6 +29,7 @@ variables:
 
 stages:
    - build
+   - test
    - publish
    - deploy
    - verify
