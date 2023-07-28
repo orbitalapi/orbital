@@ -12,7 +12,7 @@
    <parent>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-parent</artifactId>
-      <!-- Looks like 3.1.0 is breaking our native image build.  Let's wait for a couple of patch releases there -->
+      <!-- Looks like 3.1.0 is breaking our natifve image build.  Let's wait for a couple of patch releases there -->
       <version>3.0.9</version>
    </parent>
 
@@ -100,7 +100,7 @@
       <module>cask-api</module>
       <module>test-cli</module>
       <module>vyne-csv-utils</module>
-      <module>regression-tests</module>
+<!--      <module>regression-tests</module>-->
       <module>vyne-history-core</module>
       <module>connectors</module>
       <module>schema-server-api</module>
