@@ -25,6 +25,12 @@
    </licenses>
 
    <properties>
+      <!-- This is a hack.
+      Children inherit this, and by convention, they're one project
+      deep.  (Other children will need to override.
+       Saves us duplicating
+       -->
+      <owasp-exclusions-file>../whitelisted-cvss-list.xml</owasp-exclusions-file>
       <taxi.version>1.40.0-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
@@ -450,6 +456,7 @@
       </dependencies>
    </dependencyManagement>
 
+
    <build>
       <extensions>
          <extension>
@@ -563,6 +570,30 @@
       </plugins>
       <pluginManagement>
          <plugins>
+            <plugin>
+               <groupId>org.owasp</groupId>
+               <artifactId>dependency-check-maven</artifactId>
+               <version>8.3.1</version>
+               <configuration>
+                  <suppressionFile>${owasp-exclusions-file}</suppressionFile>
+                  <skipTestScope>true</skipTestScope>
+                  <skipDependencyManagement>true</skipDependencyManagement>
+                  <skipProvidedScope>true</skipProvidedScope>
+                  <skipSystemScope>true</skipSystemScope>
+                  <formats>
+                     <format>HTML</format>
+                     <format>JSON</format>
+                  </formats>
+               </configuration>
+               <executions>
+                  <execution>
+                     <goals>
+                        <goal>check</goal>
+                     </goals>
+                  </execution>
+               </executions>
+            </plugin>
+
             <plugin>
                <groupId>org.codehaus.mojo</groupId>
                <artifactId>license-maven-plugin</artifactId>
