@@ -17,14 +17,19 @@ export class VyneqlRecordComponent {
   taxiQlQuery: string;
 
   get displayedQuery(): string {
-    return trimImportsFromQuery(this.taxiQlQuery);
+    return trimPreludeFromQuery(this.taxiQlQuery);
 
   }
 }
 
-export function trimImportsFromQuery(query: string): string {
-  return query.split("\n")
-    .filter(line => !line.startsWith("import"))
+export function trimPreludeFromQuery(query: string): string {
+  return trimLinesStartingWith(query, ['import', '@', 'query']);
+}
+
+
+export function trimLinesStartingWith(text: string, prefixes: string[]) {
+  return text.split("\n")
+    .filter(line => !prefixes.some(prefix => line.startsWith(prefix)))
     .map(line => line.trim())
     .join("\n")
 }

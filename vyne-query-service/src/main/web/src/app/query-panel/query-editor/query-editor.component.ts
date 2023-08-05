@@ -441,9 +441,16 @@ export class QueryEditorComponent implements OnInit {
         dismissible: true
       }
     ).subscribe(result => {
-      this.savedQuery = result;
-      this.query = result.sources[0].content;
-      this.changeDetector.markForCheck();
+      this.onSavedQuerySelected(result);
+      // this.savedQuery = result;
+      // this.query = result.sources[0].content;
+      // this.changeDetector.markForCheck();
     });
+  }
+
+  onSavedQuerySelected(selectedQuery: SavedQuery) {
+    this.savedQuery = selectedQuery;
+    this.query = selectedQuery.sources[0].content;
+    this.changeDetector.markForCheck();
   }
 }

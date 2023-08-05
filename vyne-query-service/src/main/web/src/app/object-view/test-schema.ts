@@ -2,6 +2,7 @@
 import { Schema } from '../services/schema';
 
 export const testSchema = {
+  queries: [],
   members: [],
   'services': [
     {

@@ -1,6 +1,7 @@
 import {PrimitiveTypeNames} from './taxi';
 import {isNullOrUndefined, isString} from 'util';
 import {PackageIdentifier} from "../package-viewer/packages.service";
+import {SavedQuery} from "./type-editor.service";
 
 export function fqn(input: string): QualifiedName {
   return QualifiedName.from(input);
@@ -267,6 +268,8 @@ export interface Schema extends TypeCollection, PartialSchema {
 
   hash?: number
 
+  queries: SavedQuery[];
+
   members: Array<SchemaMember>;
   // TODO : Are these still required / meaningful?
   // attributes: Set<QualifiedName>
@@ -278,6 +281,7 @@ export function emptySchema(): Schema {
     services: [],
     operations: [],
     members: [],
+    queries: [],
     hash: -1
   }
 }

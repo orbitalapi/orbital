@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, Component, Input, OnInit} from '@angular/core';
 import {QueryHistorySummary} from "../services/query.service";
-import {trimImportsFromQuery} from "../query-history/vyneql-record.component";
+import {trimPreludeFromQuery} from "../query-history/vyneql-record.component";
 
 @Component({
   selector: 'app-query-history-entry',
@@ -23,7 +23,7 @@ export class QueryHistoryEntryComponent  {
 
   get taxiQl():string {
     if (!this.history) return '';
-    return trimImportsFromQuery(this.history.taxiQl)
+    return trimPreludeFromQuery(this.history.taxiQl)
   }
 
 }

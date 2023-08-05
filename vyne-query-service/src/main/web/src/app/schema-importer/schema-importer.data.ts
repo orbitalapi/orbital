@@ -4,6 +4,7 @@ import {Schema} from '../services/schema';
 
 export const schemaWithNestedTypes = {
   'members': [],
+  queries: [],
   'types': [
     {
     'name': {

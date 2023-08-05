@@ -1,17 +1,27 @@
 @import "~src/theme";
+h4 {
+  text-transform: capitalize;
+}
 
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+}
 
 .query-code {
   font-family: $mono;
   font-size: 0.8rem;
 }
 
-.row {
-  display: flex;
-}
+
 .stats {
   font-size: 0.8rem;
   margin-top: 0.5rem;
+
   span {
     margin-right: 1.5rem;
     display: block;
