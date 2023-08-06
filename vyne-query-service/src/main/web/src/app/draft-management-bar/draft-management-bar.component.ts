@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ChangesetService } from 'src/app/services/changeset.service';
+import { ChangesetService } from 'src/app/changeset-selector/changeset.service';
 import * as moment from 'moment';
 
 @Component({

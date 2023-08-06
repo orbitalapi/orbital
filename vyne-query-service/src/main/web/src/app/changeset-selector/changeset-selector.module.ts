@@ -1,10 +1,9 @@
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { TuiDataListModule, TuiSvgModule } from '@taiga-ui/core';
-import { ChangesetSelectorComponent } from './changeset-selector.component';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { TuiSelectModule } from '@taiga-ui/kit';
-import { MatSelectModule } from '@angular/material/select';
+import {NgModule} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {ChangesetSelectorComponent} from './changeset-selector.component';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
+import {MatSelectModule} from '@angular/material/select';
+import {ChangesetService} from "./changeset.service";
 
 
 @NgModule({
@@ -20,6 +19,9 @@ import { MatSelectModule } from '@angular/material/select';
     FormsModule,
     MatSelectModule
   ],
+  providers: [
+    ChangesetService
+  ]
 })
 export class ChangesetSelectorModule {
 }

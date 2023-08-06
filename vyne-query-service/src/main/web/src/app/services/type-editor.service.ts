@@ -7,7 +7,7 @@ import {Metadata, PackageSourceName, QualifiedName, Type, VersionedSource} from 
 import {VyneUser} from 'src/app/services/user-info.service';
 import {Observable} from 'rxjs';
 import {switchMap} from 'rxjs/operators';
-import {ChangesetService} from 'src/app/services/changeset.service';
+import {ChangesetService} from 'src/app/changeset-selector/changeset.service';
 
 @Injectable({
   providedIn: 'root',

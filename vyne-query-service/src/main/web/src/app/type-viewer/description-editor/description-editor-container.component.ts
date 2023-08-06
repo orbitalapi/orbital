@@ -5,7 +5,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {CommitMode} from '../type-viewer.component';
 import {debounceTime} from 'rxjs/operators';
 import { TypeEditorService } from 'src/app/services/type-editor.service';
-import { ChangesetService } from 'src/app/services/changeset.service';
+import { ChangesetService } from 'src/app/changeset-selector/changeset.service';
 
 @Component({
   selector: 'app-description-editor-container',

@@ -1,17 +1,14 @@
-import { Inject, Injectable, Injector } from '@angular/core';
-import { Environment, ENVIRONMENT } from 'src/app/services/environment';
-import { TuiDialogService } from '@taiga-ui/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, of } from 'rxjs';
-import { PackageIdentifier, PackagesService, SourcePackageDescription } from 'src/app/package-viewer/packages.service';
-import { filter, map, mapTo, switchMap, take, tap } from 'rxjs/operators';
-import { Observable } from 'rxjs/internal/Observable';
-import { QualifiedName, VersionedSource } from 'src/app/services/schema';
-import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
-import {
-  ChangesetNameDialogComponent,
-  ChangesetNameDialogSaveHandler,
-} from 'src/app/changeset-name-dialog/changeset-name-dialog.component';
+import {Inject, Injectable, Injector} from '@angular/core';
+import {Environment, ENVIRONMENT} from 'src/app/services/environment';
+import {TuiDialogService} from '@taiga-ui/core';
+import {HttpClient} from '@angular/common/http';
+import {BehaviorSubject, of} from 'rxjs';
+import {PackageIdentifier, PackagesService, SourcePackageDescription} from 'src/app/package-viewer/packages.service';
+import {filter, map, mapTo, switchMap, take, tap} from 'rxjs/operators';
+import {Observable} from 'rxjs/internal/Observable';
+import {QualifiedName, VersionedSource} from 'src/app/services/schema';
+
+import {ChangesetNameDialogSaveHandler} from "../changeset-name-dialog/changeset-name-dialog-save.handler";
 
 interface UpdateChangesetResponse {
   changeset: Changeset;
@@ -71,9 +68,7 @@ export interface FinalizeChangesetResponse {
   changeset: Changeset;
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable()
 export class ChangesetService {
   editablePackage$: Observable<SourcePackageDescription | null> = this.packagesService.getEditablePackage();
   activeChangeset$ = new BehaviorSubject<Changeset | null>(null);
@@ -183,13 +178,19 @@ export class ChangesetService {
     if (!forceOpen && !this.activeChangeset$.value.isDefault) {
       return of(this.activeChangeset$.value);
     } else {
-      return this.dialogService
-        .open<Changeset>(new PolymorpheusComponent(ChangesetNameDialogComponent, this.injector), {
-          data: {
-            changeset: this.activeChangeset$.value,
-            saveHandler: saveHandler,
-          },
-        });
+      // This service needs redesigning.
+      // It is pulling in a UI component, which is breaking encapsulation.
+      // It's also referenced by import (not by dependency) in numerous
+      // components.  This is causing components that have nothing to do
+      // with changesets (eg., Voyager) breaking the build because of linking issues.
+      throw new Error('This used to open a ChangesetNameDialogComponent. Commented out as its breaking the build')
+      // return this.dialogService
+      //   .open<Changeset>(new PolymorpheusComponent(ChangesetNameDialogComponent, this.injector), {
+      //     data: {
+      //       changeset: this.activeChangeset$.value,
+      //       saveHandler: saveHandler,
+      //     },
+      //   });
     }
   }
 

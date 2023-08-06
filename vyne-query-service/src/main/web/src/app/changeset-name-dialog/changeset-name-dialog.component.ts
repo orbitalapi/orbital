@@ -1,12 +1,9 @@
-import { Component, Inject, OnInit } from '@angular/core';
-import { TuiDialogContext } from '@taiga-ui/core';
-import { POLYMORPHEUS_CONTEXT } from '@tinkoff/ng-polymorpheus';
-import { FormControl } from '@angular/forms';
-import { Observable } from 'rxjs';
-import { Changeset } from 'src/app/services/changeset.service';
-import { PackageIdentifier } from 'src/app/package-viewer/packages.service';
-
-export type ChangesetNameDialogSaveHandler = (name: string, packageIdentifer: PackageIdentifier) => Observable<Changeset>;
+import {Component, Inject, OnInit} from '@angular/core';
+import {TuiDialogContext} from '@taiga-ui/core';
+import {POLYMORPHEUS_CONTEXT} from '@tinkoff/ng-polymorpheus';
+import {FormControl} from '@angular/forms';
+import {Changeset} from 'src/app/changeset-selector/changeset.service';
+import {ChangesetNameDialogSaveHandler} from "./changeset-name-dialog-save.handler";
 
 export interface ChangesetNameDialogData {
   changeset: Changeset | null;

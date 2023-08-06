@@ -12,6 +12,7 @@ import { DraftManagementBarComponent } from '../draft-management-bar/draft-manag
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatIconModule } from '@angular/material/icon';
 import {PolymorpheusModule} from "@tinkoff/ng-polymorpheus";
+import {DraftManagementBarModule} from "../draft-management-bar/draft-management-bar.module";
 
 @NgModule({
   imports: [
@@ -25,9 +26,10 @@ import {PolymorpheusModule} from "@tinkoff/ng-polymorpheus";
     MatIconModule,
     SystemAlertModule,
     TuiButtonModule,
+    DraftManagementBarModule
   ],
   exports: [VyneComponent],
-  declarations: [VyneComponent, DraftManagementBarComponent],
+  declarations: [VyneComponent],
   providers: [DatePipe],
 })
 export class VyneModule {

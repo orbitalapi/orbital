@@ -5,7 +5,7 @@ import { filter, map } from 'rxjs/operators';
 import { Schema, Type } from '../services/schema';
 import { combineLatest, Observable } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ChangesetService } from 'src/app/services/changeset.service';
+import { ChangesetService } from 'src/app/changeset-selector/changeset.service';
 import { buildInheritable, Inheritable } from 'src/app/inheritence-graph/build.inheritable';
 
 @Component({

@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Changeset, ChangesetService } from 'src/app/services/changeset.service';
+import { Changeset, ChangesetService } from 'src/app/changeset-selector/changeset.service';
 
 @Component({
   selector: 'app-changeset-selector',
