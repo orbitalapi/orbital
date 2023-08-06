@@ -12,6 +12,7 @@ import io.vyne.cockpit.core.pipelines.PipelineConfig
 import io.vyne.cockpit.core.schemas.BuiltInTypesSubmitter
 import io.vyne.cockpit.core.security.VyneUserConfig
 import io.vyne.cockpit.core.telemetry.TelemetryConfig
+import io.vyne.connectors.soap.SoapWsdlSourceConverter
 import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.history.db.InProcessHistoryConfiguration
 import io.vyne.history.noop.NoopQueryEventConsumerConfiguration
@@ -33,6 +34,8 @@ import io.vyne.schemaServer.codegen.CodeGenApi
 import io.vyne.schemaServer.editor.SchemaEditorApi
 import io.vyne.schemaServer.packages.PackagesServiceApi
 import io.vyne.schemaServer.repositories.RepositoryServiceApi
+import io.vyne.schemas.readers.SourceConverterRegistry
+import io.vyne.schemas.readers.TaxiSourceConverter
 import io.vyne.search.embedded.EnableVyneEmbeddedSearch
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
@@ -131,6 +134,15 @@ class QueryServiceApp {
 
    @Bean
    fun formatSpecRegistry(): FormatSpecRegistry = FormatSpecRegistry.default()
+
+   @Bean
+   fun sourceConverterRegistry(): SourceConverterRegistry = SourceConverterRegistry(
+      setOf(
+         TaxiSourceConverter,
+         SoapWsdlSourceConverter
+      ),
+      registerWithStaticRegistry = true
+   )
 
    @Bean
    fun webClientCustomizer(

@@ -15,6 +15,7 @@ import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.auth.HttpAuthConfig
 import io.vyne.spring.projection.ApplicationContextProvider
+import io.vyne.spring.query.formats.FormatSpecRegistry
 import mu.KotlinLogging
 import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Autowired
@@ -66,6 +67,9 @@ class OrbitalStationApp {
    fun chatGptService(@Value("\${vyne.chat-gpt.api-key:''}") apiKey: String): ChatQueryParser {
       return ChatQueryParser(apiKey, OkHttpClient().newBuilder().readTimeout(30, TimeUnit.SECONDS).build())
    }
+
+   @Bean
+   fun formatSpecRegistry(): FormatSpecRegistry = FormatSpecRegistry.default()
 
 
    @Autowired

@@ -14,12 +14,5 @@ import org.springframework.context.annotation.Import
 @Import(RawConnectionsConnectorConfig::class)
 class CockpitCoreConfig {
 
-   @Bean
-   fun sourceConverterRegistry(): SourceConverterRegistry = SourceConverterRegistry(
-      setOf(
-         TaxiSourceConverter,
-         SoapWsdlSourceConverter
-      ),
-      registerWithStaticRegistry = true
-   )
+
 }
