@@ -1,24 +1,27 @@
 package io.vyne.auth.authorisation
 
+import io.vyne.auth.authentication.UserDisplayName
 import io.vyne.security.VyneGrantedAuthorities
 import java.util.concurrent.ConcurrentHashMap
 
-typealias VyneUserName = String
-typealias VyneUserAuthorisationRole = String
+
+typealias UserRole = String
 
 enum class VyneConsumerType {
    USER,
    API
 }
-data class VyneUserRoles(val roles: Set<VyneUserAuthorisationRole>, val type: String = VyneConsumerType.USER.name)
+data class VyneUserRoles(val roles: Set<UserRole>, val type: String = VyneConsumerType.USER.name)
+
+
 data class VyneUserRoleMappings(
-   val userRoleMappings: MutableMap<VyneUserName, VyneUserRoles> = ConcurrentHashMap()
+   val userRoleMappings: MutableMap<UserDisplayName, VyneUserRoles> = ConcurrentHashMap()
 )
 
 /**
  * When user doesn't have a role, give these default role mappings.
  */
-data class VyneDefaultUserRoleMappings(val roles: Set<VyneUserAuthorisationRole> = emptySet())
+data class VyneDefaultUserRoleMappings(val roles: Set<UserRole> = emptySet())
 data class VyneUserAuthorisationRoleDefinition(val grantedAuthorities: Set<VyneGrantedAuthorities>)
 data class VyneUserAuthorisationRoleDefinitions(
    val defaultUserRoleMappings: VyneDefaultUserRoleMappings = VyneDefaultUserRoleMappings(),

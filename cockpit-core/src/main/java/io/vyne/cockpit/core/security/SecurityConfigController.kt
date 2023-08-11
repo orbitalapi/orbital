@@ -4,6 +4,9 @@ import io.vyne.cockpit.core.security.authorisation.VyneOpenIdpConnectConfig
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 
+/**
+ * Service which exposes config settings to the UI.
+ */
 @RestController
 class SecurityConfigController(private val openIdpConfiguration: VyneOpenIdpConnectConfig) {
 

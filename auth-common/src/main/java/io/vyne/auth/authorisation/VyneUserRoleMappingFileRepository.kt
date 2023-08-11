@@ -3,6 +3,7 @@ package io.vyne.auth.authorisation
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
+import io.vyne.auth.authentication.UserDisplayName
 import io.vyne.config.BaseHoconConfigFileRepository
 import io.vyne.config.toConfig
 import org.http4k.quoted
@@ -33,7 +34,7 @@ class VyneUserRoleMappingFileRepository(
       return typedConfig().userRoleMappings[userName]!!
    }
 
-   override fun findAll(): Map<VyneUserName, VyneUserRoles> {
+   override fun findAll(): Map<UserDisplayName, VyneUserRoles> {
       return typedConfig().userRoleMappings.toMap()
    }
 

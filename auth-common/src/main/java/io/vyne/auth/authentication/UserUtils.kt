@@ -12,9 +12,7 @@ fun Authentication.toVyneUser(): VyneUser {
    }
 }
 
-fun JwtAuthenticationToken.toVyneUser(): VyneUser {
-   val claims = this.token.claims
-
+fun vyneUserFromClaims(claims: Map<String, Any>): VyneUser {
    fun <T> claim(fieldName: String): T? {
       return claims[fieldName] as T
 
@@ -28,13 +26,20 @@ fun JwtAuthenticationToken.toVyneUser(): VyneUser {
    }
 
    return VyneUser(
-      userId = this.token.subject,
+      id = mandatoryClaim(JwtStandardClaims.Sub),
+      issuer = mandatoryClaim(JwtStandardClaims.Issuer),
       username = mandatoryClaim(JwtStandardClaims.PreferredUserName, JwtStandardClaims.ClientId),
       email = mandatoryClaim(JwtStandardClaims.Email, JwtStandardClaims.ClientId),
       profileUrl = claim(JwtStandardClaims.PictureUrl),
       name = claim(JwtStandardClaims.Name),
-      isAuthenticated = true
+//      isAuthenticated = true
    )
+}
+
+fun JwtAuthenticationToken.toVyneUser(): VyneUser {
+   val claims = this.token.claims
+   return vyneUserFromClaims(claims)
+
 }
 
 
@@ -45,14 +50,21 @@ fun JwtAuthenticationToken.toVyneUser(): VyneUser {
 object JwtStandardClaims {
    // Subject - Identifier for the End-User at the Issuer.
    const val Sub = "sub"
+
+   // Issuer - the OIDC provider who authenticated the user
+   const val Issuer = "iss"
+
    // End-User's full name in displayable form including all name parts, possibly including titles and suffixes, ordered according to the End-User's locale and preferences.
    const val Name = "name"
+
    // End-User's preferred e-mail address. Its value MUST conform to the RFC 5322 [RFC5322] addr-spec syntax. The RP MUST NOT rely upon this value being unique
    const val Email = "email"
+
    // Shorthand name by which the End-User wishes to be referred to at the RP, such as janedoe or j.doe.
    // This value MAY be any valid JSON string including special characters such as @, /, or whitespace.
    // The RP MUST NOT rely upon this value being unique
    const val PreferredUserName = "preferred_username"
+
    /**
     * URL of the End-User's profile picture.
     * This URL MUST refer to an image file (for example, a PNG, JPEG, or GIF image file),

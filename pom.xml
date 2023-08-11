@@ -63,6 +63,7 @@
       <hazelcast.version>5.3.1</hazelcast.version>
       <testcontainers.version>1.16.2</testcontainers.version>
       <h2.version>2.1.214</h2.version>
+      <guava.version>31.1-jre</guava.version>
       <reactor-bom.version>2022.0.5</reactor-bom.version>
       <!--      <netty.version>4.1.75.Final</netty.version>-->
       <!-- CVE-2022-31692  -->
@@ -127,6 +128,7 @@
 
       <module>auth-tokens</module>
       <module>query-node-native</module>
+      <module>database-migrations</module>
    </modules>
    <scm>
       <developerConnection>scm:git:git@gitlab.com:vyne/vyne.git</developerConnection>
@@ -381,7 +383,12 @@
          <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>31.1-jre</version>
+            <version>${guava.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava-testlib</artifactId>
+            <version>${guava.version}</version>
          </dependency>
          <dependency>
             <groupId>net.logstash.logback</groupId>

@@ -1,6 +1,6 @@
 package io.vyne.cockpit.core.security.authorisation.rest
 
-import io.vyne.auth.authorisation.VyneUserAuthorisationRole
+import io.vyne.auth.authorisation.UserRole
 import io.vyne.auth.authorisation.VyneUserRoleDefinitionRepository
 import io.vyne.auth.authorisation.VyneUserRoleMappingRepository
 import io.vyne.auth.authorisation.VyneUserRoles
@@ -20,7 +20,7 @@ class UserRoleMappingController(
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewUsers}')")
    // Note re produces:  Without this, for some reason (in tests at least), we're sending cbor. Adding the media type sends JSON.
    @GetMapping("/api/user/roles", produces = [MediaType.APPLICATION_JSON_VALUE])
-   fun getUserRoleDefinitions(): Mono<MutableList<VyneUserAuthorisationRole>> {
+   fun getUserRoleDefinitions(): Mono<MutableList<UserRole>> {
       /**
        * From Spring Docs:
        * By default both Jackson2Encoder and Jackson2Decoder do not support elements of type String.
@@ -35,7 +35,7 @@ class UserRoleMappingController(
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewUsers}')")
    // Note re produces:  Without this, for some reason (in tests at least), we're sending cbor. Adding the media type sends JSON.
    @GetMapping("/api/user/roles/{username}",  produces = [MediaType.APPLICATION_JSON_VALUE])
-   fun getRolesForUser(@PathVariable username: String): Mono<MutableList<VyneUserAuthorisationRole>> {
+   fun getRolesForUser(@PathVariable username: String): Mono<MutableList<UserRole>> {
       val resultFlux = vyneUserRoleMappingRepository.findByUserName(username)?.let {
          Flux.fromIterable(it.roles.sorted())
       } ?: Flux.empty()
@@ -45,8 +45,8 @@ class UserRoleMappingController(
    @PreAuthorize("hasAuthority('${VynePrivileges.EditUsers}')")
    // Note re produces:  Without this, for some reason (in tests at least), we're sending cbor. Adding the media type sends JSON.
    @PostMapping("/api/user/roles/{username}",  produces = [MediaType.APPLICATION_JSON_VALUE])
-   fun updateRolesForUser(@PathVariable username: String, @RequestBody userRoles: Set<VyneUserAuthorisationRole>):
-      Mono<MutableList<VyneUserAuthorisationRole>> {
+   fun updateRolesForUser(@PathVariable username: String, @RequestBody userRoles: Set<UserRole>):
+      Mono<MutableList<UserRole>> {
       val updatedRoles = vyneUserRoleMappingRepository.save(username, VyneUserRoles(userRoles))
       return Flux.fromIterable(updatedRoles.roles.sorted()).collectList()
    }

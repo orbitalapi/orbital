@@ -1,6 +1,22 @@
 package io.vyne.security
 
 
+/**
+ * Resources:
+ *  - Query
+ *    - save
+ *    - load
+ *    - run
+ *    - cancel
+ *  - Schema
+ *  - Catalog
+ *  - Workspace
+ *    - create
+ *    - view
+ *    - modifyMembership
+ *  - Connections
+ */
+
 object VynePrivileges {
    const val RunQuery = "RUN_QUERY"
    const val CancelQuery = "CANCEL_QUERY"
@@ -19,6 +35,9 @@ object VynePrivileges {
    const val EditConnections = "EDIT_CONNECTIONS"
    const val ViewUsers = "VIEW_USERS"
    const val EditUsers = "EDIT_USERS"
+   const val CreateWorkspace = "CREATE_WORKSPACE"
+   const val ViewWorkspaces = "VIEW_WORKSPACES"
+   const val ModifyWorkspaceMembership = "MODIFY_WORKSPACE_MEMBERSHIP"
 }
 
 enum class VyneGrantedAuthorities(val constantValue: String) {
@@ -38,5 +57,8 @@ enum class VyneGrantedAuthorities(val constantValue: String) {
    ViewConnections(VynePrivileges.ViewConnections),
    EditConnections(VynePrivileges.EditConnections),
    ViewUsers(VynePrivileges.ViewUsers),
-   EditUsers(VynePrivileges.EditUsers)
+   EditUsers(VynePrivileges.EditUsers),
+   CreateWorkspace(VynePrivileges.CreateWorkspace),
+   ViewWorkspaces(VynePrivileges.ViewWorkspaces),
+   ModifyWorkspaceMembership(VynePrivileges.ModifyWorkspaceMembership)
 }

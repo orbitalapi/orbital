@@ -6,11 +6,12 @@ import {UserInfoService, VyneUser} from '../services/user-info.service';
   selector: 'app-header-bar',
   template: `
     <mat-toolbar color="primary" style="z-index: 999">
+      <app-workspace-selector></app-workspace-selector>
       <span class="page-title">{{title}}</span>
       <ng-content></ng-content>
       <div class="toolbar-spacer"></div>
       <app-search-bar-container></app-search-bar-container>
-      <app-avatar *ngIf="vyneUser && vyneUser.isAuthenticated" [user]="vyneUser"></app-avatar>
+      <app-avatar *ngIf="vyneUser" [user]="vyneUser"></app-avatar>
     </mat-toolbar>`,
   styleUrls: ['./header-bar.component.scss']
 })

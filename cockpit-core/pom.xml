@@ -232,8 +232,9 @@
          <artifactId>spring-boot-starter-data-jdbc</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.springframework.cloud</groupId>
-         <artifactId>spring-cloud-starter-config</artifactId>
+         <groupId>com.google.guava</groupId>
+         <artifactId>guava-testlib</artifactId>
+         <scope>test</scope>
       </dependency>
       <dependency>
          <groupId>org.springframework.boot</groupId>
@@ -247,6 +248,10 @@
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-reactor-netty</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.flywaydb</groupId>
+         <artifactId>flyway-core</artifactId>
       </dependency>
       <dependency>
          <groupId>io.github.config4k</groupId>
@@ -382,6 +387,24 @@
       <dependency>
          <groupId>junit</groupId>
          <artifactId>junit</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>testcontainers</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>junit-jupiter</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>postgresql</artifactId>
          <scope>test</scope>
       </dependency>
    </dependencies>

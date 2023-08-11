@@ -19,10 +19,7 @@ spring:
          mode: never
    flyway:
       enabled: true
-      url: ${spring.datasource.url}
-      user: ${spring.datasource.username}
-      password: ${spring.datasource.password}
-      locations: classpath:db/postgres
+#      locations: classpath:db/postgres
 orbital:
    cors:
       enabled: false

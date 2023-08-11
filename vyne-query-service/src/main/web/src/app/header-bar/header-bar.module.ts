@@ -10,18 +10,20 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialogModule } from '@angular/material/dialog';
 import { ConfirmationDialogModule } from 'src/app/confirmation-dialog/confirmation-dialog.module';
+import {WorkspaceSelectorModule} from "../workspace-selector/workspace-selector.module";
 
 @NgModule({
-  imports: [
-    MatToolbarModule,
-    SearchModule,
-    CommonModule,
-    MatButtonModule,
-    MatIconModule,
-    MatMenuModule,
-    MatDialogModule,
-    ConfirmationDialogModule
-  ],
+    imports: [
+        MatToolbarModule,
+        SearchModule,
+        CommonModule,
+        MatButtonModule,
+        MatIconModule,
+        MatMenuModule,
+        MatDialogModule,
+        ConfirmationDialogModule,
+        WorkspaceSelectorModule
+    ],
   exports: [HeaderBarComponent, AvatarComponent],
   declarations: [HeaderBarComponent, AvatarComponent],
   providers: [],

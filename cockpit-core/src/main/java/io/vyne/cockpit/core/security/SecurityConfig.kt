@@ -1,10 +1,10 @@
 package io.vyne.cockpit.core.security
 
 import io.vyne.auth.CookieOrHeaderTokenConverter
-import io.vyne.auth.authentication.ConfigFileVyneUserRepository
-import io.vyne.auth.authentication.JwtStandardClaims
-import io.vyne.auth.authentication.VyneUserRepository
-import io.vyne.auth.authorisation.*
+import io.vyne.auth.authorisation.VyneUserRoleDefinitionFileRepository
+import io.vyne.auth.authorisation.VyneUserRoleDefinitionRepository
+import io.vyne.auth.authorisation.VyneUserRoleMappingFileRepository
+import io.vyne.auth.authorisation.VyneUserRoleMappingRepository
 import io.vyne.cockpit.core.lsp.LanguageServerConfig
 import io.vyne.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import io.vyne.cockpit.core.security.authorisation.VyneOpenIdpConnectConfig
@@ -15,15 +15,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.core.convert.converter.Converter
 import org.springframework.core.io.ClassPathResource
 import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
-import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.authority.SimpleGrantedAuthority
-import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter
 import org.springframework.security.web.server.SecurityWebFilterChain
@@ -32,26 +28,15 @@ import org.springframework.security.web.server.util.matcher.NegatedServerWebExch
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
-import org.springframework.web.server.ServerWebExchange
 
 private val logger = KotlinLogging.logger { }
 
 @EnableWebFluxSecurity
 @EnableConfigurationProperties(VyneAuthorisationConfig::class, VyneOpenIdpConnectConfig::class)
 @Configuration
-class VyneInSecurityAutoConfig {
-
-   fun getURLsForDisabledCSRF(): NegatedServerWebExchangeMatcher? {
-      return NegatedServerWebExchangeMatcher { exchange: ServerWebExchange? ->
-         ServerWebExchangeMatchers.pathMatchers("/eureka/**").matches(exchange)
-      }
-   }
+class SecurityConfig {
 
 
-   @Bean
-   fun vyneUserRepository(config: VyneUserConfig): VyneUserRepository {
-      return ConfigFileVyneUserRepository(config.configFile)
-   }
 
    @Bean
    fun vyneUserRoleMappingRepository(authorisationConfig: VyneAuthorisationConfig): VyneUserRoleMappingRepository {
@@ -138,14 +123,11 @@ class VyneInSecurityAutoConfig {
             .headers().frameOptions().mode(XFrameOptionsServerHttpHeadersWriter.Mode.SAMEORIGIN).and()
             .authorizeExchange()
             // End points for Cask and other vyne based services to fetch the schema in EUREKA schema discovery mode.
-            .pathMatchers("/api/security/config", "/api/schemas").permitAll()
+            .pathMatchers("/api/security/config").permitAll()
             // All other api end points must be protected.
             .pathMatchers("/api/**").authenticated()
             .pathMatchers(
                "/**", // Allow access to any, to support html5 ui routes (eg /types/foo.bar.Baz)
-               "/eureka/**",
-               "/eureka/",
-               "/eureka",
                "/assets/**",
                "/index.html",
                actuatorPath,
@@ -171,86 +153,6 @@ class VyneInSecurityAutoConfig {
       }
    }
 
-}
-
-
-/**
- * Converts given jwt token to set of granted authorities.
- */
-class GrantedAuthoritiesExtractor(
-   private val vyneUserRoleMappingRepository: VyneUserRoleMappingRepository,
-   vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository,
-   private val adminRoleName: VyneUserAuthorisationRole
-) : Converter<Jwt, Collection<GrantedAuthority>> {
-   private val vyneRoleDefinitions = vyneUserRoleDefinitionRepository.findAll()
-   private val defaultClientUserRoles = vyneUserRoleDefinitionRepository.defaultUserRoles().roles
-   private val defaultApiClientUserRoles = vyneUserRoleDefinitionRepository.defaultApiClientUserRoles().roles
-
-   /**
-    * Populates set of granted authorities from 'sub' claim of the received jwt token.
-    * 'sub' claim value gives us the actual username. From the 'username', first we find the corresponding roles
-    * defined for the user and then for each role we fetch the corresponding granted authorities.
-    *
-    */
-   override fun convert(jwt: Jwt): Collection<GrantedAuthority> {
-      val preferredUserName = jwt.claims[JwtStandardClaims.PreferredUserName] as String
-      val client = jwt.claims[JwtStandardClaims.ClientId]
-      if (client != null) {
-         // The call came from an api client.
-         assignDefaultRoleToApiClient(preferredUserName)
-      } else {
-         //First check whether this is the first user logged on to the system.
-         checkFirstUserLogin(preferredUserName)
-      }
-
-      // find all the roles assigned to user.
-      val userRoles = vyneUserRoleMappingRepository.findByUserName(preferredUserName)
-      if (userRoles == null) {
-         // We see the user first the very first time, assign the user to defaultUserRoles.
-         logger.info { "A Vyne human user with Preferred User Name $preferredUserName logs in as the first user, assigning ${this.defaultClientUserRoles}" }
-         vyneUserRoleMappingRepository.save(preferredUserName, VyneUserRoles(roles = defaultClientUserRoles))
-
-      }
-      // map assigned roles to set of granted authorities.
-      val userGrantedAuthorities = userRoles?.roles?.flatMap {
-         vyneRoleDefinitions[it]?.grantedAuthorities ?: emptySet()
-      }?.toSet() ?: emptySet()
-      return userGrantedAuthorities.map { grantedAuthority -> SimpleGrantedAuthority(grantedAuthority.constantValue) }
-   }
-
-   private fun checkFirstUserLogin(preferredUserName: String) {
-      when (vyneUserRoleMappingRepository.size()) {
-         0 -> {
-            logger.info { "User With Preferred User Name $preferredUserName logs in as the first user, assigning $adminRoleName" }
-            vyneUserRoleMappingRepository.save(preferredUserName, VyneUserRoles(roles = setOf(adminRoleName)))
-         }
-
-         1 -> {
-            // an api client could be the first one to invoke query server.
-            val firstUser = vyneUserRoleMappingRepository.findAll().values.first()
-            val firstUserName = vyneUserRoleMappingRepository.findAll().keys.first()
-            if (firstUserName != preferredUserName && firstUser.type == VyneConsumerType.API.name) {
-               // that means the first call to query server came from an api client.
-               logger.info { "User With Preferred User Name $preferredUserName logs in as the first user, assigning $adminRoleName" }
-               vyneUserRoleMappingRepository.save(preferredUserName, VyneUserRoles(roles = setOf(adminRoleName)))
-            }
-         }
-      }
-   }
-
-   /**
-    * Invoked only for api client calls, and relies on the fact that Token contains the 'ClientId' claim
-    * (TODO this assumption, existence of clientId claim for Client_credentials based flow, is probably only valid for KeyCloack)
-    */
-   private fun assignDefaultRoleToApiClient(preferredUserName: String) {
-      if (vyneUserRoleMappingRepository.findByUserName(preferredUserName) == null) {
-         logger.info { "Api Client Preferred User Name $preferredUserName logs in as the first user, assigning ${this.defaultApiClientUserRoles}" }
-         vyneUserRoleMappingRepository.save(
-            preferredUserName,
-            VyneUserRoles(roles = defaultApiClientUserRoles, type = VyneConsumerType.API.name)
-         )
-      }
-   }
 }
 
 

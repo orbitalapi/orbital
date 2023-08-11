@@ -12,12 +12,12 @@ class VyneUserRoleDefinitionFileRepository(
 ) :
    VyneUserRoleDefinitionRepository,
    BaseHoconConfigFileRepository<VyneUserAuthorisationRoleDefinitions>(path, fallback) {
-   override fun findByRoleName(vyneRole: VyneUserAuthorisationRole): VyneUserAuthorisationRoleDefinition? {
+   override fun findByRoleName(vyneRole: UserRole): VyneUserAuthorisationRoleDefinition? {
       val config = typedConfig()
       return config.grantedAuthorityMappings[vyneRole]
    }
 
-   override fun findAll(): Map<VyneUserAuthorisationRole, VyneUserAuthorisationRoleDefinition> {
+   override fun findAll(): Map<UserRole, VyneUserAuthorisationRoleDefinition> {
       return typedConfig().grantedAuthorityMappings.mapKeys { it.key }
    }
 
