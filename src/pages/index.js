@@ -1,24 +1,22 @@
-import { Footer } from '@/components/home/Footer';
+import {Footer} from '@/components/home/Footer';
 import Head from 'next/head';
-import { Header } from '@/components/Header';
+import {Header} from '@/components/Header';
 import GetStartedButton from '@/components/GetStartedButton';
 import Wormhole from '@/components/Wormhole';
-import Image from 'next/future/image';
 
-import { Paragraph } from '@/components/home/common';
+import {Paragraph} from '@/components/home/common';
 import networkDiagram from '@/components/home/img/network-diagram.png';
-import { ReactComponent as ArrowCitrus } from '@/img/arrow-citrus.svg';
-import { ReactComponent as DataPatternLight } from '@/img/data-pattern.svg';
-import PublishYourApi, { publishYourApiCodeSnippets } from '@/components/home/PublishYourApi';
-import QueryExamples, { queryExampleCodeSnippets } from '@/components/home/QueryExamples';
+import {ReactComponent as ArrowCitrus} from '@/img/arrow-citrus.svg';
+import {ReactComponent as DataPatternLight} from '@/img/data-pattern.svg';
+import PublishYourApi, {publishYourApiCodeSnippets} from '@/components/home/PublishYourApi';
+import QueryExamples, {queryExampleCodeSnippets} from '@/components/home/QueryExamples';
 import WhereToUseSection from '@/components/home/WhereToUseSection';
 import DebugTools from '@/components/home/DebugTools';
 import WatchADemoButton from '../components/DemosModal';
-import OrbitalLogo from '@/img/wormhole-citrus-transparent.png';
-import { FiCheck, FiCopy } from "react-icons/fi";
-import { IconContext } from "react-icons";
-import { useEffect, useState } from 'react';
-
+import {FiCheck, FiCopy} from "react-icons/fi";
+import {IconContext} from "react-icons";
+import {useEffect, useState} from 'react';
+import BookADemoButton from "@/components/BookADemoButton";
 
 
 function HeroSection() {
@@ -41,6 +39,8 @@ function HeroSection() {
                 <div className='sm:mt-10 mt-14 flex justify-left gap-6 text-base md:text-lg flex-wrap'>
                   <GetStartedButton />
                   <WatchADemoButton />
+                  <BookADemoButton />
+
                 </div>
               </div>
               <div

@@ -7,7 +7,7 @@ export default function Wormhole(props) {
     return (
         <div className={clsx(
             props.className,
-            'sm:hidden md:w-[500px] lg:w-[600px] md:h-[500px] lg:h-[600px] absolute top-0 right-0 block rotate-[130deg] md:opacity-25 lg:opacity-50',
+            'sm:hidden md:w-[500px] lg:w-[600px] md:h-[500px] lg:h-[600px] absolute top-0 right-0 block rotate-[130deg] md:opacity-25 lg:opacity-50 pointer-events-none z-0',
         )}>
             <Image src={WormholeImg}
                 fill
