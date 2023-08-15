@@ -6,6 +6,7 @@ import {BigText, Paragraph} from './common';
 import Image from 'next/future/image';
 
 import MicroservicesDiagram from './img/microservices.png';
+import EventBasedArchitecturesDiagram from './img/event-based-architectures.png';
 import Link from "next/link";
 import OrbitalLogo from "@/img/wormhole-aqua-transparent.png";
 
@@ -18,7 +19,7 @@ function WhereToUseSection(props) {
 
     const boxCss = 'bg-gradient-to-b ease-in duration-150 rounded-2xl from-slate-900/75 to-slate-900/25 drop-shadow-lg backdrop-blur-xl  ring-1 ring-inset ring-white/20 p-6 hover:ring-violet-500 [&>img]:hover:grayscale-0 [&>img]:hover:opacity-100'
     const headerCss = 'text-xl font-bold text-white pb-4 text-center'
-    const imgCss = 'grayscale opacity-60 ease-in duration-150';
+    const imgCss = 'grayscale opacity-60 ease-in duration-150 pb-8';
     const bodyCss = 'text-md text-slate-200 text-center pb-4'
     return (
         <section id="where-to-use" className={`relative bg-slate-900  ${props.className}`}>
@@ -42,7 +43,7 @@ function WhereToUseSection(props) {
                 </div>
                 <div className={`${boxCss} col-span-2`}>
                     <h4 className={headerCss}>Event-based architectures</h4>
-                    <Image className={imgCss} alt='Microservices orchestration diagram' src={MicroservicesDiagram}/>
+                    <Image className={imgCss} alt='Microservices orchestration diagram' src={EventBasedArchitecturesDiagram}/>
 
                     <p className={'text-md text-slate-100 text-center pb-2'}><span className='font-extrabold'>Bespoke events for consumers</span> </p>
                     <p><span className='text-slate-300'>Decouple producers and consumers, providing custom events for each consumer with exactly the data they need</span> </p>
