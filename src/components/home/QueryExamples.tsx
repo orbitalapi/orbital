@@ -315,7 +315,7 @@ function QueryExamples(props: QueryExampleProps) {
               <span>All </span><span className='text-citrus'>together,</span><Widont> now.</Widont>
             </BigText>
             <Paragraph>
-              Orbital unifies your APIs, databases, event streams and serverless functions under a single, self-evolving API. As things change, Orbital automatically adapts.
+              Query for data, and Orbital automatically stitches together your APIs, databases, event streams and serverless functions. As things change, Orbital automatically adapts.
             </Paragraph>
 
             <LearnMoreLink href="/docs/querying/writing-queries/" />
