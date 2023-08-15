@@ -54,7 +54,7 @@ export function QuerySectionHeader({ className = '', ...props }) {
 export function BigText({ className = '', ...props }) {
   return (
     <p
-      className={`mt-4 text-4xl lg:text-5xl text-slate-900 font-extrabold tracking-tight dark:text-slate-50 ${className}`}
+      className={`mt-4 text-4xl lg:text-5xl text-slate-900 font-extrabold dark:text-slate-50 ${className}`}
       {...props}
     />
   )

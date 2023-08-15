@@ -275,8 +275,8 @@ module.exports = {
       fontFamily: {
         // standardize the sans font to our brand font - poppins
         // sans: ['Inter var', ...defaultTheme.fontFamily.sans],
-        sans: ['poppins', 'Helvetica', ...defaultTheme.fontFamily.sans],
-        brand: ['poppins', 'Helvetica', ...defaultTheme.fontFamily.sans],
+        sans: ['Inter', 'Helvetica', ...defaultTheme.fontFamily.sans],
+        brand: ['Manrope', 'Helvetica', ...defaultTheme.fontFamily.sans],
         mono: ['Fira Code', ...defaultTheme.fontFamily.mono],
         // these didn't seem to be used
         // source: ['Source Sans Pro', ...defaultTheme.fontFamily.sans],

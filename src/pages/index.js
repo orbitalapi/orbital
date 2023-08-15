@@ -25,15 +25,21 @@ function HeroSection() {
       <header className='relative'>
         <div className='sm:px-6 md:px-8 dark:bg-midnight-blue'>
           <Header allowThemeToggle={false} />
-          <div className='font-brand relative max-w-8xl md:min-h-[70vh] mx-auto sm:pt-16 md:pt-32 relative'>
+          <div className='max-w-8xl md:min-h-[70vh] mx-auto sm:pt-16 md:pt-32 relative'>
             <div className={'flex'}>
               <div className='max-w-2xl sm:pb-10 pb-[6rem]'>
                 <h1
-                  className='font-light text-5xl md:text-6xl leading-[4rem] md:leading-[5rem] tracking-tight dark:text-white'>
+                  className='font-light text-5xl md:text-6xl leading-[4rem] md:leading-[5rem] dark:text-white font-brand'>
                   Automated integration for modern dev teams
                 </h1>
-                <p className='sm:text-xl sm:leading-8 mt-6 text-3xl text-slate-600 dark:text-slate-300'>
-                  More building, less  plumbing - Orbital builds integration for you
+                <p className='sm:text-xl sm:leading-8 mt-6 text-3xl text-slate-600 dark:text-slate-100'>
+                  <div>
+                    Connect APIs, databases, event streams and more - without plumbing code.
+                  </div>
+                  <div className='mt-6'>
+                    As things change, Orbital automatically adapts.
+                  </div>
+
                 </p>
                 <div className='sm:mt-10 mt-14 flex justify-left gap-6 text-base md:text-lg flex-wrap'>
                   <GetStartedButton />
@@ -54,7 +60,7 @@ function HeroSection() {
             <DataPatternLight
               className='sm:hidden md:left-80 lg:left-auto lg:right-0 absolute top-[380px] md:top-[480px] w-[900px] lg:w-[900px] fill-black dark:fill-sky-100 pointer-events-none'></DataPatternLight>
 
-            <ArrowCitrus className='flex justify-center w-full mb-8 stroke-2 md:absolute md:bottom-0'></ArrowCitrus>
+            {/*<ArrowCitrus className='flex justify-center w-full mb-8 stroke-2 md:absolute md:bottom-0'></ArrowCitrus>*/}
 
           </div>
         </div>
@@ -112,7 +118,7 @@ export default function Home({
       <div className='overflow-hidden sm:mb-32 md:mb-40'>
         <div className="w-full py-10">
           <Paragraph>
-            <span className="font-bold">Get started in seconds</span> with our Docker image.
+            <span className="font-bold font-sans">Get started in seconds</span> with our Docker image.
           </Paragraph>
           <div className="mx-auto bg-gray-900 w-fit mt-10 p-8 rounded-lg border border-tint-8">
             <IconContext.Provider value={{ size: "1.5em", color: cmdCopied ? '#e0ff4f' : '' }}>
