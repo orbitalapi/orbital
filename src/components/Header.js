@@ -1,11 +1,12 @@
 import Link from 'next/link';
-import { SearchButton } from '@/components/Search';
+import {SearchButton} from '@/components/Search';
 import Router from 'next/router';
-import { Logo } from '@/components/Logo';
-import { Dialog } from '@headlessui/react';
-import { useEffect, useState } from 'react';
+import {Logo} from '@/components/Logo';
+import {Dialog, Transition} from '@headlessui/react';
+import {Fragment, useEffect, useState} from 'react';
 import clsx from 'clsx';
-import { ThemeToggle } from './ThemeToggle';
+import {ThemeToggle} from './ThemeToggle';
+import {DemosModel} from "@/components/DemosModal";
 
 
 export function NavPopover({display = 'md:hidden', className, ...props}) {
@@ -84,9 +85,68 @@ export function NavPopover({display = 'md:hidden', className, ...props}) {
   )
 }
 
+
+export function ContactUsButton() {
+  const [formVisible, setFormVisible] = useState(false);
+  return (
+    <>
+      <Transition.Root show={formVisible} as={Fragment}>
+        <Dialog as='div' className='relative z-10' onClose={setFormVisible}>
+          <Transition.Child
+            as={Fragment}
+            enter='ease-out duration-300'
+            enterFrom='opacity-0'
+            enterTo='opacity-100'
+            leave='ease-in duration-200'
+            leaveFrom='opacity-100'
+            leaveTo='opacity-0'
+          >
+            <div className='fixed inset-0 bg-slate-800 bg-opacity-75 backdrop-blur-sm  transition-opacity'/>
+          </Transition.Child>
+          <ContactUsModal></ContactUsModal>
+
+        </Dialog>
+      </Transition.Root>
+
+      <a href={'javascript:void(0)'} className="hover:text-sky-500 dark:hover:text-sky-400" onClick={() => setFormVisible(true)}>Contact Us</a>
+    </>
+  )
+}
+
+export function ContactUsModal() {
+
+
+  return (<div className='fixed inset-0 z-10 overflow-y-auto'>
+    <div className='flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0'>
+      <Transition.Child
+        as={Fragment}
+        enter='ease-out duration-300'
+        enterFrom='opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95'
+        enterTo='opacity-100 translate-y-0 sm:scale-100'
+        leave='ease-in duration-200'
+        leaveFrom='opacity-100 translate-y-0 sm:scale-100'
+        leaveTo='opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95'
+      >
+        <Dialog.Panel
+          className='relative transform overflow-hidden rounded-lg px-4 pt-5 pb-4 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-sm sm:p-6 max-w-[800px] w-[50vw] h-[75vh]'>
+          <div className='flex w-full h-full align-center'>
+            <iframe className='w-full h-full'
+                    src='https://share.hsforms.com/1Ghdpc-nFSaaLXQ4zM12Bqwbwgza'
+                    frameBorder='0' webkitallowfullscreen mozallowfullscreen allowFullScreen></iframe>
+          </div>
+
+        </Dialog.Panel>
+      </Transition.Child>
+    </div>
+  </div>);
+}
+
 export function NavItems() {
   return (
     <>
+      <li>
+        <ContactUsButton/>
+      </li>
       <li>
         <Link href="/docs">
           <a className="hover:text-sky-500 dark:hover:text-sky-400">Docs</a>
@@ -106,7 +166,15 @@ export function NavItems() {
   )
 }
 
-export function Header({hasNav = false, navIsOpen, onNavToggle, title, section, allowThemeToggle = false, className = ''}) {
+export function Header({
+                         hasNav = false,
+                         navIsOpen,
+                         onNavToggle,
+                         title,
+                         section,
+                         allowThemeToggle = false,
+                         className = ''
+                       }) {
   let [isOpaque, setIsOpaque] = useState(false)
 
   useEffect(() => {
@@ -129,20 +197,6 @@ export function Header({hasNav = false, navIsOpen, onNavToggle, title, section, 
 
   return (
     <>
-      {/* <div
-        className="absolute -z-20 -top-[500px] inset-x-0 flex justify-center overflow-hidden pointer-events-none rotate-45 ">
-        <div className="w-[108rem] flex-none flex justify-end blur-3xl opacity-[.20]">
-          <picture>
-            {/*<source srcSet={require('@/img/beams/docs@30.avif').default.src} type="image/avif"/> * /}
-            <img
-              src={require('@/img/wormhole-aqua-transparent.png').default.src}
-              alt=""
-              className="w-[50rem] flex-none max-w-none "
-              decoding="async"
-            />
-          </picture>
-        </div>
-      </div> */}
       <div
         className={clsx(
           'sticky top-[-1px] z-40 w-full backdrop-blur flex-none transition-colors duration-500 lg:z-50 ',
@@ -170,7 +224,7 @@ export function Header({hasNav = false, navIsOpen, onNavToggle, title, section, 
                     }}
                   >
                     <span className='sr-only'>Orbital home page</span>
-                    <Logo className='w-auto h-7' />
+                    <Logo className='w-auto h-7'/>
                   </a>
                 </Link>
               </div>
@@ -178,11 +232,11 @@ export function Header({hasNav = false, navIsOpen, onNavToggle, title, section, 
                 <div className='relative hidden md:flex items-center ml-auto'>
                   <nav className='text-sm leading-6 font-semibold text-slate-700 dark:text-slate-200'>
                     <ul className='flex space-x-8'>
-                      <NavItems />
+                      <NavItems/>
                     </ul>
                   </nav>
                   <div className='flex items-center border-l border-slate-200 ml-6 pl-6 dark:border-slate-800'>
-                    {allowThemeToggle && (<ThemeToggle panelClassName='mt-8' />)}
+                    {allowThemeToggle && (<ThemeToggle panelClassName='mt-8'/>)}
                     <a
                       href='https://github.com/orbitalapi/orbital'
                       className="ml-6 block text-slate-400 hover:text-slate-500 dark:hover:text-slate-300"
@@ -200,23 +254,23 @@ export function Header({hasNav = false, navIsOpen, onNavToggle, title, section, 
                     </a>
                   </div>
                 </div>
-                <SearchButton
-                  className="ml-auto text-slate-500 w-8 h-8 -my-1 flex items-center justify-center hover:text-slate-600 md:hidden dark:text-slate-400 dark:hover:text-slate-300">
-                  <span className="sr-only">Search</span>
-                  <svg
-                    width="24"
-                    height="24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="m19 19-3.5-3.5"/>
-                    <circle cx="11" cy="11" r="6"/>
-                  </svg>
-                </SearchButton>
+                {/*<SearchButton*/}
+                {/*  className="ml-auto text-slate-500 w-8 h-8 -my-1 flex items-center justify-center hover:text-slate-600 md:hidden dark:text-slate-400 dark:hover:text-slate-300">*/}
+                {/*  <span className="sr-only">Search</span>*/}
+                {/*  <svg*/}
+                {/*    width="24"*/}
+                {/*    height="24"*/}
+                {/*    fill="none"*/}
+                {/*    stroke="currentColor"*/}
+                {/*    strokeWidth="2"*/}
+                {/*    strokeLinecap="round"*/}
+                {/*    strokeLinejoin="round"*/}
+                {/*    aria-hidden="true"*/}
+                {/*  >*/}
+                {/*    <path d="m19 19-3.5-3.5"/>*/}
+                {/*    <circle cx="11" cy="11" r="6"/>*/}
+                {/*  </svg>*/}
+                {/*</SearchButton>*/}
                 <NavPopover className="ml-2 -my-1" display="md:hidden"/>
               </div>
             </div>

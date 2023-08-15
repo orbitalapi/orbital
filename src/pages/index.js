@@ -30,11 +30,10 @@ function HeroSection() {
               <div className='max-w-2xl sm:pb-10 pb-[6rem]'>
                 <h1
                   className='font-light text-5xl md:text-6xl leading-[4rem] md:leading-[5rem] tracking-tight dark:text-white'>
-                  Automated integration for microservices
+                  Automated integration for modern dev teams
                 </h1>
-                <p className='sm:text-xl sm:leading-8 mt-6 text-3xl text-slate-600 dark:text-slate-400'>
-                  Orbital eliminates the integration effort, so you can get back to <span
-                    className='text-citrus'>shipping</span>
+                <p className='sm:text-xl sm:leading-8 mt-6 text-3xl text-slate-600 dark:text-slate-300'>
+                  More building, less  plumbing - Orbital builds integration for you
                 </p>
                 <div className='sm:mt-10 mt-14 flex justify-left gap-6 text-base md:text-lg flex-wrap'>
                   <GetStartedButton />
