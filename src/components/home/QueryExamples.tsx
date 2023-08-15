@@ -312,17 +312,10 @@ function QueryExamples(props: QueryExampleProps) {
         <div className={'flex flex-col items-center'}>
           <div className='max-w-3xl mx-auto flex flex-col items-center'>
             <BigText className='text-center font-brand pb-4'>
-              <span className='text-citrus'>Connect</span><Widont> without the glue</Widont>
+              <span>All </span><span className='text-citrus'>together,</span><Widont> now.</Widont>
             </BigText>
             <Paragraph>
-              Query for the data you need, and Orbital integrates on-the-fly.
-            </Paragraph>
-            <Paragraph>
-              From simple API calls, to complex multi-hop lookups, Orbital automatically orchestrates your APIs,
-              databases, queues and lambdas.
-            </Paragraph>
-            <Paragraph>
-              No glue code required. As things change, Orbital adapts.
+              Orbital unifies your APIs, databases, event streams and serverless functions under a single, self-evolving API. As things change, Orbital automatically adapts.
             </Paragraph>
 
             <LearnMoreLink href="/docs/querying/writing-queries/" />

@@ -1,5 +1,5 @@
 import { BigText, Caption, LearnMoreLink, Paragraph, Widont } from '@/components/home/common';
-import LearnMoreButton from '@/components/home/LearnMoreButton'; 
+import LearnMoreButton from '@/components/home/LearnMoreButton';
 import { Snippet } from '@/components/Steps';
 import * as React from 'react';
 import { useState } from 'react';
@@ -132,16 +132,14 @@ export default function PublishYourApi({ highlightedSnippets }) {
   return (
     <section id='publish-your-api' className='bg-midnight-blue'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-24'>
-        <Caption className='text-citrus text-center'>Discover, and be discovered</Caption>
+        <div className='max-w-3xl mx-auto flex flex-col items-center'>
         <BigText className='text-center font-brand'>
-          <Widont>Powered by your APIs</Widont>
+          <Widont>Powered by </Widont><span className='text-citrus'>Your APIs</span>
         </BigText>
         <Paragraph>
-          Orbital uses your existing API specs and Database schemas - enriched with Taxi metadata to describe links.
+          Orbital uses by your existing API specs (with a little extra metadata), to create integration on demand.  As things change, <span className='text-citrus font-bold'>Orbital automatically adapts</span>.
         </Paragraph>
-        <Paragraph>
-          Orbital turns this into rich API and data catalog, letting you explore all your data, and how it connects
-        </Paragraph>
+        </div>
 
         <div className='pt-10 grid grid-cols-3 sm:grid-cols-1 gap-4'>
           <div className='flex flex-col items-center '>

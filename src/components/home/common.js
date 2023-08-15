@@ -76,7 +76,7 @@ export function LearnMoreLink({ className = '', href = '', label = 'Learn more' 
 }
 
 export function Paragraph({ as: Component = 'p', className = '', ...props }) {
-  return <Component className={`text-lg text-center font-light leading-8 mt-8 space-y-6 font-brand text-white ${className}`} {...props} />
+  return <Component className={`text-lg text-center font-light leading-8 mt-8 space-y-6 font-sans text-white ${className}`} {...props} />
 }
 
 export function Link({ className, ...props }) {
