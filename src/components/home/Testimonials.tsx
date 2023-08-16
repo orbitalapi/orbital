@@ -54,7 +54,7 @@ function Testimonials(props) {
                 <div className="text-base">
                   <a href='https://quadcorps.co.uk'>
                     <div className="font-semibold text-white">Jey Deivachandran</div>
-                    <div className="mt-1 text-gray-400">CEO of Quadcorps</div>
+                    <div className="mt-1 text-gray-400">CEO of QuadCorps</div>
                   </a>
                 </div>
               </figcaption>
