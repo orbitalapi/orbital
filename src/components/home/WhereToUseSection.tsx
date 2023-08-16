@@ -7,6 +7,7 @@ import Image from 'next/future/image';
 
 import MicroservicesDiagram from './img/microservices.png';
 import EventBasedArchitecturesDiagram from './img/event-based-architectures.png';
+import ExternalDataFeedsDiagram from './img/external-data-feeds.png';
 import Link from "next/link";
 import OrbitalLogo from "@/img/wormhole-aqua-transparent.png";
 import {useState} from "react";
@@ -28,7 +29,7 @@ function WhereToUseSection(props) {
             header: 'Microservices orchestration',
             img: MicroservicesDiagram,
             subtitle: 'Orchestrate services on demand',
-            text: 'Query for the data your app needs, and Orbital orchestrates your APIs, Databases and Serverless Functions on demand',
+            text: 'Query for the data your app needs, and Orbital orchestrates your APIs, databases and serverless functions on demand',
             link: '/docs'
         },
         {
@@ -40,7 +41,7 @@ function WhereToUseSection(props) {
         },
         {
             header: 'Rapidly onboard external data feeds',
-            img: EventBasedArchitecturesDiagram,
+            img: ExternalDataFeedsDiagram,
             subtitle: 'Declarative data pipelines',
             text: 'Ingest, transform and enrich data declaratively, without building & maintaining complex pipelines',
             link: '/docs'

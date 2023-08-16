@@ -17,6 +17,7 @@ import {FiCheck, FiCopy} from "react-icons/fi";
 import {IconContext} from "react-icons";
 import {useEffect, useState} from 'react';
 import BookADemoButton from "@/components/BookADemoButton";
+import Testimonials from "@/components/home/Testimonials";
 
 
 function HeroSection() {
@@ -118,6 +119,8 @@ export default function Home({
       </div>
       <div className='overflow-hidden sm:mb-32 md:mb-40'>
         <WhereToUseSection className="py-10"/>
+
+        <Testimonials />
 
         <PublishYourApi highlightedSnippets={publishYourApiHighlightedSnippets}/>
 
