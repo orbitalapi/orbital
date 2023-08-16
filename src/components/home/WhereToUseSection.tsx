@@ -11,6 +11,10 @@ import ExternalDataFeedsDiagram from './img/external-data-feeds.png';
 import Link from "next/link";
 import OrbitalLogo from "@/img/wormhole-aqua-transparent.png";
 import {useState} from "react";
+
+// Not sure why this isn't working, as this same approach works for
+// other svg's in the stack.
+// @ts-ignore
 import {ReactComponent as ArrowCitrus} from '@/img/arrow.svg';
 
 const DynamicWhereToUseOrbital = dynamic(() => import('@/components/home/WhereToUseDiagram'), {
@@ -30,7 +34,7 @@ function WhereToUseSection(props) {
             img: MicroservicesDiagram,
             subtitle: 'Orchestrate services on demand',
             text: 'Query for the data your app needs, and Orbital orchestrates your APIs, databases and serverless functions on demand',
-            link: '/docs'
+            link: '/microservices-orchestration'
         },
         {
             header: 'Event-based architectures',
