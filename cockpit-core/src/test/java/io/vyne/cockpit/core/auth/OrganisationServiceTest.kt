@@ -113,7 +113,7 @@ class OrganisationServiceTest : DatabaseTest() {
     private fun user(userId: UserOrbitalId): VyneUser {
         return userRepo.save(
             VyneUser(
-                userId = userId,
+                id = userId,
                 issuer = "google",
                 username = userId,
                 email = "$userId@foo.com"

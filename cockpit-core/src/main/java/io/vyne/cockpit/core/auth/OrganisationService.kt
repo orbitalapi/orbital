@@ -5,6 +5,7 @@ import io.vyne.cockpit.core.NotAuthorizedException
 import io.vyne.cockpit.core.security.VyneUserJpaRepository
 import io.vyne.spring.http.NotFoundException
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.security.core.Authentication
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.web.bind.annotation.PathVariable
@@ -19,15 +20,15 @@ class OrganisationService(
 
     fun createOrganisation(
         name: String,
-        @AuthenticationPrincipal requestingUser: UserDetails
+        @AuthenticationPrincipal requestingUser: Authentication
     ): Organisation {
         val organisation = organisationRepo.save(
             Organisation(
                 0, name, "?"
             )
         )
-        val user = userRepository.findByIdOrNull(requestingUser.username)
-            ?: throw NotFoundException("No user ${requestingUser.username} found")
+        val user = userRepository.findByIdOrNull(requestingUser.name)
+            ?: throw NotFoundException("No user ${requestingUser.name} found")
 
         val adminUser = memberRepository.save(
             OrganisationMember(

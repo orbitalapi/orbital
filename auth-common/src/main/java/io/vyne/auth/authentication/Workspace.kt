@@ -16,35 +16,39 @@ import org.hibernate.annotations.Type
  */
 @Entity
 data class Workspace(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long,
+   @Id
+   @GeneratedValue(strategy = GenerationType.IDENTITY)
+   val id: Long,
 
-    @Column(nullable = false)
-    val name: String,
+   @Column(nullable = false)
+   val name: String,
+
+   @ManyToOne
+   @JoinColumn(name = "organisation_id")
+   val organisation: Organisation
 )
 
 @Entity
 data class WorkspaceMember(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long,
+   @Id
+   @GeneratedValue(strategy = GenerationType.IDENTITY)
+   val id: Long,
 
 //   @Column(name = "user_id")
 //   val userId: UserOrbitalId,
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    val user: VyneUser,
+   @ManyToOne
+   @JoinColumn(name = "user_id")
+   val user: VyneUser,
 
-    @ManyToOne
-    @JoinColumn(name="workspace_id")
-    val workspace: Workspace,
+   @ManyToOne
+   @JoinColumn(name = "workspace_id")
+   val workspace: Workspace,
 
-    @Enumerated(EnumType.STRING)
-    @Type(ListArrayType::class)
-    @Column(name = "workspace_roles", columnDefinition = "text[]")
-    val roles: Set<WorkspaceRole>
+   @Enumerated(EnumType.STRING)
+   @Type(ListArrayType::class)
+   @Column(name = "workspace_roles", columnDefinition = "text[]")
+   val roles: Set<WorkspaceRole>
 ) {
    fun hasRole(role: WorkspaceRole) = roles.contains(role)
 }
@@ -52,6 +56,6 @@ data class WorkspaceMember(
 typealias WorkspaceRole = String
 
 object WorkspaceRoles {
-    const val ADMIN: WorkspaceRole = "ADMIN"
-    const val MEMBER: WorkspaceRole = "MEMBER"
+   const val ADMIN: WorkspaceRole = "ADMIN"
+   const val MEMBER: WorkspaceRole = "MEMBER"
 }

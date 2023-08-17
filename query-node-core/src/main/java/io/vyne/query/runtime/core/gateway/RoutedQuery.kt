@@ -50,7 +50,7 @@ data class RoutedQuery(
             // TODO : This should result in a BadRequest, somehow...
             else -> error("Parameter ${parameter.name} was not provided through the request")
          }
-            .map { rawValue -> FactValue.Constant(TypedValue(parameter.type, rawValue)) }
+            .map { rawValue -> FactValue.Constant(TypedValue(parameter.type, rawValue), rawValue) }
       }
 
       private fun isRequestBody(parameter: Parameter): Boolean {

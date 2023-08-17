@@ -17,6 +17,7 @@
         "build": {
           "builder": "@angular-builders/custom-webpack:browser",
           "options": {
+            "orbitalOutp"
             "outputPath": "../../../../station/target/classes/static",
             "index": "src/index.html",
             "main": "src/main.ts",
