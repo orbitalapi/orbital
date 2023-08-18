@@ -442,6 +442,7 @@ data class OpenAiChatResponse(
 
 data class OpenAiCompletionsResponse(
    val id: String,
+   val warning: String? = null,
    val `object`: String,
    val created: Long,
    val model: String,
