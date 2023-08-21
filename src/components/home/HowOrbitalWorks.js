@@ -422,45 +422,12 @@ function AnimationComponentsLarge() {
         />
         {/* Orbital icon */}
         {/* Analyst icon start */}
-        <g clipPath="url(#clip1)" clipRule="nonzero">
           <path
-            fill={iconsColour}
-            fillOpacity="1"
-            fillRule="nonzero"
-            stroke="none"
-            d="M45.55 60.559c1.145 0 2.075-.93 2.075-2.07a2.075 2.075 0 00-4.148 0c0 1.14.93 2.07 2.074 2.07zm0 0"
-          />
-        </g>
-        <path
-          fill={iconsColour}
-          fillOpacity="1"
-          fillRule="nonzero"
-          stroke="none"
-          d="M31.262 58.363c1.152 0 2.09-.937 2.09-2.09v-.523H32.3v.523a1.041 1.041 0 01-2.082 0v-.523h-1.051v.523c0 1.153.937 2.09 2.094 2.09zm0 0"
-        />
-        <path
-          fill={iconsColour}
-          fillOpacity="1"
-          fillRule="nonzero"
-          stroke="none"
-          d="M37.09 49.645c-1.23 0-2.23 1-2.23 2.226h1.05a1.18 1.18 0 012.36 0h1.05c0-1.226-1-2.226-2.23-2.226zm0 0"
-        />
-        <g clipPath="url(#clip2)" clipRule="nonzero">
-          <path
-            fill={iconsColour}
-            fillOpacity="1"
-            fillRule="nonzero"
-            stroke="none"
-            d="M17.137 68.477a23.85 23.85 0 01-.739-2.649 20.62 20.62 0 01-.367-1.723c-.101-.593-.238-1.195-.304-1.816-.07-.621-.18-1.246-.227-1.89-.05-.641-.113-1.286-.148-1.942-.024-.656-.043-1.316-.063-1.977.008-.664.02-1.332.031-1.996.028-.664.078-1.328.121-1.992.043-.66.141-1.316.207-1.969.059-.652.2-1.293.293-1.925.094-.637.243-1.258.375-1.868l.2-.91c.082-.293.164-.59.242-.879.168-.578.305-1.152.504-1.691.183-.543.367-1.07.543-1.582.203-.5.402-.984.593-1.45.192-.46.375-.906.606-1.304.242-.39.453-.77.683-1.11.477-.671.88-1.261 1.243-1.71.754-.883 1.187-1.383 1.187-1.383s-.308.586-.851 1.613c-.262.512-.524 1.16-.864 1.871-.16.36-.293.762-.457 1.176-.156.414-.422.805-.582 1.266l-.574 1.402c-.172.496-.348 1.008-.527 1.535-.196.524-.328 1.082-.489 1.645-.078.281-.16.566-.238.855-.062.293-.129.586-.195.883-.278 1.188-.477 2.434-.649 3.7-.066.636-.16 1.273-.203 1.921-.039.645-.09 1.293-.12 1.945-.009.649-.02 1.301-.028 1.946l.058 1.933c.036.641.102 1.27.149 1.895.047.629.152 1.238.223 1.844.062.605.195 1.191.293 1.77.093.577.226 1.136.359 1.679.062.289.129.57.2.847a29.366 29.366 0 01-.095-1.878c-.011-.989.024-2.036.078-3.043.125-2.04.391-4.07.758-5.95.188-.937.387-1.84.614-2.691.214-.848.449-1.645.683-2.375.125-.36.195-.723.348-1.043.148-.316.297-.613.441-.89.278-.563.551-1.036.77-1.426.218-.391.418-.68.539-.887l.195-.309-.355 1.356-.383 1.547c-.078.297-.149.613-.219.949-.074.336-.238.66-.336 1.023a44.69 44.69 0 00-1.266 4.95 45.349 45.349 0 00-.738 5.808 44.722 44.722 0 00-.078 2.98c.008.587.043 1.169.086 1.743a37.625 37.625 0 011.563-5.809v.492c0 6.075 4.949 11.012 11.035 11.012 6.082 0 11.031-4.941 11.031-11.012v-7.14a5.189 5.189 0 000-5.645v-8.601c0-.832-.102-1.649-.285-2.442 1.316-1.91 1.445-3.992-1.653-5.64l.29-.22c.37-.788-.54-2.972-1.473-3.663-5.922-4.371-17.656-1.598-22.04 3.926-6.054 7.628-3.808 20.73-2.472 29.55.39 2.578.973 5.293 2.477 7.368zM41.988 51.02a4.098 4.098 0 01-8.195 0 4.1 4.1 0 014.098-4.09 4.1 4.1 0 014.097 4.09zM38.48 40.496c.922-.652 1.875-1.426 2.657-2.266.062.45.105.907.105 1.368v7.41a5.221 5.221 0 00-3.351-1.215 5.248 5.248 0 00-4.88 3.34h-3.503a5.327 5.327 0 00-1.106-1.73c3.043-2.7 6.703-4.516 10.078-6.907zm-13.066 10.2h.016c.652 0 1.18.527 1.18 1.175h1.05a2.22 2.22 0 00-1.531-2.101 18.11 18.11 0 011.441-1.586 4.057 4.057 0 011.157 2.84 4.1 4.1 0 01-4.098 4.09c-.64 0-1.242-.153-1.781-.415a38.51 38.51 0 012.566-4.004zm-.785 5.554c2.887 0 5.238-2.348 5.238-5.227a5.25 5.25 0 00-.062-.75h2.91a5.251 5.251 0 00-.059.75 5.236 5.236 0 008.586 4.012v5.95c0 5.492-4.476 9.964-9.98 9.964-5.504 0-9.985-4.472-9.985-9.965v-3.12c.325-.731.668-1.454 1.035-2.16.7.347 1.485.546 2.317.546zm0 0"
-          />
-        </g>
-        <path
-          fill={iconsColour}
-          fillOpacity="1"
-          fillRule="nonzero"
-          stroke="none"
-          d="M46.824 51.793c0-1.398-1.14-2.54-2.543-2.54v5.079a2.545 2.545 0 002.543-2.539zm0 0"
-        />
+              fill-rule="nonzero"
+              fill={iconsColour}
+              fill-opacity="1"
+              d="M 51.507813 68.378906 C 50.847656 65.785156 46.730469 64.515625 42.746094 63.292969 C 41.429688 62.886719 40.191406 62.503906 39.207031 62.109375 C 38.648438 61.882813 38.210938 60.273438 38.152344 58.304688 C 38.628906 57.871094 39.082031 57.296875 39.550781 56.53125 C 39.699219 56.28125 39.851563 56.046875 40 55.816406 C 40.476563 55.066406 40.972656 54.292969 41.394531 53.25 C 41.808594 53.066406 42.191406 52.71875 42.425781 52.285156 C 43.308594 50.667969 43.824219 48.070313 43.460938 47.042969 C 43.3125 46.628906 43.015625 46.328125 42.601563 46.167969 C 42.601563 41.339844 40.460938 37.628906 36.824219 36.1875 C 36.101563 35.871094 34.890625 35.394531 33.238281 34.9375 C 32.546875 34.75 32.140625 34.414063 32.09375 34.3125 C 32.0625 34.117188 31.953125 33.945313 31.796875 33.835938 C 31.636719 33.722656 31.433594 33.683594 31.246094 33.722656 C 30.59375 33.851563 30.027344 34.730469 29.800781 35.285156 C 29.699219 35.535156 29.640625 35.773438 29.617188 36.003906 C 28.382813 36.164063 27.15625 36.753906 26.804688 38.019531 C 26.757813 38.148438 26.746094 38.292969 26.769531 38.425781 C 25.445313 39.902344 24.179688 42.3125 24.183594 46.132813 C 23.714844 46.28125 23.378906 46.59375 23.222656 47.039063 C 22.859375 48.066406 23.371094 50.660156 24.253906 52.28125 C 24.507813 52.742188 24.925781 53.101563 25.375 53.269531 C 25.789063 54.300781 26.253906 55.039063 26.75 55.816406 C 26.890625 56.039063 27.03125 56.261719 27.175781 56.5 C 27.675781 57.316406 28.179688 57.925781 28.742188 58.386719 C 28.628906 60.511719 28.101563 61.949219 27.636719 62.089844 L 26.917969 62.300781 C 21.515625 63.871094 15.902344 65.824219 15.238281 68.378906 C 14.679688 70.535156 14.589844 71.910156 14.585938 72.015625 C 14.585938 73.917969 16.132813 75.464844 18.03125 75.464844 L 48.742188 75.464844 C 50.644531 75.464844 52.191406 73.917969 52.191406 72.015625 C 52.191406 71.226563 52.070313 70.582031 51.507813 68.378906 Z M 48.742188 74.027344 L 18.035156 74.027344 C 16.925781 74.027344 16.023438 73.125 16.023438 72.0625 C 16.023438 72.046875 16.113281 70.75 16.632813 68.742188 C 16.996094 67.339844 20.589844 65.636719 27.320313 63.679688 L 28.054688 63.46875 C 29.867188 62.921875 30.152344 59.503906 30.191406 58.058594 C 30.199219 57.8125 30.082031 57.585938 29.882813 57.445313 C 29.359375 57.082031 28.890625 56.542969 28.40625 55.75 C 28.257813 55.507813 28.113281 55.273438 27.964844 55.046875 C 27.4375 54.210938 26.980469 53.492188 26.589844 52.410156 C 26.488281 52.136719 26.226563 51.945313 25.933594 51.933594 C 25.855469 51.929688 25.636719 51.796875 25.515625 51.582031 C 24.726563 50.132813 24.40625 47.980469 24.574219 47.5 C 24.589844 47.484375 24.675781 47.425781 24.886719 47.425781 L 24.894531 47.425781 C 25.085938 47.425781 25.285156 47.375 25.421875 47.234375 C 25.5625 47.09375 25.640625 46.921875 25.628906 46.726563 C 25.472656 42.335938 27.089844 39.972656 28.476563 38.761719 C 28.714844 38.554688 28.789063 38.214844 28.660156 37.925781 C 28.644531 37.894531 28.628906 37.867188 28.613281 37.839844 C 29.214844 37.414063 30.207031 37.398438 30.351563 37.398438 L 30.429688 37.398438 C 30.6875 37.414063 30.933594 37.289063 31.074219 37.070313 C 31.230469 36.828125 31.226563 36.511719 31.0625 36.273438 C 31.054688 36.257813 31.035156 36.195313 31.0625 36.058594 C 31.101563 35.882813 31.1875 35.691406 31.289063 35.527344 C 31.726563 35.90625 32.328125 36.179688 32.859375 36.328125 C 34.429688 36.761719 35.566406 37.210938 36.273438 37.519531 C 39.542969 38.816406 41.324219 42.171875 41.15625 46.730469 C 41.148438 46.925781 41.21875 47.113281 41.351563 47.25 C 41.484375 47.390625 41.664063 47.472656 41.859375 47.476563 C 42.019531 47.480469 42.097656 47.511719 42.105469 47.523438 C 42.273438 48.007813 41.957031 50.152344 41.167969 51.601563 C 41.046875 51.816406 40.835938 51.945313 40.75 51.957031 C 40.488281 51.992188 40.265625 52.171875 40.175781 52.417969 C 39.777344 53.488281 39.296875 54.246094 38.785156 55.042969 C 38.632813 55.28125 38.476563 55.527344 38.320313 55.78125 C 37.863281 56.535156 37.425781 57.066406 36.988281 57.40625 C 36.808594 57.546875 36.707031 57.757813 36.707031 57.980469 C 36.71875 59.726563 36.988281 62.761719 38.667969 63.441406 C 39.707031 63.863281 40.976563 64.253906 42.320313 64.667969 C 45.585938 65.671875 49.652344 66.921875 50.113281 68.738281 C 50.667969 70.910156 50.753906 71.414063 50.753906 72.015625 C 50.753906 73.121094 49.851563 74.027344 48.746094 74.027344 Z M 48.742188 74.027344 "
+              id="path211" />
         {/* Analyst icon end */}
         {/* Analyst text start */}
         <g fill={iconsTextColour} fillOpacity="1">
@@ -1165,9 +1132,10 @@ const StepThreeLinesMobile = (props) => {
 const orbitalCitrus = '#e0ff4f';
 const orbitalAqua = '#05BCC1';
 const orbitalBlue = '#12263b';
-const orbitalTextGray = '#94A3B8';
+const orbitalTextGray = colors.slate["200"];
+const orbitalLineBlue = '#0EA5E9';
 
-const iconsColour = orbitalTextGray;
+const iconsColour = orbitalLineBlue;
 const iconsTextColour = orbitalTextGray;
 const accentIconsColour = orbitalAqua;
 const accentIconsTextColour = orbitalAqua;
@@ -1179,9 +1147,16 @@ const lineLabelTextColour = orbitalBlue;
 const lineLabelColour = "white";
 
 const StyledCaptions = styled.div`
-  .counter, .subtitle {
+  .counter, .subtitle  {
     font-weight: 500;
     transition: color .5s;
+  }
+  .description {
+    transition: color .5s;
+  }
+
+  p.active {
+    color: ${colors.slate["100"]}
   }
 
   .active {
@@ -1235,9 +1210,11 @@ const CaptionsLarge = () => {
     document.querySelector(`.animation-md ${addTo} .counter`)?.classList?.add('active')
     document.querySelector(`.animation-md ${addTo} .subtitle`)?.classList?.add('active')
     document.querySelector(`.animation-md ${addTo} .progress`)?.classList?.add('active')
+    document.querySelector(`.animation-md ${addTo} .description`)?.classList?.add('active')
     document.querySelector(`.animation-md ${removeFrom} .counter`)?.classList?.remove('active')
     document.querySelector(`.animation-md ${removeFrom} .subtitle`)?.classList?.remove('active')
     document.querySelector(`.animation-md ${removeFrom} .progress`)?.classList?.remove('active')
+    document.querySelector(`.animation-md ${removeFrom} .description`)?.classList?.remove('active')
   }
 
   React.useEffect(() => {
@@ -1306,7 +1283,7 @@ const CaptionsLarge = () => {
           </div>
 
           <div className={'subtitle'}>Publish</div>
-          <p>APIs and data sources publish their schemas to Vyne, enriched with Taxi metadata.</p>
+          <p className={'description'}>APIs and data sources publish their schemas to Orbital, enriched with Taxi metadata.</p>
             <LearnMoreButton href="https://taxilang.org" text={() => <span>Learn more about Taxi</span>}/>
           {/* <Link href="https://docs.taxilang.org" color="citrus" darkColor="indigo">
             Learn more about Taxi, our metadata language
@@ -1318,7 +1295,7 @@ const CaptionsLarge = () => {
             <div className={'progress progress-2'}/>
           </div>
           <div className={'subtitle'}>Query</div>
-          <p>Data consumers send a request for data. Vyne automates the integration, fetching, mixing and
+          <p className={'description'}>Data consumers send a request for data. Orbital automates the integration, fetching, mixing and
             transforming
             data as required.</p>
         </div>
@@ -1328,7 +1305,7 @@ const CaptionsLarge = () => {
             <div className={'progress progress-3'}/>
           </div>
           <div className={'subtitle'}>Adapt</div>
-          <p>As your services change, Vyne's automatically adapts, so your clients remain unaffected. No more breaking
+          <p className={'description'}>As your services change, Orbital automatically adapts, so your clients remain unaffected. No more breaking
             changes.</p>
         </div>
       </div>
@@ -1425,7 +1402,7 @@ const CaptionsMobile = () => {
         <div id='sm-progress-bar' className={'progress'}/>
         <div className='explanation-block'>
           <div className='title step-publish'>Publish</div>
-          <p>APIs and data sources publish their schemas to Vyne, enriched with <a
+          <p className={'description'}>APIs and data sources publish their schemas to Orbital, enriched with <a
             href={'https://taxilang.org'}>Taxi</a> metadata.</p>
           <a href="https://docs.taxilang.org" color="indigo" darkColor="indigo">
             Learn more about Taxi, our metadata language
@@ -1433,13 +1410,13 @@ const CaptionsMobile = () => {
         </div>
         <div className='explanation-block'>
           <div className='title step-query'>Query</div>
-          <p>Data consumers send a request for data. Vyne automates the integration, fetching, mixing and
+          <p className={'description'}>Data consumers send a request for data. Orbital automates the integration, fetching, mixing and
             transforming
             data as required.</p>
         </div>
         <div className='explanation-block'>
           <div className={'title step-adapt'}>Adapt</div>
-          <p>As your services change, or new services come on board - Vyne automatically adapts, so your clients remain
+          <p className={'description'}>As your services change, or new services come on board - Orbital automatically adapts, so your clients remain
             unaffected. No more breaking changes.</p>
         </div>
       </div>
@@ -1451,6 +1428,9 @@ const StyledCaptionsMobile = styled.div`
     padding: 0 2rem;
   }
 
+  p.description.active {
+    color: red;
+  }
   .active {
     color: ${lineLabelTextColour}
   }
@@ -1570,7 +1550,7 @@ const AnimationComponentsMobile = () => {
 
 
       <DatabaseImage imageColour={iconsColour} textColour={iconsTextColour} />
-      
+
       <image
         width='80'
         height='80'

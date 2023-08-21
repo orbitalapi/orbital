@@ -3,6 +3,7 @@ import * as React from 'react';
 import JeyProfile from './img/testimonials/jey.png';
 import Musicflow from './img/testimonials/musicflow.png';
 import MarkusProfile from './img/testimonials/markus.png';
+import TaneProfile from './img/testimonials/tane.png';
 import Quadcorps from './img/testimonials/qc-logo-crop.png';
 
 import Image from 'next/future/image';
@@ -24,12 +25,12 @@ function Testimonials(props) {
               <figcaption className="mt-10 flex items-center gap-x-6">
                 <Image
                   className="h-14 w-14 rounded-full bg-gray-800"
-                  src={MarkusProfile}
+                  src={TaneProfile}
                   alt=""
                 />
                 <div className="text-base">
                   <a href='https://musicflow.co'>
-                    <div className="font-semibold text-white">Markus Buhmann</div>
+                    <div className="font-semibold text-white">Tane Bellwood</div>
                     <div className="mt-1 text-gray-400">Co-founder of Musicflow</div>
                   </a>
                 </div>
