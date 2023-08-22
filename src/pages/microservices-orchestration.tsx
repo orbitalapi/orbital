@@ -268,10 +268,10 @@ export default function MicroservicesOrchestration({highlightedSnippets}) {
                   Orbital handles the stitching between your microservices
                 </p>
                 <div className="mt-20 flex items-center justify-center gap-x-6">
-                  <LinkButton styles={'border-citrus'}
-                              icon={<GithubIcon className={'w-6 h-auto'}/>}
-                              label='Try this template'
-                              link='https://github.com'></LinkButton>
+                  {/*<LinkButton styles={'border-citrus'}*/}
+                  {/*            icon={<GithubIcon className={'w-6 h-auto'}/>}*/}
+                  {/*            label='Try this template'*/}
+                  {/*            link='https://github.com'></LinkButton>*/}
                   <WatchADemoButton defaultVideo="breakingChanges"/>
                   <BookADemoButton/>
                 </div>
