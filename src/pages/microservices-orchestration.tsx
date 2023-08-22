@@ -60,7 +60,7 @@ const faqs = [
 
   },
   {
-    question: "What do you mean?",
+    question: "What do you mean by 'Adapts Automatically'?",
     answer: "Orbital generates integration on-the-fly, so as your APIs change, integration automatically adapts.  We also have CI/CD tooling that can detect changes which Orbital can't recover from, and warn you ahead of deployment."
   },
   {

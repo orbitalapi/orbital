@@ -72,7 +72,7 @@ export function NavPopover({display = 'md:hidden', className, ...props}) {
             <NavItems/>
             <li>
               <a
-                href="https://github.com/orbitalapi/orbital"
+                href="https://github.com/orbitalapi"
                 className="hover:text-sky-500 dark:hover:text-sky-400"
               >
                 GitHub
@@ -238,7 +238,7 @@ export function Header({
                   <div className='flex items-center border-l border-slate-200 ml-6 pl-6 dark:border-slate-800'>
                     {allowThemeToggle && (<ThemeToggle panelClassName='mt-8'/>)}
                     <a
-                      href='https://github.com/orbitalapi/orbital'
+                      href='https://github.com/orbitalapi'
                       className="ml-6 block text-slate-400 hover:text-slate-500 dark:hover:text-slate-300"
                     >
                       <span className="sr-only">Orbital on GitHub</span>

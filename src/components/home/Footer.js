@@ -23,7 +23,7 @@ const footerNav = [
       { title: 'Taxi', href: 'https://taxilang.org' },
 
       { title: 'Slack', href: 'https://join.slack.com/t/orbitalapi/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg' },
-      { title: 'GitHub', href: 'https://github.com/orbitalapi/orbital' },
+      { title: 'GitHub', href: 'https://github.com/orbitalapi' },
       { title: 'Twitter', href: 'https://twitter.com/orbitalapi' },
       { title: 'LinkedIn', href: 'https://www.linkedin.com/company/orbitalhq/' }
     ],
