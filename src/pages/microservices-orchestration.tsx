@@ -3,14 +3,12 @@ import {Footer} from '@/components/home/Footer';
 import WatchADemoButton from '../components/DemosModal';
 import Wormhole from '@/components/Wormhole';
 import {ReactComponent as DataPatternLight} from '@/img/data-pattern.svg';
-import {ArrowPathIcon, CodeBracketIcon, WrenchIcon,} from '@heroicons/react/20/solid'
 import OrbitalLogo from '@/img/wormhole-aqua-transparent.png';
-import dynamic from 'next/dynamic';
 import BookADemoButton from "@/components/BookADemoButton";
 import {LinkButton} from "@/components/LinkButton";
 import {ReactComponent as GithubIcon} from '@/img/icons/github-mark-white.svg'
 import {CodeSnippetMap} from "@/components/Guides/CodeSnippet";
-import * as React from "react";
+
 import {useState} from "react";
 import {Snippet} from "@/components/Steps";
 import {ArrowsRightLeftIcon, BoltIcon, CpuChipIcon, MinusSmallIcon, PlusSmallIcon} from "@heroicons/react/24/outline";
@@ -20,34 +18,6 @@ import AwsServiceIcon from "@/img/aws-service-icon";
 import ProtobufIcon from "@/img/protobuf-icon";
 import KafkaIcon from "@/img/kafka-icon";
 import {Disclosure} from "@headlessui/react";
-
-const DynamicHowOrbitalWorks = dynamic(() => import('@/components/home/HowOrbitalWorks'), {
-  loading: () => <p>Loading...</p>
-})
-
-const breakingChangesFeatures = [
-  {
-    name: 'Consumer-defined queries',
-    description:
-      'Define your integrations based on the shape you want to receive it, instead of being at the mercy of how it\'s published.',
-    href: '#',
-    icon: CodeBracketIcon,
-  },
-  {
-    name: 'CI / CD tooling',
-    description:
-      'Integrate rich build time checks to ensure your queries are still compatible with your data producer\'s schemas.',
-    href: '#',
-    icon: ArrowPathIcon,
-  },
-  {
-    name: 'Zero maintenance',
-    description:
-      'When schemas are updated, your app isn\'t affected. Orbital updates the mappings on-the-fly to fulfill the queries you originally designed.',
-    href: '#',
-    icon: WrenchIcon,
-  },
-]
 
 
 const generalOrbitalFeatures = [
