@@ -1,4 +1,4 @@
-package io.vyne.query.runtime.core
+package io.vyne.query
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.models.RawObjectMapper
@@ -7,12 +7,8 @@ import io.vyne.models.TypedInstanceConverter
 import io.vyne.models.format.FirstTypedInstanceInfo
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.serde.toSerializable
-import io.vyne.query.QueryResult
-import io.vyne.query.QueryResultSerializer
-import io.vyne.query.ValueWithTypeName
 import io.vyne.schemas.QueryOptions
 import io.vyne.schemas.Type
-import org.springframework.http.MediaType
 
 class RawResultsSerializer(queryOptions: QueryOptions) : QueryResultSerializer {
 
@@ -55,8 +51,8 @@ class SerializedTypedInstanceSerializer(private val contentType: String?) : Quer
    override fun serialize(item: TypedInstance): Any? {
       item.toSerializable()
       return when (contentType) {
-         MediaType.APPLICATION_JSON_VALUE -> converter.convert(item)
-         MediaType.APPLICATION_CBOR_VALUE -> item.toSerializable().toBytes()
+         "application/json" -> converter.convert(item)
+         "application/cbor" -> item.toSerializable().toBytes()
          else -> throw IllegalArgumentException("Unsupported content type: $contentType")
       }
    }

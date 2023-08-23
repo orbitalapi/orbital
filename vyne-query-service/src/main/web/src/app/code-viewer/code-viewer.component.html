@@ -3,7 +3,6 @@
     <img class="icon" src="assets/img/file.svg">
     <span class="file-name">{{ parsedSource.name }}</span>
     <span class="error-count" *ngIf="parsedSource.errors?.length > 0">{{ parsedSource.errors.length }}</span>
-    <span class="version" *ngIf="parsedSource.source?.version">{{ parsedSource.source.version }}</span>
   </div>
 </div>
 <!--<mat-tab-group class="code-viewer" [(selectedIndex)]="selectedIndex">-->

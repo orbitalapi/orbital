@@ -1,6 +1,9 @@
 import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
 import {CompilationMessage} from '../services/schema';
 
+/**
+ * @deprecated Use compilation-message-list component instead
+ */
 @Component({
   selector: 'app-error-list',
   styleUrls: ['./error-list.component.scss'],

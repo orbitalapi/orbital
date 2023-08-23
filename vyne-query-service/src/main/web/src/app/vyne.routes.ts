@@ -26,6 +26,12 @@ export const VYNE_ROUTES = RouterModule.forRoot(
       loadChildren: () => import('./query-panel/query-panel.route.module').then(m => m.QueryPanelRouteModule),
     },
     {
+        path: 'designer',
+        loadChildren: () => import('./model-designer/model-designer.module').then(m => m.ModelDesignerModule),
+        canActivate: [AuthGuard],
+        data: {requiredAuthority: VynePrivileges.EditSchema}
+    },
+      {
       path: 'data-explorer',
       loadChildren: () => import('./data-explorer/data-explorer.route.module').then(m => m.DataExplorerRouteModule),
       canActivate: [AuthGuard],

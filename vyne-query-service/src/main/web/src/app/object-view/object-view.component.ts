@@ -58,6 +58,10 @@ export interface ResultTreeMember {
 })
 export class ObjectViewComponent extends BaseTypedInstanceViewer {
 
+    // This type doesn't render TypeNamedInstances.
+    // Those aren't typically returned from query responses,
+    // but are returned when using the Desginer.
+    // Instead, use a TypeNamedInstanceTree for that.
 
   NOT_PROVIDED = 'Value not provided';
 

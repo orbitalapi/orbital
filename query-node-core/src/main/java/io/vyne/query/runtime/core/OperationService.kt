@@ -3,6 +3,7 @@ package io.vyne.query.runtime.core
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.query.Fact
+import io.vyne.query.FirstEntryMetadataResultSerializer
 import io.vyne.query.NoOpQueryContextEventDispatcher
 import io.vyne.query.ResultMode
 import io.vyne.query.connectors.OperationInvoker
