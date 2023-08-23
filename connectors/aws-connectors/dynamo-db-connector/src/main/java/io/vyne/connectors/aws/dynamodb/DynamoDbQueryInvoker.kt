@@ -1,14 +1,12 @@
 package io.vyne.connectors.aws.dynamodb
 
-import io.vyne.connectors.aws.core.AwsConnectionConfiguration
-import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
-import io.vyne.connectors.aws.core.region
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
-import io.vyne.query.*
+import io.vyne.query.ConstructedQueryDataSource
+import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.*
 import kotlinx.coroutines.CoroutineDispatcher
@@ -20,19 +18,15 @@ import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
-import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.dynamodb.model.*
-import software.amazon.awssdk.services.dynamodb.model.QueryResponse
 import java.math.BigDecimal
-import java.time.Instant
-import java.util.concurrent.CompletableFuture
 
 class DynamoDbQueryInvoker(
     private val connectionRegistry: AwsConnectionRegistry,
     private val schemaProvider: SchemaProvider,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
-) {
-    private val queryBuilder = DynamoDbQueryBuilder()
+) : BaseDynamoInvoker(connectionRegistry) {
+    private val queryBuilder = DynamoDbRequestBuilder()
 
     companion object {
         private val logger = KotlinLogging.logger {}
@@ -51,7 +45,7 @@ class DynamoDbQueryInvoker(
 
         val (client, awsConfig) = buildClient(service)
 
-        return Mono.fromFuture(executeQuery(query, client))
+        return Mono.fromFuture(executeRequest(query, client))
             .publishOn(Schedulers.boundedElastic())
             .doOnTerminate {
                 try {
@@ -66,7 +60,7 @@ class DynamoDbQueryInvoker(
                 val duration = responsePair.t1
                 val response = responsePair.t2
                 val count = response.count()
-                val remoteCall = buildRemoteCall(service, client, awsConfig, operation, query, duration, count)
+                val remoteCall = buildRemoteCall(service, awsConfig, operation, query, duration, count)
                 val operationResult = OperationResult.fromTypedInstances(constructedQueryDataSource.inputs, remoteCall)
                 eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
                 val items = when (response) {
@@ -112,31 +106,7 @@ class DynamoDbQueryInvoker(
         }
     }
 
-    private fun buildRemoteCall(
-        service: Service,
-        client: DynamoDbAsyncClient,
-        awsConfig: AwsConnectionConfiguration,
-        operation: RemoteOperation,
-        query: DynamoDbRequest,
-        duration: Long,
-        count: Int
-    ): RemoteCall = RemoteCall(
-        service = service.name,
-        address = awsConfig.connectionName,
-        operation = operation.name,
-        responseTypeName = operation.returnType.name,
-        requestBody = query.toString(),
-        durationMs = duration,
-        timestamp = Instant.now(),
-        responseMessageType = ResponseMessageType.FULL,
-        response = null,
 
-        exchange = SqlExchange(
-            sql = query.toString(),
-            recordCount = count
-        )
-
-    )
 
     private fun DynamoDbResponse.count(): Int {
         return when (this) {
@@ -177,38 +147,4 @@ class DynamoDbQueryInvoker(
         return TypedInstance.from(memberType, itemValues, schema, source = dataSource)
     }
 
-    private fun executeQuery(
-        request: DynamoDbRequest,
-        client: DynamoDbAsyncClient
-    ): CompletableFuture<out DynamoDbResponse> {
-        return when (request) {
-            is GetItemRequest -> client.getItem(request)
-            is QueryRequest -> client.query(request)
-            is ScanRequest -> client.scan(request)
-            else -> error("DynamoDbRequest type ${request::class.simpleName} is not supported")
-        }
-    }
-
-    private fun buildClient(service: Service): Pair<DynamoDbAsyncClient, AwsConnectionConfiguration> {
-        val config = getAwsConnectionConfig(service)
-        val builder = DynamoDbAsyncClient.builder()
-            .configureWithExplicitValuesIfProvided(config)
-        return try {
-            builder.build() to config
-        } catch (e: Exception) {
-            logger.error(e) { "Failed to build Dynamo client: ${e.message}" }
-            throw e
-        }
-    }
-
-    private fun getAwsConnectionConfig(service: Service): AwsConnectionConfiguration {
-        val connectionName =
-            service.metadata(DynamoConnectorTaxi.Annotations.DynamoService.NAME).params["connectionName"] as String
-        if (!connectionRegistry.hasConnection(connectionName)) {
-            error("Connection $connectionName is not defined")
-        }
-        val awsConnectionConfiguration = connectionRegistry.getConnection(connectionName)
-        logger.info { "AWS connection ${awsConnectionConfiguration.connectionName} with region ${awsConnectionConfiguration.region} found in configurations" }
-        return awsConnectionConfiguration
-    }
 }

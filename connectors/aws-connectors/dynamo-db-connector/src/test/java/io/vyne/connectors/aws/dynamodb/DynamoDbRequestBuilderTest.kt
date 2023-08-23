@@ -3,6 +3,7 @@ package io.vyne.connectors.aws.dynamodb
 import io.kotest.matchers.maps.shouldHaveKey
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.vyne.models.TypedInstance
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.jupiter.api.Test
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue
@@ -10,7 +11,7 @@ import software.amazon.awssdk.services.dynamodb.model.GetItemRequest
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest
 
-class DynamoDbQueryBuilderTest {
+class DynamoDbRequestBuilderTest {
 
 
     @Test
@@ -29,7 +30,7 @@ class DynamoDbQueryBuilderTest {
             }
         """.trimIndent()
         )
-        val query = DynamoDbQueryBuilder().buildQuery(
+        val query = DynamoDbRequestBuilder().buildQuery(
             schema, """
             find { Movie[] }
         """.trimIndent()
@@ -54,7 +55,7 @@ class DynamoDbQueryBuilderTest {
             }
         """.trimIndent()
         )
-        val query = DynamoDbQueryBuilder().buildQuery(
+        val query = DynamoDbRequestBuilder().buildQuery(
             schema, """
             find { Movie( MovieTitle == 'Jaws' ) }
         """.trimIndent()
@@ -82,7 +83,7 @@ class DynamoDbQueryBuilderTest {
             }
         """.trimIndent()
         )
-        val query = DynamoDbQueryBuilder().buildQuery(
+        val query = DynamoDbRequestBuilder().buildQuery(
             schema, """
             find { Movie( MovieId == 3 ) }
         """.trimIndent()
@@ -109,7 +110,7 @@ class DynamoDbQueryBuilderTest {
             }
         """.trimIndent()
         )
-        val query = DynamoDbQueryBuilder().buildQuery(
+        val query = DynamoDbRequestBuilder().buildQuery(
             schema, """
             find { Movie( MovieId == "abcd" ) }
         """.trimIndent()
@@ -118,5 +119,36 @@ class DynamoDbQueryBuilderTest {
         getItemRequest.tableName().shouldBe("movies")
         getItemRequest.key().shouldHaveKey("id")
         getItemRequest.key()["id"].shouldBe(AttributeValue.builder().s("abcd").build())
+    }
+
+    @Test
+    fun `creates a put request`() {
+        val schema = TaxiSchema.from(
+            """
+            ${DynamoConnectorTaxi.schema}
+
+            namespace movies {
+                @io.vyne.aws.dynamo.Table( connectionName = "conn" , tableName = "movies" )
+                model Movie {
+                    @Id
+                    id : MovieId inherits String
+                    title : MovieTitle inherits String
+                }
+            }
+        """.trimIndent()
+        )
+        val instance = TypedInstance.from(
+            schema.type("Movie"),
+            """{ "id" : "foo" , "title" : "Star Wars" }""",
+            schema
+        )
+        val query = DynamoDbRequestBuilder().buildPut(schema, instance)
+        query.tableName().shouldBe("movies")
+        query.item().shouldBe(
+            mapOf(
+                "id" to AttributeValue.fromS("foo"),
+                "title" to AttributeValue.fromS("Star Wars")
+            )
+        )
     }
 }

@@ -136,6 +136,9 @@ class DynamoDbInvokerTest {
          @io.vyne.aws.dynamo.DynamoService( connectionName = "vyneAws" )
          service DynamoService {
             table reviews: Review[]
+
+            @UpsertOperation
+            write operation saveReview(Review):Review
          }
         """
     )
@@ -232,6 +235,32 @@ class DynamoDbInvokerTest {
             )
         )
         result.shouldHaveSize(2)
+    }
+
+    @Test
+    fun `can expose a mutation and write a new record`(): Unit = runBlocking {
+        val vyne = testVyne(schemaSrc)
+        { schema ->
+            listOf(DynamoDbInvoker(connectionRegistry, SimpleSchemaProvider(schema)))
+        }
+        buildReviewsTable(
+            data = emptyList()
+        )
+        val saved = vyne.query(
+            """
+            given { r: Review = {  movieId : 200 , score: 5 } }
+            call DynamoService::saveReview
+        """.trimIndent()
+        )
+            .rawObjects()
+
+        // Now try and find it again
+        val loaded = vyne.query("""find { Review( MovieId == 200 ) } """)
+            .rawObjects()
+        loaded.shouldHaveSize(1)
+        loaded.single().shouldBe(
+            mapOf("movieId" to 200, "score" to 5)
+        )
     }
 
     private fun String.asAttribute(): AttributeValue = AttributeValue.fromS(this)

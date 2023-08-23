@@ -1,6 +1,8 @@
 package io.vyne.connectors.aws.dynamodb
 
 import io.vyne.connectors.getTypesToFind
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
 import io.vyne.schemas.Schema
 import lang.taxi.expressions.LiteralExpression
 import lang.taxi.expressions.OperatorExpression
@@ -16,7 +18,7 @@ import lang.taxi.types.Type
 import mu.KotlinLogging
 import software.amazon.awssdk.services.dynamodb.model.*
 
-class DynamoDbQueryBuilder {
+class DynamoDbRequestBuilder {
     companion object {
         private val logger = KotlinLogging.logger {}
     }
@@ -94,7 +96,10 @@ class DynamoDbQueryBuilder {
             .build()
     }
 
-    private fun attributeValue(value: Any): AttributeValue {
+    private fun attributeValue(value: Any?): AttributeValue {
+        if (value == null) {
+            return AttributeValue.fromNul(true)
+        }
         return when (value) {
             is String -> AttributeValue.builder().s(value).build()
             is Number -> AttributeValue.builder().n(value.toString()).build()
@@ -155,12 +160,29 @@ class DynamoDbQueryBuilder {
 
     private fun getTableNames(typesToFind: List<Pair<ObjectType, DiscoveryType>>): Map<Type, String> {
         return typesToFind.associate { (type, _) ->
-            val annotation =
-                type.annotations.firstOrNull { it.qualifiedName == DynamoConnectorTaxi.Annotations.Table.NAME }
-                    ?: error("Type ${type.qualifiedName} does not declare a ${DynamoConnectorTaxi.Annotations.Table.NAME} annotation")
-
-            val table = DynamoConnectorTaxi.Annotations.Table.from(annotation)
+            val table = getDynamoTableFromType(type)
             type to table.tableName
         }
     }
+
+    fun buildPut(schema: Schema, recordToWrite: TypedInstance): PutItemRequest {
+        val table = getDynamoTableFromType(
+            schema.taxiType(recordToWrite.type.name)
+        )
+        val attributes = convertToDynamoAttributes(recordToWrite)
+        return PutItemRequest.builder()
+            .tableName(table.tableName)
+            .item(attributes)
+            .build()
+    }
+
+    private fun convertToDynamoAttributes(recordToWrite: TypedInstance): Map<String, AttributeValue> {
+        require(recordToWrite is TypedObject) { "Writes not supported on instances of type ${recordToWrite::class.simpleName}" }
+        return recordToWrite.type.attributes.map { (name, field) ->
+            val fieldValue = recordToWrite[name]
+            name to attributeValue(fieldValue.value)
+        }.toMap()
+    }
 }
+
+

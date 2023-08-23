@@ -26,7 +26,7 @@ class DynamoDbInvoker(
     }
 
     private val queryInvoker = DynamoDbQueryInvoker(connectionRegistry, schemaProvider)
-
+    private val upsertInvoker = DynamoDbUpsertInvoker(connectionRegistry, schemaProvider)
     override suspend fun invoke(
         service: Service,
         operation: RemoteOperation,
@@ -43,13 +43,13 @@ class DynamoDbInvoker(
                 queryId
             )
 
-//            operation.hasMetadata(JdbcConnectorTaxi.Annotations.UpsertOperationAnnotationName) -> upsertInvoker.invoke(
-//                service,
-//                operation,
-//                parameters,
-//                eventDispatcher,
-//                queryId
-//            )
+            operation.operationType == OperationScope.MUTATION && operation.hasMetadata("UpsertOperation") -> upsertInvoker.invoke(
+                service,
+                operation,
+                parameters,
+                eventDispatcher,
+                queryId
+            )
 
             else -> error("Unhandled Dynamo Operation type: ${operation.qualifiedName.parameterizedName}")
         }
