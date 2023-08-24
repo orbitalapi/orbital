@@ -4,8 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.rabbitmq.client.AMQP
 import io.vyne.auth.schemes.AuthSchemeRepository
-import io.vyne.auth.tokens.AuthTokenRepository
-import io.vyne.connectors.config.ConfigFileConnectorsRegistry
+import io.vyne.connectors.config.SourceLoaderConnectorsRegistry
 import io.vyne.http.ServicesConfigRepository
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryFailedException
@@ -29,13 +28,13 @@ import reactor.rabbitmq.*
  * Sends queries onto a RabbitMQ queue
  */
 class RabbitMqQueueDispatcher(
-   private val rabbitSender: Sender,
-   private val rabbitReceiver: Receiver,
-   private val servicesRepository: ServicesConfigRepository,
-   private val authTokenRepository: AuthSchemeRepository,
-   private val connectionsConfigProvider: ConfigFileConnectorsRegistry,
-   private val schemaProvider: SchemaProvider,
-   private val objectMapper: ObjectMapper = Jackson.newObjectMapperWithDefaults(),
+    private val rabbitSender: Sender,
+    private val rabbitReceiver: Receiver,
+    private val servicesRepository: ServicesConfigRepository,
+    private val authTokenRepository: AuthSchemeRepository,
+    private val connectionsConfigProvider: SourceLoaderConnectorsRegistry,
+    private val schemaProvider: SchemaProvider,
+    private val objectMapper: ObjectMapper = Jackson.newObjectMapperWithDefaults(),
 ) : StreamingQueryDispatcher {
 
    init {

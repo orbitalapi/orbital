@@ -34,7 +34,8 @@ class KafkaConnectorService(
    @PostMapping("/api/connections/message-broker")
    fun createConnection(@RequestBody connectionConfig: KafkaConnectionConfiguration): ConnectorConfigurationSummary {
       testConnection(connectionConfig);
-      connectionRegistry.register(connectionConfig)
-      return ConnectorConfigurationSummary(connectionConfig)
+       TODO("Not currently supported - need to migrate to package based writing")
+//      connectionRegistry.register(connectionConfig)
+//      return ConnectorConfigurationSummary(connectionConfig)
    }
 }

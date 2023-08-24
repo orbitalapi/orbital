@@ -7,10 +7,12 @@ import io.vyne.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.config.jdbc.JdbcConnectionConfiguration
 import io.vyne.connectors.registry.ConfigFileConnectorRegistry
 import io.vyne.connectors.registry.ConnectionConfigMap
+import io.vyne.connectors.registry.MutableConnectionRegistry
 import java.nio.file.Path
 
+@Deprecated("Use SourceLoaderJdbcConnectionRegistry instead")
 class JdbcConfigFileConnectorRegistry(path: Path, fallback: Config = ConfigFactory.systemEnvironment()) :
-   JdbcConnectionRegistry,
+    JdbcConnectionRegistry, MutableConnectionRegistry<JdbcConnectionConfiguration>,
    ConfigFileConnectorRegistry<JdbcConnections, DefaultJdbcConnectionConfiguration>(
       path,
       fallback,

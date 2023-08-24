@@ -41,7 +41,7 @@ class DynamoDbUpsertInvoker(
         val recordToWrite = parameters[0].second
         val request = queryBuilder.buildPut(schemaProvider.schema, recordToWrite)
 
-        val (client, awsConfig) = buildClient(service)
+        val (client, awsConfig) = buildClient(service, operation)
         return Mono.fromFuture(executeRequest(request, client))
             .publishOn(Schedulers.boundedElastic())
             .elapsed()

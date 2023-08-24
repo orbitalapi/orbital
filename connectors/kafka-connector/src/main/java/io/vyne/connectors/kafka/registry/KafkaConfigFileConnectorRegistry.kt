@@ -21,17 +21,17 @@ class KafkaConfigFileConnectorRegistry(path: Path, fallback: Config = ConfigFact
       return this.typedConfig().kafka
    }
 
-   override fun register(connectionConfiguration: KafkaConnectionConfiguration) {
-      saveConnectorConfig(connectionConfiguration)
-   }
+//   override fun register(connectionConfiguration: KafkaConnectionConfiguration) {
+//      saveConnectorConfig(connectionConfiguration)
+//   }
 
    override fun listAll(): List<KafkaConnectionConfiguration> {
       return listConnections()
    }
 
-   override fun remove(connectionConfiguration: KafkaConnectionConfiguration) {
-      this.removeConnectorConfig(connectionConfiguration.connectionName)
-   }
+//   override fun remove(connectionConfiguration: KafkaConnectionConfiguration) {
+//      this.removeConnectorConfig(connectionConfiguration.connectionName)
+//   }
 
 
 }

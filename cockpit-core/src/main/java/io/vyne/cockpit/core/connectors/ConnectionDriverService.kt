@@ -1,7 +1,7 @@
 package io.vyne.cockpit.core.connectors
 
 import io.vyne.connectors.ConnectionDriverOptions
-import io.vyne.connectors.aws.core.AwsConnection
+import io.vyne.connectors.config.aws.AwsConnection
 import io.vyne.connectors.azure.blob.registry.AzureStorageConnection
 import io.vyne.connectors.jdbc.JdbcDriverOptions
 import io.vyne.connectors.config.kafka.KafkaConnection

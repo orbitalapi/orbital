@@ -4,10 +4,18 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
 import io.vyne.connectors.registry.ConfigFileConnectorRegistry
+import io.vyne.connectors.registry.MutableConnectionRegistry
 import java.nio.file.Path
 
+/**
+ * This approach needs updating:
+ *  - Connection should be for Azure, not AzureBlobStore.  Move BlobStore related things to the invoker and annotation.
+ *  - Implement a SourceLoaderConnectionRegistry, which supports loading connection config from Schemas,etc.,  See SourceLoaderAwsConnectionRegistry
+ *  - Seperate read and write operations - favour not implementing the Mutable methods if possible
+ */
+@Deprecated("this needs updating.")
 class AzureStoreConnectionFileRegistry(path: Path, fallback: Config = ConfigFactory.systemEnvironment()) :
-   AzureStoreConnectionRegistry,
+    AzureStoreConnectionRegistry, MutableConnectionRegistry<AzureStorageConnectorConfiguration>,
    ConfigFileConnectorRegistry<AzureStoreConnections, AzureStorageConnectorConfiguration>(
       path,
       fallback,

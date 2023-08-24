@@ -1,10 +1,11 @@
 package io.vyne.connectors.jdbc.registry
 
 import io.vyne.connectors.config.jdbc.JdbcConnectionConfiguration
+import io.vyne.connectors.registry.MutableConnectionRegistry
 
 
 class InMemoryJdbcConnectionRegistry(configs: List<JdbcConnectionConfiguration> = emptyList()) :
-   JdbcConnectionRegistry {
+    JdbcConnectionRegistry, MutableConnectionRegistry<JdbcConnectionConfiguration> {
    private val connections: MutableMap<String, JdbcConnectionConfiguration> =
       configs.associateBy { it.connectionName }.toMutableMap()
 

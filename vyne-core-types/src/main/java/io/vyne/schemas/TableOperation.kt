@@ -39,8 +39,11 @@ data class TableOperation private constructor(
    override val operationKind: OperationKind = OperationKind.Table
 
    companion object {
-      fun findOneOperationName(operationName: String) = "${operationName}_FindOne"
-      fun findManyOperationName(operationName: String) = "${operationName}_FindMany"
+       fun findOneOperationName(operationName: String, returnTypeName: QualifiedName) =
+           "${operationName}_findOne${returnTypeName.shortDisplayName}"
+
+       fun findManyOperationName(operationName: String, returnTypeName: QualifiedName) =
+           "${operationName}_findMany${returnTypeName.shortDisplayName}"
 
       fun build(
          qualifiedName: QualifiedName,
@@ -58,7 +61,16 @@ data class TableOperation private constructor(
 
 
       /**
-       * Constructs the query operations that the table operation is wrapping
+       * Constructs the query operations that the table operation is wrapping.
+       *
+       * A table really only exposes two query operations:
+       *  - findExpectOne(query): T
+       *  - findExpectMany(query): T[]
+       *
+       * It's down to the query constructor to build a query with the correct params that
+       * control the specifics of "find what".
+       *
+       * ie: Don't build a series of findBySomeProperty(PropertyType):T, as that defeats the purpose of query operations.
        */
       private fun buildQueryOperations(
          operationName: QualifiedName,
@@ -70,7 +82,7 @@ data class TableOperation private constructor(
          val singleRecordQueryOperation = QueryOperation(
             qualifiedName = QualifiedName.from(
                operationName.namespace,
-               findOneOperationName(operationName.name)
+                findOneOperationName(operationName.name, singleReturnType.qualifiedName)
             ),
             parameters = listOf(queryBodyParam),
             returnType = singleReturnType,
@@ -80,7 +92,7 @@ data class TableOperation private constructor(
          val collectionQueryOperation = QueryOperation(
             qualifiedName = QualifiedName.from(
                operationName.namespace,
-               findManyOperationName(operationName.name)
+                findManyOperationName(operationName.name, singleReturnType.qualifiedName)
             ),
             parameters = listOf(queryBodyParam),
             returnType = returnType,

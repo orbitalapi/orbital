@@ -4,8 +4,8 @@ import com.google.common.io.Resources
 import com.jayway.awaitility.Awaitility
 import com.winterbe.expekt.should
 import io.vyne.Vyne
-import io.vyne.connectors.aws.core.AwsConnection
-import io.vyne.connectors.aws.core.AwsConnectionConfiguration
+import io.vyne.connectors.config.aws.AwsConnection
+import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
@@ -24,7 +24,6 @@ import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
@@ -87,15 +86,13 @@ class S3InvokerTest {
       s3.putObject({ builder -> builder.bucket(bucket).key("${objectKey}2") }, Paths.get(resource))
       val connectionConfig = AwsConnectionConfiguration(
          connectionName = "vyneAws",
-         mapOf(
-            AwsConnection.Parameters.ACCESS_KEY.templateParamName to localstack.accessKey,
-            AwsConnection.Parameters.SECRET_KEY.templateParamName to localstack.secretKey,
-            AwsConnection.Parameters.AWS_REGION.templateParamName to localstack.region,
-            AwsConnection.Parameters.ENDPOINT_OVERRIDE.templateParamName to localstack.getEndpointOverride(
+          region = localstack.region,
+          accessKey = localstack.accessKey,
+          secretKey = localstack.secretKey,
+          endPointOverride = localstack.getEndpointOverride(
                LocalStackContainer.Service.S3
             ).toString()
          )
-      )
       connectionRegistry.register(connectionConfig)
    }
 

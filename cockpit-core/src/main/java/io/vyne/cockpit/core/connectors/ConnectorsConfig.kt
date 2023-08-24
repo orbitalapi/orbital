@@ -2,7 +2,7 @@ package io.vyne.cockpit.core.connectors
 
 import io.vyne.config.FileConfigSourceLoader
 import io.vyne.connectors.VyneConnectionsConfig
-import io.vyne.connectors.config.ConfigFileConnectorsRegistry
+import io.vyne.connectors.config.SourceLoaderConnectorsRegistry
 import io.vyne.schema.consumer.SchemaConfigSourceLoader
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.spring.config.EnvVariablesConfig
@@ -18,8 +18,8 @@ class ConnectorsConfig {
       config: VyneConnectionsConfig,
       schemaStore: SchemaStore,
       envVariablesConfig: EnvVariablesConfig
-   ): ConfigFileConnectorsRegistry {
-      return ConfigFileConnectorsRegistry(
+   ): SourceLoaderConnectorsRegistry {
+       return SourceLoaderConnectorsRegistry(
          listOf(
             FileConfigSourceLoader(envVariablesConfig.envVariablesPath, failIfNotFound = false, packageIdentifier = EnvVariablesConfig.PACKAGE_IDENTIFIER),
             SchemaConfigSourceLoader(schemaStore, "env.conf"),

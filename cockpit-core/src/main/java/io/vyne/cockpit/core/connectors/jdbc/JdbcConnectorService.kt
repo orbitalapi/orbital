@@ -41,198 +41,203 @@ private val logger = KotlinLogging.logger {}
 
 @RestController
 class JdbcConnectorService(
-   private val connectionFactory: JdbcConnectionFactory,
-   private val connectionRegistry: JdbcConnectionRegistry,
-   private val schemaProvider: SchemaProvider,
-   private val schemaEditor: LocalSchemaEditingService
+    private val connectionFactory: JdbcConnectionFactory,
+    private val connectionRegistry: JdbcConnectionRegistry,
+    private val schemaProvider: SchemaProvider,
+    private val schemaEditor: LocalSchemaEditingService
 ) {
 
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
-   @GetMapping("/api/connections/jdbc")
-   fun listConnections(): Flux<ConnectorConfigurationSummary> {
-      return Flux.fromIterable(this.connectionRegistry.listAll().map {
-         ConnectorConfigurationSummary(it)
-      })
-   }
+    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
+    @GetMapping("/api/connections/jdbc")
+    fun listConnections(): Flux<ConnectorConfigurationSummary> {
+        return Flux.fromIterable(this.connectionRegistry.listAll().map {
+            ConnectorConfigurationSummary(it)
+        })
+    }
 
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
-   @GetMapping("/api/connections/jdbc/{connectionName}/tables")
-   fun listConnectionTables(@PathVariable("connectionName") connectionName: String): Flux<MappedTable> {
-      val template = connectionFactory.jdbcTemplate(connectionName)
-      val mappedTables = DatabaseMetadataService(template.jdbcTemplate).listTables().map { table ->
-         val mappedType = findTypeForTable(connectionName, table.tableName, table.schemaName)
-         MappedTable(table, mappedType?.qualifiedName)
-      }
-      return Flux.fromIterable(mappedTables)
-   }
+    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
+    @GetMapping("/api/connections/jdbc/{connectionName}/tables")
+    fun listConnectionTables(@PathVariable("connectionName") connectionName: String): Flux<MappedTable> {
+        val template = connectionFactory.jdbcTemplate(connectionName)
+        val mappedTables = DatabaseMetadataService(template.jdbcTemplate).listTables().map { table ->
+            val mappedType = findTypeForTable(connectionName, table.tableName, table.schemaName)
+            MappedTable(table, mappedType?.qualifiedName)
+        }
+        return Flux.fromIterable(mappedTables)
+    }
 
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
-   @GetMapping("/api/connections/jdbc/{connectionName}")
-   fun getConnection(@PathVariable("connectionName") connectionName: String): Mono<ConnectorConfigurationSummary> {
-      val summary = this.connectionRegistry.getConnection(connectionName)
-         .let { connection -> ConnectorConfigurationSummary(connection) }
-      return Mono.just(summary)
-   }
+    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
+    @GetMapping("/api/connections/jdbc/{connectionName}")
+    fun getConnection(@PathVariable("connectionName") connectionName: String): Mono<ConnectorConfigurationSummary> {
+        val summary = this.connectionRegistry.getConnection(connectionName)
+            .let { connection -> ConnectorConfigurationSummary(connection) }
+        return Mono.just(summary)
+    }
 
-   private fun findTypeForTable(
-      connectionName: String,
-      tableName: String,
-      dbSchemaName: String
-   ): Type? {
-      val schema = schemaProvider.schema
-      return schema.types
-         .filter { it.hasMetadata(JdbcConnectorTaxi.Annotations.tableName.toVyneQualifiedName()) }
-         .firstOrNull { type ->
-            val metadata = type.getMetadata(JdbcConnectorTaxi.Annotations.tableName.toVyneQualifiedName())
-            metadata.params.getOrDefault("connection", null) == connectionName &&
-               metadata.params.getOrDefault("table", null) == tableName &&
-               metadata.params.getOrDefault("schema", null) == dbSchemaName
-         }
-   }
-
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
-   @GetMapping("/api/connections/jdbc/{connectionName}/tables/{schemaName}/{tableName}/metadata")
-   fun getTableMetadata(
-      @PathVariable("connectionName") connectionName: String,
-      @PathVariable("schemaName") schemaName: String,
-      @PathVariable("tableName") tableName: String
-   ): Mono<TableMetadata> {
-      val template = connectionFactory.jdbcTemplate(connectionName)
-      val tableType = findTypeForTable(connectionName, tableName, schemaName)
-      val columns: List<ColumnMapping> = DatabaseMetadataService(template.jdbcTemplate)
-         .listColumns(schemaName, tableName)
-         .map { column -> buildColumnMapping(tableType, column) }
-
-      return Mono.just(
-         TableMetadata(
-            connectionName, schemaName, tableName, tableType?.qualifiedName, columns
-         )
-      )
-   }
-
-   private fun buildColumnMapping(
-      tableType: Type?,
-      column: JdbcColumn
-   ): ColumnMapping {
-      val mappedColumnTypeSpec: TypeSpec? = tableType?.let {
-         tableType.attributes.entries.firstOrNull { (name, _) -> name == column.columnName }?.value
-            ?.let { field: Field ->
-               TypeSpec(typeName = field.type, metadata = field.metadata, taxi = null)
+    private fun findTypeForTable(
+        connectionName: String,
+        tableName: String,
+        dbSchemaName: String
+    ): Type? {
+        val schema = schemaProvider.schema
+        return schema.types
+            .filter { it.hasMetadata(JdbcConnectorTaxi.Annotations.tableName.toVyneQualifiedName()) }
+            .firstOrNull { type ->
+                val metadata = type.getMetadata(JdbcConnectorTaxi.Annotations.tableName.toVyneQualifiedName())
+                metadata.params.getOrDefault("connection", null) == connectionName &&
+                        metadata.params.getOrDefault("table", null) == tableName &&
+                        metadata.params.getOrDefault("schema", null) == dbSchemaName
             }
-      }
-      return ColumnMapping(
-         column.columnName,
-         mappedColumnTypeSpec,
-         column
-      )
-   }
+    }
 
-   @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
-   @DeleteMapping("/api/connections/jdbc/{connectionName}/tables/{schemaName}/{tableName}/model/{typeName}")
-   fun removeTableMapping(
-      @PathVariable("connectionName") connectionName: String,
-      @PathVariable("schemaName") schemaName: String,
-      @PathVariable("tableName") tableName: String,
-      @PathVariable("typeName") typeName: String
-   ): Mono<SchemaEditResponse> {
-      val type = this.schemaProvider.schema
-         .type(typeName)
+    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
+    @GetMapping("/api/connections/jdbc/{connectionName}/tables/{schemaName}/{tableName}/metadata")
+    fun getTableMetadata(
+        @PathVariable("connectionName") connectionName: String,
+        @PathVariable("schemaName") schemaName: String,
+        @PathVariable("tableName") tableName: String
+    ): Mono<TableMetadata> {
+        val template = connectionFactory.jdbcTemplate(connectionName)
+        val tableType = findTypeForTable(connectionName, tableName, schemaName)
+        val columns: List<ColumnMapping> = DatabaseMetadataService(template.jdbcTemplate)
+            .listColumns(schemaName, tableName)
+            .map { column -> buildColumnMapping(tableType, column) }
 
-      if (type.sources.size > 1) {
-         error("This type contains multiple sources.  Editing is not yet supported")
-      }
+        return Mono.just(
+            TableMetadata(
+                connectionName, schemaName, tableName, tableType?.qualifiedName, columns
+            )
+        )
+    }
 
-      // Filter out the @Table annotation
-      val annotationFilter = { annotatable: Annotatable, annotation: Annotation ->
-         annotation.qualifiedName != JdbcConnectorTaxi.Annotations.tableName.fullyQualifiedName
-      }
-      val taxi = SchemaWriter(annotationFilter).generateTaxi(type.taxiType)
-      val mutatedSource = VersionedSource(
-         type.sources.single().name,
-         type.sources.single().version, // TODO, we should increment this...
-         taxi
-      )
-      return getDefaultEditorPackage().flatMap { editablePackage ->
-         schemaEditor.submitEdits(
-            listOf(mutatedSource), editablePackage
-         )
-      }
-   }
+    private fun buildColumnMapping(
+        tableType: Type?,
+        column: JdbcColumn
+    ): ColumnMapping {
+        val mappedColumnTypeSpec: TypeSpec? = tableType?.let {
+            tableType.attributes.entries.firstOrNull { (name, _) -> name == column.columnName }?.value
+                ?.let { field: Field ->
+                    TypeSpec(typeName = field.type, metadata = field.metadata, taxi = null)
+                }
+        }
+        return ColumnMapping(
+            column.columnName,
+            mappedColumnTypeSpec,
+            column
+        )
+    }
 
-   /**
-    * Short-term workaround.
-    * We used to only allow a single editor package, and we're working towards
-    * allowing many.
-    * That requires callers to indicate which package they want edits to land in.
-    * For now, only a single package is allowed to be editable, but it's not defined
-    * at startup anymore, so we need to query for it.
-    *
-    */
-   private fun getDefaultEditorPackage(): Mono<PackageIdentifier> {
-      return schemaEditor.getEditorConfig()
-         .map { config ->
-            config.getDefaultEditorPackage()
-         }
-   }
+    @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
+    @DeleteMapping("/api/connections/jdbc/{connectionName}/tables/{schemaName}/{tableName}/model/{typeName}")
+    fun removeTableMapping(
+        @PathVariable("connectionName") connectionName: String,
+        @PathVariable("schemaName") schemaName: String,
+        @PathVariable("tableName") tableName: String,
+        @PathVariable("typeName") typeName: String
+    ): Mono<SchemaEditResponse> {
+        val type = this.schemaProvider.schema
+            .type(typeName)
 
-   @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
-   @PostMapping("/api/connections/jdbc/{connectionName}/tables/{schemaName}/{tableName}/model")
-   fun submitModel(
-      @PathVariable("connectionName") connectionName: String,
-      @PathVariable("schemaName") schemaName: String,
-      @PathVariable("tableName") tableName: String,
-      @RequestBody request: TableModelSubmissionRequest
-   ): Mono<SchemaEditResponse> {
-      val versionedSources = request.columnMappings.map { columnMapping ->
-         require(columnMapping.typeSpec != null) { "A typeSpec property was not specified for column ${columnMapping.name}" }
-         if (columnMapping.typeSpec.taxi == null) {
-            error("Only taxi based mappings are currently supported")
-         }
-         columnMapping.typeSpec.taxi
-      }
-      val modelSource = request.model.taxi ?: error("Only taxi based mappings are currently supported")
-      val allEdits = versionedSources + modelSource + request.serviceMappings
+        if (type.sources.size > 1) {
+            error("This type contains multiple sources.  Editing is not yet supported")
+        }
 
-      return getDefaultEditorPackage().flatMap { editablePackage ->
-         schemaEditor.submitEdits(allEdits, editablePackage)
-      }
-   }
+        // Filter out the @Table annotation
+        val annotationFilter = { annotatable: Annotatable, annotation: Annotation ->
+            annotation.qualifiedName != JdbcConnectorTaxi.Annotations.tableName.fullyQualifiedName
+        }
+        val taxi = SchemaWriter(annotationFilter).generateTaxi(type.taxiType)
+        val mutatedSource = VersionedSource(
+            type.sources.single().name,
+            type.sources.single().version, // TODO, we should increment this...
+            taxi
+        )
+        return getDefaultEditorPackage().flatMap { editablePackage ->
+            schemaEditor.submitEdits(
+                listOf(mutatedSource), editablePackage
+            )
+        }
+    }
 
-
-   @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
-   @PostMapping("/api/connections/jdbc", params = ["test=true"])
-   fun testConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration): Mono<ConnectionTestedSuccessfully> {
-      logger.info("Testing connection: $connectionConfig")
-      try {
-         val connectionProvider = SimpleJdbcConnectionFactory()
-         val metadataService = DatabaseMetadataService(connectionProvider.jdbcTemplate(connectionConfig).jdbcTemplate)
-         return metadataService.testConnection(connectionConfig.jdbcDriver.metadata.testQuery)
-            .map { Mono.just(ConnectionTestedSuccessfully) }
-            .getOrHandle { connectionFailureMessage ->
-               throw BadConnectionException(connectionFailureMessage)
+    /**
+     * Short-term workaround.
+     * We used to only allow a single editor package, and we're working towards
+     * allowing many.
+     * That requires callers to indicate which package they want edits to land in.
+     * For now, only a single package is allowed to be editable, but it's not defined
+     * at startup anymore, so we need to query for it.
+     *
+     */
+    private fun getDefaultEditorPackage(): Mono<PackageIdentifier> {
+        return schemaEditor.getEditorConfig()
+            .map { config ->
+                config.getDefaultEditorPackage()
             }
-      } catch (e: Exception) {
-         // This is a catch-all.  Most exceptions are handled above, in the Either<>, but just in case...
-         val cause = e.cause?.let { cause ->
-            val errorType = cause::class.simpleName!!.replace("java.net.", "")
-            "$errorType : ${cause.message?.orElse("No other details provided")}"
-         } ?: "No other details provided"
-         // Clean up driver specific junk
-         val cleanedMessage = e.message!!.removePrefix("FATAL:")
-            .trim()
-         val message = "$cleanedMessage.  Cause: $cause"
-         throw BadConnectionException(message)
-      }
-   }
+    }
 
-   @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
-   @PostMapping("/api/connections/jdbc")
-   fun createConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration):
-      Mono<ConnectorConfigurationSummary> {
-      testConnection(connectionConfig);
-      connectionRegistry.register(connectionConfig)
-      return Mono.just(ConnectorConfigurationSummary(connectionConfig))
-   }
+    @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
+    @PostMapping("/api/connections/jdbc/{connectionName}/tables/{schemaName}/{tableName}/model")
+    fun submitModel(
+        @PathVariable("connectionName") connectionName: String,
+        @PathVariable("schemaName") schemaName: String,
+        @PathVariable("tableName") tableName: String,
+        @RequestBody request: TableModelSubmissionRequest
+    ): Mono<SchemaEditResponse> {
+        val versionedSources = request.columnMappings.map { columnMapping ->
+            require(columnMapping.typeSpec != null) { "A typeSpec property was not specified for column ${columnMapping.name}" }
+            if (columnMapping.typeSpec.taxi == null) {
+                error("Only taxi based mappings are currently supported")
+            }
+            columnMapping.typeSpec.taxi
+        }
+        val modelSource = request.model.taxi ?: error("Only taxi based mappings are currently supported")
+        val allEdits = versionedSources + modelSource + request.serviceMappings
+
+        return getDefaultEditorPackage().flatMap { editablePackage ->
+            schemaEditor.submitEdits(allEdits, editablePackage)
+        }
+    }
+
+
+    @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
+    @PostMapping("/api/connections/jdbc", params = ["test=true"])
+    fun testConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration): Mono<ConnectionTestedSuccessfully> {
+        logger.info("Testing connection: $connectionConfig")
+        try {
+            val connectionProvider = SimpleJdbcConnectionFactory()
+            val metadataService =
+                DatabaseMetadataService(connectionProvider.jdbcTemplate(connectionConfig).jdbcTemplate)
+            return metadataService.testConnection(connectionConfig.jdbcDriver.metadata.testQuery)
+                .map { Mono.just(ConnectionTestedSuccessfully) }
+                .getOrHandle { connectionFailureMessage ->
+                    throw BadConnectionException(connectionFailureMessage)
+                }
+        } catch (e: Exception) {
+            // This is a catch-all.  Most exceptions are handled above, in the Either<>, but just in case...
+            val cause = e.cause?.let { cause ->
+                val errorType = cause::class.simpleName!!.replace("java.net.", "")
+                "$errorType : ${cause.message?.orElse("No other details provided")}"
+            } ?: "No other details provided"
+            // Clean up driver specific junk
+            val cleanedMessage = e.message!!.removePrefix("FATAL:")
+                .trim()
+            val message = "$cleanedMessage.  Cause: $cause"
+            throw BadConnectionException(message)
+        }
+    }
+
+    @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
+    @PostMapping("/api/packages/{packageUri}/connections/jdbc")
+    fun createConnection(
+        @RequestBody connectionConfig: DefaultJdbcConnectionConfiguration,
+        @PathVariable("packageUri2") packageUri: String
+    ):
+            Mono<ConnectorConfigurationSummary> {
+        testConnection(connectionConfig);
+        TODO("Not currently supported - need to migrate to package based writing")
+//        connectionRegistry.register(connectionConfig)
+//        return Mono.just(ConnectorConfigurationSummary(connectionConfig))
+    }
 }
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -241,34 +246,34 @@ class BadConnectionException(message: String) : RuntimeException(message)
 data class MappedTable(val table: JdbcTable, val mappedTo: QualifiedName?)
 
 data class TableMetadata(
-   val connectionName: String,
-   val schemaName: String,
-   val tableName: String,
-   val mappedType: QualifiedName?,
-   val columns: List<ColumnMapping>
+    val connectionName: String,
+    val schemaName: String,
+    val tableName: String,
+    val mappedType: QualifiedName?,
+    val columns: List<ColumnMapping>
 )
 
 data class TableModelSubmissionRequest(
-   val model: TypeSpec,
-   val columnMappings: List<ColumnMapping>,
-   val serviceMappings: List<VersionedSource>
+    val model: TypeSpec,
+    val columnMappings: List<ColumnMapping>,
+    val serviceMappings: List<VersionedSource>
 )
 
 data class ColumnMapping(
-   val name: String,
-   // Null when sending to the UI for an unmapped table
-   val typeSpec: TypeSpec?,
-   // columnSpec is null / ignored when sending up to the server,
-   // but populated when sending to the UI
-   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-   val columnSpec: JdbcColumn? = null
+    val name: String,
+    // Null when sending to the UI for an unmapped table
+    val typeSpec: TypeSpec?,
+    // columnSpec is null / ignored when sending up to the server,
+    // but populated when sending to the UI
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    val columnSpec: JdbcColumn? = null
 )
 
 data class TypeSpec(
-   // To define a pointer to an existing type...
-   @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)
-   val typeName: QualifiedName?,
-   // To map to a new type...
-   val taxi: VersionedSource?,
-   val metadata: List<Metadata>
+    // To define a pointer to an existing type...
+    @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)
+    val typeName: QualifiedName?,
+    // To map to a new type...
+    val taxi: VersionedSource?,
+    val metadata: List<Metadata>
 )

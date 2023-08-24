@@ -1,8 +1,7 @@
 package io.vyne.query.runtime.core.dispatcher.http
 
 import io.vyne.auth.schemes.AuthSchemeRepository
-import io.vyne.auth.tokens.AuthTokenRepository
-import io.vyne.connectors.config.ConfigFileConnectorsRegistry
+import io.vyne.connectors.config.SourceLoaderConnectorsRegistry
 import io.vyne.http.ServicesConfigRepository
 import io.vyne.query.ResultMode
 import io.vyne.query.runtime.CompressedQueryResultWrapper
@@ -31,12 +30,12 @@ import reactor.kotlin.core.publisher.toFlux
 @Component
 @ConditionalOnProperty("vyne.dispatcher.http.enabled", havingValue = "true", matchIfMissing = false)
 class HttpQueryDispatcher(
-   private val webClient: WebClient.Builder,
-   private val servicesRepository: ServicesConfigRepository,
-   private val authTokenRepository: AuthSchemeRepository,
-   private val connectionsConfigProvider: ConfigFileConnectorsRegistry,
-   private val schemaProvider: SchemaProvider,
-   @Value("\${vyne.dispatcher.http.url}") private val queryRouterUrl: String
+    private val webClient: WebClient.Builder,
+    private val servicesRepository: ServicesConfigRepository,
+    private val authTokenRepository: AuthSchemeRepository,
+    private val connectionsConfigProvider: SourceLoaderConnectorsRegistry,
+    private val schemaProvider: SchemaProvider,
+    @Value("\${vyne.dispatcher.http.url}") private val queryRouterUrl: String
 ) : StreamingQueryDispatcher {
 
    init {

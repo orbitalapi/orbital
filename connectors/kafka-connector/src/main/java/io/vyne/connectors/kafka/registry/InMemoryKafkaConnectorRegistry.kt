@@ -1,9 +1,10 @@
 package io.vyne.connectors.kafka.registry
 
 import io.vyne.connectors.config.kafka.KafkaConnectionConfiguration
+import io.vyne.connectors.registry.MutableConnectionRegistry
 
 class InMemoryKafkaConnectorRegistry(configs: List<KafkaConnectionConfiguration> = emptyList()) :
-   KafkaConnectionRegistry {
+    KafkaConnectionRegistry, MutableConnectionRegistry<KafkaConnectionConfiguration> {
 
 
    private val connections: MutableMap<String, KafkaConnectionConfiguration> =

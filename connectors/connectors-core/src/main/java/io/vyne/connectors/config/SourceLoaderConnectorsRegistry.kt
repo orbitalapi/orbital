@@ -9,7 +9,18 @@ import io.vyne.config.MergingHoconConfigRepository
 import io.vyne.connectors.VyneConnectionsConfig
 import java.nio.file.Path
 
-class ConfigFileConnectorsRegistry(
+/**
+ * A Connector registry, which describes connections to other data
+ * sources (databases, kafka brokers, etc).
+ *
+ * This class is responsible for reading/writing a ConnectionsConfig
+ * class (which is the actual config) from other sources - such as config
+ * files, and schemas.
+ *
+ * This is the preferred approach for loading connections, as it
+ * uses loaders, which supports pulling from schemas etc.
+ */
+class SourceLoaderConnectorsRegistry(
    loaders: List<ConfigSourceLoader>,
    fallback: Config = ConfigFactory.systemEnvironment(),
 ) : MergingHoconConfigRepository<ConnectionsConfig>(loaders, fallback) {

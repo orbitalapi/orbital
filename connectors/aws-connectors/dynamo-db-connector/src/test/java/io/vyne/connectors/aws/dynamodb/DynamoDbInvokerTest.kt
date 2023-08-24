@@ -5,16 +5,19 @@ import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.vyne.StubService
-import io.vyne.connectors.aws.core.AwsConnection
-import io.vyne.connectors.aws.core.AwsConnectionConfiguration
+import io.vyne.connectors.config.aws.AwsConnection
+import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
+import io.vyne.models.json.parseJson
 import io.vyne.query.VyneQlGrammar
 import io.vyne.rawObjects
 import io.vyne.schema.api.SimpleSchemaProvider
+import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
+import io.vyne.typedObjects
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.testcontainers.containers.localstack.LocalStackContainer
@@ -42,14 +45,12 @@ class DynamoDbInvokerTest {
     fun beforeTest() {
         val connectionConfig = AwsConnectionConfiguration(
             connectionName = "vyneAws",
-            mapOf(
-                AwsConnection.Parameters.ACCESS_KEY.templateParamName to localStack.accessKey,
-                AwsConnection.Parameters.SECRET_KEY.templateParamName to localStack.secretKey,
-                AwsConnection.Parameters.AWS_REGION.templateParamName to localStack.region,
-                AwsConnection.Parameters.ENDPOINT_OVERRIDE.templateParamName to localStack.getEndpointOverride(
-                    LocalStackContainer.Service.DYNAMODB
-                ).toString()
-            )
+            accessKey = localStack.accessKey,
+            secretKey = localStack.secretKey,
+            region = localStack.region,
+            endPointOverride = localStack.getEndpointOverride(
+                LocalStackContainer.Service.DYNAMODB
+            ).toString()
         )
         connectionRegistry.register(connectionConfig)
     }
@@ -114,6 +115,7 @@ class DynamoDbInvokerTest {
          type MovieTitle inherits String
          type StreamingProviderName inherits String
          type MonthlyPrice inherits Decimal
+         type NetflixMovieId inherits String
 
          model Movie {
             @Id
@@ -133,7 +135,7 @@ class DynamoDbInvokerTest {
             operation findMovie(MovieId): Movie
          }
 
-         @io.vyne.aws.dynamo.DynamoService( connectionName = "vyneAws" )
+         @io.vyne.aws.dynamo.DynamoService
          service DynamoService {
             table reviews: Review[]
 
@@ -142,6 +144,7 @@ class DynamoDbInvokerTest {
          }
         """
     )
+
 
     @Test
     fun `can load from another source and enrich from dynamodb`(): Unit = runBlocking {
@@ -236,6 +239,7 @@ class DynamoDbInvokerTest {
         )
         result.shouldHaveSize(2)
     }
+
 
     @Test
     fun `can expose a mutation and write a new record`(): Unit = runBlocking {

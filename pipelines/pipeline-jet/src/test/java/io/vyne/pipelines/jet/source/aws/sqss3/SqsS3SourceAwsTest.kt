@@ -1,7 +1,7 @@
 package io.vyne.pipelines.jet.source.aws.sqss3
 
-import io.vyne.connectors.aws.core.AwsConnection
-import io.vyne.connectors.aws.core.AwsConnectionConfiguration
+import io.vyne.connectors.config.aws.AwsConnection
+import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.RatingReport

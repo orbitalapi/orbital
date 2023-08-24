@@ -14,7 +14,7 @@ import kotlinx.serialization.encodeToByteArray
 import org.junit.jupiter.api.Test
 import java.nio.file.Paths
 
-class ConfigFileConnectorsRegistryTest {
+class SourceLoaderConnectorsRegistryTest {
 
    @OptIn(ExperimentalSerializationApi::class)
    @Test
@@ -23,7 +23,7 @@ class ConfigFileConnectorsRegistryTest {
          Resources.getResource("mixed-connections.conf")
             .toURI()
       )
-      val config = ConfigFileConnectorsRegistry(path).load()
+       val config = SourceLoaderConnectorsRegistry(path).load()
       val bytes = Cbor.encodeToByteArray(config)
       val fromBytes = Cbor.decodeFromByteArray<ConnectionsConfig>(bytes)
       fromBytes.shouldBe(config)
@@ -39,7 +39,7 @@ class ConfigFileConnectorsRegistryTest {
          Resources.getResource("connections-2.conf")
             .toURI()
       )
-      val config = ConfigFileConnectorsRegistry(
+       val config = SourceLoaderConnectorsRegistry(
          listOf(
             FileConfigSourceLoader(path1, packageIdentifier = FileConfigSourceLoader.LOCAL_PACKAGE_IDENTIFIER),
             FileConfigSourceLoader(path2, packageIdentifier = FileConfigSourceLoader.LOCAL_PACKAGE_IDENTIFIER),
@@ -55,7 +55,7 @@ class ConfigFileConnectorsRegistryTest {
          Resources.getResource("mixed-connections.conf")
             .toURI()
       )
-      val config = ConfigFileConnectorsRegistry(path).load()
+       val config = SourceLoaderConnectorsRegistry(path).load()
       config.shouldBe(
          ConnectionsConfig(
             jdbc = mapOf(

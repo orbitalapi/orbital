@@ -3,8 +3,8 @@ package io.vyne.connectors.aws.lambda
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
 import io.vyne.StubService
-import io.vyne.connectors.aws.core.AwsConnection
-import io.vyne.connectors.aws.core.AwsConnectionConfiguration
+import io.vyne.connectors.config.aws.AwsConnection
+import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
@@ -93,11 +93,11 @@ class LambdaInvokerTest {
    @Before
    fun beforeTest() {
       val connectionConfig = AwsConnectionConfiguration(connectionName = "vyneAws",
-         mapOf(AwsConnection.Parameters.ACCESS_KEY.templateParamName to localStack.accessKey,
-            AwsConnection.Parameters.SECRET_KEY.templateParamName to localStack.secretKey,
-            AwsConnection.Parameters.AWS_REGION.templateParamName to localStack.region,
-            AwsConnection.Parameters.ENDPOINT_OVERRIDE.templateParamName to localStack.getEndpointOverride(LocalStackContainer.Service.LAMBDA).toString()
-         ))
+          region = localStack.region,
+          accessKey = localStack.accessKey,
+          secretKey = localStack.secretKey,
+          endPointOverride = localStack.getEndpointOverride(LocalStackContainer.Service.LAMBDA).toASCIIString()
+      )
       connectionRegistry.register(connectionConfig)
    }
 

@@ -42,10 +42,20 @@ class DynamoDbQueryInvoker(
         val schema = schemaProvider.schema
         val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
         val query = queryBuilder.buildQuery(schema, taxiQuery)
-
-        val (client, awsConfig) = buildClient(service)
+        val (client, awsConfig) = buildClient(service, operation)
 
         return Mono.fromFuture(executeRequest(query, client))
+            .doOnError { e ->
+                val errorCode = when (e) {
+                    is DynamoDbException -> e.statusCode()
+                    else -> 400
+                }
+                val message = "Call to Dynamo failed: ${e.message ?: e.toString()}"
+                val remoteCall = buildRemoteCall(service, awsConfig, operation, query, -1, -1, errorCode, message)
+                val operationResult = OperationResult.fromTypedInstances(constructedQueryDataSource.inputs, remoteCall)
+                eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
+                logger.error(e) { message }
+            }
             .publishOn(Schedulers.boundedElastic())
             .doOnTerminate {
                 try {

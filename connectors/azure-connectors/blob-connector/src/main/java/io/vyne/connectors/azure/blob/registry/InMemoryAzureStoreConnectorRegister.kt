@@ -1,7 +1,9 @@
 package io.vyne.connectors.azure.blob.registry
 
+import io.vyne.connectors.registry.MutableConnectionRegistry
+
 class InMemoryAzureStoreConnectorRegister(configs: List<AzureStorageConnectorConfiguration> = emptyList()) :
-   AzureStoreConnectionRegistry {
+    AzureStoreConnectionRegistry, MutableConnectionRegistry<AzureStorageConnectorConfiguration> {
    private val connections: MutableMap<String, AzureStorageConnectorConfiguration> =
       configs.associateBy { it.connectionName }.toMutableMap()
 

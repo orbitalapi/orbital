@@ -1,14 +1,14 @@
 package io.vyne.connectors.aws.dynamodb
 
-import io.vyne.connectors.aws.core.AwsConnectionConfiguration
-import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
-import io.vyne.connectors.aws.core.region
+import io.vyne.connectors.aws.configureWithExplicitValuesIfProvided
+import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
 import io.vyne.query.SqlExchange
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
+import io.vyne.schemas.fqn
 import mu.KotlinLogging
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.dynamodb.model.*
@@ -22,8 +22,11 @@ abstract class BaseDynamoInvoker(
         private val logger = KotlinLogging.logger {}
     }
 
-    protected fun buildClient(service: Service): Pair<DynamoDbAsyncClient, AwsConnectionConfiguration> {
-        val config = getAwsConnectionConfig(service)
+    protected fun buildClient(
+        service: Service,
+        operation: RemoteOperation
+    ): Pair<DynamoDbAsyncClient, AwsConnectionConfiguration> {
+        val config = getAwsConnectionConfig(service, operation)
         val builder = DynamoDbAsyncClient.builder()
             .configureWithExplicitValuesIfProvided(config)
         return try {
@@ -34,9 +37,12 @@ abstract class BaseDynamoInvoker(
         }
     }
 
-    protected fun getAwsConnectionConfig(service: Service): AwsConnectionConfiguration {
+    private fun getAwsConnectionConfig(service: Service, operation: RemoteOperation): AwsConnectionConfiguration {
+        // Look up the connection from the @Table annotation on the return type
+        val returnType = operation.returnType.collectionType ?: operation.returnType
+
         val connectionName =
-            service.metadata(DynamoConnectorTaxi.Annotations.DynamoService.NAME).params["connectionName"] as String
+            returnType.getMetadata(DynamoConnectorTaxi.Annotations.Table.NAME.fqn()).params["connectionName"] as String
         if (!connectionRegistry.hasConnection(connectionName)) {
             error("Connection $connectionName is not defined")
         }
@@ -64,22 +70,27 @@ abstract class BaseDynamoInvoker(
         operation: RemoteOperation,
         query: DynamoDbRequest,
         duration: Long,
-        count: Int
-    ): RemoteCall = RemoteCall(
-        service = service.name,
-        address = awsConfig.connectionName,
-        operation = operation.name,
-        responseTypeName = operation.returnType.name,
-        requestBody = query.toString(),
-        durationMs = duration,
-        timestamp = Instant.now(),
-        responseMessageType = ResponseMessageType.FULL,
-        response = null,
+        count: Int,
+        resultCode: Int = -1,
+        errorMessage: String? = null,
+    ): RemoteCall {
+        return RemoteCall(
+            service = service.name,
+            address = awsConfig.connectionName,
+            operation = operation.name,
+            responseTypeName = operation.returnType.name,
+            requestBody = query.toString(),
+            durationMs = duration,
+            timestamp = Instant.now(),
+            responseMessageType = ResponseMessageType.FULL,
+            response = errorMessage,
+            isFailed = errorMessage != null,
+            resultCode = resultCode,
+            exchange = SqlExchange(
+                sql = query.toString(),
+                recordCount = count
+            )
 
-        exchange = SqlExchange(
-            sql = query.toString(),
-            recordCount = count
         )
-
-    )
+    }
 }

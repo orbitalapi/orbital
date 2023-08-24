@@ -5,8 +5,8 @@ import com.hazelcast.jet.pipeline.BatchSource
 import com.hazelcast.jet.pipeline.SourceBuilder
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
-import io.vyne.connectors.aws.core.AwsConnectionConfiguration
-import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
+import io.vyne.connectors.config.aws.AwsConnectionConfiguration
+import io.vyne.connectors.config.aws.configureWithExplicitValuesIfProvided
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.models.csv.CsvFormatFactory
 import io.vyne.models.csv.CsvFormatSpec

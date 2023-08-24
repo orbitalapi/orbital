@@ -1,8 +1,8 @@
 package io.vyne.pipelines.jet.sink.aws.s3
 
 import com.winterbe.expekt.should
-import io.vyne.connectors.aws.core.AwsConnection
-import io.vyne.connectors.aws.core.AwsConnectionConfiguration
+import io.vyne.connectors.config.aws.AwsConnection
+import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportOutputSpec
