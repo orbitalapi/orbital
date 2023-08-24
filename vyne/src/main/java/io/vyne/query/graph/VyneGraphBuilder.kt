@@ -388,9 +388,16 @@ class VyneGraphBuilder(
       val querySpec = querySpec(operation)
       connections.addConnection(querySpec, operationNode, Relationship.IS_PARAMETER_ON)
       connections.addConnection(operationNode, querySpec, Relationship.REQUIRES_PARAMETER)
+
       val idFields = returnType.getAttributesWithAnnotation("Id".fqn())
-      if (idFields.size == 1) { // For now, we can't support composite keys
-         val idField = idFields.values.first()
+
+      // MP: 24-Aug-23: We used to restrict this to only including where there's a single @Id
+      // annotation (thinking that multiple @Id indicates a Composite key).
+      // However, that means we can't support Lookup tables, where every field is an id.
+      // Since that's a more common scenario than Composite keys, we'll use a different annotation
+      // at a later date for supporting composite keys.
+      // Therefore, we now build a link for every Id relationship.
+      idFields.forEach { (fieldName, idField) ->
          connections.addConnection(
             parameter(idField.type.parameterizedName),
             querySpec,
