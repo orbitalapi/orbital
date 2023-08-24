@@ -19,7 +19,7 @@ export default function ApiVersiningLandingPage() {
                     property='og:title'
                     content='Orbital - Eliminate API versioning'
                 />
-                <title>Orbital - Automated integration for microservices.</title>
+                <title>Orbital - Automated integration for modern dev teams.</title>
             </Head>
 
             {/* template - header */}

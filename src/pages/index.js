@@ -110,7 +110,7 @@ export default function Home({
           property='og:title'
           content='Orbital - Automated integration for microservices'
         />
-        <title>Orbital - Automated integration for microservices.</title>
+        <title>Orbital - Automated integration for modern dev teams.</title>
       </Head>
       {/*Used to have: mb-20 space-y-20  sm:mb-32 sm:space-y-32 md:mb-40 md:space-y-40 */}
       <div

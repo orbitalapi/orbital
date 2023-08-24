@@ -251,7 +251,7 @@ export default function MicroservicesOrchestration({highlightedSnippets}) {
           property='og:title'
           content='Orbital - Automatically adapt to breaking API changes'
         />
-        <title>Orbital - Automated integration for microservices.</title>
+        <title>Orbital - Automated integration for modern dev teams.</title>
       </Head>
 
       {/* template - header */}

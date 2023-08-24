@@ -106,7 +106,7 @@ export default function BreakingChangesLandingPage() {
                     property='og:title'
                     content='Orbital - Automatically adapt to breaking API changes'
                 />
-                <title>Orbital - Automated integration for microservices.</title>
+                <title>Orbital - Automated integration for modern dev teams.</title>
             </Head>
 
             {/* template - header */}
@@ -149,7 +149,7 @@ export default function BreakingChangesLandingPage() {
                             Integrations that bend, not break
                         </p>
                         {/* <p className="mt-6 text-lg leading-8 text-slate-400">
-                            Nobody needs busy work updating their systems when other teams change theirs. Orbital adapts to changes so your system doesn't need to. 
+                            Nobody needs busy work updating their systems when other teams change theirs. Orbital adapts to changes so your system doesn't need to.
                         </p> */}
                         <p className="mt-6 text-lg leading-8 text-slate-400">
                             Orbital helps prevent production incidents by automatically adapting when your integration partners update their systems. Our unique semantic integration system means your
