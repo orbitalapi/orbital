@@ -14,8 +14,9 @@ import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
-import org.springframework.web.reactive.function.client.*
+import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException.BadGateway
+import org.springframework.web.reactive.function.client.body
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
@@ -88,7 +89,7 @@ class HttpQueryDispatcher(
          .timed()
          .map { result ->
             logger.info { "Received result in ${result.elapsed()}- ${result.get().r.size.formatAsFileSize}" }
-            result.get().decompress()
+            result.get().decompressOrThrow()
          }
          .doOnError { error ->
             when (error) {

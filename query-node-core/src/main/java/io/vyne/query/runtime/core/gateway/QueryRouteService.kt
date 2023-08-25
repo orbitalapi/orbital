@@ -1,5 +1,6 @@
 package io.vyne.query.runtime.core.gateway
 
+import io.vyne.query.runtime.FailedSearchResponse
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.consumer.SchemaStore
 import lang.taxi.query.TaxiQlQuery
@@ -76,10 +77,21 @@ class QueryRouteService(
          .subscribeOn(Schedulers.boundedElastic())
          // TODO : Handle streaming queries.
          // For now, everything is a Mono<>
-         .flatMap { executor.handleRoutedQuery(query).single() }
-         .flatMap { response: Any ->
-            logger.info { "Received response : $response" }
-            ServerResponse.ok().body<Any>(Mono.just(response))
+         .flatMap {
+            executor.handleRoutedQuery(query)
+               .single()
+               .flatMap { response: Any ->
+                  logger.info { "Received response : $response" }
+                  ServerResponse.ok().body<Any>(Mono.just(response))
+               }
+         }
+         .onErrorResume { e ->
+            logger.warn { "Query failed with error ${e.message}" }
+            ServerResponse.status(HttpStatus.BAD_REQUEST)
+               .bodyValue(
+                  FailedSearchResponse(e.message ?: "Query failed with exception ${e::class.simpleName}", queryId = "")
+               )
+
          }
    }
 
