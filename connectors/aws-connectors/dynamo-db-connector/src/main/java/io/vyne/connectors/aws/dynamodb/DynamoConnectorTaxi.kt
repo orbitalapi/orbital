@@ -9,7 +9,6 @@ object DynamoConnectorTaxi {
         namespace $namespace {
             type ConnectionName inherits String
             annotation DynamoService {
-                connectionName : ConnectionName
             }
 
             annotation Table {

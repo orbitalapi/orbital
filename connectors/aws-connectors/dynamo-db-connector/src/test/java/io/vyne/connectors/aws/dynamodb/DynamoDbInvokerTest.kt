@@ -5,19 +5,15 @@ import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.vyne.StubService
-import io.vyne.connectors.config.aws.AwsConnection
-import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
+import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
-import io.vyne.models.json.parseJson
 import io.vyne.query.VyneQlGrammar
 import io.vyne.rawObjects
 import io.vyne.schema.api.SimpleSchemaProvider
-import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
-import io.vyne.typedObjects
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.testcontainers.containers.localstack.LocalStackContainer
@@ -144,6 +140,7 @@ class DynamoDbInvokerTest {
          }
         """
     )
+
 
 
     @Test

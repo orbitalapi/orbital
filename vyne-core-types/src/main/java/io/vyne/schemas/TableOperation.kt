@@ -39,11 +39,11 @@ data class TableOperation private constructor(
    override val operationKind: OperationKind = OperationKind.Table
 
    companion object {
-       fun findOneOperationName(operationName: String, returnTypeName: QualifiedName) =
-           "${operationName}_findOne${returnTypeName.shortDisplayName}"
+      fun findOneOperationName(operationName: String, returnTypeName: QualifiedName) =
+         "${operationName}_findOne${returnTypeName.shortDisplayName}"
 
-       fun findManyOperationName(operationName: String, returnTypeName: QualifiedName) =
-           "${operationName}_findMany${returnTypeName.shortDisplayName}"
+      fun findManyOperationName(operationName: String, returnTypeName: QualifiedName) =
+         "${operationName}_findMany${returnTypeName.shortDisplayName}"
 
       fun build(
          qualifiedName: QualifiedName,
@@ -82,7 +82,7 @@ data class TableOperation private constructor(
          val singleRecordQueryOperation = QueryOperation(
             qualifiedName = QualifiedName.from(
                operationName.namespace,
-                findOneOperationName(operationName.name, singleReturnType.qualifiedName)
+               findOneOperationName(operationName.name, singleReturnType.qualifiedName)
             ),
             parameters = listOf(queryBodyParam),
             returnType = singleReturnType,
@@ -92,7 +92,7 @@ data class TableOperation private constructor(
          val collectionQueryOperation = QueryOperation(
             qualifiedName = QualifiedName.from(
                operationName.namespace,
-                findManyOperationName(operationName.name, singleReturnType.qualifiedName)
+               findManyOperationName(operationName.name, singleReturnType.qualifiedName)
             ),
             parameters = listOf(queryBodyParam),
             returnType = returnType,

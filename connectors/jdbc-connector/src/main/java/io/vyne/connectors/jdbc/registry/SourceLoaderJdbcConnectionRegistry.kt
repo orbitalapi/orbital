@@ -11,8 +11,8 @@ import io.vyne.connectors.registry.SourceLoaderConnectionRegistryAdapter
  *
  */
 class SourceLoaderJdbcConnectionRegistry(sourceLoaderConnectorsRegistry: SourceLoaderConnectorsRegistry) :
-   JdbcConnectionRegistry, SourceLoaderConnectionRegistryAdapter<JdbcConnectionConfiguration>(
-   sourceLoaderConnectorsRegistry,
-   { config -> config.jdbc }) {
+    JdbcConnectionRegistry, SourceLoaderConnectionRegistryAdapter<JdbcConnectionConfiguration>(
+    sourceLoaderConnectorsRegistry,
+    { config -> config.jdbc }) {
 
 }

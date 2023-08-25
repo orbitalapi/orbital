@@ -1,7 +1,7 @@
 package io.vyne.connectors.registry
 
-import io.vyne.connectors.config.SourceLoaderConnectorsRegistry
 import io.vyne.connectors.config.ConnectionsConfig
+import io.vyne.connectors.config.SourceLoaderConnectorsRegistry
 
 interface ConnectionRegistry<T : ConnectorConfiguration> {
     fun hasConnection(name: String): Boolean

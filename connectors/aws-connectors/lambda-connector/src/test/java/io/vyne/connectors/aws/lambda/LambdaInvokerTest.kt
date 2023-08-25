@@ -3,9 +3,8 @@ package io.vyne.connectors.aws.lambda
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
 import io.vyne.StubService
-import io.vyne.connectors.config.aws.AwsConnection
-import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
+import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance

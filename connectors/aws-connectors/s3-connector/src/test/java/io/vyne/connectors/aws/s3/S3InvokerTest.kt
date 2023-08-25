@@ -4,9 +4,8 @@ import com.google.common.io.Resources
 import com.jayway.awaitility.Awaitility
 import com.winterbe.expekt.should
 import io.vyne.Vyne
-import io.vyne.connectors.config.aws.AwsConnection
-import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
+import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
 import io.vyne.query.QueryResult

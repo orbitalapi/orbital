@@ -1,11 +1,8 @@
 package io.vyne.cockpit.core.connectors.aws
 
-import io.vyne.connectors.ConnectorUtils
-import io.vyne.connectors.config.aws.AwsConnection
-import io.vyne.connectors.config.aws.AwsConnectionConfiguration
-import io.vyne.connectors.aws.core.registry.AwsConfigFileConnectionRegistry
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.connectors.aws.s3.S3AsyncConnection
+import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.connectors.registry.ConnectorConfigurationSummary
 import mu.KotlinLogging
 import org.springframework.web.bind.annotation.PostMapping

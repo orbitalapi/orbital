@@ -2,9 +2,8 @@ package io.vyne.connectors.aws.sqs
 
 import com.winterbe.expekt.should
 import io.vyne.Vyne
-import io.vyne.connectors.config.aws.AwsConnection
-import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
+import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.models.TypedObject
 import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemas.taxi.TaxiSchema

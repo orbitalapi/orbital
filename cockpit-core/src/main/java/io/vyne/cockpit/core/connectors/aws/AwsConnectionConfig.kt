@@ -1,7 +1,6 @@
 package io.vyne.cockpit.core.connectors.aws
 
 import io.vyne.connectors.VyneConnectionsConfig
-import io.vyne.connectors.aws.core.registry.AwsConfigFileConnectionRegistry
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.connectors.aws.core.registry.SourceLoaderAwsConnectionRegistry
 import io.vyne.connectors.aws.dynamodb.DynamoDbInvoker

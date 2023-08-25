@@ -1,8 +1,8 @@
 package io.vyne.connectors.aws.dynamodb
 
 import io.vyne.connectors.aws.configureWithExplicitValuesIfProvided
-import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
+import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
 import io.vyne.query.SqlExchange
