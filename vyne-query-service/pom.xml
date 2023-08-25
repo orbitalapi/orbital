@@ -287,6 +287,14 @@
             </exclusion>
          </exclusions>
       </dependency>
+      <!-- JSONAssert has an undeclared dependency on org.json:json
+      https://github.com/skyscreamer/JSONassert/issues/170 -->
+      <dependency>
+         <groupId>org.json</groupId>
+         <artifactId>json</artifactId>
+         <version>20230618</version>
+         <scope>test</scope>
+      </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>test-cli</artifactId>

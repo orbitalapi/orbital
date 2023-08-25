@@ -153,10 +153,6 @@
          <scope>test</scope>
       </dependency>
       <dependency>
-         <groupId>com.hazelcast</groupId>
-         <artifactId>hazelcast</artifactId>
-      </dependency>
-      <dependency>
          <groupId>com.spikhalskiy.futurity</groupId>
          <artifactId>futurity-core</artifactId>
          <version>0.3-RC3</version>
