@@ -11,6 +11,10 @@ export function ImageWithCaption({ caption, wide, src, voyagerLink, addLightBack
       <div className="p-[1rem]">
         <Image src={src}
           alt={caption}
+             fill={true}
+               style={{
+                 objectFit: 'contain',
+               }}
           sizes="(max-width: 1280px) 100vw,
                     65vw"
           className="rounded-md"
@@ -19,7 +23,7 @@ export function ImageWithCaption({ caption, wide, src, voyagerLink, addLightBack
         <div className="text-center text-slate-500 mt-[1rem]">{caption}</div>
         {voyagerLink !== undefined &&
           <div className="text-center"><a className="text-slate-400 text-sm" target='_blank'
-            href={`https://voyager.vyne.co/s/${voyagerLink}`}>Edit this diagram on
+            href={`https://voyager.orbitalhq.com/s/${voyagerLink}`}>Edit this diagram on
             voyager.vyne.co</a></div>}
       </div>
     </div>

@@ -1,0 +1,42 @@
+import { ImageWithCaption } from '@/components/ImageWithCaption';
+import SelectOpenApi from './select-open-api.png';
+import OpenApiPreview from './open-api-preview.png'; import { Callout } from '@/components/Callout'; import NextLink
+  from 'next/link';
+
+export const meta = {
+  title: 'Using SOAP to describe your services',
+  pageTitle: 'Connecting data sources - Using SOAP  to describe your services',
+  description: 'An overview of how to connect data sources to Orbital'
+}
+
+Orbital can use SOAP WSDLs to understand what endpoints exist, and how to call them.
+
+Orbital uses [Semantic schemas](/docs/introduction#semantic-data-schemas) to describe how data relates between systems. For SOAP WSDLs, this
+means embedding references to Taxi types within your SOAP WSDLs.
+
+To do this, we embed Taxi metadata within the WSDL.
+
+## Adding Taxi annotations to WSDLs
+
+Taxi annotations use a custom `taxi:type` element within SOAP wsdls to add a reference to a Taxi type.
+
+### Namespace
+
+The `type` tag is part of the `http://taxilang.org/` namespace. (Note the trailing `/` on the URL - this is important).
+
+```xml
+<definitions xmlns:taxi="http://taxilang.org/" ... 
+```
+
+Elements then have taxi type references embedded with them like this:
+
+```xml
+   <xs:complexType name="tCurrency">
+      <xs:sequence>
+         <xs:element name="sISOCode" type="xs:string" 
+>              taxi:type="com.orbitalhq.CurrencyIsoCode"/>
+         <xs:element name="sName" type="xs:string" 
+>              taxi:type="com.orbitalhq.CurrencyName"/>
+      </xs:sequence>
+   </xs:complexType>
+```
