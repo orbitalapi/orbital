@@ -9,16 +9,17 @@ export function ImageWithCaption({ caption, wide, src, voyagerLink, addLightBack
       { "bg-slate-800 dark:bg-transparent": addLightBackground },
     )}>
       <div className="p-[1rem]">
-        <Image src={src}
-          alt={caption}
-             fill={true}
-               style={{
-                 objectFit: 'contain',
-               }}
-          sizes="(max-width: 1280px) 100vw,
-                    65vw"
-          className="rounded-md"
-        />
+        <img src={src} />
+        {/*<Image src={src}*/}
+        {/*  alt={caption}*/}
+        {/*     fill={true}*/}
+        {/*       style={{*/}
+        {/*         objectFit: 'contain',*/}
+        {/*       }}*/}
+        {/*  sizes="(max-width: 1280px) 100vw,*/}
+        {/*            65vw"*/}
+        {/*  className="rounded-md"*/}
+        {/*/>*/}
 
         <div className="text-center text-slate-500 mt-[1rem]">{caption}</div>
         {voyagerLink !== undefined &&

@@ -4,16 +4,15 @@ import {SnippetGroup} from '@/components/SnippetGroup'
 
 export const meta = {
   title: 'Overview',
-  pageTitle: 'Connecting data sources - Overview',
+  pageTitle: 'Workspace - Overview',
   description: 'An overview of how to connect data sources to Orbital'
 }
 
-
-
-Orbital works by having data sources (APIs, Databases, Message queues and Serverless functions) provide a description
+An Orbital Workspace is a collection of schemas, API specs and Taxi projects that describe 
+data sources (APIs, Databases, Message queues and Serverless functions) provide a description
 of the data and capabilities they provide.
 
-Orbital uses these descriptions to build integration on-the-fly, when a query is received.
+These descriptions are used to generate integration on-the-fly, and power your data catalog.
 
 Data sources are described using some form of API spec language (Protobuf, OpenAPI, Avro, Taxi), along with
 additional metadata that defines how concepts are related semantically.
@@ -105,18 +104,18 @@ Alternatively, you can just generate schema definitions directly from code, or a
 
 Once you choose how to describe your services, you simply need to [publish](#publishing-and-updating) your specs to Orbital
 
-## Publishing and updating
+## Publishing and updating your specs
 How and when you choose to publish / update these sources is up to you - teams tend to have different preferences around this.
 
 You're also free to mix and match - to pick the publication method that best works for your tech and team working style.
 
 The following publication methods are available:
 
- * Pushing updates to Orbital when applications start up
+ * Pushing API specs to Orbital (eg., when your microservices start)
  * Pushing updates to Orbital manually (eg., within a CI/CD pipeline)
  * Having Orbital poll sources for changes
 
-### Pushing updates on startup
+### Pushing API specs directly from your apps
 Applications can generate Taxi, direct from code, and publish to Orbital.
 
  * Suits microservices and teams who prefer generating their API specs from code
@@ -135,11 +134,63 @@ for teams that choose to push updates as part of a CI/CD cycle.
 Learn more about this approach [here](./publishing-direct-to-orbital) -->
 
 
-### Reading API specs from a Git repository
+### Pulling API specs from Orbital
+
+Orbital can be configured to fetch API specs (projects) from either Git repositories
+or the file system where Orbital is running (intended for local development).
 
 In addition to storing your [core taxonomy](#your-core-taxonomy) in Git, you can fetch other API specs (such as Protobuf or OpenApi) from
 a git repository.
 
 Orbital will poll your git repo, and automatically update as changes are merged into your target branch.
 
-For more information, read about [pulling API specs from git](./connecting-a-git-repo)
+For more information, read about [pulling API specs from git](./connecting-a-git-repo) or [reading API specs from local disk](./connecting-a-disk-repo)
+
+## Workspace.conf file
+The `workspace.conf` file is a HOCON file that describes all the locations to pull code from.  (Data sources that
+are [pushing their API specs](#pushing-api-specs-directly-from-your-apps) are not included.)
+
+Schemas can be pulled from multiple different formats and approaches.  The configuration for these
+repositories is defined in a [HOCON](https://github.com/lightbend/config#examples-of-hocon) format file.
+
+### Passing a workspace.conf file
+By default, the configuration file is called `workspace.conf`.  However, the location of the file can be changed by setting `--vyne.workspace.config-file=/path/to/workspace.conf`
+on the command line, or through any of the supported configuration overriding mechanisms.
+
+### Using a single-project workspace
+For demos / test config, it's sometimes useful to start Orbital with a single project configured.
+
+You can by-pass the workspace config, and point Orbital directly to a single local file-system project.
+
+To do this, start Orbital's schema server with `--vyne.workspace.project-file=/path/to/taxi.conf`
+
+
+### Configuration conventions
+Durations are defined using [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601#Durations) formats.  For example:
+ * 1 Day = `P1D`
+ * 3 Seconds = `PT3S`
+
+### Kitchen sink configuration example
+
+```json5
+file {
+   changeDetectionMethod=WATCH
+   incrementVersionOnChange=false
+   paths=[
+      "/path/to/project"
+   ]
+   pollFrequency=PT5S
+   recompilationFrequencyMillis=PT3S
+}
+git {
+   checkoutRoot="/my/git/root"
+   pollFrequency=PT30S
+   repositories=[
+      {
+         branch=master
+         name=my-git-project
+         uri="https://github.com/something.git"
+      }
+   ]
+}
+```

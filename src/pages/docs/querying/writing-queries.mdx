@@ -32,7 +32,7 @@ connected.
 
 Here's some sample queries:
 
-```
+```taxi
 // Find all the movies
 find { Movie[] }
 
@@ -51,7 +51,7 @@ Orbital uses the information present on the object being projected in order to c
 
 eg:
 
-```
+```taxi
 model Purchase {
    transactionId : TransactionId
    customerId : CustomerId
@@ -80,7 +80,7 @@ an input will be called.
 
 eg:
 
-```
+```taxi
 model Customer {
   @Id customerId : CustomerId
   name : CustomerName
@@ -161,7 +161,7 @@ as {
 Expressions can be defined in two ways - on a field, or on a type.
 
 #### Expressions on a field
-```
+```taxi
 // Expression types on a field:
 find { Flights[] }
 as {
@@ -279,7 +279,7 @@ Formats are defined by adding an annotation to the model defined as the output t
 
 For example:
 
-```
+```taxi
 import io.vyne.formats.Csv
 
 @Csv(
@@ -311,3 +311,4 @@ The full definition of the Csv model format is as follows:
 | nullValue                  | Defines a custom token to use in place of null                             | false    | null          |
 | containsTrailingDelimiters | Indicates if the last delimiter is an empty column which should be ignored | false    | false         |
 | withQuote                  | Defines a quote character used if content needs to be escaped              | false    | "             |
+

@@ -2,11 +2,54 @@
 title: Configuring connections
 ---
 
+import {SnippetGroup} from '@/components/SnippetGroup'
+
+
+
 The `connections.conf` file defines connections for systems that Orbital understands how to connect to.
 
-Configuration is required for most - but not - all connections.  HTTP connections are generally self-descriptive
+A connection is required for most - but not - all data sources (eg., Databases, AWS services, etc).  HTTP connections (OpenAPI / SOAP, etc) are generally self-descriptive
 enough not to require additional metadata.
 
+## Declaring in your taxi project
+Connections are defined in a `connections.conf`, which lives inside a taxi project within your [workspace](/docs/workspace/overview).
+
+Inside your `taxi.conf` file in your project, declare where you're keeping your config for Orbital.
+
+By convention, this lives at `orbital/config/connections.conf`, but this is configurable.
+
+```hocon taxi.conf
+  name: com.myproject/demo
+  version: 0.1.0
+  sourceRoot: src/
+>  additionalSources: {
+>      "@orbital/config" : "orbital/config/*.conf"   
+>  }
+```
+
+Your connections config file is a HOCON file, specifying how to connect to various resources.
+
+For example:
+
+```hocon connections.conf
+jdbc {
+  orders {
+    connectionName = orders
+    connectionParameters {
+      database = ordersdb
+      host = localhost
+      username = martypitt
+      password = ${superSecretPassword}
+      port = 5432
+
+    }
+    jdbcDriver = POSTGRES
+  }
+}
+```
+
+
+<!--
 ## Choosing between UI vs Config file
 All connections can be configured through the UI, using the connection editor and schema editor - this is often
 the easiest way to get started.   All connections are stored within the config file, including those configured in the UI.
@@ -15,20 +58,9 @@ However, when you're scripting your deployment, or want reproducible environment
 configuration that can be checked into version control or scripted.
 
 In those situations, configuring connections via the config file directly is the way to go.
+-->
 
-
-## Specifying the location
-Connections are stored in a HOCON format config file.  The location can be customized by a parameter passed on the command line when starting Orbital.
-
-If this file doesn't exist when Orbital is launched, it's created the first time a connection is created via the UI.
-
-
-| Config setting                 | Default value             |
-|--------------------------------|---------------------------|
-| `vyne-connections.config-file` | `config/connections.conf` |
-
-
-### Passing sensitive data
+## Passing sensitive data
 It may not always be desirable to specify sensitive connection information directly in the config file - especially
 if these are being checked into source control.
 
@@ -36,21 +68,54 @@ Environment variables can be used anywhere in the config file, following the [HO
 
 For example:
 
-```HOCON
+```hocon connections.conf
 jdbc {
    another-connection {
       connectionName = another-connection
-      jdbcDriver = POSTGRES # Defines the driver to use.  See below for the possible options
+      jdbcDriver = POSTGRES 
       connectionParameters {
-         # .. other params omitted for bevity ..
-         password = ${postgres_password} # Reads the environment variable "postgres_password"
+         // .. other params omitted for bevity ..
+         password = ${postgres_password} // Reads the environment variable "postgres_password"
       }
    }
 }
 ```
 
+### Using env.conf for sensitive data
+In addition to the standard HOCON rules for resolving variables, Orbital supports
+the use of a `env.conf` file, to define variables.
 
-#### Correctly handling substitutions in Urls
+This can be useful when developing locally, to ensure that sensitive values aren't accidentally
+checked in, but to avoid having to configure environment variables, which can be fiddly.
+
+The general workflow is as follows:
+ * Define a `connections.conf` file with your connections, using `${variables}` for placeholders of sensistive data.
+ * Create a local `env.conf` file.
+   * The location of the `env.conf` file must be along side the `connections.conf` file - ie., the path defined in your [taxi.conf file](#declaring-in-your-taxi-project)
+ * Populate the env.conf file with sensitive values.
+
+Eg:
+
+<SnippetGroup>
+
+  ```hocon connections.conf
+  jdbc {
+     my-connection {
+        // ... other params omitted for brevity ...
+        connectionParams {
+          password = ${postgres_password} // Reads the environment variable "postgres_password"
+        }
+     }
+  }
+  ```
+  
+  ```hocon env.conf
+  postgres_password=hello123
+  ```
+</SnippetGroup>
+
+
+### Correctly handling substitutions in Urls
 Substitution of variable inside a Url using Hocon can be tricky.
 
 In short, here's how substitutions need to be defined:
@@ -70,17 +135,17 @@ For more information, see [this issue](https://github.com/lightbend/config/issue
 
 Database connections are defined under the `jdbc` element within the `connections.conf` file.
 
-```
-jdbc { # The root element for database connections
-   another-connection { # Defines a connection called "another-connection"
-      connectionName = another-connection # The name of the connection.  Must match the key used above.
-      jdbcDriver = POSTGRES # Defines the driver to use.  See below for the possible options
-      connectionParameters { ## A list of connection parameters.  The actual values here are defined by the driver selected.
-         database = transactions # The name of the database
-         host = our-db-server # The host of the database
-         password = super-secret # The password
-         port = "2003" # The port
-         username = jack # The username to connect with
+```hocon
+jdbc { // The root element for database connections
+   another-connection { // Defines a connection called "another-connection"
+      connectionName = another-connection // The name of the connection.  Must match the key used above.
+      jdbcDriver = POSTGRES // Defines the driver to use.  See below for the possible options
+      connectionParameters { // A list of connection parameters.  The actual values here are defined by the driver selected.
+         database = transactions // The name of the database
+         host = our-db-server // The host of the database
+         password = super-secret // The password
+         port = "2003" // The port
+         username = jack // The username to connect with
       }
    }
 }
@@ -105,16 +170,16 @@ Connection parameters are as follows:
 #### Example
 
 ```HOCON
-jdbc { # The root element for database connections
-   another-connection { # Defines a connection called "another-connection"
-      connectionName = another-connection # The name of the connection.  Must match the key used above.
-      jdbcDriver = POSTGRES # Defines the driver to use.  See below for the possible options
-      connectionParameters { ## A list of connection parameters.  The actual values here are defined by the driver selected.
-         database = transactions # The name of the database
-         host = our-db-server # The host of the database
-         password = super-secret # The password
-         port = "2003" # The port
-         username = jack # The username to connect with
+jdbc { // The root element for database connections
+   another-connection { // Defines a connection called "another-connection"
+      connectionName = another-connection // The name of the connection.  Must match the key used above.
+      jdbcDriver = POSTGRES // Defines the driver to use.  See below for the possible options
+      connectionParameters { // A list of connection parameters.  The actual values here are defined by the driver selected.
+         database = transactions // The name of the database
+         host = our-db-server // The host of the database
+         password = super-secret // The password
+         port = "2003" // The port
+         username = jack // The username to connect with
       }
    }
 }
@@ -137,16 +202,16 @@ Connection parameters are as follows:
 #### Example
 
 ```HOCON
-jdbc { # The root element for database connections
-   another-connection { # Defines a connection called "another-connection"
-      connectionName = another-connection # The name of the connection.  Must match the key used above.
-      jdbcDriver = REDSHIFT # Defines the driver to use.  See below for the possible options
-      connectionParameters { ## A list of connection parameters.  The actual values here are defined by the driver selected.
-         database = transactions # The name of the database
-         host = our-db-server # The host of the database
-         password = super-secret # The password
-         port = "2003" # The port
-         username = jack # The username to connect with
+jdbc { // The root element for database connections
+   another-connection { // Defines a connection called "another-connection"
+      connectionName = another-connection // The name of the connection.  Must match the key used above.
+      jdbcDriver = REDSHIFT // Defines the driver to use.  See below for the possible options
+      connectionParameters { // A list of connection parameters.  The actual values here are defined by the driver selected.
+         database = transactions // The name of the database
+         host = our-db-server // The host of the database
+         password = super-secret // The password
+         port = "2003" // The port
+         username = jack // The username to connect with
       }
    }
 }
@@ -171,11 +236,11 @@ Connection parameters are as follows:
 #### Example
 
 ```HOCON
-jdbc { # The root element for database connections
-   another-connection { # Defines a connection called "another-connection"
-      connectionName = another-connection # The name of the connection.  Must match the key used above.
-      jdbcDriver = SNOWFLAKE # Defines the driver to use.  See below for the possible options
-      connectionParameters { ## A list of connection parameters.  The actual values here are defined by the driver selected.
+jdbc { // The root element for database connections
+   another-connection { // Defines a connection called "another-connection"
+      connectionName = another-connection // The name of the connection.  Must match the key used above.
+      jdbcDriver = SNOWFLAKE // Defines the driver to use.  See below for the possible options
+      connectionParameters { // A list of connection parameters.  The actual values here are defined by the driver selected.
         account = mySnowflakeAccount123.eu-west-1
         schema = public
         db = demo_db

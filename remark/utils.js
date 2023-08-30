@@ -140,7 +140,11 @@ function hasLineHighlights(code) {
 
 module.exports.highlightCode = function highlightCode(code, prismLanguage) {
   const isDiff = prismLanguage.startsWith('diff-')
-  const language = isDiff ? prismLanguage.substr(5) : prismLanguage
+  let language = isDiff ? prismLanguage.substr(5) : prismLanguage
+  if (language.toLowerCase() === 'hocon') {
+    console.warn(`Prism doesn't support HOCON, using JSON5 instead`)
+    language = 'json5'
+  }
   const grammar = Prism.languages[language]
   if (!grammar) {
     console.warn(`Unrecognised language: ${prismLanguage}`)

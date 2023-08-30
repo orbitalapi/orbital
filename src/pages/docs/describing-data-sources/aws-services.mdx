@@ -1,0 +1,116 @@
+---
+title: Using AWS services
+---
+
+import {Callout} from "@/components/docs/Callout";
+import PrototypeDropDown from "./protobuf-drop-down.png";
+import PreviewProtobuf from "./preview-protobuf.png";
+
+<Callout type="note" title="Before you begin">
+
+  Before using AWS services, you need to define a connection to AWS in your <code>connections.conf</code> file.
+
+  Read more about defining AWS connections <a href='/describing-data-sources/configuring-connections#aws-connections'>here</a>.
+</Callout>
+
+Orbital supports reading protobuf messages - either as a message format for HTTP endpoints or from a streaming query originating from Kafka.
+
+You can annotate protobuf sources directly with Taxi metadata, or
+you can import through the Schema Importer.
+
+## DynamoDb
+DynamoDb services can only be declared in Taxi.
+
+Querying against key is supported, as is write operations.
+
+To expose a DynamoDb service, the following two annotations are required:
+
+ * Add a ` @io.vyne.aws.dynamo.Table` to a model
+ * Add a `@io.vyne.aws.dynamo.DynamoService` annotation to the service
+
+```taxi
+import io.vyne.aws.dynamo.DynamoService
+import io.vyne.aws.dynamo.Table
+
+// connectionName must match the defined connection.
+@Table( connectionName = "myAws" , tableName = "reviews" )
+model Review {
+  @Id
+  movieId : MovieId
+  score: ReviewScore inherits Int
+}
+
+@DynamoService
+service DynamoService {
+  // Exposes query operations that return Review[]
+  table reviews: Review[]
+
+  // allows upsert calls
+  @UpsertOperation
+  write operation saveReview(Review):Review
+}
+```
+
+Write operations (such as upserts) can only be invoked in [mutations](/docs/querying/mutations).
+
+## Lambda
+Orbital can invoke a Lambda, either to discover data in a query, or in a [mutation](/docs/querying/mutations).
+
+A service must have the `AwsLambdaService` annotation, passing the configured connection.
+
+Operations have the `LambdaOperation` annotation.
+
+```taxi
+import io.vyne.aws.lambda.AwsLambdaService
+import io.vyne.aws.lambda.LambdaOperation
+
+@AwsLambdaService( connectionName = "myAws" )
+service MovieDb {
+  @LambdaOperation(name = "streamingprovider")
+  operation movieQuery(@RequestBody StreamingProviderRequest): StreamingProviderResponse
+}
+```
+
+## S3
+Orbital can connect to S3 and read a file containing CSV data.
+
+We're excited to expand the functionality of our S3 adapter.  If you have a use case to discuss, please [get in touch on slack](https://join.slack.com/t/orbitalapi/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg).
+
+
+```taxi
+import io.vyne.formats.Csv
+@Csv
+type Orders {
+   symbol : Symbol by column(2)
+   open : Price by column(3)
+   high : Price by column(4)
+   close : Price by column(6)
+}
+@S3Service( connectionName = "myAws" )
+service AwsBucketService {
+   @S3Operation(bucket = "Orders")
+   vyneQl query fetchReports(body:VyneQlQuery): OrderWindowSummary[]
+}
+```
+
+
+## SQS
+Orbital can subscribe to a stream of data from SQS.
+
+```taxi
+import io.vyne.aws.sqs.SqsService
+import io.vyne.aws.sqs.SqsOperation
+
+@SqsService( connectionName = "moviesConnection" )
+service MovieService {
+  @SqsOperation( queue = "movies" )
+  operation streamMovieQuery():Stream<Movie>
+}
+```
+
+This can then be queried using a standard `stream` query:
+
+```taxi
+stream { Movie }
+// as ... 
+```

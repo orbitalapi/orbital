@@ -36,8 +36,9 @@ export function Icon({ color = 'blue', icon, className, ...props }) {
   let IconComponent = icons[icon]
 
   return (
-
+    <svg>
       <IconComponent color={color} />
+    </svg>
   )
 }
 

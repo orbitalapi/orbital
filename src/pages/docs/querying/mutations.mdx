@@ -1,0 +1,27 @@
+---
+title: Performing mutations
+description: Triggering updates / mutations using TaxiQL
+---
+
+Mutation queries make changes somewhere - ie., perform a task, or update a record.
+
+Mutating operations are defined in Taxi using the `write` modifier:
+
+```taxi
+service FlightsService {
+  write operation bookFlight(BookingRequest):BookingConfirmation
+  write operation sendFlightManifest(Manifest):ManifestConfirmation
+}
+```
+
+Mutating operations are excluded from being invoked during a query (ie., anything with a `find {}` or `stream {}` directive.)
+
+Instead, they are invoked using a `call` directive.
+
+```taxi
+find { Passengers[] }
+call FlightsService::sendFlightManifest
+```
+
+In this example, a list of `Passengers` is fetched, and converted into a `Manifest` to call the `sendFlightManifest` operation
+of the `FlightsService`.
