@@ -5,10 +5,11 @@ export function ImageWithCaption({ caption, wide, src, voyagerLink, addLightBack
 
   return (
     <div className={clsx(
-      "relative my-[2em] first:mt-0 last:mb-0 rounded-lg rounded-lg w-full mx-auto",
+      "relative my-[2em] first:mt-0 last:mb-0 rounded-lg w-full mx-auto",
       { "bg-slate-800 dark:bg-transparent": addLightBackground },
     )}>
       <div className="p-[1rem]">
+        {/*<img src={src} />*/}
         <Image src={src}
           alt={caption}
           sizes="(max-width: 1280px) 100vw,
@@ -19,7 +20,7 @@ export function ImageWithCaption({ caption, wide, src, voyagerLink, addLightBack
         <div className="text-center text-slate-500 mt-[1rem]">{caption}</div>
         {voyagerLink !== undefined &&
           <div className="text-center"><a className="text-slate-400 text-sm" target='_blank'
-            href={`https://voyager.vyne.co/s/${voyagerLink}`}>Edit this diagram on
+            href={`https://voyager.orbitalhq.com/s/${voyagerLink}`}>Edit this diagram on
             voyager.vyne.co</a></div>}
       </div>
     </div>

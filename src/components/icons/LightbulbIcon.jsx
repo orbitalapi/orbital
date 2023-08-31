@@ -2,7 +2,7 @@ import { DarkMode, Gradient, LightMode } from '@/components/Icon'
 
 export function LightbulbIcon({ id, color }) {
   return (
-    <>
+    <svg>
       <defs>
         <Gradient
           id={`${id}-gradient`}
@@ -41,6 +41,6 @@ export function LightbulbIcon({ id, color }) {
           fill={`url(#${id}-gradient-dark)`}
         />
       </DarkMode>
-    </>
+    </svg>
   )
 }

@@ -1,5 +1,5 @@
 import { ImageWithCaption } from '@/components/ImageWithCaption';
-import UnderConstruction from '@/components/docs/UnderConstruction.tsx';
+import UnderConstruction from '@/components/docs/UnderConstruction.tsx.js';
 import { Callout } from '@/components/docs/Callout';
 import NextLink from 'next/link';
 import AddSchemaSources from './add-schema-sources.png';
@@ -31,30 +31,35 @@ If you haven't created one yet, just provide an empty directory, and a repositor
 ## Adding a file repository through config
 The schema repositories that Orbital is connected to can be configured through a [HOCON file](/docs/deploying/configuring-orbital), which by default is called `schema-server.conf`
 
+<Callout type="note" title='A word on file paths:'>
+  <li>File paths that are absolute are resolved against the file system.</li>
+  <li>File paths that are relative are resolved relative to the location of the config file.</li>
+</Callout>
+
 ```hocon
 file {
     projects=[
         {
-            # Optional (defaults to false).  Indciates if the project can receive edits through the UI
+            // Optional (defaults to false).  Indciates if the project can receive edits through the UI
             isEditable=true
-            # Path to the folder containing a taxi.conf file.
+            // Path to the folder containing a taxi.conf file.
             path="/opt/var/orbital/schemas/taxi"
         }
     ]
 
-    # Optional - WATCH or POLL
+    // Optional - WATCH or POLL
     changeDetectionMethod=WATCH
 
-    # Optional - Should the version of the project be incremented when the local disk changes?
-    # False is a safe setting here
+    // Optional - Should the version of the project be incremented when the local disk changes?
+    // False is a safe setting here
     incrementVersionOnChange=false
 
-    # Optional.  If polling, define the frequency.
+    // Optional.  If polling, define the frequency.
     pollFrequency=PT5S
 
-     # Optional.  Defines the frequency that updates trigger recompilation.
-     # Useful if you're locally editing a schema, and don't want to trigger
-     # lots of recompilation
+     // Optional.  Defines the frequency that updates trigger recompilation.
+     // Useful if you're locally editing a schema, and don't want to trigger
+     // lots of recompilation
     recompilationFrequencyMillis=PT3S
 }
 

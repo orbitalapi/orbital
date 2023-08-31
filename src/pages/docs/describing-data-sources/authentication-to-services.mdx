@@ -1,0 +1,191 @@
+---
+title: Authenticating Orbital to other services
+description: Configuring authentication credentials Orbital provides to other services
+---
+
+import {Callout} from "@/components/docs/Callout";
+
+Orbital will pass authentication headers to upstream services when sending requests.
+
+Configuration is managed through an `auth.conf` file, present in a Taxi project in your workspace.
+
+## Auth.conf file
+Connections are defined in a `connections.conf` - a [HOCON](https://github.com/lightbend/config#examples-of-hocon) file which lives inside a taxi project within your [workspace](/docs/workspace/overview).
+
+Inside your `taxi.conf` file in your project, declare where you're keeping your config for Orbital.
+
+By convention, this lives at `orbital/config/connections.conf`, but this is configurable.
+
+```hocon taxi.conf
+  name: com.myproject/demo
+  version: 0.1.0
+  sourceRoot: src/
+>  additionalSources: {
+>      "@orbital/config" : "orbital/config/*.conf"   
+>  }
+```
+
+Here's a sample config:
+
+```hocon
+authenticationTokens {
+
+   // The fully qualified name of a service, as defined in a taxi schema. 
+  // Should be surrounded in quotes.
+   "com.acme.MyService" { 
+      type = OAuth2 
+      // ... see below for examples
+   }
+
+   // You can also use wildcards in the name of the service, to use the same credentials for
+   // all matching services
+   "com.hamilton.*" {
+
+   }
+}
+```
+
+<Callout type="note" title="See also...">
+  Also check out <a href='/docs/deploying/managing-secrets'>Managing Secrets</a> to see how to securely manage sensitive information in your auth tokens
+</Callout>
+
+## Authentication token types
+Several type fo authentication scheme are supported. If you don't see the one you need here, please [get in touch](https://join.slack.com/t/orbitalapi/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg).
+
+
+### Basic authentication
+
+```hocon auth.conf
+authenticationTokens {
+
+  // The fully qualified name of a service, as defined in a taxi schema. 
+  // Should be surrounded in quotes.
+  "com.foo.TestService" {
+     type: Basic
+     username: jimmy
+     password: password
+  }
+}
+```
+
+### HTTP Header
+```hocon auth.conf
+authenticationTokens {
+
+  // The fully qualified name of a service, as defined in a taxi schema. 
+  // Should be surrounded in quotes.
+  "com.foo.TestService" {
+     type: HttpHeader
+      // Mandatory
+      value: letMeIn     
+      // Optional, defaults to Bearer
+      prefix: "Token",
+      // Optional, defaults to Authentication
+      headerName: Auth
+  }
+}
+```
+
+### Query param
+```hocon auth.conf
+authenticationTokens {
+
+  // The fully qualified name of a service, as defined in a taxi schema. 
+  // Should be surrounded in quotes.
+  "com.foo.TestService" {
+     type: QueryParam
+     parameterName: authKey
+     value: letMeIn
+  }
+}
+```
+
+### Cookie
+```hocon auth.conf
+authenticationTokens {
+
+  // The fully qualified name of a service, as defined in a taxi schema. 
+  // Should be surrounded in quotes.
+  "com.foo.TestService" {
+     type: Cookie
+     cookieName: authKey
+     value: letMeIn
+  }
+}
+```
+
+### OAuth2
+```hocon auth.conf
+authenticationTokens {
+
+  // The fully qualified name of a service, as defined in a taxi schema. 
+  // Should be surrounded in quotes.
+  "com.foo.TestService" {
+     type: OAuth2
+     accessTokenUrl: "https://auth.com/tokens"
+     clientId: ABC
+     clientSecret: DEF
+     scopes: [ "profile" , "image" ]
+     grantType: AuthorizationCode
+     method: Post
+  }
+}
+```
+
+
+## Using environment variables
+Environment variables can be used in authentication config files.
+
+```HOCON
+authenticationTokens {
+   "com.acme.MyService" {
+      tokenType = AuthorizationBearerHeader
+      value = ${foo} // The enviroment variable of 'foo' is read and substituted
+   }
+}
+```
+
+<Callout type="note" title="See also...">
+  Also check out <a href='/docs/deploying/managing-secrets'>Managing Secrets</a> to see how to securely manage sensitive information in your auth tokens
+</Callout>
+
+
+## Other configuration approaches
+Authentication configuration is always persisted to the file described above.
+However, there are ways of adding / removing to the configuration without requiring file access.
+
+### UI configuration
+Authentication tokens can be added, modified and deleted through the UI, via the Authentication Manager.
+
+Changes made here are persisted in the configured authentication file.
+
+<!-- TODO: replace screenshots -->
+<!-- ![authentication-manager-1](auth-1.png)
+![authentication-manager-2](auth-2.png) -->
+
+### REST API
+Authentication tokens can be added, modified and deleted through the REST API:
+
+#### Create or update token
+
+POST to `/api/tokens/service/{serviceName}`:
+```json
+{
+   "tokenType" : "AuthorizationBearerHeader",
+   "value" : "yourAPIToken"
+}
+```
+
+#### Deleting a token
+Deletes a token
+
+DELETE to `/api/tokens/service/{serviceName}`
+
+#### Listing configured tokens
+It is possible to list the configured tokens.  However, the token values are not returned.
+
+GET to `/api/tokens`
+
+```
+[ { "serviceName" : "com.foo.MyService", "tokenType" : "AuthorizationBearerHeader" } ]
+```

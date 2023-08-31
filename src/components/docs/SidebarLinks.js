@@ -14,13 +14,12 @@ export const SidebarLinks = [
     ],
   },
   {
-    title: 'Connecting schema projects',
+    title: 'Your workspace',
     links: [
-      { title: 'Overview', href: '/docs/connecting-data-sources/overview' },
+      { title: 'Overview', href: '/docs/workspace/overview' },
       // { title: 'Publishing schemas to Orbital', href: '/docs/connecting-data-sources/schema-publication-methods' },
-      { title: 'Pulling schemas from git', href: '/docs/connecting-data-sources/connecting-a-git-repo' },
-      { title: 'Reading schemas from disk', href: '/docs/connecting-data-sources/connecting-a-disk-repo' },
-      { title: 'Schema config file reference', href: '/docs/connecting-data-sources/reading-from-disk' }
+      { title: 'Pulling schemas from git', href: '/docs/workspace/connecting-a-git-repo' },
+      { title: 'Reading schemas from disk', href: '/docs/workspace/connecting-a-disk-repo' },
       // TODO
       //  {title: 'Using Taxi', href: '/docs/publishing-data-sources/using-taxi'},
       // TODO
@@ -38,21 +37,25 @@ export const SidebarLinks = [
     ],
   },
   {
-    title: 'Describing data sources',
+    title: 'Managing data sources',
     links: [
+      { title: 'Configuring Connections', href: '/docs/describing-data-sources/configuring-connections'},
+      { title: 'Authenticating to other services', href: '/docs/describing-data-sources/authentication-to-services' },
       { title: 'Using OpenAPI', href: '/docs/describing-data-sources/open-api' },
       { title: 'Using Protobuf', href: '/docs/describing-data-sources/protobuf' },
       // Note: This used to be 'Connecting databases'
       { title: 'Databases', href: '/docs/describing-data-sources/databases' },
-      { title: 'Connecting a Kafka topic', href: '/docs/connecting-data-sources/connect-kafka-topic' },
+      { title: 'Connecting a Kafka topic', href: '/docs/describing-data-sources/connect-kafka-topic' },
+      { title: 'Connecting AWS services', href: '/docs/describing-data-sources/aws-services' },
       // { title: 'Using Taxi', href: '/docs/describing-data- sources/taxi'}
-      { title: 'Enable UI Schema Editing', href: '/docs/describing-data-sources/enable-ui-schema-editing' }
+      // { title: 'Enable UI Schema Editing', href: '/docs/describing-data-sources/enable-ui-schema-editing' }
     ]
   },
   {
     title: 'Querying',
     links: [
       { title: 'Writing queries', href: '/docs/querying/writing-queries' },
+      { title: 'Mutations', href: '/docs/querying/mutations' },
       { title: 'Using the Kotlin SDK', href: '/docs/querying/kotlin-sdk' }
       // { title: 'TaxiQL tutorial', href: '/docs/sample' },
       // TODO: This needs to be more step by step rather than the existing docs which describes how to write TaxiQL
@@ -71,9 +74,9 @@ export const SidebarLinks = [
     links: [
       { title: 'Production deployments', href: '/docs/deploying/production-deployments' },
       { title: 'Configuring Orbital', href: '/docs/deploying/configuring-orbital' },
-      { title: 'Configuring Connections', href: '/docs/deploying/configuring-connections'},
+      { title: 'Managing secrets', href: '/docs/deploying/managing-secrets' },
       { title: 'Configuring the Schema Server', href: '/docs/deploying/schema-server'},
-      { title: 'Authenticating to other services', href: '/docs/deploying/authentication-to-services' },
+
       { title: 'Authentication to Orbital', href: '/docs/deploying/authentication'},
       { title: 'Authorization within Orbital', href: '/docs/deploying/authorization'},
       // TODO: Needs to be written

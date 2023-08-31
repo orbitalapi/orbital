@@ -2,7 +2,7 @@ import { DarkMode, Gradient, LightMode } from '@/components/Icon'
 
 export function InstallationIcon({ id, color }) {
   return (
-    <>
+    <svg>
       <defs>
         <Gradient
           id={`${id}-gradient`}
@@ -36,6 +36,6 @@ export function InstallationIcon({ id, color }) {
           strokeLinejoin="round"
         />
       </DarkMode>
-    </>
+    </svg>
   )
 }

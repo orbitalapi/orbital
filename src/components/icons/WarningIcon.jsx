@@ -2,7 +2,7 @@ import { DarkMode, Gradient, LightMode } from '@/components/Icon'
 
 export function WarningIcon({ id, color }) {
   return (
-    <>
+    <svg>
       <defs>
         <Gradient
           id={`${id}-gradient`}
@@ -50,6 +50,6 @@ export function WarningIcon({ id, color }) {
           fill={`url(#${id}-gradient-dark)`}
         />
       </DarkMode>
-    </>
+    </svg>
   )
 }
