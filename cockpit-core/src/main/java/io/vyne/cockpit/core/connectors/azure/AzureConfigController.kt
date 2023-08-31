@@ -30,10 +30,11 @@ class AzureConfigController(private val registry: AzureStoreConnectionFileRegist
 
    @PostMapping("/api/connections/azure_storage")
    fun createConnection(@RequestBody connectionConfig: AzureStorageConnectorConfiguration): Mono<ConnectorConfigurationSummary> {
-      testConnection(connectionConfig)
-      registry.register(connectionConfig)
-      val summary = ConnectorConfigurationSummary(connectionConfig)
-      return Mono.just(summary)
+      TODO("Needs migrating - don't think this is used")
+//      testConnection(connectionConfig)
+//      registry.register(connectionConfig)
+//      val summary = ConnectorConfigurationSummary(connectionConfig)
+//      return Mono.just(summary)
    }
 }
 //AzureStorageConnectorConfiguration

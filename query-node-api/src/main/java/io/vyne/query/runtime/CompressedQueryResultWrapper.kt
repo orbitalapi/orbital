@@ -3,6 +3,7 @@ package io.vyne.query.runtime
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.models.json.Jackson
+import io.vyne.query.QueryFailedException
 import io.vyne.utils.formatAsFileSize
 import mu.KotlinLogging
 import java.io.ByteArrayInputStream
@@ -23,7 +24,7 @@ import kotlin.time.measureTimedValue
  * Also, because we're focussing on compression here, nulls are omitted.
  */
 @OptIn(ExperimentalTime::class)
-data class CompressedQueryResultWrapper(val r:ByteArray) {
+data class CompressedQueryResultWrapper(val r: ByteArray, val error: String? = null) {
    companion object {
       val mapper = Jackson.newObjectMapperWithDefaults()
          .setSerializationInclusion(JsonInclude.Include.NON_NULL)
@@ -38,8 +39,26 @@ data class CompressedQueryResultWrapper(val r:ByteArray) {
          logger.info { "Message response compressed to approx. ${byteArray.size.formatAsFileSize}" }
          return CompressedQueryResultWrapper(byteArray)
       }
+
+      fun forError(error: String): CompressedQueryResultWrapper {
+         return CompressedQueryResultWrapper(
+            ByteArray(0),
+            error
+         )
+      }
    }
 
+   /**
+    * Returns the result decompressed, or throws a QueryFailedException if an error
+    * was returned
+    */
+   fun decompressOrThrow(): Any {
+      if (error != null) {
+         throw QueryFailedException(error)
+      } else {
+         return decompress()
+      }
+   }
    fun decompress(): Any {
       val timedResult = measureTimedValue {
          val gzip = GZIPInputStream(ByteArrayInputStream(r))

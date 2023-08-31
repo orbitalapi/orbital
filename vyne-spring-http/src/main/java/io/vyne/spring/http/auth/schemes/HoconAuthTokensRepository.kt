@@ -7,6 +7,7 @@ import io.vyne.auth.schemes.*
 import io.vyne.config.ConfigSourceLoader
 import io.vyne.config.ConfigSourceWriter
 import io.vyne.config.MergingHoconConfigRepository
+import io.vyne.config.getWriter
 import io.vyne.schemas.ServiceName
 import org.http4k.quoted
 
@@ -33,9 +34,7 @@ class HoconAuthTokensRepository(
       serviceName: String,
       token: AuthScheme
    ): SanitizedAuthScheme {
-      val writers = writers.filter { it.packageIdentifier == targetPackage }
-      val writer = writers.singleOrNull()
-         ?: error("Expected to find exactly 1 writer for package ${targetPackage.id}, but found ${writers.size}")
+      val writer = writers.getWriter(targetPackage)
       val existingValues = loadUnresolvedConfig(writer, targetPackage)
 
       // Note: calling asHocon(), which defers to the AuthScheme kotlin-specific
@@ -56,23 +55,6 @@ class HoconAuthTokensRepository(
 
    private fun authTokenConfigPath(serviceName: String): String {
       return "${AuthTokens::authenticationTokens.name}.${serviceName.quoted()}"
-   }
-
-   private fun loadUnresolvedConfig(writer: ConfigSourceWriter, targetPackage: PackageIdentifier): Config {
-      val sourcePackages = writer.load()
-         .filter { it.identifier == targetPackage }
-      // Not a hard requirement, but I need to understand the use case of why this
-      // wouldn't be a single value.
-      require(sourcePackages.size == 1) { "Expected a single source package, but found ${sourcePackages.size}" }
-
-      val sourcePackage = sourcePackages.single()
-      return if (sourcePackage.sources.isEmpty()) {
-         ConfigFactory.empty()
-      } else {
-         val rawSource = readRawHoconSource(sourcePackage)
-         unresolvedConfig(rawSource)
-      }
-
    }
 
    override fun deleteToken(targetPackage: PackageIdentifier, serviceName: String) {

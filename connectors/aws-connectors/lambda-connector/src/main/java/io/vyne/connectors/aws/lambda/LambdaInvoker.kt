@@ -1,11 +1,9 @@
 package io.vyne.connectors.aws.lambda
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.vyne.connectors.aws.core.AwsConnectionConnectorConfiguration
-import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
-import io.vyne.connectors.aws.core.endPointOverride
-import io.vyne.connectors.aws.core.region
+import io.vyne.connectors.aws.configureWithExplicitValuesIfProvided
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
+import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
@@ -61,7 +59,7 @@ class LambdaInvoker(
       return invokeAwsLambda(awsConnection, parameters, service, operation, eventDispatcher, queryId)
    }
 
-   private fun fetchConnection(service: Service): AwsConnectionConnectorConfiguration {
+   private fun fetchConnection(service: Service): AwsConnectionConfiguration {
       val connectionName =
          service.metadata(LambdaConnectorTaxi.Annotations.LambdaInvocationService.NAME).params["connectionName"] as String
       val awsConnectionConfiguration = connectionRegistry.getConnection(connectionName)
@@ -76,7 +74,7 @@ class LambdaInvoker(
    }
 
    private fun invokeAwsLambda(
-      connection: AwsConnectionConnectorConfiguration,
+      connection: AwsConnectionConfiguration,
       parameters: List<Pair<Parameter, TypedInstance>>,
       service: Service,
       operation: RemoteOperation,
@@ -152,7 +150,7 @@ class LambdaInvoker(
          }.asFlow().flowOn(dispatcher)
    }
 
-   private fun createAsyncLambdaClient(connection: AwsConnectionConnectorConfiguration): LambdaAsyncClient {
+   private fun createAsyncLambdaClient(connection: AwsConnectionConfiguration): LambdaAsyncClient {
       val clientBuilder = LambdaAsyncClient.builder()
          .configureWithExplicitValuesIfProvided(connection)
 

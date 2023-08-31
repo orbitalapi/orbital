@@ -1,9 +1,11 @@
 package io.vyne.connectors.kafka.registry
 
+import io.vyne.PackageIdentifier
 import io.vyne.connectors.config.kafka.KafkaConnectionConfiguration
+import io.vyne.connectors.registry.MutableConnectionRegistry
 
 class InMemoryKafkaConnectorRegistry(configs: List<KafkaConnectionConfiguration> = emptyList()) :
-   KafkaConnectionRegistry {
+    KafkaConnectionRegistry, MutableConnectionRegistry<KafkaConnectionConfiguration> {
 
 
    private val connections: MutableMap<String, KafkaConnectionConfiguration> =
@@ -14,11 +16,19 @@ class InMemoryKafkaConnectorRegistry(configs: List<KafkaConnectionConfiguration>
    override fun getConnection(name: String): KafkaConnectionConfiguration =
       connections[name] ?: error("No JdbcConnection with name $name is registered")
 
-   override fun register(connectionConfiguration: KafkaConnectionConfiguration) {
+   override fun remove(targetPackage: PackageIdentifier, connectionName: String) {
+      connections.remove(connectionName)
+   }
+
+   fun register(connectionConfiguration: KafkaConnectionConfiguration) {
       connections[connectionConfiguration.connectionName] = connectionConfiguration
    }
 
-   override fun remove(connectionConfiguration: KafkaConnectionConfiguration) {
+   override fun register(targetPackage: PackageIdentifier, connectionConfiguration: KafkaConnectionConfiguration) {
+      connections[connectionConfiguration.connectionName] = connectionConfiguration
+   }
+
+   override fun remove(targetPackage: PackageIdentifier, connectionConfiguration: KafkaConnectionConfiguration) {
       connections.remove(connectionConfiguration.connectionName)
    }
 

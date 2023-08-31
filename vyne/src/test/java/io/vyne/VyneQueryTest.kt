@@ -2,11 +2,9 @@ package io.vyne
 
 import app.cash.turbine.test
 import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldContainAll
 import io.vyne.http.MockWebServerRule
-import io.vyne.models.Provided
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
+import io.vyne.models.*
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.functions.functionOf
 import io.vyne.models.json.parseJson
@@ -14,14 +12,16 @@ import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.query.VyneQlGrammar
 import io.vyne.query.connectors.OperationResponseHandler
+import io.vyne.query.connectors.responsesById
+import io.vyne.query.connectors.responsesToTaxiQlById
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.TableOperation
+import io.vyne.schemas.fqn
 import io.vyne.utils.withoutWhitespace
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import lang.taxi.services.QueryOperationCapability
 import org.junit.Rule
 import org.junit.Test
 import kotlin.test.assertFails
@@ -90,14 +90,15 @@ class VyneQueryTest {
       )
 
       val response = vyne.parseJsonModel("Trade[]", """[ { "traderId" : "jimmy" } ]""")
-      stub.addResponse(TableOperation.findManyOperationName("tradeQuery"), response)
+       val findManyOperationName = TableOperation.findManyOperationName("tradeQuery", "Trade".fqn())
+       stub.addResponse(findManyOperationName, response)
       val queryResult = vyne.query("find { Trade[]( TraderId == 'jimmy' ) }")
 
       val resultList = queryResult.rawObjects()
       resultList.should.have.size(1)
       resultList.first()["traderId"].should.equal("jimmy")
 
-      val invocations = stub.invocations[TableOperation.findManyOperationName("tradeQuery")]!!
+       val invocations = stub.invocations[findManyOperationName]!!
       invocations.should.have.size(1)
       val vyneQlQuery = invocations.first().value!! as String
 
@@ -109,8 +110,93 @@ class VyneQueryTest {
          .should.equal(expectedVyneQl.withoutWhitespace())
 
       println(queryResult.results?.toList())
-
    }
+
+    @Test
+    fun `can resolve ids via lookup table with many id annotations`(): Unit = io.kotest.common.runBlocking {
+        val (vyne, stub) = testVyne(
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            """
+
+            model NetflixMovie {
+                @Id id : NetflixMovieId inherits String
+                title : MovieTitle inherits String
+            }
+            model MovieReview {
+                @Id id : ReviewId inherits String
+                score : ReviewScore inherits Int
+            }
+            model IdResolution {
+                @Id recordId : RecordId inherits Int
+                @Id netflixId : NetflixMovieId
+                @Id reviewId : ReviewId
+            }
+            service MovieService {
+                operation findMovies():NetflixMovie[]
+                operation findMovie(NetflixMovieId):NetflixMovie
+
+                operation findReviews():MovieReview[]
+                operation findReview(ReviewId):MovieReview
+
+                table idResolution : IdResolution[]
+            }
+        """.trimIndent()
+        )
+        val starWarsMovie = vyne.parseJson("NetflixMovie", """{ "id" : "123" , "title" : "Star Wars" }""")
+        val backToTheFutureMovie =
+            vyne.parseJson("NetflixMovie", """{ "id"  : "456", "title" : "Back to the Future" }""")
+        stub.addResponse(
+            "findMovies", TypedCollection.from(listOf(starWarsMovie, backToTheFutureMovie))
+        )
+        val starWarsReview = vyne.parseJson("MovieReview", """{ "id" : "star" , "score" : 4 }""")
+        val backToTheFutureReview = vyne.parseJson("MovieReview", """{ "id" : "bttf" , "score" : 5 } """)
+        stub.addResponse(
+            "findReviews", TypedCollection.from(listOf(starWarsReview, backToTheFutureReview))
+        )
+        stub.addResponse(
+            "findReview", responsesById(
+                "id", listOf(starWarsReview, backToTheFutureReview)
+            )
+        )
+
+        stub.addResponse(
+            "findMovie", responsesById(
+                "id", listOf(starWarsMovie, backToTheFutureMovie)
+            )
+        )
+        stub.addResponse(
+            "idResolution_findOneIdResolution", responsesToTaxiQlById(
+                vyne.parseJson(
+                    "IdResolution[]", """[
+                | { "recordId" : 1, "netflixId" : "123", "reviewId" : "star" },
+                | { "recordId" : 2, "netflixId" : "456", "reviewId" : "bttf" }
+                | ]
+            """.trimMargin()
+                ) as TypedCollection
+            )
+        )
+
+        // Can go from Movie -[idResolution]-> Review
+        val resultByMovie = vyne.query("""find { NetflixMovie[] } as { title : MovieTitle score: ReviewScore }[]""")
+            .rawObjects()
+        resultByMovie.shouldContainAll(
+            listOf(
+                mapOf("title" to "Star Wars", "score" to 4),
+                mapOf("title" to "Back to the Future", "score" to 5),
+            )
+        )
+
+        // Can go from Movie -[idResolution]-> Review
+        val resultByReview = vyne.query("""find { MovieReview[] } as { title : MovieTitle score: ReviewScore }[]""")
+            .rawObjects()
+        resultByReview.shouldContainAll(
+            listOf(
+                mapOf("title" to "Star Wars", "score" to 4),
+                mapOf("title" to "Back to the Future", "score" to 5),
+            )
+        )
+
+    }
 
    @Test
    fun `when a value is returned containing a nested fact, that fact is used in discovery`(): Unit = runBlocking {
@@ -522,16 +608,4 @@ fun tableDeclaration(
    returnTypeName: String
 ): String {
    return """table $queryName : $returnTypeName"""
-}
-
-fun queryDeclaration(
-   queryName: String,
-   returnTypeName: String,
-   capabilities: List<QueryOperationCapability> = QueryOperationCapability.ALL
-): String {
-   return """
-      vyneQl query $queryName(params:${VyneQlGrammar.QUERY_TYPE_NAME}):$returnTypeName with capabilities {
-         ${capabilities.joinToString(", \n") { it.asTaxi() }}
-      }
-   """.trimIndent()
 }

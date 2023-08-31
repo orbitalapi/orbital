@@ -6,6 +6,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigParseOptions
 import com.typesafe.config.ConfigResolveOptions
+import io.vyne.PackageIdentifier
 import io.vyne.SourcePackage
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
@@ -73,6 +74,23 @@ abstract class MergingHoconConfigRepository<T : Any>(
             }
          }
       })
+
+   protected fun loadUnresolvedConfig(writer: ConfigSourceWriter, targetPackage: PackageIdentifier): Config {
+      val sourcePackages = writer.load()
+         .filter { it.identifier == targetPackage }
+      // Not a hard requirement, but I need to understand the use case of why this
+      // wouldn't be a single value.
+      require(sourcePackages.size == 1) { "Expected a single source package, but found ${sourcePackages.size}" }
+
+      val sourcePackage = sourcePackages.single()
+      return if (sourcePackage.sources.isEmpty()) {
+         ConfigFactory.empty()
+      } else {
+         val rawSource = readRawHoconSource(sourcePackage)
+         unresolvedConfig(rawSource)
+      }
+
+   }
 
    protected fun readRawHoconSource(sourcePackage: SourcePackage): String {
       // This isn't a hard requirement, but it certainly makes life simpler.

@@ -5,7 +5,7 @@ import com.rabbitmq.client.Address
 import com.rabbitmq.client.ConnectionFactory
 import io.kotest.matchers.shouldBe
 import io.vyne.auth.schemes.EmptyAuthSchemeRepository
-import io.vyne.connectors.config.ConfigFileConnectorsRegistry
+import io.vyne.connectors.config.SourceLoaderConnectorsRegistry
 import io.vyne.http.ServicesConfigRepository
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryFailedException
@@ -16,7 +16,6 @@ import io.vyne.query.runtime.core.dispatcher.rabbitmq.RabbitAdmin.QUERIES_QUEUE_
 import io.vyne.query.runtime.core.dispatcher.rabbitmq.RabbitAdmin.RESPONSES_EXCHANGE_NAME
 import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.spring.http.auth.EmptyAuthTokenRepository
 import io.vyne.utils.Ids
 import lang.taxi.utils.log
 import org.junit.Before
@@ -202,7 +201,7 @@ class RabbitMqQueueDispatcherTest {
          rabbitReceiver,
          ServicesConfigRepository(configRoot!!.root.resolve("services.conf").toPath()),
          EmptyAuthSchemeRepository,
-         ConfigFileConnectorsRegistry(configRoot!!.root.resolve("connections.conf").toPath()),
+          SourceLoaderConnectorsRegistry(configRoot!!.root.resolve("connections.conf").toPath()),
          schemaProvider,
       )
    }

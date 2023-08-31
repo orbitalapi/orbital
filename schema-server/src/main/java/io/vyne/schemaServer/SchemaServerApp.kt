@@ -12,15 +12,16 @@ import io.vyne.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleE
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.scheduling.annotation.EnableScheduling
 import java.nio.file.Path
+import java.nio.file.Paths
 
 private val logger = KotlinLogging.logger {}
 
@@ -30,7 +31,10 @@ private val logger = KotlinLogging.logger {}
 // MP: I don't think Schema server needs a discovery client, does it?
 //@EnableDiscoveryClient
 @EnableConfigurationProperties(
-   value = [VyneSpringHazelcastConfiguration::class]
+   value = [
+      VyneSpringHazelcastConfiguration::class,
+      WorkspaceConfig::class
+   ]
 )
 class SchemaServerApp {
    companion object {
@@ -43,23 +47,22 @@ class SchemaServerApp {
    // Place this here to allow overriding of the config loader in tests.
    @Bean
    fun configRepoLoader(
-      @Value("\${vyne.repositories.config-file:repositories.conf}") configFilePath: Path,
-      @Value("\${vyne.repositories.repository-path:#{null}}") repositoryHome: Path? = null,
+      workspaceConfig: WorkspaceConfig,
       eventDispatcher: RepositorySpecLifecycleEventDispatcher
    ): SchemaRepositoryConfigLoader {
-      return if (repositoryHome != null) {
-         logger.info { "vyne.repositories.repository-path was set to $repositoryHome running a file-based repository from this path, ignoring any other config from $configFilePath" }
+      return if (workspaceConfig.projectFile != null) {
+         logger.info { "A single-project workspace has been configured for ${workspaceConfig.projectFile}. Ignoring any other config from ${workspaceConfig.configFile}" }
          return InMemorySchemaRepositoryConfigLoader(
             SchemaRepositoryConfig(
                FileSystemSchemaRepositoryConfig(
-                  projects = listOf(FileSystemPackageSpec(repositoryHome, isEditable = true)),
+                  projects = listOf(FileSystemPackageSpec(workspaceConfig.projectFile, isEditable = true)),
                )
             ),
             eventDispatcher
          )
       } else {
-         logger.info { "Using repository config file at $configFilePath" }
-         FileSchemaRepositoryConfigLoader(configFilePath, eventDispatcher = eventDispatcher)
+         logger.info { "Using workspace config file at ${workspaceConfig.configFile}" }
+         FileSchemaRepositoryConfigLoader(workspaceConfig.configFile, eventDispatcher = eventDispatcher)
       }
    }
 
@@ -80,3 +83,24 @@ class SchemaServerApp {
 
 @EnableCloudMetrics
 class SchemaServerConfig
+
+@ConfigurationProperties(prefix = "vyne.workspace")
+data class WorkspaceConfig(
+   /**
+    * A path to the config file containing the workspace config.
+    */
+   val configFile: Path = Paths.get("workspace.conf"),
+
+   /**
+    * Path to a taxi.conf file.
+    *
+    * Bootstraps a single-file project, creating a standalone
+    * workspace.
+    *
+    * If this is provided, the workspaceConfigPath is ignored.
+    *
+    * Useful for quickly bootstrapping demo projects, not intended
+    * for production.
+    */
+   val projectFile: Path? = null
+)

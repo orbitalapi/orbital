@@ -7,11 +7,11 @@ import io.vyne.config.FileConfigSourceLoader
 import io.vyne.connectors.VyneConnectionsConfig
 import io.vyne.connectors.aws.core.registry.AwsConfigFileConnectionRegistry
 import io.vyne.connectors.azure.blob.registry.AzureStoreConnectionFileRegistry
-import io.vyne.connectors.config.ConfigFileConnectorsRegistry
+import io.vyne.connectors.config.SourceLoaderConnectorsRegistry
 import io.vyne.connectors.jdbc.HikariJdbcConnectionFactory
 import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
-import io.vyne.connectors.jdbc.registry.ReloadingJdbcConnectionRegistry
+import io.vyne.connectors.jdbc.registry.SourceLoaderJdbcConnectionRegistry
 import io.vyne.connectors.kafka.registry.KafkaConfigFileConnectorRegistry
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
 import io.vyne.schema.consumer.SchemaConfigSourceLoader
@@ -30,8 +30,8 @@ class ConnectionsConfiguration {
       config: VyneConnectionsConfig,
       schemaStore: SchemaStore,
       envVariablesConfig: EnvVariablesConfig
-   ): ConfigFileConnectorsRegistry {
-      return ConfigFileConnectorsRegistry(
+   ): SourceLoaderConnectorsRegistry {
+       return SourceLoaderConnectorsRegistry(
          listOf(
             FileConfigSourceLoader(envVariablesConfig.envVariablesPath, failIfNotFound = false, packageIdentifier = EnvVariablesConfig.PACKAGE_IDENTIFIER),
             SchemaConfigSourceLoader(schemaStore, "env.conf"),
@@ -46,8 +46,8 @@ class ConnectionsConfiguration {
    }
 
    @Bean
-   fun jdbcConnectionRegistry(config: ConfigFileConnectorsRegistry): JdbcConnectionRegistry {
-      return ReloadingJdbcConnectionRegistry(config)
+   fun jdbcConnectionRegistry(config: SourceLoaderConnectorsRegistry): JdbcConnectionRegistry {
+       return SourceLoaderJdbcConnectionRegistry(config)
    }
 
    @Bean

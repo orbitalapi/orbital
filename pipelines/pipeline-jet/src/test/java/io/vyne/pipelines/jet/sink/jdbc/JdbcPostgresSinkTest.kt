@@ -5,7 +5,7 @@ import com.hazelcast.jet.pipeline.test.TestSources
 import com.winterbe.expekt.should
 import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.SqlUtils
-import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
+import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.models.json.parseJson
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.PostgresSQLContainerFacade
@@ -70,7 +70,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       )
 
       // Register the connection so we can look it up later
-      val connectionRegistry = testSetup.applicationContext.getBean(JdbcConnectionRegistry::class.java)
+      val connectionRegistry = testSetup.applicationContext.getBean(InMemoryJdbcConnectionRegistry::class.java)
       connectionRegistry.register(postgresSQLContainerFacade.connection)
 
       // A stream that generates 100 items per second
@@ -118,7 +118,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       )
 
       // Register the connection so we can look it up later
-      val connectionRegistry = testSetup.applicationContext.getBean(JdbcConnectionRegistry::class.java)
+      val connectionRegistry = testSetup.applicationContext.getBean(InMemoryJdbcConnectionRegistry::class.java)
       connectionRegistry.register(postgresSQLContainerFacade.connection)
 
       fun buildPipelineSpec(items: Queue<String>) = PipelineSpec(

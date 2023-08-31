@@ -1,8 +1,7 @@
 package io.vyne.query.runtime.core.dispatcher.rabbitmq
 
 import io.vyne.auth.schemes.AuthSchemeRepository
-import io.vyne.auth.tokens.AuthTokenRepository
-import io.vyne.connectors.config.ConfigFileConnectorsRegistry
+import io.vyne.connectors.config.SourceLoaderConnectorsRegistry
 import io.vyne.http.ServicesConfigRepository
 import io.vyne.schema.api.SchemaProvider
 import mu.KotlinLogging
@@ -21,13 +20,13 @@ class RabbitDispatcherConfig {
 
    @Bean
    fun rabbitDispatcher(
-      @Value("\${vyne.dispatcher.rabbit.address}") rabbitAddress: String,
-      servicesRepository: ServicesConfigRepository,
-      authTokenRepository: AuthSchemeRepository,
-      connectionsConfigProvider: ConfigFileConnectorsRegistry,
-      schemaProvider: SchemaProvider,
-      @Value("\${vyne.dispatcher.rabbit.username:''}") rabbitUsername: String = "",
-      @Value("\${vyne.dispatcher.rabbit.password:''}") rabbitPassword: String = "",
+       @Value("\${vyne.dispatcher.rabbit.address}") rabbitAddress: String,
+       servicesRepository: ServicesConfigRepository,
+       authTokenRepository: AuthSchemeRepository,
+       connectionsConfigProvider: SourceLoaderConnectorsRegistry,
+       schemaProvider: SchemaProvider,
+       @Value("\${vyne.dispatcher.rabbit.username:''}") rabbitUsername: String = "",
+       @Value("\${vyne.dispatcher.rabbit.password:''}") rabbitPassword: String = "",
    ): RabbitMqQueueDispatcher {
 
       val (connectionFactory, addresses) = RabbitAdmin.newConnectionFactory(

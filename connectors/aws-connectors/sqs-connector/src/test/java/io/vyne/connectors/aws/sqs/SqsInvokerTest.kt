@@ -2,9 +2,8 @@ package io.vyne.connectors.aws.sqs
 
 import com.winterbe.expekt.should
 import io.vyne.Vyne
-import io.vyne.connectors.aws.core.AwsConnection
-import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
+import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.models.TypedObject
 import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemas.taxi.TaxiSchema
@@ -64,14 +63,12 @@ class SqsInvokerTest {
       sqsQueueUrl = createSqsQueue()
       val connectionConfig = AwsConnectionConfiguration(
          connectionName = "moviesConnection",
-         mapOf(
-            AwsConnection.Parameters.ACCESS_KEY.templateParamName to localstack.accessKey,
-            AwsConnection.Parameters.SECRET_KEY.templateParamName to localstack.secretKey,
-            AwsConnection.Parameters.AWS_REGION.templateParamName to localstack.region,
-            AwsConnection.Parameters.ENDPOINT_OVERRIDE.templateParamName to localstack.getEndpointOverride(
-               LocalStackContainer.Service.S3
-            ).toString()
-         )
+          region = localstack.region,
+          accessKey = localstack.accessKey,
+          secretKey = localstack.secretKey,
+          endPointOverride = localstack.getEndpointOverride(
+              LocalStackContainer.Service.S3
+          ).toASCIIString()
       )
       connectionRegistry.register(connectionConfig)
    }
