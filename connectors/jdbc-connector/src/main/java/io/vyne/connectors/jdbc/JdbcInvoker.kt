@@ -1,34 +1,18 @@
 package io.vyne.connectors.jdbc
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.common.base.Stopwatch
-import io.vyne.connectors.collectionTypeOrType
-import io.vyne.connectors.config.jdbc.JdbcConnectionConfiguration
-import io.vyne.connectors.jdbc.sql.dml.SelectStatementGenerator
-import io.vyne.connectors.resultType
 import io.vyne.models.DataSource
-import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.Jackson
-import io.vyne.query.*
+import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
-import io.vyne.utils.withQueryId
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
-import lang.taxi.query.TaxiQlQuery
 import lang.taxi.services.OperationScope
 import mu.KotlinLogging
-import org.postgresql.jdbc.PgArray
-import org.postgresql.util.PGobject
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
-import org.springframework.util.LinkedCaseInsensitiveMap
-import java.time.Duration
-import java.time.Instant
 
 /**
  * An invoker capable of invoking VyneQL queries in a graph search

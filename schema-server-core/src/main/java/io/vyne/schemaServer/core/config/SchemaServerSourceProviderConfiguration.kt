@@ -3,7 +3,6 @@ package io.vyne.schemaServer.core.config
 import io.rsocket.core.RSocketServer
 import io.rsocket.transport.netty.server.CloseableChannel
 import io.rsocket.transport.netty.server.TcpServerTransport
-import io.vyne.connectors.soap.SoapWsdlSourceConverter
 import io.vyne.schema.publisher.ExpiringSourcesStore
 import io.vyne.schema.publisher.KeepAliveStrategyMonitor
 import io.vyne.schema.publisher.NoneKeepAliveStrategyMonitor
@@ -13,7 +12,6 @@ import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.TaxiSchemaValidator
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import io.vyne.schemas.readers.SourceConverterRegistry
-import io.vyne.schemas.readers.TaxiSourceConverter
 import mu.KotlinLogging
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.beans.factory.annotation.Value
@@ -34,15 +32,6 @@ class SchemaServerSourceProviderConfiguration {
    fun rsocketMessageHandler(rsocketStrategies: RSocketStrategies) = RSocketMessageHandler().apply {
       rSocketStrategies = rsocketStrategies
    }
-
-   @Bean
-   fun sourceConverterRegistry(): SourceConverterRegistry = SourceConverterRegistry(
-      setOf(
-         TaxiSourceConverter,
-         SoapWsdlSourceConverter
-      ),
-      registerWithStaticRegistry = true
-   )
 
    @Bean
    fun rsocketStrategies() = RSocketStrategies.builder()

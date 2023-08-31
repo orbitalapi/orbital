@@ -8,7 +8,11 @@ import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.licensing.LicenseConfig
 import io.vyne.query.chat.ChatQueryParser
 import io.vyne.schemaServer.core.VersionedSourceLoader
-import io.vyne.spring.config.*
+import io.vyne.schemaServer.core.config.WorkspaceConfig
+import io.vyne.spring.config.DiscoveryClientConfig
+import io.vyne.spring.config.VyneSpringCacheConfiguration
+import io.vyne.spring.config.VyneSpringHazelcastConfiguration
+import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.auth.HttpAuthConfig
 import io.vyne.spring.projection.ApplicationContextProvider
 import mu.KotlinLogging
@@ -35,13 +39,14 @@ import java.util.concurrent.TimeUnit
    VyneSpringProjectionConfiguration::class,
    VyneSpringHazelcastConfiguration::class,
    VyneUserConfig::class,
-   FeatureTogglesConfig::class
+   FeatureTogglesConfig::class,
+   WorkspaceConfig::class
 )
 @Import(
    HttpAuthConfig::class,
    ApplicationContextProvider::class,
    LicenseConfig::class,
-   DiscoveryClientConfig::class
+   DiscoveryClientConfig::class,
 )
 //@EnableWebFluxSecurity
 class OrbitalStationApp {

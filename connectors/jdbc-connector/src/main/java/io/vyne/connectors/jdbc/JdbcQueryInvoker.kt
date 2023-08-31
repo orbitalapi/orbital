@@ -1,10 +1,8 @@
 package io.vyne.connectors.jdbc
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Stopwatch
 import io.vyne.connectors.jdbc.sql.dml.SelectStatementGenerator
 import io.vyne.models.TypedInstance
-import io.vyne.models.json.Jackson
 import io.vyne.query.ConstructedQueryDataSource
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.schema.api.SchemaProvider
