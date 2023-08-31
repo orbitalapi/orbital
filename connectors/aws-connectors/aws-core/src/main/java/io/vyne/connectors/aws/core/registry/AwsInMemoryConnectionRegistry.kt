@@ -1,5 +1,6 @@
 package io.vyne.connectors.aws.core.registry
 
+import io.vyne.PackageIdentifier
 import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.connectors.registry.MutableConnectionRegistry
 
@@ -8,13 +9,25 @@ class AwsInMemoryConnectionRegistry(configs: List<AwsConnectionConfiguration> = 
     private val connections: MutableMap<String, AwsConnectionConfiguration> =
         configs.associateBy { it.connectionName }.toMutableMap()
 
-    override fun register(connectionConfiguration: AwsConnectionConfiguration) {
-        connections[connectionConfiguration.connectionName] = connectionConfiguration
-    }
+   fun register(connectionConfiguration: AwsConnectionConfiguration) {
+      connections[connectionConfiguration.connectionName] = connectionConfiguration
+   }
 
-    override fun remove(connectionConfiguration: AwsConnectionConfiguration) {
+   override fun register(targetPackage: PackageIdentifier, connectionConfiguration: AwsConnectionConfiguration) {
+      connections[connectionConfiguration.connectionName] = connectionConfiguration
+   }
+
+   override fun remove(targetPackage: PackageIdentifier, connectionConfiguration: AwsConnectionConfiguration) {
+      super.remove(targetPackage, connectionConfiguration)
+   }
+
+   fun remove(connectionConfiguration: AwsConnectionConfiguration) {
         connections.remove(connectionConfiguration.connectionName)
     }
+
+   override fun remove(targetPackage: PackageIdentifier, connectionName: String) {
+      connections.remove(connectionName)
+   }
 
     override fun hasConnection(name: String): Boolean {
         return connections.containsKey(name)

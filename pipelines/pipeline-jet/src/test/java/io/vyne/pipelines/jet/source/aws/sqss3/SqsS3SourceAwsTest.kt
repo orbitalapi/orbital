@@ -1,8 +1,7 @@
 package io.vyne.pipelines.jet.source.aws.sqss3
 
-import io.vyne.connectors.config.aws.AwsConnection
+import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import io.vyne.connectors.config.aws.AwsConnectionConfiguration
-import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.RatingReport
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
@@ -26,11 +25,9 @@ class SqsS3SourceAwsTest : BaseJetIntegrationTest() {
    // Set accessKey and secretKey accordingly!
    private val awsConnection = AwsConnectionConfiguration(
       "aws-test-connection",
-      mapOf(
-         AwsConnection.Parameters.ACCESS_KEY.templateParamName to "xxx",
-         AwsConnection.Parameters.SECRET_KEY.templateParamName to "yyy",
-         AwsConnection.Parameters.AWS_REGION.templateParamName to "eu-west-2"
-      )
+      region = "eu-west-2",
+      accessKey = "not-used",
+      secretKey = "not-used",
    )
 
 
@@ -43,7 +40,7 @@ class SqsS3SourceAwsTest : BaseJetIntegrationTest() {
          emptyList(),
          listOf(awsConnection)
       )
-      applicationContext.getBean(AwsConnectionRegistry::class.java).register(awsConnection)
+      applicationContext.getBean(AwsInMemoryConnectionRegistry::class.java).register(awsConnection)
       val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "RatingsReport")
       val pipelineSpec = PipelineSpec(
          name = "aws-s3-source",

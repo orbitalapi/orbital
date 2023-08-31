@@ -1,5 +1,6 @@
 package io.vyne.connectors.jdbc.registry
 
+import io.vyne.PackageIdentifier
 import io.vyne.connectors.config.jdbc.JdbcConnectionConfiguration
 import io.vyne.connectors.registry.MutableConnectionRegistry
 
@@ -14,12 +15,20 @@ class InMemoryJdbcConnectionRegistry(configs: List<JdbcConnectionConfiguration> 
    override fun getConnection(name: String): JdbcConnectionConfiguration =
       connections[name] ?: error("No JdbcConnection with name $name is registered")
 
-   override fun register(connectionConfiguration: JdbcConnectionConfiguration) {
+   fun register(connectionConfiguration: JdbcConnectionConfiguration) {
       connections[connectionConfiguration.connectionName] = connectionConfiguration
    }
 
-   override fun remove(connectionConfiguration: JdbcConnectionConfiguration) {
+   override fun register(targetPackage: PackageIdentifier, connectionConfiguration: JdbcConnectionConfiguration) {
+      connections[connectionConfiguration.connectionName] = connectionConfiguration
+   }
+
+   override fun remove(targetPackage: PackageIdentifier, connectionConfiguration: JdbcConnectionConfiguration) {
       connections.remove(connectionConfiguration.connectionName)
+   }
+
+   override fun remove(targetPackage: PackageIdentifier, connectionName: String) {
+      connections.remove(connectionName)
    }
 
    override fun listAll(): List<JdbcConnectionConfiguration> {

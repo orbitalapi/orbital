@@ -3,9 +3,8 @@ package io.vyne.connectors.config
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
-import io.vyne.config.ConfigSourceLoader
-import io.vyne.config.FileConfigSourceLoader
-import io.vyne.config.MergingHoconConfigRepository
+import io.vyne.PackageIdentifier
+import io.vyne.config.*
 import io.vyne.connectors.VyneConnectionsConfig
 import java.nio.file.Path
 
@@ -24,6 +23,8 @@ class SourceLoaderConnectorsRegistry(
    loaders: List<ConfigSourceLoader>,
    fallback: Config = ConfigFactory.systemEnvironment(),
 ) : MergingHoconConfigRepository<ConnectionsConfig>(loaders, fallback) {
+
+   private val writers = loaders.filterIsInstance<ConfigSourceWriter>()
 
    // for testing
    constructor(path: Path, fallback: Config = ConfigFactory.systemEnvironment()) : this(
@@ -44,6 +45,17 @@ class SourceLoaderConnectorsRegistry(
    }
 
    fun load(): ConnectionsConfig = typedConfig()
+
+   fun loadUnresolvedConfig(packageIdentifier: PackageIdentifier): Config {
+      val writer = writers.getWriter(packageIdentifier)
+      return loadUnresolvedConfig(writer, packageIdentifier)
+   }
+
+   fun saveConfig(packageIdentifier: PackageIdentifier, config: Config) {
+      val writer = writers.getWriter(packageIdentifier)
+      writer.saveConfig(config)
+      invalidateCache()
+   }
 
 }
 

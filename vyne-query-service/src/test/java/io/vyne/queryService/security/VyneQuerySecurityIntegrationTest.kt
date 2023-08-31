@@ -589,6 +589,7 @@ class VyneQuerySecurityIntegrationTest {
     * Create jdbc connection
     */
    @Test
+   @Ignore("creating connections from UI is disabled for now")
    fun `an admin user can create jdbc connections`() {
       val token = setUpLoggedInUser(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
@@ -597,6 +598,7 @@ class VyneQuerySecurityIntegrationTest {
    }
 
    @Test
+   @Ignore("creating connections from UI is disabled for now")
    fun `a platform manager can create jdbc connections`() {
       val token = setUpLoggedInUser(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
@@ -605,6 +607,7 @@ class VyneQuerySecurityIntegrationTest {
    }
 
    @Test
+   @Ignore("creating connections from UI is disabled for now")
    fun `a query runner can not create jdbc connections`() {
       val token = setUpLoggedInUser(queryRunnerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
@@ -613,6 +616,7 @@ class VyneQuerySecurityIntegrationTest {
    }
 
    @Test
+   @Ignore("creating connections from UI is disabled for now")
    fun `a viewer user can not create jdbc connections`() {
       val token = setUpLoggedInUser(viewerUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)

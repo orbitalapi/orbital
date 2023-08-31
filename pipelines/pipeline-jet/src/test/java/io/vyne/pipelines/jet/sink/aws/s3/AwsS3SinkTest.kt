@@ -1,7 +1,6 @@
 package io.vyne.pipelines.jet.sink.aws.s3
 
 import com.winterbe.expekt.should
-import io.vyne.connectors.config.aws.AwsConnection
 import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
@@ -49,14 +48,12 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
       s3.createBucket { b: CreateBucketRequest.Builder -> b.bucket(bucket) }
       awsConnectionConfig = AwsConnectionConfiguration(
          connectionName = "test-aws",
-         mapOf(
-            AwsConnection.Parameters.ACCESS_KEY.templateParamName to "not-used",
-            AwsConnection.Parameters.SECRET_KEY.templateParamName to "not-used",
-            AwsConnection.Parameters.AWS_REGION.templateParamName to localstack.region,
-            AwsConnection.Parameters.ENDPOINT_OVERRIDE.templateParamName to localstack.getEndpointOverride(
-               LocalStackContainer.Service.S3
-            ).toString()
-         )
+         region = localstack.region,
+         accessKey = "not-used",
+         secretKey = "not-used",
+         endPointOverride = localstack.getEndpointOverride(
+            LocalStackContainer.Service.S3
+         ).toString()
       )
    }
 

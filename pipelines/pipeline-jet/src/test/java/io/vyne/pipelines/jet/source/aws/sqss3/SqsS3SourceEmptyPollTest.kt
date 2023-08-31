@@ -1,18 +1,14 @@
 package io.vyne.pipelines.jet.source.aws.sqss3
 
 import io.vyne.VersionedTypeReference
-import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
+import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import io.vyne.connectors.jdbc.SqlUtils
-import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
-import io.vyne.pipelines.jet.BaseJetIntegrationTest
-import io.vyne.pipelines.jet.PostgresSQLContainerFacade
-import io.vyne.pipelines.jet.UTCClockProvider
+import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
+import io.vyne.pipelines.jet.*
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
 import io.vyne.pipelines.jet.api.transport.jdbc.JdbcTransportOutputSpec
-import io.vyne.pipelines.jet.awsConnection
-import io.vyne.pipelines.jet.populateS3AndSqs
 import io.vyne.schemas.Type
 import mu.KotlinLogging
 import org.awaitility.Awaitility
@@ -90,9 +86,9 @@ type OrderWindowSummary {
          listOf(localstack.awsConnection()),
          UTCClockProvider::class.java
       )
-      applicationContext.getBean(AwsConnectionRegistry::class.java).register(localstack.awsConnection())
+      applicationContext.getBean(AwsInMemoryConnectionRegistry::class.java).register(localstack.awsConnection())
       // Register the connection so we can look it up later
-      val connectionRegistry = applicationContext.getBean(JdbcConnectionRegistry::class.java)
+      val connectionRegistry = applicationContext.getBean(InMemoryJdbcConnectionRegistry::class.java)
       connectionRegistry.register(postgresSQLContainerFacade.connection)
       val (_, _) = listSinkTargetAndSpec(applicationContext, targetType = "OrderWindowSummary")
       val pipelineSpec = PipelineSpec(
