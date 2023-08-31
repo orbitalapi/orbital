@@ -2,7 +2,7 @@ import { DarkMode, Gradient, LightMode } from '@/components/Icon'
 
 export function ThemingIcon({ id, color }) {
   return (
-    <>
+    <svg>
       <defs>
         <Gradient
           id={`${id}-gradient`}
@@ -54,6 +54,6 @@ export function ThemingIcon({ id, color }) {
           fill={`url(#${id}-gradient-dark)`}
         />
       </DarkMode>
-    </>
+    </svg>
   )
 }

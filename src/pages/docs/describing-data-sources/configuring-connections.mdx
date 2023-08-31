@@ -3,7 +3,7 @@ title: Configuring connections
 ---
 
 import {SnippetGroup} from '@/components/SnippetGroup'
-
+import {Callout} from "@/components/docs/Callout";
 
 
 The `connections.conf` file defines connections for systems that Orbital understands how to connect to.
@@ -81,38 +81,10 @@ jdbc {
 }
 ```
 
-### Using env.conf for sensitive data
-In addition to the standard HOCON rules for resolving variables, Orbital supports
-the use of a `env.conf` file, to define variables.
+<Callout type="note" title="See also...">
+  Also check out <a href='/docs/deploying/managing-secrets'>Managing Secrets</a> to see how to securely manage sensitive information in your connections
+</Callout>
 
-This can be useful when developing locally, to ensure that sensitive values aren't accidentally
-checked in, but to avoid having to configure environment variables, which can be fiddly.
-
-The general workflow is as follows:
- * Define a `connections.conf` file with your connections, using `${variables}` for placeholders of sensistive data.
- * Create a local `env.conf` file.
-   * The location of the `env.conf` file must be along side the `connections.conf` file - ie., the path defined in your [taxi.conf file](#declaring-in-your-taxi-project)
- * Populate the env.conf file with sensitive values.
-
-Eg:
-
-<SnippetGroup>
-
-  ```hocon connections.conf
-  jdbc {
-     my-connection {
-        // ... other params omitted for brevity ...
-        connectionParams {
-          password = ${postgres_password} // Reads the environment variable "postgres_password"
-        }
-     }
-  }
-  ```
-  
-  ```hocon env.conf
-  postgres_password=hello123
-  ```
-</SnippetGroup>
 
 
 ### Correctly handling substitutions in Urls

@@ -21,7 +21,6 @@ const icons = {
   installation: InstallationIcon,
   presets: PresetsIcon,
   plugins: PluginsIcon,
-  theming: ThemingIcon,
   lightbulb: LightbulbIcon,
   warning: WarningIcon,
 }
@@ -36,9 +35,7 @@ export function Icon({ color = 'blue', icon, className, ...props }) {
   let IconComponent = icons[icon]
 
   return (
-    <svg>
       <IconComponent color={color} />
-    </svg>
   )
 }
 

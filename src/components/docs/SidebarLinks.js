@@ -37,9 +37,10 @@ export const SidebarLinks = [
     ],
   },
   {
-    title: 'Describing data sources',
+    title: 'Managing data sources',
     links: [
       { title: 'Configuring Connections', href: '/docs/describing-data-sources/configuring-connections'},
+      { title: 'Authenticating to other services', href: '/docs/describing-data-sources/authentication-to-services' },
       { title: 'Using OpenAPI', href: '/docs/describing-data-sources/open-api' },
       { title: 'Using Protobuf', href: '/docs/describing-data-sources/protobuf' },
       // Note: This used to be 'Connecting databases'
@@ -73,8 +74,9 @@ export const SidebarLinks = [
     links: [
       { title: 'Production deployments', href: '/docs/deploying/production-deployments' },
       { title: 'Configuring Orbital', href: '/docs/deploying/configuring-orbital' },
+      { title: 'Managing secrets', href: '/docs/deploying/managing-secrets' },
       { title: 'Configuring the Schema Server', href: '/docs/deploying/schema-server'},
-      { title: 'Authenticating to other services', href: '/docs/deploying/authentication-to-services' },
+
       { title: 'Authentication to Orbital', href: '/docs/deploying/authentication'},
       { title: 'Authorization within Orbital', href: '/docs/deploying/authorization'},
       // TODO: Needs to be written

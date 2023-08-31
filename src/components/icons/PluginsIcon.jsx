@@ -2,7 +2,7 @@ import { DarkMode, Gradient, LightMode } from '@/components/Icon'
 
 export function PluginsIcon({ id, color }) {
   return (
-    <>
+    <svg>
       <defs>
         <Gradient
           id={`${id}-gradient`}
@@ -58,6 +58,6 @@ export function PluginsIcon({ id, color }) {
           stroke={`url(#${id}-gradient-dark-2)`}
         />
       </DarkMode>
-    </>
+    </svg>
   )
 }
