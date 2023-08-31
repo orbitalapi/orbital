@@ -6,6 +6,7 @@ import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonModel
 import io.vyne.rawObjects
 import io.vyne.schemas.TableOperation
+import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.tableDeclaration
 import io.vyne.testVyne
@@ -117,7 +118,7 @@ class QueryOperationInvocationStrategyTest {
       val (vyne, stub) = testVyne(schema)
 
       stub.addResponse(
-         TableOperation.findManyOperationName("personQuery"), vyne.parseJsonModel(
+          TableOperation.findManyOperationName("personQuery", "Person".fqn()), vyne.parseJsonModel(
             "Person[]",
             """
             [ { "firstName" : "Jimmy" } ]
@@ -158,7 +159,7 @@ class QueryOperationInvocationStrategyTest {
       )
       stub.addResponse("findPeople", vyne.parseJson("Person[]", """[ { "id" : "001" , "name" :  "Jimmy" } ]"""))
       stub.addResponse(
-         TableOperation.findOneOperationName("getEmployeesDetails"),
+          TableOperation.findOneOperationName("getEmployeesDetails", "EmployeeDetails".fqn()),
          vyne.parseJson("EmployeeDetails", """[ { "id" : "001" , "managerName" :  "Jones" } ]""")
       )
       val result = runBlocking {

@@ -9,6 +9,8 @@ import {
 } from "@taiga-ui/kit";
 import {FormsModule} from "@angular/forms";
 import {DisableControlModule} from "../disable-control/disable-control.module";
+import {RouterModule} from "@angular/router";
+import {TuiNotificationModule} from "@taiga-ui/core";
 
 
 @NgModule({
@@ -18,15 +20,17 @@ import {DisableControlModule} from "../disable-control/disable-control.module";
   exports: [
     ProjectSelectorComponent
   ],
-  imports: [
-    CommonModule,
-    TuiSelectModule,
-    FormsModule,
-    DisableControlModule,
-    TuiDataListWrapperModule,
-    TuiFilterByInputPipeModule,
-    TuiStringifyContentPipeModule
-  ]
+    imports: [
+        CommonModule,
+        TuiSelectModule,
+        FormsModule,
+        DisableControlModule,
+        TuiDataListWrapperModule,
+        TuiFilterByInputPipeModule,
+        TuiStringifyContentPipeModule,
+        RouterModule,
+        TuiNotificationModule
+    ]
 })
 export class ProjectSelectorModule {
 }

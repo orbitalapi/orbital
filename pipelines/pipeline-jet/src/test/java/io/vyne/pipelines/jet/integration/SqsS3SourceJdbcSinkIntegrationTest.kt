@@ -1,17 +1,13 @@
 package io.vyne.pipelines.jet.integration
 
-import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
+import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import io.vyne.connectors.jdbc.JdbcConnectionFactory
-import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
-import io.vyne.pipelines.jet.BaseJetIntegrationTest
-import io.vyne.pipelines.jet.PostgresSQLContainerFacade
-import io.vyne.pipelines.jet.RatingReport
+import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
+import io.vyne.pipelines.jet.*
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
 import io.vyne.pipelines.jet.api.transport.jdbc.JdbcTransportOutputSpec
-import io.vyne.pipelines.jet.awsConnection
-import io.vyne.pipelines.jet.populateS3AndSqs
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
@@ -64,9 +60,10 @@ class SqsS3SourceJdbcSinkIntegrationTest : BaseJetIntegrationTest() {
          listOf(localstack.awsConnection())
       )
       // Register the connection so we can look it up later
-      val connectionRegistry = testSetup.applicationContext.getBean(JdbcConnectionRegistry::class.java)
+      val connectionRegistry = testSetup.applicationContext.getBean(InMemoryJdbcConnectionRegistry::class.java)
       connectionRegistry.register(postgresSQLContainerFacade.connection)
-      testSetup.applicationContext.getBean(AwsConnectionRegistry::class.java).register(localstack.awsConnection())
+      testSetup.applicationContext.getBean(AwsInMemoryConnectionRegistry::class.java)
+         .register(localstack.awsConnection())
 
       // create the pipeline
       val pipelineSpec = PipelineSpec(

@@ -56,8 +56,8 @@ class FileConfigSourceLoader(
          }
    }
 
-   override fun saveConfig(config: Config) {
-      val configWithPlaceholderQuotesRemoved = config.getSafeConfigString()
+   override fun saveConfig(updated: Config) {
+      val configWithPlaceholderQuotesRemoved = updated.getSafeConfigString()
       if (!Files.exists(configFilePath)) {
          configFilePath.createFile()
       } else {

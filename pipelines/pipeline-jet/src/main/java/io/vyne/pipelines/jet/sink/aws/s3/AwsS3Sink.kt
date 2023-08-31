@@ -1,7 +1,7 @@
 package io.vyne.pipelines.jet.sink.aws.s3
 
 import com.hazelcast.jet.pipeline.Sink
-import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
+import io.vyne.connectors.aws.configureWithExplicitValuesIfProvided
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.format.FormatDetector

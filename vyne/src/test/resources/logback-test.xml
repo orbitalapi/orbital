@@ -14,8 +14,7 @@
     <!--<logger level="trace" name="org.springframework.data.hazelcast" />-->
     <!--<logger level="trace" name="com" />-->
 
-<!--   <logger level="DEBUG" name="io.vyne" />-->
-<!--   <logger level="DEBUG" name="io.vyne" />-->
+   <logger level="DEBUG" name="io.vyne"/>
 <!--   For graph viz, uncomment the following -->
   <!-- <logger level="TRACE" name="io.vyne.query.GraphSearcher" /> -->
    <root level="INFO">

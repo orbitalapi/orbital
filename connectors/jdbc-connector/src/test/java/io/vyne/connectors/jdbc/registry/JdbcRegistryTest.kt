@@ -105,7 +105,8 @@ class JdbcRegistryTest {
          """jdbc {}
 kafka {
     some-connection {
-        something=foo
+        connectionName=some-connection
+        connectionParameters {}
     }
 }
 """

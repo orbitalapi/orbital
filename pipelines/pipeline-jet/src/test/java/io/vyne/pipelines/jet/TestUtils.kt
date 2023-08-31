@@ -1,7 +1,7 @@
 package io.vyne.pipelines.jet
 
 import io.vyne.VersionedTypeReference
-import io.vyne.connectors.aws.core.AwsConnectionConfiguration
+import io.vyne.connectors.config.aws.AwsConnectionConfiguration
 import io.vyne.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.config.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.SqlUtils

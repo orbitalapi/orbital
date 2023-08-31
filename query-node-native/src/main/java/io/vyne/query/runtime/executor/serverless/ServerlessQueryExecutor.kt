@@ -21,8 +21,9 @@ class ServerlessQueryExecutor(
          val collectedResult = result.collectList().block()
          CompressedQueryResultWrapper.forResult(collectedResult!!)
       } catch (e: Exception) {
-         logger.error(e) { "Query execution failed: ${e.message}" }
-         throw e
+         val message = "Query execution failed: ${e.message}"
+         logger.error(e) { message }
+         CompressedQueryResultWrapper.forError(message)
       }
    }
 }

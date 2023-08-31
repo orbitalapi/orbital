@@ -3,8 +3,7 @@ package io.vyne.query.runtime.core.dispatcher.aws.sqs
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.auth.schemes.AuthSchemeRepository
-import io.vyne.auth.tokens.AuthTokenRepository
-import io.vyne.connectors.config.ConfigFileConnectorsRegistry
+import io.vyne.connectors.config.SourceLoaderConnectorsRegistry
 import io.vyne.http.ServicesConfigRepository
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryFailedException
@@ -16,15 +15,11 @@ import io.vyne.query.runtime.core.dispatcher.StreamingQueryDispatcher
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.utils.Ids
 import reactor.core.publisher.Mono
-import kotlinx.coroutines.*
 import mu.KotlinLogging
-import org.springframework.http.MediaType
 import reactor.core.publisher.Flux
-import reactor.core.scheduler.Schedulers
 import reactor.kotlin.core.publisher.toMono
 import software.amazon.awssdk.services.sqs.*
 import software.amazon.awssdk.services.sqs.model.*
-import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -32,13 +27,13 @@ import java.util.concurrent.atomic.AtomicBoolean
  * A temporary queue is created to consumer the results, and
  */
 class AwsSqsQueryDispatcher(
-   private val servicesRepository: ServicesConfigRepository,
-   private val authTokenRepository: AuthSchemeRepository,
-   private val connectionsConfigProvider: ConfigFileConnectorsRegistry,
-   private val schemaProvider: SchemaProvider,
-   private val sqsClient: SqsAsyncClient,
-   private val objectMapper: ObjectMapper = Jackson.newObjectMapperWithDefaults(),
-   private val queryQueueAddress: String
+    private val servicesRepository: ServicesConfigRepository,
+    private val authTokenRepository: AuthSchemeRepository,
+    private val connectionsConfigProvider: SourceLoaderConnectorsRegistry,
+    private val schemaProvider: SchemaProvider,
+    private val sqsClient: SqsAsyncClient,
+    private val objectMapper: ObjectMapper = Jackson.newObjectMapperWithDefaults(),
+    private val queryQueueAddress: String
 ) : StreamingQueryDispatcher {
    companion object {
       private val logger = KotlinLogging.logger {}

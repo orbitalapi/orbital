@@ -1,6 +1,7 @@
 package io.vyne.query.runtime
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonInclude
 import io.vyne.query.FailedQueryResponse
 import io.vyne.query.ProfilerOperation
 import org.springframework.http.HttpStatus
@@ -10,10 +11,14 @@ import org.springframework.web.bind.annotation.ResponseStatus
 data class FailedSearchResponse(
    override val message: String,
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
-   override val profilerOperation: ProfilerOperation?,
+   override val profilerOperation: ProfilerOperation? = null,
+   @JsonInclude(JsonInclude.Include.NON_NULL)
    override val queryId: String,
+   @JsonInclude(JsonInclude.Include.NON_EMPTY)
    val results: Map<String, Any?> = mapOf(),
+   @JsonInclude(JsonInclude.Include.NON_NULL)
    override val clientQueryId: String? = null,
+   @JsonInclude(JsonInclude.Include.NON_NULL)
    override val responseType: String? = null
 
 

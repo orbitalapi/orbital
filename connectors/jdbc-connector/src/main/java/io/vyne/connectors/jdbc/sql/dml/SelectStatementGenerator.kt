@@ -1,6 +1,6 @@
 package io.vyne.connectors.jdbc.sql.dml
 
-import io.vyne.connectors.collectionTypeOrType
+import io.vyne.connectors.getTypesToFind
 import io.vyne.connectors.jdbc.SqlTypes
 import io.vyne.connectors.jdbc.SqlUtils
 import io.vyne.schemas.Schema
@@ -10,9 +10,12 @@ import lang.taxi.expressions.OperatorExpression
 import lang.taxi.expressions.TypeExpression
 import lang.taxi.query.DiscoveryType
 import lang.taxi.query.TaxiQlQuery
-import lang.taxi.services.operations.constraints.*
 import lang.taxi.services.operations.constraints.Constraint
-import lang.taxi.types.*
+import lang.taxi.services.operations.constraints.ExpressionConstraint
+import lang.taxi.types.FieldReference
+import lang.taxi.types.FormulaOperator
+import lang.taxi.types.ObjectType
+import lang.taxi.types.Type
 import org.jooq.*
 import org.jooq.impl.DSL
 import org.jooq.impl.DSL.field
@@ -59,7 +62,7 @@ class SelectStatementGenerator(
       sqlDsl: DSLContext,
       selectType: SelectType
    ): Pair<Select<out Record>, List<SqlTemplateParameter>> {
-      val typesToFind = getTypesToFind(query)
+       val typesToFind = getTypesToFind(query, taxiSchema)
       val tableNamesFromType: Map<Type, AliasedTableName> = getTableNames(typesToFind)
       if (tableNamesFromType.size > 1) {
          error("Joins are not yet supported - can only select from a single table")
@@ -123,15 +126,6 @@ class SelectStatementGenerator(
          type to alias
       }.toMap()
       return tableNames
-   }
-
-   private fun getTypesToFind(query: TaxiQlQuery): List<Pair<ObjectType, DiscoveryType>> {
-      val typesToFind = query.typesToFind
-         .map { discoveryType ->
-            val collectionType = collectionTypeOrType(taxiSchema.type(discoveryType.typeName)) as ObjectType
-            collectionType to discoveryType
-         }
-      return typesToFind
    }
 
    private fun buildWhereClause(

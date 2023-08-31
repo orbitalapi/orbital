@@ -6,14 +6,13 @@ import es.usc.citius.hipster.model.Transition
 import es.usc.citius.hipster.model.impl.WeightedNode
 import es.usc.citius.hipster.model.problem.ProblemBuilder
 import io.vyne.models.facts.FactBag
-import io.vyne.query.graph.EvaluatedPathSet
 import io.vyne.query.graph.Element
+import io.vyne.query.graph.EvaluatedPathSet
 import io.vyne.query.graph.pathHashExcludingWeights
 import io.vyne.schemas.Relationship
 import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.cached
 import mu.KotlinLogging
-import java.util.HashMap
 
 private val logger = KotlinLogging.logger {}
 
@@ -71,9 +70,6 @@ class SchemaPathFindingGraph(connections: HashMap<Element, Set<GraphEdge<Element
       val executionPath = VyneGraphSearchAlgorithm
          .create(problem, key.evaluatedEdges)
          .search(key.targetFact).goalNode
-
-
-
 
       return if (executionPath.state() != key.targetFact) {
          logger.debug { "No path found between ${key.startFact} and ${key.targetFact}" }

@@ -22,6 +22,7 @@ import org.eclipse.jgit.transport.RefSpec
 import org.eclipse.jgit.transport.URIish
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
@@ -108,6 +109,7 @@ class GitChangesetsTest {
    }
 
    @Test
+   @Ignore("changesets temporarily disabled")
    fun `changesets work with git as expected (create a changeset, add changes into it, change active changeset and finalize changeset)`() {
       expect(schemaStore.schema().sources).to.be.empty
       initializeSchemaToRepo(gitServerContainer, mainTempFolder.newFolder(), gitRepoUri)

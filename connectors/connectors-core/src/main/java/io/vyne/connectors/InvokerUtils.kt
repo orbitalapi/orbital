@@ -8,8 +8,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flowOn
+import lang.taxi.TaxiDocument
+import lang.taxi.query.DiscoveryType
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.types.ArrayType
+import lang.taxi.types.ObjectType
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.Type
 
@@ -49,4 +52,13 @@ fun collectionTypeOrType(type: Type): Type {
    } else {
       type
    }
+}
+
+fun getTypesToFind(query: TaxiQlQuery, taxiSchema: TaxiDocument): List<Pair<ObjectType, DiscoveryType>> {
+    val typesToFind = query.typesToFind
+        .map { discoveryType ->
+            val collectionType = collectionTypeOrType(taxiSchema.type(discoveryType.typeName)) as ObjectType
+            collectionType to discoveryType
+        }
+    return typesToFind
 }
