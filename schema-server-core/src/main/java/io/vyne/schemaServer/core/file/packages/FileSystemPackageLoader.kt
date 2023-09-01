@@ -16,6 +16,7 @@ import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
 import reactor.kotlin.core.publisher.toFlux
 import java.net.URI
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
@@ -34,9 +35,12 @@ class FileSystemPackageLoader(
    private val transportDecorator: SchemaPackageTransport? = null
 ) : SchemaPackageTransport {
 
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
    override val description: String = "FileLoader at ${config.path}"
    override val publisherType: PublisherType = PublisherType.FileSystem
-   private val logger = KotlinLogging.logger {}
+
    private val fileEvents: Flux<List<FileSystemChangeEvent>> = fileMonitor.startWatching()
 
    private val sink = Sinks.many().replay().latest<SourcePackage>()
@@ -110,6 +114,17 @@ class FileSystemPackageLoader(
          .toFile()
          .walkBottomUp()
          .map { it.toURI() }
+         .ifEmpty {
+            // can't use packageIdentifier here, as
+            // it likely isn't loaded yet.
+            val projectDesc = this.config.loader
+            if (!Files.exists(config.path)) {
+               logger.warn { "The project $projectDesc is configured to watch ${config.path.toFile().canonicalPath} which does not exist" }
+            } else {
+               logger.warn { "The project $projectDesc is configured to watch ${config.path.toFile().canonicalPath} which is empty" }
+            }
+            sequenceOf()
+         }
          .toFlux()
    }
 

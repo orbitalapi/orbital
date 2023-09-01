@@ -87,8 +87,8 @@ class FileSchemaRepositoryConfigLoader(
       val updatedFileConfig = original.file?.let { fileConfig ->
          val resolvedPaths = fileConfig.projects
             .map { packageSpec ->
+               val relativePath = makeRelativeToConfigFile(packageSpec.path)
                if (packageSpec.loader is TaxiPackageLoaderSpec) {
-                  val relativePath = makeRelativeToConfigFile(packageSpec.path)
                   val packageMetadata = try {
                      TaxiPackageLoader(relativePath.resolve("taxi.conf")).load()?.toPackageMetadata()
                   } catch (e: Exception) {
@@ -97,7 +97,7 @@ class FileSchemaRepositoryConfigLoader(
                   }
                   packageSpec.copy(path = relativePath, packageIdentifier = packageMetadata?.identifier)
                } else {
-                  packageSpec
+                  packageSpec.copy(path = relativePath)
                }
 
 

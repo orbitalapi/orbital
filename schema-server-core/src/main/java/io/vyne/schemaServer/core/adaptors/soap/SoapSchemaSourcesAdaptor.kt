@@ -8,6 +8,7 @@ import io.vyne.schema.publisher.loaders.SchemaPackageTransport
 import io.vyne.schema.publisher.loaders.SchemaSourcesAdaptor
 import io.vyne.schemaServer.packages.SoapPackageLoaderSpec
 import lang.taxi.generators.soap.SoapLanguage
+import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.net.URI
@@ -26,6 +27,9 @@ data class SoapPackageMetadata(
 ) : PackageMetadata
 
 class SoapSchemaSourcesAdaptor(private val spec: SoapPackageLoaderSpec) : SchemaSourcesAdaptor {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
    override fun buildMetadata(transport: SchemaPackageTransport): Mono<PackageMetadata> {
       return Mono.just(
          SoapPackageMetadata(
@@ -39,11 +43,6 @@ class SoapSchemaSourcesAdaptor(private val spec: SoapPackageLoaderSpec) : Schema
    private fun getWsdlUris(transport: SchemaPackageTransport): Flux<URI> {
       return transport.listUris()
          .filter { uri -> uri.toURL().file.endsWith("wsdl") }
-//         .collectList()
-//         .map { uris ->
-//            TODO()
-//         }.block()
-//      TODO()
    }
 
    /**

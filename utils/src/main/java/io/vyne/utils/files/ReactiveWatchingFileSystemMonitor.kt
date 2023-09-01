@@ -74,7 +74,7 @@ class ReactiveWatchingFileSystemMonitor(
 
    private fun watch(): Thread {
       val thread = Thread {
-         logger.info("Starting to watch $path")
+         logger.info("Starting to watch ${path.toFile().canonicalPath}")
          val watchService = FileSystems.getDefault().newWatchService()
 
          watchServiceRef.set(watchService)
@@ -106,7 +106,7 @@ class ReactiveWatchingFileSystemMonitor(
                   continue
                }
                sink.emitNext(events) { signalType, emitResult ->
-                  logger.warn { "A file change was detected at $path, but emitting the change signal failed: $signalType $emitResult" }
+                  logger.warn { "A file change was detected at ${path.toFile().canonicalPath}, but emitting the change signal failed: $signalType $emitResult" }
                   false
                }
                key.reset()
