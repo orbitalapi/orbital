@@ -1,9 +1,9 @@
-package io.vyne.connectors.aws.s3
+package com.orbitalhq.connectors.aws.s3
 
-import io.vyne.connectors.aws.configureWithExplicitValuesIfProvided
-import io.vyne.connectors.config.aws.AwsConnectionConfiguration
-import io.vyne.models.csv.CsvFormatFactory
-import io.vyne.models.csv.CsvFormatSpecAnnotation
+import com.orbitalhq.connectors.aws.configureWithExplicitValuesIfProvided
+import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
+import com.orbitalhq.models.csv.CsvFormatFactory
+import com.orbitalhq.models.csv.CsvFormatSpecAnnotation
 import org.apache.commons.csv.CSVParser
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.S3ClientBuilder

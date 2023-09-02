@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <parent>
       <artifactId>connectors</artifactId>
-      <groupId>io.vyne</groupId>
+      <groupId>com.orbitalhq</groupId>
       <version>0.25.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
@@ -39,7 +39,7 @@
          <version>${taxi.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>connectors-core</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -71,7 +71,7 @@
          <version>${taxi.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>utils</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -86,18 +86,18 @@
          <artifactId>compiler</artifactId>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>schema-api</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne</artifactId>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>taxiql-query-engine</artifactId>
          <version>${project.version}</version>
          <type>test-jar</type>
          <scope>test</scope>
@@ -109,8 +109,8 @@
          </exclusions>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne</artifactId>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>taxiql-query-engine</artifactId>
          <version>${project.version}</version>
          <scope>test</scope>
          <exclusions>
@@ -138,7 +138,7 @@
       </dependency>
 
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
          <scope>test</scope>

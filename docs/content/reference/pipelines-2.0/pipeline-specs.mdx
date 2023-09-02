@@ -339,11 +339,11 @@ Most database types are supported, providing they expose a JDBC driver.
 #### Table definition
 A table is created, if it doesn't already exist, using the config defined on the target type.
 
-If the table contains a `io.vyne.jdbc.Table` annotation, then this is used
+If the table contains a `com.orbitalhq.jdbc.Table` annotation, then this is used
 to define the table name.  Otherwise, a table name is derived from the
 name of the type.
 
-Similarly, columns are created for all attributes annotated with a `io.vyne.jdbc.Column` annotation.
+Similarly, columns are created for all attributes annotated with a `com.orbitalhq.jdbc.Column` annotation.
 
 The table creation occurs when the pipeline is first initiated, and run once.
 Table creation occurs using a `CREATE IF NOT EXISTS` statement, so if the type
@@ -382,8 +382,8 @@ The following configuration parameters are available:
     "targetTypeName" : "com.demo.Customer",
     "writeDisposition" : "APPEND",
     "tableName" : null,
-    "windowDurationMs" : 500,
-    "targetType" : "com.demo.Customer"
+    "targetType" : "com.demo.Customer",
+    "windowDurationMs" : 500
   }
 }
 ```

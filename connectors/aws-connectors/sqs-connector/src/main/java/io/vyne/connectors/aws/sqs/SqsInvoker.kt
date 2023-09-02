@@ -1,13 +1,13 @@
-package io.vyne.connectors.aws.sqs
+package com.orbitalhq.connectors.aws.sqs
 
-import io.vyne.models.TypedInstance
-import io.vyne.query.QueryContextEventDispatcher
-import io.vyne.query.connectors.OperationInvoker
-import io.vyne.schema.api.SchemaProvider
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Service
-import io.vyne.schemas.Type
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.query.QueryContextEventDispatcher
+import com.orbitalhq.query.connectors.OperationInvoker
+import com.orbitalhq.schema.api.SchemaProvider
+import com.orbitalhq.schemas.Parameter
+import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.Service
+import com.orbitalhq.schemas.Type
 import kotlinx.coroutines.flow.Flow
 
 class SqsInvoker(private val schemaProvider: SchemaProvider, private val sqsStreamManager: SqsStreamManager): OperationInvoker {

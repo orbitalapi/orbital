@@ -1,9 +1,9 @@
 package io.orbital.station
 
 import arrow.core.Either
-import io.vyne.cockpit.core.schemas.BuiltInTypesProvider
-import io.vyne.schemaServer.core.packages.SchemaServerSourceManager
-import io.vyne.schemas.taxi.toMessage
+import com.orbitalhq.cockpit.core.schemas.BuiltInTypesProvider
+import com.orbitalhq.schemaServer.core.packages.SchemaServerSourceManager
+import com.orbitalhq.schemas.taxi.toMessage
 import lang.taxi.errors
 import mu.KotlinLogging
 import org.springframework.stereotype.Component

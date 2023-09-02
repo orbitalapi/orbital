@@ -12,8 +12,13 @@ At the same time, we want to ensure the company's business interests are protect
 
 Our guiding approach is:
  * Taxi, and all the language tooling is Open Sourced under an Apache 2 license
- * The tooling in Orbital for executing queries and delivering integration is published under a Fair Code license - we're using the Business Source License (BSL)
+ * The TaxiQL query engine implementation, and it's dependencies are open sourced under Apache 2
+   * You do not need a license from us to run this code.
+   * We offer paid support for the TaxiQL query engine, if you'd like it. 
+ * The Orbital platform is published under a Fair Code license - we're using the Business Source License (BSL)
+   * We are planning on (or already do) monetize these features.  There is a free tier with usage limits, which then requires a paid license.
  * Tooling which focuses on improving productivity, collaboration, performance, or authoring require a paid license.
+
 
 We also want to protect our commercial interests, ensuring that customers don't use Orbital (or it's code) to compete with Orbital.
 

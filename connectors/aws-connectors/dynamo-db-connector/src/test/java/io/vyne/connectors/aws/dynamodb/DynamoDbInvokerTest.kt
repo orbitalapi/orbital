@@ -1,19 +1,19 @@
-package io.vyne.connectors.aws.dynamodb
+package com.orbitalhq.connectors.aws.dynamodb
 
 import io.kotest.common.runBlocking
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.vyne.StubService
-import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
-import io.vyne.connectors.config.aws.AwsConnectionConfiguration
-import io.vyne.models.Provided
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.query.VyneQlGrammar
-import io.vyne.rawObjects
-import io.vyne.schema.api.SimpleSchemaProvider
-import io.vyne.testVyne
+import com.orbitalhq.StubService
+import com.orbitalhq.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
+import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
+import com.orbitalhq.models.Provided
+import com.orbitalhq.models.TypedCollection
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.query.VyneQlGrammar
+import com.orbitalhq.rawObjects
+import com.orbitalhq.schema.api.SimpleSchemaProvider
+import com.orbitalhq.testVyne
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.testcontainers.containers.localstack.LocalStackContainer
@@ -119,7 +119,7 @@ class DynamoDbInvokerTest {
             title : MovieTitle
          }
 
-         @io.vyne.aws.dynamo.Table( connectionName = "vyneAws" , tableName = "reviews" )
+         @com.orbitalhq.aws.dynamo.Table( connectionName = "vyneAws" , tableName = "reviews" )
          model Review {
             @Id
             movieId : MovieId
@@ -131,7 +131,7 @@ class DynamoDbInvokerTest {
             operation findMovie(MovieId): Movie
          }
 
-         @io.vyne.aws.dynamo.DynamoService
+         @com.orbitalhq.aws.dynamo.DynamoService
          service DynamoService {
             table reviews: Review[]
 

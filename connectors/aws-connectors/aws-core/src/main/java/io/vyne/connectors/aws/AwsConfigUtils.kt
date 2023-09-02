@@ -1,6 +1,6 @@
-package io.vyne.connectors.aws
+package com.orbitalhq.connectors.aws
 
-import io.vyne.connectors.config.aws.*
+import com.orbitalhq.connectors.config.aws.*
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder

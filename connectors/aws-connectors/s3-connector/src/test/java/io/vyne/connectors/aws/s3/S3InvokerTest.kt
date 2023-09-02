@@ -1,18 +1,18 @@
-package io.vyne.connectors.aws.s3
+package com.orbitalhq.connectors.aws.s3
 
 import com.google.common.io.Resources
 import com.jayway.awaitility.Awaitility
 import com.winterbe.expekt.should
-import io.vyne.Vyne
-import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
-import io.vyne.connectors.config.aws.AwsConnectionConfiguration
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedValue
-import io.vyne.query.QueryResult
-import io.vyne.query.VyneQlGrammar
-import io.vyne.schema.api.SimpleSchemaProvider
-import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.testVyne
+import com.orbitalhq.Vyne
+import com.orbitalhq.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
+import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedValue
+import com.orbitalhq.query.QueryResult
+import com.orbitalhq.query.VyneQlGrammar
+import com.orbitalhq.schema.api.SimpleSchemaProvider
+import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.testVyne
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
@@ -41,12 +41,12 @@ class S3InvokerTest {
    var localstack: LocalStackContainer = LocalStackContainer(localStackImage)
       .withServices(LocalStackContainer.Service.S3)
    private val defaultSchema = """
-         import io.vyne.aws.s3.S3Service
-         import io.vyne.aws.s3.S3Operation
+         import com.orbitalhq.aws.s3.S3Service
+         import com.orbitalhq.aws.s3.S3Operation
          import  ${VyneQlGrammar.QUERY_TYPE_NAME}
          type alias Price as Decimal
          type alias Symbol as String
-          @io.vyne.formats.Csv(
+          @com.orbitalhq.formats.Csv(
                      delimiter = ",",
                      nullValue = "NULL"
                   )

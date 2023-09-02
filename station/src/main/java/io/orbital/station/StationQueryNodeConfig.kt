@@ -1,14 +1,14 @@
 package io.orbital.station
 
-import io.vyne.history.AnalyticsConfig
-import io.vyne.query.runtime.core.EnableVyneQueryNode
-import io.vyne.query.runtime.core.QueryNodeConfig
-import io.vyne.spring.EnableVyne
-import io.vyne.spring.VyneSchemaConsumer
-import io.vyne.spring.config.DiscoveryClientConfig
-import io.vyne.spring.config.VyneSpringCacheConfiguration
-import io.vyne.spring.config.VyneSpringProjectionConfiguration
-import io.vyne.spring.http.auth.HttpAuthConfig
+import com.orbitalhq.history.AnalyticsConfig
+import com.orbitalhq.query.runtime.core.EnableVyneQueryNode
+import com.orbitalhq.query.runtime.core.QueryNodeConfig
+import com.orbitalhq.spring.EnableVyne
+import com.orbitalhq.spring.VyneSchemaConsumer
+import com.orbitalhq.spring.config.DiscoveryClientConfig
+import com.orbitalhq.spring.config.VyneSpringCacheConfiguration
+import com.orbitalhq.spring.config.VyneSpringProjectionConfiguration
+import com.orbitalhq.spring.http.auth.HttpAuthConfig
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration

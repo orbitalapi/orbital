@@ -1,8 +1,8 @@
 package io.orbital.station
 
-import io.vyne.schemaServer.core.SchemaServerConfig
-import io.vyne.schemaServer.core.config.WorkspaceLoaderConfig
-import io.vyne.spring.config.VyneSpringHazelcastConfiguration
+import com.orbitalhq.schemaServer.core.SchemaServerConfig
+import com.orbitalhq.schemaServer.core.config.WorkspaceLoaderConfig
+import com.orbitalhq.spring.config.VyneSpringHazelcastConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.context.annotation.ComponentScan

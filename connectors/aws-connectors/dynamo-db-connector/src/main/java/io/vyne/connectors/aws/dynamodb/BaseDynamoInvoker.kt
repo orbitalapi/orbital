@@ -1,14 +1,14 @@
-package io.vyne.connectors.aws.dynamodb
+package com.orbitalhq.connectors.aws.dynamodb
 
-import io.vyne.connectors.aws.configureWithExplicitValuesIfProvided
-import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
-import io.vyne.connectors.config.aws.AwsConnectionConfiguration
-import io.vyne.query.RemoteCall
-import io.vyne.query.ResponseMessageType
-import io.vyne.query.SqlExchange
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Service
-import io.vyne.schemas.fqn
+import com.orbitalhq.connectors.aws.configureWithExplicitValuesIfProvided
+import com.orbitalhq.connectors.aws.core.registry.AwsConnectionRegistry
+import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
+import com.orbitalhq.query.RemoteCall
+import com.orbitalhq.query.ResponseMessageType
+import com.orbitalhq.query.SqlExchange
+import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.Service
+import com.orbitalhq.schemas.fqn
 import mu.KotlinLogging
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.dynamodb.model.*

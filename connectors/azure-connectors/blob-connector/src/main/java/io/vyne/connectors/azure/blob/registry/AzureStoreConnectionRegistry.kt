@@ -1,7 +1,7 @@
-package io.vyne.connectors.azure.blob.registry
+package com.orbitalhq.connectors.azure.blob.registry
 
-import io.vyne.connectors.registry.ConnectionConfigMap
-import io.vyne.connectors.registry.ConnectionRegistry
+import com.orbitalhq.connectors.registry.ConnectionConfigMap
+import com.orbitalhq.connectors.registry.ConnectionRegistry
 
 interface AzureStoreConnectionRegistry: ConnectionRegistry<AzureStorageConnectorConfiguration>
 

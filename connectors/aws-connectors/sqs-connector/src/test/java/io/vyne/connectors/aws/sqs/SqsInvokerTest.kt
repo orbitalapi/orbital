@@ -1,13 +1,13 @@
-package io.vyne.connectors.aws.sqs
+package com.orbitalhq.connectors.aws.sqs
 
 import com.winterbe.expekt.should
-import io.vyne.Vyne
-import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
-import io.vyne.connectors.config.aws.AwsConnectionConfiguration
-import io.vyne.models.TypedObject
-import io.vyne.schema.api.SimpleSchemaProvider
-import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.testVyne
+import com.orbitalhq.Vyne
+import com.orbitalhq.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
+import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
+import com.orbitalhq.models.TypedObject
+import com.orbitalhq.schema.api.SimpleSchemaProvider
+import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.testVyne
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking

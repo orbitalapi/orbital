@@ -2,12 +2,12 @@ package io.orbital.station
 
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.vyne.cockpit.core.WebUiUrlSupportFilter
-import io.vyne.models.csv.CsvFormatSpec
-import io.vyne.models.format.ModelFormatSpec
-import io.vyne.query.TaxiJacksonModule
-import io.vyne.query.VyneJacksonModule
-import io.vyne.spring.config.ConditionallyLoadBalancedExchangeFilterFunction
+import com.orbitalhq.cockpit.core.WebUiUrlSupportFilter
+import com.orbitalhq.models.csv.CsvFormatSpec
+import com.orbitalhq.models.format.ModelFormatSpec
+import com.orbitalhq.query.TaxiJacksonModule
+import com.orbitalhq.query.VyneJacksonModule
+import com.orbitalhq.spring.config.ConditionallyLoadBalancedExchangeFilterFunction
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer

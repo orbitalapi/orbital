@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <parent>
       <artifactId>platform</artifactId>
-      <groupId>io.vyne</groupId>
+      <groupId>com.orbitalhq</groupId>
       <version>0.25.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
@@ -21,19 +21,19 @@
          <scope>provided</scope>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne</artifactId>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>taxiql-query-engine</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne</artifactId>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>taxiql-query-engine</artifactId>
          <version>${project.version}</version>
          <scope>test</scope>
          <type>test-jar</type>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
          <scope>test</scope>
@@ -48,7 +48,7 @@
          <artifactId>java2taxi</artifactId>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>schema-store-client</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -69,12 +69,12 @@
          <artifactId>reactor-core</artifactId>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>schema-api</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>schema-spring</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -93,7 +93,7 @@
          <scope>test</scope>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-spring-http</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -110,7 +110,7 @@
          <artifactId>kotlinx-coroutines-reactive</artifactId>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>protobuf-utils</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -141,7 +141,7 @@
       </dependency>
 
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-client</artifactId>
          <version>${project.version}</version>
       </dependency>

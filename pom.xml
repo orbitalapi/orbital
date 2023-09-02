@@ -4,7 +4,7 @@
          xmlns="http://maven.apache.org/POM/4.0.0">
    <modelVersion>4.0.0</modelVersion>
 
-   <groupId>io.vyne</groupId>
+   <groupId>com.orbitalhq</groupId>
    <artifactId>platform</artifactId>
    <packaging>pom</packaging>
    <version>0.25.0-SNAPSHOT</version>
@@ -87,7 +87,7 @@
       <module>events-api</module>
       <module>vyne-search</module>
       <module>utils</module>
-      <module>vyne</module>
+      <module>taxiql-query-engine</module>
       <module>vyne-spring</module>
       <module>vyne-spring-http</module>
       <module>schema-store-client</module>

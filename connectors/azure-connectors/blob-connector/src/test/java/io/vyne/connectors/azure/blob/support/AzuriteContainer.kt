@@ -1,4 +1,4 @@
-package io.vyne.connectors.azure.blob.support
+package com.orbitalhq.connectors.azure.blob.support
 
 import org.testcontainers.containers.GenericContainer
 

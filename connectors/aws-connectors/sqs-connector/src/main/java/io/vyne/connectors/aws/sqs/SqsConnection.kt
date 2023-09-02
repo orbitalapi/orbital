@@ -1,7 +1,7 @@
-package io.vyne.connectors.aws.sqs
+package com.orbitalhq.connectors.aws.sqs
 
-import io.vyne.connectors.aws.configureWithExplicitValuesIfProvided
-import io.vyne.connectors.config.aws.AwsConnectionConfiguration
+import com.orbitalhq.connectors.aws.configureWithExplicitValuesIfProvided
+import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import mu.KotlinLogging
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.SqsClientBuilder
