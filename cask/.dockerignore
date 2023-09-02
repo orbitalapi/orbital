@@ -1,6 +1,0 @@
-src/
-target/appassembler
-target/classes
-target/service
-target/generated*
-target/maven*

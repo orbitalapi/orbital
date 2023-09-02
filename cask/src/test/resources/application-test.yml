@@ -1,6 +1,0 @@
-vyne:
-   connections:
-      kafka:
-         - connection-name: OrderWindowSummary
-           bootstrap-servers: localhost:9022
-           topic: OrderWindowSummary
