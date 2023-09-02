@@ -1,13 +1,13 @@
 package io.orbital.station
 
-import io.vyne.schemaServer.core.VersionedSourceLoader
-import io.vyne.schemaServer.core.file.FileSystemPackageSpec
-import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
-import io.vyne.schemaServer.core.repositories.FileSchemaRepositoryConfigLoader
-import io.vyne.schemaServer.core.repositories.InMemorySchemaRepositoryConfigLoader
-import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfig
-import io.vyne.schemaServer.core.repositories.SchemaRepositoryConfigLoader
-import io.vyne.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.VersionedSourceLoader
+import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
+import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
+import com.orbitalhq.schemaServer.core.repositories.FileSchemaRepositoryConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.InMemorySchemaRepositoryConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfig
+import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean

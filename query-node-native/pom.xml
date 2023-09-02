@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <modelVersion>4.0.0</modelVersion>
    <parent>
-      <groupId>io.vyne</groupId>
+      <groupId>com.orbitalhq</groupId>
       <artifactId>platform</artifactId>
       <version>0.25.0-SNAPSHOT</version>
    </parent>
@@ -25,7 +25,7 @@
          <scope>test</scope>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>soap-connector</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -105,19 +105,19 @@
          <artifactId>kotlinx-coroutines-reactor</artifactId>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>monitoring-common</artifactId>
          <version>${project.version}</version>
       </dependency>
 
 
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>query-node-api</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-spring</artifactId>
          <version>${project.version}</version>
          <exclusions>
@@ -129,22 +129,22 @@
          </exclusions>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>query-node-core</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-history-core</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>jdbc-connector</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -165,8 +165,8 @@
          <scope>test</scope>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne</artifactId>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>taxiql-query-engine</artifactId>
          <type>test-jar</type>
          <version>${project.version}</version>
       </dependency>

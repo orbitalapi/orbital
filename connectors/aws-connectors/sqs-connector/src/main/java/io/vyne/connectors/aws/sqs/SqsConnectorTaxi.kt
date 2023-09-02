@@ -1,14 +1,14 @@
-package io.vyne.connectors.aws.sqs
+package com.orbitalhq.connectors.aws.sqs
 
-import io.vyne.annotations.AnnotationWrapper
-import io.vyne.schemas.Metadata
-import io.vyne.schemas.fqn
+import com.orbitalhq.annotations.AnnotationWrapper
+import com.orbitalhq.schemas.Metadata
+import com.orbitalhq.schemas.fqn
 import lang.taxi.TaxiDocument
 import lang.taxi.types.Annotation
 
 object SqsConnectorTaxi {
    object Annotations {
-      internal const val namespace = "io.vyne.aws.sqs"
+      internal const val namespace = "com.orbitalhq.aws.sqs"
 
       val imports: String = listOf(SqsService.NAME, SqsOperation.NAME).joinToString("\n") { "import $it" }
 

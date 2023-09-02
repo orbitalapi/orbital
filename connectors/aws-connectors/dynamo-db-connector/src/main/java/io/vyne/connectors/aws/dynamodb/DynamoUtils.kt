@@ -1,4 +1,4 @@
-package io.vyne.connectors.aws.dynamodb
+package com.orbitalhq.connectors.aws.dynamodb
 
 import lang.taxi.types.Type
 

@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <modelVersion>4.0.0</modelVersion>
    <parent>
-      <groupId>io.vyne</groupId>
+      <groupId>com.orbitalhq</groupId>
       <artifactId>platform</artifactId>
       <version>0.25.0-SNAPSHOT</version>
    </parent>
@@ -18,7 +18,7 @@
          <version>${taxi.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>chatgpt</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -75,17 +75,17 @@
          <scope>test</scope>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>query-node-api</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>connectors-core</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>auth-common</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -94,27 +94,27 @@
          <artifactId>spring-security-core</artifactId>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>schema-server-api</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>schema-consumer-api</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne</artifactId>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>taxiql-query-engine</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-query-api</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -153,19 +153,19 @@
          <artifactId>spring-context</artifactId>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-spring-http</artifactId>
          <version>0.25.0-SNAPSHOT</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne</artifactId>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>taxiql-query-engine</artifactId>
          <version>${project.version}</version>
          <scope>test</scope>
          <type>test-jar</type>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-spring</artifactId>
          <version>${project.version}</version>
          <type>test-jar</type>

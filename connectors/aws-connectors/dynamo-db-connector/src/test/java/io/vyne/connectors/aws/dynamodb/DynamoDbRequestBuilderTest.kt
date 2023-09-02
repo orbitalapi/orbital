@@ -1,10 +1,10 @@
-package io.vyne.connectors.aws.dynamodb
+package com.orbitalhq.connectors.aws.dynamodb
 
 import io.kotest.matchers.maps.shouldHaveKey
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import io.vyne.models.TypedInstance
-import io.vyne.schemas.taxi.TaxiSchema
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.schemas.taxi.TaxiSchema
 import org.junit.jupiter.api.Test
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest
@@ -21,7 +21,7 @@ class DynamoDbRequestBuilderTest {
             ${DynamoConnectorTaxi.schema}
 
             namespace movies {
-                @io.vyne.aws.dynamo.Table( connectionName = "conn" , tableName = "movies" )
+                @com.orbitalhq.aws.dynamo.Table( connectionName = "conn" , tableName = "movies" )
                 model Movie {
                     @Id
                     id : MovieId inherits Int
@@ -46,7 +46,7 @@ class DynamoDbRequestBuilderTest {
             ${DynamoConnectorTaxi.schema}
 
             namespace movies {
-                @io.vyne.aws.dynamo.Table( connectionName = "conn" , tableName = "movies" )
+                @com.orbitalhq.aws.dynamo.Table( connectionName = "conn" , tableName = "movies" )
                 model Movie {
                     @Id
                     id : MovieId inherits Int
@@ -74,7 +74,7 @@ class DynamoDbRequestBuilderTest {
             ${DynamoConnectorTaxi.schema}
 
             namespace movies {
-                @io.vyne.aws.dynamo.Table( connectionName = "conn" , tableName = "movies" )
+                @com.orbitalhq.aws.dynamo.Table( connectionName = "conn" , tableName = "movies" )
                 model Movie {
                     @Id
                     id : MovieId inherits Int
@@ -101,7 +101,7 @@ class DynamoDbRequestBuilderTest {
             ${DynamoConnectorTaxi.schema}
 
             namespace movies {
-                @io.vyne.aws.dynamo.Table( connectionName = "conn" , tableName = "movies" )
+                @com.orbitalhq.aws.dynamo.Table( connectionName = "conn" , tableName = "movies" )
                 model Movie {
                     @Id
                     id : MovieId inherits String
@@ -128,7 +128,7 @@ class DynamoDbRequestBuilderTest {
             ${DynamoConnectorTaxi.schema}
 
             namespace movies {
-                @io.vyne.aws.dynamo.Table( connectionName = "conn" , tableName = "movies" )
+                @com.orbitalhq.aws.dynamo.Table( connectionName = "conn" , tableName = "movies" )
                 model Movie {
                     @Id
                     id : MovieId inherits String

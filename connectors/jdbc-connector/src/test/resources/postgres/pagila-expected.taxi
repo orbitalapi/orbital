@@ -236,7 +236,7 @@ namespace paymentP200706.types {
 
 }
 namespace actor {
-   @io.vyne.jdbc.Table(table = "actor" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "actor" , schema = "public" , connection = "testConnection")
    model Actor {
       @Id actor_id : actor.types.ActorId
       first_name : actor.types.FirstName
@@ -244,13 +244,13 @@ namespace actor {
       last_update : actor.types.LastUpdate
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service ActorService {
       table actor : Actor[]
    }
 }
 namespace address {
-   @io.vyne.jdbc.Table(table = "address" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "address" , schema = "public" , connection = "testConnection")
    model Address {
       @Id address_id : address.types.AddressId
       address : address.types.Address
@@ -262,26 +262,26 @@ namespace address {
       last_update : address.types.LastUpdate
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service AddressService {
       table address : Address[]
    }
 }
 namespace category {
-   @io.vyne.jdbc.Table(table = "category" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "category" , schema = "public" , connection = "testConnection")
    model Category {
       @Id category_id : category.types.CategoryId
       name : category.types.Name
       last_update : category.types.LastUpdate
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service CategoryService {
       table category : Category[]
    }
 }
 namespace city {
-   @io.vyne.jdbc.Table(table = "city" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "city" , schema = "public" , connection = "testConnection")
    model City {
       @Id city_id : city.types.CityId
       city : city.types.City
@@ -289,26 +289,26 @@ namespace city {
       last_update : city.types.LastUpdate
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service CityService {
       table city : City[]
    }
 }
 namespace country {
-   @io.vyne.jdbc.Table(table = "country" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "country" , schema = "public" , connection = "testConnection")
    model Country {
       @Id country_id : country.types.CountryId
       country : country.types.Country
       last_update : country.types.LastUpdate
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service CountryService {
       table country : Country[]
    }
 }
 namespace customer {
-   @io.vyne.jdbc.Table(table = "customer" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "customer" , schema = "public" , connection = "testConnection")
    model Customer {
       @Id customer_id : customer.types.CustomerId
       store_id : store.types.StoreId
@@ -322,13 +322,13 @@ namespace customer {
       active : customer.types.Active?
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service CustomerService {
       table customer : Customer[]
    }
 }
 namespace film {
-   @io.vyne.jdbc.Table(table = "film" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "film" , schema = "public" , connection = "testConnection")
    model Film {
       @Id film_id : film.types.FilmId
       title : film.types.Title
@@ -346,39 +346,39 @@ namespace film {
       fulltext : film.types.Fulltext
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service FilmService {
       table film : Film[]
    }
 }
 namespace filmActor {
-   @io.vyne.jdbc.Table(table = "film_actor" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "film_actor" , schema = "public" , connection = "testConnection")
    model FilmActor {
       @Id actor_id : filmActor.types.ActorId
       @Id film_id : filmActor.types.FilmId
       last_update : filmActor.types.LastUpdate
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service FilmActorService {
       table filmactor : FilmActor[]
    }
 }
 namespace filmCategory {
-   @io.vyne.jdbc.Table(table = "film_category" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "film_category" , schema = "public" , connection = "testConnection")
    model FilmCategory {
       @Id film_id : filmCategory.types.FilmId
       @Id category_id : filmCategory.types.CategoryId
       last_update : filmCategory.types.LastUpdate
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service FilmCategoryService {
       table filmcategory : FilmCategory[]
    }
 }
 namespace inventory {
-   @io.vyne.jdbc.Table(table = "inventory" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "inventory" , schema = "public" , connection = "testConnection")
    model Inventory {
       @Id inventory_id : inventory.types.InventoryId
       film_id : film.types.FilmId
@@ -386,26 +386,26 @@ namespace inventory {
       last_update : inventory.types.LastUpdate
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service InventoryService {
       table inventory : Inventory[]
    }
 }
 namespace language {
-   @io.vyne.jdbc.Table(table = "language" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "language" , schema = "public" , connection = "testConnection")
    model Language {
       @Id language_id : language.types.LanguageId
       name : language.types.Name
       last_update : language.types.LastUpdate
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service LanguageService {
       table language: Language[]
    }
 }
 namespace payment {
-   @io.vyne.jdbc.Table(table = "payment" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "payment" , schema = "public" , connection = "testConnection")
    model Payment {
       @Id payment_id : payment.types.PaymentId
       customer_id : customer.types.CustomerId
@@ -415,13 +415,13 @@ namespace payment {
       payment_date : payment.types.PaymentDate
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service PaymentService {
       table payment : Payment[]
    }
 }
 namespace paymentP200701 {
-   @io.vyne.jdbc.Table(table = "payment_p2007_01" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "payment_p2007_01" , schema = "public" , connection = "testConnection")
    model PaymentP200701 {
       payment_id : paymentP200701.types.PaymentId
       customer_id : customer.types.CustomerId
@@ -431,13 +431,13 @@ namespace paymentP200701 {
       payment_date : paymentP200701.types.PaymentDate
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service PaymentP200701Service {
       table paymentp200701:lang.taxi.Array<paymentP200701.PaymentP200701>
    }
 }
 namespace paymentP200702 {
-   @io.vyne.jdbc.Table(table = "payment_p2007_02" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "payment_p2007_02" , schema = "public" , connection = "testConnection")
    model PaymentP200702 {
       payment_id : paymentP200702.types.PaymentId
       customer_id : customer.types.CustomerId
@@ -447,13 +447,13 @@ namespace paymentP200702 {
       payment_date : paymentP200702.types.PaymentDate
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service PaymentP200702Service {
       table paymentp200702:lang.taxi.Array<paymentP200702.PaymentP200702>
    }
 }
 namespace paymentP200703 {
-   @io.vyne.jdbc.Table(table = "payment_p2007_03" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "payment_p2007_03" , schema = "public" , connection = "testConnection")
    model PaymentP200703 {
       payment_id : paymentP200703.types.PaymentId
       customer_id : customer.types.CustomerId
@@ -463,13 +463,13 @@ namespace paymentP200703 {
       payment_date : paymentP200703.types.PaymentDate
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service PaymentP200703Service {
       table paymentp200703:lang.taxi.Array<paymentP200703.PaymentP200703>
    }
 }
 namespace paymentP200704 {
-   @io.vyne.jdbc.Table(table = "payment_p2007_04" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "payment_p2007_04" , schema = "public" , connection = "testConnection")
    model PaymentP200704 {
       payment_id : paymentP200704.types.PaymentId
       customer_id : customer.types.CustomerId
@@ -479,13 +479,13 @@ namespace paymentP200704 {
       payment_date : paymentP200704.types.PaymentDate
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service PaymentP200704Service {
       table paymentp200704:lang.taxi.Array<paymentP200704.PaymentP200704>
    }
 }
 namespace paymentP200705 {
-   @io.vyne.jdbc.Table(table = "payment_p2007_05" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "payment_p2007_05" , schema = "public" , connection = "testConnection")
    model PaymentP200705 {
       payment_id : paymentP200705.types.PaymentId
       customer_id : customer.types.CustomerId
@@ -495,13 +495,13 @@ namespace paymentP200705 {
       payment_date : paymentP200705.types.PaymentDate
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service PaymentP200705Service {
       table  paymentp200705:lang.taxi.Array<paymentP200705.PaymentP200705>
    }
 }
 namespace paymentP200706 {
-   @io.vyne.jdbc.Table(table = "payment_p2007_06" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "payment_p2007_06" , schema = "public" , connection = "testConnection")
    model PaymentP200706 {
       payment_id : paymentP200706.types.PaymentId
       customer_id : customer.types.CustomerId
@@ -511,13 +511,13 @@ namespace paymentP200706 {
       payment_date : paymentP200706.types.PaymentDate
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service PaymentP200706Service {
       table paymentp200706:lang.taxi.Array<paymentP200706.PaymentP200706>
    }
 }
 namespace rental {
-   @io.vyne.jdbc.Table(table = "rental" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "rental" , schema = "public" , connection = "testConnection")
    model Rental {
       @Id rental_id : rental.types.RentalId
       rental_date : rental.types.RentalDate
@@ -528,13 +528,13 @@ namespace rental {
       last_update : rental.types.LastUpdate
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service RentalService {
       table rental:lang.taxi.Array<rental.Rental>
    }
 }
 namespace staff {
-   @io.vyne.jdbc.Table(table = "staff" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "staff" , schema = "public" , connection = "testConnection")
    model Staff {
       @Id staff_id : staff.types.StaffId
       first_name : staff.types.FirstName
@@ -549,13 +549,13 @@ namespace staff {
       picture : staff.types.Picture?
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service StaffService {
       table staff:lang.taxi.Array<staff.Staff>
    }
 }
 namespace store {
-   @io.vyne.jdbc.Table(table = "store" , schema = "public" , connection = "testConnection")
+   @com.orbitalhq.jdbc.Table(table = "store" , schema = "public" , connection = "testConnection")
    model Store {
       @Id store_id : store.types.StoreId
       manager_staff_id : staff.types.StaffId
@@ -563,7 +563,7 @@ namespace store {
       last_update : store.types.LastUpdate
    }
 
-   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   @com.orbitalhq.jdbc.DatabaseService(connection = "testConnection")
    service StoreService {
       table store:lang.taxi.Array<store.Store>
    }

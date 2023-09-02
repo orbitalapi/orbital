@@ -1,10 +1,10 @@
 package org.taxilang.playground.parser
 
-import io.vyne.PackageMetadata
-import io.vyne.SourcePackage
-import io.vyne.VersionedSource
-import io.vyne.query.VyneQlGrammar
-import io.vyne.schemas.taxi.TaxiSchema
+import com.orbitalhq.PackageMetadata
+import com.orbitalhq.SourcePackage
+import com.orbitalhq.VersionedSource
+import com.orbitalhq.query.VyneQlGrammar
+import com.orbitalhq.schemas.taxi.TaxiSchema
 import lang.taxi.CompilationMessage
 import lang.taxi.errors
 import org.springframework.web.bind.annotation.PostMapping

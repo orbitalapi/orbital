@@ -1,7 +1,7 @@
-package io.vyne.connectors.azure.blob.registry
+package com.orbitalhq.connectors.azure.blob.registry
 
-import io.vyne.PackageIdentifier
-import io.vyne.connectors.registry.MutableConnectionRegistry
+import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.connectors.registry.MutableConnectionRegistry
 
 class InMemoryAzureStoreConnectorRegister(configs: List<AzureStorageConnectorConfiguration> = emptyList()) :
     AzureStoreConnectionRegistry, MutableConnectionRegistry<AzureStorageConnectorConfiguration> {

@@ -1,4 +1,4 @@
-package io.vyne.connectors.aws.sqs
+package com.orbitalhq.connectors.aws.sqs
 
 import mu.KotlinLogging
 import reactor.core.publisher.Mono

@@ -1,8 +1,8 @@
-package io.vyne.connectors.aws.lambda
+package com.orbitalhq.connectors.aws.lambda
 
-import io.vyne.annotations.AnnotationWrapper
-import io.vyne.schemas.Metadata
-import io.vyne.schemas.fqn
+import com.orbitalhq.annotations.AnnotationWrapper
+import com.orbitalhq.schemas.Metadata
+import com.orbitalhq.schemas.fqn
 import lang.taxi.TaxiDocument
 import lang.taxi.types.Annotation
 
@@ -21,7 +21,7 @@ namespace  ${Annotations.namespace} {
 """
 
    object Annotations {
-      internal const val namespace = "io.vyne.aws.lambda"
+      internal const val namespace = "com.orbitalhq.aws.lambda"
       val imports: String = listOf(LambdaOperation.NAME, LambdaInvocationService.NAME).joinToString("\n") { "import $it" }
 
       data class LambdaInvocationService(val connectionName: String) : AnnotationWrapper {

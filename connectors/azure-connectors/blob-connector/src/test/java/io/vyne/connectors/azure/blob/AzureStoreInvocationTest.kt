@@ -1,15 +1,15 @@
-package io.vyne.connectors.azure.blob
+package com.orbitalhq.connectors.azure.blob
 
 import com.azure.storage.blob.BlobContainerClientBuilder
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
-import io.vyne.connectors.azure.blob.registry.AzureStorageConnectorConfiguration
-import io.vyne.connectors.azure.blob.registry.InMemoryAzureStoreConnectorRegister
-import io.vyne.connectors.azure.blob.support.AzuriteContainer
-import io.vyne.query.VyneQlGrammar
-import io.vyne.schema.api.SimpleSchemaProvider
-import io.vyne.testVyne
-import io.vyne.typedObjects
+import com.orbitalhq.connectors.azure.blob.registry.AzureStorageConnectorConfiguration
+import com.orbitalhq.connectors.azure.blob.registry.InMemoryAzureStoreConnectorRegister
+import com.orbitalhq.connectors.azure.blob.support.AzuriteContainer
+import com.orbitalhq.query.VyneQlGrammar
+import com.orbitalhq.schema.api.SimpleSchemaProvider
+import com.orbitalhq.testVyne
+import com.orbitalhq.typedObjects
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.testcontainers.junit.jupiter.Container
@@ -56,7 +56,7 @@ class AzureStoreInvocationTest {
          type MovieId inherits Int
          type MovieTitle inherits String
 
-          @io.vyne.formats.Csv(
+          @com.orbitalhq.formats.Csv(
                      delimiter = ",",
                      nullValue = "NULL"
                   )

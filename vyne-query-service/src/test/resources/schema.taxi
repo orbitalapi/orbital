@@ -1,4 +1,4 @@
-namespace io.vyne {
+namespace com.orbitalhq {
 
     type TradeComplianceResult {
         status : TradeComplianceStatus
