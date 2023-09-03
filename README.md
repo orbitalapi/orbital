@@ -5,9 +5,7 @@
 
 [![Docker Pulls](https://img.shields.io/docker/pulls/orbitalhq/orbital?style=for-the-badge)](https://hub.docker.com/r/orbitalhq/orbital)
 ![Latest Version](https://img.shields.io/badge/dynamic/xml.svg?label=Latest&url=http%3A%2F%2Frepo.orbitalhq.com%2Frelease%2Fio%2Fvyne%2Fplatform%2Fmaven-metadata.xml&query=%2F%2Frelease&colorB=green&prefix=v&style=for-the-badge&)
-
-![Pipeline status](https://gitlab.com/vyne/vyne/badges/develop/pipeline.svg)
-
+![Pipeline status](https://gitlab.com/vyne/vyne/badges/develop/pipeline.svg?style=flat-square)
 </div>
 
 <div align="center">
