@@ -1,122 +1,168 @@
-# Development Environment
+![Header](profile/github-banner.png)
 
-## Server side
+<div align="center">
 
-* JDK 18
-* Maven 3.x
 
-Make sure to have these as command line arguments to `java` command when running query server, analytics server or
-vyne-history-core modules.
+[![Docker Pulls](https://img.shields.io/docker/pulls/orbitalhq/orbital?style=for-the-badge)](https://hub.docker.com/r/orbitalhq/orbital)
+![Latest Version](https://img.shields.io/badge/dynamic/xml.svg?label=Latest&url=http%3A%2F%2Frepo.orbitalhq.com%2Frelease%2Fio%2Fvyne%2Fplatform%2Fmaven-metadata.xml&query=%2F%2Frelease&colorB=green&prefix=v&style=for-the-badge&)
 
-```shell
---add-exports=java.base/jdk.internal.ref=ALL-UNNAMED
---add-exports=java.base/sun.nio.ch=ALL-UNNAMED
---add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
---add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
---add-opens=jdk.compiler/com.sun.tools.javac=ALL-UNNAMED
---add-opens=java.base/java.lang=ALL-UNNAMED
---add-opens=java.base/java.lang.reflect=ALL-UNNAMED
---add-opens=java.base/java.io=ALL-UNNAMED
---add-opens=java.base/java.util=ALL-UNNAMED
+</div>
+
+<div align="center">
+
+[![Join us on Slack](https://img.shields.io/badge/Slack-chat%20with%20us-%235865F2?style=for-the-badge&logo=slack&logoColor=%23fff)](https://join.slack.com/t/orbitalapi/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg)
+[![Follow us on Twitter](https://img.shields.io/badge/Follow-@orbitalapi-%235865F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com/orbitalapi)
+
+</div>
+
+<div align="center">
+
+[Website](https://orbitalhq.com)&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
+[Docs](https://orbitalhq.com/docs)&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
+[Blog](https://orbitalhq.com/blog)&nbsp;&nbsp;&nbsp;
+
+</div>
+
+Orbital automates integration between your data sources. 
+
+It's decentralized by nature - there's no central mapping code defined.
+Instead, teams add Taxi Metadata to their API specs, and push those to Orbital.
+
+Orbital creates integration on-the-fly, without engineers having to write glue code.
+
+Get started right now, by spinning up Orbital on your machine
+
+```bash
+docker run -p 9022:9022 orbitalhq/orbital
 ```
 
-They can also be set as `MAVEN_OPTS` - more info [here](https://chronicle.software/chronicle-support-java-17/).
+Then visit https://localhost:9022 in your browser.
 
-## Client Side
+## What is Orbital?
+Orbital is a data gateway that automates the integration, transformation and discovery of data from data sources (API’s, databases, message brokers) across your enterprise.
 
-* Node.js 16 or later LTS
-* npm 7 or later
+Orbital integrates on-the-fly, automatically adjusting as your data sources change.
 
-# Running App Locally for development purpose
+This is powered [Taxi](https://github.com/taxilang/taxilang) which adds rich [Semantic Metadata](https://orbitalhq.com/blog/2023-05-22-semantic-metadata-101) to your exist API specs, that describes how data relates between your data sources.
 
-## Server
+![Network Diagram](./profile/network-diagram.png)
 
-* Run 'QueryServiceApp' with:
-    * embedded-discovery, local if you want to run the application without any query history functionality (-Dspring.profiles.active=embedded-discovery,local).
-    * embedded-discovery, local and inmemory-query-history spring profiles (-Dspring.profiles.active=embedded-discovery,inmemory-query-history,local) if you want keep query histories in memory.
-    * embedded-discovery, local and persist-query-history spring profiles (-Dspring.profiles.active=embedded-discovery,persist-query-history,local) if you want keep query histories in a postgres database.
-      see application-persist-query-history.yml for database details.
-* embedded-discovery provides and embedded Eureka server so that client app can register against it.
-* local profile enables REST request coming from localhost:4200 by modifying the CORS settings accordingly. This profile
-requires only if you're planning run client app on localhost:4200 (see below). If that is not the case, build the client app by running
-'mvn clean install -DskipTests' or by running 'npm build' on vyne-query-service/src/main/web 
-* By default data lineage functionality is disabled for remote calls. If you want to enable it please set vyne.data-lineage.remoteCalls.enabled as true,
-(i.e. -Dvyne.data-lineage.remoteCalls.enabled=true)
+## Orbital Fly-by
+Here's the main ideas of Orbital.
 
-## Client
+0. **Define some shared terms**
 
-* On a terminal / cmd shell, goto vyne-query-service/src/main/web  and run 'npm run start-dev'. That will fire up and angular development server
-running on localhost:4200
+Create a [Taxi project](https://taxilang.org/taxi-cli/intro/):
 
-* If you are not interested in client side development, you can simply run 'mvn clean install -DskipTests' for 'vyne-query-service' and
-run QueryServiceApp. That'd make client application avalilable at localhost:9022
-
-
-# Running application locally using docker
-
-## Windows
-
-### How to install docker
-Follow instructions here:
-* https://docs.docker.com/docker-for-windows/install/
-This should install docker engine and docker-compose.
-
-### How to start docker
-* Click windows start button, search/type for Docker, and select Docker Desktop in the search results.
-* Wait for it to start, about 30-60 seconds
-
-## How to build vyne docker containers locally (Optional, for developers only)
-Command below should compile code (java/npm) and build docker containers locally:
-```
-mvn clean install docker:build -Dmaven.test.skip=true -P snapshot-release
-```
-Note: vyne-query-service docker images is huge, on windows the build may look like it hanged, please be patient.
-
-## How start vyne
-Open cmd console or git-bash console in vyne root project (e.g. ```C:\dev\workspace\vyne``` and type in:
-```
-docker-compose up
-```
-this should:
-* pull down all the docker containers
-* start them up (review logs for any errors)
-* start web UI on http://localhost:9022
-
-Note: If you got any taxi schemas, paste them in the vyne/schemas/ folder.
-Vyne should automatically pick them up, and they should be available after refreshing UI.
-
-## How to stop vyne
-* ctrl+c - this should stop gracefully all the containers, if not
-* if not, type in:
-```
-docker-compose down
+```bash
+taxi init
 ```
 
-# Unix/Ubuntu
-...
+... and create some types...
+
+```taxi
+type MovieId inherits Int
+type MovieTitle inherits String
+// ... etc...
+```
 
 
-# Services
+1. **Add metadata into your APIs**
+   
+```diff
+# An extract of an OpenAPI spec:
+components:
+  schemas:
+    Reviews:
+      properties:
+        id:
+          type: string
++           # Embed semantic type metadata directly in OpenAPI
++           x-taxi-type:
++             name: MovieId
 
-| Service name | Port |
-| :---: | :---: |
-| vyne | 9022 |  
-| cask | 8800 |  
-| pipelines-orchestrator | 9600 |
-| schema-server | 9301 |  
-  
-Optional services
+```   
 
-| Service name | Port |
-| :---: | :---: |
-| eureka | 8761 |  
-| config-service | 8888 | 
+(See the full docs for [OpenAPI](https://orbitalhq.com/docs/describing-data-sources/open-api), or other examples in [Protobuf](https://orbitalhq.com/docs/describing-data-sources/protobuf) and [Databases](https://orbitalhq.com/docs/describing-data-sources/databases))
 
-## OpenId Connect Integration
+2. **Publish your API specs to Orbital**
 
-To enable Authentication through OpenId Connect:
+Tell Orbital about your API.  There's a few ways to do this.
 
-* Run vyne-query-service with 'secure' profile.
-* Run jwt-auth-server
-* Login to UI with one of the users defined in jwt-auth-server application.yml
-* See [security flow](./security.puml)
+ * [Get Orbital to poll your OpenAPI spec](https://orbitalhq.com/docs/describing-data-sources/open-api#publishing-open-api-specs-to-orbital)
+ * [Read from a Git repository](https://orbitalhq.com/docs/connecting-data-sources/connecting-a-git-repo)
+ * [Get your app to push directly to Orbital](https://orbitalhq.com/docs/connecting-data-sources/overview#pushing-updates-on-startup)
+
+3. **Query for data**
+
+Some example queries:
+```taxi
+// Find all the movies
+find { Movie[] }
+
+// Find a specific movie
+find { Movie(MovieId == 1)}
+
+// Join some other data
+find { Movie[] } as {
+    title: MovieTitle
+
+    // Compose together APIs:
+    // Where can I watch this?
+    // This data comes from another REST API
+    streamingServiceName: ServiceName
+    price: PricePerMonth
+
+    // Reviews - is the film any good?
+    // This data comes from a third API
+    reviewScore: ReviewScore
+    reviewText: ReviewText
+}
+```
+
+Orbital builds the integration for each query, and composes the APIs on demand.
+
+Because it's powered by API specs:
+ * There's no resolvers to maintain
+ * Changes to API specs are automatically main
+
+## Taxi
+Under the hood, Orbital is a [TaxiQL](https://docs.taxilang.org/language-reference/querying-with-taxiql/) query server.
+
+### Links
+ * [Taxi](https://taxilang.org)
+ * [TaxiQL](https://docs.taxilang.org/language-reference/querying-with-taxiql/) 
+
+
+## FAQ's
+
+### How does this relate to GraphQL?
+Orbital gives you many of the benefits of GraphQL (API federation, custom response schemas), without having to move your tech stack over to GraphQl - instead working with your existing tech stack(s).
+
+The key differences are:
+
+#### Technology agnostic
+GraphQL works great when you have GraphQL everywhere.  For everything else, you have to maintain a seperate shim layer to adapt your RESTful API / Database / Message Queue etc., to GraphQL.
+
+Orbital and Taxi work by embedding metatdata in your existing API specs (OpenAPI / Protobuf / Avro / JsonSchema, etc), so that you don't need to change the underlying tech you're using.
+
+#### Decentralized, spec-first federation
+Orbital is built for decentralized teams, so that teams can ship changes independently, without having to build and maintain a seperate integration layer.
+
+#### Resolver-free
+Resolvers in GraphQL are integration code that has to be maintated - often by a dedicated GraphQL / middleware team.  This means teams that own services have to co-ordinate changes with a seperate integration team.
+
+Instead, Orbital uses Taxi metadata embedded in API specs to define how data relates semantically.  From here, most integration can be created automatically.
+
+### Does this mean all my systems have to have the same ID schemes and request/response models?
+Nope. Taxi is designed to encourage teams to evolve independently, without sharing common models.  Instead, semantic scalars are used to compose models together automatically.
+
+We talk more about that in [Why we built Taxi](https://orbitalhq.com/blog/2023-05-12-why-we-created-taxi)
+
+## Doc links
+
+ * [Semantic Integration 101](https://orbitalhq.com/blog/2023-05-22-semantic-metadata-101)
+ * [Why we built Taxi](https://orbitalhq.com/blog/2023-05-12-why-we-created-taxi)
+ * [Using Semantic Metadata to automate integration](https://orbitalhq.com/blog/2023-01-16-using-semantic-metadata)
+ * [Querying for data](https://orbitalhq.com/docs/querying/writing-queries)
+ * 
