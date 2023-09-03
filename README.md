@@ -1,4 +1,4 @@
-![Header](profile/github-banner.png)
+![Header](./github-banner.png)
 
 <div align="center">
 
@@ -45,7 +45,7 @@ Orbital integrates on-the-fly, automatically adjusting as your data sources chan
 
 This is powered [Taxi](https://github.com/taxilang/taxilang) which adds rich [Semantic Metadata](https://orbitalhq.com/blog/2023-05-22-semantic-metadata-101) to your exist API specs, that describes how data relates between your data sources.
 
-![Network Diagram](./profile/network-diagram.png)
+![Network Diagram](./network-diagram.png)
 
 ## Orbital Fly-by
 Here's the main ideas of Orbital.
