@@ -1,4 +1,14 @@
-# Developing Vyne
+# Developing Orbital
+
+Orbital is currently developed on Gitlab (for historic reasons), and mirrored
+to Github.
+
+This makes it difficult for us to accept contributions on Github.
+Please reach out on [Slack](https://join.slack.com/t/orbitalapi/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg) if you'd like to contribute.
+
+## Naming
+Orbital used to be called Vyne, so you'll see that in many places throughout the code.
+We're progressively moving this from Vyne to Orbital.
 
 ## Commit messages
 
