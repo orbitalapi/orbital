@@ -7,6 +7,7 @@ We're doing this iteratively.  It's likely that we may move code between license
 
 While we work through this, it's responsible to outline our intentions, and how we think about licensing.
 
+## Goals
 We want Orbital users to trust that the platform will continue even if the company behind it changes. 
 At the same time, we want to ensure the company's business interests are protected, and ensure Orbital remains a successful commercial product.
 
