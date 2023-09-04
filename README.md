@@ -35,7 +35,7 @@ Get started right now, by spinning up Orbital on your machine
 docker run -p 9022:9022 orbitalhq/orbital
 ```
 
-Then visit https://localhost:9022 in your browser.
+Then visit http://localhost:9022 in your browser.
 
 ## What is Orbital?
 Orbital is a data gateway that automates the integration, transformation and discovery of data from data sources (API’s, databases, message brokers) across your enterprise.
