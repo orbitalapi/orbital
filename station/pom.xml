@@ -92,6 +92,12 @@
          <groupId>org.testcontainers</groupId>
          <artifactId>postgresql</artifactId>
       </dependency>
+      <!-- I've asked in the Testcontainers group if there's a workaround to needing this.
+      Otherwise the compilation error is:
+      Kotlin: Supertypes of the following classes cannot be resolved. Please make sure you have the required dependencies in the classpath:
+    class org.testcontainers.containers.FailureDetectingExternalResource, unresolved supertypes: org.junit.rules.TestRule
+Adding -Xextended-compiler-checks argument might provide additional information.
+-->
       <dependency>
          <groupId>junit</groupId>
          <artifactId>junit</artifactId>
