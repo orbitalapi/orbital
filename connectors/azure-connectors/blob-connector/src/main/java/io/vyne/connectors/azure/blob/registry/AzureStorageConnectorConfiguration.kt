@@ -1,13 +1,13 @@
-package io.vyne.connectors.azure.blob.registry
+package com.orbitalhq.connectors.azure.blob.registry
 
-import io.vyne.connectors.ConnectionDriverOptions
-import io.vyne.connectors.ConnectionDriverParam
-import io.vyne.connectors.ConnectionParameterName
-import io.vyne.connectors.IConnectionParameter
-import io.vyne.connectors.SimpleDataType
-import io.vyne.connectors.connectionParams
-import io.vyne.connectors.registry.ConnectorConfiguration
-import io.vyne.connectors.registry.ConnectorType
+import com.orbitalhq.connectors.ConnectionDriverOptions
+import com.orbitalhq.connectors.ConnectionDriverParam
+import com.orbitalhq.connectors.ConnectionParameterName
+import com.orbitalhq.connectors.IConnectionParameter
+import com.orbitalhq.connectors.SimpleDataType
+import com.orbitalhq.connectors.connectionParams
+import com.orbitalhq.connectors.registry.ConnectorConfiguration
+import com.orbitalhq.connectors.registry.ConnectorType
 
 data class AzureStorageConnectorConfiguration(
    override val connectionName: String, val connectionParameters: Map<ConnectionParameterName, String>) : ConnectorConfiguration {

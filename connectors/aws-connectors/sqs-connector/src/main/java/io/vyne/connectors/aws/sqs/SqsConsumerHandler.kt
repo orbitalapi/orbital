@@ -1,4 +1,4 @@
-package io.vyne.connectors.aws.sqs
+package com.orbitalhq.connectors.aws.sqs
 
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono

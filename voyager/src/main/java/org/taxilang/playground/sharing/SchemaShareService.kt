@@ -1,7 +1,7 @@
 package org.taxilang.playground.sharing
 
 import com.google.common.hash.Hashing
-import io.vyne.utils.Ids
+import com.orbitalhq.utils.Ids
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EntityNotFoundException

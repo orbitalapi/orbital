@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <parent>
       <artifactId>platform</artifactId>
-      <groupId>io.vyne</groupId>
+      <groupId>com.orbitalhq</groupId>
       <version>0.25.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
@@ -17,7 +17,7 @@
 
    <dependencies>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
          <scope>test</scope>
@@ -39,17 +39,17 @@
          <version>${lucene.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>events-api</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>utils</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-spring</artifactId>
          <version>${project.version}</version>
       </dependency>

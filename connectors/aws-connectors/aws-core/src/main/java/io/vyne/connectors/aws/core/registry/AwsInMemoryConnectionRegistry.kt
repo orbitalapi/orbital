@@ -1,8 +1,8 @@
-package io.vyne.connectors.aws.core.registry
+package com.orbitalhq.connectors.aws.core.registry
 
-import io.vyne.PackageIdentifier
-import io.vyne.connectors.config.aws.AwsConnectionConfiguration
-import io.vyne.connectors.registry.MutableConnectionRegistry
+import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
+import com.orbitalhq.connectors.registry.MutableConnectionRegistry
 
 class AwsInMemoryConnectionRegistry(configs: List<AwsConnectionConfiguration> = emptyList()) : AwsConnectionRegistry,
     MutableConnectionRegistry<AwsConnectionConfiguration> {

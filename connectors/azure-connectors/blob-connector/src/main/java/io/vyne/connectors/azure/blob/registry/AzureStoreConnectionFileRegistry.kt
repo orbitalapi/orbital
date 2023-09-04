@@ -1,11 +1,11 @@
-package io.vyne.connectors.azure.blob.registry
+package com.orbitalhq.connectors.azure.blob.registry
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
-import io.vyne.PackageIdentifier
-import io.vyne.connectors.registry.ConfigFileConnectorRegistry
-import io.vyne.connectors.registry.MutableConnectionRegistry
+import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.connectors.registry.ConfigFileConnectorRegistry
+import com.orbitalhq.connectors.registry.MutableConnectionRegistry
 import java.nio.file.Path
 
 /**

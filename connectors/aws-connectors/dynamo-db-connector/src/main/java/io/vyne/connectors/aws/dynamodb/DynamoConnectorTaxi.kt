@@ -1,10 +1,10 @@
-package io.vyne.connectors.aws.dynamodb
+package com.orbitalhq.connectors.aws.dynamodb
 
 import lang.taxi.types.Annotation
 
 object DynamoConnectorTaxi {
 
-    internal const val namespace = "io.vyne.aws.dynamo"
+    internal const val namespace = "com.orbitalhq.aws.dynamo"
     val schema = """
         namespace $namespace {
             type ConnectionName inherits String

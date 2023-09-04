@@ -90,7 +90,7 @@ default:
          - "query-node-native/target/query-node-native.jar"
          - "vyne-query-service/target/vyne.zip"
 #         - "station/target/orbital.zip"
-         - "test-cli/target/*.zip"
+#         - "test-cli/target/*.zip"
 #         - "voyager/target/voyager.jar"
       expire_in: 1 hours
       reports:

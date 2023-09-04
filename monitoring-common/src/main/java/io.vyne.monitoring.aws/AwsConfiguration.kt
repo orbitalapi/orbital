@@ -1,4 +1,4 @@
-package io.vyne.monitoring.aws
+package com.orbitalhq.monitoring.aws
 
 import io.micrometer.cloudwatch2.CloudWatchConfig
 import io.micrometer.cloudwatch2.CloudWatchMeterRegistry

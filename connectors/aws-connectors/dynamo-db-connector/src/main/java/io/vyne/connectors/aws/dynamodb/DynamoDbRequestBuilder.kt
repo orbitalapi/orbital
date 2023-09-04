@@ -1,9 +1,9 @@
-package io.vyne.connectors.aws.dynamodb
+package com.orbitalhq.connectors.aws.dynamodb
 
-import io.vyne.connectors.getTypesToFind
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedObject
-import io.vyne.schemas.Schema
+import com.orbitalhq.connectors.getTypesToFind
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedObject
+import com.orbitalhq.schemas.Schema
 import lang.taxi.expressions.LiteralExpression
 import lang.taxi.expressions.OperatorExpression
 import lang.taxi.expressions.TypeExpression

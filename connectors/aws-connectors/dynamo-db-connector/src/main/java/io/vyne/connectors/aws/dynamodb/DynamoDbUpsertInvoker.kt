@@ -1,14 +1,14 @@
-package io.vyne.connectors.aws.dynamodb
+package com.orbitalhq.connectors.aws.dynamodb
 
-import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
-import io.vyne.models.DataSourceUpdater
-import io.vyne.models.OperationResult
-import io.vyne.models.TypedInstance
-import io.vyne.query.QueryContextEventDispatcher
-import io.vyne.schema.api.SchemaProvider
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Service
+import com.orbitalhq.connectors.aws.core.registry.AwsConnectionRegistry
+import com.orbitalhq.models.DataSourceUpdater
+import com.orbitalhq.models.OperationResult
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.query.QueryContextEventDispatcher
+import com.orbitalhq.schema.api.SchemaProvider
+import com.orbitalhq.schemas.Parameter
+import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.Service
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow

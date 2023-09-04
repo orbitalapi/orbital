@@ -1,0 +1,20 @@
+package com.orbitalhq.schema.spring.config.consumer
+
+import com.orbitalhq.schema.api.VyneSchemaInteractionMethod
+import com.orbitalhq.schema.spring.config.SchemaConfigProperties.Companion.SCHEMA_CONFIG
+import com.orbitalhq.schema.spring.config.SchemaTransportConfigProperties
+import com.orbitalhq.schema.spring.config.consumer.SchemaConsumerConfigProperties.Companion.CONSUMER_CONFIG
+import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.boot.context.properties.ConstructorBinding
+
+//@ConstructorBinding
+@ConfigurationProperties(prefix = CONSUMER_CONFIG)
+data class SchemaConsumerConfigProperties(
+   override var method: VyneSchemaInteractionMethod = VyneSchemaInteractionMethod.RSocket,
+) : SchemaTransportConfigProperties {
+   companion object {
+      const val CONSUMER_CONFIG = "$SCHEMA_CONFIG.consumer"
+      const val CONSUMER_METHOD = "$CONSUMER_CONFIG.method"
+   }
+}
+

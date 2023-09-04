@@ -1,16 +1,16 @@
-package io.vyne.connectors.azure.blob
+package com.orbitalhq.connectors.azure.blob
 
 import com.azure.storage.blob.BlobServiceClientBuilder
-import io.vyne.connectors.azure.blob.StreamProvider.Companion.typedInstanceStream
-import io.vyne.connectors.azure.blob.registry.AzureStorageConnectorConfiguration
-import io.vyne.models.Provided
-import io.vyne.models.TypedInstance
-import io.vyne.models.csv.CsvFormatFactory
-import io.vyne.models.csv.CsvFormatSpec
-import io.vyne.models.csv.CsvFormatSpecAnnotation
-import io.vyne.models.format.FormatDetector
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
+import com.orbitalhq.connectors.azure.blob.StreamProvider.Companion.typedInstanceStream
+import com.orbitalhq.connectors.azure.blob.registry.AzureStorageConnectorConfiguration
+import com.orbitalhq.models.Provided
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.csv.CsvFormatFactory
+import com.orbitalhq.models.csv.CsvFormatSpec
+import com.orbitalhq.models.csv.CsvFormatSpecAnnotation
+import com.orbitalhq.models.format.FormatDetector
+import com.orbitalhq.schemas.Schema
+import com.orbitalhq.schemas.Type
 import reactor.core.scheduler.Schedulers
 import java.io.BufferedReader
 import java.io.File
