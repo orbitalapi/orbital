@@ -29,10 +29,6 @@ spring:
       username: sa
       password:
       driverClassName: org.h2.Driver
-   sql:
-      init:
-         schema-locations: classpath:schema-h2.sql
-         mode: embedded
 
 server:
    port: 9405

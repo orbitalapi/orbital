@@ -17,6 +17,9 @@ spring:
       web-application-type: reactive
    codec:
       max-in-memory-size: 100MB
+   flyway:
+      enabled: true
+      locations: classpath:db/postgres
 
    jpa:
       hibernate.ddl-auto: none
@@ -40,18 +43,6 @@ spring:
                jwk-set-uri: ${vyne.security.open-ipd.jwk-set-uri:''}
 
    cloud.config.enabled: false
-   sql:
-      init:
-         schema-locations: classpath:schema-h2.sql
-         mode: always
-
-#   cloud:
-#      discovery:
-#         client:
-#            simple:
-#               instances:
-#                  schema-server:
-#                     - uri: http://schema-server
 vyne:
    newSchemaSubmissionEnabled: true
    data-lineage:
