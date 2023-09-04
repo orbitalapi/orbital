@@ -1,7 +1,7 @@
 ## Licensing
 
 We are progressively making the source of Orbital available, moving from a closed source model 
-to a mix of open-source and [fair code](https://faircode.io/) licenses.
+to a mix of open-source (Apache 2) and [fair code](https://faircode.io/) licenses.
 
 We're doing this iteratively.  It's likely that we may move code between licenses as we continue to find the right balance.
 
