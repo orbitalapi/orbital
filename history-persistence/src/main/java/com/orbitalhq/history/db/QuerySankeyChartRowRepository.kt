@@ -30,7 +30,7 @@ interface QuerySankeyChartRowRepository : JpaRepository<QuerySankeyChartRow, San
 
    @Transactional
    @Modifying
-   @Query(nativeQuery = true, value = H2_MERGE_QUERY)
+   @Query(nativeQuery = true, value = POSTGRES_UPSERT_QUERY)
    fun upsert(
       @Param("queryId") queryId: String,
       @Param("sourceNodeType") sourceNodeType: String,
