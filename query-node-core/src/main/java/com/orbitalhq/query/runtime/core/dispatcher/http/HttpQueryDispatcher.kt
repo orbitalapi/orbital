@@ -31,12 +31,12 @@ import reactor.kotlin.core.publisher.toFlux
 @Component
 @ConditionalOnProperty("vyne.dispatcher.http.enabled", havingValue = "true", matchIfMissing = false)
 class HttpQueryDispatcher(
-    private val webClient: WebClient.Builder,
-    private val servicesRepository: ServicesConfigRepository,
-    private val authTokenRepository: AuthSchemeRepository,
-    private val connectionsConfigProvider: SourceLoaderConnectorsRegistry,
-    private val schemaProvider: SchemaProvider,
-    @Value("\${vyne.dispatcher.http.url}") private val queryRouterUrl: String
+   private val webClient: WebClient.Builder,
+   private val servicesRepository: ServicesConfigRepository,
+   private val authTokenRepository: AuthSchemeRepository,
+   private val connectionsConfigProvider: SourceLoaderConnectorsRegistry,
+   private val schemaProvider: SchemaProvider,
+   @Value("\${vyne.dispatcher.http.url}") private val queryRouterUrl: String
 ) : StreamingQueryDispatcher {
 
    init {
@@ -64,8 +64,23 @@ class HttpQueryDispatcher(
          arguments
       )
 
+      // HACK: We can't currently support streaming messages,
+      // so we get back a Mono<T>, where T could either be a collection
+      // or a single item, depending on what the query was.
+      // If it's a collection, we don't want to return Flux<Collection<T>>,
+      // as that serializes as [ [ { ... } , { .. } ] ]
+      // (ie., a double-nested array).
+      // So, check the result, and handle iterables correctly.
       return dispatchQuery(message)
-         .toFlux()
+         .flatMapIterable { value ->
+            if (value is Iterable<*>) {
+               value
+            } else {
+               listOf(value)
+            }
+         }
+//      return dispatchQuery(message)
+//         .toFlux()
    }
 
 //   override fun handleRoutedQuery(query: RoutedQuery): Flux<Any> {
