@@ -1,6 +1,8 @@
 package com.orbitalhq.query.runtime.core.gateway
 
+import com.orbitalhq.query.runtime.core.QueryService
 import com.orbitalhq.query.runtime.core.dispatcher.StreamingQueryDispatcher
+import com.orbitalhq.query.runtime.core.dispatcher.local.LocalQueryDispatcher
 import com.orbitalhq.utils.Ids
 import mu.KotlinLogging
 import org.springframework.http.MediaType
@@ -33,20 +35,21 @@ interface RoutedQueryExecutor {
 class RoutedQueryDispatcherAdaptor(
    // We can't use conditional wiring in Graal native images.
    // So, this needs to be nullable, and we need to handle the scenario that it wasn't wired.
-   val dispatcher: StreamingQueryDispatcher?
+   configuredDispatcher: StreamingQueryDispatcher?,
+   val queryService: QueryService
 ) : RoutedQueryExecutor {
    companion object {
       private val logger = KotlinLogging.logger {}
    }
 
-   init {
-      if (dispatcher != null) {
-         logger.info { "RoutedQueryExecutor created.  Will offload queries to dispatcher of type ${dispatcher!!::class.simpleName}" }
-      } else {
-         logger.info { "RoutedQueryExecutor created without a dispatcher.  Queries will be rejected." }
-      }
-
+   private val dispatcher:StreamingQueryDispatcher = if (configuredDispatcher != null) {
+      logger.info { "RoutedQueryExecutor created.  Will offload queries to dispatcher of type ${configuredDispatcher!!::class.simpleName}" }
+      configuredDispatcher
+   } else {
+      logger.info { "RoutedQueryExecutor created without a dispatcher.  Queries will be executed locally." }
+      LocalQueryDispatcher(queryService)
    }
+
 
    override fun handleRoutedQuery(query: RoutedQuery): Flux<Any> {
       if (dispatcher == null) {

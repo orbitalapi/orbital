@@ -12,7 +12,6 @@ import org.springframework.web.reactive.function.server.ServerResponse
  * for saved queries containing an HttpOperation annotation
  */
 @Configuration
-@ConditionalOnProperty("vyne.dispatcher.http.enabled", havingValue = "true", matchIfMissing = false)
 class QueryGatewayRouterConfig {
 
    companion object {
