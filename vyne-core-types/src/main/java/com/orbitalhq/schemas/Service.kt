@@ -227,6 +227,7 @@ enum class ServiceKind : Serializable {
 
             serviceMetadata.containsMetadata("com.orbitalhq.kafka.KafkaService") -> Kafka
             serviceMetadata.containsMetadata("com.orbitalhq.jdbc.DatabaseService") -> Database
+            serviceMetadata.containsMetadata("com.orbitalhq.aws.dynamo.DynamoService") -> Database
             allOperationMetadata.containsMetadata("HttpOperation") -> API
             else -> null
          }

@@ -47,6 +47,7 @@ class DynamoDbUpsertInvoker(
             .elapsed()
             .flatMapMany<TypedInstance> { responsePair ->
                 val duration = responsePair.t1
+               logger.info { "DynamoDb call completed in ${duration}ms for request $request" }
                 val response = responsePair.t2
                 val count = 1
                 val remoteCall = buildRemoteCall(service, awsConfig, operation, request, duration, count)

@@ -58,12 +58,16 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClient
+import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.containers.wait.strategy.Wait
+import org.testcontainers.junit.jupiter.Container
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
@@ -84,9 +88,20 @@ private val logger = KotlinLogging.logger {}
       "vyne.search.directory=./search/\${random.int}",
       "vyne.analytics.persistResults=true",
       "vyne.telemetry.enabled=false",
-      "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"]
+   ]
 )
 class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
+   companion object {
+      @Container
+      @ServiceConnection
+      val postgres = PostgreSQLContainer<Nothing>("postgres:11.1").let {
+         it.start()
+         it.waitingFor(Wait.forListeningPort())
+         it
+      } as PostgreSQLContainer<*>
+
+   }
+
 
    @Autowired
    lateinit var queryHistoryRecordRepository: QueryHistoryRecordRepository

@@ -85,13 +85,13 @@ default:
          # exceeds 1GB then builds can fail.
          #         - "cask/target/cask.jar"
          - "pipelines/pipeline-jet/target/pipeline-jet.jar"
-         - "schema-server/target/schema-server.jar"
-         - "vyne-analytics-server/target/vyne-analytics-server.jar"
+#         - "schema-server/target/schema-server.jar"
+#         - "vyne-analytics-server/target/vyne-analytics-server.jar"
          - "query-node-native/target/query-node-native.jar"
-         - "vyne-query-service/target/vyne.zip"
-#         - "station/target/orbital.zip"
+#         - "vyne-query-service/target/vyne.zip"
+         - "station/target/orbital.zip"
 #         - "test-cli/target/*.zip"
-#         - "voyager/target/voyager.jar"
+         - "voyager/target/voyager.jar"
       expire_in: 1 hours
       reports:
          junit:
@@ -283,61 +283,30 @@ regression-test:
 publish-orbital-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
-      projectDir: vyne-query-service
-      microservice_vyne: vyne
+      projectDir: station
       microservice_orbital: orbital
    before_script:
       - mkdir -p station/target/classes
       - cp -a vyne-query-service/target/classes/static/. station/target/classes/static
 
-#publish-cask-to-docker-hub:
-#   extends: .publish-to-docker-hub
-#   variables:
-#      projectDir: cask
-#      microservice_vyne: cask
-#      microservice_orbital: cask
-
 publish-pipeline-jet-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: pipelines/pipeline-jet
-      microservice_vyne: pipeline
       microservice_orbital: pipelines
 
 publish-query-node-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: query-node-native
-      microservice_vyne: query-node
       microservice_orbital: query-node
 
 publish-schema-server-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: schema-server
-      microservice_vyne: schema-server
       microservice_orbital: schema-server
 
-publish-analytics-server-to-docker-hub:
-   extends: .publish-to-docker-hub
-   variables:
-      projectDir: vyne-analytics-server
-      microservice_vyne: analytics-server
-      microservice_orbital: analytics-server
-
-#publish-vyne-to-gitlab-container-registry:
-#   extends: .publish-to-gitlab-container-registry
-#   variables:
-#      projectDir: vyne-query-service
-#      microservice_vyne: vyne
-#      microservice_orbital: orbital
-#
-#publish-schema-server-to-gitlab-container-registry:
-#   extends: .publish-to-gitlab-container-registry
-#   variables:
-#      projectDir: schema-server
-#      microservice_vyne: schema-server
-#      microservice_orbital: schema-server
 
 #publish-voyager-to-gitlab-container-registry:
 #   extends: .publish-to-gitlab-container-registry

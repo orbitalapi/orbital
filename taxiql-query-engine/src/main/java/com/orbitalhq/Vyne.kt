@@ -132,18 +132,33 @@ class Vyne(
       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
       arguments: Map<String, Any?> = emptyMap(),
    ): Pair<QueryContext, QueryExpression> {
+
+      // The facts in taxiQL are the variables defined in a given {} block.
+      // given allows declaration in two ways:
+      // given { foo : Foo = 123 }
+      // and...
+      // query( foo : Foo ) { // arguments passed at query runtime
+      // given { foo }
+      //
+      // In the latter, we need to resolve foo against the arguments provided.
+
       val additionalFacts = taxiQl.facts.map { variable ->
-         TypedInstance.from(
-            schema.type(variable.value.typedValue.fqn.parameterizedName),
-            variable.value.typedValue.value,
+         val argumentValue = variable.resolveValue(arguments)
+
+         variable.name to TypedInstance.from(
+            schema.type(argumentValue.fqn.parameterizedName),
+            argumentValue.value,
             schema,
             source = Provided
          )
-      }.toSet()
+      }.toMap()
+
+      // TODO : Do we need to remove the arguments here that were used in the given {} block?
+      // I don't see why we would, but lets keep an eye...
       val scopedFacts = extractArgumentsFromQuery(taxiQl, arguments, formatSpecs)
 
       val queryContext = query(
-         additionalFacts = additionalFacts,
+         additionalFacts = additionalFacts.values.toSet(),
          queryId = queryId,
          clientQueryId = clientQueryId,
          eventBroker = eventBroker,
