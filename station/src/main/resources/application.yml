@@ -10,7 +10,14 @@ spring:
       config:
          import-check:
             enabled: false
-
+   datasource:
+      url: jdbc:postgresql://${vyne.db.host}:${vyne.db.port:5432}/${vyne.db.database:orbital}
+      username: ${vyne.db.username}
+      password: ${vyne.db.password}
+      driver-class-name: org.postgresql.Driver
+   sql:
+      init:
+         mode: never
    security:
       oauth2:
          resourceserver:
