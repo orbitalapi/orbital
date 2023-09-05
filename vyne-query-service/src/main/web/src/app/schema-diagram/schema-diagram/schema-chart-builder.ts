@@ -184,6 +184,7 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
   const modelLinks: Map<string, Link> = new Map<string, Link>();
   // Build links for models which have this type as an attribute
   schema.types
+    .filter(t => !t.name.name.startsWith('Anonymous'))
     .filter(t => !t.isScalar)
     .filter(typeInSchema => {
       // Exclude our own type...

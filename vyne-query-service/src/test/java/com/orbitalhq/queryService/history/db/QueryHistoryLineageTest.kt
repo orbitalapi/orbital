@@ -25,11 +25,15 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
+import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.containers.wait.strategy.Wait
+import org.testcontainers.junit.jupiter.Container
 import java.util.*
 import java.util.concurrent.Callable
 import java.util.concurrent.TimeUnit
@@ -48,10 +52,20 @@ import kotlin.time.ExperimentalTime
       "vyne.search.directory=./search/\${random.int}",
       "vyne.analytics.persistResults=true",
       "vyne.telemetry.enabled=false",
-      "spring.datasource.url=jdbc:h2:mem:testdbQueryHistoryLineageTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"
    ]
 )
 class QueryHistoryLineageTest {
+   companion object {
+      @Container
+      @ServiceConnection
+      val postgres = PostgreSQLContainer<Nothing>("postgres:11.1").let {
+         it.start()
+         it.waitingFor(Wait.forListeningPort())
+         it
+      } as PostgreSQLContainer<*>
+
+   }
+
    @Autowired
    lateinit var historyDbWriter: QueryHistoryDbWriter
 

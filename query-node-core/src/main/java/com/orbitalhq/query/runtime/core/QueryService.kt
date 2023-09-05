@@ -169,7 +169,7 @@ class QueryService(
          defaultValue = MediaType.APPLICATION_JSON_VALUE
       ) contentType: String,
       auth: Authentication?,
-      @RequestParam("clientQueryId", required = false) clientQueryId: String?
+      @RequestParam("clientQueryId", required = false) clientQueryId: String?,
    ): ResponseEntity<Flow<Any>> {
 
       val user = auth?.toVyneUser()
@@ -178,6 +178,32 @@ class QueryService(
          user,
          clientQueryId = clientQueryId,
          queryId = clientQueryId ?: UUID.randomUUID().toString()
+      )
+      return queryResultToResponseEntity(response, resultMode, contentType, queryOptions)
+   }
+
+   /**
+    * Overload which allows taking a set of arguments.
+    * This is used when calling saved queries with @Http endpoints exposed.
+    * Invoked by the LocalQueryDispatcher, when a remote dispatcher (eg.,
+    * calling a Cloud Function) has not been provided.
+    */
+   suspend fun submitVyneQlQuery(
+      query: TaxiQLQueryString,
+      resultMode: ResultMode,
+      contentType: String,
+      auth: Authentication?,
+      clientQueryId: String?,
+      arguments: Map<String, Any?>
+   ): ResponseEntity<Flow<Any>> {
+
+      val user = auth?.toVyneUser()
+      val (response, queryOptions) = vyneQLQuery(
+         query,
+         user,
+         clientQueryId = clientQueryId,
+         queryId = clientQueryId ?: UUID.randomUUID().toString(),
+         arguments = arguments
       )
       return queryResultToResponseEntity(response, resultMode, contentType, queryOptions)
    }
@@ -356,7 +382,8 @@ class QueryService(
       query: TaxiQLQueryString,
       vyneUser: VyneUser? = null,
       clientQueryId: String?,
-      queryId: String
+      queryId: String,
+      arguments: Map<String, Any?> = emptyMap()
    ): Pair<QueryResponse, QueryOptions> =
       monitored(query = query, clientQueryId = clientQueryId, queryId = queryId, vyneUser = vyneUser) {
          logger.info { "[$queryId] $query" }
@@ -372,7 +399,8 @@ class QueryService(
                taxiQlQuery,
                queryId = queryId,
                clientQueryId = clientQueryId,
-               eventBroker = eventDispatcherForQuery
+               eventBroker = eventDispatcherForQuery,
+               arguments = arguments
             )
          } catch (e: lang.taxi.CompilationException) {
             logger.info("The query failed compilation: ${e.message}")

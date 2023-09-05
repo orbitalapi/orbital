@@ -41,16 +41,18 @@ class FileConfigSourceLoader(
    private val sink = Sinks.many().multicast().directBestEffort<Class<out ConfigSourceLoader>>()
    private val contentCache = ConcurrentHashMap<CacheKey, List<SourcePackage>>()
 
+   private val absolutePath = configFilePath.toFile().canonicalPath
+
    init {
       if (packageIdentifier == LOCAL_PACKAGE_IDENTIFIER) {
-         logger.warn { "Loader for path $configFilePath was configured without a source package.  This can lead to sources being persisted to the wrong place." }
+         logger.warn { "Loader for path $absolutePath was configured without a source package.  This can lead to sources being persisted to the wrong place." }
       }
       if (glob != null && configFilePath.isRegularFile()) {
          error("Glob patterns are only supported when the provided path is a directory")
       }
       fileMonitor.startWatching()
          .subscribe {
-            logger.info { "Config file at $configFilePath has changed.  Invalidating cache, so will reload on next attempt" }
+            logger.info { "Config file at $absolutePath has changed.  Invalidating cache, so will reload on next attempt" }
             contentCache.remove(CacheKey)
             sink.emitNext(FileConfigSourceLoader::class.java, Sinks.EmitFailureHandler.FAIL_FAST)
          }
@@ -61,7 +63,7 @@ class FileConfigSourceLoader(
       if (!Files.exists(configFilePath)) {
          configFilePath.createFile()
       } else {
-         require(configFilePath.isRegularFile()) { "Expected the configured file path to be a file, but found a directory at $configFilePath" }
+         require(configFilePath.isRegularFile()) { "Expected the configured file path to be a file, but found a directory at $absolutePath" }
       }
       writeText(configFilePath, configWithPlaceholderQuotesRemoved)
    }
@@ -80,7 +82,7 @@ class FileConfigSourceLoader(
    }
 
    private fun writeText(path: Path, text: String) {
-      logger.info { "Saving updated config to $path and invalidating caches" }
+      logger.info { "Saving updated config to $absolutePath and invalidating caches" }
       path.toFile().writeText(text)
       contentCache.remove(CacheKey)
 
@@ -114,7 +116,7 @@ class FileConfigSourceLoader(
          if (failIfNotFound) {
             throw kotlin.io.NoSuchFileException(configFilePath.toFile())
          } else {
-            logger.info { "No file found at $configFilePath.  Will ignore this source." }
+            logger.info { "No file found at $absolutePath.  Will ignore this source." }
             return emptyList()
          }
       }

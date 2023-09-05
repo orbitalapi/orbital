@@ -145,6 +145,11 @@
       </dependency>
       <dependency>
          <groupId>com.orbitalhq</groupId>
+         <artifactId>dynamo-db-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
       </dependency>

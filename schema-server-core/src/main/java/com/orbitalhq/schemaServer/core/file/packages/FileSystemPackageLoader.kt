@@ -74,7 +74,7 @@ class FileSystemPackageLoader(
    private fun triggerLoad() {
       loadNow()
          .subscribe { schemaPackage ->
-            logger.info { "Updated schema package ${schemaPackage.identifier} loaded.  Emitting event" }
+            logger.info { "Updated schema package ${schemaPackage.identifier} loaded with ${schemaPackage.sources.size} source files and ${schemaPackage.additionalSources.size} additional sources.  Emitting event" }
             sink.emitNext(schemaPackage) { signalType, emitResult ->
                emitResult == Sinks.EmitResult.FAIL_NON_SERIALIZED
             }

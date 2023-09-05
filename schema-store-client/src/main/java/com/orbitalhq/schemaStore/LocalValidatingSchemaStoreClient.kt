@@ -209,7 +209,13 @@ abstract class ValidatingSchemaStoreClient(
          }
       }
 
-      rebuildAndStoreSchema(returnValue.orNull())
+      val rebuilt = rebuildAndStoreSchema(returnValue.orNull())
+
+      // MP 4-Sep-23: When running in Orbital (where all consumers are in-proc, vs
+      // Schema Server, where they run over RSocket), changes weren't notifying consumers.
+      // Adding this call, lets see what the imapct is.
+      emitNewSchemaIfDifferent(rebuilt)
+
       logger.info { "After schema update operation, now on generation $generation" }
       lastSubmissionResult = returnValue.mapLeft { CompilationException(it) }
 
