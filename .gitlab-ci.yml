@@ -85,7 +85,7 @@ default:
          # exceeds 1GB then builds can fail.
          #         - "cask/target/cask.jar"
          - "pipelines/pipeline-jet/target/pipeline-jet.jar"
-#         - "schema-server/target/schema-server.jar"
+         - "schema-server/target/schema-server.jar"
 #         - "vyne-analytics-server/target/vyne-analytics-server.jar"
          - "query-node-native/target/query-node-native.jar"
 #         - "vyne-query-service/target/vyne.zip"
@@ -285,9 +285,10 @@ publish-orbital-to-docker-hub:
    variables:
       projectDir: station
       microservice_orbital: orbital
-   before_script:
-      - mkdir -p station/target/classes
-      - cp -a vyne-query-service/target/classes/static/. station/target/classes/static
+#      UI is now output to station directory by default, so this isn't required
+#   before_script:
+#      - mkdir -p station/target/classes
+#      - cp -a vyne-query-service/target/classes/static/. station/target/classes/static
 
 publish-pipeline-jet-to-docker-hub:
    extends: .publish-to-docker-hub
