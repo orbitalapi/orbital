@@ -121,7 +121,7 @@ build-vyne-ui:
       - npm run-script build-prod
    artifacts:
       paths:
-         - vyne-query-service/target/classes/static
+         - station/target/classes/static
       expire_in: 1 hours
 
 build-voyager-ui:
