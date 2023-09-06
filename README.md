@@ -19,13 +19,14 @@
 [Website](https://orbitalhq.com)&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
 [Docs](https://orbitalhq.com/docs)&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
 [Blog](https://orbitalhq.com/blog)&nbsp;&nbsp;&nbsp;
+[Get in touch](#)
 
 </div>
 
 Orbital automates integration between your data sources. 
 
 It's decentralized by nature - there's no central mapping code defined.
-Instead, teams add Taxi Metadata to their API specs, and push those to Orbital.
+Instead, Orbital is powered by the API specs you're already building.
 
 Orbital creates integration on-the-fly, without engineers having to write glue code.
 
@@ -40,13 +41,21 @@ Then visit http://localhost:9022 in your browser.
 ## What is Orbital?
 Orbital is a data gateway that automates the integration, transformation and discovery of data from data sources (API’s, databases, message brokers) across your enterprise.
 
+Think of it as data federation (a single API for all your sources), without having to shift to GraphQL.
+
 Orbital integrates on-the-fly, automatically adjusting as your data sources change.
 
 This is powered [Taxi](https://github.com/taxilang/taxilang) which adds rich [Semantic Metadata](https://orbitalhq.com/blog/2023-05-22-semantic-metadata-101) to your exist API specs, that describes how data relates between your data sources.
 
 ![Network Diagram](./network-diagram.png)
 
-## Orbital Fly-by
+## Why Orbital?
+1. **No glue code:** Glue code that stitches APIs together is brittle, breaking whenever APIs change.
+2. **API First:** Orbital is powered by your existing API specs, meaning less code to maintain
+3. **Technology Agnostic:** Using gRPC? REST? SOAP? Kafka? Orbital doesn't care. It'll work with what you have
+4. **Automatically Adapts:** As your API specs change, Orbital automatically adapts it's integration flows, so consumers stay unaffected.
+
+## How does it work?
 Here's the main ideas of Orbital.
 
 0. **Define some shared terms**
@@ -132,31 +141,41 @@ Under the hood, Orbital is a [TaxiQL](https://docs.taxilang.org/language-referen
  * [Taxi](https://taxilang.org)
  * [TaxiQL](https://docs.taxilang.org/language-reference/querying-with-taxiql/) 
 
+## Get in touch
+ * 💬 [Connect with us on Slack](https://join.slack.com/t/orbitalapi/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg)
+ * ☎️ [Book a call with the founders](https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0ihMtHrlqo-9Zu2041JizUvJv-rk8m2l88UtiTI14c-dtv8ZVrnd_p1dLnmMyFFKc1tAF2ig41)
+ * 🐞 [Report a bug](https://github.com/orbitalapi/orbital/issues)
+ * 🙋 [Ask a question](https://github.com/orbitalapi/orbital/discussions)
+
 
 ## FAQ's
 
-### How does this relate to GraphQL?
+#### How does this relate to GraphQL?
 Orbital gives you many of the benefits of GraphQL (API federation, custom response schemas), without having to move your tech stack over to GraphQl - instead working with your existing tech stack(s).
 
 The key differences are:
 
-#### Technology agnostic
+##### Technology agnostic
 GraphQL works great when you have GraphQL everywhere.  For everything else, you have to maintain a seperate shim layer to adapt your RESTful API / Database / Message Queue etc., to GraphQL.
 
 Orbital and Taxi work by embedding metatdata in your existing API specs (OpenAPI / Protobuf / Avro / JsonSchema, etc), so that you don't need to change the underlying tech you're using.
 
-#### Decentralized, spec-first federation
+##### Decentralized, spec-first federation
 Orbital is built for decentralized teams, so that teams can ship changes independently, without having to build and maintain a seperate integration layer.
 
-#### Resolver-free
+##### Resolver-free
 Resolvers in GraphQL are integration code that has to be maintated - often by a dedicated GraphQL / middleware team.  This means teams that own services have to co-ordinate changes with a seperate integration team.
 
 Instead, Orbital uses Taxi metadata embedded in API specs to define how data relates semantically.  From here, most integration can be created automatically.
 
-### Does this mean all my systems have to have the same ID schemes and request/response models?
+#### Does this mean all my systems have to have the same ID schemes and request/response models?
 Nope. Taxi is designed to encourage teams to evolve independently, without sharing common models.  Instead, semantic scalars are used to compose models together automatically.
 
 We talk more about that in [Why we built Taxi](https://orbitalhq.com/blog/2023-05-12-why-we-created-taxi)
+
+#### I can't embed tags in my API specs - does that stop me using Orbital?
+Nope. There's plenty of options if you can't edit API specs directly (or don't have them) - such as working with a clone of the spec,
+or implementing the spec from scratch in Taxi (it's really quick)
 
 ## Doc links
 
