@@ -130,7 +130,7 @@ database.
 
 ### Defining a table mapping
 
-Tables are exposed to Vyne using the annotation `@io.vyne.jdbc.Table` on a model.
+Tables are exposed to Vyne using the annotation `@com.orbitalhq.jdbc.Table` on a model.
 
 Fields names in the model are expected to align with column names from the database.
 
@@ -167,7 +167,7 @@ are not supported.
 
 ### Exposing a query service
 Vyne uses Taxi Services to expose query capabilities.  To configure Vyne to be able to query the database table, a
-service must be declared, and annotated with the `@io.vyne.jdbc.DatabaseService` annotation.
+service must be declared, and annotated with the `@com.orbitalhq.jdbc.DatabaseService` annotation.
 
 Here's an example:
 
