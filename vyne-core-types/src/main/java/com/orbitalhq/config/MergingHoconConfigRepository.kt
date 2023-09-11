@@ -57,7 +57,6 @@ abstract class MergingHoconConfigRepository<T : Any>(
                logger.info { "($loaderTypeName) - Loaders returned no config sources, so starting with an empty one." }
                emptyConfig()
             } else {
-               logger.info { "($loaderTypeName) - Loading config files returned ${loadedSources.size} sources" }
                val mergedConfig = loadedSources.map { sourcePackage: SourcePackage ->
                   val hoconSource = readRawHoconSource(sourcePackage)
                   try {
