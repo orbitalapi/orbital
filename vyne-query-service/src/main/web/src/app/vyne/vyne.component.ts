@@ -66,13 +66,13 @@ export class VyneComponent implements OnInit {
     //   requiredAuthority: VynePrivileges.ViewCaskDefinitions
     // },
     {
-      title: 'Connection manager',
+      title: 'Connections',
       icon: 'assets/img/connections.svg',
       route: 'connection-manager',
       requiredAuthority: VynePrivileges.ViewConnections
     },
     {
-      title: 'Authentication manager',
+      title: 'Authentication',
       icon: 'assets/img/security.svg',
       route: 'authentication-manager',
       testId: 'authentication-sidebar',
