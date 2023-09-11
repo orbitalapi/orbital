@@ -1947,7 +1947,7 @@ export const importedSchema = {
         {
           'name': 'actor/Actor.taxi',
           'version': '0.0.0',
-          'content': 'import io.vyne.jdbc.Table\nnamespace actor {\n   @io.vyne.jdbc.Table(table = "actor" , schema = "public" , connection = "asfdf")\n         model Actor {\n            @Id actor_id : ActorId\n            first_name : FirstName\n            last_name : LastName\n            last_update : LastUpdate\n         }\n}',
+          'content': 'import io.vyne.jdbc.Table\nnamespace actor {\n   @com.orbitalhq.jdbc.Table(table = "actor" , schema = "public" , connection = "asfdf")\n         model Actor {\n            @Id actor_id : ActorId\n            first_name : FirstName\n            last_name : LastName\n            last_update : LastUpdate\n         }\n}',
           'id': 'actor/Actor.taxi:0.0.0',
           'contentHash': '621410'
         }
@@ -2130,7 +2130,7 @@ export const importedSchema = {
         {
           'name': 'actor/ActorService.taxi',
           'version': '0.0.0',
-          'content': 'import vyne.vyneQl.VyneQlQuery\nnamespace actor {\n   @io.vyne.jdbc.DatabaseService(connection = "asfdf")\n         service ActorService {\n            vyneQl query actorQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<actor.Actor> with capabilities {\n               sum,\n               count,\n               avg,\n               min,\n               max,\n               filter(==,!=,in,like,>,<,>=,<=)\n            }\n         }\n}',
+          'content': 'import vyne.vyneQl.VyneQlQuery\nnamespace actor {\n   @com.orbitalhq.jdbc.DatabaseService(connection = "asfdf")\n         service ActorService {\n            vyneQl query actorQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<actor.Actor> with capabilities {\n               sum,\n               count,\n               avg,\n               min,\n               max,\n               filter(==,!=,in,like,>,<,>=,<=)\n            }\n         }\n}',
           'id': 'actor/ActorService.taxi:0.0.0',
           'contentHash': '9e93b0'
         }
@@ -2150,7 +2150,7 @@ export const importedSchema = {
     }
   ],
   'messages': [],
-  'taxi': 'namespace actor {\n   type ActorId inherits Int\n   \n   type FirstName inherits String\n   \n   type LastName inherits String\n   \n   type LastUpdate inherits Instant\n   \n   @io.vyne.jdbc.Table(table = "actor" , schema = "public" , connection = "asfdf")\n   model Actor {\n      @Id actor_id : ActorId\n      first_name : FirstName\n      last_name : LastName\n      last_update : LastUpdate\n   }\n   \n   @io.vyne.jdbc.DatabaseService(connection = "asfdf")\n   service ActorService {\n      vyneQl query actorQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<actor.Actor> with capabilities {\n         sum,\n         count,\n         avg,\n         min,\n         max,\n         filter(==,!=,in,like,>,<,>=,<=)\n      }\n   }\n}'
+  'taxi': 'namespace actor {\n   type ActorId inherits Int\n   \n   type FirstName inherits String\n   \n   type LastName inherits String\n   \n   type LastUpdate inherits Instant\n   \n   @com.orbitalhq.jdbc.Table(table = "actor" , schema = "public" , connection = "asfdf")\n   model Actor {\n      @Id actor_id : ActorId\n      first_name : FirstName\n      last_name : LastName\n      last_update : LastUpdate\n   }\n   \n   @com.orbitalhq.jdbc.DatabaseService(connection = "asfdf")\n   service ActorService {\n      vyneQl query actorQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<actor.Actor> with capabilities {\n         sum,\n         count,\n         avg,\n         min,\n         max,\n         filter(==,!=,in,like,>,<,>=,<=)\n      }\n   }\n}'
 } as SchemaSubmissionResult
 
 export const testImportForUI = {
@@ -2927,7 +2927,7 @@ export const testImportForUI = {
     'sources': [{
       'name': 'customer/Customer.taxi',
       'version': '0.0.0',
-      'content': 'import store.StoreId\nimport address.AddressId\nimport io.vyne.jdbc.Table\nnamespace customer {\n   @io.vyne.jdbc.Table(table = "customer" , schema = "public" , connection = "asfdf")\n         model Customer {\n            @Id customer_id : CustomerId\n            store_id : store.StoreId\n            first_name : FirstName\n            last_name : LastName\n            email : Email?\n            address_id : address.AddressId\n            activebool : Activebool\n            create_date : CreateDate\n            last_update : LastUpdate?\n            active : Active?\n         }\n}',
+      'content': 'import store.StoreId\nimport address.AddressId\nimport io.vyne.jdbc.Table\nnamespace customer {\n   @com.orbitalhq.jdbc.Table(table = "customer" , schema = "public" , connection = "asfdf")\n         model Customer {\n            @Id customer_id : CustomerId\n            store_id : store.StoreId\n            first_name : FirstName\n            last_name : LastName\n            email : Email?\n            address_id : address.AddressId\n            activebool : Activebool\n            create_date : CreateDate\n            last_update : LastUpdate?\n            active : Active?\n         }\n}',
       'id': 'customer/Customer.taxi:0.0.0',
       'contentHash': 'df3c48'
     }],
@@ -3194,7 +3194,7 @@ export const testImportForUI = {
     'sourceCode': [{
       'name': 'customer/CustomerService.taxi',
       'version': '0.0.0',
-      'content': 'import vyne.vyneQl.VyneQlQuery\nnamespace customer {\n   @io.vyne.jdbc.DatabaseService(connection = "asfdf")\n         service CustomerService {\n            vyneQl query customerQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<customer.Customer> with capabilities {\n               sum,\n               count,\n               avg,\n               min,\n               max,\n               filter(==,!=,in,like,>,<,>=,<=)\n            }\n         }\n}',
+      'content': 'import vyne.vyneQl.VyneQlQuery\nnamespace customer {\n   @com.orbitalhq.jdbc.DatabaseService(connection = "asfdf")\n         service CustomerService {\n            vyneQl query customerQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<customer.Customer> with capabilities {\n               sum,\n               count,\n               avg,\n               min,\n               max,\n               filter(==,!=,in,like,>,<,>=,<=)\n            }\n         }\n}',
       'id': 'customer/CustomerService.taxi:0.0.0',
       'contentHash': '24de2b'
     }],
@@ -3212,6 +3212,6 @@ export const testImportForUI = {
     }
   }],
   'messages': [],
-  'taxi': 'namespace customer {\n   type CustomerId inherits Int\n   \n   type FirstName inherits String\n   \n   type LastName inherits String\n   \n   type Email inherits String\n   \n   type Activebool inherits Boolean\n   \n   type CreateDate inherits Date\n   \n   type LastUpdate inherits Instant\n   \n   type Active inherits Int\n   \n   @io.vyne.jdbc.Table(table = "customer" , schema = "public" , connection = "asfdf")\n   model Customer {\n      @Id customer_id : CustomerId\n      store_id : store.StoreId\n      first_name : FirstName\n      last_name : LastName\n      email : Email?\n      address_id : address.AddressId\n      activebool : Activebool\n      create_date : CreateDate\n      last_update : LastUpdate?\n      active : Active?\n   }\n   \n   @io.vyne.jdbc.DatabaseService(connection = "asfdf")\n   service CustomerService {\n      vyneQl query customerQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<customer.Customer> with capabilities {\n         sum,\n         count,\n         avg,\n         min,\n         max,\n         filter(==,!=,in,like,>,<,>=,<=)\n      }\n   }\n}\nnamespace store {\n   type StoreId inherits Int\n   \n   \n}\nnamespace address {\n   type AddressId inherits Int\n   \n   \n}',
+  'taxi': 'namespace customer {\n   type CustomerId inherits Int\n   \n   type FirstName inherits String\n   \n   type LastName inherits String\n   \n   type Email inherits String\n   \n   type Activebool inherits Boolean\n   \n   type CreateDate inherits Date\n   \n   type LastUpdate inherits Instant\n   \n   type Active inherits Int\n   \n   @com.orbitalhq.jdbc.Table(table = "customer" , schema = "public" , connection = "asfdf")\n   model Customer {\n      @Id customer_id : CustomerId\n      store_id : store.StoreId\n      first_name : FirstName\n      last_name : LastName\n      email : Email?\n      address_id : address.AddressId\n      activebool : Activebool\n      create_date : CreateDate\n      last_update : LastUpdate?\n      active : Active?\n   }\n   \n   @com.orbitalhq.jdbc.DatabaseService(connection = "asfdf")\n   service CustomerService {\n      vyneQl query customerQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<customer.Customer> with capabilities {\n         sum,\n         count,\n         avg,\n         min,\n         max,\n         filter(==,!=,in,like,>,<,>=,<=)\n      }\n   }\n}\nnamespace store {\n   type StoreId inherits Int\n   \n   \n}\nnamespace address {\n   type AddressId inherits Int\n   \n   \n}',
   'dryRun': true
 };
