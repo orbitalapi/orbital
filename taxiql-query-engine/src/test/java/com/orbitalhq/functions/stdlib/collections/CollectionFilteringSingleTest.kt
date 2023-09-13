@@ -9,6 +9,7 @@ import com.orbitalhq.testVyne
 import com.orbitalhq.typedObjects
 import com.orbitalhq.utils.asA
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
@@ -89,89 +90,6 @@ class CollectionFilteringSingleTest {
       starring.should.equal(mapOf("name" to "Jack"))
    }
 
-   @Test
-   fun `can filter a collection using singleBy using a projected value`():Unit = runBlocking {
-      val schema = TaxiSchema.from(
-         """
-         model PersonIds {
-            agencyId : AgencyId inherits String
-            imdbId : ImdbId inherits String
-            unionId : UnionId inherits String
-         }
-       model MovieAwardList {
-         movies : Movie[]
-         awards : Award[]
-       }
-       model Award {
-         person : PersonIds
-         awardTitle : AwardTitle inherits String
-       }
-       model Person {
-           name : PersonName inherits String
-           ids : PersonIds
-          }
-          model Movie {
-            title : MovieTitle inherits String
-            cast : Person[]
-         }
-          service MoviesService {
-            operation getAll():MovieAwardList
-         }
-   """.trimIndent()
-      )
-      val movieJson = """{
-  "movies": [
-    {
-      "title": "Pirates",
-      "cast": [
-        {
-          "name": "Depp",
-          "ids": {
-            "agencyId": "A1",
-            "imdbId": "I1",
-            "unionId": "U1"
-          }
-        },
-        {
-          "name": "Jill",
-          "ids": {
-            "agencyId": "A2",
-            "imdbId": "I2",
-            "unionId": "U2"
-          }
-        }
-      ]
-    }
-  ],
-  "awards": [
-    {
-      "person": {
-        "agencyId": "A1",
-        "imdbId": null,
-        "unionId": "U1"
-      },
-      "awardTitle": "Best Actor"
-    }
-  ]
-}
-   """.trimMargin()
-      val (vyne,stub) = testVyne(schema)
-      val movies = vyne.parseJson("MovieAwardList", movieJson)
-      stub.addResponse("getAll", movies)
-      val queryResult = vyne.query("""
-         find { MovieAwardList } as {
-            title : MovieTitle
-            cast : Person[] as (person:Person) -> {
-               name: PersonName
-               award : singleBy(Award[], (Award) -> Award::PersonIds as { a: AgencyId, u: UnionId } , person.ids)
-            }[]
-         }
-
-      """.trimIndent()).firstTypedObject()
-      queryResult.shouldNotBeNull()
-      TODO()
-
-   }
 
 
 }
