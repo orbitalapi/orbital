@@ -52,7 +52,6 @@ class RestTemplateInvoker(
 ) : OperationInvoker {
    private val logger = KotlinLogging.logger {}
 
-   @Autowired
    constructor(
       schemaProvider: SchemaProvider,
       webClientBuilder: WebClient.Builder,

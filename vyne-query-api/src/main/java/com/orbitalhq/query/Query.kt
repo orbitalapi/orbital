@@ -93,8 +93,11 @@ data class TypeNameQueryExpression(val typeName: String) : QueryExpression {
 
 data class MutationOnlyExpression(override val mutation: Mutation) : MutatingQueryExpression
 data class QueryAndMutateExpression(val query: QueryExpression, override val mutation: Mutation): MutatingQueryExpression
+
+// TODO : Can we replace / deprecate in favour of taxi's ProjectingExpression?
 data class ProjectedExpression(val source: QueryExpression, val projection: Projection): QueryExpression
 
+// TODO : Can we replace / collapse with FieldProjection?
 data class Projection(val type: Type, val scope: ProjectionFunctionScope?)
 
 data class TypeNameListQueryExpression(val typeNames: List<String>) : QueryExpression {
