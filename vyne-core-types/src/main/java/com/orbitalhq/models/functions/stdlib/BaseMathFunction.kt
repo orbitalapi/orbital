@@ -1,13 +1,14 @@
 package com.orbitalhq.models.functions.stdlib
 
 import com.orbitalhq.models.AccessorReader
-import com.orbitalhq.models.DeferredTypedInstance
+import com.orbitalhq.models.DeferredExpression
 import com.orbitalhq.models.EvaluatedExpression
 import com.orbitalhq.models.EvaluationValueSupplier
 import com.orbitalhq.models.FactBagValueSupplier
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedValue
+import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.functions.NullSafeInvoker
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
@@ -20,16 +21,17 @@ import java.math.BigDecimal
 
 abstract class MathIteratingFunction : NullSafeInvoker() {
    override fun doInvoke(
-      inputValues: List<TypedInstance>,
-      schema: Schema,
-      returnType: Type,
-      function: FunctionAccessor,
-      rawMessageBeingParsed: Any?,
-      thisScopeValueSupplier: EvaluationValueSupplier,
-      returnTypeFormat: FormatsAndZoneOffset?
+       inputValues: List<TypedInstance>,
+       schema: Schema,
+       returnType: Type,
+       function: FunctionAccessor,
+       rawMessageBeingParsed: Any?,
+       thisScopeValueSupplier: EvaluationValueSupplier,
+       returnTypeFormat: FormatsAndZoneOffset?,
+       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val sourceCollection = inputValues[0] as TypedCollection
-      val deferredInstance = inputValues[1] as DeferredTypedInstance
+      val deferredInstance = inputValues[1] as DeferredExpression
       val expression = deferredInstance.expression
       val expressionReturnType = schema.type(expression.returnType)
       val inputValues = mutableListOf<TypedInstance>()

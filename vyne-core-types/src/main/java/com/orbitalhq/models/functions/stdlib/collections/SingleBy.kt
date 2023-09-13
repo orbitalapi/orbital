@@ -32,7 +32,7 @@ object SingleBy : NamedFunctionInvoker {
       val collection = inputValues[0] as TypedCollection
       val deferredInstance = inputValues[1] as DeferredTypedInstance
       val searchValue = inputValues[2] as TypedInstance
-      val expressionReturnType = schema.type(deferredInstance.expression.returnType)
+      val expressionReturnType = deferredInstance.type
 
       val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
 
@@ -46,14 +46,17 @@ object SingleBy : NamedFunctionInvoker {
          val stopwatch = Stopwatch.createStarted()
          val grouped = collection.groupBy { collectionMember ->
             val factBag = FactBagValueSupplier.of(listOf(collectionMember), schema, thisScopeValueSupplier = objectFactory)
-            val reader = AccessorReader(factBag, schema.functionRegistry, schema, functionResultCache = resultCache)
-            val evaluated = reader.evaluate(
-               collectionMember,
-               expressionReturnType,
-               deferredInstance.expression,
-               dataSource = dataSource,
-               format = null
-            )
+//            val reader = AccessorReader(factBag, schema.functionRegistry, schema, functionResultCache = resultCache)
+
+            val evaluated = deferredInstance.evaluate(collectionMember, dataSource, factBag, functionResultCache = resultCache)
+
+//            val evaluated = reader.evaluate(
+//               collectionMember,
+//               expressionReturnType,
+//               deferredInstance.expression,
+//               dataSource = dataSource,
+//               format = null
+//            )
             evaluated
          }
          logger.debug { "singleBy grouping function took ${stopwatch.elapsed().toMillis()}ms" }

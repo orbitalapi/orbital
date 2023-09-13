@@ -63,7 +63,7 @@ open class CollectionFilteringFunction {
          else -> error("Expected either a TypedNull or a TypedCollection in param 0.  Got a ${collection::class.simpleName}")
       }
 
-      val deferredInstance = inputValues[1] as DeferredTypedInstance
+      val deferredInstance = inputValues[1] as DeferredExpression
       val expressionReturnType = schema.type(deferredInstance.expression.returnType)
 
       if (expressionReturnType.basePrimitiveTypeName?.parameterizedName != PrimitiveType.BOOLEAN.qualifiedName) {
@@ -74,14 +74,15 @@ open class CollectionFilteringFunction {
 
       val filtered = collection.filter { collectionMember ->
          val factBag = FactBagValueSupplier.of(listOf(collectionMember), schema, thisScopeValueSupplier = objectFactory)
-         val reader = AccessorReader(factBag, schema.functionRegistry, schema)
-         val evaluated = reader.evaluate(
-            collectionMember,
-            expressionReturnType,
-            deferredInstance.expression,
-            dataSource = dataSource,
-            format = null
-         )
+         val evaluated = deferredInstance.evaluate(collectionMember, dataSource, factBag)
+//         val reader = AccessorReader(factBag, schema.functionRegistry, schema)
+//         val evaluated = reader.evaluate(
+//            collectionMember,
+//            expressionReturnType,
+//            deferredInstance.expression,
+//            dataSource = dataSource,
+//            format = null
+//         )
 
          if (evaluated.type.basePrimitiveTypeName?.parameterizedName != PrimitiveType.BOOLEAN.qualifiedName) {
             return failed(

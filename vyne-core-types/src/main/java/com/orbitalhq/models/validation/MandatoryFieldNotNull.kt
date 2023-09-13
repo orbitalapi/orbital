@@ -1,12 +1,6 @@
 package com.orbitalhq.models.validation
 
-import com.orbitalhq.models.DeferredTypedInstance
-import com.orbitalhq.models.TypedCollection
-import com.orbitalhq.models.TypedEnumValue
-import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.models.TypedNull
-import com.orbitalhq.models.TypedObject
-import com.orbitalhq.models.TypedValue
+import com.orbitalhq.models.*
 import com.orbitalhq.schemas.AttributeName
 import com.orbitalhq.schemas.Field
 import lang.taxi.accessors.PathBasedAccessor
