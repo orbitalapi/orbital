@@ -98,7 +98,7 @@ We have a `JdbcInvoker` which is the equivalent to a `RemoteOperationInvoker`, b
 of which implement `OperationInvoker`.
 
 To Vyne, it's just an implementation of OperationInvoker, where `canSupport(Service,Operation) == true`
-if the service is annotated with `@io.vyne.jdbc.DatabaseService`
+if the service is annotated with `@com.orbitalhq.jdbc.DatabaseService`
 
 Most of the heavy lifting is converting the TaxiQL query to a SQL query.
 

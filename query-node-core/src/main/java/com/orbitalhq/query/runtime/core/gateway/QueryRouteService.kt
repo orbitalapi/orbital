@@ -73,26 +73,34 @@ class QueryRouteService(
          return ServerResponse.notFound().build()
       }
       logger.info { "Received query invocation on ${request.path()} - matches with query ${query.query.name}" }
-      return Mono.just(query)
-         .subscribeOn(Schedulers.boundedElastic())
-         // TODO : Handle streaming queries.
-         // For now, everything is a Mono<>
-         .flatMap {
-            executor.handleRoutedQuery(query)
-               .single()
-               .flatMap { response: Any ->
-                  logger.info { "Received response : $response" }
-                  ServerResponse.ok().body<Any>(Mono.just(response))
-               }
-         }
-         .onErrorResume { e ->
-            logger.warn { "Query failed with error ${e.message}" }
-            ServerResponse.status(HttpStatus.BAD_REQUEST)
-               .bodyValue(
-                  FailedSearchResponse(e.message ?: "Query failed with exception ${e::class.simpleName}", queryId = "")
-               )
+      val queryResultFlux = executor.handleRoutedQuery(query)
+      return ServerResponse.ok().body(queryResultFlux)
 
-         }
+      // I have tried and tried and tried.
+      // Somewhere in here is the "correct" way to get Spring to return a 4xx instead of a
+      // 5xx when the query execution fails.
+      // However, nothing seems to work.
+      // The error is thrown from the queryResultFlux defined above.
+      // queryResultFlux.onErrorResume { ... } will catch the error.
+      // However, it's not caught if I try in ServerlessResponse.ok().body(...).onErrorResume { ... },
+      // which is where we need to catch it in order to send back a ServerResponse with an
+      // error code.
+      // You can have a go. I give up.
+//
+//      return Mono.defer {
+//         try {
+//            val queryResultFlux = executor.handleRoutedQuery(query)
+//            ServerResponse.ok().body(queryResultFlux)
+//         } catch(e:Exception) {
+//            TODO()
+//         }
+//      }.onErrorResume { e ->
+//         logger.warn { "Query failed with error ${e.message}" }
+//         ServerResponse.status(HttpStatus.BAD_REQUEST)
+//            .bodyValue(
+//               FailedSearchResponse(e.message ?: "Query failed with exception ${e::class.simpleName}", queryId = "")
+//            )
+//      }
    }
 
    override fun handle(request: ServerRequest): Mono<ServerResponse> {

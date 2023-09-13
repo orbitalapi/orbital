@@ -1,5 +1,6 @@
 package io.orbital.station
 
+import com.orbitalhq.cockpit.core.DatabaseConfig
 import com.orbitalhq.cockpit.core.FeatureTogglesConfig
 import com.orbitalhq.cockpit.core.lsp.LanguageServerConfig
 import com.orbitalhq.cockpit.core.pipelines.PipelineConfig
@@ -41,7 +42,8 @@ import java.util.concurrent.TimeUnit
    VyneSpringHazelcastConfiguration::class,
    VyneUserConfig::class,
    FeatureTogglesConfig::class,
-   WorkspaceConfig::class
+   WorkspaceConfig::class,
+   DatabaseConfig::class
 )
 @Import(
    HttpAuthConfig::class,

@@ -948,7 +948,7 @@ const codeGenRequest = {
           {
             "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/Film.annotations.taxi",
             "version": "0.0.0",
-            "content": "namespace film {\n   @io.vyne.jdbc.Table(table = \"film\", schema = \"public\", connection = \"films\")\n   @Ann\n   type extension Film {}\n}",
+            "content": "namespace film {\n   @com.orbitalhq.jdbc.Table(table = \"film\", schema = \"public\", connection = \"films\")\n   @Ann\n   type extension Film {}\n}",
             "packageIdentifier": {
               "organisation": "demo.vyne",
               "name": "films-demo",
@@ -964,7 +964,7 @@ const codeGenRequest = {
           {
             "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/Film.dataOwner.taxi",
             "version": "0.0.0",
-            "content": "namespace film {\n   @io.vyne.catalog.DataOwner( id = \"michael.stone\" , name = \"Michael Stone\" )\n   type extension Film {}\n}",
+            "content": "namespace film {\n   @com.orbitalhq.catalog.DataOwner( id = \"michael.stone\" , name = \"Michael Stone\" )\n   type extension Film {}\n}",
             "packageIdentifier": {
               "organisation": "demo.vyne",
               "name": "films-demo",
@@ -980,7 +980,7 @@ const codeGenRequest = {
           {
             "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/Film.taxi",
             "version": "0.0.0",
-            "content": "import films.FilmId\nimport film.types.Title\nimport film.types.Description\nimport film.types.ReleaseYear\nimport language.types.LanguageId\nimport language.types.LanguageId\nimport film.types.RentalDuration\nimport film.types.RentalRate\nimport film.types.Length\nimport film.types.ReplacementCost\nimport film.types.Rating\nimport film.types.LastUpdate\nimport film.types.Fulltext\nimport io.vyne.jdbc.Table\nimport film.types.SpecialFeatures\nnamespace film {\n   @io.vyne.jdbc.Table(table = \"film\" , schema = \"public\" , connection = \"films\")\n         model Film {\n            @Id film_id : films.FilmId\n            title : film.types.Title\n            description : film.types.Description?\n            release_year : film.types.ReleaseYear?\n            language_id : language.types.LanguageId\n            original_language_id : language.types.LanguageId?\n            rental_duration : film.types.RentalDuration\n            rental_rate : film.types.RentalRate\n            length : film.types.Length?\n            replacement_cost : film.types.ReplacementCost\n            rating : film.types.Rating?\n            last_update : film.types.LastUpdate\n            special_features : film.types.SpecialFeatures[]?\n            fulltext : film.types.Fulltext\n         }\n}",
+            "content": "import films.FilmId\nimport film.types.Title\nimport film.types.Description\nimport film.types.ReleaseYear\nimport language.types.LanguageId\nimport language.types.LanguageId\nimport film.types.RentalDuration\nimport film.types.RentalRate\nimport film.types.Length\nimport film.types.ReplacementCost\nimport film.types.Rating\nimport film.types.LastUpdate\nimport film.types.Fulltext\nimport io.vyne.jdbc.Table\nimport film.types.SpecialFeatures\nnamespace film {\n   @com.orbitalhq.jdbc.Table(table = \"film\" , schema = \"public\" , connection = \"films\")\n         model Film {\n            @Id film_id : films.FilmId\n            title : film.types.Title\n            description : film.types.Description?\n            release_year : film.types.ReleaseYear?\n            language_id : language.types.LanguageId\n            original_language_id : language.types.LanguageId?\n            rental_duration : film.types.RentalDuration\n            rental_rate : film.types.RentalRate\n            length : film.types.Length?\n            replacement_cost : film.types.ReplacementCost\n            rating : film.types.Rating?\n            last_update : film.types.LastUpdate\n            special_features : film.types.SpecialFeatures[]?\n            fulltext : film.types.Fulltext\n         }\n}",
             "packageIdentifier": {
               "organisation": "demo.vyne",
               "name": "films-demo",
@@ -6970,7 +6970,7 @@ const codeGenRequest = {
           {
             "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/io/vyne/films/announcements/KafkaService.taxi",
             "version": "0.0.0",
-            "content": "import io.vyne.kafka.KafkaOperation\nimport lang.taxi.Stream\nimport NewFilmReleaseAnnouncement\nnamespace io.vyne.films.announcements {\n   @io.vyne.kafka.KafkaService(connectionName = \"kafka\")\n         service KafkaService {\n            @io.vyne.kafka.KafkaOperation(topic = \"releases\" , offset = \"latest\")\n            stream newReleases : Stream<NewFilmReleaseAnnouncement>\n         }\n}",
+            "content": "import io.vyne.kafka.KafkaOperation\nimport lang.taxi.Stream\nimport NewFilmReleaseAnnouncement\nnamespace io.vyne.films.announcements {\n   @com.orbitalhq.kafka.KafkaService(connectionName = \"kafka\")\n         service KafkaService {\n            @com.orbitalhq.kafka.KafkaOperation(topic = \"releases\" , offset = \"latest\")\n            stream newReleases : Stream<NewFilmReleaseAnnouncement>\n         }\n}",
             "packageIdentifier": {
               "organisation": "demo.vyne",
               "name": "films-demo",
@@ -7119,7 +7119,7 @@ const codeGenRequest = {
           {
             "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/FilmService.taxi",
             "version": "0.0.0",
-            "content": "namespace film {\n   @io.vyne.jdbc.DatabaseService(connection = \"films\")\n         service FilmDatabase {\n            table films : Film[]\n         }\n}",
+            "content": "namespace film {\n   @com.orbitalhq.jdbc.DatabaseService(connection = \"films\")\n         service FilmDatabase {\n            table films : Film[]\n         }\n}",
             "packageIdentifier": {
               "organisation": "demo.vyne",
               "name": "films-demo",
@@ -9866,7 +9866,7 @@ const codeGenRequest = {
             {
               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/Film.annotations.taxi",
               "version": "0.0.0",
-              "content": "namespace film {\n   @io.vyne.jdbc.Table(table = \"film\", schema = \"public\", connection = \"films\")\n   @Ann\n   type extension Film {}\n}",
+              "content": "namespace film {\n   @com.orbitalhq.jdbc.Table(table = \"film\", schema = \"public\", connection = \"films\")\n   @Ann\n   type extension Film {}\n}",
               "packageIdentifier": {
                 "organisation": "demo.vyne",
                 "name": "films-demo",
@@ -9882,7 +9882,7 @@ const codeGenRequest = {
             {
               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/Film.dataOwner.taxi",
               "version": "0.0.0",
-              "content": "namespace film {\n   @io.vyne.catalog.DataOwner( id = \"michael.stone\" , name = \"Michael Stone\" )\n   type extension Film {}\n}",
+              "content": "namespace film {\n   @com.orbitalhq.catalog.DataOwner( id = \"michael.stone\" , name = \"Michael Stone\" )\n   type extension Film {}\n}",
               "packageIdentifier": {
                 "organisation": "demo.vyne",
                 "name": "films-demo",
@@ -9898,7 +9898,7 @@ const codeGenRequest = {
             {
               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/Film.taxi",
               "version": "0.0.0",
-              "content": "import films.FilmId\nimport film.types.Title\nimport film.types.Description\nimport film.types.ReleaseYear\nimport language.types.LanguageId\nimport language.types.LanguageId\nimport film.types.RentalDuration\nimport film.types.RentalRate\nimport film.types.Length\nimport film.types.ReplacementCost\nimport film.types.Rating\nimport film.types.LastUpdate\nimport film.types.Fulltext\nimport io.vyne.jdbc.Table\nimport film.types.SpecialFeatures\nnamespace film {\n   @io.vyne.jdbc.Table(table = \"film\" , schema = \"public\" , connection = \"films\")\n         model Film {\n            @Id film_id : films.FilmId\n            title : film.types.Title\n            description : film.types.Description?\n            release_year : film.types.ReleaseYear?\n            language_id : language.types.LanguageId\n            original_language_id : language.types.LanguageId?\n            rental_duration : film.types.RentalDuration\n            rental_rate : film.types.RentalRate\n            length : film.types.Length?\n            replacement_cost : film.types.ReplacementCost\n            rating : film.types.Rating?\n            last_update : film.types.LastUpdate\n            special_features : film.types.SpecialFeatures[]?\n            fulltext : film.types.Fulltext\n         }\n}",
+              "content": "import films.FilmId\nimport film.types.Title\nimport film.types.Description\nimport film.types.ReleaseYear\nimport language.types.LanguageId\nimport language.types.LanguageId\nimport film.types.RentalDuration\nimport film.types.RentalRate\nimport film.types.Length\nimport film.types.ReplacementCost\nimport film.types.Rating\nimport film.types.LastUpdate\nimport film.types.Fulltext\nimport io.vyne.jdbc.Table\nimport film.types.SpecialFeatures\nnamespace film {\n   @com.orbitalhq.jdbc.Table(table = \"film\" , schema = \"public\" , connection = \"films\")\n         model Film {\n            @Id film_id : films.FilmId\n            title : film.types.Title\n            description : film.types.Description?\n            release_year : film.types.ReleaseYear?\n            language_id : language.types.LanguageId\n            original_language_id : language.types.LanguageId?\n            rental_duration : film.types.RentalDuration\n            rental_rate : film.types.RentalRate\n            length : film.types.Length?\n            replacement_cost : film.types.ReplacementCost\n            rating : film.types.Rating?\n            last_update : film.types.LastUpdate\n            special_features : film.types.SpecialFeatures[]?\n            fulltext : film.types.Fulltext\n         }\n}",
               "packageIdentifier": {
                 "organisation": "demo.vyne",
                 "name": "films-demo",
@@ -9953,7 +9953,7 @@ const codeGenRequest = {
           {
             "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/Film.annotations.taxi",
             "version": "0.0.0",
-            "content": "namespace film {\n   @io.vyne.jdbc.Table(table = \"film\", schema = \"public\", connection = \"films\")\n   @Ann\n   type extension Film {}\n}",
+            "content": "namespace film {\n   @com.orbitalhq.jdbc.Table(table = \"film\", schema = \"public\", connection = \"films\")\n   @Ann\n   type extension Film {}\n}",
             "packageIdentifier": {
               "organisation": "demo.vyne",
               "name": "films-demo",
@@ -9969,7 +9969,7 @@ const codeGenRequest = {
           {
             "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/Film.dataOwner.taxi",
             "version": "0.0.0",
-            "content": "namespace film {\n   @io.vyne.catalog.DataOwner( id = \"michael.stone\" , name = \"Michael Stone\" )\n   type extension Film {}\n}",
+            "content": "namespace film {\n   @com.orbitalhq.catalog.DataOwner( id = \"michael.stone\" , name = \"Michael Stone\" )\n   type extension Film {}\n}",
             "packageIdentifier": {
               "organisation": "demo.vyne",
               "name": "films-demo",
@@ -9985,7 +9985,7 @@ const codeGenRequest = {
           {
             "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/Film.taxi",
             "version": "0.0.0",
-            "content": "import films.FilmId\nimport film.types.Title\nimport film.types.Description\nimport film.types.ReleaseYear\nimport language.types.LanguageId\nimport language.types.LanguageId\nimport film.types.RentalDuration\nimport film.types.RentalRate\nimport film.types.Length\nimport film.types.ReplacementCost\nimport film.types.Rating\nimport film.types.LastUpdate\nimport film.types.Fulltext\nimport io.vyne.jdbc.Table\nimport film.types.SpecialFeatures\nnamespace film {\n   @io.vyne.jdbc.Table(table = \"film\" , schema = \"public\" , connection = \"films\")\n         model Film {\n            @Id film_id : films.FilmId\n            title : film.types.Title\n            description : film.types.Description?\n            release_year : film.types.ReleaseYear?\n            language_id : language.types.LanguageId\n            original_language_id : language.types.LanguageId?\n            rental_duration : film.types.RentalDuration\n            rental_rate : film.types.RentalRate\n            length : film.types.Length?\n            replacement_cost : film.types.ReplacementCost\n            rating : film.types.Rating?\n            last_update : film.types.LastUpdate\n            special_features : film.types.SpecialFeatures[]?\n            fulltext : film.types.Fulltext\n         }\n}",
+            "content": "import films.FilmId\nimport film.types.Title\nimport film.types.Description\nimport film.types.ReleaseYear\nimport language.types.LanguageId\nimport language.types.LanguageId\nimport film.types.RentalDuration\nimport film.types.RentalRate\nimport film.types.Length\nimport film.types.ReplacementCost\nimport film.types.Rating\nimport film.types.LastUpdate\nimport film.types.Fulltext\nimport io.vyne.jdbc.Table\nimport film.types.SpecialFeatures\nnamespace film {\n   @com.orbitalhq.jdbc.Table(table = \"film\" , schema = \"public\" , connection = \"films\")\n         model Film {\n            @Id film_id : films.FilmId\n            title : film.types.Title\n            description : film.types.Description?\n            release_year : film.types.ReleaseYear?\n            language_id : language.types.LanguageId\n            original_language_id : language.types.LanguageId?\n            rental_duration : film.types.RentalDuration\n            rental_rate : film.types.RentalRate\n            length : film.types.Length?\n            replacement_cost : film.types.ReplacementCost\n            rating : film.types.Rating?\n            last_update : film.types.LastUpdate\n            special_features : film.types.SpecialFeatures[]?\n            fulltext : film.types.Fulltext\n         }\n}",
             "packageIdentifier": {
               "organisation": "demo.vyne",
               "name": "films-demo",
@@ -10149,7 +10149,7 @@ const codeGenRequest = {
             {
               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/film/FilmService.taxi",
               "version": "0.0.0",
-              "content": "namespace film {\n   @io.vyne.jdbc.DatabaseService(connection = \"films\")\n         service FilmDatabase {\n            table films : Film[]\n         }\n}",
+              "content": "namespace film {\n   @com.orbitalhq.jdbc.DatabaseService(connection = \"films\")\n         service FilmDatabase {\n            table films : Film[]\n         }\n}",
               "packageIdentifier": {
                 "organisation": "demo.vyne",
                 "name": "films-demo",
@@ -15657,7 +15657,7 @@ const codeGenRequest = {
             {
               "name": "file:///home/martypitt/dev/vyne-demos/films/taxi/src/io/vyne/films/announcements/KafkaService.taxi",
               "version": "0.0.0",
-              "content": "import io.vyne.kafka.KafkaOperation\nimport lang.taxi.Stream\nimport NewFilmReleaseAnnouncement\nnamespace io.vyne.films.announcements {\n   @io.vyne.kafka.KafkaService(connectionName = \"kafka\")\n         service KafkaService {\n            @io.vyne.kafka.KafkaOperation(topic = \"releases\" , offset = \"latest\")\n            stream newReleases : Stream<NewFilmReleaseAnnouncement>\n         }\n}",
+              "content": "import io.vyne.kafka.KafkaOperation\nimport lang.taxi.Stream\nimport NewFilmReleaseAnnouncement\nnamespace io.vyne.films.announcements {\n   @com.orbitalhq.kafka.KafkaService(connectionName = \"kafka\")\n         service KafkaService {\n            @com.orbitalhq.kafka.KafkaOperation(topic = \"releases\" , offset = \"latest\")\n            stream newReleases : Stream<NewFilmReleaseAnnouncement>\n         }\n}",
               "packageIdentifier": {
                 "organisation": "demo.vyne",
                 "name": "films-demo",

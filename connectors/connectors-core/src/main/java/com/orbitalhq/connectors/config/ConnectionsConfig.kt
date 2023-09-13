@@ -3,6 +3,7 @@ package com.orbitalhq.connectors.config
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
+import com.orbitalhq.connectors.registry.ConnectorConfiguration
 import kotlinx.serialization.Serializable
 
 /**
@@ -22,6 +23,10 @@ data class ConnectionsConfig(
    val kafka: Map<String, KafkaConnectionConfiguration> = emptyMap(),
    val aws: Map<String, AwsConnectionConfiguration> = emptyMap()
 ) {
+   fun listAll(): List<ConnectorConfiguration> {
+      return jdbc.values + kafka.values + aws.values
+   }
+
    val jdbcConnectionsHash = jdbc.hashCode()
    val kafkaConnectionsHash = kafka.hashCode()
 

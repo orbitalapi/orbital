@@ -64,6 +64,9 @@ class SchemaConfigSourceLoader(
             .filter { pathMatcher.matches(Paths.get(it.name)) }
          sourcePackage.copy(sources = requestedSources)
       }
+      val matchedFileNames = hoconSources.flatMap { it.sources }
+         .map { it.name }
+      logger.info { "Loading content from schema with ${schema.packages.size} packages for pattern $pathGlob found ${matchedFileNames.size} matches - ${matchedFileNames.joinToString(", ")}" }
       contentCache[CacheKey] = hoconSources
       sink.emitNext(SchemaConfigSourceLoader::class.java, Sinks.EmitFailureHandler.FAIL_FAST)
    }

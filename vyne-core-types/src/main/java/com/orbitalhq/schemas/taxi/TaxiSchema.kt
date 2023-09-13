@@ -270,10 +270,6 @@ class TaxiSchema(
       ): Pair<List<CompilationError>, TaxiSchema> {
          val stopwatch = Stopwatch.createStarted()
 
-         if (sourceConverters.size == 1) {
-            logger.warn { "Taxi Schema compilation started, but looks like we're missing some loaders" }
-         }
-
          // TODO : We need to improve the processing order here, to consider
          // import / dependencies between projects.
          val packagesByLanguage = packages

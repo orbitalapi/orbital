@@ -6506,7 +6506,7 @@ export const LINEAGE_DEMO_SCHEMA = {
     'sources': [{
       'name': 'file:///home/martypitt/dev/vyne-demos/orders-enrichment-and-lineage/taxonomy/./src/demo/orderFeeds/AssetClass.annotations.taxi',
       'version': '0.0.0',
-      'content': 'namespace demo.orderFeeds {\n   @io.vyne.catalog.DataOwner(id = "userId1", name = "Serhat Tuncay")\n   @CDE\n   @ApprovedDataSource\n   enum extension AssetClass {}\n}',
+      'content': 'namespace demo.orderFeeds {\n   @com.orbitalhq.catalog.DataOwner(id = "userId1", name = "Serhat Tuncay")\n   @CDE\n   @ApprovedDataSource\n   enum extension AssetClass {}\n}',
       'packageIdentifier': {
         'organisation': 'demo.orderFeeds',
         'name': 'OrdersEnrichmentAndLineage',
@@ -6566,7 +6566,7 @@ export const LINEAGE_DEMO_SCHEMA = {
     }, {
       'name': 'file:///home/martypitt/dev/vyne-demos/orders-enrichment-and-lineage/taxonomy/./src/order.taxi',
       'version': '0.0.0',
-      'content': 'namespace demo.orderFeeds {\n   [[\n   An asset class is a grouping of investments that exhibit similar characteristics and are subject to the same laws and regulations. Asset classes are thus made up of instruments that often behave similarly to one another in the marketplace.\n   ]]\n   @io.vyne.catalog.DataOwner( id = "userId1" , name = "Serhat Tuncay" )\n   @CDE\n   enum AssetClass {\n       [[ Forex is the abbreviation for foreign exchange – the market in which one currency is converted into another. The forex market can also be referred to as the FX market or currency market. ]]\n       Fx,\n       [[ Fixed income assets are investments that pay interest over time and then return the original sum paid. Bonds are the most common type of fixed income asset ]]\n       Bonds,\n       [[ Equities, also known as stocks, are the shares that make up the ownership of public companies. Within this asset class, there is further variation between large-cap, mid-cap and small-cap stocks ]]\n       Equities\n   }\n}',
+      'content': 'namespace demo.orderFeeds {\n   [[\n   An asset class is a grouping of investments that exhibit similar characteristics and are subject to the same laws and regulations. Asset classes are thus made up of instruments that often behave similarly to one another in the marketplace.\n   ]]\n   @com.orbitalhq.catalog.DataOwner( id = "userId1" , name = "Serhat Tuncay" )\n   @CDE\n   enum AssetClass {\n       [[ Forex is the abbreviation for foreign exchange – the market in which one currency is converted into another. The forex market can also be referred to as the FX market or currency market. ]]\n       Fx,\n       [[ Fixed income assets are investments that pay interest over time and then return the original sum paid. Bonds are the most common type of fixed income asset ]]\n       Bonds,\n       [[ Equities, also known as stocks, are the shares that make up the ownership of public companies. Within this asset class, there is further variation between large-cap, mid-cap and small-cap stocks ]]\n       Equities\n   }\n}',
       'packageIdentifier': {
         'organisation': 'demo.orderFeeds',
         'name': 'OrdersEnrichmentAndLineage',
@@ -6752,7 +6752,7 @@ export const LINEAGE_DEMO_SCHEMA = {
     'sources': [{
       'name': 'file:///home/martypitt/dev/vyne-demos/orders-enrichment-and-lineage/taxonomy/./src/order.taxi',
       'version': '0.0.0',
-      'content': 'import io.vyne.catalog.DataOwner\nnamespace demo.orderFeeds {\n   [[\n   An International Securities Identification Number (ISIN) is a 12-digit alphanumeric code that uniquely identifies a specific security. The organization that allocates ISINs in any particular country is the country\'s respective National Numbering Agency (NNA).\n   ]]\n   @io.vyne.catalog.DataOwner( id = "userId1" , name = "Marty Pitt" )\n   @CDE\n   type Isin inherits String\n}',
+      'content': 'import io.vyne.catalog.DataOwner\nnamespace demo.orderFeeds {\n   [[\n   An International Securities Identification Number (ISIN) is a 12-digit alphanumeric code that uniquely identifies a specific security. The organization that allocates ISINs in any particular country is the country\'s respective National Numbering Agency (NNA).\n   ]]\n   @com.orbitalhq.catalog.DataOwner( id = "userId1" , name = "Marty Pitt" )\n   @CDE\n   type Isin inherits String\n}',
       'packageIdentifier': {
         'organisation': 'demo.orderFeeds',
         'name': 'OrdersEnrichmentAndLineage',

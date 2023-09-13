@@ -8,6 +8,8 @@ import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
 import io.micrometer.core.instrument.MeterRegistry
 import com.orbitalhq.SourcePackageHasher
 import com.orbitalhq.Vyne
+import com.orbitalhq.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
+import com.orbitalhq.connectors.aws.dynamodb.DynamoDbInvoker
 import com.orbitalhq.connectors.config.ConnectionsConfig
 import com.orbitalhq.connectors.jdbc.HikariJdbcConnectionFactory
 import com.orbitalhq.connectors.jdbc.JdbcInvoker
@@ -84,7 +86,8 @@ class StandaloneVyneFactory(
       val jdbcInvoker = buildJdbcInvoker(message.connections, schemaProvider)
       val httpInvoker = buildHttpInvoker(schemaProvider, message, discoveryClient)
       val soapInvoker = buildSoapInvoker(schemaProvider, discoveryClient)
-      val invokers = listOf(jdbcInvoker, httpInvoker, soapInvoker)
+      val dynamoInvoker = buildDynamoInvoker(message.connections, schemaProvider)
+      val invokers = listOf(jdbcInvoker, httpInvoker, soapInvoker, dynamoInvoker)
       return Vyne(
          listOf(schemaProvider.schema),
          QueryEngineFactory.withOperationInvokers(
@@ -97,6 +100,13 @@ class StandaloneVyneFactory(
          formatSpecRegistry.formats
       ) to discoveryClient
 
+   }
+
+   private fun buildDynamoInvoker(connections: ConnectionsConfig, schemaProvider: SchemaProvider): DynamoDbInvoker {
+      return DynamoDbInvoker(
+         connectionRegistry =  AwsInMemoryConnectionRegistry(connections.aws.values.toList()),
+         schemaProvider = schemaProvider
+      )
    }
 
    private fun buildSoapInvoker(

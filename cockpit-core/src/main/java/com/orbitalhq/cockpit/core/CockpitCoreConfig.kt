@@ -28,3 +28,5 @@ class CockpitCoreConfig {
       registerWithStaticRegistry = true
    )
 }
+
+

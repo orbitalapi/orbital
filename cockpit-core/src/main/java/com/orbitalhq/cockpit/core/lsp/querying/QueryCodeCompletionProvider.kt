@@ -11,6 +11,7 @@ import com.orbitalhq.schemas.toVyneQualifiedName
 import lang.taxi.TaxiParser.ArrayMarkerContext
 import lang.taxi.TaxiParser.ConditionalTypeStructureDeclarationContext
 import lang.taxi.TaxiParser.FactContext
+import lang.taxi.TaxiParser.FactDeclarationContext
 import lang.taxi.TaxiParser.FactListContext
 import lang.taxi.TaxiParser.FieldDeclarationContext
 import lang.taxi.TaxiParser.FieldTypeDeclarationContext
@@ -308,7 +309,11 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
          val givenBlock = ruleContext as GivenBlockContext
          val typesOfFacts = givenBlock.getRuleContexts(FactListContext::class.java)
             .flatMap { it.fact() }
-            .map { it.getRuleContexts(TypeReferenceContext::class.java) }
+            .map{ factContext ->
+               factContext.getRuleContexts(FactDeclarationContext::class.java)
+               .flatMap { factDeclaration -> factDeclaration.getRuleContexts(TypeReferenceContext::class.java) }
+
+            }
             .flatten()
             .map { typeTypeContext ->
                compilationResult.compiler.lookupTypeByName(typeTypeContext)

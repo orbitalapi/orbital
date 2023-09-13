@@ -14,12 +14,6 @@ spring:
       password: "password"
       driver: "org.postgresql.Driver"
       driverClassName: org.postgresql.Driver
-   sql:
-      init:
-         mode: never
-   flyway:
-      enabled: true
-#      locations: classpath:db/postgres
 orbital:
    cors:
       enabled: false

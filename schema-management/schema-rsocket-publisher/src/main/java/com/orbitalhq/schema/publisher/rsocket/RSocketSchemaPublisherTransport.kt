@@ -12,10 +12,7 @@ import io.rsocket.util.DefaultPayload
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.schema.publisher.*
-import com.orbitalhq.schema.rsocket.CBORJackson
-import com.orbitalhq.schema.rsocket.ClientTransportAddress
-import com.orbitalhq.schema.rsocket.RSocketRoutes
-import com.orbitalhq.schema.rsocket.SchemaServerRSocketFactory
+import com.orbitalhq.schema.rsocket.*
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.taxi.toMessage
 import com.orbitalhq.utils.Ids
@@ -30,6 +27,7 @@ class RSocketSchemaPublisherTransport(
    rsocketFactory: SchemaServerRSocketFactory,
    private val objectMapper: ObjectMapper = CBORJackson.defaultMapper
 ) : AsyncSchemaPublisherTransport {
+   constructor(host: String, port: Int, objectMapper: ObjectMapper = CBORJackson.defaultMapper) : this(TcpAddress(host, port), objectMapper)
    constructor(
       address: ClientTransportAddress,
       objectMapper: ObjectMapper = CBORJackson.defaultMapper

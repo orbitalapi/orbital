@@ -3,6 +3,7 @@ package com.orbitalhq.cockpit.core.connectors
 import com.orbitalhq.connectors.ConnectionDriverOptions
 import com.orbitalhq.connectors.config.aws.AwsConnection
 import com.orbitalhq.connectors.azure.blob.registry.AzureStorageConnection
+import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.connectors.jdbc.JdbcDriverOptions
 import com.orbitalhq.connectors.config.kafka.KafkaConnection
 import com.orbitalhq.connectors.registry.ConnectionRegistry
@@ -16,6 +17,7 @@ import reactor.kotlin.core.publisher.toFlux
 
 @RestController
 class ConnectionDriverService(
+   private val new: SourceLoaderConnectorsRegistry,
    val connectorRegistries: List<ConnectionRegistry<*>>
 ) {
 
@@ -28,10 +30,14 @@ class ConnectionDriverService(
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections")
    fun listConnections(): Flux<ConnectorConfigurationSummary> {
-      return this.connectorRegistries
-         .flatMap { it.listAll() }
+      return this.new.load()
+         .listAll()
          .map { ConnectorConfigurationSummary(it) }
          .toFlux()
+//      return this.connectorRegistries
+//         .flatMap { it.listAll() }
+//         .map { ConnectorConfigurationSummary(it) }
+//         .toFlux()
    }
 
 }

@@ -166,7 +166,7 @@ export class SchemaDiagramComponent {
       map(schema => {
         if (this.displayedMembers === 'everything') {
           const membersToDisplay = schema.types
-            .filter(t => !t.name.namespace.startsWith('lang.taxi') && !t.name.namespace.startsWith('io.vyne') && !t.isScalar)
+            .filter(t => !t.name.namespace.startsWith('lang.taxi') && !t.name.namespace.startsWith('com.orbitalhq') && !t.isScalar)
             .map(t => t.name.parameterizedName)
             .concat(schema.services.map(s => s.qualifiedName));
           return {

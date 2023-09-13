@@ -1,9 +1,6 @@
 package com.orbitalhq.queryService
 
 import com.jayway.awaitility.Awaitility
-import com.winterbe.expekt.should
-import io.kotest.matchers.collections.shouldHaveSize
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import com.orbitalhq.StubService
 import com.orbitalhq.Vyne
 import com.orbitalhq.history.QueryAnalyticsConfig
@@ -14,22 +11,32 @@ import com.orbitalhq.query.HistoryEventConsumerProvider
 import com.orbitalhq.query.history.QuerySankeyChartRow
 import com.orbitalhq.query.history.SankeyNodeType
 import com.orbitalhq.testVyne
+import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldHaveSize
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
-import org.junit.runner.RunWith
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.api.io.TempDir
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.test.context.junit.jupiter.SpringExtension
+import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.containers.wait.strategy.Wait
+import org.testcontainers.junit.jupiter.Container
+import org.testcontainers.junit.jupiter.Testcontainers
+import java.io.File
 import java.util.*
 import javax.sql.DataSource
 
-@RunWith(SpringRunner::class)
+
+@ExtendWith(SpringExtension::class)
 @Import(TestSpringConfig::class)
 @SpringBootTest(
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -40,9 +47,9 @@ import javax.sql.DataSource
       "vyne.analytics.persistRemoteCallMetadata=true",
       "vyne.analytics.persistRemoteCallResponses=false",
       "vyne.telemetry.enabled=false",
-      "spring.datasource.url=jdbc:h2:mem:testdbQueryLineageTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"
    ]
 )
+@Testcontainers
 @ActiveProfiles("test")
 class QueryLineageTest : BaseQueryServiceTest() {
    @Autowired
@@ -63,9 +70,22 @@ class QueryLineageTest : BaseQueryServiceTest() {
    @Autowired
    lateinit var sankeyChartRowRepository: QuerySankeyChartRowRepository
 
-   @Rule
-   @JvmField
-   final val tempDir = TemporaryFolder()
+   companion object {
+      @Container
+      @ServiceConnection
+      val postgres = PostgreSQLContainer<Nothing>("postgres:11.1") as PostgreSQLContainer<*>
+      @BeforeAll
+      fun setup() {
+         postgres.start()
+         postgres.waitingFor(Wait.forListeningPort())
+      }
+
+   }
+
+
+
+   @TempDir
+   final lateinit var tempDir:File
 
    val schema = """
          model Order
@@ -282,7 +302,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
          remoteCallResponseRepository,
          sankeyChartRowRepository,
          config = QueryAnalyticsConfig(
-            persistenceQueueStorePath = tempDir.root.toPath()
+            persistenceQueueStorePath = tempDir.toPath()
          ),
          meterRegistry = SimpleMeterRegistry()
       )
