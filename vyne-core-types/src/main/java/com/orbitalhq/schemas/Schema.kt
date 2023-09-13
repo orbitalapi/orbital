@@ -3,6 +3,7 @@ package com.orbitalhq.schemas
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.orbitalhq.*
 import com.orbitalhq.models.functions.FunctionRegistry
+import com.orbitalhq.schemas.TaxiTypeMapper.fromTaxiType
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.assertingThat
@@ -10,6 +11,7 @@ import lang.taxi.TaxiDocument
 import lang.taxi.packages.SourcesType
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
+import lang.taxi.types.ArrayType
 
 
 /**
@@ -301,6 +303,26 @@ interface Schema {
    }
 
    fun parseQuery(vyneQlQuery: TaxiQLQueryString): Pair<TaxiQlQuery, QueryOptions>
+
+   /**
+    * Looks up the type, and will construct a new type from the provided taxi type if not present.
+    * This should only be called in edge cases where we aren't sure we've already converted the type.
+    * Currently, the only known edge case is nested anonymous types inside expressions, where
+    * we need to find a better solution, but haven't yet.
+    * If you're calling this from somewhere else, it's worth investigating why.
+    */
+   fun typeCreateIfRequired(taxiType: lang.taxi.types.Type): Type {
+      val name = taxiType.toVyneQualifiedName().parameterizedName
+
+      return when {
+          this.hasType(name) -> this.type(name)
+         taxiType is ArrayType -> {
+            val vyneMemberType = typeCreateIfRequired(taxiType.memberType)
+            vyneMemberType.asArrayType()
+         }
+         else -> fromTaxiType(taxiType, this)
+      }
+   }
 
 }
 
