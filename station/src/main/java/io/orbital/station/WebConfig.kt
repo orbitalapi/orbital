@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
-import org.springframework.cloud.client.loadbalancer.reactive.WebClientCustomizer
+import org.springframework.boot.web.reactive.function.client.WebClientCustomizer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -23,7 +23,6 @@ import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.web.reactive.config.CorsRegistry
 import org.springframework.web.reactive.config.WebFluxConfigurer
-import org.springframework.web.reactive.function.client.WebClient
 
 @Configuration
 @Import(WebUiUrlSupportFilter::class)
