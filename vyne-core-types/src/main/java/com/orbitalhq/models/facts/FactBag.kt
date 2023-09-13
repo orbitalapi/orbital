@@ -15,9 +15,11 @@ import lang.taxi.accessors.ProjectionFunctionScope
  */
 interface FactBag : Collection<TypedInstance> {
    companion object {
+
       fun of(facts: List<TypedInstance>, schema: Schema): FactBag {
          return CopyOnWriteFactBag(facts, schema)
       }
+      fun of(typedInstance: TypedInstance, schema: Schema) = of(listOf(typedInstance), schema)
 
       fun empty(): FactBag {
          return EmptyFactBag()
