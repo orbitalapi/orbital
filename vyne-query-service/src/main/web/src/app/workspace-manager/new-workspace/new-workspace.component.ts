@@ -17,8 +17,6 @@ import {WorkspacesService} from "../../services/workspaces.service";
         },
     ],
     template: `
-        <app-header-bar>
-        </app-header-bar>
         <app-header-component-layout title='New workspace'
                                      description="A workspace allows you to configure a group of data sources and schemas"
         >

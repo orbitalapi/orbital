@@ -7,7 +7,7 @@ import {UserInfoService, VyneUser} from '../services/user-info.service';
     template: `
         <app-workspace-selector></app-workspace-selector>
         <div class="spacer"></div>
-        <!--        <app-search-bar-container></app-search-bar-container>-->
+        <app-search-bar-container></app-search-bar-container>
         <app-avatar *ngIf="vyneUser" [user]="vyneUser"></app-avatar>
     `,
     styleUrls: ['./header-bar.component.scss']

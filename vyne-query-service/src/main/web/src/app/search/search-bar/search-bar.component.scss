@@ -1,15 +1,31 @@
-@use '~@angular/material' as mat;
-@import "src/theme";
+@import "~src/theme";
 
+tui-combo-box {
+  width: 100%;
+}
+
+.search-result-button-wrapper {
+  flex-grow: 1;
+}
+
+tui-combo-box::ng-deep {
+  // This removes the "dropdown" icon from the combobox, making it
+  // look more like a normal input, even though it's a combo box
+  .t-icon:not(.t-icon_left) {
+    width: 0;
+    display: none;
+  }
+}
 
 :host {
-  background-color: rgba($purple-white,0.8);
-  border-radius: 4px;
+  //background-color: rgba($purple-white,0.8);
+  //border-radius: 4px;
   min-width: 30rem;
-  padding: 0.8rem;
+  flex: 0;
+  //padding: 0.8rem;
 
-  display: flex;
-  align-items: center;
+  //display: flex;
+  //align-items: center;
 }
 
 ng-select {
@@ -40,7 +56,7 @@ ng-select {
   $dropdown-panel-items-height-fixer: 10vh;
 
   .ng-dropdown-panel {
-    @include mat.elevation(5);
+    //@include mat.elevation(5);
     background-color: $light-purple-grey-100;
     max-height: 100vh;
     top: #{$toolbar-height - $dropdown-position-fixer};
