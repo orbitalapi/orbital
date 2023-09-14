@@ -1,8 +1,12 @@
-<app-header-bar title="Query History">
-  <span>
-    <button mat-stroked-button (click)="loadQuerySummaries()">Refresh</button>
-  </span>
-</app-header-bar>
+<!--<app-header-bar title="Query History">-->
+<!--  <span>-->
+<!--    <button mat-stroked-button (click)="loadQuerySummaries()">Refresh</button>-->
+<!--  </span>-->
+<!--</app-header-bar>-->
+<app-panel-header title="Query History">
+  <div class="spacer"></div>
+  <button mat-flat-button class='button-small menu-bar-button' (click)="loadQuerySummaries()">Refresh</button>
+</app-panel-header>
 <div class="container">
   <app-query-list [historyRecords]="history"
                   [activeQueries]="activeQueries"

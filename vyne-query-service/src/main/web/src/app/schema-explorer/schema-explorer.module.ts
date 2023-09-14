@@ -31,51 +31,53 @@ import {
 import { ChangesetSelectorModule } from '../changeset-selector/changeset-selector.module';
 import { SchemaSettingsComponent } from './schema-settings.component';
 import { SchemaSourceConfigModule } from 'src/app/schema-source-config/schema-source-config.module';
+import {ExpandingPanelSetModule} from "../expanding-panelset/expanding-panel-set.module";
 
 
 @NgModule({
-  imports: [
-    CommonModule,
-    MatMenuModule,
-    MatButtonModule,
-    SearchModule,
-    MatToolbarModule,
-    CodeViewerModule,
-    MatProgressBarModule,
-    MatStepperModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    ReactiveFormsModule,
-    CovalentHighlightModule,
-    MatListModule,
-    MatIconModule,
-    MatInputModule,
-    HeaderBarModule,
-    RouterModule,
-    PackageViewerModule,
-    ChangelogModule,
-    SchemaExplorerTableModule,
-    SimpleBadgeListModule,
-    TuiButtonModule,
-    SchemaSourceConfigModule,
-    RouterModule.forChild([
-      {
-        path: '',
-        component: SchemaExplorerContainerComponent,
-        children: [
-          {
-            path: '', component: SchemaSummaryViewComponent
-          },
-          {
-            path: ':packageName', component: SchemaExplorerComponent
-          }
-        ]
-      },
-    ]),
-    TuiTabsModule,
-    ChangesetSelectorModule,
-    TuiNotificationModule,
-  ],
+    imports: [
+        CommonModule,
+        MatMenuModule,
+        MatButtonModule,
+        SearchModule,
+        MatToolbarModule,
+        CodeViewerModule,
+        MatProgressBarModule,
+        MatStepperModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        ReactiveFormsModule,
+        CovalentHighlightModule,
+        MatListModule,
+        MatIconModule,
+        MatInputModule,
+        HeaderBarModule,
+        RouterModule,
+        PackageViewerModule,
+        ChangelogModule,
+        SchemaExplorerTableModule,
+        SimpleBadgeListModule,
+        TuiButtonModule,
+        SchemaSourceConfigModule,
+        RouterModule.forChild([
+            {
+                path: '',
+                component: SchemaExplorerContainerComponent,
+                children: [
+                    {
+                        path: '', component: SchemaSummaryViewComponent
+                    },
+                    {
+                        path: ':packageName', component: SchemaExplorerComponent
+                    }
+                ]
+            },
+        ]),
+        TuiTabsModule,
+        ChangesetSelectorModule,
+        TuiNotificationModule,
+        ExpandingPanelSetModule,
+    ],
   exports: [SchemaExplorerComponent],
   declarations: [SchemaExplorerComponent, SchemaExplorerContainerComponent, SchemaSummaryViewComponent, OrbitalSchemaExplorerContainerComponent, SchemaSettingsComponent],
   providers: [],

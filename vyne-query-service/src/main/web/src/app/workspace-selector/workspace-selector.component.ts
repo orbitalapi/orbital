@@ -10,7 +10,7 @@ import {Router} from "@angular/router";
         <tui-select
                 [stringify]="stringifyWorkspace"
                 [ngModel]="activeWorkspace"
-                tuiTextfieldSize="m"
+                tuiTextfieldSize="s"
                 (ngModelChange)="selectedWorkspaceChanged($event)">
             Workspace
             <tui-data-list *tuiDataList>

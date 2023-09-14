@@ -37,9 +37,12 @@ export class BaseSchemaExplorerContainer {
 @Component({
   selector: 'app-schema-explorer-container',
   template: `
-      <app-header-bar title="Schema Explorer">
-          <button mat-stroked-button [routerLink]="['/schema-importer']">Add new sources</button>
-      </app-header-bar>
+      <app-panel-header title="Schemas">
+          <div class="spacer"></div>
+          <button mat-flat-button class='button-small menu-bar-button' [routerLink]="['/schema-importer']">Add new
+              sources
+          </button>
+      </app-panel-header>
       <div class="container">
           <app-package-list [packages]="packages | async"
                             (packageClicked)="navigateToPackage($event)"></app-package-list>
