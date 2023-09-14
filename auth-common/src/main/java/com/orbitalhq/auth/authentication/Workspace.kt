@@ -25,7 +25,7 @@ data class Workspace(
 
    @ManyToOne
    @JoinColumn(name = "organisation_id")
-   val organisation: Organisation
+   val organisation: Organisation?
 )
 
 @Entity

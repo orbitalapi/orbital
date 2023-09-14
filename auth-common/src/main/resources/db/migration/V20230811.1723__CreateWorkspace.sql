@@ -2,9 +2,9 @@ create table workspace
 (
    id              serial primary key,
    name            varchar(255) not null,
-   organisation_id integer      not null,
+   organisation_id integer      null, -- for now, orgs are nullable, as we need to build them
 
-   foreign key (organisation_id) references organisation (id),
+--    foreign key (organisation_id) references organisation (id),
    unique (name, organisation_id)
 );
 
