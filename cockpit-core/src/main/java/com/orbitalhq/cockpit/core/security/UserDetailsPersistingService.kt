@@ -2,13 +2,16 @@ package com.orbitalhq.cockpit.core.security
 
 import com.google.common.base.Ticker
 import com.google.common.cache.CacheBuilder
-import io.vyne.cockpit.core.security.VyneUserJpaRepository
+import com.orbitalhq.auth.authentication.vyneUserFromClaims
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Sinks
 import java.time.Duration
 
 @Component
+@ConditionalOnProperty("vyne.security.openIdp.enabled", havingValue = "true", matchIfMissing = false)
 class UserDetailsPersistingService(
    eventSource: UserAuthenticatedEventSource,
    userRepository: VyneUserJpaRepository,
@@ -49,16 +52,18 @@ class UserDetailsPersistingService(
             logger.info { "Persisting details for user ${event.preferredUserName}" }
             try {
                val user = vyneUserFromClaims(event.claims)
-               val updated = userRepository.upsert(
-                  user.id,
-                  user.issuer,
-                  user.username,
-                  user.email,
-                  user.profileUrl,
-                  user.name
-               )
-               logger.info { "Upsert returned $updated" }
-               userRepository.flush()
+               // Not sure how to call this from the flux?
+               runBlocking {
+                  val updated = userRepository.upsert(
+                     user.id,
+                     user.issuer,
+                     user.username,
+                     user.email,
+                     user.profileUrl,
+                     user.name
+                  )
+                  logger.info { "Upserting user returned $updated" }
+               }
             } catch (e: Exception) {
                logger.error(e) { "Failed to write update for user ${event.preferredUserName} - ${e.message}" }
             }

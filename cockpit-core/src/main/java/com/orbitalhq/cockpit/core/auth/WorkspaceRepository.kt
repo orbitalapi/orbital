@@ -1,9 +1,9 @@
-package io.vyne.cockpit.core.auth
+package com.orbitalhq.cockpit.core.auth
 
-import io.vyne.auth.authentication.UserOrbitalId
-import io.vyne.auth.authentication.Workspace
-import io.vyne.auth.authentication.WorkspaceMember
-import io.vyne.auth.authentication.WorkspaceRole
+import com.orbitalhq.auth.authentication.UserOrbitalId
+import com.orbitalhq.auth.authentication.Workspace
+import com.orbitalhq.auth.authentication.WorkspaceMember
+import com.orbitalhq.auth.authentication.WorkspaceRole
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 

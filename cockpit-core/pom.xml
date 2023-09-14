@@ -223,13 +223,33 @@
          <groupId>net.logstash.logback</groupId>
          <artifactId>logstash-logback-encoder</artifactId>
       </dependency>
+      <!-- Times I've tried updating to r2dbc, and then regretted it,
+      rolling back to some async hack with spring-data:
+      3
+
+      List of issues hit:
+       - No support for joins
+       - No support for nested collections, or advanced types - using things like
+         Postgres Array types aren't possible.
+      -->
+      <!--
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-data-r2dbc</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.postgresql</groupId>
+         <artifactId>r2dbc-postgresql</artifactId>
+      </dependency>
+      -->
+      <!-- Is this really needed? -->
+<!--      <dependency>-->
+<!--         <groupId>org.springframework.boot</groupId>-->
+<!--         <artifactId>spring-boot-starter-data-jdbc</artifactId>-->
+<!--      </dependency>-->
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-data-jpa</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter-data-jdbc</artifactId>
       </dependency>
       <dependency>
          <groupId>com.google.guava</groupId>
@@ -253,6 +273,11 @@
          <groupId>org.flywaydb</groupId>
          <artifactId>flyway-core</artifactId>
       </dependency>
+      <!-- non-reactive driver required for flyway -->
+      <dependency>
+         <groupId>org.postgresql</groupId>
+         <artifactId>postgresql</artifactId>
+      </dependency>
       <dependency>
          <groupId>io.github.config4k</groupId>
          <artifactId>config4k</artifactId>
@@ -274,10 +299,6 @@
          <groupId>javax.websocket</groupId>
          <artifactId>javax.websocket-api</artifactId>
          <version>1.1</version>
-      </dependency>
-      <dependency>
-         <groupId>com.h2database</groupId>
-         <artifactId>h2</artifactId>
       </dependency>
       <dependency>
          <groupId>org.skyscreamer</groupId>

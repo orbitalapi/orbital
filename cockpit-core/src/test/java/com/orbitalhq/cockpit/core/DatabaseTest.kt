@@ -1,5 +1,6 @@
-package io.vyne.cockpit.core
+package com.orbitalhq.cockpit.core
 
+import org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.test.context.DynamicPropertyRegistry

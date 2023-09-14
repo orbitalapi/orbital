@@ -2,7 +2,7 @@ create table workspace
 (
    id              serial primary key,
    name            varchar(255) not null,
-   organisation_id numeric      not null,
+   organisation_id integer      not null,
 
    foreign key (organisation_id) references organisation (id),
    unique (name, organisation_id)

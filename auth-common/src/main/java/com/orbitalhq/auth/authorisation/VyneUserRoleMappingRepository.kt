@@ -1,6 +1,7 @@
 package com.orbitalhq.auth.authorisation
 
-import io.vyne.auth.authentication.UserDisplayName
+import com.orbitalhq.auth.authentication.UserDisplayName
+
 
 @Deprecated(message = "Use JPA instead", level = DeprecationLevel.WARNING)
 interface VyneUserRoleMappingRepository {

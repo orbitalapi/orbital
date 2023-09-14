@@ -1,14 +1,11 @@
-package io.vyne.cockpit.core.security
+package com.orbitalhq.cockpit.core.security
 
 import com.google.common.testing.FakeTicker
-import com.jayway.awaitility.Awaitility
-import com.jayway.awaitility.Awaitility.await
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
-import io.vyne.auth.authentication.JwtStandardClaims
-import io.vyne.auth.authentication.VyneUser
-import io.vyne.cockpit.core.DatabaseTest
-import jakarta.transaction.Transactional
+import com.orbitalhq.auth.authentication.JwtStandardClaims
+import com.orbitalhq.auth.authentication.VyneUser
+import com.orbitalhq.cockpit.core.DatabaseTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -18,17 +15,10 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.test.context.ContextConfiguration
-import org.springframework.test.context.DynamicPropertyRegistry
-import org.springframework.test.context.DynamicPropertySource
-import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.containers.wait.strategy.Wait
-import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import reactor.test.publisher.TestPublisher
 import java.time.Duration
-import java.util.concurrent.TimeUnit
 
 @DataJpaTest
 @Testcontainers

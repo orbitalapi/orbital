@@ -1,7 +1,7 @@
 package com.orbitalhq.cockpit.core.security
 
-import com.orbitalhq.authentication.UserOrbitalId
-import com.orbitalhq.authentication.VyneUser
+import com.orbitalhq.auth.authentication.UserOrbitalId
+import com.orbitalhq.auth.authentication.VyneUser
 import jakarta.transaction.Transactional
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying

@@ -1,8 +1,8 @@
-package io.vyne.cockpit.core.security
+package com.orbitalhq.cockpit.core.security
 
-import io.vyne.auth.authentication.JwtStandardClaims
-import io.vyne.auth.authorisation.*
-import io.vyne.utils.RetryFailOnSerializeEmitHandler
+import com.orbitalhq.auth.authentication.JwtStandardClaims
+import com.orbitalhq.auth.authorisation.*
+import com.orbitalhq.utils.RetryFailOnSerializeEmitHandler
 import mu.KotlinLogging
 import org.springframework.core.convert.converter.Converter
 import org.springframework.security.core.GrantedAuthority
