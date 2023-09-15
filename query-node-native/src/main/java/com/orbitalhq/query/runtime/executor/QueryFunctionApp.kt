@@ -1,9 +1,6 @@
 package com.orbitalhq.query.runtime.executor
 
-import com.zaxxer.hikari.HikariConfig
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import com.orbitalhq.connectors.jdbc.registry.JdbcConnections
-import com.orbitalhq.connectors.soap.SoapWsdlSourceConverter
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.models.facts.CascadingFactBag
 import com.orbitalhq.query.QueryResponseMessage
@@ -15,6 +12,8 @@ import com.orbitalhq.spring.config.VyneSpringHazelcastConfiguration
 import com.orbitalhq.spring.config.VyneSpringProjectionConfiguration
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
 import com.orbitalhq.utils.formatAsFileSize
+import com.zaxxer.hikari.HikariConfig
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import mu.KotlinLogging
 import org.springframework.aot.hint.*
 import org.springframework.aot.hint.annotation.RegisterReflectionForBinding
@@ -69,7 +68,7 @@ class QueryFunctionApp {
    fun sourceConverterRegistry(): SourceConverterRegistry = SourceConverterRegistry(
       setOf(
          TaxiSourceConverter,
-         SoapWsdlSourceConverter
+//         SoapWsdlSourceConverter
       ),
       registerWithStaticRegistry = true
    )
