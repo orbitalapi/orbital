@@ -53,7 +53,7 @@ class WorkspaceService(
         }
     }
 
-    @PostMapping("/api/{organisationId}/workspaces")
+    @PostMapping("/api/workspaces/{organisationId}")
 //    @PreAuthorize("hasAuthority('${VynePrivileges.CreateWorkspace}')")
     suspend fun createWorkspace(
         @AuthenticationPrincipal auth: Mono<Authentication>,
@@ -99,7 +99,7 @@ class WorkspaceService(
     )
 
 //    @PreAuthorize("hasAuthority('${VynePrivileges.ModifyWorkspaceMembership}')")
-    @PostMapping("/api/{organisationId}/workspaces/{workspaceId}/members")
+    @PostMapping("/api/workspaces/{organisationId}/workspaceId}/members")
     suspend fun addMemberToWorkspace(
         @AuthenticationPrincipal auth: Mono<Authentication>,
         @PathVariable("workspaceId") workspaceId: Long,
@@ -144,7 +144,7 @@ class WorkspaceService(
         }
     }
 
-    @GetMapping("/api/{organisationId}/workspaces/{workspaceId}/members")
+    @GetMapping("/api/workspaces/{organisationId}/{workspaceId}/members")
 //    @PreAuthorize("hasAuthority('${VynePrivileges.ViewWorkspaces}')")
     suspend fun getWorkspaceMembers(
         @AuthenticationPrincipal auth: Mono<Authentication>,
@@ -159,7 +159,7 @@ class WorkspaceService(
         return workspaceMembershipRepository.findAllByWorkspaceId(workspaceId)
     }
 
-    @GetMapping("/api/{organisationId}/workspaces")
+    @GetMapping("/api/workspaces/{organisationId}")
     suspend fun getWorkspacesForUser(
         @AuthenticationPrincipal auth: Mono<Authentication>,
     ): List<WorkspaceMembershipDto> = withContext(Dispatchers.IO) {

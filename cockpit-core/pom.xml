@@ -77,6 +77,12 @@
          <version>${taxi.version}</version>
          <scope>test</scope>
       </dependency>
+      <!-- had to add this to allow workspace-centric schema management. -->
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>schema-server-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
       <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-history-core</artifactId>
