@@ -3,7 +3,7 @@ package com.orbitalhq.spring.config
 import com.jayway.awaitility.Awaitility
 import com.winterbe.expekt.should
 import io.kotest.matchers.shouldBe
-import com.orbitalhq.config.toConfig
+import com.orbitalhq.config.toHocon
 import com.orbitalhq.http.ServicesConfig
 import com.orbitalhq.http.ServicesConfigRepository
 import org.junit.Rule
@@ -33,7 +33,7 @@ class FileBasedDiscoveryClientTest {
       configFile.writeText(
          configText
       )
-      val stubEnvConfig = mapOf("VYNE_HOST" to "localhost").toConfig()
+      val stubEnvConfig = mapOf("VYNE_HOST" to "localhost").toHocon()
       val configRepository = ServicesConfigRepository(configFile,stubEnvConfig)
       val client = FileBasedDiscoveryClient(configRepository)
       val queryServer = client.getInstances("query-server").single()

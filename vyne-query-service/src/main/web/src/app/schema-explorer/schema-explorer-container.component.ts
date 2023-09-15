@@ -39,8 +39,8 @@ export class BaseSchemaExplorerContainer {
   template: `
       <app-panel-header title="Schemas">
           <div class="spacer"></div>
-          <button mat-flat-button class='button-small menu-bar-button' [routerLink]="['/schema-importer']">Add new
-              sources
+          <button mat-flat-button class='button-small menu-bar-button' [routerLink]="['/schema-importer']">Add a new schema
+
           </button>
       </app-panel-header>
       <div class="container">

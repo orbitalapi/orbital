@@ -34,7 +34,7 @@ enum class OperationResult {
 
 class GitOperations(
    val workingDir: File,
-   private val config: GitRepositoryConfig,
+   private val config: GitRepositorySpec,
    private val hostingProviderRegistry: GitHostingProviderRegistry = GitHostingProviderRegistry()
 ) : AutoCloseable {
    private val gitDir: File = workingDir.resolve(".git")
@@ -93,11 +93,10 @@ class GitOperations(
                   "Authentication failed",
                )
             }
-            if (message.contains("not found: Not Found")) {
+            if (message.contains("not found")) {
                return TestConnectionResult.failed("Could not connect to the remote repository")
             }
-            logger.warn(e) { "Failed to connect to git repo at $url, but the exception has not been handled" }
-            return TestConnectionResult.failed("An unknown error occurred")
+            return TestConnectionResult.failed("Failed to connect - ${e.message}")
          }
          val defaultBranchName = branches.get("HEAD")
             ?.target?.name?.objectNameToDisplayName()

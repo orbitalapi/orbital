@@ -7,7 +7,7 @@ import io.kotest.matchers.shouldBe
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
-import com.orbitalhq.schemaServer.core.git.GitRepositoryConfig
+import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaRepositoryConfig
 import com.orbitalhq.schemaServer.core.repositories.FileSchemaRepositoryConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfig
@@ -49,7 +49,7 @@ class ConfigTest {
          git = GitSchemaRepositoryConfig(
             checkoutRoot = Paths.get("/my/git/root"),
             repositories = listOf(
-               GitRepositoryConfig(
+               GitRepositorySpec(
                   "my-git-project",
                   "https://github.com/something.git",
                   branch = "master"

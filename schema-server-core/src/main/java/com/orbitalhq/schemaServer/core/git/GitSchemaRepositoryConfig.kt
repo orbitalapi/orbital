@@ -13,10 +13,14 @@ import java.nio.file.Paths
 import java.time.Duration
 
 data class GitSchemaRepositoryConfig(
-   val checkoutRoot: Path? = null,
+   val checkoutRoot: Path = Paths.get("./gitProjects/"),
    val pollFrequency: Duration = Duration.ofSeconds(30),
-   val repositories: List<GitRepositoryConfig> = emptyList(),
-)
+   val repositories: List<GitRepositorySpec> = emptyList(),
+) {
+   companion object {
+      fun default():GitSchemaRepositoryConfig = GitSchemaRepositoryConfig()
+   }
+}
 
 data class GitCredentials(
    val username: String,
@@ -27,7 +31,7 @@ data class GitSshAuth(
    val passphrase: String? = null,
 )
 
-data class GitRepositoryConfig(
+data class GitRepositorySpec(
    val name: String,
 
    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)

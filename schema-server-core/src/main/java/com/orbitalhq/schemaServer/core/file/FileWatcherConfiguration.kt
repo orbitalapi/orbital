@@ -20,6 +20,10 @@ data class FileSystemPackageSpec(
    val loader: PackageLoaderSpec = TaxiPackageLoaderSpec,
    val isEditable: Boolean = false,
    // TODO : Why is this nullable? When should we provide vs omit it?
+   // Answer: It's nullable when getting a git repo for the first time.
+   // In order to load the git repo, we need to create a FileSystemPackageSpec,
+   // but we can't know the package identifier until we've loaded the spec.
+   // That could do with some work I guess..
    val packageIdentifier: PackageIdentifier? = null
 ) {
 

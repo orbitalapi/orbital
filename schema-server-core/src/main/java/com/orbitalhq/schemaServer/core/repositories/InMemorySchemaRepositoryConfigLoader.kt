@@ -3,7 +3,7 @@ package com.orbitalhq.schemaServer.core.repositories
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
-import com.orbitalhq.schemaServer.core.git.GitRepositoryConfig
+import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecAddedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.GitSpecAddedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
@@ -53,7 +53,7 @@ class InMemorySchemaRepositoryConfigLoader(
       eventDispatcher.fileRepositorySpecAdded(FileSpecAddedEvent(fileSpec, config.file!!))
    }
 
-   override fun addGitSpec(gitSpec: GitRepositoryConfig) {
+   override fun addGitSpec(gitSpec: GitRepositorySpec) {
       config = config.copy(
          git = config.git!!.copy(
             repositories = config.git!!.repositories.concat(gitSpec)

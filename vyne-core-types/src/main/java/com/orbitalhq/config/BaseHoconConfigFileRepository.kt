@@ -55,7 +55,7 @@ abstract class BaseHoconConfigFileRepository<T : Any>(
                unsubstitutedConfig to substitutedConfig
             } else {
                logger.info { "No config file exists at ${path.toFile().canonicalPath}, starting with an empty one" }
-               val emptyConfigAsConfig: Config = emptyConfig().toConfig()
+               val emptyConfigAsConfig: Config = emptyConfig().toHocon()
                val emptyTypedConfig = emptyConfig()
                emptyConfigAsConfig to emptyTypedConfig
             }
@@ -100,7 +100,7 @@ abstract class BaseHoconConfigFileRepository<T : Any>(
 
 }
 
-fun Any.toConfig(): Config {
+fun Any.toHocon(): Config {
    return this.toConfig("root")
       .getConfig("root")
       .root()
