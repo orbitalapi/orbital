@@ -25,10 +25,20 @@ object TaxiTypeMapper {
          is ObjectType -> {
             val typeName = QualifiedName.from(taxiType.qualifiedName)
             val fields = taxiType.allFields.map { field ->
-               val fieldAnonymousType = convertIfAnonymous(field.type, schema, typeCache)
+               val declaredAnonymousType = convertIfAnonymous(field.type, schema, typeCache)
+               val accessorReturnType = field.accessor?.returnType?.let { convertIfAnonymous(it, schema, typeCache) }
+               // HACK: This is a workaround.
+               // Thins like this shouldn't be permitted, but currently are:
+               //  as {
+   //          //   starring : Person = first(Person[]) as { // <--- This is wrong, as the actual anonymous type is NOT a person.
+   //          //     starsName : PersonName
+   //          //  }
+               // So, if there's an accessor return type, use that.
+               val fieldAnonymousType = accessorReturnType ?: declaredAnonymousType
+               val fieldTypeName = fieldAnonymousType?.qualifiedName ?: field.type.toVyneQualifiedName()
                when (field.type) {
                   is ArrayType -> field.name to Field(
-                     type = field.type.toVyneQualifiedName(),
+                     type = fieldTypeName,
                      modifiers = field.modifiers.toVyneFieldModifiers(),
                      accessor = field.accessor,
                      readCondition = field.readExpression,
@@ -41,7 +51,7 @@ object TaxiTypeMapper {
                   )
 
                   else -> field.name to Field(
-                     field.type.qualifiedName.fqn(),
+                     fieldTypeName,
                      constraintProvider = buildDeferredConstraintProvider(
                         field.type.qualifiedName.fqn(),
                         field.constraints,

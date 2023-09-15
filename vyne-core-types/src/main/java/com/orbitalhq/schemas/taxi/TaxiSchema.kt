@@ -17,6 +17,7 @@ import lang.taxi.types.Annotation
 import lang.taxi.types.ArrayType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.StreamType
+import lang.taxi.types.TypeReference
 import mu.KotlinLogging
 import java.nio.file.Path
 
@@ -227,7 +228,7 @@ class TaxiSchema(
          // Use a cache of only taxi types initially.
          // These will be migrated to other type caches as they are created
          val taxiTypeCache = DefaultTypeCache()
-         (PrimitiveType.values().toList() + ArrayType.untyped() + StreamType.untyped())
+         (PrimitiveType.values().toList() + ArrayType.untyped() + StreamType.untyped() + TypeReference.untyped())
             .map { taxiPrimitive ->
                taxiTypeCache.add(
                   Type(

@@ -1,5 +1,6 @@
 package com.orbitalhq.functions.stdlib.collections
 
+import com.orbitalhq.firstTypedObject
 import com.winterbe.expekt.should
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.json.parseJson
@@ -7,6 +8,8 @@ import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyne
 import com.orbitalhq.typedObjects
 import com.orbitalhq.utils.asA
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
@@ -86,6 +89,7 @@ class CollectionFilteringSingleTest {
       val starring = movie.get("starring").toRawObject()
       starring.should.equal(mapOf("name" to "Jack"))
    }
+
 
 
 }

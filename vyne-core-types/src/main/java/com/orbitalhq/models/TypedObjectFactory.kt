@@ -18,11 +18,13 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.accessors.*
 import lang.taxi.expressions.Expression
+import lang.taxi.types.FieldProjection
 import lang.taxi.types.FormatsAndZoneOffset
 import mu.KotlinLogging
 import org.apache.commons.csv.CSVRecord
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.stream.Collectors
+
 
 /**
  * Constructs a TypedObject
@@ -46,7 +48,7 @@ class TypedObjectFactory(
    private val parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
    private val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf(),
    private val projectionScope: ProjectionFunctionScope? = null
-) : EvaluationValueSupplier {
+) : EvaluationValueSupplier, ValueProjector {
 
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -62,7 +64,9 @@ class TypedObjectFactory(
          this.functionRegistry,
          this.schema,
          this.accessorHandlers,
-         this.functionResultCache
+         this.functionResultCache,
+         valueProjector = this
+
       )
    }
    private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this, this.schema, accessorReader)
@@ -78,7 +82,7 @@ class TypedObjectFactory(
    }
 
    init {
-      if (type.isScalar) {
+      if (type.isCollection) {
 //         logger.warn { "TypedObjectFactory constructed for scalar type ${type.qualifiedName.shortDisplayName} - TypedObjectFactory is intended for object types - this probably indicates an upstream bug" }
       }
    }
@@ -153,21 +157,62 @@ class TypedObjectFactory(
          } else {
             schema.type(field.fieldProjection!!.projectedType)
          }
-//      val projectedType =  if (field.fieldProjection!!.projectedType.paschema.type(field.fieldProjection!!.projectedType)
-      val projectedFieldValue = if (fieldValue is TypedCollection && projectedType.isCollection) {
+      // MP: 12-Sep-23: Centralizing this to allow projection calling from places outside of fields (eg., within
+      // expressions)
+//      val projectedFieldValue = if (fieldValue is TypedCollection && projectedType.isCollection) {
+//         // Project each member of the collection seperately
+//         fieldValue
+//            .parallelStream()
+//            .map { collectionMember ->
+//               newFactory(projectedType.collectionType!!, collectionMember, scope = projectionScope)
+//                  .build()
+//            }.collect(Collectors.toList())
+//            .let { projectedCollection ->
+//               // Use arrayOf (instead of from), as the collection may be empty, so we want to be explicit about it's type
+//               TypedCollection.arrayOf(projectedType.collectionType!!, projectedCollection, source)
+//            }
+//      } else {
+//         newFactory(projectedType, fieldValue, scope = projectionScope).build()
+//      }
+//      return projectedFieldValue
+      return project(
+         fieldValue,
+         field.fieldProjection,
+         projectedType,
+         schema,
+         this.nullValues,
+         source,
+         field.format,
+         field.nullable,
+         true
+      )
+   }
+
+   override fun project(
+      valueToProject: TypedInstance,
+      projection: FieldProjection,
+      targetType: Type,
+      schema: Schema,
+      nullValues: Set<String>,
+      source: DataSource,
+      format: FormatsAndZoneOffset?,
+      nullable: Boolean,
+      allowContextQuerying: Boolean
+   ): TypedInstance {
+      val projectedFieldValue = if (valueToProject is TypedCollection && targetType.isCollection) {
          // Project each member of the collection seperately
-         fieldValue
+         valueToProject
             .parallelStream()
             .map { collectionMember ->
-               newFactory(projectedType.collectionType!!, collectionMember, scope = projectionScope)
+               newFactory(targetType.collectionType!!, collectionMember, scope = projection.projectionFunctionScope)
                   .build()
             }.collect(Collectors.toList())
             .let { projectedCollection ->
                // Use arrayOf (instead of from), as the collection may be empty, so we want to be explicit about it's type
-               TypedCollection.arrayOf(projectedType.collectionType!!, projectedCollection, source)
+               TypedCollection.arrayOf(targetType.collectionType!!, projectedCollection, source)
             }
       } else {
-         newFactory(projectedType, fieldValue, scope = projectionScope).build()
+         newFactory(targetType, valueToProject, scope = projection.projectionFunctionScope).build()
       }
       return projectedFieldValue
    }
@@ -176,7 +221,7 @@ class TypedObjectFactory(
     * Returns a new TypedObjectFactory,
     * merging the current set of known values with the newValue if possible.
     */
-   private fun newFactory(
+   fun newFactory(
       type: Type,
       newValue: Any,
       factsToExclude: Set<TypedInstance> = emptySet(),

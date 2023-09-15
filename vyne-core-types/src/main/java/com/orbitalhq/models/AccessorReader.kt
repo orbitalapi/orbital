@@ -9,7 +9,6 @@ import com.orbitalhq.models.conditional.ConditionalFieldSetEvaluator
 import com.orbitalhq.models.csv.CsvAttributeAccessorParser
 import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.FactDiscoveryStrategy
-import com.orbitalhq.models.facts.FactSearch
 import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.json.JsonAttributeAccessorParser
@@ -18,18 +17,15 @@ import com.orbitalhq.schemas.*
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
-import com.orbitalhq.utils.*
+import com.orbitalhq.utils.log
+import com.orbitalhq.utils.timeBucket
+import com.orbitalhq.utils.xtimed
 import lang.taxi.accessors.*
-import lang.taxi.expressions.Expression
-import lang.taxi.expressions.FieldReferenceExpression
-import lang.taxi.expressions.FunctionExpression
-import lang.taxi.expressions.LambdaExpression
-import lang.taxi.expressions.LiteralExpression
-import lang.taxi.expressions.OperatorExpression
-import lang.taxi.expressions.TypeExpression
+import lang.taxi.expressions.*
 import lang.taxi.functions.FunctionAccessor
 import lang.taxi.functions.FunctionExpressionAccessor
 import lang.taxi.types.*
+import lang.taxi.types.TypeReference
 import lang.taxi.utils.takeHead
 import org.apache.commons.csv.CSVRecord
 import org.w3c.dom.Document
@@ -41,101 +37,6 @@ object Parsers {
    val jsonParser: JsonAttributeAccessorParser by lazy { JsonAttributeAccessorParser() }
 }
 
-
-/**
- * Turns a FactBag into a ValueSupplier for evaluating expressions.
- * Lightweight way to provide access to TypedInstances in expression evaluation that's happening
- * outside of object construction (eg., when evaluating an expression inside a function)
- *
- * Supports model scan strategies in FactBag, so asking for a type will return the closest match
- * considering polymorphism
- */
-class FactBagValueSupplier(
-   private val facts: FactBag,
-   private val schema: Schema,
-   /**
-    * The value supplier to use when evaluating statements scoped with "this".
-    * If none passed, an empty value bag is used, so evaluations will fail.
-    *
-    * Generally, this should be a TypedObjectFactory.
-    */
-   private val thisScopeValueSupplier: EvaluationValueSupplier = empty(schema),
-   val typeMatchingStrategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES,
-
-   ) : EvaluationValueSupplier {
-   companion object {
-      fun of(
-         facts: List<TypedInstance>,
-         schema: Schema,
-         thisScopeValueSupplier: EvaluationValueSupplier = empty(schema),
-         typeMatchingStrategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES
-      ): EvaluationValueSupplier {
-         return FactBagValueSupplier(FactBag.of(facts, schema), schema, thisScopeValueSupplier, typeMatchingStrategy)
-      }
-
-      fun empty(schema: Schema): EvaluationValueSupplier {
-         return of(emptyList(), schema)
-      }
-   }
-
-   override fun getValue(
-      typeName: QualifiedName,
-      queryIfNotFound: Boolean,
-      allowAccessorEvaluation: Boolean
-   ): TypedInstance {
-      val type = schema.type(typeName)
-      val fact = facts.getFactOrNull(
-         FactSearch.findType(
-            type,
-            strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE,
-            matcher = typeMatchingStrategy
-         )
-      )
-//      val fact = facts.getFactOrNull(type, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
-      return fact ?: TypedNull.create(
-         type,
-         FailedSearch("Type ${typeName.shortDisplayName} was not found in the provided set of facts")
-      )
-   }
-
-   override fun getValue(attributeName: AttributeName): TypedInstance {
-      return thisScopeValueSupplier.getValue(attributeName)
-   }
-
-   override fun getScopedFact(scope: Argument): TypedInstance {
-      // MP: 17-Nov-22
-      // was:
-      // return facts.getScopedFact(scope).fact
-      // but this was causing exceptions.
-      // Looks like we should be using thisScopeValueSupplier
-      return thisScopeValueSupplier.getScopedFact(scope)
-   }
-
-   override fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance {
-      TODO("Not yet implemented")
-   }
-
-   override fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean, format: FormatsAndZoneOffset?): TypedInstance {
-      TODO("Not yet implemented")
-   }
-}
-
-/**
- * When evaluating expressions, a thing that can provide values.
- * Generally a TypedObjectFactory
- */
-interface EvaluationValueSupplier {
-   fun getValue(
-      typeName: QualifiedName,
-      queryIfNotFound: Boolean = false,
-      allowAccessorEvaluation: Boolean = true
-   ): TypedInstance
-
-   fun getScopedFact(scope: Argument): TypedInstance
-   fun getValue(attributeName: AttributeName): TypedInstance
-   fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance
-   fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean, format: FormatsAndZoneOffset?): TypedInstance
-}
 
 interface AccessorHandler<T : Accessor> {
    val accessorType: KClass<T>
@@ -153,7 +54,8 @@ class AccessorReader(
    private val functionRegistry: FunctionRegistry,
    private val schema: Schema,
    private val accessorHandlers: List<AccessorHandler<out Accessor>> = emptyList(),
-   private val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf()
+   private val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf(),
+   private val valueProjector: ValueProjector? = null
 ) {
    val accessorsByType = accessorHandlers.associateBy { it.accessorType }
 
@@ -292,13 +194,24 @@ class AccessorReader(
          )
 
          is FieldSourceAccessor -> TypedNull.create(targetType, source)
-         is LambdaExpression -> DeferredTypedInstance(accessor, schema, source)
-         is OperatorExpression -> evaluateOperatorExpression(targetType, accessor, schema, value, nullValues, source, format)
-         is FieldReferenceExpression -> xtimed("evaluate field reference ${accessor.asTaxi()}") { evaluateFieldReference(
+         is LambdaExpression -> DeferredExpression(accessor, schema, source)
+         is OperatorExpression -> evaluateOperatorExpression(
             targetType,
-            accessor.selectors,
-            source
-         )}
+            accessor,
+            schema,
+            value,
+            nullValues,
+            source,
+            format
+         )
+
+         is FieldReferenceExpression -> xtimed("evaluate field reference ${accessor.asTaxi()}") {
+            evaluateFieldReference(
+               targetType,
+               accessor.selectors,
+               source
+            )
+         }
 
          is LiteralExpression -> read(
             value,
@@ -324,15 +237,48 @@ class AccessorReader(
             allowContextQuerying
          )
 
-         is TypeExpression -> readTypeExpression(accessor, allowContextQuerying)
-         is ModelAttributeReferenceSelector -> xtimed("read model Attribute ${accessor.asTaxi()}") { readModelAttributeSelector(accessor, allowContextQuerying, schema) }
+         is TypeExpression -> readTypeExpression(accessor, allowContextQuerying, targetType)
+         is ModelAttributeReferenceSelector -> xtimed("read model Attribute ${accessor.asTaxi()}") {
+            readModelAttributeSelector(
+               accessor,
+               allowContextQuerying,
+               schema
+            )
+         }
+
          is ArgumentSelector -> readScopedReferenceSelector(accessor)
+         is ProjectingExpression -> {
+            val valueToProject = read(
+               value,
+               targetType,
+               accessor.expression,
+               schema,
+               nullValues,
+               source,
+               format,
+               nullable,
+               allowContextQuerying
+            )
+            if (valueProjector == null) {
+               error("Cannot project, as no ValueProjector has been supplied. Understand this use-case")
+            }
+            // TODO PERF: When we have projecting statements within an
+            // expression (vs on a field or as a top-level concern), then they're not currently converted to Vyne types.
+            // So, we have to convert them here.
+            // We should find a way to convert them earlier.
+            val projectionType = schema.typeCreateIfRequired(accessor.projection.projectedType)
+            if (valueToProject is DeferredTypedInstance) {
+               DeferredProjection(valueToProject, accessor.projection, valueProjector, projectionType, schema, nullValues, source, format, nullable, allowContextQuerying)
+            } else {
+               valueProjector.project(valueToProject, accessor.projection, projectionType, schema, nullValues, source, format, nullable, allowContextQuerying)
+            }
+         }
+
          else -> {
             TODO("Support for accessor not implemented with type $accessor")
          }
       }
    }
-
 
 
    private fun readModelAttributeSelector(
@@ -362,8 +308,11 @@ class AccessorReader(
          } else {
             FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE
          }
-      val fact = xtimed("readModelAttributeSelector - fact bag search against ${source.type.qualifiedName.shortDisplayName}") { FactBag.of(listOf(source), schema)
-         .getFactOrNull(requestedType, discoveryStrategy) }
+      val fact =
+         xtimed("readModelAttributeSelector - fact bag search against ${source.type.qualifiedName.shortDisplayName}") {
+            FactBag.of(listOf(source), schema)
+               .getFactOrNull(requestedType, discoveryStrategy)
+         }
       return fact ?: TypedNull.create(
          requestedType,
          FailedEvaluatedExpression(
@@ -374,26 +323,45 @@ class AccessorReader(
       )
    }
 
+   /**
+    * Reads a type expression (eg., a token where a type has been used as an input).
+    * Depending on the signature, this could be EITHER:
+    *  - A request for an instance of that type, looked up from the objectFactory (if the return type is T)
+    *  - A request for a reference to the type itself, for reflection purposes (if the return type is Type<T>)
+    */
    private fun readTypeExpression(
       accessor: TypeExpression,
-      allowContextQuerying: Boolean
+      allowContextQuerying: Boolean,
+      targetType: Type
    ): TypedInstance {
-      val result = objectFactory.getValue(
-         accessor.type.toVyneQualifiedName(),
-         queryIfNotFound = allowContextQuerying
-      )
+      val result = if (TypeReference.isTypeReference(targetType.paramaterizedName)) {
+         val typeReference = targetType.typeParameters[0]
+         TypeReferenceInstance.from(typeReference)
+      } else {
+         objectFactory.getValue(
+            accessor.type.toVyneQualifiedName(),
+            queryIfNotFound = allowContextQuerying
+         )
+      }
+
       return result
    }
 
    private fun readScopedReferenceSelector(accessor: ArgumentSelector): TypedInstance {
       val scopedInstance = objectFactory.getScopedFact(accessor.scope)
-      val result =  if (accessor.selectors.isNotEmpty()) {
-         readFieldSelectorsAgainstObject(accessor.selectors, scopedInstance, schema.type(accessor.returnType), accessor.path)
+      val result = if (accessor.selectors.isNotEmpty()) {
+         readFieldSelectorsAgainstObject(
+            accessor.selectors,
+            scopedInstance,
+            schema.type(accessor.returnType),
+            accessor.path
+         )
       } else {
          scopedInstance
       }
       return result
    }
+
    private fun evaluateFieldReference(
       targetType: Type,
       selectors: List<FieldReferenceSelector>,
@@ -401,7 +369,11 @@ class AccessorReader(
    ): TypedInstance {
       val (firstFieldRef, remainingFields) = selectors.takeHead()
       val firstObject = objectFactory.getValue(firstFieldRef.fieldName)
-      return readFieldSelectorsAgainstObject(remainingFields, firstObject, targetType, selectors.joinToString(".") { it.fieldName})
+      return readFieldSelectorsAgainstObject(
+         remainingFields,
+         firstObject,
+         targetType,
+         selectors.joinToString(".") { it.fieldName })
    }
 
    private fun readFieldSelectorsAgainstObject(
@@ -415,35 +387,35 @@ class AccessorReader(
          .asSequence()
          .takeWhile { errorMessage == null }
          .fold(firstObject as TypedInstance?) { lastObject, fieldReference ->
-               val result = when {
-                  lastObject is TypedNull -> {
-                     errorMessage =
-                        "Evaluation returned null where a ${lastObject.type.qualifiedName.shortDisplayName} was expected"
-                     null
-                  }
-
-                  lastObject !is TypedObject -> {
-                     errorMessage =
-                        "Evaluation returned a type of ${lastObject!!.type.qualifiedName.shortDisplayName} which doesn't have properties"
-                     null
-                  }
-
-                  !lastObject.hasAttribute(fieldReference.fieldName) -> {
-                     errorMessage =
-                        "Evaluation returned a type of ${lastObject.type.qualifiedName.shortDisplayName} which doesn't have a property named ${fieldReference.fieldName}"
-                     null
-                  }
-
-                  else -> {
-                     lastObject.get(fieldReference.fieldName)
-                  }
+            val result = when {
+               lastObject is TypedNull -> {
+                  errorMessage =
+                     "Evaluation returned null where a ${lastObject.type.qualifiedName.shortDisplayName} was expected"
+                  null
                }
-               result
+
+               lastObject !is TypedObject -> {
+                  errorMessage =
+                     "Evaluation returned a type of ${lastObject!!.type.qualifiedName.shortDisplayName} which doesn't have properties"
+                  null
+               }
+
+               !lastObject.hasAttribute(fieldReference.fieldName) -> {
+                  errorMessage =
+                     "Evaluation returned a type of ${lastObject.type.qualifiedName.shortDisplayName} which doesn't have a property named ${fieldReference.fieldName}"
+                  null
+               }
+
+               else -> {
+                  lastObject.get(fieldReference.fieldName)
+               }
+            }
+            result
          }
       return if (errorMessage != null) {
          TypedNull.create(
             targetType,
-               FailedEvaluatedExpression(fullPath, listOf(firstObject), errorMessage!!)
+            FailedEvaluatedExpression(fullPath, listOf(firstObject), errorMessage!!)
          )
       } else {
          value!!
@@ -471,9 +443,10 @@ class AccessorReader(
             require(index < accessor.inputs.size) { "Cannot read parameter ${parameter.description} as no input was provided at index $index" }
             val parameterInputAccessor = accessor.inputs[index]
             val targetParameterType = if (parameter.type is LambdaExpressionType) {
-               schema.type((parameter.type as LambdaExpressionType).returnType)
+               schema.typeCreateIfRequired((parameter.type as LambdaExpressionType).returnType)
+//               schema.type((parameter.type as LambdaExpressionType).returnType)
             } else {
-               schema.type(parameter.type)
+               schema.typeCreateIfRequired(parameter.type)
             }
 
             // This doesn't feel like the right place to do this, it's really
@@ -507,16 +480,18 @@ class AccessorReader(
             // If we revert, document the reason.
             val queryIfNotFound = true
 
-            timeBucket("read function accessor ${accessor.function.qualifiedName}") { read(
-               value,
-               targetParameterType,
-               parameterInputAccessor,
-               schema,
-               nullValues,
-               source,
-               allowContextQuerying = queryIfNotFound,
-               format = format
-            ) }
+            timeBucket("read function accessor ${accessor.function.qualifiedName}") {
+               read(
+                  value,
+                  targetParameterType,
+                  parameterInputAccessor,
+                  schema,
+                  nullValues,
+                  source,
+                  allowContextQuerying = queryIfNotFound,
+                  format = format
+               )
+            }
          }
       }
       val declaredVarArgs = if (function.parameters.isNotEmpty() && function.parameters.last().isVarArg) {
@@ -525,7 +500,16 @@ class AccessorReader(
          val varargType = schema.type(varargParam.type)
          val inputs = accessor.inputs.subList(varargFrom, accessor.inputs.size)
          inputs.map { varargInputAccessor ->
-            read(value, varargType, varargInputAccessor, schema, nullValues, source, format = format, allowContextQuerying = true)
+            read(
+               value,
+               varargType,
+               varargInputAccessor,
+               schema,
+               nullValues,
+               source,
+               format = format,
+               allowContextQuerying = true
+            )
          }
       } else emptyList()
 
@@ -648,7 +632,16 @@ class AccessorReader(
       return when {
          value is String -> csvParser.parse(value, targetType, accessor, schema, source, nullable, format)
          // Efficient parsing where we've already parsed the record once (eg., streaming from disk).
-         value is CSVRecord -> csvParser.parseToType(targetType, accessor, value, schema, nullValues, source, nullable, format)
+         value is CSVRecord -> csvParser.parseToType(
+            targetType,
+            accessor,
+            value,
+            schema,
+            nullValues,
+            source,
+            nullable,
+            format
+         )
 
          else -> {
             if (nullable) {
@@ -670,7 +663,8 @@ class AccessorReader(
    ): TypedInstance {
       val values = accessor.fields.map { (attributeName, accessor) ->
          val objectMemberField = targetType.attribute(attributeName)
-         val attributeValue = read(value, objectMemberField.type, accessor, schema, source = source, nullable = false, format = format)
+         val attributeValue =
+            read(value, objectMemberField.type, accessor, schema, source = source, nullable = false, format = format)
          attributeName to attributeValue
       }.toMap()
       return TypedObject(targetType, values, source)

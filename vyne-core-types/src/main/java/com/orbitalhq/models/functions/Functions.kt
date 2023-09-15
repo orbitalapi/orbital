@@ -66,7 +66,8 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
       function: FunctionAccessor,
       rawMessageBeingParsed: Any?,
       thisScopeValueSupplier: EvaluationValueSupplier,
-      returnTypeFormat: FormatsAndZoneOffset?
+      returnTypeFormat: FormatsAndZoneOffset?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance
 
    override fun invoke(
@@ -106,7 +107,7 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
             )
          )
       } else {
-         doInvoke(inputValues, schema, returnType, function, rawMessageBeingParsed, objectFactory, returnTypeFormat)
+         doInvoke(inputValues, schema, returnType, function, rawMessageBeingParsed, objectFactory, returnTypeFormat, resultCache)
       }
    }
 }
@@ -126,7 +127,8 @@ class InlineFunctionInvoker(override val functionName: QualifiedName, val handle
       function: FunctionAccessor,
       rawMessageBeingParsed: Any?,
       thisScopeValueSupplier: EvaluationValueSupplier,
-      returnTypeFormat: FormatsAndZoneOffset?
+      returnTypeFormat: FormatsAndZoneOffset?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       return handler.invoke(inputValues, schema, returnType, function)
    }
