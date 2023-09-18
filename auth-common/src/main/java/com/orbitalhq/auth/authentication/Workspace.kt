@@ -23,7 +23,7 @@ data class Workspace(
    @Column(nullable = false)
    val name: String,
 
-   @ManyToOne
+   @ManyToOne(fetch = FetchType.EAGER)
    @JoinColumn(name = "organisation_id")
    val organisation: Organisation?
 )

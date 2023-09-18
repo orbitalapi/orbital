@@ -13,7 +13,7 @@ import java.nio.file.Paths
 import java.time.Duration
 
 data class GitSchemaRepositoryConfig(
-   val checkoutRoot: Path = Paths.get("./gitProjects/"),
+   val checkoutRoot: Path = Paths.get("./.orbital/gitProjects/"),
    val pollFrequency: Duration = Duration.ofSeconds(30),
    val repositories: List<GitRepositorySpec> = emptyList(),
 ) {

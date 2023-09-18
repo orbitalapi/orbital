@@ -99,7 +99,7 @@ class WorkspaceService(
     )
 
 //    @PreAuthorize("hasAuthority('${VynePrivileges.ModifyWorkspaceMembership}')")
-    @PostMapping("/api/workspaces/{organisationId}/workspaceId}/members")
+    @PostMapping("/api/workspaces/{organisationId}/{workspaceId}/members")
     suspend fun addMemberToWorkspace(
         @AuthenticationPrincipal auth: Mono<Authentication>,
         @PathVariable("workspaceId") workspaceId: Long,

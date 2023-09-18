@@ -55,8 +55,8 @@ class InMemorySchemaRepositoryConfigLoader(
 
    override fun addGitSpec(gitSpec: GitRepositorySpec) {
       config = config.copy(
-         git = config.git!!.copy(
-            repositories = config.git!!.repositories.concat(gitSpec)
+         git = config.gitConfigOrDefault.copy(
+            repositories = config.gitConfigOrDefault.repositories.concat(gitSpec)
          )
       )
       eventDispatcher.gitRepositorySpecAdded(GitSpecAddedEvent(gitSpec, config.git!!))

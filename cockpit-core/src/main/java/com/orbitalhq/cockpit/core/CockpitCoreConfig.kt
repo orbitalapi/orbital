@@ -16,7 +16,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 @ComponentScan
 @EnableJpaRepositories
 
-@EntityScan(basePackageClasses = [VyneUser::class])
+@EntityScan(basePackageClasses = [VyneUser::class, CockpitCoreConfig::class])
 @Import(RawConnectionsConnectorConfig::class)
 class CockpitCoreConfig {
 
