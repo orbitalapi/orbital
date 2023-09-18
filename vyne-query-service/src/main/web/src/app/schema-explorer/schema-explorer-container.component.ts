@@ -1,5 +1,5 @@
 import { Component, Directive } from '@angular/core';
-import { AppInfoService, QueryServiceConfig } from '../services/app-info.service';
+import { AppInfoService, AppConfig } from '../services/app-info.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PackagesService, SourcePackageDescription } from 'src/app/package-viewer/packages.service';
 import { Observable } from 'rxjs/internal/Observable';
@@ -7,7 +7,7 @@ import { SchemaNotificationService } from 'src/app/services/schema-notification.
 
 @Directive()
 export class BaseSchemaExplorerContainer {
-  config: QueryServiceConfig;
+  config: AppConfig;
   packages: Observable<SourcePackageDescription[]>;
 
   constructor(private configService: AppInfoService,

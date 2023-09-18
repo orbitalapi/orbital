@@ -11,7 +11,7 @@ import {take, tap} from 'rxjs/operators';
 import {ActiveQueriesNotificationService, RunningQueryStatus} from '../services/active-queries-notification-service';
 import {ValueWithTypeName} from '../services/models';
 import {Subscription} from 'rxjs';
-import {AppInfoService, QueryServiceConfig} from '../services/app-info.service';
+import {AppInfoService, AppConfig} from '../services/app-info.service';
 import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
 import {ExportFormat, ResultsDownloadService} from 'src/app/results-download/results-download.service';
 
@@ -32,7 +32,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   private subscriptions: Subscription[] = [];
 
   activeQueries: Map<string, RunningQueryStatus> = new Map<string, RunningQueryStatus>();
-  config: QueryServiceConfig;
+  config: AppConfig;
 
   constructor(appInfoService: AppInfoService,
               queryService: QueryService,

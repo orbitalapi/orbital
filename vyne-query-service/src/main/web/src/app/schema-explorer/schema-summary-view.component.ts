@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs/internal/Observable';
 import { ParsedSource, VersionedSource } from '../services/schema';
-import { AppInfoService, QueryServiceConfig } from '../services/app-info.service';
+import { AppInfoService, AppConfig } from '../services/app-info.service';
 import { PackagesService, SourcePackageDescription } from '../package-viewer/packages.service';
 import { ChangeLogEntry, ChangelogService } from '../changelog/changelog.service';
 import { TypesService } from '../services/types.service';
@@ -38,7 +38,7 @@ export class SchemaSummaryViewComponent {
 
   schemas: Observable<ParsedSource[]>;
 
-  config: QueryServiceConfig;
+  config: AppConfig;
   changeLogEntries: Observable<ChangeLogEntry[]>
 
   constructor(private service: TypesService,
