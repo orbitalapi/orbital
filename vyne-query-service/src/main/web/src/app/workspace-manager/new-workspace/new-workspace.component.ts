@@ -87,7 +87,7 @@ export class NewWorkspaceComponent {
         this.errorMessage = null;
         this.working = true;
         const formData = this.formGroup.getRawValue() as { workspaceName: string }
-        this.workspaceService.createWorkspace(formData.workspaceName)
+        this.workspaceService.createWorkspace(formData.workspaceName, true)
             .subscribe(value => {
                     console.log('Workspace created')
                     this.working = false
