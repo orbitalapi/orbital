@@ -55,7 +55,8 @@ abstract class ConfigFileConnectorRegistry<TMapType : ConnectionConfigMap, TConf
       return getConnectionMap().values.toList()
    }
    fun getConnection(name: String): TConfigType {
-      return getConnectionMap()[name] ?: error("No connection $name is defined")
+      return getConnectionMap()[name] ?:
+         error("No connection $name is defined")
    }
    fun hasConnection(name: String): Boolean {
       return getConnectionMap().containsKey(name)
