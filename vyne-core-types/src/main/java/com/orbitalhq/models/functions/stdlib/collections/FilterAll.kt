@@ -13,7 +13,7 @@ import lang.taxi.functions.FunctionAccessor
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.QualifiedName
 
-object FilterAll : NamedFunctionInvoker, CollectionFilteringFunction()  {
+object FilterAll : NamedFunctionInvoker, CollectionFilteringFunction() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.FilterAll.name
    override fun invoke(
       inputValues: List<TypedInstance>,
@@ -28,11 +28,11 @@ object FilterAll : NamedFunctionInvoker, CollectionFilteringFunction()  {
       return applyFilter(inputValues, schema, returnType, function, objectFactory, rawMessageBeingParsed)
          .map {
             if (it.isEmpty()) {
-                TypedCollection.empty(returnType)
+               TypedCollection.empty(returnType)
             } else {
-                TypedCollection.from(it, source = EvaluatedExpression(function.asTaxi(), inputValues))
+               TypedCollection.from(it, source = EvaluatedExpression(function.asTaxi(), inputValues))
             }
-            }
+         }
 
          .getOrHandle { it }
    }

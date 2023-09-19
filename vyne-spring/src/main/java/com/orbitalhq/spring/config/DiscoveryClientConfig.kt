@@ -24,7 +24,7 @@ class DiscoveryClientConfig {
 
    @Bean
    fun servicesConfigRepository(configPathProvider: ConfigPathProvider): ServicesConfigRepository {
-      logger.info { "Registering a file based discovery client for Vyne services.  Using ${configPathProvider.servicesConfigFilePath}" }
+      logger.info { "Registering a file based discovery client for Vyne services.  Using ${configPathProvider.servicesConfigFilePath.toFile().absolutePath}" }
       val repository =
          ServicesConfigRepository(configPathProvider.servicesConfigFilePath, createConfigFileIfMissing = true)
       repository.watchForChanges()

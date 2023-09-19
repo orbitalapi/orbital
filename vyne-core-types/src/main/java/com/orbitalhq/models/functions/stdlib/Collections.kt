@@ -5,6 +5,7 @@ import arrow.core.getOrHandle
 import arrow.core.left
 import arrow.core.right
 import com.orbitalhq.models.*
+import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.functions.NamedFunctionInvoker
 import com.orbitalhq.models.functions.NullSafeInvoker
 import com.orbitalhq.schemas.Schema
@@ -42,13 +43,14 @@ abstract class BooleanPredicateEvaluator(
    NullSafeInvoker() {
 
    override fun doInvoke(
-      inputValues: List<TypedInstance>,
-      schema: Schema,
-      returnType: Type,
-      function: FunctionAccessor,
-      rawMessageBeingParsed: Any?,
-      thisScopeValueSupplier: EvaluationValueSupplier,
-      returnTypeFormat: FormatsAndZoneOffset?
+       inputValues: List<TypedInstance>,
+       schema: Schema,
+       returnType: Type,
+       function: FunctionAccessor,
+       rawMessageBeingParsed: Any?,
+       thisScopeValueSupplier: EvaluationValueSupplier,
+       returnTypeFormat: FormatsAndZoneOffset?,
+       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       return expectAllBoolean(inputValues, function, returnType)
          .map(reducer)
@@ -94,13 +96,14 @@ private fun expectAllBoolean(
 object Contains : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Contains.name
    override fun doInvoke(
-      inputValues: List<TypedInstance>,
-      schema: Schema,
-      returnType: Type,
-      function: FunctionAccessor,
-      rawMessageBeingParsed: Any?,
-      thisScopeValueSupplier: EvaluationValueSupplier,
-      returnTypeFormat: FormatsAndZoneOffset?
+       inputValues: List<TypedInstance>,
+       schema: Schema,
+       returnType: Type,
+       function: FunctionAccessor,
+       rawMessageBeingParsed: Any?,
+       thisScopeValueSupplier: EvaluationValueSupplier,
+       returnTypeFormat: FormatsAndZoneOffset?,
+       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val collection = inputValues[0] as TypedCollection
       val searchTarget = inputValues[1] as TypedInstance

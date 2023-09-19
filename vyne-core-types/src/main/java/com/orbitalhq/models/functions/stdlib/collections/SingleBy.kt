@@ -32,7 +32,7 @@ object SingleBy : NamedFunctionInvoker {
       val collection = inputValues[0] as TypedCollection
       val deferredInstance = inputValues[1] as DeferredTypedInstance
       val searchValue = inputValues[2] as TypedInstance
-      val expressionReturnType = schema.type(deferredInstance.expression.returnType)
+      val expressionReturnType = deferredInstance.type
 
       val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
 
@@ -46,14 +46,12 @@ object SingleBy : NamedFunctionInvoker {
          val stopwatch = Stopwatch.createStarted()
          val grouped = collection.groupBy { collectionMember ->
             val factBag = FactBagValueSupplier.of(listOf(collectionMember), schema, thisScopeValueSupplier = objectFactory)
-            val reader = AccessorReader(factBag, schema.functionRegistry, schema, functionResultCache = resultCache)
-            val evaluated = reader.evaluate(
-               collectionMember,
-               expressionReturnType,
-               deferredInstance.expression,
-               dataSource = dataSource,
-               format = null
-            )
+//            val reader = AccessorReader(factBag, schema.functionRegistry, schema, functionResultCache = resultCache)
+
+            val evaluated = deferredInstance.evaluate(collectionMember, dataSource, factBag, functionResultCache = resultCache)
+            if (evaluated is TypedNull) {
+               deferredInstance.evaluate(collectionMember, dataSource, factBag, functionResultCache = resultCache)
+            }
             evaluated
          }
          logger.debug { "singleBy grouping function took ${stopwatch.elapsed().toMillis()}ms" }
@@ -62,7 +60,9 @@ object SingleBy : NamedFunctionInvoker {
 
       val matchedCollection = groupedData[searchValue]
       val result = when {
-         matchedCollection == null -> TypedNull.create(returnType, FailedEvaluatedExpression(function.asTaxi(), inputValues, "No matching value in collection of ${collection.memberType.longDisplayName} with ${collection.size} elements matched value ${searchValue.value}"))
+         matchedCollection == null -> {
+            TypedNull.create(returnType, FailedEvaluatedExpression(function.asTaxi(), inputValues, "No matching value in collection of ${collection.memberType.longDisplayName} with ${collection.size} elements matched value ${searchValue.value}"))
+         }
          matchedCollection.size == 1 -> matchedCollection.single()
          else -> TypedNull.create(returnType, FailedEvaluatedExpression(function.asTaxi(), inputValues, "Search key  ${searchValue.value} matched ${matchedCollection.size} elements, expected a single match."))
       }

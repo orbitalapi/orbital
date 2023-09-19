@@ -14,7 +14,6 @@ import com.orbitalhq.connectors.config.ConnectionsConfig
 import com.orbitalhq.connectors.jdbc.HikariJdbcConnectionFactory
 import com.orbitalhq.connectors.jdbc.JdbcInvoker
 import com.orbitalhq.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
-import com.orbitalhq.connectors.soap.SoapInvoker
 import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import com.orbitalhq.query.graph.operationInvocation.OperationCacheFactory
@@ -52,7 +51,6 @@ class StandaloneVyneFactory(
    objectMapper: ObjectMapper,
    private val webClientBuilder: WebClient.Builder,
    private val cacheConfiguration: VyneSpringCacheConfiguration,
-   private val operationCacheFactory: OperationCacheFactory = OperationCacheFactory(),
    private val formatSpecRegistry: FormatSpecRegistry,
    private val sourceConverterRegistry: SourceConverterRegistry
 //   private val schemaCache: ?
@@ -60,6 +58,12 @@ class StandaloneVyneFactory(
    companion object {
       private val logger = KotlinLogging.logger {}
    }
+
+   // Removed from constructor, as we weren't injecting, just using the default value.
+   // Turns out, a constructor param with a variable with default value breaks Spring Native
+   // ( Parameter specified as non-null is null: method com.orbitalhq.query.runtime.executor.StandaloneVyneFactory.<init>, parameter operationCacheFactory)
+   // So, since we weren't injecting, just use the static value.
+   private val operationCacheFactory: OperationCacheFactory = OperationCacheFactory()
 
    private val schemaCache = CacheBuilder.newBuilder()
       .maximumSize(5)
@@ -85,9 +89,10 @@ class StandaloneVyneFactory(
       val discoveryClient = StaticServicesConfigDiscoveryClient(message.services)
       val jdbcInvoker = buildJdbcInvoker(message.connections, schemaProvider)
       val httpInvoker = buildHttpInvoker(schemaProvider, message, discoveryClient)
-      val soapInvoker = buildSoapInvoker(schemaProvider, discoveryClient)
+      // SOAP invoker is not compatible with native builds
+//      val soapInvoker = buildSoapInvoker(schemaProvider, discoveryClient)
       val dynamoInvoker = buildDynamoInvoker(message.connections, schemaProvider)
-      val invokers = listOf(jdbcInvoker, httpInvoker, soapInvoker, dynamoInvoker)
+      val invokers = listOf(jdbcInvoker, httpInvoker, /* soapInvoker, */ dynamoInvoker)
       return Vyne(
          listOf(schemaProvider.schema),
          QueryEngineFactory.withOperationInvokers(
@@ -109,14 +114,14 @@ class StandaloneVyneFactory(
       )
    }
 
-   private fun buildSoapInvoker(
-      schemaProvider: SchemaProvider,
-      discoveryClient: StaticServicesConfigDiscoveryClient
-   ): SoapInvoker {
-      return SoapInvoker(
-         schemaProvider
-      )
-   }
+//   private fun buildSoapInvoker(
+//      schemaProvider: SchemaProvider,
+//      discoveryClient: StaticServicesConfigDiscoveryClient
+//   ): SoapInvoker {
+//      return SoapInvoker(
+//         schemaProvider
+//      )
+//   }
 
    private fun buildHttpInvoker(
       schemaProvider: SchemaProvider,

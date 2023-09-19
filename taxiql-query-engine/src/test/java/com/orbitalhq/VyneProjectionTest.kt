@@ -2843,8 +2843,9 @@ find { Movie[] } as {
        ...except { id }
     }[]
 }[]"""
-      ).firstTypedObject()["aListers"].toRawObject() as List<Map<String, Any>>
-      result.shouldBe(
+      ).firstTypedObject()
+      val alisters = result["aListers"].toRawObject() as List<Map<String, Any>>
+      alisters.shouldBe(
          listOf(
             mapOf(
                "name" to "Tom Planks",

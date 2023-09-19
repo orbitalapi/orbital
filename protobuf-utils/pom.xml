@@ -12,7 +12,7 @@
    <artifactId>protobuf-utils</artifactId>
 
    <properties>
-      <wire.version>4.8.0</wire.version>
+      <wire.version>4.8.1</wire.version>
       <okio.version>3.4.0</okio.version>
 
 
@@ -33,6 +33,13 @@
       <dependency>
          <groupId>com.squareup.wire</groupId>
          <artifactId>wire-compiler</artifactId>
+         <exclusions>
+            <!-- HAs a depenendecy on 1.0.1, which doesn't actually seem to exist. We have a dependency on 1.5.1.  Should be fine, right? -->
+            <exclusion>
+               <groupId>org.jetbrains.kotlinx</groupId>
+               <artifactId>kotlinx-serialization-core</artifactId>
+            </exclusion>
+         </exclusions>
       </dependency>
       <dependency>
          <groupId>com.squareup.wire</groupId>
@@ -50,6 +57,13 @@
          <groupId>com.squareup.okio</groupId>
          <artifactId>okio-fakefilesystem</artifactId>
       </dependency>
+      <!-- required because wire has a transitive dependency on v1.0.1, which is causing all sorts of problems -->
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-serialization-core</artifactId>
+         <version>${kotlin.serialization.version}</version>
+      </dependency>
+
    </dependencies>
 
    <dependencyManagement>

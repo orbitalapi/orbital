@@ -1,7 +1,7 @@
 package com.orbitalhq.models.functions.stdlib
 
 import com.orbitalhq.models.AccessorReader
-import com.orbitalhq.models.DeferredTypedInstance
+import com.orbitalhq.models.DeferredExpression
 import com.orbitalhq.models.EvaluatedExpression
 import com.orbitalhq.models.EvaluationValueSupplier
 import com.orbitalhq.models.FactBagValueSupplier
@@ -43,7 +43,7 @@ object Fold : NamedFunctionInvoker {
    ): TypedInstance {
       val sourceCollection = inputValues[0] as TypedCollection
       val initialValue = inputValues[1] as TypedValue
-      val deferredInstance = inputValues[2] as DeferredTypedInstance
+      val deferredInstance = inputValues[2] as DeferredExpression
       val expression = deferredInstance.expression
       val expressionReturnType = schema.type(expression.returnType)
       val dataSource = EvaluatedExpression(
@@ -79,7 +79,7 @@ object Reduce : NamedFunctionInvoker {
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val sourceCollection = inputValues[0] as TypedCollection
-      val deferredInstance = inputValues[1] as DeferredTypedInstance
+      val deferredInstance = inputValues[1] as DeferredExpression
       val expression = deferredInstance.expression
       val expressionReturnType = schema.type(expression.returnType)
       val dataSource = EvaluatedExpression(
