@@ -49,14 +49,9 @@ object SingleBy : NamedFunctionInvoker {
 //            val reader = AccessorReader(factBag, schema.functionRegistry, schema, functionResultCache = resultCache)
 
             val evaluated = deferredInstance.evaluate(collectionMember, dataSource, factBag, functionResultCache = resultCache)
-
-//            val evaluated = reader.evaluate(
-//               collectionMember,
-//               expressionReturnType,
-//               deferredInstance.expression,
-//               dataSource = dataSource,
-//               format = null
-//            )
+            if (evaluated is TypedNull) {
+               deferredInstance.evaluate(collectionMember, dataSource, factBag, functionResultCache = resultCache)
+            }
             evaluated
          }
          logger.debug { "singleBy grouping function took ${stopwatch.elapsed().toMillis()}ms" }
@@ -65,7 +60,9 @@ object SingleBy : NamedFunctionInvoker {
 
       val matchedCollection = groupedData[searchValue]
       val result = when {
-         matchedCollection == null -> TypedNull.create(returnType, FailedEvaluatedExpression(function.asTaxi(), inputValues, "No matching value in collection of ${collection.memberType.longDisplayName} with ${collection.size} elements matched value ${searchValue.value}"))
+         matchedCollection == null -> {
+            TypedNull.create(returnType, FailedEvaluatedExpression(function.asTaxi(), inputValues, "No matching value in collection of ${collection.memberType.longDisplayName} with ${collection.size} elements matched value ${searchValue.value}"))
+         }
          matchedCollection.size == 1 -> matchedCollection.single()
          else -> TypedNull.create(returnType, FailedEvaluatedExpression(function.asTaxi(), inputValues, "Search key  ${searchValue.value} matched ${matchedCollection.size} elements, expected a single match."))
       }
