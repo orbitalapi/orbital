@@ -13,6 +13,8 @@ import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseJsonModel
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
+import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.SimpleVyneProvider
@@ -24,6 +26,7 @@ import org.skyscreamer.jsonassert.JSONAssert
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
@@ -120,6 +123,12 @@ class VyneQueryIntegrationTest {
    //@Import(SchemaSourcePrimaryBeanConfig::class)
    @Import(TestDiscoveryClientConfig::class)
    class SpringConfig {
+
+      @MockBean
+      lateinit var eventDispatcher: RepositorySpecLifecycleEventDispatcher
+
+      @MockBean
+      lateinit var configLoader : SchemaRepositoryConfigLoader
 
       @Bean
       @Primary

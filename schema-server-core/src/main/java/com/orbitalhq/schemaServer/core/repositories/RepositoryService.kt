@@ -94,7 +94,7 @@ fun GitRepositoryChangeRequest.toRepositorySpec(): GitRepositorySpec {
 
 fun CreateFileRepositoryRequest.toRepositorySpec(): FileSystemPackageSpec {
     val packageIdentifier = when (this.loader.packageType) {
-        PackageType.Taxi -> this.newProjectIdentifier!!
+        PackageType.Taxi -> this.newProjectIdentifier
 
         PackageType.OpenApi -> (this.loader as OpenApiPackageLoaderSpec).identifier
         PackageType.Soap -> (this.loader as SoapPackageLoaderSpec).identifier

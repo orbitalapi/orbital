@@ -10,6 +10,8 @@ import com.orbitalhq.models.json.parseKeyValuePair
 import com.orbitalhq.query.HistoryEventConsumerProvider
 import com.orbitalhq.query.history.QuerySankeyChartRow
 import com.orbitalhq.query.history.SankeyNodeType
+import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
 import com.orbitalhq.testVyne
 import com.winterbe.expekt.should
 import io.kotest.matchers.collections.shouldHaveSize
@@ -23,6 +25,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
@@ -52,6 +55,13 @@ import javax.sql.DataSource
 @Testcontainers
 @ActiveProfiles("test")
 class QueryLineageTest : BaseQueryServiceTest() {
+
+   @MockBean
+   lateinit var eventDispatcher: RepositorySpecLifecycleEventDispatcher
+
+   @MockBean
+   lateinit var configLoader : SchemaRepositoryConfigLoader
+
    @Autowired
    lateinit var datasource: DataSource
 

@@ -2,12 +2,15 @@ package com.orbitalhq.queryService.security.authorisation.rest
 
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import com.orbitalhq.queryService.CustomWebFluxConfigSupport
+import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
 import com.orbitalhq.spring.config.TestDiscoveryClientConfig
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
@@ -33,6 +36,13 @@ import java.io.File
 class UserRoleMappingControllerTest {
    @Autowired
    private lateinit var webClient: WebTestClient
+
+   @MockBean
+   lateinit var eventDispatcher: RepositorySpecLifecycleEventDispatcher
+
+   @MockBean
+   lateinit var configLoader : SchemaRepositoryConfigLoader
+
 
    @TestConfiguration
    @Import(TestDiscoveryClientConfig::class, CustomWebFluxConfigSupport::class)

@@ -16,6 +16,8 @@ import com.orbitalhq.query.runtime.core.QueryService
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schema.spring.SimpleTaxiSchemaProvider
+import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.config.TestDiscoveryClientConfig
@@ -55,6 +57,13 @@ import org.springframework.test.context.junit4.SpringRunner
 @ActiveProfiles("test")
 class OperationAuthenticationIntegrationTest {
    private lateinit var taxiSchema: TaxiSchema
+
+   @MockBean
+   lateinit var eventDispatcher: RepositorySpecLifecycleEventDispatcher
+
+   @MockBean
+   lateinit var configLoader : SchemaRepositoryConfigLoader
+
 
    @Rule
    @JvmField

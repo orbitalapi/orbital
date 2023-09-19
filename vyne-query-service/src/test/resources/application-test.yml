@@ -2,4 +2,4 @@ vyne.telemetry.enabled: false
 spring:
    flyway:
       enabled: true
-      locations: classpath:db/postgres
+      locations: classpath:db/migration
