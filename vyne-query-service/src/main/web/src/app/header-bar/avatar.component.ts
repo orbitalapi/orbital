@@ -8,8 +8,7 @@ import { ConfirmationDialogComponent } from 'src/app/confirmation-dialog/confirm
   selector: 'app-avatar',
   template: `
     <button mat-icon-button [matMenuTriggerFor]="menu">
-      <mat-icon *ngIf="!user?.profileUrl" class="avatar">account_circle</mat-icon>
-      <img class="avatar" *ngIf="user.profileUrl" [src]="user.profileUrl" alt="User profile">
+      <tui-avatar [text]="user.username" [rounded]="true" [avatarUrl]="user.profileUrl" size="s"></tui-avatar>
     </button>
     <mat-menu #menu="matMenu">
       <div class="menu-header">

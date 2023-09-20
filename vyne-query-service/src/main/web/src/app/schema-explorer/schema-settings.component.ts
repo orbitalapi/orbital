@@ -17,7 +17,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
       <hr>
       <h3>Danger zone</h3>
       <button tuiButton appearance="secondary-destructive" [showLoader]="working" (click)="removeRepository()">
-        Remove this repository
+        Remove this schema
       </button>
       <tui-notification [status]="deleteResultMessage.level.toLowerCase()" *ngIf="deleteResultMessage">
         {{ deleteResultMessage.message }}

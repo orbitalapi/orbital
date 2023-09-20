@@ -12,7 +12,6 @@ spring:
       url: "jdbc:postgresql://localhost:5432/orbital-station"
       username: "martypitt"
       password: "password"
-      driver: "org.postgresql.Driver"
       driverClassName: org.postgresql.Driver
 orbital:
    cors:

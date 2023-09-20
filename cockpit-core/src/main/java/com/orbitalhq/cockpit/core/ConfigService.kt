@@ -1,13 +1,12 @@
 package com.orbitalhq.cockpit.core
 
-import io.micrometer.core.instrument.MeterRegistry
 import com.orbitalhq.cockpit.core.pipelines.PipelineConfig
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.licensing.License
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer
 import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.bind.annotation.GetMapping
@@ -51,7 +50,8 @@ data class ConfigSummary(
 
 @ConfigurationProperties(prefix = "vyne.toggles")
 data class FeatureTogglesConfig(
-   val chatGptEnabled: Boolean = false
+   val chatGptEnabled: Boolean = false,
+   val workspacesEnabled: Boolean = false
 )
 
 data class LicenseStatus(

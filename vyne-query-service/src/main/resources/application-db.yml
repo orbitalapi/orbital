@@ -5,4 +5,4 @@ spring:
       password: orbital
    flyway:
       enabled: true
-      locations: classpath:db/postgres
+      locations: classpath:db/migration

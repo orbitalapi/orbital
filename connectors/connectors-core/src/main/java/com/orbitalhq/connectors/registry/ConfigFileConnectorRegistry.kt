@@ -3,7 +3,7 @@ package com.orbitalhq.connectors.registry
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.orbitalhq.config.BaseHoconConfigFileRepository
-import com.orbitalhq.config.toConfig
+import com.orbitalhq.config.toHocon
 import mu.KotlinLogging
 import org.http4k.quoted
 import java.nio.file.Files
@@ -30,7 +30,7 @@ abstract class ConfigFileConnectorRegistry<TMapType : ConnectionConfigMap, TConf
 
    fun saveConnectorConfig(connectionConfig: TConfigType) {
       val newConfig = ConfigFactory.empty()
-         .withValue(configPath(connectionConfig.connectionName), connectionConfig.toConfig().root())
+         .withValue(configPath(connectionConfig.connectionName), connectionConfig.toHocon().root())
 
       // Use the existing unresolvedConfig to ensure that when we're
       // writing back out, that tokens that have been resolved
@@ -55,7 +55,8 @@ abstract class ConfigFileConnectorRegistry<TMapType : ConnectionConfigMap, TConf
       return getConnectionMap().values.toList()
    }
    fun getConnection(name: String): TConfigType {
-      return getConnectionMap()[name] ?: error("No connection $name is defined")
+      return getConnectionMap()[name] ?:
+         error("No connection $name is defined")
    }
    fun hasConnection(name: String): Boolean {
       return getConnectionMap().containsKey(name)

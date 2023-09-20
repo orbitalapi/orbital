@@ -1,6 +1,7 @@
 package com.orbitalhq.schema.publisher.http
 
 import com.orbitalhq.schema.publisher.*
+import com.orbitalhq.utils.RetryFailOnSerializeEmitHandler
 import mu.KotlinLogging
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.*
@@ -103,7 +104,8 @@ class HttpPollKeepAliveStrategyMonitor(
                      PublisherHealth.Status.Unhealthy,
                      "Keep alive call returned error: ${error.message}"
                   )
-               ), RetryFailOnSerializeEmitHandler)
+               ), RetryFailOnSerializeEmitHandler
+               )
             }
          }
    }
@@ -116,8 +118,4 @@ class HttpPollKeepAliveStrategyMonitor(
    }
 }
 
-object RetryFailOnSerializeEmitHandler : Sinks.EmitFailureHandler {
-   override fun onEmitFailure(signalType: SignalType, emitResult: Sinks.EmitResult) =
-      emitResult == Sinks.EmitResult.FAIL_NON_SERIALIZED
-}
 

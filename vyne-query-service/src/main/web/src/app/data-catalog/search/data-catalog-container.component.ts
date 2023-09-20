@@ -10,8 +10,6 @@ import {Schema} from 'src/app/services/schema';
 @Component({
   selector: 'app-data-catalog-container',
   template: `
-    <app-header-bar>
-    </app-header-bar>
     <app-header-component-layout title='Catalog'
                                  description='The data catalog contains all models, attributes, services and operations published to Orbital. You can search by
           name, or search for tags using # (eg: #MyTag)' [padBottom]='false' [displayBody]='false'>

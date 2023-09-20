@@ -8,7 +8,7 @@ import com.orbitalhq.auth.tokens.AuthToken
 import com.orbitalhq.auth.tokens.AuthTokenRepository
 import com.orbitalhq.auth.tokens.NoCredentialsAuthToken
 import com.orbitalhq.config.BaseHoconConfigFileRepository
-import com.orbitalhq.config.toConfig
+import com.orbitalhq.config.toHocon
 import mu.KotlinLogging
 import org.http4k.quoted
 import java.nio.file.Path
@@ -74,7 +74,7 @@ class ConfigFileAuthTokenRepository(
 //      val newConfig = AuthConfig(mutableMapOf(serviceName to token))
 //         .toConfig()
       val newConfig = ConfigFactory.empty()
-         .withValue(authTokenConfigPath(serviceName), token.toConfig().root())
+         .withValue(authTokenConfigPath(serviceName), token.toHocon().root())
 
       // Use the existing unresolvedConfig to ensure that when we're
       // writing back out, that tokens that have been resolved

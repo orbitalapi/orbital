@@ -13,8 +13,6 @@ import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDis
 @Component({
   selector: 'app-data-workbook-container',
   template: `
-    <app-header-bar title="Data workbook">
-    </app-header-bar>
     <div class="page-content container">
       <app-data-workbook
         (fileDataSourceChanged)="onFileSourceChanged($event)"

@@ -13,13 +13,10 @@ import org.springframework.http.ResponseCookie
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.security.core.context.ReactiveSecurityContextHolder
-import org.springframework.security.core.context.SecurityContext
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
 import reactor.kotlin.core.publisher.switchIfEmpty
 import java.time.Duration
 import java.time.Instant
@@ -28,7 +25,7 @@ private val logger = KotlinLogging.logger {}
 
 @RestController
 class UserService(
-   private val vyneUserRepository: VyneUserRepository,
+   private val vyneUserRepository: VyneUserJpaRepository,
    private val vyneUserRoleMappingRepository: VyneUserRoleMappingRepository,
    private val vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository,
    private val openIdpConfiguration: VyneOpenIdpConnectConfig
@@ -78,6 +75,7 @@ class UserService(
    }
 
    private fun withGrantedAuthorities(authenticatedVyneUser: VyneUser): VyneUser {
+//      return authenticatedVyneUser
       val userRoles = vyneUserRoleMappingRepository.findByUserName(authenticatedVyneUser.username)?.roles ?: emptySet()
       val grantedAuthorities = userRoles
          .flatMap { role -> vyneUserRoleDefinitionRepository.findByRoleName(role)?.grantedAuthorities ?: emptySet() }

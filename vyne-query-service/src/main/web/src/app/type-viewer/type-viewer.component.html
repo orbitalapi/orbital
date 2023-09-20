@@ -18,10 +18,10 @@
     <app-description-editor-container [type]="type" [editable]="editable" [commitMode]="commitMode"
                                       (updateDeferred)="typeUpdated.emit(type)"></app-description-editor-container>
   </section>
-  <section class="no-h2" *ngIf="showTags">
-    <app-tags-section [metadata]="type.metadata" [type]="type" [commitMode]="commitMode"
-                      (updateDeferred)="typeUpdated.emit(type)"></app-tags-section>
-  </section>
+<!--  <section class="no-h2" *ngIf="showTags">-->
+<!--    <app-tags-section [metadata]="type.metadata" [type]="type" [commitMode]="commitMode"-->
+<!--                      (updateDeferred)="typeUpdated.emit(type)"></app-tags-section>-->
+<!--  </section>-->
 
   <section *ngIf="hasAttributes && showAttributes">
     <h2>Attributes</h2>

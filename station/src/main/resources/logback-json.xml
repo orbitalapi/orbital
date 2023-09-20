@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+   <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
+   </appender>
+   <root level="info">
+      <appender-ref ref="Console"/>
+   </root>
+</configuration>
