@@ -17,14 +17,11 @@ import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {SimpleCodeViewerModule} from '../simple-code-viewer/simple-code-viewer.module';
 import {UsagesTableComponent} from './usages-table/usages-table.component';
 import {OperationBadgeModule} from '../operation-badge/operation-badge.module';
-import {TagsSectionComponent} from './tags-section/tags-section.component';
 import {MatIconModule} from '@angular/material/icon';
-import {EditTagsPanelComponent} from './tags-section/edit-tags-panel.component';
+// import {EditTagsPanelComponent} from './tags-section/edit-tags-panel.component';
 import {MatButtonModule} from '@angular/material/button';
 import {FormsModule} from '@angular/forms';
-import {EditTagsPanelContainerComponent} from './tags-section/edit-tags-panel-container.component';
-import {EditOwnerPanelContainerComponent} from './tags-section/edit-owner-panel-container.component';
-import {EditOwnerPanelComponent} from './tags-section/edit-owner-panel.component';
+// import {EditTagsPanelContainerComponent} from './tags-section/edit-tags-panel-container.component';
 import {LineageGraphModule} from './lineage-graph/lineage-graph.module';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {RouterModule} from '@angular/router';
@@ -94,11 +91,11 @@ import {ChangesetSelectorModule} from '../changeset-selector/changeset-selector.
     TypeViewerComponent,
     TypeViewerContainerComponent,
     UsagesTableComponent,
-    TagsSectionComponent,
-    EditTagsPanelComponent,
-    EditTagsPanelContainerComponent,
-    EditOwnerPanelContainerComponent,
-    EditOwnerPanelComponent,
+    // TagsSectionComponent,
+    // EditTagsPanelComponent,
+    // EditTagsPanelContainerComponent,
+    // EditOwnerPanelContainerComponent,
+    // EditOwnerPanelComponent,
     InheritsFromComponent,
 
     ModelAttributeTreeListComponent, ModelMemberComponent, ModelMemberTreeNodeComponent,
@@ -112,11 +109,11 @@ import {ChangesetSelectorModule} from '../changeset-selector/changeset-selector.
     TypeSearchComponent, TypeSearchContainerComponent, TypeSearchResultComponent,
   ],
   exports: [
-    TagsSectionComponent,
+    // TagsSectionComponent,
     TypeViewerComponent,
-    EditTagsPanelComponent,
-    EditOwnerPanelComponent,
-    EditTagsPanelContainerComponent,
+    // EditTagsPanelComponent,
+    // EditOwnerPanelComponent,
+    // EditTagsPanelContainerComponent,
     InheritsFromComponent,
 
     TypeSearchContainerComponent,
@@ -125,8 +122,8 @@ import {ChangesetSelectorModule} from '../changeset-selector/changeset-selector.
     ModelAttributeTreeListComponent,
   ],
   entryComponents: [
-    EditTagsPanelContainerComponent,
-    EditOwnerPanelContainerComponent,
+    // EditTagsPanelContainerComponent,
+    // EditOwnerPanelContainerComponent,
   ],
 })
 export class TypeViewerModule {
