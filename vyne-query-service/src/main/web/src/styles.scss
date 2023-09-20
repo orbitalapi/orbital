@@ -55,9 +55,12 @@ tui-dropdown-host {
   }
 }
 
-tui-wrapper[data-appearance='textfield'] {
-  box-shadow: 0 1px 2px rgb(19 20 22 / 10%);
+[tuiWrapper][data-appearance='textfield'] {
+  box-shadow: none;
 }
+//tui-wrapper[data-appearance='textfield'] {
+//  box-shadow: 0 1px 2px rgb(19 20 22 / 10%);
+//}
 
 tui-root {
   // Without this, the app wasn't filling the full height.

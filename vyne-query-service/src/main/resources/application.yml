@@ -19,7 +19,7 @@ spring:
       max-in-memory-size: 100MB
    flyway:
       enabled: true
-      locations: classpath:db/postgres
+      locations: classpath:db/migration
 
    jpa:
       hibernate.ddl-auto: none

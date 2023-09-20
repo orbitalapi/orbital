@@ -6,13 +6,13 @@ import io.github.config4k.extract
 import io.github.config4k.registerCustomType
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.config.BaseHoconConfigFileRepository
-import com.orbitalhq.config.toConfig
+import com.orbitalhq.config.toHocon
 import com.orbitalhq.schemaServer.core.adaptors.InstantHoconSupport
 import com.orbitalhq.schemaServer.core.adaptors.PackageLoaderSpecHoconSupport
 import com.orbitalhq.schemaServer.core.adaptors.UriHoconSupport
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
-import com.orbitalhq.schemaServer.core.git.GitRepositoryConfig
+import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaRepositoryConfig
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecAddedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.GitSpecAddedEvent
@@ -188,7 +188,7 @@ class FileSchemaRepositoryConfigLoader(
 
    }
 
-   override fun addGitSpec(gitSpec: GitRepositoryConfig) {
+   override fun addGitSpec(gitSpec: GitRepositorySpec) {
       val current = this.typedConfig() // Don't call load, as we want the original, not the one we resolve paths with
       val currentGitConfig = current.git ?: GitSchemaRepositoryConfig()
 
@@ -242,7 +242,7 @@ class FileSchemaRepositoryConfigLoader(
    }
 
    fun save(schemaRepoConfig: SchemaRepositoryConfig) {
-      val newConfig = schemaRepoConfig.toConfig()
+      val newConfig = schemaRepoConfig.toHocon()
 
       // Use the existing unresolvedConfig to ensure that when we're
       // writing back out, that tokens that have been resolved

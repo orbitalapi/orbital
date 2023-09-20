@@ -1,5 +1,5 @@
 import { Component, Directive } from '@angular/core';
-import { AppInfoService, QueryServiceConfig } from '../services/app-info.service';
+import { AppInfoService, AppConfig } from '../services/app-info.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PackagesService, SourcePackageDescription } from 'src/app/package-viewer/packages.service';
 import { Observable } from 'rxjs/internal/Observable';
@@ -7,7 +7,7 @@ import { SchemaNotificationService } from 'src/app/services/schema-notification.
 
 @Directive()
 export class BaseSchemaExplorerContainer {
-  config: QueryServiceConfig;
+  config: AppConfig;
   packages: Observable<SourcePackageDescription[]>;
 
   constructor(private configService: AppInfoService,
@@ -37,9 +37,12 @@ export class BaseSchemaExplorerContainer {
 @Component({
   selector: 'app-schema-explorer-container',
   template: `
-      <app-header-bar title="Schema Explorer">
-          <button mat-stroked-button [routerLink]="['/schema-importer']">Add new sources</button>
-      </app-header-bar>
+      <app-panel-header title="Schemas">
+          <div class="spacer"></div>
+          <button mat-flat-button class='button-small menu-bar-button' [routerLink]="['/schema-importer']">Add a new schema
+
+          </button>
+      </app-panel-header>
       <div class="container">
           <app-package-list [packages]="packages | async"
                             (packageClicked)="navigateToPackage($event)"></app-package-list>

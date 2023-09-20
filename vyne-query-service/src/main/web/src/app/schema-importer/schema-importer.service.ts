@@ -1,21 +1,30 @@
-import { Injectable } from '@angular/core';
-import { VyneServicesModule } from '../services/vyne-services.module';
-import { HttpClient } from '@angular/common/http';
-import { ConvertSchemaEvent, FileSystemPackageSpec, GitRepositoryConfig } from './schema-importer.models';
-import { environment } from '../../environments/environment';
-import { Observable } from 'rxjs/internal/Observable';
+import {Injectable} from '@angular/core';
+import {VyneServicesModule} from '../services/vyne-services.module';
+import {HttpClient} from '@angular/common/http';
+import {ConvertSchemaEvent, FileSystemPackageSpec, GitRepositoryConfig} from './schema-importer.models';
+import {environment} from '../../environments/environment';
+import {Observable} from 'rxjs/internal/Observable';
 import {SchemaSubmissionResult} from '../services/types.service';
 import {PartialSchema, VersionedSource} from '../services/schema';
 import {PackageIdentifier, PackagesService, SourcePackageDescription} from '../package-viewer/packages.service';
-import { switchMap } from 'rxjs/operators';
+import {switchMap} from 'rxjs/operators';
+import {WorkspacesService} from "../services/workspaces.service";
+import {AppConfig, AppInfoService} from "../services/app-info.service";
 
 @Injectable({
   providedIn: VyneServicesModule,
 })
 export class SchemaImporterService {
   editablePackage$: Observable<SourcePackageDescription | null> = this.packagesService.getEditablePackage();
+  private appConfig: AppConfig;
 
-  constructor(private httpClient: HttpClient, private packagesService: PackagesService) {
+  constructor(private httpClient: HttpClient,
+              private packagesService: PackagesService,
+              private workspaceService: WorkspacesService,
+              private configService: AppInfoService
+  ) {
+    configService.getConfig().subscribe(next => this.appConfig = next)
+
   }
 
   convertSchema(event: ConvertSchemaEvent): Observable<SchemaSubmissionResult> {
@@ -49,7 +58,12 @@ export class SchemaImporterService {
   }
 
   addNewGitRepository(request: GitRepositoryConfig): Observable<any> {
-    return this.httpClient.post<any>(`${environment.serverUrl}/api/repositories/git`, request)
+    if (this.appConfig.featureToggles.workspacesEnabled) {
+
+    } else {
+      return this.httpClient.post<any>(`${environment.serverUrl}/api/repositories/git`, request)
+    }
+
   }
 
   addNewFileRepository(request: FileSystemPackageSpec): Observable<any> {

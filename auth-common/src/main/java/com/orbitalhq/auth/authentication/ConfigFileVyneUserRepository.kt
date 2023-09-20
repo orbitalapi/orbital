@@ -7,6 +7,7 @@ import com.orbitalhq.config.BaseHoconConfigFileRepository
 import reactor.core.publisher.Flux
 import java.nio.file.Path
 
+@Deprecated("Use JPA instead")
 class ConfigFileVyneUserRepository(path: Path, fallback: Config = ConfigFactory.systemEnvironment()) :
    VyneUserRepository, BaseHoconConfigFileRepository<VyneUserConfigConfig>(path, fallback) {
 

@@ -4,6 +4,12 @@
   height: 100%;
   display: flex;
 }
+
+.content-wrapper {
+  display: flex;
+  flex-grow: 1;
+}
+
 .alerts-container {
   width: 100%;
 }
@@ -19,6 +25,13 @@
 .app-page-content {
   flex-grow: 1;
   background-color: $body-bg;
+  // NEW: Giv eht page content a "card" feel
+  margin: 1rem;
+  border-radius: 8px;
+  border: 1px solid $slate-200;
+  // tailwind drop-shadow-md
+  filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06))
+
 }
 
 .sidenav-container {
@@ -26,11 +39,10 @@
 }
 
 .logo-container {
-  padding: 24px 16px;
+  padding: 1rem;
 
   img {
     vertical-align: middle;
-    width: 65%;
   }
 
   span {
@@ -44,28 +56,21 @@
   align-items: center;
 
   img.integrator {
-    width: 65px;
+    width: 48px;
+  }
+  img.wordmark {
+    height: 3rem;
   }
 }
 
 .sidenav {
-
-  width: $sidenav-width;
+  min-width: $sidenav-width;
+  flex: 0;
   background-color: $midnight-grey;
-  border-right: 1px solid rgba(0, 0, 0, 0.15);
 }
-.navbar-route {
+
+.navbar-item {
   font-family: $headings-font;
-  opacity: 0.6;
-
-  &:hover {
-    opacity: 1;
-  }
-
-  &.active {
-    opacity: 1;
-  }
-
   text-align: center;
 
   font-size: 1rem;
@@ -74,24 +79,25 @@
   a {
     text-decoration: none;
     text-align: center;
-    color: white;
-    padding: 24px;
+    padding: 0.6rem;
+    margin: 0.5rem;
     display: flex;
     align-items: center;
 
-    img {
-      width: 36px;
-      margin-right: 18px;
+    color: $gray-400;
+
+    &:hover, &.active {
+      color: white;
+      background-color: $gray-800;
+    }
+
+    .icon {
+      margin-right: 1rem;
     }
 
     span {
       flex-grow: 1;
       text-align: left;
-    }
-
-    &.active {
-      background-color: rgba(0, 0, 0, 0.8);
-      //color: #8cc63e;
     }
   }
 }
@@ -105,6 +111,7 @@
 }
 
 .appInfo {
+  font-family: $headings-font;
   position: absolute;
   bottom: 0px;
   font-size: 0.8rem;

@@ -13,6 +13,7 @@ import {VyneModule} from './vyne/vyne.module';
 import {AuthModule} from './auth/auth.module';
 import {AuthService} from './auth/auth.service';
 import {
+  TUI_SANITIZER,
   TuiAlertModule,
   TuiButtonModule,
   TuiDialogModule,
@@ -31,6 +32,7 @@ import {TuiInputModule} from '@taiga-ui/kit';
 import {PolymorpheusModule} from "@tinkoff/ng-polymorpheus";
 import {TuiDialogHostModule, TuiFocusTrapModule, TuiOverscrollModule} from "@taiga-ui/cdk";
 import {MatNativeDateModule} from "@angular/material/core";
+import {NgDompurifySanitizer} from "@tinkoff/ng-dompurify";
 
 
 const oauth2OidcModule = [AuthModule];
@@ -70,6 +72,10 @@ const oauth2OidcModule = [AuthModule];
   providers: [
     TypesService,
     QueryService,
+    {
+      provide: TUI_SANITIZER,
+      useClass: NgDompurifySanitizer,
+    },
     SearchService,
     {
       provide: LANGUAGE_SERVER_WS_ADDRESS_TOKEN,

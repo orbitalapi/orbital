@@ -1,23 +1,25 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {AuthService} from '../auth/auth.service';
 import {UserInfoService, VyneUser} from '../services/user-info.service';
+import {AppConfig, AppInfoService} from "../services/app-info.service";
+import {Observable} from "rxjs";
 
 @Component({
   selector: 'app-header-bar',
   template: `
-    <mat-toolbar color="primary" style="z-index: 999">
-      <span class="page-title">{{title}}</span>
-      <ng-content></ng-content>
-      <div class="toolbar-spacer"></div>
-      <app-search-bar-container></app-search-bar-container>
-      <app-avatar *ngIf="vyneUser && vyneUser.isAuthenticated" [user]="vyneUser"></app-avatar>
-    </mat-toolbar>`,
+    <app-workspace-selector *ngIf="(appConfig$ | async)?.featureToggles.workspacesEnabled"></app-workspace-selector>
+    <div class="spacer"></div>
+    <app-search-bar-container></app-search-bar-container>
+    <app-avatar *ngIf="vyneUser" [user]="vyneUser"></app-avatar>
+  `,
   styleUrls: ['./header-bar.component.scss']
 })
 export class HeaderBarComponent implements OnInit {
   vyneUser: VyneUser;
+  appConfig$: Observable<AppConfig>;
 
-  constructor(private userInfoService: UserInfoService) {
+  constructor(private userInfoService: UserInfoService, private appConfigService: AppInfoService) {
+    this.appConfig$ = this.appConfigService.getConfig()
   }
 
   @Input()

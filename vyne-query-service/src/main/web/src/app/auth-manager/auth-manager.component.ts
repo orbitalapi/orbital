@@ -6,8 +6,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 @Component({
   selector: 'app-auth-manager',
   template: `
-      <app-header-bar title="Authentication Manager">
-      </app-header-bar>
       <app-token-list
               class="centered-page-block"
               [tokens]="tokens" (newTokenSaved)="refreshTokenList()"

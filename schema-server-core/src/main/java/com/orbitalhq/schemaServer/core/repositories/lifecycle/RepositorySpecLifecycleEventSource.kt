@@ -2,7 +2,7 @@ package com.orbitalhq.schemaServer.core.repositories.lifecycle
 
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
-import com.orbitalhq.schemaServer.core.git.GitRepositoryConfig
+import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaRepositoryConfig
 import reactor.core.publisher.Flux
 
@@ -12,7 +12,7 @@ interface RepositorySpecLifecycleEventSource {
 }
 
 data class GitSpecAddedEvent(
-   val spec: GitRepositoryConfig,
+   val spec: GitRepositorySpec,
    val config: GitSchemaRepositoryConfig
 )
 

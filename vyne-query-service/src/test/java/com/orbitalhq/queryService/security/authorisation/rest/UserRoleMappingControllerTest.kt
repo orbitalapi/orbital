@@ -2,12 +2,16 @@ package com.orbitalhq.queryService.security.authorisation.rest
 
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import com.orbitalhq.queryService.CustomWebFluxConfigSupport
+import com.orbitalhq.queryService.DatabaseTest
+import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
 import com.orbitalhq.spring.config.TestDiscoveryClientConfig
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
@@ -26,13 +30,19 @@ import java.io.File
       "spring.main.allow-bean-definition-overriding=true",
       "vyne.search.directory=./search/\${random.int}",
       "vyne.telemetry.enabled=false",
-      "spring.datasource.url=jdbc:h2:mem:UserRoleMappingControllerTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY",
    ]
 )
 @ActiveProfiles("test")
-class UserRoleMappingControllerTest {
+class UserRoleMappingControllerTest : DatabaseTest() {
    @Autowired
    private lateinit var webClient: WebTestClient
+
+   @MockBean
+   lateinit var eventDispatcher: RepositorySpecLifecycleEventDispatcher
+
+   @MockBean
+   lateinit var configLoader : SchemaRepositoryConfigLoader
+
 
    @TestConfiguration
    @Import(TestDiscoveryClientConfig::class, CustomWebFluxConfigSupport::class)

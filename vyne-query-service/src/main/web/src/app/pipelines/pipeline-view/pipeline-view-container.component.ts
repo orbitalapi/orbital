@@ -12,7 +12,7 @@ import {
   ConfirmationDialogComponent,
   ConfirmationParams
 } from '../../confirmation-dialog/confirmation-dialog.component';
-import {AppInfoService, PipelineConfig, QueryServiceConfig} from '../../services/app-info.service';
+import {AppInfoService, PipelineConfig, AppConfig} from '../../services/app-info.service';
 
 @Component({
   selector: 'app-pipeline-view-container',

@@ -1,4 +1,10 @@
-@import "src/theme";
+@import "~src/theme";
+
+.search-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.5rem;
+}
 
 ::ng-deep {
   .type-name {
@@ -15,7 +21,7 @@
   .type-doc {
     font-size: 0.9rem;
     color: lighten($body, 5%);
-    margin-top: 12px;
+    margin: 0.5rem 0;
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;

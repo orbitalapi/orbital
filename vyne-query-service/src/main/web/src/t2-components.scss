@@ -9,11 +9,21 @@ button.button-small {
     }
   }
   font-family: $headings-font;
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: 0.9rem;
+  font-weight: 400;
 
   img {
     width: 1rem;
     margin-right: 0.8rem;
   }
+}
+
+
+.menu-bar-button {
+  margin-right: 2rem;
+  border: 1px solid $slate-200;
+}
+
+.spacer {
+  flex-grow: 1;
 }

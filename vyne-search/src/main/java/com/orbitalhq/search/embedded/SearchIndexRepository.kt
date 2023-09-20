@@ -6,6 +6,7 @@ import com.orbitalhq.query.graph.OperationQueryResultItemRole
 import com.orbitalhq.schemas.*
 import com.orbitalhq.utils.log
 import lang.taxi.types.TypeKind
+import mu.KotlinLogging
 import org.apache.lucene.document.Document
 import org.apache.lucene.index.IndexWriter
 import org.apache.lucene.index.Term
@@ -25,6 +26,7 @@ class SearchIndexRepository(
    private val searchManager: SearcherManager,
    private val configFactory: ConfigFactory
 ) {
+
    fun destroyAndInitialize() {
       log().info("Destroying existing search indices")
       indexWriter.deleteAll()
@@ -243,15 +245,21 @@ class SearchIndexRepository(
       searchField: SearchField,
       fieldContents: String
    ): SearchMatch? {
-      return highlighter.getBestFragment(configFactory.config().analyzer, searchField.fieldName, fieldContents)
-         ?.let { highlight ->
-            SearchMatch(searchField, highlight)
-         }
+      return try {
+         highlighter.getBestFragment(configFactory.config().analyzer, searchField.fieldName, fieldContents)
+            ?.let { highlight ->
+               SearchMatch(searchField, highlight)
+            }
+      } catch (e:Exception) {
+         logger.warn { "Search highlighting failed with exception: ${e.message}" }
+         null
+      }
    }
 
    companion object {
       fun isAnnotationSearch(term: String) = term.startsWith("#") || term.startsWith("@")
       fun annotationSearchTerm(term: String) = term.drop(1)
+      private val logger = KotlinLogging.logger {}
    }
 }
 

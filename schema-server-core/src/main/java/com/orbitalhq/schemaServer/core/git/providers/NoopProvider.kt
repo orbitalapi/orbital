@@ -1,7 +1,7 @@
 package com.orbitalhq.schemaServer.core.git.providers
 
 import com.orbitalhq.schema.publisher.loaders.ChangesetOverview
-import com.orbitalhq.schemaServer.core.git.GitRepositoryConfig
+import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
 import java.util.*
 
 /**
@@ -9,10 +9,10 @@ import java.util.*
  */
 class NoopProvider : GitHostedService {
    override fun raisePr(
-      config: GitRepositoryConfig,
-      branchName: String,
-      description: String,
-      author: String
+       config: GitRepositorySpec,
+       branchName: String,
+       description: String,
+       author: String
    ): Pair<ChangesetOverview, String> {
       return ChangesetOverview(0, 0, 0, "", "", Date()) to ""
    }
