@@ -63,6 +63,7 @@
       <hazelcast.version>5.3.1</hazelcast.version>
       <testcontainers.version>1.19.0</testcontainers.version>
       <h2.version>2.1.214</h2.version>
+      <guava.version>32.1.2-jre</guava.version>
       <reactor-bom.version>2022.0.5</reactor-bom.version>
       <!--      <netty.version>4.1.75.Final</netty.version>-->
       <!-- CVE-2022-31692  -->
@@ -287,6 +288,21 @@
             <version>3.19.6</version>
          </dependency>
 
+         <!-- https://security.snyk.io/vuln/SNYK-JAVA-ORGAPACHETOMCATEMBED-5862028
+         Drop once patched in Spring Boot > 3.1.3 -->
+         <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-core</artifactId>
+            <version>10.1.13</version>
+            <scope>compile</scope>
+            <exclusions>
+               <exclusion>
+                  <artifactId>tomcat-annotations-api</artifactId>
+                  <groupId>org.apache.tomcat</groupId>
+               </exclusion>
+            </exclusions>
+         </dependency>
+
 
 
 
@@ -381,7 +397,12 @@
          <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>32.1.2-jre</version>
+            <version>${guava.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava-testlib</artifactId>
+            <version>${guava.version}</version>
          </dependency>
          <dependency>
             <groupId>net.logstash.logback</groupId>

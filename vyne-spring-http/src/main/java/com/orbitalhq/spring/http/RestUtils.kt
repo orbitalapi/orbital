@@ -10,6 +10,8 @@ class NotFoundException(message:String) : RuntimeException(message)
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 class BadRequestException(message:String): RuntimeException(message)
 
+fun badRequest(message: String):Nothing = throw BadRequestException(message)
+
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 class InvalidPathException(message: String) : RuntimeException(message)
 

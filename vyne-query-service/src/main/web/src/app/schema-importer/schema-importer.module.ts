@@ -32,7 +32,6 @@ import {
 } from '@taiga-ui/core';
 import {TypeViewerModule} from '../type-viewer/type-viewer.module';
 import {SchemaSourcePanelComponent} from './schema-source-panel/schema-source-panel.component';
-import {NgSelectModule} from '@ng-select/ng-select';
 import {SwaggerConfigComponent} from './schema-source-panel/config-panels/swagger-config.component';
 import {JsonSchemaConfigComponent} from './schema-source-panel/config-panels/jsonschema-config.component';
 import {DataExplorerModule} from '../data-explorer/data-explorer.module';
@@ -95,7 +94,6 @@ import {ProjectSelectorModule} from "../project-selector/project-selector.module
     TuiDataListWrapperModule,
     TuiFilterByInputPipeModule,
     TuiStringifyContentPipeModule,
-    NgSelectModule,
     TuiTabsModule,
     DataExplorerModule,
     SchemaExplorerTableModule,

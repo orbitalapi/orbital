@@ -3,7 +3,7 @@ import {isNullOrUndefined} from 'util';
 import {RunningQueryStatus} from '../../services/active-queries-notification-service';
 import {Observable} from 'rxjs/internal/Observable';
 import {CopyQueryFormat} from 'src/app/query-panel/query-editor/QueryFormatter';
-import {AppInfoService, QueryServiceConfig} from 'src/app/services/app-info.service';
+import {AppInfoService, AppConfig} from 'src/app/services/app-info.service';
 
 
 @Component({
@@ -86,7 +86,7 @@ import {AppInfoService, QueryServiceConfig} from 'src/app/services/app-info.serv
   styleUrls: ['./bottom-bar.component.scss']
 })
 export class BottomBarComponent {
-  config: QueryServiceConfig;
+  config: AppConfig;
 
   constructor(appInfo:AppInfoService) {
     appInfo.getConfig()

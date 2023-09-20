@@ -1,6 +1,6 @@
 package com.orbitalhq.cockpit.core.security.authorisation
 
-import com.orbitalhq.auth.authorisation.VyneUserAuthorisationRole
+import com.orbitalhq.auth.authorisation.UserRole
 import org.springframework.boot.context.properties.ConfigurationProperties
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -10,7 +10,7 @@ class VyneAuthorisationConfig {
    val roleDefinitionsFile: Path = Paths.get("config/roles.conf")
    // var for testing.
    var userToRoleMappingsFile: Path = Paths.get("config/user-role-mappings.conf")
-   val adminRole: VyneUserAuthorisationRole = "Admin"
+   val adminRole: UserRole = "Admin"
 
    /**
     * Idp Related Settings:

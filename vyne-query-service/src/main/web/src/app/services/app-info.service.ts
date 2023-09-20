@@ -12,17 +12,17 @@ export class AppInfoService {
   constructor(private httpClient: HttpClient) {
   }
 
-  private config: QueryServiceConfig;
+  private config: AppConfig;
 
   getAppInfo(actuatorEndPoint: string = '/api/actuator'): Observable<AppInfo> {
     return this.httpClient.get<AppInfo>(`${environment.serverUrl}${actuatorEndPoint}/info`);
   }
 
-  getConfig(): Observable<QueryServiceConfig> {
+  getConfig(): Observable<AppConfig> {
     if (this.config) {
       return of(this.config);
     } else {
-      const observable = this.httpClient.get<QueryServiceConfig>(`${environment.serverUrl}/api/config`);
+      const observable = this.httpClient.get<AppConfig>(`${environment.serverUrl}/api/config`);
       observable.subscribe(result => {
         this.config = result;
       });
@@ -34,7 +34,7 @@ export class AppInfoService {
 
 }
 
-export interface QueryServiceConfig {
+export interface AppConfig {
   analytics: {
     maxPayloadSizeInBytes: number
     persistRemoteCallResponses: boolean
@@ -52,6 +52,7 @@ export interface QueryServiceConfig {
 
 export interface FeatureToggles {
   chatGptEnabled: boolean;
+  workspacesEnabled: boolean;
 }
 export interface PipelineConfig {
   kibanaUrl: string;

@@ -8,9 +8,12 @@ import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.jdbc.builders.PostgresJdbcUrlBuilder
+import org.apache.commons.io.FileUtils
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.io.File
+import java.net.URI
 import java.nio.file.Path
 
 class SourceLoaderJdbcConnectionRegistryTest {
@@ -141,3 +144,9 @@ kafka {
 
 }
 
+fun URI.copyTo(destDirectory: File): File {
+   val source = File(this)
+   val destFile = destDirectory.resolve(source.name)
+   FileUtils.copyFile(source, destFile)
+   return destFile
+}

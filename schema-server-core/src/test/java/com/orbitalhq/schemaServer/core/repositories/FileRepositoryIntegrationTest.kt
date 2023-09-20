@@ -13,7 +13,7 @@ import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.rsocket.CBORJackson
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
-import com.orbitalhq.schemaServer.core.git.GitRepositoryConfig
+import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoaderFactory
 import com.orbitalhq.schemaServer.core.publisher.SourceWatchingSchemaPublisher
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
@@ -367,14 +367,14 @@ class FileRepositoryIntegrationTest {
 
    private fun createFourRepositories(schemaRepository: FileSchemaRepositoryConfigLoader) {
       schemaRepository.addGitSpec(
-         GitRepositoryConfig(
+         GitRepositorySpec(
             "test-repo-1",
             "https://github.com/test/repo1",
             "master",
          )
       )
       schemaRepository.addGitSpec(
-         GitRepositoryConfig(
+         GitRepositorySpec(
             "test-repo-2",
             "https://github.com/test/repo2",
             "master",

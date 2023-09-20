@@ -5,7 +5,7 @@ import { InstanceLike, Type } from '../services/schema';
 import { QueryProfileData } from '../services/query.service';
 import { BaseQueryResultComponent } from '../query-panel/result-display/BaseQueryResultComponent';
 import { TypesService } from '../services/types.service';
-import { AppInfoService, QueryServiceConfig } from '../services/app-info.service';
+import { AppInfoService, AppConfig } from '../services/app-info.service';
 import { ConfigDisabledFormComponent } from '../test-pack-module/config-disabled-form.component';
 import {
   ConfigPersistResultsDisabledFormComponent
@@ -105,7 +105,7 @@ import { map, scan, tap } from 'rxjs/operators';
   styleUrls: ['./tabbed-results-view.component.scss']
 })
 export class TabbedResultsViewComponent extends BaseQueryResultComponent {
-  config: QueryServiceConfig;
+  config: AppConfig;
 // workaround for lack of enum support in templates
   downloadFileType = ExportFormat;
 

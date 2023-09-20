@@ -94,7 +94,7 @@ class PipelineRepository(
       val writer = writers.firstOrNull { it.packageIdentifier == packageIdentifier }
          ?: error("Unable to find a writer to write to package ${packageIdentifier.id}")
       val pipelineSpecAsMap = mapper.convertValue<Map<String, Any>>(pipelineSpec)
-      val config = pipelineSpecAsMap.toConfig()
+      val config = pipelineSpecAsMap.toHocon()
       val hocon = config.getSafeConfigString()
       val filename = pipelineSpec.id + ".conf"
       val source = VersionedSource(

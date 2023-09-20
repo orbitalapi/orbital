@@ -12,6 +12,8 @@ import com.orbitalhq.query.HistoryEventConsumerProvider
 import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.queryService.BaseQueryServiceTest
 import com.orbitalhq.queryService.TestSpringConfig
+import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
 import com.orbitalhq.spring.invokers.Invoker
 import com.orbitalhq.spring.invokers.testVyne
 import com.orbitalhq.utils.Ids
@@ -30,6 +32,7 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
@@ -66,6 +69,11 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
       } as PostgreSQLContainer<*>
 
    }
+   @MockBean
+   lateinit var eventDispatcher: RepositorySpecLifecycleEventDispatcher
+
+   @MockBean
+   lateinit var configLoader : SchemaRepositoryConfigLoader
 
 
 

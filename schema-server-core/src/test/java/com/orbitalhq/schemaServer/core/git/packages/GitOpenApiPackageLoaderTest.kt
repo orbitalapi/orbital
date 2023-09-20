@@ -4,7 +4,7 @@ import com.google.common.io.Resources
 import com.winterbe.expekt.should
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
-import com.orbitalhq.schemaServer.core.git.GitRepositoryConfig
+import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoader
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.utils.files.ReactivePollingFileSystemMonitor
@@ -40,7 +40,7 @@ class GitOpenApiPackageLoaderTest {
    @Test
    fun `can load an openApi package from a git repo`() {
       val checkoutRoot = localRepoDir.root.toPath()
-      val config = GitRepositoryConfig(
+      val config = GitRepositorySpec(
          "local-test",
          uri = remoteRepoDir.root.toURI().toASCIIString(),
          branch = "master",

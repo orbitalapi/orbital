@@ -7,6 +7,7 @@ import com.orbitalhq.query.runtime.executor.analytics.AnalyticsEventWriterProvid
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.utils.Ids
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -67,6 +68,12 @@ class QueryExecutor(
             .responseWithQueryHistoryListener(message.query, queryResult)
 
          val flux = when (observedQuery) {
+            is QueryResult -> observedQuery.results.let { flow ->
+               (flow.map {
+                  it.toRawObject()
+               } as Flow<Any>).asFlux(context)
+            }
+
             is QueryResult -> observedQuery.rawResults.let { flow -> (flow as Flow<Any>).asFlux(context) }
             is FailedQueryResponse -> Flux.error<Any>(QueryFailedException(observedQuery.message))
             else -> error("Received unknown type of QueryResponse: ${observedQuery::class.simpleName}")

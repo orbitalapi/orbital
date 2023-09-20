@@ -32,6 +32,7 @@ import com.orbitalhq.schemaServer.codegen.CodeGenApi
 import com.orbitalhq.schemaServer.editor.SchemaEditorApi
 import com.orbitalhq.schemaServer.packages.PackagesServiceApi
 import com.orbitalhq.schemaServer.repositories.RepositoryServiceApi
+import com.orbitalhq.schemas.readers.SourceConverterRegistry
 import com.orbitalhq.search.embedded.EnableVyneEmbeddedSearch
 import com.orbitalhq.spring.EnableVyne
 import com.orbitalhq.spring.VyneSchemaConsumer

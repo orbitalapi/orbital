@@ -27,7 +27,7 @@ spring:
       name: orbital-station
    flyway:
       enabled: true
-      locations: classpath:db/postgres
+      locations: classpath:db/migration
 
 management:
    endpoints:

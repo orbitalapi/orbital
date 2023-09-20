@@ -20,6 +20,8 @@ class DeferredExpression(
    override val type: Type = schema.type(expression.returnType)
    override val value: Any = expression.asTaxi()
 
+   override fun toString(): String = "Expression ${expression.asTaxi()}"
+
    private val equality = ImmutableEquality(
       this,
       DeferredExpression::value
@@ -82,7 +84,17 @@ data class DeferredProjection(
       functionResultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val valueToProject = sourceInstance.evaluate(input, dataSource, factBag, functionResultCache)
-      val projectedValue = projector.project(valueToProject, projection, type, schema, nullValues, source, format, nullable, allowContextQuerying)
+      val projectedValue = projector.project(
+         valueToProject,
+         projection,
+         type,
+         schema,
+         nullValues,
+         source,
+         format,
+         nullable,
+         allowContextQuerying
+      )
       return projectedValue
    }
 }

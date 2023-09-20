@@ -1,10 +1,11 @@
 package com.orbitalhq.auth.authorisation
 
+import com.orbitalhq.auth.authentication.UserDisplayName
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
 import com.orbitalhq.config.BaseHoconConfigFileRepository
-import com.orbitalhq.config.toConfig
+import com.orbitalhq.config.toHocon
 import org.http4k.quoted
 import java.nio.file.Path
 
@@ -24,7 +25,7 @@ class VyneUserRoleMappingFileRepository(
 
    override fun save(userName: String, roleMapping: VyneUserRoles): VyneUserRoles {
       val newConfig = ConfigFactory.empty()
-         .withValue(userRoleMappingPath(userName), roleMapping.toConfig().root())
+         .withValue(userRoleMappingPath(userName), roleMapping.toHocon().root())
       val existingValues = unresolvedConfig()
       val updated = ConfigFactory.empty()
          .withFallback(newConfig)
@@ -33,7 +34,7 @@ class VyneUserRoleMappingFileRepository(
       return typedConfig().userRoleMappings[userName]!!
    }
 
-   override fun findAll(): Map<VyneUserName, VyneUserRoles> {
+   override fun findAll(): Map<UserDisplayName, VyneUserRoles> {
       return typedConfig().userRoleMappings.toMap()
    }
 

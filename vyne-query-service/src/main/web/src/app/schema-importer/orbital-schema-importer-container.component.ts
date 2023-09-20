@@ -3,8 +3,6 @@ import { Component } from '@angular/core';
 @Component({
   selector: 'app-orbital-schema-importer-container',
   template: `
-    <app-header-bar>
-    </app-header-bar>
     <app-header-component-layout title="Add new schemas" [padBottom]="false" [fullWidth]="activeTabIndex===3">
       <ng-container ngProjectAs="header-components">
         <tui-tabs [(activeItemIndex)]="activeTabIndex">

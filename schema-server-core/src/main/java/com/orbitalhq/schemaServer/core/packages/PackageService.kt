@@ -7,7 +7,7 @@ import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schema.publisher.ExpiringSourcesStore
 import com.orbitalhq.schema.publisher.PublisherType
 import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
-import com.orbitalhq.schemaServer.core.git.GitRepositoryConfig
+import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
 import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
 import com.orbitalhq.schemaServer.packages.PackageWithDescription
@@ -59,7 +59,7 @@ class PackageService(
             val packageDescription = packageWithDescription.description
             when (packageDescription.publisherType) {
                PublisherType.GitRepo -> {
-                  val repositoryName = (packageDescription.packageConfig as GitRepositoryConfig).name
+                  val repositoryName = (packageDescription.packageConfig as GitRepositorySpec).name
                   configRepo.removeGitRepository(repositoryName, packageDescription.identifier)
                }
 

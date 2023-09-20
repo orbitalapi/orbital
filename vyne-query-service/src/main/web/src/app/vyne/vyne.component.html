@@ -1,42 +1,48 @@
 <div class="sidenav">
-  <div class="logo-container">
-    <a routerLink="/">
-      <div class="logo">
-        <img alt="Vyne" class="integrator" src="assets/img/orbital_integrator_citrus_transparent-256x256.png">
-        <img src="assets/img/orbital_logo_white.svg"/>
-      </div>
+    <div class="logo-container">
+        <a routerLink="/">
+            <div class="logo">
+                <img alt="Vyne" class="integrator" src="assets/img/orbital_integrator_citrus_transparent-256x256.png">
+                <img class="wordmark" src="assets/img/orbital_logo_white.svg"/>
+            </div>
 
-    </a>
-  </div>
-  <div *ngFor="let element of sidebarElements$ | async" class="navbar-route" [routerLink]="element.route"
-       routerLinkActive="active">
-    <a [routerLink]="element.route" routerLinkActive="active" #rla="routerLinkActive"
-       [attr.data-e2e-id]="element.testId">
-      <img [src]="element.icon">
-      <span>{{element.title}}</span>
-    </a>
-    <!--        <a [routerLink]="element.route" routerLinkActive="active">{{element.title}}</a>-->
-  </div>
-  <div *ngIf="userInfo !== null && userInfo.username !== null" class="navbar-route">
-    <a routerLink="logout" routerLinkActive="active" #rla="routerLinkActive">
-      <img src="assets/img/logout.svg">
-      <span>Logout</span>
-    </a>
-  </div>
-  <!--<a mat-list-item *ngFor="let element of sidebarElements" [routerLink]="element.route">{{ element.title }}</a>-->
-  <div class="appInfo">
+        </a>
+    </div>
+    <div>
+        <div *ngFor="let element of sidebarElements$ | async" class="navbar-item" [routerLink]="element.route"
+             routerLinkActive="active">
+
+            <a [routerLink]="element.route" routerLinkActive="active" #rla="routerLinkActive"
+               [attr.data-e2e-id]="element.testId">
+                <tui-svg [src]="element.icon" class="icon"></tui-svg>
+                <span>{{element.title}}</span>
+            </a>
+            <!--        <a [routerLink]="element.route" routerLinkActive="active">{{element.title}}</a>-->
+        </div>
+    </div>
+
+    <div *ngIf="userInfo !== null && userInfo.username !== null" class="navbar-item">
+        <a routerLink="logout" routerLinkActive="active" #rla="routerLinkActive">
+            <img src="assets/img/logout.svg">
+            <span>Logout</span>
+        </a>
+    </div>
+    <!--<a mat-list-item *ngFor="let element of sidebarElements" [routerLink]="element.route">{{ element.title }}</a>-->
+    <div class="appInfo">
       <span>v{{ appInfo?.build?.baseVersion && appInfo?.build?.buildNumber !== '0' && appInfo?.build?.version?.includes('SNAPSHOT') ?
-        appInfo.build.baseVersion + "-BETA-" + appInfo.build.buildNumber :
-        appInfo?.build?.version }}
-        ({{ appInfo?.git?.commit?.id }})</span>
-  </div>
+          appInfo.build.baseVersion + "-BETA-" + appInfo.build.buildNumber :
+          appInfo?.build?.version }}
+          ({{ appInfo?.git?.commit?.id }})</span>
+    </div>
 </div>
 <div class="app-content-container">
-  <div class="alerts-container">
-    <app-system-alert *ngFor="let alert of alerts" [alert]="alert"></app-system-alert>
-  </div>
-  <div class="app-page-content">
-    <router-outlet></router-outlet>
-    <app-draft-management-bar></app-draft-management-bar>
-  </div>
+    <app-header-bar></app-header-bar>
+    <div class="alerts-container">
+        <app-system-alert *ngFor="let alert of alerts" [alert]="alert"></app-system-alert>
+    </div>
+    <div class="app-page-content">
+        <router-outlet></router-outlet>
+        <app-draft-management-bar></app-draft-management-bar>
+    </div>
 </div>
+

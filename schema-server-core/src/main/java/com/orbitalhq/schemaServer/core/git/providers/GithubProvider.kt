@@ -1,7 +1,7 @@
 package com.orbitalhq.schemaServer.core.git.providers
 
 import com.orbitalhq.schema.publisher.loaders.ChangesetOverview
-import com.orbitalhq.schemaServer.core.git.GitRepositoryConfig
+import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
 import org.kohsuke.github.GHPullRequest
 import org.kohsuke.github.GHRepository
 import org.kohsuke.github.GitHub
@@ -24,10 +24,10 @@ class GithubProvider : GitHostedService {
    }
 
    override fun raisePr(
-      config: GitRepositoryConfig,
-      branchName: String,
-      description: String,
-      author: String
+       config: GitRepositorySpec,
+       branchName: String,
+       description: String,
+       author: String
    ): Pair<ChangesetOverview, String> {
       if (config.pullRequestConfig == null) {
          error("Don't know how to finalize changes for $branchName as there's no update flow config defined.")
@@ -61,7 +61,7 @@ class GithubProvider : GitHostedService {
       )
    }
 
-   private fun getGitHubInstance(config: GitRepositoryConfig): GHRepository {
+   private fun getGitHubInstance(config: GitRepositorySpec): GHRepository {
       return GitHub.connectUsingPassword(config.credentials!!.username, config.credentials.password)
          ?.getRepository(repositoryNameFromUri(config.uri))
          ?: error("Unable to authenticate to GitHub")
