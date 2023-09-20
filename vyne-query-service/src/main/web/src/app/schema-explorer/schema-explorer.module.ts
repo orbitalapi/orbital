@@ -25,9 +25,6 @@ import { SimpleBadgeListModule } from '../simple-badge-list/simple-badge-list.mo
 import { TuiButtonModule, TuiNotificationModule } from '@taiga-ui/core';
 import { TuiTabsModule } from '@taiga-ui/kit';
 import { SchemaExplorerTableModule } from 'src/app/schema-explorer-table/schema-explorer-table.module';
-import {
-  OrbitalSchemaExplorerContainerComponent
-} from 'src/app/schema-explorer/orbital-schema-explorer-container.component';
 import { ChangesetSelectorModule } from '../changeset-selector/changeset-selector.module';
 import { SchemaSettingsComponent } from './schema-settings.component';
 import { SchemaSourceConfigModule } from 'src/app/schema-source-config/schema-source-config.module';
@@ -79,7 +76,7 @@ import {ExpandingPanelSetModule} from "../expanding-panelset/expanding-panel-set
         ExpandingPanelSetModule,
     ],
   exports: [SchemaExplorerComponent],
-  declarations: [SchemaExplorerComponent, SchemaExplorerContainerComponent, SchemaSummaryViewComponent, OrbitalSchemaExplorerContainerComponent, SchemaSettingsComponent],
+  declarations: [SchemaExplorerComponent, SchemaExplorerContainerComponent, SchemaSummaryViewComponent, SchemaSettingsComponent],
   providers: [],
 })
 export class SchemaExplorerModule {
