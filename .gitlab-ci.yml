@@ -85,7 +85,7 @@ default:
          # exceeds 1GB then builds can fail.
          #         - "cask/target/cask.jar"
          - "pipelines/pipeline-jet/target/pipeline-jet.jar"
-         - "schema-server/target/schema-server.jar"
+#         - "schema-server/target/schema-server.jar"
 #         - "vyne-analytics-server/target/vyne-analytics-server.jar"
          - "query-node-native/target/query-node-native.jar"
 #         - "vyne-query-service/target/vyne.zip"
@@ -302,11 +302,11 @@ publish-query-node-to-docker-hub:
       projectDir: query-node-native
       microservice_orbital: query-node
 
-publish-schema-server-to-docker-hub:
-   extends: .publish-to-docker-hub
-   variables:
-      projectDir: schema-server
-      microservice_orbital: schema-server
+#publish-schema-server-to-docker-hub:
+#   extends: .publish-to-docker-hub
+#   variables:
+#      projectDir: schema-server
+#      microservice_orbital: schema-server
 
 
 #publish-voyager-to-gitlab-container-registry:
@@ -355,10 +355,10 @@ publish-schema-server-to-docker-hub:
 #      microservice_vyne: pipeline
 #      microservice_orbital: pipelines
 
-terraform-validate:
-   extends: .terraform:validate
-   needs: [ ]
-   stage: build
+#terraform-validate:
+#   extends: .terraform:validate
+#   needs: [ ]
+#   stage: build
 
 #build-helm:
 #   stage: build
@@ -374,15 +374,8 @@ terraform-validate:
 #   artifacts:
 #      paths:
 #         - infra/helm/vyne-helm/charts
+#
 
-.terraform-deploy:
-  extends: .terraform:deploy
-  stage: deploy
-  before_script:
-     - echo ${TF_ROOT}
-     - cd ${TF_ROOT}
-     - gitlab-terraform plan
-     - gitlab-terraform plan-json
 #
 #terraform-deploy-dev:
 #   extends: .terraform-deploy
@@ -519,6 +512,15 @@ terraform-validate:
 #         when: 'always'
 #      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
 #         when: 'never'
+
+.terraform-deploy:
+  extends: .terraform:deploy
+  stage: deploy
+  before_script:
+     - echo ${TF_ROOT}
+     - cd ${TF_ROOT}
+     - gitlab-terraform plan
+     - gitlab-terraform plan-json
 
 terraform-deploy-dev-voyager:
    extends: .terraform-deploy
