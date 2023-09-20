@@ -3,6 +3,7 @@ package com.orbitalhq.queryService.security
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.matchers.booleans.shouldBeTrue
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
+import com.orbitalhq.queryService.DatabaseTest
 import com.orbitalhq.queryService.TestSchemaProvider
 import com.orbitalhq.queryService.VyneQueryIntegrationTest
 import com.orbitalhq.schema.api.SchemaProvider
@@ -49,7 +50,7 @@ private val logger = KotlinLogging.logger {  }
       "wiremock.server.baseUrl=http://localhost:\${wiremock.server.port}",
       "logging.level.org.springframework.security=DEBUG",
    ])
-class VyneQuerySecurityFirstTimeLoginIntegrationTest {
+class VyneQuerySecurityFirstTimeLoginIntegrationTest : DatabaseTest() {
    private var rsaJsonWebKey: RsaJsonWebKey? = null
    private var jwsBuilder: JWSBuilder? = null
 

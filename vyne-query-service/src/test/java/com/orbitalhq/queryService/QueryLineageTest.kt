@@ -80,17 +80,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
    @Autowired
    lateinit var sankeyChartRowRepository: QuerySankeyChartRowRepository
 
-   companion object {
-      @Container
-      @ServiceConnection
-      val postgres = PostgreSQLContainer<Nothing>("postgres:11.1") as PostgreSQLContainer<*>
-      @BeforeAll
-      fun setup() {
-         postgres.start()
-         postgres.waitingFor(Wait.forListeningPort())
-      }
 
-   }
 
 
 

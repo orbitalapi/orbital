@@ -3,6 +3,7 @@ package com.orbitalhq.queryService.security
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.matchers.booleans.shouldBeTrue
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
+import com.orbitalhq.queryService.DatabaseTest
 import com.orbitalhq.queryService.TestSchemaProvider
 import com.orbitalhq.queryService.VyneQueryIntegrationTest
 import com.orbitalhq.schema.api.SchemaProvider
@@ -41,7 +42,6 @@ private val logger = KotlinLogging.logger {  }
       "vyne.schema.consumer.method=Local",
       "spring.main.allow-bean-definition-overriding=true",
       "vyne.search.directory=./search/\${random.int}",
-      "spring.datasource.url=jdbc:h2:mem:testdbVyneQuerySecureIntegrationTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY",
       "spring.security.oauth2.resourceserver.jwt.jwk-set-uri=\${wiremock.server.baseUrl}/.well-known/jwks.json",
       "vyne.security.openIdp.enabled=true",
       "vyne.telemetry.enabled=false",
@@ -50,7 +50,7 @@ private val logger = KotlinLogging.logger {  }
    ]
 )
 @ActiveProfiles("test")
-class VyneQuerySecurityFirstTimeApiClientLoginIntegrationTest {
+class VyneQuerySecurityFirstTimeApiClientLoginIntegrationTest : DatabaseTest() {
    private var rsaJsonWebKey: RsaJsonWebKey? = null
    private var jwsBuilder: JWSBuilder? = null
 

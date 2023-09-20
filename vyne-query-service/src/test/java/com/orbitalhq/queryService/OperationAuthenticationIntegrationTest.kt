@@ -55,7 +55,7 @@ import org.springframework.test.context.junit4.SpringRunner
    ]
 )
 @ActiveProfiles("test")
-class OperationAuthenticationIntegrationTest {
+class OperationAuthenticationIntegrationTest : DatabaseTest() {
    private lateinit var taxiSchema: TaxiSchema
 
    @MockBean

@@ -2,6 +2,7 @@ package com.orbitalhq.queryService.security.authorisation.rest
 
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import com.orbitalhq.queryService.CustomWebFluxConfigSupport
+import com.orbitalhq.queryService.DatabaseTest
 import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
 import com.orbitalhq.spring.config.TestDiscoveryClientConfig
@@ -29,11 +30,10 @@ import java.io.File
       "spring.main.allow-bean-definition-overriding=true",
       "vyne.search.directory=./search/\${random.int}",
       "vyne.telemetry.enabled=false",
-      "spring.datasource.url=jdbc:h2:mem:UserRoleMappingControllerTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY",
    ]
 )
 @ActiveProfiles("test")
-class UserRoleMappingControllerTest {
+class UserRoleMappingControllerTest : DatabaseTest() {
    @Autowired
    private lateinit var webClient: WebTestClient
 

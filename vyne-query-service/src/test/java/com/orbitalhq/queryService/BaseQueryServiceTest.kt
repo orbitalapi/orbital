@@ -24,17 +24,34 @@ import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.SimpleVyneProvider
 import com.orbitalhq.spring.config.TestDiscoveryClientConfig
 import com.orbitalhq.testVyne
+import org.junit.jupiter.api.BeforeAll
 import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
+import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.containers.wait.strategy.Wait
+import org.testcontainers.junit.jupiter.Container
+import org.testcontainers.junit.jupiter.Testcontainers
 import java.io.ByteArrayOutputStream
 
+@Testcontainers
 abstract class BaseQueryServiceTest {
    companion object {
+      @Container
+      @ServiceConnection
+      val postgres = PostgreSQLContainer<Nothing>("postgres:11.1") as PostgreSQLContainer<*>
+
+      @BeforeAll
+      fun setup() {
+         postgres.start()
+         postgres.waitingFor(Wait.forListeningPort())
+      }
+
       val testSchema = """
          type OrderId inherits String
          type TraderName inherits String
@@ -89,6 +106,7 @@ abstract class BaseQueryServiceTest {
    lateinit var vyne: Vyne
    lateinit var queryEventObserver: QueryLifecycleEventObserver
    lateinit var meterRegistry: SimpleMeterRegistry
+
 
    protected fun mockHistoryWriter(): QueryHistoryDbWriter {
       val eventConsumer: QueryEventConsumer = mock {}
