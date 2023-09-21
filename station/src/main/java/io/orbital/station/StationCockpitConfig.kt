@@ -41,10 +41,10 @@ class PipelineConfig {
 @EnableReactiveFeignClients(
    clients = [
       PipelineApi::class,
-      SchemaEditorApi::class,
-      PackagesServiceApi::class,
-      RepositoryServiceApi::class,
-      ChangelogApi::class
+//      SchemaEditorApi::class,
+//      PackagesServiceApi::class,
+//      RepositoryServiceApi::class,
+//      ChangelogApi::class
    ]
 )
 class FeignConfig
