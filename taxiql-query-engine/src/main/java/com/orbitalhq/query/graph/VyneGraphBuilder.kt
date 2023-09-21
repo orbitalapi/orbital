@@ -231,7 +231,7 @@ class VyneGraphBuilder(
                // TODO : Waiting to see if we actually use GraphBuildResult anymore, if not, just return the graph here.
                GraphBuildResult(graph, emptyList(), emptyList())
             }
-            logger.info { "Building graph for cache took ${timedValue.duration}" }
+            logger.debug { "Building graph for cache took ${timedValue.duration}" }
             timedValue.value
 
          }
