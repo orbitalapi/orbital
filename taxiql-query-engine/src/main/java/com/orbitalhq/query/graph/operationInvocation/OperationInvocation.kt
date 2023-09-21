@@ -1,7 +1,7 @@
 package com.orbitalhq.query.graph.operationInvocation
 
 import com.orbitalhq.models.*
-fimport com.orbitalhq.query.*
+import com.orbitalhq.query.*
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.graph.edges.EdgeEvaluator
 import com.orbitalhq.query.graph.edges.EvaluatableEdge
