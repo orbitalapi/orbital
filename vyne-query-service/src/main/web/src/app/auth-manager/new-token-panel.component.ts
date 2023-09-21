@@ -7,7 +7,6 @@ import {
   AuthManagerService,
   AuthToken,
   AuthTokenType,
-  authTokenTypeDisplayName,
   NoCredentialsAuthToken
 } from './auth-manager.service';
 import {MatSnackBar} from '@angular/material/snack-bar';
@@ -107,11 +106,10 @@ import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 export class NewTokenPanelComponent {
   schema: Observable<Schema>;
 
-  authenticationTypes: { label: string; value: AuthTokenType }[] = [
-    {label: authTokenTypeDisplayName(AuthTokenType.Header), value: AuthTokenType.Header},
-    {label: authTokenTypeDisplayName(AuthTokenType.QueryParam), value: AuthTokenType.QueryParam},
-    {label: authTokenTypeDisplayName(AuthTokenType.Cookie), value: AuthTokenType.Cookie}
-  ];
+  authenticationTypes = [
+    // TODO: Add the different ypes of auth schemes here.
+    // Haven't implemented, as for now, we're removed adding tokens in the UI
+  ]
 
   errorMessage: string = null;
   saving = false;

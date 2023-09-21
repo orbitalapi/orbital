@@ -27,6 +27,9 @@
 
 }
 
+tui-dialog {
+  border-radius: 8px !important;
+}
 // Patching things that broke after upgrading Taiga-ui 2->3
 button {
   // For some reason, link buttons are showing as Arial without this

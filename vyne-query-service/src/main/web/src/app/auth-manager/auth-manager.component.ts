@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { AuthManagerService, NoCredentialsAuthToken } from './auth-manager.service';
+import {AuthManagerService, AuthScheme, AuthTokenMap, NoCredentialsAuthToken} from './auth-manager.service';
 import { Observable } from 'rxjs/internal/Observable';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
@@ -8,13 +8,13 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   template: `
       <app-token-list
               class="centered-page-block"
-              [tokens]="tokens" (newTokenSaved)="refreshTokenList()"
+              [tokens$]="tokens" (newTokenSaved)="refreshTokenList()"
               (deleteToken)="deleteToken($event)"></app-token-list>
   `,
   styleUrls: ['./auth-manager.component.scss']
 })
 export class AuthManagerComponent {
-  tokens: Observable<NoCredentialsAuthToken[]>;
+  tokens: Observable<AuthTokenMap>;
 
   constructor(private service: AuthManagerService, private snackBar: MatSnackBar) {
     this.refreshTokenList();

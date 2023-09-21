@@ -16,7 +16,7 @@ storiesOf('Authentication Manager', module)
   .add('default', () => {
     return {
       template: `<div style="padding: 40px; width: 100%; background-color: #F5F7F9;">
-    <app-token-list [tokens]="tokens" ></app-token-list>
+    <app-token-list [tokens$]="tokens" ></app-token-list>
     </div>`,
       props: {
         tokens: of(

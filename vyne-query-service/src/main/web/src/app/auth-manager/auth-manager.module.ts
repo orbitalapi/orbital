@@ -18,6 +18,7 @@ import { TuiButtonModule } from '@taiga-ui/core';
 import { RouterModule } from '@angular/router';
 import { AuthManagerService } from 'src/app/auth-manager/auth-manager.service';
 import { HeaderComponentLayoutModule } from 'src/app/header-component-layout/header-component-layout.module';
+import { AddTokenPanelComponent } from './add-token-panel.component';
 
 @NgModule({
   imports: [
@@ -43,7 +44,7 @@ import { HeaderComponentLayoutModule } from 'src/app/header-component-layout/hea
     HeaderComponentLayoutModule
   ],
   exports: [AuthManagerComponent, TokenListComponent],
-  declarations: [AuthManagerComponent, TokenListComponent, NewTokenPanelComponent],
+  declarations: [AuthManagerComponent, TokenListComponent, NewTokenPanelComponent, AddTokenPanelComponent],
   providers: [AuthManagerService],
   entryComponents: [NewTokenPanelComponent]
 })
