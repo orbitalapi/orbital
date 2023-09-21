@@ -426,7 +426,7 @@ namespace vyne {
       paramName: String? = null
    ): Pair<Parameter, TypedInstance> {
       val type = schema.type(typeName)
-      return Parameter(type, paramName) to TypedInstance.from(type, value, schema, source = Provided)
+      return Parameter(type, paramName, nullable = false) to TypedInstance.from(type, value, schema, source = Provided)
    }
 
    @Test
