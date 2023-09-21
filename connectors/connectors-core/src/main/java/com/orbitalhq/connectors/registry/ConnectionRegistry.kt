@@ -40,7 +40,7 @@ abstract class SourceLoaderConnectionRegistryAdapter<T : ConnectorConfiguration>
    }
 
    override fun getConnection(name: String): T {
-      return getCurrent().getValue(name)
+      return getCurrent().get(name) ?: error("No connection named $name is defined")
    }
 
    override fun hasConnection(name: String): Boolean {
