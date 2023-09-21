@@ -8,7 +8,7 @@ image:
    repository: vyneco/vyne
    pullPolicy: IfNotPresent
    # Overrides the image tag whose default is the chart appVersion.
-   tag: "latest-preview"
+   tag: "next"
 
 imagePullSecrets: [ ]
 nameOverride: ""
@@ -62,7 +62,7 @@ schemaServer:
       repository: vyneco/schema-server
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: "latest-preview"
+      tag: "next"
    service:
       type: ClusterIP
       port: 80
