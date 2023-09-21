@@ -231,7 +231,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
       }.flatMap { schemaSearchResult ->
          val discoveryPath = schemaSearchResult.describePath()
          val modelCompletionItem = completionItemWithDiscoveryPath(
-            schemaSearchResult.resultingType.toTaxiQualifiedName(),
+            schema.type(schemaSearchResult.resultingType).taxiType,
             discoveryPath,
             importDecorator
          )
@@ -241,7 +241,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
                .filter { (_, field) -> !field.resolveType(schema).isPrimitive }
                .map { (fieldName, field) ->
                   completionItemWithDiscoveryPath(
-                     field.type.toTaxiQualifiedName(),
+                     schema.type(field.type).taxiType,
                      discoveryPath + fieldName,
                      importDecorator
                   )
@@ -256,7 +256,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
                .filter { (_, field) -> !field.resolveType(schema).isPrimitive }
                .map { (fieldName, field) ->
                   completionItemWithDiscoveryPath(
-                     typeName = field.type.toTaxiQualifiedName(),
+                     type = schema.taxiType(field.type),
                      discoveryPath = listOf(typeInQuery.toVyneQualifiedName().shortDisplayName, fieldName),
                      importDecorator = importDecorator
                   )
@@ -309,9 +309,9 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
          val givenBlock = ruleContext as GivenBlockContext
          val typesOfFacts = givenBlock.getRuleContexts(FactListContext::class.java)
             .flatMap { it.fact() }
-            .map{ factContext ->
+            .map { factContext ->
                factContext.getRuleContexts(FactDeclarationContext::class.java)
-               .flatMap { factDeclaration -> factDeclaration.getRuleContexts(TypeReferenceContext::class.java) }
+                  .flatMap { factDeclaration -> factDeclaration.getRuleContexts(TypeReferenceContext::class.java) }
 
             }
             .flatten()
@@ -324,12 +324,12 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
    }
 
    private fun completionItemWithDiscoveryPath(
-      typeName: QualifiedName,
+      type: Type,
       discoveryPath: List<String>,
       importDecorator: ImportCompletionDecorator
    ) =
       typeProvider.buildCompletionItem(
-         null, typeName, listOf(
+         type, type.toQualifiedName(), listOf(
             importDecorator,
             documentationDecorator(
                "Discovered by path ${discoveryPath.joinToString(" -> ")}"
