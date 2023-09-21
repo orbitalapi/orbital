@@ -16,7 +16,7 @@ class UriVariableProviderTest {
    @Test
    fun matchesBasedOnType() {
       val int = type(PrimitiveType.INTEGER.qualifiedName, PrimitiveType.INTEGER)
-      val params = listOf(Parameter(int) to TypedValue.from(int, 5, source = Provided))
+      val params = listOf(Parameter(int, nullable = false) to TypedValue.from(int, 5, source = Provided))
       val url = "http://foo.com/bar/{lang.taxi.Int}"
 
       val variables = provider.getUriVariables(params, url)
@@ -26,7 +26,7 @@ class UriVariableProviderTest {
    @Test
    fun matchesBasedOnName() {
       val int = type(PrimitiveType.INTEGER.qualifiedName, PrimitiveType.INTEGER)
-      val params = listOf(Parameter(int, name = "id") to TypedValue.from(int, 5, source = Provided))
+      val params = listOf(Parameter(int, name = "id", nullable = false) to TypedValue.from(int, 5, source = Provided))
       val url = "http://foo.com/bar/{id}"
 
       val variables = provider.getUriVariables(params, url)

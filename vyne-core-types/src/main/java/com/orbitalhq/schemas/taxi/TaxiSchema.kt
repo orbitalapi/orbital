@@ -190,7 +190,8 @@ class TaxiSchema(
          name = taxiParam.name,
          metadata = parseAnnotationsToMetadata(taxiParam.annotations),
          constraints = constraintConverter.buildConstraints(type, taxiParam.constraints),
-         typeDoc = taxiParam.typeDoc
+         typeDoc = taxiParam.typeDoc,
+         nullable = taxiParam.nullable
       )
    }
 

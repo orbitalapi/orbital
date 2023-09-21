@@ -70,7 +70,7 @@ class CacheAwareOperationInvocationDecoratorTest {
       )
       val params = listOf(
          element = Pair(
-            first = Parameter(type),
+            first = Parameter(type, nullable = false),
             second = TypedInstance.from(type, null, mock(), source = Provided)
          )
       )

@@ -92,6 +92,7 @@ data class Parameter(
    override val metadata: List<Metadata> = emptyList(),
    val constraints: List<InputConstraint> = emptyList(),
    val typeDoc: String? = null,
+   val nullable: Boolean
 ) : MetadataTarget, PartialParameter {
    fun isNamed(name: String): Boolean {
       return this.name != null && this.name == name
