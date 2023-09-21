@@ -534,6 +534,9 @@ class StatefulQueryEngine(
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
       failureBehaviour: FailureBehaviour = FailureBehaviour.THROW,
    ): QueryResult {
+      if (target.type.isPrimitive) {
+         logger.warn { "A search was started for a primitive type (${target.type.qualifiedName.shortDisplayName} - this is almost certainly a bug" }
+      }
       logger.debug { "Initiating find for ${target.description}" }
       if (context.cancelRequested) {
          throw QueryCancelledException()

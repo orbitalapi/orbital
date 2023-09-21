@@ -1,10 +1,7 @@
 package com.orbitalhq.query.graph.operationInvocation
 
 import com.orbitalhq.models.*
-import com.orbitalhq.query.ProfilerOperation
-import com.orbitalhq.query.QueryContext
-import com.orbitalhq.query.QuerySpecTypeNode
-import com.orbitalhq.query.SearchFailedException
+fimport com.orbitalhq.query.*
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.graph.edges.EdgeEvaluator
 import com.orbitalhq.query.graph.edges.EvaluatableEdge
@@ -50,7 +47,7 @@ class DefaultOperationInvocationService(
 
       val paramStart = Instant.now()
       val parameters = try {
-         gatherParameters(operation.parameters, preferredParams, context, providedParamValues)
+         gatherParameters(operation.parameters, preferredParams, context, providedParamValues, operation)
       } catch (e:Exception) {
          log().error("Gather params failed", e)
          throw e
@@ -78,7 +75,8 @@ class DefaultOperationInvocationService(
       parameters: List<Parameter>,
       candidateParamValues: Set<TypedInstance>,
       context: QueryContext,
-      providedParamValues: List<Pair<Parameter, TypedInstance>>
+      providedParamValues: List<Pair<Parameter, TypedInstance>>,
+      operation: RemoteOperation
    ): List<Pair<Parameter, TypedInstance>> {
       if (parameters.isEmpty()) {
          return emptyList()
@@ -87,7 +85,7 @@ class DefaultOperationInvocationService(
       // Suggest merging that here.
       val startTime = Instant.now()
       val preferredParamsByType = candidateParamValues.associateBy { it.type }
-      val unresolvedParams = mutableListOf<QuerySpecTypeNode>()
+      val unresolvedParams = mutableListOf<Pair<Parameter,QuerySpecTypeNode>>()
       // Holds EITHER the param value, or a QuerySpecTypeNode which can be used
       // to query the engine for a value.
       val parameterValuesOrQuerySpecs: List<Pair<Parameter, Any>> = parameters
@@ -101,27 +99,34 @@ class DefaultOperationInvocationService(
                   requiredParam.type
                )
                context.hasFactOfType(requiredParam.type) -> requiredParam to context.getFact(requiredParam.type)
+               requiredParam.type.isPrimitive -> {
+                  logger.warn { "Operation ${operation.qualifiedName} has a parameter ${requiredParam.name} with type ${requiredParam.type} - constructing requests with primtiive types is not supported - use a semantic type instead" }
+                  requiredParam to TypedNull.create(requiredParam.type)
+               }
                else -> {
                   val queryNode = QuerySpecTypeNode(requiredParam.type)
-                  unresolvedParams.add(queryNode)
+                  unresolvedParams.add(requiredParam to queryNode)
                   requiredParam to queryNode
                }
             }
          }
 
       // Try to resolve any unresolved params
-      val resolvedParams = unresolvedParams.map {
-         val queryResult = context.queryEngine.find(it, context)
-         if (!queryResult.isFullyResolved) {
-            throw UnresolvedOperationParametersException(
-               "The following parameters could not be fully resolved : ${queryResult.unmatchedNodes}",
-               context.evaluatedPath(),
-               context.profiler.root,
-               // TODO : Surface the failed attempts
-               emptyList()
-            )
+      val resolvedParams = unresolvedParams.map { (param,paramQuerySpec) ->
+         val failureBehaviour = if (param.nullable) FailureBehaviour.THROW else FailureBehaviour.SEND_TYPED_NULL
+         val queryResult = context.queryEngine.find(paramQuerySpec, context, failureBehaviour = failureBehaviour)
+         when {
+             !queryResult.isFullyResolved && !param.nullable -> {
+                 throw UnresolvedOperationParametersException(
+                    "The following parameters could not be fully resolved : ${queryResult.unmatchedNodes}",
+                    context.evaluatedPath(),
+                    context.profiler.root,
+                    // TODO : Surface the failed attempts
+                    emptyList()
+                 )
+             }
+             else -> paramQuerySpec to queryResult.results.toList().first()
          }
-         it to queryResult.results.toList().first()
       }.toMap()
 //      val resolvedParams: List<TypedInstance> = if (unresolvedParams.isNotEmpty()) {
 //         logger.debug { "Querying to find params for Operation : ${unresolvedParams.map { it.type.fullyQualifiedName }}" }

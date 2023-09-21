@@ -95,7 +95,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
       target: QuerySpecTypeNode,
       requireAllParametersResolved: Boolean
    ): Map<RemoteOperation, Map<Parameter, TypedInstance>> {
-      var operationsForType = operationsForTypeCache.get(target.type) {
+      val operationsForType = operationsForTypeCache.get(target.type) {
          val operations: Set<RemoteOperation> = schema.operations + schema.streamOperations
          (operations).filter {
             it.returnType.isAssignableTo(target.type)
@@ -118,7 +118,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
             if (requireAllParametersResolved) {
                // Check to see if there are any outstanding parameters that haven't been populated
                val unpopulatedParams = operation.parameters.filter { parameter ->
-                  !populatedOperationParameters.containsKey(parameter)
+                  !populatedOperationParameters.containsKey(parameter) && !parameter.nullable
                }
                unpopulatedParams.isEmpty()
             } else {
