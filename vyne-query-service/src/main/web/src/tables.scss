@@ -1,19 +1,19 @@
 @import "~src/theme";
 
-@mixin vyne-table($bg-color-even: rgba($vyne-lilac, 0.05)) {
+@mixin vyne-table($bg-color-even: $slate-100) {
   border-collapse: collapse;
   width: 100%;
 
   th {
-    border-bottom: solid 1px rgba($vyne-lilac, 0.3);
+    border-bottom: solid 1px $slate-300;
     font-family: $headings-font;
     font-weight: 400;
     text-align: left;
   }
   td {
     border: none;
-    border-bottom: solid 1px rgba($vyne-lilac, 0.3);
-    padding: 0.25rem 1rem 0.25rem 0.2rem;
+    border-bottom: solid 1px $slate-300;
+    padding: 0.7rem 1rem 0.7rem 0.2rem;
   }
 
   tr:nth-child(even) {
