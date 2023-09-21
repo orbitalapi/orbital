@@ -1,5 +1,5 @@
-@import "src/theme";
-@import "src/tables";
+@import "~src/theme";
+@import "~src/tables";
 
 .connection-list {
   @include vyne-table();

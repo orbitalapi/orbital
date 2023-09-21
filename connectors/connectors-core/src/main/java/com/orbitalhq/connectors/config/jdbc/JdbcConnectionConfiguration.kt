@@ -4,6 +4,7 @@ import com.orbitalhq.connectors.ConnectionParameterName
 import com.orbitalhq.connectors.IConnectionParameter
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
 import com.orbitalhq.connectors.registry.ConnectorType
+import com.orbitalhq.utils.obfuscateKeys
 import kotlinx.serialization.Serializable
 
 
@@ -35,6 +36,10 @@ data class DefaultJdbcConnectionConfiguration(
 
    override fun buildUrlAndCredentials(urlBuilder: JdbcUrlBuilder): JdbcUrlAndCredentials {
       return urlBuilder.build(connectionParameters)
+   }
+
+   override fun getUiDisplayProperties(): Map<String, Any> {
+      return connectionParameters.obfuscateKeys("password")
    }
 }
 

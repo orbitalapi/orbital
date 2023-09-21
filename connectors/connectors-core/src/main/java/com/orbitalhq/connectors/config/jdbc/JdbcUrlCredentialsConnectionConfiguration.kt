@@ -10,4 +10,7 @@ data class JdbcUrlCredentialsConnectionConfiguration(
     val urlAndCredentials: JdbcUrlAndCredentials
 ) : JdbcConnectionConfiguration {
    override fun buildUrlAndCredentials(urlBuilder: JdbcUrlBuilder) = urlAndCredentials
+   override fun getUiDisplayProperties(): Map<String, Any> {
+      TODO("Not yet implemented")
+   }
 }

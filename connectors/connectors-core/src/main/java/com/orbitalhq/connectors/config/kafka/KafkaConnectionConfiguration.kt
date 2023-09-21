@@ -3,6 +3,7 @@ package com.orbitalhq.connectors.config.kafka
 import com.orbitalhq.connectors.ConnectionParameterName
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
 import com.orbitalhq.connectors.registry.ConnectorType
+import com.orbitalhq.utils.obfuscateKeys
 import kotlinx.serialization.Serializable
 
 /**
@@ -18,6 +19,10 @@ data class KafkaConnectionConfiguration(
    val connectionParameters: Map<ConnectionParameterName, String>
 ) : ConnectorConfiguration {
    override val type: ConnectorType = ConnectorType.MESSAGE_BROKER
+   override fun getUiDisplayProperties(): Map<String, Any> {
+      return connectionParameters.obfuscateKeys("password")
+   }
+
    override val driverName: String = KafkaConnection.DRIVER_NAME
 
    constructor(

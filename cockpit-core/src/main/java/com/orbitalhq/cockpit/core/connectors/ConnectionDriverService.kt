@@ -32,12 +32,15 @@ class ConnectionDriverService(
    fun listConnections(): Flux<ConnectorConfigurationSummary> {
       return this.new.load()
          .listAll()
-         .map { ConnectorConfigurationSummary(it) }
+         .map {
+            ConnectorConfigurationSummary(
+               it.connectionName,
+               it.type,
+               it.driverName,
+               it.getUiDisplayProperties()
+            )
+         }
          .toFlux()
-//      return this.connectorRegistries
-//         .flatMap { it.listAll() }
-//         .map { ConnectorConfigurationSummary(it) }
-//         .toFlux()
    }
 
 }

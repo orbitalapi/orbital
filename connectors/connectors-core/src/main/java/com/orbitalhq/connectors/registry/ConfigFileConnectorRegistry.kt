@@ -19,8 +19,9 @@ abstract class ConfigFileConnectorRegistry<TMapType : ConnectionConfigMap, TConf
    val connectorConfigPrefix: String
 ) : BaseHoconConfigFileRepository<TMapType>(path, fallback) {
    private val logger = KotlinLogging.logger {}
+
    init {
-       logger.info { "Using a connection config file at ${path.toFile().canonicalPath}" }
+      logger.info { "Using a connection config file at ${path.toFile().canonicalPath}" }
       if (!Files.exists(path)) {
          logger.info { "Connection config file at ${path.toFile().canonicalPath} doesn't exist, and will be created if required" }
       }
@@ -54,10 +55,11 @@ abstract class ConfigFileConnectorRegistry<TMapType : ConnectionConfigMap, TConf
    fun listConnections(): List<TConfigType> {
       return getConnectionMap().values.toList()
    }
+
    fun getConnection(name: String): TConfigType {
-      return getConnectionMap()[name] ?:
-         error("No connection $name is defined")
+      return getConnectionMap()[name] ?: error("No connection $name is defined")
    }
+
    fun hasConnection(name: String): Boolean {
       return getConnectionMap().containsKey(name)
    }
@@ -68,10 +70,18 @@ abstract class ConfigFileConnectorRegistry<TMapType : ConnectionConfigMap, TConf
 
 
 }
+
 interface ConnectorConfiguration {
    val connectionName: String
    val driverName: String
    val type: ConnectorType
+
+   /**
+    * Returns properties for display in the UI.
+    * Anything sensitive should be obscured. (Use
+    * maps.obscureKeys()
+    */
+   fun getUiDisplayProperties(): Map<String, Any>
 }
 
 enum class ConnectorType {
@@ -87,5 +97,12 @@ enum class ConnectorType {
  * the basic ones to the Web UI.
  */
 data class ConnectorConfigurationSummary(
-   private val connectorConfiguration: ConnectorConfiguration
-) : ConnectorConfiguration by connectorConfiguration
+   val connectionName: String,
+   val connectionType: ConnectorType,
+   val driverName: String,
+   val properties: Map<String, Any>
+) {
+   constructor(config: ConnectorConfiguration) : this(
+      config.connectionName, config.type, config.driverName, config.getUiDisplayProperties()
+   )
+}

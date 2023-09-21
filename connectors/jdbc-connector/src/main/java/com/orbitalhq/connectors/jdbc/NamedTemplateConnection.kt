@@ -33,4 +33,6 @@ data class NamedTemplateConnection(
       )
    }
 
+   override fun getUiDisplayProperties(): Map<String, Any> = emptyMap() // TODO
+
 }
