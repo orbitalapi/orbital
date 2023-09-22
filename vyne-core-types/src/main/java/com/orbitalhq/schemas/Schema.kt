@@ -81,6 +81,9 @@ interface Schema {
       get() = services.flatMap { it.operations }.toSet()
 
 
+   val queryAndTableOperations:Set<RemoteOperation>
+      get() = queryOperations + tableOperations
+
    val queryOperations: Set<QueryOperation>
       get() = services.flatMap { it.queryOperations }.toSet()
 
@@ -168,11 +171,19 @@ interface Schema {
       }.toSet()
    }
 
-   fun operationsWithNoArgument(): Set<Pair<Service, Operation>> {
-      return services.flatMap { service ->
-         service.operations.filter { operation -> operation.parameters.size == 0 }
-            .map { service to it }
-      }.toSet()
+   fun operationsWithNoArgument(): Set<Pair<Service, RemoteOperation>> {
+      return servicesAndRemoteOperations()
+         .filter { (service, remoteOperation) -> remoteOperation.parameters.isEmpty() }
+         .toSet()
+//      return services.flatMap { service ->
+//         service.operations.filter { operation -> operation.parameters.size == 0 }
+//            .map { service to it }
+//      }.toSet()
+   }
+
+   fun servicesAndRemoteOperations(): Set<Pair<Service, RemoteOperation>> {
+      return services.flatMap { service -> service.remoteOperations.map { operation -> service to operation } }
+         .toSet()
    }
 
    fun servicesAndOperations(): Set<Pair<Service, Operation>> {
@@ -315,11 +326,12 @@ interface Schema {
       val name = taxiType.toVyneQualifiedName().parameterizedName
 
       return when {
-          this.hasType(name) -> this.type(name)
+         this.hasType(name) -> this.type(name)
          taxiType is ArrayType -> {
             val vyneMemberType = typeCreateIfRequired(taxiType.memberType)
             vyneMemberType.asArrayType()
          }
+
          else -> fromTaxiType(taxiType, this)
       }
    }

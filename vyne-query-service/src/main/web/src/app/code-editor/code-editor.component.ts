@@ -163,7 +163,7 @@ export class CodeEditorComponent implements OnDestroy {
     monaco.editor.defineTheme('vyne', this.editorTheme as any);
     monaco.editor.setTheme('vyne');
     this.modelChanged$.pipe(
-      debounceTime(500),
+      debounceTime(150),
     ).subscribe(e => {
       this.updateContent(this.monacoModel.getValue());
       if (this.webSocket.readyState != this.webSocket.OPEN) {

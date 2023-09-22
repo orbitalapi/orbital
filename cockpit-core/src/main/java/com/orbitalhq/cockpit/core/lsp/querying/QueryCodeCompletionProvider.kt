@@ -345,7 +345,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
       importDecorator: ImportCompletionDecorator,
       queryMode: QueryMode?
    ): List<CompletionItem> {
-      return schema.queryOperations
+      return schema.queryAndTableOperations
          .filter { operation -> !operation.returnType.isPrimitive }
          .filter { operation -> filterStreamingOperations(queryMode, operation) }
          .map { queryOperation ->
