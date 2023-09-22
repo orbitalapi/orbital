@@ -146,6 +146,9 @@ data class Type(
       return result
    }
 
+   val isAnonymous: Boolean = taxiType.anonymous
+
+
 
    override fun isDefinedSameAs(other: Type): Boolean {
       return this.name == other.name && this.attributes == other.attributes && this.typeDoc == other.typeDoc

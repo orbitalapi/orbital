@@ -52,13 +52,18 @@ class ChangeLogDiffFactory(
 //      if (oldMembers == newMembers) {
 //         return emptyList()
 //      }
-      val typesAdded = newMembers.membersNotPresentByNameIn(oldMembers)
+      val typesAdded = newMembers
+         .excludingAnonymousTypes()
+         .membersNotPresentByNameIn(oldMembers)
          .excludingInternalMembers()
          .flatMap { addedFactory(it) }
-      val typesRemoved = oldMembers.membersNotPresentByNameIn(newMembers)
+      val typesRemoved = oldMembers
+         .excludingAnonymousTypes()
+         .membersNotPresentByNameIn(newMembers)
          .excludingInternalMembers()
          .flatMap { removedFactory(it) }
       val typesChanged = newMembers
+         .excludingAnonymousTypes()
          .excludingInternalMembers()
          .mapNotNull { newType ->
             val oldType = oldMembers.findByName(newType)
@@ -347,6 +352,15 @@ class ChangeLogDiffFactory(
    private fun <T : SchemaMember> Set<T>.membersNotPresentByNameIn(other: Set<T>): Set<T> {
       val otherNames = other.map { it.memberQualifiedName }.toSet()
       return this.filter { thisMember -> !otherNames.contains(thisMember.memberQualifiedName) }.toSet()
+   }
+
+   private fun <T : SchemaMember> Set<T>.excludingAnonymousTypes(): Set<T> {
+      return this.filter { member ->
+         when (member) {
+            is Type -> !member.isAnonymous
+            else -> true
+         }
+      }.toSet()
    }
 
    private fun <T : SchemaMember> Set<T>.excludingInternalMembers(): Set<T> {
