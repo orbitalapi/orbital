@@ -519,34 +519,32 @@ class VyneGraphBuilder(
          connections.addAll(membersAsArrayTypes)
       }
 
-      if (!type.isClosed) {
-         // We treat attributes of actual values that we know differently
-         // from those that we could theoretically discover.
-         // Attributes from real instances have atttributes with null values excluded.
-         // If it's discoverable, we optimistically add them.
-         // Note: We might need to modify this so that once a discoverable value
-         // becomes known, we rebuild our graph, trimming edges where attribues were discovered
-         // to be null
-         if (value != null) {
-            connections.addAll(
-               buildInstanceAttributesOfActualInstanceConnections(
-                  schema,
-                  instanceFqn,
-                  providedInstance,
-                  value
-               )
+      // We treat attributes of actual values that we know differently
+      // from those that we could theoretically discover.
+      // Attributes from real instances have atttributes with null values excluded.
+      // If it's discoverable, we optimistically add them.
+      // Note: We might need to modify this so that once a discoverable value
+      // becomes known, we rebuild our graph, trimming edges where attribues were discovered
+      // to be null
+      if (value != null) {
+         connections.addAll(
+            buildInstanceAttributesOfActualInstanceConnections(
+               schema,
+               instanceFqn,
+               providedInstance,
+               value
             )
-         } else {
-            connections.addAll(
-               buildInstanceAttributesOfDiscoverableInstanceConnections(
-                  schema,
-                  instanceFqn,
-                  providedInstance
-               )
+         )
+      } else {
+         connections.addAll(
+            buildInstanceAttributesOfDiscoverableInstanceConnections(
+               schema,
+               instanceFqn,
+               providedInstance
             )
-         }
-
+         )
       }
+
       return connections
    }
 
@@ -684,32 +682,30 @@ class VyneGraphBuilder(
             }
          createdConnections.addAll(synonymConnections)
       }
-      if (!type.isClosed) {
-         // We treat attributes of actual values that we know differently
-         // from those that we could theoretically discover.
-         // Attributes from real instances have atttributes with null values excluded.
-         // If it's discoverable, we optimistically add them.
-         // Note: We might need to modify this so that once a discoverable value
-         // becomes known, we rebuild our graph, trimming edges where attribues were discovered
-         // to be null
-         if (value != null) {
-            createdConnections.addAll(
-               createInstanceAttributesOfActualInstance(
-                  schema,
-                  instanceFqn,
-                  providedInstance,
-                  value
-               )
+      // We treat attributes of actual values that we know differently
+      // from those that we could theoretically discover.
+      // Attributes from real instances have atttributes with null values excluded.
+      // If it's discoverable, we optimistically add them.
+      // Note: We might need to modify this so that once a discoverable value
+      // becomes known, we rebuild our graph, trimming edges where attribues were discovered
+      // to be null
+      if (value != null) {
+         createdConnections.addAll(
+            createInstanceAttributesOfActualInstance(
+               schema,
+               instanceFqn,
+               providedInstance,
+               value
             )
-         } else {
-            createdConnections.addAll(
-               createInstanceAttributesOfDiscoverableInstance(
-                  schema,
-                  instanceFqn,
-                  providedInstance
-               )
+         )
+      } else {
+         createdConnections.addAll(
+            createInstanceAttributesOfDiscoverableInstance(
+               schema,
+               instanceFqn,
+               providedInstance
             )
-         }
+         )
       }
       return createdConnections
    }
