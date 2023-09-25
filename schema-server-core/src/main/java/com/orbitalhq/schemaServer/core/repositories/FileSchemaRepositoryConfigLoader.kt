@@ -28,9 +28,7 @@ import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.writers.ConfigWriter
 import mu.KotlinLogging
 import java.nio.file.Path
-import kotlin.io.path.createDirectories
-import kotlin.io.path.exists
-import kotlin.io.path.writeText
+import kotlin.io.path.*
 
 class FileSchemaRepositoryConfigLoader(
    private val configFilePath: Path,
@@ -90,9 +88,15 @@ class FileSchemaRepositoryConfigLoader(
                val relativePath = makeRelativeToConfigFile(packageSpec.path)
                if (packageSpec.loader is TaxiPackageLoaderSpec) {
                   val packageMetadata = try {
-                     TaxiPackageLoader(relativePath.resolve("taxi.conf")).load()?.toPackageMetadata()
+                     // If we were passed a file, use it. Otherwise, if it's a dir, resolve taxi.conf file.
+                     val pathToLoad = when {
+                        relativePath.isDirectory() -> relativePath.resolve("taxi.conf")
+                        relativePath.isRegularFile() -> relativePath
+                        else -> error("Provided path is neither a file not a directory - not sure what to do")
+                     }
+                     TaxiPackageLoader(pathToLoad).load()?.toPackageMetadata()
                   } catch (e: Exception) {
-                     logger.warn(e) { "Failed to read package metadata for project at $relativePath  ${e.message}" }
+                     logger.warn(e) { "Failed to read package metadata for project at $relativePath  ${e.message ?: e.cause?.message}" }
                      null
                   }
                   packageSpec.copy(path = relativePath, packageIdentifier = packageMetadata?.identifier)
