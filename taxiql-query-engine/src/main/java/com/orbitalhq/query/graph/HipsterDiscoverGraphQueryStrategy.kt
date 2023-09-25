@@ -18,10 +18,7 @@ import com.orbitalhq.utils.ImmutableEquality
 import es.usc.citius.hipster.algorithm.Algorithm
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
-import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.mapNotNull
@@ -87,6 +84,7 @@ class HipsterDiscoverGraphQueryStrategy(
    private val searchExecutingCacheLoader =
       object : CacheLoader<StrategyInvocationCacheKey, Deferred<QueryStrategyResult>>() {
          override fun load(key: StrategyInvocationCacheKey): Deferred<QueryStrategyResult> {
+
             return key.coroutineContext.async {
                logger.debug { "Invoking search for type ${key.target.type.qualifiedName.shortDisplayName} with ${key.facts.size} provided facts: ${key.facts.joinToString { it.type.qualifiedName.shortDisplayName }}" }
 

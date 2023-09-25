@@ -69,11 +69,6 @@ class GraphSearcher(
        evaluator: PathEvaluator
    ): SearchResult {
 
-      // TODO : EEEK!  We should be adding the instances, not the types.
-      // This will cause problems when we have multiple facts of the same type,
-      // as one may result in a happy path, and the other might not.
-//      val factTypes = knownFacts.map { it.type }.toSet()
-
       val excludedOperationsNames = excludedOperations.map { it.excludedValue.qualifiedName }.toSet()
       val excludedInstance = mutableSetOf<TypedInstance>()
       val excludedEdges = mutableListOf<EvaluatableEdge>()

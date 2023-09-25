@@ -36,6 +36,9 @@ data class AuthTokens(
        * Otherwise, we'd call Hocon.decodeFromConfig<AuthTokens>(config)
        */
       fun fromConfig(config: Config): AuthTokens {
+         if (!config.hasPath(AuthTokens::authenticationTokens.name)) {
+            return empty()
+         }
          val tokenConfigs = config.getObject(AuthTokens::authenticationTokens.name)
          val schemes = tokenConfigs.map { (serviceName, tokenConfig) ->
             require(tokenConfig is ConfigObject) { "Encoding error - expected a ConfigObject but was ${tokenConfig::class.simpleName}" }
