@@ -208,3 +208,4 @@ fallback-license.json
 **/fallback-license.json
 
 .orbital/
+/auth.bak.conf
