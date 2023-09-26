@@ -7,11 +7,6 @@ import {flatMap, map} from 'rxjs/operators';
 @Component({
   selector: 'app-service-view-container',
   template: `
-    <mat-toolbar color="primary">
-      <span>Service Explorer</span>
-      <span class="toolbar-spacer"></span>
-      <app-search-bar-container></app-search-bar-container>
-    </mat-toolbar>
     <app-service-view [service]="service"></app-service-view>
   `,
   styleUrls: ['./service-view-container.component.scss']
