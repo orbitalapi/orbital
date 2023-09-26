@@ -195,7 +195,7 @@ export class CodeEditorComponent implements OnDestroy {
       },
       automaticLayout: true,
       readOnly: this._readOnly,
-      wordWrap: this._wordWrap
+      wordWrap: this._wordWrap,
     });
 
     this.updateActionsOnEditor();
