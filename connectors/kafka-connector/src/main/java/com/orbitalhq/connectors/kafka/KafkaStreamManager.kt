@@ -109,7 +109,7 @@ class KafkaStreamManager(
             val messageValue = if (encoding == MessageEncodingType.BYTE_ARRAY) {
                record.value()!!
             } else {
-               record.value()!!.toString()
+               String(record.value())
             }
 
             TypedInstance.from(
