@@ -27,6 +27,7 @@ import lang.taxi.packages.TaxiPackageLoader
 import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.writers.ConfigWriter
 import mu.KotlinLogging
+import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.*
 
@@ -90,6 +91,7 @@ class FileSchemaRepositoryConfigLoader(
                   val packageMetadata = try {
                      // If we were passed a file, use it. Otherwise, if it's a dir, resolve taxi.conf file.
                      val pathToLoad = when {
+                        !Files.exists(relativePath) -> error("No file or directory exists at ${relativePath.toFile().canonicalPath}")
                         relativePath.isDirectory() -> relativePath.resolve("taxi.conf")
                         relativePath.isRegularFile() -> relativePath
                         else -> error("Provided path is neither a file not a directory - not sure what to do")
