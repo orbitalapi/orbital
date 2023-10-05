@@ -24,7 +24,8 @@ import reactor.kotlin.core.publisher.toFlux
 @Component
 class QueryRouteService(
    private val schemaStore: SchemaStore,
-   private val executor: RoutedQueryExecutor?
+   private val executor: RoutedQueryExecutor?,
+   private val queryPrefix:String = "/api/q"
 ) : HandlerFunction<ServerResponse> {
 
    private var queryRouter: QueryRouter = QueryRouter.build(emptyList())
@@ -50,7 +51,7 @@ class QueryRouteService(
    fun router(): RouterFunction<ServerResponse> {
       return RouterFunctions.route({ request ->
          val query = queryRouter.getQuery(request)
-         if (request.path().startsWith("/api/q") && query == null) {
+         if (request.path().startsWith(queryPrefix) && query == null) {
             logger.warn { "Request $request received did not match any queries" }
          }
          if (query != null) {
