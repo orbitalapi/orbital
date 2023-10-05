@@ -6,6 +6,7 @@ import com.winterbe.expekt.should
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.parseJson
+import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -177,5 +178,62 @@ class VyneStreamTest {
          turbine.expectNoEvents()
          turbine.cancelAndIgnoreRemainingEvents()
       }
+   }
+
+   @Test
+   fun `can call mutation for each member of a stream`():Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+
+         model UserUpdateMessage {
+            userId : UserId inherits String
+            message : StatusMessage inherits String
+         }
+         model User {
+            id : UserId
+            name : UserName inherits String
+         }
+         parameter model RichUserUpdateMessage {
+            userId : UserId
+            name : UserName
+            message : StatusMessage
+         }
+
+         service UserService {
+            operation getUser(UserId):User
+            operation getUpdates():Stream<UserUpdateMessage>
+            write operation storeUpdate(RichUserUpdateMessage):RichUserUpdateMessage
+         }
+      """.trimIndent()
+
+      )
+
+      stub.addResponseFlow("getUpdates") { _, _ ->
+         listOf(
+            """{ "userId" : "aaa", "message" : "Fighting a dragon" }""",
+            """{ "userId" : "bbb", "message" : "Stretching" }"""
+         ).map { vyne.parseJson("UserUpdateMessage", it) }
+            .asFlow()
+      }
+      stub.addResponse("getUser") {_,params ->
+         val userId = params[0].second.value!!
+         val username = when (userId) {
+            "aaa" -> "Jimmy"
+            "bbb" -> "Mike"
+            else -> error("Unexpected user id")
+         }
+         val user = vyne.parseJson("User", """{ "id" : "$userId", "name" : "$username" } """)
+         listOf(user)
+      }
+      stub.addResponse("storeUpdate") { _, params -> params.map { it.second }
+      }
+
+
+      val queryResult = vyne.query("""
+         stream { UserUpdateMessage }
+         call UserService::storeUpdate
+      """.trimIndent()).rawObjects()
+      queryResult.shouldHaveSize(2)
+
    }
 }
