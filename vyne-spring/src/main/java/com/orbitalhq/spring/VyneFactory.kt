@@ -9,8 +9,8 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.Fact
 import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.query.connectors.OperationInvoker
-import com.orbitalhq.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
-import com.orbitalhq.query.graph.operationInvocation.OperationCacheFactory
+import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
+import com.orbitalhq.query.graph.operationInvocation.cache.OperationCacheFactory
 import com.orbitalhq.query.projection.LocalProjectionProvider
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.QueryOptions
@@ -37,7 +37,7 @@ class VyneFactory(
    private val operationInvokers: List<OperationInvoker>,
    private val vyneCacheConfiguration: VyneCacheConfiguration,
    private val vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration,
-   private val operationCacheFactory: OperationCacheFactory = OperationCacheFactory(),
+   private val operationCacheFactory: OperationCacheFactory = OperationCacheFactory.default(),
    private val formatSpecRegistry: FormatSpecRegistry
 ) : FactoryBean<Vyne>, VyneProvider {
 
@@ -73,7 +73,8 @@ class VyneFactory(
             vyneCacheConfiguration,
             CacheAwareOperationInvocationDecorator.decorateAll(
                operationInvokers,
-               operationCache = operationCacheFactory.getCache(queryOptions.cachingStrategy)
+               operationCacheFactory.maxResultRecordCount,
+               operationCacheFactory.getOperationCache(queryOptions.cachingStrategy)
             ),
             projectionProvider = projectionProvider,
             formatSpecs = formatSpecRegistry.formats

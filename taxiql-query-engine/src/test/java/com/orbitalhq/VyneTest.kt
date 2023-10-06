@@ -10,7 +10,8 @@ import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.models.json.*
 import com.orbitalhq.query.*
 import com.orbitalhq.query.connectors.OperationInvoker
-import com.orbitalhq.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
+import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
+import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalOperationCacheProvider
 import com.orbitalhq.query.projection.LocalProjectionProvider
 import com.orbitalhq.query.projection.ProjectionProvider
 import com.orbitalhq.schemas.Operation
@@ -1278,7 +1279,10 @@ service Broker2Service {
       """.trimIndent()
       val stubInvocationService = StubService()
 
-      val cacheAwareInvocationService = CacheAwareOperationInvocationDecorator(stubInvocationService)
+      val cacheAwareInvocationService = CacheAwareOperationInvocationDecorator(
+         stubInvocationService,
+         cacheProvider = LocalOperationCacheProvider.default()
+      )
       val queryEngineFactory =
          QueryEngineFactory.withOperationInvokers(
             VyneCacheConfiguration.default(),

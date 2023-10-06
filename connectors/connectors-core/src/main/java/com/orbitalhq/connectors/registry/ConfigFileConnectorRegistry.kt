@@ -89,7 +89,8 @@ enum class ConnectorType {
    MESSAGE_BROKER,
    AWS,
    AWS_S3,
-   AZURE_STORAGE
+   AZURE_STORAGE,
+   CACHE
 }
 
 /**

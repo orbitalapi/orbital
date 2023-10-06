@@ -31,6 +31,7 @@ object GlobalSharedCache : CachingStrategy()
  */
 data class NamedCache(val name: String) : CachingStrategy()
 
+data class RemoteCache(val connectionName: String) : CachingStrategy()
 
 data class QueryOptions(
    /**
@@ -82,9 +83,11 @@ data class QueryOptions(
 
       fun fromQuery(query: TaxiQlQuery): QueryOptions {
          val cachingStrategy: CachingStrategy = query.annotation("Cache")?.let { annotation ->
-            if (annotation.defaultParameterValue != null) {
-               NamedCache(annotation.defaultParameterValue as String)
-            } else GlobalSharedCache
+            when {
+               annotation.parameter("connection") != null -> RemoteCache(annotation.parameter("connection")!! as String)
+               annotation.defaultParameterValue != null -> NamedCache(annotation.defaultParameterValue as String)
+               else -> GlobalSharedCache
+            }
          } ?: QueryScopedCache
          return QueryOptions(
             omitNulls = query.annotation("OmitNulls") != null,

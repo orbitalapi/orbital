@@ -19,6 +19,7 @@
       <module>azure-connectors</module>
       <module>connectors-calcite</module>
        <module>soap-connector</module>
+      <module>hazelcast-connector</module>
    </modules>
 
 </project>
