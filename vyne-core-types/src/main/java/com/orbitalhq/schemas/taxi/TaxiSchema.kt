@@ -27,7 +27,7 @@ class TaxiSchema(
    @get:JsonIgnore val document: TaxiDocument,
    @get:JsonIgnore override val packages: List<SourcePackage>,
    override val functionRegistry: FunctionRegistry = FunctionRegistry.default,
-   queryCacheSize: Long = 100,
+   private val queryCacheSize: Long = 100,
 //   override val additionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
 ) : Schema {
    override val types: Set<Type>

@@ -345,7 +345,11 @@ class ObjectBuilder(
                val fieldBuildType =
                   field.fieldProjection?.sourceType?.toVyneQualifiedName()?.let { context.schema.type(it) }
                      ?: field.resolveType(context.schema)
-               val value = build(fieldBuildType, buildSpec, theseFacts)
+               // Don't attempt to build primitive types.
+               // There's not enough context, and attempting to search for one is silly.
+               val value = if (!fieldBuildType.isPrimitive) {
+                  build(fieldBuildType, buildSpec, theseFacts)
+               } else null
 
 
                if (value != null) {

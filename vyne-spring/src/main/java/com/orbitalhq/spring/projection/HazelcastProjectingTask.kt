@@ -11,6 +11,7 @@ import com.orbitalhq.query.QueryProfiler
 import com.orbitalhq.query.SearchGraphExclusion
 import com.orbitalhq.query.SerializableVyneQueryStatistics
 import com.orbitalhq.schemas.QualifiedName
+import com.orbitalhq.schemas.QueryOptions
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.asFlow
@@ -56,7 +57,8 @@ class HazelcastProjectingTask(
           schema = vyne.schema,
           queryId = queryId,
           queryEngine = vyne.queryEngine(),
-          profiler = QueryProfiler()
+          profiler = QueryProfiler(),
+          queryOptions = QueryOptions.default()
        )
         context.excludedServices.addAll( Cbor.decodeFromByteArray<MutableSet<SearchGraphExclusion<QualifiedName>>>(excludedServices) )
 

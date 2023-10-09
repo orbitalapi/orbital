@@ -45,7 +45,7 @@ abstract class BaseTypeCache : TypeCache {
     * Adds the type to the cache, and returns a new copy, with the
     * type cache updated.
     */
-   fun add(type: Type): Type {
+   override fun add(type: Type): Type {
       val withReference = if (type.typeCache == this) type else type.copy(typeCache = this)
       cache[type.name] = withReference
       shortNames.compute(type.name.name) { _, existingList ->
@@ -167,6 +167,10 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : BaseTypeCache() {
          types.forEach { add(it) }
       }
    }
+
+   override fun copy(): TypeCache {
+      return DefaultTypeCache(types.toSet())
+   }
 }
 
 /**
@@ -181,6 +185,9 @@ class TaxiTypeCache(private val taxi: TaxiDocument, private val schema: Schema) 
       }
    }
 
+   override fun copy(): TypeCache {
+      return TaxiTypeCache(taxi, schema)
+   }
    override fun hasType(name: String): Boolean {
       return super.hasType(name) || taxi.containsType(name)
    }

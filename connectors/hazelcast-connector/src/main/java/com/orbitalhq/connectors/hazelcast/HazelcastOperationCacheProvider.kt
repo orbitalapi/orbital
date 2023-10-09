@@ -6,7 +6,6 @@ import com.hazelcast.collection.IList
 import com.hazelcast.collection.ItemEvent
 import com.hazelcast.collection.ItemListener
 import com.hazelcast.core.HazelcastInstance
-import com.hazelcast.cp.lock.FencedLock
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.serde.SerializableTypedInstance
@@ -18,14 +17,10 @@ import com.orbitalhq.schemas.RemoteCache
 import com.orbitalhq.utils.Ids
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
-import kotlin.random.Random
 
-class HazelcastCacheProvider(
+class HazelcastOperationCacheProvider(
    private val hazelcast: HazelcastInstance,
    private val schemaStore: SchemaStore,
    private val maxSize: Int = 10
@@ -58,7 +53,7 @@ class HazelcastCacheProvider(
    private fun load(key: OperationCacheKey, loader: () -> Flux<TypedInstance>): Flux<TypedInstance> {
       val list = hazelcast.getList<ByteArray>(key)
 
-      val lockMap = hazelcast.getMap<String,String>("operationLocks")
+      val lockMap = hazelcast.getMap<String, String>("operationLocks")
       val thisSeed = Ids.fastUuid()
 
       return if (list.isEmpty() && lockMap.getOrPut(key) { thisSeed } == thisSeed) {
@@ -72,7 +67,7 @@ class HazelcastCacheProvider(
       }
    }
 
-   private fun createFluxFromCache(list:IList<ByteArray>): Flux<TypedInstance> = Flux.create { sink ->
+   private fun createFluxFromCache(list: IList<ByteArray>): Flux<TypedInstance> = Flux.create { sink ->
       // This method returns the cached value.
       // It's not currently "correct", as a race condition exists
       // where inflight values might be missed between us checking to see if the cached value
@@ -139,7 +134,11 @@ class HazelcastCacheProvider(
    }
 }
 
-class HazelcastCacheProviderBuilder(
+/**
+ * Builds Hazelcast backed cache providers that are used for
+ * caching results of operation calls.
+ */
+class HazelcastOperationCacheBuilder(
    private val connectors: SourceLoaderConnectorsRegistry,
    private val schemaStore: SchemaStore,
    private val maxSize: Int = 10,
@@ -152,20 +151,17 @@ class HazelcastCacheProviderBuilder(
       return connectors.load().hazelcast.containsKey(strategy.connectionName)
    }
 
-   override fun build(strategy: CachingStrategy, maxSize: Int): OperationCacheProvider {
+   override fun buildOperationCache(strategy: CachingStrategy, maxSize: Int): OperationCacheProvider {
       require(strategy is RemoteCache)
       val client = hazelcastConnections.getOrPut(strategy.connectionName) {
          val connectors = connectors.load()
          require(connectors.hazelcast.containsKey(strategy.connectionName)) { "No connection for Hazelcast named ${strategy.connectionName} exists" }
 
          val connectionConfig = connectors.hazelcast[strategy.connectionName]!!
-         val clientConfig = ClientConfig().apply {
-            networkConfig.addAddress(*connectionConfig.addresses.toTypedArray())
-         }
-         HazelcastClient.newHazelcastClient(clientConfig)
+         HazelcastBuilder.build(connectionConfig)
       }
 
-      return HazelcastCacheProvider(client, schemaStore, maxSize)
+      return HazelcastOperationCacheProvider(client, schemaStore, maxSize)
    }
 
 }

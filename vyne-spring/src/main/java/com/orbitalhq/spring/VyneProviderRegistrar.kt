@@ -2,6 +2,7 @@ package com.orbitalhq.spring
 
 import io.micrometer.core.instrument.MeterRegistry
 import com.orbitalhq.VyneCacheConfiguration
+import com.orbitalhq.query.caching.StateStoreProvider
 import com.orbitalhq.query.connectors.OperationCacheProviderBuilder
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.graph.operationInvocation.cache.OperationCacheFactory
@@ -32,7 +33,8 @@ class EnableVyneConfiguration {
       vyneCacheConfiguration: VyneCacheConfiguration,
       vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration,
       formatSpecRegistry: FormatSpecRegistry,
-      operationCacheFactory: OperationCacheFactory
+      operationCacheFactory: OperationCacheFactory,
+      stateStoreProvider: StateStoreProvider?
    ): VyneFactory {
       return VyneFactory(
          schemaProvider,
@@ -40,7 +42,8 @@ class EnableVyneConfiguration {
          vyneCacheConfiguration,
          vyneSpringProjectionConfiguration,
          formatSpecRegistry = formatSpecRegistry,
-         operationCacheFactory = operationCacheFactory
+         operationCacheFactory = operationCacheFactory,
+         stateStoreProvider = stateStoreProvider
       )
    }
 

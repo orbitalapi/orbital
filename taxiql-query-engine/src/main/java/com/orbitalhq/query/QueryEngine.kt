@@ -100,7 +100,8 @@ interface QueryEngine {
       queryId: String,
       clientQueryId: String?,
       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
-      scopedFacts: List<ScopedFact> = emptyList()
+      scopedFacts: List<ScopedFact> = emptyList(),
+      queryOptions: QueryOptions = QueryOptions.default()
    ): QueryContext
 
    suspend fun build(type: Type, context: QueryContext): QueryResult =
@@ -184,7 +185,8 @@ class StatefulQueryEngine(
       queryId: String,
       clientQueryId: String?,
       eventBroker: QueryContextEventBroker,
-      scopedFacts: List<ScopedFact>
+      scopedFacts: List<ScopedFact>,
+      queryOptions: QueryOptions
    ): QueryContext {
       val facts = this.factSets.retainFactsFromFactSet(factSetIds).values().toSet()
       return QueryContext.from(
@@ -195,7 +197,8 @@ class StatefulQueryEngine(
          queryId = queryId,
          clientQueryId = clientQueryId,
          eventBroker = eventBroker,
-         scopedFacts = scopedFacts
+         scopedFacts = scopedFacts,
+         queryOptions = queryOptions
       )
    }
 
@@ -502,14 +505,21 @@ class StatefulQueryEngine(
       failureBehaviour: FailureBehaviour = FailureBehaviour.THROW
    ): QueryResult {
 
-      val queryResult =
-         doFind(
+      val queryResult = when {
+         // Is this a multi-stream join?
+         target.size > 1 && target.all { it.type.isStream } -> {
+            TODO("Streaming")
+         }
+         target.size == 1 -> doFind(
             target.first(),
             context,
             spec,
             applicableStrategiesPredicate = applicableStrategiesPredicate,
             failureBehaviour = failureBehaviour
          )
+         else -> error("Querying with multiple targets is not supported")
+
+      }
 
       return QueryResult(
          querySpec = queryResult.querySpec,
@@ -692,6 +702,15 @@ class StatefulQueryEngine(
          }
       }
       val statisticsFlow = MutableSharedFlow<VyneQueryStatistics>(replay = 0)
+
+      val anonymousTypes = if (schema is QuerySchema) {
+         // Inline types defined in a schema include types defined in the
+         // query type - such as an inline Union type when joining streams.
+         (schema.inlineTypes + target.anonymousTypes()).toSet()
+      } else {
+         target.anonymousTypes()
+      }
+      target.anonymousTypes()
       return QueryResult(
          querySpecTypeNode,
          mutatedResults.onEach { statisticsFlow.emit(it.second) }.map { it.first },
@@ -699,7 +718,7 @@ class StatefulQueryEngine(
          profilerOperation = context.profiler.root,
          queryId = context.queryId,
          clientQueryId = context.clientQueryId,
-         anonymousTypes = target.anonymousTypes(),
+         anonymousTypes = anonymousTypes,
          statistics = statisticsFlow,
          responseType = context.responseType,
          onCancelRequestHandler = { context.requestCancel() }

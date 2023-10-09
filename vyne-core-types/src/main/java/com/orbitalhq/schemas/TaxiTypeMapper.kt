@@ -17,67 +17,70 @@ object TaxiTypeMapper {
          taxiType.anonymous -> fromTaxiType(taxiType, schema, typeCache)
          else -> null
       }
+   }
 
+   private fun convertFields(fields: Collection<lang.taxi.types.Field>, schema: Schema, typeCache: TypeCache):Map<String,Field> {
+      return fields.map { field ->
+         val declaredAnonymousType = convertIfAnonymous(field.type, schema, typeCache)
+         val accessorReturnType = field.accessor?.returnType?.let { convertIfAnonymous(it, schema, typeCache) }
+         // HACK: This is a workaround.
+         // Thins like this shouldn't be permitted, but currently are:
+         //  as {
+         //          //   starring : Person = first(Person[]) as { // <--- This is wrong, as the actual anonymous type is NOT a person.
+         //          //     starsName : PersonName
+         //          //  }
+         // So, if there's an accessor return type, use that.
+         val fieldAnonymousType = accessorReturnType ?: declaredAnonymousType
+         val fieldTypeName = fieldAnonymousType?.qualifiedName ?: field.type.toVyneQualifiedName()
+         when (field.type) {
+            is ArrayType -> field.name to Field(
+               type = fieldTypeName,
+               modifiers = field.modifiers.toVyneFieldModifiers(),
+               accessor = field.accessor,
+               readCondition = field.readExpression,
+               typeDoc = field.typeDoc,
+               nullable = field.nullable,
+               metadata = parseAnnotationsToMetadata(field.annotations),
+               fieldProjection = field.projection,
+               format = field.formatAndZoneOffset,
+               anonymousType = fieldAnonymousType
+            )
+
+            else -> field.name to Field(
+               fieldTypeName,
+               constraintProvider = buildDeferredConstraintProvider(
+                  field.type.qualifiedName.fqn(),
+                  field.constraints,
+                  schema
+               ),
+               modifiers = field.modifiers.toVyneFieldModifiers(),
+               accessor = field.accessor,
+               readCondition = field.readExpression,
+               typeDoc = field.typeDoc,
+//                     formula = field.formula,
+               nullable = field.nullable,
+               metadata = parseAnnotationsToMetadata(field.annotations),
+               sourcedBy = if (field.accessor is FieldSourceAccessor)
+                  FieldSource(
+                     (field.accessor as FieldSourceAccessor).sourceAttributeName,
+                     field.type.qualifiedName.fqn(),
+                     (field.accessor as FieldSourceAccessor).sourceType.toVyneQualifiedName(),
+                     fieldAnonymousType
+                  )
+               else null,
+               fieldProjection = field.projection,
+               format = field.formatAndZoneOffset,
+               anonymousType = fieldAnonymousType
+            )
+         }
+      }.toMap()
    }
 
    fun fromTaxiType(taxiType: lang.taxi.types.Type, schema: Schema, typeCache: TypeCache = schema.typeCache): Type {
       return when (taxiType) {
          is ObjectType -> {
             val typeName = QualifiedName.from(taxiType.qualifiedName)
-            val fields = taxiType.allFields.map { field ->
-               val declaredAnonymousType = convertIfAnonymous(field.type, schema, typeCache)
-               val accessorReturnType = field.accessor?.returnType?.let { convertIfAnonymous(it, schema, typeCache) }
-               // HACK: This is a workaround.
-               // Thins like this shouldn't be permitted, but currently are:
-               //  as {
-   //          //   starring : Person = first(Person[]) as { // <--- This is wrong, as the actual anonymous type is NOT a person.
-   //          //     starsName : PersonName
-   //          //  }
-               // So, if there's an accessor return type, use that.
-               val fieldAnonymousType = accessorReturnType ?: declaredAnonymousType
-               val fieldTypeName = fieldAnonymousType?.qualifiedName ?: field.type.toVyneQualifiedName()
-               when (field.type) {
-                  is ArrayType -> field.name to Field(
-                     type = fieldTypeName,
-                     modifiers = field.modifiers.toVyneFieldModifiers(),
-                     accessor = field.accessor,
-                     readCondition = field.readExpression,
-                     typeDoc = field.typeDoc,
-                     nullable = field.nullable,
-                     metadata = parseAnnotationsToMetadata(field.annotations),
-                     fieldProjection = field.projection,
-                     format = field.formatAndZoneOffset,
-                     anonymousType = fieldAnonymousType
-                  )
-
-                  else -> field.name to Field(
-                     fieldTypeName,
-                     constraintProvider = buildDeferredConstraintProvider(
-                        field.type.qualifiedName.fqn(),
-                        field.constraints,
-                        schema
-                     ),
-                     modifiers = field.modifiers.toVyneFieldModifiers(),
-                     accessor = field.accessor,
-                     readCondition = field.readExpression,
-                     typeDoc = field.typeDoc,
-//                     formula = field.formula,
-                     nullable = field.nullable,
-                     metadata = parseAnnotationsToMetadata(field.annotations),
-                     sourcedBy = if (field.accessor is FieldSourceAccessor)
-                        FieldSource(
-                           (field.accessor as FieldSourceAccessor).sourceAttributeName,
-                           field.type.qualifiedName.fqn(),
-                           (field.accessor as FieldSourceAccessor).sourceType.toVyneQualifiedName(),
-                           fieldAnonymousType
-                        )
-                     else null,
-                     fieldProjection = field.projection,
-                     format = field.formatAndZoneOffset,
-                     anonymousType = fieldAnonymousType
-                  )
-               }
-            }.toMap()
+            val fields = convertFields(taxiType.allFields, schema, typeCache)
             val modifiers = parseModifiers(taxiType)
             Type(
                typeName,
@@ -123,14 +126,27 @@ object TaxiTypeMapper {
 
             collectionType.asArrayType()
          }
+         is UnionType -> {
+            Type(
+               taxiType.toVyneQualifiedName(),
+               modifiers = parseModifiers(taxiType),
+               sources = taxiType.compilationUnits.toVyneSources(),
+               taxiType = taxiType,
+               typeDoc = null,
+               typeCache = typeCache,
+               attributes = convertFields(taxiType.fields, schema, typeCache),
+               typeParametersTypeNames = taxiType.types.map { it.toVyneQualifiedName() }
+            )
+         }
 
          else -> Type(
-            QualifiedName.from(taxiType.qualifiedName),
+            taxiType.toVyneQualifiedName(),
             modifiers = parseModifiers(taxiType),
             sources = taxiType.compilationUnits.toVyneSources(),
             taxiType = taxiType,
             typeDoc = null,
-            typeCache = typeCache
+            typeCache = typeCache,
+            typeParametersTypeNames = taxiType.toVyneQualifiedName().parameters
          )
       }
    }

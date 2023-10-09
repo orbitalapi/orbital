@@ -236,4 +236,9 @@ class VyneStreamTest {
       queryResult.shouldHaveSize(2)
 
    }
+
+   @Test
+   fun `can join streams`() {
+
+   }
 }

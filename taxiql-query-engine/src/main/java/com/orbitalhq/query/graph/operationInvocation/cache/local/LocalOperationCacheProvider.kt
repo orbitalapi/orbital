@@ -81,7 +81,7 @@ class LocalCacheProviderBuilder : OperationCacheProviderBuilder {
       else -> false
    }
 
-   override fun build(strategy: CachingStrategy, maxSize: Int): OperationCacheProvider {
+   override fun buildOperationCache(strategy: CachingStrategy, maxSize: Int): OperationCacheProvider {
       val cache = when (strategy) {
          is QueryScopedCache -> newCache()
          is GlobalSharedCache -> caches.getOrPut(globalCacheName) { newCache() }

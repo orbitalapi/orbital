@@ -400,7 +400,8 @@ class QueryService(
                queryId = queryId,
                clientQueryId = clientQueryId,
                eventBroker = eventDispatcherForQuery,
-               arguments = arguments
+               arguments = arguments,
+               queryOptions = queryOptions
             )
          } catch (e: lang.taxi.CompilationException) {
             logger.info("The query failed compilation: ${e.message}")

@@ -4,6 +4,7 @@ import com.orbitalhq.models.DataSourceUpdater
 import com.orbitalhq.models.OperationResultDataSourceWrapper
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
+import com.orbitalhq.query.connectors.OperationCachingBehaviour
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
@@ -19,6 +20,10 @@ class KafkaInvoker(private val streamManager: KafkaStreamManager) : OperationInv
       return service.hasMetadata(KafkaConnectorTaxi.Annotations.KafkaService.NAME) && operation.hasMetadata(
          KafkaConnectorTaxi.Annotations.KafkaOperation.NAME
       )
+   }
+
+   override fun getCachingBehaviour(service: Service, operation: RemoteOperation): OperationCachingBehaviour {
+      return OperationCachingBehaviour.NO_CACHE
    }
 
    override suspend fun invoke(

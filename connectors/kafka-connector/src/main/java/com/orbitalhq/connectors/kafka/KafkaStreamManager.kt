@@ -96,6 +96,10 @@ class KafkaStreamManager(
          .doOnSubscribe {
             logger.info { "Subscriber detected for Kafka consumer on ${request.connectionName} / ${request.topicName}" }
          }
+         .doOnComplete {
+            logger.info { "Flow Complete detected for Kafka consumer on ${request.connectionName} / ${request.topicName}" }
+            evictConnection(request)
+         }
          .doOnCancel {
             logger.info { "Subscriber cancel detected for Kafka consumer on ${request.connectionName} / ${request.topicName}" }
             evictConnection(request)

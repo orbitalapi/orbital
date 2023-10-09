@@ -5,6 +5,7 @@ import com.winterbe.expekt.should
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseJsonModel
 import com.orbitalhq.rawObjects
+import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.TableOperation
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.TaxiSchema
@@ -193,6 +194,7 @@ fun getQuerySpecNode(taxiQl: String, schema: TaxiSchema): QuerySpecTypeNode {
        vyneQuery,
        queryId = UUID.randomUUID().toString(),
        clientQueryId = null,
+       queryOptions = QueryOptions.default(),
    )
    val queryParser = QueryParser(schema)
    val querySpecNodes = queryParser.parse(expression)

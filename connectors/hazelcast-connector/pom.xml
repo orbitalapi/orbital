@@ -49,6 +49,11 @@
          <artifactId>reactor-kotlin-extensions</artifactId>
       </dependency>
       <dependency>
+         <groupId>app.cash.turbine</groupId>
+         <artifactId>turbine-jvm</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>taxiql-query-engine</artifactId>
          <version>${project.version}</version>

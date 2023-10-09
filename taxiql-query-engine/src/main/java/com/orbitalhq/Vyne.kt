@@ -14,7 +14,6 @@ import com.orbitalhq.schemas.*
 import com.orbitalhq.schemas.taxi.TaxiConstraintConverter
 import com.orbitalhq.schemas.taxi.TaxiSchemaAggregator
 import com.orbitalhq.schemas.taxi.compileExpression
-import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.Ids
 import com.orbitalhq.utils.log
 import kotlinx.coroutines.currentCoroutineContext
@@ -23,7 +22,8 @@ import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.query.FactValue
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
-import lang.taxi.types.Arrays
+import lang.taxi.types.StreamType
+import lang.taxi.types.UnionType
 import java.util.*
 
 enum class NodeTypes {
@@ -82,8 +82,8 @@ class Vyne(
       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
       arguments: Map<String, Any?> = emptyMap()
    ): QueryResult {
-      val taxiQlQuery = parseQuery(vyneQlQuery).first
-      return query(taxiQlQuery, queryId, clientQueryId, eventBroker, arguments)
+      val (taxiQlQuery, queryOptions) = parseQuery(vyneQlQuery)
+      return query(taxiQlQuery, queryId, clientQueryId, eventBroker, arguments, queryOptions = queryOptions)
    }
 
 
@@ -96,10 +96,11 @@ class Vyne(
       queryId: String = UUID.randomUUID().toString(),
       clientQueryId: String? = null,
       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
-      arguments: Map<String, Any?> = emptyMap()
+      arguments: Map<String, Any?> = emptyMap(),
+      queryOptions: QueryOptions
    ): QueryResult {
       val currentJob = currentCoroutineContext().job
-      val (queryContext, expression) = buildContextAndExpression(taxiQl, queryId, clientQueryId, eventBroker, arguments)
+      val (queryContext, expression) = buildContextAndExpression(taxiQl, queryId, clientQueryId, eventBroker, arguments, queryOptions)
       val queryCanceller = QueryCanceller(queryContext, currentJob)
       eventBroker.addHandler(queryCanceller)
       return when (taxiQl.queryMode) {
@@ -131,6 +132,7 @@ class Vyne(
       clientQueryId: String?,
       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
       arguments: Map<String, Any?> = emptyMap(),
+      queryOptions: QueryOptions,
    ): Pair<QueryContext, QueryExpression> {
 
       // The facts in taxiQL are the variables defined in a given {} block.
@@ -157,12 +159,16 @@ class Vyne(
       // I don't see why we would, but lets keep an eye...
       val scopedFacts = extractArgumentsFromQuery(taxiQl, arguments, formatSpecs)
 
+      val inlineTypes = findInlineTypesInQuery(taxiQl, schema)
+
       val queryContext = query(
          additionalFacts = additionalFacts.values.toSet(),
          queryId = queryId,
          clientQueryId = clientQueryId,
          eventBroker = eventBroker,
-         scopedFacts = scopedFacts
+         scopedFacts = scopedFacts,
+         inlineTypes = inlineTypes,
+         queryOptions = queryOptions
       )
          .responseType(deriveResponseType(taxiQl))
 //      queryContext = taxiQl.projectedType?.let {
@@ -171,12 +177,15 @@ class Vyne(
 
       val constraintProvider = TaxiConstraintConverter(this.schema)
       val queryExpressions = taxiQl.typesToFind.map { discoveryType ->
-         val targetType = discoveryType.anonymousType?.let {
-            ProjectionAnonymousTypeProvider
-               .toVyneAnonymousType(discoveryType.anonymousType!!, schema)
-         }
-            ?: schema.type(discoveryType.typeName.toVyneQualifiedName())
 
+         val targetType = when {
+            discoveryType.anonymousType != null -> ProjectionAnonymousTypeProvider.toVyneAnonymousType(discoveryType.anonymousType!!, schema)
+            StreamType.isStreamTypeName(discoveryType.typeName) && UnionType.isUnionType(discoveryType.type.typeParameters()[0]) -> {
+               val unionType = ProjectionAnonymousTypeProvider.toVyneStreamOfAnonymousType(discoveryType.type, schema)
+               unionType
+            }
+            else -> schema.type(discoveryType.typeName.toVyneQualifiedName())
+         }
          val expression = if (discoveryType.constraints.isNotEmpty()) {
             val constraints = constraintProvider.buildOutputConstraints(targetType, discoveryType.constraints)
             ConstrainedTypeNameQueryExpression(targetType.name.parameterizedName, constraints)
@@ -188,19 +197,14 @@ class Vyne(
       }
 
       val expression: QueryExpression = when {
-         queryExpressions.size > 1 -> TODO("Handle multiple target types in VyneQL")
+         queryExpressions.size > 1 -> {
+            val streamJoin =  (queryExpressions.all { it is TypeQueryExpression && it.type.isStream })
+            require(streamJoin) { "Multiple source types are only supported when joining streams" }
+            StreamJoiningExpression(queryExpressions as List<TypeQueryExpression>)
+               .applyProjection(taxiQl.projectedType, taxiQl.projectionScope, schema)
+         }
          queryExpressions.size == 1 -> queryExpressions.first().let { expression ->
-            if (taxiQl.projectedType != null) {
-               ProjectedExpression(
-                  expression,
-                  Projection(
-                     ProjectionAnonymousTypeProvider.projectedTo(taxiQl.projectedType!!, schema),
-                     taxiQl.projectionScope,
-                  )
-               )
-            } else {
-               expression
-            }
+            expression.applyProjection(taxiQl.projectedType, taxiQl.projectionScope, schema)
          }
 
          else -> null
@@ -216,6 +220,23 @@ class Vyne(
 
 
       return Pair(queryContext, expression)
+   }
+
+   /**
+    * Returns a list of types that are defined in the query,
+    * ie., not present in the base schema we're using
+    */
+   private fun findInlineTypesInQuery(taxiQl: TaxiQlQuery, schema: Schema): List<Type> {
+      val inlineDiscoveryTypes: List<lang.taxi.types.Type> = taxiQl.typesToFind.flatMap { discoveryType ->
+         schema.findUnknownTypes(discoveryType.type)
+      }
+      val inlineProjectionType: List<lang.taxi.types.Type> = taxiQl.projectedType?.let { schema.findUnknownTypes(it) } ?: emptyList()
+
+      val vyneTypes = (inlineDiscoveryTypes + inlineProjectionType).map {
+         schema.typeCreateIfRequired(it)
+      }
+      return vyneTypes
+
    }
 
    private fun extractArgumentsFromQuery(
@@ -274,8 +295,12 @@ class Vyne(
       queryId: String = UUID.randomUUID().toString(),
       clientQueryId: String? = null,
       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
-      scopedFacts: List<ScopedFact> = emptyList()
+      scopedFacts: List<ScopedFact> = emptyList(),
+      inlineTypes: List<Type> = emptyList(),
+      queryOptions: QueryOptions = QueryOptions.default()
    ): QueryContext {
+
+      val schemaWithInlineTypes = createSchemaWithInlineTypes(this.schema, inlineTypes)
 
       // Design note:  I'm creating the queryEngine with ALL the fact sets, regardless of
       // what is asked for, but only providing the desired factSets to the queryContext.
@@ -284,14 +309,23 @@ class Vyne(
       // However, we may want to expand the set of factSets later, (eg., to include a caller
       // factSet), so leave them present in the queryEngine.
       // Hopefully, this lets us have the best of both worlds.
-      val queryEngine = queryEngine(setOf(FactSets.ALL), additionalFacts)
+      val queryEngine = queryEngine(setOf(FactSets.ALL), additionalFacts, schema = schemaWithInlineTypes)
       return queryEngine.queryContext(
          factSetIds = factSetIds,
          queryId = queryId,
          clientQueryId = clientQueryId,
          eventBroker = eventBroker,
-         scopedFacts = scopedFacts
+         scopedFacts = scopedFacts,
+         queryOptions = queryOptions
       )
+   }
+
+   private fun createSchemaWithInlineTypes(schema: Schema, inlineTypes: List<Type>): Schema {
+      if (inlineTypes.isEmpty()) {
+         return schema
+      } else {
+         return QuerySchema(inlineTypes, schema)
+      }
    }
 
    fun accessibleFrom(fullyQualifiedTypeName: String): Set<Type> {
@@ -425,4 +459,21 @@ class CompositeSchemaBuilder(val aggregators: List<SchemaAggregator> = SchemaAgg
       }
       return CompositeSchema(unaggregated + aggregatedSchemas)
    }
+}
+
+fun QueryExpression.applyProjection(
+   projectedType: lang.taxi.types.Type?,
+   projectionScope: ProjectionFunctionScope?,
+   schema: Schema
+):QueryExpression {
+   if (projectedType == null) {
+      return this
+   }
+   return ProjectedExpression(
+      this,
+      Projection(
+         ProjectionAnonymousTypeProvider.projectedTo(projectedType, schema),
+         projectionScope,
+      )
+   )
 }

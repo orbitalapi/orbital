@@ -9,6 +9,7 @@ import com.orbitalhq.models.*
 import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.models.json.*
 import com.orbitalhq.query.*
+import com.orbitalhq.query.caching.StateStoreProvider
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
 import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalOperationCacheProvider
@@ -80,7 +81,8 @@ service ClientService {
 
 fun testVyne(
    schema: TaxiSchema,
-   projectionProvider: ProjectionProvider = LocalProjectionProvider()
+   projectionProvider: ProjectionProvider = LocalProjectionProvider(),
+   stateStoreProvider: StateStoreProvider? = null
 ): Pair<Vyne, StubService> {
    val stubService = StubService(schema = schema)
    val queryEngineFactory =
@@ -88,7 +90,8 @@ fun testVyne(
          VyneCacheConfiguration.default(),
          formatSpecs = emptyList(),
          invokers = listOf(stubService),
-         projectionProvider = projectionProvider
+         projectionProvider = projectionProvider,
+         stateStoreProvider = stateStoreProvider
       )
    val vyne = Vyne(listOf(schema), queryEngineFactory)
    return vyne to stubService
@@ -154,11 +157,13 @@ fun testVyneWithStub(schema: String, invokers: List<OperationInvoker>): Pair<Vyn
 fun testVyne(
    schema: String,
    functionRegistry: FunctionRegistry = FunctionRegistry.default,
-   projectionProvider: ProjectionProvider = LocalProjectionProvider()
+   projectionProvider: ProjectionProvider = LocalProjectionProvider(),
+   stateStoreProvider: StateStoreProvider? = null
 ) =
    testVyne(
       TaxiSchema.compileOrFail(schema, functionRegistry = functionRegistry),
-      projectionProvider = projectionProvider
+      projectionProvider = projectionProvider,
+      stateStoreProvider = stateStoreProvider
    )
 
 @ExperimentalTime

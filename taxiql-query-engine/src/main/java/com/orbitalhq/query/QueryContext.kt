@@ -135,6 +135,8 @@ data class QueryContext(
 
    val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = ConcurrentHashMap(),
 
+   val queryOptions: QueryOptions
+
 //   val failureBehaviour: FailureBehaviour = FailureBehaviour.THROW
 
 ) : ProfilerOperation by profiler, FactBag by facts, QueryContextEventDispatcher by eventBroker, InPlaceQueryEngine {
@@ -303,7 +305,8 @@ data class QueryContext(
          clientQueryId: String? = null,
          queryId: String,
          eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
-         scopedFacts: List<ScopedFact> = emptyList()
+         scopedFacts: List<ScopedFact> = emptyList(),
+         queryOptions: QueryOptions
       ): QueryContext {
          return QueryContext(
             schema,
@@ -312,7 +315,8 @@ data class QueryContext(
             profiler,
             clientQueryId = clientQueryId,
             queryId = queryId,
-            eventBroker = eventBroker
+            eventBroker = eventBroker,
+            queryOptions =  queryOptions
          )
       }
    }

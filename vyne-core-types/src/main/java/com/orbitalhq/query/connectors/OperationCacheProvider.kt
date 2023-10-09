@@ -19,7 +19,7 @@ interface OperationCacheProvider {
 interface OperationCacheProviderBuilder {
    fun canBuild(strategy: CachingStrategy): Boolean
 
-   fun build(strategy: CachingStrategy, maxSize: Int): OperationCacheProvider
+   fun buildOperationCache(strategy: CachingStrategy, maxSize: Int): OperationCacheProvider
 }
 
 

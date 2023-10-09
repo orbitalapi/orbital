@@ -1,6 +1,8 @@
 package com.orbitalhq.query
 
+import com.orbitalhq.query.streams.MergedStream
 import com.orbitalhq.schemas.Schema
+import com.orbitalhq.schemas.Type
 
 class QueryParser(val schema: Schema) {
    @Deprecated(message = "Use a TypeNameQueryExpression instead", replaceWith = ReplaceWith("parse(QueryExpression)"))
@@ -25,6 +27,24 @@ class QueryParser(val schema: Schema) {
          is QueryAndMutateExpression -> parse(query.query).map { it.copy(mutation = query.mutation) }.toSet()
          is ProjectedExpression -> {
             parse(query.source).map { it.copy(projection = query.projection) }.toSet()
+         }
+         is StreamJoiningExpression -> {
+            val streamNodes = query.streamExpressions.flatMap { parse(it) }
+            val projections = streamNodes.mapNotNull { it.projection }.distinct()
+            if (projections.size > 1) { error("Found multiple projections in a stream joining query - this is an error") }
+            val mergedStreamType = MergedStream.buildMergedStreamType(streamNodes.map { it.type })
+
+            val mutations = streamNodes.mapNotNull { it.mutation }.distinct()
+            if (projections.size > 1) { error("Found multiple mutations in a stream joining query - this is an error") }
+
+            setOf(QuerySpecTypeNode(
+               type = mergedStreamType,
+               // Remove the mutation and the projection, as we want to operate those on the MERGED stream,
+               // not the individual ones.
+               children = streamNodes.map { it.copy(mutation = null, projection = null) }.toSet(),
+               projection = projections.singleOrNull(),
+               mutation = mutations.singleOrNull()
+            ))
          }
          else -> throw IllegalArgumentException("The query passed was neither a Json object, nor a recognized type.  Unable to proceed:  $query")
       }

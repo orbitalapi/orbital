@@ -32,7 +32,7 @@ class HazelcastCacheProviderTest : DescribeSpec({
       stub.addResponse("findPerson", vyne.parseJson("Person", """{ "id" : "1", "name" : "Jimmy" }"""))
 
       it("should cache the result") {
-         val cacheProvider = HazelcastCacheProvider(
+         val cacheProvider = HazelcastOperationCacheProvider(
             hazelcast,
             schemaStore
          )
@@ -73,7 +73,7 @@ class HazelcastCacheProviderTest : DescribeSpec({
          stub.invocations.shouldHaveSize(1)
       }
       it("should cache if a second call comes when the first call is still inflight") {
-         val cacheProvider = HazelcastCacheProvider(
+         val cacheProvider = HazelcastOperationCacheProvider(
             hazelcast,
             schemaStore
          )

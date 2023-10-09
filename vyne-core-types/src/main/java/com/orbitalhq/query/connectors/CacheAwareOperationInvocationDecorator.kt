@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.reactive.asFlow
+import kotlinx.coroutines.reactor.asFlux
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import java.time.Duration
@@ -52,6 +53,10 @@ class CacheAwareOperationInvocationDecorator(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String
    ): Flow<TypedInstance> {
+      if (invoker.getCachingBehaviour(service, operation) == OperationCachingBehaviour.NO_CACHE) {
+         return invoker.invoke(service, operation, parameters, eventDispatcher, queryId)
+      }
+
       val (key, params) = getCacheKeyAndParamMessage(service, operation, parameters, eventDispatcher, queryId)
 
       val cachingInvoker = cacheProvider.getCachingInvoker(key, invoker)
@@ -69,15 +74,14 @@ class CacheAwareOperationInvocationDecorator(
 //         return it.asFlow()
 //      }
 
+      var emittedRecords = 0
+      var evictedFromCache = false
+
       // We didn't have a result.  Defer to the actor, to ensure that
       // if multiple attempts to load from this cache at the same arrive, we only
       // want one to hit the cached service.  The actor takes care of this for us
       val flux = cachingInvoker.invoke(params)
-
-      var emittedRecords = 0
-      var evictedFromCache = false
-      return flux.asFlow()
-         .onEach {
+         .doOnNext {
             emittedRecords++
             if (!evictedFromCache && emittedRecords > evictWhenResultSizeExceeds) {
                // Some cache keys can be huge
@@ -88,6 +92,7 @@ class CacheAwareOperationInvocationDecorator(
          }
 
 
+      return flux.asFlow()
 //      try {
 //         var emittedRecords = 0
 //         var evictedFromCache = false
@@ -195,14 +200,15 @@ class CachingOperatorInvoker(
          runBlocking {
             try {
                invoker.invoke(service, operation, parameters, eventDispatcher, queryId)
-                  .catch { exception ->
+                  .asFlux()
+                  .doOnError {exception ->
                      logger.info { "Operation with cache key ${cacheKey.abbreviate()} failed with exception ${exception::class.simpleName} ${exception.message}.  This operation with params will not be attempted again.  Future attempts will have this error replayed" }
                      sink.error(exception)
                   }
-                  .onCompletion {
+                  .doOnComplete {
                      sink.complete()
                   }
-                  .collect {
+                  .subscribe {
                      sink.next(it)
                   }
             } catch (exception: Exception) {
@@ -212,9 +218,7 @@ class CachingOperatorInvoker(
                sink.error(exception)
             }
          }
-         // Only cache up to the max size.  If we exceed this number, the Flux itself is removed from the cache, so not
-         // presented for replay.
-      }.cache(maxSize)
+      }.share()
 
 
    }

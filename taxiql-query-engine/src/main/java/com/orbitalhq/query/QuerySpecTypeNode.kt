@@ -26,6 +26,7 @@ import mu.KotlinLogging
 data class QuerySpecTypeNode(
    val type: Type,
    @Deprecated("Not used, not required")
+   // Note: Currently using children to wrap nested nodes when joining multiple streams (one child for each contributing stream).
    val children: Set<QuerySpecTypeNode> = emptySet(),
    val mode: QueryMode = QueryMode.DISCOVER,
    // Note: Not really convinced these need to be OutputCOnstraints (vs Constraints).

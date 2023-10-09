@@ -145,7 +145,7 @@ interface TypedInstance {
          format: FormatsAndZoneOffset? = type.formatAndZoneOffset
       ): TypedInstance {
          return when {
-            value is TypedInstance -> value
+            value is TypedInstance && value.type == type -> value
             value == null -> TypedNull.create(type)
             value is NullValue -> TypedNull.create(type)
             value is java.sql.Array -> {

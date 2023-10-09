@@ -25,7 +25,7 @@ class OperationCacheFactory(
    fun getOperationCache(strategy: CachingStrategy): OperationCacheProvider {
       val provider = providers.firstOrNull { it.canBuild(strategy) }
          ?: error("Unable to build an OperationCacheProvider for strategy ${strategy::class.simpleName}")
-      return provider.build(strategy, maxResultRecordCount)
+      return provider.buildOperationCache(strategy, maxResultRecordCount)
    }
 
 }
