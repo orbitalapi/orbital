@@ -152,7 +152,7 @@ class CacheAwareOperationInvocationDecorator(
  *  - The Cache Key (For looking up against some backing store - eg: a Concurrent Hash Map_
  *  - A loader function, which can be called to invoke the underlying service
  */
-typealias CacheFetcher = (OperationCacheKey, () -> Flux<TypedInstance>) -> Flux<TypedInstance>
+typealias CacheFetcher = (OperationCacheKey, OperationInvocationParamMessage, () -> Flux<TypedInstance>) -> Flux<TypedInstance>
 
 /**
  * A Kotlin Actor which ensures a single in-flight request through to the downstream invoker.
@@ -168,7 +168,7 @@ class CachingOperatorInvoker(
    private val cacheFetcher: CacheFetcher
 ) {
    fun invoke(message: OperationInvocationParamMessage): Flux<TypedInstance> {
-      return cacheFetcher.invoke(cacheKey) {
+      return cacheFetcher.invoke(cacheKey, message) {
          logger.debug { "${cacheKey.abbreviate()} cache miss, loading from Operation Invoker" }
          invokeUnderlyingService(message)
       }

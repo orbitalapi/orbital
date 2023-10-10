@@ -20,6 +20,7 @@ import lang.taxi.accessors.CollectionProjectionExpressionAccessor
 import lang.taxi.accessors.ConditionalAccessor
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.ObjectType
+import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 import java.util.*
 
@@ -290,25 +291,32 @@ class ObjectBuilder(
             targetType
                .attributes
                .forEach { (attributeName, field) ->
-                  if (field.sourcedBy == null) {
-                     val fieldInstanceValidPredicate = buildSpecProvider.provide(field)
-                     val targetAttributeType = field.resolveType(context.schema)
-                     val returnTypedNull = true
-                     when (val value =
-                        sourceObjectType.getAttributeIdentifiedByType(targetAttributeType, returnTypedNull)) {
-                        is TypedNull -> missingAttributes[attributeName] = field
-                        else -> {
-                           val attributeSatisfiesPredicate = fieldInstanceValidPredicate.isValid(value)
-                           if (attributeSatisfiesPredicate) {
-                              populatedValues[attributeName] = convertValue(value, targetAttributeType, field.format)
-                           } else {
-                              missingAttributes[attributeName] = field
-                           }
+                  when {
+                     field.sourcedBy != null -> sourcedByAttributes[attributeName] = field
+                     PrimitiveType.isPrimitiveType(field.type.fullyQualifiedName) -> {
+                        // There's no point in trying to build primitive types.
+                        // Just tag it as missing. It's possible there's an expression to evaluate.
+                        missingAttributes[attributeName] = field
+                     }
 
+                     else -> {
+                        val fieldInstanceValidPredicate = buildSpecProvider.provide(field)
+                        val targetAttributeType = field.resolveType(context.schema)
+                        val returnTypedNull = true
+                        when (val value =
+                           sourceObjectType.getAttributeIdentifiedByType(targetAttributeType, returnTypedNull)) {
+                           is TypedNull -> missingAttributes[attributeName] = field
+                           else -> {
+                              val attributeSatisfiesPredicate = fieldInstanceValidPredicate.isValid(value)
+                              if (attributeSatisfiesPredicate) {
+                                 populatedValues[attributeName] = convertValue(value, targetAttributeType, field.format)
+                              } else {
+                                 missingAttributes[attributeName] = field
+                              }
+
+                           }
                         }
                      }
-                  } else {
-                     sourcedByAttributes[attributeName] = field
                   }
                }
          } else {

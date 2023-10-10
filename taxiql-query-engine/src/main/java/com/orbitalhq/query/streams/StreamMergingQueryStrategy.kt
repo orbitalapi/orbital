@@ -36,7 +36,7 @@ class StreamMergingQueryStrategy(
       val streamMemberTaxiType: UnionType = streamType.taxiType.typeParameters()[0] as UnionType
 
       val connectionName = context.queryOptions.stateStoreConnectionName
-         "" // TODO : We need a way of getting this from the parsed query (similar to how we get Cache info)
+      "" // TODO : We need a way of getting this from the parsed query (similar to how we get Cache info)
       val stateStore = if (stateStoreProvider != null && connectionName != null) {
          stateStoreProvider.getCacheStore(
             connectionName,
@@ -60,14 +60,8 @@ class StreamMergingQueryStrategy(
          .map {
             val typedInstance = TypedInstance.from(streamMemberType, it, context.schema)
             typedInstance
-         }.let { flow ->
-            if (stateStore != null) {
-               flow.flatMapMerge { value ->
-                  stateStore.mergeNotNullValues(value).asFlow()
-               }
-            } else {
-               flow
-            }
+         }.flatMapMerge { value ->
+            stateStore?.mergeNotNullValues(value)?.asFlow() ?: flowOf(value)
          }
       return QueryStrategyResult(
          mergedFlow

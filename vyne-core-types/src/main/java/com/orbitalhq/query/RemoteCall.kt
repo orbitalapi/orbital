@@ -133,6 +133,15 @@ data class SqlExchange(
    override val requestBody: String = sql
 }
 
+@Serializable
+data class CacheExchange(
+   val connectionName: String,
+   val cacheName: String,
+   val cacheKey: String
+) : RemoteCallExchangeMetadata() {
+   override val requestBody: String? = null
+}
+
 
 @Serializable
 data class MessageStreamExchange(

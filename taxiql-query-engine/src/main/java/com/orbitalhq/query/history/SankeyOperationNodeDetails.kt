@@ -37,10 +37,18 @@ data class DatabaseNode(
    val tableNames: List<String>
 ) : SankeyOperationNodeDetails(OperationNodeType.Database)
 
+@Serializable
+data class CacheNode(
+   val connectionName: String,
+   val cacheName: String,
+   val cacheKey: String
+) : SankeyOperationNodeDetails(OperationNodeType.Cache)
+
 enum class OperationNodeType {
    KafkaTopic,
    Database,
-   Http
+   Http,
+   Cache
 }
 
 

@@ -1,9 +1,18 @@
 package com.orbitalhq.schemas
 
-import com.orbitalhq.schemas.taxi.*
+import com.orbitalhq.schemas.taxi.FunctionConstraintProvider
+import com.orbitalhq.schemas.taxi.TaxiConstraintConverter
+import com.orbitalhq.schemas.taxi.toVyneFieldModifiers
+import com.orbitalhq.schemas.taxi.toVyneQualifiedName
+import com.orbitalhq.schemas.taxi.toVyneSources
 import lang.taxi.accessors.FieldSourceAccessor
-import lang.taxi.types.*
 import lang.taxi.types.Annotation
+import lang.taxi.types.ArrayType
+import lang.taxi.types.EnumType
+import lang.taxi.types.ObjectType
+import lang.taxi.types.PrimitiveType
+import lang.taxi.types.TypeAlias
+import lang.taxi.types.UnionType
 
 object TaxiTypeMapper {
    private fun convertIfAnonymous(taxiType: lang.taxi.types.Type, schema: Schema, typeCache: TypeCache): Type? {

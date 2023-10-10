@@ -112,7 +112,11 @@ data class Type(
       private val internedParameterizedNames = Interners.newStrongInterner<String>()
    }
 
-   override val schemaMemberKind: SchemaMemberKind = SchemaMemberKind.TYPE
+   // Note on unneccessary imports:
+   // For some reason the compiler is throwing an exception on this line, trying to link to a non-existent
+   // type SchemaMemberKind in Taxi.
+   // Not sure why, but this fully qualified type reference resolves ths issue.
+   override val schemaMemberKind: com.orbitalhq.schemas.SchemaMemberKind = com.orbitalhq.schemas.SchemaMemberKind.TYPE
 
    // Interned, so that can be used for equality checks
    val paramaterizedName: String = internedParameterizedNames.intern(qualifiedName.parameterizedName)

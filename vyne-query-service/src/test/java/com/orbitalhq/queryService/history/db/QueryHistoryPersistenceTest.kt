@@ -23,7 +23,8 @@ import com.orbitalhq.query.QueryResponse
 import com.orbitalhq.query.ResponseCodeGroup
 import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.ValueWithTypeName
-import com.orbitalhq.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
+import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
+import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalOperationCacheProvider
 import com.orbitalhq.query.history.QueryResultRow
 import com.orbitalhq.query.history.QuerySummary
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryController
@@ -297,7 +298,8 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
                   SimpleSchemaProvider(schema),
                   WebClient.builder(),
                   AuthWebClientCustomizer.empty(),
-               )
+               ),
+               LocalOperationCacheProvider.default()
             )
          )
       }
@@ -386,7 +388,8 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
                   SimpleSchemaProvider(schema),
                   WebClient.builder(),
                   AuthWebClientCustomizer.empty(),
-               )
+               ),
+               LocalOperationCacheProvider.default()
             )
          )
       }

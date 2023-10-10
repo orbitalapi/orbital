@@ -43,7 +43,7 @@ import {
   CodeGenRequest,
   QuerySnippetContainerComponent
 } from 'src/app/query-snippet-panel/query-snippet-container.component';
-import {TuiDialogService} from '@taiga-ui/core';
+import {TuiAlertService, TuiDialogService, TuiNotification} from '@taiga-ui/core';
 import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
 import {appendToQuery} from "./query-code-generator";
 import {SaveQueryPanelComponent, SaveQueryPanelProps} from "./save-query-panel.component";
@@ -131,6 +131,7 @@ export class QueryEditorComponent implements OnInit {
               private clipboard: Clipboard,
               @Inject(TuiDialogService) private readonly tuiDialogService: TuiDialogService,
               @Inject(Injector) private readonly injector: Injector,
+              @Inject(TuiAlertService) private readonly alerts: TuiAlertService,
               private editorService: TypeEditorService,
               private snackbarService: MatSnackBar
   ) {
@@ -363,6 +364,8 @@ export class QueryEditorComponent implements OnInit {
       ).subscribe();
     } else {
       copyQueryAs(this.query, this.queryService.queryEndpoint, $event, this.clipboard);
+      this.alerts.open('Copied to clipboard', { status: TuiNotification.Success})
+        .subscribe()
     }
   }
 

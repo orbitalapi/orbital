@@ -135,11 +135,17 @@ $border-highlight: rgba($vyne-lilac, 0.6);
 
 }
 
+// Note: fullscreen isn't really doing fullscreen at the moment - it
+// consumes the main panel, excluding the toolbar and the sidenav.
+// This is because for some reason, position: fixed is becoming relative to one of the child
+// containers (not sure which one), rather than the screen.
 .fullscreen {
   position: fixed;
-  top: $toolbar-height + 2rem;
+  //was -- top: $toolbar-height + 2rem;
+  top: 0;
   height: calc(100vh - (#{$toolbar-height} + 4rem));
-  left: $sidenav-width + 20px;
+  // was -- left: $sidenav-width + 20px;
+  left: 0;
   width: calc(100vw - (#{$sidenav-width} + 60px));
   z-index: 2000;
 }

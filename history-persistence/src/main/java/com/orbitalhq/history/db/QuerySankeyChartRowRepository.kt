@@ -18,13 +18,7 @@ interface QuerySankeyChartRowRepository : JpaRepository<QuerySankeyChartRow, San
            on conflict (query_id, source_node_type, source_node, target_node_type, target_node)
            do update set node_count = :count, source_operation_data = :sourceNodeOperationData, target_operation_data = :targetNodeOperationData
     """
-      const val H2_MERGE_QUERY: String =
-         """merge into QUERY_SANKEY_ROW (query_id, source_node_type, source_node, source_operation_data, target_node_type, target_node, target_operation_data, node_count)
-           key(query_id, source_node_type, source_node, target_node_type, target_node)
-           values (:queryId, :sourceNodeType, :sourceNode, :sourceNodeOperationData, :targetNodeType, :targetNode, :targetNodeOperationData, :count)
-    """
    }
-
    fun findAllByQueryId(queryId: String): List<QuerySankeyChartRow>
 
 

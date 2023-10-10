@@ -198,6 +198,10 @@ export class QueryLineageComponent extends BaseGraphComponent {
             const httpHeader = 'HTTP ' + operationData.verb
             const httpSubheader = operationData.operationName.name.replace('@@', ' / ');
             return [httpHeader, httpSubheader]
+          case "Cache":
+            const cacheHeader = 'Cache connection: ' + operationData.connectionName
+            const cacheSubheader = 'Read ' + operationData.cacheName
+            return [cacheHeader, cacheSubheader];
         }
       }
 

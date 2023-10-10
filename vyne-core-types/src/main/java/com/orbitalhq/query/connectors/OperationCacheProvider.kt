@@ -2,7 +2,21 @@ package com.orbitalhq.query.connectors
 
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schemas.CachingStrategy
+import com.orbitalhq.schemas.OperationName
+import com.orbitalhq.schemas.OperationNames
+import com.orbitalhq.schemas.QualifiedName
+import com.orbitalhq.schemas.ServiceName
 
+typealias CacheConnectionName = String
+typealias CacheName = String
+object CacheNames {
+   val CACHE_PREFIX = "com.orbital.caching.Cache"
+   val CACHE_READ_OPERATION_NAME = "READ"
+   fun cacheServiceName(connectionName: CacheConnectionName) = "$CACHE_PREFIX.$connectionName"
+
+   fun isCacheName(serviceName: QualifiedName) = serviceName.fullyQualifiedName.startsWith(CACHE_PREFIX)
+   fun isCacheName(serviceName: ServiceName) = serviceName.startsWith(CACHE_PREFIX)
+}
 interface OperationCacheProvider {
    fun getCachingInvoker(operationKey: OperationCacheKey, invoker: OperationInvoker): CachingOperatorInvoker
    fun evict(operationKey: OperationCacheKey)

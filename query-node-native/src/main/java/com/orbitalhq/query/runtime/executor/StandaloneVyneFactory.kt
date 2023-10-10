@@ -15,8 +15,9 @@ import com.orbitalhq.connectors.jdbc.HikariJdbcConnectionFactory
 import com.orbitalhq.connectors.jdbc.JdbcInvoker
 import com.orbitalhq.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import com.orbitalhq.query.QueryEngineFactory
-import com.orbitalhq.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
-import com.orbitalhq.query.graph.operationInvocation.OperationCacheFactory
+import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
+import com.orbitalhq.query.graph.operationInvocation.cache.OperationCacheFactory
+import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalOperationCacheProvider
 import com.orbitalhq.query.runtime.QueryMessage
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.api.SchemaWithSourcesSchemaProvider
@@ -59,12 +60,6 @@ class StandaloneVyneFactory(
       private val logger = KotlinLogging.logger {}
    }
 
-   // Removed from constructor, as we weren't injecting, just using the default value.
-   // Turns out, a constructor param with a variable with default value breaks Spring Native
-   // ( Parameter specified as non-null is null: method com.orbitalhq.query.runtime.executor.StandaloneVyneFactory.<init>, parameter operationCacheFactory)
-   // So, since we weren't injecting, just use the static value.
-   private val operationCacheFactory: OperationCacheFactory = OperationCacheFactory()
-
    private val schemaCache = CacheBuilder.newBuilder()
       .maximumSize(5)
       .build<String, SchemaProvider>()
@@ -99,7 +94,7 @@ class StandaloneVyneFactory(
             cacheConfiguration,
             CacheAwareOperationInvocationDecorator.decorateAll(
                invokers,
-               operationCache = operationCacheFactory.getCache(options.cachingStrategy)
+               cacheProvider = LocalOperationCacheProvider.default()
             )
          ),
          formatSpecRegistry.formats
