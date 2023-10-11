@@ -25,9 +25,9 @@ class CsvFormatSpecTest {
             nullValue = "NULL"
          )
          model Person {
-            firstName : String by column("firstName")
-            lastName : String by column("lastName")
-            age : Int by column("age")
+            firstName : String
+            lastName : String
+            age : Int
          }
       """
             ),
@@ -58,9 +58,9 @@ jimmy|smitts|NULL"""
          """
          @com.orbitalhq.formats.Csv
          model Person {
-            firstName : String by column("firstName")
-            lastName : String by column("lastName")
-            age : Int by column("age")
+            firstName : String
+            lastName : String
+            age : Int
          }
       """.trimIndent()
       )
