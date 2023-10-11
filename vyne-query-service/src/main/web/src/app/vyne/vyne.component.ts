@@ -78,6 +78,13 @@ export class VyneComponent implements OnInit {
       testId: 'authentication-sidebar',
       requiredAuthority: VynePrivileges.ViewAuthenticationTokens
     },
+    {
+      title: 'Designer',
+      icon: 'assets/img/tabler/tools.svg',
+      route: 'designer',
+      testId: 'designer',
+      requiredAuthority: VynePrivileges.BrowseSchema
+    },
     // {
     //   title: 'Pipeline manager',
     //   icon: 'assets/img/pipeline.svg',
