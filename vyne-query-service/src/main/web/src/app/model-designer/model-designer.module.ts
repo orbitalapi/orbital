@@ -14,7 +14,13 @@ import {
     TuiInputFilesModule, TuiProgressModule, TuiStringifyContentPipeModule
 } from "@taiga-ui/kit";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
-import {TuiButtonModule, TuiLoaderModule, TuiNotificationModule, TuiTextfieldControllerModule} from "@taiga-ui/core";
+import {
+    TuiButtonModule,
+    TuiDataListModule,
+    TuiLoaderModule,
+    TuiNotificationModule,
+    TuiTextfieldControllerModule
+} from "@taiga-ui/core";
 import {ExpandingPanelSetModule} from "../expanding-panelset/expanding-panel-set.module";
 import {CodeEditorModule} from "../code-editor/code-editor.module";
 import {TaxiParserService} from "./taxi-parser.service";
@@ -60,7 +66,8 @@ import {JsonViewerModule} from "../json-viewer/json-viewer.module";
         TabbedResultsViewModule,
         TuiLoaderModule,
         TypeNamedInstanceTreeModule,
-        JsonViewerModule
+        JsonViewerModule,
+        TuiDataListModule
     ]
 })
 export class ModelDesignerModule {

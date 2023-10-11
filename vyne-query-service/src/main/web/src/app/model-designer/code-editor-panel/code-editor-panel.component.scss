@@ -14,3 +14,18 @@ app-code-editor {
 .type-input {
   width: 20rem;
 }
+
+.type-option {
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+
+  .type-name {
+    margin-right: 0.5rem;
+  }
+  .mono-badge.small {
+    font-size: 0.7rem !important;
+    margin-top: 0;
+  }
+
+}
