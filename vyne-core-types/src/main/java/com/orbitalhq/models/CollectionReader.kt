@@ -1,7 +1,7 @@
 package com.orbitalhq.models
 
-import com.orbitalhq.models.csv.CsvAttributeAccessorParser
-import com.orbitalhq.models.csv.CsvCollectionParser
+import com.orbitalhq.formats.csv.CsvAttributeAccessorParser
+import com.orbitalhq.formats.csv.CsvCollectionParser
 import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type

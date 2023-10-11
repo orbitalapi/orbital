@@ -8,7 +8,7 @@ import com.orbitalhq.connectors.aws.sqs.SqsConnectorTaxi
 import com.orbitalhq.connectors.azure.blob.AzureStoreConnectionTaxi
 import com.orbitalhq.connectors.jdbc.JdbcConnectorTaxi
 import com.orbitalhq.connectors.kafka.KafkaConnectorTaxi
-import com.orbitalhq.models.csv.CsvAnnotationSpec
+import com.orbitalhq.formats.csv.CsvAnnotationSpec
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schema.publisher.SchemaPublisherService
 import com.orbitalhq.schemas.taxi.toMessage

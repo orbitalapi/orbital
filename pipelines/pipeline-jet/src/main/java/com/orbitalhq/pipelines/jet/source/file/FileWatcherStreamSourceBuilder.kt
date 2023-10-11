@@ -3,7 +3,7 @@ package com.orbitalhq.pipelines.jet.source.file
 import com.hazelcast.jet.core.AbstractProcessor
 import com.hazelcast.jet.pipeline.SourceBuilder
 import com.hazelcast.jet.pipeline.StreamSource
-import com.orbitalhq.models.csv.CsvFormatSpec
+import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.models.format.FormatDetector
 import com.orbitalhq.pipelines.jet.api.transport.CsvRecordContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.MessageContentProvider

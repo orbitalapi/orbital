@@ -3,7 +3,7 @@ package io.orbital.station
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.cockpit.core.WebUiUrlSupportFilter
-import com.orbitalhq.models.csv.CsvFormatSpec
+import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.query.TaxiJacksonModule
 import com.orbitalhq.query.VyneJacksonModule

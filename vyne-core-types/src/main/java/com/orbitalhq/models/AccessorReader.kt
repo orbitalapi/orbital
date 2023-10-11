@@ -6,7 +6,7 @@ import com.jayway.jsonpath.PathNotFoundException
 import com.orbitalhq.expressions.OperatorExpressionCalculator
 import com.orbitalhq.formulas.CalculatorRegistry
 import com.orbitalhq.models.conditional.ConditionalFieldSetEvaluator
-import com.orbitalhq.models.csv.CsvAttributeAccessorParser
+import com.orbitalhq.formats.csv.CsvAttributeAccessorParser
 import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.FactDiscoveryStrategy
 import com.orbitalhq.models.functions.FunctionRegistry
@@ -670,6 +670,10 @@ class AccessorReader(
       return TypedObject(targetType, values, source)
    }
 
+   /**
+    * Deprecated. Use an Xml format, and the deserialziation within the FormatSpec instead.
+    */
+   @Deprecated("Use an XmlFormatSpec instead.")
    private fun parseXml(
       value: Any,
       targetType: Type,

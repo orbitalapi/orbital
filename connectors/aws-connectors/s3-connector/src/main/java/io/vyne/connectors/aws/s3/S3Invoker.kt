@@ -10,9 +10,9 @@ import com.orbitalhq.connectors.jdbc.sql.dml.SelectStatementGenerator
 import com.orbitalhq.connectors.resultType
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.models.csv.CsvAnnotationSpec
-import com.orbitalhq.models.csv.CsvFormatSpec
-import com.orbitalhq.models.csv.CsvFormatSpecAnnotation
+import com.orbitalhq.formats.csv.CsvAnnotationSpec
+import com.orbitalhq.formats.csv.CsvFormatSpec
+import com.orbitalhq.formats.csv.CsvFormatSpecAnnotation
 import com.orbitalhq.models.format.FormatDetector
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.query.ConstructedQueryDataSource

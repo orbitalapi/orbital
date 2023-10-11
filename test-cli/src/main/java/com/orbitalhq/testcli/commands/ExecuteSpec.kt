@@ -15,8 +15,8 @@ import com.orbitalhq.asSourcePackage
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypeNamedInstance
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.models.csv.CsvImporterUtil
-import com.orbitalhq.models.csv.CsvIngestionParameters
+import com.orbitalhq.formats.csv.CsvImporterUtil
+import com.orbitalhq.formats.csv.CsvIngestionParameters
 import com.orbitalhq.query.TaxiJacksonModule
 import com.orbitalhq.query.VyneJacksonModule
 import com.orbitalhq.schemas.Type

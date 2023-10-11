@@ -1,4 +1,4 @@
-package com.orbitalhq.models.csv
+package com.orbitalhq.formats.csv
 
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.InPlaceQueryEngine
@@ -9,6 +9,7 @@ import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 
+@Deprecated("Replaced by CsvFormat")
 class CsvCollectionParser(val content: String, val type: Type, val schema: Schema, val source:DataSource, val functionRegistry: FunctionRegistry = FunctionRegistry.default, val inPlaceQueryEngine: InPlaceQueryEngine? = null) {
    private val memberType: Type
 

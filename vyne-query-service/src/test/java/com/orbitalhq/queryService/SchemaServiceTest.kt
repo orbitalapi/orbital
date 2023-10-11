@@ -6,7 +6,7 @@ import io.kotest.matchers.shouldBe
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.asPackage
 import com.orbitalhq.cockpit.core.schemas.SchemaService
-import com.orbitalhq.models.csv.CsvFormatSpec
+import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schema.consumer.SimpleSchemaStore

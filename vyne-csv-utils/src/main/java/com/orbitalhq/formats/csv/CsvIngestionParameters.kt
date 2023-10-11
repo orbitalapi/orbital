@@ -1,4 +1,4 @@
-package com.orbitalhq.models.csv
+package com.orbitalhq.formats.csv
 
 import java.io.Serializable
 

@@ -1,4 +1,4 @@
-package com.orbitalhq.models.csv
+package com.orbitalhq.formats.csv
 
 import com.google.common.io.Resources
 import com.winterbe.expekt.should

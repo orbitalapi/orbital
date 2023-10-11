@@ -1,8 +1,8 @@
 package com.orbitalhq.cockpit.core.schemas
 
-import com.orbitalhq.models.csv.CsvImporterUtil
-import com.orbitalhq.models.csv.CsvIngestionParameters
-import com.orbitalhq.models.csv.ParsedTypeInstance
+import com.orbitalhq.formats.csv.CsvImporterUtil
+import com.orbitalhq.formats.csv.CsvIngestionParameters
+import com.orbitalhq.formats.csv.ParsedTypeInstance
 import com.orbitalhq.schema.api.SchemaProvider
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody

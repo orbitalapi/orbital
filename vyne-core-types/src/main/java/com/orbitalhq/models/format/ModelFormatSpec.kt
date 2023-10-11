@@ -42,7 +42,7 @@ interface ModelFormatDeserializer {
    fun parseRequired(value: Any, metadata: Metadata): Boolean
 
    /**
-    * Should return either List<Map<String,Any>> or Map<String,Any>
+    * Should return either List<Map<String,Any>> or Map<String,Any>, or a TypedInstance
     */
    fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema): Any
 

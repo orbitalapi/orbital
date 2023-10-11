@@ -3,7 +3,7 @@ package com.orbitalhq.pipelines.jet.sink.aws.s3
 import com.hazelcast.jet.pipeline.Sink
 import com.orbitalhq.connectors.aws.configureWithExplicitValuesIfProvided
 import com.orbitalhq.connectors.aws.core.registry.AwsConnectionRegistry
-import com.orbitalhq.models.csv.CsvFormatSpec
+import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.models.format.FormatDetector
 import com.orbitalhq.pipelines.jet.api.transport.MessageContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportSpec

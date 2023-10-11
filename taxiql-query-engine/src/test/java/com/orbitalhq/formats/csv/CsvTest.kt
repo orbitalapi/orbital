@@ -1,4 +1,4 @@
-package com.orbitalhq.models.csv
+package com.orbitalhq.formats.csv
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
@@ -99,10 +99,10 @@ type Person {
          "jimmy,parsons\n" +
          "olly,spurrs"
       val parsed = CsvImporterUtil.parseCsvToType(
-         csv,
-         CsvIngestionParameters(),
-         schema,
-         "Person"
+          csv,
+          CsvIngestionParameters(),
+          schema,
+          "Person"
       ).map { it.raw as Map<String,Any> }
 
       parsed.should.equal(listOf(
@@ -125,10 +125,10 @@ type Person {
          "jimmy,parsons\n" +
          "olly,spurrs"
       val parsed = CsvImporterUtil.parseCsvToType(
-         csv,
-         CsvIngestionParameters(),
-         schema,
-         "Person"
+          csv,
+          CsvIngestionParameters(),
+          schema,
+          "Person"
       ).map { it.raw as Map<String,Any> }
       parsed.should.equal(listOf(
          mapOf("firstName" to "jimmy", "lastName" to "parsons"),

@@ -1,8 +1,8 @@
 package com.orbitalhq.pipelines.jet.source
 
-import com.orbitalhq.models.csv.CsvFormatFactory
-import com.orbitalhq.models.csv.CsvFormatSpec
-import com.orbitalhq.models.csv.CsvFormatSpecAnnotation
+import com.orbitalhq.formats.csv.CsvFormatFactory
+import com.orbitalhq.formats.csv.CsvFormatSpec
+import com.orbitalhq.formats.csv.CsvFormatSpecAnnotation
 import com.orbitalhq.models.format.FormatDetector
 import com.orbitalhq.pipelines.jet.api.transport.CsvRecordContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.MessageContentProvider

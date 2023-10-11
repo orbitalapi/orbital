@@ -1,4 +1,4 @@
-package com.orbitalhq.models.csv
+package com.orbitalhq.formats.csv
 
 import com.winterbe.expekt.should
 import com.orbitalhq.VersionedSource
@@ -113,7 +113,7 @@ jimmy|smitts|NULL"""
          )
       )
       val (metadata, _) = FormatDetector(listOf(CsvFormatSpec)).getFormatType(schema.type("Person"))!!
-      val generated = (CsvFormatSpec.serializer.write(result, metadata) as String)
+      val generated = (CsvFormatSerializer.write(result, metadata) as String)
          .replace("\r\n", "\n")
       val expected = """firstName|lastName|age
 jack|jackery|23
@@ -148,7 +148,7 @@ jimmy|smitts|NULL
          nullValue = "NULL",
          useFieldNamesAsColumnNames = true
       )
-      val generated = (CsvFormatSpec.serializer.write(typedCollection, csvSpec, EmptyTypedInstanceInfo) as String)
+      val generated = (CsvFormatSerializer.write(typedCollection, csvSpec, EmptyTypedInstanceInfo) as String)
          .replace("\r\n", "\n")
       val expected = """firstName|lastName|age
 jack|jackery|23

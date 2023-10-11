@@ -1,4 +1,4 @@
-package com.orbitalhq.models.csv
+package com.orbitalhq.formats.csv
 
 import com.orbitalhq.models.format.ModelFormatDeserializer
 import com.orbitalhq.schemas.Metadata

@@ -1,4 +1,4 @@
-package com.orbitalhq.models.csv
+package com.orbitalhq.formats.csv
 
 import com.orbitalhq.annotations.AnnotationWrapper
 import com.orbitalhq.models.format.ModelFormatSpec

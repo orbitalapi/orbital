@@ -1,6 +1,6 @@
 package com.orbitalhq.spring.query.formats
 
-import com.orbitalhq.models.csv.CsvFormatSpec
+import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.protobuf.ProtobufFormatSpec
 import org.springframework.stereotype.Component
