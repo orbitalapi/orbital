@@ -6,8 +6,6 @@ import {Observable} from "rxjs/internal/Observable";
 @Component({
   selector: 'app-model-designer',
   template: `
-    <app-header-bar title="Model designer">
-    </app-header-bar>
     <as-split direction="vertical" unit="percent">
       <as-split-area>
         <as-split direction="horizontal" unit="percent">

@@ -14,6 +14,7 @@ import {catchError, debounceTime, map, mergeMap} from "rxjs/operators";
 import {isNullOrUndefined} from "util";
 import {CompilationMessage, findType, Schema, Type, TypeNamedInstance} from "../../services/schema";
 import {Observable} from "rxjs/internal/Observable";
+import {PARSE_RESULT} from "./parsedData";
 
 @Component({
     selector: 'app-designer-parse-result-panel',
@@ -30,7 +31,7 @@ import {Observable} from "rxjs/internal/Observable";
         <!--                                 [downloadSupported]="false"-->
         <!--        ></app-tabbed-results-view>-->
 
-        <app-json-viewer [json]="parsedEntityJson" *ngIf="parsedEntityJson"></app-json-viewer>
+        <app-json-viewer [json]="parseResult?.parseResult?.json" *ngIf="parseResult" [typeHints]="parseResult?.parseResult?.typeHints" [readOnly]="true"></app-json-viewer>
         <div class="row center">
             <tui-notification *ngIf="errorMessage" status="error">{{errorMessage}}</tui-notification>
         </div>
@@ -72,7 +73,7 @@ export class ParseResultPanelComponent implements OnChanges {
                 const modelRequest: ModelParseRequest | null = (hasModelDefinition) ? {
                     model: source,
                     targetType,
-                    includeTypeInformation: false // TODO :  Need to build type-named-instance-tree to get this working
+                    includeTypeInformation: true
                 } : null
                 return this.service.parseTaxiModel({
                     model: modelRequest,
@@ -90,13 +91,6 @@ export class ParseResultPanelComponent implements OnChanges {
             value => {
                 this.working = false;
                 this.parseResult = value;
-                if (value.parseResult?.typeNamedInstance != null) {
-                    this.parsedEntity$ = of(value.parseResult.typeNamedInstance as TypeNamedInstance)
-                }
-                if (value.parseResult?.raw != null) {
-                    this.parsedEntityJson = JSON.stringify(value.parseResult.raw, null, 3);
-                }
-                // this.parsedEntity$ = of(value.parseResult.typeNamedInstance as TypeNamedInstance)
 
                 this.parsedTypesChanged.emit(value.newTypes);
                 this.changeDetector.markForCheck();
@@ -130,9 +124,6 @@ export class ParseResultPanelComponent implements OnChanges {
 
     parseResult: TaxiParseResult | null = null;
     errorMessage: string | null = null;
-
-    parsedEntity$: Observable<TypeNamedInstance> = null;
-    parsedEntityJson: string;
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.source) {

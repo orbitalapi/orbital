@@ -7,7 +7,7 @@ import {
   OnDestroy,
   ViewChild
 } from '@angular/core';
-import {editor} from 'monaco-editor';
+import {editor, languages} from 'monaco-editor';
 
 
 // Import the core monaco editor
@@ -28,8 +28,12 @@ import * as monacoFeature8
   from 'monaco-editor/esm/vs/editor/standalone/browser/quickInput/standaloneQuickInputService.js';
 import {JSONPathFinder} from 'src/app/json-viewer/JsonPathFinder';
 import {Clipboard} from '@angular/cdk/clipboard';
+import {TypePosition} from "../model-designer/taxi-parser.service";
+import {JsonTypeInlayHintProvider} from "./JsonTypeInlayHintProvider";
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 import ITextModel = editor.ITextModel;
+import InlayHint = languages.InlayHint;
+import InlayHintKind = languages.InlayHintKind;
 
 @Component({
   selector: 'app-json-viewer',
@@ -58,12 +62,51 @@ export class JsonViewerComponent implements OnDestroy {
   @Input()
   showHeader = true;
 
+  private _typeHints: TypePosition[] | null = null;
+  private inlayHints: InlayHint[] = null;
+
   constructor(private changeDetector: ChangeDetectorRef, private clipboard: Clipboard) {
     // This does nothing, but prevents tree-shaking
     const features = [monadoEditorAll, monacoFeature4, monacoFeature5, monacoFeature6, monacoFeature7, monacoFeature8, languageFeatureService];
 
   }
 
+  @Input()
+  get typeHints(): TypePosition[] | null {
+    return this._typeHints;
+  }
+
+  set typeHints(value: TypePosition[] | null) {
+    if (value === this._typeHints) {
+      return;
+    }
+    this._typeHints = value;
+    this.inlayHints = this.typeHints.map(hint => {
+      return {
+        kind: InlayHintKind.Type,
+        label: hint.type.shortDisplayName,
+        position: {
+          column: hint.start.char,
+          lineNumber: hint.start.line
+        },
+        tooltip: hint.type.longDisplayName,
+        paddingLeft: true
+      }
+    })
+    if (this.modelUri) {
+      JsonTypeInlayHintProvider.hints.set(this.modelUri, this.inlayHints);
+    }
+  }
+
+  private _readOnly: boolean = false;
+  @Input()
+  get readOnly():boolean {
+    return this._readOnly;
+  }
+  set readOnly(value) {
+    this._readOnly = value;
+    this.createOrUpdateEditor();
+  }
   @Input()
   get json(): string {
     return this._json;
@@ -127,6 +170,7 @@ export class JsonViewerComponent implements OnDestroy {
       });
   }
 
+  modelUri:monaco.Uri = null;
   private createOrUpdateEditor(): void {
     if (!this.codeEditorContainer) {
       return;
@@ -139,18 +183,30 @@ export class JsonViewerComponent implements OnDestroy {
     } else {
       let monacoTextModel: ITextModel
       if (this.json) {
-        const modelUri = monaco.Uri.parse(`inmemory://json-file-${Date.now()}.json`); // a made up unique URI for our model
-        monacoTextModel = monaco.editor.createModel(this.json, 'json', modelUri)
+        this.modelUri = monaco.Uri.parse(`inmemory://json-file-${Date.now()}.json`); // a made up unique URI for our model
+        if (this.inlayHints) {
+          JsonTypeInlayHintProvider.hints.set(this.modelUri, this.inlayHints)
+        }
+        monacoTextModel = monaco.editor.createModel(this.json, 'json', this.modelUri)
       }
+
+
+      const _typehints = this.typeHints || [];
+      monaco.languages.registerInlayHintsProvider("json", new JsonTypeInlayHintProvider())
 
       this.monacoEditor = monaco.editor.create(this._codeEditorContainer.nativeElement, {
         model: monacoTextModel,
         glyphMargin: true,
         automaticLayout: true,
-        readOnly: false,
+        readOnly: this._readOnly,
         contextmenu: true,
         folding: true,
+        codeLens: true,
+        inlayHints: {
+          enabled: true
+        }
       });
+
 
       // Add back the "Copy" action.  Shouldn't have to do this.
       // but is a workaround as documented here:

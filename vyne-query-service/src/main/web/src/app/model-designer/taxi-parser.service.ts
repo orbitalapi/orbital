@@ -1,6 +1,6 @@
 import {Inject, Injectable} from "@angular/core";
 import {HttpClient} from "@angular/common/http";
-import {CompilationMessage, Type, TypeNamedInstance} from "../services/schema";
+import {CompilationMessage, QualifiedName, Type} from "../services/schema";
 import {Observable} from "rxjs/internal/Observable";
 import {ENVIRONMENT, Environment} from 'src/app/services/environment';
 
@@ -32,11 +32,21 @@ export interface TaxiParseResult {
   hasParseErrors: boolean;
   hasCompilationErrors: boolean;
   hasErrors: boolean;
-  fullError: string;
 }
 
-interface ModelParseResult {
-  typeNamedInstance: TypeNamedInstance | TypeNamedInstance[];
+export interface SourceLocation {
+  line: number;
+  char: number;
+}
+export interface TypePosition {
+  start: SourceLocation
+  startOffset: number;
+  path: string;
+  type: QualifiedName;
+}
+export interface ModelParseResult {
   raw: any | any[];
+  typeHints: TypePosition[];
   parseErrors: string[];
+  json: string;
 }
