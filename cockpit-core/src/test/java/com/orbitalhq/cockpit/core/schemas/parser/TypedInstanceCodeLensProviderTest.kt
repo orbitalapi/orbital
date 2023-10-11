@@ -5,6 +5,7 @@ import com.orbitalhq.schemas.taxi.TaxiSchema
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import org.junit.jupiter.api.fail
 
 class TypedInstanceCodeLensProviderTest : DescribeSpec({
 
@@ -42,8 +43,10 @@ class TypedInstanceCodeLensProviderTest : DescribeSpec({
          hints.shouldNotBeNull()
          hints.forEach { hint ->
             val line = formattedJsonLines[hint.start.line - 1]
-            val char = line.get(hint.start.char + 1)
-            char.shouldBe(':')
+            val char = line.get(hint.start.char)
+            if (char != ':') {
+               fail("Line '$line' has hint at index ${hint.start.char} which is char '$char' ")
+            }
          }
       }
    }
