@@ -1,4 +1,4 @@
-package io.vyne.connectors.aws.s3
+package com.orbitalhq.connectors.aws.s3
 
 import reactor.core.publisher.Flux
 import software.amazon.awssdk.core.async.AsyncResponseTransformer

@@ -1,5 +1,8 @@
 package io.vyne.cockpit.core.schemas
 
+import com.orbitalhq.cockpit.core.schemas.ModelParseRequest
+import com.orbitalhq.cockpit.core.schemas.TaxiParseRequest
+import com.orbitalhq.cockpit.core.schemas.TaxiParserService
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf

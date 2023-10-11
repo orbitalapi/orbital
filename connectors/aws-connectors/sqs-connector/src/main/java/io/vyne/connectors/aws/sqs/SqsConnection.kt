@@ -1,7 +1,7 @@
-package io.vyne.connectors.aws.sqs
+package com.orbitalhq.connectors.aws.sqs
 
-import io.vyne.connectors.aws.core.AwsConnectionConfiguration
-import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
+import com.orbitalhq.connectors.aws.configureWithExplicitValuesIfProvided
+import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import mu.KotlinLogging
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.SqsClientBuilder
@@ -55,9 +55,9 @@ class SqsConnection(private val receiverOptions: SqsReceiverOptions) {
 }
 
 data class SqsReceiverOptions(
-   val pollTimeout: Duration,
-   val queueName: String,
-   val awsConnectionConfiguration: AwsConnectionConfiguration,
+    val pollTimeout: Duration,
+    val queueName: String,
+    val awsConnectionConfiguration: AwsConnectionConfiguration,
    // This can be at most 10
-   val maxNumberOfMessagesToFetch: Int = 10
+    val maxNumberOfMessagesToFetch: Int = 10
 )

@@ -27,6 +27,9 @@
 
 }
 
+tui-dialog {
+  border-radius: 8px !important;
+}
 // Patching things that broke after upgrading Taiga-ui 2->3
 button {
   // For some reason, link buttons are showing as Arial without this
@@ -55,9 +58,12 @@ tui-dropdown-host {
   }
 }
 
-tui-wrapper[data-appearance='textfield'] {
-  box-shadow: 0 1px 2px rgb(19 20 22 / 10%);
+[tuiWrapper][data-appearance='textfield'] {
+  box-shadow: none;
 }
+//tui-wrapper[data-appearance='textfield'] {
+//  box-shadow: 0 1px 2px rgb(19 20 22 / 10%);
+//}
 
 tui-root {
   // Without this, the app wasn't filling the full height.
@@ -135,4 +141,8 @@ tui-dropdown-box {
 .mat-stroked-button:not([class*=mat-elevation-z]) {
   box-shadow: 0 1px 2px rgb(19 20 22 / 10%);
   background-color: rgba(255, 255, 255, 0.7);
+}
+
+.as-split-gutter {
+  z-index: 1000;
 }

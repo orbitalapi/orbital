@@ -1,16 +1,22 @@
 package io.orbital.station
 
-import io.vyne.cockpit.core.FeatureTogglesConfig
-import io.vyne.cockpit.core.lsp.LanguageServerConfig
-import io.vyne.cockpit.core.pipelines.PipelineConfig
-import io.vyne.cockpit.core.security.VyneUserConfig
-import io.vyne.history.QueryAnalyticsConfig
-import io.vyne.licensing.LicenseConfig
-import io.vyne.query.chat.ChatQueryParser
-import io.vyne.schemaServer.core.VersionedSourceLoader
-import io.vyne.spring.config.*
-import io.vyne.spring.http.auth.HttpAuthConfig
-import io.vyne.spring.projection.ApplicationContextProvider
+import com.orbitalhq.cockpit.core.DatabaseConfig
+import com.orbitalhq.cockpit.core.FeatureTogglesConfig
+import com.orbitalhq.cockpit.core.lsp.LanguageServerConfig
+import com.orbitalhq.cockpit.core.pipelines.PipelineConfig
+import com.orbitalhq.cockpit.core.security.VyneUserConfig
+import com.orbitalhq.history.QueryAnalyticsConfig
+import com.orbitalhq.licensing.LicenseConfig
+import com.orbitalhq.query.chat.ChatQueryParser
+import com.orbitalhq.schemaServer.core.VersionedSourceLoader
+import com.orbitalhq.schemaServer.core.config.WorkspaceConfig
+import com.orbitalhq.spring.config.DiscoveryClientConfig
+import com.orbitalhq.spring.config.VyneSpringCacheConfiguration
+import com.orbitalhq.spring.config.VyneSpringHazelcastConfiguration
+import com.orbitalhq.spring.config.VyneSpringProjectionConfiguration
+import com.orbitalhq.spring.http.auth.HttpAuthConfig
+import com.orbitalhq.spring.projection.ApplicationContextProvider
+import com.orbitalhq.spring.query.formats.FormatSpecRegistry
 import mu.KotlinLogging
 import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Autowired
@@ -35,13 +41,15 @@ import java.util.concurrent.TimeUnit
    VyneSpringProjectionConfiguration::class,
    VyneSpringHazelcastConfiguration::class,
    VyneUserConfig::class,
-   FeatureTogglesConfig::class
+   FeatureTogglesConfig::class,
+   WorkspaceConfig::class,
+   DatabaseConfig::class
 )
 @Import(
    HttpAuthConfig::class,
    ApplicationContextProvider::class,
    LicenseConfig::class,
-   DiscoveryClientConfig::class
+   DiscoveryClientConfig::class,
 )
 //@EnableWebFluxSecurity
 class OrbitalStationApp {
@@ -61,6 +69,9 @@ class OrbitalStationApp {
    fun chatGptService(@Value("\${vyne.chat-gpt.api-key:''}") apiKey: String): ChatQueryParser {
       return ChatQueryParser(apiKey, OkHttpClient().newBuilder().readTimeout(30, TimeUnit.SECONDS).build())
    }
+
+   @Bean
+   fun formatSpecRegistry(): FormatSpecRegistry = FormatSpecRegistry.default()
 
 
    @Autowired

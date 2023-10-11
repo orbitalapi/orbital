@@ -1,18 +1,17 @@
 package io.orbital.station
 
-import io.vyne.cask.api.CaskApi
-import io.vyne.cockpit.core.CockpitCoreConfig
-import io.vyne.history.db.InProcessHistoryConfiguration
-import io.vyne.history.rest.QueryHistoryRestConfig
-import io.vyne.pipelines.jet.api.PipelineApi
-import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
-import io.vyne.query.runtime.core.EnableVyneQueryNode
-import io.vyne.schemaServer.changelog.ChangelogApi
-import io.vyne.schemaServer.editor.SchemaEditorApi
-import io.vyne.schemaServer.packages.PackagesServiceApi
-import io.vyne.schemaServer.repositories.RepositoryServiceApi
-import io.vyne.search.embedded.EnableVyneEmbeddedSearch
-import io.vyne.spring.EnableVyne
+import com.orbitalhq.cockpit.core.CockpitCoreConfig
+import com.orbitalhq.history.db.InProcessHistoryConfiguration
+import com.orbitalhq.history.rest.QueryHistoryRestConfig
+import com.orbitalhq.pipelines.jet.api.PipelineApi
+import com.orbitalhq.pipelines.jet.api.transport.PipelineJacksonModule
+import com.orbitalhq.query.runtime.core.EnableVyneQueryNode
+import com.orbitalhq.schemaServer.changelog.ChangelogApi
+import com.orbitalhq.schemaServer.editor.SchemaEditorApi
+import com.orbitalhq.schemaServer.packages.PackagesServiceApi
+import com.orbitalhq.schemaServer.repositories.RepositoryServiceApi
+import com.orbitalhq.search.embedded.EnableVyneEmbeddedSearch
+import com.orbitalhq.spring.EnableVyne
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
@@ -41,12 +40,11 @@ class PipelineConfig {
 @Configuration
 @EnableReactiveFeignClients(
    clients = [
-      CaskApi::class,
       PipelineApi::class,
-      SchemaEditorApi::class,
-      PackagesServiceApi::class,
-      RepositoryServiceApi::class,
-      ChangelogApi::class
+//      SchemaEditorApi::class,
+//      PackagesServiceApi::class,
+//      RepositoryServiceApi::class,
+//      ChangelogApi::class
    ]
 )
 class FeignConfig

@@ -7,7 +7,7 @@ abstract class ConnectorsFilter implements PipeTransform {
   }
 
   transform(connectors: ConnectorSummary[]) {
-    return connectors.filter(connector => connector.type === this.connectorType);
+    return connectors.filter(connector => connector.connectionType === this.connectorType);
   }
 }
 

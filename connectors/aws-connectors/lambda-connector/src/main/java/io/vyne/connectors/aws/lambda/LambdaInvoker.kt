@@ -1,25 +1,23 @@
-package io.vyne.connectors.aws.lambda
+package com.orbitalhq.connectors.aws.lambda
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.vyne.connectors.aws.core.AwsConnectionConnectorConfiguration
-import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
-import io.vyne.connectors.aws.core.endPointOverride
-import io.vyne.connectors.aws.core.region
-import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
-import io.vyne.models.OperationResult
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.json.Jackson
-import io.vyne.query.EmptyExchangeData
-import io.vyne.query.QueryContextEventDispatcher
-import io.vyne.query.RemoteCall
-import io.vyne.query.ResponseMessageType
-import io.vyne.query.connectors.OperationInvoker
-import io.vyne.schema.api.SchemaProvider
-import io.vyne.schemas.OperationInvocationException
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Service
+import com.orbitalhq.connectors.aws.configureWithExplicitValuesIfProvided
+import com.orbitalhq.connectors.aws.core.registry.AwsConnectionRegistry
+import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
+import com.orbitalhq.models.OperationResult
+import com.orbitalhq.models.TypedCollection
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.json.Jackson
+import com.orbitalhq.query.EmptyExchangeData
+import com.orbitalhq.query.QueryContextEventDispatcher
+import com.orbitalhq.query.RemoteCall
+import com.orbitalhq.query.ResponseMessageType
+import com.orbitalhq.query.connectors.OperationInvoker
+import com.orbitalhq.schema.api.SchemaProvider
+import com.orbitalhq.schemas.OperationInvocationException
+import com.orbitalhq.schemas.Parameter
+import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.Service
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -61,7 +59,7 @@ class LambdaInvoker(
       return invokeAwsLambda(awsConnection, parameters, service, operation, eventDispatcher, queryId)
    }
 
-   private fun fetchConnection(service: Service): AwsConnectionConnectorConfiguration {
+   private fun fetchConnection(service: Service): AwsConnectionConfiguration {
       val connectionName =
          service.metadata(LambdaConnectorTaxi.Annotations.LambdaInvocationService.NAME).params["connectionName"] as String
       val awsConnectionConfiguration = connectionRegistry.getConnection(connectionName)
@@ -76,7 +74,7 @@ class LambdaInvoker(
    }
 
    private fun invokeAwsLambda(
-      connection: AwsConnectionConnectorConfiguration,
+      connection: AwsConnectionConfiguration,
       parameters: List<Pair<Parameter, TypedInstance>>,
       service: Service,
       operation: RemoteOperation,
@@ -152,7 +150,7 @@ class LambdaInvoker(
          }.asFlow().flowOn(dispatcher)
    }
 
-   private fun createAsyncLambdaClient(connection: AwsConnectionConnectorConfiguration): LambdaAsyncClient {
+   private fun createAsyncLambdaClient(connection: AwsConnectionConfiguration): LambdaAsyncClient {
       val clientBuilder = LambdaAsyncClient.builder()
          .configureWithExplicitValuesIfProvided(connection)
 

@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <parent>
       <artifactId>connectors</artifactId>
-      <groupId>io.vyne</groupId>
+      <groupId>com.orbitalhq</groupId>
       <version>0.25.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
@@ -16,5 +16,6 @@
       <module>aws-core</module>
       <module>s3-connector</module>
        <module>lambda-connector</module>
+       <module>dynamo-db-connector</module>
    </modules>
 </project>

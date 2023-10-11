@@ -5,6 +5,13 @@ import {ControlValueAccessor, NG_VALUE_ACCESSOR} from "@angular/forms";
 @Component({
   selector: 'app-project-selector',
   template: `
+    <tui-notification *ngIf="!hasEditablePackages && showErrorIfNoEditable"
+                      status="error"
+    >
+      You don't currently have any projects that are editable. Add or configure a project in the <a
+        [routerLink]="['schemas']">Schemas</a> view
+    </tui-notification>
+
     <tui-select
       [stringify]="stringify"
       [ngModel]="selectedPackage"
@@ -44,6 +51,9 @@ export class ProjectSelectorComponent implements ControlValueAccessor {
   @Input()
   selectedPackage: SourcePackageDescription | null;
 
+    @Input()
+    showErrorIfNoEditable: boolean = false;
+
   get editablePackages(): SourcePackageDescription[] {
     if (!this.packages) {
       return [];
@@ -53,6 +63,10 @@ export class ProjectSelectorComponent implements ControlValueAccessor {
       return this.packages.filter(p => p.editable)
     }
   }
+
+    get hasEditablePackages(): boolean {
+        return this.editablePackages.length > 0;
+    }
 
   readonly stringify = (item: SourcePackageDescription) => item.identifier.name;
 

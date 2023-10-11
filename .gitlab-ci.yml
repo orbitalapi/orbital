@@ -85,13 +85,13 @@ default:
          # exceeds 1GB then builds can fail.
          #         - "cask/target/cask.jar"
          - "pipelines/pipeline-jet/target/pipeline-jet.jar"
-         - "schema-server/target/schema-server.jar"
-         - "vyne-analytics-server/target/vyne-analytics-server.jar"
+#         - "schema-server/target/schema-server.jar"
+#         - "vyne-analytics-server/target/vyne-analytics-server.jar"
          - "query-node-native/target/query-node-native.jar"
-         - "vyne-query-service/target/vyne.zip"
-#         - "station/target/orbital.zip"
-         - "test-cli/target/*.zip"
-#         - "voyager/target/voyager.jar"
+#         - "vyne-query-service/target/vyne.zip"
+         - "station/target/orbital.zip"
+#         - "test-cli/target/*.zip"
+         - "voyager/target/voyager.jar"
       expire_in: 1 hours
       reports:
          junit:
@@ -121,7 +121,7 @@ build-vyne-ui:
       - npm run-script build-prod
    artifacts:
       paths:
-         - vyne-query-service/target/classes/static
+         - station/target/classes/static
       expire_in: 1 hours
 
 build-voyager-ui:
@@ -242,7 +242,7 @@ regression-test:
            tag="latest"
            versionTag="$PROJECT_VERSION"
          elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
-            tag="latest-preview"
+            tag="next"
             versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
          else
             tag="$CI_COMMIT_BRANCH"
@@ -283,61 +283,31 @@ regression-test:
 publish-orbital-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
-      projectDir: vyne-query-service
-      microservice_vyne: vyne
+      projectDir: station
       microservice_orbital: orbital
-   before_script:
-      - mkdir -p station/target/classes
-      - cp -a vyne-query-service/target/classes/static/. station/target/classes/static
-
-#publish-cask-to-docker-hub:
-#   extends: .publish-to-docker-hub
-#   variables:
-#      projectDir: cask
-#      microservice_vyne: cask
-#      microservice_orbital: cask
+#      UI is now output to station directory by default, so this isn't required
+#   before_script:
+#      - mkdir -p station/target/classes
+#      - cp -a vyne-query-service/target/classes/static/. station/target/classes/static
 
 publish-pipeline-jet-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: pipelines/pipeline-jet
-      microservice_vyne: pipeline
       microservice_orbital: pipelines
 
 publish-query-node-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: query-node-native
-      microservice_vyne: query-node
       microservice_orbital: query-node
 
-publish-schema-server-to-docker-hub:
-   extends: .publish-to-docker-hub
-   variables:
-      projectDir: schema-server
-      microservice_vyne: schema-server
-      microservice_orbital: schema-server
-
-publish-analytics-server-to-docker-hub:
-   extends: .publish-to-docker-hub
-   variables:
-      projectDir: vyne-analytics-server
-      microservice_vyne: analytics-server
-      microservice_orbital: analytics-server
-
-#publish-vyne-to-gitlab-container-registry:
-#   extends: .publish-to-gitlab-container-registry
-#   variables:
-#      projectDir: vyne-query-service
-#      microservice_vyne: vyne
-#      microservice_orbital: orbital
-#
-#publish-schema-server-to-gitlab-container-registry:
-#   extends: .publish-to-gitlab-container-registry
+#publish-schema-server-to-docker-hub:
+#   extends: .publish-to-docker-hub
 #   variables:
 #      projectDir: schema-server
-#      microservice_vyne: schema-server
 #      microservice_orbital: schema-server
+
 
 #publish-voyager-to-gitlab-container-registry:
 #   extends: .publish-to-gitlab-container-registry
@@ -385,10 +355,10 @@ publish-analytics-server-to-docker-hub:
 #      microservice_vyne: pipeline
 #      microservice_orbital: pipelines
 
-terraform-validate:
-   extends: .terraform:validate
-   needs: [ ]
-   stage: build
+#terraform-validate:
+#   extends: .terraform:validate
+#   needs: [ ]
+#   stage: build
 
 #build-helm:
 #   stage: build
@@ -404,15 +374,8 @@ terraform-validate:
 #   artifacts:
 #      paths:
 #         - infra/helm/vyne-helm/charts
+#
 
-.terraform-deploy:
-  extends: .terraform:deploy
-  stage: deploy
-  before_script:
-     - echo ${TF_ROOT}
-     - cd ${TF_ROOT}
-     - gitlab-terraform plan
-     - gitlab-terraform plan-json
 #
 #terraform-deploy-dev:
 #   extends: .terraform-deploy
@@ -458,7 +421,7 @@ terraform-validate:
 #           tag="latest"
 #           versionTag="$PROJECT_VERSION"
 #         elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
-#            tag="latest-preview"
+#            tag="next"
 #            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
 #         else
 #            tag="$CI_COMMIT_BRANCH"
@@ -549,6 +512,15 @@ terraform-validate:
 #         when: 'always'
 #      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
 #         when: 'never'
+
+.terraform-deploy:
+  extends: .terraform:deploy
+  stage: deploy
+  before_script:
+     - echo ${TF_ROOT}
+     - cd ${TF_ROOT}
+     - gitlab-terraform plan
+     - gitlab-terraform plan-json
 
 terraform-deploy-dev-voyager:
    extends: .terraform-deploy

@@ -2170,7 +2170,7 @@ export const FILMS_SCHEMA = {
     'sources': [{
       'name': 'actor/Actor.taxi',
       'version': '0.0.0',
-      'content': 'import actor.types.ActorId\nimport actor.types.FirstName\nimport actor.types.LastName\nimport actor.types.LastUpdate\nimport io.vyne.jdbc.Table\nnamespace actor {\n   @io.vyne.jdbc.Table(table = "actor" , schema = "public" , connection = "films")\n         model Actor {\n            @Id actor_id : actor.types.ActorId\n            first_name : actor.types.FirstName\n            last_name : actor.types.LastName\n            last_update : actor.types.LastUpdate\n         }\n}',
+      'content': 'import actor.types.ActorId\nimport actor.types.FirstName\nimport actor.types.LastName\nimport actor.types.LastUpdate\nimport io.vyne.jdbc.Table\nnamespace actor {\n   @com.orbitalhq.jdbc.Table(table = "actor" , schema = "public" , connection = "films")\n         model Actor {\n            @Id actor_id : actor.types.ActorId\n            first_name : actor.types.FirstName\n            last_name : actor.types.LastName\n            last_update : actor.types.LastUpdate\n         }\n}',
       'id': 'actor/Actor.taxi:0.0.0',
       'contentHash': 'd01534'
     }],
@@ -3736,7 +3736,7 @@ export const FILMS_SCHEMA = {
     'sources': [{
       'name': 'film/Film.taxi',
       'version': '0.0.0',
-      'content': 'import films.FilmId\nimport film.types.Title\nimport film.types.Description\nimport film.types.ReleaseYear\nimport language.types.LanguageId\nimport language.types.LanguageId\nimport film.types.RentalDuration\nimport film.types.RentalRate\nimport film.types.Length\nimport film.types.ReplacementCost\nimport film.types.Rating\nimport film.types.LastUpdate\nimport film.types.Fulltext\nimport io.vyne.jdbc.Table\nimport film.types.SpecialFeatures\nnamespace film {\n   @io.vyne.jdbc.Table(table = "film" , schema = "public" , connection = "films")\n         model Film {\n            @Id film_id : films.FilmId\n            title : film.types.Title\n            description : film.types.Description?\n            release_year : film.types.ReleaseYear?\n            language_id : language.types.LanguageId\n            original_language_id : language.types.LanguageId?\n            rental_duration : film.types.RentalDuration\n            rental_rate : film.types.RentalRate\n            length : film.types.Length?\n            replacement_cost : film.types.ReplacementCost\n            rating : film.types.Rating?\n            last_update : film.types.LastUpdate\n            special_features : film.types.SpecialFeatures[]?\n            fulltext : film.types.Fulltext\n         }\n}',
+      'content': 'import films.FilmId\nimport film.types.Title\nimport film.types.Description\nimport film.types.ReleaseYear\nimport language.types.LanguageId\nimport language.types.LanguageId\nimport film.types.RentalDuration\nimport film.types.RentalRate\nimport film.types.Length\nimport film.types.ReplacementCost\nimport film.types.Rating\nimport film.types.LastUpdate\nimport film.types.Fulltext\nimport io.vyne.jdbc.Table\nimport film.types.SpecialFeatures\nnamespace film {\n   @com.orbitalhq.jdbc.Table(table = "film" , schema = "public" , connection = "films")\n         model Film {\n            @Id film_id : films.FilmId\n            title : film.types.Title\n            description : film.types.Description?\n            release_year : film.types.ReleaseYear?\n            language_id : language.types.LanguageId\n            original_language_id : language.types.LanguageId?\n            rental_duration : film.types.RentalDuration\n            rental_rate : film.types.RentalRate\n            length : film.types.Length?\n            replacement_cost : film.types.ReplacementCost\n            rating : film.types.Rating?\n            last_update : film.types.LastUpdate\n            special_features : film.types.SpecialFeatures[]?\n            fulltext : film.types.Fulltext\n         }\n}',
       'id': 'film/Film.taxi:0.0.0',
       'contentHash': 'fc40ac'
     }],
@@ -5644,7 +5644,7 @@ export const FILMS_SCHEMA = {
     'sourceCode': [{
       'name': 'actor/ActorService.taxi',
       'version': '0.0.0',
-      'content': 'import vyne.vyneQl.VyneQlQuery\nimport vyne.vyneQl.VyneQlQuery\nnamespace actor {\n   @io.vyne.jdbc.DatabaseService(connection = "films")\n         service ActorService {\n            vyneQl query findManyActor(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<actor.Actor> with capabilities {\n               sum,\n               count,\n               avg,\n               min,\n               max,\n               filter(==,!=,in,like,>,<,>=,<=)\n            }\n            vyneQl query findOneActor(querySpec: vyne.vyneQl.VyneQlQuery):actor.Actor with capabilities {\n               sum,\n               count,\n               avg,\n               min,\n               max,\n               filter(==,!=,in,like,>,<,>=,<=)\n            }\n         }\n}',
+      'content': 'import vyne.vyneQl.VyneQlQuery\nimport vyne.vyneQl.VyneQlQuery\nnamespace actor {\n   @com.orbitalhq.jdbc.DatabaseService(connection = "films")\n         service ActorService {\n            vyneQl query findManyActor(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<actor.Actor> with capabilities {\n               sum,\n               count,\n               avg,\n               min,\n               max,\n               filter(==,!=,in,like,>,<,>=,<=)\n            }\n            vyneQl query findOneActor(querySpec: vyne.vyneQl.VyneQlQuery):actor.Actor with capabilities {\n               sum,\n               count,\n               avg,\n               min,\n               max,\n               filter(==,!=,in,like,>,<,>=,<=)\n            }\n         }\n}',
       'id': 'actor/ActorService.taxi:0.0.0',
       'contentHash': '550ed3'
     }],
@@ -5957,7 +5957,7 @@ export const FILMS_SCHEMA = {
     'sourceCode': [{
       'name': 'io/vyne/films/announcements/KafkaService.taxi',
       'version': '0.0.0',
-      'content': 'import io.vyne.kafka.KafkaOperation\nimport lang.taxi.Stream\nimport NewFilmReleaseAnnouncement\nnamespace io.vyne.films.announcements {\n   @io.vyne.kafka.KafkaService(connectionName = "kafka")\n         service KafkaService {\n            @io.vyne.kafka.KafkaOperation(topic = "releases" , offset = "latest")\n            operation consumeFromReleases(  ) : Stream<NewFilmReleaseAnnouncement>\n         }\n}',
+      'content': 'import io.vyne.kafka.KafkaOperation\nimport lang.taxi.Stream\nimport NewFilmReleaseAnnouncement\nnamespace io.vyne.films.announcements {\n   @com.orbitalhq.kafka.KafkaService(connectionName = "kafka")\n         service KafkaService {\n            @com.orbitalhq.kafka.KafkaOperation(topic = "releases" , offset = "latest")\n            operation consumeFromReleases(  ) : Stream<NewFilmReleaseAnnouncement>\n         }\n}',
       'id': 'io/vyne/films/announcements/KafkaService.taxi:0.0.0',
       'contentHash': '5c0e7d'
     }],
@@ -6270,7 +6270,7 @@ export const FILMS_SCHEMA = {
     'sourceCode': [{
       'name': 'film/FilmService.taxi',
       'version': '0.0.0',
-      'content': 'import vyne.vyneQl.VyneQlQuery\nimport vyne.vyneQl.VyneQlQuery\nnamespace film {\n   @io.vyne.jdbc.DatabaseService(connection = "films")\n         service FilmDatabase {\n            vyneQl query findManyFilm(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<film.Film> with capabilities {\n               sum,\n               count,\n               avg,\n               min,\n               max,\n               filter(==,!=,in,like,>,<,>=,<=)\n            }\n            vyneQl query findOneFilm(querySpec: vyne.vyneQl.VyneQlQuery):film.Film with capabilities {\n               sum,\n               count,\n               avg,\n               min,\n               max,\n               filter(==,!=,in,like,>,<,>=,<=)\n            }\n         }\n}',
+      'content': 'import vyne.vyneQl.VyneQlQuery\nimport vyne.vyneQl.VyneQlQuery\nnamespace film {\n   @com.orbitalhq.jdbc.DatabaseService(connection = "films")\n         service FilmDatabase {\n            vyneQl query findManyFilm(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<film.Film> with capabilities {\n               sum,\n               count,\n               avg,\n               min,\n               max,\n               filter(==,!=,in,like,>,<,>=,<=)\n            }\n            vyneQl query findOneFilm(querySpec: vyne.vyneQl.VyneQlQuery):film.Film with capabilities {\n               sum,\n               count,\n               avg,\n               min,\n               max,\n               filter(==,!=,in,like,>,<,>=,<=)\n            }\n         }\n}',
       'id': 'film/FilmService.taxi:0.0.0',
       'contentHash': 'b884ef'
     }],

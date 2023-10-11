@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <parent>
       <artifactId>licensing</artifactId>
-      <groupId>io.vyne</groupId>
+      <groupId>com.orbitalhq</groupId>
       <version>0.25.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
@@ -15,7 +15,7 @@
 
 
       <picocli.version>4.7.1</picocli.version>
-      <app.main.class>io.vyne.licensing.vendor.LicenseCli</app.main.class>
+      <app.main.class>com.orbitalhq.licensing.vendor.LicenseCli</app.main.class>
       <app.distribution.directory>${project.build.directory}/distributions/app</app.distribution.directory>
    </properties>
 
@@ -26,7 +26,7 @@
          <version>${picocli.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>license-api</artifactId>
          <version>${project.version}</version>
       </dependency>

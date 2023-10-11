@@ -1,10 +1,10 @@
-package io.vyne.connectors.aws.sqs
+package com.orbitalhq.connectors.aws.sqs
 
 import com.google.common.cache.CacheBuilder
-import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
-import io.vyne.models.TypedInstance
-import io.vyne.schema.api.SchemaProvider
-import io.vyne.schemas.QualifiedName
+import com.orbitalhq.connectors.aws.core.registry.AwsConnectionRegistry
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.schema.api.SchemaProvider
+import com.orbitalhq.schemas.QualifiedName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow

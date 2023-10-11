@@ -11,11 +11,6 @@ import { toOperationSummary } from 'src/app/service-view/operation-summary';
 @Component({
   selector: 'app-operation-view-container',
   template: `
-    <mat-toolbar color="primary">
-      <span>Operation Explorer</span>
-      <span class="toolbar-spacer"></span>
-      <app-search-bar-container></app-search-bar-container>
-    </mat-toolbar>
     <app-operation-view [operation]="operation"
                         (submit)="invokeOperation($event)"
                         [instances$]="operationResult$"

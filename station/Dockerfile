@@ -1,5 +1,7 @@
 ARG REGISTRY
-FROM ${REGISTRY}eclipse-temurin:17-jre-focal
+# Generating SOAP clients from WSDLs at runtime requires the JDK, not JRE
+# As Apache CXF generates and compiles code.
+FROM ${REGISTRY}eclipse-temurin:17-jdk-focal
 
 RUN apt-get update && apt-get install zip -y
 

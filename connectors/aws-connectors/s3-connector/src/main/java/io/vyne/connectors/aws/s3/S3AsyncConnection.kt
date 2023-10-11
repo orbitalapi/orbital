@@ -1,7 +1,7 @@
-package io.vyne.connectors.aws.s3
+package com.orbitalhq.connectors.aws.s3
 
-import io.vyne.connectors.aws.core.AwsConnectionConfiguration
-import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
+import com.orbitalhq.connectors.aws.configureWithExplicitValuesIfProvided
+import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import reactor.core.publisher.Mono
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient
 import software.amazon.awssdk.services.s3.S3AsyncClient

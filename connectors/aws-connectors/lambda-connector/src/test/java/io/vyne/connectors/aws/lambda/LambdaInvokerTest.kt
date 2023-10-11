@@ -1,18 +1,17 @@
-package io.vyne.connectors.aws.lambda
+package com.orbitalhq.connectors.aws.lambda
 
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
-import io.vyne.StubService
-import io.vyne.connectors.aws.core.AwsConnection
-import io.vyne.connectors.aws.core.AwsConnectionConfiguration
-import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
-import io.vyne.models.Provided
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.query.VyneQlGrammar
-import io.vyne.schema.api.SimpleSchemaProvider
-import io.vyne.testVyne
-import io.vyne.typedObjects
+import com.orbitalhq.StubService
+import com.orbitalhq.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
+import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
+import com.orbitalhq.models.Provided
+import com.orbitalhq.models.TypedCollection
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.query.VyneQlGrammar
+import com.orbitalhq.schema.api.SimpleSchemaProvider
+import com.orbitalhq.testVyne
+import com.orbitalhq.typedObjects
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.junit.Before
@@ -93,11 +92,11 @@ class LambdaInvokerTest {
    @Before
    fun beforeTest() {
       val connectionConfig = AwsConnectionConfiguration(connectionName = "vyneAws",
-         mapOf(AwsConnection.Parameters.ACCESS_KEY.templateParamName to localStack.accessKey,
-            AwsConnection.Parameters.SECRET_KEY.templateParamName to localStack.secretKey,
-            AwsConnection.Parameters.AWS_REGION.templateParamName to localStack.region,
-            AwsConnection.Parameters.ENDPOINT_OVERRIDE.templateParamName to localStack.getEndpointOverride(LocalStackContainer.Service.LAMBDA).toString()
-         ))
+          region = localStack.region,
+          accessKey = localStack.accessKey,
+          secretKey = localStack.secretKey,
+          endPointOverride = localStack.getEndpointOverride(LocalStackContainer.Service.LAMBDA).toASCIIString()
+      )
       connectionRegistry.register(connectionConfig)
    }
 

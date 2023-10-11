@@ -5,7 +5,7 @@ import {Observable} from 'rxjs';
 import {Injectable} from '@angular/core';
 import {VyneServicesModule} from '../services/vyne-services.module';
 import {SchemaSubmissionResult} from '../services/types.service';
-import { NewTypeSpec } from 'src/app/type-editor/new-type-spec';
+import {NewTypeSpec} from 'src/app/type-editor/new-type-spec';
 
 
 export interface JdbcColumn {
@@ -160,9 +160,9 @@ export interface NewOrExistingTypeName {
 
 export interface ConnectorSummary {
   connectionName: string;
+  connectionType: ConnectorType;
   driverName: string;
-  address: string;
-  type: ConnectorType;
+  properties: { [index: string]: string }
 }
 
 export interface MappedTable {

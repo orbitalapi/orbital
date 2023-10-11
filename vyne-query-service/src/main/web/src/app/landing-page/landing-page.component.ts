@@ -13,8 +13,6 @@ export interface LandingPageCardConfig {
   selector: 'app-landing-page',
   styleUrls: ['./landing-page.component.scss'],
   template: `
-    <app-header-bar title=''>
-    </app-header-bar>
     <div class='page-content'>
       <h2>Welcome to Orbital</h2>
       <div class='row search-row'>

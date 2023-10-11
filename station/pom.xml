@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <parent>
       <artifactId>platform</artifactId>
-      <groupId>io.vyne</groupId>
+      <groupId>com.orbitalhq</groupId>
       <version>0.25.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
@@ -26,17 +26,17 @@
 
    <dependencies>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>schema-server-core</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>cockpit-core</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>query-node-core</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -45,7 +45,7 @@
          <artifactId>spring-boot-starter-webflux</artifactId>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>auth-common</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -54,12 +54,12 @@
          <artifactId>spring-boot-starter-data-jpa</artifactId>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>license-client</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
          <scope>test</scope>
@@ -74,10 +74,41 @@
          <artifactId>micrometer-core</artifactId>
       </dependency>
 
+      <!-- Testcontainers support.
+      Station allows starting an in-process postgres db if using the localdb profile
+      As a result, we end up dragging some transitive dependencies into runtime scope
+      that wouldn't otherwise be there - stuff like Junit
+      -->
+
       <dependency>
-         <groupId>com.h2database</groupId>
-         <artifactId>h2</artifactId>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-testcontainers</artifactId>
       </dependency>
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>testcontainers</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>postgresql</artifactId>
+      </dependency>
+      <!-- I've asked in the Testcontainers group if there's a workaround to needing this.
+      Otherwise the compilation error is:
+      Kotlin: Supertypes of the following classes cannot be resolved. Please make sure you have the required dependencies in the classpath:
+    class org.testcontainers.containers.FailureDetectingExternalResource, unresolved supertypes: org.junit.rules.TestRule
+Adding -Xextended-compiler-checks argument might provide additional information.
+-->
+      <dependency>
+         <groupId>junit</groupId>
+         <artifactId>junit</artifactId>
+      </dependency>
+
+
+      <!-- end Testcontainers support -->
+<!--      <dependency>-->
+<!--         <groupId>com.h2database</groupId>-->
+<!--         <artifactId>h2</artifactId>-->
+<!--      </dependency>-->
       <dependency>
          <groupId>org.flywaydb</groupId>
          <artifactId>flyway-core</artifactId>
@@ -86,6 +117,7 @@
          <groupId>org.postgresql</groupId>
          <artifactId>postgresql</artifactId>
       </dependency>
+
    </dependencies>
 
    <build>

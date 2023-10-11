@@ -12,7 +12,7 @@ import { BaseTypedInstanceViewer } from './BaseTypedInstanceViewer';
 import { InstanceLike, Type } from '../services/schema';
 import { Observable, Subscription } from 'rxjs';
 import { ResultsTableComponent } from '../results-table/results-table.component';
-import { AppInfoService, QueryServiceConfig } from '../services/app-info.service';
+import { AppInfoService, AppConfig } from '../services/app-info.service';
 import { TypesService } from '../services/types.service';
 import { throttleTime } from 'rxjs/operators';
 import { ExportFormat } from 'src/app/results-download/results-download.service';
@@ -52,7 +52,7 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
   // workaround for lack of enum support in templates
   downloadFileType = ExportFormat;
 
-  config: QueryServiceConfig;
+  config: AppConfig;
 
   constructor(
     private typesService: TypesService,

@@ -16,34 +16,56 @@ export interface NoCredentialsAuthToken {
   tokenType: AuthTokenType;
 }
 
+export type AuthSchemeKind = 'Basic' | 'HttpHeader' | 'QueryParam' | 'Cookie' | 'OAuth2';
+
+export interface AuthScheme {
+  type: AuthSchemeKind
+}
+
+export interface BasicAuth extends AuthScheme {
+  type: 'Basic';
+  username: string;
+  password: string;
+}
+
+export interface HttpHeader extends AuthScheme {
+  type: 'HttpHeader';
+  prefix: string;
+  headerName: string;
+}
+
+export interface QueryParam extends AuthScheme {
+  type: 'QueryParam'
+  parameterName: string;
+  value: string;
+}
+
+export interface Cookie extends AuthScheme {
+  type: 'Cookie';
+  cookieName: string;
+  value: string;
+}
+
 export enum AuthTokenType {
   Header = "Header",
   QueryParam = "QueryParam",
   Cookie = "Cookie"
 }
 
-export function authTokenTypeDisplayName(tokenType: AuthTokenType): string {
-  switch (tokenType) {
-    case AuthTokenType.Header:
-      return 'Request Header Value';
-    case AuthTokenType.QueryParam:
-      return "Request Query Parameter Key-Value"
-    case AuthTokenType.Cookie:
-      return "Cookie Based Token"
 
-  }
-}
+export type AuthTokenMap = { [index: string]: AuthScheme }
 
 @Injectable({
   providedIn: VyneServicesModule
 })
 export class AuthManagerService {
   private tokensApiEndpoint = `${environment.serverUrl}/api/tokens`;
+
   constructor(private http: HttpClient) {
   }
 
-  getAllTokens(): Observable<NoCredentialsAuthToken[]> {
-    return this.http.get<NoCredentialsAuthToken[]>(`${this.tokensApiEndpoint}`);
+  getAllTokens(): Observable<AuthTokenMap> {
+    return this.http.get<AuthTokenMap>(`${this.tokensApiEndpoint}`);
   }
 
   saveToken(serviceName: string, token: AuthToken): Observable<NoCredentialsAuthToken> {

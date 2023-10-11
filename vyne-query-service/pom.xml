@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <parent>
-      <groupId>io.vyne</groupId>
+      <groupId>com.orbitalhq</groupId>
       <artifactId>platform</artifactId>
       <version>0.25.0-SNAPSHOT</version>
    </parent>
@@ -12,7 +12,7 @@
 
    <properties>
       <buildNumber>0</buildNumber>
-      <app.main.class>io.vyne.queryService.QueryServiceApp</app.main.class>
+      <app.main.class>com.orbitalhq.queryService.QueryServiceApp</app.main.class>
       <app.distribution.directory>${project.build.directory}/distributions/app</app.distribution.directory>
       <!-- see the plugin below for why we're disabling this -->
       <spring-boot.repackage.skip>true</spring-boot.repackage.skip>
@@ -20,49 +20,49 @@
 
    <dependencies>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>spring-utils</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>monitoring-common</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>cockpit-core</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>license-client</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
          <scope>test</scope>
          <type>test-jar</type>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-csv-utils</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>protobuf-utils</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>schema-server-api</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>auth-common</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -73,22 +73,31 @@
          <scope>test</scope>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-history-core</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>history-service</artifactId>
          <version>${project.version}</version>
       </dependency>
+      <!-- some tests are failing with NoClassDefFound org/json/JSONException
+      because of an undeclared dependency..somewhere.  Only seems to happen in tests though.
+      -->
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>org.json</groupId>
+         <artifactId>json</artifactId>
+         <version>20230618</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>history-persistence</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>jdbc-connector</artifactId>
          <version>${project.version}</version>
          <exclusions>
@@ -99,28 +108,28 @@
          </exclusions>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>kafka-connector</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>s3-connector</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>blob-connector</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>sqs-connector</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
          <artifactId>lambda-connector</artifactId>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -129,17 +138,17 @@
          <version>${taxi.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-search</artifactId>
          <version>${project.version}</version>
       </dependency>
+<!--      <dependency>-->
+<!--         <groupId>com.orbitalhq</groupId>-->
+<!--         <artifactId>cask-api</artifactId>-->
+<!--         <version>${project.version}</version>-->
+<!--      </dependency>-->
       <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>cask-api</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-query-api</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -149,12 +158,12 @@
          <version>${taxi.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-spring</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-client</artifactId>
          <version>${project.version}</version>
          <scope>test</scope>
@@ -192,7 +201,7 @@
          <artifactId>spring-security-oauth2-jose</artifactId>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>query-node-core</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -230,12 +239,12 @@
          <artifactId>spring-boot-starter-webflux</artifactId>
       </dependency>
       <!--      <dependency>-->
-      <!--         <groupId>io.vyne</groupId>-->
+      <!--         <groupId>com.orbitalhq</groupId>-->
       <!--         <artifactId>pipelines-orchestrator-api</artifactId>-->
       <!--         <version>${project.version}</version>-->
       <!--      </dependency>-->
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>pipeline-jet-api</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -261,7 +270,7 @@
          </exclusions>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>schema-server-core</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -270,10 +279,6 @@
          <groupId>javax.websocket</groupId>
          <artifactId>javax.websocket-api</artifactId>
          <version>1.1</version>
-      </dependency>
-      <dependency>
-         <groupId>com.h2database</groupId>
-         <artifactId>h2</artifactId>
       </dependency>
       <dependency>
          <groupId>org.skyscreamer</groupId>
@@ -287,8 +292,16 @@
             </exclusion>
          </exclusions>
       </dependency>
+      <!-- JSONAssert has an undeclared dependency on org.json:json
+      https://github.com/skyscreamer/JSONassert/issues/170 -->
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>org.json</groupId>
+         <artifactId>json</artifactId>
+         <version>20230618</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>test-cli</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -332,6 +345,31 @@
       <dependency>
          <groupId>io.micrometer</groupId>
          <artifactId>micrometer-registry-prometheus</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-testcontainers</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>junit-jupiter</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>testcontainers</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>postgresql</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.flywaydb</groupId>
+         <artifactId>flyway-core</artifactId>
       </dependency>
 
       <!--      <dependency>-->
@@ -384,14 +422,14 @@
          <artifactId>reactor-kotlin-extensions</artifactId>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne</artifactId>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>taxiql-query-engine</artifactId>
          <version>${project.version}</version>
          <scope>test</scope>
          <type>test-jar</type>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-spring</artifactId>
          <version>${project.version}</version>
          <type>test-jar</type>

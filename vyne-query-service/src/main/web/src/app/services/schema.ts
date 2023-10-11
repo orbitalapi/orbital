@@ -82,6 +82,7 @@ export interface Type extends Documented, Named {
   isStream?: boolean;
   expression?: string;
   declaresFormat?: boolean;
+  isAnonymous?: Boolean
 }
 
 export interface MetadataTarget {

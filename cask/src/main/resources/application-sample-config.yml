@@ -1,2 +1,0 @@
-cask.query-options:
-   findOneMatchesManyBehaviour: RETURN_FIRST

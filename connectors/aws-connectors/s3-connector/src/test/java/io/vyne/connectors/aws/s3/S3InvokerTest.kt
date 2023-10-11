@@ -1,19 +1,18 @@
-package io.vyne.connectors.aws.s3
+package com.orbitalhq.connectors.aws.s3
 
 import com.google.common.io.Resources
 import com.jayway.awaitility.Awaitility
 import com.winterbe.expekt.should
-import io.vyne.Vyne
-import io.vyne.connectors.aws.core.AwsConnection
-import io.vyne.connectors.aws.core.AwsConnectionConfiguration
-import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedValue
-import io.vyne.query.QueryResult
-import io.vyne.query.VyneQlGrammar
-import io.vyne.schema.api.SimpleSchemaProvider
-import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.testVyne
+import com.orbitalhq.Vyne
+import com.orbitalhq.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
+import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedValue
+import com.orbitalhq.query.QueryResult
+import com.orbitalhq.query.VyneQlGrammar
+import com.orbitalhq.schema.api.SimpleSchemaProvider
+import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.testVyne
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
@@ -24,7 +23,6 @@ import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
@@ -43,12 +41,12 @@ class S3InvokerTest {
    var localstack: LocalStackContainer = LocalStackContainer(localStackImage)
       .withServices(LocalStackContainer.Service.S3)
    private val defaultSchema = """
-         import io.vyne.aws.s3.S3Service
-         import io.vyne.aws.s3.S3Operation
+         import com.orbitalhq.aws.s3.S3Service
+         import com.orbitalhq.aws.s3.S3Operation
          import  ${VyneQlGrammar.QUERY_TYPE_NAME}
          type alias Price as Decimal
          type alias Symbol as String
-          @io.vyne.formats.Csv(
+          @com.orbitalhq.formats.Csv(
                      delimiter = ",",
                      nullValue = "NULL"
                   )
@@ -87,15 +85,13 @@ class S3InvokerTest {
       s3.putObject({ builder -> builder.bucket(bucket).key("${objectKey}2") }, Paths.get(resource))
       val connectionConfig = AwsConnectionConfiguration(
          connectionName = "vyneAws",
-         mapOf(
-            AwsConnection.Parameters.ACCESS_KEY.templateParamName to localstack.accessKey,
-            AwsConnection.Parameters.SECRET_KEY.templateParamName to localstack.secretKey,
-            AwsConnection.Parameters.AWS_REGION.templateParamName to localstack.region,
-            AwsConnection.Parameters.ENDPOINT_OVERRIDE.templateParamName to localstack.getEndpointOverride(
+          region = localstack.region,
+          accessKey = localstack.accessKey,
+          secretKey = localstack.secretKey,
+          endPointOverride = localstack.getEndpointOverride(
                LocalStackContainer.Service.S3
             ).toString()
          )
-      )
       connectionRegistry.register(connectionConfig)
    }
 

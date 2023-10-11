@@ -20,7 +20,7 @@ export class VyneComponent implements OnInit {
   sidebarElements: SidebarElement[] = [
     {
       title: 'Catalog',
-      icon: 'assets/img/dictionary.svg',
+      icon: 'assets/img/tabler/book2.svg',
       // icon: 'explore',
       // icon: 'outline-explore.svg',
       // iconActive: 'outline-explore-active.svg',
@@ -30,14 +30,14 @@ export class VyneComponent implements OnInit {
     },
     {
       title: 'Schemas',
-      icon: 'assets/img/coding.svg',
+      icon: 'assets/img/tabler/folder-code.svg',
       route: 'schemas',
       testId: 'schema-explorer-sidebar',
       requiredAuthority: VynePrivileges.BrowseSchema
     },
     {
       title: 'Query editor',
-      icon: 'assets/img/query.svg',
+      icon: 'assets/img/tabler/pencil-code.svg',
       // icon: 'outline-layers.svg',
       // iconActive: 'outline-layers-active.svg',
       route: 'query/editor',
@@ -53,7 +53,7 @@ export class VyneComponent implements OnInit {
     // },
     {
       title: 'Query history',
-      icon: 'assets/img/history.svg',
+      icon: 'assets/img/tabler/clock-code.svg',
       route: 'query-history',
       testId: 'query-history-sidebar',
       requiredAuthority: VynePrivileges.ViewQueryHistory
@@ -66,14 +66,14 @@ export class VyneComponent implements OnInit {
     //   requiredAuthority: VynePrivileges.ViewCaskDefinitions
     // },
     {
-      title: 'Connection manager',
-      icon: 'assets/img/connections.svg',
+      title: 'Connections',
+      icon: 'assets/img/tabler/plug.svg',
       route: 'connection-manager',
       requiredAuthority: VynePrivileges.ViewConnections
     },
     {
-      title: 'Authentication manager',
-      icon: 'assets/img/security.svg',
+      title: 'Authentication',
+      icon: 'assets/img/tabler/shield-lock.svg',
       route: 'authentication-manager',
       testId: 'authentication-sidebar',
       requiredAuthority: VynePrivileges.ViewAuthenticationTokens

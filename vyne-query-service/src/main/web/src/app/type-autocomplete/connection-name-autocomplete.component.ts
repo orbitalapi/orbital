@@ -130,7 +130,7 @@ export class ConnectionNameAutocompleteComponent {
     return this.connections.filter(connection => {
         const nameMatch = connection.connectionName.toLowerCase().indexOf(filterValue) !== -1;
         if (this.connectionType) {
-          return nameMatch && connection.type === this.connectionType;
+          return nameMatch && connection.connectionType === this.connectionType;
         } else {
           return nameMatch;
         }

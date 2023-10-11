@@ -91,5 +91,6 @@ export enum VynePrivileges {
   ViewConnections = 'ViewConnections',
   EditConnections = 'EditConnections',
   ViewUsers = 'ViewUsers',
-  EditUsers = 'EditUsers'
+  EditUsers = 'EditUsers',
+  CreateWorkspace = 'CreateWorkspace'
 }

@@ -1,8 +1,6 @@
-## This file stands up an Orbital instance and Schema server
+## This file stands up an Orbital instance, along with a Postgres database
 ##
-##
-## It's configured to use RSocket for distribution
-## The Schema Server will deploy a single file-based schema, which by default
+## Orbital will create a simple, single project workspace, which by default
 ## watches the directory where this docker-compose file is deployed.
 ##
 ## You can launch orbital directly by downloading this file, and
@@ -26,43 +24,47 @@
 ## SCHEMA_PATH (default: current directory .)
 
 version: "3.3"
+
 services:
    orbital:
       image: orbitalhq/orbital:${ORBITAL_VERSION:-latest}
       environment:
+         JAVA_OPTS: >-
+            -Xms256m
+            -Xmx1024m
          OPTIONS: >-
-            --vyne.analytics.mode=InProcess
             --vyne.analytics.persistRemoteCallResponses=true
             --vyne.analytics.persistResults=true
-      expose:
-         - 9022
+            --vyne.db.username=orbital
+            --vyne.db.password=changeme
+            --vyne.db.host=postgres
+            --vyne.workspace.project-file=/opt/service/workspace/taxi.conf
       ports:
          - "9022:9022"
-      volumes:
-         - ~/.orbital/license:/opt/var/orbital/license
-         - ./orbital/config:/opt/service/config
-      deploy:
-         resources:
-            limits:
-               memory: 600mb
-
-   schema-server:
-      image: orbitalhq/schema-server:${ORBITAL_VERSION:-latest}
-      volumes:
-         - ${SCHEMA_PATH:-.}:/var/lib/orbital/schema-server
-      environment:
-         OPTIONS: >-
-            --server.port=80
-            --vyne.repositories.repository-path=/var/lib/orbital/schema-server
-            ## --vyne.repositories.config-file=/var/lib/orbital/schema-server/schema-server.conf
-      deploy:
-         resources:
-            limits:
-               memory: 600mb
-
       expose:
-         - 7655
-         - 9305
+         - 9022
+      volumes:
+         - ~/.orbital/license/:/opt/var/vyne/license/
+         - .:/opt/service/workspace
+      depends_on:
+         - postgres
+      deploy:
+         resources:
+            limits:
+               memory: 600mb
+
+   postgres:
+      image: postgres:15
+      expose:
+         - 5432
       ports:
-         - "7655:7655"
-         - "9305:9305"
+         - "25432:5432"
+      environment:
+         POSTGRES_DB: orbital
+         POSTGRES_USER: orbital
+         POSTGRES_PASSWORD: changeme
+      volumes:
+         - postgres_data:/var/lib/postgresql/data
+
+volumes:
+   postgres_data:
