@@ -154,7 +154,11 @@ class LineageSankeyViewBuilder(private val schema: Schema) {
                   lookupSource(sourceDataSourceId)
                }
                if (source == null) {
-                  logger.warn { "Received dataSourceId ${sourceDataSourceId.orElse("null")} for input parameter ${operationParam.parameterName} on operation $operationQualifiedName but that has not yet been mapped.  No entry will be added for this pair" }
+                  val dataSourceId = sourceDataSourceId.orElse("null")
+                  when(dataSourceId) {
+                     UndefinedSource.id -> {} // do nothing - we can't help undefined sources.
+                     else -> logger.warn { "Received dataSourceId ${sourceDataSourceId.orElse("null")} for input parameter ${operationParam.parameterName} on operation $operationQualifiedName but that has not yet been mapped.  No entry will be added for this pair" }
+                  }
                } else {
                   incrementSankeyCount(source, SankeyNode(operationQualifiedName))
                }

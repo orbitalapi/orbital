@@ -360,6 +360,7 @@ class ObjectBuilder(
                } else null
 
 
+
                if (value != null) {
                   populatedValues[attributeName] = convertValue(value, targetAttributeType, field.format)
 //                  log().debug("Object builder ${this.id} populated attribute $attributeName : ${targetAttributeType.name.longDisplayName}.  Now contains keys: ${populatedValues.keys}")

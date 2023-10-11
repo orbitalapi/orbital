@@ -40,7 +40,10 @@ class LocalOperationCacheProvider(
          return actorCache.size()
       }
 
-   override fun getCachingInvoker(operationKey: OperationCacheKey, invoker: OperationInvoker): CachingOperatorInvoker {
+   override fun getCachingInvoker(
+      operationKey: OperationCacheKey,
+      invoker: OperationInvoker
+   ): CachingOperatorInvoker {
       return actorCache.get(operationKey) {
          val map = ConcurrentHashMap<OperationCacheKey, Flux<TypedInstance>>()
          val mapLoader: CacheFetcher = { key: OperationCacheKey, invocationParams, loader -> map.getOrPut(key, loader) }

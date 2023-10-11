@@ -34,11 +34,15 @@ class HazelcastCacheProviderTest : DescribeSpec({
       it("should cache the result") {
          val cacheProvider = HazelcastOperationCacheProvider(
             hazelcast,
-            schemaStore
+            schemaStore,
+            10,
+            "connectionName",
+            "connectionAddress"
+
          )
          val cacheKey = "testKey"
          val cache = cacheProvider.getCachingInvoker(
-            cacheKey, stub
+             cacheKey, stub,
          )
          val service = vyne.getService("PersonService")
          val operation = service.operation("findPerson")
@@ -75,11 +79,14 @@ class HazelcastCacheProviderTest : DescribeSpec({
       it("should cache if a second call comes when the first call is still inflight") {
          val cacheProvider = HazelcastOperationCacheProvider(
             hazelcast,
-            schemaStore
+            schemaStore,
+            10,
+            "connectionName",
+            "connectionAddress"
          )
          val cacheKey = "testKey"
          val cache = cacheProvider.getCachingInvoker(
-            cacheKey, stub
+             cacheKey, stub
          )
          val service = vyne.getService("PersonService")
          val operation = service.operation("findPerson")

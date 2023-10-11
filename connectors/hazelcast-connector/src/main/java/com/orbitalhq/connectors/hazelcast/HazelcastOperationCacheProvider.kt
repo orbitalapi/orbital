@@ -3,13 +3,16 @@ package com.orbitalhq.connectors.hazelcast
 import com.hazelcast.collection.IList
 import com.hazelcast.collection.ItemEvent
 import com.hazelcast.collection.ItemListener
+import com.hazelcast.core.EntryEvent
+import com.hazelcast.core.EntryListener
 import com.hazelcast.core.HazelcastInstance
+import com.hazelcast.map.MapEvent
+import com.hazelcast.multimap.MultiMap
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
 import com.orbitalhq.models.DataSourceUpdater
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.OperationResultDataSourceWrapper
-import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.serde.SerializableTypedInstance
 import com.orbitalhq.models.serde.toSerializable
@@ -17,7 +20,6 @@ import com.orbitalhq.query.CacheExchange
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
-import com.orbitalhq.query.SqlExchange
 import com.orbitalhq.query.connectors.*
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemas.CachingStrategy
@@ -58,7 +60,10 @@ class HazelcastOperationCacheProvider(
          }
    }
 
-   override fun getCachingInvoker(operationKey: OperationCacheKey, invoker: OperationInvoker): CachingOperatorInvoker {
+   override fun getCachingInvoker(
+      operationKey: OperationCacheKey,
+      invoker: OperationInvoker
+   ): CachingOperatorInvoker {
 
       return CachingOperatorInvoker(
          operationKey, invoker, maxSize, this::load
@@ -112,7 +117,6 @@ class HazelcastOperationCacheProvider(
 
       // Initial state
       var foundCompletionMarker = false
-      val typedInstances = mutableListOf<TypedInstance>()
 
       val operationResult = OperationResult.from(
          parameters,
@@ -124,7 +128,7 @@ class HazelcastOperationCacheProvider(
             durationMs = Duration.between(startTime, Instant.now()).toMillis(),
             exchange = CacheExchange(
                connectionName,
-               listName,
+               message.operation.name,
                listName
             ),
             timestamp = startTime,
@@ -140,7 +144,8 @@ class HazelcastOperationCacheProvider(
          foundCompletionMarker = foundCompletionMarker || isCompletionMarker
          !isCompletionMarker
       }.map {
-         val typedInstance = SerializableTypedInstance.fromBytes(it).toTypedInstance(schemaStore.schema(), dataSource = dataSource)
+         val typedInstance =
+            SerializableTypedInstance.fromBytes(it).toTypedInstance(schemaStore.schema(), dataSource = dataSource)
 
          // Update the datasource. The existing data source (a DataSourceReference)
          // points to a data source from when this was cached, which is not neccessarily
@@ -167,7 +172,7 @@ class HazelcastOperationCacheProvider(
                   sink.complete()
                   listenerId?.let { uuid -> list.removeItemListener(uuid) }
                } else {
-                  SerializableTypedInstance.fromBytes(event.item).toTypedInstance(schemaStore.schema())
+                  sink.next(SerializableTypedInstance.fromBytes(event.item).toTypedInstance(schemaStore.schema()))
                }
             }
 
@@ -189,7 +194,6 @@ class HazelcastOperationCacheProvider(
             logger.error(e) { "Failed to write TypedInstance to cache" }
          }
       }.doFinally {
-
          list.add(COMPLETION_MARKER)
       }
    }
@@ -216,7 +220,7 @@ class HazelcastOperationCacheBuilder(
    private val maxSize: Int = 10,
 ) :
    OperationCacheProviderBuilder {
-   private val hazelcastConnections = ConcurrentHashMap<String, Pair<HazelcastInstance,HazelcastConfiguration>>()
+   private val hazelcastConnections = ConcurrentHashMap<String, Pair<HazelcastInstance, HazelcastConfiguration>>()
 
    override fun canBuild(strategy: CachingStrategy): Boolean {
       if (strategy !is RemoteCache) return false
@@ -233,7 +237,13 @@ class HazelcastOperationCacheBuilder(
          HazelcastBuilder.build(connectionConfig) to connectionConfig
       }
 
-      return HazelcastOperationCacheProvider(client, schemaStore, maxSize, config.connectionName, config.addresses.joinToString(","))
+      return HazelcastOperationCacheProvider(
+         client,
+         schemaStore,
+         maxSize,
+         config.connectionName,
+         config.addresses.joinToString(",")
+      )
    }
 
 }

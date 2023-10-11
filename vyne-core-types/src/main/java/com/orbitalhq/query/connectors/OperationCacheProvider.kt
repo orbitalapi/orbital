@@ -1,9 +1,6 @@
 package com.orbitalhq.query.connectors
 
-import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schemas.CachingStrategy
-import com.orbitalhq.schemas.OperationName
-import com.orbitalhq.schemas.OperationNames
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.ServiceName
 

@@ -31,6 +31,7 @@ import reactor.kafka.receiver.ReceiverOptions
 import java.time.Duration
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 data class KafkaConsumerRequest(
@@ -55,7 +56,7 @@ class KafkaStreamManager(
    private val cache = CacheBuilder.newBuilder()
       .build<KafkaConsumerRequest, SharedFlow<TypedInstance>>()
 
-   private val messageCounter = mutableMapOf<KafkaConsumerRequest, AtomicInteger>()
+   private val messageCounter = ConcurrentHashMap<KafkaConsumerRequest, AtomicInteger>()
 
    /**
     * Returns the message counts received on topics where we're still subscribed.
@@ -68,8 +69,14 @@ class KafkaStreamManager(
 
    fun getStream(request: KafkaConsumerRequest): Flow<TypedInstance> {
       return cache.get(request) {
-         messageCounter[request] = AtomicInteger(0)
+         getCounter(request) // Force creation
          buildSharedFlow(request)
+      }
+   }
+   private fun getCounter(request:KafkaConsumerRequest):AtomicInteger {
+      return messageCounter.getOrPut(request) {
+         logger.info { "Creating Kafka message counter for topic ${request.topicName}" }
+         AtomicInteger(0)
       }
    }
 
@@ -106,8 +113,7 @@ class KafkaStreamManager(
          }
          .map { record ->
 
-            messageCounter[request]?.incrementAndGet()
-               ?: logger.warn { "Attempt to increment message counter for consumer on Kafka topic ${request.topicName} failed - the counter was not present" }
+            getCounter(request).incrementAndGet()
 
             logger.trace { "Received message on topic ${record.topic()} with offset ${record.offset()}" }
             val messageValue = if (encoding == MessageEncodingType.BYTE_ARRAY) {

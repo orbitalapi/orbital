@@ -89,9 +89,14 @@ data class TypedValue private constructor(
          if (!type.taxiType.inheritsFromPrimitive) {
             error("Type ${type.fullyQualifiedName} is not a primitive, cannot be converted")
          } else {
+            val valueToConvert = if (value is TypedInstance) {
+               value.toRawObject()!!
+            } else {
+               value
+            }
             return try {
                val valueToUse =
-                  converter.convert(value, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!), format)
+                  converter.convert(valueToConvert, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!), format)
                if (valueToUse != null) {
                   TypedValue(type, valueToUse, source, format)
                } else {
