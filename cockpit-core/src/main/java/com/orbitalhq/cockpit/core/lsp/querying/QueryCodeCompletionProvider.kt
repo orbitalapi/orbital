@@ -8,8 +8,8 @@ import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.toTaxiQualifiedName
 import com.orbitalhq.schemas.toVyneQualifiedName
+import lang.taxi.TaxiParser.AnnotationContext
 import lang.taxi.TaxiParser.ArrayMarkerContext
-import lang.taxi.TaxiParser.FactContext
 import lang.taxi.TaxiParser.FactDeclarationContext
 import lang.taxi.TaxiParser.FactListContext
 import lang.taxi.TaxiParser.FieldDeclarationContext
@@ -36,6 +36,7 @@ import lang.taxi.types.Type
 import mu.KotlinLogging
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.Token
+import org.antlr.v4.runtime.tree.TerminalNode
 import org.eclipse.lsp4j.CompletionItem
 import org.eclipse.lsp4j.CompletionItemKind
 import org.eclipse.lsp4j.CompletionParams
@@ -130,11 +131,21 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
          is TypeBodyContext,
          is IdentifierContext,
          is QualifiedNameContext -> {
-            // In tests, it looks like we could be either declaring a filter criteria here,
-            // or listing fields we want to add to the query.
-            val typeCompletions = typeCompletionItems(decorators)
-            val functionCompletions = functionCompletionProvider.buildFunctions(schema.taxi, decorators)
-            typeCompletions + functionCompletions
+            // Check if we're inside an annotation declaration.
+
+            if (contextAtCursor.searchUpForRule<AnnotationContext>() != null &&
+               params.position.isBetween(
+                  contextAtCursor.searchUpForRule<AnnotationContext>()?.LPAREN()?.symbol,
+                  contextAtCursor.searchUpForRule<AnnotationContext>()?.RPAREN()?.symbol
+               )
+            ) {
+               annotationParameterCompletion(contextAtCursor, decorators, compilationResult)
+            } else {
+               val typeCompletions = typeCompletionItems(decorators)
+               val functionCompletions = functionCompletionProvider.buildFunctions(schema.taxi, decorators)
+               typeCompletions + functionCompletions
+            }
+
 
             // Old approach:
             // We used to try to be "smart", limiting the items we return here
@@ -177,6 +188,29 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
             completion.additionalTextEdits.orEmpty().map { edit -> edit.newText } + completion.insertText
          }
       return completed(distinctCompletions)
+   }
+
+   private fun annotationParameterCompletion(
+      contextAtCursor: ParserRuleContext,
+      decorators: List<ImportCompletionDecorator>,
+      compilationResult: CompilationResult
+   ): List<CompletionItem> {
+      val annotationCtx = contextAtCursor.searchUpForRule<AnnotationContext>()!!
+      return compilationResult.compiler.lookupSymbolByName(
+         annotationCtx.qualifiedName().text,
+         annotationCtx.qualifiedName()
+      ).map { annotationName ->
+         val annotationType = schema.taxi.annotation(annotationName)
+         val completions = annotationType.fields.map { field ->
+            val completionText = field.name + " = "
+            CompletionItem(
+               completionText
+            ).apply {
+               insertText = completionText
+            }
+         }
+         completions
+      }.getOrNull() ?: emptyList()
    }
 
    private fun buildAsCompletion(params: CompletionParams, sourceTypeIsCollection: Boolean): List<CompletionItem> {
@@ -474,6 +508,25 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
       TODO()
    }
 
+}
+
+/**
+ * Indicates if a Position is between two tokens from the compiler.
+ * If either of the provided tokens are null, returns false
+ */
+private fun Position.isBetween(left: Token?, right: Token?): Boolean {
+   if (left == null || right == null) return false
+   val editorLine = this.line // zero-based
+   val startLine = (left.line - 1) // antlr lines are 1-based
+   val endLine = right.line - 1 // antrl lines are 1-based
+   if (editorLine !in startLine..endLine) return false
+   return when {
+      // On a line inbetween the start and end
+      this.line > startLine && this.line < endLine -> true
+      this.line == startLine -> this.character >= left.charPositionInLine
+      this.line == endLine -> this.character < right.charPositionInLine
+      else -> false
+   }
 }
 
 private fun Token.locationIsBeforeOrEqualTo(oneBasedLineNumber: Int, character: Int): Boolean {
