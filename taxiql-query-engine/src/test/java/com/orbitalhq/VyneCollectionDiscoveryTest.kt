@@ -358,6 +358,7 @@ class VyneCollectionDiscoveryTest {
       }
 
    @Test
+   @Ignore("Dropped this syntax, will revisit if/when required")
    fun `can use projection scope to build nested collections`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """
@@ -425,6 +426,7 @@ class VyneCollectionDiscoveryTest {
 
 
    @Test
+   @Ignore("Dropped this syntax, will revisit if/when required")
    fun `can flatten an array onto a field of an anonymous type`(): Unit = runBlocking {
       val source = """{
          "name" : "Stephen Sondheim",

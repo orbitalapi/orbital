@@ -9,7 +9,6 @@ import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.toTaxiQualifiedName
 import com.orbitalhq.schemas.toVyneQualifiedName
 import lang.taxi.TaxiParser.ArrayMarkerContext
-import lang.taxi.TaxiParser.ConditionalTypeStructureDeclarationContext
 import lang.taxi.TaxiParser.FactContext
 import lang.taxi.TaxiParser.FactDeclarationContext
 import lang.taxi.TaxiParser.FactListContext
@@ -17,7 +16,7 @@ import lang.taxi.TaxiParser.FieldDeclarationContext
 import lang.taxi.TaxiParser.FieldTypeDeclarationContext
 import lang.taxi.TaxiParser.GivenBlockContext
 import lang.taxi.TaxiParser.IdentifierContext
-import lang.taxi.TaxiParser.OptionalTypeReferenceContext
+import lang.taxi.TaxiParser.NullableTypeReferenceContext
 import lang.taxi.TaxiParser.ParameterConstraintContext
 import lang.taxi.TaxiParser.QualifiedNameContext
 import lang.taxi.TaxiParser.QueryDirectiveContext
@@ -28,13 +27,10 @@ import lang.taxi.TaxiParser.TypeProjectionContext
 import lang.taxi.TaxiParser.TypeReferenceContext
 import lang.taxi.TaxiParser.VariableNameContext
 import lang.taxi.lsp.CompilationResult
-import lang.taxi.lsp.completion.CompletionDecorator
-import lang.taxi.lsp.completion.CompletionProvider
-import lang.taxi.lsp.completion.ImportCompletionDecorator
-import lang.taxi.lsp.completion.TypeProvider
-import lang.taxi.lsp.completion.completed
+import lang.taxi.lsp.completion.*
 import lang.taxi.query.QueryMode
 import lang.taxi.searchUpForRule
+import lang.taxi.types.ImportableToken
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.Type
 import org.antlr.v4.runtime.ParserRuleContext
@@ -66,6 +62,8 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
          }
       }
 
+   private val functionCompletionProvider = FunctionCompletionProvider()
+
    override fun getCompletionsForContext(
       compilationResult: CompilationResult,
       params: CompletionParams,
@@ -86,7 +84,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
                // If the source type is a collection...
                val sourceTypeIsCollection =
                   children.isNotEmpty() && children.filterIsInstance<FieldTypeDeclarationContext>().any {
-                     it.optionalTypeReference()?.typeReference()?.arrayMarker() != null
+                     it.nullableTypeReference()?.typeReference()?.arrayMarker() != null
                   }
                if (children.isNotEmpty()) {
                   buildAsCompletion(params, sourceTypeIsCollection)
@@ -127,14 +125,13 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
          is QualifiedNameContext -> {
             // In tests, it looks like we could be either declaring a filter criteria here,
             // or listing fields we want to add to the query.
-            if (contextAtCursor.searchUpForRule(ConditionalTypeStructureDeclarationContext::class.java) != null) {
-               suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
-            } else if (contextAtCursor.searchUpForRule<FactContext>() != null) {
+          if (contextAtCursor.searchUpForRule<FactContext>() != null) {
                schema.types
                   // MP 27-Jul-23: Why did I think filtering for Scalars was a good idea?
 //                  .filter { it.isScalar }
                   .map { type -> typeProvider.buildCompletionItem(type.taxiType, listOf(importDecorator)) }
             } else {
+               val functionCompletions = functionCompletionProvider.buildFunctions(schema.taxi, listOf(importDecorator))
                val typesInQuery = findTypesDeclaredInQuery(contextAtCursor, compilationResult)
                // If the user has provided facts, (either in a Given clause, or in the body of the query),
                // Then only suggest the types that are discoverable based on what they've provided.
@@ -143,11 +140,12 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
                      importDecorator,
                      typesInQuery,
                      includeModelAttributes = true
-                  )
+                  ) + functionCompletions
                } else {
                   val queryMode = findQueryMode(contextAtCursor)
                   findModelsReturnableFromNoArgServices(importDecorator, queryMode) +
-                     findModelsReturnableFromQueryOperations(importDecorator, queryMode)
+                     findModelsReturnableFromQueryOperations(importDecorator, queryMode) +
+                     functionCompletions
                }
             }
          }
@@ -180,7 +178,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
       importDecorator: ImportCompletionDecorator,
       compilationResult: CompilationResult
    ): List<CompletionItem> {
-      val typeToFilterToken = contextAtCursor.searchUpForRule<OptionalTypeReferenceContext>()
+      val typeToFilterToken = contextAtCursor.searchUpForRule<NullableTypeReferenceContext>()
          ?: // Hmm... this shouldn't happen.
          return emptyList()
       val typeReferenceToken = typeToFilterToken.typeReference()
@@ -278,7 +276,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
          queryTypeList.fieldTypeDeclaration()
             .map { fieldTypeContext ->
                compilationResult.compiler.lookupTypeByName(
-                  fieldTypeContext.optionalTypeReference().typeReference()
+                  fieldTypeContext.nullableTypeReference().typeReference()
                )
             }
       } ?: emptyList()
@@ -393,7 +391,11 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
 
    private fun documentationDecorator(documentation: String): CompletionDecorator {
       return object : CompletionDecorator {
-         override fun decorate(typeName: QualifiedName, type: Type?, completionItem: CompletionItem): CompletionItem {
+         override fun decorate(
+            typeName: QualifiedName,
+            token: ImportableToken?,
+            completionItem: CompletionItem
+         ): CompletionItem {
             completionItem.setDocumentation(MarkupContent("markdown", documentation))
             return completionItem
          }

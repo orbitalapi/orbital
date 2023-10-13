@@ -34,7 +34,7 @@ data class ChangeFieldType(
          ?: error("Can not find a field named $fieldName in the definition of type ${symbol.fullyQualifiedName}")
 
       val fieldReturnTypeDefinition =
-         fieldDefinition.fieldDeclaration()?.fieldTypeDeclaration()?.optionalTypeReference()?.typeReference()
+         fieldDefinition.fieldDeclaration()?.fieldTypeDeclaration()?.nullableTypeReference()?.typeReference()
             ?: error("Field $fieldName does not define a type")
 
       val mutation = SourcePackageEdit(

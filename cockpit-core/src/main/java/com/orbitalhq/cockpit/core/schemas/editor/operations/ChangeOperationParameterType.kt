@@ -35,7 +35,7 @@ data class ChangeOperationParameterType(
 
       val mutation = SourcePackageEdit(
          operation.source().sourceName,
-         parameter.optionalTypeReference().asCharacterPositionRange(),
+         parameter.nullableTypeReference().asCharacterPositionRange(),
          newType.parameterizedName
       )
       return applyEditAndCompile(listOf(mutation), sourcePackage, taxiDocument)
