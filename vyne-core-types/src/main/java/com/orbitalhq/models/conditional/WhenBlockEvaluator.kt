@@ -3,6 +3,7 @@ package com.orbitalhq.models.conditional
 import com.orbitalhq.models.AccessorReader
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.EvaluationValueSupplier
+import com.orbitalhq.models.FailedEvaluation
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.UndefinedSource
@@ -33,7 +34,7 @@ class WhenBlockEvaluator(
          format = format
       )
       val caseBlock = selectCaseBlock(selectorValue, readCondition, value, format)
-
+         ?: return TypedNull.create(targetType, FailedEvaluation("No matching cases found in when clause"))
       return accessorReader.read(
          value,
          targetType,
@@ -50,7 +51,7 @@ class WhenBlockEvaluator(
       readCondition: WhenExpression,
       value: Any,
       format: FormatsAndZoneOffset?
-   ): WhenCaseBlock {
+   ): WhenCaseBlock? {
       var index = 0
       return readCondition.cases.firstOrNull { caseBlock ->
          index = ++index
@@ -72,8 +73,7 @@ class WhenBlockEvaluator(
          }
 
 
-      } ?: error("No matching cases found in when clause")
-
+      }
    }
 
    private fun evaluateExpression(

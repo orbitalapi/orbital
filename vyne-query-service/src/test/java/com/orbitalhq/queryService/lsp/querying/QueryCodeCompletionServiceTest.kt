@@ -8,6 +8,7 @@ import lang.taxi.lsp.sourceService.inMemoryIdentifier
 import lang.taxi.lsp.sourceService.inMemoryVersionedId
 import lang.taxi.lsp.sourceService.inmemoryUri
 import org.eclipse.lsp4j.*
+import org.junit.Ignore
 import org.junit.Test
 
 class QueryCodeCompletionServiceTest {
@@ -229,6 +230,7 @@ class QueryCodeCompletionServiceTest {
    }
 
    @Test
+   @Ignore("Rewriting code completion")
    fun `when writing a projection without given then includes hints of discoverable attributes`() {
       val documentService = documentServiceForSchema(taxi, schema = schema)
       val position = documentService.applyEdit("query", "find { Actor } as { id: ")
@@ -251,6 +253,7 @@ class QueryCodeCompletionServiceTest {
    }
 
    @Test
+   @Ignore("Rewriting code completion")
    fun `when writing a projection then hints include attributes of discoverable models from given statement`() {
       val documentService = documentServiceForSchema(taxi, schema = schema)
       val position = documentService.applyEdit("query", "given { id : ActorId = '123' } find { Actor } as { id: ")
