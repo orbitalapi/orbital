@@ -193,6 +193,9 @@ export class CodeEditorComponent implements OnDestroy {
       lightbulb: {
         enabled: true
       },
+      parameterHints: {
+        enabled: true
+      },
       automaticLayout: true,
       readOnly: this._readOnly,
       wordWrap: this._wordWrap,

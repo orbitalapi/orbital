@@ -33,6 +33,7 @@ import lang.taxi.searchUpForRule
 import lang.taxi.types.ImportableToken
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.Type
+import mu.KotlinLogging
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.Token
 import org.eclipse.lsp4j.CompletionItem
@@ -48,6 +49,10 @@ import java.util.concurrent.CompletableFuture
  */
 class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, private val schema: Schema) :
    CompletionProvider {
+
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
 
    private val topLevelQueryCompletionItems = listOf(
       "find" to "Query for a single item, or a list of items",
@@ -74,6 +79,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
       if (contextAtCursor == null) {
          return completed(topLevelQueryCompletionItems)
       }
+      val decorators = listOf(importDecorator)
 
       val completions = when (contextAtCursor) {
          is TypeProjectionContext -> {
@@ -120,34 +126,45 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
          }
 
          is FieldDeclarationContext,
+         is FieldTypeDeclarationContext,
          is TypeBodyContext,
          is IdentifierContext,
          is QualifiedNameContext -> {
             // In tests, it looks like we could be either declaring a filter criteria here,
             // or listing fields we want to add to the query.
-          if (contextAtCursor.searchUpForRule<FactContext>() != null) {
-               schema.types
-                  // MP 27-Jul-23: Why did I think filtering for Scalars was a good idea?
-//                  .filter { it.isScalar }
-                  .map { type -> typeProvider.buildCompletionItem(type.taxiType, listOf(importDecorator)) }
-            } else {
-               val functionCompletions = functionCompletionProvider.buildFunctions(schema.taxi, listOf(importDecorator))
-               val typesInQuery = findTypesDeclaredInQuery(contextAtCursor, compilationResult)
-               // If the user has provided facts, (either in a Given clause, or in the body of the query),
-               // Then only suggest the types that are discoverable based on what they've provided.
-               if (typesInQuery.isNotEmpty()) {
-                  findModelsReturnsFromProvidedInputs(
-                     importDecorator,
-                     typesInQuery,
-                     includeModelAttributes = true
-                  ) + functionCompletions
-               } else {
-                  val queryMode = findQueryMode(contextAtCursor)
-                  findModelsReturnableFromNoArgServices(importDecorator, queryMode) +
-                     findModelsReturnableFromQueryOperations(importDecorator, queryMode) +
-                     functionCompletions
-               }
-            }
+            val typeCompletions = typeCompletionItems(decorators)
+            val functionCompletions = functionCompletionProvider.buildFunctions(schema.taxi, decorators)
+            typeCompletions + functionCompletions
+
+            // Old approach:
+            // We used to try to be "smart", limiting the items we return here
+            // to those that are relevant.
+            // However, this turned out to be so buggy, it was unhelpful.
+            // For now, let's just be simple until we can understand what "better" actually looks like.
+
+//            if (contextAtCursor.searchUpForRule<FactContext>() != null) {
+//               schema.types
+//                  // MP 27-Jul-23: Why did I think filtering for Scalars was a good idea?
+////                  .filter { it.isScalar }
+//                  .map { type -> typeProvider.buildCompletionItem(type.taxiType, decorators) }
+//            } else {
+//               val functionCompletions = functionCompletionProvider.buildFunctions(schema.taxi, decorators)
+//               val typesInQuery = findTypesDeclaredInQuery(contextAtCursor, compilationResult)
+//               // If the user has provided facts, (either in a Given clause, or in the body of the query),
+//               // Then only suggest the types that are discoverable based on what they've provided.
+//               if (typesInQuery.isNotEmpty()) {
+//                  findModelsReturnsFromProvidedInputs(
+//                     importDecorator,
+//                     typesInQuery,
+//                     includeModelAttributes = true
+//                  ) + functionCompletions
+//               } else {
+//                  val queryMode = findQueryMode(contextAtCursor)
+//                  findModelsReturnableFromNoArgServices(importDecorator, queryMode) +
+//                     findModelsReturnableFromQueryOperations(importDecorator, queryMode) +
+//                     functionCompletions
+//               }
+//            }
          }
 
          is VariableNameContext -> suggestTypesAsInputs(importDecorator)
@@ -171,6 +188,31 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
             insertText += "[]"
          }
       })
+   }
+
+   /**
+    * Returns all types in the schema as CompletionItems
+    */
+   private fun typeCompletionItems(decorators: List<CompletionDecorator>): List<CompletionItem> {
+      return taxiTokensAsCompletionItems(schema.taxi.types, decorators) { it is Type && !it.anonymous }
+   }
+
+   private fun taxiTokensAsCompletionItems(
+      tokens: Collection<ImportableToken>,
+      decorators: List<CompletionDecorator>,
+      predicate: (ImportableToken) -> Boolean
+   ): List<CompletionItem> {
+      return tokens
+         .filter(predicate)
+         .mapNotNull { token ->
+            when (token) {
+               is Type -> typeProvider.buildCompletionItem(token, decorators)
+               else -> {
+                  logger.debug("Don't know how to build completion items for type ${token::class.simpleName}")
+                  null
+               }
+            }
+         }
    }
 
    private fun suggestFilterTypes(
