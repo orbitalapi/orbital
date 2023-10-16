@@ -28,6 +28,7 @@ import {CompilationMessageListModule} from "../compilation-message-list/compilat
 import {TabbedResultsViewModule} from "../tabbed-results-view/tabbed-results-view.module";
 import {TypeNamedInstanceTreeModule} from "../type-named-instance-tree/type-named-instance-tree.module";
 import {JsonViewerModule} from "../json-viewer/json-viewer.module";
+import {TypeAutocompleteTuiModule} from "../type-autocomplete-tui/type-autocomplete-tui.module";
 
 @NgModule({
     declarations: [
@@ -67,7 +68,8 @@ import {JsonViewerModule} from "../json-viewer/json-viewer.module";
         TuiLoaderModule,
         TypeNamedInstanceTreeModule,
         JsonViewerModule,
-        TuiDataListModule
+        TuiDataListModule,
+        TypeAutocompleteTuiModule
     ]
 })
 export class ModelDesignerModule {

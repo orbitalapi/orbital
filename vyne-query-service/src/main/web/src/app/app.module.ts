@@ -87,8 +87,7 @@ const oauth2OidcModule = [AuthModule];
     },
   ],
   entryComponents: [AppComponent],
-  exports: [
-  ]
+  exports: []
 })
 export class AppModule implements DoBootstrap {
   constructor(@Optional() private authService: AuthService) {

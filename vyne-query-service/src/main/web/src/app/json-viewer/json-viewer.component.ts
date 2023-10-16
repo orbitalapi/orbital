@@ -94,7 +94,7 @@ export class JsonViewerComponent implements OnDestroy {
       }
     })
     if (this.modelUri) {
-      JsonTypeInlayHintProvider.hints.set(this.modelUri, this.inlayHints);
+      JsonTypeInlayHintProvider.hintMap.registerHints(this.modelUri, this.inlayHints);
     }
   }
 
@@ -185,13 +185,12 @@ export class JsonViewerComponent implements OnDestroy {
       if (this.json) {
         this.modelUri = monaco.Uri.parse(`inmemory://json-file-${Date.now()}.json`); // a made up unique URI for our model
         if (this.inlayHints) {
-          JsonTypeInlayHintProvider.hints.set(this.modelUri, this.inlayHints)
+          JsonTypeInlayHintProvider.hintMap.registerHints(this.modelUri, this.inlayHints)
         }
         monacoTextModel = monaco.editor.createModel(this.json, 'json', this.modelUri)
       }
 
 
-      const _typehints = this.typeHints || [];
       monaco.languages.registerInlayHintsProvider("json", new JsonTypeInlayHintProvider())
 
       this.monacoEditor = monaco.editor.create(this._codeEditorContainer.nativeElement, {

@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
-import {CompilationMessage, Schema, Type} from "../../services/schema";
+import {CompilationMessage, Schema, SchemaMember, Type} from "../../services/schema";
 
 @Component({
     selector: 'app-designer-code-editor-panel',
@@ -7,37 +7,11 @@ import {CompilationMessage, Schema, Type} from "../../services/schema";
         <app-panel-header title="Taxi model editor">
             <div class="spacer"></div>
 
-            <tui-combo-box
+            <app-type-autocomplete-tui
                     class="type-input"
-                    [stringify]="stringifyTypeName"
-                    tuiTextfieldSize="s"
-                    [valueContent]="value"
-                    [(ngModel)]="selectedType"
-                    (ngModelChange)="handleSelectedTypeChanged($event)">
-                Select a type
-                <input tuiTextfield placeholder="Select a type"/>
-                <ng-template #value let-item>
-                    <div class="type-option">
-                        <span class="type-name">{{item.name.shortDisplayName}}</span>
-                      <span class="mono-badge small" *ngIf="item.name.namespace">{{item.name.namespace}}</span>
-                    </div>
-                </ng-template>
-                <ng-template tuiDataList>
-                    <tui-data-list *ngFor="let item of types | tuiFilterByInputWith : stringifyTypeName">
-                        <button tuiOption [value]="item">
-                          <div class="type-option">
-                            <span class="type-name">{{item.name.shortDisplayName}}</span>
-                            <span class="mono-badge small" *ngIf="item.name.namespace">{{item.name.namespace}}</span>
-                          </div>
-                        </button>
-                    </tui-data-list>
-                </ng-template>
-                <!--              <tui-data-list-wrapper-->
-                <!--                      *tuiDataList-->
-                <!--                      [items]="types | tuiFilterByInputWith : stringifyTypeName"-->
-                <!--                      [itemContent]="stringifyTypeName | tuiStringifyContent"></tui-data-list-wrapper>-->
-            </tui-combo-box>
-
+                    [schema]="schema"
+                    [additionalTypes]="parsedTypes"
+                    (selectedTypeChanged)="handleSelectedTypeChanged($event)"></app-type-autocomplete-tui>
         </app-panel-header>
 
         <as-split gutterSize="5" direction="vertical" unit="pixel">
@@ -56,7 +30,6 @@ import {CompilationMessage, Schema, Type} from "../../services/schema";
 })
 export class CodeEditorPanelComponent {
 
-    readonly stringifyTypeName = (item: Type): string => item.name.shortDisplayName;
 
     @Output()
     taxiChange = new EventEmitter<string>();
@@ -89,7 +62,7 @@ export class CodeEditorPanelComponent {
     }
 
 
-    handleSelectedTypeChanged($event: Type) {
-        this.selectedTypeChanged.emit($event.fullyQualifiedName)
+    handleSelectedTypeChanged($event: SchemaMember) {
+        this.selectedTypeChanged.emit($event.name.fullyQualifiedName)
     }
 }
