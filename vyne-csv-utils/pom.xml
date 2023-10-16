@@ -21,6 +21,11 @@
 
    <dependencies>
       <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>xsd2taxi</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>

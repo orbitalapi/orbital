@@ -5,11 +5,12 @@ import com.orbitalhq.models.format.ModelFormatSerializer
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.fqn
+import lang.taxi.xsd.XsdAnnotations
 
 object XmlAnnotationSpec {
    val NAME = "com.orbitalhq.formats.Xml".fqn()
 
-   val XmlAttributeName = "XmlAttribute".fqn()
+   val XmlAttributeName = XsdAnnotations.XML_ATTRIBUTE_TYPE.qualifiedName.fqn()
 
    val taxi = """
       namespace ${NAME.namespace} {

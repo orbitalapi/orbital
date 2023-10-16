@@ -21,7 +21,7 @@ class XmlFormatSpecTest : DescribeSpec({
             }
 
             model Actor inherits Person {
-                @XmlAttribute
+                @lang.taxi.xml.XmlAttribute
                 id : ActorId inherits Int
                 agent : Person
                 fullName : FullName inherits String = FirstName + ' ' + LastName
