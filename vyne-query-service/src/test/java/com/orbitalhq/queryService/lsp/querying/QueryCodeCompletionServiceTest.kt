@@ -229,6 +229,8 @@ class QueryCodeCompletionServiceTest {
       agentCompletion.documentation.right.value.should.equal("Discovered by path ActorId -> MyService / listActor -> Actor -> MyService / getAgent -> Agent")
    }
 
+
+
    @Test
    @Ignore("Rewriting code completion")
    fun `when writing a projection without given then includes hints of discoverable attributes`() {

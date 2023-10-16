@@ -10,12 +10,15 @@ import com.orbitalhq.schemas.toTaxiQualifiedName
 import com.orbitalhq.schemas.toVyneQualifiedName
 import lang.taxi.TaxiParser.AnnotationContext
 import lang.taxi.TaxiParser.ArrayMarkerContext
+import lang.taxi.TaxiParser.ElementValueContext
+import lang.taxi.TaxiParser.ElementValuePairContext
 import lang.taxi.TaxiParser.FactDeclarationContext
 import lang.taxi.TaxiParser.FactListContext
 import lang.taxi.TaxiParser.FieldDeclarationContext
 import lang.taxi.TaxiParser.FieldTypeDeclarationContext
 import lang.taxi.TaxiParser.GivenBlockContext
 import lang.taxi.TaxiParser.IdentifierContext
+import lang.taxi.TaxiParser.LiteralContext
 import lang.taxi.TaxiParser.NullableTypeReferenceContext
 import lang.taxi.TaxiParser.ParameterConstraintContext
 import lang.taxi.TaxiParser.QualifiedNameContext
@@ -43,6 +46,7 @@ import org.eclipse.lsp4j.CompletionParams
 import org.eclipse.lsp4j.InsertTextFormat
 import org.eclipse.lsp4j.MarkupContent
 import org.eclipse.lsp4j.Position
+import org.eclipse.lsp4j.jsonrpc.messages.Either
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -54,6 +58,9 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
    companion object {
       private val logger = KotlinLogging.logger {}
    }
+
+   // The "normal" editor, not used when building queries
+   private val editorCompletionService = EditorCompletionService(typeProvider)
 
    private val topLevelQueryCompletionItems = listOf(
       "find" to "Query for a single item, or a list of items",
@@ -80,6 +87,12 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
       if (contextAtCursor == null) {
          return completed(topLevelQueryCompletionItems)
       }
+
+      val significantContext = editorCompletionService.getSignificantContext(contextAtCursor)
+      if (significantContext != contextAtCursor) {
+         return getCompletionsForContext(compilationResult, params, importDecorator, significantContext, lastSuccessfulCompilation)
+      }
+
       val decorators = listOf(importDecorator)
 
       val completions = when (contextAtCursor) {
@@ -126,10 +139,15 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
             suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
          }
 
+         is ElementValuePairContext -> {
+            editorCompletionService.provideAnnotationFieldCompletions(contextAtCursor, decorators, compilationResult)
+         }
+
          is FieldDeclarationContext,
          is FieldTypeDeclarationContext,
          is TypeBodyContext,
          is IdentifierContext,
+         is ElementValueContext,
          is QualifiedNameContext -> {
             // Check if we're inside an annotation declaration.
 
@@ -145,37 +163,6 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
                val functionCompletions = functionCompletionProvider.buildFunctions(schema.taxi, decorators)
                typeCompletions + functionCompletions
             }
-
-
-            // Old approach:
-            // We used to try to be "smart", limiting the items we return here
-            // to those that are relevant.
-            // However, this turned out to be so buggy, it was unhelpful.
-            // For now, let's just be simple until we can understand what "better" actually looks like.
-
-//            if (contextAtCursor.searchUpForRule<FactContext>() != null) {
-//               schema.types
-//                  // MP 27-Jul-23: Why did I think filtering for Scalars was a good idea?
-////                  .filter { it.isScalar }
-//                  .map { type -> typeProvider.buildCompletionItem(type.taxiType, decorators) }
-//            } else {
-//               val functionCompletions = functionCompletionProvider.buildFunctions(schema.taxi, decorators)
-//               val typesInQuery = findTypesDeclaredInQuery(contextAtCursor, compilationResult)
-//               // If the user has provided facts, (either in a Given clause, or in the body of the query),
-//               // Then only suggest the types that are discoverable based on what they've provided.
-//               if (typesInQuery.isNotEmpty()) {
-//                  findModelsReturnsFromProvidedInputs(
-//                     importDecorator,
-//                     typesInQuery,
-//                     includeModelAttributes = true
-//                  ) + functionCompletions
-//               } else {
-//                  val queryMode = findQueryMode(contextAtCursor)
-//                  findModelsReturnableFromNoArgServices(importDecorator, queryMode) +
-//                     findModelsReturnableFromQueryOperations(importDecorator, queryMode) +
-//                     functionCompletions
-//               }
-//            }
          }
 
          is VariableNameContext -> suggestTypesAsInputs(importDecorator)
@@ -195,22 +182,13 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
       decorators: List<ImportCompletionDecorator>,
       compilationResult: CompilationResult
    ): List<CompletionItem> {
-      val annotationCtx = contextAtCursor.searchUpForRule<AnnotationContext>()!!
-      return compilationResult.compiler.lookupSymbolByName(
-         annotationCtx.qualifiedName().text,
-         annotationCtx.qualifiedName()
-      ).map { annotationName ->
-         val annotationType = schema.taxi.annotation(annotationName)
-         val completions = annotationType.fields.map { field ->
-            val completionText = field.name + " = "
-            CompletionItem(
-               completionText
-            ).apply {
-               insertText = completionText
-            }
+      return when (         contextAtCursor      ) {
+         is ElementValueContext -> {
+            // specifying the value of a an annotation field
+            editorCompletionService.provideAnnotationFieldValueCompletions(contextAtCursor, decorators, compilationResult)
          }
-         completions
-      }.getOrNull() ?: emptyList()
+         else -> editorCompletionService.provideAnnotationFieldCompletions(contextAtCursor, decorators, compilationResult)
+      }
    }
 
    private fun buildAsCompletion(params: CompletionParams, sourceTypeIsCollection: Boolean): List<CompletionItem> {

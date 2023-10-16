@@ -16,14 +16,13 @@ object CsvAnnotationSpec {
       namespace ${NAME.namespace} {
 
          annotation ${NAME.name} {
-            delimiter : String?
-            firstRecordAsHeader : Boolean?
+            delimiter : String = ","
+            firstRecordAsHeader : Boolean = true
             nullValue : String?
-            containsTrailingDelimiters : Boolean?
-            ignoreContentBefore : String?
-            useFieldNamesAsColumnNames: Boolean?
-            withQuote: String?
-            recordSeparator: String?
+            containsTrailingDelimiters : Boolean = false
+            useFieldNamesAsColumnNames: Boolean = false
+            withQuote: String = '"'
+            recordSeparator: String = "\r\n"
          }
 
       }
