@@ -265,7 +265,8 @@ data class QueryContext(
                null,
                false,
                emptySet(),
-               clientQueryId, queryId
+               clientQueryId, queryId,
+               schema = schema
             )
 
          }
@@ -281,7 +282,8 @@ data class QueryContext(
             null,
             false,
             emptySet(),
-            clientQueryId, queryId
+            clientQueryId, queryId,
+            schema = schema
          )
       } else {
          val firstResult = mappingResult.first()

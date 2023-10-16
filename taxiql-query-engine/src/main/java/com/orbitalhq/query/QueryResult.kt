@@ -7,6 +7,7 @@ import com.orbitalhq.models.TypeNamedInstanceMapper
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedInstanceConverter
 import com.orbitalhq.schemas.QualifiedName
+import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -31,7 +32,15 @@ data class QueryResult(
    override val responseType: String? = null,
 
    @field:JsonIgnore
-   private val onCancelRequestHandler: () -> Unit = {}
+   private val onCancelRequestHandler: () -> Unit = {},
+
+
+   /**
+    * The schema that was used to execute this query.
+    * Should include any anonymous types etc., not present in the main schema
+    */
+   @field:JsonIgnore
+   val schema: Schema
 ) : QueryResponse {
    override val queryResponseId: String = queryId
    val duration = profilerOperation?.duration

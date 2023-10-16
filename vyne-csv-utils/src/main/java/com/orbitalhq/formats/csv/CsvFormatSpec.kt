@@ -1,5 +1,6 @@
 package com.orbitalhq.formats.csv
 
+import com.google.common.net.MediaType
 import com.orbitalhq.annotations.AnnotationWrapper
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.schemas.Metadata
@@ -118,4 +119,5 @@ object CsvFormatSpec : ModelFormatSpec {
    override val annotations: List<QualifiedName> = listOf(CsvAnnotationSpec.NAME)
    override val serializer: CsvFormatSerializer = CsvFormatSerializer
    override val deserializer: CsvFormatDeserializer = CsvFormatDeserializer
+   override val mediaType: String = MediaType.CSV_UTF_8.toString()
 }

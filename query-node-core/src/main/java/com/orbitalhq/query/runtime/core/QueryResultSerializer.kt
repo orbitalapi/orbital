@@ -11,6 +11,7 @@ import com.orbitalhq.query.QueryResult
 import com.orbitalhq.query.QueryResultSerializer
 import com.orbitalhq.query.ValueWithTypeName
 import com.orbitalhq.schemas.QueryOptions
+import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import org.springframework.http.MediaType
 
@@ -21,7 +22,7 @@ class RawResultsSerializer(queryOptions: QueryOptions) : QueryResultSerializer {
    private val queryOptionsConverter: ObjectMapper? = queryOptions.newObjectMapperIfRequired()
 
    private val converter = TypedInstanceConverter(RawObjectMapper)
-   override fun serialize(item: TypedInstance): Any? {
+   override fun serialize(item: TypedInstance, schema: Schema): Any? {
       val converted = converter.convert(item)
 
       // If we need to use a special mapper (eg., to exclude nulls),
@@ -39,12 +40,12 @@ class ModelFormatSpecSerializer(
    private val metadata: com.orbitalhq.schemas.Metadata
 ) : QueryResultSerializer {
    private var metadataEmitted: Boolean = false
-   override fun serialize(item: TypedInstance): Any? {
+   override fun serialize(item: TypedInstance, schema: Schema): Any? {
       return if (!metadataEmitted) {
          metadataEmitted = true
-         modelFormatSpec.serializer.write(item, metadata, FirstTypedInstanceInfo)
+         modelFormatSpec.serializer.write(item, metadata, schema, FirstTypedInstanceInfo)
       } else {
-         modelFormatSpec.serializer.write(item, metadata)
+         modelFormatSpec.serializer.write(item, metadata, schema)
       }
 
    }
@@ -52,7 +53,7 @@ class ModelFormatSpecSerializer(
 
 class SerializedTypedInstanceSerializer(private val contentType: String?) : QueryResultSerializer {
    private val converter = TypedInstanceConverter(RawObjectMapper)
-   override fun serialize(item: TypedInstance): Any? {
+   override fun serialize(item: TypedInstance, schema: Schema): Any? {
       item.toSerializable()
       return when (contentType) {
          "application/json" -> converter.convert(item)
@@ -77,7 +78,7 @@ class FirstEntryMetadataResultSerializer(
    private val mapper = queryOptions.newObjectMapper()
 
    private var metadataEmitted: Boolean = false
-   override fun serialize(item: TypedInstance): Any {
+   override fun serialize(item: TypedInstance, schema: Schema): Any {
       val convertedValue = if (queryOptions.requiresCustomMapper) {
          // The custom mapper will apply query-specific options (such as omitting nulls)
          mapper.convertValue(converter.convert(item), Any::class.java)

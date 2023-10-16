@@ -56,7 +56,7 @@ class AwsS3SinkBuilder(private val connectionRegistry: AwsConnectionRegistry) :
             val targetType = schema.type(pipelineTransportSpec.targetType)
             val typedInstance = message.readAsTypedInstance(targetType, schema)
             val (metadata, _) = FormatDetector(listOf(CsvFormatSpec)).getFormatType(typedInstance.type)!!
-            (CsvFormatSpec.serializer.write(typedInstance, metadata) as String).replace("\r\n", "\n")
+            (CsvFormatSpec.serializer.write(typedInstance, metadata, schema) as String).replace("\r\n", "\n")
          }) as Sink<MessageContentProvider>
    }
 }

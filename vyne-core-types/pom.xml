@@ -22,6 +22,11 @@
 
    <dependencies>
       <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>taxi-stdlib-annotations</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.jetbrains.kotlinx</groupId>
          <artifactId>kotlinx-coroutines-core</artifactId>
       </dependency>

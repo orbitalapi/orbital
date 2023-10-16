@@ -21,6 +21,10 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.coroutines.test.runTest
+import lang.taxi.annotations.HttpService
+import lang.taxi.functions.stdlib.StdLib
+import lang.taxi.stdlib.StdLibSchema
+import lang.taxi.types.BuiltIns
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
@@ -115,7 +119,8 @@ fun testVyneWithStub(schema: String, invokerProvider: (TaxiSchema) -> List<Opera
 }
 
 fun testVyne(schemas: List<String>, invokerProvider: (TaxiSchema) -> List<OperationInvoker>): Vyne {
-   val schema = TaxiSchema.fromStrings(schemas)
+   // Note : We bake-in HttpService in our tests, as for years it was impicilty available
+   val schema = TaxiSchema.fromStrings(listOf(HttpService.asTaxi()) + schemas )
    val invokers = invokerProvider(schema)
    return testVyne(schema, invokers)
 }
@@ -159,6 +164,17 @@ fun testVyne(
       TaxiSchema.compileOrFail(schema, functionRegistry = functionRegistry),
       projectionProvider = projectionProvider
    )
+
+
+/**
+ * We built LOTS of tests with implicit @HttpOperation support.
+ * This method back-ports it into taxi schemas
+ */
+fun TaxiSchema.withBuiltIns(): TaxiSchema {
+   val sources = listOf(VersionedSource.sourceOnly(HttpService.asTaxi())) +
+      this.sources
+   return TaxiSchema.from(sources)
+}
 
 @ExperimentalTime
 @ExperimentalCoroutinesApi
@@ -1482,13 +1498,16 @@ service Broker2Service {
                   }
                 }
 
-      """)
+      """
+      )
       // Given
       val (vyne, stub) = testVyne(schema)
-      stub.addResponse("findOrders", vyne.parseJson(
-         "BankX.BankOrder[]",
-         """ [ { "buySellIndicator" : "BUY" }, { "buySellIndicator" : "SELL" } ] """.trimIndent()
-      ))
+      stub.addResponse(
+         "findOrders", vyne.parseJson(
+            "BankX.BankOrder[]",
+            """ [ { "buySellIndicator" : "BUY" }, { "buySellIndicator" : "SELL" } ] """.trimIndent()
+         )
+      )
 
 
       // When

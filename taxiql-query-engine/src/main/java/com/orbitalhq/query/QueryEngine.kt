@@ -290,7 +290,8 @@ class StatefulQueryEngine(
             anonymousTypes = targetType.anonymousTypes,
             queryId = context.queryId,
             responseType = targetType.fullyQualifiedName,
-            onCancelRequestHandler = { context.requestCancel() }
+            onCancelRequestHandler = { context.requestCancel() },
+            schema = schema
          )
       } else {
          QueryResult(
@@ -302,7 +303,8 @@ class StatefulQueryEngine(
             clientQueryId = context.clientQueryId,
             anonymousTypes = targetType.anonymousTypes,
             responseType = targetType.fullyQualifiedName,
-            onCancelRequestHandler = { context.requestCancel() }
+            onCancelRequestHandler = { context.requestCancel() },
+            schema = schema
          )
       }
    }
@@ -342,7 +344,8 @@ class StatefulQueryEngine(
          anonymousTypes = spec.anonymousTypes(),
          queryId = context.queryId,
          responseType = spec.type.paramaterizedName,
-         onCancelRequestHandler = { context.requestCancel() }
+         onCancelRequestHandler = { context.requestCancel() },
+         schema = schema
       )
    }
 
@@ -521,7 +524,8 @@ class StatefulQueryEngine(
          clientQueryId = context.clientQueryId,
          statistics = queryResult.statistics,
          responseType = context.responseType,
-         onCancelRequestHandler = { context.requestCancel() }
+         onCancelRequestHandler = { context.requestCancel() },
+         schema = schema
       )
 
    }
@@ -702,7 +706,8 @@ class StatefulQueryEngine(
          anonymousTypes = target.anonymousTypes(),
          statistics = statisticsFlow,
          responseType = context.responseType,
-         onCancelRequestHandler = { context.requestCancel() }
+         onCancelRequestHandler = { context.requestCancel() },
+         schema = schema
       )
 
    }

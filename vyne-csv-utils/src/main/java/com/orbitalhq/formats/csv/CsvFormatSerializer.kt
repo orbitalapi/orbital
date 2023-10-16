@@ -7,6 +7,7 @@ import com.orbitalhq.models.format.ModelFormatSerializer
 import com.orbitalhq.models.format.TypedInstanceInfo
 import com.orbitalhq.schemas.AttributeName
 import com.orbitalhq.schemas.Metadata
+import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import lang.taxi.accessors.ColumnAccessor
 import lang.taxi.types.ObjectType
@@ -15,7 +16,7 @@ import org.apache.commons.csv.CSVPrinter
 import java.io.StringWriter
 
 object CsvFormatSerializer : ModelFormatSerializer {
-   override fun write(result: TypedInstance, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo): Any? {
+   override fun write(result: TypedInstance, metadata: Metadata, schema: Schema, typedInstanceInfo: TypedInstanceInfo): Any? {
       val csvAnnotation = CsvFormatSpecAnnotation.from(metadata)
       return write(result, csvAnnotation, typedInstanceInfo)
    }

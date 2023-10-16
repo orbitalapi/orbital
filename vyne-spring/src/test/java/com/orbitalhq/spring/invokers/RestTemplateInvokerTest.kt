@@ -21,6 +21,7 @@ import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.typedObjects
 import com.orbitalhq.utils.Benchmark
 import com.orbitalhq.utils.StrategyPerformanceProfiler
+import com.orbitalhq.withBuiltIns
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -143,7 +144,7 @@ namespace vyne {
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(json)
       }
 
-      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}"))
+      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}")).withBuiltIns()
       val service = schema.service("vyne.ClientDataService")
       val operation = service.operation("getContactsForClient")
       val queryContext: QueryContext = mock { }
@@ -388,7 +389,7 @@ namespace vyne {
             .setBody("""{ "stuff" : "Right back atcha, kid" }""")
       }
 
-      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}"))
+      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}")).withBuiltIns()
       val service = schema.service("vyne.CreditCostService")
       val operation = service.operation("calculateCreditCosts")
 
@@ -445,7 +446,7 @@ namespace vyne {
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(responseJson)
       }
 
-      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}"))
+      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}")).withBuiltIns()
       val service = schema.service("vyne.PetService")
       val operation = service.operation("getPetById")
 
@@ -486,7 +487,7 @@ namespace vyne {
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody("""{ "id" : 100 }""")
       }
 
-      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}"))
+      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}")).withBuiltIns()
       val service = schema.service("vyne.PetService")
       val operation = service.operation("getPetById")
 
@@ -544,7 +545,7 @@ namespace vyne {
             name : String by jsonPath("$.animalName")
          }
       """
-      )
+      ).withBuiltIns()
 
       val service = schema.service("PetService")
       val operation = service.operation("getBestPet")
@@ -598,7 +599,7 @@ namespace vyne {
             name : String by jsonPath("$.animalName")
          }
       """
-      )
+      ).withBuiltIns()
 
       val service = schema.service("PetService")
       val operation = service.operation("getBestPet")

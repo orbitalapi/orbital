@@ -2,6 +2,7 @@ package com.orbitalhq.spring.http
 
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.schemas.RemoteOperation
+import lang.taxi.annotations.HttpOperation
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
@@ -14,9 +15,9 @@ interface HttpRequestFactory {
 
 class DefaultRequestFactory : HttpRequestFactory {
    override fun buildRequestBody(operation: RemoteOperation, parameters: List<TypedInstance>): HttpEntity<*> {
-      if (operation.hasMetadata("HttpOperation")) {
+      if (operation.hasMetadata(HttpOperation.NAME)) {
          // TODO Revisit as this is a quick hack to invoke services that returns simple/text
-         val httpOperation = operation.metadata("HttpOperation")
+         val httpOperation = operation.metadata(HttpOperation.NAME)
          httpOperation.params["consumes"]?.let {
             val httpHeaders = HttpHeaders()
             httpHeaders.accept = mutableListOf(MediaType.parseMediaType(it as String))

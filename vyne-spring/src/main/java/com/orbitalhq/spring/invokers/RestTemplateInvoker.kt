@@ -18,14 +18,13 @@ import com.orbitalhq.spring.http.DefaultRequestFactory
 import com.orbitalhq.spring.http.HttpRequestFactory
 import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.spring.http.auth.schemes.addAuthTokenAttributes
-import com.orbitalhq.spring.isServiceDiscoveryClient
+import com.orbitalhq.spring.query.formats.FormatSpecRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.annotations.HttpService
 import mu.KotlinLogging
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
@@ -49,6 +48,7 @@ class RestTemplateInvoker(
    val schemaProvider: SchemaProvider,
    val webClient: WebClient,
    private val requestFactory: HttpRequestFactory = DefaultRequestFactory(),
+   val formats: FormatSpecRegistry = FormatSpecRegistry.default(),
 ) : OperationInvoker {
    private val logger = KotlinLogging.logger {}
 
@@ -95,7 +95,7 @@ class RestTemplateInvoker(
    }
 
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
-      return service.isServiceDiscoveryClient() || operation.hasHttpMetadata()
+      return operation.hasHttpMetadata()
    }
 
    override suspend fun invoke(
@@ -108,7 +108,7 @@ class RestTemplateInvoker(
       logger.info { "Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}" }
 
       val (_, url, method) = operation.httpOperationMetadata()
-      val httpMethod = HttpMethod.valueOf(method)!!
+      val httpMethod = HttpMethod.valueOf(method)
       //val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation", OperationType.REMOTE_CALL) { httpInvokeOperation ->
 
       val absoluteUrl = prependServiceBaseUrl(service, url)
@@ -121,6 +121,8 @@ class RestTemplateInvoker(
 
       val expandedUri = defaultUriBuilderFactory.expand(absoluteUrl, uriVariables)
 
+      val contentType = getContentTypeFromResponseType(operation.returnType)
+
       //TODO - On upgrade to Spring boot 2.4.X replace usage of exchange with exchangeToFlow LENS-473
       val request = webClient
          .method(httpMethod)
@@ -129,7 +131,7 @@ class RestTemplateInvoker(
                .fromUriString(absoluteUrl)
             (queryParams?.let { uriBuilder.queryParams(it) } ?: uriBuilder).build(uriVariables)
          }
-         .contentType(MediaType.APPLICATION_JSON)
+         .contentType(contentType)
          .headers { consumer ->
             consumer.addAll(httpEntity.headers)
          }
@@ -142,7 +144,7 @@ class RestTemplateInvoker(
 
       val remoteCallId = UUID.randomUUID().toString()
       val results = request
-         .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
+         .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML)
          .exchange()
          .onErrorMap { error ->
             val remoteCall = RemoteCall(
@@ -279,6 +281,22 @@ class RestTemplateInvoker(
 
    }
 
+   private fun getContentTypeFromResponseType(returnType: Type): MediaType {
+      val formatSpec = formats.forType(returnType)
+      val mediaType = if (formatSpec != null) {
+         try {
+            MediaType.parseMediaType(formatSpec.mediaType)
+         } catch (e: Exception) {
+            logger.error { "Format spec ${formatSpec::class.simpleName} declares a media type of $${formatSpec.mediaType} which cannot be parsed to a standard MediaType" }
+            MediaType.APPLICATION_JSON
+         }
+
+      } else {
+         MediaType.APPLICATION_JSON // default to JSON
+      }
+      return mediaType
+   }
+
    private fun prependServiceBaseUrl(service: Service, url: String): String {
       val serviceMetadata = service.metadata.singleOrNull { it.name == HttpService.NAME.fqn() }
          ?.let { metadata -> HttpService.fromParams(metadata.params) }
@@ -328,7 +346,8 @@ class RestTemplateInvoker(
          result,
          schemaProvider.schema,
          source = operationResult.asOperationReferenceDataSource(),
-         evaluateAccessors = evaluateAccessors
+         evaluateAccessors = evaluateAccessors,
+         formatSpecs = formats.formats
       )
       return if (typedInstance is TypedCollection) {
          Flux.fromIterable(typedInstance.value)

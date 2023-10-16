@@ -113,7 +113,7 @@ jimmy|smitts|NULL"""
          )
       )
       val (metadata, _) = FormatDetector(listOf(CsvFormatSpec)).getFormatType(schema.type("Person"))!!
-      val generated = (CsvFormatSerializer.write(result, metadata) as String)
+      val generated = (CsvFormatSerializer.write(result, metadata, schema) as String)
          .replace("\r\n", "\n")
       val expected = """firstName|lastName|age
 jack|jackery|23
