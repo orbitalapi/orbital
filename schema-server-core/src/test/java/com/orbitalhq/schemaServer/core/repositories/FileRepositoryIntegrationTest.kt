@@ -9,6 +9,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.connectors.soap.SoapWsdlSourceConverter
+import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.rsocket.CBORJackson
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
@@ -236,6 +237,7 @@ class FileRepositoryIntegrationTest {
       // Can we load this to/from CBOR (for sending over rsocket)?
       val schema = schemaClient.schema()
       val schemaSet = SchemaSet.from(schema, 1)
+
       val bytes = CBORJackson.defaultMapper.writeValueAsBytes(schemaSet)
       val deserialized = CBORJackson.defaultMapper.readValue<SchemaSet>(bytes)
       deserialized.schema.additionalSources.shouldBe(schemaClient.schema().additionalSources)

@@ -16,14 +16,13 @@ object CsvAnnotationSpec {
       namespace ${NAME.namespace} {
 
          annotation ${NAME.name} {
-            delimiter : String?
-            firstRecordAsHeader : Boolean?
+            delimiter : String = ","
+            firstRecordAsHeader : Boolean = true
             nullValue : String?
-            containsTrailingDelimiters : Boolean?
-            ignoreContentBefore : String?
-            useFieldNamesAsColumnNames: Boolean?
-            withQuote: String?
-            recordSeparator: String?
+            containsTrailingDelimiters : Boolean = false
+            useFieldNamesAsColumnNames: Boolean = false
+            withQuote: String = '"'
+            recordSeparator: String = "\r\n"
          }
 
       }
@@ -67,6 +66,12 @@ class CsvFormatSpecAnnotation(
 
 
    companion object {
+      private val SEPERATOR_REPLACEMENTS = listOf(
+         "\\r" to "\r",
+         "\\n" to "\n",
+         "\\t" to "\t"
+      )
+
       fun from(metadata: Metadata): CsvFormatSpecAnnotation {
          require(metadata.name == CsvAnnotationSpec.NAME) { "Cannot parse ${CsvAnnotationSpec.NAME} from an annotation of type ${metadata.name}" }
          val delimiter = (metadata.params["delimiter"] as String?)?.let { delimiterStr ->
@@ -84,7 +89,15 @@ class CsvFormatSpecAnnotation(
          val containsTrailingDelimiters: Boolean = metadata.params["containsTrailingDelimiters"] as Boolean? ?: false
          val ignoreContentBefore = metadata.params["ignoreContentBefore"] as String?
          val useFieldNamesAsColumnNames = metadata.params["useFieldNamesAsColumnNames"] as Boolean? ?: false
-         val recordSeparator = metadata.params["recordSeparator"] as String? ?: "\r\n"
+         val recordSeparator = (metadata.params["recordSeparator"] as String? ?: "\r\n").let { value ->
+            // If the user has provided the string of \r, it's parsed as \\r, (to escape the sequence),
+            // but we actually want the raw sequence.
+            SEPERATOR_REPLACEMENTS.fold(value) { acc, replacements->
+               val (input, replacement) = replacements
+               acc.replace(input,replacement)
+            }
+         }
+
          return CsvFormatSpecAnnotation(
             delimiter,
             firstRecordAsHeader,

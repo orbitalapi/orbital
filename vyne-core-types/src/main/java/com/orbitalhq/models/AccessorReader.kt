@@ -6,6 +6,7 @@ import com.jayway.jsonpath.PathNotFoundException
 import com.orbitalhq.expressions.OperatorExpressionCalculator
 import com.orbitalhq.formulas.CalculatorRegistry
 import com.orbitalhq.models.conditional.ConditionalFieldSetEvaluator
+import com.orbitalhq.models.conditional.WhenBlockEvaluator
 import com.orbitalhq.formats.csv.CsvAttributeAccessorParser
 import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.FactDiscoveryStrategy
@@ -273,7 +274,11 @@ class AccessorReader(
                valueProjector.project(valueToProject, accessor.projection, projectionType, schema, nullValues, source, format, nullable, allowContextQuerying)
             }
          }
-
+         is WhenExpression -> {
+            WhenBlockEvaluator(
+               this.objectFactory, schema, this
+            ).evaluate(value, accessor, source, targetType, format)
+         }
          else -> {
             TODO("Support for accessor not implemented with type $accessor")
          }

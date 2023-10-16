@@ -12,12 +12,14 @@ import com.orbitalhq.formats.csv.CsvAnnotationSpec
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schema.publisher.SchemaPublisherService
 import com.orbitalhq.schemas.taxi.toMessage
+import lang.taxi.annotations.HttpService
 import mu.KotlinLogging
 
 object BuiltInTypesProvider {
    private val builtInSources = SourcePackage(
       PackageMetadata.from("com.orbitalhq", "core-types", "1.0.0"),
       listOf(
+         VersionedSource.unversioned("taxi.http", HttpService.asTaxi()),
          VersionedSource(
             "UserTypes",
             "0.1.0",

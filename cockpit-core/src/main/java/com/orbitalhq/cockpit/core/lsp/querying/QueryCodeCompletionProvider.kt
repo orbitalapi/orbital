@@ -8,16 +8,18 @@ import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.toTaxiQualifiedName
 import com.orbitalhq.schemas.toVyneQualifiedName
+import lang.taxi.TaxiParser.AnnotationContext
 import lang.taxi.TaxiParser.ArrayMarkerContext
-import lang.taxi.TaxiParser.ConditionalTypeStructureDeclarationContext
-import lang.taxi.TaxiParser.FactContext
+import lang.taxi.TaxiParser.ElementValueContext
+import lang.taxi.TaxiParser.ElementValuePairContext
 import lang.taxi.TaxiParser.FactDeclarationContext
 import lang.taxi.TaxiParser.FactListContext
 import lang.taxi.TaxiParser.FieldDeclarationContext
 import lang.taxi.TaxiParser.FieldTypeDeclarationContext
 import lang.taxi.TaxiParser.GivenBlockContext
 import lang.taxi.TaxiParser.IdentifierContext
-import lang.taxi.TaxiParser.OptionalTypeReferenceContext
+import lang.taxi.TaxiParser.LiteralContext
+import lang.taxi.TaxiParser.NullableTypeReferenceContext
 import lang.taxi.TaxiParser.ParameterConstraintContext
 import lang.taxi.TaxiParser.QualifiedNameContext
 import lang.taxi.TaxiParser.QueryDirectiveContext
@@ -28,23 +30,23 @@ import lang.taxi.TaxiParser.TypeProjectionContext
 import lang.taxi.TaxiParser.TypeReferenceContext
 import lang.taxi.TaxiParser.VariableNameContext
 import lang.taxi.lsp.CompilationResult
-import lang.taxi.lsp.completion.CompletionDecorator
-import lang.taxi.lsp.completion.CompletionProvider
-import lang.taxi.lsp.completion.ImportCompletionDecorator
-import lang.taxi.lsp.completion.TypeProvider
-import lang.taxi.lsp.completion.completed
+import lang.taxi.lsp.completion.*
 import lang.taxi.query.QueryMode
 import lang.taxi.searchUpForRule
+import lang.taxi.types.ImportableToken
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.Type
+import mu.KotlinLogging
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.Token
+import org.antlr.v4.runtime.tree.TerminalNode
 import org.eclipse.lsp4j.CompletionItem
 import org.eclipse.lsp4j.CompletionItemKind
 import org.eclipse.lsp4j.CompletionParams
 import org.eclipse.lsp4j.InsertTextFormat
 import org.eclipse.lsp4j.MarkupContent
 import org.eclipse.lsp4j.Position
+import org.eclipse.lsp4j.jsonrpc.messages.Either
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -52,6 +54,13 @@ import java.util.concurrent.CompletableFuture
  */
 class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, private val schema: Schema) :
    CompletionProvider {
+
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+
+   // The "normal" editor, not used when building queries
+   private val editorCompletionService = EditorCompletionService(typeProvider)
 
    private val topLevelQueryCompletionItems = listOf(
       "find" to "Query for a single item, or a list of items",
@@ -66,6 +75,8 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
          }
       }
 
+   private val functionCompletionProvider = FunctionCompletionProvider()
+
    override fun getCompletionsForContext(
       compilationResult: CompilationResult,
       params: CompletionParams,
@@ -77,6 +88,13 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
          return completed(topLevelQueryCompletionItems)
       }
 
+      val significantContext = editorCompletionService.getSignificantContext(contextAtCursor)
+      if (significantContext != contextAtCursor) {
+         return getCompletionsForContext(compilationResult, params, importDecorator, significantContext, lastSuccessfulCompilation)
+      }
+
+      val decorators = listOf(importDecorator)
+
       val completions = when (contextAtCursor) {
          is TypeProjectionContext -> {
             if (contextAtCursor.stop.text == "as") {
@@ -86,7 +104,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
                // If the source type is a collection...
                val sourceTypeIsCollection =
                   children.isNotEmpty() && children.filterIsInstance<FieldTypeDeclarationContext>().any {
-                     it.optionalTypeReference()?.typeReference()?.arrayMarker() != null
+                     it.nullableTypeReference()?.typeReference()?.arrayMarker() != null
                   }
                if (children.isNotEmpty()) {
                   buildAsCompletion(params, sourceTypeIsCollection)
@@ -121,34 +139,29 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
             suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
          }
 
+         is ElementValuePairContext -> {
+            editorCompletionService.provideAnnotationFieldCompletions(contextAtCursor, decorators, compilationResult)
+         }
+
          is FieldDeclarationContext,
+         is FieldTypeDeclarationContext,
          is TypeBodyContext,
          is IdentifierContext,
+         is ElementValueContext,
          is QualifiedNameContext -> {
-            // In tests, it looks like we could be either declaring a filter criteria here,
-            // or listing fields we want to add to the query.
-            if (contextAtCursor.searchUpForRule(ConditionalTypeStructureDeclarationContext::class.java) != null) {
-               suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
-            } else if (contextAtCursor.searchUpForRule<FactContext>() != null) {
-               schema.types
-                  // MP 27-Jul-23: Why did I think filtering for Scalars was a good idea?
-//                  .filter { it.isScalar }
-                  .map { type -> typeProvider.buildCompletionItem(type.taxiType, listOf(importDecorator)) }
+            // Check if we're inside an annotation declaration.
+
+            if (contextAtCursor.searchUpForRule<AnnotationContext>() != null &&
+               params.position.isBetween(
+                  contextAtCursor.searchUpForRule<AnnotationContext>()?.LPAREN()?.symbol,
+                  contextAtCursor.searchUpForRule<AnnotationContext>()?.RPAREN()?.symbol
+               )
+            ) {
+               annotationParameterCompletion(contextAtCursor, decorators, compilationResult)
             } else {
-               val typesInQuery = findTypesDeclaredInQuery(contextAtCursor, compilationResult)
-               // If the user has provided facts, (either in a Given clause, or in the body of the query),
-               // Then only suggest the types that are discoverable based on what they've provided.
-               if (typesInQuery.isNotEmpty()) {
-                  findModelsReturnsFromProvidedInputs(
-                     importDecorator,
-                     typesInQuery,
-                     includeModelAttributes = true
-                  )
-               } else {
-                  val queryMode = findQueryMode(contextAtCursor)
-                  findModelsReturnableFromNoArgServices(importDecorator, queryMode) +
-                     findModelsReturnableFromQueryOperations(importDecorator, queryMode)
-               }
+               val typeCompletions = typeCompletionItems(decorators)
+               val functionCompletions = functionCompletionProvider.buildFunctions(schema.taxi, decorators)
+               typeCompletions + functionCompletions
             }
          }
 
@@ -164,6 +177,20 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
       return completed(distinctCompletions)
    }
 
+   private fun annotationParameterCompletion(
+      contextAtCursor: ParserRuleContext,
+      decorators: List<ImportCompletionDecorator>,
+      compilationResult: CompilationResult
+   ): List<CompletionItem> {
+      return when (         contextAtCursor      ) {
+         is ElementValueContext -> {
+            // specifying the value of a an annotation field
+            editorCompletionService.provideAnnotationFieldValueCompletions(contextAtCursor, decorators, compilationResult)
+         }
+         else -> editorCompletionService.provideAnnotationFieldCompletions(contextAtCursor, decorators, compilationResult)
+      }
+   }
+
    private fun buildAsCompletion(params: CompletionParams, sourceTypeIsCollection: Boolean): List<CompletionItem> {
       return listOf(CompletionItem("{ ... } (Start a projection)").apply {
          kind = CompletionItemKind.Snippet
@@ -175,12 +202,37 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
       })
    }
 
+   /**
+    * Returns all types in the schema as CompletionItems
+    */
+   private fun typeCompletionItems(decorators: List<CompletionDecorator>): List<CompletionItem> {
+      return taxiTokensAsCompletionItems(schema.taxi.types, decorators) { it is Type && !it.anonymous }
+   }
+
+   private fun taxiTokensAsCompletionItems(
+      tokens: Collection<ImportableToken>,
+      decorators: List<CompletionDecorator>,
+      predicate: (ImportableToken) -> Boolean
+   ): List<CompletionItem> {
+      return tokens
+         .filter(predicate)
+         .mapNotNull { token ->
+            when (token) {
+               is Type -> typeProvider.buildCompletionItem(token, decorators)
+               else -> {
+                  logger.debug("Don't know how to build completion items for type ${token::class.simpleName}")
+                  null
+               }
+            }
+         }
+   }
+
    private fun suggestFilterTypes(
       contextAtCursor: ParserRuleContext,
       importDecorator: ImportCompletionDecorator,
       compilationResult: CompilationResult
    ): List<CompletionItem> {
-      val typeToFilterToken = contextAtCursor.searchUpForRule<OptionalTypeReferenceContext>()
+      val typeToFilterToken = contextAtCursor.searchUpForRule<NullableTypeReferenceContext>()
          ?: // Hmm... this shouldn't happen.
          return emptyList()
       val typeReferenceToken = typeToFilterToken.typeReference()
@@ -278,7 +330,7 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
          queryTypeList.fieldTypeDeclaration()
             .map { fieldTypeContext ->
                compilationResult.compiler.lookupTypeByName(
-                  fieldTypeContext.optionalTypeReference().typeReference()
+                  fieldTypeContext.nullableTypeReference().typeReference()
                )
             }
       } ?: emptyList()
@@ -393,7 +445,11 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
 
    private fun documentationDecorator(documentation: String): CompletionDecorator {
       return object : CompletionDecorator {
-         override fun decorate(typeName: QualifiedName, type: Type?, completionItem: CompletionItem): CompletionItem {
+         override fun decorate(
+            typeName: QualifiedName,
+            token: ImportableToken?,
+            completionItem: CompletionItem
+         ): CompletionItem {
             completionItem.setDocumentation(MarkupContent("markdown", documentation))
             return completionItem
          }
@@ -430,6 +486,25 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
       TODO()
    }
 
+}
+
+/**
+ * Indicates if a Position is between two tokens from the compiler.
+ * If either of the provided tokens are null, returns false
+ */
+private fun Position.isBetween(left: Token?, right: Token?): Boolean {
+   if (left == null || right == null) return false
+   val editorLine = this.line // zero-based
+   val startLine = (left.line - 1) // antlr lines are 1-based
+   val endLine = right.line - 1 // antrl lines are 1-based
+   if (editorLine !in startLine..endLine) return false
+   return when {
+      // On a line inbetween the start and end
+      this.line > startLine && this.line < endLine -> true
+      this.line == startLine -> this.character >= left.charPositionInLine
+      this.line == endLine -> this.character < right.charPositionInLine
+      else -> false
+   }
 }
 
 private fun Token.locationIsBeforeOrEqualTo(oneBasedLineNumber: Int, character: Int): Boolean {
