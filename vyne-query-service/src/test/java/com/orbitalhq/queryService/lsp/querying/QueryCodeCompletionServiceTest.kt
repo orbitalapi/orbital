@@ -64,6 +64,7 @@ class QueryCodeCompletionServiceTest {
    val schema = TaxiSchema.fromStrings(VyneQlGrammar.QUERY_TYPE_TAXI, taxi)
 
    @Test
+   @Ignore("removed this feature while we refactor code completions")
    fun `offers at clause when completing after the type list and selecting a single model`() {
       val documentService = documentServiceForSchema(taxi, schema = schema)
       val position = documentService.applyEdit("query", "find { Studio } as ")
@@ -80,6 +81,7 @@ class QueryCodeCompletionServiceTest {
 
 
    @Test
+   @Ignore("removed this feature while we refactor code completions")
    fun `offers at clause with an array marker when completing after the type list and selecting a list`() {
       val documentService = documentServiceForSchema(taxi, schema = schema)
       val position = documentService.applyEdit("query", "find { Studio[] } as ")
