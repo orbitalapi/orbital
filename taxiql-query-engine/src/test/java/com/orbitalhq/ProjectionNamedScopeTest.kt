@@ -4,6 +4,7 @@ import com.winterbe.expekt.should
 import io.kotest.matchers.nulls.shouldNotBeNull
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.parseJson
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
 import org.junit.Test
@@ -106,6 +107,34 @@ class ProjectionNamedScopeTest {
             )
          )
       )
+   }
+
+   @Test
+   fun `a projection can refine whats in scope`():Unit = runBlocking {
+      val (vyne,stub) = testVyne(
+         """
+            model Film {
+               title : Title inherits String
+               cast : Actor[]
+            }
+            model Actor {
+               name : Name inherits String
+            }
+            service FilmService {
+               operation getFilm():Film
+            }
+         """.trimIndent()
+      )
+      stub.addResponse("getFilm", vyne.parseJson("Film", """{
+         "title" : "Star Wars",
+          "cast" : [ { "name" : "Mark" } , { "name" : "Carrie" } ]
+           }"""))
+      val queryResult = vyne.query("""find { Film } as (actors:Actor[]) -> {
+         | actorName : Name
+         |}[]
+      """.trimMargin())
+         .rawObjects()
+      queryResult.shouldBe(listOf(mapOf("actorName" to "Mark"), mapOf("actorName" to "Carrie")))
    }
 
    @Test
