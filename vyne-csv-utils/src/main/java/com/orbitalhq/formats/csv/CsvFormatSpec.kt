@@ -8,7 +8,6 @@ import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.fqn
 import lang.taxi.TaxiDocument
 import lang.taxi.types.Annotation
-import org.apache.commons.lang3.StringEscapeUtils
 import java.io.Serializable
 
 object CsvAnnotationSpec {
@@ -22,7 +21,7 @@ object CsvAnnotationSpec {
             nullValue : String?
             containsTrailingDelimiters : Boolean = false
             useFieldNamesAsColumnNames: Boolean = false
-            withQuote: String = '"'
+            quoteChar: String = '"'
             recordSeparator: String = "\r\n"
          }
 
@@ -48,7 +47,7 @@ class CsvFormatSpecAnnotation(
     * as query results, but should be avoided on actual models.
     */
    val useFieldNamesAsColumnNames: Boolean = false,
-   val withQuote: Char? = '"',
+   val quoteChar: Char? = '"',
    val recordSeparator: String = "\r\n"
 ) : Serializable, AnnotationWrapper {
    override fun asAnnotation(schema: TaxiDocument): Annotation {
@@ -61,7 +60,7 @@ class CsvFormatSpecAnnotation(
       nullValue = nullValue?.let { setOf(it) } ?: emptySet(),
       containsTrailingDelimiters = containsTrailingDelimiters,
       ignoreContentBefore = ignoreContentBefore,
-      withQuote = withQuote,
+      withQuote = quoteChar,
       recordSeparator = recordSeparator
    )
 
@@ -79,7 +78,7 @@ class CsvFormatSpecAnnotation(
             if (delimiterStr == """\t""") '\t' else delimiterStr.toCharArray()[0]
          } ?: ','
 
-         val withQuote = when (val withQuoteStr = metadata.params["withQuote"] as String?) {
+         val withQuote = when (val withQuoteStr = metadata.params["quoteChar"] as String?) {
             null -> '"'
             "null" -> null
             else -> withQuoteStr[0]
