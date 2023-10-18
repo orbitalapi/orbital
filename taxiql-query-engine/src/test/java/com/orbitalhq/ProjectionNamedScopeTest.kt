@@ -82,6 +82,14 @@ class ProjectionNamedScopeTest {
          |     { "actorId" : 1 , "name" : "Mark Hamill" },
          |     { "actorId" : 2 , "name" : "Carrie Fisher" }
          |     ]
+         |  },
+         |  {
+         |  "title" : "Empire Strikes Back",
+         |  "headliner" : 1 ,
+         |  "cast": [
+         |     { "actorId" : 1 , "name" : "Mark Hamill" },
+         |     { "actorId" : 2 , "name" : "Carrie Fisher" }
+         |     ]
          |  }
          |]
       """.trimMargin()
@@ -98,15 +106,21 @@ class ProjectionNamedScopeTest {
             }[]
       """.trimMargin()
       )
-         .firstRawObject()
-      result.should.equal(
+         .rawObjects() as Any
+      result.should.equal(listOf(
          mapOf(
             "title" to "Star Wars",
             "star" to mapOf(
                "name" to "Mark Hamill", "title" to "Star Wars"
             )
+         ),
+         mapOf(
+            "title" to "Empire Strikes Back",
+            "star" to mapOf(
+               "name" to "Mark Hamill", "title" to "Empire Strikes Back"
+            )
          )
-      )
+      ))
    }
 
    @Test
@@ -129,12 +143,17 @@ class ProjectionNamedScopeTest {
          "title" : "Star Wars",
           "cast" : [ { "name" : "Mark" } , { "name" : "Carrie" } ]
            }"""))
-      val queryResult = vyne.query("""find { Film } as (actors:Actor[]) -> {
+      val queryResult = vyne.query("""find { Film } as (Actor[]) -> {
          | actorName : Name
+         | filmTitle : Title // should be null, as it's out-of-scope on Actor
          |}[]
       """.trimMargin())
          .rawObjects()
-      queryResult.shouldBe(listOf(mapOf("actorName" to "Mark"), mapOf("actorName" to "Carrie")))
+      queryResult.shouldBe(listOf(
+         // filmTitle is null, because it's out-of-scope
+         mapOf("actorName" to "Mark", "filmTitle" to null),
+         mapOf("actorName" to "Carrie", "filmTitle" to null)
+      ))
    }
 
    @Test

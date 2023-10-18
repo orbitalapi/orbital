@@ -401,7 +401,7 @@ class StatefulQueryEngine(
    private suspend fun mapTo(targetType: Type, typedInstance: TypedInstance, context: QueryContext): TypedInstance? {
 
       //paramitziedtype of
-      val transformationResult = context.only(typedInstance).build(targetType.fullyQualifiedName)
+      val transformationResult = context.only(typedInstance).build(targetType)
 
       return if (transformationResult.isFullyResolved) {
          val results = transformationResult.results.toList()

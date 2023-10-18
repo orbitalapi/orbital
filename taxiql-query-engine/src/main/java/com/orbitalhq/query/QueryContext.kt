@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.merge
 import kotlinx.serialization.Serializable
 import lang.taxi.accessors.ProjectionFunctionScope
+import lang.taxi.expressions.TypeExpression
 import lang.taxi.policies.Instruction
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
@@ -208,6 +209,7 @@ data class QueryContext(
    ): QueryResult =
       queryEngine.find(target, this.newSearchContext(), excludedOperations, failureBehaviour = failureBehaviour)
 
+   suspend fun build(type: Type):QueryResult = build(TypeQueryExpression(type))
    suspend fun build(typeName: QualifiedName): QueryResult = build(typeName.parameterizedName)
    suspend fun build(typeName: String): QueryResult =
       queryEngine.build(TypeNameQueryExpression(typeName), this.newSearchContext())
