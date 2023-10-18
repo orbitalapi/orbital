@@ -14,10 +14,11 @@ object XmlAnnotationSpec {
    val XmlAttributeName = XsdAnnotations.XML_ATTRIBUTE_TYPE.qualifiedName.fqn()
 
    val taxi = """
-      namespace ${NAME.namespace} {
-         annotation Xml {}
-      }
-   """.trimIndent()
+namespace ${NAME.namespace} {
+   annotation Xml {}
+}
+
+""" + XsdAnnotations.annotationsTaxiSource
 }
 
 object XmlFormatSpec : ModelFormatSpec {
