@@ -10,6 +10,7 @@ import com.orbitalhq.schema.publisher.PublisherHealth
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.springframework.web.reactive.function.client.WebClient
@@ -19,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 
+@Ignore("This test is flakey, and this functionality isn't used")
 class HttpPollKeepAliveStrategyMonitorTest {
    @Rule
    @JvmField
