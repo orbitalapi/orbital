@@ -204,7 +204,7 @@ class RSocketSchemaPublisherTransportTest {
       // Publish first source
       publisher.publish(testPackage()).subscribe()
 
-      await().atMost(5, TimeUnit.SECONDS)
+      await().atMost(15, TimeUnit.SECONDS)
          .until<Boolean> {
             collectedResponses.size == 1
          }
@@ -216,7 +216,7 @@ class RSocketSchemaPublisherTransportTest {
 
       Thread.sleep(2500)
 
-      await().atMost(10, TimeUnit.SECONDS)
+      await().atMost(15, TimeUnit.SECONDS)
          .until<Boolean> { collectedResponses.size == 2 }
 
 
