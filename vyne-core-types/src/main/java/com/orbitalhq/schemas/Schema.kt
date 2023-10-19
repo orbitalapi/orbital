@@ -58,9 +58,11 @@ interface Schema {
       get() = FunctionRegistry.default
 
    @get:JsonIgnore
-   val additionalSourcePaths: List<Pair<String, PathGlob>>
+   val additionalSourcePaths: List<Pair<SourcesType, PathGlob>>
       get() {
-         return emptyList()
+         return this.packages.flatMap { sourcePackage ->
+            sourcePackage.additionalSourcePaths
+         }
       }
 
    @get:JsonIgnore
@@ -75,7 +77,6 @@ interface Schema {
          }.groupBy({ it.first }, { it.second })
          return loadedSources
       }
-
 
    val operations: Set<Operation>
       get() = services.flatMap { it.operations }.toSet()

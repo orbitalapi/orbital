@@ -1,5 +1,7 @@
 package com.orbitalhq.schema.consumer
 
+import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.schema.api.SchemaPackageTransport
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.SchemaSetChangedEvent
@@ -30,4 +32,20 @@ interface SchemaStore: SchemaChangedEventProvider {
 
 interface SchemaChangedEventProvider {
    val schemaChanged: Publisher<SchemaSetChangedEvent>
+}
+
+interface SchemaTransportProvider {
+   fun getLoader(packageIdentifier: PackageIdentifier): SchemaPackageTransport
+   fun getLoaderOrNull(packageIdentifier: PackageIdentifier): SchemaPackageTransport?
+}
+
+object NullSchemaTransportProvider : SchemaTransportProvider{
+   override fun getLoader(packageIdentifier: PackageIdentifier): SchemaPackageTransport {
+      error("Not supported")
+   }
+
+   override fun getLoaderOrNull(packageIdentifier: PackageIdentifier): SchemaPackageTransport? {
+      return null
+   }
+
 }

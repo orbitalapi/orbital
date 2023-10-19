@@ -1,5 +1,6 @@
 package com.orbitalhq.schema.consumer
 
+import com.nhaarman.mockito_kotlin.mock
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import com.orbitalhq.PackageIdentifier

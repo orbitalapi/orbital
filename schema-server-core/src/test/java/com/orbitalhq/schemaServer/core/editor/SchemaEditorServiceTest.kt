@@ -7,7 +7,7 @@ import com.orbitalhq.PackageSourceName
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.consumer.SimpleSchemaStore
-import com.orbitalhq.schema.publisher.loaders.Changeset
+import com.orbitalhq.schema.api.Changeset
 import com.orbitalhq.schemaServer.core.file.deployProject
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
 import com.orbitalhq.schemaServer.editor.SaveQueryRequest

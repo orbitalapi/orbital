@@ -3,8 +3,16 @@ package com.orbitalhq.schemaServer.core.file.packages
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
-import com.orbitalhq.schema.publisher.PublisherType
-import com.orbitalhq.schema.publisher.loaders.*
+import com.orbitalhq.schema.api.AddChangesToChangesetResponse
+import com.orbitalhq.schema.api.AvailableChangesetsResponse
+import com.orbitalhq.schema.api.CreateChangesetResponse
+import com.orbitalhq.schema.api.FilePathPackageTransport
+import com.orbitalhq.schema.api.FinalizeChangesetResponse
+import com.orbitalhq.schema.api.PublisherType
+import com.orbitalhq.schema.api.SchemaPackageTransport
+import com.orbitalhq.schema.api.SchemaSourcesAdaptor
+import com.orbitalhq.schema.api.SetActiveChangesetResponse
+import com.orbitalhq.schema.api.UpdateChangesetResponse
 import com.orbitalhq.schemaServer.core.adaptors.taxi.TaxiSchemaSourcesAdaptor
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.utils.files.FileSystemChangeEvent
@@ -33,13 +41,15 @@ class FileSystemPackageLoader(
    // to act as the decorator to the underlying transport, and
    // do things like filter out uris etc
    private val transportDecorator: SchemaPackageTransport? = null
-) : SchemaPackageTransport {
+) : SchemaPackageTransport, FilePathPackageTransport {
 
    companion object {
       private val logger = KotlinLogging.logger {}
    }
    override val description: String = "FileLoader at ${config.path}"
    override val publisherType: PublisherType = PublisherType.FileSystem
+   override val path: Path
+      get() = config.path
 
    private val fileEvents: Flux<List<FileSystemChangeEvent>> = fileMonitor.startWatching()
 

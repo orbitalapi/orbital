@@ -1,7 +1,7 @@
 package com.orbitalhq.schemaServer.core.repositories.lifecycle
 
 import com.orbitalhq.PackageIdentifier
-import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
+import com.orbitalhq.schema.api.SchemaPackageTransport
 import com.orbitalhq.schemaServer.core.file.SourcesChangedMessage
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoader
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoader

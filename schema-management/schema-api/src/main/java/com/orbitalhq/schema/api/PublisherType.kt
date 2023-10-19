@@ -1,4 +1,4 @@
-package com.orbitalhq.schema.publisher
+package com.orbitalhq.schema.api
 
 enum class PublisherType {
    GitRepo,

@@ -11,11 +11,8 @@ import com.orbitalhq.cockpit.core.schemas.editor.operations.ChangeFieldType
 import com.orbitalhq.cockpit.core.schemas.editor.operations.ChangeOperationParameterType
 import com.orbitalhq.cockpit.core.schemas.editor.operations.CreateOrReplaceSource
 import com.orbitalhq.cockpit.core.schemas.editor.operations.SchemaEdit
-import com.orbitalhq.queryService.schemas.SubmitEditJson
 import com.orbitalhq.schema.publisher.PublisherHealth
-import com.orbitalhq.schema.publisher.PublisherType
-import com.orbitalhq.schemaServer.editor.SchemaEditRequest
-import com.orbitalhq.schemaServer.editor.SchemaEditResponse
+import com.orbitalhq.schema.api.PublisherType
 import com.orbitalhq.schemaServer.editor.SchemaEditorApi
 import com.orbitalhq.schemaServer.packages.PackageWithDescription
 import com.orbitalhq.schemaServer.packages.PackagesServiceApi

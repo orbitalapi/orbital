@@ -3,7 +3,13 @@ package com.orbitalhq.schemaServer.editor
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.PackageSourceName
 import com.orbitalhq.VersionedSource
-import com.orbitalhq.schema.publisher.loaders.*
+import com.orbitalhq.schema.api.AddChangesToChangesetResponse
+import com.orbitalhq.schema.api.AvailableChangesetsResponse
+import com.orbitalhq.schema.api.Changeset
+import com.orbitalhq.schema.api.CreateChangesetResponse
+import com.orbitalhq.schema.api.FinalizeChangesetResponse
+import com.orbitalhq.schema.api.SetActiveChangesetResponse
+import com.orbitalhq.schema.api.UpdateChangesetResponse
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.SavedQuery
 import lang.taxi.CompilationMessage

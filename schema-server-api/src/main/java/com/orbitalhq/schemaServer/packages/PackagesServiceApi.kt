@@ -5,7 +5,7 @@ import com.orbitalhq.PackageMetadata
 import com.orbitalhq.ParsedPackage
 import com.orbitalhq.UriSafePackageIdentifier
 import com.orbitalhq.schema.publisher.PublisherHealth
-import com.orbitalhq.schema.publisher.PublisherType
+import com.orbitalhq.schema.api.PublisherType
 import com.orbitalhq.schemas.PartialSchema
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -14,14 +14,14 @@ import reactivefeign.spring.config.ReactiveFeignClient
 import reactor.core.publisher.Mono
 
 data class SourcePackageDescription(
-   val identifier: PackageIdentifier,
-   val health: PublisherHealth,
-   val sourceCount: Int,
-   val warningCount: Int,
-   val errorCount: Int,
-   val publisherType: PublisherType,
-   val editable: Boolean,
-   val packageConfig: Any? // GitRepositoryConfig or  FileSystemPackageSpec
+    val identifier: PackageIdentifier,
+    val health: PublisherHealth,
+    val sourceCount: Int,
+    val warningCount: Int,
+    val errorCount: Int,
+    val publisherType: PublisherType,
+    val editable: Boolean,
+    val packageConfig: Any? // GitRepositoryConfig or  FileSystemPackageSpec
    // TODO : Other things for visualisation
 ) {
    val uriPath: String = PackageIdentifier.toUriSafeId(identifier)

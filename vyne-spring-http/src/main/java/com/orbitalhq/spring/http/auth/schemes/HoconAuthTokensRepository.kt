@@ -34,7 +34,7 @@ class HoconAuthTokensRepository(
       serviceName: String,
       token: AuthScheme
    ): SanitizedAuthScheme {
-      val writer = writers.getWriter(targetPackage)
+      val writer = writers.getWriter(targetPackage,"auth.conf")
       val existingValues = loadUnresolvedConfig(writer, targetPackage)
 
       // Note: calling asHocon(), which defers to the AuthScheme kotlin-specific
@@ -47,7 +47,7 @@ class HoconAuthTokensRepository(
          .withFallback(newConfig)
          .withFallback(existingValues)
 
-      writer.saveConfig(updated)
+      writer.saveConfig(targetPackage, updated)
       invalidateCache()
 
       return token.sanitized()

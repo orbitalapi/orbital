@@ -3,8 +3,8 @@ package com.orbitalhq.schemaServer.core.adaptors.taxi
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.schema.publisher.loaders.FileSchemaSourceProvider
-import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
-import com.orbitalhq.schema.publisher.loaders.SchemaSourcesAdaptor
+import com.orbitalhq.schema.api.SchemaPackageTransport
+import com.orbitalhq.schema.api.SchemaSourcesAdaptor
 import com.orbitalhq.toVynePackageIdentifier
 import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.packages.TaxiProjectLoader

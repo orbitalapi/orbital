@@ -4,6 +4,7 @@ import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.auth.schemes.AuthSchemeProvider
 import com.orbitalhq.auth.tokens.AuthTokenRepository
 import com.orbitalhq.config.FileConfigSourceLoader
+import com.orbitalhq.schema.consumer.NullSchemaTransportProvider
 import com.orbitalhq.schema.consumer.SchemaChangedEventProvider
 import com.orbitalhq.schema.consumer.SchemaConfigSourceLoader
 import com.orbitalhq.spring.config.EnvVariablesConfig
@@ -44,7 +45,7 @@ class HttpAuthConfig {
    fun configAuthTokenRepository(
       config: VyneHttpAuthConfig,
       eventProvider: SchemaChangedEventProvider,
-      envVariablesConfig: EnvVariablesConfig
+      envVariablesConfig: EnvVariablesConfig,
    ): HoconAuthTokensRepository {
       logger.info { "Using auth config file at ${config.configFile.toFile().canonicalPath}" }
       return HoconAuthTokensRepository(

@@ -37,6 +37,7 @@ import {
 import {TuiButtonModule, TuiTextfieldControllerModule} from '@taiga-ui/core';
 import {DbConnectionEditorDialogComponent} from './db-connection-editor-dialog.component';
 import {HeaderComponentLayoutModule} from 'src/app/header-component-layout/header-component-layout.module';
+import {ProjectSelectorModule} from "../project-selector/project-selector.module";
 
 const appearance: MatFormFieldDefaultOptions = {
   appearance: 'outline'
@@ -52,24 +53,25 @@ const appearance: MatFormFieldDefaultOptions = {
         FormsModule,
         MatButtonModule,
         AgGridModule.withComponents([TypeSelectorCellEditorComponent, CheckboxCellEditorComponent]),
-      TypeAutocompleteModule,
-      MatCheckboxModule,
-      CovalentDynamicFormsModule,
-      ReactiveFormsModule,
-      MatStepperModule,
-      MatProgressBarModule,
-      TypedEditorModule,
-      RouterModule,
-      MatMenuModule,
-      TuiInputModule,
-      TuiFieldErrorPipeModule,
-      TuiComboBoxModule,
-      TuiDataListWrapperModule,
-      TuiFilterByInputPipeModule,
-      TuiStringifyContentPipeModule,
-      TuiTextfieldControllerModule,
-      TuiButtonModule,
-      HeaderComponentLayoutModule
+        TypeAutocompleteModule,
+        MatCheckboxModule,
+        CovalentDynamicFormsModule,
+        ReactiveFormsModule,
+        MatStepperModule,
+        MatProgressBarModule,
+        TypedEditorModule,
+        RouterModule,
+        MatMenuModule,
+        TuiInputModule,
+        TuiFieldErrorPipeModule,
+        TuiComboBoxModule,
+        TuiDataListWrapperModule,
+        TuiFilterByInputPipeModule,
+        TuiStringifyContentPipeModule,
+        TuiTextfieldControllerModule,
+        TuiButtonModule,
+        HeaderComponentLayoutModule,
+        ProjectSelectorModule
     ],
   exports: [ConnectionEditorComponent, TableImporterComponent,
     DbConnectionWizardComponent,

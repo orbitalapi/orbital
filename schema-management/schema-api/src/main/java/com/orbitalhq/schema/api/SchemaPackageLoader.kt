@@ -1,13 +1,13 @@
-package com.orbitalhq.schema.publisher.loaders
+package com.orbitalhq.schema.api
 
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
-import com.orbitalhq.schema.publisher.PublisherType
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.net.URI
+import java.nio.file.Path
 import java.util.*
 
 
@@ -100,3 +100,6 @@ interface SchemaSourcesAdaptor {
    fun convert(packageMetadata: PackageMetadata, transport: SchemaPackageTransport): Mono<SourcePackage>
 }
 
+interface FilePathPackageTransport : SchemaPackageTransport {
+   val path: Path
+}

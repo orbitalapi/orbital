@@ -29,7 +29,8 @@ class ConnectionsConfiguration {
    fun configFileConnectorsRegistry(
       config: VyneConnectionsConfig,
       schemaStore: SchemaStore,
-      envVariablesConfig: EnvVariablesConfig
+      envVariablesConfig: EnvVariablesConfig,
+
    ): SourceLoaderConnectorsRegistry {
        return SourceLoaderConnectorsRegistry(
          listOf(

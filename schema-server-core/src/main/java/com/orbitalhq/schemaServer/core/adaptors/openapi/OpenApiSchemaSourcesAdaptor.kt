@@ -4,8 +4,8 @@ import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
-import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
-import com.orbitalhq.schema.publisher.loaders.SchemaSourcesAdaptor
+import com.orbitalhq.schema.api.SchemaPackageTransport
+import com.orbitalhq.schema.api.SchemaSourcesAdaptor
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import lang.taxi.generators.openApi.GeneratorOptions
 import lang.taxi.generators.openApi.TaxiGenerator

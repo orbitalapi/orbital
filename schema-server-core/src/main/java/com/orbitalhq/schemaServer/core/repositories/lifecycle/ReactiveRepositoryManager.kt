@@ -1,7 +1,8 @@
 package com.orbitalhq.schemaServer.core.repositories.lifecycle
 
 import com.orbitalhq.PackageIdentifier
-import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
+import com.orbitalhq.schema.api.SchemaPackageTransport
+import com.orbitalhq.schema.consumer.SchemaTransportProvider
 import com.orbitalhq.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
 import com.orbitalhq.schemaServer.core.adaptors.taxi.TaxiSchemaSourcesAdaptor
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
@@ -23,14 +24,14 @@ class ReactiveRepositoryManager(
    private val specEventSource: RepositorySpecLifecycleEventSource,
    private val eventDispatcher: RepositoryLifecycleEventDispatcher,
    private val repositoryEventSource: RepositoryLifecycleEventSource
-) {
+) : SchemaTransportProvider {
 
-   fun getLoaderOrNull(packageIdentifier: PackageIdentifier): SchemaPackageTransport? {
+   override fun getLoaderOrNull(packageIdentifier: PackageIdentifier): SchemaPackageTransport? {
       return loaders
          .firstOrNull { it.packageIdentifier.unversionedId == packageIdentifier.unversionedId }
    }
 
-   fun getLoader(packageIdentifier: PackageIdentifier): SchemaPackageTransport {
+   override fun getLoader(packageIdentifier: PackageIdentifier): SchemaPackageTransport {
       val loader = getLoaderOrNull(packageIdentifier)
          ?: error("No file loader exists for package ${packageIdentifier.unversionedId}")
 

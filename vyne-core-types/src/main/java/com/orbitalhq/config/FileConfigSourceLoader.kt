@@ -19,7 +19,7 @@ import kotlin.io.path.readText
 class FileConfigSourceLoader(
    private val configFilePath: Path,
    private val fileMonitor: ReactiveFileSystemMonitor = ReactiveWatchingFileSystemMonitor(configFilePath),
-   override val packageIdentifier: PackageIdentifier, /*= LOCAL_PACKAGE_IDENTIFIER, */
+   val packageIdentifier: PackageIdentifier, /*= LOCAL_PACKAGE_IDENTIFIER, */
    /**
     * Optionally pass a glob pattern if configFilePath is a directory
     */
@@ -37,6 +37,9 @@ class FileConfigSourceLoader(
 
       object CacheKey
    }
+
+   override val configFileName: String = configFilePath.fileName.toString()
+   override val packageIdentifiers: List<PackageIdentifier> = listOf(packageIdentifier)
 
    private val sink = Sinks.many().multicast().directBestEffort<Class<out ConfigSourceLoader>>()
    private val contentCache = ConcurrentHashMap<CacheKey, List<SourcePackage>>()
@@ -58,7 +61,7 @@ class FileConfigSourceLoader(
          }
    }
 
-   override fun saveConfig(updated: Config) {
+   override fun saveConfig(targetPackage: PackageIdentifier, updated: Config) {
       val configWithPlaceholderQuotesRemoved = updated.getSafeConfigString()
       if (!Files.exists(configFilePath)) {
          configFilePath.createFile()
@@ -68,7 +71,7 @@ class FileConfigSourceLoader(
       writeText(configFilePath, configWithPlaceholderQuotesRemoved)
    }
 
-   override fun save(source: VersionedSource) {
+   override fun save(targetPackage: PackageIdentifier, source: VersionedSource) {
       val path = if (glob == null) {
          require(source.name == configFilePath.toFile().name) { "This writer can only write to ${configFilePath.fileName}" }
          configFilePath

@@ -10,8 +10,10 @@ import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.packages.TaxiPackageSources
 import mu.KotlinLogging
 import java.io.Serializable
+import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Instant
 import kotlin.io.path.readText
 
@@ -37,6 +39,41 @@ data class PathGlob(val basePath: Path, val glob: String) {
          }
       return result
    }
+
+   /**
+    * Returns a path that points to the file within this basepath + glob
+    * config.
+    *
+    * eg: Given a base path of `/a/b/c`, and a glob of "config/ *.conf", then passing
+    * "env.conf" would result in `/a/b/c/config/env.conf`.
+    *
+    * Fails if the requested file does not match the configured glob,
+    * or if the glob path would make the requested file amgibuous.
+    *
+    */
+   fun resolveFileName(filename: String): Path {
+      val pathMatcher = FileSystems.getDefault().getPathMatcher("glob:$glob")
+
+
+      val parentPath = basePath.resolve(glob.substringBeforeLast("/"))
+      val resolvedPath = parentPath.resolve(filename)
+
+      if (glob.contains('*')) {
+         val stars = glob.filter { it == '*' }.count()
+         if (stars > 1 || glob.indexOf('*') != glob.lastIndexOf('*')) {
+            throw IllegalArgumentException("Path is ambiguous.")
+         }
+
+         val resolvedPathRelativeToBase = basePath.relativize(resolvedPath)
+
+         if (!pathMatcher.matches(resolvedPathRelativeToBase)) {
+            throw IllegalArgumentException("Requested filename ($filename) does not match the glob ($glob)")
+         }
+      }
+
+      return resolvedPath
+   }
+
 }
 
 @kotlinx.serialization.Serializable
@@ -53,6 +90,8 @@ data class SourcePackage(
     * Additional sources (eg., config, pipelines, extensions, etc).
     */
    val additionalSources: Map<SourcesType, List<VersionedSource>> = emptyMap(),
+
+   val additionalSourcePaths: List<Pair<SourcesType, PathGlob>> = emptyList()
 ) : Serializable {
    val identifier = packageMetadata.identifier
 
@@ -97,7 +136,7 @@ data class SourcePackage(
             }.values.toList()
             sourceType to sources
          }
-         return SourcePackage(packageMetadata, sources, additionalSources)
+         return SourcePackage(packageMetadata, sources, additionalSources, additionalSourcePaths)
       }
    }
 }

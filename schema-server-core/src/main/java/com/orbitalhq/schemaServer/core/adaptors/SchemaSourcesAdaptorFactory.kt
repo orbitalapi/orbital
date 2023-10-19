@@ -1,6 +1,6 @@
 package com.orbitalhq.schemaServer.core.adaptors
 
-import com.orbitalhq.schema.publisher.loaders.SchemaSourcesAdaptor
+import com.orbitalhq.schema.api.SchemaSourcesAdaptor
 import com.orbitalhq.schemaServer.core.adaptors.openapi.OpenApiSchemaSourcesAdaptor
 import com.orbitalhq.schemaServer.core.adaptors.soap.SoapSchemaSourcesAdaptor
 import com.orbitalhq.schemaServer.core.adaptors.taxi.TaxiSchemaSourcesAdaptor

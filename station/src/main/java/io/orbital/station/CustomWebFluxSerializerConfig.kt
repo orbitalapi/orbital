@@ -3,10 +3,14 @@ package io.orbital.station
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
+import org.springframework.http.codec.DecoderHttpMessageReader
 import org.springframework.http.codec.EncoderHttpMessageWriter
+import org.springframework.http.codec.HttpMessageReader
 import org.springframework.http.codec.HttpMessageWriter
 import org.springframework.http.codec.ServerCodecConfigurer
+import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
+import org.springframework.http.codec.json.KotlinSerializationJsonDecoder
 import org.springframework.http.codec.json.KotlinSerializationJsonEncoder
 import java.util.*
 
@@ -54,6 +58,23 @@ class CustomWebFluxSerializerConfig {
             Collections.swap(writers, jacksonWriterIndex, kotlinSerializationWriterIndex)
          }
          return writers
+      }
+
+      override fun getReaders(): MutableList<HttpMessageReader<*>> {
+         val readers = configurer.readers
+         val jacksonReaderIndex =
+            configurer.readers.indexOfFirst { it is DecoderHttpMessageReader && it.decoder is Jackson2JsonDecoder }
+         val kotlinSerializationReaderIndex =
+            configurer.readers.indexOfFirst { it is DecoderHttpMessageReader && it.decoder is KotlinSerializationJsonDecoder }
+
+         if (kotlinSerializationReaderIndex == -1 || jacksonReaderIndex == -1) {
+            return readers
+         }
+
+         if (kotlinSerializationReaderIndex < jacksonReaderIndex) {
+            Collections.swap(readers, jacksonReaderIndex, kotlinSerializationReaderIndex)
+         }
+         return readers
       }
    }
 }

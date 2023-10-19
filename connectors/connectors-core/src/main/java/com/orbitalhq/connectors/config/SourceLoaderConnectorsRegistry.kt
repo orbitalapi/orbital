@@ -20,7 +20,7 @@ import java.nio.file.Path
  * uses loaders, which supports pulling from schemas etc.
  */
 class SourceLoaderConnectorsRegistry(
-   loaders: List<ConfigSourceLoader>,
+   private val loaders: List<ConfigSourceLoader>,
    fallback: Config = ConfigFactory.systemEnvironment(),
 ) : MergingHoconConfigRepository<ConnectionsConfig>(loaders, fallback) {
 
@@ -47,13 +47,13 @@ class SourceLoaderConnectorsRegistry(
    fun load(): ConnectionsConfig = typedConfig()
 
    fun loadUnresolvedConfig(packageIdentifier: PackageIdentifier): Config {
-      val writer = writers.getWriter(packageIdentifier)
+      val writer = writers.getWriter(packageIdentifier,"connections.conf")
       return loadUnresolvedConfig(writer, packageIdentifier)
    }
 
    fun saveConfig(packageIdentifier: PackageIdentifier, config: Config) {
-      val writer = writers.getWriter(packageIdentifier)
-      writer.saveConfig(config)
+      val writer = writers.getWriter(packageIdentifier,"connections.conf")
+      writer.saveConfig(packageIdentifier, config)
       invalidateCache()
    }
 

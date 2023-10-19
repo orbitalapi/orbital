@@ -1,5 +1,6 @@
 package io.orbital.station
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.cockpit.core.DatabaseConfig
 import com.orbitalhq.cockpit.core.FeatureTogglesConfig
 import com.orbitalhq.cockpit.core.lsp.LanguageServerConfig
@@ -28,6 +29,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
+import org.springframework.http.codec.json.Jackson2JsonDecoder
 import java.util.concurrent.TimeUnit
 
 @SpringBootApplication(
@@ -72,6 +74,9 @@ class OrbitalStationApp {
 
    @Bean
    fun formatSpecRegistry(): FormatSpecRegistry = FormatSpecRegistry.default()
+
+   @Bean
+   fun jacksonJsonDecoder(mapper:ObjectMapper) = Jackson2JsonDecoder(mapper)
 
 
    @Autowired

@@ -91,7 +91,7 @@ class PipelineRepository(
 
    fun save(packageIdentifier: PackageIdentifier, pipelineSpec: PipelineSpec<*, *>) {
       // Used to write to file system, now defer to a writer to allow us to write a schema source too.
-      val writer = writers.firstOrNull { it.packageIdentifier == packageIdentifier }
+      val writer = writers.firstOrNull { it.packageIdentifiers.contains(packageIdentifier) }
          ?: error("Unable to find a writer to write to package ${packageIdentifier.id}")
       val pipelineSpecAsMap = mapper.convertValue<Map<String, Any>>(pipelineSpec)
       val config = pipelineSpecAsMap.toHocon()
@@ -100,7 +100,7 @@ class PipelineRepository(
       val source = VersionedSource(
          filename, packageIdentifier.version, hocon
       )
-      writer.save(source)
+      writer.save(packageIdentifier, source)
 //      val path = getPipelineFile(pipelineSpec)
 //      if (Files.exists(path)) {
 //         logger.info { "Overwriting pipeline definition at ${path.toFile().canonicalPath}" }

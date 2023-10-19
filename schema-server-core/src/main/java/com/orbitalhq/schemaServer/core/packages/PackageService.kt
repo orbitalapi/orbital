@@ -5,8 +5,8 @@ import com.orbitalhq.ParsedPackage
 import com.orbitalhq.UriSafePackageIdentifier
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schema.publisher.ExpiringSourcesStore
-import com.orbitalhq.schema.publisher.PublisherType
-import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
+import com.orbitalhq.schema.api.PublisherType
+import com.orbitalhq.schema.api.SchemaPackageTransport
 import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
 import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager

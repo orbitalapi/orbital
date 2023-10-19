@@ -1,6 +1,6 @@
 package com.orbitalhq.schemaServer.core.git
 
-import com.orbitalhq.schema.publisher.loaders.ChangesetOverview
+import com.orbitalhq.schema.api.ChangesetOverview
 import com.orbitalhq.schemaServer.core.git.providers.GitHostingProviderRegistry
 import mu.KotlinLogging
 import org.eclipse.jgit.api.*

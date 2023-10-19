@@ -11,6 +11,8 @@ import {FormControl, FormGroup, Validators} from '@angular/forms';
 // import {TuiInputModeT, TuiInputTypeT} from '@taiga-ui/cdk';
 import {isNullOrUndefined} from 'util';
 import {TuiInputMode, TuiInputType} from "@taiga-ui/cdk";
+import {PackagesService, SourcePackageDescription} from "../package-viewer/packages.service";
+import {Observable} from "rxjs/internal/Observable";
 
 export type ConnectionEditorMode = 'create' | 'edit';
 
@@ -67,10 +69,16 @@ export class ConnectionEditorComponent {
   @Output()
   connectionCreated = new EventEmitter<ConnectorSummary>();
 
+  packages$: Observable<SourcePackageDescription[]>
+  selectedPackage: SourcePackageDescription
+
   connectionDetails: FormGroup;
   driverParameters: FormGroup; // A nested formGroup within the driverParameters
 
-  constructor(private dbConnectionService: DbConnectionService) {
+  constructor(private dbConnectionService: DbConnectionService,
+              private packagesService: PackagesService,
+              ) {
+    this.packages$ = packagesService.listPackages();
     dbConnectionService.getDrivers()
       .subscribe(drivers => {
         // Being a little lazy here.  If we update this to not call the server all the time,
@@ -120,7 +128,7 @@ export class ConnectionEditorComponent {
           if (param.dataType === 'STRING' && param.sensitive) {
             textFieldType = 'password';
           } else if (param.dataType === 'NUMBER') {
-            textFieldMode = 'numeric';
+            // textFieldMode = 'numeric';
           } else if (param.dataType === 'BOOLEAN') {
             componentType = 'checkbox';
             textFieldType = null;
@@ -148,12 +156,12 @@ export class ConnectionEditorComponent {
 
 
   get isValid() {
-    return this.connectionDetails.valid;
+    return this.connectionDetails.valid && this.selectedPackage != null;
   }
 
   createConnection() {
     this.working = true;
-    this.dbConnectionService.createConnection(this.getConnectionConfiguration())
+    this.dbConnectionService.createConnection(this.getConnectionConfiguration(), this.selectedPackage.identifier)
       .subscribe(result => {
         this.working = false;
         this.testResult = {

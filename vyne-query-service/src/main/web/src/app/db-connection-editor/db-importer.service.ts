@@ -6,6 +6,7 @@ import {Injectable} from '@angular/core';
 import {VyneServicesModule} from '../services/vyne-services.module';
 import {SchemaSubmissionResult} from '../services/types.service';
 import {NewTypeSpec} from 'src/app/type-editor/new-type-spec';
+import {PackageIdentifier} from "../package-viewer/packages.service";
 
 
 export interface JdbcColumn {
@@ -92,19 +93,31 @@ export class DbConnectionService {
   }
 
   testConnection(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration | AwsConnectionConfiguration): Observable<any> {
-    const url = DbConnectionService.getConnectionUrl(connectionConfig);
+    const url = DbConnectionService.getTestConnectionUrl(connectionConfig);
     return this.http.post(`${environment.serverUrl}${url}?test=true`, connectionConfig);
   }
 
-  createConnection(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration | AwsConnectionConfiguration): Observable<ConnectorSummary> {
-    const url = DbConnectionService.getConnectionUrl(connectionConfig);
+  createConnection(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration | AwsConnectionConfiguration, selectedPackage: PackageIdentifier): Observable<ConnectorSummary> {
+    const url = DbConnectionService.getConnectionUrl(connectionConfig, selectedPackage);
     return this.http.post<ConnectorSummary>(`${environment.serverUrl}${url}`, connectionConfig);
   }
 
-  private static getConnectionUrl(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration): string {
+  private static getTestConnectionUrl(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration): string {
     switch (connectionConfig.connectionType) {
       case 'JDBC':
-        return '/api/connections/jdbc';
+        return `/api/connections/jdbc`;
+      case 'MESSAGE_BROKER':
+        return '/api/connections/message-broker';
+      case 'AWS':
+        return '/api/connections/aws';
+      case 'AZURE_STORAGE':
+        return '/api/connections/azure_storage';
+    }
+  }
+  private static getConnectionUrl(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration, selectedPackage: PackageIdentifier): string {
+    switch (connectionConfig.connectionType) {
+      case 'JDBC':
+        return `/api/packages/${selectedPackage.uriSafeId}/connections/jdbc`;
       case 'MESSAGE_BROKER':
         return '/api/connections/message-broker';
       case 'AWS':

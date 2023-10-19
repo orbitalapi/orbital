@@ -1,6 +1,11 @@
 package com.orbitalhq.cockpit.core.schemas.editor
 
-import com.orbitalhq.schema.publisher.loaders.*
+import com.orbitalhq.schema.api.AddChangesToChangesetResponse
+import com.orbitalhq.schema.api.AvailableChangesetsResponse
+import com.orbitalhq.schema.api.CreateChangesetResponse
+import com.orbitalhq.schema.api.FinalizeChangesetResponse
+import com.orbitalhq.schema.api.SetActiveChangesetResponse
+import com.orbitalhq.schema.api.UpdateChangesetResponse
 import com.orbitalhq.schemaServer.editor.*
 import com.orbitalhq.schemas.SavedQuery
 import com.orbitalhq.spring.config.ExcludeFromOrbitalStation

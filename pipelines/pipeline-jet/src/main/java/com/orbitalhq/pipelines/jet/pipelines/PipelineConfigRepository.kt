@@ -67,7 +67,7 @@ class PipelineConfigRepository(
 
    fun save(packageIdentifier: PackageIdentifier, pipelineSpec: PipelineSpec<*, *>) {
       // Used to write to file system, now defer to a writer to allow us to write a schema source too.
-      val writer = writers.firstOrNull { it.packageIdentifier == packageIdentifier }
+      val writer = writers.firstOrNull { it.packageIdentifiers.contains(packageIdentifier) }
          ?: error("Unable to find a writer to write to package ${packageIdentifier.id}")
       val pipelineList = PipelineSpecList(listOf(pipelineSpec))
       val pipelineSpecAsMap = mapper.convertValue<Map<String, Any>>(pipelineList)
@@ -77,7 +77,7 @@ class PipelineConfigRepository(
       val source = VersionedSource(
          filename, packageIdentifier.version, hocon
       )
-      writer.save(source)
+      writer.save(packageIdentifier, source)
    }
 
    fun deletePipeline(packageIdentifier: PackageIdentifier, pipelineSpec: PipelineSpec<*, *>) {

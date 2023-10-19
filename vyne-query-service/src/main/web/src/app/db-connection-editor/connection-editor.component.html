@@ -1,6 +1,11 @@
 <app-header-component-layout [title]="mode === 'create' ? 'Add new connection' : 'Edit connection'">
 
   <div class="form-container">
+    <app-project-selector
+      prompt="Select a project to save the connection to"
+      [packages]="packages$ | async"
+      [(ngModel)]="selectedPackage"
+    ></app-project-selector>
     <div class="form-body" [formGroup]="connectionDetails">
       <div class="tui-form-field">
         <tui-input [required]="true" formControlName="connectionName">Connection name</tui-input>

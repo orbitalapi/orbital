@@ -10,6 +10,7 @@ import com.orbitalhq.cockpit.core.schemas.editor.LocalSchemaEditingService
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.*
 import com.orbitalhq.connectors.jdbc.registry.JdbcConnectionRegistry
+import com.orbitalhq.connectors.jdbc.registry.SourceLoaderJdbcConnectionRegistry
 import com.orbitalhq.connectors.registry.ConnectorConfigurationSummary
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemaServer.editor.SchemaEditResponse
@@ -42,7 +43,7 @@ private val logger = KotlinLogging.logger {}
 @RestController
 class JdbcConnectorService(
     private val connectionFactory: JdbcConnectionFactory,
-    private val connectionRegistry: JdbcConnectionRegistry,
+    private val connectionRegistry: SourceLoaderJdbcConnectionRegistry,
     private val schemaProvider: SchemaProvider,
     private val schemaEditor: LocalSchemaEditingService
 ) {
@@ -230,13 +231,14 @@ class JdbcConnectorService(
     @PostMapping("/api/packages/{packageUri}/connections/jdbc")
     fun createConnection(
         @RequestBody connectionConfig: DefaultJdbcConnectionConfiguration,
-        @PathVariable("packageUri2") packageUri: String
+        @PathVariable("packageUri") packageUri: String
     ):
             Mono<ConnectorConfigurationSummary> {
-        testConnection(connectionConfig);
-        TODO("Not currently supported - need to migrate to package based writing")
-//        connectionRegistry.register(connectionConfig)
-//        return Mono.just(ConnectorConfigurationSummary(connectionConfig))
+        return testConnection(connectionConfig).map {
+           val packageIdentifier = PackageIdentifier.fromUriSafeId(packageUri)
+           connectionRegistry.register(packageIdentifier, connectionConfig)
+           ConnectorConfigurationSummary(connectionConfig)
+        }
     }
 }
 

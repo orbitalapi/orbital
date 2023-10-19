@@ -5,6 +5,7 @@ import com.orbitalhq.connectors.VyneConnectionsConfig
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.schema.consumer.SchemaConfigSourceLoader
 import com.orbitalhq.schema.consumer.SchemaStore
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
 import com.orbitalhq.spring.config.EnvVariablesConfig
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
@@ -17,7 +18,7 @@ class ConnectorsConfig {
    fun connectorsConfigRegistry(
       config: VyneConnectionsConfig,
       schemaStore: SchemaStore,
-      envVariablesConfig: EnvVariablesConfig
+      envVariablesConfig: EnvVariablesConfig,
    ): SourceLoaderConnectorsRegistry {
        return SourceLoaderConnectorsRegistry(
          listOf(

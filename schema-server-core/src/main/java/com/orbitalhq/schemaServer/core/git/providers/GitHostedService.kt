@@ -1,6 +1,6 @@
 package com.orbitalhq.schemaServer.core.git.providers
 
-import com.orbitalhq.schema.publisher.loaders.ChangesetOverview
+import com.orbitalhq.schema.api.ChangesetOverview
 import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
 import com.orbitalhq.schemaServer.repositories.git.GitHostingProvider
 

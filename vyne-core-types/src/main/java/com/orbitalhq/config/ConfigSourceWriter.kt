@@ -4,27 +4,27 @@ import com.typesafe.config.Config
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.VersionedSource
 
-
-// This isn't really implemented.
-// Pausing, as I think we just won't
-// support ui-based writes for Auth tokens
-// for a while
+/**
+ * Writes config
+ */
 interface ConfigSourceWriter : ConfigSourceLoader {
-   fun saveConfig(updated: Config)
-   fun save(source: VersionedSource)
+   fun saveConfig(targetPackage: PackageIdentifier, updated: Config)
+   fun save(targetPackage: PackageIdentifier, source: VersionedSource)
 
-   val packageIdentifier: PackageIdentifier
+   val packageIdentifiers: List<PackageIdentifier>
+   val configFileName : String
 }
 
 
-fun List<ConfigSourceWriter>.getWriter(targetPackage: PackageIdentifier): ConfigSourceWriter {
-   val writers = this.filter { it.packageIdentifier == targetPackage }
-   return writers.singleOrNull()
+fun List<ConfigSourceWriter>.getWriter(targetPackage: PackageIdentifier, filename: String): ConfigSourceWriter {
+   val writers = this.filter { it.packageIdentifiers.contains(targetPackage) }
+      .filter { it.configFileName == filename }
+   return writers.firstOrNull()
       ?: error("Expected to find exactly 1 writer for package ${targetPackage.id}, but found ${writers.size}")
 }
 
 fun List<ConfigSourceWriter>.hasWriter(targetPackage: PackageIdentifier): Boolean {
-   val writers = this.filter { it.packageIdentifier == targetPackage }
+   val writers = this.filter { it.packageIdentifiers.contains(targetPackage) }
    return writers.size == 1
 }
 
