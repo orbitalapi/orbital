@@ -10,6 +10,7 @@ import com.orbitalhq.query.history.HttpOperationNode
 import com.orbitalhq.query.history.KafkaOperationNode
 import com.orbitalhq.query.history.SankeyOperationNodeDetails
 import com.orbitalhq.schemas.*
+import lang.taxi.annotations.HttpOperation
 import mu.KotlinLogging
 
 /**
@@ -108,7 +109,7 @@ class LineageSankeyOperationNodeBuilder(private val schema: Schema) {
    }
 
    private fun isHttpApi(service: Service, operation: RemoteOperation): Boolean {
-      return operation.hasMetadata("HttpOperation")
+      return operation.hasMetadata(HttpOperation.NAME)
    }
 
    private fun buildHttpApi(
@@ -120,7 +121,7 @@ class LineageSankeyOperationNodeBuilder(private val schema: Schema) {
 
       // Use the address from the metadata, rather than the remote call,
       // as this is templated, and will be consistent between calls.
-      val path = operation.metadata("HttpOperation").params["url"] as String?
+      val path = operation.metadata(HttpOperation.NAME).params["url"] as String?
       if (path == null) {
          logger.warn { "Could not construct an Http node for ${operation.qualifiedName} as no HttpOperation url metadata was found" }
          return null

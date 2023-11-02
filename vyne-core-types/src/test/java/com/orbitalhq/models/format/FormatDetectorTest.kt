@@ -132,6 +132,8 @@ abstract class StubSpec : ModelFormatSpec {
       get() = TODO("Not yet implemented")
    override val serializer: ModelFormatSerializer
       get() = TODO("Not yet implemented")
+   override val mediaType: String
+      get() = TODO("Not yet implemented")
 }
 object FixModelSpec : StubSpec() {
    override val annotations: List<QualifiedName> = listOf("FixModel".fqn())

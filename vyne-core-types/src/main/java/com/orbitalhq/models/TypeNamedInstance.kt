@@ -18,7 +18,7 @@ data class TypeNamedInstance(
    val dataSourceId: String?
 ) {
    constructor(typeName: QualifiedName, value: Any?, source: DataSource? = null) : this(
-      typeName.fullyQualifiedName,
+       typeName.parameterizedName,
       value,
       source?.id
    )

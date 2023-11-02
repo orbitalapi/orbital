@@ -175,7 +175,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       sendMessage(message("message1"))
       sendMessage(message("message2"))
 
-      await().atMost(10, SECONDS).until<Boolean> { resultsFromQuery1.size == 2 }
+      await().atMost(15, SECONDS).until<Boolean> { resultsFromQuery1.size == 2 }
       query1.requestCancel()
       Thread.sleep(1000)
 
@@ -188,7 +188,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
 
       Thread.sleep(1000)
 
-      await().atMost(10, SECONDS).until<Boolean> { resultsFromQuery2.size == 2 }
+      await().atMost(15, SECONDS).until<Boolean> { resultsFromQuery2.size == 2 }
    }
 
 

@@ -5,7 +5,7 @@
    <parent>
       <artifactId>schema-management</artifactId>
       <groupId>com.orbitalhq</groupId>
-      <version>0.25.0-SNAPSHOT</version>
+      <version>0.26.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -19,17 +19,17 @@
       <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>schema-consumer-api</artifactId>
-         <version>0.25.0-SNAPSHOT</version>
+         <version>0.26.0-SNAPSHOT</version>
       </dependency>
       <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>schema-rsocket-common</artifactId>
-         <version>0.25.0-SNAPSHOT</version>
+         <version>0.26.0-SNAPSHOT</version>
       </dependency>
       <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>events-api</artifactId>
-         <version>0.25.0-SNAPSHOT</version>
+         <version>0.26.0-SNAPSHOT</version>
       </dependency>
       <dependency>
          <groupId>com.orbitalhq</groupId>

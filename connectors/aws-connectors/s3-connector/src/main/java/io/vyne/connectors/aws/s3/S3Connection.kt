@@ -2,8 +2,8 @@ package com.orbitalhq.connectors.aws.s3
 
 import com.orbitalhq.connectors.aws.configureWithExplicitValuesIfProvided
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
-import com.orbitalhq.models.csv.CsvFormatFactory
-import com.orbitalhq.models.csv.CsvFormatSpecAnnotation
+import com.orbitalhq.formats.csv.CsvFormatFactory
+import com.orbitalhq.formats.csv.CsvFormatSpecAnnotation
 import org.apache.commons.csv.CSVParser
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.S3ClientBuilder

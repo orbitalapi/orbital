@@ -1,7 +1,7 @@
 package com.orbitalhq.historyServer
 
 import com.orbitalhq.history.QueryAnalyticsConfig
-import com.orbitalhq.models.csv.CsvFormatSpec
+import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.query.history.VyneHistoryRecord
 import com.orbitalhq.schemas.readers.SourceConverterRegistry

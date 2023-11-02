@@ -9,6 +9,7 @@ import com.orbitalhq.query.runtime.FailedSearchResponse
 import com.orbitalhq.query.runtime.core.csv.toCsv
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.QueryOptions
+import com.orbitalhq.schemas.Schema
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import mu.KotlinLogging
@@ -49,7 +50,7 @@ class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private va
 
 
    @FlowPreview
-   private fun serialise(results: Flow<TypedInstance>, serializer: QueryResultSerializer): Flow<Any> {
+   private fun serialise(results: Flow<TypedInstance>, serializer: QueryResultSerializer, schema: Schema): Flow<Any> {
       return results
          .catch { error ->
             when (error) {
@@ -74,9 +75,9 @@ class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private va
             // This smells, because it could be indicative of a problem
             // higher in the stack.
             if (typedInstance is TypedCollection) {
-               typedInstance.map { serializer.serialize(it) }
+               typedInstance.map { serializer.serialize(it, schema) }
             } else {
-               listOf(serializer.serialize(typedInstance))
+               listOf(serializer.serialize(typedInstance, schema))
             }.filterNotNull()
                .asFlow()
 
@@ -149,7 +150,7 @@ class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private va
    ): Flow<Any> {
 
       val modelFormattedResult  =  tryGetModelFormatSerialiser(resultMode, queryResult)?.let {
-         serialise(queryResult.results, it)
+         serialise(queryResult.results, it, queryResult.schema)
       }
 
       return if (modelFormattedResult != null) {
@@ -157,9 +158,9 @@ class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private va
       } else {
          val serializer = getNonModelFormatSerialiser(contentType, queryResult, resultMode, queryOptions)
          when (contentType) {
-            TEXT_CSV -> toCsv(queryResult.results, serializer)
+            TEXT_CSV -> toCsv(queryResult.results, serializer, queryResult.schema)
             // Default everything else to JSON
-            else -> serialise(queryResult.results, serializer)
+            else -> serialise(queryResult.results, serializer, queryResult.schema)
          }
       }
    }

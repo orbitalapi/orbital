@@ -5,9 +5,9 @@ import com.orbitalhq.connectors.azure.blob.StreamProvider.Companion.typedInstanc
 import com.orbitalhq.connectors.azure.blob.registry.AzureStorageConnectorConfiguration
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.models.csv.CsvFormatFactory
-import com.orbitalhq.models.csv.CsvFormatSpec
-import com.orbitalhq.models.csv.CsvFormatSpecAnnotation
+import com.orbitalhq.formats.csv.CsvFormatFactory
+import com.orbitalhq.formats.csv.CsvFormatSpec
+import com.orbitalhq.formats.csv.CsvFormatSpecAnnotation
 import com.orbitalhq.models.format.FormatDetector
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type

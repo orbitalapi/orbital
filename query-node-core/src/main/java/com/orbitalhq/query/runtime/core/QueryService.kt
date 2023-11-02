@@ -296,7 +296,7 @@ class QueryService(
                   }
                }
                .map {
-                  resultSerializer.serialize(it)
+                  resultSerializer.serialize(it, queryResponse.schema)
                }
          }
 

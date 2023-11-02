@@ -23,6 +23,7 @@ import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.config.TestDiscoveryClientConfig
 import com.orbitalhq.spring.http.auth.ConfigFileAuthTokenRepository
 import com.orbitalhq.spring.http.auth.VyneHttpAuthConfig
+import com.orbitalhq.withBuiltIns
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
@@ -97,7 +98,7 @@ class OperationAuthenticationIntegrationTest : DatabaseTest() {
                operation findAllAddresses():Address[]
             }
          """
-      )
+      ).withBuiltIns()
       whenever(schemaProvider.schema).thenReturn(taxiSchema)
    }
 

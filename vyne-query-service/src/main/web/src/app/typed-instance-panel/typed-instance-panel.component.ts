@@ -8,8 +8,9 @@ import { Inheritable } from 'src/app/inheritence-graph/build.inheritable';
   template: `
     <div class="container" *ngIf="type">
       <div class="type-name">
-        <h2>{{instance?.value}}</h2>
-        <h4>{{type?.name?.name}}</h4>
+        <h2>{{type?.name?.name}}</h2>
+        <h3>{{instance?.value}}</h3>
+
         <span class="mono-badge">{{type?.name?.fullyQualifiedName}}</span>
       </div>
       <section>

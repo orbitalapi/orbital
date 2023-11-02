@@ -8,7 +8,7 @@ import com.orbitalhq.Vyne
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.models.csv.CsvFormatSpec
+import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseJsonModel
 import com.orbitalhq.schema.api.SchemaProvider
@@ -246,7 +246,7 @@ str2|2"""
 
       response.statusCodeValue.should.be.equal(200)
       response.headers["Content-Type"].should.equal(listOf("text/event-stream;charset=UTF-8"))
-      response.body.withoutWhitespace().should.equal(
+      response.body!!.withoutWhitespace().should.equal(
          """
             data:{"userId":"1010","userName":"jean-pierre"}
             data:{"userId":"2020","userName":"jean-paul"}
@@ -387,7 +387,7 @@ str2|2"""
       response.statusCodeValue.should.be.equal(200)
       response.headers["Content-Type"].should.equal(listOf("text/csv;charset=UTF-8"))
       assertEquals(
-         response.body.trimIndent(), """
+         response.body!!.trimIndent(), """
          userId,userName
          1010,jean-pierre
          2020,jean-paul
@@ -433,7 +433,7 @@ str2|2"""
          str1|1
          str2|2
          """.trimIndent(),
-         response.body.trimIndent()
+         response.body!!.trimIndent()
       )
    }
 

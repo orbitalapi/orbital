@@ -3,7 +3,7 @@ package com.orbitalhq.pipelines.jet.sink.aws.s3
 import com.hazelcast.jet.pipeline.Sink
 import com.orbitalhq.connectors.aws.configureWithExplicitValuesIfProvided
 import com.orbitalhq.connectors.aws.core.registry.AwsConnectionRegistry
-import com.orbitalhq.models.csv.CsvFormatSpec
+import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.models.format.FormatDetector
 import com.orbitalhq.pipelines.jet.api.transport.MessageContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportSpec
@@ -56,7 +56,7 @@ class AwsS3SinkBuilder(private val connectionRegistry: AwsConnectionRegistry) :
             val targetType = schema.type(pipelineTransportSpec.targetType)
             val typedInstance = message.readAsTypedInstance(targetType, schema)
             val (metadata, _) = FormatDetector(listOf(CsvFormatSpec)).getFormatType(typedInstance.type)!!
-            (CsvFormatSpec.serializer.write(typedInstance, metadata) as String).replace("\r\n", "\n")
+            (CsvFormatSpec.serializer.write(typedInstance, metadata, schema) as String).replace("\r\n", "\n")
          }) as Sink<MessageContentProvider>
    }
 }

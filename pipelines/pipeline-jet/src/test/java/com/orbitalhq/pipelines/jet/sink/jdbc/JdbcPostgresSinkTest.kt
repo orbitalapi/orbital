@@ -390,13 +390,13 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       val schemaSource = """
          model Person {
             @Id()
-            id : Id inherits String
+            id : PersonId inherits String
             firstName : FirstName inherits String
             lastName : LastName inherits String
          }
          model Target {
             @Id()
-            id : Id inherits String
+            id : PersonId inherits String
             givenName : FirstName
          }
       """
@@ -451,7 +451,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       val schemaSource = """
          model Person {
             @Id()
-            id : Id inherits String
+            id : DbId inherits String
          }
       """
       val testSetup = jetWithSpringAndVyne(

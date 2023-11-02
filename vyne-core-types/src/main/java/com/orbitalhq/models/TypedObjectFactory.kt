@@ -315,10 +315,16 @@ class TypedObjectFactory(
          // now what?
          val (metadata, modelFormatSpec) = metadataAndFormat
          if (modelFormatSpec.deserializer.parseRequired(value, metadata)) {
-            val parsed = modelFormatSpec.deserializer.parse(value, type, metadata, schema)
+            val parsedValue = modelFormatSpec.deserializer.parse(value, type, metadata, schema)
+            // When parsing CSV, we may provide the type as T, and get back T[]
+            val parsedType = if (parsedValue is Collection<*> && parsedValue.size > 1 && !type.isCollection) {
+               type.asArrayType()
+            } else {
+               type
+            }
             return TypedInstance.from(
-               type,
-               parsed,
+               parsedType,
+               parsedValue,
                schema,
                source = source,
                evaluateAccessors = evaluateAccessors,

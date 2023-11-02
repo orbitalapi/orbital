@@ -9,6 +9,7 @@ import lang.taxi.lsp.TaxiLanguageServer
 import lang.taxi.lsp.TaxiTextDocumentService
 import lang.taxi.lsp.completion.CompositeCompletionService
 import lang.taxi.lsp.sourceService.WorkspaceSourceServiceFactory
+import lang.taxi.packages.utils.log
 import org.eclipse.lsp4j.jsonrpc.RemoteEndpoint
 import org.eclipse.lsp4j.jsonrpc.json.JsonRpcMethod
 import org.eclipse.lsp4j.jsonrpc.json.MessageJsonHandler
@@ -58,7 +59,15 @@ class WebsocketSessionLanguageServer(
    val messages: Flux<String> = messageSink.asFlux()
 
    fun consume(message: String) {
-      remoteEndpoint.consume(jsonHandler.parseMessage(message))
+      try {
+         remoteEndpoint.consume(jsonHandler.parseMessage(message))
+      } catch (e:NullPointerException) {
+         if (e.message == """Cannot invoke "java.util.concurrent.CompletableFuture.thenAccept(java.util.function.Consumer)" because "future" is null""") {
+            // Do nothing. We see this error whenever a user closes a connection, and
+            // can't seem to find a way to prevent it.
+         }
+      }
+
    }
 
    init {

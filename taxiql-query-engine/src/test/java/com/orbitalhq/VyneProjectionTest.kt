@@ -1934,6 +1934,7 @@ service Broker1Service {
       }
 
    @Test
+   @Ignore("This syntax is deprecated, will revisit if/when needed")
    fun `should project to anonymous type containing an anonymously typed field`(): Unit = runBlocking {
       val (vyne, stubService) = testVyne(
          """

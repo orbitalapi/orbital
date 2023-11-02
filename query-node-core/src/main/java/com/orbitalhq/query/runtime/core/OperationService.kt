@@ -53,7 +53,7 @@ class OperationService(
             NoOpQueryContextEventDispatcher,
             invocationId
          )
-            .map { value: TypedInstance -> serialiser.serialize(value) }
+            .map { value: TypedInstance -> serialiser.serialize(value, schemaProvider.schema) }
             .filterNotNull()
          return ResponseEntity.ok(operationResult)
       } catch (e: OperationInvocationException) {

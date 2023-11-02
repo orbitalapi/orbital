@@ -1,14 +1,16 @@
 package com.orbitalhq.query.projection
 
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedNull
+import com.orbitalhq.models.ValueLookupReturnedNull
 import com.orbitalhq.models.facts.FactBag
+import com.orbitalhq.models.facts.FactDiscoveryStrategy
 import com.orbitalhq.models.facts.ScopedFact
 import com.orbitalhq.query.Projection
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.TypeQueryExpression
 import com.orbitalhq.query.VyneQueryStatistics
 import com.orbitalhq.schemas.Type
-import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import lang.taxi.accessors.CollectionProjectionExpressionAccessor
@@ -64,17 +66,29 @@ class LocalProjectionProvider : ProjectionProvider {
                   // It's an upstream problbem, but if we let it flow any further, we spend huge CPU cycles
                   // trying to project the wrong source type.
                   // TODO : Investigate the cause - I suspect it's coming from the Graph search strategy, when service invocation fails.
-                  val isProjectable = when (scope.type) {
+                  val isAssignable = when (scope.type) {
                      is ArrayType -> emittedType.taxiType.isAssignableTo((scope.type as ArrayType).memberType)
                      is StreamType -> emittedType.taxiType.isAssignableTo((scope.type as StreamType).type)
                      else -> emittedType.taxiType.isAssignableTo(scope.type)
                   }
-                  if (!isProjectable) {
-                     val message =
-                        "Projecting has received an invalid type - expected to receive an instance of ${scope.type.toVyneQualifiedName().shortDisplayName} but received an instance of ${emittedResult.value.type.qualifiedName.shortDisplayName}.  This is an error upstream."
-                     logger.error { message }
+
+                  val schema = context.schema
+                  if (!isAssignable) {
+                     val scopeType = schema.type(scope.type)
+                     val selectedFact = try {
+                        FactBag.of(emittedResult.value, schema)
+                           .getFact(scopeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
+                     } catch (e:Exception) {
+                        TypedNull.create(scopeType, source = ValueLookupReturnedNull(
+                           "Projection scope requested type ${scopeType.qualifiedName.shortDisplayName}, which was not found on the type of ${emittedResult.value.typeName}",
+                           scopeType.name
+                        ))
+                     }
+                     ScopedFact(scope, selectedFact)
+                  } else {
+                     ScopedFact(scope, emittedResult.value)
                   }
-                  ScopedFact(scope, emittedResult.value)
+
                } ?: null
 
                // If the projection scope was explicitly defined,

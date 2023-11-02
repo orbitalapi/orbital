@@ -13,7 +13,7 @@ import com.orbitalhq.history.rest.export.QueryHistoryExporter
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.models.csv.CsvFormatSpec
+import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.query.ProjectionAnonymousTypeProvider
 import com.orbitalhq.query.QueryResponse
@@ -58,7 +58,9 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
       historyRecordRepository = mock {
          on { findByQueryId(any()) } doThrow EmptyResultDataAccessException(1)
       }
-      queryExporter = QueryHistoryExporter(objectMapper, resultRowRepository, historyRecordRepository, schemaProvider, VyneQueryServiceExceptionProvider(), listOf(CsvFormatSpec))
+      queryExporter = QueryHistoryExporter(objectMapper, resultRowRepository, historyRecordRepository, schemaProvider, VyneQueryServiceExceptionProvider(), listOf(
+          CsvFormatSpec
+      ))
 
 
       queryExporter.export("fakeId", ExportFormat.CSV)
@@ -224,6 +226,8 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
       historyRecordRepository = mock {
          on { findByQueryId(any()) } doReturn querySummary
       }
-      queryExporter = QueryHistoryExporter(objectMapper, resultRowRepository, historyRecordRepository, schemaProvider, VyneQueryServiceExceptionProvider(), listOf(CsvFormatSpec))
+      queryExporter = QueryHistoryExporter(objectMapper, resultRowRepository, historyRecordRepository, schemaProvider, VyneQueryServiceExceptionProvider(), listOf(
+          CsvFormatSpec
+      ))
    }
 }

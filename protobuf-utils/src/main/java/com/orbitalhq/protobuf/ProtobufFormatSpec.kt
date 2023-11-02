@@ -1,5 +1,6 @@
 package com.orbitalhq.protobuf
 
+import com.google.common.net.MediaType
 import com.orbitalhq.models.format.ModelFormatDeserializer
 import com.orbitalhq.models.format.ModelFormatSerializer
 import com.orbitalhq.models.format.ModelFormatSpec
@@ -20,4 +21,5 @@ object ProtobufFormatSpec : ModelFormatSpec {
       get() = TODO("Not yet implemented")
    override val deserializer: ModelFormatDeserializer = ProtobufFormatDeserializer()
    override val annotations: List<QualifiedName> = listOf(ProtobufMessageAnnotation.NAME.fqn())
+   override val mediaType: String = MediaType.PROTOBUF.toString()
 }

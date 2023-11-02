@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.MapperFeature
 import io.micrometer.core.instrument.MeterRegistry
 import com.orbitalhq.connectors.soap.SoapWsdlSourceConverter
 import com.orbitalhq.history.AnalyticsConfig
-import com.orbitalhq.models.csv.CsvFormatSpec
+import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.query.TaxiJacksonModule
 import com.orbitalhq.query.VyneJacksonModule

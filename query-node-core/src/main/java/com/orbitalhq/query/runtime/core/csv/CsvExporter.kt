@@ -4,6 +4,7 @@ import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.query.QueryResultSerializer
+import com.orbitalhq.schemas.Schema
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flatMapConcat
@@ -14,7 +15,8 @@ import org.apache.commons.csv.CSVPrinter
 import java.util.concurrent.atomic.AtomicInteger
 
 
-fun toCsv(results: Flow<TypedInstance>, queryResultSerializer: QueryResultSerializer): Flow<CharSequence> {
+@Deprecated("This should be using the CsvFormatSpec")
+fun toCsv(results: Flow<TypedInstance>, queryResultSerializer: QueryResultSerializer, schema: Schema): Flow<CharSequence> {
 
    val indexTracker = AtomicInteger(0)
    val writer = StringBuilder()
@@ -33,7 +35,7 @@ fun toCsv(results: Flow<TypedInstance>, queryResultSerializer: QueryResultSerial
                   when (it) {
                      is TypedObject -> {
                         printer.printRecord(it.type!!.attributes.keys) //The header
-                        printer.printRecord((queryResultSerializer.serialize(it) as Map<*, *>).map { e -> e.value})
+                        printer.printRecord((queryResultSerializer.serialize(it, schema) as Map<*, *>).map { e -> e.value})
                         val csvRecord = writer.toString()
                         writer.clear()
                         csvRecord
@@ -45,7 +47,7 @@ fun toCsv(results: Flow<TypedInstance>, queryResultSerializer: QueryResultSerial
                else -> {
                   when (it) {
                      is TypedObject -> {
-                        printer.printRecord( (queryResultSerializer.serialize(it) as Map<*,*>).map { e -> e.value})
+                        printer.printRecord( (queryResultSerializer.serialize(it, schema) as Map<*,*>).map { e -> e.value})
                         val csvRecord = writer.toString()
                         writer.clear()
                         csvRecord

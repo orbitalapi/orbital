@@ -17,7 +17,7 @@ import com.orbitalhq.history.noop.NoopQueryEventConsumerConfiguration
 import com.orbitalhq.history.remote.RemoteHistoryConfig
 import com.orbitalhq.history.rest.QueryHistoryRestConfig
 import com.orbitalhq.licensing.LicenseConfig
-import com.orbitalhq.models.csv.CsvFormatSpec
+import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.monitoring.EnableCloudMetrics
 import com.orbitalhq.pipelines.jet.api.PipelineApi

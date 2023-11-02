@@ -39,14 +39,14 @@ import { map, scan, tap } from 'rxjs/operators';
           <img src="assets/img/tabler/code-dots.svg" class="tab-icon">
           Raw
         </button>
-        <button tuiTab>
+        <button tuiTab *ngIf="profilerEnabled">
           <img src="assets/img/tabler/gauge.svg" class="tab-icon">
           Profiler
         </button>
       </tui-tabs>
       <div class="spacer"></div>
       <tui-hosted-dropdown
-        *ngIf="showResultsPanel"
+          *ngIf="showResultsPanel && downloadSupported"
         tuiDropdownAlign="left"
         [content]="dropdown"
         [(open)]="downloadMenuOpen"
@@ -120,6 +120,9 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   activeTabIndex: number = 0;
   @Input()
   downloadSupported = true;
+
+  @Input()
+  profilerEnabled: boolean = true;
 
   @Output()
   loadProfileData = new EventEmitter();

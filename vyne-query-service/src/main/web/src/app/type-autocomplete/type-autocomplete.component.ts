@@ -7,6 +7,10 @@ import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {FloatLabelType, MatFormFieldAppearance, MatFormFieldControl} from '@angular/material/form-field';
 import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 
+/**
+ * Consider using type-autocomplete-tui instead, which is built on top of Taiga UI, and
+ * gives a more consistent look & feel
+ */
 @Component({
   selector: 'app-type-autocomplete',
   styleUrls: ['./type-autocomplete.component.scss'],

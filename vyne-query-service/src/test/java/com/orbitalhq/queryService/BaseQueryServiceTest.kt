@@ -9,7 +9,7 @@ import com.orbitalhq.Vyne
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.history.db.QueryHistoryDbWriter
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.models.csv.CsvFormatSpec
+import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseJsonModel
 import com.orbitalhq.models.json.parseKeyValuePair

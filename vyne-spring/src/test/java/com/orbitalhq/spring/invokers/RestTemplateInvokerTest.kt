@@ -21,6 +21,8 @@ import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.typedObjects
 import com.orbitalhq.utils.Benchmark
 import com.orbitalhq.utils.StrategyPerformanceProfiler
+import com.orbitalhq.withBuiltIns
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -143,7 +145,7 @@ namespace vyne {
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(json)
       }
 
-      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}"))
+      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}")).withBuiltIns()
       val service = schema.service("vyne.ClientDataService")
       val operation = service.operation("getContactsForClient")
       val queryContext: QueryContext = mock { }
@@ -388,7 +390,7 @@ namespace vyne {
             .setBody("""{ "stuff" : "Right back atcha, kid" }""")
       }
 
-      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}"))
+      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}")).withBuiltIns()
       val service = schema.service("vyne.CreditCostService")
       val operation = service.operation("calculateCreditCosts")
 
@@ -445,7 +447,7 @@ namespace vyne {
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(responseJson)
       }
 
-      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}"))
+      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}")).withBuiltIns()
       val service = schema.service("vyne.PetService")
       val operation = service.operation("getPetById")
 
@@ -486,7 +488,7 @@ namespace vyne {
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody("""{ "id" : 100 }""")
       }
 
-      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}"))
+      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}")).withBuiltIns()
       val service = schema.service("vyne.PetService")
       val operation = service.operation("getPetById")
 
@@ -544,7 +546,7 @@ namespace vyne {
             name : String by jsonPath("$.animalName")
          }
       """
-      )
+      ).withBuiltIns()
 
       val service = schema.service("PetService")
       val operation = service.operation("getBestPet")
@@ -598,7 +600,7 @@ namespace vyne {
             name : String by jsonPath("$.animalName")
          }
       """
-      )
+      ).withBuiltIns()
 
       val service = schema.service("PetService")
       val operation = service.operation("getBestPet")
@@ -754,6 +756,36 @@ namespace vyne {
          assertEquals("/people?apiKey=hello", request.path)
          assertEquals(HttpMethod.GET.name(), request.method)
       }
+   }
+
+   @Test
+   fun `request body is populated on request`(): Unit = runBlocking{
+      val vyne = testVyne("""
+         type PersonId inherits String
+         parameter model PersonRequest {
+            id : PersonId
+         }
+         model Person {
+            name : Name inherits String
+         }
+          service PersonService {
+            @HttpOperation(method = "POST", url = "http://localhost:${server.port}/person")
+            operation getPerson(@RequestBody PersonRequest):Person
+          }
+      """, invoker = Invoker.RestTemplate)
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""{ "name" : "Jimmy" }""")
+      }
+      val result = vyne.query("""given { PersonId = "1" } find { Person }""")
+         .rawObjects()
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals(HttpMethod.POST.name(), request.method)
+         val requestBody = String(request.body.readByteArray())
+         requestBody.shouldBe("""{"id":"1"}""")
+      }
+
    }
 
    @Test

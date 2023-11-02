@@ -142,6 +142,18 @@ export interface CompilationMessage {
   severity: 'INFO' | 'WARNING' | 'ERROR';
 }
 
+export function groupBySource(messages: CompilationMessage[]): Map<string, CompilationMessage[]> {
+    return messages.reduce((acc, message) => {
+        const group = acc.get(message.sourceName)
+        if (!group) {
+            acc.set(message.sourceName, [message])
+        } else {
+            group.push(message)
+        }
+        return acc;
+    }, new Map<string, CompilationMessage[]>())
+}
+
 export interface ParsedSource {
   source: VersionedSource;
   errors: CompilationMessage[];

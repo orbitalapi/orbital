@@ -5,7 +5,7 @@ import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import com.orbitalhq.firstRawObject
 import com.orbitalhq.firstTypedObject
-import com.orbitalhq.models.csv.CsvFormatSpec
+import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.testVyne
 import kotlinx.coroutines.runBlocking
 import org.junit.Ignore

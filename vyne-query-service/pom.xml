@@ -4,7 +4,7 @@
    <parent>
       <groupId>com.orbitalhq</groupId>
       <artifactId>platform</artifactId>
-      <version>0.25.0-SNAPSHOT</version>
+      <version>0.26.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -82,15 +82,7 @@
          <artifactId>history-service</artifactId>
          <version>${project.version}</version>
       </dependency>
-      <!-- some tests are failing with NoClassDefFound org/json/JSONException
-      because of an undeclared dependency..somewhere.  Only seems to happen in tests though.
-      -->
-      <dependency>
-         <groupId>org.json</groupId>
-         <artifactId>json</artifactId>
-         <version>20230618</version>
-         <scope>test</scope>
-      </dependency>
+
       <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>history-persistence</artifactId>
@@ -297,7 +289,7 @@
       <dependency>
          <groupId>org.json</groupId>
          <artifactId>json</artifactId>
-         <version>20230618</version>
+         <version>20231013</version>
          <scope>test</scope>
       </dependency>
       <dependency>

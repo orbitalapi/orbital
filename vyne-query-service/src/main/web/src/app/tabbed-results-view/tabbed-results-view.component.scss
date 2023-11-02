@@ -1,5 +1,10 @@
 @import "src/theme";
 
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
 .tab-icon {
   margin-right: 0.6rem;
   width: 1.2rem;

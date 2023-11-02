@@ -1,5 +1,6 @@
 package com.orbitalhq.models.format
 
+import com.google.common.net.MediaType
 import com.orbitalhq.models.TypeNamedInstance
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.schemas.AttributeName
@@ -26,10 +27,17 @@ interface ModelFormatSpec {
    val serializer: ModelFormatSerializer
    val deserializer: ModelFormatDeserializer
    val annotations: List<QualifiedName>
+
+   // REturns a MIME Type / Content type (eg: application/json).
+   // Consider using Guava MediaType in implementations
+   val mediaType: String
 }
 
 interface ModelFormatSerializer {
-   fun write(result: TypedInstance, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
+
+   // TODO :  These method signatures aren't well defined, and are leaking implementation details. Should be:
+   // fun write(result: TypedInstance, schema: Schema):Any?
+   fun write(result: TypedInstance, metadata: Metadata, schema: Schema, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
    fun write(result: TypeNamedInstance, attributes: Set<AttributeName>, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
    fun write(result: TypeNamedInstance, type: Type, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
 }
@@ -41,6 +49,9 @@ interface ModelFormatDeserializer {
     */
    fun parseRequired(value: Any, metadata: Metadata): Boolean
 
+   /**
+    * Should return either List<Map<String,Any>> or Map<String,Any>, or a TypedInstance
+    */
    fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema): Any
 
 }

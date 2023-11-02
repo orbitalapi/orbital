@@ -50,7 +50,7 @@ import {isScalar} from "../object-view/object-view.component";
 })
 export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
-  constructor(private service: CaskService, private changeDetector: ChangeDetectorRef) {
+  constructor(private changeDetector: ChangeDetectorRef) {
     super();
   }
 
@@ -182,7 +182,6 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     } else {
       const attributeNames = Object.keys(instanceValue);
       const columnDefinitions = attributeNames.map((fieldName, index) => {
-        const cellRenderer = (fieldName === 'caskMessageId') ? this.downloadLinkRender() : null;
         return {
           resizable: true,
           headerName: fieldName,
@@ -190,28 +189,10 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
           valueGetter: (params: ValueGetterParams) => {
             return this.unwrap(params.data, fieldName);
           },
-          cellRenderer: cellRenderer
         };
       });
       this.columnDefs = columnDefinitions;
     }
-  }
-
-  private downloadLinkRender(): ICellRendererFunc {
-    const urlFunc = this.service.downloadIngestedMessageUrl;
-    return function (params) {
-      const keyData = params && params.data && params.data.caskMessageId ? params.data.caskMessageId : '';
-      const newLink = `<a href="${urlFunc(keyData)}" target="_blank">${keyData}</a>`;
-      return newLink;
-    };
-  }
-
-  private getAttributes(type: Type): string[] {
-    const itemType = (type.collectionType !== null
-      && type.collectionType !== undefined) ?
-      type.collectionType
-      : type;
-    return Object.keys(itemType.attributes);
   }
 
   private unwrap(instance: any, fieldName: string | null): any {

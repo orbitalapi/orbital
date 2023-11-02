@@ -8,9 +8,9 @@ import com.hazelcast.spring.context.SpringAware
 import com.orbitalhq.connectors.aws.configureWithExplicitValuesIfProvided
 import com.orbitalhq.connectors.aws.core.registry.AwsConnectionRegistry
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
-import com.orbitalhq.models.csv.CsvFormatFactory
-import com.orbitalhq.models.csv.CsvFormatSpec
-import com.orbitalhq.models.csv.CsvFormatSpecAnnotation
+import com.orbitalhq.formats.csv.CsvFormatFactory
+import com.orbitalhq.formats.csv.CsvFormatSpec
+import com.orbitalhq.formats.csv.CsvFormatSpecAnnotation
 import com.orbitalhq.models.format.FormatDetector
 import com.orbitalhq.pipelines.jet.api.transport.*
 import com.orbitalhq.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
@@ -244,9 +244,9 @@ class PollingSqsOperationSourceContext(
    }
 
    private fun feedAsCsvRecord(
-      inputStream: InputStream,
-      csvModelFormatAnnotation: CsvFormatSpecAnnotation,
-      etag: String
+       inputStream: InputStream,
+       csvModelFormatAnnotation: CsvFormatSpecAnnotation,
+       etag: String
    ) {
       val csvFormat = CsvFormatFactory.fromParameters(csvModelFormatAnnotation.ingestionParameters)
       val parser = csvFormat.parse(inputStream.bufferedReader())

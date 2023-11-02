@@ -1,0 +1,54 @@
+@import "~/src/theme";
+
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+.grow {
+  flex-grow: 1;
+}
+
+::ng-deep.t-title {
+  font-size: 0.8rem !important;
+}
+
+.no-errors {
+  padding: 1rem;
+}
+
+tui-accordion::ng-deep {
+  .t-content {
+    padding: 0 !important;
+  }
+}
+
+.accordion-header {
+  display: flex;
+  align-items: center;
+
+  img {
+    opacity: 0.7;
+    width: 20px;
+    margin-right: 1rem;
+  }
+}
+
+.error-row {
+  display: flex;
+  align-items: center;
+
+  font-size: 0.8rem;
+  color: $slate-800;
+
+  border-bottom: 1px solid $slate-300;
+  padding: 0.5rem;
+
+  .message-line {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0 1rem;
+  }
+}

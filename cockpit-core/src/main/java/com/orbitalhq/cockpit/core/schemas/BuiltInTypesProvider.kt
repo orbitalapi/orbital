@@ -8,16 +8,19 @@ import com.orbitalhq.connectors.aws.sqs.SqsConnectorTaxi
 import com.orbitalhq.connectors.azure.blob.AzureStoreConnectionTaxi
 import com.orbitalhq.connectors.jdbc.JdbcConnectorTaxi
 import com.orbitalhq.connectors.kafka.KafkaConnectorTaxi
-import com.orbitalhq.models.csv.CsvAnnotationSpec
+import com.orbitalhq.formats.csv.CsvAnnotationSpec
+import com.orbitalhq.formats.xml.XmlAnnotationSpec
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schema.publisher.SchemaPublisherService
 import com.orbitalhq.schemas.taxi.toMessage
+import lang.taxi.annotations.HttpService
 import mu.KotlinLogging
 
 object BuiltInTypesProvider {
    private val builtInSources = SourcePackage(
       PackageMetadata.from("com.orbitalhq", "core-types", "1.0.0"),
       listOf(
+         VersionedSource.unversioned("taxi.http", HttpService.asTaxi()),
          VersionedSource(
             "UserTypes",
             "0.1.0",
@@ -68,7 +71,12 @@ object BuiltInTypesProvider {
             "CsvFormat",
             "0.1.0",
             CsvAnnotationSpec.taxi
-         )
+         ),
+         VersionedSource(
+            "XmlFormat",
+            "0.1.0",
+            XmlAnnotationSpec.taxi
+         ),
       ),
       emptyMap()
    )

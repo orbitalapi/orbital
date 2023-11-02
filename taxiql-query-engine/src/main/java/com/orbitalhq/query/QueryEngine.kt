@@ -293,7 +293,8 @@ class StatefulQueryEngine(
             anonymousTypes = targetType.anonymousTypes,
             queryId = context.queryId,
             responseType = targetType.fullyQualifiedName,
-            onCancelRequestHandler = { context.requestCancel() }
+            onCancelRequestHandler = { context.requestCancel() },
+            schema = schema
          )
       } else {
          QueryResult(
@@ -305,7 +306,8 @@ class StatefulQueryEngine(
             clientQueryId = context.clientQueryId,
             anonymousTypes = targetType.anonymousTypes,
             responseType = targetType.fullyQualifiedName,
-            onCancelRequestHandler = { context.requestCancel() }
+            onCancelRequestHandler = { context.requestCancel() },
+            schema = schema
          )
       }
    }
@@ -345,7 +347,8 @@ class StatefulQueryEngine(
          anonymousTypes = spec.anonymousTypes(),
          queryId = context.queryId,
          responseType = spec.type.paramaterizedName,
-         onCancelRequestHandler = { context.requestCancel() }
+         onCancelRequestHandler = { context.requestCancel() },
+         schema = schema
       )
    }
 
@@ -401,7 +404,7 @@ class StatefulQueryEngine(
    private suspend fun mapTo(targetType: Type, typedInstance: TypedInstance, context: QueryContext): TypedInstance? {
 
       //paramitziedtype of
-      val transformationResult = context.only(typedInstance).build(targetType.fullyQualifiedName)
+      val transformationResult = context.only(typedInstance).build(targetType)
 
       return if (transformationResult.isFullyResolved) {
          val results = transformationResult.results.toList()
@@ -531,7 +534,8 @@ class StatefulQueryEngine(
          clientQueryId = context.clientQueryId,
          statistics = queryResult.statistics,
          responseType = context.responseType,
-         onCancelRequestHandler = { context.requestCancel() }
+         onCancelRequestHandler = { context.requestCancel() },
+         schema = schema
       )
 
    }
@@ -721,7 +725,8 @@ class StatefulQueryEngine(
          anonymousTypes = anonymousTypes,
          statistics = statisticsFlow,
          responseType = context.responseType,
-         onCancelRequestHandler = { context.requestCancel() }
+         onCancelRequestHandler = { context.requestCancel() },
+         schema = schema
       )
 
    }

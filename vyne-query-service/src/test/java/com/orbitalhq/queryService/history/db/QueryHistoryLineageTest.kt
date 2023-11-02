@@ -6,7 +6,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.history.db.QueryHistoryDbWriter
 import com.orbitalhq.history.rest.QueryHistoryService
-import com.orbitalhq.models.csv.CsvFormatSpec
+import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.ValueWithTypeName
 import com.orbitalhq.query.runtime.core.MetricsEventConsumer

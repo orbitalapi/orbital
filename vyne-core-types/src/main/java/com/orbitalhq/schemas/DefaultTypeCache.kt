@@ -71,9 +71,14 @@ abstract class BaseTypeCache : TypeCache {
    }
 
    protected open fun typeOrNull(name: QualifiedName): Type? {
-      return this.cache[name]
-         ?: fromShortName(name)
-         ?: parameterisedType(name)
+      try {
+         return this.cache[name]
+            ?: fromShortName(name)
+            ?: parameterisedType(name)
+      } catch (e:StackOverflowError) {
+         throw RuntimeException("Stack Overflow caused by typeOrNull for ${name.parameterizedName}", e)
+      }
+
    }
 
    internal fun fromShortName(name: QualifiedName): Type? =

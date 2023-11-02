@@ -1,0 +1,18 @@
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+app-code-editor {
+  flex-grow: 1;
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+.type-input {
+  width: 20rem;
+}
+
+

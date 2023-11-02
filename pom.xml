@@ -7,7 +7,7 @@
    <groupId>com.orbitalhq</groupId>
    <artifactId>platform</artifactId>
    <packaging>pom</packaging>
-   <version>0.25.0-SNAPSHOT</version>
+   <version>0.26.0-SNAPSHOT</version>
 
    <parent>
       <groupId>org.springframework.boot</groupId>
@@ -31,7 +31,7 @@
        Saves us duplicating
        -->
       <owasp-exclusions-file>../whitelisted-cvss-list.xml</owasp-exclusions-file>
-      <taxi.version>1.43.0-SNAPSHOT</taxi.version>
+      <taxi.version>1.45.0-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -128,6 +128,7 @@
 
       <module>auth-tokens</module>
       <module>query-node-native</module>
+       <module>formats-common</module>
    </modules>
    <scm>
       <developerConnection>scm:git:git@gitlab.com:vyne/vyne.git</developerConnection>

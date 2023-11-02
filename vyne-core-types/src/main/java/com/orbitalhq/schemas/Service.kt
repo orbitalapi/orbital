@@ -7,6 +7,7 @@ import com.orbitalhq.VersionedSource
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.utils.ImmutableEquality
+import lang.taxi.annotations.HttpOperation
 import lang.taxi.services.OperationScope
 import lang.taxi.types.Documented
 import java.io.Serializable
@@ -229,7 +230,7 @@ enum class ServiceKind : Serializable {
             serviceMetadata.containsMetadata("com.orbitalhq.kafka.KafkaService") -> Kafka
             serviceMetadata.containsMetadata("com.orbitalhq.jdbc.DatabaseService") -> Database
             serviceMetadata.containsMetadata("com.orbitalhq.aws.dynamo.DynamoService") -> Database
-            allOperationMetadata.containsMetadata("HttpOperation") -> API
+            allOperationMetadata.containsMetadata(HttpOperation.NAME) -> API
             else -> null
          }
       }
@@ -329,7 +330,8 @@ data class OperationContract(
 
 
 fun RemoteOperation.httpOperationMetadata(): VyneHttpOperation {
-   val annotation = metadata("HttpOperation")
+   val metadataName = HttpOperation.NAME
+   val annotation = metadata(metadataName)
    val url = annotation.params["url"] as String
    val method = annotation.params["method"] as String
    return VyneHttpOperation(httpOperationMetadata = annotation, url = url, method = method)
