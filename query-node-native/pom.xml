@@ -197,7 +197,7 @@
                <groupId>com.fasterxml.woodstox</groupId>
                <artifactId>woodstox-core</artifactId>
             </exclusion>
-            
+
          </exclusions>
       </dependency>
       <!-- Caffeine is excluded, as it breaks native runtime -->
