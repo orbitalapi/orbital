@@ -22,6 +22,7 @@ import com.orbitalhq.typedObjects
 import com.orbitalhq.utils.Benchmark
 import com.orbitalhq.utils.StrategyPerformanceProfiler
 import com.orbitalhq.withBuiltIns
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -755,6 +756,36 @@ namespace vyne {
          assertEquals("/people?apiKey=hello", request.path)
          assertEquals(HttpMethod.GET.name(), request.method)
       }
+   }
+
+   @Test
+   fun `request body is populated on request`(): Unit = runBlocking{
+      val vyne = testVyne("""
+         type PersonId inherits String
+         parameter model PersonRequest {
+            id : PersonId
+         }
+         model Person {
+            name : Name inherits String
+         }
+          service PersonService {
+            @HttpOperation(method = "POST", url = "http://localhost:${server.port}/person")
+            operation getPerson(@RequestBody PersonRequest):Person
+          }
+      """, invoker = Invoker.RestTemplate)
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""{ "name" : "Jimmy" }""")
+      }
+      val result = vyne.query("""given { PersonId = "1" } find { Person }""")
+         .rawObjects()
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals(HttpMethod.POST.name(), request.method)
+         val requestBody = String(request.body.readByteArray())
+         requestBody.shouldBe("""{"id":"1"}""")
+      }
+
    }
 
    @Test
