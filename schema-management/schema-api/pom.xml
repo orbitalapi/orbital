@@ -15,7 +15,7 @@
       <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-core-types</artifactId>
-         <version>0.25.0-SNAPSHOT</version>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>com.fasterxml.jackson.dataformat</groupId>
