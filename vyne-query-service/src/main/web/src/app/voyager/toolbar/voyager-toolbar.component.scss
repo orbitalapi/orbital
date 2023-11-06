@@ -21,6 +21,10 @@
   }
 }
 
+a:visited {
+  color: unset;
+}
+
 .nav-link {
   --tui-link: white;
   --tui-link-hover: white;
@@ -73,19 +77,22 @@ mat-icon {
   fill: white;
   color: white;
 
+  margin-right: 1rem;
 }
 
 .built-by-orbital {
-  margin-left: 2rem;
-
-  a {
+  .wrapper {
     display: flex;
     align-items: center;
-    font-size: 0.7rem;
   }
+
+  margin-left: 2rem;
+
+  font-size: 0.7rem;
 
   mat-icon {
     width: unset;
+    margin-top: -3px;
   }
 }
 
