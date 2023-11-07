@@ -54,7 +54,7 @@ import {VoyagerModule} from "src/app/voyager/voyager.module";
       provide: PLAUSIBLE_ANALYTICS,
       useFactory: () => {
         const plausible = Plausible({
-          domain: 'voyager.vyne.co'
+          domain: 'voyager.orbitalhq.com'
         })
         plausible.enableAutoOutboundTracking();
         return plausible;

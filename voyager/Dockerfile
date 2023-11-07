@@ -1,7 +1,6 @@
 ARG REGISTRY
 FROM ${REGISTRY}eclipse-temurin:17-jre-jammy
 
-RUN apt-get update
 ARG JAR_FILE=target/*.jar
 
 COPY ${JAR_FILE} /opt/service/app.jar

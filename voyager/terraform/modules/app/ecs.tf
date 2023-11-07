@@ -36,7 +36,7 @@ module "voyager" {
    region                            = var.region
    vpc_id                            = var.vpc_id
    subnets                           = var.subnets
-   image                             = "registry.gitlab.com/vyne/vyne/taxi-playground:${var.taxi_playground_docker_image_id}"
+   image                             = "registry.gitlab.com/vyne/vyne/voyager:${var.taxi_playground_docker_image_id}"
    task_definition_cpu               = 2048
    task_definition_memory            = 4096
    port                              = 9500
