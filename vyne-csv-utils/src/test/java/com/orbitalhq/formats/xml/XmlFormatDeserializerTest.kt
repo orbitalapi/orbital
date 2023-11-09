@@ -168,13 +168,12 @@ class XmlFormatDeserializerTest : DescribeSpec({
       it("is possible to embed xml within json") {
          val schema = TaxiSchema.from(
             """
-import com.orbitalhq.formats.Xml
 model MyMessage {
     messageId : MessageId inherits String
     xmlRecord : Person
 }
 
-@Xml
+@com.orbitalhq.formats.Xml
 model Person {
     name : PersonName inherits String
 }"""

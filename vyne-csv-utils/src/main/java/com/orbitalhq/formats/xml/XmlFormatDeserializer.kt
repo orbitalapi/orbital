@@ -71,7 +71,7 @@ private class XmlDeserializer {
    }
 
    fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema): TypedInstance? {
-      require(value is String) { "Expected Xml parsed from String" }
+      require(value is String) { "Expected Xml parsed from String, but received ${value::class.simpleName}" }
       return parseWithJackson(value,type, schema)
    }
 
