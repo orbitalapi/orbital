@@ -25,3 +25,8 @@ fun Array<out IConnectionParameter>.connectionParams(): List<ConnectionDriverPar
 
 class MissingConnectionParametersException(private val parameters: List<ConnectionDriverParam>) :
    RuntimeException("The following parameters were not provided: ${parameters.joinToString { it.displayName }}")
+
+
+fun Map<ConnectionParameterName, String>.valueOrThrowNiceMessage(key:String):String {
+   return this[key] ?: error("Connection parameter '$key' was not defined, but is required")
+}
