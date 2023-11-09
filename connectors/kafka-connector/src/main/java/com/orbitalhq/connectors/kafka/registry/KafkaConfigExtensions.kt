@@ -2,6 +2,7 @@ package com.orbitalhq.connectors.kafka.registry
 
 import com.orbitalhq.connectors.config.kafka.KafkaConnection
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
+import com.orbitalhq.connectors.valueOrThrowNiceMessage
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
@@ -50,9 +51,9 @@ fun KafkaConnectionConfiguration.toProducerProps():MutableMap<String,Any> {
 // Using extension functions to avoid serialization issues with HOCON
 val KafkaConnectionConfiguration.brokers: String
    get() {
-      return this.connectionParameters[KafkaConnection.Parameters.BROKERS.templateParamName] as String
+      return this.connectionParameters.valueOrThrowNiceMessage(KafkaConnection.Parameters.BROKERS.templateParamName)
    }
 val KafkaConnectionConfiguration.groupId: String
    get() {
-      return this.connectionParameters[KafkaConnection.Parameters.GROUP_ID.templateParamName] as String
+      return this.connectionParameters.valueOrThrowNiceMessage(KafkaConnection.Parameters.GROUP_ID.templateParamName)
    }
