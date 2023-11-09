@@ -2,6 +2,7 @@ package com.orbitalhq.query.runtime.core.gateway
 
 import io.kotest.matchers.shouldBe
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.withBuiltIns
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import org.junit.Test
@@ -62,6 +63,6 @@ class RoutedQueryTest {
 
 fun query(vararg sources: String): Pair<TaxiQlQuery, TaxiQLQueryString> {
    val src = sources.joinToString("\n")
-   val schema = TaxiSchema.from(src)
+   val schema = TaxiSchema.from(src).withBuiltIns()
    return schema.taxi.queries.single() to schema.taxi.queries.single().compilationUnits.single().source.content
 }

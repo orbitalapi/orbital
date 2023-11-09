@@ -4,7 +4,6 @@ import com.orbitalhq.connectors.VyneConnectionsConfig
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.connectors.kafka.KafkaInvoker
 import com.orbitalhq.connectors.kafka.KafkaStreamManager
-import com.orbitalhq.connectors.kafka.registry.KafkaConfigFileConnectorRegistry
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
 import com.orbitalhq.connectors.kafka.registry.SourceLoaderKafkaConnectionRegistry
 import com.orbitalhq.schema.api.SchemaProvider
