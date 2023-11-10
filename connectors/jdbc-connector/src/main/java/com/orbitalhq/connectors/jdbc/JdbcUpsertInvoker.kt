@@ -39,7 +39,7 @@ class JdbcUpsertInvoker(
       queryId: String
    ): Flow<TypedInstance> {
       val schema = schemaProvider.schema
-      val taxi = schema.taxi
+
       require(operation.parameters.size == 1) { "Operations annotated with ${JdbcConnectorTaxi.Annotations.UpsertOperationAnnotationName} should accept exactly one type" }
       val inputType = operation.parameters.single().type.let { type -> type.collectionType ?: type }
       require(inputType.hasMetadata(JdbcConnectorTaxi.Annotations.Table.NAME.fqn())) { "The input type into an ${JdbcConnectorTaxi.Annotations.UpsertOperationAnnotationName} operation should be a type with a ${JdbcConnectorTaxi.Annotations.Table.NAME.fqn()} annotation" }
@@ -61,18 +61,27 @@ class JdbcUpsertInvoker(
          is TypedObject -> listOf(input)
          else -> error("Expected either a TypedCollection or a TypedObject")
       }
-      val insertStatement = InsertStatementGenerator(schema).generateInsertAsSingleStatement(
+      val (insertStatement, statementReturnsGeneratedValues) = InsertStatementGenerator(schema).generateInsertAsSingleStatement(
          inputAsList,
          dsl,
+         useUpsertSemantics = true
       )
-
-
-//      val insertStatement = insertStatements.single()
       logger.info { "Writing INSERT to table ${tableAnnotation.tableName}" }
       val startTime = Instant.now()
       try {
-         val inserted = insertStatement.fetch()
-         logger.info { "Successfully inserted $inserted record(s) into table ${tableAnnotation.tableName}" }
+         val (affectedRecordCount, insertedRecords) = if (statementReturnsGeneratedValues) {
+            val result = insertStatement.fetch()
+            result.size to result
+         } else {
+            insertStatement.execute() to null
+         }
+
+         if (inputAsList.size == affectedRecordCount) {
+            logger.info { "Successfully inserted $affectedRecordCount record(s) into table ${tableAnnotation.tableName}" }
+         } else {
+            logger.warn { "Was passed ${inputAsList.size} records to insert to table ${tableAnnotation.tableName}, but $affectedRecordCount were inserted" }
+         }
+
          val remoteCall =
             buildRemoteCall(service, connectionConfig, operation, insertStatement.sql, startTime, errorMessage = null)
          val operationResult = OperationResult.fromTypedInstances(
@@ -83,13 +92,18 @@ class JdbcUpsertInvoker(
             operationResult, queryId
          )
 
-         return mergeUpdatedValuesToSource(
-            inputAsList,
-            inserted,
-            inputType,
-            schema,
-            operationResult.asOperationReferenceDataSource()
-         ).asFlow()
+         return if (statementReturnsGeneratedValues) {
+            mergeUpdatedValuesToSource(
+               inputAsList,
+               insertedRecords!!,
+               inputType,
+               schema,
+               operationResult.asOperationReferenceDataSource()
+            ).asFlow()
+         } else {
+            inputAsList.map { DataSourceUpdater.update(it, operationResult.asOperationReferenceDataSource()) }
+               .asFlow()
+         }
       } catch (e: Exception) {
          val errorMessage = "Failed to insert into ${tableAnnotation.tableName} - ${e.message}"
          logger.error(e) { errorMessage }
@@ -118,7 +132,7 @@ class JdbcUpsertInvoker(
       schema: Schema,
       dataSource: OperationResultReference
    ): List<TypedInstance> {
-      require(source.size == persisted.size) { "Number of inputs and created records don't match - can't map the ids back to the persisted values"}
+      require(source.size == persisted.size) { "Record count mismatch: Was passed ${source.size} records to write, but only ${persisted.size} were returned from the db write operation. Can't map results back to inputs."}
       return source.mapIndexed { index, typedInstance ->
 
          val sourceMap = (typedInstance as TypedObject).toRawObject() as Map<String, Any>
