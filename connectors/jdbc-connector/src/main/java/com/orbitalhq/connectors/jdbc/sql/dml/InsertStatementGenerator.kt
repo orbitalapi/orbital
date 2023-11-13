@@ -58,11 +58,12 @@ class InsertStatementGenerator(private val schema: Schema) {
          }
          row(rowValues)
       }
+      val primaryKeyFields = getPrimaryKeyFields(recordType)
       val statement = sql.insertInto(table(DSL.name(actualTableName)), *sqlFields.toTypedArray())
          .valuesOfRows(*rows.toTypedArray())
          .let { insert ->
-            if (useUpsertSemantics) {
-               insert.onConflict(getPrimaryKeyFields(recordType))
+            if (useUpsertSemantics && primaryKeyFields.isNotEmpty()) {
+               insert.onConflict(primaryKeyFields)
                   .doUpdate().setAllToExcluded()
                   .returningResult(generatedFields)
             } else {
@@ -83,46 +84,47 @@ class InsertStatementGenerator(private val schema: Schema) {
     * Where possible prefer using generateInsertAsSingleStatement.
     * That approach
     */
-   fun generateInserts(
-      values: List<TypedInstance>,
-      sql: DSLContext,
-      useUpsertSemantics: Boolean = false,
-      tableNameSuffix: String? = null,
-      tableName: String? = null
-   ): List<InsertValuesStepN<Record>> {
-      require(values.isNotEmpty()) { "No values provided to persist." }
-      val recordType = assertAllValuesHaveSameType(values)
-
-      val actualTableName = tableName ?: SqlUtils.tableNameOrTypeName(recordType.taxiType, tableNameSuffix)
-      val fields = findFieldsToInsert(recordType)
-      val sqlFields = fields.map { it.second }
-      val rowsToInsert = values.mapNotNull { typedInstance ->
-         if (typedInstance is TypedCollection && typedInstance.isEmpty()) {
-            // This can sneak through because of a failed transformation
-            return@mapNotNull null
-         }
-
-         require(typedInstance is TypedObject) { "Database operations are only supported on TypedObject - got ${typedInstance::class.simpleName}" }
-         val rowValues = fields.map { (attributeName, _) ->
-            attributeName to typedInstance[attributeName].value
-         }
-         rowValues
-      }
-
-      // There are nicer syntaxes for inserting multiple rows (using Records)
-      // in later versions, but locked to 3.13 because of old spring dependencies.
-      val insertStatements = rowsToInsert.map { row: List<Pair<AttributeName, Any?>> ->
-         val insert = sql.insertInto(table(actualTableName), *sqlFields.toTypedArray())
-         val rowValues = row.map { it.second }
-         insert.values(rowValues)
-         if (useUpsertSemantics) {
-            TODO("I broke this")
-//            appendUpsert(insert, row, recordType, generatedFields)
-         }
-         insert
-      }
-      return insertStatements
-   }
+//   fun generateInserts(
+//      values: List<TypedInstance>,
+//      sql: DSLContext,
+//      useUpsertSemantics: Boolean = false,
+//      tableNameSuffix: String? = null,
+//      tableName: String? = null
+//   ): List<InsertValuesStepN<Record>> {
+//      require(values.isNotEmpty()) { "No values provided to persist." }
+//      val recordType = assertAllValuesHaveSameType(values)
+//
+//      val actualTableName = tableName ?: SqlUtils.tableNameOrTypeName(recordType.taxiType, tableNameSuffix)
+//      val fields = findFieldsToInsert(recordType)
+//      val sqlFields = fields.map { it.second }
+//      val rowsToInsert = values.mapNotNull { typedInstance ->
+//         if (typedInstance is TypedCollection && typedInstance.isEmpty()) {
+//            // This can sneak through because of a failed transformation
+//            return@mapNotNull null
+//         }
+//
+//         require(typedInstance is TypedObject) { "Database operations are only supported on TypedObject - got ${typedInstance::class.simpleName}" }
+//         val rowValues = fields.map { (attributeName, _) ->
+//            attributeName to typedInstance[attributeName].value
+//         }
+//         rowValues
+//      }
+//
+//      // There are nicer syntaxes for inserting multiple rows (using Records)
+//      // in later versions, but locked to 3.13 because of old spring dependencies.
+//      val insertStatements = rowsToInsert.map { row: List<Pair<AttributeName, Any?>> ->
+//         var insert = sql.insertInto(table(actualTableName), *sqlFields.toTypedArray())
+//         val rowValues = row.map { it.second }
+//         insert = insert.values(rowValues)
+//         if (useUpsertSemantics) {
+//            insert.onConflict(getPrimaryKeyFields(recordType))
+//               .doUpdate().setAllToExcluded().returning()
+//         } else {
+//            insert.returning()
+//         }
+//      }
+//      return insertStatements
+//   }
 
    private fun getPrimaryKeyFields(recordType: Type): List<Field<Any>> {
       return recordType.getAttributesWithAnnotation("Id".fqn())

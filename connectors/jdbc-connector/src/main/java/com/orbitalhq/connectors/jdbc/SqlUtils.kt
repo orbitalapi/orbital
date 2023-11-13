@@ -21,7 +21,7 @@ object SqlUtils {
          // Putting .toLowerCase() here, as Postgres (which I'm testing with)
          // fails with uppercase chars for tablenames if not quoted (and JOOQ doesn't
          // appear to be handling the quoting)
-         type.toQualifiedName().typeName.lowercase(Locale.getDefault())
+         type.toQualifiedName().typeName //.lowercase(Locale.getDefault())
       }
       return tableName + tableNameSuffix.orEmpty()
    }
