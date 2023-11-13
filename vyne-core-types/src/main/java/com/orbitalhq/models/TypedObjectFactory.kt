@@ -829,7 +829,11 @@ class TypedObjectFactory(
          // Or a field in Protobuf that contains JSON, etc etc
          modelFormatSpecPair != null -> {
             val (metadata, modelFormatSpec) = modelFormatSpecPair
-            val parsed = modelFormatSpec.deserializer.parse(attributeValue, type, metadata, schema)
+            val parsed = when {
+               // "canParse" here can indicate "is any more deserializaiton required?"
+               modelFormatSpec.deserializer.canParse(attributeValue, metadata) -> modelFormatSpec.deserializer.parse(attributeValue, type, metadata, schema)
+               else -> attributeValue
+            }
             when (parsed) {
                is TypedInstance -> parsed
                else -> TypedInstance.from(type, parsed, schema)

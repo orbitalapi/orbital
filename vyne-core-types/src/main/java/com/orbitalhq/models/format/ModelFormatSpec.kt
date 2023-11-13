@@ -44,7 +44,11 @@ interface ModelFormatSerializer {
 interface ModelFormatDeserializer {
    /**
     * Indicates if this spec can parse the content of the value into something else.
-    * Generally returns a Map<> or List<Map<>> which the TypedObjectFactory will consume later
+    * Generally returns a Map<> or List<Map<>> which the TypedObjectFactory will consume later.
+    *
+    * Deserializers may be called on content that has already been deseriazlied.
+    * Therefore, canParse() may return false for a correctly configured deserializer,
+    * indicating "no more parsing is required".
     */
    fun canParse(value: Any, metadata: Metadata): Boolean
 
