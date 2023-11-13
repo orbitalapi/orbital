@@ -11,13 +11,13 @@ class ProtobufFormatDeserializer : ModelFormatDeserializer {
       .newBuilder()
       .build<Type, com.squareup.wire.schema.Schema>()
 
-   override fun parseRequired(value: Any, metadata: Metadata): Boolean = value is ByteArray
+   override fun canParse(value: Any, metadata: Metadata): Boolean = value is ByteArray
 
    override fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema): Any {
       val protobufSchema = protoSchemaCache.get(type) {
          ProtobufSpecGenerator(schema).generateProtobufSchema(type)
       }
-      require(value is ByteArray) { "Can only parse a ByteArray" }
+      require(value is ByteArray) { "Can only parse a ByteArray, instead received a ${value::class.simpleName}" }
       val decoded = protobufSchema.protoAdapter(type.fullyQualifiedName, true)
          .decode(value)
       return decoded

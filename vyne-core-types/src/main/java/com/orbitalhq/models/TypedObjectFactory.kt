@@ -309,30 +309,34 @@ class TypedObjectFactory(
       }
    }
 
+
+   private fun readWithFormatSpecDeserializer(metadata: Metadata, modelFormatSpec: ModelFormatSpec): TypedInstance {
+      val parsedValue = modelFormatSpec.deserializer.parse(value, type, metadata, schema)
+      // When parsing CSV, we may provide the type as T, and get back T[]
+      val parsedType = if (parsedValue is Collection<*> && parsedValue.size > 1 && !type.isCollection) {
+         type.asArrayType()
+      } else {
+         type
+      }
+      return TypedInstance.from(
+         parsedType,
+         parsedValue,
+         schema,
+         source = source,
+         evaluateAccessors = evaluateAccessors,
+         functionRegistry = functionRegistry,
+         formatSpecs = formatSpecs,
+         inPlaceQueryEngine = inPlaceQueryEngine,
+         parsingErrorBehaviour = parsingErrorBehaviour
+      )
+   }
+
    private fun doBuild(decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
       val metadataAndFormat = formatDetector.getFormatType(type)
       if (metadataAndFormat != null) {
-         // now what?
          val (metadata, modelFormatSpec) = metadataAndFormat
-         if (modelFormatSpec.deserializer.parseRequired(value, metadata)) {
-            val parsedValue = modelFormatSpec.deserializer.parse(value, type, metadata, schema)
-            // When parsing CSV, we may provide the type as T, and get back T[]
-            val parsedType = if (parsedValue is Collection<*> && parsedValue.size > 1 && !type.isCollection) {
-               type.asArrayType()
-            } else {
-               type
-            }
-            return TypedInstance.from(
-               parsedType,
-               parsedValue,
-               schema,
-               source = source,
-               evaluateAccessors = evaluateAccessors,
-               functionRegistry = functionRegistry,
-               formatSpecs = formatSpecs,
-               inPlaceQueryEngine = inPlaceQueryEngine,
-               parsingErrorBehaviour = parsingErrorBehaviour
-            )
+         if (modelFormatSpec.deserializer.canParse(value, metadata)) {
+            return readWithFormatSpecDeserializer(metadata, modelFormatSpec)
          }
       }
       if (value is FactBag && value.hasFactOfType(type, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)) {
@@ -608,6 +612,10 @@ class TypedObjectFactory(
          value is CSVRecord && field.accessor is ColumnAccessor && considerAccessor -> {
             readAccessor(fieldTypeName, field.accessor, field.nullable, field.format)
          }
+//         modelFormatSpecPair != null && modelFormatSpecPair.second.deserializer.canParse(value, modelFormatSpecPair.first) -> {
+//            val (metadata,formatSpec) = modelFormatSpecPair
+//            readWithFormatSpecDeserializer(metadata,formatSpec)
+//         }
 
          // ValueReader can be expensive if the value is an object,
          // so only use the valueReader early if the value is a map
@@ -812,10 +820,27 @@ class TypedObjectFactory(
       format: FormatsAndZoneOffset?
    ): TypedInstance {
       val attributeValue = valueReader.read(value, attributeName)
-      return if (attributeValue == null) {
-         TypedNull.create(type, source)
-      } else {
-         TypedInstance.from(
+      val modelFormatSpecPair = formatDetector.getFormatType(type)
+      return when {
+         attributeValue == null -> TypedNull.create(type, source)
+
+         // Support embedded formats.
+         // Eg: A field in a JSON message that contains an XML payload.
+         // Or a field in Protobuf that contains JSON, etc etc
+         modelFormatSpecPair != null -> {
+            val (metadata, modelFormatSpec) = modelFormatSpecPair
+            val parsed = when {
+               // "canParse" here can indicate "is any more deserializaiton required?"
+               modelFormatSpec.deserializer.canParse(attributeValue, metadata) -> modelFormatSpec.deserializer.parse(attributeValue, type, metadata, schema)
+               else -> attributeValue
+            }
+            when (parsed) {
+               is TypedInstance -> parsed
+               else -> TypedInstance.from(type, parsed, schema)
+            }
+         }
+
+         else -> TypedInstance.from(
             type,
             attributeValue,
             schema,

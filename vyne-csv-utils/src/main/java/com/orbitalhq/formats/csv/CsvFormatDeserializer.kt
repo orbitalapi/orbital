@@ -7,7 +7,7 @@ import com.orbitalhq.schemas.Type
 import org.apache.commons.csv.CSVParser
 
 object CsvFormatDeserializer : ModelFormatDeserializer {
-   override fun parseRequired(value: Any, metadata: Metadata): Boolean {
+   override fun canParse(value: Any, metadata: Metadata): Boolean {
       return value is String
    }
 

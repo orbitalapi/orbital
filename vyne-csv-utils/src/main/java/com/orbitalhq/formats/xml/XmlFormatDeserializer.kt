@@ -21,7 +21,7 @@ import javax.xml.xpath.XPathFactory
 
 object XmlFormatDeserializer : ModelFormatDeserializer {
    private val deserializer = XmlDeserializer()
-   override fun parseRequired(value: Any, metadata: Metadata): Boolean = true
+   override fun canParse(value: Any, metadata: Metadata): Boolean = true
 
    override fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema): Any =
       deserializer.parse(value, type, metadata, schema) ?: error("Parsing XML from root returned null")
@@ -71,7 +71,7 @@ private class XmlDeserializer {
    }
 
    fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema): TypedInstance? {
-      require(value is String) { "Expected Xml parsed from String" }
+      require(value is String) { "Expected Xml parsed from String, but received ${value::class.simpleName}" }
       return parseWithJackson(value,type, schema)
    }
 
