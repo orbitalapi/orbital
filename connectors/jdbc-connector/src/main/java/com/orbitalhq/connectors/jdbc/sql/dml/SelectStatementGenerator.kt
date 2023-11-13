@@ -19,6 +19,7 @@ import lang.taxi.types.Type
 import org.jooq.*
 import org.jooq.impl.DSL
 import org.jooq.impl.DSL.field
+import org.jooq.impl.DSL.name
 import org.jooq.impl.DSL.table
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -68,7 +69,7 @@ class SelectStatementGenerator(
          error("Joins are not yet supported - can only select from a single table")
       }
       val sqlTablesByType = tableNamesFromType.values.map { tableName ->
-         tableName.type to table(tableName.tableName).`as`(tableName.alias)
+         tableName.type to table(name(tableName.tableName)).`as`(tableName.alias)
       }.toMap()
 
       val select = when (selectType) {

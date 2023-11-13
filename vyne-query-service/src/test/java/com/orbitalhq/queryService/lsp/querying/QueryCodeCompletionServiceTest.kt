@@ -158,7 +158,7 @@ class QueryCodeCompletionServiceTest {
          )
       ).get().left
       completions.should.have.size(1)
-      completions.map { it.label }.should.contain.elements("Tweet")
+      completions.map { it.label }.should.contain.elements("Tweet (lang.taxi)")
    }
 
    @Test
@@ -188,8 +188,8 @@ class QueryCodeCompletionServiceTest {
          )
       ).get().left
       completions.should.have.size(3)
-      completions.map { it.label }.should.have.elements("Studio[]", "Studio", "Film[]")
-      val completionItem = completions.first { it.label == "Film[]" }
+      completions.map { it.label }.should.have.elements("Studio[] (lang.taxi)", "Studio", "Film[] (lang.taxi)")
+      val completionItem = completions.first { it.label.contains("Film[]") }
       completionItem.additionalTextEdits.single().newText.trim().should.equal("import Film")
    }
 

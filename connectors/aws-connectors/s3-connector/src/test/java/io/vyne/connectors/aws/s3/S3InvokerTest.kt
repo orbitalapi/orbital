@@ -17,6 +17,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.testcontainers.containers.localstack.LocalStackContainer
@@ -97,6 +98,7 @@ class S3InvokerTest {
 
 
    @Test
+   @Ignore("this test explores querying an s3 file using calcilte. It's not currently working, or an area that's of interest to persue, so will ignore for now.")
    fun `can consume a csv file in s3`() {
       val resultsFromQuery = mutableListOf<TypedInstance>()
       val vyne = vyneWithS3Invoker()

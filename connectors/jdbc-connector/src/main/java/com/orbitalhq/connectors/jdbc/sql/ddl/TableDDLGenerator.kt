@@ -40,7 +40,7 @@ class TableGenerator(private val schema: Schema) {
       providedTableName: String? = null
    ): TableDDLData {
       // see tableNameOrTypeName() for justification of .lowercase()
-      val tableName = providedTableName?.lowercase() ?: SqlUtils.tableNameOrTypeName(type.taxiType, tableNameSuffix)
+      val tableName = providedTableName ?: SqlUtils.tableNameOrTypeName(type.taxiType, tableNameSuffix)
 
       val columns = type.attributes.map { (attributeName, typeField) ->
          val taxiType = typeField.resolveType(schema).taxiType

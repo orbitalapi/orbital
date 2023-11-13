@@ -34,7 +34,7 @@ class SelectStatementGeneratorTest : DescribeSpec({
             query,
             connectionDetails.sqlBuilder()
          )
-         sql.should.equal("""select * from Movie as "t0"""")
+         sql.should.equal("""select * from "Movie" as "t0"""")
          params.should.be.empty
       }
 
@@ -53,7 +53,7 @@ class SelectStatementGeneratorTest : DescribeSpec({
 
          // The odd cast expression here is JOOQ doing it's thing.
          // CAn't work out how to supress it
-         val expected = """select * from movie as "t0" where "t0"."title" = :title0"""
+         val expected = """select * from "Movie" as "t0" where "t0"."title" = :title0"""
          sql.should.equal(expected)
          params.should.equal(listOf(SqlTemplateParameter("title0", "Hello")))
       }
@@ -63,6 +63,7 @@ class SelectStatementGeneratorTest : DescribeSpec({
          type MovieId inherits Int
          type MovieTitle inherits String
 
+         @com.orbitalhq.jdbc.Table(table = "movie", connection = "", schema = "")
          model Movie {
             id : MovieId
             title : MovieTitle
@@ -73,7 +74,7 @@ class SelectStatementGeneratorTest : DescribeSpec({
 
          // The odd cast expression here is JOOQ doing it's thing.
          // CAn't work out how to supress it
-         val expected = """select * from movie as "t0" where "t0"."id" = :id0"""
+         val expected = """select * from "movie" as "t0" where "t0"."id" = :id0"""
          sql.should.equal(expected)
          params.should.equal(listOf(SqlTemplateParameter("id0", 123)))
       }
@@ -83,6 +84,7 @@ class SelectStatementGeneratorTest : DescribeSpec({
          type MovieId inherits String
          type MovieTitle inherits String
 
+         @com.orbitalhq.jdbc.Table(table = "movie", connection = "", schema = "")
          model Movie {
             id : MovieId
             title : MovieTitle
@@ -91,7 +93,7 @@ class SelectStatementGeneratorTest : DescribeSpec({
          val selectStatement = SelectStatementGenerator(taxi).selectSqlWithNamedParams(query, connectionDetails.sqlBuilder())
          val (sql, params) = selectStatement
 
-         val expected = """select * from movie as "t0" where "t0"."id" = :id0"""
+         val expected = """select * from "movie" as "t0" where "t0"."id" = :id0"""
          sql.should.equal(expected)
          params.should.equal(listOf(SqlTemplateParameter("id0", "123")))
       }
@@ -107,7 +109,7 @@ class SelectStatementGeneratorTest : DescribeSpec({
          val dsl = connectionDetails.sqlBuilder()
          it("generates a select for multiple number params") {
             val query = generator.selectSqlWithNamedParams("find { Person[]( Age >= 21 && Age < 40 ) }".query(taxi), dsl)
-            query.shouldBeQueryWithParams("""select * from person as "t0" where ("t0"."age" >= :age0 and "t0"."age" < :age1)""", listOf(21, 40))
+            query.shouldBeQueryWithParams("""select * from "Person" as "t0" where ("t0"."age" >= :age0 and "t0"."age" < :age1)""", listOf(21, 40))
          }
       }
    }
