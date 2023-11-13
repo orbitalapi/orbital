@@ -22,7 +22,9 @@ import com.orbitalhq.schemas.fqn
 import nl.altindag.log.LogCaptor
 import org.awaitility.Awaitility
 import org.jooq.DSLContext
+import org.jooq.impl.DSL
 import org.jooq.impl.DSL.condition
+import org.jooq.impl.DSL.name
 import org.jooq.impl.DSL.table
 import org.junit.Before
 import org.junit.Rule
@@ -151,7 +153,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
 
       Awaitility.await().atMost(Duration.ofSeconds(5)).until {
          val upsertedRecord = connectionFactory.dsl(postgresSQLContainerFacade.connection)
-            .selectFrom(SqlUtils.tableNameOrTypeName(type.taxiType))
+            .selectFrom(DSL.name(SqlUtils.tableNameOrTypeName(type.taxiType)))
             .where(condition("id = 123"))
             .fetch()
             .single()
@@ -248,7 +250,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
          connectionFactory.dsl(postgresSQLContainerFacade.connection),
          testSetup.schema.type("Target"),
          1,
-         duration = Duration.ofSeconds(30L)
+         duration = Duration.ofSeconds(10L)
       )
    }
 
@@ -537,7 +539,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       // The table should get created with the specified name
       waitForTableExistence(
          connectionFactory.dsl(postgresSQLContainerFacade.connection),
-         "MovieQuotes".lowercase(),
+         "MovieQuotes",
          true
       )
 
@@ -581,7 +583,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
    ) {
       Awaitility.await().atMost(duration)
          .until {
-            val tableExists = dsl.meta().tables.any { it.name == tableName }
+            val tableExists = dsl.meta().tables.any { it.name.equals(tableName, ignoreCase = true) }
             val isCorrect = tableExists == shouldExist
             logger.info(
                "The table $tableName does ${if (tableExists) "" else "not "}exist while it should ${if (shouldExist) "" else "not "}exist after ${
@@ -596,7 +598,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
    }
 
    private fun rowCount(dsl: DSLContext, type: Type?, tableName: String? = null): Int {
-      val table = tableName?.let { table(it) } ?: table(SqlUtils.tableNameOrTypeName(type!!.taxiType))
+      val table = tableName?.let { table(DSL.name(it)) } ?: table(name(SqlUtils.tableNameOrTypeName(type!!.taxiType)))
       return try {
          dsl.fetchCount(table)
       } catch (e: Exception) {

@@ -6,6 +6,9 @@ import com.orbitalhq.connectors.jdbc.sqlBuilder
 import com.orbitalhq.schemas.Type
 import org.jooq.CreateViewFinalStep
 import org.jooq.DSLContext
+import org.jooq.impl.DSL
+import org.jooq.impl.DSL.name
+import org.jooq.impl.DSL.table
 
 /**
  * Generates, and optionally executes a CREATE OR REPLACE VIW
@@ -19,8 +22,8 @@ class ViewGenerator {
 
    fun generate(type: Type, targetTableName: String, dsl: DSLContext): CreateViewFinalStep {
       val tableName = SqlUtils.tableNameOrTypeName(type.taxiType)
-      return dsl.createOrReplaceView(tableName)
-         .`as`("SELECT * FROM ${targetTableName};")
+      return dsl.createOrReplaceView(name(tableName))
+         .`as`(DSL.select(DSL.asterisk()).from(table(name(targetTableName))))
    }
 
    /**

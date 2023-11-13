@@ -48,7 +48,7 @@ class PipelineDocumentationGeneratorTest {
       // Returns the root of the project
       val projectPart = currentPath.subpath(0, pipelinesPathIndex).toString()
       val projectRootPath = Paths.get(currentPath.root.toString(), projectPart)
-      val docsPath = projectRootPath.resolve("docs/content/reference/pipelines-2.0/")
+      val docsPath = projectRootPath.resolve("docs/reference/pipelines/")
       return docsPath.resolve("$fileName.mdx")
    }
 
