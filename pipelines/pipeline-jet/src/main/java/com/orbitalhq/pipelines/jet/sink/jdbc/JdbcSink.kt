@@ -138,20 +138,20 @@ class JdbcSinkBuilder : WindowingPipelineSinkBuilder<JdbcTransportOutputSpec> {
                null
             }
          }
-         val insertStatements = InsertStatementGenerator(schema).generateInserts(
+         val (insertStatements) = InsertStatementGenerator(schema).generateInsertAsSingleStatement(
             typedInstances,
             context.sqlDsl(),
             useUpsertSemantics = true,
             tableNameSuffix = context.tableNameSuffix,
             tableName = pipelineTransportSpec.tableName
          )
-         logger.info { "${pipelineTransportSpec.targetTypeName} => Executing INSERT batch with size: ${insertStatements.size}" }
+         logger.info { "${pipelineTransportSpec.targetTypeName} => Executing INSERT batch with size: ${typedInstances.size}" }
          try {
-            val insertedCount = context.sqlDsl().batch(insertStatements).execute().size
+            val insertedCount = context.sqlDsl().execute(insertStatements)
             context.logger.info("Inserted $insertedCount ${targetType.fullyQualifiedName} records into DB.")
          } catch (e: Exception) {
             context.logger.severe(
-               "${pipelineTransportSpec.targetTypeName} => Failed to insert ${insertStatements.size} ${targetType.fullyQualifiedName} into DB.",
+               "${pipelineTransportSpec.targetTypeName} => Failed to insert ${typedInstances.size} ${targetType.fullyQualifiedName} into DB.",
                e
             )
 
