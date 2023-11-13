@@ -12,6 +12,7 @@ import com.orbitalhq.pipelines.jet.api.transport.MessageSourceWithGroupId
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.api.transport.TypedInstanceContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.query.PollingQueryInputSpec
+import com.orbitalhq.pipelines.jet.api.transport.query.TaxiQlQueryPipelineTransportSpec
 import com.orbitalhq.pipelines.jet.source.PipelineSourceBuilder
 import com.orbitalhq.pipelines.jet.source.PipelineSourceType
 import com.orbitalhq.query
@@ -47,9 +48,9 @@ class PollingQuerySourceBuilder : PipelineSourceBuilder<PollingQueryInputSpec> {
       inputType: Type?
    ): BatchSource<MessageContentProvider> {
       return SourceBuilder.batch("query-poll") { context ->
-         PollingQuerySourceContext(context.logger(), pipelineSpec, context.jobId())
+         QueryBufferingPipelineContext(context.logger(), pipelineSpec, context.jobId(), QueryBufferingPipelineContext.BufferMode.Batch)
       }
-         .fillBufferFn { context: PollingQuerySourceContext, buffer: SourceBuffer<MessageContentProvider> ->
+         .fillBufferFn { context: QueryBufferingPipelineContext, buffer: SourceBuffer<MessageContentProvider> ->
             context.fillBuffer(buffer)
          }
          .build()
@@ -68,11 +69,15 @@ data class PollingQuerySourceMetadata(val jobId: String) : MessageSourceWithGrou
 }
 
 @SpringAware
-class PollingQuerySourceContext(
+class QueryBufferingPipelineContext(
    val logger: ILogger,
-   val pipelineSpec: PipelineSpec<PollingQueryInputSpec, *>,
-   val jobId: Long
+   val pipelineSpec: PipelineSpec<out TaxiQlQueryPipelineTransportSpec, *>,
+   val jobId: Long,
+   val mode:BufferMode
 ) {
+   enum class BufferMode {
+      Stream, Batch;
+   }
    @PostConstruct
    fun runQuery() {
       val scope = CoroutineScope(Dispatchers.Default)
@@ -99,15 +104,14 @@ class PollingQuerySourceContext(
    lateinit var vyneClient: VyneClient
 
    private val queue: BlockingQueue<MessageContentProvider> = ArrayBlockingQueue(CAPACITY)
-   private val tempBuffer: MutableList<MessageContentProvider> = mutableListOf()
    private var isDone = false
 
    fun fillBuffer(buffer: SourceBuffer<MessageContentProvider>) {
       logger.finest("Writing ${queue.size} items into the polling query sink's buffer.")
+      val tempBuffer: MutableList<MessageContentProvider> = mutableListOf()
       queue.drainTo(tempBuffer)
       tempBuffer.forEach(buffer::add)
-      tempBuffer.clear()
-      if (isDone) {
+      if (isDone && mode == BufferMode.Batch) {
          logger.info("Polling query execution finished. Closing buffer.")
          buffer.close()
       }

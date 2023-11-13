@@ -85,9 +85,9 @@ class PipelineFactory(
       jetPipelineBuilder: GeneralStage<out MessageContentProvider>,
       transformation: TaxiQLQueryString?
    ): GeneralStage<out MessageContentProvider> {
-      if (outputTypeName == null) {
-         require(transformation != null) { "If the output type is not provided, then a transformation must be provided" }
-      }
+//      if (outputTypeName == null) {
+//         require(transformation != null) { "If the output type is not provided, then a transformation must be provided" }
+//      }
 
       val jetPipelineWithTransformation =
          if (inputType != null && (inputType != outputTypeName || transformation != null)) {

@@ -63,6 +63,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
    val pipelineSinkProvider = PipelineSinkProvider.default(kafkaConnectionRegistry, awsConnectionRegistry)
    val meterRegistry = SimpleMeterRegistry()
 
+
    fun jetWithSpringAndVyne(
        schema: String,
        jdbcConnections: List<JdbcConnectionConfiguration> = emptyList(),
