@@ -1,5 +1,6 @@
 package com.orbitalhq.models.format
 
+import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.TypeNamedInstance
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.schemas.AttributeName
@@ -55,7 +56,7 @@ interface ModelFormatDeserializer {
    /**
     * Should return either List<Map<String,Any>> or Map<String,Any>, or a TypedInstance
     */
-   fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema): Any
+   fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema, source: DataSource): Any
 
 }
 

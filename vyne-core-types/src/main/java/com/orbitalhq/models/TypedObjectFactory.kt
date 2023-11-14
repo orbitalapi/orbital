@@ -311,7 +311,7 @@ class TypedObjectFactory(
 
 
    private fun readWithFormatSpecDeserializer(metadata: Metadata, modelFormatSpec: ModelFormatSpec): TypedInstance {
-      val parsedValue = modelFormatSpec.deserializer.parse(value, type, metadata, schema)
+      val parsedValue = modelFormatSpec.deserializer.parse(value, type, metadata, schema, source)
       // When parsing CSV, we may provide the type as T, and get back T[]
       val parsedType = if (parsedValue is Collection<*> && parsedValue.size > 1 && !type.isCollection) {
          type.asArrayType()
@@ -831,7 +831,13 @@ class TypedObjectFactory(
             val (metadata, modelFormatSpec) = modelFormatSpecPair
             val parsed = when {
                // "canParse" here can indicate "is any more deserializaiton required?"
-               modelFormatSpec.deserializer.canParse(attributeValue, metadata) -> modelFormatSpec.deserializer.parse(attributeValue, type, metadata, schema)
+               modelFormatSpec.deserializer.canParse(attributeValue, metadata) -> modelFormatSpec.deserializer.parse(
+                  attributeValue,
+                  type,
+                  metadata,
+                  schema,
+                  source
+               )
                else -> attributeValue
             }
             when (parsed) {
