@@ -13,6 +13,7 @@ import com.orbitalhq.connectors.jdbc.JdbcInvoker
 import com.orbitalhq.connectors.kafka.KafkaInvoker
 import com.orbitalhq.connectors.kafka.KafkaStreamManager
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
+import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.schema.api.SchemaProvider
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -55,8 +56,9 @@ class InvokerConfiguration {
    @Bean
    fun kafkaStreamManager(
       connectionRegistry: KafkaConnectionRegistry,
-      schemaProvider: SchemaProvider
-   ) = KafkaStreamManager(connectionRegistry, schemaProvider)
+      schemaProvider: SchemaProvider,
+      formatRegistry: FormatRegistry
+   ) = KafkaStreamManager(connectionRegistry, schemaProvider, formatRegistry = formatRegistry)
 
    @Bean
    fun kafkaInvoker(
