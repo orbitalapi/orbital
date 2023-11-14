@@ -6,6 +6,7 @@ import com.orbitalhq.pipelines.jet.api.transport.PipelineDirection
 import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportSpec
 import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportSpecId
 import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportType
+import lang.taxi.query.TaxiQLQueryString
 
 object StreamingQueryTransport {
    const val TYPE: PipelineTransportType = "streamingQuery"
@@ -14,7 +15,7 @@ object StreamingQueryTransport {
 
 class StreamingQueryInputSpec(
    @PipelineParam("The query to be executed. See the sample for an example. ")
-   override val query: String,
+   override val query: TaxiQLQueryString,
 ) : PipelineTransportSpec, TaxiQlQueryPipelineTransportSpec {
    object Sample : PipelineDocumentationSample<StreamingQueryInputSpec> {
       override val sample = StreamingQueryInputSpec(

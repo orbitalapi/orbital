@@ -1,19 +1,19 @@
 package com.orbitalhq.pipelines.jet.streams
 
-import com.google.common.collect.MapDifference
 import com.google.common.collect.Maps
-import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
-import com.orbitalhq.pipelines.jet.api.transport.log.LogLevel
-import com.orbitalhq.pipelines.jet.api.transport.log.LoggingOutputSpec
+import com.orbitalhq.pipelines.jet.api.RunningPipelineSummary
 import com.orbitalhq.pipelines.jet.api.transport.query.StreamingQueryInputSpec
 import com.orbitalhq.pipelines.jet.pipelines.PipelineManager
 import com.orbitalhq.schema.consumer.SchemaChangedEventProvider
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Schema
+import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.toVyneQualifiedName
 import lang.taxi.query.QueryMode
+import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import mu.KotlinLogging
+import org.springframework.stereotype.Component
 import reactor.kotlin.core.publisher.toFlux
 import java.util.concurrent.ConcurrentHashMap
 
@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
  * Watches the schema, and creates / destroys persistent streams
  * based on those saved in the schema
  */
+@Component
 class PersistentStreamManager(
    private val schemaStore: SchemaChangedEventProvider,
    private val pipelineManager: PipelineManager
@@ -32,6 +33,7 @@ class PersistentStreamManager(
    }
 
    init {
+      logger.info { "Stream manager is active, monitoring schema for persistent streams" }
       schemaStore.schemaChanged
          .toFlux()
          .subscribe { schemaSetChangedEvent ->
@@ -45,25 +47,44 @@ class PersistentStreamManager(
    }
 
    private fun updateStreams(schema: Schema) {
-      val updatesStreamState = getStreams(schema)
-      val currentStreams = managedStreams.mapValues { it.value.query }
-      val difference = Maps.difference(updatesStreamState, currentStreams)
+      val updatedStreamState = getStreams(schema)
+      val updatedStreamQueries: Map<QualifiedName, TaxiQLQueryString> = updatedStreamState.mapValues { it.value.source }
+
+      val currentManagedStreams = pipelineManager.getManagedStreams()
+      val currentStreamQueries: Map<QualifiedName, TaxiQLQueryString> = currentManagedStreams
+         .filter { it.pipeline != null }.associate { runningPipeline ->
+            val pipelineSpec = runningPipeline.pipeline!!.spec
+            val querySpec = pipelineSpec.input as StreamingQueryInputSpec
+            pipelineSpec.name.fqn() to querySpec.query
+         }
+
+
+      val difference = Maps.difference(updatedStreamQueries, currentStreamQueries)
 
       val addedStreams = difference.entriesOnlyOnLeft()
-      handleStreamsAdded(addedStreams)
+      handleStreamsAdded(addedStreams.mapValues { entry -> updatedStreamState[entry.key]!! })
 
       val removedStreams = difference.entriesOnlyOnRight()
-      handleStreamsRemoved(removedStreams)
+      handleStreamsRemoved(removedStreams.keys, currentManagedStreams)
 
       val updatedStreams = difference.entriesDiffering()
-      handleStreamsUpdated(updatedStreams)
+      handleStreamsUpdated(updatedStreams.mapValues { entry -> updatedStreamState[entry.key]!! })
 
    }
 
-   private fun handleStreamsUpdated(updatedStreams: Map<QualifiedName, MapDifference.ValueDifference<TaxiQlQuery>>) {
+   private fun handleStreamsUpdated(updatedStreams: Map<QualifiedName, TaxiQlQuery>) {
    }
 
-   private fun handleStreamsRemoved(removedStreams: Map<QualifiedName, TaxiQlQuery>) {
+   private fun handleStreamsRemoved(
+      removedStreams: MutableSet<QualifiedName>,
+      currentManagedStreams: List<RunningPipelineSummary>
+   ) {
+      removedStreams.map { removedStreamName -> currentManagedStreams.single { runningPipeline -> runningPipeline.pipeline!!.name ==  removedStreamName.parameterizedName } }
+         .forEach { runningPipelineSummary ->
+            logger.info { "Managed stream ${runningPipelineSummary.pipeline!!.name} has been removed from the schema, so terminating associated stream" }
+            pipelineManager.terminatePipeline(runningPipelineSummary.pipeline!!.pipelineSpecId)
+         }
+
    }
 
    private fun handleStreamsAdded(addedStreams: Map<QualifiedName, TaxiQlQuery>) {
@@ -78,32 +99,6 @@ class PersistentStreamManager(
       pipelineManager.startPipeline(ManagedStream.from(query))
    }
 
-
-   // should store, and then start the stream
-   private fun submitStream(managedStream: ManagedStream) {
-      if (managedStream.streamType != ManagedStream.StreamType.CONTINUOUS) {
-         logger.info { "Not starting a pipeline for stream ${managedStream.name} as it's type is ${managedStream.streamType}" }
-         return
-      }
-      // TODO : Something about start
-      val currentValue = managedStreams.putIfAbsent(managedStream.name, managedStream)
-      if (currentValue != null) {
-         logger.warn { "Attempted to submit stream ${managedStream.name}, but that stream was already present. Remove and add to update" }
-      } else {
-         startStream(managedStream)
-      }
-   }
-
-   private fun startStream(managedStream: ManagedStream) {
-      logger.info { "Starting stream ${managedStream.name}" }
-      val spec = PipelineSpec<StreamingQueryInputSpec, LoggingOutputSpec>(
-         managedStream.name.longDisplayName,
-         StreamingQueryInputSpec(managedStream.query.source),
-         null,
-         listOf(LoggingOutputSpec(LogLevel.INFO, managedStream.name.longDisplayName))
-      )
-      pipelineManager.startPipeline(spec)
-   }
 
    private fun getStreams(schema: Schema): Map<QualifiedName, TaxiQlQuery> {
       return schema.taxi.queries

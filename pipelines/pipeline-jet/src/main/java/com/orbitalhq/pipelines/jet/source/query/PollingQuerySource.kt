@@ -51,7 +51,7 @@ class PollingQuerySourceBuilder : PipelineSourceBuilder<PollingQueryInputSpec> {
          QueryBufferingPipelineContext(context.logger(), pipelineSpec, context.jobId(), QueryBufferingPipelineContext.BufferMode.Batch)
       }
          .fillBufferFn { context: QueryBufferingPipelineContext, buffer: SourceBuffer<MessageContentProvider> ->
-            context.fillBuffer(buffer)
+            context.drainTo(buffer)
          }
          .build()
    }
@@ -95,7 +95,10 @@ class QueryBufferingPipelineContext(
                isDone = true
             }
             .subscribe {
-               queue.put(it)
+               val wasQueued = queue.offer(it)
+               if (!wasQueued) {
+                  logger.warning("Failed to append query result to the result queue.  Is the buffer full? Current size is ${queue.size}")
+               }
             }
       }
    }
@@ -106,7 +109,7 @@ class QueryBufferingPipelineContext(
    private val queue: BlockingQueue<MessageContentProvider> = ArrayBlockingQueue(CAPACITY)
    private var isDone = false
 
-   fun fillBuffer(buffer: SourceBuffer<MessageContentProvider>) {
+   fun drainTo(buffer: SourceBuffer<MessageContentProvider>) {
       logger.finest("Writing ${queue.size} items into the polling query sink's buffer.")
       val tempBuffer: MutableList<MessageContentProvider> = mutableListOf()
       queue.drainTo(tempBuffer)

@@ -39,10 +39,24 @@ data class PipelineSpec<I : PipelineTransportSpec, O : PipelineTransportSpec>(
    val transformation: TaxiQLQueryString? = null,
    @JsonDeserialize(using = PipelineListTransportSpecDeserializer::class)
    val outputs: List<O>,
-   val id: String = Ids.id("pipeline-")
+   val id: String = Ids.id("pipeline-"),
+   val kind:PipelineKind = PipelineKind.Pipeline
 ) : Serializable {
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val description = "From ${input.description} to ${outputs.size} outputs"
+}
+
+enum class PipelineKind {
+   /**
+    * A Pipeline defined using a Pipeline Spec, normally
+    * as part of a taxi project
+    */
+   Pipeline,
+
+   /**
+    * A managed stream, created by a streaming query present wihtin the schema
+    */
+   Stream
 }
 
 /**

@@ -1,6 +1,5 @@
 package com.orbitalhq.pipelines.jet.sink.log
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.hazelcast.jet.pipeline.Sink
 import com.hazelcast.jet.pipeline.SinkBuilder
 import com.hazelcast.logging.ILogger
@@ -11,8 +10,10 @@ import com.orbitalhq.pipelines.jet.api.transport.log.LoggingOutputSpec
 import com.orbitalhq.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Schema
+import org.springframework.stereotype.Component
 
 
+@Component
 class LoggingSinkBuilder : SingleMessagePipelineSinkBuilder<LoggingOutputSpec> {
 
    companion object {
