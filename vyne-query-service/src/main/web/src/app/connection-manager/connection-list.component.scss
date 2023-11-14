@@ -1,8 +1,10 @@
 @import "~src/theme";
 @import "~src/tables";
+@import "./status-colors";
 
 .connection-list {
-  @include vyne-table();
+  @include orbital-table();
+  @include orbital-table-with-selectable-rows();
 }
 
 .connection-list-container {

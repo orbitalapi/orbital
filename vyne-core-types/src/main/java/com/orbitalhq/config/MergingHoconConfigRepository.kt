@@ -12,7 +12,13 @@ import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 
-
+/**
+ * Models a Config as loaded from a Package,
+ * which may contain an error
+ */
+data class ConfigSource<T : Any>(val packageIdentifier: PackageIdentifier, val config: Config?, val typedConfig: T?, val error:String?) {
+   val hasError = error != null
+}
 /**
  * Takes multiple Config repositories, and merges the result.
  *
@@ -43,8 +49,15 @@ abstract class MergingHoconConfigRepository<T : Any>(
       return configCache[CacheKey]
    }
 
+   val configSources: List<ConfigSource<T>>
+      get() {
+         typedConfig() // force the cache to be populated
+         return _configSources
+      }
+
    protected fun invalidateCache() = configCache.invalidateAll()
 
+   private var _configSources: List<ConfigSource<T>> = emptyList()
    /**
     * A cache of loaded, merged config.
     */
@@ -57,15 +70,21 @@ abstract class MergingHoconConfigRepository<T : Any>(
                logger.info { "($loaderTypeName) - Loaders returned no config sources, so starting with an empty one." }
                emptyConfig()
             } else {
-               val mergedConfig = loadedSources.map { sourcePackage: SourcePackage ->
+               _configSources = loadedSources.map { sourcePackage: SourcePackage ->
                   val hoconSource = readRawHoconSource(sourcePackage)
                   try {
-                     readConfig(hoconSource, fallback)
+                     val config  = readConfig(hoconSource, fallback)
+                     val typedConfig = extract(config)
+                     ConfigSource(sourcePackage.identifier, config, typedConfig, null)
                   } catch (e: Exception) {
                      logger.error(e) { "($loaderTypeName) - Parsing the config from source package ${sourcePackage.packageMetadata.identifier.id} failed: ${e.message}" }
-                     throw e
+                     ConfigSource<T>(sourcePackage.identifier, null, null, e.message)
                   }
-               }.reduce { acc, config ->
+               }
+               val mergedConfig = _configSources
+                  .filter { !it.hasError }
+                  .map { it.config!! }
+                  .reduce { acc, config ->
                   // when merging, "config" values beat "acc" values.
                   config.withFallback(acc)
                }.resolve()

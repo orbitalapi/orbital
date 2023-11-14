@@ -51,6 +51,9 @@ class S3Invoker(
 
     companion object {
         private val logger = KotlinLogging.logger {}
+       init {
+           S3ConnectorTaxi.registerConnectionUsage()
+       }
     }
 
     data class S3BucketConfig(

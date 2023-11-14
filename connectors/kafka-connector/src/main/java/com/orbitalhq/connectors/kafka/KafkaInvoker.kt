@@ -14,6 +14,11 @@ import mu.KotlinLogging
 
 
 class KafkaInvoker(private val streamManager: KafkaStreamManager) : OperationInvoker {
+   companion object {
+      init {
+          KafkaConnectorTaxi.registerMetadataUsage()
+      }
+   }
    private val logger = KotlinLogging.logger {}
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.hasMetadata(KafkaConnectorTaxi.Annotations.KafkaService.NAME) && operation.hasMetadata(

@@ -1,14 +1,23 @@
 package com.orbitalhq.connectors.aws.sqs
 
 import com.orbitalhq.annotations.AnnotationWrapper
+import com.orbitalhq.connections.ConnectionUsageMetadataRegistry
+import com.orbitalhq.connections.ConnectionUsageRegistration
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.fqn
 import lang.taxi.TaxiDocument
 import lang.taxi.types.Annotation
 
 object SqsConnectorTaxi {
+   fun registerConnectionUsage() {
+      ConnectionUsageMetadataRegistry.register(
+         ConnectionUsageRegistration(Annotations.SqsService.NAME.fqn(), "connectionName")
+      )
+   }
+
    object Annotations {
       internal const val namespace = "com.orbitalhq.aws.sqs"
+
 
       val imports: String = listOf(SqsService.NAME, SqsOperation.NAME).joinToString("\n") { "import $it" }
 
@@ -25,6 +34,7 @@ object SqsConnectorTaxi {
                parameterMap
             )
          }
+
       }
       data class SqsOperation(val queue: String) : AnnotationWrapper {
          companion object {

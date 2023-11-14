@@ -154,7 +154,6 @@ data class Operation(
  *
  */
 interface RemoteOperation : MetadataTarget, Documented, SchemaMember {
-   val qualifiedName: QualifiedName
    val parameters: List<Parameter>
    val returnType: Type
    val contract: OperationContract
@@ -302,7 +301,9 @@ data class Service(
       return this.operations.any { it.name == name }
    }
 
-   val qualifiedName = name.fullyQualifiedName
+   @JsonIgnore
+   override val qualifiedName: QualifiedName = name
+   val fullyQualifiedName = name.fullyQualifiedName
 }
 
 

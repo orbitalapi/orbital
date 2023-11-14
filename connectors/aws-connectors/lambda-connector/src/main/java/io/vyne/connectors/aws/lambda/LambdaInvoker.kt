@@ -43,6 +43,12 @@ class LambdaInvoker(
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : OperationInvoker {
+   companion object {
+      init {
+          LambdaConnectorTaxi.registerConnectorUsage()
+      }
+   }
+
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.hasMetadata(LambdaConnectorTaxi.Annotations.LambdaInvocationService.NAME) &&
          operation.hasMetadata(LambdaConnectorTaxi.Annotations.LambdaOperation.NAME)

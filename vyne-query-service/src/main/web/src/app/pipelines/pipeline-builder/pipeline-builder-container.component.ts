@@ -30,7 +30,7 @@ export class PipelineBuilderContainerComponent {
     this.typeService.getTypes()
       .subscribe(s => this.schema = s);
 
-    this.dbConnectionService.getConnections().subscribe(connections => this.connections = connections)
+    this.dbConnectionService.getConnections().subscribe(connections => this.connections = connections.connections)
   }
 
 

@@ -21,6 +21,11 @@ class DynamoDbInvoker(
     private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : OperationInvoker {
+   companion object {
+      init {
+          DynamoConnectorTaxi.registerConnectorUsage()
+      }
+   }
     override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
         return service.hasMetadata(DynamoConnectorTaxi.Annotations.DynamoService.NAME)
     }

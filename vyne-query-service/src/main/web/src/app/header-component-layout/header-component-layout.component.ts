@@ -8,26 +8,33 @@ import { Component, Input } from '@angular/core';
           <div class="header">
               <div class="row">
                   <div class="header-text">
+                      <h4 *ngIf="subtitle">{{ subtitle}}</h4>
                       <h2>{{ title }}</h2>
                       <p class="description">{{ description }}</p>
                   </div>
-                <div class="spacer"></div>
-                <div class="buttons">
-                  <ng-content select="buttons">
-                  </ng-content>
-                </div>
+                  <div class="spacer"></div>
+                  <div class="buttons">
+                      <ng-content select="buttons">
+                      </ng-content>
+                  </div>
               </div>
-            <ng-content select="header-components"></ng-content>
+              <ng-content select="header-components"></ng-content>
           </div>
       </div>
       <div class="body-container" *ngIf='displayBody'>
-        <div class="body" [ngClass]="{'full-width' : fullWidth}">
-          <ng-content></ng-content>
-        </div>
+          <div class="body" [ngClass]="{'full-width' : fullWidth}">
+              <ng-content></ng-content>
+          </div>
       </div>
   `
 })
 export class HeaderComponentLayoutComponent {
+
+  @Input()
+  showBack: boolean = false;
+
+  @Input()
+  subtitle: string = null;
 
   @Input()
   title: string;

@@ -217,7 +217,7 @@ class LocalSchemaEditingService(
                )
             }
          }
-         .map { it.qualifiedName }
+         .map { it.fullyQualifiedName }
          .toSet()
 
       val dupTypes = Sets.intersection(typesInOtherPackages, editedSchema.types.map { it.fullyQualifiedName }.toSet())

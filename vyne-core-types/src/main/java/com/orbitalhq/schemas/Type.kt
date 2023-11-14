@@ -115,7 +115,7 @@ data class Type(
    override val schemaMemberKind: SchemaMemberKind = SchemaMemberKind.TYPE
 
    // Interned, so that can be used for equality checks
-   val paramaterizedName: String = internedParameterizedNames.intern(qualifiedName.parameterizedName)
+   val paramaterizedName: String = internedParameterizedNames.intern(name.parameterizedName)
 
 
    // Intentionally excluded from equality:
@@ -313,8 +313,7 @@ data class Type(
       get() = name.fullyQualifiedName
 
    @get:JsonIgnore
-   val qualifiedName: QualifiedName
-      get() = QualifiedName.from(fullyQualifiedName, typeParametersTypeNames)
+   override val qualifiedName: QualifiedName = name
 
    val longDisplayName: String = qualifiedName.longDisplayName
 

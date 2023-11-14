@@ -66,14 +66,14 @@ class SoapClientCache(
          val wsdlSource = service.sourceCode.singleOrNull { it.language == SoapLanguage.WSDL }
             ?: error("Service ${service.name} is expected to have WSDL source attached, but it was not found")
 
-         val tmpWsdlFile = Files.createTempFile("tmp-servicedef-${service.qualifiedName}", "wsdl")
+         val tmpWsdlFile = Files.createTempFile("tmp-servicedef-${service.fullyQualifiedName}", "wsdl")
          tmpWsdlFile.writeText(wsdlSource.content)
          val tmpFileUrl = tmpWsdlFile.toUri().toURL()
 
          val client = clientFactory.createClient(tmpFileUrl)
          client.inInterceptors.add(inboundInterceptor)
          client.outInterceptors.add(outboundInterceptor)
-         logger.info { "Created new SoapClient for service ${service.qualifiedName}" }
+         logger.info { "Created new SoapClient for service ${service.fullyQualifiedName}" }
          client
       }
    }

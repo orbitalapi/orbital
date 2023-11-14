@@ -1,0 +1,17 @@
+@import "./status-colors";
+
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.dot {
+  margin-right: 1rem;
+}
+.status {
+  font-size: 0.9rem;
+}
+.timestamp-row {
+  font-size: 0.8rem;
+  color: $slate-600;
+}
