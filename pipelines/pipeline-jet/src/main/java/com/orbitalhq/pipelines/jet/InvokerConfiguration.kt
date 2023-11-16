@@ -12,9 +12,11 @@ import com.orbitalhq.connectors.jdbc.JdbcConnectionFactory
 import com.orbitalhq.connectors.jdbc.JdbcInvoker
 import com.orbitalhq.connectors.kafka.KafkaInvoker
 import com.orbitalhq.connectors.kafka.KafkaStreamManager
+import com.orbitalhq.connectors.kafka.KafkaStreamPublisher
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
 import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.schema.api.SchemaProvider
+import org.apache.kafka.clients.producer.internals.BuiltInPartitioner
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -61,16 +63,29 @@ class InvokerConfiguration {
    ) = KafkaStreamManager(connectionRegistry, schemaProvider, formatRegistry = formatRegistry)
 
    @Bean
+   fun kafkaStreamPublisher(
+      connectionRegistry: KafkaConnectionRegistry,
+      formatRegistry: FormatRegistry
+   ): KafkaStreamPublisher {
+      return KafkaStreamPublisher(connectionRegistry, formatRegistry = formatRegistry)
+   }
+
+   @Bean
    fun kafkaInvoker(
-      streamManager: KafkaStreamManager
+      streamManager: KafkaStreamManager,
+      streamPublisher: KafkaStreamPublisher
    ): KafkaInvoker {
       return KafkaInvoker(
-         streamManager
+         streamManager,
+         streamPublisher
       )
    }
 
    @Bean
-   fun azureStoreInvoker(schemaProvider: SchemaProvider, azureConnectionRegistry: AzureStoreConnectionFileRegistry): StoreInvoker {
+   fun azureStoreInvoker(
+      schemaProvider: SchemaProvider,
+      azureConnectionRegistry: AzureStoreConnectionFileRegistry
+   ): StoreInvoker {
       return StoreInvoker(AzureStreamProvider(), azureConnectionRegistry, schemaProvider)
    }
 }

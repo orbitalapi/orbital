@@ -30,7 +30,7 @@ class KafkaConnectionConfig {
    ) = KafkaStreamManager(connectionRegistry, schemaProvider, formatRegistry = formatRegistry)
 
    @Bean
-   fun kafkaStreamPublishing(     connectionRegistry: KafkaConnectionRegistry,
+   fun kafkaStreamPublisher(     connectionRegistry: KafkaConnectionRegistry,
                                   formatRegistry: FormatRegistry): KafkaStreamPublisher {
       return KafkaStreamPublisher(connectionRegistry, formatRegistry = formatRegistry)
    }
