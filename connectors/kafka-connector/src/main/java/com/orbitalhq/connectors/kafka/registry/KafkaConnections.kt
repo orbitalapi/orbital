@@ -9,6 +9,7 @@ import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.registry.ConnectionConfigMap
 import org.apache.kafka.clients.admin.AdminClient
 import org.apache.kafka.clients.admin.DescribeClusterOptions
+import java.time.Duration
 
 data class KafkaConnections(
    val kafka: MutableMap<String, KafkaConnectionConfiguration> = mutableMapOf()
@@ -18,11 +19,11 @@ data class KafkaConnections(
    }
 }
 
-fun KafkaConnection.test(connection: KafkaConnectionConfiguration): Either<String, ConnectionSucceeded> {
+fun KafkaConnection.test(connection: KafkaConnectionConfiguration, timeout: Duration = Duration.ofSeconds(5)): Either<String, ConnectionSucceeded> {
    logger.debug { "testing kafka connection configuration => $connection" }
    return try {
       AdminClient.create(connection.toAdminProps()).use { adminClient ->
-         val nodes = adminClient.describeCluster(DescribeClusterOptions().timeoutMs(100)).nodes().get()
+         val nodes = adminClient.describeCluster(DescribeClusterOptions().timeoutMs(timeout.toMillis().toInt())).nodes().get()
          return if (!nodes.isNullOrEmpty()) {
             ConnectionSucceeded.right()
          } else {
