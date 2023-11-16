@@ -551,7 +551,13 @@ export interface SchemaNodeSet {
   links: SchemaGraphLink[];
 }
 
+export interface SchemaMemberReference {
+  qualifiedName: QualifiedName;
+  kind: SchemaMemberKind;
+}
 
+// This class was built before server-side schema members
+// implemented SchemaMemberReference.
 export class SchemaMember {
   constructor(
     public readonly name: QualifiedName,
@@ -573,6 +579,14 @@ export class SchemaMember {
   }
 
   attributeNames: string[];
+
+  // Facade to the new API
+  get schemaMemberReference():SchemaMemberReference {
+    return {
+      qualifiedName: this.name,
+      kind: this.kind
+    }
+  }
 
   static fromService(service: Service): SchemaMember[] {
     const serviceMember = new SchemaMember(

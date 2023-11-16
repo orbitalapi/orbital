@@ -213,7 +213,7 @@ data class RemoteCallResponseDto(
    val method: String
       get() = when (exchange) {
          is HttpExchange -> (exchange as HttpExchange).verb
-         is SqlExchange -> "SELECT"
+         is SqlExchange -> (exchange as SqlExchange).verb
          is MessageStreamExchange -> "SUBSCRIBE"
          else -> "CALL"
       }

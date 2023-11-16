@@ -106,7 +106,7 @@ object QueryCancellationRequest
 // Revisit if the above becomes less true.
 
 data class QueryContext(
-   val schema: Schema,
+   override val schema: Schema,
 
    // TODO : Facts should become "scoped", to allow us to carefully
    // manage which facts are shared between contexts when doing things like
@@ -138,7 +138,7 @@ data class QueryContext(
 
 //   val failureBehaviour: FailureBehaviour = FailureBehaviour.THROW
 
-) : ProfilerOperation by profiler, FactBag by facts, QueryContextEventDispatcher by eventBroker, InPlaceQueryEngine {
+) : ProfilerOperation by profiler, FactBag by facts, QueryContextEventDispatcher by eventBroker, InPlaceQueryEngine, QueryContextSchemaProvider {
 
    private val logger = KotlinLogging.logger {}
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()

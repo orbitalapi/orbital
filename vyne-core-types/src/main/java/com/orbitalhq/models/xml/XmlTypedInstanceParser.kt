@@ -20,6 +20,24 @@ import javax.xml.xpath.XPathConstants
 import javax.xml.xpath.XPathExpression
 import javax.xml.xpath.XPathFactory
 
+/**
+ * If the schema uses xpath accessors, we need
+ * access to the original document.
+ */
+interface XmlParsedStructure {
+   val document: Document
+}
+
+data class XmlParsedMap(
+   val parsed: Map<String,Any>,
+   override val document: Document
+) : Map<String,Any > by parsed, XmlParsedStructure
+data class XmlParsedList(
+   val parsed: Collection<Map<String,Any>>,
+   override val document: Document
+) : Collection<Map<String,Any>> by parsed, XmlParsedStructure
+
+
 class XmlTypedInstanceParser(private val primitiveParser: PrimitiveParser = PrimitiveParser()) {
    private val factory = DocumentBuilderFactory.newInstance()
    private val builder = factory.newDocumentBuilder()

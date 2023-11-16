@@ -1,0 +1,17 @@
+@import "~src/theme";
+
+.dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  display: inline-block;
+  &.OK {
+    background-color: $bg-ok;
+  }
+  &.UNKNOWN {
+    background-color: $bg-status-unknown;
+  }
+  &.ERROR {
+    background-color: $bg-error;
+  }
+}

@@ -34,6 +34,10 @@ class JdbcInvoker(
 
    companion object {
       private val logger = KotlinLogging.logger {}
+
+      init {
+         JdbcConnectorTaxi.registerConnectionUsage()
+      }
    }
 
    override suspend fun invoke(

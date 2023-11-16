@@ -10,6 +10,7 @@ import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import reactor.kafka.receiver.ReceiverOptions
+import reactor.kafka.sender.SenderOptions
 
 
 fun KafkaConnectionConfiguration.toReceiverOptions(offset: String = "latest"): ReceiverOptions<Int, ByteArray> {
@@ -17,6 +18,10 @@ fun KafkaConnectionConfiguration.toReceiverOptions(offset: String = "latest"): R
    return ReceiverOptions.create(consumerProps)
 }
 
+fun KafkaConnectionConfiguration.toSenderOptions():SenderOptions<Any,Any> {
+   val producerProps = this.toProducerProps()
+   return SenderOptions.create<Any,Any>(producerProps)
+}
 fun KafkaConnectionConfiguration.toAdminProps(): MutableMap<String, Any> {
    val adminProps: MutableMap<String, Any> = HashMap()
    adminProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = this.brokers

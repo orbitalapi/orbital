@@ -1,4 +1,4 @@
-import {Metadata, QualifiedName, VersionedSource} from '../services/schema';
+import {Metadata, QualifiedName, SchemaMember, SchemaMemberReference, VersionedSource} from '../services/schema';
 import {HttpClient} from '@angular/common/http';
 import {environment} from 'src/environments/environment';
 import {Observable} from 'rxjs';
@@ -6,6 +6,7 @@ import {Injectable} from '@angular/core';
 import {VyneServicesModule} from '../services/vyne-services.module';
 import {SchemaSubmissionResult} from '../services/types.service';
 import {NewTypeSpec} from 'src/app/type-editor/new-type-spec';
+import {PackageIdentifier} from "../package-viewer/packages.service";
 
 
 export interface JdbcColumn {
@@ -86,9 +87,12 @@ export class DbConnectionService {
   getConnection(name: string): Observable<ConnectorSummary> {
     return this.http.get<ConnectorSummary>(`${environment.serverUrl}/api/connections/jdbc/${name}`);
   }
+  getConnectionByName(packageUri: string, name: string): Observable<ConnectorConfigDetail> {
+    return this.http.get<ConnectorConfigDetail>(`${environment.serverUrl}/api/connections/${packageUri}/${name}`);
+  }
 
-  getConnections(): Observable<ConnectorSummary[]> {
-    return this.http.get<ConnectorSummary[]>(`${environment.serverUrl}/api/connections`);
+  getConnections(): Observable<ConnectionsListResponse> {
+    return this.http.get<ConnectionsListResponse>(`${environment.serverUrl}/api/connections`);
   }
 
   testConnection(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration | AwsConnectionConfiguration): Observable<any> {
@@ -158,13 +162,34 @@ export interface NewOrExistingTypeName {
   exists: boolean;
 }
 
+export interface ConnectionsListResponse {
+  definitionsWithErrors: PackageWithError[]
+  connections: ConnectorSummary[]
+}
+
+export interface PackageWithError {
+  identifier: PackageIdentifier;
+  error: string;
+}
 export interface ConnectorSummary {
   connectionName: string;
   connectionType: ConnectorType;
   driverName: string;
   properties: { [index: string]: string }
+  packageIdentifier: PackageIdentifier;
+  connectionStatus: ConnectionStatus;
 }
 
+export interface ConnectionStatus {
+  status: 'OK' | 'ERROR' | 'UNKNOWN';
+  timestamp: Date;
+  errorMessage: string | null;
+}
+
+export interface ConnectorConfigDetail {
+  config: ConnectorSummary;
+  usages: SchemaMemberReference[];
+}
 export interface MappedTable {
   table: JdbcTable;
   mappedTo: QualifiedName | null;

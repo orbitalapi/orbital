@@ -9,6 +9,7 @@ import com.orbitalhq.connectors.jdbc.schema.JdbcTaxiSchemaGenerator
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.QualifiedNameAsStringDeserializer
 import com.orbitalhq.schemas.Schema
+import com.orbitalhq.utils.orElse
 import lang.taxi.generators.GeneratedTaxiCode
 import mu.KotlinLogging
 import org.springframework.core.NestedRuntimeException
@@ -18,6 +19,7 @@ import schemacrawler.schemacrawler.LoadOptionsBuilder
 import schemacrawler.schemacrawler.SchemaCrawlerOptionsBuilder
 import schemacrawler.schemacrawler.SchemaInfoLevelBuilder
 import schemacrawler.tools.utility.SchemaCrawlerUtility
+import java.net.UnknownHostException
 import java.util.*
 
 
@@ -40,12 +42,17 @@ class DatabaseMetadataService(
             logger.info { "Test query did not return any rows - treating as a failure" }
             "Connection succeeded, but test query returned no rows.  Possibly a bug in the adaptor?".left()
          }
-      } catch (e: NestedRuntimeException) {
-         e.mostSpecificCause.message?.left() ?: "An unhandled exception occurred: ${e::class.simpleName}".left()
       } catch (e: Exception) {
-         e.message?.left() ?: "An unhandled exception occurred: ${e::class.simpleName}".left()
+         getUserFriendlyConnectionError(e).left()
       }
+   }
 
+   private fun getUserFriendlyConnectionError(exception: Throwable): String {
+      return when (exception) {
+         is NestedRuntimeException -> getUserFriendlyConnectionError(exception.mostSpecificCause)
+         is UnknownHostException -> "Unknown host: ${exception.message}"
+         else -> "Could not connect to the database: ${exception::class.simpleName} : ${exception.message?.orElse("")}"
+      }
    }
 
    fun listTables(): List<JdbcTable> {

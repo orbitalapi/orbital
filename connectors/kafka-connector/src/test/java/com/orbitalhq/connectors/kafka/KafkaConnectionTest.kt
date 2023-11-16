@@ -7,6 +7,7 @@ import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.test
 import com.orbitalhq.utils.get
 import org.junit.Test
+import java.time.Duration
 import kotlin.random.Random
 
 class KafkaConnectionTest : BaseKafkaContainerTest() {
@@ -18,7 +19,7 @@ class KafkaConnectionTest : BaseKafkaContainerTest() {
          kafkaContainer.bootstrapServers,
          "VyneTest-" + Random.nextInt(),
       )
-      KafkaConnection.test(connection).get().should.equal(ConnectionSucceeded)
+      KafkaConnection.test(connection, timeout = Duration.ofSeconds(30)).get().should.equal(ConnectionSucceeded)
    }
 
    @Test
@@ -28,7 +29,7 @@ class KafkaConnectionTest : BaseKafkaContainerTest() {
          "invalidHost:24601",
          "VyneTest-" + Random.nextInt(),
       )
-      KafkaConnection.test(connection)
+      KafkaConnection.test(connection, timeout = Duration.ofSeconds(30))
          .get().should.equal("Failed to create new KafkaAdminClient : No resolvable bootstrap urls given in bootstrap.servers")
    }
 

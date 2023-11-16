@@ -1,13 +1,17 @@
 package com.orbitalhq.connectors.kafka
 
+import com.orbitalhq.StubService
 import com.orbitalhq.Vyne
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.InMemoryKafkaConnectorRegistry
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.format.DefaultFormatRegistry
+import com.orbitalhq.protobuf.ProtobufFormatSpec
 import com.orbitalhq.query.QueryResult
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyne
+import com.orbitalhq.testVyneWithStub
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import mu.KotlinLogging
@@ -38,6 +42,8 @@ abstract class BaseKafkaContainerTest {
 
    lateinit var kafkaProducer: Producer<String, ByteArray>
    lateinit var connectionRegistry: InMemoryKafkaConnectorRegistry
+
+   val formatRegistry = DefaultFormatRegistry(listOf(ProtobufFormatSpec))
 
    @Rule
    @JvmField
@@ -92,18 +98,20 @@ abstract class BaseKafkaContainerTest {
       return sendMessage(message.toByteArray(), topic)
    }
 
-   fun vyneWithKafkaInvoker(taxi: String): Pair<Vyne, KafkaStreamManager> {
+   fun vyneWithKafkaInvoker(taxi: String): Triple<Vyne, KafkaStreamManager, StubService> {
       val schema = TaxiSchema.fromStrings(
          listOf(
             KafkaConnectorTaxi.schema,
             taxi
          )
       )
-      val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema))
+      val kafkaStreamPublisher = KafkaStreamPublisher(connectionRegistry, formatRegistry = formatRegistry)
+      val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry)
       val invokers = listOf(
-         KafkaInvoker(kafkaStreamManager)
+         KafkaInvoker(kafkaStreamManager, kafkaStreamPublisher),
       )
-      return testVyne(schema, invokers) to kafkaStreamManager
+      val (vyne,stub) = testVyneWithStub(schema, invokers)
+      return Triple(vyne , kafkaStreamManager ,stub)
    }
 
    fun collectQueryResults(query: QueryResult, resultsFromQuery1: MutableList<TypedInstance>) {

@@ -19,7 +19,6 @@ import org.springframework.web.reactive.function.client.WebClient
 annotation class EnableVyne
 
 @Configuration
-@Import(FormatSpecRegistry::class)
 class EnableVyneConfiguration {
    @Bean
    fun vyneFactory(

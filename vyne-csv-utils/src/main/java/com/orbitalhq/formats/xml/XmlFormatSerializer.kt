@@ -28,11 +28,7 @@ object XmlFormatSerializer : ModelFormatSerializer {
       schema: Schema,
       typedInstanceInfo: TypedInstanceInfo
    ): Any {
-      val swFactory = XMLOutputFactory2.newFactory()
-      val stream = ByteArrayOutputStream()
-      val writer = swFactory.createXMLStreamWriter(stream)
-      StaxXmlSerializer(schema, writer).write(result)
-      return stream.toString()
+      return write(result, schema, typedInstanceInfo)
    }
 
    override fun write(
@@ -52,6 +48,19 @@ object XmlFormatSerializer : ModelFormatSerializer {
    ): Any? {
       TODO("Not yet implemented")
    }
+
+   override fun write(result: TypedInstance, schema: Schema, typedInstanceInfo: TypedInstanceInfo): Any {
+      val swFactory = XMLOutputFactory2.newFactory()
+      val stream = ByteArrayOutputStream()
+      val writer = swFactory.createXMLStreamWriter(stream)
+      StaxXmlSerializer(schema, writer).write(result)
+      return stream.toString()
+   }
+
+   override fun writeAsBytes(result: TypedInstance, schema: Schema, typedInstanceInfo: TypedInstanceInfo): ByteArray {
+      val xmlString = write(result, schema, typedInstanceInfo) as String
+      return xmlString.toByteArray()
+   }
 }
 
 private class StaxXmlSerializer(private val schema: Schema, private val writer: XMLStreamWriter) {
@@ -61,10 +70,10 @@ private class StaxXmlSerializer(private val schema: Schema, private val writer: 
       writer.writeEndDocument()
    }
 
-   private fun writeInstanceToXml(value: TypedInstance,elementName: String) {
+   private fun writeInstanceToXml(value: TypedInstance, elementName: String) {
       when (value) {
-         is TypedObject -> writeObjectToXml(value,  elementName)
-         is TypedCollection -> writeCollectionToXml(value,  elementName)
+         is TypedObject -> writeObjectToXml(value, elementName)
+         is TypedCollection -> writeCollectionToXml(value, elementName)
          else -> TODO()
       }
    }

@@ -129,6 +129,7 @@ class XmlFormatDeserializerTest : DescribeSpec({
       it("should support xpath declarations and functions") {
          val schema = TaxiSchema.from(
             """
+               @com.orbitalhq.formats.Xml
          model Foo {
             assetClass : String by xpath("/Foo/assetClass")
             identifierValue : String? by when (this.assetClass) {

@@ -1,6 +1,7 @@
 package com.orbitalhq.connectors.kafka
 
 import com.jayway.awaitility.Awaitility
+import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
@@ -60,11 +61,13 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
       password = postgreSQLContainer.password
 
       jdbcConnectionRegistry = InMemoryJdbcConnectionRegistry()
-      jdbcConnectionRegistry.register(JdbcUrlCredentialsConnectionConfiguration(
-         "postgres",
-         JdbcDriver.POSTGRES,
-         JdbcUrlAndCredentials(jdbcUrl, username, password)
-      ))
+      jdbcConnectionRegistry.register(
+         JdbcUrlCredentialsConnectionConfiguration(
+            "postgres",
+            JdbcDriver.POSTGRES,
+            JdbcUrlAndCredentials(jdbcUrl, username, password)
+         )
+      )
 //      jdbcConnectionFactory = SimpleJdbcConnectionFactory()
       //      jdbcConnectionRegistry =
 //         InMemoryJdbcConnectionRegistry(listOf(NamedTemplateConnection("movies", namedParamTemplate, JdbcDriver.H2)))
@@ -122,18 +125,22 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
             schema
          )
       ) { schema ->
-         val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema))
+         val kafkaStreamManager =
+            KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry)
          listOf(
             JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(schema)),
-            KafkaInvoker(kafkaStreamManager)
+            KafkaInvoker(kafkaStreamManager, mock { })
          )
       }
 
       val resultsFromQuery = mutableListOf<TypedInstance>()
       val query = runBlocking {
-         vyne.query("""stream { MovieEvent } as FilmDbRecord[]
+         vyne.query(
+            """stream { MovieEvent } as FilmDbRecord[]
             |call MovieDb::upsertMovie
-         """.trimMargin()) }
+         """.trimMargin()
+         )
+      }
       collectQueryResults(query, resultsFromQuery)
 
       sendMessage("""{ "id" : "one" , "title" : "Star Wars" }""")
@@ -152,9 +159,9 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
 
       dbQueryResults.map { listOf("title" to it["TITLE"], "id" to it["FILM_ID"]).toMap() }
          .shouldContainAll(
-            mapOf("id" to "one", "title" to "Star Wars" ),
-            mapOf("id" to "one", "title" to "Star Wars IV: A New Hope" ),
-            mapOf("id" to "two", "title" to "Empire Strikes Back" ),
+            mapOf("id" to "one", "title" to "Star Wars"),
+            mapOf("id" to "one", "title" to "Star Wars IV: A New Hope"),
+            mapOf("id" to "two", "title" to "Empire Strikes Back"),
          )
    }
 
@@ -207,18 +214,22 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
             schema
          )
       ) { schema ->
-         val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema))
+         val kafkaStreamManager =
+            KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry)
          listOf(
             JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(schema)),
-            KafkaInvoker(kafkaStreamManager)
+            KafkaInvoker(kafkaStreamManager, mock {})
          )
       }
 
       val resultsFromQuery = mutableListOf<TypedInstance>()
       val query = runBlocking {
-         vyne.query("""stream { MovieEvent } as FilmDbRecord[]
+         vyne.query(
+            """stream { MovieEvent } as FilmDbRecord[]
             |call MovieDb::upsertMovie
-         """.trimMargin()) }
+         """.trimMargin()
+         )
+      }
       collectQueryResults(query, resultsFromQuery)
 
       sendMessage("""{ "id" : "one" , "title" : "Star Wars" }""")
@@ -240,8 +251,8 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
 
       dbQueryResults.map { listOf("title" to it["TITLE"], "id" to it["FILM_ID"]).toMap() }
          .shouldContainAll(
-            mapOf("id" to "one", "title" to "Star Wars IV: A New Hope" ),
-            mapOf("id" to "two", "title" to "Empire Strikes Back" ),
+            mapOf("id" to "one", "title" to "Star Wars IV: A New Hope"),
+            mapOf("id" to "two", "title" to "Empire Strikes Back"),
          )
    }
 

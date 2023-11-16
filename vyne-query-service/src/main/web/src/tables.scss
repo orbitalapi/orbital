@@ -39,3 +39,45 @@
 
 
 }
+
+
+@mixin orbital-table($table-border-radius: 6px) {
+  width: 100%;
+  th {
+    text-align: left;
+  }
+
+  td, th {
+    border-bottom: 1px solid $slate-200;
+    padding: 1rem;
+  }
+
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.15);
+  border: 1px solid $slate-300;
+  border-radius: $table-border-radius;
+  border-collapse: separate;
+  border-spacing: 0;
+
+  th:first-of-type {
+    border-top-left-radius: $table-border-radius;
+  }
+  th:last-of-type {
+    border-top-right-radius: $table-border-radius;
+  }
+  tr:last-of-type td:first-of-type {
+    border-bottom-left-radius: $table-border-radius;
+  }
+  tr:last-of-type td:last-of-type {
+    border-bottom-right-radius: $table-border-radius;
+  }
+}
+
+@mixin orbital-table-with-selectable-rows {
+  tbody {
+    tr:hover {
+      background-color: $slate-100;
+      cursor: pointer;
+    }
+
+  }
+}

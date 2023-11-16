@@ -1,0 +1,13 @@
+@import "~src/theme";
+@import "~src/tables";
+@import "./status-colors";
+
+.connection-properties {
+  @include orbital-table();
+  @include links()
+}
+
+.connection-health {
+  display: flex;
+  align-items: center;
+}

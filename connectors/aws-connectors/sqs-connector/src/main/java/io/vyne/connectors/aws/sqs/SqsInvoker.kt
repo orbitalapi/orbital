@@ -10,7 +10,14 @@ import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.Type
 import kotlinx.coroutines.flow.Flow
 
-class SqsInvoker(private val schemaProvider: SchemaProvider, private val sqsStreamManager: SqsStreamManager): OperationInvoker {
+class SqsInvoker(private val schemaProvider: SchemaProvider, private val sqsStreamManager: SqsStreamManager) :
+   OperationInvoker {
+   companion object {
+      init {
+         SqsConnectorTaxi.registerConnectionUsage()
+      }
+   }
+
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       val hasParamMatch = operation.parameters.isEmpty()
       return service.hasMetadata(SqsConnectorTaxi.Annotations.SqsService.NAME) &&

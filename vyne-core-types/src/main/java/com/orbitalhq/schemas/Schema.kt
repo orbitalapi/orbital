@@ -213,11 +213,11 @@ interface Schema {
    fun hasType(name: String) = typeCache.hasType(name)
 
    fun hasService(serviceName: String): Boolean {
-      return this.services.any { it.qualifiedName == serviceName }
+      return this.services.any { it.fullyQualifiedName == serviceName }
    }
 
    fun service(serviceName: String): Service {
-      return this.services.firstOrNull { it.qualifiedName == serviceName }
+      return this.services.firstOrNull { it.fullyQualifiedName == serviceName }
          ?: throw IllegalArgumentException("Service $serviceName was not found within this schema")
    }
 

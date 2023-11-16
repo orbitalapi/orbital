@@ -160,7 +160,8 @@ class JdbcUpsertInvoker(
       response = errorMessage,
       exchange = SqlExchange(
          sql,
-         0
+         0,
+         "UPSERT"
       ),
       isFailed = errorMessage != null
    )
