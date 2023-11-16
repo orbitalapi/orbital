@@ -47,6 +47,14 @@ object CsvFormatSerializer : ModelFormatSerializer {
       return write(result, type, result.convertToRaw(), CsvFormatSpecAnnotation.from(metadata), typedInstanceInfo)
    }
 
+   override fun write(result: TypedInstance, schema: Schema, typedInstanceInfo: TypedInstanceInfo): Any? {
+      TODO("Not yet implemented")
+   }
+
+   override fun writeAsBytes(result: TypedInstance, schema: Schema, typedInstanceInfo: TypedInstanceInfo): ByteArray {
+      TODO("Not yet implemented")
+   }
+
    fun write(result: TypedInstance, csvAnnotation: CsvFormatSpecAnnotation, typedInstanceInfo: TypedInstanceInfo): Any? {
       return write(result, result.type, result.toRawObject(), csvAnnotation, typedInstanceInfo)
    }

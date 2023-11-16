@@ -2,6 +2,7 @@ package com.orbitalhq.query
 
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.Schema
 
 
 /**
@@ -28,4 +29,14 @@ interface QueryContextEventDispatcher {
 
 
    fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String)
+}
+
+/**
+ * A way for a QueryContextEventDispatcher to provide access to the underlying schema.
+ * Used in Operations, (specifically KAfka), where QueryContextEventDispatcher is a
+ * QueryContext,  But need to understand the usecases
+ * where QueryContextEventDispatcher is passed to an invoker, but isn't a QueryContext
+ */
+interface QueryContextSchemaProvider {
+   val schema: Schema
 }
