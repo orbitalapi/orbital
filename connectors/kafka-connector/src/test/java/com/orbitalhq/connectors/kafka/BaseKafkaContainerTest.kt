@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.kafka
 
+import com.orbitalhq.StubService
 import com.orbitalhq.Vyne
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.InMemoryKafkaConnectorRegistry
@@ -10,6 +11,7 @@ import com.orbitalhq.query.QueryResult
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyne
+import com.orbitalhq.testVyneWithStub
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import mu.KotlinLogging
@@ -96,7 +98,7 @@ abstract class BaseKafkaContainerTest {
       return sendMessage(message.toByteArray(), topic)
    }
 
-   fun vyneWithKafkaInvoker(taxi: String): Pair<Vyne, KafkaStreamManager> {
+   fun vyneWithKafkaInvoker(taxi: String): Triple<Vyne, KafkaStreamManager, StubService> {
       val schema = TaxiSchema.fromStrings(
          listOf(
             KafkaConnectorTaxi.schema,
@@ -105,9 +107,10 @@ abstract class BaseKafkaContainerTest {
       )
       val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry)
       val invokers = listOf(
-         KafkaInvoker(kafkaStreamManager)
+         KafkaInvoker(kafkaStreamManager),
       )
-      return testVyne(schema, invokers) to kafkaStreamManager
+      val (vyne,stub) = testVyneWithStub(schema, invokers)
+      return Triple(vyne , kafkaStreamManager ,stub)
    }
 
    fun collectQueryResults(query: QueryResult, resultsFromQuery1: MutableList<TypedInstance>) {
