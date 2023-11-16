@@ -10,3 +10,10 @@
 .connection-list-container {
   width: 100%;
 }
+
+.errors-panel {
+  margin: 1rem 0;
+  background-color: $warning-light;
+  padding: 1rem;
+  border-radius: 6px;
+}
