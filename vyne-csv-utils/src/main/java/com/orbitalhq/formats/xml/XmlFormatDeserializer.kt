@@ -9,10 +9,16 @@ import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.UndefinedSource
 import com.orbitalhq.models.format.ModelFormatDeserializer
+import com.orbitalhq.models.xml.XmlParsedList
+import com.orbitalhq.models.xml.XmlParsedMap
+import com.orbitalhq.models.xml.XmlTypedInstanceParser
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import mu.KotlinLogging
+import org.apache.commons.io.IOUtils
+import org.w3c.dom.Document
+import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.xpath.XPathExpression
@@ -52,27 +58,38 @@ private class XmlDeserializer {
    }
 
    private fun parseWithJackson(value: String, type: Type, schema: Schema, source: DataSource): TypedInstance {
+      // This is expensive, and needs rethinking.
+      // We use jackson parsing because it's simple, and maps nicely to a Map<String,Any>,
+      // so the user doesn't have to litter with by xpath(..) on all attributes.
+      // However, when the use has used by xpath() for some reason, we need access to the XML Doc
+      // The obvious resolution is not to use Jackson, but that needs rework.
       val raw:Any = xmlMapper.readValue(value)
+      val xmlDocument = builder.parse(IOUtils.toInputStream(value, Charset.defaultCharset()))
+
       val typedInstance = when {
          type.isCollection && raw is Collection<*> -> {
-            TypedInstance.from(type, raw, schema, source = source)
+            val xmlParsedStructure = XmlParsedList(raw as List<Map<String,Any>>, xmlDocument)
+            TypedInstance.from(type, xmlParsedStructure, schema, source = source)
          }
          type.isCollection && isXmlCollectionWrapper(raw) -> {
             val collectionWrapper = raw as Map<*, *>
             val collection = collectionWrapper[collectionWrapper.keys.single()] as List<*>
-            TypedInstance.from(type, collection, schema, source = source)
+            val xmlParsedStructure = XmlParsedList(collection as List<Map<String,Any>>, xmlDocument)
+            TypedInstance.from(type, xmlParsedStructure, schema, source = source)
          }
          else -> {
-            TypedInstance.from(type, raw, schema, source = source)
+            val xmlParsedStructure = XmlParsedMap(raw as Map<String,Any>, xmlDocument)
+            TypedInstance.from(type, xmlParsedStructure, schema, source = source)
          }
       }
       return typedInstance
    }
 
-   fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema, source: DataSource = UndefinedSource): TypedInstance? {
+   fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema, source: DataSource = UndefinedSource): TypedInstance {
       require(value is String) { "Expected Xml parsed from String, but received ${value::class.simpleName}" }
       return parseWithJackson(value,type, schema, source = source)
    }
 
 
 }
+

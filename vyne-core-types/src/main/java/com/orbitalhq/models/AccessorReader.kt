@@ -13,6 +13,7 @@ import com.orbitalhq.models.facts.FactDiscoveryStrategy
 import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.json.JsonAttributeAccessorParser
+import com.orbitalhq.models.xml.XmlParsedStructure
 import com.orbitalhq.models.xml.XmlTypedInstanceParser
 import com.orbitalhq.schemas.*
 import com.orbitalhq.schemas.QualifiedName
@@ -691,15 +692,7 @@ class AccessorReader(
       // TODO : We should really support parsing from a stream, to avoid having to load large sets in memory
       return when (value) {
          is String -> xmlParser.parse(value, targetType, accessor, schema, source, nullable, format)
-         // Strictly speaking, we shouldn't be getting maps here.
-         // But it's a legacy thing, from when we used xpath(...) all over the shop, even in non xml types
-         is Map<*, *> -> TypedInstance.from(
-            targetType,
-            value[accessor.expression.removePrefix("/")],
-            schema,
-            source = source
-         )
-
+         is XmlParsedStructure -> xmlParser.parse(value.document, targetType, accessor, schema, source, nullable, format)
          is Document -> xmlParser.parse(value, targetType, accessor, schema, source, nullable, format)
          else -> TODO("Value=${value} targetType=${targetType} accessor={$accessor} not supported!")
       }
