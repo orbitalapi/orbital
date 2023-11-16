@@ -3,6 +3,7 @@ package com.orbitalhq.queryService.schemas.editor.splitter
 import com.winterbe.expekt.should
 import com.orbitalhq.cockpit.core.schemas.editor.splitter.SingleTypePerFileSplitter
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.utils.withoutWhitespace
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.ImportableToken
 import org.junit.Test
@@ -27,13 +28,13 @@ class SingleTypePerFileSplitterTest {
 }"""
       )
       sources[1].name.should.equal("com/orbitalhq/test/Person.taxi")
-      sources[1].content.should.equal(
+      sources[1].content.withoutWhitespace().should.equal(
          """import com.orbitalhq.test.FirstName
 namespace com.orbitalhq.test {
    model Person {
                firstName : FirstName
             }
-}"""
+}""".withoutWhitespace()
       )
    }
 
@@ -69,13 +70,13 @@ namespace com.orbitalhq.test {
       ).taxi
       val sources = SingleTypePerFileSplitter.toVersionedSources(taxi.services.getCompilationUnits())
       sources[0].name.should.equal("com/orbitalhq/test/PersonService.taxi")
-      sources[0].content.should.equal("""import com.orbitalhq.test.FirstName
+      sources[0].content.withoutWhitespace().should.equal("""import com.orbitalhq.test.FirstName
 import com.orbitalhq.test.Person
 namespace com.orbitalhq.test {
    service PersonService {
                operation findPeopleWithName(FirstName):Person[]
             }
-}""")
+}""".withoutWhitespace())
    }
 
 

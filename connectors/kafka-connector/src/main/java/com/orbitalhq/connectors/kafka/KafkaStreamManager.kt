@@ -89,7 +89,6 @@ class KafkaStreamManager(
          require(type.name.name == "Stream") { "Expected to receive a Stream type for consuming from Kafka. Instead found ${type.name.parameterizedName}" }
          type.typeParameters[0]
       }
-      // TODO : We need to introduce a vyne annotation - readAsByteArray or something similar
       val encoding = MessageEncodingType.forType(messageType)
       val schema = schemaProvider.schema
       val dataSource = buildDataSource(request, connectionConfiguration)

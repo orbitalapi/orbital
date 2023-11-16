@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.reactive.asFlow
+import lang.taxi.services.OperationScope
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import java.time.Duration
@@ -65,6 +66,10 @@ class CacheAwareOperationInvocationDecorator(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String
    ): Flow<TypedInstance> {
+      if (!isCacheable(operation)) {
+         return invoker.invoke(service, operation, parameters, eventDispatcher, queryId)
+      }
+
       val (key, params) = getCacheKeyAndParamMessage(service, operation, parameters, eventDispatcher, queryId)
       val actor = actorCache.get(key) {
          buildActor(key, evictWhenResultSizeExceeds)
@@ -101,6 +106,15 @@ class CacheAwareOperationInvocationDecorator(
             }
       } catch (e: Exception) {
          throw e
+      }
+   }
+
+   private fun isCacheable(operation: RemoteOperation): Boolean {
+      // TODO : Make this richer
+      return when {
+         operation.operationType == OperationScope.MUTATION -> false
+         operation.returnType.isStream -> false
+         else -> true
       }
    }
 

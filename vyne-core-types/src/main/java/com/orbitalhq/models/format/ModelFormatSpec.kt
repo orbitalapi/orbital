@@ -40,6 +40,9 @@ interface ModelFormatSerializer {
    fun write(result: TypedInstance, metadata: Metadata, schema: Schema, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
    fun write(result: TypeNamedInstance, attributes: Set<AttributeName>, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
    fun write(result: TypeNamedInstance, type: Type, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
+
+   fun write(result: TypedInstance, schema: Schema, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
+   fun writeAsBytes(result: TypedInstance, schema: Schema, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):ByteArray
 }
 
 interface ModelFormatDeserializer {
