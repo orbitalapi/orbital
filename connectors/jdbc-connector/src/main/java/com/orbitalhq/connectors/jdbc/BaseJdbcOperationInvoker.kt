@@ -94,10 +94,11 @@ abstract class BaseJdbcOperationInvoker(
       sql: String,
       jdbcUrl: String,
       elapsed: Duration,
-      recordCount: Int
+      recordCount: Int,
+      verb: String = "SELECT"
    ): OperationResult {
 
-      val remoteCall = buildRemoteCall(service, jdbcUrl, operation, sql, elapsed, recordCount)
+      val remoteCall = buildRemoteCall(service, jdbcUrl, operation, sql, elapsed, recordCount, verb)
       return OperationResult.fromTypedInstances(
          parameters,
          remoteCall
@@ -110,7 +111,8 @@ abstract class BaseJdbcOperationInvoker(
       operation: RemoteOperation,
       sql: String,
       elapsed: Duration,
-      recordCount: Int
+      recordCount: Int,
+      verb: String
    ) = RemoteCall(
       service = service.name,
       address = jdbcUrl,
@@ -125,7 +127,8 @@ abstract class BaseJdbcOperationInvoker(
       response = null,
       exchange = SqlExchange(
          sql = sql,
-         recordCount = recordCount
+         recordCount = recordCount,
+         verb = verb
       ),
 
    )
