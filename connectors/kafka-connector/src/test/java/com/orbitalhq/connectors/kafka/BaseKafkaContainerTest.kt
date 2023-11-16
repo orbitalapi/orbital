@@ -105,9 +105,10 @@ abstract class BaseKafkaContainerTest {
             taxi
          )
       )
+      val kafkaStreamPublisher = KafkaStreamPublisher(connectionRegistry, formatRegistry = formatRegistry)
       val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry)
       val invokers = listOf(
-         KafkaInvoker(kafkaStreamManager),
+         KafkaInvoker(kafkaStreamManager, kafkaStreamPublisher),
       )
       val (vyne,stub) = testVyneWithStub(schema, invokers)
       return Triple(vyne , kafkaStreamManager ,stub)
