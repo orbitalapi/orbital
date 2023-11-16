@@ -122,7 +122,7 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
             schema
          )
       ) { schema ->
-         val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema))
+         val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry)
          listOf(
             JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(schema)),
             KafkaInvoker(kafkaStreamManager)
@@ -207,7 +207,7 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
             schema
          )
       ) { schema ->
-         val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema))
+         val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry)
          listOf(
             JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(schema)),
             KafkaInvoker(kafkaStreamManager)

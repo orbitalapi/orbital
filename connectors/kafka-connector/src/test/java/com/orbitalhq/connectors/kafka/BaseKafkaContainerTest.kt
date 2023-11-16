@@ -4,6 +4,8 @@ import com.orbitalhq.Vyne
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.InMemoryKafkaConnectorRegistry
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.format.DefaultFormatRegistry
+import com.orbitalhq.protobuf.ProtobufFormatSpec
 import com.orbitalhq.query.QueryResult
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
@@ -38,6 +40,8 @@ abstract class BaseKafkaContainerTest {
 
    lateinit var kafkaProducer: Producer<String, ByteArray>
    lateinit var connectionRegistry: InMemoryKafkaConnectorRegistry
+
+   val formatRegistry = DefaultFormatRegistry(listOf(ProtobufFormatSpec))
 
    @Rule
    @JvmField
@@ -99,7 +103,7 @@ abstract class BaseKafkaContainerTest {
             taxi
          )
       )
-      val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema))
+      val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry)
       val invokers = listOf(
          KafkaInvoker(kafkaStreamManager)
       )

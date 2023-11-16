@@ -30,6 +30,9 @@ spring:
       locations: classpath:db/migration
 
 management:
+   endpoint:
+     prometheus:
+        enabled: true
    endpoints:
       web:
          exposure:

@@ -10,6 +10,7 @@ import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.OperationResultDataSourceWrapper
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.protobuf.ProtobufFormatSpec
 import com.orbitalhq.query.MessageStreamExchange
@@ -47,7 +48,8 @@ class KafkaStreamManager(
    private val connectionRegistry: KafkaConnectionRegistry,
    private val schemaProvider: SchemaProvider,
    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
-   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper
+   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
+   private val formatRegistry: FormatRegistry
 ) {
 
    private val logger = KotlinLogging.logger {}
@@ -116,12 +118,7 @@ class KafkaStreamManager(
                messageType,
                messageValue,
                schema,
-               // TODO : How do I provide this more globally / consistently?
-               // Difficult to inject given from the base type given how
-               // jars are segregated
-               formatSpecs = listOf(
-                  ProtobufFormatSpec
-               ),
+               formatSpecs = formatRegistry.formats,
                source = dataSource
             )
          }
