@@ -11,6 +11,7 @@ import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageWriter
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
 import com.orbitalhq.schemaServer.editor.*
 import com.orbitalhq.schemas.SavedQuery
+import com.orbitalhq.schemas.taxi.asSavedQuery
 import com.orbitalhq.schemas.taxi.toMessage
 import com.orbitalhq.schemas.taxi.toVyneSources
 import com.orbitalhq.schemas.toVyneQualifiedName
@@ -89,12 +90,7 @@ class SchemaEditorService(
                   listOf(queryWithName)
                )
             ).map {
-               SavedQuery(
-                  taxiQuery.name.toVyneQualifiedName(),
-                  // TODO : Need to handle packageIdentifiers better
-                  taxiQuery.compilationUnits.toVyneSources(request.source.packageIdentifier),
-                  null // TODO : Url
-               )
+               taxiQuery.asSavedQuery()
             }
          }
    }

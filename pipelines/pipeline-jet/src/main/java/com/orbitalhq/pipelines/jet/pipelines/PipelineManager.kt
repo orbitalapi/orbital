@@ -199,15 +199,19 @@ class PipelineManager(
       submittedPipelines.put(jobId, submittedPipeline)
    }
 
-   fun getManagedStreams(): List<RunningPipelineSummary> {
-      return getPipelines()
-         .filter {
-            it.pipeline?.spec?.kind == PipelineKind.Stream
+   fun getManagedStreams(includeCancelled: Boolean = false): List<RunningPipelineSummary> {
+      return getPipelines(kind = PipelineKind.Stream)
+         .filter { pipelineSummary ->
+            if (!includeCancelled) {
+               pipelineSummary.pipeline?.cancelled == false
+            } else {
+               true
+            }
          }
    }
-   fun getPipelines(): List<RunningPipelineSummary> {
+   fun getPipelines(kind: PipelineKind = PipelineKind.Pipeline): List<RunningPipelineSummary> {
       val runningPipelines = submittedPipelines.entries
-         .filter { it.value.spec.kind == PipelineKind.Pipeline }
+         .filter { it.value.spec.kind == kind }
          .map { (key, submittedPipeline) ->
             val job = hazelcastInstance.jet.jobs
                .find { it.idString == key } ?: error("The pipeline \"$key\" is not actually running. ")

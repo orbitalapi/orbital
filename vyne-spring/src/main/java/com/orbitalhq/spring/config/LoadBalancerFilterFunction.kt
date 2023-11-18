@@ -1,4 +1,4 @@
-package com.orbitalhq.query.runtime.executor
+package com.orbitalhq.spring.config
 
 import mu.KotlinLogging
 import org.springframework.cloud.client.ServiceInstance

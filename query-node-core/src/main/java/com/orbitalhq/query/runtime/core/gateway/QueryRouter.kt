@@ -32,9 +32,9 @@ class QueryRouter private constructor(val routes: List<RoutableQuery>) {
 
             .filter { query -> query.queryMode != QueryMode.STREAM }
             .mapNotNull { query ->
-            val httpAnnotation = query.annotations.singleOrNull { annotation -> annotation.name == HttpOperation.NAME }
+            val httpAnnotation = HttpOperation.fromQuery(query)
             if (httpAnnotation != null) {
-               query to HttpOperation.fromAnnotation(httpAnnotation)
+               query to httpAnnotation
             } else null
          }.map { (query, httpOperation) ->
             val predicate = when (val method = getHttpMethod(httpOperation.method)) {

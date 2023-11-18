@@ -9,6 +9,7 @@ import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
 import com.orbitalhq.connectors.kafka.registry.SourceLoaderKafkaConnectionRegistry
 import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.schema.api.SchemaProvider
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -26,14 +27,19 @@ class KafkaConnectionConfig {
    fun kafkaStreamManager(
       connectionRegistry: KafkaConnectionRegistry,
       schemaProvider: SchemaProvider,
-      formatRegistry: FormatRegistry
-   ) = KafkaStreamManager(connectionRegistry, schemaProvider, formatRegistry = formatRegistry)
+      formatRegistry: FormatRegistry,
+      meterRegistry: MeterRegistry
+   ) = KafkaStreamManager(connectionRegistry, schemaProvider, formatRegistry = formatRegistry, meterRegistry = meterRegistry)
 
    @Bean
-   fun kafkaStreamPublisher(     connectionRegistry: KafkaConnectionRegistry,
-                                  formatRegistry: FormatRegistry): KafkaStreamPublisher {
-      return KafkaStreamPublisher(connectionRegistry, formatRegistry = formatRegistry)
+   fun kafkaStreamPublisher(
+      connectionRegistry: KafkaConnectionRegistry,
+      formatRegistry: FormatRegistry,
+      meterRegistry: MeterRegistry
+   ): KafkaStreamPublisher {
+      return KafkaStreamPublisher(connectionRegistry, formatRegistry = formatRegistry, meterRegistry = meterRegistry)
    }
+
    @Bean
    fun kafkaInvoker(
       streamManager: KafkaStreamManager,

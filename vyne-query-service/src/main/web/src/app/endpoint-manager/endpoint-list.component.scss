@@ -1,0 +1,7 @@
+@import "~src/theme";
+@import "~src/tables";
+
+.query-list {
+  @include orbital-table();
+  @include orbital-table-with-selectable-rows();
+}

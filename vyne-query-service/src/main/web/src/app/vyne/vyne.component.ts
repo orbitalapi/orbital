@@ -85,6 +85,13 @@ export class VyneComponent implements OnInit {
       testId: 'designer',
       requiredAuthority: VynePrivileges.BrowseSchema
     },
+    {
+      title: 'Endpoints',
+      icon: 'assets/img/tabler/traffic-lights.svg',
+      route: 'endpoints',
+      testId: 'endpoints',
+      requiredAuthority: VynePrivileges.BrowseSchema
+    },
     // {
     //   title: 'Pipeline manager',
     //   icon: 'assets/img/pipeline.svg',

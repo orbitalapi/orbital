@@ -48,9 +48,9 @@ class PersistentStreamManager(
 
    private fun updateStreams(schema: Schema) {
       val updatedStreamState = getStreams(schema)
-      val updatedStreamQueries: Map<QualifiedName, TaxiQLQueryString> = updatedStreamState.mapValues { it.value.source }
+      val updatedStreamQueries: Map<QualifiedName, TaxiQLQueryString> = updatedStreamState.mapValues { (_,taxiQlQuery) -> taxiQlQuery.source }
 
-      val currentManagedStreams = pipelineManager.getManagedStreams()
+      val currentManagedStreams = pipelineManager.getManagedStreams(includeCancelled = false)
       val currentStreamQueries: Map<QualifiedName, TaxiQLQueryString> = currentManagedStreams
          .filter { it.pipeline != null }.associate { runningPipeline ->
             val pipelineSpec = runningPipeline.pipeline!!.spec

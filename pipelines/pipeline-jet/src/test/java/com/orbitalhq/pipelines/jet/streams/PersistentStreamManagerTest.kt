@@ -63,6 +63,7 @@ class PersistentStreamManagerTest : DescribeSpec({
          reset(pipelineManager)
 
          store.setSchema(TaxiSchema.from("""model Foo"""))
+         verify(pipelineManager, times(1)).terminatePipeline(any<String>(), any())
 
       }
    }

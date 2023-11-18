@@ -11,6 +11,7 @@ import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemas.*
 import com.orbitalhq.schemas.taxi.toVyneSources
 import com.orbitalhq.spring.http.NotFoundException
+import lang.taxi.annotations.HttpOperation
 import lang.taxi.generators.SourceFormatter
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -67,9 +68,18 @@ class SchemaService(
          .map { query ->
             SavedQuery(
                query.name.toVyneQualifiedName(),
-               query.compilationUnits.toVyneSources()
+               query.compilationUnits.toVyneSources(),
+               SavedQuery.QueryKind.forQueryMode(query.queryMode),
+               HttpOperation.fromQuery(query)
             )
          }
+   }
+
+   @GetMapping("/api/schemas/queries/{name}")
+   fun getSavedQuery(@PathVariable("name") queryName: String): SavedQuery {
+      return getSavedQueries()
+         .firstOrNull { it.name.parameterizedName == queryName }
+         ?: throw NotFoundException("No query $queryName found")
    }
 
    @GetMapping(path = ["/api/types/{typeName}"])

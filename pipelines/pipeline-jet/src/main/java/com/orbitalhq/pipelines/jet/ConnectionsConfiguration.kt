@@ -6,6 +6,8 @@ import io.micrometer.core.instrument.MeterRegistry
 import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.connectors.VyneConnectionsConfig
 import com.orbitalhq.connectors.aws.core.registry.AwsConfigFileConnectionRegistry
+import com.orbitalhq.connectors.aws.core.registry.AwsConnectionRegistry
+import com.orbitalhq.connectors.aws.core.registry.SourceLoaderAwsConnectionRegistry
 import com.orbitalhq.connectors.azure.blob.registry.AzureStoreConnectionFileRegistry
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.connectors.jdbc.HikariJdbcConnectionFactory
@@ -14,6 +16,7 @@ import com.orbitalhq.connectors.jdbc.registry.JdbcConnectionRegistry
 import com.orbitalhq.connectors.jdbc.registry.SourceLoaderJdbcConnectionRegistry
 import com.orbitalhq.connectors.kafka.registry.KafkaConfigFileConnectorRegistry
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
+import com.orbitalhq.connectors.kafka.registry.SourceLoaderKafkaConnectionRegistry
 import com.orbitalhq.schema.consumer.SchemaConfigSourceLoader
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.spring.config.EnvVariablesConfig
@@ -51,13 +54,13 @@ class ConnectionsConfiguration {
    }
 
    @Bean
-   fun awsConnectionRegistry(config: VyneConnectionsConfig): AwsConfigFileConnectionRegistry {
-      return AwsConfigFileConnectionRegistry(config.configFile)
+   fun awsConnectionRegistry(sourceLoaderConnectorsRegistry: SourceLoaderConnectorsRegistry): AwsConnectionRegistry {
+      return SourceLoaderAwsConnectionRegistry(sourceLoaderConnectorsRegistry)
    }
 
    @Bean
-   fun kafkaConnectionRegistry(config: VyneConnectionsConfig): KafkaConnectionRegistry {
-      return KafkaConfigFileConnectorRegistry(config.configFile)
+   fun kafkaConnectionRegistry(sourceLoaderConnectorsRegistry: SourceLoaderConnectorsRegistry): KafkaConnectionRegistry {
+      return SourceLoaderKafkaConnectionRegistry(sourceLoaderConnectorsRegistry)
    }
 
    @Bean
