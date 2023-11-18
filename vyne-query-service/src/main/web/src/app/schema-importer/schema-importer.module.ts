@@ -35,7 +35,7 @@ import {SchemaSourcePanelComponent} from './schema-source-panel/schema-source-pa
 import {SwaggerConfigComponent} from './schema-source-panel/config-panels/swagger-config.component';
 import {JsonSchemaConfigComponent} from './schema-source-panel/config-panels/jsonschema-config.component';
 import {DataExplorerModule} from '../data-explorer/data-explorer.module';
-import {MatButtonModule} from '@angular/material/button';
+import {MatLegacyButtonModule as MatButtonModule} from '@angular/material/legacy-button';
 import {DatabaseTableConfigComponent} from './schema-source-panel/config-panels/database-table-config.component';
 import {DbConnectionEditorModule} from '../db-connection-editor/db-connection-editor.module';
 import {HeaderBarModule} from '../header-bar/header-bar.module';

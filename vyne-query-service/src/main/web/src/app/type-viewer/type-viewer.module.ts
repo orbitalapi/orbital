@@ -19,7 +19,7 @@ import {UsagesTableComponent} from './usages-table/usages-table.component';
 import {OperationBadgeModule} from '../operation-badge/operation-badge.module';
 import {MatIconModule} from '@angular/material/icon';
 // import {EditTagsPanelComponent} from './tags-section/edit-tags-panel.component';
-import {MatButtonModule} from '@angular/material/button';
+import {MatLegacyButtonModule as MatButtonModule} from '@angular/material/legacy-button';
 import {FormsModule} from '@angular/forms';
 // import {EditTagsPanelContainerComponent} from './tags-section/edit-tags-panel-container.component';
 import {LineageGraphModule} from './lineage-graph/lineage-graph.module';
@@ -42,7 +42,7 @@ import {TypeSearchResultComponent} from './type-search/type-search-result.compon
 import {ModelAttributeTreeListComponent} from './model-attribute-tree-list/model-attribute-tree-list.component';
 import {ModelMemberComponent} from './model-attribute-tree-list/model-member.component';
 import {ModelMemberTreeNodeComponent} from './model-attribute-tree-list/model-member-tree-node.component';
-import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import {MatLegacyProgressSpinnerModule as MatProgressSpinnerModule} from '@angular/material/legacy-progress-spinner';
 import {TypedEditorModule} from '../type-editor/type-editor.module';
 import {SchemaDiagramModule} from '../schema-diagram/schema-diagram.module';
 import {ChangesetSelectorModule} from '../changeset-selector/changeset-selector.module';

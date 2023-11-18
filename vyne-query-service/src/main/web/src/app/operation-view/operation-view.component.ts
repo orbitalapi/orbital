@@ -4,7 +4,7 @@ import {Fact} from '../services/query.service';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {BaseDeferredEditComponent} from '../type-viewer/base-deferred-edit.component';
-import {MatDialog} from '@angular/material/dialog';
+import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
 import {openTypeSearch} from '../type-viewer/model-attribute-tree-list/base-schema-member-display';
 import {isNullOrUndefined} from 'util';
 import {OperationSummary, toOperationSummary} from 'src/app/service-view/operation-summary';

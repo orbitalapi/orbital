@@ -5,7 +5,7 @@ import {TUI_VALIDATION_ERRORS} from "@taiga-ui/kit";
 import {TuiDialogContext, TuiDialogService} from "@taiga-ui/core";
 import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
 import {SavedQuery, TypeEditorService} from "../../services/type-editor.service";
-import {MatSnackBar} from "@angular/material/snack-bar";
+import {MatLegacySnackBar as MatSnackBar} from "@angular/material/legacy-snack-bar";
 
 export interface SaveQueryPanelProps {
   query: string,

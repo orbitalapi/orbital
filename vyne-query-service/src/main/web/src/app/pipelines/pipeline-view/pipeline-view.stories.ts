@@ -9,7 +9,7 @@ import {pipeline} from './pipeline-sample';
 import {HttpClientTestingModule} from '@angular/common/http/testing';
 import {RouterTestingModule} from '@angular/router/testing';
 import {ConfirmationDialogComponent} from '../../confirmation-dialog/confirmation-dialog.component';
-import {MAT_DIALOG_DATA} from '@angular/material/dialog';
+import {MAT_LEGACY_DIALOG_DATA as MAT_DIALOG_DATA} from '@angular/material/legacy-dialog';
 
 storiesOf('Pipeline view', module)
   .addDecorator(

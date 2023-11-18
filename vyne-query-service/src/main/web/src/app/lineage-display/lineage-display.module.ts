@@ -3,8 +3,8 @@ import {LineageDisplayComponent} from './lineage-display.component';
 import {NgxGraphModule} from '@swimlane/ngx-graph';
 import {CommonModule} from '@angular/common';
 import {QueryLineageComponent} from './query-lineage.component';
-import {MatButtonModule} from '@angular/material/button';
-import {MatChipsModule} from '@angular/material/chips';
+import {MatLegacyButtonModule as MatButtonModule} from '@angular/material/legacy-button';
+import {MatLegacyChipsModule as MatChipsModule} from '@angular/material/legacy-chips';
 import {MatIconModule} from '@angular/material/icon';
 
 

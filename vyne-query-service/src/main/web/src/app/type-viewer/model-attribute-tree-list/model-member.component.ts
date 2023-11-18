@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Inject, Input, Output
 import { Field, findType, QualifiedName, Schema, Type } from '../../services/schema';
 import { isNullOrUndefined } from 'util';
 import { TuiHandler } from '@taiga-ui/cdk';
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { MatLegacyDialog as MatDialog, MatLegacyDialogRef as MatDialogRef } from '@angular/material/legacy-dialog';
 import { TypeSearchContainerComponent } from '../type-search/type-search-container.component';
 import { BaseDeferredEditComponent } from '../base-deferred-edit.component';
 import { TUI_TREE_LOADING, TuiTreeLoader, TuiTreeService } from '@taiga-ui/kit';

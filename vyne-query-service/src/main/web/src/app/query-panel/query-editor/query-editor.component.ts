@@ -23,7 +23,7 @@ import {
 } from '../../services/query.service';
 import {QueryLanguage, QueryState} from './bottom-bar.component';
 import {isQueryResult, QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
-import {MatDialog} from '@angular/material/dialog';
+import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
 import {findType, InstanceLike, QualifiedName, Schema, Type, VersionedSource} from '../../services/schema';
 import {BehaviorSubject, Observable, ReplaySubject, Subject} from 'rxjs';
 import {isNullOrUndefined} from 'util';
@@ -48,7 +48,7 @@ import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
 import {appendToQuery} from "./query-code-generator";
 import {SaveQueryPanelComponent, SaveQueryPanelProps} from "./save-query-panel.component";
 import {SavedQuery, SaveQueryRequest, TypeEditorService} from "../../services/type-editor.service";
-import {MatSnackBar} from "@angular/material/snack-bar";
+import {MatLegacySnackBar as MatSnackBar} from "@angular/material/legacy-snack-bar";
 import {HttpEndpointPanelComponent} from "./http-endpoint-panel.component";
 import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;

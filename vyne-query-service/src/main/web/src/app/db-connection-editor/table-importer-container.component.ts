@@ -13,7 +13,7 @@ import {SchemaSubmissionResult, TypesService} from '../services/types.service';
 import {findType, Schema, Type, VersionedSource} from '../services/schema';
 import {isNullOrUndefined} from 'util';
 import {HttpErrorResponse} from '@angular/common/http';
-import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatLegacySnackBar as MatSnackBar} from '@angular/material/legacy-snack-bar';
 import { NewTypeSpec, qualifiedName } from 'src/app/type-editor/new-type-spec';
 
 @Component({

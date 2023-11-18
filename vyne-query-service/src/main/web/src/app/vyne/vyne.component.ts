@@ -5,7 +5,7 @@ import {filter, map} from 'rxjs/operators';
 import {AppInfo, AppInfoService} from '../services/app-info.service';
 import {NavigationEnd, Router} from '@angular/router';
 import {SchemaNotificationService} from '../services/schema-notification.service';
-import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatLegacySnackBar as MatSnackBar} from '@angular/material/legacy-snack-bar';
 import {SystemAlert} from '../system-alert/system-alert.component';
 import {TypesService} from '../services/types.service';
 import {UserInfoService, VynePrivileges, VyneUser} from '../services/user-info.service';

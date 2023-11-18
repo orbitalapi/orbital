@@ -1,4 +1,4 @@
-import {MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {MatLegacyDialog as MatDialog, MatLegacyDialogRef as MatDialogRef} from '@angular/material/legacy-dialog';
 import {Directive, Input} from '@angular/core';
 import {Schema, Type} from '../../services/schema';
 import {TypeSearchContainerComponent} from '../type-search/type-search-container.component';

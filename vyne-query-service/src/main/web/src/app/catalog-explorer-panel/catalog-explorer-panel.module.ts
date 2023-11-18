@@ -10,7 +10,7 @@ import {
   TuiTextfieldControllerModule
 } from "@taiga-ui/core";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
-import {MatProgressBarModule} from "@angular/material/progress-bar";
+import {MatLegacyProgressBarModule as MatProgressBarModule} from "@angular/material/legacy-progress-bar";
 import {CatalogPanelSearchResults} from './catalog-panel-search-results.component';
 import {CatalogTreeComponent} from './catalog-tree.component';
 import {CatalogEntryLineComponent} from './catalog-entry-line.component';

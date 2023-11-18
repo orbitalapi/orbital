@@ -2,8 +2,8 @@ import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@
 import { SchemaMemberKind } from '../services/schema';
 import { UntypedFormControl } from '@angular/forms';
 import { map, startWith } from 'rxjs/operators';
-import { FloatLabelType, MatFormFieldAppearance } from '@angular/material/form-field';
-import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { LegacyFloatLabelType as FloatLabelType, MatLegacyFormFieldAppearance as MatFormFieldAppearance } from '@angular/material/legacy-form-field';
+import { MatLegacyAutocompleteSelectedEvent as MatAutocompleteSelectedEvent } from '@angular/material/legacy-autocomplete';
 import { ConnectorSummary, ConnectorType } from '../db-connection-editor/db-importer.service';
 
 /**

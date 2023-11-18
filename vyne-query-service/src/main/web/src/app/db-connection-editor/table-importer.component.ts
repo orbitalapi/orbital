@@ -14,7 +14,7 @@ import {
   ConfirmationDialogComponent,
   ConfirmationParams
 } from '../confirmation-dialog/confirmation-dialog.component';
-import {MatDialog} from '@angular/material/dialog';
+import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
 import {isNullOrUndefined} from 'util';
 import {capitalizeFirstLetter} from '../utils/strings';
 import { NewTypeSpec } from 'src/app/type-editor/new-type-spec';

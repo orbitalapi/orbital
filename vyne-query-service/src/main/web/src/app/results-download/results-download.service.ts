@@ -7,7 +7,7 @@ import { Type } from 'src/app/services/schema';
 import { CsvOptions } from 'src/app/services/types.service';
 import { TestSpecFormComponent } from 'src/app/test-pack-module/test-spec-form.component';
 import * as fileSaver from 'file-saver';
-import { MatDialog } from '@angular/material/dialog';
+import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 
 // Don't provide in root, as we need
 // to depend on UI components that aren't imported in the root.

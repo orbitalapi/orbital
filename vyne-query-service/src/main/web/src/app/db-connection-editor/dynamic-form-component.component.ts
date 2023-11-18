@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {UntypedFormControl, UntypedFormGroup} from '@angular/forms';
-import {MatFormFieldAppearance} from '@angular/material/form-field';
+import {MatLegacyFormFieldAppearance as MatFormFieldAppearance} from '@angular/material/legacy-form-field';
 import {TuiInputMode, TuiInputType} from '@taiga-ui/cdk';
 
 export class DynamicFormComponentSpec {

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { QualifiedName, Type } from '../../services/schema';
 import { isNullOrUndefined } from 'util';
-import { MatDialog } from '@angular/material/dialog';
+import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 import { BaseSchemaMemberDisplay, openTypeSearch } from './base-schema-member-display';
 
 @Component({

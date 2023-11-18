@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Inject, Input, Output} from '@angular/core';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {MAT_LEGACY_DIALOG_DATA as MAT_DIALOG_DATA, MatLegacyDialogRef as MatDialogRef} from '@angular/material/legacy-dialog';
 import {Schema, Type, VersionedSource} from '../../services/schema';
 import {UntypedFormBuilder, UntypedFormControl, UntypedFormGroup} from '@angular/forms';
 import {dateTimeSymbolsExampleTableData} from './date-time-symbols-example-table-data';

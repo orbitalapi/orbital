@@ -4,7 +4,7 @@ import { ActivatedRoute, ParamMap } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
 import { Schema, Type } from '../services/schema';
 import { combineLatest, Observable } from 'rxjs';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatLegacySnackBar as MatSnackBar } from '@angular/material/legacy-snack-bar';
 import { ChangesetService } from 'src/app/changeset-selector/changeset.service';
 import { buildInheritable, Inheritable } from 'src/app/inheritence-graph/build.inheritable';
 

@@ -112,7 +112,7 @@ $vyne-app-theme: mat.define-light-theme($primary-palette, $accent-palette);
 // Include theme styles for core and each component used in your app.
 // Alternatively, you can import and @include the theme mixins for each component
 // that you are using.
-@include mat.all-component-themes($vyne-app-theme);
+@include mat.all-legacy-component-themes($vyne-app-theme);
 
 
 .cc-window {

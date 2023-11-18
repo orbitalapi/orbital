@@ -10,7 +10,7 @@ import { ConfigDisabledFormComponent } from '../test-pack-module/config-disabled
 import {
   ConfigPersistResultsDisabledFormComponent
 } from '../test-pack-module/config-persist-results-disabled-form.component';
-import { MatDialog } from '@angular/material/dialog';
+import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 import { isNullOrUndefined } from 'util';
 import { ExportFormat } from 'src/app/results-download/results-download.service';
 import { map, scan, tap } from 'rxjs/operators';
