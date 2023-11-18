@@ -1,6 +1,6 @@
 import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {Operation, QualifiedName, Schema, SchemaMember, SchemaMemberKind, Service, Type} from '../services/schema';
-import {FormControl} from '@angular/forms';
+import {UntypedFormControl} from '@angular/forms';
 import {map, startWith} from 'rxjs/operators';
 import {Observable} from 'rxjs';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
@@ -85,7 +85,7 @@ export class SchemaMemberAutocompleteComponent implements OnInit {
 
   filteredMembers: Observable<SchemaMember[]>;
 
-  filterInput = new FormControl();
+  filterInput = new UntypedFormControl();
 
   private _selectedMember: SchemaMember;
 

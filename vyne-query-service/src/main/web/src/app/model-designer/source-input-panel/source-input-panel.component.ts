@@ -6,7 +6,7 @@ import {
     EventEmitter, Input, Output,
     ViewChild
 } from '@angular/core';
-import {FormControl} from "@angular/forms";
+import {UntypedFormControl} from "@angular/forms";
 import {TuiFileLike} from "@taiga-ui/kit";
 import * as monaco from "monaco-editor";
 import {MonacoServices} from "monaco-languageclient";
@@ -41,7 +41,7 @@ import {debounceTime} from "rxjs/operators";
 })
 export class SourceInputPanelComponent {
 
-    readonly fileDropControl = new FormControl();
+    readonly fileDropControl = new UntypedFormControl();
     editorVisible = false;
 
     private monacoEditor: IStandaloneCodeEditor;

@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Schema, Type } from '../services/schema';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import { debounceTime } from 'rxjs/operators';
 import { NewTypeSpec } from 'src/app/type-editor/new-type-spec';
 
@@ -11,11 +11,11 @@ import { NewTypeSpec } from 'src/app/type-editor/new-type-spec';
 })
 export class TypeEditorComponent {
 
-  typeSpecFormGroup = new FormGroup({
-    namespace: new FormControl(),
-    typeName: new FormControl(null, Validators.required),
-    inheritsFrom: new FormControl(),
-    typeDoc: new FormControl(),
+  typeSpecFormGroup = new UntypedFormGroup({
+    namespace: new UntypedFormControl(),
+    typeName: new UntypedFormControl(null, Validators.required),
+    inheritsFrom: new UntypedFormControl(),
+    typeDoc: new UntypedFormControl(),
   });
 
   constructor() {

@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Inject, Input, Output} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {Schema, Type, VersionedSource} from '../../services/schema';
-import {FormBuilder, FormControl, FormGroup} from '@angular/forms';
+import {UntypedFormBuilder, UntypedFormControl, UntypedFormGroup} from '@angular/forms';
 import {dateTimeSymbolsExampleTableData} from './date-time-symbols-example-table-data';
 import {dateTimeSampleFormatsTableData} from './date-time-sample-formats-table-data';
 import { buildInheritable, Inheritable } from 'src/app/inheritence-graph/build.inheritable';
@@ -38,8 +38,8 @@ export class AssignTypeToColumnDialogComponent {
   targetType: Type;
   sources: VersionedSource[];
   inheritanceView: Inheritable;
-  formatForm: FormGroup;
-  format = new FormControl();
+  formatForm: UntypedFormGroup;
+  format = new UntypedFormControl();
   isInheritedType = false;
   sampleDateTimeFormatsTable: DateTimeFormatsTableColumns[] = dateTimeSymbolsExampleTableData;
   dateTimeSampleFormatsTableData: DateTimeSampleFormatsTableColumns[] = dateTimeSampleFormatsTableData;
@@ -47,7 +47,7 @@ export class AssignTypeToColumnDialogComponent {
 
   constructor(
     private dialogRef: MatDialogRef<AssignTypeToColumnDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: any, private fb: FormBuilder) {
+    @Inject(MAT_DIALOG_DATA) public data: any, private fb: UntypedFormBuilder) {
     this.schema = data.schema;
     this.expanded = false;
     this.formatForm = fb.group({

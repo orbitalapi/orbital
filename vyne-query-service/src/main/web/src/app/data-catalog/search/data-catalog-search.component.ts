@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { ExpandableSearchResult, SearchEntryType, SearchResult } from '../../search/search.service';
-import { FormControl } from '@angular/forms';
+import { UntypedFormControl } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, filter } from 'rxjs/operators';
 import { Router } from '@angular/router';
@@ -102,7 +102,7 @@ import { Observable } from 'rxjs/internal/Observable';
 })
 export class DataCatalogSearchComponent implements OnInit {
   showCategories = false;
-  searchInput: FormControl;
+  searchInput: UntypedFormControl;
   fixedColumns: string[] = ['result'];
   columns = [{ label: 'Search result', value: 'result' },
     { label: 'Consumers', value: 'consumers' },
@@ -110,7 +110,7 @@ export class DataCatalogSearchComponent implements OnInit {
 
   // Intentionally removing the consumers and publishers columns.  These should be 'opt-in' by the user,
   // since it's only relevant in some situations.
-  selectedColumns = new FormControl(['result' /*'consumers', 'publishers' */]);
+  selectedColumns = new UntypedFormControl(['result' /*'consumers', 'publishers' */]);
 
   @Input()
   searchResults: Observable<ExpandableSearchResult[]>;
@@ -160,7 +160,7 @@ export class DataCatalogSearchComponent implements OnInit {
     { label: 'Data source', value: 'SERVICE' }
   ];
 
-  selectedCategories: FormControl = new FormControl(this.searchCategories);
+  selectedCategories: UntypedFormControl = new UntypedFormControl(this.searchCategories);
 
   onSearchValueUpdated($event) {
     this.searchTerm = $event.target.value;

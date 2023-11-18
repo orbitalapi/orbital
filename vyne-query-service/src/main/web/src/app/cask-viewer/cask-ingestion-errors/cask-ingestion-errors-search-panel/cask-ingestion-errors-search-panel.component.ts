@@ -1,5 +1,5 @@
 import {Component, EventEmitter, OnInit, Output} from '@angular/core';
-import {FormControl} from '@angular/forms';
+import {UntypedFormControl} from '@angular/forms';
 import {SearchDates, today, yesterday} from './search-dates';
 
 
@@ -9,13 +9,13 @@ import {SearchDates, today, yesterday} from './search-dates';
   styleUrls: ['./cask-ingestion-errors-search-panel.component.scss']
 })
 export class CaskIngestionErrorsSearchPanelComponent implements OnInit {
-  searchEndDate: FormControl;
-  searchStartDate: FormControl;
+  searchEndDate: UntypedFormControl;
+  searchStartDate: UntypedFormControl;
   @Output() searchCriteriaChanged = new EventEmitter<SearchDates>();
 
   constructor() {
-    this.searchEndDate = new FormControl(today());
-    this.searchStartDate = new FormControl(yesterday());
+    this.searchEndDate = new UntypedFormControl(today());
+    this.searchStartDate = new UntypedFormControl(yesterday());
   }
 
   ngOnInit() {

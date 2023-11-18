@@ -259,7 +259,6 @@
       }
     }
   },
-  "defaultProject": "vyne-app",
   "cli": {
     "analytics": false
   }

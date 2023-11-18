@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component} from '@angular/core';
-import {FormControl, FormGroup, Validators} from "@angular/forms";
+import {UntypedFormControl, UntypedFormGroup, Validators} from "@angular/forms";
 import {TUI_VALIDATION_ERRORS} from "@taiga-ui/kit";
 import {WorkspacesService} from "../../services/workspaces.service";
 
@@ -68,7 +68,7 @@ import {WorkspacesService} from "../../services/workspaces.service";
     `
 })
 export class NewWorkspaceComponent {
-    formGroup: FormGroup;
+    formGroup: UntypedFormGroup;
     working: boolean = false;
 
     errorMessage: string | null = null;
@@ -76,8 +76,8 @@ export class NewWorkspaceComponent {
     constructor(private workspaceService: WorkspacesService,
                 private changeRef: ChangeDetectorRef
     ) {
-        this.formGroup = new FormGroup({
-            workspaceName: new FormControl(null,
+        this.formGroup = new UntypedFormGroup({
+            workspaceName: new UntypedFormControl(null,
                 [Validators.required, Validators.pattern('[a-zA-Z](\\w|\\d)*')]
             )
         })

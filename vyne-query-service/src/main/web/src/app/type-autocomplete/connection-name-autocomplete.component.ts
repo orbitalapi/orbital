@@ -1,6 +1,6 @@
 import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { SchemaMemberKind } from '../services/schema';
-import { FormControl } from '@angular/forms';
+import { UntypedFormControl } from '@angular/forms';
 import { map, startWith } from 'rxjs/operators';
 import { FloatLabelType, MatFormFieldAppearance } from '@angular/material/form-field';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
@@ -57,7 +57,7 @@ export class ConnectionNameAutocompleteComponent {
     return this._enabled;
   }
 
-  filterInput = new FormControl();
+  filterInput = new UntypedFormControl();
 
   @Input()
   connectionType?: ConnectorType;

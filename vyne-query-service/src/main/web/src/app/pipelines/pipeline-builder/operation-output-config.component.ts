@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Output } from '@angular/core';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import { findType, Operation, QualifiedName, SchemaMember } from '../../services/schema';
 import { BaseTransportConfigEditor } from './base-transport-config-editor';
 import { PipelineTransportSpec } from '../pipelines.service';
@@ -31,7 +31,7 @@ export class OperationOutputConfigComponent extends BaseTransportConfigEditor {
   @Output()
   configValueChanged = new EventEmitter<any>();
 
-  config: FormGroup;
+  config: UntypedFormGroup;
 
   errorMessage: string;
 
@@ -44,10 +44,10 @@ export class OperationOutputConfigComponent extends BaseTransportConfigEditor {
 
   constructor() {
     super();
-    this.config = new FormGroup({
-        operationName: new FormControl('', Validators.required),
-        schedule: new FormControl('', Validators.required),
-        parameterMap: new FormGroup({})
+    this.config = new UntypedFormGroup({
+        operationName: new UntypedFormControl('', Validators.required),
+        schedule: new UntypedFormControl('', Validators.required),
+        parameterMap: new UntypedFormGroup({})
       }
     );
     this.config.valueChanges.subscribe(e => this.configValueChanged.emit(e));

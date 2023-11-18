@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {CsvOptions, XmlIngestionParameters} from '../services/types.service';
-import {FormControl} from '@angular/forms';
+import {UntypedFormControl} from '@angular/forms';
 import {NgxFileDropEntry} from 'ngx-file-drop';
 
 @Component({
@@ -71,8 +71,8 @@ export class DataSourceConfigComponent {
   dataContainsHeaders = true;
   dataHasContentToIgnore = false;
 
-  columnOne = new FormControl();
-  columnTwo = new FormControl();
+  columnOne = new UntypedFormControl();
+  columnTwo = new UntypedFormControl();
   xmlFileContainsCollection = false;
 
   get useSpecialValueForNull(): boolean {

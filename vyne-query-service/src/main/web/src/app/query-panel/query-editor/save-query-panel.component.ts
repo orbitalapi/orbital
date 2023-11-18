@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Input} from '@angular/core';
 import {PackagesService, SourcePackageDescription} from "../../package-viewer/packages.service";
-import {FormControl, FormGroup, Validators} from "@angular/forms";
+import {UntypedFormControl, UntypedFormGroup, Validators} from "@angular/forms";
 import {TUI_VALIDATION_ERRORS} from "@taiga-ui/kit";
 import {TuiDialogContext, TuiDialogService} from "@taiga-ui/core";
 import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
@@ -109,7 +109,7 @@ export class SaveQueryPanelComponent {
   @Input()
   packages: SourcePackageDescription[];
 
-  formGroup: FormGroup
+  formGroup: UntypedFormGroup
 
   working: boolean = false;
 
@@ -121,9 +121,9 @@ export class SaveQueryPanelComponent {
               private changeRef: ChangeDetectorRef,
               private snackBar: MatSnackBar
   ) {
-    this.formGroup = new FormGroup({
-      schemaPackage: new FormControl(null, Validators.required),
-      queryName: new FormControl(null,
+    this.formGroup = new UntypedFormGroup({
+      schemaPackage: new UntypedFormControl(null, Validators.required),
+      queryName: new UntypedFormControl(null,
         [Validators.required, Validators.pattern('[a-zA-Z](\\w|\\d)*')])
     })
     this.packagesService.listPackages()

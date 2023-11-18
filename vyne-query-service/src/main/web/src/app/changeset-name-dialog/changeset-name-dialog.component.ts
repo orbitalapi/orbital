@@ -1,7 +1,7 @@
 import {Component, Inject, OnInit} from '@angular/core';
 import {TuiDialogContext} from '@taiga-ui/core';
 import {POLYMORPHEUS_CONTEXT} from '@tinkoff/ng-polymorpheus';
-import {FormControl} from '@angular/forms';
+import {UntypedFormControl} from '@angular/forms';
 import {Changeset} from 'src/app/changeset-selector/changeset.service';
 import {ChangesetNameDialogSaveHandler} from "./changeset-name-dialog-save.handler";
 
@@ -16,7 +16,7 @@ export interface ChangesetNameDialogData {
   styleUrls: ['./changeset-name-dialog.component.scss'],
 })
 export class ChangesetNameDialogComponent implements OnInit {
-  nameControl!: FormControl;
+  nameControl!: UntypedFormControl;
   errorMessage: string | null = null;
 
   constructor(
@@ -27,7 +27,7 @@ export class ChangesetNameDialogComponent implements OnInit {
 
   ngOnInit(): void {
     const changeset = this.context.data.changeset;
-    this.nameControl = new FormControl(changeset.isDefault ? '' : changeset.name);
+    this.nameControl = new UntypedFormControl(changeset.isDefault ? '' : changeset.name);
     this.nameControl.valueChanges.subscribe(() => this.errorMessage = null);
   }
 

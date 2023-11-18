@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Inject, Injector, Input, OnInit, Output} from '@angular/core';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
+import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 import {QualifiedName, Schema, SchemaMember} from '../../services/schema';
 import {map} from 'rxjs/operators';
 import {bootstrap} from 'angular';
@@ -69,7 +69,7 @@ import {TuiDialogService} from "@taiga-ui/core";
 })
 export class KafkaTopicConfigComponent extends BaseTransportConfigEditor {
 
-  config: FormGroup;
+  config: UntypedFormGroup;
 
   @Output()
   configValueChanged = new EventEmitter<any>();
@@ -89,10 +89,10 @@ export class KafkaTopicConfigComponent extends BaseTransportConfigEditor {
   constructor(@Inject(Injector) private readonly injector: Injector,
               @Inject(TuiDialogService) private readonly dialogService: TuiDialogService) {
     super();
-    this.config = new FormGroup({
-        topic: new FormControl('', Validators.required),
-        targetTypeName: new FormControl('', Validators.required),
-        connection: new FormControl('', Validators.required)
+    this.config = new UntypedFormGroup({
+        topic: new UntypedFormControl('', Validators.required),
+        targetTypeName: new UntypedFormControl('', Validators.required),
+        connection: new UntypedFormControl('', Validators.required)
       }
     );
     this.config.valueChanges

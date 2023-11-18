@@ -1,6 +1,6 @@
 import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {QualifiedName, Schema, SchemaMember, SchemaMemberKind, Type} from '../services/schema';
-import {FormControl} from '@angular/forms';
+import {UntypedFormControl} from '@angular/forms';
 import {map, startWith} from 'rxjs/operators';
 import {Observable} from 'rxjs';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
@@ -106,7 +106,7 @@ export class TypeAutocompleteComponent implements OnInit {
 
   filteredTypes: Observable<Type[]>;
 
-  filterInput = new FormControl();
+  filterInput = new UntypedFormControl();
 
   private _selectedType: Type;
 
