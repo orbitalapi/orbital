@@ -90,9 +90,8 @@ export const VYNE_ROUTES = RouterModule.forRoot(
 
     ],
     {
-        useHash: false,
-        anchorScrolling: 'enabled',
-        scrollPositionRestoration: 'disabled',
-        relativeLinkResolution: 'legacy'
-    }
+    useHash: false,
+    anchorScrolling: 'enabled',
+    scrollPositionRestoration: 'disabled'
+}
 );
