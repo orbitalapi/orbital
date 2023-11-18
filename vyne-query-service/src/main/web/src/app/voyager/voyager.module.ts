@@ -24,34 +24,31 @@ import {ShareDialogComponent} from './share-dialog/share-dialog.component';
 
 
 @NgModule({
-  declarations: [
-    VoyagerToolbarComponent,
-    SubscribeDialogComponent,
-    ShareDialogComponent
-  ],
-  exports: [
-    VoyagerToolbarComponent
-  ],
-  imports: [
-    CommonModule,
-    MatIconModule,
-    MatButtonModule,
-    TuiDialogModule,
-    TuiInputModule,
-    ReactiveFormsModule,
-    TuiSelectModule,
-    TuiButtonModule,
-    TuiTextfieldControllerModule,
-    TuiDataListWrapperModule,
-    TuiCheckboxLabeledModule,
-    TuiHintModule,
-    TuiLinkModule,
-    FormsModule,
-    TuiInputCopyModule
-  ],
-  entryComponents: [
-    SubscribeDialogComponent
-  ]
+    declarations: [
+        VoyagerToolbarComponent,
+        SubscribeDialogComponent,
+        ShareDialogComponent
+    ],
+    exports: [
+        VoyagerToolbarComponent
+    ],
+    imports: [
+        CommonModule,
+        MatIconModule,
+        MatButtonModule,
+        TuiDialogModule,
+        TuiInputModule,
+        ReactiveFormsModule,
+        TuiSelectModule,
+        TuiButtonModule,
+        TuiTextfieldControllerModule,
+        TuiDataListWrapperModule,
+        TuiCheckboxLabeledModule,
+        TuiHintModule,
+        TuiLinkModule,
+        FormsModule,
+        TuiInputCopyModule
+    ]
 })
 export class VoyagerModule {
 

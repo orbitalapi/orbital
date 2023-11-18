@@ -5,18 +5,17 @@ import { OAuthModule } from 'angular-oauth2-oidc';
 import { MatDialogModule } from '@angular/material/dialog';
 
 @NgModule({
-  imports: [
-    MatDialogModule,
-    CommonModule,
-    OAuthModule.forRoot({
-      resourceServer: {
-        sendAccessToken: false
-      }
-    })
-  ],
-  declarations: [],
-  providers: [AuthService],
-  entryComponents: []
+    imports: [
+        MatDialogModule,
+        CommonModule,
+        OAuthModule.forRoot({
+            resourceServer: {
+                sendAccessToken: false
+            }
+        })
+    ],
+    declarations: [],
+    providers: [AuthService]
 })
 export class AuthModule {
 }

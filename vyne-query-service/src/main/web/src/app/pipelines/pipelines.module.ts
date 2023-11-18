@@ -26,7 +26,6 @@ import {StatisticModule} from '../statistic/statistic.module';
 import {MomentModule} from 'ngx-moment';
 import {PipelineGraphComponent} from './pipeline-view/pipeline-graph.component';
 import {NgxGraphModule} from '@swimlane/ngx-graph';
-import {NgxChartsModule} from '@swimlane/ngx-charts';
 import {InputEditorComponent} from './pipeline-builder/input-editor.component';
 import {OutputEditorComponent} from './pipeline-builder/output-editor.component';
 import {MatDialogModule} from '@angular/material/dialog';
@@ -89,7 +88,6 @@ import {VyneServicesModule} from 'src/app/services/vyne-services.module';
     StatisticModule,
     MomentModule,
     NgxGraphModule,
-    NgxChartsModule,
     SchemaDisplayTableModule,
     TuiButtonModule,
     TuiComboBoxModule,

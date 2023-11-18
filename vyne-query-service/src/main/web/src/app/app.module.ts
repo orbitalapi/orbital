@@ -39,55 +39,51 @@ const oauth2OidcModule = [AuthModule];
 
 
 @NgModule({
-  declarations: [
-    AppComponent,
-  ],
-  imports: [
-    VYNE_ROUTES,
-
-    BrowserModule,
-    BrowserAnimationsModule,
-    CommonModule,
-    LayoutModule,
-
-    HttpClientModule,
-
-    VyneModule,
-    ...oauth2OidcModule,
-    TuiRootModule,
-    TuiAlertModule,
-    TuiLinkModule,
-    TuiDialogModule,
-    TuiInputModule,
-    PolymorpheusModule,
-    TuiButtonModule,
-    LandingPageModule,
-    ConfirmationDialogModule,
-    TuiFocusTrapModule,
-    TuiScrollbarModule,
-    TuiOverscrollModule,
-    TuiDialogHostModule,
-    MatNativeDateModule,
-  ],
-  providers: [
-    TypesService,
-    QueryService,
-    {
-      provide: TUI_SANITIZER,
-      useClass: NgDompurifySanitizer,
-    },
-    SearchService,
-    {
-      provide: LANGUAGE_SERVER_WS_ADDRESS_TOKEN,
-      useValue: WebsocketService.buildWsUrl(environment.serverUrl, '/api/language-server'),
-    },
-    {
-      provide: ENVIRONMENT,
-      useValue: environment,
-    },
-  ],
-  entryComponents: [AppComponent],
-  exports: []
+    declarations: [
+        AppComponent,
+    ],
+    imports: [
+        VYNE_ROUTES,
+        BrowserModule,
+        BrowserAnimationsModule,
+        CommonModule,
+        LayoutModule,
+        HttpClientModule,
+        VyneModule,
+        ...oauth2OidcModule,
+        TuiRootModule,
+        TuiAlertModule,
+        TuiLinkModule,
+        TuiDialogModule,
+        TuiInputModule,
+        PolymorpheusModule,
+        TuiButtonModule,
+        LandingPageModule,
+        ConfirmationDialogModule,
+        TuiFocusTrapModule,
+        TuiScrollbarModule,
+        TuiOverscrollModule,
+        TuiDialogHostModule,
+        MatNativeDateModule,
+    ],
+    providers: [
+        TypesService,
+        QueryService,
+        {
+            provide: TUI_SANITIZER,
+            useClass: NgDompurifySanitizer,
+        },
+        SearchService,
+        {
+            provide: LANGUAGE_SERVER_WS_ADDRESS_TOKEN,
+            useValue: WebsocketService.buildWsUrl(environment.serverUrl, '/api/language-server'),
+        },
+        {
+            provide: ENVIRONMENT,
+            useValue: environment,
+        },
+    ],
+    exports: []
 })
 export class AppModule implements DoBootstrap {
   constructor(@Optional() private authService: AuthService) {

@@ -11,25 +11,20 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 
 
 @NgModule({
-  declarations: [
-    TestSpecFormComponent,
-    ConfigDisabledFormComponent,
-    ConfigPersistResultsDisabledFormComponent
-  ],
-  imports: [
-    CommonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    FormsModule,
-    ReactiveFormsModule,
-    MatButtonModule,
-    MatToolbarModule
-  ],
-  entryComponents: [
-    TestSpecFormComponent,
-    ConfigDisabledFormComponent,
-    ConfigPersistResultsDisabledFormComponent
-  ]
+    declarations: [
+        TestSpecFormComponent,
+        ConfigDisabledFormComponent,
+        ConfigPersistResultsDisabledFormComponent
+    ],
+    imports: [
+        CommonModule,
+        MatFormFieldModule,
+        MatInputModule,
+        FormsModule,
+        ReactiveFormsModule,
+        MatButtonModule,
+        MatToolbarModule
+    ]
 })
 export class TestPackModuleModule {
 }

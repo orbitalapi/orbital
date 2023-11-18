@@ -24,7 +24,7 @@ export class AuthGuard implements CanActivate {
   }
 
   private checkAuthorisation(vyneUser: VyneUser, route: ActivatedRouteSnapshot) {
-    if (route.data.requiredAuthority && vyneUser.grantedAuthorities.includes(route.data.requiredAuthority)) {
+    if (route.data['requiredAuthority'] && vyneUser.grantedAuthorities.includes(route.data['requiredAuthority'])) {
       // authorised so return true
       return true;
     }

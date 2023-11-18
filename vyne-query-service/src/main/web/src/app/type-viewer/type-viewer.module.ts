@@ -49,82 +49,74 @@ import {ChangesetSelectorModule} from '../changeset-selector/changeset-selector.
 
 
 @NgModule({
-  imports: [
-    SearchModule,
-    TuiInputModule,
-    MatToolbarModule,
-    TuiTextfieldControllerModule,
-    CommonModule,
-    AttributeTableModule,
-    ContentsTableModule,
-    DescriptionEditorModule,
-    EnumTableModule,
-    TypeLinkGraphModule,
-    CodeViewerModule,
-    PolicyManagerModule,
-    InheritanceGraphModule,
-    HeaderBarModule,
-    SimpleCodeViewerModule,
-    OperationBadgeModule,
-    MatIconModule,
-    MatButtonModule,
-    FormsModule,
-    LineageGraphModule,
-    MatButtonToggleModule,
-    RouterModule,
-    TuiLinkModule,
-    TuiTextAreaModule,
-    TuiTreeModule,
-    TuiCheckboxLabeledModule,
-    TuiTagModule,
-    MatProgressSpinnerModule,
-    TuiToggleModule,
-    TuiLabelModule,
-    TuiTabsModule,
-    TypedEditorModule,
-    SchemaDiagramModule,
-    TuiButtonModule,
-    ChangesetSelectorModule
-  ],
-  declarations: [
-    TocHostDirective,
-    TypeViewerComponent,
-    TypeViewerContainerComponent,
-    UsagesTableComponent,
-    // TagsSectionComponent,
-    // EditTagsPanelComponent,
-    // EditTagsPanelContainerComponent,
-    // EditOwnerPanelContainerComponent,
-    // EditOwnerPanelComponent,
-    InheritsFromComponent,
-
-    ModelAttributeTreeListComponent, ModelMemberComponent, ModelMemberTreeNodeComponent,
-
-    // These type search components are declared in type-viewer, otherwise we end up
-    // with circular dependencies
-    // (When editing a type in the type viewer, you can search for a new type,
-    // which opens the type search.  When searching for a type, we show documentation
-    // which needs the type viewer.
-    // That's the circular dependency).
-    TypeSearchComponent, TypeSearchContainerComponent, TypeSearchResultComponent,
-  ],
-  exports: [
-    // TagsSectionComponent,
-    TypeViewerComponent,
-    // EditTagsPanelComponent,
-    // EditOwnerPanelComponent,
-    // EditTagsPanelContainerComponent,
-    InheritsFromComponent,
-
-    TypeSearchContainerComponent,
-    TypeSearchComponent,
-
-    ModelAttributeTreeListComponent,
-  ],
-  entryComponents: [
-    // EditTagsPanelContainerComponent,
-    // EditOwnerPanelContainerComponent,
-  ],
+    imports: [
+        SearchModule,
+        TuiInputModule,
+        MatToolbarModule,
+        TuiTextfieldControllerModule,
+        CommonModule,
+        AttributeTableModule,
+        ContentsTableModule,
+        DescriptionEditorModule,
+        EnumTableModule,
+        TypeLinkGraphModule,
+        CodeViewerModule,
+        PolicyManagerModule,
+        InheritanceGraphModule,
+        HeaderBarModule,
+        SimpleCodeViewerModule,
+        OperationBadgeModule,
+        MatIconModule,
+        MatButtonModule,
+        FormsModule,
+        LineageGraphModule,
+        MatButtonToggleModule,
+        RouterModule,
+        TuiLinkModule,
+        TuiTextAreaModule,
+        TuiTreeModule,
+        TuiCheckboxLabeledModule,
+        TuiTagModule,
+        MatProgressSpinnerModule,
+        TuiToggleModule,
+        TuiLabelModule,
+        TuiTabsModule,
+        TypedEditorModule,
+        SchemaDiagramModule,
+        TuiButtonModule,
+        ChangesetSelectorModule
+    ],
+    declarations: [
+        TocHostDirective,
+        TypeViewerComponent,
+        TypeViewerContainerComponent,
+        UsagesTableComponent,
+        // TagsSectionComponent,
+        // EditTagsPanelComponent,
+        // EditTagsPanelContainerComponent,
+        // EditOwnerPanelContainerComponent,
+        // EditOwnerPanelComponent,
+        InheritsFromComponent,
+        ModelAttributeTreeListComponent, ModelMemberComponent, ModelMemberTreeNodeComponent,
+        // These type search components are declared in type-viewer, otherwise we end up
+        // with circular dependencies
+        // (When editing a type in the type viewer, you can search for a new type,
+        // which opens the type search.  When searching for a type, we show documentation
+        // which needs the type viewer.
+        // That's the circular dependency).
+        TypeSearchComponent, TypeSearchContainerComponent, TypeSearchResultComponent,
+    ],
+    exports: [
+        // TagsSectionComponent,
+        TypeViewerComponent,
+        // EditTagsPanelComponent,
+        // EditOwnerPanelComponent,
+        // EditTagsPanelContainerComponent,
+        InheritsFromComponent,
+        TypeSearchContainerComponent,
+        TypeSearchComponent,
+        ModelAttributeTreeListComponent,
+    ]
 })
 export class TypeViewerModule {
 }

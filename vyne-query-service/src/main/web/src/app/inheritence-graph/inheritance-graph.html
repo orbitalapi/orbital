@@ -20,10 +20,7 @@
     </ng-template>
 
     <ng-template #nodeTemplate let-node>
-      <svg:g class="node" style="filter:url(#shadow)" ngx-tooltip
-             [tooltipPlacement]="'top'"
-             [tooltipType]="'tooltip'"
-             [tooltipTitle]="node.fullyQualifiedName">
+      <svg:g class="node" style="filter:url(#shadow)">
         <svg:path [attr.d]="outerRectangle(node.dimension.width, node.dimension.height)" stroke="none"
                   fill="white"></svg:path>
         <svg:path [attr.d]="innerRectangle(4, node.dimension.height)" stroke="none"

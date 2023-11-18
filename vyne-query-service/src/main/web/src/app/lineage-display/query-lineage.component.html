@@ -40,15 +40,7 @@
 
     <ng-template #nodeTemplate let-node>
 
-      <svg:g class="node" style="filter:url(#shadow)"
-             ngx-tooltip
-
-             [tooltipPlacement]="'top'"
-             [tooltipType]="'tooltip'"
-             [tooltipDisabled]="!node.tooltip"
-             [tooltipTitle]="node.tooltip">
-        >
-
+      <svg:g class="node" style="filter:url(#shadow)">
         <ng-container [ngSwitch]='nodeIcon(node)'>
           <!-- Kafka Node -->
           <ng-container *ngSwitchCase="'KafkaTopic'">

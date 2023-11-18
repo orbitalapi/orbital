@@ -21,32 +21,31 @@ import { HeaderComponentLayoutModule } from 'src/app/header-component-layout/hea
 import { AddTokenPanelComponent } from './add-token-panel.component';
 
 @NgModule({
-  imports: [
-    HeaderBarModule,
-    CommonModule,
-    MatButtonModule,
-    MatDialogModule,
-    MatCardModule,
-    TypeAutocompleteModule,
-    ReactiveFormsModule,
-    FormsModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatInputModule,
-    MatSnackBarModule,
-    TuiButtonModule,
-    RouterModule.forChild([
-      {
-        path: '',
-        component: AuthManagerComponent,
-      },
-    ]),
-    HeaderComponentLayoutModule
-  ],
-  exports: [AuthManagerComponent, TokenListComponent],
-  declarations: [AuthManagerComponent, TokenListComponent, NewTokenPanelComponent, AddTokenPanelComponent],
-  providers: [AuthManagerService],
-  entryComponents: [NewTokenPanelComponent]
+    imports: [
+        HeaderBarModule,
+        CommonModule,
+        MatButtonModule,
+        MatDialogModule,
+        MatCardModule,
+        TypeAutocompleteModule,
+        ReactiveFormsModule,
+        FormsModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        MatInputModule,
+        MatSnackBarModule,
+        TuiButtonModule,
+        RouterModule.forChild([
+            {
+                path: '',
+                component: AuthManagerComponent,
+            },
+        ]),
+        HeaderComponentLayoutModule
+    ],
+    exports: [AuthManagerComponent, TokenListComponent],
+    declarations: [AuthManagerComponent, TokenListComponent, NewTokenPanelComponent, AddTokenPanelComponent],
+    providers: [AuthManagerService]
 })
 export class AuthManagerModule {
 }
