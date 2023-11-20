@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Inject, Input, Output } from '@angular/core';
 import { Field, findType, QualifiedName, Schema, Type } from '../../services/schema';
-import { isNullOrUndefined } from 'util';
+import { isNullOrUndefined } from 'src/app/utils/utils';
 import { TuiHandler } from '@taiga-ui/cdk';
 import { MatLegacyDialog as MatDialog, MatLegacyDialogRef as MatDialogRef } from '@angular/material/legacy-dialog';
 import { TypeSearchContainerComponent } from '../type-search/type-search-container.component';

@@ -51,7 +51,7 @@ const appearance: MatFormFieldDefaultOptions = {
         MatInputModule,
         FormsModule,
         MatButtonModule,
-        AgGridModule.withComponents([TypeSelectorCellEditorComponent, CheckboxCellEditorComponent]),
+        AgGridModule,
       TypeAutocompleteModule,
       MatCheckboxModule,
       CovalentDynamicFormsModule,

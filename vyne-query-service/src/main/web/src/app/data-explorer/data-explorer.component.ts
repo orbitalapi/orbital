@@ -16,12 +16,11 @@ import { environment } from '../../environments/environment';
 import { CaskService } from '../services/cask.service';
 import { HeaderTypes } from './csv-viewer.component';
 import { SchemaGeneratorComponent } from './schema-generator-panel/schema-generator.component';
-import * as fileSaver from 'file-saver';
 import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 import { TestSpecFormComponent } from '../test-pack-module/test-spec-form.component';
 import { InstanceSelectedEvent } from '../query-panel/instance-selected-event';
 import { SchemaNotificationService } from '../services/schema-notification.service';
-import { from, Observable, ReplaySubject } from 'rxjs/index';
+import { from, Observable, ReplaySubject } from 'rxjs';
 import { ObjectViewContainerComponent } from '../object-view/object-view-container.component';
 import { ResultsDownloadService } from 'src/app/results-download/results-download.service';
 
@@ -284,7 +283,9 @@ export class DataExplorerComponent {
     this.exportFileService.exportParsedData(this.fileContents, this.contentType, this.csvOptions, false)
       .subscribe(response => {
         const blob: Blob = new Blob([response], { type: `text/json; charset=utf-8` });
-        fileSaver.saveAs(blob, `parsed-data-${new Date().getTime()}.json`);
+        // fileSaver.saveAs(blob, `parsed-data-${new Date().getTime()}.json`);
+        // fileSaver no longer compatible. Will upgrade if this code is still used.
+        throw new Error('This functionality was removed.')
       });
   }
 
@@ -300,7 +301,9 @@ export class DataExplorerComponent {
         this.exportFileService.exportTestSpec(this.fileContents, this.contentType, this.csvOptions, specName)
           .subscribe(response => {
             const blob: Blob = new Blob([response], { type: `application/zip` });
-            fileSaver.saveAs(blob, `${specName}-spec-${new Date().getTime()}.zip`);
+            // fileSaver.saveAs(blob, `${specName}-spec-${new Date().getTime()}.zip`);
+            // fileSaver no longer compatible. Will upgrade if this code is still used.
+            throw new Error('This functionality was removed.')
           });
       }
     });

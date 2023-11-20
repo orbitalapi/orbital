@@ -7,7 +7,7 @@ import {
   OpenApiPackageLoaderSpec,
   TaxiPackageLoaderSpec
 } from 'src/app/schema-importer/schema-importer.models';
-import { isNullOrUndefined } from 'util';
+import { isNullOrUndefined } from 'src/app/utils/utils';
 import { GitConnectionTestResult, SchemaImporterService } from 'src/app/schema-importer/schema-importer.service';
 import { Message } from 'src/app/services/schema';
 

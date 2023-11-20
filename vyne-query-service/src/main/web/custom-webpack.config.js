@@ -1,26 +1,30 @@
-const webpack = require('webpack');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
-// Need to 'mock' some server side node librarie due to this problem...
-// vscode-jsonrpc is re-exporting net, crypto and some libs not available in the browser....
-// See https://github.com/TypeFox/monaco-languageclient/issues/2
+const path = require('path');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const MONACO_DIR = path.join(__dirname, 'node_modules/monaco-editor');
 
+// Workround to https://github.com/microsoft/monaco-editor/issues/3553#issuecomment-1432647208
 module.exports = {
-  plugins: [new MonacoWebpackPlugin()],
-  resolve: {
-    // Required for the LanguageServerProtocol client to work
-    //   alias: {
-    //       'vscode': require.resolve('monaco-languageclient/lib/vscode-compatibility')
-    //   }
-  }
-  // node: {
-  //     "fs": "empty",
-  //     "global": true,
-  //     "crypto": "empty",
-  //     "tls": "empty",
-  //     "net": "empty",
-  //     "process": true,
-  //     "module": false,
-  //     "clearImmediate": false,
-  //     "setImmediate": true
-  //   },
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        include: MONACO_DIR,
+        use: [
+          MiniCssExtractPlugin.loader,
+          {
+            loader: "css-loader"
+          }
+        ]
+      },
+      // {
+      //     test: /\.ttf$/,
+      //     include: MONACO_DIR,
+      //     use: ['file-loader']
+      // }
+    ]
+  },
+  plugins: [
+    new MonacoWebpackPlugin(),
+  ]
 };

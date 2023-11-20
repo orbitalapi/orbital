@@ -1,7 +1,6 @@
 import {AfterViewInit, Component, ElementRef, Input, OnInit, ViewChild} from '@angular/core';
 
-import * as mermaid from 'mermaid';
-import {DatePipe} from '@angular/common';
+import mermaid from 'mermaid';
 
 @Component({
   selector: 'mermaid',
@@ -73,7 +72,7 @@ export class MermaidComponent implements OnInit, AfterViewInit {
     };
 
     this.counter++;
-    const graph = mermaid.render('graphDiv' + Date.now(), this._chartDef, insertSvg);
+    const graph = mermaid.render('graphDiv' + Date.now(), this._chartDef, element);
   }
 
 }

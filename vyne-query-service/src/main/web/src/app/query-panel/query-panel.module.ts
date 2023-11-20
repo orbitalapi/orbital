@@ -93,7 +93,7 @@ import {ProjectSelectorModule} from "../project-selector/project-selector.module
     CodeViewerModule,
     MatProgressSpinnerModule,
     CallExplorerModule,
-    AngularSplitModule.forChild(),
+    AngularSplitModule,
     HeaderBarModule,
     MatDialogModule,
     ResultsTableModule,

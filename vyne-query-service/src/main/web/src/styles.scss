@@ -1,10 +1,11 @@
 @use '@angular/material' as mat;
+
 @import "theme";
-@import "~ag-grid-community/src/styles/ag-grid.scss";
-@import "~ag-grid-community/src/styles/ag-theme-alpine/sass/ag-theme-alpine-mixin.scss";
-@import '~highlight.js/styles/ocean.css';
+@import "node_modules/ag-grid-community/styles/ag-grid.css";
+@import "node_modules/ag-grid-community/styles/ag-theme-alpine.css";
 @import "t2-colors";
 
+// my other global styles
 :root {
   // Used to use variables here (--tui-text-font: $font-sans), but it stopped working.
   // Haven't really investigated why.
@@ -45,10 +46,8 @@ tui-dropdown-host {
 }
 
 .ag-theme-alpine {
-  @include ag-theme-alpine((
-    font-family: ($font-sans),
-    border-color: $border-dark
-  ));
+  --ag-font-family: $font-sans;
+  --ag-border-color: $border-dark;
 
   .ag-header-cell-text {
     font-family: $headings-font;
@@ -103,7 +102,7 @@ $custom-typography: mat.define-legacy-typography-config(
 //  If you don't need the default component typographies but still want the hierarchy styles,
 //  you can delete this line and instead use:
 //    `@include mat.legacy-typography-hierarchy($custom-typography);`
-@include mat.all-legacy-component-typographies($custom-typography);
+//@include mat.all-legacy-component-typographies($custom-typography);
 @include mat.legacy-core();
 
 // Define the palettes for your theme using the Material Design palettes available in palette.scss

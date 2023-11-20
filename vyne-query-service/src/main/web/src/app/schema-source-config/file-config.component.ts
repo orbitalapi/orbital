@@ -6,7 +6,7 @@ import {
   OpenApiPackageLoaderSpec,
   TaxiPackageLoaderSpec
 } from 'src/app/schema-importer/schema-importer.models';
-import { isNullOrUndefined } from 'util';
+import { isNullOrUndefined } from 'src/app/utils/utils';
 import { Message } from 'src/app/services/schema';
 import { FileRepositoryTestResponse, SchemaImporterService } from 'src/app/schema-importer/schema-importer.service';
 import { catchError, debounceTime, switchMap } from 'rxjs/operators';

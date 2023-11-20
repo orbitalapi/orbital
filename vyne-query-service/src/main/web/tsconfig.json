@@ -6,7 +6,7 @@
     "outDir": "./dist/out-tsc",
     "sourceMap": true,
     "declaration": false,
-    "module": "es2020",
+    "module": "ES2022",
     "moduleResolution": "node",
     "emitDecoratorMetadata": false,
     "experimentalDecorators": true,
@@ -17,9 +17,9 @@
       "node_modules/@types"
     ],
     "lib": [
-      "es2017",
+      "es2022",
       "dom",
-      "esnext"
+
     ],
     "useDefineForClassFields": false
   }

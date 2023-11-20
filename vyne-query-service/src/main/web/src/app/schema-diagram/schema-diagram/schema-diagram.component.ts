@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, Ou
 import { Schema, SchemaMember, SchemaMemberKind, splitOperationQualifiedName } from '../../services/schema';
 import { RequiredMembersProps, SchemaFlowWrapper, SchemaMemberClickProps } from './schema-flow.react';
 import { ResizedEvent } from 'angular-resize-event/lib/resized.event';
-import { isNullOrUndefined } from 'util';
+import { isNullOrUndefined } from 'src/app/utils/utils';
 import { Observable, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { arraysEqual } from 'src/app/utils/arrays';

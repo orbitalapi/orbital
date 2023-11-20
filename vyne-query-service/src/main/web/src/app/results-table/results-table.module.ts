@@ -7,7 +7,7 @@ import {MatLegacyTooltipModule as MatTooltipModule} from '@angular/material/lega
 
 @NgModule({
     imports: [CommonModule,
-        AgGridModule.withComponents(),
+        AgGridModule,
         MatTooltipModule
     ],
     exports: [ResultsTableComponent],

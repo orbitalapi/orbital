@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { BaseTypedInstanceViewer } from './BaseTypedInstanceViewer';
-import { isNullOrUndefined } from 'util';
+import { isNullOrUndefined } from 'src/app/utils/utils';
 import {
   InstanceLike,
   InstanceLikeOrCollection,

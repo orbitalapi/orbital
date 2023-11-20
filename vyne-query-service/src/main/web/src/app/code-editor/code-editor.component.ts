@@ -15,20 +15,20 @@ import {editor} from 'monaco-editor';
 
 // Import the core monaco editor
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
-import * as monadoEditorAll from 'monaco-editor/esm/vs/editor/editor.all.js';
-import * as languageFeatureService from 'monaco-editor/esm/vs/editor/common/services/languageFeaturesService.js';
+// import * as monadoEditorAll from 'monaco-editor/esm/vs/editor/editor.all.js';
+// import * as languageFeatureService from 'monaco-editor/esm/vs/editor/common/services/languageFeaturesService.js';
 
 // Import features we care abut
-import * as monacoFeature4
-  from 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneHelpQuickAccess.js';
-import * as monacoFeature5
-  from 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneGotoLineQuickAccess.js';
-import * as monacoFeature6
-  from 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneGotoSymbolQuickAccess.js';
-import * as monacoFeature7
-  from 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneCommandsQuickAccess.js';
-import * as monacoFeature8
-  from 'monaco-editor/esm/vs/editor/standalone/browser/quickInput/standaloneQuickInputService.js';
+// import * as monacoFeature4
+//   from 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneHelpQuickAccess.js';
+// import * as monacoFeature5
+//   from 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneGotoLineQuickAccess.js';
+// import * as monacoFeature6
+//   from 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneGotoSymbolQuickAccess.js';
+// import * as monacoFeature7
+//   from 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneCommandsQuickAccess.js';
+// import * as monacoFeature8
+//   from 'monaco-editor/esm/vs/editor/standalone/browser/quickInput/standaloneQuickInputService.js';
 import ITextModel = editor.ITextModel;
 import IModelContentChangedEvent = editor.IModelContentChangedEvent;
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
@@ -143,7 +143,7 @@ export class CodeEditorComponent implements OnDestroy {
 
   constructor(@Inject(LANGUAGE_SERVER_WS_ADDRESS_TOKEN) private languageServerWsAddress: string) {
     // This does nothing, but prevents tree-shaking
-    const features = [monadoEditorAll, monacoFeature4, monacoFeature5, monacoFeature6, monacoFeature7, monacoFeature8, languageFeatureService];
+    // const features = [monadoEditorAll, monacoFeature4, monacoFeature5, monacoFeature6, monacoFeature7, monacoFeature8, languageFeatureService];
 
     this.monacoModel = monaco.editor.createModel(this.content, TAXI_LANGUAGE_ID, monaco.Uri.parse('inmemory://query.taxi'));
     monaco.languages.register({id: TAXI_LANGUAGE_ID});
