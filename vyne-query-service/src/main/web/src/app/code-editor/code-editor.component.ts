@@ -3,12 +3,14 @@ import {debounceTime} from 'rxjs/operators';
 import {TAXI_LANGUAGE_ID, taxiLanguageConfiguration, taxiLanguageTokenProvider} from '../code-viewer/taxi-lang.monaco';
 import {toSocket, WebSocketMessageReader, WebSocketMessageWriter} from 'vscode-ws-jsonrpc';
 import {
+  MonacoLanguageClient,
+  // MonacoServices
+} from 'monaco-languageclient';
+import {
   CloseAction,
   DidOpenTextDocumentNotification,
   ErrorAction,
-  MonacoLanguageClient,
-  MonacoServices
-} from 'monaco-languageclient';
+} from 'vscode-languageclient';
 import {iplastic_theme} from './themes/iplastic';
 import {editor} from 'monaco-editor';
 
@@ -32,9 +34,10 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import ITextModel = editor.ITextModel;
 import IModelContentChangedEvent = editor.IModelContentChangedEvent;
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
+import { LANGUAGE_SERVER_WS_ADDRESS_TOKEN } from './langServer.service';
 
 
-export const LANGUAGE_SERVER_WS_ADDRESS_TOKEN = 'LANGUAGE_SERVER_WS_ADDRESS_TOKEN';
+
 
 type WordWrapOptions = 'off' | 'on' | 'wordWrapColumn' | 'bounded';
 
@@ -143,9 +146,9 @@ export class CodeEditorComponent implements OnDestroy {
 
   constructor(@Inject(LANGUAGE_SERVER_WS_ADDRESS_TOKEN) private languageServerWsAddress: string) {
     // This does nothing, but prevents tree-shaking
-    // const features = [monadoEditorAll, monacoFeature4, monacoFeature5, monacoFeature6, monacoFeature7, monacoFeature8, languageFeatureService];
+    // const features = [ monacoFeature4, monacoFeature5, monacoFeature6, monacoFeature7, monacoFeature8,];
 
-    this.monacoModel = monaco.editor.createModel(this.content, TAXI_LANGUAGE_ID, monaco.Uri.parse('inmemory://query.taxi'));
+    this.monacoModel = editor.createModel(this.content, TAXI_LANGUAGE_ID, monaco.Uri.parse('inmemory://query.taxi'));
     monaco.languages.register({id: TAXI_LANGUAGE_ID});
     // monaco.languages.registerHoverProvider(TAXI_LANGUAGE_ID, {
     //   provideHover(model: editor.ITextModel, position, token: CancellationToken): languages.ProviderResult<languages.Hover> {
@@ -202,7 +205,7 @@ export class CodeEditorComponent implements OnDestroy {
     });
 
     this.updateActionsOnEditor();
-    MonacoServices.install();
+    // MonacoServices.install();
 
     this.createWebsocketConnection().then(() => {
       this.createLanguageClient();

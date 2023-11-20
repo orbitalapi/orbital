@@ -7,7 +7,6 @@ import {CodeEditorModule} from 'src/app/code-editor/code-editor.module';
 import {SchemaDiagramModule} from 'src/app/schema-diagram/schema-diagram.module';
 import {HttpClientModule} from '@angular/common/http';
 import {AuthModule} from '@auth0/auth0-angular';
-import {LANGUAGE_SERVER_WS_ADDRESS_TOKEN} from 'src/app/code-editor/code-editor.component';
 import {WebsocketService} from 'src/app/services/websocket.service';
 import {environment} from 'src/voyager-app/environments/environment';
 import {TuiDialogModule, TuiRootModule} from '@taiga-ui/core';
@@ -18,6 +17,7 @@ import {RouterModule} from '@angular/router';
 import {VoyagerContainerAppComponent} from 'src/voyager-app/voyager-container-app.component';
 import {VoyagerAppComponent} from "./voyager-app.component";
 import {VoyagerModule} from "src/app/voyager/voyager.module";
+import {LANGUAGE_SERVER_WS_ADDRESS_TOKEN} from "../app/code-editor/langServer.service";
 
 @NgModule({
   imports: [

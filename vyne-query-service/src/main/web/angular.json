@@ -22,9 +22,7 @@
             "main": "src/main.ts",
             "polyfills": "src/polyfills.ts",
             "tsConfig": "src/tsconfig.app.json",
-            "customWebpackConfig": {
-              "path": "./custom-webpack.config.js"
-            },
+
             "assets": [
               "src/silent-refresh.html",
               "src/favicon-32x32.png",
@@ -36,16 +34,14 @@
                 "output": "assets/taiga-ui/icons"
               }
             ],
+            "customWebpackConfig": {
+              "path": "./custom-webpack.config.js"
+            },
             "styles": [
-              {
-                "input": "node_modules/@angular/material/prebuilt-themes/indigo-pink.css"
-              },
-              "node_modules/prismjs/themes/prism-okaidia.css",
-              "node_modules/monaco-editor/dev/vs/editor/editor.main.css",
               "node_modules/@taiga-ui/core/styles/taiga-ui-theme.less",
               "node_modules/@taiga-ui/core/styles/taiga-ui-fonts.less",
               "node_modules/reactflow/dist/style.css",
-              "./src/styles.scss"
+              "src/styles.scss"
             ],
             "scripts": [
               "node_modules/marked/marked.min.js",

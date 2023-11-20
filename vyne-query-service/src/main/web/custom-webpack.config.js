@@ -1,4 +1,4 @@
-const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+// const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const MONACO_DIR = path.join(__dirname, 'node_modules/monaco-editor');
@@ -12,19 +12,12 @@ module.exports = {
         include: MONACO_DIR,
         use: [
           MiniCssExtractPlugin.loader,
-          {
-            loader: "css-loader"
-          }
+          "css-loader",
         ]
       },
-      // {
-      //     test: /\.ttf$/,
-      //     include: MONACO_DIR,
-      //     use: ['file-loader']
-      // }
     ]
   },
   plugins: [
-    new MonacoWebpackPlugin(),
+    // new MonacoWebpackPlugin(),
   ]
 };

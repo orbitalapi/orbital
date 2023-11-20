@@ -24,7 +24,6 @@ import {
 import {LandingPageModule} from './landing-page/landing-page.module';
 import {VYNE_ROUTES} from 'src/app/vyne.routes';
 import {ConfirmationDialogModule} from 'src/app/confirmation-dialog/confirmation-dialog.module';
-import {LANGUAGE_SERVER_WS_ADDRESS_TOKEN} from 'src/app/code-editor/code-editor.component';
 import {WebsocketService} from 'src/app/services/websocket.service';
 import {environment} from 'src/environments/environment';
 import {ENVIRONMENT} from 'src/app/services/environment';
@@ -33,6 +32,7 @@ import {PolymorpheusModule} from "@tinkoff/ng-polymorpheus";
 import {TuiDialogHostModule, TuiFocusTrapModule, TuiOverscrollModule} from "@taiga-ui/cdk";
 import {MatNativeDateModule} from "@angular/material/core";
 import {NgDompurifySanitizer} from "@tinkoff/ng-dompurify";
+import {LANGUAGE_SERVER_WS_ADDRESS_TOKEN} from "./code-editor/langServer.service";
 
 
 const oauth2OidcModule = [AuthModule];

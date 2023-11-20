@@ -202,7 +202,7 @@ export class JsonViewerComponent implements OnDestroy {
         folding: true,
         codeLens: true,
         inlayHints: {
-          enabled: true
+          enabled: 'on'
         }
       });
 

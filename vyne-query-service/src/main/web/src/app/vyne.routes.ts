@@ -31,18 +31,18 @@ export const VYNE_ROUTES = RouterModule.forRoot(
         canActivate: [AuthGuard],
         data: {requiredAuthority: VynePrivileges.EditSchema}
     },
-      {
-            path: 'data-explorer',
-            loadChildren: () => import('./data-explorer/data-explorer.route.module').then(m => m.DataExplorerRouteModule),
-            canActivate: [AuthGuard],
-            data: {requiredAuthority: VynePrivileges.EditSchema}
-        },
-        // {
-        //   path: 'workbook',
-        //   component: DataWorkbookContainerComponent,
-        //   canActivate: [AuthGuard],
-        //   data: { requiredAuthority: VynePrivileges.EditSchema }
-        // },
+    //   {
+    //         path: 'data-explorer',
+    //         loadChildren: () => import('./data-explorer/data-explorer.route.module').then(m => m.DataExplorerRouteModule),
+    //         canActivate: [AuthGuard],
+    //         data: {requiredAuthority: VynePrivileges.EditSchema}
+    //     },
+    //     // {
+    //     //   path: 'workbook',
+    //     //   component: DataWorkbookContainerComponent,
+    //     //   canActivate: [AuthGuard],
+    //     //   data: { requiredAuthority: VynePrivileges.EditSchema }
+    //     // },
         {
             path: 'schemas',
             loadChildren: () => import('./schema-explorer/schema-explorer.module').then(m => m.SchemaExplorerModule),
@@ -61,12 +61,12 @@ export const VYNE_ROUTES = RouterModule.forRoot(
             canActivate: [AuthGuard],
             data: {requiredAuthority: VynePrivileges.ViewQueryHistory}
         },
-        {
-            path: 'cask-viewer',
-            loadChildren: () => import('./cask-viewer/cask-viewer.module').then(m => m.CaskViewerModule),
-            canActivate: [AuthGuard],
-            data: {requiredAuthority: VynePrivileges.ViewCaskDefinitions}
-        },
+    //     {
+    //         path: 'cask-viewer',
+    //         loadChildren: () => import('./cask-viewer/cask-viewer.module').then(m => m.CaskViewerModule),
+    //         canActivate: [AuthGuard],
+    //         data: {requiredAuthority: VynePrivileges.ViewCaskDefinitions}
+    //     },
         {
             path: 'connection-manager',
             loadChildren: () => import('./connection-manager/connection-manager.module').then(m => m.ConnectionManagerModule),
@@ -79,14 +79,14 @@ export const VYNE_ROUTES = RouterModule.forRoot(
             canActivate: [AuthGuard],
             data: {requiredAuthority: VynePrivileges.ViewAuthenticationTokens}
         },
-        {
-            path: 'pipelines',
-            loadChildren: () => import('./pipelines/pipelines.module').then(m => m.PipelinesModule)
-        },
-        {
-            path: 'workspace',
-            loadChildren: () => import('./workspace-manager/workspace-manager.module').then(m => m.WorkspaceManagerModule)
-        },
+        // {
+    //         path: 'pipelines',
+    //         loadChildren: () => import('./pipelines/pipelines.module').then(m => m.PipelinesModule)
+    //     },
+    //     {
+    //         path: 'workspace',
+    //         loadChildren: () => import('./workspace-manager/workspace-manager.module').then(m => m.WorkspaceManagerModule)
+    //     },
 
     ],
     {
