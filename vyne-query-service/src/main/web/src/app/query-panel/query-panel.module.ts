@@ -40,9 +40,9 @@ import {MatSortModule} from '@angular/material/sort';
 import {CovalentFileModule} from '@covalent/core/file';
 import {ExpandingPanelSetModule} from '../expanding-panelset/expanding-panel-set.module';
 import {
-    TuiButtonModule, TuiDropdownModule,
+    TuiButtonModule, TuiDataListModule, TuiDropdownModule,
     TuiErrorModule,
-    TuiHintModule,
+    TuiHintModule, TuiHostedDropdownModule,
     TuiNotificationModule,
     TuiTextfieldControllerModule
 } from '@taiga-ui/core';
@@ -68,6 +68,7 @@ import {QueryHistoryPanelModule} from "../query-history-panel/query-history-pane
 import {SavedQueriesPanelModule} from "../saved-queries-panel/saved-queries-panel.module";
 import {HttpEndpointPanelComponent} from "./query-editor/http-endpoint-panel.component";
 import {ProjectSelectorModule} from "../project-selector/project-selector.module";
+import {TuiActiveZoneModule} from "@taiga-ui/cdk";
 
 @NgModule({
     imports: [
@@ -127,6 +128,9 @@ import {ProjectSelectorModule} from "../project-selector/project-selector.module
         SavedQueriesPanelModule,
         ProjectSelectorModule,
         TuiDropdownModule,
+        TuiActiveZoneModule,
+        TuiHostedDropdownModule,
+        TuiDataListModule,
 
     ],
   exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent,

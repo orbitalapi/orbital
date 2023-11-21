@@ -1,4 +1,3 @@
-const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const MONACO_DIR = path.join(__dirname, 'node_modules/monaco-editor');
@@ -38,6 +37,5 @@ module.exports = {
 
   },
   plugins: [
-    // new MonacoWebpackPlugin(),
   ]
 };

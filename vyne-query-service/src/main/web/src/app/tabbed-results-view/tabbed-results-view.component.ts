@@ -51,7 +51,7 @@ import { map, scan, tap } from 'rxjs/operators';
         [content]="dropdown"
         [(open)]="downloadMenuOpen"
       >
-        <button tuiButton type="button" appearance="flat" [iconRight]="icon" size="m">
+        <button tuiButton type="button" appearance="outline" [iconRight]="icon" size="s"  class="button-small menu-bar-button">
           Download
         </button>
       </tui-hosted-dropdown>
