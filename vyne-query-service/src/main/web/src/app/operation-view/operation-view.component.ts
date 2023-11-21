@@ -88,12 +88,12 @@ import {methodClassFromName} from 'src/app/service-view/service-view-class-utils
             required</p>
         </div>
         <div class="button-row" *ngIf="allowTryItOut">
-          <button mat-stroked-button (click)="tryMode = true" *ngIf="!tryMode" [disabled]="!operationSummary.url">Try
+          <button tuiButton size="m" appearance="outline" (click)="tryMode = true" *ngIf="!tryMode" [disabled]="!operationSummary.url">Try
             it out
           </button>
-          <button mat-stroked-button (click)="onCancel()" *ngIf="tryMode">Cancel</button>
+          <button tuiButton  size="m" appearance="outline"  (click)="onCancel()" *ngIf="tryMode">Cancel</button>
           <div class="spacer"></div>
-          <button mat-raised-button color="primary" *ngIf="tryMode" (click)="doSubmit()">Submit</button>
+          <button tuiButton  size="m" appearance="secondary"  *ngIf="tryMode" (click)="doSubmit()">Submit</button>
         </div>
       </section>
 

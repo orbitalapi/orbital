@@ -1,11 +1,15 @@
-// const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const MONACO_DIR = path.join(__dirname, 'node_modules/monaco-editor');
 
 // Workround to https://github.com/microsoft/monaco-editor/issues/3553#issuecomment-1432647208
 module.exports = {
+  resolve: {
+    extensions: ['.ts', '.js', '.json', '.ttf']
+  },
   module: {
+
     rules: [
       {
         test: /\.css$/,
@@ -15,9 +19,25 @@ module.exports = {
           "css-loader",
         ]
       },
-    ]
+      {
+        test: /\.ttf$/,
+        type: 'asset/resource'
+      },
+      // from https://github.com/TypeFox/monaco-languageclient-ng-example/blob/main/custom-webpack.config.js#L18C12-L21C14
+      {
+        test: /\.(mp3|wasm|ttf)$/i,
+        type: 'asset/resource'
+      }
+    ],
+    // this is required for loading .wasm (and other) files. For context, see https://stackoverflow.com/a/75252098 and https://github.com/angular/angular-cli/issues/24617
+    parser: {
+      javascript: {
+        url: true
+      }
+    },
+
   },
   plugins: [
-    // new MonacoWebpackPlugin(),
+    new MonacoWebpackPlugin(),
   ]
 };

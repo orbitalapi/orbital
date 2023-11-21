@@ -4,7 +4,6 @@ import {TAXI_LANGUAGE_ID, taxiLanguageConfiguration, taxiLanguageTokenProvider} 
 import {toSocket, WebSocketMessageReader, WebSocketMessageWriter} from 'vscode-ws-jsonrpc';
 import {
   MonacoLanguageClient,
-  // MonacoServices
 } from 'monaco-languageclient';
 import {
   CloseAction,
@@ -12,11 +11,14 @@ import {
   ErrorAction,
 } from 'vscode-languageclient';
 import {iplastic_theme} from './themes/iplastic';
-import {editor} from 'monaco-editor';
+import {editor, languages, Uri} from 'monaco-editor';
 
+import { buildWorkerDefinition } from 'monaco-editor-workers';
+// Copied from https://github.com/TypeFox/monaco-languageclient-ng-example/blob/main/src/app/app.component.ts
+buildWorkerDefinition('./assets/monaco-editor-workers/workers', window.location.origin, false);
 
 // Import the core monaco editor
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
+// import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 // import * as monadoEditorAll from 'monaco-editor/esm/vs/editor/editor.all.js';
 // import * as languageFeatureService from 'monaco-editor/esm/vs/editor/common/services/languageFeaturesService.js';
 
@@ -148,8 +150,8 @@ export class CodeEditorComponent implements OnDestroy {
     // This does nothing, but prevents tree-shaking
     // const features = [ monacoFeature4, monacoFeature5, monacoFeature6, monacoFeature7, monacoFeature8,];
 
-    this.monacoModel = editor.createModel(this.content, TAXI_LANGUAGE_ID, monaco.Uri.parse('inmemory://query.taxi'));
-    monaco.languages.register({id: TAXI_LANGUAGE_ID});
+    this.monacoModel = editor.createModel(this.content, TAXI_LANGUAGE_ID, Uri.parse('inmemory://query.taxi'));
+    languages.register({id: TAXI_LANGUAGE_ID});
     // monaco.languages.registerHoverProvider(TAXI_LANGUAGE_ID, {
     //   provideHover(model: editor.ITextModel, position, token: CancellationToken): languages.ProviderResult<languages.Hover> {
     //     return {
@@ -160,11 +162,11 @@ export class CodeEditorComponent implements OnDestroy {
     //   }
     // })
 
-    monaco.languages.setLanguageConfiguration(TAXI_LANGUAGE_ID, taxiLanguageConfiguration);
-    monaco.languages.setMonarchTokensProvider(TAXI_LANGUAGE_ID, taxiLanguageTokenProvider);
+    languages.setLanguageConfiguration(TAXI_LANGUAGE_ID, taxiLanguageConfiguration);
+    languages.setMonarchTokensProvider(TAXI_LANGUAGE_ID, taxiLanguageTokenProvider);
 
-    monaco.editor.defineTheme('vyne', this.editorTheme as any);
-    monaco.editor.setTheme('vyne');
+    editor.defineTheme('vyne', this.editorTheme as any);
+    editor.setTheme('vyne');
     this.modelChanged$.pipe(
       debounceTime(500),
     ).subscribe(e => {
@@ -190,7 +192,7 @@ export class CodeEditorComponent implements OnDestroy {
       this.monacoEditor.dispose();
     }
 
-    this.monacoEditor = monaco.editor.create(this._codeEditorContainer.nativeElement, {
+    this.monacoEditor = editor.create(this._codeEditorContainer.nativeElement, {
       model: this.monacoModel,
       glyphMargin: true,
       lightbulb: {
@@ -234,25 +236,25 @@ export class CodeEditorComponent implements OnDestroy {
   }
 
   createLanguageClient() {
-    this.monacoLanguageClient = new MonacoLanguageClient({
-      name: 'vyne-taxi-language-client',
-      clientOptions: {
-        // use a language id as a document selector
-        documentSelector: [TAXI_LANGUAGE_ID],
-        // disable the default error handler
-        errorHandler: {
-          error: () => ({ action: ErrorAction.Continue }),
-          closed: () => ({ action: CloseAction.DoNotRestart })
-        }
-      },
-      // create a language client connection from the JSON RPC connection on demand
-      connectionProvider: {
-        get: () => {
-          return Promise.resolve(this.transport);
-        }
-      }
-    });
-    this.startLanguageClient();
+    // this.monacoLanguageClient = new MonacoLanguageClient({
+    //   name: 'vyne-taxi-language-client',
+    //   clientOptions: {
+    //     // use a language id as a document selector
+    //     documentSelector: [TAXI_LANGUAGE_ID],
+    //     // disable the default error handler
+    //     errorHandler: {
+    //       error: () => ({ action: ErrorAction.Continue }),
+    //       closed: () => ({ action: CloseAction.DoNotRestart })
+    //     }
+    //   },
+    //   // create a language client connection from the JSON RPC connection on demand
+    //   connectionProvider: {
+    //     get: () => {
+    //       return Promise.resolve(this.transport);
+    //     }
+    //   }
+    // });
+    // this.startLanguageClient();
   }
 
   startLanguageClient() {
@@ -278,9 +280,9 @@ export class CodeEditorComponent implements OnDestroy {
 
 
   ngOnDestroy(): void {
-    console.info('Closing Language Service');
-    this.monacoLanguageClient?.stop();
-    this.monacoModel?.dispose();
+    // console.info('Closing Language Service');
+    // this.monacoLanguageClient?.stop();
+    // this.monacoModel?.dispose();
   }
 
 }

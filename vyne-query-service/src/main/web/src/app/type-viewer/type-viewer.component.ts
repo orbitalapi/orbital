@@ -27,7 +27,7 @@ export class TypeViewerComponent {
   showPolicyManager: boolean;
   schemaMember: SchemaMember;
 
-  chartDisplayMode: 'links' | 'lineage' = 'links';
+  chartDisplayTabIndex: number = 0;
 
   private _type: Type;
 

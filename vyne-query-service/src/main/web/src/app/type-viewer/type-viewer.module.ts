@@ -14,7 +14,6 @@ import {TocHostDirective} from './toc-host.directive';
 import {TypeViewerContainerComponent} from './type-viewer-container.component';
 import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.module';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
-import {SimpleCodeViewerModule} from '../simple-code-viewer/simple-code-viewer.module';
 import {UsagesTableComponent} from './usages-table/usages-table.component';
 import {OperationBadgeModule} from '../operation-badge/operation-badge.module';
 import {MatIconModule} from '@angular/material/icon';
@@ -23,7 +22,6 @@ import {MatLegacyButtonModule as MatButtonModule} from '@angular/material/legacy
 import {FormsModule} from '@angular/forms';
 // import {EditTagsPanelContainerComponent} from './tags-section/edit-tags-panel-container.component';
 import {LineageGraphModule} from './lineage-graph/lineage-graph.module';
-import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {RouterModule} from '@angular/router';
 import {InheritsFromComponent} from './inherits-from.component';
 import {TuiButtonModule, TuiLabelModule, TuiLinkModule, TuiTextfieldControllerModule} from '@taiga-ui/core';
@@ -64,13 +62,11 @@ import {ChangesetSelectorModule} from '../changeset-selector/changeset-selector.
         PolicyManagerModule,
         InheritanceGraphModule,
         HeaderBarModule,
-        SimpleCodeViewerModule,
         OperationBadgeModule,
         MatIconModule,
         MatButtonModule,
         FormsModule,
         LineageGraphModule,
-        MatButtonToggleModule,
         RouterModule,
         TuiLinkModule,
         TuiTextAreaModule,

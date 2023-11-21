@@ -12,29 +12,30 @@ import {QueryPanelModule} from '../query-panel/query-panel.module';
 import {OperationErrorComponent} from './operation-error.component';
 import {ObjectViewModule} from '../object-view/object-view.module';
 import {MatLegacyProgressSpinnerModule as MatProgressSpinnerModule} from '@angular/material/legacy-progress-spinner';
-import {TuiLinkModule} from '@taiga-ui/core';
+import {TuiButtonModule, TuiLinkModule} from '@taiga-ui/core';
 import {TuiToggleModule} from '@taiga-ui/kit';
 import {FormsModule} from '@angular/forms';
 import {MarkdownModule} from "ngx-markdown";
 
 
 @NgModule({
-  imports: [
-    CommonModule,
-    MatToolbarModule,
-    SearchModule,
-    DescriptionEditorModule,
-    RouterModule,
-    MatButtonModule,
-    MatInputModule,
-    QueryPanelModule,
-    ObjectViewModule,
-    MatProgressSpinnerModule,
-    TuiLinkModule,
-    TuiToggleModule,
-    FormsModule,
-    MarkdownModule
-  ],
+    imports: [
+        CommonModule,
+        MatToolbarModule,
+        SearchModule,
+        DescriptionEditorModule,
+        RouterModule,
+        MatButtonModule,
+        MatInputModule,
+        QueryPanelModule,
+        ObjectViewModule,
+        MatProgressSpinnerModule,
+        TuiLinkModule,
+        TuiToggleModule,
+        FormsModule,
+        MarkdownModule,
+        TuiButtonModule
+    ],
   exports: [OperationViewComponent, OperationViewContainerComponent],
   declarations: [OperationViewComponent, OperationViewContainerComponent, OperationErrorComponent],
   providers: [],

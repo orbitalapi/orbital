@@ -41,7 +41,7 @@ export class MermaidComponent implements OnInit, AfterViewInit {
     }
   }
 
-  private renderMermaid() {
+  private async renderMermaid() {
     // mermaid.sequenceConfig = {
     //   actorFontFamily: '"DM Sans", "nunito-sans", "sans-serif',
     //   messageFontFamily: '"nunito-sans", "sans-serif"'
@@ -67,12 +67,11 @@ export class MermaidComponent implements OnInit, AfterViewInit {
     }
 
     const element = this.mermaidContainer.nativeElement;
-    const insertSvg = function (svgCode, bindFunctions) {
-      element.innerHTML = svgCode;
-    };
-
     this.counter++;
-    const graph = mermaid.render('graphDiv' + Date.now(), this._chartDef, element);
+    // const graph = mermaid.render('graphDiv' + Date.now(), this._chartDef);
+    const { svg, bindFunctions } = await mermaid.render('graphDiv' + Date.now(), this._chartDef);
+    element.innerHTML = svg;
+    bindFunctions?.(element)
   }
 
 }

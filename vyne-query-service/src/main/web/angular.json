@@ -22,12 +22,20 @@
             "main": "src/main.ts",
             "polyfills": "src/polyfills.ts",
             "tsConfig": "src/tsconfig.app.json",
-
+            "allowedCommonJsDependencies": [
+              "vscode-jsonrpc",
+              "vscode-languageclient",
+              "vscode-languageserver-protocol"
+            ],
             "assets": [
               "src/silent-refresh.html",
               "src/favicon-32x32.png",
               "src/assets",
-
+              {
+                "glob": "**/*",
+                "input": "./node_modules/monaco-editor-workers/dist",
+                "output": "assets/monaco-editor-workers"
+              },
               {
                 "glob": "**/*",
                 "input": "node_modules/@taiga-ui/icons/src",

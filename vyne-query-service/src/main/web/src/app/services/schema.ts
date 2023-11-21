@@ -224,12 +224,12 @@ export function findSchemaMember(schema: Schema, memberName: string, anonymousTy
 
   if (memberName.includes('@@')) {
     const operationName = splitOperationQualifiedName(memberName);
-    const service = schema.services.find(s => s.qualifiedName === operationName.serviceName)
+    const service = schema.services.find(s => s.fullyQualifiedName === operationName.serviceName)
     return SchemaMember.fromService(service)
       .find(m => m.kind === 'SERVICE')
   }
 
-  const service = schema.services.find(service => service.qualifiedName == memberName)
+  const service = schema.services.find(service => service.fullyQualifiedName == memberName)
   if (service) {
     return SchemaMember.fromService(service)
       .find(m => m.kind === 'SERVICE')
@@ -374,7 +374,7 @@ export interface ServiceLineage {
   metadata: Metadata[]
 }
 export interface Service extends SchemaMemberNamed, Named, Documented {
-  qualifiedName: string; // This is messy, and needs fixing up.
+  fullyQualifiedName: string; // This is messy, and needs fixing up.
   operations: Operation[];
   queryOperations: QueryOperation[];
   tableOperations: TableOperation[];
