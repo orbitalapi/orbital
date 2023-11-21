@@ -260,14 +260,14 @@ export class CodeEditorComponent implements OnDestroy {
   startLanguageClient() {
     this.monacoLanguageClient.start()
     .then(() => {
-      this.monacoLanguageClient.sendNotification(DidOpenTextDocumentNotification.type, {
-        textDocument: {
-          uri: 'inmemory://query.taxi',
-          languageId: TAXI_LANGUAGE_ID,
-          version: 0,
-          text: this.content
-        }
-      })
+      // this.monacoLanguageClient.sendNotification(DidOpenTextDocumentNotification.type, {
+      //   textDocument: {
+      //     uri: 'inmemory://query.taxi',
+      //     languageId: TAXI_LANGUAGE_ID,
+      //     version: 0,
+      //     text: this.content
+      //   }
+      // })
     });
   }
 

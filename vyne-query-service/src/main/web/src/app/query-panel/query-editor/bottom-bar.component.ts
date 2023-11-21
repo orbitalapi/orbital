@@ -28,14 +28,26 @@ import {AppInfoService, AppConfig} from 'src/app/services/app-info.service';
       ></tui-data-list-wrapper>
     </tui-select>
     <button mat-flat-button class='button-small menu-bar-button' [matMenuTriggerFor]='copyAsMenu'>Copy</button>
+    <button
+      iconRight="tuiIconChevronDown"
+      tuiButton
+      type="button"
+      size="s" appearance="outline" class="button-small  menu-bar-button"
+      [tuiDropdown]="dropdownContent"
+    >
+      Copy
+      <ng-template #dropdownContent>
+        <div class="dropdown">But there is nothing to choose...</div>
+      </ng-template>
+    </button>
     <mat-menu #copyAsMenu='matMenu'>
       <button mat-menu-item (click)="copyQuery.emit('query')">Query only</button>
       <button mat-menu-item (click)="copyQuery.emit('curl')">As cURL statement</button>
       <button mat-menu-item (click)="copyQuery.emit('snippet')" tuiHint='Available once query has completed'>As code
       </button>
     </mat-menu>
-    <button mat-flat-button class="button-small menu-bar-button" (click)="saveClicked.emit()">Save</button>
-    <button mat-flat-button color='accent'
+    <button tuiButton size="s" appearance="outline" class="button-small  menu-bar-button"  (click)="saveClicked.emit()">Save</button>
+    <button tuiButton size="s" appearance="primary"
             class='button-small menu-bar-button'
             *ngIf="(currentState$ | async) !== 'Running' && (currentState$ | async) !== 'Cancelling'"
             (click)='runQuery()'>

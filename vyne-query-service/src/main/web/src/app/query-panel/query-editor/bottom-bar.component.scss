@@ -63,6 +63,11 @@ app-counter-timer {
 
 button {
   flex-shrink: 0;
+  border-radius: 4px;
+  &[data-appearance='outline'] {
+    background-color: $white;
+    border: none;
+  }
 }
 
 

@@ -2,6 +2,7 @@ const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const MONACO_DIR = path.join(__dirname, 'node_modules/monaco-editor');
+const VSCODE_DIR = path.join(__dirname, 'node_modules/vscode');
 
 // Workround to https://github.com/microsoft/monaco-editor/issues/3553#issuecomment-1432647208
 module.exports = {
@@ -13,15 +14,14 @@ module.exports = {
     rules: [
       {
         test: /\.css$/,
-        include: MONACO_DIR,
+        include: [
+          MONACO_DIR,
+          VSCODE_DIR
+        ],
         use: [
           MiniCssExtractPlugin.loader,
           "css-loader",
         ]
-      },
-      {
-        test: /\.ttf$/,
-        type: 'asset/resource'
       },
       // from https://github.com/TypeFox/monaco-languageclient-ng-example/blob/main/custom-webpack.config.js#L18C12-L21C14
       {
@@ -38,6 +38,6 @@ module.exports = {
 
   },
   plugins: [
-    new MonacoWebpackPlugin(),
+    // new MonacoWebpackPlugin(),
   ]
 };
