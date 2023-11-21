@@ -100,12 +100,12 @@
     "zone.js": "~0.13.0"
   },
   "overridesComments" : {
-    "d3-selection"  : "See https://github.com/swimlane/ngx-graph/issues/41#issuecomment-1639986985",
-    "monaco-editor": "$monaco-editor",
-    "vscode": "$vscode"
+    "d3-selection"  : "See https://github.com/swimlane/ngx-graph/issues/41#issuecomment-1639986985"
   },
   "overrides": {
-    "d3-selection": "3.0.0"
+    "d3-selection": "3.0.0",
+    "monaco-editor": "$monaco-editor",
+    "vscode": "$vscode"
   },
   "resolutions": {
     "monaco-editor": "npm:@codingame/monaco-editor-treemended@>=1.83.7 <1.84.0",
