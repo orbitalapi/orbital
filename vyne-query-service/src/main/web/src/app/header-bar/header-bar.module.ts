@@ -14,18 +14,18 @@ import {WorkspaceSelectorModule} from "../workspace-selector/workspace-selector.
 import {TuiAvatarModule} from "@taiga-ui/kit";
 
 @NgModule({
-  imports: [
-    MatToolbarModule,
-    SearchModule,
-    CommonModule,
-    MatButtonModule,
-    MatIconModule,
-    MatMenuModule,
-    MatDialogModule,
-    ConfirmationDialogModule,
-    WorkspaceSelectorModule,
-    TuiAvatarModule,
-  ],
+    imports: [
+        MatToolbarModule,
+        SearchModule,
+        CommonModule,
+        MatButtonModule,
+        MatIconModule,
+        MatMenuModule,
+        MatDialogModule,
+        ConfirmationDialogModule,
+        WorkspaceSelectorModule,
+        TuiAvatarModule,
+    ],
   exports: [HeaderBarComponent, AvatarComponent],
   declarations: [HeaderBarComponent, AvatarComponent],
   providers: [],

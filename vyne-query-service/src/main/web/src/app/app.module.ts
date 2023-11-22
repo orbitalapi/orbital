@@ -34,54 +34,55 @@ import {MatNativeDateModule} from "@angular/material/core";
 import {NgDompurifySanitizer} from "@tinkoff/ng-dompurify";
 import {LANGUAGE_SERVER_WS_ADDRESS_TOKEN} from "./code-editor/langServer.service";
 
-
 const oauth2OidcModule = [AuthModule];
-
 
 @NgModule({
     declarations: [
         AppComponent,
     ],
     imports: [
-        VYNE_ROUTES,
-        BrowserModule,
-        BrowserAnimationsModule,
-        CommonModule,
-        LayoutModule,
-        HttpClientModule,
-        VyneModule,
-        ...oauth2OidcModule,
-        TuiRootModule,
-        TuiAlertModule,
-        TuiLinkModule,
-        TuiDialogModule,
-        TuiInputModule,
-        PolymorpheusModule,
-        TuiButtonModule,
-        LandingPageModule,
-        ConfirmationDialogModule,
-        TuiFocusTrapModule,
-        TuiScrollbarModule,
-        TuiOverscrollModule,
-        TuiDialogHostModule,
-        MatNativeDateModule,
+    VYNE_ROUTES,
+
+    BrowserModule,
+    BrowserAnimationsModule,
+    CommonModule,
+    LayoutModule,
+
+    HttpClientModule,
+
+    VyneModule,
+    ...oauth2OidcModule,
+    TuiRootModule,
+    TuiAlertModule,
+    TuiLinkModule,
+    TuiDialogModule,
+    TuiInputModule,
+    PolymorpheusModule,
+    TuiButtonModule,
+    LandingPageModule,
+    ConfirmationDialogModule,
+    TuiFocusTrapModule,
+    TuiScrollbarModule,
+    TuiOverscrollModule,
+    TuiDialogHostModule,
+    MatNativeDateModule,
     ],
     providers: [
-        TypesService,
-        QueryService,
-        {
-            provide: TUI_SANITIZER,
-            useClass: NgDompurifySanitizer,
-        },
-        SearchService,
-        {
-            provide: LANGUAGE_SERVER_WS_ADDRESS_TOKEN,
-            useValue: WebsocketService.buildWsUrl(environment.serverUrl, '/api/language-server'),
-        },
-        {
-            provide: ENVIRONMENT,
-            useValue: environment,
-        },
+    TypesService,
+    QueryService,
+    {
+      provide: TUI_SANITIZER,
+      useClass: NgDompurifySanitizer,
+    },
+    SearchService,
+    {
+      provide: LANGUAGE_SERVER_WS_ADDRESS_TOKEN,
+      useValue: WebsocketService.buildWsUrl(environment.serverUrl, '/api/language-server'),
+    },
+    {
+      provide: ENVIRONMENT,
+      useValue: environment,
+    },
     ],
     exports: []
 })
@@ -92,7 +93,8 @@ export class AppModule implements DoBootstrap {
   ngDoBootstrap(appRef: ApplicationRef): void {
     this.authService.bootstrapAuthService()
       .then(() => {
-        appRef.bootstrap(AppComponent);
+        console.log('bootstrapping the application');
+      appRef.bootstrap(AppComponent);
       })
       .catch(error => {
         console.error(`[ngDoBootstrap] Problem while authService.bootstrapAuthService(): ${JSON.stringify(error)}`, error);

@@ -20,7 +20,9 @@
             "outputPath": "../../../../station/target/classes/static",
             "index": "src/index.html",
             "main": "src/main.ts",
-            "polyfills": "src/polyfills.ts",
+            "polyfills": [
+              "zone.js"
+            ],
             "tsConfig": "src/tsconfig.app.json",
             "allowedCommonJsDependencies": [
               "vscode-jsonrpc",
