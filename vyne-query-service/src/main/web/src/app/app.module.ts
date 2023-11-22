@@ -32,7 +32,7 @@ import {PolymorpheusModule} from "@tinkoff/ng-polymorpheus";
 import {TuiDialogHostModule, TuiFocusTrapModule, TuiOverscrollModule} from "@taiga-ui/cdk";
 import {MatNativeDateModule} from "@angular/material/core";
 import {NgDompurifySanitizer} from "@tinkoff/ng-dompurify";
-import {LANGUAGE_SERVER_WS_ADDRESS_TOKEN} from "./code-editor/langServer.service";
+import {LANGUAGE_SERVER_WS_ADDRESS_TOKEN} from "./code-editor/language-server.tokens";
 
 const oauth2OidcModule = [AuthModule];
 

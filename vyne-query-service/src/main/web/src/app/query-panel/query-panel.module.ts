@@ -51,14 +51,14 @@ import {MatLegacyMenuModule as MatMenuModule} from '@angular/material/legacy-men
 import {ClipboardModule} from '@angular/cdk/clipboard';
 import {QuerySnippetPanelModule} from 'src/app/query-snippet-panel/query-snippet-panel.module';
 import {
-  TuiDataListWrapperModule,
-  TuiFieldErrorPipeModule,
-  TuiFilterByInputPipeModule,
-  TuiInputModule,
-  TuiSelectModule,
-  TuiStringifyContentPipeModule,
-  TuiTabsModule,
-  TuiTextAreaModule
+    TuiDataListWrapperModule,
+    TuiFieldErrorPipeModule,
+    TuiFilterByInputPipeModule,
+    TuiInputModule,
+    TuiSelectModule,
+    TuiStringifyContentPipeModule,
+    TuiTabsModule,
+    TuiTextAreaModule
 } from '@taiga-ui/kit';
 import {CatalogExplorerPanelModule} from "../catalog-explorer-panel/catalog-explorer-panel.module";
 import {SaveQueryPanelComponent} from "./query-editor/save-query-panel.component";
@@ -133,17 +133,21 @@ import {TuiActiveZoneModule} from "@taiga-ui/cdk";
         TuiDataListModule,
 
     ],
-  exports: [QueryPanelComponent, QueryEditorComponent, QueryEditorToolbar,
-    ErrorPanelComponent, SaveQueryPanelComponent],
-  declarations: [QueryPanelComponent, QueryWizardComponent,
-    VyneQueryViewerComponent, QueryEditorComponent, QueryEditorToolbar, CounterTimerComponent,
-    HttpEndpointPanelComponent,
-    ErrorPanelComponent,
-    QueryBuilderComponent,
-    SaveQueryPanelComponent
+    exports: [QueryPanelComponent,
+        QueryEditorComponent,
+        QueryEditorToolbar,
+        ErrorPanelComponent, SaveQueryPanelComponent],
+    declarations: [QueryPanelComponent, QueryWizardComponent,
+        VyneQueryViewerComponent,
+        QueryEditorComponent,
+        QueryEditorToolbar, CounterTimerComponent,
+        HttpEndpointPanelComponent,
+        ErrorPanelComponent,
+        QueryBuilderComponent,
+        SaveQueryPanelComponent
 
-  ],
-  providers: [],
+    ],
+    providers: [],
 })
 export class QueryPanelModule {
 }

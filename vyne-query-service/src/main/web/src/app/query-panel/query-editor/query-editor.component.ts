@@ -26,7 +26,7 @@ import {isQueryResult, QueryResultInstanceSelectedEvent} from '../result-display
 import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
 import {findType, InstanceLike, QualifiedName, Schema, Type, VersionedSource} from '../../services/schema';
 import {BehaviorSubject, Observable, ReplaySubject, Subject} from 'rxjs';
-import {isNullOrUndefined} from 'util';
+import { isNullOrUndefined } from 'src/app/utils/utils';
 import {ActiveQueriesNotificationService, RunningQueryStatus} from '../../services/active-queries-notification-service';
 import {TypesService} from '../../services/types.service';
 import {

@@ -1,288 +1,209 @@
-import {Component, ElementRef, EventEmitter, Inject, Input, OnDestroy, Output, ViewChild} from '@angular/core';
-import {debounceTime} from 'rxjs/operators';
-import {TAXI_LANGUAGE_ID, taxiLanguageConfiguration, taxiLanguageTokenProvider} from '../code-viewer/taxi-lang.monaco';
-import {toSocket, WebSocketMessageReader, WebSocketMessageWriter} from 'vscode-ws-jsonrpc';
-import {
-  MonacoLanguageClient,
-} from 'monaco-languageclient';
-import {
-  CloseAction,
-  DidOpenTextDocumentNotification,
-  ErrorAction,
-} from 'vscode-languageclient';
-import {iplastic_theme} from './themes/iplastic';
-import {CancellationToken, editor, languages, Uri} from 'monaco-editor';
-
-import {buildWorkerDefinition} from 'monaco-editor-workers';
-// Copied from https://github.com/TypeFox/monaco-languageclient-ng-example/blob/main/src/app/app.component.ts
-buildWorkerDefinition('./assets/monaco-editor-workers/workers', window.location.origin, false);
-
-// Import the core monaco editor
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
-// import * as monadoEditorAll from 'monaco-editor/esm/vs/editor/editor.all.js';
-// import * as languageFeatureService from 'monaco-editor/esm/vs/editor/common/services/languageFeaturesService.js';
-
-// Import features we care abut
-// import * as monacoFeature4
-//   from 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneHelpQuickAccess.js';
-// import * as monacoFeature5
-//   from 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneGotoLineQuickAccess.js';
-// import * as monacoFeature6
-//   from 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneGotoSymbolQuickAccess.js';
-// import * as monacoFeature7
-//   from 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneCommandsQuickAccess.js';
-// import * as monacoFeature8
-//   from 'monaco-editor/esm/vs/editor/standalone/browser/quickInput/standaloneQuickInputService.js';
+import {Component, ElementRef, EventEmitter, Input, Output, ViewChild} from '@angular/core';
+import {editor, Uri} from "monaco-editor";
+import {MonacoLanguageServerService} from "./language-server.service";
+import {MonacoLanguageClient} from "monaco-languageclient";
+import {debounceTime} from "rxjs/operators";
+import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 import ITextModel = editor.ITextModel;
 import IModelContentChangedEvent = editor.IModelContentChangedEvent;
-import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
-import {
-  LANGUAGE_SERVER_WS_ADDRESS_TOKEN,
-  initializeMonacoLanguageServices,
-  MonacoLanguageServerService
-} from './langServer.service';
+import {createConfiguredEditor} from "@codingame/monaco-vscode-api/monaco";
+
 
 
 type WordWrapOptions = 'off' | 'on' | 'wordWrapColumn' | 'bounded';
 
 @Component({
-  selector: 'app-code-editor',
-  styleUrls: ['./code-editor.component.scss'],
-  template: `
-    <div #codeEditorContainer class="code-editor"></div>
-  `
+    selector: 'app-code-editor',
+    styleUrls: ['./code-editor.component.scss'],
+    template: `
+        <div #codeEditorContainer class="code-editor"></div>
+    `
 })
-export class CodeEditorComponent implements OnDestroy {
-  private _codeEditorContainer: ElementRef;
-  @ViewChild('codeEditorContainer')
-  get codeEditorContainer(): ElementRef {
-    return this._codeEditorContainer;
-  }
+export class CodeEditorComponent {
 
-  set codeEditorContainer(value: ElementRef) {
-    this._codeEditorContainer = value;
-    this.createMonacoEditor()
-  }
+    private editorResourceUri: Uri | null = null;
 
-  private _actions: editor.IActionDescriptor[] = [];
-  @Input()
-  get actions(): editor.IActionDescriptor[] {
-    return this._actions;
-  }
-
-  set actions(value) {
-    if (this._actions === value) {
-      return;
-    }
-    this._actions = value;
-    if (this.monacoEditor) {
-      this.updateActionsOnEditor();
-    }
-  }
-
-  private editorTheme = iplastic_theme;
-
-  private _readOnly: boolean = false;
-
-  @Input()
-  get readOnly(): boolean {
-    return this._readOnly;
-  }
-
-  set readOnly(value: boolean) {
-    if (value === this._readOnly) {
-      return;
-    }
-    this._readOnly = value;
-    if (this.monacoEditor) {
-      this.monacoEditor.updateOptions({readOnly: this.readOnly});
-    }
-  }
-
-  private _wordWrap: WordWrapOptions = 'off';
-
-  @Input()
-  get wordWrap(): WordWrapOptions {
-    return this._wordWrap;
-  }
-
-  set wordWrap(value: WordWrapOptions) {
-    if (value === this._wordWrap) {
-      return;
-    }
-    this._wordWrap = value;
-    if (this.monacoEditor) {
-      this.monacoEditor.updateOptions({wordWrap: this.wordWrap});
-    }
-  }
-
-  private _content: string = '';
-  @Input()
-  get content(): string {
-    return this._content;
-  }
-
-  set content(value: string) {
-    if (this._content === value) {
-      return;
-    }
-    this._content = value;
-    if (this.monacoModel) {
-      this.monacoModel.setValue(value);
-      this.contentChange.emit(value);
-    }
-  }
-
-  private modelChanged$ = new EventEmitter<IModelContentChangedEvent>();
-
-  @Output()
-  contentChange = new EventEmitter<string>();
-
-  private monacoEditor: IStandaloneCodeEditor;
-  private monacoModel: ITextModel;
-
-  private languageServicesInitialized = false;
-
-  private monacoLanguageClient: MonacoLanguageClient;
-
-  private webSocket: WebSocket;
-  private transport: {
-    reader: WebSocketMessageReader,
-    writer: WebSocketMessageWriter
-  };
-
-  constructor(@Inject(LANGUAGE_SERVER_WS_ADDRESS_TOKEN) private languageServerWsAddress: string,
-              private languageInitServices: MonacoLanguageServerService
-              ) {
-    // This does nothing, but prevents tree-shaking
-    // const features = [ monacoFeature4, monacoFeature5, monacoFeature6, monacoFeature7, monacoFeature8,];
-
-    this.monacoModel = editor.createModel(this.content, TAXI_LANGUAGE_ID, Uri.parse('inmemory://query.taxi'));
-    languages.register({id: TAXI_LANGUAGE_ID});
-    languages.setLanguageConfiguration(TAXI_LANGUAGE_ID, taxiLanguageConfiguration);
-    languages.setMonarchTokensProvider(TAXI_LANGUAGE_ID, taxiLanguageTokenProvider);
-
-    editor.defineTheme('vyne', this.editorTheme as any);
-    editor.setTheme('vyne');
-    this.modelChanged$.pipe(
-      debounceTime(500),
-    ).subscribe(e => {
-      this.updateContent(this.monacoModel.getValue());
-      if (this.webSocket.readyState != this.webSocket.OPEN) {
-        console.log("Refresh websocket connection for language server");
-        this.createWebsocketConnection().then(() => {
-          this.startLanguageClient()
-        })
-      }
-    })
-    this.monacoModel.onDidChangeContent(e => this.modelChanged$.next(e));
-
-    // For testing websocket reconnection
-    // @ts-ignore
-    window.killWebsocket = () => {
-      this.webSocket.close()
-    }
-  }
-
-  private createMonacoEditor() {
-    if (this.monacoEditor) {
-      this.monacoEditor.dispose();
+    private _codeEditorContainer: ElementRef;
+    @ViewChild('codeEditorContainer')
+    get codeEditorContainer(): ElementRef {
+        return this._codeEditorContainer;
     }
 
-    this.monacoEditor = editor.create(this._codeEditorContainer.nativeElement, {
-      model: this.monacoModel,
-      glyphMargin: true,
-      lightbulb: {
-        enabled: true
-      },
-      parameterHints: {
-        enabled: true
-      },
-      automaticLayout: true,
-      readOnly: this._readOnly,
-      wordWrap: this._wordWrap,
-    });
+    set codeEditorContainer(value: ElementRef) {
+        this._codeEditorContainer = value;
+        this.createMonacoEditor()
+    }
 
-    this.updateActionsOnEditor();
+    private _actions: editor.IActionDescriptor[] = [];
+    @Input()
+    get actions(): editor.IActionDescriptor[] {
+        return this._actions;
+    }
 
-    this.languageInitServices.languageServicesInit$.subscribe(() => {
-      this.createWebsocketConnection().then(() => {
-        this.createLanguageClient();
-      })
-    })
-
-
-
-  }
-
-  private updateActionsOnEditor() {
-    this.actions.forEach(action => {
-      this.monacoEditor.addAction(action);
-    })
-  }
-
-  async createWebsocketConnection(): Promise<void> {
-    this.webSocket = new WebSocket(this.languageServerWsAddress, []);
-    await new Promise<void>((resolve) => {
-      this.webSocket.onopen = () => {
-        resolve();
-      };
-    });
-    const socket = toSocket(this.webSocket);
-    const reader = new WebSocketMessageReader(socket);
-    const writer = new WebSocketMessageWriter(socket);
-    this.transport = {reader, writer};
-  }
-
-  createLanguageClient() {
-    this.monacoLanguageClient = new MonacoLanguageClient({
-      name: 'vyne-taxi-language-client',
-      clientOptions: {
-        // use a language id as a document selector
-        documentSelector: [TAXI_LANGUAGE_ID],
-        // disable the default error handler
-        errorHandler: {
-          error: () => ({action: ErrorAction.Continue}),
-          closed: () => ({action: CloseAction.DoNotRestart})
+    set actions(value) {
+        if (this._actions === value) {
+            return;
         }
-      },
-      // create a language client connection from the JSON RPC connection on demand
-      connectionProvider: {
-        get: () => {
-          return Promise.resolve(this.transport);
+        this._actions = value;
+        if (this.monacoEditor) {
+            this.updateActionsOnEditor();
         }
-      }
-    });
-    this.startLanguageClient();
-  }
-
-  startLanguageClient() {
-    this.monacoLanguageClient.start()
-      .then(() => {
-        this.monacoLanguageClient.sendNotification(DidOpenTextDocumentNotification.type, {
-          textDocument: {
-            uri: 'inmemory://query.taxi',
-            languageId: TAXI_LANGUAGE_ID,
-            version: 0,
-            text: this.content
-          }
-        })
-      });
-  }
-
-  updateContent(content: string) {
-    if (this._content !== content) {
-      this._content = content;
-      this.contentChange.emit(content);
     }
-  }
 
+    // private editorTheme = iplastic_theme;
+    //
+    private _readOnly: boolean = false;
 
-  ngOnDestroy(): void {
-    // console.info('Closing Language Service');
-    // this.monacoLanguageClient?.stop();
-    // this.monacoModel?.dispose();
-  }
+    @Input()
+    get readOnly(): boolean {
+        return this._readOnly;
+    }
+
+    set readOnly(value: boolean) {
+        if (value === this._readOnly) {
+            return;
+        }
+        this._readOnly = value;
+        if (this.monacoEditor) {
+            this.monacoEditor.updateOptions({readOnly: this.readOnly});
+        }
+    }
+
+    private _wordWrap: WordWrapOptions = 'off';
+
+    @Input()
+    get wordWrap(): WordWrapOptions {
+        return this._wordWrap;
+    }
+
+    set wordWrap(value: WordWrapOptions) {
+        if (value === this._wordWrap) {
+            return;
+        }
+        this._wordWrap = value;
+        if (this.monacoEditor) {
+            this.monacoEditor.updateOptions({wordWrap: this.wordWrap});
+        }
+    }
+
+    //
+    private _content: string = '';
+    @Input()
+    get content(): string {
+        return this._content;
+    }
+
+    set content(value: string) {
+        if (this._content === value) {
+            return;
+        }
+        this._content = value;
+        if (this.monacoModel) {
+            this.monacoModel.setValue(value);
+            this.contentChange.emit(value);
+        }
+    }
+
+    //
+    private modelChanged$ = new EventEmitter<IModelContentChangedEvent>();
+    //
+    @Output()
+    contentChange = new EventEmitter<string>();
+    //
+    private monacoEditor: IStandaloneCodeEditor;
+    private monacoModel: ITextModel;
+    // //
+    private monacoLanguageClient: MonacoLanguageClient;
+    private webSocket: WebSocket;
+
+    //
+    constructor(
+        private languageInitServices: MonacoLanguageServerService
+    ) {
+
+        this.languageInitServices.languageServicesInit$
+            .subscribe(() => {
+                // editor.defineTheme('vyne', this.editorTheme as any);
+                editor.setTheme('vyne');
+            })
+        this.modelChanged$.pipe(
+            debounceTime(250),
+        ).subscribe(e => {
+            this.createWebsocket();
+            this.updateContent(this.monacoModel.getValue());
+            if (this.webSocket.readyState != this.webSocket.OPEN) {
+                console.log("Refresh websocket connection for language server");
+                this.createWebsocket();
+            }
+        })
+    }
+
+    private createWebsocket() {
+        if (this.webSocket) {
+            this.webSocket.close()
+        }
+        this.languageInitServices.createLanguageServerWebsocket()
+            .subscribe(websocket => {
+                this.webSocket = websocket;
+
+                // For testing websocket reconnection
+                // @ts-ignore
+                window.killWebsocket = () => {
+                    this.webSocket.close()
+                }
+            })
+
+    }
+
+    //
+    private newQueryUri() {
+        return Uri.parse(`inmemory://query-${Math.floor(Math.random() * 1_000_000_000)}.taxi`)
+    }
+
+    //
+    private async createMonacoEditor() {
+        // if (this.monacoEditor) {
+        //     this.monacoEditor.dispose();
+        // }
+        //
+        // this.editorResourceUri = this.newQueryUri();
+        //
+        // const modelReference = await createModelReference(this.editorResourceUri, this.content)
+        //
+        // modelReference.object.setLanguageId(TAXI_LANGUAGE_ID);
+        // modelReference.object.onDidChangeContent((e: editor.IModelContentChangedEvent) => this.modelChanged$.next(e));
+        //
+        this.monacoEditor = createConfiguredEditor(this.codeEditorContainer.nativeElement, {
+            model: this.monacoModel,
+            glyphMargin: true,
+            lightbulb: {
+                enabled: true
+            },
+            parameterHints: {
+                enabled: true
+            },
+            automaticLayout: true,
+            readOnly: this._readOnly,
+            wordWrap: this._wordWrap,
+        });
+        //
+        // this.updateActionsOnEditor()
+        // this.createWebsocket();
+    }
+
+    //
+    private updateActionsOnEditor() {
+        // this.actions.forEach(action => {
+        //     this.monacoEditor.addAction(action);
+        // })
+    }
+
+    updateContent(content: string) {
+        // if (this._content !== content) {
+        //     this._content = content;
+        //     this.contentChange.emit(content);
+        // }
+    }
 
 }
 

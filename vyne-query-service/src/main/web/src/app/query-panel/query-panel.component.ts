@@ -5,7 +5,7 @@ import {QueryFailure} from './query-wizard/query-wizard.component';
 import {isQueryResult} from './result-display/BaseQueryResultComponent';
 import {BaseQueryResultDisplayComponent} from './BaseQueryResultDisplayComponent';
 import {TypesService} from '../services/types.service';
-import {isNullOrUndefined} from 'util';
+import {isNullOrUndefined} from "src/app/utils/utils";
 
 @Component({
   selector: 'query-panel',

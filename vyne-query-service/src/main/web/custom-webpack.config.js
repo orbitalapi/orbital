@@ -1,5 +1,5 @@
 const path = require('path');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+// const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const MONACO_DIR = path.join(__dirname, 'node_modules/monaco-editor');
 const VSCODE_DIR = path.join(__dirname, 'node_modules/vscode');
 
@@ -18,7 +18,7 @@ module.exports = {
           VSCODE_DIR
         ],
         use: [
-          MiniCssExtractPlugin.loader,
+          // MiniCssExtractPlugin.loader,
           "css-loader",
         ]
       },

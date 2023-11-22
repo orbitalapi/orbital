@@ -17,7 +17,7 @@ import {RouterModule} from '@angular/router';
 import {VoyagerContainerAppComponent} from 'src/voyager-app/voyager-container-app.component';
 import {VoyagerAppComponent} from "./voyager-app.component";
 import {VoyagerModule} from "src/app/voyager/voyager.module";
-import {LANGUAGE_SERVER_WS_ADDRESS_TOKEN} from "../app/code-editor/langServer.service";
+import {LANGUAGE_SERVER_WS_ADDRESS_TOKEN} from "../app/code-editor/language-server.tokens";
 
 @NgModule({
   imports: [
