@@ -21,7 +21,7 @@
           </app-panelset>
           <div class='code-editor-section'>
             <app-panel-header title='Code'>
-              <app-query-editor-bottom-bar
+              <app-query-editor-toolbar
                 (executeQuery)='submitQuery()'
                 [currentState$]='currentState$'
                 [error]='lastErrorMessage'
@@ -33,7 +33,7 @@
                 (publishAsHttpEndpoint)="createHttpEndpoint()"
                 [publishAsHttpEndpointEnabled]="savedQuery !== null"
               >
-              </app-query-editor-bottom-bar>
+              </app-query-editor-toolbar>
             </app-panel-header>
             <div class='code-viewer-container' *ngIf='queryLanguage === "TaxiQL"'>
               <app-code-editor

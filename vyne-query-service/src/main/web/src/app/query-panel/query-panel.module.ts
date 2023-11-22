@@ -22,7 +22,7 @@ import {QueryEditorComponent} from './query-editor/query-editor.component';
 import {MatLegacyTabsModule as MatTabsModule} from '@angular/material/legacy-tabs';
 import {CodeViewerModule} from '../code-viewer/code-viewer.module';
 import {MatLegacyProgressSpinnerModule as MatProgressSpinnerModule} from '@angular/material/legacy-progress-spinner';
-import {BottomBarComponent} from './query-editor/bottom-bar.component';
+import {QueryEditorToolbar} from './query-editor/query-editor-toolbar.component';
 import {CounterTimerComponent} from './query-editor/counter-timer.component';
 import {CallExplorerModule} from './taxi-viewer/call-explorer/call-explorer.module';
 
@@ -133,10 +133,10 @@ import {TuiActiveZoneModule} from "@taiga-ui/cdk";
         TuiDataListModule,
 
     ],
-  exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent,
+  exports: [QueryPanelComponent, QueryEditorComponent, QueryEditorToolbar,
     ErrorPanelComponent, SaveQueryPanelComponent],
   declarations: [QueryPanelComponent, QueryWizardComponent,
-    VyneQueryViewerComponent, QueryEditorComponent, BottomBarComponent, CounterTimerComponent,
+    VyneQueryViewerComponent, QueryEditorComponent, QueryEditorToolbar, CounterTimerComponent,
     HttpEndpointPanelComponent,
     ErrorPanelComponent,
     QueryBuilderComponent,

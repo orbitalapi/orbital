@@ -8,7 +8,7 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
 
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,
-    selector: 'app-query-editor-bottom-bar',
+    selector: 'app-query-editor-toolbar',
     template: `
         <span class='error-message'>{{ error }}</span>
         <tui-select
@@ -28,9 +28,8 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
             ></tui-data-list-wrapper>
         </tui-select>
         <tui-hosted-dropdown
-                tuiDropdownAlign="center"
+                tuiDropdownAlign="left"
                 [content]="copyMenuDropdown"
-                [sided]="true"
                 [(open)]="copyMenuOpen">
             <button
                     appearance="outline"
@@ -56,9 +55,8 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
         </ng-template>
 
         <tui-hosted-dropdown
-                tuiDropdownAlign="center"
+                tuiDropdownAlign="left"
                 [content]="publishMenuDropdown"
-                [sided]="true"
                 [(open)]="publishMenuOpen">
             <button
                     appearance="outline"
@@ -123,9 +121,9 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
             <span>Cancelling...</span>
         </div>
     `,
-    styleUrls: ['./bottom-bar.component.scss']
+    styleUrls: ['./query-editor-toolbar.component.scss']
 })
-export class BottomBarComponent {
+export class QueryEditorToolbar {
     config: AppConfig;
 
     publishMenuOpen = false;

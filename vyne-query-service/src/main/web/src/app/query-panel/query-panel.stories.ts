@@ -12,7 +12,7 @@ storiesOf('Query panel', module)
   .addDecorator(
     moduleMetadata({
       declarations: [],
-      imports: [CommonModule, BrowserModule,BrowserAnimationsModule,TuiRootModule, QueryPanelModule, ExpandingPanelSetModule, AngularSplitModule.forChild(), RouterTestingModule]
+      imports: [CommonModule, BrowserModule,BrowserAnimationsModule,TuiRootModule, QueryPanelModule, ExpandingPanelSetModule, AngularSplitModule, RouterTestingModule]
     })
   ).add('Query editor', () => {
   return {
@@ -26,16 +26,16 @@ storiesOf('Query panel', module)
     return {
       template: `<div style="padding: 40px; width: 80%; height: 250px" >
       <app-panel-header title="Code">
-        <app-query-editor-bottom-bar currentState="Editing"></app-query-editor-bottom-bar>
+        <app-query-editor-toolbar currentState="Editing"></app-query-editor-toolbar>
       </app-panel-header>
        <app-panel-header title="Code">
-       <app-query-editor-bottom-bar currentState="Running" [queryStarted]="queryStartDate"></app-query-editor-bottom-bar>
+       <app-query-editor-toolbar currentState="Running" [queryStarted]="queryStartDate"></app-query-editor-toolbar>
       </app-panel-header>
        <app-panel-header title="Code">
-        <app-query-editor-bottom-bar currentState="Running" [queryStarted]="aMinuteAgo"></app-query-editor-bottom-bar>
+        <app-query-editor-toolbar currentState="Running" [queryStarted]="aMinuteAgo"></app-query-editor-toolbar>
       </app-panel-header>
        <app-panel-header title="Code">
-       <app-query-editor-bottom-bar currentState="Error" error="A query failed to execute."></app-query-editor-bottom-bar>
+       <app-query-editor-toolbar currentState="Error" error="A query failed to execute."></app-query-editor-toolbar>
       </app-panel-header>
     </div>`,
       props: {

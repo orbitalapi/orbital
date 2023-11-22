@@ -21,7 +21,7 @@ import {
   randomId,
   ResultMode
 } from '../../services/query.service';
-import {QueryLanguage, QueryState} from './bottom-bar.component';
+import {QueryLanguage, QueryState} from './query-editor-toolbar.component';
 import {isQueryResult, QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
 import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
 import {findType, InstanceLike, QualifiedName, Schema, Type, VersionedSource} from '../../services/schema';
