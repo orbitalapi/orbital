@@ -12,7 +12,7 @@ Just run:
 docker-compose up -d
 ```
 
-The admin console is then avaiable on `http://localhost:8080/admin`
+The admin console is then available on `http://localhost:8080/admin`
 
 Log in with username/password `admin/admin`
 

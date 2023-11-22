@@ -14,5 +14,5 @@ low.
 
 Instead, the web app is built in parallel to the main java app.
 
-Our docker build combines the two (see `Dockerfile`), and configrures
+Our docker build combines the two (see `Dockerfile`), and configures
 the spring boot app to serve from `opt/service/webapp`

@@ -18,7 +18,7 @@
 
 [Website](https://orbitalhq.com)&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
 [Docs](https://orbitalhq.com/docs)&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
-[Blog](https://orbitalhq.com/blog)&nbsp;&nbsp;&nbsp;
+[Blog](https://orbitalhq.com/blog)&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
 [Get in touch](#)
 
 </div>
@@ -157,15 +157,15 @@ Orbital gives you many of the benefits of GraphQL (API federation, custom respon
 The key differences are:
 
 ##### Technology agnostic
-GraphQL works great when you have GraphQL everywhere.  For everything else, you have to maintain a seperate shim layer to adapt your RESTful API / Database / Message Queue etc., to GraphQL.
+GraphQL works great when you have GraphQL everywhere.  For everything else, you have to maintain a separate shim layer to adapt your RESTful API / Database / Message Queue etc., to GraphQL.
 
-Orbital and Taxi work by embedding metatdata in your existing API specs (OpenAPI / Protobuf / Avro / JsonSchema, etc), so that you don't need to change the underlying tech you're using.
+Orbital and Taxi work by embedding metadata in your existing API specs (OpenAPI / Protobuf / Avro / JsonSchema, etc), so that you don't need to change the underlying tech you're using.
 
 ##### Decentralized, spec-first federation
-Orbital is built for decentralized teams, so that teams can ship changes independently, without having to build and maintain a seperate integration layer.
+Orbital is built for decentralized teams, so that teams can ship changes independently, without having to build and maintain a separate integration layer.
 
 ##### Resolver-free
-Resolvers in GraphQL are integration code that has to be maintated - often by a dedicated GraphQL / middleware team.  This means teams that own services have to co-ordinate changes with a seperate integration team.
+Resolvers in GraphQL are integration code that has to be maintained - often by a dedicated GraphQL / middleware team.  This means teams that own services have to co-ordinate changes with a separate integration team.
 
 Instead, Orbital uses Taxi metadata embedded in API specs to define how data relates semantically.  From here, most integration can be created automatically.
 
@@ -184,4 +184,3 @@ or implementing the spec from scratch in Taxi (it's really quick)
  * [Why we built Taxi](https://orbitalhq.com/blog/2023-05-12-why-we-created-taxi)
  * [Using Semantic Metadata to automate integration](https://orbitalhq.com/blog/2023-01-16-using-semantic-metadata)
  * [Querying for data](https://orbitalhq.com/docs/querying/writing-queries)
- * 
