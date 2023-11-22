@@ -30,7 +30,7 @@ mvn verify -Dvyne.tag=<DESIRED DOCKER IMAGE LABEL>
 
 e.g.
 
-mvn verify -Dvyne-tag=latest-snasphost
+mvn verify -Dvyne-tag=latest-snapshot
 
 # I don't want to deal with docker containers, I just want to run the system (vyne, cask etc.) locally and run test against my local
 
