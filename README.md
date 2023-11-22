@@ -33,7 +33,8 @@ Orbital creates integration on-the-fly, without engineers having to write glue c
 Get started right now, by spinning up Orbital on your machine
 
 ```bash
-docker run -p 9022:9022 orbitalhq/orbital
+curl https://start.orbitalhq.com > docker-compose.yml
+docker compose up -d
 ```
 
 Then visit http://localhost:9022 in your browser.
