@@ -1,20 +1,6 @@
-import {AfterViewInit, Component} from '@angular/core';
+import {Component} from '@angular/core';
 import {Router} from '@angular/router';
 import {QueryHistorySummary} from '../services/query.service';
-import {
-  createLanguageClient,
-  createTaxiEditor,
-  createTaxiEditorModel,
-  createUrl,
-  createWebsocketConnection,
-  performInit
-} from "../code-editor/language-server-commons";
-import {ITextFileEditorModel} from "@codingame/monaco-vscode-api/monaco";
-import {DidOpenTextDocumentNotification} from "vscode-languageclient";
-import {MonacoLanguageClient} from "monaco-languageclient";
-import {
-  IStandaloneCodeEditor
-} from "@codingame/monaco-vscode-api/vscode/vs/editor/standalone/browser/standaloneCodeEditor";
 
 export interface LandingPageCardConfig {
   title: string;

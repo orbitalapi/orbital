@@ -19,6 +19,7 @@ import {
     IStandaloneCodeEditor
 } from "@codingame/monaco-vscode-api/vscode/vs/editor/standalone/browser/standaloneCodeEditor";
 import {TAXI_LANGUAGE_ID, taxiLanguageConfiguration, taxiLanguageTokenProvider} from "../code-viewer/taxi-lang.monaco";
+import {iplastic_theme} from "./themes/iplastic";
 
 export const createLanguageClient = (transports: MessageTransports): MonacoLanguageClient => {
     return new MonacoLanguageClient({
@@ -61,15 +62,15 @@ export type WsTransport = {
     reader: WebSocketMessageReader,
     writer: WebSocketMessageWriter
 }
-export const createWebsocketConnection = (url: string): Promise<WsTransport>  => {
+export const createWebsocketConnection = (url: string): Promise<[WebSocket,WsTransport]>  => {
     const webSocket = new WebSocket(url, []);
 
-    return  new Promise<WsTransport>((resolve, reject) => {
+    return  new Promise<[WebSocket,WsTransport]>((resolve, reject) => {
         webSocket.onopen = () => {
             const socket = toSocket(webSocket);
             const reader = new WebSocketMessageReader(socket);
             const writer = new WebSocketMessageWriter(socket);
-            resolve({reader, writer});
+            resolve([webSocket, {reader, writer}]);
         };
 
         webSocket.onerror = (err) => {
@@ -85,8 +86,10 @@ export const performInit = async (vscodeApiInit: boolean) => {
             // enableTextmateService: true,
             // enableThemeService: true,
             userServices: {
-                ...getThemeServiceOverride(),
-                ...getTextmateServiceOverride(),
+                // Enabling theme and textMate services stops the
+                // Monarch service working, which is what provides taxi highlighting
+                // ...getThemeServiceOverride(),
+                // ...getTextmateServiceOverride(),
                 ...getConfigurationServiceOverride(Uri.file('/web/sandbox')),
                 ...getKeybindingsServiceOverride()
             },
@@ -99,11 +102,12 @@ export const performInit = async (vscodeApiInit: boolean) => {
             aliases: ['TAXI', 'taxi'],
             mimetypes: ['application/taxi']
         });
-        // languages.setLanguageConfiguration(TAXI_LANGUAGE_ID, taxiLanguageConfiguration);
-        // languages.setMonarchTokensProvider(TAXI_LANGUAGE_ID, taxiLanguageTokenProvider);
 
+        editor.defineTheme('orbital', iplastic_theme as any);
+        editor.setTheme('orbital');
 
-
+        languages.setLanguageConfiguration(TAXI_LANGUAGE_ID, taxiLanguageConfiguration);
+        languages.setMonarchTokensProvider(TAXI_LANGUAGE_ID, taxiLanguageTokenProvider);
     }
 };
 
