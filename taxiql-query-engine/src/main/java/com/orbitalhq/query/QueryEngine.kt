@@ -522,7 +522,6 @@ class StatefulQueryEngine(
          anonymousTypes = queryResult.anonymousTypes,
          queryId = context.queryId,
          clientQueryId = context.clientQueryId,
-         statistics = queryResult.statistics,
          responseType = context.responseType,
          onCancelRequestHandler = { context.requestCancel() },
          schema = schema
@@ -663,8 +662,8 @@ class StatefulQueryEngine(
          }
       }
 
-      val projectedResults: Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (target.projection) {
-         null -> resultsFlow.map { it to context.vyneQueryStatistics }
+      val projectedResults: Flow<TypedInstance> = when (target.projection) {
+         null -> resultsFlow
          else -> {
             // Pick the facts that we want to make available during projection.
             // Currently, we pass the initial state (things from the `given {}` clause, and anything about the user).
@@ -682,29 +681,24 @@ class StatefulQueryEngine(
          target
       }
 
-      val mutatedResults: Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (target.mutation) {
+      val mutatedResults: Flow<TypedInstance> = when (target.mutation) {
          null -> projectedResults
          else -> {
             // At this point, any queries have been executed, and we're ready
             // to invoke mutations.
-            projectedResults.flatMapConcat { (queryResult, stats) ->
-               mutate(target.mutation, target, context, queryResult)
-                  .results.map {
-                     it to stats
-                  }
+            projectedResults.flatMapConcat { queryResult ->
+               mutate(target.mutation, target, context, queryResult).results
             }
          }
       }
-      val statisticsFlow = MutableSharedFlow<VyneQueryStatistics>(replay = 0)
       return QueryResult(
          querySpecTypeNode,
-         mutatedResults.onEach { statisticsFlow.emit(it.second) }.map { it.first },
+         mutatedResults,
          isFullyResolved = true,
          profilerOperation = context.profiler.root,
          queryId = context.queryId,
          clientQueryId = context.clientQueryId,
          anonymousTypes = target.anonymousTypes(),
-         statistics = statisticsFlow,
          responseType = context.responseType,
          onCancelRequestHandler = { context.requestCancel() },
          schema = schema

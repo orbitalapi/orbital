@@ -10,7 +10,17 @@ import com.orbitalhq.auth.authentication.VyneUser
 import com.orbitalhq.auth.authentication.toVyneUser
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.query.*
+import com.orbitalhq.query.Fact
+import com.orbitalhq.query.HistoryEventConsumerProvider
+import com.orbitalhq.query.Query
+import com.orbitalhq.query.QueryCancelledException
+import com.orbitalhq.query.QueryContextEventBroker
+import com.orbitalhq.query.QueryMode
+import com.orbitalhq.query.QueryResponse
+import com.orbitalhq.query.QueryResult
+import com.orbitalhq.query.QueryStartEvent
+import com.orbitalhq.query.ResultMode
+import com.orbitalhq.query.SearchFailedException
 import com.orbitalhq.query.runtime.FailedSearchResponse
 import com.orbitalhq.query.runtime.QueryServiceApi
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
@@ -22,7 +32,11 @@ import com.orbitalhq.spring.http.websocket.WebSocketController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import lang.taxi.query.TaxiQLQueryString
 import mu.KotlinLogging
@@ -31,7 +45,12 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.Authentication
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.reactive.socket.CloseStatus
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Mono
@@ -64,7 +83,6 @@ class QueryService(
    val historyWriterProvider: HistoryEventConsumerProvider,
    val objectMapper: ObjectMapper,
    val activeQueryMonitor: ActiveQueryMonitor,
-   val metricsEventConsumer: MetricsEventConsumer,
    private val queryResponseFormatter: QueryResponseFormatter,
 ) : QueryServiceApi, WebSocketController {
 

@@ -2696,7 +2696,7 @@ service Broker1Service {
             projection: Projection,
             context: QueryContext,
             globalFacts: FactBag
-         ): Flow<Pair<TypedInstance, VyneQueryStatistics>> {
+         ): Flow<TypedInstance> {
             return results.map { typedInstance ->
                error("THis shouldn't have been called!! $typedInstance")
             }

@@ -43,39 +43,6 @@ fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> 
    return profilerOperation.remoteCalls + profilerOperation.children.flatMap { collateRemoteCalls(it) }
 }
 
-data class VyneQueryStatistics(
-   val graphCreatedCount: AtomicInteger = AtomicInteger(0),
-   val graphSearchSuccessCount: AtomicInteger = AtomicInteger(0),
-   val graphSearchFailedCount: AtomicInteger = AtomicInteger(0)
-) {
-   companion object {
-      fun from(serializableVyneQueryStatistics: SerializableVyneQueryStatistics): VyneQueryStatistics {
-         return VyneQueryStatistics(
-            graphCreatedCount = AtomicInteger(serializableVyneQueryStatistics.graphCreatedCount),
-            graphSearchSuccessCount = AtomicInteger(serializableVyneQueryStatistics.graphSearchSuccessCount),
-            graphSearchFailedCount = AtomicInteger(serializableVyneQueryStatistics.graphSearchFailedCount)
-         )
-      }
-   }
-}
-
-@Serializable
-data class SerializableVyneQueryStatistics(
-   val graphCreatedCount: Int,
-   val graphSearchSuccessCount: Int,
-   val graphSearchFailedCount: Int
-) {
-   companion object {
-      fun from(vyneQueryStatistics: VyneQueryStatistics): SerializableVyneQueryStatistics {
-         return SerializableVyneQueryStatistics(
-            graphCreatedCount = vyneQueryStatistics.graphCreatedCount.get(),
-            graphSearchSuccessCount = vyneQueryStatistics.graphSearchSuccessCount.get(),
-            graphSearchFailedCount = vyneQueryStatistics.graphSearchFailedCount.get(),
-         )
-      }
-   }
-}
-
 enum class FailureBehaviour {
 
    /**
@@ -131,8 +98,6 @@ data class QueryContext(
    val queryId: String,
 
    val eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
-
-   val vyneQueryStatistics: VyneQueryStatistics = VyneQueryStatistics(),
 
    val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = ConcurrentHashMap(),
 
@@ -350,7 +315,6 @@ data class QueryContext(
       val copied = this.newSearchContext().copy(
          facts = CopyOnWriteFactBag(CopyOnWriteArrayList(facts), scopedFacts, schema),
          parent = parent,
-         vyneQueryStatistics = VyneQueryStatistics()
       )
       appendExclusionsToContext(copied)
       return copied
@@ -379,7 +343,6 @@ data class QueryContext(
       val copied = this.newSearchContext().copy(
          facts = CascadingFactBag(additionalFacts, this.facts),
          parent = this,
-         vyneQueryStatistics = VyneQueryStatistics()
       )
       appendExclusionsToContext(copied)
       return copied

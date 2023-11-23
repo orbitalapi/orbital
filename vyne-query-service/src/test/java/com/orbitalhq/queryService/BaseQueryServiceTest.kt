@@ -3,18 +3,20 @@ package com.orbitalhq.queryService
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import com.orbitalhq.StubService
 import com.orbitalhq.Vyne
 import com.orbitalhq.VyneProvider
+import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.history.db.QueryHistoryDbWriter
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseJsonModel
 import com.orbitalhq.models.json.parseKeyValuePair
-import com.orbitalhq.query.*
-import com.orbitalhq.query.runtime.core.MetricsEventConsumer
+import com.orbitalhq.query.HistoryEventConsumerProvider
+import com.orbitalhq.query.Query
+import com.orbitalhq.query.QueryEventConsumer
+import com.orbitalhq.query.QueryMode
+import com.orbitalhq.query.TypeNameListQueryExpression
 import com.orbitalhq.query.runtime.core.QueryLifecycleEventObserver
 import com.orbitalhq.query.runtime.core.QueryResponseFormatter
 import com.orbitalhq.query.runtime.core.QueryService
@@ -24,6 +26,7 @@ import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.SimpleVyneProvider
 import com.orbitalhq.spring.config.TestDiscoveryClientConfig
 import com.orbitalhq.testVyne
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.junit.jupiter.api.BeforeAll
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
@@ -143,7 +146,6 @@ abstract class BaseQueryServiceTest {
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),
          ActiveQueryMonitor(),
-         MetricsEventConsumer(this.meterRegistry),
          QueryResponseFormatter(listOf(CsvFormatSpec), SimpleSchemaProvider(vyne.schema))
       )
       return queryService

@@ -9,7 +9,6 @@ import com.orbitalhq.models.facts.ScopedFact
 import com.orbitalhq.query.Projection
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.TypeQueryExpression
-import com.orbitalhq.query.VyneQueryStatistics
 import com.orbitalhq.schemas.Type
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -32,7 +31,7 @@ class LocalProjectionProvider : ProjectionProvider {
       projection: Projection,
       context: QueryContext,
       globalFacts: FactBag
-   ): Flow<Pair<TypedInstance, VyneQueryStatistics>> {
+   ): Flow<TypedInstance> {
 
       context.cancelFlux.subscribe {
          logger.info { "QueryEngine for queryId ${context.queryId} is cancelling" }
@@ -104,7 +103,7 @@ class LocalProjectionProvider : ProjectionProvider {
                   context.only(globalFacts.rootFacts(), scopedFacts = listOf(scopedFact))
                }
                val buildResult = projectionContext.build(TypeQueryExpression(projectionType))
-               buildResult.results.map { it to projectionContext.vyneQueryStatistics }
+               buildResult.results
             }
          }
          .buffer(16).map { it.await() }.flatMapMerge { it }

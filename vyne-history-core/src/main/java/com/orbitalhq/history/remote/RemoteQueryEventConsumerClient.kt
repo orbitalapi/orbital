@@ -52,7 +52,6 @@ class RemoteQueryEventConsumerClient(
             is QueryFailureEvent -> persistQueryFailureEvent(event)
             is RestfulQueryExceptionEvent -> persistRestfulQueryExceptionEvent(event)
             is StreamingQueryCancelledEvent -> processStreamingQueryCancelledEvent(event)
-            is VyneQueryStatisticsEvent -> {}
             else -> {}
          }
       }
