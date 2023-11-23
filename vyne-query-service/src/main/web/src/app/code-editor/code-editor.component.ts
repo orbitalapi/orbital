@@ -6,9 +6,7 @@ import {debounceTime} from "rxjs/operators";
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 import ITextModel = editor.ITextModel;
 import IModelContentChangedEvent = editor.IModelContentChangedEvent;
-import {createConfiguredEditor} from "@codingame/monaco-vscode-api/monaco";
-
-
+// import {createModelReference} from "@codingame/monaco-vscode-api/monaco";
 
 type WordWrapOptions = 'off' | 'on' | 'wordWrapColumn' | 'bounded';
 
@@ -162,30 +160,30 @@ export class CodeEditorComponent {
 
     //
     private async createMonacoEditor() {
-        // if (this.monacoEditor) {
-        //     this.monacoEditor.dispose();
-        // }
-        //
-        // this.editorResourceUri = this.newQueryUri();
+        if (this.monacoEditor) {
+            this.monacoEditor.dispose();
+        }
+
+        this.editorResourceUri = this.newQueryUri();
         //
         // const modelReference = await createModelReference(this.editorResourceUri, this.content)
         //
         // modelReference.object.setLanguageId(TAXI_LANGUAGE_ID);
         // modelReference.object.onDidChangeContent((e: editor.IModelContentChangedEvent) => this.modelChanged$.next(e));
         //
-        this.monacoEditor = createConfiguredEditor(this.codeEditorContainer.nativeElement, {
-            model: this.monacoModel,
-            glyphMargin: true,
-            lightbulb: {
-                enabled: true
-            },
-            parameterHints: {
-                enabled: true
-            },
-            automaticLayout: true,
-            readOnly: this._readOnly,
-            wordWrap: this._wordWrap,
-        });
+        // this.monacoEditor = createConfiguredEditor(this.codeEditorContainer.nativeElement, {
+        //     model: this.monacoModel,
+        //     glyphMargin: true,
+        //     lightbulb: {
+        //         enabled: true
+        //     },
+        //     parameterHints: {
+        //         enabled: true
+        //     },
+        //     automaticLayout: true,
+        //     readOnly: this._readOnly,
+        //     wordWrap: this._wordWrap,
+        // });
         //
         // this.updateActionsOnEditor()
         // this.createWebsocket();

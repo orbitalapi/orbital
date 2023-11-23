@@ -73,20 +73,20 @@
     "ngx-highlightjs": "^5.0.0",
     "ngx-markdown": "^16.0.0",
     "ngx-moment": "^6.0.2",
-    "monaco-editor": "npm:@codingame/monaco-editor-treemended@>=1.83.7 <1.84.0",
+    "monaco-editor": "npm:@codingame/monaco-editor-treemended@1.83.7",
     "monaco-editor-workers": "~0.44.0",
     "monaco-languageclient": "^7.0.2",
     "vscode-languageclient": "~9.0.1",
-    "@codingame/monaco-vscode-configuration-service-override": "~1.83.7",
-    "@codingame/monaco-vscode-editor-service-override": "~1.83.7",
-    "@codingame/monaco-vscode-api": "~1.83.7",
-    "@codingame/monaco-vscode-files-service-override": "~1.83.7",
-    "@codingame/monaco-vscode-json-default-extension": "~1.83.7",
-    "@codingame/monaco-vscode-keybindings-service-override": "~1.83.7",
-    "@codingame/monaco-vscode-python-default-extension": "~1.83.7",
-    "@codingame/monaco-vscode-textmate-service-override": "~1.83.7",
-    "@codingame/monaco-vscode-theme-defaults-default-extension": "~1.83.7",
-    "@codingame/monaco-vscode-theme-service-override": "~1.83.7",
+    "@codingame/monaco-vscode-configuration-service-override": "1.83.7",
+    "@codingame/monaco-vscode-editor-service-override": "1.83.7",
+    "@codingame/monaco-vscode-api": "1.83.7",
+    "@codingame/monaco-vscode-files-service-override": "1.83.7",
+    "@codingame/monaco-vscode-json-default-extension": "1.83.7",
+    "@codingame/monaco-vscode-keybindings-service-override": "1.83.7",
+    "@codingame/monaco-vscode-python-default-extension": "1.83.7",
+    "@codingame/monaco-vscode-textmate-service-override": "1.83.7",
+    "@codingame/monaco-vscode-theme-defaults-default-extension": "1.83.7",
+    "@codingame/monaco-vscode-theme-service-override": "1.83.7",
 
     "plausible-tracker": "^0.3.8",
     "react": "^17.0.2",
@@ -101,8 +101,8 @@
   },
   "overrides": {
     "d3-selection": "3.0.0",
-    "monaco-editor": "npm:@codingame/monaco-editor-treemended@>=1.83.7 <1.84.0",
-    "vscode": "npm:@codingame/monaco-vscode-api@>=1.83.7 <1.84.0"
+    "monaco-editor": "npm:@codingame/monaco-editor-treemended@1.83.7",
+    "vscode": "npm:@codingame/monaco-vscode-api@1.83.7"
 
   },
   "devDependencies": {

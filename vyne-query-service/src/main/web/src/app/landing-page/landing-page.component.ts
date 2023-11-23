@@ -1,6 +1,12 @@
-import { Component } from '@angular/core';
-import { Router } from '@angular/router';
-import { QueryHistorySummary } from '../services/query.service';
+import {AfterViewInit, Component} from '@angular/core';
+import {Router} from '@angular/router';
+import {QueryHistorySummary} from '../services/query.service';
+import {
+  createDefaultJsonContent,
+  createJsonEditor,
+  createUrl, createWebSocketAndStartClient,
+  performInit
+} from "../code-editor/language-server-commons";
 
 export interface LandingPageCardConfig {
   title: string;
@@ -15,6 +21,7 @@ export interface LandingPageCardConfig {
   template: `
     <div class='page-content'>
       <h2>Welcome to Orbital</h2>
+      <div id="container" class="monaco-editor" style="height: 50vh; width: 100%;"></div>
       <div class='row search-row'>
         <app-landing-card [cardConfig]='catalogCardConfig' [isEmpty]='true' layout='horizontal'
                           (emptyActionClicked)="router.navigate(['catalog'])"></app-landing-card>
@@ -28,8 +35,24 @@ export interface LandingPageCardConfig {
     </div>
   `
 })
-export class LandingPageComponent {
+export class LandingPageComponent implements AfterViewInit {
   constructor(public readonly router: Router) {
+  }
+
+  initDone = false;
+
+  async ngAfterViewInit(): Promise<void> {
+    // use the same common method to create a monaco editor for json
+    await performInit(!this.initDone);
+    this.initDone = true;
+    await createJsonEditor({
+      htmlElement: document.getElementById('container')!,
+      content: createDefaultJsonContent()
+    });
+
+    // create the web socket
+    const url = createUrl('localhost', 30000, '/sampleServer');
+    createWebSocketAndStartClient(url);
   }
 
   dataSources: any[] = [];
