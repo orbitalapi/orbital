@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Output } from '@angular/core';
 import { Operation, Parameter, QualifiedName, Schema, SchemaMember } from '../../services/schema';
-import { AbstractControl, FormControl, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import { PipelineTransportSpec } from '../pipelines.service';
 import { BaseTransportConfigEditor } from './base-transport-config-editor';
 import { getOperationFromMember, getOperationFromQualifiedName } from './schema-helpers';
@@ -14,7 +14,7 @@ export class PollingOperationInputConfigComponent extends BaseTransportConfigEdi
   @Output()
   configValueChanged = new EventEmitter<any>();
 
-  config: FormGroup;
+  config: UntypedFormGroup;
 
   selectedOperationName: QualifiedName;
   selectedOperation: Operation;
@@ -27,10 +27,10 @@ export class PollingOperationInputConfigComponent extends BaseTransportConfigEdi
 
   constructor() {
     super();
-    this.config = new FormGroup({
-        operationName: new FormControl('', Validators.required),
-        pollSchedule: new FormControl('', Validators.required),
-        parameterMap: new FormGroup({})
+    this.config = new UntypedFormGroup({
+        operationName: new UntypedFormControl('', Validators.required),
+        pollSchedule: new UntypedFormControl('', Validators.required),
+        parameterMap: new UntypedFormGroup({})
       }
     );
     this.config.valueChanges.subscribe(e => this.configValueChanged.emit(e));
@@ -75,9 +75,9 @@ export class PollingOperationInputConfigComponent extends BaseTransportConfigEdi
     const selectedOperationParameterInputs: { [key: string]: AbstractControl } = {};
     params.forEach(p => {
       const controlName = p.name || p.typeName.shortDisplayName;
-      selectedOperationParameterInputs[controlName] = new FormControl('');
+      selectedOperationParameterInputs[controlName] = new UntypedFormControl('');
     });
-    const parametersFormGroup = new FormGroup(selectedOperationParameterInputs);
+    const parametersFormGroup = new UntypedFormGroup(selectedOperationParameterInputs);
     this.config.setControl('parameterMap', parametersFormGroup);
     if (!this.editable) {
       parametersFormGroup.disable();

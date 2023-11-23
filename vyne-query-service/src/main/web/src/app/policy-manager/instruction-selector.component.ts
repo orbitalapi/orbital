@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {FilterInstruction, Instruction, InstructionType, PermitInstruction, PolicyStatement} from './policies';
 import {Type} from '../services/schema';
-import {MatSelectChange} from '@angular/material/select';
+import {MatLegacySelectChange as MatSelectChange} from '@angular/material/legacy-select';
 
 @Component({
   selector: 'app-instruction-selector',

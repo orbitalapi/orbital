@@ -4,7 +4,7 @@ import {ICellEditorParams} from 'ag-grid-community';
 import {isNullOrUndefined} from 'util';
 import {QualifiedName, Schema, Type} from '../services/schema';
 import {TypeSpecContainer} from './db-importer.service';
-import {MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {MatLegacyDialog as MatDialog, MatLegacyDialogRef as MatDialogRef} from '@angular/material/legacy-dialog';
 import {TypeEditorPopupComponent} from '../type-editor/type-editor-popup.component';
 import {SchemaSubmissionResult, TypesService} from '../services/types.service';
 

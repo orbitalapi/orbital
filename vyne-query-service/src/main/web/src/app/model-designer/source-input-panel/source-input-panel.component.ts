@@ -1,21 +1,21 @@
 import {
-    ChangeDetectionStrategy,
-    ChangeDetectorRef,
-    Component,
-    ElementRef,
-    EventEmitter, Input, Output,
-    ViewChild
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  Output,
+  ViewChild
 } from '@angular/core';
-import {FormControl} from "@angular/forms";
+import {UntypedFormControl} from "@angular/forms";
 import {TuiFileLike} from "@taiga-ui/kit";
 import * as monaco from "monaco-editor";
-import {MonacoServices} from "monaco-languageclient";
 import {editor} from "monaco-editor";
+import {debounceTime} from "rxjs/operators";
 import ITextModel = editor.ITextModel;
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
-import {TAXI_LANGUAGE_ID} from "../../code-viewer/taxi-lang.monaco";
 import IModelContentChangedEvent = editor.IModelContentChangedEvent;
-import {debounceTime} from "rxjs/operators";
 
 @Component({
     selector: 'app-designer-source-input-panel',
@@ -41,7 +41,7 @@ import {debounceTime} from "rxjs/operators";
 })
 export class SourceInputPanelComponent {
 
-    readonly fileDropControl = new FormControl();
+    readonly fileDropControl = new UntypedFormControl();
     editorVisible = false;
 
     private monacoEditor: IStandaloneCodeEditor;

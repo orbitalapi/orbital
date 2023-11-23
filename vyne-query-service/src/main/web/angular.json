@@ -20,15 +20,24 @@
             "outputPath": "../../../../station/target/classes/static",
             "index": "src/index.html",
             "main": "src/main.ts",
-            "polyfills": "src/polyfills.ts",
+            "polyfills": [
+              "zone.js"
+            ],
             "tsConfig": "src/tsconfig.app.json",
-            "customWebpackConfig": {
-              "path": "./custom-webpack.config.js"
-            },
+            "allowedCommonJsDependencies": [
+              "vscode-jsonrpc",
+              "vscode-languageclient",
+              "vscode-languageserver-protocol"
+            ],
             "assets": [
               "src/silent-refresh.html",
               "src/favicon-32x32.png",
               "src/assets",
+              {
+                "glob": "**/*",
+                "input": "./node_modules/monaco-editor-workers/dist",
+                "output": "assets/monaco-editor-workers"
+              },
               {
                 "glob": "**/*",
                 "input": "node_modules/monaco-editor",
@@ -40,16 +49,14 @@
                 "output": "assets/taiga-ui/icons"
               }
             ],
+            "customWebpackConfig": {
+              "path": "./custom-webpack.config.js"
+            },
             "styles": [
-              {
-                "input": "node_modules/@angular/material/prebuilt-themes/indigo-pink.css"
-              },
-              "node_modules/prismjs/themes/prism-okaidia.css",
-              "node_modules/monaco-editor/dev/vs/editor/editor.main.css",
               "node_modules/@taiga-ui/core/styles/taiga-ui-theme.less",
               "node_modules/@taiga-ui/core/styles/taiga-ui-fonts.less",
               "node_modules/reactflow/dist/style.css",
-              "./src/styles.scss"
+              "src/styles.scss"
             ],
             "scripts": [
               "node_modules/marked/marked.min.js",
@@ -167,15 +174,6 @@
               "devServerTarget": "vyne-app:serve:production"
             }
           }
-        },
-        "lint": {
-          "builder": "@angular-devkit/build-angular:tslint",
-          "options": {
-            "tsConfig": "e2e/tsconfig.e2e.json",
-            "exclude": [
-              "**/node_modules/**"
-            ]
-          }
         }
       }
     },
@@ -268,7 +266,6 @@
       }
     }
   },
-  "defaultProject": "vyne-app",
   "cli": {
     "analytics": false
   }

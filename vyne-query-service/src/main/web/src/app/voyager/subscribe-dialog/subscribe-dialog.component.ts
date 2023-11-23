@@ -1,5 +1,5 @@
 import {ChangeDetectorRef, Component, Inject} from '@angular/core';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
+import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 import {TuiDialogContext} from '@taiga-ui/core';
 import {POLYMORPHEUS_CONTEXT} from '@tinkoff/ng-polymorpheus';
 import {PLAUSIBLE_ANALYTICS} from 'src/voyager-app/plausible';
@@ -22,9 +22,9 @@ export class SubscribeDialogComponent {
     private ref: ChangeDetectorRef
   ) {}
 
-  subscribeForm = new FormGroup({
-    email: new FormControl('', [Validators.email, Validators.required]),
-    otherCommsCheckbox: new FormControl(false)
+  subscribeForm = new UntypedFormGroup({
+    email: new UntypedFormControl('', [Validators.email, Validators.required]),
+    otherCommsCheckbox: new UntypedFormControl(false)
   });
 
   onSubmit(data) {

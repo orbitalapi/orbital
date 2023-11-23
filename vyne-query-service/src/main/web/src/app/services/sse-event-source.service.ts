@@ -1,7 +1,7 @@
 import {Injectable, NgZone} from '@angular/core';
-import {Observable} from 'rxjs/index';
-import {isNullOrUndefined} from 'util';
+import {Observable} from 'rxjs';
 import {ValueWithTypeName} from './models';
+import {isNullOrUndefined} from "../utils/utils";
 
 @Injectable({
   providedIn: 'root'

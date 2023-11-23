@@ -10,20 +10,20 @@ import {PolicyManagerComponent} from './policy-manager.component';
 import {StatementDisplayComponent} from './statement-display.component';
 import {StatementEditorComponent} from './statement-editor.component';
 import {CommonModule} from '@angular/common';
-import {MatTabsModule} from '@angular/material/tabs';
+import {MatLegacyTabsModule as MatTabsModule} from '@angular/material/legacy-tabs';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {BrowserModule} from '@angular/platform-browser';
-import {MatSelectModule} from '@angular/material/select';
+import {MatLegacySelectModule as MatSelectModule} from '@angular/material/legacy-select';
 import {TypeAutocompleteComponent} from '../type-autocomplete/type-autocomplete.component';
-import {MatChipsModule} from '@angular/material/chips';
+import {MatLegacyChipsModule as MatChipsModule} from '@angular/material/legacy-chips';
 import {MatIconModule} from '@angular/material/icon';
-import {MatProgressBarModule} from '@angular/material/progress-bar';
+import {MatLegacyProgressBarModule as MatProgressBarModule} from '@angular/material/legacy-progress-bar';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {MatAutocompleteModule} from '@angular/material/autocomplete';
+import {MatLegacyAutocompleteModule as MatAutocompleteModule} from '@angular/material/legacy-autocomplete';
 import {Policy} from './policies';
 import {Schema, Type} from '../services/schema';
-import {MatInputModule} from '@angular/material/input';
-import {MatButtonModule} from '@angular/material/button';
+import {MatLegacyInputModule as MatInputModule} from '@angular/material/legacy-input';
+import {MatLegacyButtonModule as MatButtonModule} from '@angular/material/legacy-button';
 
 
 const type = {

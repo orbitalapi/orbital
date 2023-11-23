@@ -3,7 +3,7 @@ import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {CodeViewerComponent} from './code-viewer.component';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {MatTabsModule} from '@angular/material/tabs';
+import {MatLegacyTabsModule as MatTabsModule} from '@angular/material/legacy-tabs';
 import {sampleParsedSource} from './sample-code';
 import {FormsModule} from '@angular/forms';
 

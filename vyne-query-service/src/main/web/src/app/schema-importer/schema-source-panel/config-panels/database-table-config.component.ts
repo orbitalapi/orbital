@@ -5,7 +5,7 @@ import {
   JdbcConnectionConfiguration,
   MappedTable
 } from '../../../db-connection-editor/db-importer.service';
-import {MatDialog} from '@angular/material/dialog';
+import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
 import {ConnectionEditorComponent} from '../../../db-connection-editor/connection-editor.component';
 import {Observable} from 'rxjs/internal/Observable';
 import {TuiDialogService} from '@taiga-ui/core';

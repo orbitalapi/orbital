@@ -5,7 +5,7 @@ import { TypesService } from '../../services/types.service';
 import { map } from 'rxjs/operators';
 import { SearchResultDocs } from './type-search.component';
 import { findType, Schema, Type } from '../../services/schema';
-import { MatDialogRef } from '@angular/material/dialog';
+import { MatLegacyDialogRef as MatDialogRef } from '@angular/material/legacy-dialog';
 import { buildInheritable } from 'src/app/inheritence-graph/build.inheritable';
 import { NewTypeSpec, qualifiedName } from 'src/app/type-editor/new-type-spec';
 import { TypeSelectedEvent } from 'src/app/type-viewer/type-search/type-selected-event';

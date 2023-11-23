@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Output } from '@angular/core';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import { QualifiedName, Schema, SchemaMember } from '../../services/schema';
 import { BaseTransportConfigEditor } from './base-transport-config-editor';
 import { PipelineTransportSpec } from '../pipelines.service';
@@ -36,7 +36,7 @@ import { ConnectorSummary } from '../../db-connection-editor/db-importer.service
   `
 })
 export class JdbcOutputConfigComponent extends BaseTransportConfigEditor {
-  config: FormGroup;
+  config: UntypedFormGroup;
 
   @Output()
   configValueChanged = new EventEmitter<any>();
@@ -49,9 +49,9 @@ export class JdbcOutputConfigComponent extends BaseTransportConfigEditor {
 
   constructor() {
     super();
-    this.config = new FormGroup({
-        connection: new FormControl('', Validators.required),
-        targetTypeName: new FormControl('', Validators.required)
+    this.config = new UntypedFormGroup({
+        connection: new UntypedFormControl('', Validators.required),
+        targetTypeName: new UntypedFormControl('', Validators.required)
       }
     );
     this.config.valueChanges.subscribe(e => this.configValueChanged.emit(e));

@@ -8,7 +8,7 @@ import {
   RunningPipelineSummary, SubmittedPipeline
 } from '../pipelines.service';
 import {Schema} from '../../services/schema';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
+import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 import {isNullOrUndefined} from 'util';
 import {PipelineConfig} from '../../services/app-info.service';
 
@@ -79,7 +79,7 @@ import {PipelineConfig} from '../../services/app-info.service';
 export class PipelineViewComponent {
   private _pipeline: RunningPipelineSummary;
 
-  pipelineTransportSpecFg: FormGroup;
+  pipelineTransportSpecFg: UntypedFormGroup;
 
   @Input()
   pipelineConfig: PipelineConfig;
@@ -120,16 +120,16 @@ export class PipelineViewComponent {
         // from the data we collect / emit
         .filter(k => k !== 'type' && k !== 'direction')
         .forEach(key => {
-          formControls[key] = new FormControl(transportSpec[key]);
+          formControls[key] = new UntypedFormControl(transportSpec[key]);
         });
-      return new FormGroup(formControls);
+      return new UntypedFormGroup(formControls);
     }
 
-    this.pipelineTransportSpecFg = new FormGroup({
-      name: new FormControl(currentValue.name || '', Validators.required),
-      input: new FormControl(currentValue.input, Validators.required),
+    this.pipelineTransportSpecFg = new UntypedFormGroup({
+      name: new UntypedFormControl(currentValue.name || '', Validators.required),
+      input: new UntypedFormControl(currentValue.input, Validators.required),
       inputSpec: formGroupFromTransportSpec(currentValue.input),
-      output: new FormControl(currentValue.output, Validators.required),
+      output: new UntypedFormControl(currentValue.output, Validators.required),
       outputSpec: formGroupFromTransportSpec(currentValue.output)
     });
   }

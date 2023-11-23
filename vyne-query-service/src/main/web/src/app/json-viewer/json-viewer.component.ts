@@ -12,20 +12,7 @@ import {editor, languages} from 'monaco-editor';
 
 // Import the core monaco editor
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
-import * as monadoEditorAll from 'monaco-editor/esm/vs/editor/editor.all.js';
-import * as languageFeatureService from 'monaco-editor/esm/vs/editor/common/services/languageFeaturesService.js';
 
-// Import features we care abut
-import * as monacoFeature4
-  from 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneHelpQuickAccess.js';
-import * as monacoFeature5
-  from 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneGotoLineQuickAccess.js';
-import * as monacoFeature6
-  from 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneGotoSymbolQuickAccess.js';
-import * as monacoFeature7
-  from 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneCommandsQuickAccess.js';
-import * as monacoFeature8
-  from 'monaco-editor/esm/vs/editor/standalone/browser/quickInput/standaloneQuickInputService.js';
 import {JSONPathFinder} from 'src/app/json-viewer/JsonPathFinder';
 import {Clipboard} from '@angular/cdk/clipboard';
 import {TypePosition} from "../model-designer/taxi-parser.service";
@@ -66,9 +53,6 @@ export class JsonViewerComponent implements OnDestroy {
   private inlayHints: InlayHint[] = null;
 
   constructor(private changeDetector: ChangeDetectorRef, private clipboard: Clipboard) {
-    // This does nothing, but prevents tree-shaking
-    const features = [monadoEditorAll, monacoFeature4, monacoFeature5, monacoFeature6, monacoFeature7, monacoFeature8, languageFeatureService];
-
   }
 
   @Input()
@@ -202,7 +186,7 @@ export class JsonViewerComponent implements OnDestroy {
         folding: true,
         codeLens: true,
         inlayHints: {
-          enabled: true
+          enabled: 'on'
         }
       });
 

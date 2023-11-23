@@ -2,6 +2,7 @@ import {Component, Input} from '@angular/core';
 import {HighlightJS} from 'ngx-highlightjs';
 import {taxiLangDef} from '../code-viewer/taxi-lang-def';
 
+// Deprecated. Use a code-viewer
 @Component({
   selector: 'app-simple-code-viewer',
   styleUrls: ['./simple-code-viewer.component.scss'],

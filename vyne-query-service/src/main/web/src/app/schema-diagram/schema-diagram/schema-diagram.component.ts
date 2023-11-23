@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, Ou
 import { Schema, SchemaMember, SchemaMemberKind, splitOperationQualifiedName } from '../../services/schema';
 import { RequiredMembersProps, SchemaFlowWrapper, SchemaMemberClickProps } from './schema-flow.react';
 import { ResizedEvent } from 'angular-resize-event/lib/resized.event';
-import { isNullOrUndefined } from 'util';
+import { isNullOrUndefined } from 'src/app/utils/utils';
 import { Observable, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { arraysEqual } from 'src/app/utils/arrays';
@@ -168,7 +168,7 @@ export class SchemaDiagramComponent {
           const membersToDisplay = schema.types
             .filter(t => !t.name.namespace.startsWith('lang.taxi') && !t.name.namespace.startsWith('com.orbitalhq') && !t.isScalar)
             .map(t => t.name.parameterizedName)
-            .concat(schema.services.map(s => s.qualifiedName));
+            .concat(schema.services.map(s => s.fullyQualifiedName));
           return {
             schema,
             memberNames: membersToDisplay
@@ -176,7 +176,7 @@ export class SchemaDiagramComponent {
         } else if (this.displayedMembers === 'services') {
           return {
             schema,
-            memberNames: schema.services.map(s => s.qualifiedName)
+            memberNames: schema.services.map(s => s.fullyQualifiedName)
           }
         } else {
           return { schema, memberNames: this.displayedMembers }

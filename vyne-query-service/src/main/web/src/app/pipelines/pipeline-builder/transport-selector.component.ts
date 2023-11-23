@@ -1,6 +1,6 @@
 import {Component, Input, ViewEncapsulation} from '@angular/core';
 import {PipelineTransport} from '../pipelines.service';
-import {FormControl, FormGroup} from '@angular/forms';
+import {UntypedFormControl, UntypedFormGroup} from '@angular/forms';
 
 @Component({
   selector: 'app-transport-selector',
@@ -34,11 +34,11 @@ export class TransportSelectorComponent {
   @Input()
   transports: PipelineTransport[];
   @Input()
-  formGroup: FormGroup;
+  formGroup: UntypedFormGroup;
   @Input()
   formControlName: string;
   @Input()
-  control: FormControl;
+  control: UntypedFormControl;
 
   pipelineTransportLabel(transport: PipelineTransport): string {
     return transport ? transport.label : '';

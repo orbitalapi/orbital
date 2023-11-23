@@ -3,7 +3,6 @@ import { SearchResult, SearchService } from '../search.service';
 import {Observable, of, Subject} from 'rxjs';
 import { Router } from '@angular/router';
 import {filter, startWith, switchMap} from "rxjs/operators";
-import {startsWith} from "ag-grid-community/dist/lib/utils/string";
 import {isNullOrUndefined} from "util";
 
 

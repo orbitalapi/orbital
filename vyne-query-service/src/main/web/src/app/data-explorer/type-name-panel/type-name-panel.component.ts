@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Output} from '@angular/core';
-import {FormBuilder, FormControl, FormGroup} from '@angular/forms';
+import {UntypedFormBuilder, UntypedFormControl, UntypedFormGroup} from '@angular/forms';
 
 @Component({
   selector: 'app-type-name-panel',
@@ -7,14 +7,14 @@ import {FormBuilder, FormControl, FormGroup} from '@angular/forms';
   styleUrls: ['./type-name-panel.component.scss']
 })
 export class TypeNamePanelComponent {
-  addTypeNameFormGroup: FormGroup;
-  typeName = new FormControl();
+  addTypeNameFormGroup: UntypedFormGroup;
+  typeName = new UntypedFormControl();
   @Output() assignedTypeName: EventEmitter<string> = new EventEmitter<string>();
 
   @Output() isGenerateSchemaClicked = new EventEmitter<boolean>();
   isTypePresent = false;
 
-  constructor(fb: FormBuilder) {
+  constructor(fb: UntypedFormBuilder) {
     this.addTypeNameFormGroup = fb.group({
       typeName: this.typeName
     });

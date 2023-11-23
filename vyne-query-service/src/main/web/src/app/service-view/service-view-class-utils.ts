@@ -1,4 +1,4 @@
-import { isNullOrUndefined } from 'util';
+import { isNullOrUndefined } from 'src/app/utils/utils';
 
 export function methodClassFromName(method: string) {
   if (isNullOrUndefined(method)) {

@@ -3,10 +3,10 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {PipelineService, RunningPipelineSummary, SubmittedPipeline} from '../pipelines.service';
 import {flatMap, map, mergeMap} from 'rxjs/operators';
 import {Observable} from 'rxjs/internal/Observable';
-import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatLegacySnackBar as MatSnackBar} from '@angular/material/legacy-snack-bar';
 import {TypesService} from '../../services/types.service';
 import {Schema} from '../../services/schema';
-import {MatDialog} from '@angular/material/dialog';
+import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
 import {
   ConfirmationAction,
   ConfirmationDialogComponent,

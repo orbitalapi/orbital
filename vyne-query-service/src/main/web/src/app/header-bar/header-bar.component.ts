@@ -1,5 +1,4 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {AuthService} from '../auth/auth.service';
 import {UserInfoService, VyneUser} from '../services/user-info.service';
 import {AppConfig, AppInfoService} from "../services/app-info.service";
 import {Observable} from "rxjs";
@@ -7,10 +6,10 @@ import {Observable} from "rxjs";
 @Component({
   selector: 'app-header-bar',
   template: `
-    <app-workspace-selector *ngIf="(appConfig$ | async)?.featureToggles.workspacesEnabled"></app-workspace-selector>
-    <div class="spacer"></div>
-    <app-search-bar-container></app-search-bar-container>
-    <app-avatar *ngIf="vyneUser" [user]="vyneUser"></app-avatar>
+      <app-workspace-selector *ngIf="(appConfig$ | async)?.featureToggles.workspacesEnabled"></app-workspace-selector>
+      <div class="spacer"></div>
+      <app-search-bar-container></app-search-bar-container>
+      <app-avatar *ngIf="vyneUser" [user]="vyneUser"></app-avatar>
   `,
   styleUrls: ['./header-bar.component.scss']
 })

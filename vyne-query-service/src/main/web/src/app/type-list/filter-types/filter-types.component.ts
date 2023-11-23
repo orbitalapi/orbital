@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { Schema, SchemaMember, SchemaMemberKind } from '../../services/schema';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
@@ -81,10 +81,10 @@ export class TypeFilter {
 export class FilterTypesComponent {
   @Input()
   expanded: boolean;
-  filterTypesFormGroup: FormGroup;
-  name = new FormControl();
-  namespace = new FormControl();
-  filterType = new FormControl();
+  filterTypesFormGroup: UntypedFormGroup;
+  name = new UntypedFormControl();
+  namespace = new UntypedFormControl();
+  filterType = new UntypedFormControl();
   schema: Schema;
   isFiltered = false;
 
@@ -97,10 +97,10 @@ export class FilterTypesComponent {
   @Output()
   filterChanged = new EventEmitter<TypeFilterParams>();
 
-  formGroup: FormGroup;
+  formGroup: UntypedFormGroup;
 
 
-  constructor(fb: FormBuilder, private activatedRoute: ActivatedRoute, private router: Router, private location: Location) {
+  constructor(fb: UntypedFormBuilder, private activatedRoute: ActivatedRoute, private router: Router, private location: Location) {
     this.formGroup = fb.group({
       filter: fb.control(''),
       showTypes: fb.control(true),

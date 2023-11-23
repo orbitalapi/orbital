@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
-import { Router } from '@angular/router';
-import { QueryHistorySummary } from '../services/query.service';
+import {Component} from '@angular/core';
+import {Router} from '@angular/router';
+import {QueryHistorySummary} from '../services/query.service';
 
 export interface LandingPageCardConfig {
   title: string;
@@ -15,6 +15,7 @@ export interface LandingPageCardConfig {
   template: `
     <div class='page-content'>
       <h2>Welcome to Orbital</h2>
+      <div id="container" class="monaco-editor" style="height: 50vh; width: 100%;"></div>
       <div class='row search-row'>
         <app-landing-card [cardConfig]='catalogCardConfig' [isEmpty]='true' layout='horizontal'
                           (emptyActionClicked)="router.navigate(['catalog'])"></app-landing-card>
@@ -31,6 +32,7 @@ export interface LandingPageCardConfig {
 export class LandingPageComponent {
   constructor(public readonly router: Router) {
   }
+
 
   dataSources: any[] = [];
   recentQueries: QueryHistorySummary[] = [];

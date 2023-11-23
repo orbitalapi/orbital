@@ -1,12 +1,10 @@
-import { Component, Input } from '@angular/core';
-import { taxiLangDef } from './taxi-lang-def';
-import { CompilationMessage, ParsedSource, VersionedSource } from '../services/schema';
-import { editor } from 'monaco-editor';
+import {Component, Input} from '@angular/core';
+import {CompilationMessage, ParsedSource, VersionedSource} from '../services/schema';
 
 declare const require: any;
 /* eslint-disable-next-line */
-let hljs: any = require('highlight.js/lib');
-hljs.registerLanguage('taxi', taxiLangDef);
+// let hljs: any = require('highlight.js/lib');
+// hljs.registerLanguage('taxi', taxiLangDef);
 
 @Component({
   selector: 'app-code-viewer',

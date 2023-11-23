@@ -9,7 +9,7 @@ import {
   TdDynamicFormsComponent,
   TdDynamicType
 } from '@covalent/dynamic-forms';
-import {FormControl} from '@angular/forms';
+import {UntypedFormControl} from '@angular/forms';
 import {
   Fact,
   Query,
@@ -29,7 +29,7 @@ import {FailedSearchResponse} from '../../services/models';
 })
 export class QueryWizardComponent implements OnInit {
   schema: Schema;
-  queryMode = new FormControl();
+  queryMode = new UntypedFormControl();
 
   targetTypes: Type[];
   findAsArray = false;

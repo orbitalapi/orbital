@@ -2,7 +2,7 @@ import {Component, Inject} from '@angular/core';
 import {TuiDialogContext} from '@taiga-ui/core';
 import {POLYMORPHEUS_CONTEXT} from '@tinkoff/ng-polymorpheus';
 import {SharedSchemaResponse} from 'src/voyager-app/voyager.service';
-import {FormControl, FormGroup} from '@angular/forms';
+import {UntypedFormControl, UntypedFormGroup} from '@angular/forms';
 
 @Component({
   selector: 'app-share-dialog',
@@ -27,7 +27,7 @@ import {FormControl, FormGroup} from '@angular/forms';
 })
 export class ShareDialogComponent {
 
-  readonly form: FormGroup;
+  readonly form: UntypedFormGroup;
 
   constructor(@Inject(POLYMORPHEUS_CONTEXT)
               public readonly context: TuiDialogContext<void, SharedSchemaResponse>,) {
@@ -36,8 +36,8 @@ export class ShareDialogComponent {
     const windowLocation = href.endsWith('/') ? href.slice(0, -1) : href
     const shareUrl = windowLocation + context.data.uri;
 
-    this.form = new FormGroup({
-      shareUrl: new FormControl(shareUrl)
+    this.form = new UntypedFormGroup({
+      shareUrl: new UntypedFormControl(shareUrl)
     })
   }
 

@@ -1,7 +1,6 @@
-import {Component, OnInit} from '@angular/core';
-import {Workspace, WorkspaceMembershipDto, WorkspacesService} from "../services/workspaces.service";
+import {Component} from '@angular/core';
+import {WorkspaceMembershipDto, WorkspacesService} from "../services/workspaces.service";
 import {Observable} from "rxjs/internal/Observable";
-import {ConnectorSummary} from "../db-connection-editor/db-importer.service";
 import {Router} from "@angular/router";
 
 @Component({
