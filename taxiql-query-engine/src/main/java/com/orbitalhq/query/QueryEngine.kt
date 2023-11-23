@@ -2,6 +2,8 @@ package com.orbitalhq.query
 
 import com.google.common.base.Stopwatch
 import com.orbitalhq.*
+import com.orbitalhq.metrics.NoOpMetricsReporter
+import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.*
 import com.orbitalhq.models.facts.ScopedFact
 import com.orbitalhq.models.format.ModelFormatSpec
@@ -18,6 +20,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import lang.taxi.mutations.Mutation
 import mu.KotlinLogging
+import java.time.Instant
 
 private val logger = KotlinLogging.logger {}
 
@@ -141,7 +144,8 @@ class StatefulQueryEngine(
    private val profiler: QueryProfiler = QueryProfiler(),
    private val projectionProvider: ProjectionProvider,
    override val operationInvocationService: OperationInvocationService,
-   val formatSpecs: List<ModelFormatSpec>
+   val formatSpecs: List<ModelFormatSpec>,
+   private val metricsReporter: QueryMetricsReporter = NoOpMetricsReporter
 ) :
    QueryEngine,
    ModelContainer {
@@ -160,7 +164,7 @@ class StatefulQueryEngine(
    override fun newEngine(): QueryEngine {
       return StatefulQueryEngine(
          FactSetMap.create(),
-         schema, strategies, profiler, projectionProvider, operationInvocationService, formatSpecs
+         schema, strategies, profiler, projectionProvider, operationInvocationService, formatSpecs, metricsReporter
       )
    }
 
@@ -168,7 +172,7 @@ class StatefulQueryEngine(
       val newFacts = factSetMapFilter(this.initialState)
       return StatefulQueryEngine(
          newFacts,
-         schema, strategies, profiler, projectionProvider, operationInvocationService, formatSpecs
+         schema, strategies, profiler, projectionProvider, operationInvocationService, formatSpecs, metricsReporter
       )
    }
 
@@ -202,21 +206,10 @@ class StatefulQueryEngine(
    private val queryParser = QueryParser(schema)
 
    override suspend fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult {
-      // First pass impl.
-      // Thinking here is that if I can add a new Hipster strategy that discovers all the
-      // endpoints, then I can compose a result of gather() from multiple finds()
       val findAllQuery = queryParser.parse(queryString).map { it.copy(mode = QueryMode.GATHER) }.toSet()
-      // TODO return timed("BaseQueryEngine.findAll") {
       return find(findAllQuery, context)
-      //}
    }
 
-   // Experimental.
-   // I'm starting this by treating find() and build() as separate operations, but
-   // I'm not sure why...just a gut feel.
-   // The idea use case here is for ETL style transformations, where a user may know
-   // some, but not all, of the facts up front, and then use Vyne to polyfill.
-   // Build starts by using facts known in it's current context to build the target type
    override suspend fun build(query: QueryExpression, context: QueryContext): QueryResult {
 
       val targetType = when (query) {
@@ -233,16 +226,7 @@ class StatefulQueryEngine(
          else -> error("Currently, build only supports TypeNameQueryExpression")
 
       }
-      // Note - this should be trivial to expand to TypeListQueryExpression too
-//      val typeNameQueryExpression = when (query) {
-//         is TypeNameQueryExpression -> query
-//         is TypeNameListQueryExpression -> {
-//            require(query.typeNames.size == 1) { "Currently, build only supports TypeNameQueryExpression, or a list of a single type" }
-//            TypeNameQueryExpression(query.typeNames.first())
-//         }
-//         else -> error("Currently, build only supports TypeNameQueryExpression")
-//      }
-//      val targetType = context.schema.type(typeNameQueryExpression.typeName)
+
       return projectTo(targetType, context)
    }
 
@@ -538,6 +522,8 @@ class StatefulQueryEngine(
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
       failureBehaviour: FailureBehaviour = FailureBehaviour.THROW,
    ): QueryResult {
+      val startTime = Instant.now()
+
       if (target.type.isPrimitive) {
          logger.warn { "A search was started for a primitive type (${target.type.qualifiedName.shortDisplayName} - this is almost certainly a bug" }
       }

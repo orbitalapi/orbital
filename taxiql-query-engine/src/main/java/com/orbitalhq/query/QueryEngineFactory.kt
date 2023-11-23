@@ -2,6 +2,8 @@ package com.orbitalhq.query
 
 import com.orbitalhq.FactSetMap
 import com.orbitalhq.VyneCacheConfiguration
+import com.orbitalhq.metrics.NoOpMetricsReporter
+import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.graph.EdgeNavigator
@@ -132,7 +134,8 @@ class DefaultQueryEngineFactory(
    private val strategies: List<QueryStrategy>,
    private val projectionProvider: ProjectionProvider,
    private val operationInvocationService: OperationInvocationService,
-   private val formatSpecs:List<ModelFormatSpec> = emptyList()
+   private val formatSpecs:List<ModelFormatSpec> = emptyList(),
+   private val metricsReporter: QueryMetricsReporter = NoOpMetricsReporter
 ) : QueryEngineFactory {
 
    override fun queryEngine(schema: Schema): QueryEngine {
@@ -140,6 +143,7 @@ class DefaultQueryEngineFactory(
    }
 
    override fun queryEngine(schema: Schema, models: FactSetMap): StatefulQueryEngine {
-      return StatefulQueryEngine(models, schema, strategies,projectionProvider = projectionProvider, operationInvocationService = operationInvocationService, formatSpecs = formatSpecs)
+      return StatefulQueryEngine(models, schema, strategies,projectionProvider = projectionProvider, operationInvocationService = operationInvocationService, formatSpecs = formatSpecs,
+         metricsReporter = metricsReporter)
    }
 }

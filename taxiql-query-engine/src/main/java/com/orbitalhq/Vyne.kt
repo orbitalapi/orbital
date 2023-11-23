@@ -1,6 +1,8 @@
 package com.orbitalhq
 
 import com.google.common.annotations.VisibleForTesting
+import com.orbitalhq.metrics.NoOpMetricsReporter
+import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.DefinedInSchema
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
