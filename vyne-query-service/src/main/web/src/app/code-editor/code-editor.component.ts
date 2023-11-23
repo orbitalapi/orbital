@@ -1,12 +1,23 @@
-import {Component, ElementRef, EventEmitter, Input, Output, ViewChild} from '@angular/core';
-import {editor, Uri} from "monaco-editor";
-import {MonacoLanguageServerService} from "./language-server.service";
-import {MonacoLanguageClient} from "monaco-languageclient";
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, Output, ViewChild} from '@angular/core';
 import {debounceTime} from "rxjs/operators";
-import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
-import ITextModel = editor.ITextModel;
-import IModelContentChangedEvent = editor.IModelContentChangedEvent;
-// import {createModelReference} from "@codingame/monaco-vscode-api/monaco";
+
+import {
+    createLanguageClient,
+    createTaxiEditor,
+    createTaxiEditorModel,
+    createUrl,
+    createWebsocketConnection,
+    performInit
+} from "./language-server-commons";
+import {ITextFileEditorModel} from "@codingame/monaco-vscode-api/monaco";
+import {DidOpenTextDocumentNotification} from "vscode-languageclient";
+import {MonacoLanguageClient} from "monaco-languageclient";
+import {
+    IStandaloneCodeEditor
+} from "@codingame/monaco-vscode-api/vscode/vs/editor/standalone/browser/standaloneCodeEditor";
+import {buildWorkerDefinition} from 'monaco-editor-workers';
+
+buildWorkerDefinition('./assets/monaco-editor-workers/workers', window.location.origin, false);
 
 type WordWrapOptions = 'off' | 'on' | 'wordWrapColumn' | 'bounded';
 
@@ -17,9 +28,19 @@ type WordWrapOptions = 'off' | 'on' | 'wordWrapColumn' | 'bounded';
         <div #codeEditorContainer class="code-editor"></div>
     `
 })
-export class CodeEditorComponent {
+export class CodeEditorComponent implements AfterViewInit  {
 
-    private editorResourceUri: Uri | null = null;
+    initDone = false;
+
+    private languageClient: MonacoLanguageClient;
+    private editor: IStandaloneCodeEditor
+
+    async ngAfterViewInit(): Promise<void> {
+        await performInit(!this.initDone);
+        this.initDone = true;
+    }
+
+
 
     private _codeEditorContainer: ElementRef;
     @ViewChild('codeEditorContainer')
@@ -32,21 +53,21 @@ export class CodeEditorComponent {
         this.createMonacoEditor()
     }
 
-    private _actions: editor.IActionDescriptor[] = [];
-    @Input()
-    get actions(): editor.IActionDescriptor[] {
-        return this._actions;
-    }
-
-    set actions(value) {
-        if (this._actions === value) {
-            return;
-        }
-        this._actions = value;
-        if (this.monacoEditor) {
-            this.updateActionsOnEditor();
-        }
-    }
+    // private _actions: editor.IActionDescriptor[] = [];
+    // @Input()
+    // get actions(): editor.IActionDescriptor[] {
+    //     return this._actions;
+    // }
+    //
+    // set actions(value) {
+    //     if (this._actions === value) {
+    //         return;
+    //     }
+    //     this._actions = value;
+    //     if (this.monacoEditor) {
+    //         this.updateActionsOnEditor();
+    //     }
+    // }
 
     // private editorTheme = iplastic_theme;
     //
@@ -96,27 +117,28 @@ export class CodeEditorComponent {
             return;
         }
         this._content = value;
-        if (this.monacoModel) {
-            this.monacoModel.setValue(value);
-            this.contentChange.emit(value);
-        }
+        // if (this.monacoModel) {
+        //     this.monacoModel.setValue(value);
+        //     this.contentChange.emit(value);
+        // }
     }
 
     //
-    private modelChanged$ = new EventEmitter<IModelContentChangedEvent>();
-    //
+    private modelChanged$ = new EventEmitter<any>();
+    // private modelChanged$ = new EventEmitter<IModelContentChangedEvent>();
+
     @Output()
     contentChange = new EventEmitter<string>();
     //
     private monacoEditor: IStandaloneCodeEditor;
-    private monacoModel: ITextModel;
+    // private monacoModel: ITextModel;
     // //
     private monacoLanguageClient: MonacoLanguageClient;
     private webSocket: WebSocket;
 
     //
     constructor(
-        private languageInitServices: MonacoLanguageServerService
+        // private languageInitServices: MonacoLanguageServerService
     ) {
 
         // this.languageInitServices.languageServicesInit$
@@ -124,16 +146,16 @@ export class CodeEditorComponent {
         //         // editor.defineTheme('vyne', this.editorTheme as any);
         //         editor.setTheme('vyne');
         //     })
-        this.modelChanged$.pipe(
-            debounceTime(250),
-        ).subscribe(e => {
-            this.createWebsocket();
-            this.updateContent(this.monacoModel.getValue());
-            if (this.webSocket.readyState != this.webSocket.OPEN) {
-                console.log("Refresh websocket connection for language server");
-                this.createWebsocket();
-            }
-        })
+        // this.modelChanged$.pipe(
+        //     debounceTime(250),
+        // ).subscribe(e => {
+        //     this.createWebsocket();
+        //     this.updateContent(this.monacoModel.getValue());
+        //     if (this.webSocket.readyState != this.webSocket.OPEN) {
+        //         console.log("Refresh websocket connection for language server");
+        //         this.createWebsocket();
+        //     }
+        // })
     }
 
     private createWebsocket() {
@@ -153,18 +175,27 @@ export class CodeEditorComponent {
 
     }
 
-    //
-    private newQueryUri() {
-        return Uri.parse(`inmemory://query-${Math.floor(Math.random() * 1_000_000_000)}.taxi`)
-    }
-
-    //
     private async createMonacoEditor() {
         if (this.monacoEditor) {
             this.monacoEditor.dispose();
         }
 
-        this.editorResourceUri = this.newQueryUri();
+        // create the web socket
+        const wsTransport = await createWebsocketConnection(createUrl('localhost', 9022, '/api/language-server'))
+        this.languageClient = createLanguageClient(wsTransport);
+        const modelRef = await createTaxiEditorModel(this.content);
+        const model:ITextFileEditorModel = modelRef.object;
+        this.editor = await createTaxiEditor(this.codeEditorContainer.nativeElement, modelRef)
+
+        await this.languageClient.sendNotification(DidOpenTextDocumentNotification.type, {
+            textDocument: {
+                uri: model.resource.toString(),
+                languageId: 'taxi',
+                version: 0,
+                text: this.content
+            }
+        })
+
         //
         // const modelReference = await createModelReference(this.editorResourceUri, this.content)
         //

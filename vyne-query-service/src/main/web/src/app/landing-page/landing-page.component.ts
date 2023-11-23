@@ -43,40 +43,10 @@ export interface LandingPageCardConfig {
     </div>
   `
 })
-export class LandingPageComponent implements AfterViewInit {
+export class LandingPageComponent {
   constructor(public readonly router: Router) {
   }
 
-  initDone = false;
-
-  private languageClient: MonacoLanguageClient;
-  private editor: IStandaloneCodeEditor
-  content = `type Name inherits String
-
-model Person {
-    name : Name
-}`
-
-  async ngAfterViewInit(): Promise<void> {
-    await performInit(!this.initDone);
-    this.initDone = true;
-
-    // create the web socket
-    const wsTransport = await createWebsocketConnection(createUrl('localhost', 9022, '/api/language-server'))
-    this.languageClient = createLanguageClient(wsTransport);
-    const modelRef = await createTaxiEditorModel(this.content);
-    const model:ITextFileEditorModel = modelRef.object;
-    this.editor = await createTaxiEditor(document.getElementById('container')!, modelRef)
-
-    await this.languageClient.sendNotification(DidOpenTextDocumentNotification.type, {
-      textDocument: {
-        uri: model.resource.toString(),
-        languageId: 'taxi',
-        version: 0,
-        text: this.content
-      }
-    })
-  }
 
   dataSources: any[] = [];
   recentQueries: QueryHistorySummary[] = [];

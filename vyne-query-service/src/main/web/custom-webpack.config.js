@@ -1,5 +1,4 @@
 const path = require('path');
-// const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const MONACO_DIR = path.join(__dirname, 'node_modules/monaco-editor');
 const VSCODE_DIR = path.join(__dirname, 'node_modules/vscode');
 
@@ -13,10 +12,7 @@ module.exports = {
           MONACO_DIR,
           VSCODE_DIR
         ],
-        use: [
-          // MiniCssExtractPlugin.loader,
-          "css-loader",
-        ]
+        use: [          'style-loader', 'css-loader'        ]
       },
       // from https://github.com/TypeFox/monaco-languageclient-ng-example/blob/main/custom-webpack.config.js#L18C12-L21C14
       {
