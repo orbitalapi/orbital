@@ -20,6 +20,7 @@ import {
 } from "@codingame/monaco-vscode-api/vscode/vs/editor/standalone/browser/standaloneCodeEditor";
 import {TAXI_LANGUAGE_ID, taxiLanguageConfiguration, taxiLanguageTokenProvider} from "../code-viewer/taxi-lang.monaco";
 import {iplastic_theme} from "./themes/iplastic";
+import {nanoid} from "nanoid";
 
 export const createLanguageClient = (transports: MessageTransports): MonacoLanguageClient => {
     return new MonacoLanguageClient({
@@ -112,7 +113,8 @@ export const performInit = async (vscodeApiInit: boolean) => {
 };
 
 export const createTaxiEditorModel = async (content: string):Promise<IReference<ITextFileEditorModel>> => {
-    const uri = Uri.parse('/web/sandbox/query-123.taxi');
+
+    const uri = Uri.parse(`/web/sandbox/query-${nanoid(8)}.taxi`);
     const modelRef: IReference<ITextFileEditorModel> = await createModelReference(uri, content);
 
     modelRef.object.setLanguageId(TAXI_LANGUAGE_ID);

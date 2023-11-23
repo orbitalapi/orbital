@@ -7,8 +7,7 @@ import {TuiTabsModule} from "@taiga-ui/kit";
 import { EndpointMonitorComponent } from './endpoint-monitor.component';
 import {ExpandingPanelSetModule} from "../expanding-panelset/expanding-panel-set.module";
 import {CodeViewerModule} from "../code-viewer/code-viewer.module";
-import {TuiAxesModule, TuiLineChartModule} from "@taiga-ui/addon-charts";
-
+import {NgApexchartsModule} from "ng-apexcharts";
 
 @NgModule({
   declarations: [
@@ -31,8 +30,7 @@ import {TuiAxesModule, TuiLineChartModule} from "@taiga-ui/addon-charts";
         TuiTabsModule,
         ExpandingPanelSetModule,
         CodeViewerModule,
-        TuiAxesModule,
-        TuiLineChartModule
+        NgApexchartsModule,
     ]
 })
 export class EndpointManagerModule {

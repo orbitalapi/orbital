@@ -7,6 +7,7 @@ import com.hazelcast.jet.core.JetTestSupport
 import com.hazelcast.jet.core.JobStatus
 import com.hazelcast.spring.context.SpringManagedContext
 import com.mercateo.test.clock.TestClock
+import com.nhaarman.mockito_kotlin.mock
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import com.orbitalhq.*
@@ -244,7 +245,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       sinkProvider: PipelineSinkProvider = pipelineSinkProvider,
    ): PipelineManager {
       return PipelineManager(
-         PipelineFactory(vyneClient, sourceProvider, sinkProvider),
+         PipelineFactory(vyneClient, sourceProvider, sinkProvider, mock {  }),
          hazelcastInstance
       )
    }

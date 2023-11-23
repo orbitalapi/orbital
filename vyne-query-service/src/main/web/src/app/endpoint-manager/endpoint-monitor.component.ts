@@ -5,8 +5,15 @@ import {Observable} from "rxjs";
 import {map, mergeMap} from "rxjs/operators";
 import {SavedQuery} from "../services/type-editor.service";
 import {MetricsService, StreamMetricsData} from "../services/metrics.service";
-import {TuiPoint} from "@taiga-ui/core";
-import {TUI_DEFAULT_STRINGIFY, TuiContextWithImplicit} from '@taiga-ui/cdk';
+import {
+    ApexAxisChartSeries,
+    ApexChart,
+    ApexDataLabels,
+    ApexFill,
+    ApexStroke,
+    ApexXAxis,
+    ApexYAxis
+} from "ng-apexcharts";
 
 @Component({
     selector: 'app-endpoint-monitor',
@@ -16,23 +23,12 @@ import {TUI_DEFAULT_STRINGIFY, TuiContextWithImplicit} from '@taiga-ui/cdk';
             <div>
                 <div class="">
                     <app-panel-header title="Metrics"></app-panel-header>
-                    <tui-axes
-                            class="axes"
-                            [tuiLineChartHint]="hintContent"
-                            [horizontalLines]="2"
-                            [verticalLines]="4"
-                    >
-                        <tui-line-chart
-                                [dots]="true"
-                                [height]="200"
-                                [value]="chartData"
-                                [width]="400"
-                                [x]="xAxisStart"
-                                [y]="yAxisStart"
-                                [xStringify]="stringify"
-                                [yStringify]="stringify"
-                        ></tui-line-chart>
-                    </tui-axes>
+                    <apx-chart *ngIf="chartSeries" [chart]="chartConfig" [series]="chartSeries"
+                               [stroke]="stroke"
+                               [fill]="fill"
+                               [yaxis]="numericYAxis"
+                               [dataLabels]="dataLabels"
+                               [xaxis]="dateTimeXAxis"></apx-chart>
                 </div>
                 <div class="">
                     <app-panel-header title="Source"></app-panel-header>
@@ -48,23 +44,49 @@ export class EndpointMonitorComponent {
 
     query$: Observable<SavedQuery>
     metrics$: Observable<StreamMetricsData>
-    chartData$: Observable<TuiPoint[]>
-    chartData: TuiPoint[] = [
-        [50, 50],
-        [100, 75],
-        [150, 50],
-        [200, 150],
-        [250, 155],
-        [300, 190],
-        [350, 90]
-    ];
-    xAxisStart = 0;
-    yAxisStart = 0;
-    readonly stringify = TUI_DEFAULT_STRINGIFY;
 
-    readonly hintContent = ({
-                                $implicit,
-                            }: TuiContextWithImplicit<readonly TuiPoint[]>): number => $implicit[0][1];
+    dataLabels: ApexDataLabels = {
+        enabled: false
+    }
+
+    stroke: ApexStroke = {
+        width: 2,
+        curve: "straight"
+    }
+
+    fill:ApexFill =  {
+        type: "gradient",
+        gradient: {
+            shadeIntensity: 1,
+            opacityFrom: 0.7,
+            opacityTo: 0.9,
+            stops: [0, 90, 100]
+        }
+    }
+    chartSeries: ApexAxisChartSeries;
+    dateTimeXAxis : ApexXAxis = {
+        type: "datetime"
+    }
+    numericYAxis : ApexYAxis = {
+        labels: {
+            formatter: val => { return val.toFixed(0) }
+        }
+    }
+
+
+    chartConfig: ApexChart = {
+        type: 'area',
+        height: 200,
+
+        zoom: {
+            type: "x",
+            enabled: true,
+            autoScaleYaxis: true
+        },
+        toolbar: {
+            autoSelected: "zoom"
+        }
+    }
 
     constructor(
         private activatedRoute: ActivatedRoute,
@@ -72,6 +94,7 @@ export class EndpointMonitorComponent {
         private metricsService: MetricsService,
         private changeDetector: ChangeDetectorRef
     ) {
+
         const endpointName$ = activatedRoute.paramMap.pipe(
             map(paramMap => {
                 const endpoint = paramMap.get('endpointName');
@@ -89,26 +112,31 @@ export class EndpointMonitorComponent {
             })
         )
         this.metrics$.subscribe(metricsData => {
-            const chartData = metricsData.metrics.map(dataPoint => {
-                return [dataPoint.epochSeconds, dataPoint.value * 1] as TuiPoint
+            const dataPoints: [number, number][] = metricsData.metrics.map(dataPoint => {
+                return [dataPoint.epochSeconds * 1000, dataPoint.value * 1];
             })
-            this.chartData = chartData;
-            this.xAxisStart = Math.min(...chartData.map(v => v[0]))
+            this.chartSeries = [{
+
+                data: dataPoints
+            }]
+            // this.xAxisStart = Math.min(...chartData.map(v => v[0]))
             // this.yAxisStart = Math.min(...chartData.map(v => v[1]))
 
             this.changeDetector.markForCheck();
         })
-        this.chartData$ = this.metrics$.pipe(
-            map(metricsData => {
-                const chartData = metricsData.metrics.map(dataPoint => {
-                    return [dataPoint.epochSeconds, dataPoint.value * 1] as TuiPoint
-                })
-                // this.chartData = chartData;
-                return chartData;
-            })
-        )
+        // this.chartData$ = this.metrics$.pipe(
+        //     map(metricsData => {
+        //         const chartData = metricsData.metrics.map(dataPoint => {
+        //             return [dataPoint.epochSeconds, dataPoint.value * 1] as TuiPoint
+        //         })
+        //         // this.chartData = chartData;
+        //         return chartData;
+        //     })
+        // )
 
     }
 
 
 }
+
+type ChartDataPoint = [number,number]

@@ -61,6 +61,7 @@ class PipelineManager(
          ) to null
       } else {
          val job = hazelcastInstance.jet.newJob(pipeline)
+
          val submittedPipeline = SubmittedPipeline(
             pipelineSpec.name,
             job.idString,
