@@ -71,7 +71,8 @@ class TelemetryService(
             )
         ).retrieve().bodyToMono<PrometheusQueryRangeMetricsResult>()
             .map { prometheusMetrics ->
-                val resultItem = prometheusMetrics.data.result.first()
+                val resultItem = prometheusMetrics.data.result.firstOrNull()
+                    ?: return@map StreamMetricsData.empty
                 val tags = resultItem.metricsAs<PipelineTags>()
                 val metrics = resultItem.valuesAsTimestampedValues
                 StreamMetricsData(tags, metrics)

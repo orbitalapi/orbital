@@ -19,6 +19,10 @@ data class MetricTimestampValue(
 )
 
 data class StreamMetricsData(
-    val tags: PipelineTags,
+    val tags: PipelineTags?,
     val metrics: List<MetricTimestampValue>
-)
+) {
+    companion object {
+        val empty = StreamMetricsData(null, emptyList())
+    }
+}
