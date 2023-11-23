@@ -154,7 +154,6 @@ class ObjectBuilder(
          }
          .firstOrNull().let { instance: TypedInstance? ->
             if (instance == null && failedAttempts != null) {
-               context.vyneQueryStatistics.graphSearchFailedCount.addAndGet(failedAttempts!!.size)
                TypedNull.create(
                   targetType,
                   FailedSearch("The search failed after ${failedAttempts!!.size} attempts", failedAttempts!!)

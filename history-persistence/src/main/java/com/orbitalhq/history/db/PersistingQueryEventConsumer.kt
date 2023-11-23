@@ -7,7 +7,17 @@ import com.orbitalhq.history.QueryResultEventMapper
 import com.orbitalhq.history.ResultRowPersistenceStrategyFactory
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.json.Jackson
-import com.orbitalhq.query.*
+import com.orbitalhq.query.QueryCompletedEvent
+import com.orbitalhq.query.QueryEvent
+import com.orbitalhq.query.QueryEventConsumer
+import com.orbitalhq.query.QueryFailureEvent
+import com.orbitalhq.query.QueryStartEvent
+import com.orbitalhq.query.RemoteCallOperationResultHandler
+import com.orbitalhq.query.RestfulQueryExceptionEvent
+import com.orbitalhq.query.RestfulQueryResultEvent
+import com.orbitalhq.query.StreamingQueryCancelledEvent
+import com.orbitalhq.query.TaxiQlQueryExceptionEvent
+import com.orbitalhq.query.TaxiQlQueryResultEvent
 import com.orbitalhq.query.history.RemoteCallResponse
 import com.orbitalhq.schemas.Schema
 import kotlinx.coroutines.CoroutineScope
@@ -63,7 +73,6 @@ class PersistingQueryEventConsumer(
             is RestfulQueryExceptionEvent -> persistEvent(event)
             is QueryStartEvent -> persistEvent(event)
             is StreamingQueryCancelledEvent -> processStreamingQueryCancelledEvent(event)
-            is VyneQueryStatisticsEvent -> {}
          }
       }
    }

@@ -1,13 +1,25 @@
 package com.orbitalhq.query.runtime.core
 
-import com.orbitalhq.query.*
+import com.orbitalhq.query.FailedQueryResponse
+import com.orbitalhq.query.Query
+import com.orbitalhq.query.QueryCancelledException
+import com.orbitalhq.query.QueryCompletedEvent
+import com.orbitalhq.query.QueryEventConsumer
+import com.orbitalhq.query.QueryFailureEvent
+import com.orbitalhq.query.QueryResponse
+import com.orbitalhq.query.QueryResult
+import com.orbitalhq.query.QueryStartEvent
+import com.orbitalhq.query.RestfulQueryExceptionEvent
+import com.orbitalhq.query.RestfulQueryResultEvent
+import com.orbitalhq.query.StreamingQueryCancelledEvent
+import com.orbitalhq.query.TaxiQlQueryExceptionEvent
+import com.orbitalhq.query.TaxiQlQueryResultEvent
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import lang.taxi.query.TaxiQLQueryString
 import mu.KotlinLogging
 import java.time.Instant
@@ -61,11 +73,6 @@ class QueryLifecycleEventObserver(
             timestamp = queryStartTime
          )
       )
-      val statsCollector = statisticsScope.launch {
-         queryResult.statistics?.collect {
-
-         }
-      }
 
       return queryResult.copy(
          results = queryResult.results
@@ -106,11 +113,9 @@ class QueryLifecycleEventObserver(
 //                  metricsEventConsumer.handleEvent(event)
                }
                activeQueryMonitor?.reportComplete(queryResult.queryId)
-               statsCollector.cancel()
             }.catch {
                logger.warn { "An error in emitting results - has consumer gone away?? ${it.message} ${it.javaClass}" }
                activeQueryMonitor?.reportComplete(queryResult.queryId)
-               statsCollector.cancel()
                throw it
             }
       )

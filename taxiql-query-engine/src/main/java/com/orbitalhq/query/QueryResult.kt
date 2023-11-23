@@ -27,8 +27,6 @@ data class QueryResult(
    val anonymousTypes: Set<Type> = setOf(),
    override val clientQueryId: String? = null,
    override val queryId: String,
-   @field:JsonIgnore // we send a lightweight version below
-   val statistics: MutableSharedFlow<VyneQueryStatistics>? = null,
    override val responseType: String? = null,
 
    @field:JsonIgnore

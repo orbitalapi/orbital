@@ -5,7 +5,6 @@ import com.hazelcast.cluster.MemberSelector
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.core.IExecutorService
-import com.spikhalskiy.futurity.Futurity
 import com.orbitalhq.Vyne
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.facts.FactBag
@@ -13,9 +12,8 @@ import com.orbitalhq.models.serde.SerializableTypedInstance
 import com.orbitalhq.models.serde.toSerializable
 import com.orbitalhq.query.Projection
 import com.orbitalhq.query.QueryContext
-import com.orbitalhq.query.SerializableVyneQueryStatistics
-import com.orbitalhq.query.VyneQueryStatistics
 import com.orbitalhq.query.projection.ProjectionProvider
+import com.spikhalskiy.futurity.Futurity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.reactive.asFlow
@@ -40,7 +38,7 @@ class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistrib
 
     val hazelcastScheduler: Scheduler = Schedulers.parallel()
 
-    override fun project(results: Flow<TypedInstance>, projection: Projection, context: QueryContext, globalFacts: FactBag):Flow<Pair<TypedInstance, VyneQueryStatistics>> {
+    override fun project(results: Flow<TypedInstance>, projection: Projection, context: QueryContext, globalFacts: FactBag):Flow<TypedInstance> {
 
         val instance:HazelcastInstance = Hazelcast.getAllHazelcastInstances().first()
         val executorService:IExecutorService = instance.getExecutorService("projectionExecutorService")
@@ -78,14 +76,14 @@ class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistrib
         return HazelcastProjectingTask(context.queryId, serializedTypedInstancesAsByteList, serializedExcludedServices, qualifiedName, segment) to segment
     }
 
-    private fun deserialiseTaskResults(context: QueryContext, vyne:Vyne, resultsFuture: Mono<ByteArray>, segment:Long):Flow<Pair<TypedInstance, VyneQueryStatistics>> {
+    private fun deserialiseTaskResults(context: QueryContext, vyne:Vyne, resultsFuture: Mono<ByteArray>, segment:Long):Flow<TypedInstance> {
 
         val deserialised =
             resultsFuture
                 .map {
-                    val decoded = Cbor.decodeFromByteArray<List<Pair<ByteArray, SerializableVyneQueryStatistics>>>(it)
+                    val decoded = Cbor.decodeFromByteArray<List<ByteArray>>(it)
                         .map{
-                            SerializableTypedInstance.fromBytes(it.first).toTypedInstance(vyne.schema) to VyneQueryStatistics.from(it.second)
+                            SerializableTypedInstance.fromBytes(it).toTypedInstance(vyne.schema)
                         }
                         .toFlux()
                     logger.info { "Received and deserialised segment $segment for query ${context.queryId} at ${Instant.now()}" }

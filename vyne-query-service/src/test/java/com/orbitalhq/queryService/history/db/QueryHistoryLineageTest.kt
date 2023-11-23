@@ -9,7 +9,6 @@ import com.orbitalhq.history.rest.QueryHistoryService
 import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.ValueWithTypeName
-import com.orbitalhq.query.runtime.core.MetricsEventConsumer
 import com.orbitalhq.query.runtime.core.QueryResponseFormatter
 import com.orbitalhq.query.runtime.core.QueryService
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
@@ -105,7 +104,6 @@ class QueryHistoryLineageTest {
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),
          ActiveQueryMonitor(),
-         MetricsEventConsumer(meterRegistry),
          QueryResponseFormatter(listOf(CsvFormatSpec), schemaProvider)
       )
       runBlocking {
