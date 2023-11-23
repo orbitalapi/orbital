@@ -6,7 +6,7 @@
     "start": "ng serve --proxy-config proxy.conf.json",
     "build": "node --max_old_space_size=16000 node_modules/@angular/cli/bin/ng build",
     "start-dev": "node --max_old_space_size=8192 node_modules/@angular/cli/bin/ng serve --configuration dev",
-    "build-prod": "ng build --configuration production",
+    "build-prod": "ng build --configuration production vyne-app",
     "build-prod-voyager": "ng build --configuration production voyager",
     "test": "ng test",
     "lint": "ng lint",
