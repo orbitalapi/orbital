@@ -2,11 +2,19 @@ import {AfterViewInit, Component} from '@angular/core';
 import {Router} from '@angular/router';
 import {QueryHistorySummary} from '../services/query.service';
 import {
-  createDefaultJsonContent,
-  createJsonEditor,
-  createUrl, createWebSocketAndStartClient,
+  createLanguageClient,
+  createTaxiEditor,
+  createTaxiEditorModel,
+  createUrl,
+  createWebsocketConnection,
   performInit
 } from "../code-editor/language-server-commons";
+import {ITextFileEditorModel} from "@codingame/monaco-vscode-api/monaco";
+import {DidOpenTextDocumentNotification} from "vscode-languageclient";
+import {MonacoLanguageClient} from "monaco-languageclient";
+import {
+  IStandaloneCodeEditor
+} from "@codingame/monaco-vscode-api/vscode/vs/editor/standalone/browser/standaloneCodeEditor";
 
 export interface LandingPageCardConfig {
   title: string;
@@ -41,18 +49,33 @@ export class LandingPageComponent implements AfterViewInit {
 
   initDone = false;
 
+  private languageClient: MonacoLanguageClient;
+  private editor: IStandaloneCodeEditor
+  content = `type Name inherits String
+
+model Person {
+    name : Name
+}`
+
   async ngAfterViewInit(): Promise<void> {
-    // use the same common method to create a monaco editor for json
     await performInit(!this.initDone);
     this.initDone = true;
-    await createJsonEditor({
-      htmlElement: document.getElementById('container')!,
-      content: createDefaultJsonContent()
-    });
 
     // create the web socket
-    const url = createUrl('localhost', 30000, '/sampleServer');
-    createWebSocketAndStartClient(url);
+    const wsTransport = await createWebsocketConnection(createUrl('localhost', 9022, '/api/language-server'))
+    this.languageClient = createLanguageClient(wsTransport);
+    const modelRef = await createTaxiEditorModel(this.content);
+    const model:ITextFileEditorModel = modelRef.object;
+    this.editor = await createTaxiEditor(document.getElementById('container')!, modelRef)
+
+    await this.languageClient.sendNotification(DidOpenTextDocumentNotification.type, {
+      textDocument: {
+        uri: model.resource.toString(),
+        languageId: 'taxi',
+        version: 0,
+        text: this.content
+      }
+    })
   }
 
   dataSources: any[] = [];

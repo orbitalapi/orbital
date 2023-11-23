@@ -2,7 +2,6 @@ import {Component, EventEmitter, Inject, Injector, Input, OnInit, Output} from '
 import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 import {QualifiedName, Schema, SchemaMember} from '../../services/schema';
 import {map} from 'rxjs/operators';
-import {bootstrap} from 'angular';
 import {PipelineDirection, PipelineTransportSpec} from '../pipelines.service';
 import {BaseTransportConfigEditor} from './base-transport-config-editor';
 import {ConnectorSummary} from "../../db-connection-editor/db-importer.service";

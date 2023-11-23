@@ -119,11 +119,11 @@ export class CodeEditorComponent {
         private languageInitServices: MonacoLanguageServerService
     ) {
 
-        this.languageInitServices.languageServicesInit$
-            .subscribe(() => {
-                // editor.defineTheme('vyne', this.editorTheme as any);
-                editor.setTheme('vyne');
-            })
+        // this.languageInitServices.languageServicesInit$
+        //     .subscribe(() => {
+        //         // editor.defineTheme('vyne', this.editorTheme as any);
+        //         editor.setTheme('vyne');
+        //     })
         this.modelChanged$.pipe(
             debounceTime(250),
         ).subscribe(e => {
@@ -137,19 +137,19 @@ export class CodeEditorComponent {
     }
 
     private createWebsocket() {
-        if (this.webSocket) {
-            this.webSocket.close()
-        }
-        this.languageInitServices.createLanguageServerWebsocket()
-            .subscribe(websocket => {
-                this.webSocket = websocket;
-
-                // For testing websocket reconnection
-                // @ts-ignore
-                window.killWebsocket = () => {
-                    this.webSocket.close()
-                }
-            })
+        // if (this.webSocket) {
+        //     this.webSocket.close()
+        // }
+        // this.languageInitServices.createLanguageServerWebsocket()
+        //     .subscribe(websocket => {
+        //         this.webSocket = websocket;
+        //
+        //         // For testing websocket reconnection
+        //         // @ts-ignore
+        //         window.killWebsocket = () => {
+        //             this.webSocket.close()
+        //         }
+        //     })
 
     }
 

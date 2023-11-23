@@ -15,13 +15,17 @@ import { initServices, MonacoLanguageClient } from 'monaco-languageclient';
 import { CloseAction, ErrorAction, MessageTransports } from 'vscode-languageclient';
 import { WebSocketMessageReader, WebSocketMessageWriter, toSocket } from 'vscode-ws-jsonrpc';
 import { Uri } from 'vscode';
+import {
+    IStandaloneCodeEditor
+} from "@codingame/monaco-vscode-api/vscode/vs/editor/standalone/browser/standaloneCodeEditor";
+import {TAXI_LANGUAGE_ID, taxiLanguageConfiguration, taxiLanguageTokenProvider} from "../code-viewer/taxi-lang.monaco";
 
 export const createLanguageClient = (transports: MessageTransports): MonacoLanguageClient => {
     return new MonacoLanguageClient({
         name: 'Sample Language Client',
         clientOptions: {
             // use a language id as a document selector
-            documentSelector: ['json'],
+            documentSelector: [TAXI_LANGUAGE_ID],
             // disable the default error handler
             errorHandler: {
                 error: () => ({ action: ErrorAction.Continue }),
@@ -53,62 +57,68 @@ export const createUrl = (hostname: string, port: number, path: string, searchPa
     return url.toString();
 };
 
-export const createWebSocketAndStartClient = (url: string): WebSocket => {
-    const webSocket = new WebSocket(url);
-    webSocket.onopen = () => {
-        const socket = toSocket(webSocket);
-        const reader = new WebSocketMessageReader(socket);
-        const writer = new WebSocketMessageWriter(socket);
-        const languageClient = createLanguageClient({
-            reader,
-            writer
-        });
-        languageClient.start();
-        reader.onClose(() => languageClient.stop());
-    };
-    return webSocket;
-};
+export type WsTransport = {
+    reader: WebSocketMessageReader,
+    writer: WebSocketMessageWriter
+}
+export const createWebsocketConnection = (url: string): Promise<WsTransport>  => {
+    const webSocket = new WebSocket(url, []);
 
-export const createDefaultJsonContent = (): string => {
-    return `{
-    "$schema": "http://json.schemastore.org/coffeelint",
-    "line_endings": "unix"
-}`;
-};
+    return  new Promise<WsTransport>((resolve, reject) => {
+        webSocket.onopen = () => {
+            const socket = toSocket(webSocket);
+            const reader = new WebSocketMessageReader(socket);
+            const writer = new WebSocketMessageWriter(socket);
+            resolve({reader, writer});
+        };
+
+        webSocket.onerror = (err) => {
+            reject(err);
+        };
+    });
+}
+
 
 export const performInit = async (vscodeApiInit: boolean) => {
     if (vscodeApiInit === true) {
         await initServices({
+            // enableTextmateService: true,
+            // enableThemeService: true,
             userServices: {
-                // ...getThemeServiceOverride(),
-                // ...getTextmateServiceOverride(),
-                // ...getConfigurationServiceOverride(Uri.file('/workspace')),
-                // ...getKeybindingsServiceOverride()
+                ...getThemeServiceOverride(),
+                ...getTextmateServiceOverride(),
+                ...getConfigurationServiceOverride(Uri.file('/web/sandbox')),
+                ...getKeybindingsServiceOverride()
             },
             debugLogging: true
         });
-
-        // register the JSON language with Monaco
+        // register the Taxi language with Monaco
         languages.register({
-            id: 'taxi',
+            id: TAXI_LANGUAGE_ID,
             extensions: ['.taxi'],
             aliases: ['TAXI', 'taxi'],
             mimetypes: ['application/taxi']
         });
+        // languages.setLanguageConfiguration(TAXI_LANGUAGE_ID, taxiLanguageConfiguration);
+        // languages.setMonarchTokensProvider(TAXI_LANGUAGE_ID, taxiLanguageTokenProvider);
+
+
+
     }
 };
 
-export const createJsonEditor = async (config: {
-    htmlElement: HTMLElement,
-    content: string
-}) => {
-    // create the model
-    const uri = Uri.parse('/workspace/model.taxi');
-    const modelRef = await createModelReference(uri, config.content);
-    modelRef.object.setLanguageId('taxi');
+export const createTaxiEditorModel = async (content: string):Promise<IReference<ITextFileEditorModel>> => {
+    const uri = Uri.parse('/web/sandbox/query-123.taxi');
+    const modelRef: IReference<ITextFileEditorModel> = await createModelReference(uri, content);
 
+    modelRef.object.setLanguageId(TAXI_LANGUAGE_ID);
+    return modelRef
+}
+
+export const createTaxiEditor = async (htmlElement: HTMLElement,    modelRef: IReference<ITextFileEditorModel>
+) => {
     // create monaco editor
-    const editor = createConfiguredEditor(config.htmlElement, {
+    const editor: IStandaloneCodeEditor = createConfiguredEditor(htmlElement, {
         model: modelRef.object.textEditorModel,
         glyphMargin: true,
         lightbulb: {
@@ -118,10 +128,5 @@ export const createJsonEditor = async (config: {
         wordBasedSuggestions: false
     });
 
-    const result = {
-        editor,
-        uri,
-        modelRef
-    };
-    return Promise.resolve(result);
+    return Promise.resolve(editor);
 };
