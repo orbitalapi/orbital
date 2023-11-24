@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.Duration
 import java.time.Instant
@@ -32,6 +33,13 @@ class TelemetryService(
     private val webClient =
         webClientBuilder.clone().filter(LoadBalancerFilterFunction(discoveryClient))
             .build()
+
+    private val streamDataMetricSpecs = listOf(
+        DataMetricSpecs.messagesReceived,
+        DataMetricSpecs.averageQueryDuration,
+        DataMetricSpecs.maxQueryDuration,
+        DataMetricSpecs.failures
+    )
 
 
     @GetMapping("/api/metrics/stream/{name}")
@@ -55,9 +63,30 @@ class TelemetryService(
         val endTime = Instant.now()
         val startTime = endTime.minus(window.duration)
         val stepSize = "30s"
-        val promQlQuery =
-            """rate(orbital_pipelines_received_items_total{pipeline="${query.name.fullyQualifiedName}"}[$stepSize])"""
+        val httpRequests: List<Mono<Pair<DataMetricSpec, RawSeriesData>>> = streamDataMetricSpecs.map { spec ->
+            loadDataSeries(startTime, endTime, spec.promQlQuery(query.name.fullyQualifiedName, stepSize), stepSize)
+                .map { spec to it }
+        }
+        return Flux.merge(httpRequests)
+            .collectList()
+            .map { specsAndResults: List<Pair<DataMetricSpec, RawSeriesData>> ->
 
+                // Sorting is important so that the charts appear in a consistent order on the UI
+                val dataSeries = specsAndResults.sortedBy { (spec, _) -> streamDataMetricSpecs.indexOf(spec) }
+                    .map { (spec, data) ->
+                        DataSeries(spec.title, spec.unitLabel, spec.yAxisUnit, data.series)
+                    }
+                val tags = specsAndResults.firstOrNull()?.second?.tags ?: emptyMap()
+                StreamMetricsData(tags, dataSeries)
+            }
+    }
+
+    private fun loadDataSeries(
+        startTime: Instant,
+        endTime: Instant,
+        promQlQuery: String,
+        stepSize: String
+    ): Mono<RawSeriesData> {
         // Hard-learnt lesson: Don't try to use spring's URI builder, as it gets thrown out by the {} symbols within the PromQL query
         val uri = "http://orbital-metrics-server/api/v1/query_range?query={query}&start={start}&end={end}&step={step}"
 
@@ -72,10 +101,10 @@ class TelemetryService(
         ).retrieve().bodyToMono<PrometheusQueryRangeMetricsResult>()
             .map { prometheusMetrics ->
                 val resultItem = prometheusMetrics.data.result.firstOrNull()
-                    ?: return@map StreamMetricsData.empty
-                val tags = resultItem.metricsAs<PipelineTags>()
+                    ?: return@map RawSeriesData.empty
+                val tags = resultItem.metric
                 val metrics = resultItem.valuesAsTimestampedValues
-                StreamMetricsData(tags, metrics)
+                RawSeriesData(tags, metrics)
             }
     }
 
@@ -92,6 +121,7 @@ enum class MetricsWindow(val duration: Duration) {
     Last4Hours(Duration.ofHours(4)),
     LastDay(Duration.ofDays(1)),
     Last7Days(Duration.ofDays(7)),
+    Last30Days(Duration.ofDays(30)),
 
 }
 

@@ -31,7 +31,6 @@ class PipelineFactory(
    private val vyneClient: VyneClientWithSchema,
    private val sourceProvider: PipelineSourceProvider,
    private val sinkProvider: PipelineSinkProvider,
-   private val meterRegistry: MeterRegistry
 ) {
    fun <I : PipelineTransportSpec, O : PipelineTransportSpec> createJetPipeline(pipelineSpec: PipelineSpec<I, O>): Pipeline {
       val jetPipeline = Pipeline.create()

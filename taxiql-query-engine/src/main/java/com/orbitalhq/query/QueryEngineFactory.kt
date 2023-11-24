@@ -33,8 +33,8 @@ import com.orbitalhq.schemas.Schema
 
 
 interface QueryEngineFactory {
-   fun queryEngine(schema: Schema, models: FactSetMap): StatefulQueryEngine
-   fun queryEngine(schema: Schema): QueryEngine
+   fun queryEngine(schema: Schema, models: FactSetMap, metricsTags: Map<String,String> = emptyMap()): StatefulQueryEngine
+   fun queryEngine(schema: Schema, metricsTags: Map<String,String> = emptyMap()): QueryEngine
 
 //   val pathResolver: SchemaPathResolver
 
@@ -77,7 +77,8 @@ interface QueryEngineFactory {
          vyneCacheConfiguration: VyneCacheConfiguration,
          invokers: List<OperationInvoker>,
          formatSpecs:List<ModelFormatSpec> = emptyList(),
-         projectionProvider: ProjectionProvider = LocalProjectionProvider()): QueryEngineFactory {
+         projectionProvider: ProjectionProvider = LocalProjectionProvider(),
+         queryMetricsReporter: QueryMetricsReporter = NoOpMetricsReporter): QueryEngineFactory {
          val invocationService = operationInvocationService(invokers)
          val opInvocationEvaluator = OperationInvocationEvaluator(invocationService)
          val edgeEvaluator = EdgeNavigator(edgeEvaluators(opInvocationEvaluator))
@@ -99,7 +100,8 @@ interface QueryEngineFactory {
             ),
             projectionProvider,
             operationInvocationService = invocationService,
-            formatSpecs = formatSpecs
+            formatSpecs = formatSpecs,
+            metricsReporter = queryMetricsReporter
          )
       }
 
@@ -138,11 +140,11 @@ class DefaultQueryEngineFactory(
    private val metricsReporter: QueryMetricsReporter = NoOpMetricsReporter
 ) : QueryEngineFactory {
 
-   override fun queryEngine(schema: Schema): QueryEngine {
+   override fun queryEngine(schema: Schema, metricsTags: Map<String, String>): QueryEngine {
       return queryEngine(schema, FactSetMap.create())
    }
 
-   override fun queryEngine(schema: Schema, models: FactSetMap): StatefulQueryEngine {
+   override fun queryEngine(schema: Schema, models: FactSetMap, metricsTags: Map<String,String>): StatefulQueryEngine {
       return StatefulQueryEngine(models, schema, strategies,projectionProvider = projectionProvider, operationInvocationService = operationInvocationService, formatSpecs = formatSpecs,
          metricsReporter = metricsReporter)
    }

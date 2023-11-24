@@ -12,6 +12,19 @@ data class PipelineTags(
     val pipeline: String
 )
 
+enum class YAxisUnit {
+   Count,
+   DurationInSeconds,
+   DurationInSecondsConvertToMillis
+}
+data class DataSeries(
+    val title: String,
+    val unitLabel: String,
+    val unit:  YAxisUnit,
+    val series: List<MetricTimestampValue>
+) {
+
+}
 data class MetricTimestampValue(
     val timestamp: Instant,
     val epochSeconds: Long,
@@ -19,10 +32,16 @@ data class MetricTimestampValue(
 )
 
 data class StreamMetricsData(
-    val tags: PipelineTags?,
-    val metrics: List<MetricTimestampValue>
+    val tags: Map<String,Any>,
+    val series: List<DataSeries>
 ) {
     companion object {
-        val empty = StreamMetricsData(null, emptyList())
+        val empty = StreamMetricsData(emptyMap(), emptyList())
     }
+}
+
+data class RawSeriesData(val tags: Map<String,Any>, val series: List<MetricTimestampValue>) {
+   companion object {
+      val empty = RawSeriesData(emptyMap(), emptyList())
+   }
 }

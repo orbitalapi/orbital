@@ -3,7 +3,6 @@ package com.orbitalhq.pipelines.jet.pipelines
 import arrow.core.getOrHandle
 import arrow.core.left
 import arrow.core.right
-import com.fasterxml.jackson.core.JsonGenerator
 import com.hazelcast.jet.pipeline.ServiceFactory
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware

@@ -16,6 +16,8 @@ import com.orbitalhq.pipelines.jet.api.transport.query.TaxiQlQueryPipelineTransp
 import com.orbitalhq.pipelines.jet.source.PipelineSourceBuilder
 import com.orbitalhq.pipelines.jet.source.PipelineSourceType
 import com.orbitalhq.query
+import com.orbitalhq.query.MetricsTagBuilder
+import com.orbitalhq.query.tagsOf
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
@@ -82,7 +84,7 @@ class QueryBufferingPipelineContext(
    fun runQuery() {
       val scope = CoroutineScope(Dispatchers.Default)
       scope.launch {
-         vyneClient.query<TypedInstance>(pipelineSpec.input.query)
+         vyneClient.query<TypedInstance>(pipelineSpec.input.query,  tagsOf().pipelineName(pipelineSpec.name).tags())
             .map {
                TypedInstanceContentProvider(
                   it,

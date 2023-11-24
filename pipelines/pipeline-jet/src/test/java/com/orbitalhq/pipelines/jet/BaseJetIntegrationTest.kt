@@ -245,7 +245,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       sinkProvider: PipelineSinkProvider = pipelineSinkProvider,
    ): PipelineManager {
       return PipelineManager(
-         PipelineFactory(vyneClient, sourceProvider, sinkProvider, mock {  }),
+         PipelineFactory(vyneClient, sourceProvider, sinkProvider),
          hazelcastInstance
       )
    }

@@ -3,11 +3,13 @@ import {CommonModule} from '@angular/common';
 import {EndpointListComponent} from './endpoint-list.component';
 import {RouterModule} from "@angular/router";
 import {HeaderComponentLayoutModule} from "../header-component-layout/header-component-layout.module";
-import {TuiTabsModule} from "@taiga-ui/kit";
+import {TuiCheckboxLabeledModule, TuiDataListWrapperModule, TuiSelectModule, TuiTabsModule} from "@taiga-ui/kit";
 import { EndpointMonitorComponent } from './endpoint-monitor.component';
 import {ExpandingPanelSetModule} from "../expanding-panelset/expanding-panel-set.module";
 import {CodeViewerModule} from "../code-viewer/code-viewer.module";
 import {NgApexchartsModule} from "ng-apexcharts";
+import {FormsModule} from "@angular/forms";
+import {TuiDataListModule, TuiTextfieldControllerModule} from "@taiga-ui/core";
 
 @NgModule({
   declarations: [
@@ -31,6 +33,12 @@ import {NgApexchartsModule} from "ng-apexcharts";
         ExpandingPanelSetModule,
         CodeViewerModule,
         NgApexchartsModule,
+        TuiSelectModule,
+        FormsModule,
+        TuiDataListWrapperModule,
+        TuiTextfieldControllerModule,
+        TuiDataListModule,
+        TuiCheckboxLabeledModule,
     ]
 })
 export class EndpointManagerModule {

@@ -2695,8 +2695,9 @@ service Broker1Service {
             results: Flow<TypedInstance>,
             projection: Projection,
             context: QueryContext,
-            globalFacts: FactBag
-         ): Flow<TypedInstance> {
+            globalFacts: FactBag,
+            metricTags: MetricTags
+         ): Flow<TypedInstanceWithMetadata> {
             return results.map { typedInstance ->
                error("THis shouldn't have been called!! $typedInstance")
             }

@@ -15,20 +15,20 @@ export class MetricsService {
         private http: HttpClient,
     ) {}
 
-    getMetricsForStream(streamName: string):Observable<StreamMetricsData> {
-        return this.http.get<StreamMetricsData>(`${this.environment.serverUrl}/api/metrics/stream/${streamName}`)
+    getMetricsForStream(streamName: string, period: MetricsPeriod):Observable<StreamMetricsData> {
+        return this.http.get<StreamMetricsData>(`${this.environment.serverUrl}/api/metrics/stream/${streamName}?period=${period}`)
     }
 }
 
-export interface PipelineTags {
-    application: string;
-    instance: string;
-    job: string;
-    pipeline: string;
-}
 export interface StreamMetricsData {
-    tags: PipelineTags;
-    metrics: MetricTimestampValue[]
+    tags: { [index: string]: any };
+    series: DataSeries[]
+}
+export interface DataSeries {
+  title: string;
+  unitLabel: string;
+  unit: 'Count' | 'DurationInSeconds' | 'DurationInSecondsConvertToMillis';
+  series: MetricTimestampValue[]
 }
 
 export interface MetricTimestampValue {
@@ -36,3 +36,5 @@ export interface MetricTimestampValue {
     epochSeconds: number;
     value: any;
 }
+
+export type MetricsPeriod = 'Last5Minutes' | 'LastHour' | 'Last4Hours' | 'LastDay' | 'Last7Days' | 'Last30Days';

@@ -32,7 +32,6 @@ class PipelineIntegrationTest : BaseJetIntegrationTest() {
             vyneClient,
             pipelineSourceProvider,
             pipelineSinkProvider,
-             mock {  }
          ),
          hazelcastInstance,
       )
