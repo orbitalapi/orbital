@@ -1,12 +1,12 @@
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {TypeAutocompleteComponent} from './type-autocomplete.component';
-import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatLegacyFormFieldModule as MatFormFieldModule} from '@angular/material/legacy-form-field';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {MatAutocompleteModule} from '@angular/material/autocomplete';
+import {MatLegacyAutocompleteModule as MatAutocompleteModule} from '@angular/material/legacy-autocomplete';
 import {MatIconModule} from '@angular/material/icon';
-import {MatChipsModule} from '@angular/material/chips';
-import {MatInputModule} from '@angular/material/input';
+import {MatLegacyChipsModule as MatChipsModule} from '@angular/material/legacy-chips';
+import {MatLegacyInputModule as MatInputModule} from '@angular/material/legacy-input';
 import {SchemaMemberAutocompleteComponent} from './schema-member-autocomplete.component';
 import {ConnectionNameAutocompleteComponent} from './connection-name-autocomplete.component';
 

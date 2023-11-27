@@ -25,12 +25,12 @@ import { Observable, Subject } from 'rxjs';
 import { Link, LinkKind, MemberWithLinks } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
 import { applyElkLayout } from 'src/app/schema-diagram/schema-diagram/elk-chart-layout';
 import FloatingEdge from 'src/app/schema-diagram/schema-diagram/diagram-nodes/floating-edge';
-import { isNullOrUndefined } from 'util';
 import { toPng } from 'html-to-image';
 import DownloadIcon from 'src/app/schema-diagram/schema-diagram/icons/download-icon';
 import FullScreenIcon from 'src/app/schema-diagram/schema-diagram/icons/fullscreen-icon';
 import MinimizeIcon from 'src/app/schema-diagram/schema-diagram/icons/minimize-icon';
 import { colors } from './tailwind.colors';
+import {isNullOrUndefined} from "../../utils/utils";
 
 export type NodeType = 'Model' | 'Service';
 type ReactComponentFunction = ({ data }: { data: any }) => JSX.Element

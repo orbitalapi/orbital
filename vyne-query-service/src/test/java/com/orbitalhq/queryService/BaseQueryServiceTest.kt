@@ -8,6 +8,8 @@ import com.orbitalhq.Vyne
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.history.db.QueryHistoryDbWriter
+import com.orbitalhq.metrics.NoOpMetricsReporter
+import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseJsonModel
@@ -29,6 +31,7 @@ import com.orbitalhq.testVyne
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.junit.jupiter.api.BeforeAll
 import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
@@ -227,6 +230,9 @@ class TestSpringConfig {
          }
       """
    )
+
+   @Bean
+   fun metricsReporter() = NoOpMetricsReporter
 
    @Bean
    @Primary

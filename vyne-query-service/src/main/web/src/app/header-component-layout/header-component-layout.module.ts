@@ -1,10 +1,10 @@
 import { NgModule } from '@angular/core';
 
 import { HeaderComponentLayoutComponent } from './header-component-layout.component';
-import { CommonModule } from '@angular/common';
+import {CommonModule, NgOptimizedImage} from '@angular/common';
 
 @NgModule({
-  imports: [CommonModule],
+    imports: [CommonModule, NgOptimizedImage],
   exports: [HeaderComponentLayoutComponent],
   declarations: [HeaderComponentLayoutComponent],
   providers: [],

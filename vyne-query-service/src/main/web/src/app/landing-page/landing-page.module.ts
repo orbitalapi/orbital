@@ -1,22 +1,15 @@
-import { NgModule } from '@angular/core';
+import {NgModule} from '@angular/core';
 
-import { LandingPageComponent } from './landing-page.component';
-import { CommonModule } from '@angular/common';
-import { LandingCardComponent } from './landing-card.component';
-import { TuiButtonModule } from '@taiga-ui/core';
-import { RouterModule, Routes } from '@angular/router';
-import { HeaderBarModule } from '../header-bar/header-bar.module';
-import { SearchModule } from '../search/search.module';
-import { SchemaDiagramModule } from '../schema-diagram/schema-diagram.module';
-import { LandingPageContainerComponent } from './landing-page-container.component';
-import { ChangelogModule } from '../changelog/changelog.module';
-import { JsonViewerModule } from 'src/app/json-viewer/json-viewer.module';
+import {LandingPageComponent} from './landing-page.component';
+import {CommonModule} from '@angular/common';
+import {LandingCardComponent} from './landing-card.component';
+import {TuiButtonModule} from '@taiga-ui/core';
+import {RouterModule} from '@angular/router';
+import {HeaderBarModule} from '../header-bar/header-bar.module';
+import {SearchModule} from '../search/search.module';
+import {SchemaDiagramModule} from '../schema-diagram/schema-diagram.module';
+import {LandingPageContainerComponent} from './landing-page-container.component';
 
-const routes: Routes = [
-  {
-    path: '', component: LandingPageContainerComponent
-  }
-];
 
 @NgModule({
   imports: [CommonModule,
@@ -25,8 +18,6 @@ const routes: Routes = [
     HeaderBarModule,
     SearchModule,
     SchemaDiagramModule,
-    ChangelogModule,
-    JsonViewerModule
   ],
   exports: [LandingPageComponent, LandingCardComponent],
   declarations: [LandingPageComponent, LandingCardComponent, LandingPageContainerComponent],

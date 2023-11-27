@@ -20,7 +20,7 @@ import {TuiDialogService} from "@taiga-ui/core";
               </button>
           </ng-container>
 
-          <ng-container *ngIf="connections$ | async as connectionList">
+          <ng-container *ngIf="(connections$ | async) as connectionList">
 
               <div *ngIf="connectionList.definitionsWithErrors.length > 0" class="errors-panel">
                 <h3>Some configuration files have errors:</h3>

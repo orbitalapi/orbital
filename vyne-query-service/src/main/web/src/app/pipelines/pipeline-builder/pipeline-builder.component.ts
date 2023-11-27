@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {findType, QualifiedName, Schema, Type} from '../../services/schema';
-import {AbstractControl, FormControl, FormGroup, Validators} from '@angular/forms';
+import {AbstractControl, UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 import {
   PIPELINE_INPUTS,
   PIPELINE_OUTPUTS, PipelineService,
@@ -27,7 +27,7 @@ export class PipelineBuilderComponent implements OnInit {
   pipelineSources = PIPELINE_INPUTS;
   pipelineTargets = PIPELINE_OUTPUTS;
 
-  pipelineSpecFg: FormGroup;
+  pipelineSpecFg: UntypedFormGroup;
 
   @Input()
   working = false;
@@ -48,12 +48,12 @@ export class PipelineBuilderComponent implements OnInit {
     const currentValue = (this.pipelineSpecFg) ?
       this.pipelineSpecFg.getRawValue() :
       {};
-    this.pipelineSpecFg = new FormGroup({
-      name: new FormControl(currentValue.pipelineName || '', Validators.required),
-      input: new FormControl(currentValue.input, Validators.required),
-      inputSpec: new FormControl(),
-      output: new FormControl(currentValue.output, Validators.required),
-      outputSpec: new FormControl()
+    this.pipelineSpecFg = new UntypedFormGroup({
+      name: new UntypedFormControl(currentValue.pipelineName || '', Validators.required),
+      input: new UntypedFormControl(currentValue.input, Validators.required),
+      inputSpec: new UntypedFormControl(),
+      output: new UntypedFormControl(currentValue.output, Validators.required),
+      outputSpec: new UntypedFormControl()
     });
   }
 

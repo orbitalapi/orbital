@@ -11,6 +11,7 @@ import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Service
+import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
@@ -22,7 +23,8 @@ import reactor.kafka.sender.SenderRecord
 class KafkaStreamPublisher(
    private val connectionRegistry: KafkaConnectionRegistry,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-   private val formatRegistry: FormatRegistry
+   private val formatRegistry: FormatRegistry,
+   private val meterRegistry: MeterRegistry
 ) {
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -45,6 +47,7 @@ class KafkaStreamPublisher(
       val sender = KafkaSender.create(senderOptions)
 
       return sender.send(Mono.just(senderRecord))
+         .doOnEach { _ -> meterRegistry.counter("orbital.connections.kafka.${connectionName}.topic.${topic}.messagesPublished").increment() }
          .doOnError { e->  logger.warn { "Failed to send message to Kafka connection ${connectionConfiguration.connectionName} on topic $topic: ${e::class.simpleName} - ${e.message}" } }
          .map { senderResult ->
             logger.info { "Message published to Kafka connection  ${connectionConfiguration.connectionName} on topic $topic with offset ${senderResult.recordMetadata()?.offset()}" }

@@ -9,6 +9,7 @@ import com.orbitalhq.VyneProvider
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.formats.csv.CsvFormatSpec
+import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseJsonModel
 import com.orbitalhq.schema.api.SchemaProvider
@@ -61,6 +62,8 @@ import kotlin.test.assertEquals
 class VyneQueryIntegrationTest : DatabaseTest() {
 
 
+   @MockBean
+   lateinit var queryMetricsReporter: QueryMetricsReporter
 
    @Autowired
    private lateinit var restTemplate: TestRestTemplate

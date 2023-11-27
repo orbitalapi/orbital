@@ -4,7 +4,7 @@ import { EventEmitter, Input, Output, Directive } from '@angular/core';
 import {QueryResult, ResponseStatus, ResultMode} from '../../services/query.service';
 import {QueryFailure} from '../query-wizard/query-wizard.component';
 import {InstanceSelectedEvent} from '../instance-selected-event';
-import {isNullOrUndefined} from 'util';
+import { isNullOrUndefined } from 'src/app/utils/utils';
 import {FailedSearchResponse} from '../../services/models';
 
 /**

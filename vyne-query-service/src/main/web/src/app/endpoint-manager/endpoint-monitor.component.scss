@@ -1,0 +1,43 @@
+@import "src/theme";
+@import "./endpoint-list.component";
+.axes {
+  height: 12.5rem;
+  width: 25rem;
+  color: #bc71c9;
+}
+
+app-code-viewer {
+  height: 15rem;
+}
+
+
+.chart-row {
+  display: flex;
+  .label-box {
+    flex-shrink: 0;
+    width: 6rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    h4 {
+      color: $slate-600;
+    }
+    .hero-datapoint {
+      font-size: 1.2rem;
+    }
+  }
+  apx-chart {
+    flex-grow: 1;
+  }
+}
+
+app-panel-header {
+  tui-select {
+    width: 10rem;
+  }
+}
+
+button.small {
+  font-size: 0.8rem;
+}

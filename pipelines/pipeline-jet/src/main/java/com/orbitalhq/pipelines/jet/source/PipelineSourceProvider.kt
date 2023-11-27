@@ -13,6 +13,7 @@ import com.orbitalhq.pipelines.jet.source.fixed.ScheduledSourceBuilder
 import com.orbitalhq.pipelines.jet.source.http.poll.PollingTaxiOperationSourceBuilder
 import com.orbitalhq.pipelines.jet.source.kafka.KafkaSourceBuilder
 import com.orbitalhq.pipelines.jet.source.query.PollingQuerySourceBuilder
+import com.orbitalhq.pipelines.jet.source.query.StreamingQuerySourceBuilder
 
 class PipelineSourceProvider(
    private val builders: List<PipelineSourceBuilder<*>>
@@ -42,6 +43,7 @@ class PipelineSourceProvider(
                SqsS3SourceBuilder(),
                KafkaSourceBuilder(kafkaConnectionRegistry),
                PollingQuerySourceBuilder(),
+               StreamingQuerySourceBuilder(),
                FileWatcherStreamSourceBuilder()
             )
          )

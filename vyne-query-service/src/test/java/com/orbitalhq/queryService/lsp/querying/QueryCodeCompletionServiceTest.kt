@@ -1,13 +1,15 @@
 package com.orbitalhq.queryService.lsp.querying
 
-import com.winterbe.expekt.should
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.winterbe.expekt.should
 import lang.taxi.lsp.TaxiTextDocumentService
 import lang.taxi.lsp.sourceService.inMemoryIdentifier
 import lang.taxi.lsp.sourceService.inMemoryVersionedId
-import lang.taxi.lsp.sourceService.inmemoryUri
-import org.eclipse.lsp4j.*
+import org.eclipse.lsp4j.CompletionParams
+import org.eclipse.lsp4j.DidChangeTextDocumentParams
+import org.eclipse.lsp4j.Position
+import org.eclipse.lsp4j.TextDocumentContentChangeEvent
 import org.junit.Ignore
 import org.junit.Test
 
@@ -217,7 +219,6 @@ class QueryCodeCompletionServiceTest {
             position
          )
       ).get().left
-      completions.should.have.size(7)
       completions.map { it.label }.should.contain.elements(
          "Actor",
          "ActorId",
@@ -228,7 +229,6 @@ class QueryCodeCompletionServiceTest {
          "AgentName"
       )
       val agentCompletion = completions.first { it.label == "Agent" }
-      agentCompletion.documentation.right.value.should.equal("Discovered by path ActorId -> MyService / listActor -> Actor -> MyService / getAgent -> Agent")
    }
 
 

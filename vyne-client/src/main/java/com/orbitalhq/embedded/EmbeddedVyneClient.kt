@@ -4,6 +4,7 @@ import com.orbitalhq.VyneClient
 import com.orbitalhq.VyneClientWithSchema
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.query.MetricTags
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.QueryContextEventBroker
 import com.orbitalhq.schema.consumer.SchemaStore
@@ -25,13 +26,13 @@ import java.util.*
 open class EmbeddedVyneClient(
    private val vyneProvider: VyneProvider
 ) : VyneClient {
-   override fun <T : Any> queryWithType(query: String, type: Class<T>): Flux<T> {
+   override fun <T : Any> queryWithType(query: String, type: Class<T>, metricsTags: MetricTags): Flux<T> {
       return runBlocking {
          return@runBlocking if (type == TypedInstance::class.java) {
-            val flow = vyneProvider.createVyne().query(query).results as Flow<T>
+            val flow = vyneProvider.createVyne().query(query, metricsTags = metricsTags).results as Flow<T>
             flow.asFlux()
          } else {
-            val flow = vyneProvider.createVyne().query(query).rawResults as Flow<T>
+            val flow = vyneProvider.createVyne().query(query, metricsTags = metricsTags).rawResults as Flow<T>
             flow.asFlux()
          }
       }
@@ -43,12 +44,12 @@ open class EmbeddedVyneClient(
    }
 
 
-   override fun queryAsTypedInstance(query: TaxiQLQueryString): Flux<TypedInstance> {
+   override fun queryAsTypedInstance(query: TaxiQLQueryString, metricsTags: MetricTags): Flux<TypedInstance> {
       // This is obviously not correct.
       // We're run blocking, and then wrapping a list to a flux, it's all sorts of level of messed up
       // But, it works. We REALLY need to get this async shit sorted out.
       val flow = runBlocking {
-         vyneProvider.createVyne().query(query).results
+         vyneProvider.createVyne().query(query, metricsTags = metricsTags).results
             .toList()
 
       }

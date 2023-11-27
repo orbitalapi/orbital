@@ -84,7 +84,7 @@ export const testSchema = {
           'parameterizedName': 'ServiceDiscoveryClient'
         }, 'params': { 'serviceName': 'customer-service' }
       }],
-      'qualifiedName': 'io.vyne.demos.rewards.CustomerService',
+      'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService',
       'memberQualifiedName': {
         'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService',
         'parameters': [],

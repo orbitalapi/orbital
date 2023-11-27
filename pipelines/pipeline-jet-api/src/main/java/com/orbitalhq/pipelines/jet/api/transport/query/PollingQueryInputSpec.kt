@@ -5,6 +5,7 @@ import com.orbitalhq.pipelines.jet.api.documentation.PipelineDocs
 import com.orbitalhq.pipelines.jet.api.documentation.PipelineDocumentationSample
 import com.orbitalhq.pipelines.jet.api.documentation.PipelineParam
 import com.orbitalhq.pipelines.jet.api.transport.PipelineDirection
+import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportSpec
 import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportSpecId
 import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportType
 import com.orbitalhq.pipelines.jet.api.transport.ScheduledPipelineTransportSpec
@@ -38,12 +39,12 @@ another type, and published to an output.
 )
 data class PollingQueryInputSpec(
    @PipelineParam("The query to be executed. See the sample for an example. ")
-   val query: String,
+   override val query: String,
    @PipelineParam("A [Spring-flavored cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this query should be invoked.")
    override val pollSchedule: CronExpression,
    @PipelineParam("When set to true, specifically controls the next execution time when the last execution finishes.")
    override val preventConcurrentExecution: Boolean = false
-) : ScheduledPipelineTransportSpec {
+) : ScheduledPipelineTransportSpec, TaxiQlQueryPipelineTransportSpec {
    object Sample : PipelineDocumentationSample<PollingQueryInputSpec> {
       override val sample = PollingQueryInputSpec(
          query = "find { Person( FirstName == 'Jim' ) }",
@@ -64,4 +65,8 @@ data class PollingQueryInputSpec(
    override val description: String =
       "Execute the query ${query.replace("\n", " ")}"
 
+}
+
+interface TaxiQlQueryPipelineTransportSpec : PipelineTransportSpec {
+   val query: String
 }

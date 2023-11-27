@@ -2137,7 +2137,7 @@ export const importedSchema = {
       ],
       'typeDoc': null,
       'lineage': null,
-      'qualifiedName': 'actor.ActorService',
+      'fullyQualifiedName': 'actor.ActorService',
       'memberQualifiedName': {
         'fullyQualifiedName': 'actor.ActorService',
         'parameters': [],

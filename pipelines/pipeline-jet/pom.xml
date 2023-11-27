@@ -283,41 +283,6 @@
       </dependency>
 
       <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-influx</artifactId>
-      </dependency>
-
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-elastic</artifactId>
-      </dependency>
-
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-jmx</artifactId>
-      </dependency>
-
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-graphite</artifactId>
-      </dependency>
-
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-datadog</artifactId>
-      </dependency>
-
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-dynatrace</artifactId>
-      </dependency>
-
-      <dependency>
-         <groupId>io.micrometer</groupId>
-         <artifactId>micrometer-registry-cloudwatch2</artifactId>
-      </dependency>
-
-      <dependency>
          <groupId>com.amazonaws</groupId>
          <artifactId>aws-java-sdk-s3</artifactId>
          <version>1.12.411</version>

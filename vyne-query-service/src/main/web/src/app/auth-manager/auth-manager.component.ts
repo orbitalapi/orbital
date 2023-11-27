@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import {AuthManagerService, AuthScheme, AuthTokenMap, NoCredentialsAuthToken} from './auth-manager.service';
 import { Observable } from 'rxjs/internal/Observable';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatLegacySnackBar as MatSnackBar } from '@angular/material/legacy-snack-bar';
 
 @Component({
   selector: 'app-auth-manager',

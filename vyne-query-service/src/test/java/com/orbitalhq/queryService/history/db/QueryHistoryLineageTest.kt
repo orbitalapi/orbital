@@ -7,6 +7,7 @@ import com.orbitalhq.VyneProvider
 import com.orbitalhq.history.db.QueryHistoryDbWriter
 import com.orbitalhq.history.rest.QueryHistoryService
 import com.orbitalhq.formats.csv.CsvFormatSpec
+import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.ValueWithTypeName
 import com.orbitalhq.query.runtime.core.QueryResponseFormatter
@@ -73,6 +74,9 @@ class QueryHistoryLineageTest {
 
    @MockBean
    lateinit var configLoader : SchemaRepositoryConfigLoader
+
+   @MockBean
+   lateinit var queryMetricsReporter: QueryMetricsReporter
 
 
    @Autowired

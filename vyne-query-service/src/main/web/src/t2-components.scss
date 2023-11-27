@@ -12,6 +12,8 @@ button.button-small {
   font-size: 0.9rem;
   font-weight: 400;
 
+  border-radius: 4px;
+
   img {
     width: 1rem;
     margin-right: 0.8rem;
@@ -21,7 +23,10 @@ button.button-small {
 
 .menu-bar-button {
   margin-right: 2rem;
-  border: 1px solid $slate-200;
+  &[data-appearance='outline'] {
+    background-color: $white;
+    border: none;
+  }
 }
 
 .spacer {

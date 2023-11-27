@@ -12,6 +12,7 @@ import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyne
 import com.orbitalhq.testVyneWithStub
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import mu.KotlinLogging
@@ -105,8 +106,8 @@ abstract class BaseKafkaContainerTest {
             taxi
          )
       )
-      val kafkaStreamPublisher = KafkaStreamPublisher(connectionRegistry, formatRegistry = formatRegistry)
-      val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry)
+      val kafkaStreamPublisher = KafkaStreamPublisher(connectionRegistry, formatRegistry = formatRegistry, meterRegistry = SimpleMeterRegistry())
+      val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry, meterRegistry = SimpleMeterRegistry())
       val invokers = listOf(
          KafkaInvoker(kafkaStreamManager, kafkaStreamPublisher),
       )

@@ -4,28 +4,30 @@ import { Component, Input } from '@angular/core';
   selector: 'app-header-component-layout',
   styleUrls: ['./header-component-layout.component.scss'],
   template: `
-      <div class="header-container" [ngClass]="{'pad-bottom' : padBottom}">
-          <div class="header">
-              <div class="row">
-                  <div class="header-text">
-                      <h4 *ngIf="subtitle">{{ subtitle}}</h4>
-                      <h2>{{ title }}</h2>
-                      <p class="description">{{ description }}</p>
-                  </div>
-                  <div class="spacer"></div>
-                  <div class="buttons">
-                      <ng-content select="buttons">
-                      </ng-content>
-                  </div>
-              </div>
-              <ng-content select="header-components"></ng-content>
+    <div class="header-container" [ngClass]="{'pad-bottom' : padBottom}">
+      <div class="header">
+        <div class="row">
+          <img class="icon" *ngIf="iconUrl" [attr.src]="iconUrl">
+          <div class="header-text">
+            <h4 *ngIf="subtitle">{{ subtitle}}</h4>
+            <h2>{{ title }}</h2>
+            <p class="description">{{ description }}</p>
+
           </div>
-      </div>
-      <div class="body-container" *ngIf='displayBody'>
-          <div class="body" [ngClass]="{'full-width' : fullWidth}">
-              <ng-content></ng-content>
+          <div class="spacer"></div>
+          <div class="buttons">
+            <ng-content select="buttons">
+            </ng-content>
           </div>
+        </div>
+        <ng-content select="header-components"></ng-content>
       </div>
+    </div>
+    <div class="body-container" *ngIf='displayBody'>
+      <div class="body" [ngClass]="{'full-width' : fullWidth}">
+        <ng-content></ng-content>
+      </div>
+    </div>
   `
 })
 export class HeaderComponentLayoutComponent {
@@ -35,6 +37,9 @@ export class HeaderComponentLayoutComponent {
 
   @Input()
   subtitle: string = null;
+
+  @Input()
+  iconUrl: string;
 
   @Input()
   title: string;

@@ -7,7 +7,9 @@ import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.spring.config.VyneSpringProjectionConfiguration
+import com.orbitalhq.spring.metrics.MicrometerMetricsReporter
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -26,7 +28,8 @@ class EnableEmbeddedVyneClientConfiguration {
       operationInvokers: List<OperationInvoker>,
       vyneCacheConfiguration: VyneCacheConfiguration,
       vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration,
-      formatSpecRegistry: FormatSpecRegistry
+      formatSpecRegistry: FormatSpecRegistry,
+      meterRegistry: MeterRegistry
    ): VyneClient {
       return EmbeddedVyneClient(
          VyneFactory(
@@ -34,7 +37,8 @@ class EnableEmbeddedVyneClientConfiguration {
             operationInvokers,
             vyneCacheConfiguration,
             vyneSpringProjectionConfiguration,
-            formatSpecRegistry = formatSpecRegistry
+            formatSpecRegistry = formatSpecRegistry,
+            metricsReporter = MicrometerMetricsReporter(meterRegistry)
          )
       )
    }

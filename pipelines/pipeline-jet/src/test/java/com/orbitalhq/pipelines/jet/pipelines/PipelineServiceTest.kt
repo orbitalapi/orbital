@@ -46,7 +46,7 @@ class PipelineServiceTest {
       )
 
       val pipelineManager: PipelineManager = mock {
-         on { startPipeline(any()) } doReturn Pair(mock { }, mock { })
+         on { startPipeline(any<PipelineSpec<*,*>>()) } doReturn Pair(mock { }, mock { })
       }
       val repository: PipelineConfigRepository = mock {
          on { loadPipelines() } doReturn listOf(pipelineSpec)
@@ -64,7 +64,7 @@ class PipelineServiceTest {
 
       pipelineService.loadAndSubmitExistingPipelines()
 
-      verify(pipelineManager, Mockito.times(0)).startPipeline(any())
+      verify(pipelineManager, Mockito.times(0)).startPipeline(any<PipelineSpec<*,*>>())
 
       val oldSource = VersionedSource("order.taxi", "1.0.0", "type Order {}")
       val newSource = VersionedSource("client.taxi", "1.1.1", "type Client {}")
@@ -76,7 +76,7 @@ class PipelineServiceTest {
 
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
          try {
-            verify(pipelineManager, Mockito.times(1)).startPipeline(any())
+            verify(pipelineManager, Mockito.times(1)).startPipeline(any<PipelineSpec<*,*>>())
             true
          } catch (e: Throwable) {
             false

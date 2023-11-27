@@ -2,15 +2,15 @@ import {Component, Inject} from '@angular/core';
 import {TypesService} from '../services/types.service';
 import {Observable} from 'rxjs/internal/Observable';
 import {QualifiedName, Schema, SchemaMember} from '../services/schema';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
+import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 import {
   AuthManagerService,
   AuthToken,
   AuthTokenType,
   NoCredentialsAuthToken
 } from './auth-manager.service';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {MatLegacySnackBar as MatSnackBar} from '@angular/material/legacy-snack-bar';
+import {MAT_LEGACY_DIALOG_DATA as MAT_DIALOG_DATA, MatLegacyDialogRef as MatDialogRef} from '@angular/material/legacy-dialog';
 
 @Component({
   selector: 'app-new-token-panel',
@@ -114,12 +114,12 @@ export class NewTokenPanelComponent {
   errorMessage: string = null;
   saving = false;
 
-  newTokenFormGroup = new FormGroup({
-    serviceName: new FormControl(null, Validators.required),
-    tokenType: new FormControl(null, Validators.required),
-    paramName: new FormControl(null, Validators.required),
-    tokenValue: new FormControl(null, Validators.required),
-    valuePrefix: new FormControl(null)
+  newTokenFormGroup = new UntypedFormGroup({
+    serviceName: new UntypedFormControl(null, Validators.required),
+    tokenType: new UntypedFormControl(null, Validators.required),
+    paramName: new UntypedFormControl(null, Validators.required),
+    tokenValue: new UntypedFormControl(null, Validators.required),
+    valuePrefix: new UntypedFormControl(null)
   });
 
   selectedService: QualifiedName;

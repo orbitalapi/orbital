@@ -13,4 +13,6 @@ export class PanelHeaderComponent {
   @Input()
   title: string;
 
+  @Input()
+  icon: string
 }

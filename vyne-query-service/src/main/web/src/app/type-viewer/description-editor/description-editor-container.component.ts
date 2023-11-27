@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {NamedAndDocumented, Type} from '../../services/schema';
 import {TypesService} from '../../services/types.service';
-import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatLegacySnackBar as MatSnackBar} from '@angular/material/legacy-snack-bar';
 import {CommitMode} from '../type-viewer.component';
 import {debounceTime} from 'rxjs/operators';
 import { TypeEditorService } from 'src/app/services/type-editor.service';

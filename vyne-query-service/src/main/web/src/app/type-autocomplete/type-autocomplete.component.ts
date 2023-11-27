@@ -1,11 +1,11 @@
 import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {QualifiedName, Schema, SchemaMember, SchemaMemberKind, Type} from '../services/schema';
-import {FormControl} from '@angular/forms';
+import {UntypedFormControl} from '@angular/forms';
 import {map, startWith} from 'rxjs/operators';
 import {Observable} from 'rxjs';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {FloatLabelType, MatFormFieldAppearance, MatFormFieldControl} from '@angular/material/form-field';
-import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
+import {LegacyFloatLabelType as FloatLabelType, MatLegacyFormFieldAppearance as MatFormFieldAppearance, MatLegacyFormFieldControl as MatFormFieldControl} from '@angular/material/legacy-form-field';
+import {MatLegacyAutocompleteSelectedEvent as MatAutocompleteSelectedEvent} from '@angular/material/legacy-autocomplete';
 
 /**
  * Consider using type-autocomplete-tui instead, which is built on top of Taiga UI, and
@@ -106,7 +106,7 @@ export class TypeAutocompleteComponent implements OnInit {
 
   filteredTypes: Observable<Type[]>;
 
-  filterInput = new FormControl();
+  filterInput = new UntypedFormControl();
 
   private _selectedType: Type;
 

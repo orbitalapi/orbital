@@ -1,6 +1,7 @@
 package com.orbitalhq.pipelines.jet.api
 
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
+import lang.taxi.query.TaxiQlQuery
 import java.io.Serializable
 import java.time.Instant
 
@@ -78,7 +79,11 @@ data class SubmittedPipeline(
    val spec: PipelineSpec<*, *>,
    val dotViz: String,
    val graph: DagDataset,
-   val cancelled: Boolean
+   val cancelled: Boolean,
+   /**
+    * Contains the originating query, if this pipeline is a managed stream.
+    */
+   val query: TaxiQlQuery? = null
 ) : Serializable {
    val pipelineSpecId: String = spec.id
 }

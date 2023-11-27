@@ -12,6 +12,7 @@ import com.orbitalhq.auth.tokens.AuthTokenRepository
 import com.orbitalhq.cockpit.core.security.AuthTokenConfigurationService
 import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.http.MockWebServerRule
+import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.runtime.core.QueryService
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
@@ -58,6 +59,9 @@ import org.springframework.test.context.junit4.SpringRunner
 @ActiveProfiles("test")
 class OperationAuthenticationIntegrationTest : DatabaseTest() {
    private lateinit var taxiSchema: TaxiSchema
+
+   @MockBean
+   lateinit var queryMetricsReporter: QueryMetricsReporter
 
    @MockBean
    lateinit var eventDispatcher: RepositorySpecLifecycleEventDispatcher

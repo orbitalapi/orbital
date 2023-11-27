@@ -3,6 +3,8 @@ package com.orbitalhq.spring
 import com.orbitalhq.Vyne
 import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.VyneProvider
+import com.orbitalhq.metrics.NoOpMetricsReporter
+import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.DefinedInSchema
 import com.orbitalhq.models.TypeNamedInstance
 import com.orbitalhq.models.TypedInstance
@@ -38,7 +40,8 @@ class VyneFactory(
    private val vyneCacheConfiguration: VyneCacheConfiguration,
    private val vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration,
    private val operationCacheFactory: OperationCacheFactory = OperationCacheFactory(),
-   private val formatSpecRegistry: FormatSpecRegistry
+   private val formatSpecRegistry: FormatSpecRegistry,
+   private val metricsReporter: QueryMetricsReporter = NoOpMetricsReporter
 ) : FactoryBean<Vyne>, VyneProvider {
 
    override fun isSingleton() = true
@@ -76,7 +79,8 @@ class VyneFactory(
                operationCache = operationCacheFactory.getCache(queryOptions.cachingStrategy)
             ),
             projectionProvider = projectionProvider,
-            formatSpecs = formatSpecRegistry.formats
+            formatSpecs = formatSpecRegistry.formats,
+            queryMetricsReporter = metricsReporter
          ),
       )
       facts.forEach { fact ->

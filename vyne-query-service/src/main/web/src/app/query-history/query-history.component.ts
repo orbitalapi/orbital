@@ -4,8 +4,7 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {DownloadClickedEvent} from '../object-view/object-view-container.component';
 import {TypesService} from '../services/types.service';
 import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDisplayComponent';
-import {isNullOrUndefined} from 'util';
-import {Observable, ReplaySubject} from 'rxjs/index';
+import {Observable, ReplaySubject} from 'rxjs';
 import {InstanceLike, tryFindType, Type} from '../services/schema';
 import {take, tap} from 'rxjs/operators';
 import {ActiveQueriesNotificationService, RunningQueryStatus} from '../services/active-queries-notification-service';
@@ -14,6 +13,7 @@ import {Subscription} from 'rxjs';
 import {AppInfoService, AppConfig} from '../services/app-info.service';
 import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
 import {ExportFormat, ResultsDownloadService} from 'src/app/results-download/results-download.service';
+import {isNullOrUndefined} from "../utils/utils";
 
 @Component({
   selector: 'app-query-history',
@@ -95,18 +95,6 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
       const parts = qualifiedTypeName.split('.');
       return parts[parts.length - 1];
     }
-  }
-
-  isVyneQlQuery(record: QueryHistorySummary): boolean {
-    return !isNullOrUndefined(record.taxiQl);
-  }
-
-  isRestQuery(record: QueryHistorySummary): boolean {
-    return !isNullOrUndefined(record.queryJson);
-  }
-
-  onCloseTypedInstanceDrawer($event: boolean) {
-    this.shouldTypedInstancePanelBeVisible = $event;
   }
 
   downloadQueryHistory(event: DownloadClickedEvent) {

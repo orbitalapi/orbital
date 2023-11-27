@@ -3,7 +3,7 @@ import {CommonModule} from '@angular/common';
 import {VoyagerToolbarComponent} from 'src/app/voyager/toolbar/voyager-toolbar.component';
 import {MatIconModule, MatIconRegistry} from '@angular/material/icon';
 import {DomSanitizer} from '@angular/platform-browser';
-import {MatButtonModule} from '@angular/material/button';
+import {MatLegacyButtonModule as MatButtonModule} from '@angular/material/legacy-button';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {SubscribeDialogComponent} from './subscribe-dialog/subscribe-dialog.component';
 import {
@@ -24,34 +24,31 @@ import {ShareDialogComponent} from './share-dialog/share-dialog.component';
 
 
 @NgModule({
-  declarations: [
-    VoyagerToolbarComponent,
-    SubscribeDialogComponent,
-    ShareDialogComponent
-  ],
-  exports: [
-    VoyagerToolbarComponent
-  ],
-  imports: [
-    CommonModule,
-    MatIconModule,
-    MatButtonModule,
-    TuiDialogModule,
-    TuiInputModule,
-    ReactiveFormsModule,
-    TuiSelectModule,
-    TuiButtonModule,
-    TuiTextfieldControllerModule,
-    TuiDataListWrapperModule,
-    TuiCheckboxLabeledModule,
-    TuiHintModule,
-    TuiLinkModule,
-    FormsModule,
-    TuiInputCopyModule
-  ],
-  entryComponents: [
-    SubscribeDialogComponent
-  ]
+    declarations: [
+        VoyagerToolbarComponent,
+        SubscribeDialogComponent,
+        ShareDialogComponent
+    ],
+    exports: [
+        VoyagerToolbarComponent
+    ],
+    imports: [
+        CommonModule,
+        MatIconModule,
+        MatButtonModule,
+        TuiDialogModule,
+        TuiInputModule,
+        ReactiveFormsModule,
+        TuiSelectModule,
+        TuiButtonModule,
+        TuiTextfieldControllerModule,
+        TuiDataListWrapperModule,
+        TuiCheckboxLabeledModule,
+        TuiHintModule,
+        TuiLinkModule,
+        FormsModule,
+        TuiInputCopyModule
+    ]
 })
 export class VoyagerModule {
 

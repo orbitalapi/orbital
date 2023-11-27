@@ -1,6 +1,6 @@
 import {Component} from '@angular/core';
 import {PipelineService, RunningPipelineSummary} from '../pipelines.service';
-import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatLegacySnackBar as MatSnackBar} from '@angular/material/legacy-snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 
 @Component({

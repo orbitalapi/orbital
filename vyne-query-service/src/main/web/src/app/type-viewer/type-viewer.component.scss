@@ -63,3 +63,9 @@ mat-button-toggle-group {
 .last-edited {
   color: gray;
 }
+
+app-code-viewer {
+  height: 10rem;
+  border-radius: 6px;
+  border: 1px solid $slate-200;
+}

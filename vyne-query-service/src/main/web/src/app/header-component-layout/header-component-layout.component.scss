@@ -1,4 +1,4 @@
-@import "~src/theme";
+@import "src/theme";
 
 :host {
   display: flex;
@@ -19,6 +19,14 @@
   .header {
     width: 1280px;
     margin: 0 auto;
+
+    .icon {
+      margin-right: 2rem;
+      width: 2rem;
+    }
+    h2 {
+      margin-top: 0;
+    }
 
     .spacer {
       flex-grow: 1;
