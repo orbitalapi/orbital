@@ -4,8 +4,7 @@ fun tagsOf() = MetricsTagBuilder()
 
 class MetricsTagBuilder {
    companion object {
-      const val PIPELINE_NAME_KEY = "pipeline";
-      const val QUERY_NAME_KEY = "query"
+      const val QUERY_NAME_KEY = "queryStream"
    }
    private val tags = mutableListOf<Pair<String,String>>()
 
@@ -13,7 +12,7 @@ class MetricsTagBuilder {
       tags.add(tag)
       return  this
    }
-   fun pipelineName(pipelineName: String):MetricsTagBuilder = append(PIPELINE_NAME_KEY to pipelineName)
+   fun queryStream(name: String):MetricsTagBuilder = append(QUERY_NAME_KEY to name)
 
    fun tags():MetricTags = MetricTags(tags)
 }

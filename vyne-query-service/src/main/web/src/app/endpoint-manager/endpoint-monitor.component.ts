@@ -29,7 +29,16 @@ import {WorkspaceMembershipDto} from "../services/workspaces.service";
 @Component({
     selector: 'app-endpoint-monitor',
     template: `
-        <app-header-component-layout *ngIf="query$ | async as query" [title]="query?.name.name">
+        <app-header-component-layout *ngIf="query$ | async as query" [title]="query?.name.name"
+                                     [subtitle]="query.queryKind"
+                                     [iconUrl]="getIconUrl(query.queryKind)"
+        >
+            <ng-container ngProjectAs="header-components">
+                <div *ngIf="query.httpEndpoint" class="url-parts">
+                    <span class="method">{{query.httpEndpoint.method}}</span>
+                    <span class="url">{{query.httpEndpoint.url}}</span>
+                </div>
+            </ng-container>
 
             <div>
                 <div class="">
@@ -96,6 +105,14 @@ export class EndpointMonitorComponent {
     readonly stringifyPeriod = (item: MetricsPeriodToDescription) => item.label;
 
     selectedPeriod$: BehaviorSubject<MetricsPeriodToDescription> = new BehaviorSubject(this.periods[1])
+
+    getIconUrl(queryKind: 'Stream' | 'Query') {
+        switch (queryKind) {
+            case "Query": return "assets/img/tabler/arrows-right-left.svg";
+            case "Stream": return "assets/img/tabler/arrows-right.svg";
+
+        }
+    }
 
     dataLabels: ApexDataLabels = {
         enabled: false

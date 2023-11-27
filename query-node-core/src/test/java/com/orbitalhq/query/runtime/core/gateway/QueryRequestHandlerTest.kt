@@ -2,6 +2,7 @@ package com.orbitalhq.query.runtime.core.gateway
 
 import com.jayway.awaitility.Awaitility
 import com.nhaarman.mockito_kotlin.*
+import com.orbitalhq.metrics.QueryMetricsReporter
 import io.kotest.matchers.shouldBe
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.schema.consumer.SimpleSchemaStore
@@ -155,8 +156,8 @@ class QueryRequestHandlerTest {
       }
 
       @Bean
-      fun queryRouteService(schemaStore: SimpleSchemaStore, queryExecutor: RoutedQueryExecutor): QueryRouteService {
-         return QueryRouteService(schemaStore, queryExecutor)
+      fun queryRouteService(schemaStore: SimpleSchemaStore, queryExecutor: RoutedQueryExecutor, metricsReporter: QueryMetricsReporter): QueryRouteService {
+         return QueryRouteService(schemaStore, queryExecutor, metricsReporter = metricsReporter)
       }
 
       @Bean

@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
+import reactor.core.publisher.Flux
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -21,13 +22,43 @@ interface QueryMetricsReporter {
    fun failed(duration:Duration, tags: MetricTags)
 
    /**
+    * Records metrics on queries routed through the query router (ie., saved queries).
+    * At present, we're
+    */
+   fun observeRequestResponse(
+      flux: Flux<Any>,
+      startTime: Instant,
+      metricsTags: MetricTags,
+   ): Flux<Any> {
+      if (metricsTags == MetricTags.NONE) {
+         return flux
+      }
+
+      val isFirst = AtomicBoolean(true)
+      val counter = AtomicInteger(0)
+      return flux
+         .doOnSubscribe { invoked(metricsTags) }
+         .doOnEach {
+            val wasFirst = isFirst.getAndSet(false)
+            if (wasFirst) {
+               firstResult(Duration.between(startTime, Instant.now()), metricsTags)
+            }
+            counter.incrementAndGet()
+         }
+         .doOnComplete {
+            completed(Duration.between(startTime, Instant.now()), counter.get(), metricsTags)
+         }
+   }
+   /**
     * Captures metrics for the result stream,
     * Unless the metrics tags provided are MetricsTags.NONE, in which case we don't bother.
     * This is so that Internal / nested queries don't capture metrics, as it skews the results.
     */
    fun observeEventStream(
       resultsWithMetadata: Flow<TypedInstanceWithMetadata>,
-      startTime: Instant, metricsTags: MetricTags, logDurationsOfIndividualMessages: Boolean
+      startTime: Instant,
+      metricsTags: MetricTags,
+      logDurationsOfIndividualMessages: Boolean
    ):Flow<TypedInstance> {
       if (metricsTags == MetricTags.NONE) {
          return resultsWithMetadata.map { it.instance }

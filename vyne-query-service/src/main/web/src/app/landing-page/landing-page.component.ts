@@ -15,7 +15,6 @@ export interface LandingPageCardConfig {
   template: `
     <div class='page-content'>
       <h2>Welcome to Orbital</h2>
-      <div id="container" class="monaco-editor" style="height: 50vh; width: 100%;"></div>
       <div class='row search-row'>
         <app-landing-card [cardConfig]='catalogCardConfig' [isEmpty]='true' layout='horizontal'
                           (emptyActionClicked)="router.navigate(['catalog'])"></app-landing-card>

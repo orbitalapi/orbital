@@ -42,6 +42,14 @@ class TelemetryService(
     )
 
 
+    private val queryDataMetricSpecs = listOf(
+        DataMetricSpecs.queryInvocations,
+        DataMetricSpecs.averageQueryDuration,
+        DataMetricSpecs.maxQueryDuration,
+        DataMetricSpecs.failures
+    )
+
+
     @GetMapping("/api/metrics/stream/{name}")
     fun getMetricsForStream(
         @PathVariable("name") qualifiedName: String,
@@ -54,16 +62,16 @@ class TelemetryService(
             throw NotFoundException("No query named $qualifiedName is present in this schema")
         }
         return when (query.asSavedQuery().queryKind) {
-            SavedQuery.QueryKind.Query -> buildQueryMetrics(query)
-            SavedQuery.QueryKind.Stream -> buildStreamMetrics(query, period)
+            SavedQuery.QueryKind.Query -> buildStreamMetrics(query, period, queryDataMetricSpecs)
+            SavedQuery.QueryKind.Stream -> buildStreamMetrics(query, period, streamDataMetricSpecs)
         }
     }
 
-    private fun buildStreamMetrics(query: TaxiQlQuery, window: MetricsWindow): Mono<StreamMetricsData> {
+    private fun buildStreamMetrics(query: TaxiQlQuery, window: MetricsWindow, metricsSpecs: List<DataMetricSpec>): Mono<StreamMetricsData> {
         val endTime = Instant.now()
         val startTime = endTime.minus(window.duration)
         val stepSize = "30s"
-        val httpRequests: List<Mono<Pair<DataMetricSpec, RawSeriesData>>> = streamDataMetricSpecs.map { spec ->
+        val httpRequests: List<Mono<Pair<DataMetricSpec, RawSeriesData>>> = metricsSpecs.map { spec ->
             loadDataSeries(startTime, endTime, spec.promQlQuery(query.name.fullyQualifiedName, stepSize), stepSize)
                 .map { spec to it }
         }

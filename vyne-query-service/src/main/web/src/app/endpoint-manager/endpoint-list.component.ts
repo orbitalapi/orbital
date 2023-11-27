@@ -9,15 +9,6 @@ import {ActivatedRoute, Router} from "@angular/router";
   template: `
     <app-header-component-layout title="Query Endpoints"
                                  description="Queries, Streams and Pipelines defined in your schema">
-
-      <!--      <ng-container ngProjectAs="header-components">-->
-      <!--        <tui-tabs [(activeItemIndex)]="activeTabIndex">-->
-      <!--          <button tuiTab>Queries</button>-->
-      <!--          <button tuiTab>Streams</button>-->
-      <!--          <button tuiTab>Pipelines</button>-->
-      <!--        </tui-tabs>-->
-      <!--      </ng-container>-->
-
       <div *ngIf="queries$ | async as queries">
         <table class="query-list">
           <thead>
@@ -32,7 +23,7 @@ import {ActivatedRoute, Router} from "@angular/router";
             <td>{{query.name.shortDisplayName}}</td>
             <td>{{query.queryKind}}</td>
             <td>
-              <div *ngIf="query.httpEndpoint">
+              <div *ngIf="query.httpEndpoint" class="url-parts">
                 <span class="method">{{query.httpEndpoint.method}}</span>
                 <span class="url">{{query.httpEndpoint.url}}</span>
               </div>
