@@ -79,7 +79,10 @@ class PersistentStreamManager(
       removedStreams: MutableSet<QualifiedName>,
       currentManagedStreams: List<RunningPipelineSummary>
    ) {
-      removedStreams.map { removedStreamName -> currentManagedStreams.single { runningPipeline -> runningPipeline.pipeline!!.name ==  removedStreamName.parameterizedName } }
+      removedStreams.map { removedStreamName ->
+         currentManagedStreams.single {
+            runningPipeline -> runningPipeline.pipeline!!.name ==  removedStreamName.parameterizedName }
+      }
          .forEach { runningPipelineSummary ->
             logger.info { "Managed stream ${runningPipelineSummary.pipeline!!.name} has been removed from the schema, so terminating associated stream" }
             pipelineManager.terminatePipeline(runningPipelineSummary.pipeline!!.pipelineSpecId)
