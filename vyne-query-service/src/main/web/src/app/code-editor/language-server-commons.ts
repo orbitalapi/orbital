@@ -3,18 +3,15 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 
-import { editor, languages } from 'monaco-editor';
-import { createConfiguredEditor, createModelReference, IReference, ITextFileEditorModel } from 'vscode/monaco';
+import {editor, languages} from 'monaco-editor';
+import {createConfiguredEditor, createModelReference, IReference, ITextFileEditorModel} from 'vscode/monaco';
 import '@codingame/monaco-vscode-theme-defaults-default-extension';
 import '@codingame/monaco-vscode-json-default-extension';
 import getConfigurationServiceOverride from '@codingame/monaco-vscode-configuration-service-override';
-import getKeybindingsServiceOverride from '@codingame/monaco-vscode-keybindings-service-override';
-import getThemeServiceOverride from '@codingame/monaco-vscode-theme-service-override';
-import getTextmateServiceOverride from '@codingame/monaco-vscode-textmate-service-override';
-import { initServices, MonacoLanguageClient } from 'monaco-languageclient';
-import { CloseAction, ErrorAction, MessageTransports } from 'vscode-languageclient';
-import { WebSocketMessageReader, WebSocketMessageWriter, toSocket } from 'vscode-ws-jsonrpc';
-import { Uri } from 'vscode';
+import {initServices, MonacoLanguageClient} from 'monaco-languageclient';
+import {CloseAction, ErrorAction, MessageTransports} from 'vscode-languageclient';
+import {toSocket, WebSocketMessageReader, WebSocketMessageWriter} from 'vscode-ws-jsonrpc';
+import {Uri} from 'vscode';
 import {
     IStandaloneCodeEditor
 } from "@codingame/monaco-vscode-api/vscode/vs/editor/standalone/browser/standaloneCodeEditor";
@@ -87,12 +84,19 @@ export const performInit = async (vscodeApiInit: boolean) => {
             // enableTextmateService: true,
             // enableThemeService: true,
             userServices: {
+                // See https://github.com/CodinGame/monaco-vscode-api
+                // for a description of these services
+
+
                 // Enabling theme and textMate services stops the
                 // Monarch service working, which is what provides taxi highlighting
                 // ...getThemeServiceOverride(),
                 // ...getTextmateServiceOverride(),
                 ...getConfigurationServiceOverride(Uri.file('/web/sandbox')),
-                ...getKeybindingsServiceOverride()
+
+                // When this was enabled, I found that keybindings for custom actions (eg: run query)
+                // were enabled when the editor was created for the first time, but not subsequent creations
+                // ...getKeybindingsServiceOverride()
             },
             debugLogging: true
         });

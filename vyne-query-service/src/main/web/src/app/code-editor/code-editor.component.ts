@@ -189,7 +189,6 @@ export class CodeEditorComponent {
         return {modelRef, model};
     }
 
-//
     private updateActionsOnEditor() {
         this.actions.forEach(action => {
             this.monacoEditor.addAction(action);

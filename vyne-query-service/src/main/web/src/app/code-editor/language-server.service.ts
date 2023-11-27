@@ -33,29 +33,4 @@ export class MonacoLanguageServerService {
     async createLanguageServerWebsocketTransport(): Promise<[WebSocket,WsTransport]> {
         return createWebsocketConnection(this.languageServerWsAddress)
     }
-
-    //
-    // createLanguageServerWebsocket(): Observable<WebSocket> {
-    //     return this.languageServicesInit$
-    //         .pipe(map(() => createWebSocketAndStartClient(this.languageServerWsAddress)
-    //         ))
-    // }
-    //
-    // private async initializeMonacoLanguageServices()  {
-    //
-    //     await initServices({
-    //         userServices: {
-    //             ...getThemeServiceOverride(),
-    //             ...getTextmateServiceOverride(),
-    //             ...getConfigurationServiceOverride(Uri.file('/workspace')),
-    //             ...getKeybindingsServiceOverride()
-    //         },
-    //         debugLogging: true
-    //     });
-    //
-    //     languages.register({id: TAXI_LANGUAGE_ID});
-    //     languages.setLanguageConfiguration(TAXI_LANGUAGE_ID, taxiLanguageConfiguration);
-    //     languages.setMonarchTokensProvider(TAXI_LANGUAGE_ID, taxiLanguageTokenProvider);
-    // };
-
 }
