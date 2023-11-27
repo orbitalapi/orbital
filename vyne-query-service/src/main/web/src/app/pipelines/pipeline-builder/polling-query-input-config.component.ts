@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Output } from '@angular/core';
 import { Schema } from '../../services/schema';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import { PipelineTransportSpec } from '../pipelines.service';
 import { BaseTransportConfigEditor } from './base-transport-config-editor';
 
@@ -11,16 +11,16 @@ import { BaseTransportConfigEditor } from './base-transport-config-editor';
 })
 export class PollingQueryInputConfigComponent extends BaseTransportConfigEditor {
 
-  config: FormGroup;
+  config: UntypedFormGroup;
 
   @Output()
   configValueChanged = new EventEmitter<any>();
 
   constructor() {
     super();
-    this.config = new FormGroup({
-        query: new FormControl('', Validators.required),
-        pollSchedule: new FormControl('', Validators.required)
+    this.config = new UntypedFormGroup({
+        query: new UntypedFormControl('', Validators.required),
+        pollSchedule: new UntypedFormControl('', Validators.required)
       }
     );
     this.config.valueChanges.subscribe(change => this.configValueChanged.emit(change));

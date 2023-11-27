@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
-import {FormControl, FormGroup} from '@angular/forms';
-import {MatFormFieldAppearance} from '@angular/material/form-field';
+import {UntypedFormControl, UntypedFormGroup} from '@angular/forms';
+import {MatLegacyFormFieldAppearance as MatFormFieldAppearance} from '@angular/material/legacy-form-field';
 import {TuiInputMode, TuiInputType} from '@taiga-ui/cdk';
 
 export class DynamicFormComponentSpec {
@@ -35,13 +35,13 @@ export type ComponentType = 'input' | 'checkbox';
 })
 export class DynamicFormComponentComponent {
 
-  @Input() form!: FormGroup;
+  @Input() form!: UntypedFormGroup;
   @Input() spec: DynamicFormComponentSpec;
 
   @Input() appearance: MatFormFieldAppearance = 'outline';
 
-  get formControl(): FormControl {
-    return this.form.controls[this.spec.key] as FormControl;
+  get formControl(): UntypedFormControl {
+    return this.form.controls[this.spec.key] as UntypedFormControl;
   }
 
   get isValid() {

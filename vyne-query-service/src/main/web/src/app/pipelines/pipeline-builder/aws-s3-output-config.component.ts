@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Output } from '@angular/core';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import { QualifiedName, SchemaMember } from '../../services/schema';
 import { BaseTransportConfigEditor } from './base-transport-config-editor';
 import { PipelineTransportSpec } from '../pipelines.service';
@@ -14,7 +14,7 @@ export class AwsS3OutputConfigComponent extends BaseTransportConfigEditor {
   @Output()
   configValueChanged = new EventEmitter<any>();
 
-  config: FormGroup;
+  config: UntypedFormGroup;
   connectionType: ConnectorType = 'AWS';
 
   targetTypeName: QualifiedName;
@@ -24,11 +24,11 @@ export class AwsS3OutputConfigComponent extends BaseTransportConfigEditor {
 
   constructor() {
     super();
-    this.config = new FormGroup({
-        connectionName: new FormControl('', Validators.required),
-        bucket: new FormControl('', Validators.required),
-        objectKey: new FormControl('', Validators.required),
-        targetTypeName: new FormControl('', Validators.required)
+    this.config = new UntypedFormGroup({
+        connectionName: new UntypedFormControl('', Validators.required),
+        bucket: new UntypedFormControl('', Validators.required),
+        objectKey: new UntypedFormControl('', Validators.required),
+        targetTypeName: new UntypedFormControl('', Validators.required)
       }
     );
     this.config.valueChanges.subscribe(event => this.configValueChanged.emit(event));

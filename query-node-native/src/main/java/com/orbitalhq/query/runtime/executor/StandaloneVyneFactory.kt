@@ -22,6 +22,7 @@ import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.api.SchemaWithSourcesSchemaProvider
 import com.orbitalhq.schemas.readers.SourceConverterRegistry
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.spring.config.LoadBalancerFilterFunction
 import com.orbitalhq.spring.config.StaticServicesConfigDiscoveryClient
 import com.orbitalhq.spring.config.VyneSpringCacheConfiguration
 import com.orbitalhq.spring.http.DefaultRequestFactory

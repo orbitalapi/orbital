@@ -7,7 +7,7 @@ import {
   JdbcConnectionConfiguration
 } from './db-importer.service';
 import {ComponentType, DynamicFormComponentSpec} from './dynamic-form-component.component';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
+import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 // import {TuiInputModeT, TuiInputTypeT} from '@taiga-ui/cdk';
 import {isNullOrUndefined} from 'util';
 import {TuiInputMode, TuiInputType} from "@taiga-ui/cdk";
@@ -67,8 +67,8 @@ export class ConnectionEditorComponent {
   @Output()
   connectionCreated = new EventEmitter<ConnectorSummary>();
 
-  connectionDetails: FormGroup;
-  driverParameters: FormGroup; // A nested formGroup within the driverParameters
+  connectionDetails: UntypedFormGroup;
+  driverParameters: UntypedFormGroup; // A nested formGroup within the driverParameters
 
   constructor(private dbConnectionService: DbConnectionService) {
     dbConnectionService.getDrivers()
@@ -94,9 +94,9 @@ export class ConnectionEditorComponent {
     const currentValue = (this.connectionDetails) ?
       this.connectionDetails.getRawValue() :
       {};
-    this.connectionDetails = new FormGroup({
-      connectionName: new FormControl(currentValue.connectionName || '', Validators.required),
-      jdbcDriver: new FormControl(currentValue.driver || '', Validators.required)
+    this.connectionDetails = new UntypedFormGroup({
+      connectionName: new UntypedFormControl(currentValue.connectionName || '', Validators.required),
+      jdbcDriver: new UntypedFormControl(currentValue.driver || '', Validators.required)
     });
   }
 
@@ -138,10 +138,10 @@ export class ConnectionEditorComponent {
     const connectionParameters = {};
     elements.forEach(element => {
       connectionParameters[element.key] = element.required ?
-        new FormControl(element.value, Validators.required) :
-        new FormControl(element.value);
+        new UntypedFormControl(element.value, Validators.required) :
+        new UntypedFormControl(element.value);
     });
-    this.driverParameters = new FormGroup(connectionParameters);
+    this.driverParameters = new UntypedFormGroup(connectionParameters);
     this.connectionDetails.setControl('connectionParameters', this.driverParameters);
     this.formElements = elements;
   }

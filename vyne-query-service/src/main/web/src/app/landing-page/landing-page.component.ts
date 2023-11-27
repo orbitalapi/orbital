@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
-import { Router } from '@angular/router';
-import { QueryHistorySummary } from '../services/query.service';
+import {Component} from '@angular/core';
+import {Router} from '@angular/router';
+import {QueryHistorySummary} from '../services/query.service';
 
 export interface LandingPageCardConfig {
   title: string;
@@ -31,6 +31,7 @@ export interface LandingPageCardConfig {
 export class LandingPageComponent {
   constructor(public readonly router: Router) {
   }
+
 
   dataSources: any[] = [];
   recentQueries: QueryHistorySummary[] = [];

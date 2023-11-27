@@ -26,23 +26,11 @@ export const VYNE_ROUTES = RouterModule.forRoot(
             loadChildren: () => import('./query-panel/query-panel.route.module').then(m => m.QueryPanelRouteModule),
         },
         {
-        path: 'designer',
-        loadChildren: () => import('./model-designer/model-designer.module').then(m => m.ModelDesignerModule),
-        canActivate: [AuthGuard],
-        data: {requiredAuthority: VynePrivileges.EditSchema}
-    },
-      {
-            path: 'data-explorer',
-            loadChildren: () => import('./data-explorer/data-explorer.route.module').then(m => m.DataExplorerRouteModule),
+            path: 'designer',
+            loadChildren: () => import('./model-designer/model-designer.module').then(m => m.ModelDesignerModule),
             canActivate: [AuthGuard],
             data: {requiredAuthority: VynePrivileges.EditSchema}
         },
-        // {
-        //   path: 'workbook',
-        //   component: DataWorkbookContainerComponent,
-        //   canActivate: [AuthGuard],
-        //   data: { requiredAuthority: VynePrivileges.EditSchema }
-        // },
         {
             path: 'schemas',
             loadChildren: () => import('./schema-explorer/schema-explorer.module').then(m => m.SchemaExplorerModule),
@@ -62,12 +50,6 @@ export const VYNE_ROUTES = RouterModule.forRoot(
             data: {requiredAuthority: VynePrivileges.ViewQueryHistory}
         },
         {
-            path: 'cask-viewer',
-            loadChildren: () => import('./cask-viewer/cask-viewer.module').then(m => m.CaskViewerModule),
-            canActivate: [AuthGuard],
-            data: {requiredAuthority: VynePrivileges.ViewCaskDefinitions}
-        },
-        {
             path: 'connection-manager',
             loadChildren: () => import('./connection-manager/connection-manager.module').then(m => m.ConnectionManagerModule),
             canActivate: [AuthGuard],
@@ -79,20 +61,45 @@ export const VYNE_ROUTES = RouterModule.forRoot(
             canActivate: [AuthGuard],
             data: {requiredAuthority: VynePrivileges.ViewAuthenticationTokens}
         },
-        {
-            path: 'pipelines',
-            loadChildren: () => import('./pipelines/pipelines.module').then(m => m.PipelinesModule)
-        },
+
         {
             path: 'workspace',
             loadChildren: () => import('./workspace-manager/workspace-manager.module').then(m => m.WorkspaceManagerModule)
         },
+        {
+            path: 'endpoints',
+            loadChildren: () => import('./endpoint-manager/endpoint-manager.module').then(m => m.EndpointManagerModule)
+        },
+
+
+        // Experiments / Deprecated:
+        //     {
+        //         path: 'cask-viewer',
+        //         loadChildren: () => import('./cask-viewer/cask-viewer.module').then(m => m.CaskViewerModule),
+        //         canActivate: [AuthGuard],
+        //         data: {requiredAuthority: VynePrivileges.ViewCaskDefinitions}
+        //     },
+        // {
+        //         path: 'pipelines',
+        //         loadChildren: () => import('./pipelines/pipelines.module').then(m => m.PipelinesModule)
+        //     },
+        //   {
+        //         path: 'data-explorer',
+        //         loadChildren: () => import('./data-explorer/data-explorer.route.module').then(m => m.DataExplorerRouteModule),
+        //         canActivate: [AuthGuard],
+        //         data: {requiredAuthority: VynePrivileges.EditSchema}
+        //     },
+        //     // {
+        //     //   path: 'workbook',
+        //     //   component: DataWorkbookContainerComponent,
+        //     //   canActivate: [AuthGuard],
+        //     //   data: { requiredAuthority: VynePrivileges.EditSchema }
+        //     // },
 
     ],
     {
         useHash: false,
         anchorScrolling: 'enabled',
-        scrollPositionRestoration: 'disabled',
-        relativeLinkResolution: 'legacy'
+        scrollPositionRestoration: 'disabled'
     }
 );

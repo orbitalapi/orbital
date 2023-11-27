@@ -34,6 +34,7 @@ import {ENVIRONMENT, Environment} from './environment';
 import {TuiDialogService} from '@taiga-ui/core';
 import {PackageIdentifier, PackageMetadata, SourcePackageDescription} from "../package-viewer/packages.service";
 import {SchemaEditOperation} from "../schema-importer/schema-importer.service";
+import {SavedQuery} from "./type-editor.service";
 
 
 @Injectable({
@@ -299,6 +300,15 @@ export class TypesService {
       request,
     );
   }
+
+  getQueries(): Observable<SavedQuery[]> {
+    return this.http.get<SavedQuery[]>(`${this.environment.serverUrl}/api/schemas/queries`,)
+  }
+
+  getQuery(qualifiedName: string): Observable<SavedQuery> {
+    return this.http.get<SavedQuery>(`${this.environment.serverUrl}/api/schemas/queries/${qualifiedName}`,)
+  }
+
 
 
   getAllMetadata(): Observable<QualifiedName[]> {

@@ -1,15 +1,15 @@
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
-import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatLegacyFormFieldModule as MatFormFieldModule} from '@angular/material/legacy-form-field';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {MatAutocompleteModule} from '@angular/material/autocomplete';
-import {MatSlideToggleModule} from '@angular/material/slide-toggle';
-import {MatButtonModule} from '@angular/material/button';
+import {MatLegacyAutocompleteModule as MatAutocompleteModule} from '@angular/material/legacy-autocomplete';
+import {MatLegacySlideToggleModule as MatSlideToggleModule} from '@angular/material/legacy-slide-toggle';
+import {MatLegacyButtonModule as MatButtonModule} from '@angular/material/legacy-button';
 import {PipelineBuilderComponent} from './pipeline-builder/pipeline-builder.component';
-import {MatInputModule} from '@angular/material/input';
+import {MatLegacyInputModule as MatInputModule} from '@angular/material/legacy-input';
 import {VyneFormsModule} from '../forms/vyne-forms.module';
-import {MatSelectModule} from '@angular/material/select';
+import {MatLegacySelectModule as MatSelectModule} from '@angular/material/legacy-select';
 import {PollingOperationInputConfigComponent} from './pipeline-builder/polling-operation-input-config.component';
 import {TransportSelectorComponent} from './pipeline-builder/transport-selector.component';
 import {HttpListenerInputConfigComponent} from './pipeline-builder/http-listener-input-config.component';
@@ -19,17 +19,16 @@ import {PipelineManagerComponent} from './pipeline-manager/pipeline-manager.comp
 import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {PipelineListComponent} from './pipeline-list/pipeline-list.component';
 import {RouterModule} from '@angular/router';
-import {MatProgressBarModule} from '@angular/material/progress-bar';
+import {MatLegacyProgressBarModule as MatProgressBarModule} from '@angular/material/legacy-progress-bar';
 import {PipelineViewComponent} from './pipeline-view/pipeline-view.component';
 import {PipelineViewContainerComponent} from './pipeline-view/pipeline-view-container.component';
 import {StatisticModule} from '../statistic/statistic.module';
 import {MomentModule} from 'ngx-moment';
 import {PipelineGraphComponent} from './pipeline-view/pipeline-graph.component';
 import {NgxGraphModule} from '@swimlane/ngx-graph';
-import {NgxChartsModule} from '@swimlane/ngx-charts';
 import {InputEditorComponent} from './pipeline-builder/input-editor.component';
 import {OutputEditorComponent} from './pipeline-builder/output-editor.component';
-import {MatDialogModule} from '@angular/material/dialog';
+import {MatLegacyDialogModule as MatDialogModule} from '@angular/material/legacy-dialog';
 import {PipelineBuilderContainerComponent} from './pipeline-builder/pipeline-builder-container.component';
 import {SchemaDisplayTableModule} from '../schema-display-table/schema-display-table.module';
 import {TuiButtonModule, TuiDataListModule, TuiSvgModule} from '@taiga-ui/core';
@@ -89,7 +88,6 @@ import {VyneServicesModule} from 'src/app/services/vyne-services.module';
     StatisticModule,
     MomentModule,
     NgxGraphModule,
-    NgxChartsModule,
     SchemaDisplayTableModule,
     TuiButtonModule,
     TuiComboBoxModule,

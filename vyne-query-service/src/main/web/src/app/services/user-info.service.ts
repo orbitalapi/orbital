@@ -29,7 +29,6 @@ export class UserInfoService {
    */
   getUserInfo(refresh: boolean = false, accessToken: string | null = null): Observable<VyneUser> {
     if (refresh) {
-      console.log('fetching user data');
       if (accessToken) {
         let header = 'Bearer ' + accessToken;
         let headers = new HttpHeaders().set('Authorization', header);

@@ -66,5 +66,10 @@ export interface SaveQueryRequest {
 export interface SavedQuery {
   name: QualifiedName;
   sources: VersionedSource[];
-  url: string | null;
+  queryKind: 'Stream' | 'Query'
+  httpEndpoint: HttpOperation
+}
+interface HttpOperation {
+  method: string;
+  url: string;
 }

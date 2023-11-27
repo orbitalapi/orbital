@@ -345,7 +345,7 @@ export const service: Service = {
       }
     }
   ],
-  'qualifiedName': 'io.vyne.demos.rewards.CustomerService',
+  'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService',
   'memberQualifiedName': {
     'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService',
     'parameters': [],

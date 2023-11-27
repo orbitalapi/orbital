@@ -6,6 +6,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
+import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.queryService.TestSchemaProvider
 import com.orbitalhq.queryService.VyneQueryIntegrationTest
 import com.orbitalhq.schema.api.SchemaProvider
@@ -93,6 +94,9 @@ class VyneQuerySecurityIntegrationTest {
 
    @Autowired
    private lateinit var objectMapper: ObjectMapper
+
+   @MockBean
+   lateinit var queryMetricsReporter: QueryMetricsReporter
 
    /**
     * see "authorisation/user-role-mappings.conf" in resources.

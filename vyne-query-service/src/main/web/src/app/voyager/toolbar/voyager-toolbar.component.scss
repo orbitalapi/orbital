@@ -1,7 +1,7 @@
 @use '@angular/material' as mat;
-@import "~src/theme";
+@import "src/theme";
 @import "../../../voyager-app/styles.scss";
-@import "~src/orbital-theme";
+@import "src/orbital-theme";
 
 :host {
   display: flex;

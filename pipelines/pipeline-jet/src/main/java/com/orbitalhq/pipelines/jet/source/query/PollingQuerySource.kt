@@ -12,9 +12,11 @@ import com.orbitalhq.pipelines.jet.api.transport.MessageSourceWithGroupId
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.api.transport.TypedInstanceContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.query.PollingQueryInputSpec
+import com.orbitalhq.pipelines.jet.api.transport.query.TaxiQlQueryPipelineTransportSpec
 import com.orbitalhq.pipelines.jet.source.PipelineSourceBuilder
 import com.orbitalhq.pipelines.jet.source.PipelineSourceType
 import com.orbitalhq.query
+import com.orbitalhq.query.tagsOf
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
@@ -22,8 +24,12 @@ import jakarta.annotation.PostConstruct
 import jakarta.annotation.Resource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
+import reactor.core.Disposable
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 
@@ -47,10 +53,10 @@ class PollingQuerySourceBuilder : PipelineSourceBuilder<PollingQueryInputSpec> {
       inputType: Type?
    ): BatchSource<MessageContentProvider> {
       return SourceBuilder.batch("query-poll") { context ->
-         PollingQuerySourceContext(context.logger(), pipelineSpec, context.jobId())
+         QueryBufferingPipelineContext(context.logger(), pipelineSpec, context.jobId(), QueryBufferingPipelineContext.BufferMode.Batch)
       }
-         .fillBufferFn { context: PollingQuerySourceContext, buffer: SourceBuffer<MessageContentProvider> ->
-            context.fillBuffer(buffer)
+         .fillBufferFn { context: QueryBufferingPipelineContext, buffer: SourceBuffer<MessageContentProvider> ->
+            context.drainTo(buffer)
          }
          .build()
    }
@@ -68,16 +74,23 @@ data class PollingQuerySourceMetadata(val jobId: String) : MessageSourceWithGrou
 }
 
 @SpringAware
-class PollingQuerySourceContext(
+class QueryBufferingPipelineContext(
    val logger: ILogger,
-   val pipelineSpec: PipelineSpec<PollingQueryInputSpec, *>,
-   val jobId: Long
+   val pipelineSpec: PipelineSpec<out TaxiQlQueryPipelineTransportSpec, *>,
+   val jobId: Long,
+   val mode:BufferMode
 ) {
+   enum class BufferMode {
+      Stream, Batch;
+   }
+
+   private lateinit var queryJob: Job
+   private lateinit var querySubscription: Disposable
    @PostConstruct
    fun runQuery() {
       val scope = CoroutineScope(Dispatchers.Default)
-      scope.launch {
-         vyneClient.query<TypedInstance>(pipelineSpec.input.query)
+      queryJob = scope.launch {
+         querySubscription = vyneClient.query<TypedInstance>(pipelineSpec.input.query,  tagsOf().queryStream(pipelineSpec.name).tags())
             .map {
                TypedInstanceContentProvider(
                   it,
@@ -90,8 +103,19 @@ class PollingQuerySourceContext(
                isDone = true
             }
             .subscribe {
-               queue.put(it)
+               val wasQueued = queue.offer(it)
+               if (!wasQueued) {
+                  logger.warning("Failed to append query result to the result queue.  Is the buffer full? Current size is ${queue.size}")
+               }
             }
+      }
+   }
+
+   fun terminate() {
+      runBlocking {
+         logger.info("Terminating running TaxlQL query")
+         querySubscription.dispose()
+         queryJob.cancelAndJoin()
       }
    }
 
@@ -99,15 +123,14 @@ class PollingQuerySourceContext(
    lateinit var vyneClient: VyneClient
 
    private val queue: BlockingQueue<MessageContentProvider> = ArrayBlockingQueue(CAPACITY)
-   private val tempBuffer: MutableList<MessageContentProvider> = mutableListOf()
    private var isDone = false
 
-   fun fillBuffer(buffer: SourceBuffer<MessageContentProvider>) {
+   fun drainTo(buffer: SourceBuffer<MessageContentProvider>) {
       logger.finest("Writing ${queue.size} items into the polling query sink's buffer.")
+      val tempBuffer: MutableList<MessageContentProvider> = mutableListOf()
       queue.drainTo(tempBuffer)
       tempBuffer.forEach(buffer::add)
-      tempBuffer.clear()
-      if (isDone) {
+      if (isDone && mode == BufferMode.Batch) {
          logger.info("Polling query execution finished. Closing buffer.")
          buffer.close()
       }

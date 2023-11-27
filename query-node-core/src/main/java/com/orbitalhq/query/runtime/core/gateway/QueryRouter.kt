@@ -1,6 +1,7 @@
 package com.orbitalhq.query.runtime.core.gateway
 
 import lang.taxi.annotations.HttpOperation
+import lang.taxi.query.QueryMode
 import lang.taxi.query.TaxiQlQuery
 import org.springframework.http.HttpMethod
 import org.springframework.web.reactive.function.server.RequestPredicate
@@ -27,10 +28,13 @@ class QueryRouter private constructor(val routes: List<RoutableQuery>) {
        * an @HttpOperation annotation.
        */
       fun build(queries: Iterable<TaxiQlQuery>): QueryRouter {
-         val routes = queries.mapNotNull { query ->
-            val httpAnnotation = query.annotations.singleOrNull { annotation -> annotation.name == HttpOperation.NAME }
+         val routes = queries
+
+            .filter { query -> query.queryMode != QueryMode.STREAM }
+            .mapNotNull { query ->
+            val httpAnnotation = HttpOperation.fromQuery(query)
             if (httpAnnotation != null) {
-               query to HttpOperation.fromAnnotation(httpAnnotation)
+               query to httpAnnotation
             } else null
          }.map { (query, httpOperation) ->
             val predicate = when (val method = getHttpMethod(httpOperation.method)) {

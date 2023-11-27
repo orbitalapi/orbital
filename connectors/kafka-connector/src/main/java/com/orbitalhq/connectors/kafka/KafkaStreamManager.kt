@@ -12,13 +12,13 @@ import com.orbitalhq.models.OperationResultDataSourceWrapper
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.models.json.Jackson
-import com.orbitalhq.protobuf.ProtobufFormatSpec
 import com.orbitalhq.query.MessageStreamExchange
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
+import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -49,7 +49,8 @@ class KafkaStreamManager(
    private val schemaProvider: SchemaProvider,
    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-   private val formatRegistry: FormatRegistry
+   private val formatRegistry: FormatRegistry,
+   private val meterRegistry: MeterRegistry
 ) {
 
    private val logger = KotlinLogging.logger {}
@@ -100,6 +101,10 @@ class KafkaStreamManager(
          .doOnCancel {
             logger.info { "Subscriber cancel detected for Kafka consumer on ${request.connectionName} / ${request.topicName}" }
             evictConnection(request)
+         }
+         .doOnEach { _ ->
+            meterRegistry.counter("orbital.connections.kafka.${request.connectionName}.topic.${request.topicName}.messagesReceived")
+               .increment()
          }
          .map { record ->
 

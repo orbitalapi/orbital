@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { delay, retryWhen } from 'rxjs/operators';
-import { WebSocketSubject } from 'rxjs/internal-compatibility';
+import { WebSocketSubject } from 'rxjs/webSocket';
 import { webSocket } from 'rxjs/webSocket';
 
 @Injectable({

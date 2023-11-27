@@ -5,11 +5,11 @@ import { findType, InstanceLike, Schema, Type } from '../../services/schema';
 import { nanoid } from 'nanoid';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RunningQueryStatus } from '../../services/active-queries-notification-service';
-import { isNullOrUndefined } from 'util';
 import { QueryResultInstanceSelectedEvent } from '../result-display/BaseQueryResultComponent';
-import { Observable, ReplaySubject } from 'rxjs/index';
+import { Observable, ReplaySubject } from 'rxjs';
 import { FailedSearchResponse } from '../../services/models';
 import { ExportFormat, ResultsDownloadService } from 'src/app/results-download/results-download.service';
+import { isNullOrUndefined } from 'src/app/utils/utils';
 
 @Component({
   selector: 'app-query-builder',

@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { Documented } from '../../services/schema';
 import { BehaviorSubject } from 'rxjs';
-import { FormControl } from '@angular/forms';
+import { UntypedFormControl } from '@angular/forms';
 
 @Component({
   selector: 'app-description-editor',
@@ -54,7 +54,7 @@ export class DescriptionEditorComponent implements OnInit, OnChanges {
 
   isEditModeOn = false;
 
-  descriptionControl!: FormControl;
+  descriptionControl!: UntypedFormControl;
 
   changes$ = new BehaviorSubject<string>('');
 
@@ -63,7 +63,7 @@ export class DescriptionEditorComponent implements OnInit, OnChanges {
   }
 
   ngOnInit(): void {
-    this.descriptionControl = new FormControl(this.documentationSource.typeDoc);
+    this.descriptionControl = new UntypedFormControl(this.documentationSource.typeDoc);
 
     this.changes$.subscribe(value => {
       this.valueChanged.emit(value);

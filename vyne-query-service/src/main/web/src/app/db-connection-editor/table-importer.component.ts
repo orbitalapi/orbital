@@ -7,14 +7,14 @@ import {CheckboxCellEditorComponent} from './checkbox-cell-editor.component';
 import {Observable} from 'rxjs/internal/Observable';
 import {Subscription} from 'rxjs';
 import {GridApi} from 'ag-grid-community/dist/lib/gridApi';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
+import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 import {validNamespace, validTypeName} from '../services/validators';
 import {
   ConfirmationAction,
   ConfirmationDialogComponent,
   ConfirmationParams
 } from '../confirmation-dialog/confirmation-dialog.component';
-import {MatDialog} from '@angular/material/dialog';
+import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
 import {isNullOrUndefined} from 'util';
 import {capitalizeFirstLetter} from '../utils/strings';
 import { NewTypeSpec } from 'src/app/type-editor/new-type-spec';
@@ -145,9 +145,9 @@ export class TableImporterComponent {
   private metadataSubscription: Subscription;
   private _tableMetadata$: Observable<TableMetadata>;
 
-  tableSpecFormGroup = new FormGroup({
-    typeName: new FormControl(null, [Validators.required, validTypeName()]),
-    namespace: new FormControl(null, [validNamespace()]),
+  tableSpecFormGroup = new UntypedFormGroup({
+    typeName: new UntypedFormControl(null, [Validators.required, validTypeName()]),
+    namespace: new UntypedFormControl(null, [validNamespace()]),
   });
 
   @Input()

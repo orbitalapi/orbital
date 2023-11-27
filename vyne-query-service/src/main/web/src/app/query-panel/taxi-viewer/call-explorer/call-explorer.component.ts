@@ -8,7 +8,7 @@ import {
 } from '../../../services/query.service';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { isNullOrUndefined } from 'util';
+import { isNullOrUndefined } from 'src/app/utils/utils';
 
 @Component({
   selector: 'app-call-explorer',

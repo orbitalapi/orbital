@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
+import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 import {QualifiedName, Schema, SchemaMember, Type} from '../../services/schema';
 import {BaseTransportConfigEditor} from './base-transport-config-editor';
 import {PipelineTransportSpec} from '../pipelines.service';
@@ -42,7 +42,7 @@ import {PipelineTransportSpec} from '../pipelines.service';
 })
 export class HttpListenerInputConfigComponent extends BaseTransportConfigEditor {
 
-  config: FormGroup;
+  config: UntypedFormGroup;
 
   @Output()
   configValueChanged = new EventEmitter<any>();
@@ -53,10 +53,10 @@ export class HttpListenerInputConfigComponent extends BaseTransportConfigEditor 
 
   constructor() {
     super();
-    this.config = new FormGroup({
-        path: new FormControl('', Validators.required),
-        method: new FormControl('', Validators.required),
-        payloadType: new FormControl()
+    this.config = new UntypedFormGroup({
+        path: new UntypedFormControl('', Validators.required),
+        method: new UntypedFormControl('', Validators.required),
+        payloadType: new UntypedFormControl()
       }
     );
     this.config.valueChanges.subscribe(e => this.configValueChanged.emit(e));

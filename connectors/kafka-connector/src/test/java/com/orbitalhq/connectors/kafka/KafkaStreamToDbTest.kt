@@ -18,6 +18,7 @@ import com.orbitalhq.testVyne
 import com.zaxxer.hikari.HikariConfig
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldHaveSize
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.runBlocking
 import org.jooq.impl.DSL
 import org.junit.Before
@@ -126,7 +127,7 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
          )
       ) { schema ->
          val kafkaStreamManager =
-            KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry)
+            KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry, meterRegistry = SimpleMeterRegistry())
          listOf(
             JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(schema)),
             KafkaInvoker(kafkaStreamManager, mock { })
@@ -215,7 +216,7 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
          )
       ) { schema ->
          val kafkaStreamManager =
-            KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry)
+            KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry, meterRegistry = SimpleMeterRegistry())
          listOf(
             JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(schema)),
             KafkaInvoker(kafkaStreamManager, mock {})

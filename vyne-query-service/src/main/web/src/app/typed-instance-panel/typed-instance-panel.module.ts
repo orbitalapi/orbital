@@ -8,7 +8,7 @@ import {AttributeTableModule} from '../type-viewer/attribute-table/attribute-tab
 import {InlineQueryRunnerModule} from '../inline-query-runner/inline-query-runner.module';
 import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.module';
 import {LineageDisplayModule} from '../lineage-display/lineage-display.module';
-import {MatButtonModule} from '@angular/material/button';
+import {MatLegacyButtonModule as MatButtonModule} from '@angular/material/legacy-button';
 import {MatIconModule} from '@angular/material/icon';
 import {ExpandingPanelSetModule} from '../expanding-panelset/expanding-panel-set.module';
 import {TuiButtonModule} from '@taiga-ui/core';

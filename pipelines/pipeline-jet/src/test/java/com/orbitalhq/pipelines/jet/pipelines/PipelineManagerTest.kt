@@ -1,17 +1,25 @@
 package com.orbitalhq.pipelines.jet.pipelines
 
 import com.hazelcast.jet.core.JobStatus
+import com.orbitalhq.models.TypedInstance
 import com.winterbe.expekt.should
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.pipelines.jet.BaseJetIntegrationTest
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.api.transport.TypedInstanceContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.http.CronExpressions
+import com.orbitalhq.pipelines.jet.api.transport.log.LoggingOutputSpec
 import com.orbitalhq.pipelines.jet.api.transport.query.PollingQueryInputSpec
 import com.orbitalhq.pipelines.jet.queueOf
+import com.orbitalhq.pipelines.jet.sink.list.ListSinkBuilder
+import com.orbitalhq.pipelines.jet.sink.list.ListSinkSpec
+import com.orbitalhq.pipelines.jet.sink.log.LoggingSinkBuilder
 import com.orbitalhq.pipelines.jet.source.fixed.FixedItemsSourceSpec
 import com.orbitalhq.pipelines.jet.source.fixed.ScheduledSourceSpec
+import com.orbitalhq.pipelines.jet.streams.ManagedStream
 import com.orbitalhq.schemas.fqn
+import com.orbitalhq.schemas.taxi.TaxiSchema
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flowOf
 import org.awaitility.Awaitility
 import org.junit.Ignore
@@ -22,6 +30,39 @@ import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
 
 class PipelineManagerTest : BaseJetIntegrationTest() {
+
+   @Test
+   fun `can submit stream`() {
+      val testSetup = jetWithSpringAndVyne(
+         """
+            model Tweet {
+               text : String
+            }
+            service Tweeter {
+               operation getTweets():Stream<Tweet>
+            }
+
+            query MySavedStream {
+               stream { Tweet }
+            }
+         """
+      )
+
+      val tweets = (1 until 3).map { parseJson(testSetup.schema, "Tweet", """{ "text" : "Hello $it" }""") }
+         .asFlow()
+      testSetup.stubService.addResponseFlow("getTweets") { remoteOperation, pairs -> tweets }
+      val manager = pipelineManager(
+         testSetup.hazelcastInstance,
+         testSetup.vyneClient
+      )
+      val query = testSetup.schema.taxi.queries.single()
+      val job = manager.startPipeline(
+         ManagedStream.from(query),
+         sinkSpec = LoggingOutputSpec.captureForTest
+      )
+      Awaitility.await().atMost(10, TimeUnit.MINUTES)
+         .until { LoggingSinkBuilder.captured.isNotEmpty() }
+   }
 
 
    @Test

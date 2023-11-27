@@ -1,6 +1,7 @@
 package com.orbitalhq.pipelines.jet
 
 import com.hazelcast.jet.core.JobStatus
+import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.pipelines.PipelineFactory
 import com.orbitalhq.pipelines.jet.pipelines.PipelineManager

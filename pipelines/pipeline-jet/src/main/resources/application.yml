@@ -42,32 +42,7 @@ management:
    prometheus:
       metrics:
          export:
-            enabled: false
-   influx:
-      metrics:
-         export:
-            enabled: false
-   dynatrace:
-      metrics:
-         export:
-            enabled: false
-   datadog:
-      metrics:
-         export:
-            enabled: false
-   elastic:
-      metrics:
-         export:
-            enabled: false
-   jmx:
-      metrics:
-         export:
-            enabled: false
-   graphite:
-      metrics:
-         export:
-            enabled: false
-
+            enabled: true
 
    endpoints:
       web:
@@ -79,7 +54,7 @@ management:
       metrics:
          enabled: true
       prometheus:
-         enabled: false
+         enabled: true
       health:
          show-components: always
          show-details: always

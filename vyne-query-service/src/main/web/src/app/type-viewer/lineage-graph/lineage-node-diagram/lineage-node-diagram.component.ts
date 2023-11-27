@@ -67,7 +67,7 @@ export class LineageNodeDiagramComponent {
         const consumedBy: string[] = schema.services.flatMap(service => {
           const serviceConsumedOperations = service.lineage?.consumes || [];
           if (serviceConsumedOperations.some(c => c.serviceName === serviceName)) {
-            return [service.qualifiedName]
+            return [service.fullyQualifiedName]
           } else {
             return []
           }
