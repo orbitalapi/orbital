@@ -24,8 +24,12 @@ import jakarta.annotation.PostConstruct
 import jakarta.annotation.Resource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
+import reactor.core.Disposable
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 
@@ -79,11 +83,14 @@ class QueryBufferingPipelineContext(
    enum class BufferMode {
       Stream, Batch;
    }
+
+   private lateinit var queryJob: Job
+   private lateinit var querySubscription: Disposable
    @PostConstruct
    fun runQuery() {
       val scope = CoroutineScope(Dispatchers.Default)
-      scope.launch {
-         vyneClient.query<TypedInstance>(pipelineSpec.input.query,  tagsOf().queryStream(pipelineSpec.name).tags())
+      queryJob = scope.launch {
+         querySubscription = vyneClient.query<TypedInstance>(pipelineSpec.input.query,  tagsOf().queryStream(pipelineSpec.name).tags())
             .map {
                TypedInstanceContentProvider(
                   it,
@@ -101,6 +108,14 @@ class QueryBufferingPipelineContext(
                   logger.warning("Failed to append query result to the result queue.  Is the buffer full? Current size is ${queue.size}")
                }
             }
+      }
+   }
+
+   fun terminate() {
+      runBlocking {
+         logger.info("Terminating running TaxlQL query")
+         querySubscription.dispose()
+         queryJob.cancelAndJoin()
       }
    }
 

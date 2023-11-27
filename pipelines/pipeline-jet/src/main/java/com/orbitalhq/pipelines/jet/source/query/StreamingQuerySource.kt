@@ -33,6 +33,8 @@ class StreamingQuerySourceBuilder() :
          QueryBufferingPipelineContext(context.logger(), pipelineSpec, context.jobId(), QueryBufferingPipelineContext.BufferMode.Stream)
       }.fillBufferFn { queryBuffer, sourceBuffer: SourceBuffer<MessageContentProvider> ->
          queryBuffer.drainTo(sourceBuffer)
+      }.destroyFn {
+         it.terminate()
       }
          .build()
    }
