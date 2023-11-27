@@ -1,6 +1,7 @@
 package com.orbitalhq.queryService.security.authorisation.rest
 
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
+import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.queryService.CustomWebFluxConfigSupport
 import com.orbitalhq.queryService.DatabaseTest
 import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
@@ -43,6 +44,8 @@ class UserRoleMappingControllerTest : DatabaseTest() {
    @MockBean
    lateinit var configLoader : SchemaRepositoryConfigLoader
 
+   @MockBean
+   lateinit var queryMetricsReporter: QueryMetricsReporter
 
    @TestConfiguration
    @Import(TestDiscoveryClientConfig::class, CustomWebFluxConfigSupport::class)

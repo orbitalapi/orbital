@@ -3,6 +3,7 @@ package com.orbitalhq.queryService.security
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.matchers.booleans.shouldBeTrue
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
+import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.queryService.DatabaseTest
 import com.orbitalhq.queryService.TestSchemaProvider
 import com.orbitalhq.queryService.VyneQueryIntegrationTest
@@ -59,6 +60,9 @@ class VyneQuerySecurityFirstTimeLoginIntegrationTest : DatabaseTest() {
 
    @MockBean
    lateinit var configLoader : SchemaRepositoryConfigLoader
+
+   @MockBean
+   lateinit var queryMetricsReporter: QueryMetricsReporter
 
 
    @Value("\${wiremock.server.baseUrl}")
