@@ -4,10 +4,14 @@ import com.winterbe.expekt.should
 import com.orbitalhq.Vyne
 import com.orbitalhq.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
+import com.orbitalhq.firstRawObject
 import com.orbitalhq.models.TypedObject
+import com.orbitalhq.models.format.DefaultFormatRegistry
+import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyne
+import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -54,6 +58,9 @@ class SqsInvokerTest {
                service MovieService {
                   @SqsOperation( queue = "$sqsQueue" )
                   operation streamMovieQuery():Stream<Movie>
+
+                  @SqsOperation( queue = "$sqsQueue" )
+                  write operation publishMovie(Movie):Movie
                }
 
             """.trimIndent()
@@ -71,6 +78,22 @@ class SqsInvokerTest {
           ).toASCIIString()
       )
       connectionRegistry.register(connectionConfig)
+   }
+
+   @Test
+   fun `can write to sqs`(): Unit = runBlocking {
+      val (vyne, _) = vyneWithSqsInvoker()
+
+      val publishedMovie = vyne.query("""
+         given { movie : Movie = { id: "1223" , title : "Star Wars" } }
+         call MovieService::publishMovie
+      """.trimIndent()).firstRawObject()
+
+      val result = vyne.query("""stream { Movie }""")
+         .results.take(1).toList() as List<TypedObject>
+
+      result.shouldHaveSize(1)
+
    }
 
 
@@ -100,9 +123,10 @@ class SqsInvokerTest {
          )
       )
       val schemaProvider = SimpleSchemaProvider(schema)
-      val sqsStreamManager = SqsStreamManager(connectionRegistry, schemaProvider)
+      val connectionBuilder = SqsConnectionBuilder(connectionRegistry, DefaultFormatRegistry.empty())
+      val sqsStreamManager = SqsStreamManager(connectionBuilder, schemaProvider)
       val invokers = listOf(
-         SqsInvoker(schemaProvider, sqsStreamManager)
+         SqsInvoker(schemaProvider, sqsStreamManager, connectionBuilder)
       )
       return testVyne(schema, invokers) to sqsStreamManager
    }

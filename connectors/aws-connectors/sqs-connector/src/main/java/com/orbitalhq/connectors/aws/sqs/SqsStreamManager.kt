@@ -1,7 +1,6 @@
 package com.orbitalhq.connectors.aws.sqs
 
 import com.google.common.cache.CacheBuilder
-import com.orbitalhq.connectors.aws.core.registry.AwsConnectionRegistry
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.QualifiedName
@@ -13,8 +12,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
-import java.time.Duration
-import java.util.concurrent.atomic.AtomicInteger
 
 private val logger = KotlinLogging.logger {}
 
@@ -24,26 +21,20 @@ data class SqsConsumerRequest(
    val messageType: QualifiedName
 )
 
-class SqsStreamManager(private val connectionRegistry: AwsConnectionRegistry,
+class SqsStreamManager(private val connectionBuilder: SqsConnectionBuilder,
                        private val schemaProvider: SchemaProvider,
                        private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)) {
    private val cache = CacheBuilder.newBuilder()
       .build<SqsConsumerRequest, SharedFlow<TypedInstance>>()
 
-   private val messageCounter = mutableMapOf<SqsConsumerRequest, AtomicInteger>()
-
-   fun getActiveRequests(): List<SqsConsumerRequest> = cache.asMap().keys.toList()
-
    fun getStream(request: SqsConsumerRequest): Flow<TypedInstance> {
       return cache.get(request) {
-         messageCounter[request] = AtomicInteger(0)
          buildSharedFlow(request)
       }
    }
 
    private fun evictConnection(consumerRequest: SqsConsumerRequest) {
       cache.invalidate(consumerRequest)
-      messageCounter.remove(consumerRequest)
       cache.cleanUp()
       logger.debug { "Evicted connection ${consumerRequest.connectionName} / ${consumerRequest.topicName}" }
    }
@@ -55,12 +46,12 @@ class SqsStreamManager(private val connectionRegistry: AwsConnectionRegistry,
          type.typeParameters[0]
       }
       val schema = schemaProvider.schema
-      val sqsReceiverOptions = SqsReceiverOptions(
-         Duration.ofSeconds(1),
+
+      val receiver = connectionBuilder.buildReceiver(
+         request.connectionName,
          request.topicName,
-         connectionRegistry.getConnection(request.connectionName)
       )
-      return SqsReceiver(sqsReceiverOptions)
+      return receiver
          .receive()
          .doOnSubscribe {
             logger.info { "Subscriber detected for sqs consumer on ${request.connectionName} / ${request.topicName}" }
@@ -69,9 +60,6 @@ class SqsStreamManager(private val connectionRegistry: AwsConnectionRegistry,
             logger.info { "Subscriber cancel detected for sqs consumer on ${request.connectionName} / ${request.topicName}" }
             evictConnection(request)
          }.map { message ->
-            messageCounter[request]?.incrementAndGet()
-               ?: logger.warn { "Attempt to increment message counter for consumer on sqs topic ${request.topicName} failed - the counter was not present" }
-
             logger.debug { "Received message on queue ${request.topicName} with Id ${message.messageId()} " }
             val messageValue = message.body()
             TypedInstance.from(

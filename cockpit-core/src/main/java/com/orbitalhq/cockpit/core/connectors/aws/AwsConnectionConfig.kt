@@ -6,9 +6,11 @@ import com.orbitalhq.connectors.aws.core.registry.SourceLoaderAwsConnectionRegis
 import com.orbitalhq.connectors.aws.dynamodb.DynamoDbInvoker
 import com.orbitalhq.connectors.aws.lambda.LambdaInvoker
 import com.orbitalhq.connectors.aws.s3.S3Invoker
+import com.orbitalhq.connectors.aws.sqs.SqsConnectionBuilder
 import com.orbitalhq.connectors.aws.sqs.SqsInvoker
 import com.orbitalhq.connectors.aws.sqs.SqsStreamManager
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
+import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.schema.api.SchemaProvider
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
@@ -28,12 +30,21 @@ class AwsConnectionConfig {
    }
 
    @Bean
-   fun sqsStreamManager(schemaProvider: SchemaProvider, awsConnectionRegistry: AwsConnectionRegistry) =
-      SqsStreamManager(awsConnectionRegistry, schemaProvider)
+   fun sqsConnectionBuilder(
+      awsConnectionRegistry: AwsConnectionRegistry,
+      formatRegistry: FormatRegistry
+   ) = SqsConnectionBuilder(
+      awsConnectionRegistry, formatRegistry
+   )
 
    @Bean
-   fun sqsInvoker(schemaProvider: SchemaProvider, sqsStreamManager: SqsStreamManager) =
-      SqsInvoker(schemaProvider, sqsStreamManager)
+   fun sqsStreamManager(schemaProvider: SchemaProvider, connectionBuilder: SqsConnectionBuilder) =
+      SqsStreamManager(connectionBuilder, schemaProvider)
+
+
+   @Bean
+   fun sqsInvoker(schemaProvider: SchemaProvider, sqsStreamManager: SqsStreamManager, connectionBuilder: SqsConnectionBuilder) =
+      SqsInvoker(schemaProvider, sqsStreamManager, connectionBuilder)
 
    @Bean
    fun lambdaInvoker(schemaProvider: SchemaProvider, awsConnectionRegistry: AwsConnectionRegistry): LambdaInvoker {

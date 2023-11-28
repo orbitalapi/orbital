@@ -46,9 +46,9 @@ class KafkaInvoker(
          .let { KafkaConnectorTaxi.Annotations.KafkaOperation.from(it) }
 
       return if (operation.operationType == OperationScope.MUTATION) {
-         return publishToTopic(connectionName, kafkaOperation, service, operation, eventDispatcher, queryId, parameters)
+         publishToTopic(connectionName, kafkaOperation, service, operation, eventDispatcher, queryId, parameters)
       } else {
-         return subscribeToTopic(connectionName, kafkaOperation, service, operation, eventDispatcher, queryId)
+         subscribeToTopic(connectionName, kafkaOperation, service, operation, eventDispatcher, queryId)
       }
 
    }
