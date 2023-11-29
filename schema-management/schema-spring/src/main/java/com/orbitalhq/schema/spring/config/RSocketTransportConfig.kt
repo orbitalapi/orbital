@@ -1,11 +1,11 @@
 package com.orbitalhq.schema.spring.config
 
+import com.orbitalhq.http.ServicesConfig
+import com.orbitalhq.http.ServicesConfig.Companion.ORBITAL_SERVER_NAME
 import com.orbitalhq.schema.api.AddressSupplier
 import com.orbitalhq.schema.rsocket.ClientTransportAddress
 import com.orbitalhq.schema.rsocket.SchemaServerRSocketFactory
-import com.orbitalhq.schema.rsocket.TcpAddress
 import com.orbitalhq.schema.spring.RSocketHealthIndicator
-import com.orbitalhq.schema.spring.config.SchemaConfigProperties.*
 import com.orbitalhq.schema.spring.config.consumer.SchemaConsumerConfigProperties
 import com.orbitalhq.schema.spring.config.publisher.SchemaPublisherConfigProperties.Companion.PUBLISHER_METHOD
 import mu.KotlinLogging
@@ -43,57 +43,32 @@ class RSocketTransportConfig {
     */
    @Bean
    fun schemaServerRSocketFactory(
-      discoveryClient: DiscoveryClient?,
-      config: SchemaConfigProperties,
+      discoveryClient: DiscoveryClient,
    ): SchemaServerRSocketFactory {
-      val addressSupplier =
-         if (discoveryClient != null && config.schemaServerAddressType == AddressType.DISCOVERY_CLIENT_REFERENCE) {
-            logger.info { "SchemaServer rsocket connections will be made via DiscoveryClient of type ${discoveryClient::class.simpleName}" }
-            // Configure RSocket lookup via discovery client
-            DiscoveryClientAddressSupplier.forTcpAddresses(
-               discoveryClient,
-               config.schemaServerAddress
-            ) { serviceInstance ->
-               getRsocketPort(serviceInstance, config)
-            }
-         } else {
-            val uri = URI.create(config.schemaServerAddress)
-            AddressSupplier.Companion.just(TcpAddress(uri.host, config.schemaServerRSocketPort))
-         } as AddressSupplier<ClientTransportAddress>
+      val addressSupplier = DiscoveryClientAddressSupplier.forTcpAddresses(
+         discoveryClient,
+         ORBITAL_SERVER_NAME
+      ) { serviceInstance ->
+         getRsocketPort(serviceInstance)
+      } as AddressSupplier<ClientTransportAddress>
       return SchemaServerRSocketFactory(addressSupplier)
    }
 
    private fun getRsocketPort(
       serviceInstance: ServiceInstance,
-      config: SchemaConfigProperties
    ): Int {
-      // In the old days, we used to support just declaring the rsocket port.
-      // It wasn't obvious to people what it meant, so we're now asking people to declare the full
-      // uri.
-      // If they're using the old version, that's fine.
-      val legacyDeclaredRsocketPort = serviceInstance.metadata["rsocket-port"]?.let { rsocketPort ->
-         val rsocketPortInt = rsocketPort.toIntOrNull()
-         if (rsocketPortInt != null) {
-            logger.warn { "Could not parse the provided rsocket-port value ('$rsocketPort') to an int.  Using the fallback value of ${config.schemaServerRSocketPort}" }
-         }
-         rsocketPortInt ?: config.schemaServerRSocketPort
-      }
-      if (legacyDeclaredRsocketPort != null) {
-         logger.warn { "Defining the rsocket connection using rsocket-port is deprecated.  Instead declare use a URI.  Your config equivalent is a config entry of 'rsocket' within the schema-server config block with a value of tcp://${serviceInstance.host}:$legacyDeclaredRsocketPort" }
-         return legacyDeclaredRsocketPort
-      }
-
       // Try reading the newer rsocket URI declaration
-      val rsocketMetadata = serviceInstance.metadata["rsocket"] ?: return config.schemaServerRSocketPort
+      val port =  serviceInstance.metadata["rsocket"]?.let {rsocketMetadata ->
+         try {
+            val uri = URI.create(rsocketMetadata)
+            uri.port
+         } catch (e: Exception) {
+            logger.warn { "Failed to parse a URI from schema server rsocket value of $rsocketMetadata.  Expected a uri like tcp://schema-server.com:7655. Falling back to default port of ${ServicesConfig.DEFAULT_QUERY_SERVER_RSOCKET_PORT}" }
+            ServicesConfig.DEFAULT_QUERY_SERVER_RSOCKET_PORT
+         }
+      } ?: return ServicesConfig.DEFAULT_QUERY_SERVER_RSOCKET_PORT
 
-      // Parse the configured rsocket entry if present.
-      return try {
-         val uri = URI.create(rsocketMetadata)
-         uri.port
-      } catch (e: Exception) {
-         logger.warn { "Failed to parse a URI from schema server rsocket value of $rsocketMetadata.  Expected a uri like tcp://schema-server.com:7655. Falling back to configured value of ${config.schemaServerRSocketPort}" }
-         config.schemaServerRSocketPort
-      }
+      return port
 
 
    }
