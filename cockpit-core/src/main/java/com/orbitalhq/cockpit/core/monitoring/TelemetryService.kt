@@ -1,5 +1,6 @@
 package com.orbitalhq.cockpit.core.monitoring
 
+import com.orbitalhq.http.ServicesConfig
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.SavedQuery
 import com.orbitalhq.schemas.taxi.asSavedQuery
@@ -96,7 +97,7 @@ class TelemetryService(
         stepSize: String
     ): Mono<RawSeriesData> {
         // Hard-learnt lesson: Don't try to use spring's URI builder, as it gets thrown out by the {} symbols within the PromQL query
-        val uri = "http://orbital-metrics-server/api/v1/query_range?query={query}&start={start}&end={end}&step={step}"
+        val uri = "http://${ServicesConfig.METRICS_SERVER_NAME}/api/v1/query_range?query={query}&start={start}&end={end}&step={step}"
 
         return webClient.get().uri(
             uri,
