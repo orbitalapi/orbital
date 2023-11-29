@@ -294,7 +294,7 @@ publish-pipeline-jet-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: pipelines/pipeline-jet
-      microservice_orbital: pipelines
+      microservice_orbital: stream-server
 
 publish-query-node-to-docker-hub:
    extends: .publish-to-docker-hub
