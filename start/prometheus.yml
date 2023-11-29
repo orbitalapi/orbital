@@ -1,0 +1,19 @@
+scrape_configs:
+   - job_name: 'Pipeline Metrics'
+     metrics_path: '/api/actuator/prometheus'
+     scrape_interval: 3s
+     static_configs:
+#        172.17.0.1 is the ip address of localhost
+#        from within docker
+        - targets: ['172.17.0.1:9615']
+          labels:
+             application: 'Comet'
+   - job_name: 'Orbital Metrics'
+     metrics_path: '/api/actuator/prometheus'
+     scrape_interval: 3s
+     static_configs:
+        #        172.17.0.1 is the ip address of localhost
+        #        from within docker
+        - targets: ['172.17.0.1:9022']
+          labels:
+             application: 'Orbital'
