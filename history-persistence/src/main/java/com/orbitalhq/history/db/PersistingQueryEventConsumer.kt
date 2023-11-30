@@ -57,7 +57,7 @@ class PersistingQueryEventConsumer(
     * Shutdown subscription to query history queue and clear down the queue files
     */
    fun shutDown() {
-      logger.info { "Query result handler shutting down - $queryId" }
+      logger.debug { "Query result handler shutting down - $queryId" }
       queryHistoryDao.persistSankeyChart(queryId, sankeyViewBuilder)
    }
 
