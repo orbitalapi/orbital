@@ -7,6 +7,9 @@ import com.hazelcast.jet.core.JetTestSupport
 import com.hazelcast.jet.core.JobStatus
 import com.hazelcast.spring.context.SpringManagedContext
 import com.mercateo.test.clock.TestClock
+import com.nhaarman.mockito_kotlin.mock
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import com.orbitalhq.*
 import com.orbitalhq.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
@@ -38,8 +41,6 @@ import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.SimpleVyneProvider
 import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.spring.invokers.RestTemplateInvoker
-import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.support.GenericApplicationContext
@@ -63,6 +64,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
    val pipelineSourceProvider = PipelineSourceProvider.default(kafkaConnectionRegistry)
    val pipelineSinkProvider = PipelineSinkProvider.default(kafkaConnectionRegistry, awsConnectionRegistry)
    val meterRegistry = SimpleMeterRegistry()
+
 
    fun jetWithSpringAndVyne(
        schema: String,

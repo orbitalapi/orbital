@@ -7,10 +7,17 @@ import com.hazelcast.jet.core.JobNotFoundException
 import com.hazelcast.map.IMap
 import com.hazelcast.query.Predicates
 import com.orbitalhq.pipelines.jet.api.*
+import com.orbitalhq.pipelines.jet.api.transport.PipelineKind
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
+import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportSpec
 import com.orbitalhq.pipelines.jet.api.transport.ScheduledPipelineTransportSpec
+import com.orbitalhq.pipelines.jet.api.transport.log.LogLevel
+import com.orbitalhq.pipelines.jet.api.transport.log.LoggingOutputSpec
+import com.orbitalhq.pipelines.jet.api.transport.query.StreamingQueryInputSpec
 import com.orbitalhq.pipelines.jet.badRequest
 import com.orbitalhq.pipelines.jet.source.next
+import com.orbitalhq.pipelines.jet.streams.ManagedStream
+import lang.taxi.query.TaxiQlQuery
 import mu.KotlinLogging
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.scheduling.support.CronSequenceGenerator
@@ -54,6 +61,7 @@ class PipelineManager(
          ) to null
       } else {
          val job = hazelcastInstance.jet.newJob(pipeline)
+
          val submittedPipeline = SubmittedPipeline(
             pipelineSpec.name,
             job.idString,
@@ -192,8 +200,19 @@ class PipelineManager(
       submittedPipelines.put(jobId, submittedPipeline)
    }
 
-   fun getPipelines(): List<RunningPipelineSummary> {
+   fun getManagedStreams(includeCancelled: Boolean = false): List<RunningPipelineSummary> {
+      return getPipelines(kind = PipelineKind.Stream)
+         .filter { pipelineSummary ->
+            if (!includeCancelled) {
+               pipelineSummary.pipeline?.cancelled == false
+            } else {
+               true
+            }
+         }
+   }
+   fun getPipelines(kind: PipelineKind = PipelineKind.Pipeline): List<RunningPipelineSummary> {
       val runningPipelines = submittedPipelines.entries
+         .filter { it.value.spec.kind == kind }
          .map { (key, submittedPipeline) ->
             val job = hazelcastInstance.jet.jobs
                .find { it.idString == key } ?: error("The pipeline \"$key\" is not actually running. ")
@@ -312,6 +331,23 @@ class PipelineManager(
    ): Job {
       return hazelcastInstance.jet.getJob(Util.idFromString(submittedPipeline.jobId))
          ?: error("Pipeline ${submittedPipeline.pipelineSpecId} exists, but it's associated job ${submittedPipeline.jobId} has gone away")
+   }
+
+   fun startPipeline(
+      managedStream: ManagedStream,
+      sinkSpec: PipelineTransportSpec = LoggingOutputSpec(
+         LogLevel.INFO,
+         managedStream.name.longDisplayName
+      )
+   ): Pair<SubmittedPipeline, Job?> {
+      val spec = PipelineSpec(
+         managedStream.name.longDisplayName,
+         StreamingQueryInputSpec(managedStream.query.source),
+         null,
+         listOf(sinkSpec),
+         kind = PipelineKind.Stream
+      )
+      return startPipeline(spec)
    }
 
 }

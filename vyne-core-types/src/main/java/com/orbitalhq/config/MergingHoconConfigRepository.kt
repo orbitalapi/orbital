@@ -8,10 +8,31 @@ import com.typesafe.config.ConfigParseOptions
 import com.typesafe.config.ConfigResolveOptions
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.SourcePackage
+import com.typesafe.config.ConfigResolver
+import com.typesafe.config.ConfigValue
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 
+/**
+ * Models a Config as loaded from a Package,
+ * which may or may not contain an error.
+ *
+ * This does not model an actual resolved config, as resolutions are not applied.
+ */
+data class ConfigSource<T : Any>(
+   val packageIdentifier: PackageIdentifier,
+   val unresolvedConfig: Config?,
+   /**
+    * Note: The typedConfig here has not had resolutions applied.
+    * This is because a ConfigSource is parsed standalone, and other sources that provide
+    * values may not have been loaded yet.
+    */
+   val typedConfig: T?,
+   val error: String?
+) {
+   val hasError = error != null
+}
 
 /**
  * Takes multiple Config repositories, and merges the result.
@@ -43,7 +64,15 @@ abstract class MergingHoconConfigRepository<T : Any>(
       return configCache[CacheKey]
    }
 
+   val configSources: List<ConfigSource<T>>
+      get() {
+         typedConfig() // force the cache to be populated
+         return _configSources
+      }
+
    protected fun invalidateCache() = configCache.invalidateAll()
+
+   private var _configSources: List<ConfigSource<T>> = emptyList()
 
    /**
     * A cache of loaded, merged config.
@@ -57,18 +86,27 @@ abstract class MergingHoconConfigRepository<T : Any>(
                logger.info { "($loaderTypeName) - Loaders returned no config sources, so starting with an empty one." }
                emptyConfig()
             } else {
-               val mergedConfig = loadedSources.map { sourcePackage: SourcePackage ->
+               _configSources = loadedSources.map { sourcePackage: SourcePackage ->
                   val hoconSource = readRawHoconSource(sourcePackage)
                   try {
-                     readConfig(hoconSource, fallback)
+
+                     val configWithFakeResolverValues = readConfig(hoconSource, fallback)
+                        .resolve(ConfigResolveOptions.defaults().appendResolver(FakeResolver))
+                     val typedConfig = extract(configWithFakeResolverValues)
+                     val config = readConfig(hoconSource, fallback)
+                     ConfigSource(sourcePackage.identifier, config, typedConfig, null)
                   } catch (e: Exception) {
                      logger.error(e) { "($loaderTypeName) - Parsing the config from source package ${sourcePackage.packageMetadata.identifier.id} failed: ${e.message}" }
-                     throw e
+                     ConfigSource<T>(sourcePackage.identifier, null, null, e.message)
                   }
-               }.reduce { acc, config ->
-                  // when merging, "config" values beat "acc" values.
-                  config.withFallback(acc)
-               }.resolve()
+               }
+               val mergedConfig = _configSources
+                  .filter { !it.hasError }
+                  .map { it.unresolvedConfig!! }
+                  .reduce { acc, config ->
+                     // when merging, "config" values beat "acc" values.
+                     config.withFallback(acc)
+                  }.resolve()
                extract(mergedConfig)
             }
          }
@@ -121,6 +159,26 @@ abstract class MergingHoconConfigRepository<T : Any>(
       }
       // Design choice:  Immediately reload the config, so that we get notified early if the config is invalid.
       typedConfig()
+   }
+
+}
+
+/**
+ * Resolver which just returns the requested path as the value,
+ * effectively leaving the value unresolved.
+ *
+ * Used for parsing sources of config, rather than actually building config instances.
+ *
+ */
+private object FakeResolver : ConfigResolver {
+   override fun lookup(path: String): ConfigValue {
+      val configValue = ConfigFactory.parseMap(mapOf("local" to "\${path}"))
+         .getValue("local")
+      return configValue
+   }
+
+   override fun withFallback(fallback: ConfigResolver): ConfigResolver {
+      return fallback
    }
 
 }

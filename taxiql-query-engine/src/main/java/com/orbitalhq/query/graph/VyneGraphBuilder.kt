@@ -109,7 +109,7 @@ fun querySpec(operation: QueryOperation) =
 
 fun parameter(paramTypeFqn: String) = Element(ParamNames.toParamName(paramTypeFqn), ElementType.PARAMETER)
 fun operation(service: Service, operation: RemoteOperation): Element {
-   val operationReference = OperationNames.name(service.qualifiedName, operation.name)
+   val operationReference = OperationNames.name(service.fullyQualifiedName, operation.name)
    return operation(operationReference, operation)
 }
 

@@ -142,6 +142,11 @@
                <groupId>commons-logging</groupId>
                <artifactId>commons-logging</artifactId>
             </exclusion>
+            <!-- breaks native compilation, but required for xml support -->
+            <exclusion>
+               <groupId>com.fasterxml.woodstox</groupId>
+               <artifactId>woodstox-core</artifactId>
+            </exclusion>
          </exclusions>
       </dependency>
       <dependency>
@@ -185,6 +190,15 @@
          <artifactId>taxiql-query-engine</artifactId>
          <type>test-jar</type>
          <version>${project.version}</version>
+         <scope>test</scope>
+         <exclusions>
+            <!-- breaks native compilation, but required for xml support -->
+            <exclusion>
+               <groupId>com.fasterxml.woodstox</groupId>
+               <artifactId>woodstox-core</artifactId>
+            </exclusion>
+
+         </exclusions>
       </dependency>
       <!-- Caffeine is excluded, as it breaks native runtime -->
 <!--      <dependency>-->
@@ -218,7 +232,7 @@
                   <enabled>true</enabled>
                </metadataRepository>
                <buildArgs>
-                  <arg>--initialize-at-build-time=org.apache.commons.logging</arg>
+                  <arg>--initialize-at-build-time=org.apache.commons.logging,com.ctc.wstx.api.ReaderConfig</arg>
                </buildArgs>
                <requiredVersion>22.3</requiredVersion>
                <verbose>true</verbose>

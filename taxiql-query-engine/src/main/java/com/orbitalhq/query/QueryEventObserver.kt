@@ -12,8 +12,6 @@ interface QueryEventConsumer : RemoteCallOperationResultHandler {
 
 sealed class QueryEvent
 
-data class VyneQueryStatisticsEvent(val vyneQueryStatistics: VyneQueryStatistics): QueryEvent()
-
 data class RestfulQueryResultEvent(
    val query: Query,
    override val queryId: String,

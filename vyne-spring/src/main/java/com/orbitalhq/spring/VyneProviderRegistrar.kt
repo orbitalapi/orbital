@@ -1,6 +1,5 @@
 package com.orbitalhq.spring
 
-import io.micrometer.core.instrument.MeterRegistry
 import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.query.caching.StateStoreProvider
 import com.orbitalhq.query.connectors.OperationCacheProviderBuilder
@@ -11,7 +10,9 @@ import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.spring.config.VyneSpringProjectionConfiguration
 import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.spring.invokers.RestTemplateInvoker
+import com.orbitalhq.spring.metrics.MicrometerMetricsReporter
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
+import io.micrometer.core.instrument.MeterRegistry
 import lang.taxi.packages.utils.log
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -24,7 +25,6 @@ import org.springframework.web.reactive.function.client.WebClient
 annotation class EnableVyne
 
 @Configuration
-@Import(FormatSpecRegistry::class)
 class EnableVyneConfiguration {
    @Bean
    fun vyneFactory(
@@ -34,7 +34,8 @@ class EnableVyneConfiguration {
       vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration,
       formatSpecRegistry: FormatSpecRegistry,
       operationCacheFactory: OperationCacheFactory,
-      stateStoreProvider: StateStoreProvider?
+      stateStoreProvider: StateStoreProvider?,
+      meterRegistry: MeterRegistry
    ): VyneFactory {
       return VyneFactory(
          schemaProvider,
@@ -43,7 +44,8 @@ class EnableVyneConfiguration {
          vyneSpringProjectionConfiguration,
          formatSpecRegistry = formatSpecRegistry,
          operationCacheFactory = operationCacheFactory,
-         stateStoreProvider = stateStoreProvider
+         stateStoreProvider = stateStoreProvider,
+         metricsReporter = MicrometerMetricsReporter(meterRegistry)
       )
    }
 

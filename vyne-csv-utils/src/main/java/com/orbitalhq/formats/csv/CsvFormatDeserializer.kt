@@ -1,5 +1,6 @@
 package com.orbitalhq.formats.csv
 
+import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.format.ModelFormatDeserializer
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.Schema
@@ -7,11 +8,11 @@ import com.orbitalhq.schemas.Type
 import org.apache.commons.csv.CSVParser
 
 object CsvFormatDeserializer : ModelFormatDeserializer {
-   override fun parseRequired(value: Any, metadata: Metadata): Boolean {
+   override fun canParse(value: Any, metadata: Metadata): Boolean {
       return value is String
    }
 
-   override fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema): Any {
+   override fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema, source: DataSource): Any {
 
       val csvAnnotation = CsvFormatSpecAnnotation.from(metadata)
       require(value is String)

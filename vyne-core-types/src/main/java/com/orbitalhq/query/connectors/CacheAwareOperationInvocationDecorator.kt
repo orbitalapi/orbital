@@ -10,6 +10,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
+import lang.taxi.services.OperationScope
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 
@@ -46,7 +47,7 @@ class CacheAwareOperationInvocationDecorator(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String
    ): Flow<TypedInstance> {
-      if (invoker.getCachingBehaviour(service, operation) == OperationCachingBehaviour.NO_CACHE) {
+      if (!isCacheable(operation, service, invoker)) {
          return invoker.invoke(service, operation, parameters, eventDispatcher, queryId)
       }
 
@@ -84,7 +85,6 @@ class CacheAwareOperationInvocationDecorator(
             }
          }
 
-
       return flux.asFlow()
 //      try {
 //         var emittedRecords = 0
@@ -103,6 +103,17 @@ class CacheAwareOperationInvocationDecorator(
 //         throw e
 //      }
    }
+
+   private fun isCacheable(operation: RemoteOperation, service: Service, invoker: OperationInvoker): Boolean {
+      // TODO : Make this richer
+      return when {
+         invoker.getCachingBehaviour(service, operation) == OperationCachingBehaviour.NO_CACHE -> false
+         operation.operationType == OperationScope.MUTATION -> false
+         operation.returnType.isStream -> false
+         else -> true
+      }
+   }
+
 
    companion object {
       fun decorateAll(

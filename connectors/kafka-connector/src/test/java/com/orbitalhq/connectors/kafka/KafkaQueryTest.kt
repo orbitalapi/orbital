@@ -3,7 +3,11 @@ package com.orbitalhq.connectors.kafka
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
 import com.orbitalhq.Vyne
+import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
+import com.orbitalhq.connectors.jdbc.HikariJdbcConnectionFactory
+import com.orbitalhq.connectors.jdbc.NamedTemplateConnection
+import com.orbitalhq.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import com.orbitalhq.connectors.kafka.registry.InMemoryKafkaConnectorRegistry
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
@@ -12,6 +16,7 @@ import com.orbitalhq.query.QueryResult
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyne
+import com.zaxxer.hikari.HikariConfig
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
@@ -31,6 +36,8 @@ import org.junit.runner.RunWith
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Configuration
+import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.test.context.junit4.SpringRunner
 import java.time.Instant
 import java.util.*
@@ -43,39 +50,20 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
 
    private val logger = KotlinLogging.logger {}
 
-   lateinit var kafkaProducer: Producer<String, ByteArray>
-
-   lateinit var connectionRegistry: InMemoryKafkaConnectorRegistry
-
 
    @Before
    override fun before() {
       super.before()
-      val props = Properties()
-      props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.bootstrapServers)
-      props.put(ProducerConfig.CLIENT_ID_CONFIG, "KafkaProducer-${Instant.now().toEpochMilli()}")
-      props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java.name)
-      props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer::class.java.name)
-      props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 1000)
-      kafkaProducer = KafkaProducer(props)
-
-      connectionRegistry = InMemoryKafkaConnectorRegistry()
-
-      val connection = KafkaConnectionConfiguration(
-         "moviesConnection",
-         kafkaContainer.bootstrapServers,
-         "VyneTest-" + Random.nextInt(),
-      )
-
-      connectionRegistry.register(connection)
-
+      val (producer, registry) = buildProducer()
+      kafkaProducer = producer
+      connectionRegistry = registry
    }
 
 
    @Test
    fun `can use a TaxiQL statement to consume kafka stream`(): Unit = runBlocking {
 
-      val (vyne, _) = vyneWithKafkaInvoker()
+      val (vyne, _) = vyneWithKafkaInvoker(defaultSchema)
 
       val message1 = "{\"id\": \"1234\",\"title\": \"Title 1\"}"
       val message2 = "{\"id\": \"5678\",\"title\": \"Title 2\"}"
@@ -92,7 +80,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
    @Test
    fun `can consume from the same topic concurrently`(): Unit = runBlocking {
 
-      val (vyne, _) = vyneWithKafkaInvoker()
+      val (vyne, _) = vyneWithKafkaInvoker(defaultSchema)
 
       val resultsFromQuery1 = mutableListOf<TypedInstance>()
       val future1 = buildFiniteQuery(vyne, "query1", resultsFromQuery1)
@@ -112,7 +100,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
 
    @Test
    fun `when query is cancelled, new messages are not propogated`() {
-      val (vyne, _) = vyneWithKafkaInvoker()
+      val (vyne, _) = vyneWithKafkaInvoker(defaultSchema)
 
       val resultsFromQuery1 = mutableListOf<TypedInstance>()
       val query = runBlocking { vyne.query("""stream { Movie }""") }
@@ -135,7 +123,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
 
    @Test
    fun `when no active consumers then topic is unsubscribed`() {
-      val (vyne, streamManager) = vyneWithKafkaInvoker()
+      val (vyne, streamManager) = vyneWithKafkaInvoker(defaultSchema)
       val resultsFromQuery1 = mutableListOf<TypedInstance>()
       val query = runBlocking { vyne.query("""stream { Movie }""") }
       collectQueryResults(query, resultsFromQuery1)
@@ -166,7 +154,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
 
    @Test
    fun `when query is cancelled, subsequent queries receive new messages`() {
-      val (vyne, _) = vyneWithKafkaInvoker()
+      val (vyne, _) = vyneWithKafkaInvoker(defaultSchema)
 
       val resultsFromQuery1 = mutableListOf<TypedInstance>()
       val query1 = runBlocking { vyne.query("""stream { Movie }""") }
@@ -246,32 +234,14 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
             "senderName" to "jimmy"
          )
       )
-
-   }
-
-   private fun collectQueryResults(query: QueryResult, resultsFromQuery1: MutableList<TypedInstance>) {
-      GlobalScope.async {
-         logger.info { "Collecting..." }
-         query.results
-            .collect {
-               resultsFromQuery1.add(it)
-               logger.info { "received event - have now captured ${resultsFromQuery1.size} events in result handler" }
-            }
-      }
    }
 
 
-   private fun sendMessage(message: ByteArray, topic: String = "movies"): RecordMetadata {
-      logger.info { "Sending message to topic $topic" }
-      val metadata = kafkaProducer.send(ProducerRecord(topic, UUID.randomUUID().toString(), message))
-         .get()
-      logger.info { "message sent to topic $topic with offset ${metadata.offset()}" }
-      return metadata
-   }
 
-   private fun sendMessage(message: String, topic: String = "movies"): RecordMetadata {
-      return sendMessage(message.toByteArray(), topic)
-   }
+
+
+
+
 
    private fun message(messageId: String) = """{ "id": "$messageId"}"""
 
@@ -293,19 +263,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
 
             """.trimIndent()
 
-   private fun vyneWithKafkaInvoker(taxi: String = defaultSchema): Pair<Vyne, KafkaStreamManager> {
-      val schema = TaxiSchema.fromStrings(
-         listOf(
-            KafkaConnectorTaxi.schema,
-            taxi
-         )
-      )
-      val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema))
-      val invokers = listOf(
-         KafkaInvoker(kafkaStreamManager)
-      )
-      return testVyne(schema, invokers) to kafkaStreamManager
-   }
+
 
    fun buildFiniteQuery(
       vyne: Vyne,

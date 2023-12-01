@@ -51,6 +51,9 @@ class S3Invoker(
 
     companion object {
         private val logger = KotlinLogging.logger {}
+       init {
+           S3ConnectorTaxi.registerConnectionUsage()
+       }
     }
 
     data class S3BucketConfig(
@@ -74,7 +77,13 @@ class S3Invoker(
         val taxiSchema = schema.taxi
         val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
         val query = Compiler(taxiQuery, importSources = listOf(taxiSchema)).queries().first()
-        val (sql, paramList) = SelectStatementGenerator(taxiSchema).toSql(query) { type -> type.toQualifiedName().typeName.toUpperCase() }
+       // TODO :
+       // The below is broken.
+       // The SQL statement stopped returning results after the generator
+       // was modified to use name quoting for table names. (select from "Foo")
+       // Suspect that it's simply a grammar issue in JOOQ / DSL, however
+       // it's not an area of focus right now (or used), so will defer fixing.
+       val (sql, paramList) = SelectStatementGenerator(taxiSchema).toSql(query) { type -> type.toQualifiedName().typeName.toUpperCase() }
         val paramMap = paramList.associate { param -> param.nameUsedInTemplate to param.value }
         val resultTypeQualifiedName = query.resultType()
         val resultType = schema.type(resultTypeQualifiedName.toVyneQualifiedName())

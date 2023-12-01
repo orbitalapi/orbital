@@ -12,5 +12,4 @@ spring:
       url: "jdbc:postgresql://localhost:5432/voyager"
       username: "vynedb"
       password: "vynedb"
-      driver: "org.postgresql.Driver"
       driverClassName: org.postgresql.Driver

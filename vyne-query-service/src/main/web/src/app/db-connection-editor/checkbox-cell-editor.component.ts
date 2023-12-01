@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {ICellEditorAngularComp, ICellRendererAngularComp} from 'ag-grid-angular';
 import {ICellEditorParams, ICellRendererParams} from 'ag-grid-community';
-import {MatCheckboxChange} from '@angular/material/checkbox';
+import {MatLegacyCheckboxChange as MatCheckboxChange} from '@angular/material/legacy-checkbox';
 
 @Component({
   selector: 'app-checkbox-cell-editor',

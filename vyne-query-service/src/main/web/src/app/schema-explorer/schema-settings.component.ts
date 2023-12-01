@@ -3,7 +3,7 @@ import { SourcePackageDescription } from 'src/app/package-viewer/packages.servic
 import { SchemaImporterService } from 'src/app/schema-importer/schema-importer.service';
 import { Message } from 'src/app/services/schema';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatLegacySnackBar as MatSnackBar } from '@angular/material/legacy-snack-bar';
 
 @Component({
   selector: 'app-schema-settings',

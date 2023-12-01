@@ -1,6 +1,6 @@
 import {NgModule} from '@angular/core';
 import {TabbedResultsViewComponent} from './tabbed-results-view.component';
-import {MatTabsModule} from '@angular/material/tabs';
+import {MatLegacyTabsModule as MatTabsModule} from '@angular/material/legacy-tabs';
 import {ObjectViewModule} from '../object-view/object-view.module';
 import {CallExplorerModule} from '../query-panel/taxi-viewer/call-explorer/call-explorer.module';
 import {CommonModule} from '@angular/common';

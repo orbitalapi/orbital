@@ -224,12 +224,12 @@ export function findSchemaMember(schema: Schema, memberName: string, anonymousTy
 
   if (memberName.includes('@@')) {
     const operationName = splitOperationQualifiedName(memberName);
-    const service = schema.services.find(s => s.qualifiedName === operationName.serviceName)
+    const service = schema.services.find(s => s.fullyQualifiedName === operationName.serviceName)
     return SchemaMember.fromService(service)
       .find(m => m.kind === 'SERVICE')
   }
 
-  const service = schema.services.find(service => service.qualifiedName == memberName)
+  const service = schema.services.find(service => service.fullyQualifiedName == memberName)
   if (service) {
     return SchemaMember.fromService(service)
       .find(m => m.kind === 'SERVICE')
@@ -374,7 +374,7 @@ export interface ServiceLineage {
   metadata: Metadata[]
 }
 export interface Service extends SchemaMemberNamed, Named, Documented {
-  qualifiedName: string; // This is messy, and needs fixing up.
+  fullyQualifiedName: string; // This is messy, and needs fixing up.
   operations: Operation[];
   queryOperations: QueryOperation[];
   tableOperations: TableOperation[];
@@ -551,7 +551,13 @@ export interface SchemaNodeSet {
   links: SchemaGraphLink[];
 }
 
+export interface SchemaMemberReference {
+  qualifiedName: QualifiedName;
+  kind: SchemaMemberKind;
+}
 
+// This class was built before server-side schema members
+// implemented SchemaMemberReference.
 export class SchemaMember {
   constructor(
     public readonly name: QualifiedName,
@@ -573,6 +579,14 @@ export class SchemaMember {
   }
 
   attributeNames: string[];
+
+  // Facade to the new API
+  get schemaMemberReference():SchemaMemberReference {
+    return {
+      qualifiedName: this.name,
+      kind: this.kind
+    }
+  }
 
   static fromService(service: Service): SchemaMember[] {
     const serviceMember = new SchemaMember(

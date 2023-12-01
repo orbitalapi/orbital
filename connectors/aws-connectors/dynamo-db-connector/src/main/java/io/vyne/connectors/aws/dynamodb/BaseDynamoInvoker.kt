@@ -88,7 +88,8 @@ abstract class BaseDynamoInvoker(
             resultCode = resultCode,
             exchange = SqlExchange(
                 sql = query.toString(),
-                recordCount = count
+                recordCount = count,
+               verb = "SELECT"
             )
 
         )

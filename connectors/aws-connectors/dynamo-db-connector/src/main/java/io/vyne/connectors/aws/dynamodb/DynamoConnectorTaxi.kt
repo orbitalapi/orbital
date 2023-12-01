@@ -1,8 +1,16 @@
 package com.orbitalhq.connectors.aws.dynamodb
 
+import com.orbitalhq.connections.ConnectionUsageMetadataRegistry
+import com.orbitalhq.connections.ConnectionUsageRegistration
+import com.orbitalhq.schemas.fqn
 import lang.taxi.types.Annotation
 
 object DynamoConnectorTaxi {
+   fun registerConnectorUsage() {
+      ConnectionUsageMetadataRegistry.register(
+         ConnectionUsageRegistration(Annotations.Table.NAME.fqn(), Annotations.Table::connectionName.name)
+      )
+   }
 
     internal const val namespace = "com.orbitalhq.aws.dynamo"
     val schema = """
@@ -30,7 +38,6 @@ object DynamoConnectorTaxi {
                     )
                 }
             }
-
         }
 
         object DynamoService {

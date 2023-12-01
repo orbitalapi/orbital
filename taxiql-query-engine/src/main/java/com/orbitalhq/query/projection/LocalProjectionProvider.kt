@@ -6,10 +6,12 @@ import com.orbitalhq.models.ValueLookupReturnedNull
 import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.FactDiscoveryStrategy
 import com.orbitalhq.models.facts.ScopedFact
+import com.orbitalhq.query.MetricTags
 import com.orbitalhq.query.Projection
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.TypeQueryExpression
-import com.orbitalhq.query.VyneQueryStatistics
+import com.orbitalhq.query.TypedInstanceWithMetadata
+import com.orbitalhq.query.withProcessingMetadata
 import com.orbitalhq.schemas.Type
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -17,6 +19,7 @@ import lang.taxi.accessors.CollectionProjectionExpressionAccessor
 import lang.taxi.types.ArrayType
 import lang.taxi.types.StreamType
 import mu.KotlinLogging
+import java.time.Instant
 import java.util.concurrent.Executors
 
 private val projectingDispatcher = Executors.newFixedThreadPool(16).asCoroutineDispatcher()
@@ -31,8 +34,9 @@ class LocalProjectionProvider : ProjectionProvider {
       results: Flow<TypedInstance>,
       projection: Projection,
       context: QueryContext,
-      globalFacts: FactBag
-   ): Flow<Pair<TypedInstance, VyneQueryStatistics>> {
+      globalFacts: FactBag,
+      metricTags: MetricTags
+   ): Flow<TypedInstanceWithMetadata> {
 
       context.cancelFlux.subscribe {
          logger.info { "QueryEngine for queryId ${context.queryId} is cancelling" }
@@ -52,8 +56,8 @@ class LocalProjectionProvider : ProjectionProvider {
          .distinctUntilChanged()
          .map { emittedResult ->
             logger.debug { "Starting to project instance of ${emittedResult.value.type.qualifiedName.shortDisplayName} (index ${emittedResult.index}) to instance of ${projection.type.qualifiedName.shortDisplayName}" }
-
             projectingScope.async {
+               val startTime = Instant.now()
                if (!isActive) {
                   logger.warn { "Query Cancelled exiting!" }
                   cancel()
@@ -104,7 +108,9 @@ class LocalProjectionProvider : ProjectionProvider {
                   context.only(globalFacts.rootFacts(), scopedFacts = listOf(scopedFact))
                }
                val buildResult = projectionContext.build(TypeQueryExpression(projectionType))
-               buildResult.results.map { it to projectionContext.vyneQueryStatistics }
+               buildResult.results.map {
+                  it.withProcessingMetadata(asOf = startTime)
+               }
             }
          }
          .buffer(16).map { it.await() }.flatMapMerge { it }

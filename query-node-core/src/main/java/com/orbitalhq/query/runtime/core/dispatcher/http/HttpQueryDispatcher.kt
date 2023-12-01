@@ -32,10 +32,7 @@ import reactor.kotlin.core.publisher.toFlux
 @ConditionalOnProperty("vyne.dispatcher.http.enabled", havingValue = "true", matchIfMissing = false)
 class HttpQueryDispatcher(
    private val webClient: WebClient.Builder,
-   private val servicesRepository: ServicesConfigRepository,
-   private val authTokenRepository: AuthSchemeRepository,
-   private val connectionsConfigProvider: SourceLoaderConnectorsRegistry,
-   private val schemaProvider: SchemaProvider,
+   private val messageFactory: QueryMessageFactory,
    @Value("\${vyne.dispatcher.http.url}") private val queryRouterUrl: String
 ) : StreamingQueryDispatcher {
 
@@ -54,15 +51,7 @@ class HttpQueryDispatcher(
       resultMode: ResultMode,
       arguments: Map<String, Any?>
    ): Flux<Any> {
-      val message = QueryMessage(
-         query = query,
-         sourcePackages = schemaProvider.schema.packages,
-         connections = connectionsConfigProvider.load(),
-         authTokens = authTokenRepository.getAllTokens(),
-         services = servicesRepository.load(),
-         resultMode, mediaType, clientQueryId,
-         arguments
-      )
+      val message = messageFactory.buildQueryMessage(query, clientQueryId, mediaType, resultMode, arguments)
 
       // HACK: We can't currently support streaming messages,
       // so we get back a Mono<T>, where T could either be a collection

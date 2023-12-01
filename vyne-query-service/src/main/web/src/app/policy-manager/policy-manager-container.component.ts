@@ -3,7 +3,7 @@ import {Policy} from './policies';
 import {SchemaImportRequest, TypesService} from '../services/types.service';
 import {Schema, SchemaSpec, Type} from '../services/schema';
 import {Observable} from 'rxjs';
-import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatLegacySnackBar as MatSnackBar} from '@angular/material/legacy-snack-bar';
 
 @Component({
   selector: 'app-policy-manager-container',

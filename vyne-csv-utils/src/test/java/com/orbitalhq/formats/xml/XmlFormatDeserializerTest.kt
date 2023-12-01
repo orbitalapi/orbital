@@ -129,6 +129,7 @@ class XmlFormatDeserializerTest : DescribeSpec({
       it("should support xpath declarations and functions") {
          val schema = TaxiSchema.from(
             """
+               @com.orbitalhq.formats.Xml
          model Foo {
             assetClass : String by xpath("/Foo/assetClass")
             identifierValue : String? by when (this.assetClass) {
@@ -164,6 +165,36 @@ class XmlFormatDeserializerTest : DescribeSpec({
          ) as TypedObject
          fooWithIsin["identifierValue"].value.should.equal("ISIN-138443")
       }
-   }
 
+      it("is possible to embed xml within json") {
+         val schema = TaxiSchema.from(
+            """
+model MyMessage {
+    messageId : MessageId inherits String
+    xmlRecord : Person
+}
+
+@com.orbitalhq.formats.Xml
+model Person {
+    name : PersonName inherits String
+}"""
+         )
+         val src = """{
+    "messageId" : "123",
+    "xmlRecord" : "<person><name>Jimmy</name></person>"
+}"""
+         val typedInstance = TypedInstance.from(
+            schema.type("MyMessage"), src, schema,
+            source = Provided,
+            formatSpecs = listOf(XmlFormatSpec)
+            )
+         typedInstance.toRawObject().shouldBe(
+            mapOf(
+               "messageId" to "123",
+               "xmlRecord" to mapOf("name" to "Jimmy")
+            ),
+
+         )
+      }
+   }
 })

@@ -1,12 +1,23 @@
 package com.orbitalhq.connectors.jdbc
 
 import com.orbitalhq.annotations.AnnotationWrapper
+import com.orbitalhq.connections.ConnectionUsageMetadataRegistry
+import com.orbitalhq.connections.ConnectionUsageRegistration
 import com.orbitalhq.schemas.Metadata
+import com.orbitalhq.schemas.fqn
 import lang.taxi.TaxiDocument
 import lang.taxi.types.Annotation
 import lang.taxi.types.QualifiedName
 
 object JdbcConnectorTaxi {
+   fun registerConnectionUsage() {
+         ConnectionUsageMetadataRegistry.register(
+            ConnectionUsageRegistration(Annotations.DatabaseOperation.NAME.fqn(), "connection")
+         )
+      ConnectionUsageMetadataRegistry.register(
+         ConnectionUsageRegistration(Annotations.DatabaseOperation.NAME.fqn(), Annotations.DatabaseOperation::connectionName.name)
+      )
+   }
    object Annotations {
       internal const val namespace = "com.orbitalhq.jdbc"
       const val Column = "$namespace.Column"
@@ -46,6 +57,9 @@ object JdbcConnectorTaxi {
                   connectionName = annotation.parameters["connection"] as String
                )
             }
+
+
+
          }
 
          override fun asAnnotation(schema: TaxiDocument): Annotation {

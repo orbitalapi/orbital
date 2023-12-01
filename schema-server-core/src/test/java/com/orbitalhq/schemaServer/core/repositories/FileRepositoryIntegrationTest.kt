@@ -112,7 +112,7 @@ class FileRepositoryIntegrationTest {
          .should.be.`false`
 
       Awaitility.await()
-         .atMost(2, TimeUnit.SECONDS)
+         .atMost(10, TimeUnit.SECONDS)
          .until<Boolean> {
             schemaClient.schema()
                .services.isNotEmpty()

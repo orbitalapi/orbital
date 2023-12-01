@@ -1,7 +1,7 @@
 @use '@angular/material' as mat;
-@import "~src/theme";
+@import "src/theme";
 @import "../../../voyager-app/styles.scss";
-@import "~src/orbital-theme";
+@import "src/orbital-theme";
 
 :host {
   display: flex;
@@ -19,6 +19,10 @@
     height: 32px;
     margin-right: 0.5rem;
   }
+}
+
+a:visited {
+  color: unset;
 }
 
 .nav-link {
@@ -73,19 +77,22 @@ mat-icon {
   fill: white;
   color: white;
 
+  margin-right: 1rem;
 }
 
 .built-by-orbital {
-  margin-left: 2rem;
-
-  a {
+  .wrapper {
     display: flex;
     align-items: center;
-    font-size: 0.7rem;
   }
+
+  margin-left: 2rem;
+
+  font-size: 0.7rem;
 
   mat-icon {
     width: unset;
+    margin-top: -3px;
   }
 }
 

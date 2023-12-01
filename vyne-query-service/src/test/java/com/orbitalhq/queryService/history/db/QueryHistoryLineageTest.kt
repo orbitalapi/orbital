@@ -7,9 +7,9 @@ import com.orbitalhq.VyneProvider
 import com.orbitalhq.history.db.QueryHistoryDbWriter
 import com.orbitalhq.history.rest.QueryHistoryService
 import com.orbitalhq.formats.csv.CsvFormatSpec
+import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.ValueWithTypeName
-import com.orbitalhq.query.runtime.core.MetricsEventConsumer
 import com.orbitalhq.query.runtime.core.QueryResponseFormatter
 import com.orbitalhq.query.runtime.core.QueryService
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
@@ -75,6 +75,9 @@ class QueryHistoryLineageTest {
    @MockBean
    lateinit var configLoader : SchemaRepositoryConfigLoader
 
+   @MockBean
+   lateinit var queryMetricsReporter: QueryMetricsReporter
+
 
    @Autowired
    lateinit var historyDbWriter: QueryHistoryDbWriter
@@ -105,7 +108,6 @@ class QueryHistoryLineageTest {
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),
          ActiveQueryMonitor(),
-         MetricsEventConsumer(meterRegistry),
          QueryResponseFormatter(listOf(CsvFormatSpec), schemaProvider)
       )
       runBlocking {

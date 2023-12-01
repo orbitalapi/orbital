@@ -1,9 +1,9 @@
 import { NgModule } from '@angular/core';
 import { InlineQueryRunnerComponent } from './inline-query-runner.component';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatLegacyProgressBarModule as MatProgressBarModule } from '@angular/material/legacy-progress-bar';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { CommonModule } from '@angular/common';
-import { MatButtonModule } from '@angular/material/button';
+import { MatLegacyButtonModule as MatButtonModule } from '@angular/material/legacy-button';
 import { VyneServicesModule } from '../services/vyne-services.module';
 import { TabbedResultsViewModule } from '../tabbed-results-view/tabbed-results-view.module';
 

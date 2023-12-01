@@ -117,7 +117,7 @@ resource "aws_security_group" "database" {
 resource "aws_db_instance" "voyager-db" {
    allocated_storage         = 10
    engine                    = "postgres"
-   engine_version            = "13.4"
+   engine_version            = "15.3"
    instance_class            = "db.t3.micro"
    db_name                   = "voyager"
    username                  = "voyager"

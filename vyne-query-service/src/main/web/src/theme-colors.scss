@@ -58,8 +58,10 @@ $dark-blue-1: #1d2539;
 $blueish: #afdfff;
 
 $bg-info: rgba($blueish, 0.3);
-$bg-warn: #f5ab26;
-$bg-error: $red-light;
+$bg-ok: $green-400;
+$bg-status-unknown: $slate-400;
+$bg-warn: $amber-400;
+$bg-error: $red-400;
 
 $warning-2: #DD8902;
 

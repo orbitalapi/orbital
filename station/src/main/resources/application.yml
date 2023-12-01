@@ -30,6 +30,9 @@ spring:
       locations: classpath:db/migration
 
 management:
+   endpoint:
+     prometheus:
+        enabled: true
    endpoints:
       web:
          exposure:
@@ -44,3 +47,32 @@ vyne:
    analytics:
       mode: Inprocess
 orbital:
+
+
+logging:
+   level:
+
+      org.springframework: WARN
+      com.netflix.discovery.InstanceInfoReplicator: ERROR
+
+      #       These two netflix loggers are REALLY noisy - it logs errors on startup, complaining it can't connect .. generally those errors are ignorable
+      #        But, in some cases we may care -- so consider turning this back on.
+      com.netflix.discovery.shared.transport.decorator.RedirectingEurekaHttpClient: OFF
+      com.netflix.discovery.DiscoveryClient: OFF
+      org.apache.http: OFF
+      com.netflix: WARN
+      com.hazelcast: WARN
+      io.vyne: INFO
+#      io.vyne.query.chat: DEBUG
+      #       Enable this to get graph debug schemas:
+      #      io.vyne.query.GraphSearcher: TRACE
+      #      io.vyne.query: DEBUG
+      org.apache.catalina: WARN
+      # AdminClientConfig is used for testing connections,
+      # and gets really noisy.
+      org.apache.kafka.clients.admin: WARN
+      org.apache.kafka.common.metrics: WARN
+      org.apache.kafka.common.utils: WARN
+      # Unfortunately, this is really really noisy when we try to test
+      # kafka connections, that have failed
+#      org.apache.kafka.clients.NetworkClient: ERROR

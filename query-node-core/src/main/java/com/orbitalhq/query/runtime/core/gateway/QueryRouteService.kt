@@ -1,6 +1,10 @@
 package com.orbitalhq.query.runtime.core.gateway
 
+import com.orbitalhq.metrics.QueryMetricsReporter
+import com.orbitalhq.query.MetricTags
+import com.orbitalhq.query.MetricsTagBuilder
 import com.orbitalhq.query.runtime.FailedSearchResponse
+import com.orbitalhq.query.tagsOf
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.consumer.SchemaStore
 import lang.taxi.query.TaxiQlQuery
@@ -12,6 +16,7 @@ import org.springframework.web.reactive.function.server.ServerResponse.status
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import reactor.kotlin.core.publisher.toFlux
+import java.time.Instant
 
 /**
  * The handler / service which receives HTTP invocations
@@ -25,7 +30,8 @@ import reactor.kotlin.core.publisher.toFlux
 class QueryRouteService(
    private val schemaStore: SchemaStore,
    private val executor: RoutedQueryExecutor?,
-   private val queryPrefix:String = "/api/q/"
+   private val queryPrefix:String = "/api/q/",
+   private val metricsReporter: QueryMetricsReporter
 ) : HandlerFunction<ServerResponse> {
 
    private var queryRouter: QueryRouter = QueryRouter.build(emptyList())
@@ -78,6 +84,7 @@ class QueryRouteService(
       }
       logger.info { "Received query invocation on ${request.path()} - matches with query ${query.query.name}" }
       val queryResultFlux = executor.handleRoutedQuery(query)
+         .let { metricsReporter.observeRequestResponse(it, Instant.now(), getMetricsTags(query)) }
       return ServerResponse.ok().body(queryResultFlux)
 
       // I have tried and tried and tried.
@@ -105,6 +112,11 @@ class QueryRouteService(
 //               FailedSearchResponse(e.message ?: "Query failed with exception ${e::class.simpleName}", queryId = "")
 //            )
 //      }
+   }
+
+   private fun getMetricsTags(query: RoutedQuery): MetricTags {
+      return tagsOf().queryStream(query.query.name.fullyQualifiedName)
+         .tags()
    }
 
    override fun handle(request: ServerRequest): Mono<ServerResponse> {

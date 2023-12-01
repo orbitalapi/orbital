@@ -1,6 +1,6 @@
 package com.orbitalhq.models.format
 
-import com.google.common.net.MediaType
+import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.TypeNamedInstance
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.schemas.AttributeName
@@ -40,19 +40,26 @@ interface ModelFormatSerializer {
    fun write(result: TypedInstance, metadata: Metadata, schema: Schema, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
    fun write(result: TypeNamedInstance, attributes: Set<AttributeName>, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
    fun write(result: TypeNamedInstance, type: Type, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
+
+   fun write(result: TypedInstance, schema: Schema, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
+   fun writeAsBytes(result: TypedInstance, schema: Schema, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):ByteArray
 }
 
 interface ModelFormatDeserializer {
    /**
     * Indicates if this spec can parse the content of the value into something else.
-    * Generally returns a Map<> or List<Map<>> which the TypedObjectFactory will consume later
+    * Generally returns a Map<> or List<Map<>> which the TypedObjectFactory will consume later.
+    *
+    * Deserializers may be called on content that has already been deseriazlied.
+    * Therefore, canParse() may return false for a correctly configured deserializer,
+    * indicating "no more parsing is required".
     */
-   fun parseRequired(value: Any, metadata: Metadata): Boolean
+   fun canParse(value: Any, metadata: Metadata): Boolean
 
    /**
     * Should return either List<Map<String,Any>> or Map<String,Any>, or a TypedInstance
     */
-   fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema): Any
+   fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema, source: DataSource): Any
 
 }
 

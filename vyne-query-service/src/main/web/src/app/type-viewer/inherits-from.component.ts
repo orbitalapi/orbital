@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { Type } from '../services/schema';
 import { openTypeSearch } from './model-attribute-tree-list/base-schema-member-display';
-import { isNullOrUndefined } from 'util';
-import { MatDialog } from '@angular/material/dialog';
+import { isNullOrUndefined } from 'src/app/utils/utils';
+import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 import { BaseDeferredEditComponent } from './base-deferred-edit.component';
 
 @Component({

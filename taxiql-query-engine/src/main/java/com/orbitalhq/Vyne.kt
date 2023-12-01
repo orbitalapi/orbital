@@ -1,6 +1,8 @@
 package com.orbitalhq
 
 import com.google.common.annotations.VisibleForTesting
+import com.orbitalhq.metrics.NoOpMetricsReporter
+import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.DefinedInSchema
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
@@ -80,10 +82,11 @@ class Vyne(
       queryId: String = UUID.randomUUID().toString(),
       clientQueryId: String? = null,
       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
-      arguments: Map<String, Any?> = emptyMap()
+      arguments: Map<String, Any?> = emptyMap(),
+      metricsTags:MetricTags = MetricTags.NONE
    ): QueryResult {
       val (taxiQlQuery, queryOptions) = parseQuery(vyneQlQuery)
-      return query(taxiQlQuery, queryId, clientQueryId, eventBroker, arguments, queryOptions = queryOptions)
+      return query(taxiQlQuery, queryId, clientQueryId, eventBroker, arguments, queryOptions = queryOptions, metricsTags)
    }
 
 
@@ -97,18 +100,19 @@ class Vyne(
       clientQueryId: String? = null,
       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
       arguments: Map<String, Any?> = emptyMap(),
-      queryOptions: QueryOptions
+      queryOptions: QueryOptions,
+      metricsTags: MetricTags = MetricTags.NONE
    ): QueryResult {
       val currentJob = currentCoroutineContext().job
       val (queryContext, expression) = buildContextAndExpression(taxiQl, queryId, clientQueryId, eventBroker, arguments, queryOptions)
       val queryCanceller = QueryCanceller(queryContext, currentJob)
       eventBroker.addHandler(queryCanceller)
       return when (taxiQl.queryMode) {
-         lang.taxi.query.QueryMode.FIND_ALL -> queryContext.findAll(expression)
-         lang.taxi.query.QueryMode.FIND_ONE -> queryContext.find(expression)
-         lang.taxi.query.QueryMode.STREAM -> queryContext.findAll(expression)
-         lang.taxi.query.QueryMode.MAP -> queryContext.doMap(expression)
-         lang.taxi.query.QueryMode.MUTATE -> queryContext.mutate(expression as MutatingQueryExpression)
+         lang.taxi.query.QueryMode.FIND_ALL -> queryContext.findAll(expression, metricsTags = metricsTags)
+         lang.taxi.query.QueryMode.FIND_ONE -> queryContext.find(expression, metricsTags = metricsTags)
+         lang.taxi.query.QueryMode.STREAM -> queryContext.findAll(expression, metricsTags = metricsTags)
+         lang.taxi.query.QueryMode.MAP -> queryContext.doMap(expression, metricsTags = metricsTags)
+         lang.taxi.query.QueryMode.MUTATE -> queryContext.mutate(expression as MutatingQueryExpression, metricsTags = metricsTags)
       }
    }
 

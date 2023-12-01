@@ -10,8 +10,8 @@ import { ConfigDisabledFormComponent } from '../test-pack-module/config-disabled
 import {
   ConfigPersistResultsDisabledFormComponent
 } from '../test-pack-module/config-persist-results-disabled-form.component';
-import { MatDialog } from '@angular/material/dialog';
-import { isNullOrUndefined } from 'util';
+import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
+import { isNullOrUndefined } from 'src/app/utils/utils';
 import { ExportFormat } from 'src/app/results-download/results-download.service';
 import { map, scan, tap } from 'rxjs/operators';
 
@@ -51,7 +51,7 @@ import { map, scan, tap } from 'rxjs/operators';
         [content]="dropdown"
         [(open)]="downloadMenuOpen"
       >
-        <button tuiButton type="button" appearance="flat" [iconRight]="icon" size="m">
+        <button tuiButton type="button" appearance="outline" [iconRight]="icon" size="s"  class="button-small menu-bar-button">
           Download
         </button>
       </tui-hosted-dropdown>

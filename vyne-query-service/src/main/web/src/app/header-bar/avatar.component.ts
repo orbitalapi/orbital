@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { VyneUser } from '../services/user-info.service';
 import { AuthService } from '../auth/auth.service';
-import { MatDialog } from '@angular/material/dialog';
+import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 import { ConfirmationDialogComponent } from 'src/app/confirmation-dialog/confirmation-dialog.component';
 
 @Component({

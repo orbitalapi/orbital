@@ -96,7 +96,7 @@ as-split.query-panel-split {
   margin-bottom: 3px;
 }
 
-app-query-editor-bottom-bar {
+app-query-editor-toolbar {
   // Overflow   hidden because the ngx-monaco editor is causing width sizing
   // issues, which can incorrectly trigger horizontal scrollbars appearing
   //overflow-x: hidden;

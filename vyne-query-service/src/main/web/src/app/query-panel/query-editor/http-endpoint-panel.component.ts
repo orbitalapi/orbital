@@ -1,5 +1,5 @@
 import {ChangeDetectorRef, Component, Inject} from '@angular/core';
-import {FormControl, FormGroup, Validators} from "@angular/forms";
+import {UntypedFormControl, UntypedFormGroup, Validators} from "@angular/forms";
 import {TuiDialogContext, TuiDialogService} from "@taiga-ui/core";
 import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
 
@@ -48,7 +48,7 @@ import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
 })
 export class HttpEndpointPanelComponent {
 
-  formGroup: FormGroup
+  formGroup: UntypedFormGroup
 
   prefix = `/api/q/`
   annotationRegex = /@HttpOperation\([^)]*\)\s*/g
@@ -57,8 +57,8 @@ export class HttpEndpointPanelComponent {
               @Inject(POLYMORPHEUS_CONTEXT)
               private readonly context: TuiDialogContext<string, string>,
               private changeRef: ChangeDetectorRef,) {
-    this.formGroup = new FormGroup({
-      endpoint: new FormControl(null, Validators.pattern('^[a-zA-Z\\-]+\$'))
+    this.formGroup = new UntypedFormGroup({
+      endpoint: new UntypedFormControl(null, Validators.pattern('^[a-zA-Z\\-]+\$'))
     })
   }
 

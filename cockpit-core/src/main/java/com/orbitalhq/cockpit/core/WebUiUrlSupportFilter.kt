@@ -18,7 +18,7 @@ class WebUiUrlSupportFilter(
 ) : WebFilter {
    companion object {
       val ASSET_EXTENSIONS =
-         listOf(".css", ".js", ".js?", ".js.map", ".html", ".scss", ".ts", ".ttf", ".wott", ".svg", ".gif", ".png")
+         listOf(".css", ".js", ".js?", ".js.map", ".html", ".scss", ".ts", ".ttf", ".wott", ".svg", ".gif", ".png", ".json")
    }
 
    override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {

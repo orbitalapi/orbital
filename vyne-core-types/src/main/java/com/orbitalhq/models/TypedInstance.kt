@@ -14,7 +14,7 @@ import lang.taxi.types.ArrayType
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.ObjectType
 import lang.taxi.types.isMapType
-
+import java.time.Instant
 
 interface TypedInstance {
    @get:JsonIgnore

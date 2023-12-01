@@ -1,8 +1,16 @@
 package com.orbitalhq.schemas
 
 
+data class SchemaMemberReference(val qualifiedName: QualifiedName, val kind: SchemaMemberKind)
+
 interface SchemaMember {
    val schemaMemberKind: SchemaMemberKind
+   val qualifiedName: QualifiedName
+
+   val schemaMemberReference:SchemaMemberReference
+      get() {
+         return SchemaMemberReference(qualifiedName, schemaMemberKind)
+      }
 
    @Deprecated(message = "Workaround for https://gitlab.com/vyne/vyne/issues/34.  Will be removed")
    val memberQualifiedName: QualifiedName

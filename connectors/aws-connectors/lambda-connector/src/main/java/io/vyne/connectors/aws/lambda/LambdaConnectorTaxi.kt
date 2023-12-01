@@ -1,12 +1,19 @@
 package com.orbitalhq.connectors.aws.lambda
 
 import com.orbitalhq.annotations.AnnotationWrapper
+import com.orbitalhq.connections.ConnectionUsageMetadataRegistry
+import com.orbitalhq.connections.ConnectionUsageRegistration
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.fqn
 import lang.taxi.TaxiDocument
 import lang.taxi.types.Annotation
 
 object LambdaConnectorTaxi {
+   fun registerConnectorUsage() {
+      ConnectionUsageMetadataRegistry.register(
+         ConnectionUsageRegistration(Annotations.LambdaInvocationService.NAME.fqn(), "connection")
+      )
+   }
    val schema = """
 namespace  ${Annotations.namespace} {
    annotation ${Annotations.LambdaInvocationService.NAME.fqn().name} {

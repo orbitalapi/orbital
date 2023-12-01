@@ -2,7 +2,7 @@
 <span class="title">Voyager</span>
 
 <span class="nav-link">
-  <a tuiLink (click)="openNewSite('https://taxilang.org/')">
+  <a tuiLink href="https://taxilang.org/" target="_blank" (click)="openNewSite($event, 'https://taxilang.org/')">
     Taxi Language Reference
   </a>
 </span>
@@ -37,32 +37,21 @@
   Share
 </button>
 
-<button class="header-icon-button"
-        tuiHintAppearance="onDark"
-        tuiHintDirection="left"
-        [tuiHint]="githubTooltip">
-  <a (click)="openNewSite('https://github.com/vyneco/voyager')">
-    <mat-icon svgIcon="brandGitHub"></mat-icon>
-  </a>
-</button>
-<button class="header-icon-button" (click)="slackInvite()">
-  <mat-icon svgIcon="slack"></mat-icon>
-</button>
 
-<button [tuiHint]="vyneTooltip"
-        class="header-icon-button built-by-orbital"
-        tuiHintAppearance="onDark"
-        tuiHintDirection="left">
-  <a (click)="openNewSite('https://orbitalhq.com')">
+<a tuiLink href="https://github.com/orbitalapi/orbital" target="_blank"
+   (click)="openNewSite($event, 'https://github.com/orbitalapi/orbital')">
+  <mat-icon svgIcon="brandGitHub"></mat-icon>
+</a>
+<a tuiLink [href]="slackInviteLink" target="_blank"
+   (click)="openNewSite($event, slackInviteLink)"
+>
+  <mat-icon svgIcon="slack"></mat-icon>
+</a>
+
+<a class="built-by-orbital" tuiLink (click)="openNewSite($event, 'https://orbitalhq.com')" href="https://orbitalhq.com">
+  <div class="wrapper">
     <span>Built by</span>
     <mat-icon svgIcon="orbital"></mat-icon>
-    <!--    <img src="assets/img/orbital_integrator_citrus_transparent-256x256.png" class="icon">-->
-  </a>
-</button>
-<ng-template #vyneTooltip>
-  Orbital
-</ng-template>
-
-<ng-template #githubTooltip>
-  Issues & Roadmap
-</ng-template>
+  </div>
+  <!--    <img src="assets/img/orbital_integrator_citrus_transparent-256x256.png" class="icon">-->
+</a>

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
 import com.google.common.collect.HashMultimap
 import com.orbitalhq.FactSets
+import com.orbitalhq.metrics.NoOpMetricsReporter
+import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.retainFactsFromFactSet
 import com.orbitalhq.models.*
 import com.orbitalhq.models.facts.*
@@ -19,16 +21,13 @@ import com.orbitalhq.utils.orElse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.merge
-import kotlinx.serialization.Serializable
 import lang.taxi.accessors.ProjectionFunctionScope
-import lang.taxi.expressions.TypeExpression
 import lang.taxi.policies.Instruction
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicInteger
 
 
 class QueryResultResultsAttributeKeyDeserialiser : KeyDeserializer() {
@@ -41,39 +40,6 @@ class QueryResultResultsAttributeKeyDeserialiser : KeyDeserializer() {
 fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> {
    if (profilerOperation == null) return emptyList()
    return profilerOperation.remoteCalls + profilerOperation.children.flatMap { collateRemoteCalls(it) }
-}
-
-data class VyneQueryStatistics(
-   val graphCreatedCount: AtomicInteger = AtomicInteger(0),
-   val graphSearchSuccessCount: AtomicInteger = AtomicInteger(0),
-   val graphSearchFailedCount: AtomicInteger = AtomicInteger(0)
-) {
-   companion object {
-      fun from(serializableVyneQueryStatistics: SerializableVyneQueryStatistics): VyneQueryStatistics {
-         return VyneQueryStatistics(
-            graphCreatedCount = AtomicInteger(serializableVyneQueryStatistics.graphCreatedCount),
-            graphSearchSuccessCount = AtomicInteger(serializableVyneQueryStatistics.graphSearchSuccessCount),
-            graphSearchFailedCount = AtomicInteger(serializableVyneQueryStatistics.graphSearchFailedCount)
-         )
-      }
-   }
-}
-
-@Serializable
-data class SerializableVyneQueryStatistics(
-   val graphCreatedCount: Int,
-   val graphSearchSuccessCount: Int,
-   val graphSearchFailedCount: Int
-) {
-   companion object {
-      fun from(vyneQueryStatistics: VyneQueryStatistics): SerializableVyneQueryStatistics {
-         return SerializableVyneQueryStatistics(
-            graphCreatedCount = vyneQueryStatistics.graphCreatedCount.get(),
-            graphSearchSuccessCount = vyneQueryStatistics.graphSearchSuccessCount.get(),
-            graphSearchFailedCount = vyneQueryStatistics.graphSearchFailedCount.get(),
-         )
-      }
-   }
 }
 
 enum class FailureBehaviour {
@@ -106,7 +72,7 @@ object QueryCancellationRequest
 // Revisit if the above becomes less true.
 
 data class QueryContext(
-   val schema: Schema,
+   override val schema: Schema,
 
    // TODO : Facts should become "scoped", to allow us to carefully
    // manage which facts are shared between contexts when doing things like
@@ -132,15 +98,15 @@ data class QueryContext(
 
    val eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
 
-   val vyneQueryStatistics: VyneQueryStatistics = VyneQueryStatistics(),
-
    val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = ConcurrentHashMap(),
 
-   val queryOptions: QueryOptions
+   val queryOptions: QueryOptions,
 
 //   val failureBehaviour: FailureBehaviour = FailureBehaviour.THROW
+   val metricsReporter: QueryMetricsReporter = NoOpMetricsReporter
 
-) : ProfilerOperation by profiler, FactBag by facts, QueryContextEventDispatcher by eventBroker, InPlaceQueryEngine {
+
+) : ProfilerOperation by profiler, FactBag by facts, QueryContextEventDispatcher by eventBroker, InPlaceQueryEngine, QueryContextSchemaProvider {
 
    private val logger = KotlinLogging.logger {}
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
@@ -188,44 +154,52 @@ data class QueryContext(
    override fun toString() = "# of facts=${facts.size} #schema types=${schema.types.size}"
    suspend fun find(
       typeName: String,
-      permittedStrategy: PermittedQueryStrategies = PermittedQueryStrategies.EVERYTHING
-   ): QueryResult = find(TypeNameQueryExpression(typeName), permittedStrategy)
+      permittedStrategy: PermittedQueryStrategies = PermittedQueryStrategies.EVERYTHING,
+      metricsTags: MetricTags = MetricTags.NONE
+   ): QueryResult = find(TypeNameQueryExpression(typeName), permittedStrategy, metricsTags = metricsTags)
 
    suspend fun find(
       queryString: QueryExpression,
       permittedStrategy: PermittedQueryStrategies = PermittedQueryStrategies.EVERYTHING,
-      failureBehaviour: FailureBehaviour = FailureBehaviour.THROW
+      failureBehaviour: FailureBehaviour = FailureBehaviour.THROW,
+      metricsTags: MetricTags = MetricTags.NONE
    ): QueryResult = queryEngine.find(
       queryString,
       this.newSearchContext(),
       applicableStrategiesPredicate = PermittedQueryStrategyPredicate.forEnum(permittedStrategy),
-      failureBehaviour = failureBehaviour
+      failureBehaviour = failureBehaviour,
+      metricsTags = metricsTags
    )
 
-   suspend fun find(target: QuerySpecTypeNode, failureBehaviour: FailureBehaviour = FailureBehaviour.THROW): QueryResult = queryEngine.find(target, this.newSearchContext(), failureBehaviour = failureBehaviour)
-   suspend fun find(target: Set<QuerySpecTypeNode>, failureBehaviour: FailureBehaviour = FailureBehaviour.THROW): QueryResult = queryEngine.find(target, this.newSearchContext(), failureBehaviour = failureBehaviour)
+   suspend fun find(target: QuerySpecTypeNode, failureBehaviour: FailureBehaviour = FailureBehaviour.THROW,
+                    metricsTags: MetricTags = MetricTags.NONE): QueryResult = queryEngine.find(target, this.newSearchContext(), failureBehaviour = failureBehaviour, metricsTags = metricsTags)
+   suspend fun find(target: Set<QuerySpecTypeNode>, failureBehaviour: FailureBehaviour = FailureBehaviour.THROW,
+                    metricsTags: MetricTags = MetricTags.NONE): QueryResult = queryEngine.find(target, this.newSearchContext(), failureBehaviour = failureBehaviour, metricsTags = metricsTags)
    suspend fun find(
       target: QuerySpecTypeNode,
       excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
-      failureBehaviour:FailureBehaviour = FailureBehaviour.THROW
+      failureBehaviour:FailureBehaviour = FailureBehaviour.THROW,
+      metricsTags: MetricTags = MetricTags.NONE
    ): QueryResult =
-      queryEngine.find(target, this.newSearchContext(), excludedOperations, failureBehaviour = failureBehaviour)
+      queryEngine.find(target, this.newSearchContext(), excludedOperations, failureBehaviour = failureBehaviour, metricsTags = metricsTags)
 
    suspend fun build(type: Type):QueryResult = build(TypeQueryExpression(type))
    suspend fun build(typeName: QualifiedName): QueryResult = build(typeName.parameterizedName)
    suspend fun build(typeName: String): QueryResult =
       queryEngine.build(TypeNameQueryExpression(typeName), this.newSearchContext())
 
-   suspend fun build(expression: QueryExpression): QueryResult =
+   suspend fun build(expression: QueryExpression, metricsTags: MetricTags = MetricTags.NONE): QueryResult =
       //timed("QueryContext.build") {
       queryEngine.build(expression, this.newSearchContext())
    //}
 
-   suspend fun findAll(typeName: String): QueryResult = findAll(TypeNameQueryExpression(typeName))
-   suspend fun findAll(queryString: QueryExpression): QueryResult =
-      queryEngine.findAll(queryString, this.newSearchContext())
+   suspend fun findAll(typeName: String,
+                       metricsTags: MetricTags = MetricTags.NONE): QueryResult = findAll(TypeNameQueryExpression(typeName), metricsTags)
+   suspend fun findAll(queryString: QueryExpression,
+                       metricsTags: MetricTags = MetricTags.NONE): QueryResult =
+      queryEngine.findAll(queryString, this.newSearchContext(), metricsTags)
 
-   suspend fun doMap(expression: QueryExpression): QueryResult {
+   suspend fun doMap(expression: QueryExpression, metricsTags : MetricTags = MetricTags.NONE): QueryResult {
       val querySpec = queryEngine.parse(expression)
       val sourceFacts = when {
          // Don't use .isEmpty(), as it also considers scoped facts
@@ -310,7 +284,8 @@ data class QueryContext(
          queryId: String,
          eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
          scopedFacts: List<ScopedFact> = emptyList(),
-         queryOptions: QueryOptions
+         queryOptions: QueryOptions,
+         metricsReporter: QueryMetricsReporter = NoOpMetricsReporter
       ): QueryContext {
          return QueryContext(
             schema,
@@ -320,7 +295,8 @@ data class QueryContext(
             clientQueryId = clientQueryId,
             queryId = queryId,
             eventBroker = eventBroker,
-            queryOptions =  queryOptions
+            queryOptions =  queryOptions,
+            metricsReporter = metricsReporter
          )
       }
    }
@@ -354,7 +330,6 @@ data class QueryContext(
       val copied = this.newSearchContext().copy(
          facts = CopyOnWriteFactBag(CopyOnWriteArrayList(facts), scopedFacts, schema),
          parent = parent,
-         vyneQueryStatistics = VyneQueryStatistics()
       )
       appendExclusionsToContext(copied)
       return copied
@@ -383,7 +358,6 @@ data class QueryContext(
       val copied = this.newSearchContext().copy(
          facts = CascadingFactBag(additionalFacts, this.facts),
          parent = this,
-         vyneQueryStatistics = VyneQueryStatistics()
       )
       appendExclusionsToContext(copied)
       return copied
@@ -526,9 +500,9 @@ data class QueryContext(
    /**
     * Call this function at the mutate phase of the query execution.
     */
-   suspend fun mutate(expression: MutatingQueryExpression): QueryResult {
+   suspend fun mutate(expression: MutatingQueryExpression, metricsTags: MetricTags = MetricTags.NONE): QueryResult {
       val querySpec = parseQuery(expression).single()
-      return queryEngine.mutate(expression.mutation!!, querySpec, this, inputValue = null)
+      return queryEngine.mutate(expression.mutation!!, querySpec, this, inputValue = null, metricsTags = metricsTags)
 
    }
 }

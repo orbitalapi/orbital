@@ -15,6 +15,7 @@ import com.orbitalhq.utils.Ids
 import lang.taxi.query.TaxiQLQueryString
 import org.apache.commons.csv.CSVRecord
 import java.io.Serializable
+import java.time.Instant
 
 data class PipelineSpec<I : PipelineTransportSpec, O : PipelineTransportSpec>(
    val name: String,
@@ -39,10 +40,24 @@ data class PipelineSpec<I : PipelineTransportSpec, O : PipelineTransportSpec>(
    val transformation: TaxiQLQueryString? = null,
    @JsonDeserialize(using = PipelineListTransportSpecDeserializer::class)
    val outputs: List<O>,
-   val id: String = Ids.id("pipeline-")
+   val id: String = Ids.id("pipeline-"),
+   val kind: PipelineKind = PipelineKind.Pipeline
 ) : Serializable {
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val description = "From ${input.description} to ${outputs.size} outputs"
+}
+
+enum class PipelineKind {
+   /**
+    * A Pipeline defined using a Pipeline Spec, normally
+    * as part of a taxi project
+    */
+   Pipeline,
+
+   /**
+    * A managed stream, created by a streaming query present wihtin the schema
+    */
+   Stream
 }
 
 /**
@@ -133,6 +148,8 @@ interface MessageContentProvider {
    fun asString(): String
    fun readAsTypedInstance(inputType: Type, schema: Schema): TypedInstance
 
+   val messageTimestamp: Instant
+
    val sourceMessageMetadata: SourceMessageMetadata?
 }
 
@@ -140,7 +157,8 @@ data class TypedInstanceContentProvider(
    @VisibleForTesting
    val content: TypedInstance,
    private val mapper: ObjectMapper = Jackson.defaultObjectMapper,
-   override val sourceMessageMetadata: SourceMessageMetadata? = null
+   override val sourceMessageMetadata: SourceMessageMetadata? = null,
+   override val messageTimestamp: Instant = Instant.now()
 ) : MessageContentProvider {
    override fun asString(): String {
       return mapper.writeValueAsString(content.toRawObject())
@@ -151,29 +169,11 @@ data class TypedInstanceContentProvider(
    }
 }
 
-data class JacksonContentProvider(
-   private val objectMapper: ObjectMapper,
-   private val content: Any,
-   override val sourceMessageMetadata: SourceMessageMetadata? = null
-) :
-   MessageContentProvider {
-   override fun asString(): String {
-      return objectMapper.writeValueAsString(content)
-   }
-
-   override fun readAsTypedInstance(inputType: Type, schema: Schema): TypedInstance {
-      return TypedInstance.from(
-         inputType,
-         content,
-         schema,
-         source = Provided
-      )
-   }
-}
-
 data class StringContentProvider(
    val content: String,
-   override val sourceMessageMetadata: SourceMessageMetadata? = null
+   override val sourceMessageMetadata: SourceMessageMetadata? = null,
+   override val messageTimestamp: Instant = Instant.now()
+
 ) :
    MessageContentProvider {
    override fun asString(): String {
@@ -193,7 +193,8 @@ data class StringContentProvider(
 data class CsvRecordContentProvider(
    val content: CSVRecord,
    val nullValues: Set<String>,
-   override val sourceMessageMetadata: SourceMessageMetadata? = null
+   override val sourceMessageMetadata: SourceMessageMetadata? = null,
+   override val messageTimestamp: Instant = Instant.now()
 ) : MessageContentProvider {
    override fun asString(): String {
       return content.joinToString()

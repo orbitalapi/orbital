@@ -66,7 +66,7 @@ class JdbcQueryTest {
          type MovieId inherits Int
          type MovieTitle inherits String
 
-         @Table(connection = "movies", schema = "public", table = "movie")
+         @Table(connection = "movies", schema = "public", table = "MOVIE")
          model Movie {
             ID : MovieId
             TITLE : MovieTitle
@@ -101,7 +101,7 @@ class JdbcQueryTest {
          type MovieId inherits Int
          type MovieTitle inherits String
          type AvailableCopyCount inherits Int
-         @Table(connection = "movies", table = "movie", schema = "public")
+         @Table(connection = "movies", table = "MOVIE", schema = "public")
          model Movie {
              ID : MovieId
             TITLE : MovieTitle
@@ -156,7 +156,7 @@ class JdbcQueryTest {
          type MovieId inherits Int
          type MovieTitle inherits String
          type AvailableCopyCount inherits Int
-         @Table(connection = "movies", table = "movie", schema = "public")
+         @Table(connection = "movies", table = "MOVIE", schema = "public")
          model Movie {
             @Id
               ID : MovieId
@@ -222,7 +222,7 @@ class JdbcQueryTest {
          type MovieId inherits Int
          type MovieTitle inherits String
          type AvailableCopyCount inherits Int
-         @Table(connection = "movies", table = "movie", schema = "public")
+         @Table(connection = "movies", table = "MOVIE", schema = "public")
          model Movie {
             @Id
             ID : MovieId by column("movie id")

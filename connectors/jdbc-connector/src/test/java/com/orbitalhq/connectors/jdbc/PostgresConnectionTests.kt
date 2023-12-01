@@ -61,7 +61,7 @@ class PostgresConnectionTests {
       val metadataService = DatabaseMetadataService(template.jdbcTemplate)
       val error = metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery)
          .get()
-      error.should.equal("FATAL: password authentication failed for user \"wrongUser\"")
+      error.should.equal("Could not connect to the database: PSQLException : FATAL: password authentication failed for user \"wrongUser\"")
    }
 
    @Test
@@ -74,9 +74,9 @@ class PostgresConnectionTests {
       val template = SimpleJdbcConnectionFactory()
          .jdbcTemplate(connectionDetails)
       val metadataService = DatabaseMetadataService(template.jdbcTemplate)
-      metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery)
+      val error = metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery)
          .get().toString()
-         .trim().should.equal("Unable to parse URL jdbc:postgresql://wronghost:9999")
+      error.trim().should.equal("Could not connect to the database: PSQLException : Unable to parse URL jdbc:postgresql://wronghost:9999")
    }
 
    @Test
@@ -92,27 +92,33 @@ class PostgresConnectionTests {
       metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery).get().should.equal(ConnectionSucceeded)
       val tables = metadataService.listTables()
       tables.should.have.size(1)
-      tables.should.contain(JdbcTable("public", "actor",
-         listOf(
-            JdbcColumn(
-               "actor_id",
-               "int4",
-               10,
-               0,
-               false
-            )
-         ), listOf(JdbcIndex(
-         "actor_pkey",
-         listOf(
-            JdbcColumn(
-               "actor_id",
-               "int4",
-               10,
-               0,
-               false
+      tables.should.contain(
+         JdbcTable(
+            "public", "actor",
+            listOf(
+               JdbcColumn(
+                  "actor_id",
+                  "int4",
+                  10,
+                  0,
+                  false
+               )
+            ), listOf(
+               JdbcIndex(
+                  "actor_pkey",
+                  listOf(
+                     JdbcColumn(
+                        "actor_id",
+                        "int4",
+                        10,
+                        0,
+                        false
+                     )
+                  )
+               )
             )
          )
-      ))))
+      )
 
       val columns = metadataService.listColumns("public", "actor")
       columns.should.have.size(4)

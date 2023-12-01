@@ -1,5 +1,5 @@
 import { Documented, QualifiedName } from 'src/app/services/schema';
-import { isNullOrUndefined } from 'util';
+import { isNullOrUndefined } from 'src/app/utils/utils';
 
 export class NewTypeSpec implements Documented {
   namespace: string | null;

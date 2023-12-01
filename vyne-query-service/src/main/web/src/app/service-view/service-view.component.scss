@@ -1,7 +1,7 @@
-@import "~src/styles";
-@import "~src/page-styles";
-@import "~src/tables";
-@import "~src/toolbar";
+@import "src/styles";
+@import "src/page-styles";
+@import "src/tables";
+@import "src/toolbar";
 @import "./service-view-common-styles";
 .operation-list {
   @include vyne-table()

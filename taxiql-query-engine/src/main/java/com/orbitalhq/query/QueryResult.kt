@@ -2,6 +2,7 @@ package com.orbitalhq.query
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.RawObjectMapper
 import com.orbitalhq.models.TypeNamedInstanceMapper
 import com.orbitalhq.models.TypedInstance
@@ -12,6 +13,13 @@ import com.orbitalhq.schemas.Type
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
+import java.time.Duration
+import java.time.Instant
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class QueryResult(
@@ -27,8 +35,6 @@ data class QueryResult(
    val anonymousTypes: Set<Type> = setOf(),
    override val clientQueryId: String? = null,
    override val queryId: String,
-   @field:JsonIgnore // we send a lightweight version below
-   val statistics: MutableSharedFlow<VyneQueryStatistics>? = null,
    override val responseType: String? = null,
 
    @field:JsonIgnore

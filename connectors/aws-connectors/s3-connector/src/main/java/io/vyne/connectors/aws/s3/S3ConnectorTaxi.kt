@@ -1,12 +1,20 @@
 package com.orbitalhq.connectors.aws.s3
 
 import com.orbitalhq.annotations.AnnotationWrapper
+import com.orbitalhq.connections.ConnectionUsageMetadataRegistry
+import com.orbitalhq.connections.ConnectionUsageRegistration
+import com.orbitalhq.connectors.jdbc.JdbcConnectorTaxi
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.fqn
 import lang.taxi.TaxiDocument
 import lang.taxi.types.Annotation
 
 object S3ConnectorTaxi {
+   fun registerConnectionUsage() {
+      ConnectionUsageMetadataRegistry.register(
+         ConnectionUsageRegistration(Annotations.S3Service.NAME.fqn(), "connection")
+      )
+   }
    const val S3EntryKeyTypeName = "S3EntryKey"
    val S3EntryKeyTypeFullyQualifiedName = "${Annotations.namespace}.$S3EntryKeyTypeName".fqn()
    val schema = """

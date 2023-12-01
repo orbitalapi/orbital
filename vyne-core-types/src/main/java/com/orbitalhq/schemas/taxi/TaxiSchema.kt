@@ -8,6 +8,7 @@ import com.orbitalhq.schemas.*
 import com.orbitalhq.schemas.readers.SourceToTaxiConverter
 import com.orbitalhq.schemas.readers.TaxiSourceConverter
 import lang.taxi.*
+import lang.taxi.annotations.HttpOperation
 import lang.taxi.messages.Severity
 import lang.taxi.packages.TaxiSourcesLoader
 import lang.taxi.query.TaxiQLQueryString
@@ -514,7 +515,8 @@ fun TaxiQlQuery.asSavedQuery(): SavedQuery {
    return SavedQuery(
       this.name.toVyneQualifiedName(),
       this.compilationUnits.toVyneSources(),
-      null  // TODO : URL
+      SavedQuery.QueryKind.forQueryMode(this.queryMode),
+      HttpOperation.fromQuery(this)
    )
 }
 

@@ -1,0 +1,23 @@
+@import "src/theme";
+@import "src/tables";
+
+.query-list {
+  @include orbital-table();
+  @include orbital-table-with-selectable-rows();
+}
+
+.method {
+  font-family: $mono;
+  background-color: $slate-300;
+  border-radius: 4px;
+
+  padding: 0.2rem 0.4rem;
+  margin-right: 0.5rem;
+}
+
+.url-parts {
+  font-size: 0.8rem;
+  font-family: $mono;
+  display: flex;
+  align-items: center;
+}

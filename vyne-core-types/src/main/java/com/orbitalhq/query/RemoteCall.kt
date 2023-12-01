@@ -129,6 +129,7 @@ data class HttpExchange(
 data class SqlExchange(
    val sql: String,
    val recordCount: Int,
+   val verb: String
 ) : RemoteCallExchangeMetadata() {
    override val requestBody: String = sql
 }

@@ -1,12 +1,19 @@
 package com.orbitalhq.connectors.kafka
 
 import com.orbitalhq.annotations.AnnotationWrapper
+import com.orbitalhq.connections.ConnectionUsageMetadataRegistry
+import com.orbitalhq.connections.ConnectionUsageRegistration
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.fqn
 import lang.taxi.TaxiDocument
 import lang.taxi.types.Annotation
 
 object KafkaConnectorTaxi {
+   fun registerMetadataUsage() {
+      ConnectionUsageMetadataRegistry.register(
+         ConnectionUsageRegistration(Annotations.KafkaService.NAME.fqn(), Annotations.KafkaService::connectionName.name)
+      )
+   }
    object Annotations {
       internal const val namespace = "com.orbitalhq.kafka"
 

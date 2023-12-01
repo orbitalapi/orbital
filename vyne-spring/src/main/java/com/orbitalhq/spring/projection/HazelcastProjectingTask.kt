@@ -9,7 +9,6 @@ import com.orbitalhq.models.serde.toSerializable
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.QueryProfiler
 import com.orbitalhq.query.SearchGraphExclusion
-import com.orbitalhq.query.SerializableVyneQueryStatistics
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.QueryOptions
 import kotlinx.coroutines.GlobalScope
@@ -70,7 +69,7 @@ class HazelcastProjectingTask(
                     GlobalScope.async {
                         val projectionContext = context.only(it)
                         val buildResult = projectionContext.build(qualifiedName)
-                        buildResult.results.map { it.toSerializable().toBytes() to  SerializableVyneQueryStatistics.from(projectionContext.vyneQueryStatistics)  }
+                        buildResult.results.map { it.toSerializable().toBytes()  }
                     }
                 }
                 .buffer(16)
@@ -78,7 +77,7 @@ class HazelcastProjectingTask(
 
         //Run blocking is necessary here as the results need to be hydrated and serialised ByteArray
         return runBlocking {
-            val list:List<Pair<ByteArray, SerializableVyneQueryStatistics>> = flow.toList()
+            val list:List<ByteArray> = flow.toList()
             val encoded = Cbor.encodeToByteArray( list )
             encoded
         }

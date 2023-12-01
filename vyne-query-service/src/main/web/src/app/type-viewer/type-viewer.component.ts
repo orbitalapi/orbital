@@ -4,7 +4,7 @@ import { Contents } from './toc-host.directive';
 import { environment } from '../../environments/environment';
 import { OperationQueryResult } from '../services/types.service';
 import { Router } from '@angular/router';
-import { isNullOrUndefined } from 'util';
+import { isNullOrUndefined } from 'src/app/utils/utils';
 import { Observable } from 'rxjs';
 import { Inheritable } from 'src/app/inheritence-graph/build.inheritable';
 
@@ -27,7 +27,7 @@ export class TypeViewerComponent {
   showPolicyManager: boolean;
   schemaMember: SchemaMember;
 
-  chartDisplayMode: 'links' | 'lineage' = 'links';
+  chartDisplayTabIndex: number = 0;
 
   private _type: Type;
 

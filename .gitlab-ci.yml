@@ -294,7 +294,7 @@ publish-pipeline-jet-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
       projectDir: pipelines/pipeline-jet
-      microservice_orbital: pipelines
+      microservice_orbital: stream-server
 
 publish-query-node-to-docker-hub:
    extends: .publish-to-docker-hub
@@ -309,13 +309,13 @@ publish-query-node-to-docker-hub:
 #      microservice_orbital: schema-server
 
 
-#publish-voyager-to-gitlab-container-registry:
-#   extends: .publish-to-gitlab-container-registry
-#   variables:
-#      projectDir: voyager
-#      microservice_vyne: voyager
-#      microservice_orbital: voyager
-#   when: manual
+publish-voyager-to-gitlab-container-registry:
+   extends: .publish-to-gitlab-container-registry
+   variables:
+      projectDir: voyager
+      microservice_vyne: voyager
+      microservice_orbital: voyager
+   when: manual
 
 .publish-docker-gitlab:
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.8-0.6.3

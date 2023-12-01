@@ -20,14 +20,14 @@
 ##
 ## The following variables can be set in a .env file:
 ##
-## ORBITAL_VERSION (default: latest)
+## ORBITAL_VERSION (default: next)
 ## SCHEMA_PATH (default: current directory .)
 
 version: "3.3"
 
 services:
    orbital:
-      image: orbitalhq/orbital:${ORBITAL_VERSION:-latest}
+      image: orbitalhq/orbital:${ORBITAL_VERSION:-next}
       environment:
          JAVA_OPTS: >-
             -Xms256m
@@ -39,6 +39,9 @@ services:
             --vyne.db.password=changeme
             --vyne.db.host=postgres
             --vyne.workspace.project-file=/opt/service/workspace/taxi.conf
+#            If you're using a workspace, rather than a single-project config,
+#           use this option.
+#            --vyne.workspace.config-file=/opt/service/workspace/workspace.conf
       ports:
          - "9022:9022"
       expose:
@@ -65,6 +68,33 @@ services:
          POSTGRES_PASSWORD: changeme
       volumes:
          - postgres_data:/var/lib/postgresql/data
+
+## The below services are optional. Uncomment them to include.
+
+   # stream-server is responsible for running
+   # ETL pipelines and saved stream queries, if you have
+   # any configured.
+   # Optional, can omit if you're not using either of those.
+#   stream-server:
+#      image: orbitalhq/stream-server:${ORBITAL_VERSION:-next}
+#      environment:
+#         JAVA_OPTS: >-
+#            -Xms256m
+#            -Xmx1024m
+
+
+   # prometheus instance, which scrapes metrics from
+   # the orbital and the stream-server
+   # Optional.
+   # If provided (and configured), then
+   # metrics are shown in endpoint dashboards
+#   prometheus:
+#      image: prom/prometheus:v2.44.0
+#      ports:
+#         - "9090:9090"
+#      volumes:
+#         # Get a sample prometheus.yml file from docs
+#         - ./prometheus.yml:/etc/prometheus/prometheus.yml
 
 volumes:
    postgres_data:

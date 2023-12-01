@@ -30,7 +30,7 @@ import java.io.Serializable
 class PipelineFactory(
    private val vyneClient: VyneClientWithSchema,
    private val sourceProvider: PipelineSourceProvider,
-   private val sinkProvider: PipelineSinkProvider
+   private val sinkProvider: PipelineSinkProvider,
 ) {
    fun <I : PipelineTransportSpec, O : PipelineTransportSpec> createJetPipeline(pipelineSpec: PipelineSpec<I, O>): Pipeline {
       val jetPipeline = Pipeline.create()
@@ -40,12 +40,15 @@ class PipelineFactory(
       val inputType = if (inputTypeName != null) schema.type(inputTypeName) else null
 
       val jetPipelineBuilder = if (sourceBuilder.sourceType == PipelineSourceType.Stream) {
-         jetPipeline.readFrom(sourceBuilder.build(pipelineSpec, inputType)!!).withIngestionTimestamps()
+         jetPipeline
+            .readFrom(sourceBuilder.build(pipelineSpec, inputType)!!)
+            .withIngestionTimestamps()
             .setName("Ingest from ${pipelineSpec.input.description}")
       } else {
          jetPipeline.readFrom(sourceBuilder.buildBatch(pipelineSpec, inputType)!!)
             .setName("Ingest from ${pipelineSpec.input.description}")
       }
+
 
       pipelineSpec.outputs.forEach { output ->
          buildTransformAndSinkStageForOutput(
@@ -85,9 +88,9 @@ class PipelineFactory(
       jetPipelineBuilder: GeneralStage<out MessageContentProvider>,
       transformation: TaxiQLQueryString?
    ): GeneralStage<out MessageContentProvider> {
-      if (outputTypeName == null) {
-         require(transformation != null) { "If the output type is not provided, then a transformation must be provided" }
-      }
+//      if (outputTypeName == null) {
+//         require(transformation != null) { "If the output type is not provided, then a transformation must be provided" }
+//      }
 
       val jetPipelineWithTransformation =
          if (inputType != null && (inputType != outputTypeName || transformation != null)) {
@@ -115,9 +118,6 @@ class PipelineFactory(
    private fun buildValidationStage(
       inputType: QualifiedName?, jetPipelineBuilder: GeneralStage<out MessageContentProvider>, pipelineName: String
    ): GeneralStage<out MessageContentProvider> {
-      if (inputType == null) {
-         return jetPipelineBuilder
-      }
       val serviceFactory: ServiceFactory<*, ValidationFilterContext> = nonSharedService { context ->
          val validationFilterContext = context.managedContext().initialize(
             ValidationFilterContext(context.logger(), inputType)
@@ -130,6 +130,11 @@ class PipelineFactory(
       return jetPipelineBuilder.filterUsingService(
          serviceFactory
       ) { context, message ->
+         context.messageCount.increment()
+         if (context.inputType == null) {
+            return@filterUsingService true
+         }
+
          val schema = context.schema()
          val typedInstance = message.readAsTypedInstance(schema.type(context.inputType), schema)
          val validationResult = typedInstance.validate(
@@ -150,7 +155,7 @@ class PipelineFactory(
             context.validationFailedCounter.increment()
          }
          return@filterUsingService validationResult
-      }.setName("Validate ${inputType.shortDisplayName} has all the mandatory fields populated")
+      }.setName("Validate input has all the mandatory fields populated")
    }
 
    private fun <O : PipelineTransportSpec> buildSink(
@@ -174,8 +179,10 @@ class PipelineFactory(
             .setName("Write window of content to ${pipelineTransportSpec.description}")
       } else {
          require(sinkBuilder is SingleMessagePipelineSinkBuilder) { "Output spec is a single message spec, but sink builder ${sinkBuilder::class.simpleName} does not accept single messages" }
-         jetPipelineWithTransformation.writeTo(sinkBuilder.build(pipelineId, pipelineName, pipelineTransportSpec))
+         jetPipelineWithTransformation
+            .writeTo(sinkBuilder.build(pipelineId, pipelineName, pipelineTransportSpec))
             .setName("Write message to ${pipelineTransportSpec.description}")
+
       }
    }
 }
@@ -183,7 +190,10 @@ class PipelineFactory(
 @SpringAware
 data class ValidationFilterContext(
    val logger: ILogger,
-   val inputType: QualifiedName,
+   // InputType is null if we're not doing any input validation.
+   // Typically, this is when this is a query executed by Orbital, and what we're getting
+   // is the result, so no further validation is required,
+   val inputType: QualifiedName?,
 ) : Serializable {
    @Resource
    lateinit var vyneClient: VyneClientWithSchema
@@ -191,6 +201,7 @@ data class ValidationFilterContext(
    @Resource
    lateinit var meterRegistry: MeterRegistry
 
+   lateinit var messageCount: Counter
    lateinit var processedCounter: Counter
    lateinit var validationFailedCounter: Counter
 
@@ -199,15 +210,22 @@ data class ValidationFilterContext(
    }
 
    fun createMetricCounters(pipelineName: String) {
+      messageCount = Counter
+         .builder("orbital.pipelines.received")
+         .tag("pipeline", pipelineName)
+         .baseUnit("items")
+         .description("Count of items received as inputs to the pipeline.")
+         .register(meterRegistry)
+
       processedCounter = Counter
-         .builder("vyne.pipelines.processed")
+         .builder("orbital.pipelines.processed")
          .tag("pipeline", pipelineName)
          .baseUnit("items")
          .description("Count of items processed successfully as part of the pipeline execution.")
          .register(meterRegistry)
 
       validationFailedCounter = Counter
-         .builder("vyne.pipelines.validationFailed")
+         .builder("orbital.pipelines.validationFailed")
          .tag("pipeline", pipelineName)
          .baseUnit("items")
          .description("Count of items for which the validation failed as part of the pipeline execution.")

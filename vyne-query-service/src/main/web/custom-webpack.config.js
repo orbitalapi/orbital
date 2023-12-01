@@ -1,26 +1,35 @@
-const webpack = require('webpack');
-const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
-// Need to 'mock' some server side node librarie due to this problem...
-// vscode-jsonrpc is re-exporting net, crypto and some libs not available in the browser....
-// See https://github.com/TypeFox/monaco-languageclient/issues/2
+const path = require('path');
+const MONACO_DIR = path.join(__dirname, 'node_modules/monaco-editor');
+const VSCODE_DIR = path.join(__dirname, 'node_modules/vscode');
 
+// Workround to https://github.com/microsoft/monaco-editor/issues/3553#issuecomment-1432647208
 module.exports = {
-  plugins: [new MonacoWebpackPlugin()],
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        include: [
+          MONACO_DIR,
+          VSCODE_DIR
+        ],
+        use: [          'style-loader', 'css-loader'        ]
+      },
+      // from https://github.com/TypeFox/monaco-languageclient-ng-example/blob/main/custom-webpack.config.js#L18C12-L21C14
+      {
+        test: /\.(mp3|wasm|ttf)$/i,
+        type: 'asset/resource'
+      }
+    ],
+    // this is required for loading .wasm (and other) files. For context, see https://stackoverflow.com/a/75252098 and https://github.com/angular/angular-cli/issues/24617
+    parser: {
+      javascript: {
+        url: true
+      }
+    },
+  },
   resolve: {
-    // Required for the LanguageServerProtocol client to work
-    //   alias: {
-    //       'vscode': require.resolve('monaco-languageclient/lib/vscode-compatibility')
-    //   }
-  }
-  // node: {
-  //     "fs": "empty",
-  //     "global": true,
-  //     "crypto": "empty",
-  //     "tls": "empty",
-  //     "net": "empty",
-  //     "process": true,
-  //     "module": false,
-  //     "clearImmediate": false,
-  //     "setImmediate": true
-  //   },
+    extensions: ['.ts', '.js', '.json', '.ttf']
+  },
+  plugins: [
+  ]
 };

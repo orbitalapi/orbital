@@ -34,6 +34,10 @@ class JdbcInvoker(
 
    companion object {
       private val logger = KotlinLogging.logger {}
+
+      init {
+         JdbcConnectorTaxi.registerConnectionUsage()
+      }
    }
 
    override suspend fun invoke(
@@ -43,24 +47,29 @@ class JdbcInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String
    ): Flow<TypedInstance> {
-      return when {
-         operation.operationType == OperationScope.READ_ONLY -> queryInvoker.invoke(
-            service,
-            operation,
-            parameters,
-            eventDispatcher,
-            queryId
-         )
+      return try {
+         when {
+            operation.operationType == OperationScope.READ_ONLY -> queryInvoker.invoke(
+               service,
+               operation,
+               parameters,
+               eventDispatcher,
+               queryId
+            )
 
-         operation.hasMetadata(JdbcConnectorTaxi.Annotations.UpsertOperationAnnotationName) -> upsertInvoker.invoke(
-            service,
-            operation,
-            parameters,
-            eventDispatcher,
-            queryId
-         )
+            operation.hasMetadata(JdbcConnectorTaxi.Annotations.UpsertOperationAnnotationName) -> upsertInvoker.invoke(
+               service,
+               operation,
+               parameters,
+               eventDispatcher,
+               queryId
+            )
 
-         else -> error("Unhandled JDBC Operation type: ${operation.qualifiedName.parameterizedName}")
+            else -> error("Unhandled JDBC Operation type: ${operation.qualifiedName.parameterizedName}")
+         }
+      } catch (e: Exception) {
+         logger.error(e) { "Exception thrown whilst invoking Jdbc operation" }
+         throw e
       }
    }
 

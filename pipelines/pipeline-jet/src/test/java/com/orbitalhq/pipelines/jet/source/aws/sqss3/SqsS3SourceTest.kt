@@ -13,7 +13,9 @@ import com.orbitalhq.pipelines.jet.api.transport.http.CronExpressions
 import com.orbitalhq.pipelines.jet.api.transport.jdbc.JdbcTransportOutputSpec
 import com.orbitalhq.schemas.Type
 import org.awaitility.Awaitility
+import org.jooq.Asterisk
 import org.jooq.DSLContext
+import org.jooq.impl.DSL
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -45,7 +47,6 @@ class SqsS3SourceTest : BaseJetIntegrationTest() {
    @Rule
    @JvmField
    val postgreSQLContainer = PostgreSQLContainer<Nothing>("postgres:11.1") as PostgreSQLContainer<*>
-
 
 
    @Before
@@ -140,9 +141,12 @@ type OrderWindowSummary {
 
    private fun symbols(dsl: DSLContext, type: Type): List<String> {
       return try {
-         dsl.fetch("select * from ${SqlUtils.tableNameOrTypeName(type.taxiType)}").map { record ->
-            record["symbol"].toString()
-         }
+         dsl.select(DSL.asterisk())
+            .from(DSL.name(SqlUtils.tableNameOrTypeName(type.taxiType)))
+            .fetchMaps()
+            .map { record ->
+               record["symbol"].toString()
+            }
 
       } catch (e: Exception) {
          emptyList<String>()

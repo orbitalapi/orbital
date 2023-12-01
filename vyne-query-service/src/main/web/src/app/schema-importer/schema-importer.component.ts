@@ -1,7 +1,12 @@
 import {Component, Input} from '@angular/core';
 import {SchemaSubmissionResult, TypesService} from '../services/types.service';
 import {Message, PartialSchema, Schema} from '../services/schema';
-import {ConnectorSummary, DbConnectionService, MappedTable} from '../db-connection-editor/db-importer.service';
+import {
+  ConnectionsListResponse,
+  ConnectorSummary,
+  DbConnectionService,
+  MappedTable
+} from '../db-connection-editor/db-importer.service';
 import {ConvertSchemaEvent} from './schema-importer.models';
 import {SchemaEdit, SchemaEditOperation, SchemaImporterService} from './schema-importer.service';
 import {Observable} from 'rxjs/internal/Observable';
@@ -19,7 +24,7 @@ import {PackagesService, SourcePackageDescription} from "../package-viewer/packa
       <div class="form-container">
         <app-schema-source-panel
           [packages]="packages$ | async"
-          [dbConnections]="connections"
+          [dbConnections]="connections.connections"
           (dbConnectionChanged)="onDbConnectionChanged($event)"
           [tables$]="mappedTables$"
           (convertSchema)="convertSchema($event)"
@@ -51,7 +56,7 @@ export class SchemaImporterComponent {
   @Input()
   title = 'Add a new schema';
 
-  connections: ConnectorSummary[];
+  connections: ConnectionsListResponse;
   mappedTables$: Observable<MappedTable[]>;
   working: boolean = false;
 

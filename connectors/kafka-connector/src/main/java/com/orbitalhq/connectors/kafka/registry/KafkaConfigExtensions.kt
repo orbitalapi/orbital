@@ -2,6 +2,7 @@ package com.orbitalhq.connectors.kafka.registry
 
 import com.orbitalhq.connectors.config.kafka.KafkaConnection
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
+import com.orbitalhq.connectors.valueOrThrowNiceMessage
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
@@ -9,6 +10,7 @@ import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import reactor.kafka.receiver.ReceiverOptions
+import reactor.kafka.sender.SenderOptions
 
 
 fun KafkaConnectionConfiguration.toReceiverOptions(offset: String = "latest"): ReceiverOptions<Int, ByteArray> {
@@ -16,6 +18,10 @@ fun KafkaConnectionConfiguration.toReceiverOptions(offset: String = "latest"): R
    return ReceiverOptions.create(consumerProps)
 }
 
+fun KafkaConnectionConfiguration.toSenderOptions():SenderOptions<Any,Any> {
+   val producerProps = this.toProducerProps()
+   return SenderOptions.create<Any,Any>(producerProps)
+}
 fun KafkaConnectionConfiguration.toAdminProps(): MutableMap<String, Any> {
    val adminProps: MutableMap<String, Any> = HashMap()
    adminProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = this.brokers
@@ -50,9 +56,9 @@ fun KafkaConnectionConfiguration.toProducerProps():MutableMap<String,Any> {
 // Using extension functions to avoid serialization issues with HOCON
 val KafkaConnectionConfiguration.brokers: String
    get() {
-      return this.connectionParameters[KafkaConnection.Parameters.BROKERS.templateParamName] as String
+      return this.connectionParameters.valueOrThrowNiceMessage(KafkaConnection.Parameters.BROKERS.templateParamName)
    }
 val KafkaConnectionConfiguration.groupId: String
    get() {
-      return this.connectionParameters[KafkaConnection.Parameters.GROUP_ID.templateParamName] as String
+      return this.connectionParameters.valueOrThrowNiceMessage(KafkaConnection.Parameters.GROUP_ID.templateParamName)
    }
