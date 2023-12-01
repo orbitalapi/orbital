@@ -1,6 +1,7 @@
 package com.orbitalhq.spring.config
 
 import com.orbitalhq.http.ServicesConfig
+import com.orbitalhq.http.ServicesConfigProvider
 import com.orbitalhq.http.ServicesConfigRepository
 import mu.KotlinLogging
 import org.springframework.cloud.client.DefaultServiceInstance
@@ -46,7 +47,7 @@ abstract class BaseConfigDiscoveryClient : DiscoveryClient {
  *
  * If the file doesn't exist on startup, a default file is created.
  */
-class FileBasedDiscoveryClient(private val configRepository: ServicesConfigRepository) : BaseConfigDiscoveryClient() {
+class FileBasedDiscoveryClient(private val configRepository: ServicesConfigProvider) : BaseConfigDiscoveryClient() {
    constructor(path: Path) : this(ServicesConfigRepository(path))
 
    companion object {
@@ -86,20 +87,12 @@ class FileBasedDiscoveryClient(private val configRepository: ServicesConfigRepos
       }
    }
 
-   val path: Path
-      get() = configRepository.path
-
-
-   fun watchForChanges() {
-      configRepository.watchForChanges()
-   }
-
    override fun servicesConfig(): ServicesConfig {
-      return configRepository.load()
+      return configRepository.loadConfig()
    }
 
 
-   override fun description(): String = "File based discovery client using config at ${configRepository.path}"
+   override fun description(): String = "File based discovery client"
 }
 
 class StaticServicesConfigDiscoveryClient(private val servicesConfig: ServicesConfig) : BaseConfigDiscoveryClient() {

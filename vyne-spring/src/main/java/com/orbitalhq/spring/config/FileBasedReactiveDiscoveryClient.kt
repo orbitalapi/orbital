@@ -23,7 +23,7 @@ import reactor.core.publisher.Flux
  */
 class FileBasedReactiveDiscoveryClient(private val discoveryClient: FileBasedDiscoveryClient) :
    ReactiveDiscoveryClient {
-   override fun description(): String = "Reactive file based discovery client, using config at ${discoveryClient.path}"
+   override fun description(): String = "Reactive file based discovery client"
 
 
    override fun getInstances(serviceId: String): Flux<ServiceInstance> {

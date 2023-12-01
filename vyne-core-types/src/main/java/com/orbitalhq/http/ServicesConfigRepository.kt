@@ -9,11 +9,15 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 
+interface ServicesConfigProvider {
+   fun loadConfig(): ServicesConfig
+}
+
 class ServicesConfigRepository(
    private val configFilePath: Path,
    fallback: Config = ConfigFactory.systemEnvironment(),
    createConfigFileIfMissing: Boolean = true
-) : ChangeWatchingConfigFileRepository<ServicesConfig>(configFilePath, fallback) {
+) : ServicesConfigProvider, ChangeWatchingConfigFileRepository<ServicesConfig>(configFilePath, fallback) {
 
    override fun extract(config: Config): ServicesConfig = config.extract()
 
@@ -35,7 +39,7 @@ class ServicesConfigRepository(
          return configFilePath
       }
 
-   fun load(): ServicesConfig = typedConfig()
+   override fun loadConfig(): ServicesConfig = typedConfig()
 
 
    companion object {
@@ -49,7 +53,7 @@ class ServicesConfigRepository(
 
 
    fun writeDefault(): ServicesConfig {
-      this.load()
+      this.loadConfig()
       this.saveConfig(unresolvedConfig())
       return typedConfig()
    }

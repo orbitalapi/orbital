@@ -7,13 +7,12 @@ import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.query.TaxiJacksonModule
 import com.orbitalhq.query.VyneJacksonModule
-import com.orbitalhq.spring.config.ConditionallyLoadBalancedExchangeFilterFunction
+import com.orbitalhq.spring.config.LoadBalancerFilterFunction
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
-import org.springframework.cloud.client.discovery.DiscoveryClient
-import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
 import org.springframework.boot.web.reactive.function.client.WebClientCustomizer
+import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -64,16 +63,15 @@ class WebConfig(private val objectMapper: ObjectMapper) : WebFluxConfigurer {
    //   @LoadBalanced
    @Bean
    fun webClientCustomizer(
-      loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction,
       discoveryClient: DiscoveryClient
 
    ): WebClientCustomizer {
       return WebClientCustomizer { webClientBuilder ->
-         webClientBuilder.filter(
-            ConditionallyLoadBalancedExchangeFilterFunction.onlyKnownHosts(
-               discoveryClient.services,
-               loadBalancingFilterFunction
-            )
+         webClientBuilder.filter(LoadBalancerFilterFunction(discoveryClient)
+//            ConditionallyLoadBalancedExchangeFilterFunction.onlyKnownHosts(
+//               discoveryClient.services,
+//               loadBalancingFilterFunction
+//            )
          )
       }
    }

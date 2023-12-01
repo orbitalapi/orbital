@@ -55,7 +55,7 @@ class AwsSqsQueryDispatcher(
                sourcePackages = schemaProvider.schema.packages,
                connections = connectionsConfigProvider.load(),
                authTokens = authTokenRepository.getAllTokens(),
-               services = servicesRepository.load(),
+               services = servicesRepository.loadConfig(),
                resultMode, mediaType, clientQueryId,
                arguments,
                replyTo = tempQueue

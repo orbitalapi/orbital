@@ -17,7 +17,7 @@ import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 
 class FileConfigSourceLoader(
-   private val configFilePath: Path,
+   val configFilePath: Path,
    private val fileMonitor: ReactiveFileSystemMonitor = ReactiveWatchingFileSystemMonitor(configFilePath),
    override val packageIdentifier: PackageIdentifier, /*= LOCAL_PACKAGE_IDENTIFIER, */
    /**
@@ -57,6 +57,8 @@ class FileConfigSourceLoader(
             sink.emitNext(FileConfigSourceLoader::class.java, Sinks.EmitFailureHandler.FAIL_FAST)
          }
    }
+
+   fun configFileExists() = Files.exists(configFilePath)
 
    override fun saveConfig(updated: Config) {
       val configWithPlaceholderQuotesRemoved = updated.getSafeConfigString()

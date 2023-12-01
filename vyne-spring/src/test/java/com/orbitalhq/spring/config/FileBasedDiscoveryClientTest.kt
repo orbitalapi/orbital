@@ -70,7 +70,7 @@ class FileBasedDiscoveryClientTest {
 
       client.services.should.have.size(1)
 
-      client.watchForChanges()
+//      client.watchForChanges()
 
       // Wait a bit for everything to register
       Thread.sleep(500)

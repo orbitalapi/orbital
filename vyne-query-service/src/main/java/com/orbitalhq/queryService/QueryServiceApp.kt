@@ -134,16 +134,12 @@ class QueryServiceApp {
 
    @Bean
    fun webClientCustomizer(
-      loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction,
       discoveryClient: DiscoveryClient
 
    ): WebClientCustomizer {
       return WebClientCustomizer { webClientBuilder ->
          webClientBuilder.filter(
-            ConditionallyLoadBalancedExchangeFilterFunction.onlyKnownHosts(
-               discoveryClient.services,
-               loadBalancingFilterFunction
-            )
+            LoadBalancerFilterFunction(discoveryClient)
          )
       }
    }
