@@ -73,6 +73,8 @@ logging:
       org.apache.kafka.clients.admin: WARN
       org.apache.kafka.common.metrics: WARN
       org.apache.kafka.common.utils: WARN
+      org.apache.kafka.clients.NetworkClient: ERROR
+
       # Unfortunately, this is really really noisy when we try to test
       # kafka connections, that have failed
 #      org.apache.kafka.clients.NetworkClient: ERROR
