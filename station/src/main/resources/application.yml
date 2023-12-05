@@ -22,7 +22,7 @@ spring:
       oauth2:
          resourceserver:
             jwt:
-               jwk-set-uri: ${vyne.security.open-idp.jwk-set-uri:''}
+               jwk-set-uri: ${vyne.security.open-idp.jwks-uri:''}
    application:
       name: orbital-station
    flyway:
