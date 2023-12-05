@@ -61,6 +61,8 @@ data class VyneUser(
    @Transient
    val grantedAuthorities: Collection<VyneGrantedAuthority> = emptySet(),
 
+   // Not persisted, assigned at runtime
+   @Transient
    val isAuthenticated: Boolean = true
 ) {
    companion object {
