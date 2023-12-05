@@ -1,21 +1,21 @@
-import { CommonModule } from '@angular/common';
-import { NgModule } from '@angular/core';
-import { AuthService } from './auth.service';
-import { OAuthModule } from 'angular-oauth2-oidc';
-import { MatLegacyDialogModule as MatDialogModule } from '@angular/material/legacy-dialog';
+import {CommonModule} from '@angular/common';
+import {NgModule} from '@angular/core';
+import {AuthService} from './auth.service';
+import {OAuthModule} from 'angular-oauth2-oidc';
+import {environment} from '../../environments/environment';
 
 @NgModule({
-    imports: [
-        MatDialogModule,
-        CommonModule,
-        OAuthModule.forRoot({
-            resourceServer: {
-                sendAccessToken: false
-            }
-        })
-    ],
-    declarations: [],
-    providers: [AuthService]
+  imports: [
+    CommonModule,
+    OAuthModule.forRoot({
+      resourceServer: {
+        sendAccessToken: true,
+        allowedUrls: [environment.serverUrl]
+      }
+    })
+  ],
+  declarations: [],
+  providers: [AuthService]
 })
 export class AuthModule {
 }

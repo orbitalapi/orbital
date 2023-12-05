@@ -1,12 +1,10 @@
 package com.orbitalhq.cockpit.core.security
 
 import com.orbitalhq.auth.authentication.VyneUser
-import com.orbitalhq.auth.authentication.VyneUserRepository
 import com.orbitalhq.auth.authentication.toVyneUser
 import com.orbitalhq.auth.authorisation.VyneUserRoleDefinitionRepository
-import com.orbitalhq.auth.authorisation.VyneUserRoleMappingRepository
 import com.orbitalhq.cockpit.core.security.authorisation.VyneOpenIdpConnectConfig
-import com.orbitalhq.security.VyneGrantedAuthorities
+import com.orbitalhq.security.VyneGrantedAuthority
 import mu.KotlinLogging
 import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseCookie
@@ -26,7 +24,6 @@ private val logger = KotlinLogging.logger {}
 @RestController
 class UserService(
    private val vyneUserRepository: VyneUserJpaRepository,
-   private val vyneUserRoleMappingRepository: VyneUserRoleMappingRepository,
    private val vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository,
    private val openIdpConfiguration: VyneOpenIdpConnectConfig
 ) {
@@ -53,7 +50,8 @@ class UserService(
                      .ok()
                      .body(VyneUser.anonymousUser(allGrantedAuthorities()))
                } else {
-                  val vyneUserWithAuthorisation = withGrantedAuthorities(authentication.toVyneUser())
+
+                  val vyneUserWithAuthorisation = authentication.toVyneUser()
                   val response = ResponseEntity
                      .ok()
                   buildAuthCookie(authentication)?.let { cookie ->
@@ -74,16 +72,7 @@ class UserService(
       }
    }
 
-   private fun withGrantedAuthorities(authenticatedVyneUser: VyneUser): VyneUser {
-//      return authenticatedVyneUser
-      val userRoles = vyneUserRoleMappingRepository.findByUserName(authenticatedVyneUser.username)?.roles ?: emptySet()
-      val grantedAuthorities = userRoles
-         .flatMap { role -> vyneUserRoleDefinitionRepository.findByRoleName(role)?.grantedAuthorities ?: emptySet() }
-         .toSet()
-      return authenticatedVyneUser.copy(grantedAuthorities = grantedAuthorities)
-   }
-
-   private fun allGrantedAuthorities(): Set<VyneGrantedAuthorities> {
+   private fun allGrantedAuthorities(): Set<VyneGrantedAuthority> {
       return vyneUserRoleDefinitionRepository
          .findAll().flatMap { role -> role.value.grantedAuthorities }
          .toSet()

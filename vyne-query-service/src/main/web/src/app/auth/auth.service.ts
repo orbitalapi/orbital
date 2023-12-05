@@ -1,18 +1,22 @@
-import { Inject, Injectable } from '@angular/core';
-import { AuthConfig, JwksValidationHandler, OAuthService } from 'angular-oauth2-oidc';
-import { Router } from '@angular/router';
-import { HttpBackend, HttpClient } from '@angular/common/http';
-import { BehaviorSubject, combineLatest, Observable, ReplaySubject } from 'rxjs';
-import { filter, map } from 'rxjs/operators';
-import { UserInfoService } from '../services/user-info.service';
-import { ENVIRONMENT, Environment } from 'src/app/services/environment';
+import {Inject, Injectable} from '@angular/core';
+import {AuthConfig, OAuthService} from 'angular-oauth2-oidc';
+import {Router} from '@angular/router';
+import {HttpBackend, HttpClient} from '@angular/common/http';
+import {BehaviorSubject, combineLatest, Observable, ReplaySubject} from 'rxjs';
+import {filter, map} from 'rxjs/operators';
+import {UserInfoService} from '../services/user-info.service';
+import {ENVIRONMENT, Environment} from 'src/app/services/environment';
 
 
-interface FrontendConfig {
+interface FrontEndSecurityConfig {
   issuerUrl: string;
   clientId: string;
   scope: string;
+  redirectUri?: string | null;
   enabled: boolean;
+  requireLoginOverHttps: boolean;
+  accountManagementUrl: string | null;
+  orgManagementUrl: string | null;
 }
 
 @Injectable()
@@ -40,7 +44,11 @@ export class AuthService {
 
 
   private http: HttpClient;
-  private errorDuringBootstrap: any = undefined;
+  private _securityConfig: FrontEndSecurityConfig;
+
+  get securityConfig():FrontEndSecurityConfig {
+    return this._securityConfig;
+  }
 
 
   constructor(
@@ -57,7 +65,20 @@ export class AuthService {
     try {
       const oauthEvent = await this.configureOAuthService();
       if (oauthEvent === true) {
+        const loginResult = await this.oauthService.loadDiscoveryDocumentAndLogin({
+          disableNonceCheck: true
+        });
+        console.log('Login result: ' + loginResult);
+        if (!loginResult) {
+          return Promise.reject('Login failed')
+        }
+        // const userProfile = await this.oauthService.loadUserProfile()
+        // console.log('User:' , userProfile);
+
         //Open Idp is setup.
+        this.isDoneLoadingSubject$.next(true);
+        this.isAuthenticatedSubject$.next(true);
+
         await this.userInfoService.getUserInfo(true, this.oauthService.getAccessToken()).toPromise();
         this.oauthService.setupAutomaticSilentRefresh();
         this.router.initialNavigation();
@@ -67,17 +88,15 @@ export class AuthService {
         this.isAuthenticatedSubject$.next(true);
       }
     } catch (e) {
-      this.errorDuringBootstrap = e;
       throw e;
     }
   }
 
-  logout(): void {
-    this.oauthService.revokeTokenAndLogout();
-    this.oauthService.logOut();
+  async logout(): Promise<void> {
+    await this.oauthService.revokeTokenAndLogout();
   }
 
-  private setUpOpendIdpEventSubscriptions(): void {
+  private setupOpenIdpEventSubscriptions(): void {
     this.oauthService.events.subscribe(_ => {
       this.isAuthenticatedSubject$.next(this.oauthService.hasValidAccessToken());
     });
@@ -96,24 +115,14 @@ export class AuthService {
       .subscribe(() => this.router.initialNavigation());
   }
 
-  // Start 'Authorization Code Flow' see https://tools.ietf.org/html/rfc6749#section-1.3.1
-  private async startAuthorisationCodeFlow(): Promise<void> {
-    const state = isAngularRouteHash() ? window.location.hash : '';
-    this.oauthService.initCodeFlow(state);
-
-    // Stop the boot process of the angular app as the user will be redirected to the auth provider by the above statement.
-    await new Promise<void>(() => {
-    });
-  }
 
   private async configureOAuthService(): Promise<boolean | null> {
     const authConfig: AuthConfig = await this.buildAuthConfig();
     if (authConfig != null) {
       this.oauthService.configure(authConfig);
-      this.setUpOpendIdpEventSubscriptions();
-      this.oauthService.tokenValidationHandler = new JwksValidationHandler();
-      return this.runInitialLoginSequence()
-        .then(_ => Promise.resolve(true));
+      this.setupOpenIdpEventSubscriptions();
+      // return this.runInitialLoginSequence2()
+      return Promise.resolve(true);
       //return await this.runInitialLoginSequence();
     } else {
       return false;
@@ -121,103 +130,35 @@ export class AuthService {
   }
 
   private async buildAuthConfig(): Promise<AuthConfig | null> {
-    const frontendConfig = await this.loadFrontendConfig().toPromise();
-    if (!frontendConfig.enabled) {
+    const securityConfig = await this.loadFrontendConfig().toPromise();
+    this._securityConfig = securityConfig;
+    if (!securityConfig.enabled) {
       return null;
     }
 
     const currentLocation = window.location.origin;
-    const slashIfNeeded = currentLocation.endsWith('/') ? '' : '/';
-    console.log(`current silent refresh => ${currentLocation}${slashIfNeeded}silent-refresh.html`);
+    // console.log(`current silent refresh => ${currentLocation}${slashIfNeeded}silent-refresh.html`);
 
     return new AuthConfig({
-      issuer: frontendConfig.issuerUrl,
-      clientId: frontendConfig.clientId,
-      scope: frontendConfig.scope,
+      issuer: securityConfig.issuerUrl,
+      clientId: securityConfig.clientId,
+      scope: securityConfig.scope,
       responseType: 'code',
-      redirectUri: currentLocation,
-      silentRefreshRedirectUri: `${currentLocation}${slashIfNeeded}silent-refresh.html`,
+      redirectUri: securityConfig.redirectUri || currentLocation,
+      requireHttps: securityConfig.requireLoginOverHttps,
+
       clearHashAfterLogin: false,
       strictDiscoveryDocumentValidation: false,
       showDebugInformation: true,
-      requireHttps: false
+
     });
   }
 
-  private loadFrontendConfig(): Observable<FrontendConfig> {
-    return this.http.get<FrontendConfig>(`${this.environment.serverUrl}/api/security/config`);
+  private loadFrontendConfig(): Observable<FrontEndSecurityConfig> {
+    return this.http.get<FrontEndSecurityConfig>(`${this.environment.serverUrl}/api/security/config`);
   }
 
-  private runInitialLoginSequence(): Promise<void> {
-    // 0. LOAD CONFIG:
-    // First we have to check to see how the IdServer is
-    // currently configured:
-    return this.oauthService.loadDiscoveryDocument()
-      // 1. HASH LOGIN:
-      // Try to log in via hash fragment after redirect back
-      // from IdServer from initImplicitFlow:
-      .then(() => this.oauthService.tryLogin())
-      .then(() => {
-        if (this.oauthService.hasValidAccessToken()) {
-          return Promise.resolve();
-        }
-        // 2. SILENT LOGIN:
-        // Try to log in via a refresh because then we can prevent
-        // needing to redirect the user:
-        return this.oauthService.silentRefresh()
-          .then(() => Promise.resolve())
-          .catch(result => {
-            // Subset of situations from https://openid.net/specs/openid-connect-core-1_0.html#AuthError
-            // Only the ones where it's reasonably sure that sending the
-            // user to the IdServer will help.
-            const errorResponsesRequiringUserInteraction = [
-              'interaction_required',
-              'login_required',
-              'account_selection_required',
-              'consent_required'
-            ];
 
-            if (result
-              && result.reason.params
-              && errorResponsesRequiringUserInteraction.indexOf(result.reason.params.error) >= 0) {
-
-              // 3. ASK FOR LOGIN:
-              // At this point we know for sure that we have to ask the
-              // user to log in, so we redirect them to the IdServer to
-              // enter credentials.
-              //
-              console.warn('User interaction is needed to log in, we will wait for the user to manually log in.');
-              const state = isAngularRouteHash() ? window.location.hash : '';
-              this.oauthService.initCodeFlow(state);
-              return Promise.resolve();
-            }
-
-            // We can't handle the truth, just pass on the problem to the
-            // next handler.
-            return Promise.reject(result);
-          });
-      })
-
-      .then(() => {
-        this.isDoneLoadingSubject$.next(true);
-
-        // Check for the strings 'undefined' and 'null' just to be sure. Our current
-        // login(...) should never have this, but in case someone ever calls
-        // initImplicitFlow(undefined | null) this could happen.
-        if (this.oauthService.state && this.oauthService.state !== 'undefined' && this.oauthService.state !== 'null') {
-          let stateUrl = this.oauthService.state;
-          if (stateUrl.startsWith('/') === false) {
-            stateUrl = decodeURIComponent(stateUrl);
-          }
-          console.log(`There was state of ${this.oauthService.state}, so we are sending you to: ${stateUrl}`);
-          this.router.navigateByUrl(stateUrl);
-        }
-      })
-      .catch((error) => {
-        console.error(error);
-        this.isDoneLoadingSubject$.next(true);
-      });
-  }
 }
 
 export function isAngularRouteHash(): boolean {

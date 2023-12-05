@@ -11,5 +11,6 @@
     "targetType" : "com.foo.bar.CaskType"
   } ],
   "id" : "Pipeline-GenericPipelineTransportSpec-to-CaskTransportOutputSpec",
+  "kind" : "Pipeline",
   "description" : "From Pipeline INPUT Generic to 1 outputs"
 }

@@ -1,7 +1,7 @@
 package com.orbitalhq.auth.authorisation
 
 import com.orbitalhq.auth.authentication.UserDisplayName
-import com.orbitalhq.security.VyneGrantedAuthorities
+import com.orbitalhq.security.VyneGrantedAuthority
 import java.util.concurrent.ConcurrentHashMap
 
 
@@ -22,7 +22,7 @@ data class VyneUserRoleMappings(
  * When user doesn't have a role, give these default role mappings.
  */
 data class VyneDefaultUserRoleMappings(val roles: Set<UserRole> = emptySet())
-data class VyneUserAuthorisationRoleDefinition(val grantedAuthorities: Set<VyneGrantedAuthorities>)
+data class VyneUserAuthorisationRoleDefinition(val grantedAuthorities: Set<VyneGrantedAuthority>)
 data class VyneUserAuthorisationRoleDefinitions(
    val defaultUserRoleMappings: VyneDefaultUserRoleMappings = VyneDefaultUserRoleMappings(),
    val defaultApiClientRoleMappings: VyneDefaultUserRoleMappings = VyneDefaultUserRoleMappings(),
