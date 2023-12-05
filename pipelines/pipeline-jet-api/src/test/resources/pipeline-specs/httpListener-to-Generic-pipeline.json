@@ -14,5 +14,6 @@
     "direction" : "OUTPUT"
   } ],
   "id" : "Pipeline-HttpListenerTransportSpec-to-GenericPipelineTransportSpec",
+  "kind" : "Pipeline",
   "description" : "From Schema operation  POST requests at /foo/bar to 1 outputs"
 }

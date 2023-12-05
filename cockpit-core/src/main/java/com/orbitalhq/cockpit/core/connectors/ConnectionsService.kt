@@ -33,10 +33,10 @@ class ConnectionsService(
 ) {
 
    init {
-      healthCheckService.getHealthCheckUpdates(Duration.ofSeconds(10))
-         .subscribe { (config, status) ->
-            configStatuses[config] = status
-         }
+//      healthCheckService.getHealthCheckUpdates(Duration.ofSeconds(10))
+//         .subscribe { (config, status) ->
+//            configStatuses[config] = status
+//         }
    }
 
    private val configStatuses = ConcurrentHashMap<ConnectorConfiguration, ConnectionStatus>()

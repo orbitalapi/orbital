@@ -6,6 +6,7 @@ import com.orbitalhq.auth.authentication.JwtStandardClaims
 import com.orbitalhq.auth.authentication.VyneUserRepository
 import com.orbitalhq.auth.authorisation.*
 import com.orbitalhq.cockpit.core.lsp.LanguageServerConfig
+import com.orbitalhq.cockpit.core.security.authorisation.JwtRolesExtractor
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import com.orbitalhq.cockpit.core.security.authorisation.VyneOpenIdpConnectConfig
 import mu.KotlinLogging
@@ -35,13 +36,6 @@ private val logger = KotlinLogging.logger { }
 @EnableConfigurationProperties(VyneAuthorisationConfig::class, VyneOpenIdpConnectConfig::class)
 @Configuration
 class SecurityConfig {
-
-
-
-   @Bean
-   fun vyneUserRoleMappingRepository(authorisationConfig: VyneAuthorisationConfig): VyneUserRoleMappingRepository {
-      return VyneUserRoleMappingFileRepository(path = authorisationConfig.userToRoleMappingsFile)
-   }
 
    @Bean
    fun vyneUserRoleDefinitionRepository(authorisationConfig: VyneAuthorisationConfig): VyneUserRoleDefinitionRepository {
@@ -84,14 +78,12 @@ class SecurityConfig {
    class VyneReactiveSecurityConfig {
       @Bean
       fun grantedAuthoritiesExtractor(
-         vyneAuthorisationConfig: VyneAuthorisationConfig,
-         vyneUserRoleMappingRepository: VyneUserRoleMappingRepository,
+         rolesExtractor: JwtRolesExtractor,
          vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository
       ): GrantedAuthoritiesExtractor {
          return GrantedAuthoritiesExtractor(
-            vyneUserRoleMappingRepository,
             vyneUserRoleDefinitionRepository,
-            vyneAuthorisationConfig.adminRole
+            rolesExtractor
          )
       }
 
@@ -124,6 +116,7 @@ class SecurityConfig {
             .authorizeExchange()
             // End points for Cask and other vyne based services to fetch the schema in EUREKA schema discovery mode.
             .pathMatchers("/api/security/config").permitAll()
+            .pathMatchers("/api/actuator/**").permitAll()
             // All other api end points must be protected.
             .pathMatchers("/api/**").authenticated()
             .pathMatchers(

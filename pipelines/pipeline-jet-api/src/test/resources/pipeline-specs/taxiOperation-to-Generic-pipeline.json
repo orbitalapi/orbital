@@ -15,5 +15,6 @@
     "direction" : "OUTPUT"
   } ],
   "id" : "Pipeline-PollingTaxiOperationInputSpec-to-GenericPipelineTransportSpec",
+  "kind" : "Pipeline",
   "description" : "From Fetch data from operation com.foo.bar.MyService / listAllUsers to 1 outputs"
 }

@@ -16,15 +16,26 @@ class SecurityConfigController(private val openIdpConfiguration: VyneOpenIdpConn
     */
    @GetMapping("/api/security/config")
    fun securityIssuerUrl() =
-      FrontendConfig(openIdpConfiguration.issuerUrl, openIdpConfiguration.clientId, openIdpConfiguration.scope)
+      FrontEndSecurityConfig(
+         openIdpConfiguration.issuerUrl,
+         openIdpConfiguration.clientId,
+         openIdpConfiguration.scope,
+         openIdpConfiguration.requireHttps,
+         accountManagementUrl =  openIdpConfiguration.accountManagementUrl,
+         orgManagementUrl = openIdpConfiguration.orgManagementUrl
+         )
 
 }
 
-data class FrontendConfig(
-   val issuerUrl: String,
+data class FrontEndSecurityConfig(
+   val issuerUrl: String?, // null if security is disabled
    val clientId: String,
    val scope: String,
-   val enabled: Boolean = issuerUrl.isNotBlank()
+   val requireLoginOverHttps: Boolean,
+   val redirectUri: String? = null,
+   val enabled: Boolean = issuerUrl != null,
+   val accountManagementUrl: String?,
+   val orgManagementUrl:String?
 )
 
 
