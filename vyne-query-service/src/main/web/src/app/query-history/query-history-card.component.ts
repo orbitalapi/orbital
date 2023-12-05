@@ -8,41 +8,31 @@ import {isNullOrUndefined} from 'util';
   selector: 'app-query-history-card',
   template: `
     <div class="history-item">
-      <div [ngSwitch]="recordType">
-        <div *ngSwitchCase="'RestfulQuery'">
-          <app-restful-record [expressionTypeName]="expressionTypeName(historyRecord)"
-                              [historyRecord]="historyRecord"
-                              [factTypeNames]="getFactTypeNames(historyRecord)"></app-restful-record>
-        </div>
-        <div *ngSwitchCase="'VyneQlQuery'">
-          <app-vyneql-record [taxiQlQuery]="historyRecord.taxiQl">
+      <app-vyneql-record [taxiQlQuery]="historyRecord.taxiQl">
 
-          </app-vyneql-record>
-        </div>
-
-      </div>
+      </app-vyneql-record>
       <div class="record-stats">
         <div class="record-stat">
-          <mat-icon class="clock-icon">schedule</mat-icon>
+          <img src="assets/img/tabler/clock.svg">
           <span>{{ duration }}</span>
         </div>
         <div class="record-stat" *ngIf="historyRecord.responseStatus !== 'ERROR' && historyRecord.responseStatus !== 'CANCELLED'">
-          <mat-icon class="clock-icon">done</mat-icon>
+          <img src="assets/img/tabler/check.svg">
           <span>{{ historyRecord.recordCount }} records</span>
         </div>
         <div class="record-stat" *ngIf="historyRecord.responseStatus === 'ERROR'">
-          <mat-icon class="clock-icon">error_outline</mat-icon>
+          <img src="assets/img/tabler/exclamation-mark.svg">
           <span>A problem occurred</span>
         </div>
         <div class="record-stat" *ngIf="historyRecord.responseStatus === 'CANCELLED'">
-          <mat-icon class="clock-icon">highlight_off_outline</mat-icon>
+          <img src="assets/img/tabler/circle-x.svg">
           <span>Cancelled - {{ historyRecord.recordCount }} records</span>
         </div>
       </div>
 
       <div class="timestamp-row">
         <span>{{historyRecord.startTime | amTimeAgo}}</span>
-        <button  class="icon-button" mat-icon-button (click)="queryAgain()" *ngIf="recordType === 'VyneQlQuery'">
+        <button  class="icon-button" mat-icon-button (click)="queryAgain($event)" *ngIf="recordType === 'VyneQlQuery'">
           <img src="assets/img/tabler/repeat.svg">
         </button>
       </div>
@@ -100,7 +90,9 @@ export class QueryHistoryCardComponent {
   }
 
 
-  queryAgain() {
+  queryAgain(event:Event) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
     if (this.historyRecord) {
       this.router.navigate(['/query/editor'], {state: {query: this.historyRecord}});
     }
