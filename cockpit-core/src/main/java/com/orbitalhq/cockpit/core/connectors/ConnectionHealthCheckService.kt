@@ -25,8 +25,11 @@ class ConnectionHealthCheckService(
       private val logger = KotlinLogging.logger {}
    }
 
+
+
    fun getHealthCheckUpdates(pollDuration: Duration): Flux<Pair<ConnectorConfiguration, ConnectionStatus>> {
       return Flux.interval(pollDuration)
+         .publishOn(Schedulers.boundedElastic())
          .flatMap {
             val healthChecks = connectorsRegistry.load()
                .listAll()
