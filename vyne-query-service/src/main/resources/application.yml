@@ -34,7 +34,7 @@ spring:
       oauth2:
          resourceserver:
             jwt:
-               jwk-set-uri: ${vyne.security.open-ipd.jwk-set-uri:''}
+               jwk-set-uri: ${vyne.security.open-idp.jwks-uri:''}
 
    cloud.config.enabled: false
 vyne:

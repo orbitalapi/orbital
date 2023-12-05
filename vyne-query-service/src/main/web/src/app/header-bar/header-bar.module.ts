@@ -12,20 +12,24 @@ import { MatLegacyDialogModule as MatDialogModule } from '@angular/material/lega
 import { ConfirmationDialogModule } from 'src/app/confirmation-dialog/confirmation-dialog.module';
 import {WorkspaceSelectorModule} from "../workspace-selector/workspace-selector.module";
 import {TuiAvatarModule} from "@taiga-ui/kit";
+import {TuiButtonModule, TuiDataListModule, TuiHostedDropdownModule} from "@taiga-ui/core";
 
 @NgModule({
-    imports: [
-        MatToolbarModule,
-        SearchModule,
-        CommonModule,
-        MatButtonModule,
-        MatIconModule,
-        MatMenuModule,
-        MatDialogModule,
-        ConfirmationDialogModule,
-        WorkspaceSelectorModule,
-        TuiAvatarModule,
-    ],
+  imports: [
+    MatToolbarModule,
+    SearchModule,
+    CommonModule,
+    MatButtonModule,
+    MatIconModule,
+    MatMenuModule,
+    MatDialogModule,
+    ConfirmationDialogModule,
+    WorkspaceSelectorModule,
+    TuiAvatarModule,
+    TuiHostedDropdownModule,
+    TuiDataListModule,
+    TuiButtonModule,
+  ],
   exports: [HeaderBarComponent, AvatarComponent],
   declarations: [HeaderBarComponent, AvatarComponent],
   providers: [],

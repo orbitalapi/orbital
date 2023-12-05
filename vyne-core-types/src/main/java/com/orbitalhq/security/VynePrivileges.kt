@@ -1,5 +1,7 @@
 package com.orbitalhq.security
 
+import mu.KotlinLogging
+
 
 /**
  * Resources:
@@ -16,6 +18,8 @@ package com.orbitalhq.security
  *    - modifyMembership
  *  - Connections
  */
+
+typealias GrantedAuthorityName = String
 
 object VynePrivileges {
    const val RunQuery = "RUN_QUERY"
@@ -40,7 +44,8 @@ object VynePrivileges {
    const val ModifyWorkspaceMembership = "MODIFY_WORKSPACE_MEMBERSHIP"
 }
 
-enum class VyneGrantedAuthorities(val constantValue: String) {
+
+enum class VyneGrantedAuthority(val constantValue: GrantedAuthorityName) {
    RunQuery(VynePrivileges.RunQuery),
    CancelQuery(VynePrivileges.CancelQuery),
    ViewQueryHistory(VynePrivileges.ViewQueryHistory),
@@ -60,5 +65,16 @@ enum class VyneGrantedAuthorities(val constantValue: String) {
    EditUsers(VynePrivileges.EditUsers),
    CreateWorkspace(VynePrivileges.CreateWorkspace),
    ViewWorkspaces(VynePrivileges.ViewWorkspaces),
-   ModifyWorkspaceMembership(VynePrivileges.ModifyWorkspaceMembership)
+   ModifyWorkspaceMembership(VynePrivileges.ModifyWorkspaceMembership);
+
+   companion object {
+      private val byConstant = values().associateBy { it.constantValue }
+      private val logger = KotlinLogging.logger {}
+      fun from(authorities: Collection<String>): List<VyneGrantedAuthority> = authorities.mapNotNull { authority ->
+         if (!byConstant.containsKey(authority)) {
+            logger.warn { "There is no authority defined named $authority" }
+         }
+         byConstant[authority]
+      }
+   }
 }

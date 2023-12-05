@@ -26,7 +26,9 @@ export class HeaderBarComponent implements OnInit {
 
   ngOnInit(): void {
     this.userInfoService.userInfo$.subscribe(
-      userInfo => this.vyneUser = userInfo,
+      userInfo => {
+        this.vyneUser = userInfo
+      },
       error => console.warn('Failed to retrieve user info - user is probably not logged in')
     );
   }
