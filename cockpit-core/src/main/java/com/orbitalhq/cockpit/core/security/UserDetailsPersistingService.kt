@@ -51,7 +51,7 @@ class UserDetailsPersistingService(
          .subscribe { event ->
             logger.info { "Persisting details for user ${event.preferredUserName}" }
             try {
-               val user = vyneUserFromClaims(event.claims)
+               val user = vyneUserFromClaims(event.claims, event.authorities)
                // Not sure how to call this from the flux?
                runBlocking {
                   val updated = userRepository.upsert(

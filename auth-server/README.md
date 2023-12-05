@@ -26,7 +26,7 @@ To run vyne in authenticated mode, you need to add the following params to your 
 --vyne.security.openIdp.issuerUrl=http://localhost:8080/realms/Vyne
 --vyne.security.openIdp.clientId=vyne-spa
 --vyne.security.openIdp.scope=openid
-profile
+--vyne.security.openIdp.require-https=false
 ```
 
 Currently, the following user/passwords are configured:

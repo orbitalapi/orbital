@@ -1,9 +1,9 @@
-import { Inject, Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import {Inject, Injectable} from '@angular/core';
+import {HttpClient, HttpHeaders} from '@angular/common/http';
+import {BehaviorSubject, Observable, of} from 'rxjs';
 
-import { map, shareReplay } from 'rxjs/operators';
-import { ENVIRONMENT, Environment } from 'src/app/services/environment';
+import {map, shareReplay} from 'rxjs/operators';
+import {ENVIRONMENT, Environment} from 'src/app/services/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -32,7 +32,7 @@ export class UserInfoService {
       if (accessToken) {
         let header = 'Bearer ' + accessToken;
         let headers = new HttpHeaders().set('Authorization', header);
-        return this.httpClient.get<VyneUser>(`${this.environment.serverUrl}/api/user`, { headers: headers })
+        return this.httpClient.get<VyneUser>(`${this.environment.serverUrl}/api/user`, {headers: headers})
           .pipe(map(vyneUser => {
             this.userInfo$.next(vyneUser);
             return this.userInfo$.getValue();

@@ -3,6 +3,7 @@ package com.orbitalhq.queryService.security
 import com.fasterxml.jackson.core.type.TypeReference
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.orbitalhq.auth.authentication.JwtStandardClaims
+import com.orbitalhq.cockpit.core.security.authorisation.KeycloakRolesExtractor
 import com.orbitalhq.pipelines.jet.api.MetricValueSet
 import org.jose4j.json.JsonUtil
 import org.jose4j.jwk.JsonWebKeySet
@@ -28,8 +29,9 @@ data class JWSBuilder(
    fun subject(subject: String) = apply { this.claimsSubject = subject }
    fun clientId(clientId: String) = apply { this.claimsClientId = clientId }
 
-   fun build(): JsonWebSignature {
+   fun build(roles: List<String> = emptyList()): JsonWebSignature {
       // The JWT Claims Set represents a JSON object whose members are the claims conveyed by the JWT.
+      val rolesClaim = mapOf(KeycloakRolesExtractor.Roles to roles)
       val claims = JwtClaims().apply {
          jwtId = UUID.randomUUID().toString() // unique identifier for the JWT
          issuer = claimsIssuer // identifies the principal that issued the JWT
@@ -41,6 +43,7 @@ data class JWSBuilder(
          setClaim("scope", "openid profile email") // Scope Values
          setClaim(JwtStandardClaims.PreferredUserName, claimsSubject)
          setClaim(JwtStandardClaims.Email, "$claimsSubject@vyne.co")
+         setClaim(KeycloakRolesExtractor.RealmAccess, rolesClaim)
          claimsClientId?.let { setClaim(JwtStandardClaims.ClientId, it) }
       }
 
@@ -176,7 +179,6 @@ data class JWSBuilder(
             algorithm = AlgorithmIdentifiers.RSA_USING_SHA256
             use = "sig"
          }
-
          jwsBuilder.rsaJsonWebKey(rsaJsonWebKey)
          return Pair(jwsBuilder, rsaJsonWebKey)
       }

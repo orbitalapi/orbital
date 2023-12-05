@@ -60,13 +60,14 @@ profile
       "spring.main.allow-bean-definition-overriding=true",
       "vyne.search.directory=./search/\${random.int}",
       "spring.datasource.url=jdbc:h2:mem:testdbVyneQuerySecureIntegrationTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY",
-      "spring.security.oauth2.resourceserver.jwt.jwk-set-uri=\${wiremock.server.baseUrl}/.well-known/jwks.json",
+      "vyne.security.open-idp.jwks-uri=\${wiremock.server.baseUrl}/.well-known/jwks.json",
       "vyne.security.openIdp.enabled=true",
+      "vyne.security.open-idp.issuer-url=http://localhost:\${wiremock.server.port}",
       "wiremock.server.baseUrl=http://localhost:\${wiremock.server.port}",
       "logging.level.org.springframework.security=DEBUG",
       "vyne.analytics.persistResults=true",
-      "vyne.caskService.url=http://localhost:\${wiremock.server.port}",
-      "vyne.pipelinesJetRunner.url=http://localhost:\${wiremock.server.port}",
+//      "vyne.caskService.url=http://localhost:\${wiremock.server.port}",
+//      "vyne.pipelinesJetRunner.url=http://localhost:\${wiremock.server.port}",
       "vyne.telemetry.enabled=false",
    ]
 )
@@ -106,6 +107,15 @@ class VyneQuerySecurityIntegrationTest {
    private val queryRunnerUser = "queryExecutor"
    private val viewerUserName = "viewer"
 
+   private val roles = mapOf(
+      adminUserName to listOf("Admin"),
+      platformManagerUser to listOf("PlatformManager"),
+      queryRunnerUser to listOf("QueryRunner"),
+      viewerUserName to listOf("Viewer"),
+      "userWithoutAnyRoleSetup" to emptyList()
+   )
+
+
    @MockBean
    lateinit var eventDispatcher: RepositorySpecLifecycleEventDispatcher
 
@@ -127,10 +137,7 @@ class VyneQuerySecurityIntegrationTest {
       @Primary
       @Bean
       fun vyneAuthorisationConfig(): VyneAuthorisationConfig {
-         val testUserRoleMappingFile = ClassPathResource("authorisation/user-role-mappings.conf").file
-         return VyneAuthorisationConfig().apply {
-            userToRoleMappingsFile = testUserRoleMappingFile.toPath()
-         }
+         return VyneAuthorisationConfig()
       }
    }
 
@@ -271,24 +278,7 @@ class VyneQuerySecurityIntegrationTest {
     * End get historical query result
     */
 
-   /**
-    * Start Get Pipelines
-    */
-   @Test
-   fun `an admin user can get pipelines`() {
-      val token = setUpLoggedInUser(adminUserName)
-      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
-      val response = getPipelines(headers)
-      response.statusCodeValue.should.equal(HttpStatus.SC_OK)
-   }
 
-   @Test
-   fun `a platform manager can get pipelines`() {
-      val token = setUpLoggedInUser(platformManagerUser)
-      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
-      val response = getPipelines(headers)
-      response.statusCodeValue.should.equal(HttpStatus.SC_OK)
-   }
 
    @Test
    fun `a query runner can not get pipelines`() {
@@ -317,54 +307,6 @@ class VyneQuerySecurityIntegrationTest {
 
    /**
     * End Get Pipelines
-    */
-
-   /**
-    * Start Delete Pipelines
-    */
-   @Test
-   fun `an admin user can delete pipelines`() {
-      val token = setUpLoggedInUser(adminUserName)
-      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
-      val response = deletePipeline(headers)
-      response.statusCodeValue.should.equal(HttpStatus.SC_OK)
-   }
-
-   @Test
-   fun `a platform manager can delete pipelines`() {
-      val token = setUpLoggedInUser(platformManagerUser)
-      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
-      val response = deletePipeline(headers)
-      response.statusCodeValue.should.equal(HttpStatus.SC_OK)
-   }
-
-   @Test
-   fun `a query runner can not delete pipelines`() {
-      val token = setUpLoggedInUser(queryRunnerUser)
-      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
-      val response = deletePipeline(headers)
-      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
-   }
-
-   @Test
-   fun `a viewer user can not delete pipelines`() {
-      val token = setUpLoggedInUser(viewerUserName)
-      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
-      val response = deletePipeline(headers)
-      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
-   }
-
-   @Test
-   fun `unauthenticated user can not delete pipelines`() {
-      val headers = HttpHeaders()
-      headers.contentType = MediaType.APPLICATION_JSON
-      headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
-      val response = deletePipeline(headers)
-      response.statusCodeValue.should.be.equal(HttpStatus.SC_UNAUTHORIZED)
-   }
-
-   /**
-    * End Delete Pipelines
     */
 
    /**
@@ -570,60 +512,12 @@ class VyneQuerySecurityIntegrationTest {
     * End Create Jdbc Connection
     */
 
-   /**
-    * Start Get user role definitions
-    */
-   @Test
-   fun `an admin user can get vyne user role definitions`() {
-      val token = setUpLoggedInUser(adminUserName)
-      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
-      val response = getUserRoleDefinitions(headers)
-      response.statusCodeValue.should.equal(HttpStatus.SC_OK)
-   }
-
-   @Test
-   fun `a platform manager can not get vyne user role definitions`() {
-      val token = setUpLoggedInUser(platformManagerUser)
-      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
-      val response = getUserRoleDefinitions(headers)
-      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
-   }
-
-   @Test
-   fun `a query runner can not get vyne user role definitions`() {
-      val token = setUpLoggedInUser(queryRunnerUser)
-      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
-      val response = getUserRoleDefinitions(headers)
-      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
-   }
-
-   @Test
-   fun `a viewer user can not get vyne user role definitions`() {
-      val token = setUpLoggedInUser(viewerUserName)
-      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
-      val response = getUserRoleDefinitions(headers)
-      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
-   }
-
-   @Test
-   fun `unauthenticated user can not get vyne user role definitions`() {
-      val headers = HttpHeaders()
-      headers.contentType = MediaType.APPLICATION_JSON
-      headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
-      val response = getUserRoleDefinitions(headers)
-      response.statusCodeValue.should.be.equal(HttpStatus.SC_UNAUTHORIZED)
-   }
-
-   /**
-    * End Get user role definitions
-    */
-
    private fun setUpLoggedInUser(userName: String): String {
       val setUpIdpJwt = JWSBuilder.setUpRsaJsonWebKey(userName)
       this.jwsBuilder = setUpIdpJwt.first
       this.rsaJsonWebKey = setUpIdpJwt.second
       JWSBuilder.initialiseIdpServer(wireMockServerBaseUrl, this.jwsBuilder!!, this.rsaJsonWebKey!!)
-      return jwsBuilder!!.build().compactSerialization
+      return jwsBuilder!!.build(roles[userName]!!).compactSerialization
    }
 
    private fun issueVyneQuery(headers: HttpHeaders): ResponseEntity<String> {
