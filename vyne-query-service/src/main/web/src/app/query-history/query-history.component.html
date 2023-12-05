@@ -1,6 +1,9 @@
 <app-panel-header title="Query History">
   <div class="spacer"></div>
-  <button mat-flat-button class='button-small menu-bar-button' (click)="loadQuerySummaries()">Refresh</button>
+  <button appearance="outline" size="s"
+          tuiButton
+          type="button" class='button-small menu-bar-button' (click)="loadQuerySummaries()">Refresh
+  </button>
 </app-panel-header>
 <div class="container">
   <app-query-list [historyRecords]="history"

@@ -136,7 +136,7 @@ export class QueryEditorComponent implements OnInit {
               private snackbarService: MatSnackBar
   ) {
 
-    this.initialQuery = this.router.getCurrentNavigation()?.extras?.state?.query;
+    this.initialQuery = this.router.lastSuccessfulNavigation?.extras?.state?.query;
     this.typeService.getTypes()
       .subscribe(schema => this.schema = schema);
     this.customActions = [
@@ -155,27 +155,6 @@ export class QueryEditorComponent implements OnInit {
 
   ngOnInit(): void {
     this.query = this.initialQuery ? this.initialQuery.taxiQl : '';
-  }
-
-  remeasure() {
-    setTimeout(() => {
-      if (!this.monacoEditor) {
-        return;
-      }
-      const editorDomNode = this.monacoEditor.getDomNode();
-      const offsetHeightFixer = 20;
-      if (editorDomNode) {
-        const codeContainer = this.monacoEditor.getDomNode().getElementsByClassName('view-lines')[0] as HTMLElement;
-        const calculatedHeight = codeContainer.offsetHeight + offsetHeightFixer + 'px';
-        editorDomNode.style.height = calculatedHeight;
-        const firstParent = editorDomNode.parentElement;
-        firstParent.style.height = calculatedHeight;
-        const secondParent = firstParent.parentElement;
-        secondParent.style.height = calculatedHeight;
-        console.log('Resizing Monaco editor to ' + calculatedHeight);
-        this.monacoEditor.layout();
-      }
-    }, 10);
   }
 
   submitQuery() {

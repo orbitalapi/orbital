@@ -6,12 +6,10 @@ import { MatLegacyButtonModule as MatButtonModule } from '@angular/material/lega
 import { MomentModule } from 'ngx-moment';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { VyneqlRecordComponent } from './vyneql-record.component';
-import { RestfulRecordComponent } from './restful-record.component';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { TypedInstancePanelModule } from '../typed-instance-panel/typed-instance-panel.module';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { QueryListComponent } from './query-list.component';
-import { MatIconModule } from '@angular/material/icon';
 import { QueryHistoryCardComponent } from './query-history-card.component';
 import { QueryPanelModule } from '../query-panel/query-panel.module';
 import { HeaderBarModule } from '../header-bar/header-bar.module';
@@ -34,7 +32,6 @@ import { TruncatePipeModule } from 'src/app/truncate-pipe/truncate-pipe.module';
     MatButtonModule,
     MomentModule,
     MatToolbarModule,
-    MatIconModule,
     MatSidenavModule,
     TypedInstancePanelModule,
     ScrollingModule,
@@ -62,7 +59,6 @@ import { TruncatePipeModule } from 'src/app/truncate-pipe/truncate-pipe.module';
   declarations: [
     QueryHistoryComponent,
     VyneqlRecordComponent,
-    RestfulRecordComponent,
     QueryListComponent,
     QueryHistoryCardComponent,
     ActiveQueryCardComponent],
