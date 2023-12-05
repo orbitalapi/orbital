@@ -1,7 +1,10 @@
 package com.orbitalhq.cockpit.core.security
 
-import com.orbitalhq.auth.authentication.JwtStandardClaims
+import com.orbitalhq.auth.authentication.PropelAuthJwtTokenClaims
+import com.orbitalhq.auth.authentication.getPreferredUserDisplayName
 import com.orbitalhq.auth.authorisation.*
+import com.orbitalhq.cockpit.core.security.authorisation.JwtRolesExtractor
+import com.orbitalhq.cockpit.core.security.authorisation.PropelAuthClaimsExtractor
 import com.orbitalhq.utils.RetryFailOnSerializeEmitHandler
 import mu.KotlinLogging
 import org.springframework.core.convert.converter.Converter
@@ -17,13 +20,10 @@ import reactor.core.publisher.Sinks
  * Also, emits a UserAuthenticatedEvent on every interaction.
  */
 class GrantedAuthoritiesExtractor(
-   private val vyneUserRoleMappingRepository: VyneUserRoleMappingRepository,
    vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository,
-   private val adminRoleName: UserRole
+   private val rolesExtractor: JwtRolesExtractor
 ) : Converter<Jwt, Collection<GrantedAuthority>>, UserAuthenticatedEventSource {
    private val vyneRoleDefinitions = vyneUserRoleDefinitionRepository.findAll()
-   private val defaultClientUserRoles = vyneUserRoleDefinitionRepository.defaultUserRoles().roles
-   private val defaultApiClientUserRoles = vyneUserRoleDefinitionRepository.defaultApiClientUserRoles().roles
 
    /**
     * A Sink that is published to whenever we encounter a JWT token.
@@ -42,36 +42,16 @@ class GrantedAuthoritiesExtractor(
    }
 
    /**
-    * Populates set of granted authorities from 'sub' claim of the received jwt token.
-    * 'sub' claim value gives us the actual username. From the 'username', first we find the corresponding roles
-    * defined for the user and then for each role we fetch the corresponding granted authorities.
-    *
+    * Reads the roles from the JWT, and converts to authorities using the mapping
     */
    override fun convert(jwt: Jwt): Collection<GrantedAuthority> {
-      val preferredUserName = jwt.claims[JwtStandardClaims.PreferredUserName] as String
-      val client = jwt.claims[JwtStandardClaims.ClientId]
-
-
-      if (client != null) {
-         // The call came from an api client.
-         assignDefaultRoleToApiClient(preferredUserName)
-      } else {
-         //First check whether this is the first user logged on to the system.
-         checkFirstUserLogin(preferredUserName)
-      }
-
-      // find all the roles assigned to user.
-      val userRoles = vyneUserRoleMappingRepository.findByUserName(preferredUserName)
-      if (userRoles == null) {
-         // We see the user first the very first time, assign the user to defaultUserRoles.
-         logger.info { "A Vyne human user with Preferred User Name $preferredUserName logs in as the first user, assigning ${this.defaultClientUserRoles}" }
-         vyneUserRoleMappingRepository.save(preferredUserName, VyneUserRoles(roles = defaultClientUserRoles))
-      }
+      val preferredUserName = getPreferredUserDisplayName(jwt.claims)
+      val roles = extractRoles(jwt)
 
       // map assigned roles to set of granted authorities.
-      val userGrantedAuthorities = userRoles?.roles?.flatMap {
+      val userGrantedAuthorities = roles.flatMap {
          vyneRoleDefinitions[it]?.grantedAuthorities ?: emptySet()
-      }?.toSet() ?: emptySet()
+      }.toSet()
 
       val authorities =
          userGrantedAuthorities.map { grantedAuthority -> SimpleGrantedAuthority(grantedAuthority.constantValue) }
@@ -83,37 +63,7 @@ class GrantedAuthoritiesExtractor(
       return authorities
    }
 
-   private fun checkFirstUserLogin(preferredUserName: String) {
-      when (vyneUserRoleMappingRepository.size()) {
-         0 -> {
-            logger.info { "User With Preferred User Name $preferredUserName logs in as the first user, assigning $adminRoleName" }
-            vyneUserRoleMappingRepository.save(preferredUserName, VyneUserRoles(roles = setOf(adminRoleName)))
-         }
-
-         1 -> {
-            // an api client could be the first one to invoke query server.
-            val firstUser = vyneUserRoleMappingRepository.findAll().values.first()
-            val firstUserName = vyneUserRoleMappingRepository.findAll().keys.first()
-            if (firstUserName != preferredUserName && firstUser.type == VyneConsumerType.API.name) {
-               // that means the first call to query server came from an api client.
-               logger.info { "User With Preferred User Name $preferredUserName logs in as the first user, assigning $adminRoleName" }
-               vyneUserRoleMappingRepository.save(preferredUserName, VyneUserRoles(roles = setOf(adminRoleName)))
-            }
-         }
-      }
-   }
-
-   /**
-    * Invoked only for api client calls, and relies on the fact that Token contains the 'ClientId' claim
-    * (TODO this assumption, existence of clientId claim for Client_credentials based flow, is probably only valid for KeyCloack)
-    */
-   private fun assignDefaultRoleToApiClient(preferredUserName: String) {
-      if (vyneUserRoleMappingRepository.findByUserName(preferredUserName) == null) {
-         logger.info { "Api Client Preferred User Name $preferredUserName logs in as the first user, assigning ${this.defaultApiClientUserRoles}" }
-         vyneUserRoleMappingRepository.save(
-            preferredUserName,
-            VyneUserRoles(roles = defaultApiClientUserRoles, type = VyneConsumerType.API.name)
-         )
-      }
+   private fun extractRoles(jwt: Jwt): Set<String> {
+      return rolesExtractor.getRoles(jwt)
    }
 }

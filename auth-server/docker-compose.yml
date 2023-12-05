@@ -1,5 +1,5 @@
 services:
-   auth:
+   keycloak:
 #      image: quay.io/keycloak/keycloak:20.0
       image: quay.io/keycloak/keycloak:22.0
       ports:
@@ -16,3 +16,54 @@ services:
       #         - export --dir /opt/keycloak/data/import --users realm_file
       volumes:
          - ./realms:/opt/keycloak/data/import
+
+   orbital:
+      image: orbital:local
+      environment:
+         JAVA_OPTS: >-
+            -Xms256m
+            -Xmx1024m
+         OPTIONS: >-
+            --vyne.analytics.persistRemoteCallResponses=true
+            --vyne.analytics.persistResults=true
+            --vyne.db.username=orbital
+            --vyne.db.password=changeme
+            --vyne.db.host=postgres
+            --vyne.workspace.config-file=/opt/service/workspace/workspace.conf
+            --vyne.security.openIdp.enabled=true
+            --vyne.security.openIdp.jwks-uri=http://keycloak:8080/realms/Vyne/protocol/openid-connect/certs
+            --vyne.security.openIdp.issuerUrl=http://keycloak:8080/realms/Vyne
+            --vyne.security.openIdp.clientId=vyne-spa
+            --vyne.security.openIdp.require-https=false
+      #            If you're using a workspace, rather than a single-project config,
+      #           use this option.
+      #            --vyne.workspace.config-file=/opt/service/workspace/workspace.conf
+      ports:
+         - "9022:9022"
+      expose:
+         - 9022
+      volumes:
+         - ~/.orbital/license/:/opt/var/vyne/license/
+         - .:/opt/service/workspace
+      depends_on:
+         - postgres
+      deploy:
+         resources:
+            limits:
+               memory: 600mb
+
+   postgres:
+      image: postgres:15
+      expose:
+         - 5432
+      ports:
+         - "25432:5432"
+      environment:
+         POSTGRES_DB: orbital
+         POSTGRES_USER: orbital
+         POSTGRES_PASSWORD: changeme
+      volumes:
+         - postgres_data:/var/lib/postgresql/data
+
+volumes:
+   postgres_data:

@@ -9,4 +9,5 @@ import org.springframework.security.core.GrantedAuthority
  *
  * Consumers should consume sparingly.
  */
-data class UserAuthenticatedEvent(val preferredUserName: String, val claims: Map<String,Any>, val authorities: List<GrantedAuthority>)
+data class UserAuthenticatedEvent(val preferredUserName: String, val claims: Map<String,Any>,
+                                  val authorities: List<GrantedAuthority>)

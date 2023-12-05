@@ -1,8 +1,14 @@
 package com.orbitalhq.auth.authentication
 
 import com.orbitalhq.auth.authorisation.UserRole
-import com.orbitalhq.security.VyneGrantedAuthorities
-import jakarta.persistence.*
+import com.orbitalhq.security.VyneGrantedAuthority
+import jakarta.persistence.CollectionTable
+import jakarta.persistence.Column
+import jakarta.persistence.ElementCollection
+import jakarta.persistence.Entity
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.Transient
 import java.util.concurrent.ConcurrentHashMap
 
 // The userId of a user as defined by their issuer.
@@ -51,18 +57,23 @@ data class VyneUser(
    // However, we use them for sending to the UI
    // Note that these authorities aren't used when evaluating
    // authorization (that comes from the user credentials - see GrantedAuthoritiesExtractor
-   // however, they're populated from the same place, so should be in sync
+   // however, they're populated from the same place, so should be in sync.
    @Transient
-   val grantedAuthorities: Set<VyneGrantedAuthorities> = emptySet(),
+   val grantedAuthorities: Collection<VyneGrantedAuthority> = emptySet(),
+
+   // Not persisted, assigned at runtime
+   @Transient
+   val isAuthenticated: Boolean = true
 ) {
    companion object {
-      fun anonymousUser(grantedAuthorities: Set<VyneGrantedAuthorities>) =
+      fun anonymousUser(grantedAuthorities: Set<VyneGrantedAuthority>) =
          VyneUser(
             id = "Anonymous",
             issuer = "Orbital",
             "Anonymous",
             email = "anonymous@orbitalhq.com",
-            grantedAuthorities = grantedAuthorities
+            grantedAuthorities = grantedAuthorities,
+            isAuthenticated = false
          )
    }
 

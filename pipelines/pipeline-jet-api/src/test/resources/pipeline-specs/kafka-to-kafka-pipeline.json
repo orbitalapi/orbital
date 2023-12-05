@@ -18,5 +18,6 @@
     "targetType" : "com.foo.bar.OutputType"
   } ],
   "id" : "Pipeline-KafkaTransportInputSpec-to-KafkaTransportOutputSpec",
+  "kind" : "Pipeline",
   "description" : "From Kafka input from topic input-topic on connection my-kafka-connection to 1 outputs"
 }

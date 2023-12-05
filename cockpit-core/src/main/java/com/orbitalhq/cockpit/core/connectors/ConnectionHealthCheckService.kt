@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
+import reactor.core.scheduler.Schedulers
 import java.time.Duration
 
 interface ConnectionHealthProvider {
@@ -20,7 +21,6 @@ class ConnectionHealthCheckService(
    private val connectorsRegistry: SourceLoaderConnectorsRegistry,
    private val healthCheckProviders: List<ConnectionHealthProvider>
 ) {
-
    companion object {
       private val logger = KotlinLogging.logger {}
    }
