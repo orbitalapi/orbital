@@ -9,8 +9,8 @@ import reactor.core.publisher.Flux
  * Lightweight interface which provides access to various
  * lifecycle events related to the creation and modification of source repositories
  */
-interface RepositoryLifecycleEventSource {
-   val repositoryAdded: Flux<SchemaPackageTransport>
+interface ProjectStoreLifecycleEventSource {
+   val projectStoreAdded: Flux<SchemaPackageTransport>
 
    /**
     * A combined flux of all sourcesChanged events from all repositories

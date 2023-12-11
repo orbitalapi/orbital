@@ -3,7 +3,7 @@ package com.orbitalhq.schemaServer
 import com.orbitalhq.connectors.soap.SoapWsdlSourceConverter
 import com.orbitalhq.monitoring.EnableCloudMetrics
 import com.orbitalhq.schemaServer.core.VersionedSourceLoader
-import com.orbitalhq.schemaServer.core.config.WorkspaceConfig
+import com.orbitalhq.schemaServer.core.config.WorkspaceSettings
 import com.orbitalhq.schemas.readers.SourceConverterRegistry
 import com.orbitalhq.schemas.readers.TaxiSourceConverter
 import com.orbitalhq.spring.config.VyneSpringHazelcastConfiguration
@@ -27,7 +27,7 @@ private val logger = KotlinLogging.logger {}
 @EnableConfigurationProperties(
    value = [
       VyneSpringHazelcastConfiguration::class,
-      WorkspaceConfig::class
+      WorkspaceSettings::class
    ]
 )
 class SchemaServerApp {

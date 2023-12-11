@@ -8,12 +8,11 @@ import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schema.publisher.loaders.*
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoader
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageWriter
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.schemaServer.editor.*
 import com.orbitalhq.schemas.SavedQuery
 import com.orbitalhq.schemas.taxi.asSavedQuery
 import com.orbitalhq.schemas.taxi.toMessage
-import com.orbitalhq.schemas.taxi.toVyneSources
 import com.orbitalhq.schemas.toVyneQualifiedName
 import com.orbitalhq.spring.http.BadRequestException
 import lang.taxi.errors
@@ -32,7 +31,7 @@ private val logger = KotlinLogging.logger {}
 // break the config mechanism of HOCON we're using.
 //@ConditionalOnBean(ApiEditorRepository::class)
 class SchemaEditorService(
-   private val repositoryManager: ReactiveRepositoryManager, private val schemaProvider: SchemaStore
+    private val repositoryManager: ReactiveProjectStoreManager, private val schemaProvider: SchemaStore
 ) : SchemaEditorApi {
 
 

@@ -12,11 +12,11 @@ import com.orbitalhq.schemaServer.core.adaptors.PackageLoaderSpecHoconSupport
 import com.orbitalhq.schemaServer.core.adaptors.UriHoconSupport
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
-import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
+import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaRepositoryConfig
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecAddedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.GitSpecAddedEvent
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
 import com.orbitalhq.toPackageMetadata
@@ -31,14 +31,14 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.*
 
-class FileSchemaRepositoryConfigLoader(
+class FileWorkspaceConfigLoader(
    private val configFilePath: Path,
    fallback: Config = ConfigFactory.systemEnvironment(),
-   private val eventDispatcher: RepositorySpecLifecycleEventDispatcher
+   private val eventDispatcher: ProjectSpecLifecycleEventDispatcher
 ) :
-   BaseHoconConfigFileRepository<SchemaRepositoryConfig>(
+   BaseHoconConfigFileRepository<WorkspaceConfig>(
       configFilePath, fallback
-   ), SchemaRepositoryConfigLoader {
+   ), WorkspaceConfigLoader {
    private val logger = KotlinLogging.logger {}
 
    init {
@@ -61,15 +61,15 @@ class FileSchemaRepositoryConfigLoader(
       }
    }
 
-   override fun extract(config: Config): SchemaRepositoryConfig = config.extract()
+   override fun extract(config: Config): WorkspaceConfig = config.extract()
 
-   override fun emptyConfig(): SchemaRepositoryConfig = SchemaRepositoryConfig(null, null)
+   override fun emptyConfig(): WorkspaceConfig = WorkspaceConfig(null, null)
 
    override fun safeConfigJson(): String {
       return getSafeConfigString(unresolvedConfig(), asJson = true)
    }
 
-   override fun load(): SchemaRepositoryConfig {
+   override fun load(): WorkspaceConfig {
       val original = typedConfig()
       return resolveRelativePaths(original)
    }
@@ -82,7 +82,7 @@ class FileSchemaRepositoryConfigLoader(
       }
    }
 
-   private fun resolveRelativePaths(original: SchemaRepositoryConfig): SchemaRepositoryConfig {
+   private fun resolveRelativePaths(original: WorkspaceConfig): WorkspaceConfig {
       val updatedFileConfig = original.file?.let { fileConfig ->
          val resolvedPaths = fileConfig.projects
             .map { packageSpec ->
@@ -194,7 +194,7 @@ class FileSchemaRepositoryConfigLoader(
 
    }
 
-   override fun addGitSpec(gitSpec: GitRepositorySpec) {
+   override fun addGitSpec(gitSpec: GitProjectStoreSpec) {
       val current = this.typedConfig() // Don't call load, as we want the original, not the one we resolve paths with
       val currentGitConfig = current.git ?: GitSchemaRepositoryConfig()
 
@@ -247,7 +247,7 @@ class FileSchemaRepositoryConfigLoader(
       return removedPackages
    }
 
-   fun save(schemaRepoConfig: SchemaRepositoryConfig) {
+   fun save(schemaRepoConfig: WorkspaceConfig) {
       val newConfig = schemaRepoConfig.toHocon()
 
       // Use the existing unresolvedConfig to ensure that when we're

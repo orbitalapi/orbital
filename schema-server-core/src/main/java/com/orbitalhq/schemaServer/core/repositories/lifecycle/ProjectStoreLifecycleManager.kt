@@ -14,10 +14,10 @@ import java.time.Duration
  *
  * Consumers should subscribe for updates.
  */
-class RepositoryLifecycleManager(
-) : RepositoryLifecycleEventSource,
-   RepositoryLifecycleEventDispatcher,
-   RepositorySpecLifecycleEventDispatcher,
+class ProjectStoreLifecycleManager(
+) : ProjectStoreLifecycleEventSource,
+   ProjectStoreLifecycleEventDispatcher,
+   ProjectSpecLifecycleEventDispatcher,
    RepositorySpecLifecycleEventSource {
 
    private val emitFailureHandler: Sinks.EmitFailureHandler =
@@ -34,13 +34,13 @@ class RepositoryLifecycleManager(
    private val sourcesChangedSink = Sinks.many().replay().limit<SourcesChangedMessage>(Duration.ofSeconds(30))
 
 
-   override val repositoryAdded: Flux<SchemaPackageTransport> = schemaSourceAddedSink.asFlux()
+   override val projectStoreAdded: Flux<SchemaPackageTransport> = schemaSourceAddedSink.asFlux()
 
    override val sourcesChanged: Flux<SourcesChangedMessage> = sourcesChangedSink.asFlux()
    override val sourcesRemoved: Flux<List<PackageIdentifier>> = schemaSourceRemovedSink.asFlux()
 
    init {
-      repositoryAdded
+      projectStoreAdded
          .subscribe { schemaTransport ->
             schemaTransport.start()
                .subscribe { sourcePackage ->
@@ -57,11 +57,11 @@ class RepositoryLifecycleManager(
    override val fileSpecAdded: Flux<FileSpecAddedEvent>
       get() = fileSpecAddedSink.asFlux()
 
-   override fun fileRepositoryAdded(repository: FileSystemPackageLoader) {
+   override fun fileProjectStoreAdded(repository: FileSystemPackageLoader) {
       schemaSourceAddedSink.emitNext(repository, emitFailureHandler)
    }
 
-   override fun gitRepositoryAdded(repository: GitSchemaPackageLoader) {
+   override fun gitProjectStoreAdded(repository: GitSchemaPackageLoader) {
       schemaSourceAddedSink.emitNext(repository, emitFailureHandler)
    }
 

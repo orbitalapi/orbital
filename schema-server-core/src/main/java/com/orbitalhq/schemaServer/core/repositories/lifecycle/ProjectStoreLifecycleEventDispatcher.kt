@@ -7,8 +7,8 @@ import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoader
  * Lightweight interface which allows emission of lifecycle events
  * related to the creation and modification of source repositories
  */
-interface RepositoryLifecycleEventDispatcher {
-   fun fileRepositoryAdded(repository: FileSystemPackageLoader)
-   fun gitRepositoryAdded(repository: GitSchemaPackageLoader)
+interface ProjectStoreLifecycleEventDispatcher {
+   fun fileProjectStoreAdded(repository: FileSystemPackageLoader)
+   fun gitProjectStoreAdded(repository: GitSchemaPackageLoader)
 
 }

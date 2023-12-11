@@ -1,7 +1,7 @@
 package com.orbitalhq.schemaServer.core.git.providers
 
 import com.orbitalhq.schema.publisher.loaders.ChangesetOverview
-import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
+import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import org.kohsuke.github.GHPullRequest
 import org.kohsuke.github.GHRepository
 import org.kohsuke.github.GitHub
@@ -24,7 +24,7 @@ class GithubProvider : GitHostedService {
    }
 
    override fun raisePr(
-       config: GitRepositorySpec,
+       config: GitProjectStoreSpec,
        branchName: String,
        description: String,
        author: String
@@ -61,7 +61,7 @@ class GithubProvider : GitHostedService {
       )
    }
 
-   private fun getGitHubInstance(config: GitRepositorySpec): GHRepository {
+   private fun getGitHubInstance(config: GitProjectStoreSpec): GHRepository {
       return GitHub.connectUsingPassword(config.credentials!!.username, config.credentials.password)
          ?.getRepository(repositoryNameFromUri(config.uri))
          ?: error("Unable to authenticate to GitHub")

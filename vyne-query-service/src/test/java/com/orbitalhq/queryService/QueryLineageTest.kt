@@ -10,8 +10,8 @@ import com.orbitalhq.models.json.parseKeyValuePair
 import com.orbitalhq.query.HistoryEventConsumerProvider
 import com.orbitalhq.query.history.QuerySankeyChartRow
 import com.orbitalhq.query.history.SankeyNodeType
-import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.testVyne
 import com.winterbe.expekt.should
 import io.kotest.matchers.collections.shouldHaveSize
@@ -19,20 +19,15 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit.jupiter.SpringExtension
-import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.containers.wait.strategy.Wait
-import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.io.File
 import java.util.*
@@ -57,10 +52,10 @@ import javax.sql.DataSource
 class QueryLineageTest : BaseQueryServiceTest() {
 
    @MockBean
-   lateinit var eventDispatcher: RepositorySpecLifecycleEventDispatcher
+   lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
 
    @MockBean
-   lateinit var configLoader : SchemaRepositoryConfigLoader
+   lateinit var configLoader : WorkspaceConfigLoader
 
    @Autowired
    lateinit var datasource: DataSource

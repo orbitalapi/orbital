@@ -1,7 +1,7 @@
 package com.orbitalhq.schemaServer.core.git.providers
 
 import com.orbitalhq.schema.publisher.loaders.ChangesetOverview
-import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
+import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import java.util.*
 
 /**
@@ -9,7 +9,7 @@ import java.util.*
  */
 class NoopProvider : GitHostedService {
    override fun raisePr(
-       config: GitRepositorySpec,
+       config: GitProjectStoreSpec,
        branchName: String,
        description: String,
        author: String

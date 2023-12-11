@@ -15,7 +15,7 @@ class CreateFileRepositoryRequestTest : DescribeSpec({
    it("can deserialize with Taxi spec") {
       val mapper = jacksonObjectMapper()
       val request =
-         mapper.readValue<CreateFileRepositoryRequest>("""{"loader":{"packageType":"Taxi"},"isEditable":true,"path":"/home/martypitt/dev/vyne-demos/films/taxi"}""")
+         mapper.readValue<CreateFileProjectStoreRequest>("""{"loader":{"packageType":"Taxi"},"isEditable":true,"path":"/home/martypitt/dev/vyne-demos/films/taxi"}""")
       request.shouldNotBeNull()
       request.loader.shouldBeTypeOf<TaxiPackageLoaderSpec>()
    }
@@ -23,7 +23,7 @@ class CreateFileRepositoryRequestTest : DescribeSpec({
    it("can deserialize with OpenAPI spec") {
       val mapper = jacksonObjectMapper()
       val request =
-         mapper.readValue<CreateFileRepositoryRequest>(
+         mapper.readValue<CreateFileProjectStoreRequest>(
             """{
   "loader": {
     "packageType": "OpenApi",

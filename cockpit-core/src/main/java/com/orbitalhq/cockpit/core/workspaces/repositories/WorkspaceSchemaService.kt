@@ -3,14 +3,14 @@ package com.orbitalhq.cockpit.core.workspaces.repositories
 import com.orbitalhq.cockpit.core.auth.requireIsAuthenticated
 import com.orbitalhq.config.getSafeConfigString
 import com.orbitalhq.config.toHocon
-import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfig
-import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfig
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecAddedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.GitSpecAddedEvent
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemaServer.core.repositories.toRepositorySpec
-import com.orbitalhq.schemaServer.repositories.CreateFileRepositoryRequest
-import com.orbitalhq.schemaServer.repositories.git.GitRepositoryChangeRequest
+import com.orbitalhq.schemaServer.repositories.CreateFileProjectStoreRequest
+import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
@@ -29,10 +29,10 @@ import reactor.core.publisher.Mono
  */
 @RestController
 class WorkspaceSchemaService(
-    private val workspaceSchemaSpecRepository: WorkspaceSchemaSpecRepository,
-    private val eventDispatcher: RepositorySpecLifecycleEventDispatcher,
+   private val workspaceSchemaSpecRepository: WorkspaceSchemaSpecRepository,
+   private val eventDispatcher: ProjectSpecLifecycleEventDispatcher,
 
-    /**
+   /**
      * This is the thing that loads the HOCON from disk.
      * Even though things like actual project/repository config is
      * being persisted in the db, settings like where to check out git repos, and
@@ -40,7 +40,7 @@ class WorkspaceSchemaService(
      *
      * In time, this could probably do with some seperation.
      */
-    private val schemaConfigLoader: SchemaRepositoryConfigLoader
+    private val schemaConfigLoader: WorkspaceConfigLoader
 ) {
 
     companion object {
@@ -53,7 +53,7 @@ class WorkspaceSchemaService(
         @PathVariable("orgId") organisationId: Long,
         @PathVariable("workspaceId") workspaceId: Long,
         @AuthenticationPrincipal auth: Mono<Authentication>,
-        @RequestBody request: CreateFileRepositoryRequest
+        @RequestBody request: CreateFileProjectStoreRequest
     ): WorkspaceSchemaSpec = withContext(Dispatchers.IO) {
         val authentication = auth.requireIsAuthenticated()
 
@@ -66,7 +66,7 @@ class WorkspaceSchemaService(
         organisationId: Long,
         workspaceId: Long,
         auth: Authentication,
-        request: CreateFileRepositoryRequest
+        request: CreateFileProjectStoreRequest
     ): WorkspaceSchemaSpec {
         val filePackageSpec = request.toRepositorySpec()
         val description = filePackageSpec.packageIdentifier!!.id
@@ -93,7 +93,7 @@ class WorkspaceSchemaService(
         workspaceId: Long,
         specKind: WorkspaceSchemaSpec.SchemaSpecKind,
         description: String
-    ): Pair<SchemaRepositoryConfig, WorkspaceSchemaSpec> {
+    ): Pair<WorkspaceConfig, WorkspaceSchemaSpec> {
         val schemaConfig = schemaConfigLoader.load()
 
         val saved = workspaceSchemaSpecRepository.save(
@@ -112,7 +112,7 @@ class WorkspaceSchemaService(
         @PathVariable("orgId") organisationId: Long,
         @PathVariable("workspaceId") workspaceId: Long,
         @AuthenticationPrincipal auth: Mono<Authentication>,
-        @RequestBody request: GitRepositoryChangeRequest
+        @RequestBody request: GitProjectStoreChangeRequest
     ): WorkspaceSchemaSpec = withContext(Dispatchers.IO) {
         val authentication = auth.requireIsAuthenticated()
 
@@ -125,7 +125,7 @@ class WorkspaceSchemaService(
         organisationId: Long,
         workspaceId: Long,
         auth: Authentication,
-        request: GitRepositoryChangeRequest
+        request: GitProjectStoreChangeRequest
     ): WorkspaceSchemaSpec {
         val gitRepoConfig = request.toRepositorySpec()
         logger.info { "User ${auth.name} is adding a new git repository ${gitRepoConfig.redactedUri} to org/workspace ${organisationId}/${workspaceId} " }

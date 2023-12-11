@@ -6,10 +6,6 @@ import com.orbitalhq.history.rest.QueryHistoryRestConfig
 import com.orbitalhq.pipelines.jet.api.PipelineApi
 import com.orbitalhq.pipelines.jet.api.transport.PipelineJacksonModule
 import com.orbitalhq.query.runtime.core.EnableVyneQueryNode
-import com.orbitalhq.schemaServer.changelog.ChangelogApi
-import com.orbitalhq.schemaServer.editor.SchemaEditorApi
-import com.orbitalhq.schemaServer.packages.PackagesServiceApi
-import com.orbitalhq.schemaServer.repositories.RepositoryServiceApi
 import com.orbitalhq.search.embedded.EnableVyneEmbeddedSearch
 import com.orbitalhq.spring.EnableVyne
 import org.springframework.context.annotation.Bean

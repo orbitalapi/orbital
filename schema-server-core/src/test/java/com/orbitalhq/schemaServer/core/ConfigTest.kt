@@ -7,10 +7,10 @@ import io.kotest.matchers.shouldBe
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
-import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
+import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaRepositoryConfig
-import com.orbitalhq.schemaServer.core.repositories.FileSchemaRepositoryConfigLoader
-import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfig
+import com.orbitalhq.schemaServer.core.repositories.FileWorkspaceConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfig
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.SoapPackageLoaderSpec
 import org.apache.commons.io.IOUtils
@@ -27,7 +27,7 @@ class ConfigTest {
 
    @Test
    fun `returns an empty config if config file doesn't exist`() {
-      val empty = FileSchemaRepositoryConfigLoader(Paths.get("/this/path/doesnt/exist"),
+      val empty = FileWorkspaceConfigLoader(Paths.get("/this/path/doesnt/exist"),
          eventDispatcher = mock { })
          .load()
       empty.file.should.be.`null`
@@ -36,7 +36,7 @@ class ConfigTest {
 
    @Test
    fun `can read and write a full config`() {
-      val config = SchemaRepositoryConfig(
+      val config = WorkspaceConfig(
          file = FileSystemSchemaRepositoryConfig(
             projects = listOf(
                FileSystemPackageSpec(
@@ -49,7 +49,7 @@ class ConfigTest {
          git = GitSchemaRepositoryConfig(
             checkoutRoot = Paths.get("/my/git/root"),
             repositories = listOf(
-               GitRepositorySpec(
+               GitProjectStoreSpec(
                   "my-git-project",
                   "https://github.com/something.git",
                   branch = "master"
@@ -60,7 +60,7 @@ class ConfigTest {
          )
 
       val path = folder.root.toPath().resolve("repo.conf")
-      val configRepo = FileSchemaRepositoryConfigLoader(path,
+      val configRepo = FileWorkspaceConfigLoader(path,
          eventDispatcher = mock { })
       configRepo.save(config)
       val loaded = configRepo.load()
@@ -75,7 +75,7 @@ class ConfigTest {
       val targetConfigFile = folder.newFile("server.conf")
       IOUtils.copy(configFile.toURL().openStream(), targetConfigFile.outputStream())
 
-      val configRepo = FileSchemaRepositoryConfigLoader(targetConfigFile.toPath(),
+      val configRepo = FileWorkspaceConfigLoader(targetConfigFile.toPath(),
          eventDispatcher = mock { })
       val config = configRepo.load()
       config.file!!.projects.should.have.size(1)
@@ -91,7 +91,7 @@ class ConfigTest {
       val targetConfigFile = folder.newFile("server.conf")
       IOUtils.copy(configFile.toURL().openStream(), targetConfigFile.outputStream())
 
-      val configRepo = FileSchemaRepositoryConfigLoader(targetConfigFile.toPath(),
+      val configRepo = FileWorkspaceConfigLoader(targetConfigFile.toPath(),
          eventDispatcher = mock { })
       val config = configRepo.load()
 

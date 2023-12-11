@@ -11,8 +11,8 @@ import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.ValueWithTypeName
 import com.orbitalhq.queryService.BaseQueryServiceTest
 import com.orbitalhq.queryService.TestSpringConfig
-import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemas.fqn
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -73,10 +73,10 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
    lateinit var historyService: QueryHistoryService
 
    @MockBean
-   lateinit var eventDispatcher: RepositorySpecLifecycleEventDispatcher
+   lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
 
    @MockBean
-   lateinit var configLoader : SchemaRepositoryConfigLoader
+   lateinit var configLoader : WorkspaceConfigLoader
 
 
    @Test

@@ -33,9 +33,9 @@ enum class OperationResult {
 }
 
 class GitOperations(
-   val workingDir: File,
-   private val config: GitRepositorySpec,
-   private val hostingProviderRegistry: GitHostingProviderRegistry = GitHostingProviderRegistry()
+    val workingDir: File,
+    private val config: GitProjectStoreSpec,
+    private val hostingProviderRegistry: GitHostingProviderRegistry = GitHostingProviderRegistry()
 ) : AutoCloseable {
    private val gitDir: File = workingDir.resolve(".git")
 

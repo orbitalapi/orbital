@@ -13,9 +13,9 @@ import java.nio.file.Paths
 import java.time.Duration
 
 data class GitSchemaRepositoryConfig(
-   val checkoutRoot: Path = Paths.get("./.orbital/gitProjects/"),
-   val pollFrequency: Duration = Duration.ofSeconds(30),
-   val repositories: List<GitRepositorySpec> = emptyList(),
+    val checkoutRoot: Path = Paths.get("./.orbital/gitProjects/"),
+    val pollFrequency: Duration = Duration.ofSeconds(30),
+    val repositories: List<GitProjectStoreSpec> = emptyList(),
 ) {
    companion object {
       fun default():GitSchemaRepositoryConfig = GitSchemaRepositoryConfig()
@@ -31,7 +31,7 @@ data class GitSshAuth(
    val passphrase: String? = null,
 )
 
-data class GitRepositorySpec(
+data class GitProjectStoreSpec(
    val name: String,
 
    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)

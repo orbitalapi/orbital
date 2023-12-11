@@ -9,7 +9,7 @@ import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.licensing.LicenseConfig
 import com.orbitalhq.query.chat.ChatQueryParser
 import com.orbitalhq.schemaServer.core.VersionedSourceLoader
-import com.orbitalhq.schemaServer.core.config.WorkspaceConfig
+import com.orbitalhq.schemaServer.core.config.WorkspaceSettings
 import com.orbitalhq.spring.config.DiscoveryClientConfig
 import com.orbitalhq.spring.config.VyneSpringCacheConfiguration
 import com.orbitalhq.spring.config.VyneSpringHazelcastConfiguration
@@ -30,7 +30,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
-import org.springframework.context.annotation.Primary
 import java.util.concurrent.TimeUnit
 
 @SpringBootApplication(
@@ -45,7 +44,7 @@ import java.util.concurrent.TimeUnit
    VyneSpringHazelcastConfiguration::class,
    VyneUserConfig::class,
    FeatureTogglesConfig::class,
-   WorkspaceConfig::class,
+   WorkspaceSettings::class,
    DatabaseConfig::class
 )
 @Import(

@@ -7,14 +7,14 @@ import com.orbitalhq.PackageIdentifier
  * Ligthweight interface which emits messages when the *spec* for a
  * repository has been changed.
  */
-interface RepositorySpecLifecycleEventDispatcher {
+interface ProjectSpecLifecycleEventDispatcher {
    fun fileRepositorySpecAdded(spec: FileSpecAddedEvent)
    fun gitRepositorySpecAdded(spec: GitSpecAddedEvent)
 
    fun schemaSourceRemoved(packages: List<PackageIdentifier>)
 }
 
-object NoOpRepositorySpecLifecycleEventDispatcher : RepositorySpecLifecycleEventDispatcher {
+object NoOpProjectSpecLifecycleEventDispatcher : ProjectSpecLifecycleEventDispatcher {
    override fun fileRepositorySpecAdded(spec: FileSpecAddedEvent) {
    }
 

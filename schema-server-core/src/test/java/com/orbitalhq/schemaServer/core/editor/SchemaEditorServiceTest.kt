@@ -9,7 +9,7 @@ import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.consumer.SimpleSchemaStore
 import com.orbitalhq.schema.publisher.loaders.Changeset
 import com.orbitalhq.schemaServer.core.file.deployProject
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.schemaServer.editor.SaveQueryRequest
 import com.orbitalhq.schemaServer.editor.UpdateTypeAnnotationRequest
 import com.orbitalhq.schemas.Metadata
@@ -34,7 +34,7 @@ class SchemaEditorServiceTest {
       val projectPath = projectHome.deployProject("sample-project")
 
       val repositoryManager =
-         ReactiveRepositoryManager.testWithFileRepo(projectPath, isEditable = true)
+         ReactiveProjectStoreManager.testWithFileRepo(projectPath, isEditable = true)
       val schema = TaxiSchema.compiled("namespace com.foo { model Bar{} }").second
       val editor = SchemaEditorService(repositoryManager, SimpleSchemaStore(SchemaSet.from(schema, 0)))
       editor.updateAnnotationsOnType(
@@ -69,7 +69,7 @@ type extension Bar {}""".withoutWhitespace()
    fun `can submit annotations to enum`() {
       val projectPath = projectHome.deployProject("sample-project")
       val repositoryManager =
-         ReactiveRepositoryManager.testWithFileRepo(projectPath, isEditable = true)
+         ReactiveProjectStoreManager.testWithFileRepo(projectPath, isEditable = true)
 
       val schema = TaxiSchema.compiled("namespace com.foo { enum Bar{} }").second
       val editor = SchemaEditorService(repositoryManager, SimpleSchemaStore(SchemaSet.from(schema, 0)))
@@ -104,7 +104,7 @@ enum extension Bar {}""".withoutWhitespace()
    fun `saving a query adds query annotation`() {
       val projectPath = projectHome.deployProject("sample-project")
       val repositoryManager =
-         ReactiveRepositoryManager.testWithFileRepo(projectPath, isEditable = true)
+         ReactiveProjectStoreManager.testWithFileRepo(projectPath, isEditable = true)
       val schema = TaxiSchema.compiled("namespace com.foo { model Person{} }").second
       val editor = SchemaEditorService(repositoryManager, SimpleSchemaStore(SchemaSet.from(schema, 0)))
 

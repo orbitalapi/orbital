@@ -3,11 +3,11 @@ package io.orbital.station
 import com.orbitalhq.schemaServer.core.VersionedSourceLoader
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
-import com.orbitalhq.schemaServer.core.repositories.FileSchemaRepositoryConfigLoader
-import com.orbitalhq.schemaServer.core.repositories.InMemorySchemaRepositoryConfigLoader
-import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfig
-import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.repositories.FileWorkspaceConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.InMemoryWorkspaceConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfig
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -27,12 +27,12 @@ class OrbitalStationConfig {
    fun configRepoLoader(
       @Value("\${vyne.repositories.config-file:repositories.conf}") configFilePath: Path,
       @Value("\${vyne.repositories.repository-path:#{null}}") repositoryHome: Path? = null,
-      eventDispatcher: RepositorySpecLifecycleEventDispatcher
-   ): SchemaRepositoryConfigLoader {
+      eventDispatcher: ProjectSpecLifecycleEventDispatcher
+   ): WorkspaceConfigLoader {
       return if (repositoryHome != null) {
          logger.info { "vyne.repositories.repository-path was set to $repositoryHome running a file-based repository from this path, ignoring any other config from $configFilePath" }
-         return InMemorySchemaRepositoryConfigLoader(
-            SchemaRepositoryConfig(
+         return InMemoryWorkspaceConfigLoader(
+            WorkspaceConfig(
                FileSystemSchemaRepositoryConfig(
                   projects = listOf(FileSystemPackageSpec(repositoryHome))
                )
@@ -41,7 +41,7 @@ class OrbitalStationConfig {
          )
       } else {
          logger.info { "Using repository config file at $configFilePath" }
-         FileSchemaRepositoryConfigLoader(configFilePath, eventDispatcher = eventDispatcher)
+         FileWorkspaceConfigLoader(configFilePath, eventDispatcher = eventDispatcher)
       }
    }
 

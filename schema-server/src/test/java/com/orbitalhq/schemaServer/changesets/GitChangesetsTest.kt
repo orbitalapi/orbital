@@ -10,9 +10,9 @@ import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemaServer.core.file.FileChangeDetectionMethod
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoaderFactory
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositoryLifecycleEventDispatcher
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositoryLifecycleEventSource
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleEventSource
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventSource
 import com.orbitalhq.schemaServer.editor.*
 import com.orbitalhq.utils.files.ReactivePollingFileSystemMonitor
@@ -74,7 +74,7 @@ class GitChangesetsTest {
    private lateinit var gitLoaderFactory: GitSchemaPackageLoaderFactory
 
    @Autowired
-   private lateinit var repositoryManager: ReactiveRepositoryManager
+   private lateinit var repositoryManager: ReactiveProjectStoreManager
 
    @Autowired
    private lateinit var schemaStore: SchemaStore
@@ -96,11 +96,11 @@ class GitChangesetsTest {
       @Bean
       fun repositoryManager(
          eventSource: RepositorySpecLifecycleEventSource,
-         eventDispatcher: RepositoryLifecycleEventDispatcher,
+         eventDispatcher: ProjectStoreLifecycleEventDispatcher,
          gitLoaderFactory: GitSchemaPackageLoaderFactory,
-         repositoryEventSource: RepositoryLifecycleEventSource
-      ): ReactiveRepositoryManager {
-         return ReactiveRepositoryManager(
+         repositoryEventSource: ProjectStoreLifecycleEventSource
+      ): ReactiveProjectStoreManager {
+         return ReactiveProjectStoreManager(
             FileSystemPackageLoaderFactory(),
             gitLoaderFactory,
             eventSource, eventDispatcher, repositoryEventSource
