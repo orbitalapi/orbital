@@ -23,7 +23,7 @@ import kotlin.io.path.toPath
 
 class GitSchemaPackageLoader(
     val workingDir: Path,
-    override val config: GitRepositorySpec,
+    override val config: GitProjectStoreSpec,
     adaptor: SchemaSourcesAdaptor,
     // visible for testing
     val fileMonitor: ReactiveFileSystemMonitor = ReactiveWatchingFileSystemMonitor(workingDir, listOf(".git")),

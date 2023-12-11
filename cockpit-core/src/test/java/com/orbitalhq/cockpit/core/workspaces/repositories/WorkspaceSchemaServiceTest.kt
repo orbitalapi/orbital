@@ -6,14 +6,13 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.cockpit.core.DatabaseTest
-import com.orbitalhq.cockpit.core.auth.WorkspaceServiceTest
 import com.orbitalhq.cockpit.core.auth.authForUserId
-import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfig
-import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfig
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
-import com.orbitalhq.schemaServer.repositories.CreateFileRepositoryRequest
-import com.orbitalhq.schemaServer.repositories.git.GitRepositoryChangeRequest
+import com.orbitalhq.schemaServer.repositories.CreateFileProjectStoreRequest
+import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
 import io.kotest.matchers.nulls.shouldNotBeNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -38,14 +37,14 @@ class WorkspaceSchemaServiceTest : DatabaseTest() {
     lateinit var workspaceSchemaSpecRepository: WorkspaceSchemaSpecRepository
 
     lateinit var service: WorkspaceSchemaService
-    lateinit var eventDispatcher: RepositorySpecLifecycleEventDispatcher
+    lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
 
     @BeforeEach
     fun setup() {
-        val schemaConfigLoader = mock<SchemaRepositoryConfigLoader>() {
-            on { load() } doReturn SchemaRepositoryConfig()
+        val schemaConfigLoader = mock<WorkspaceConfigLoader>() {
+            on { load() } doReturn WorkspaceConfig()
         }
-        eventDispatcher = mock<RepositorySpecLifecycleEventDispatcher>()
+        eventDispatcher = mock<ProjectSpecLifecycleEventDispatcher>()
         service = WorkspaceSchemaService(
             workspaceSchemaSpecRepository,
             eventDispatcher,
@@ -56,7 +55,7 @@ class WorkspaceSchemaServiceTest : DatabaseTest() {
     @Test
     fun `adding a new file repo gets persisted to disk`() {
         val added = service.doAddFileRepoToWorkspace(
-            1,2, authForUserId("marty"), CreateFileRepositoryRequest(
+            1,2, authForUserId("marty"), CreateFileProjectStoreRequest(
                 "path/to/repo",
                 true,
                 TaxiPackageLoaderSpec,
@@ -70,7 +69,7 @@ class WorkspaceSchemaServiceTest : DatabaseTest() {
     @Test
     fun `adding a new git repo gets persisted to disk`() {
         val added = service.doAddGitRepoToWorkspace(
-            1,2, authForUserId("marty"), GitRepositoryChangeRequest(
+            1,2, authForUserId("marty"), GitProjectStoreChangeRequest(
                 "test",
                 "https://git.com/test",
                 "main"

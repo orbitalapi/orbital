@@ -2,10 +2,10 @@ package com.orbitalhq.schemaServer.core.repositories
 
 import com.winterbe.expekt.should
 import com.orbitalhq.PackageIdentifier
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositoryLifecycleManager
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
-import com.orbitalhq.schemaServer.repositories.CreateFileRepositoryRequest
-import com.orbitalhq.schemaServer.repositories.git.GitRepositoryChangeRequest
+import com.orbitalhq.schemaServer.repositories.CreateFileProjectStoreRequest
+import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
 import com.orbitalhq.spring.http.BadRequestException
 import org.junit.Before
 import org.junit.Rule
@@ -14,37 +14,37 @@ import org.junit.rules.TemporaryFolder
 import kotlin.test.assertFailsWith
 
 
-class RepositoryServiceTest {
+class WorkspaceServiceTest {
 
    @Rule
    @JvmField
    val folder = TemporaryFolder()
 
-   lateinit var repositoryService: RepositoryService
+   lateinit var workspaceService: WorkspaceService
 
    @Before
    fun setup() {
       val configFile = folder.root.resolve("repositories.conf")
-      val loader = FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = RepositoryLifecycleManager())
-      repositoryService = RepositoryService(loader)
+      val loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = ProjectStoreLifecycleManager())
+      workspaceService = WorkspaceService(loader)
    }
 
    @Test
    fun `can add a file repository`() {
-      repositoryService.listRepositories()
+      workspaceService.listRepositories()
          .file?.projects?.should?.be?.empty
 
       val folder = folder.newFolder("project")
 
-      repositoryService.createFileRepository(
-         CreateFileRepositoryRequest(
+      workspaceService.createFileRepository(
+         CreateFileProjectStoreRequest(
             folder.canonicalPath, true,
             loader = TaxiPackageLoaderSpec,
             newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
          )
       )
 
-      val repositoryConfig = repositoryService.listRepositories()
+      val repositoryConfig = workspaceService.listRepositories()
       repositoryConfig
          .file!!.projects.should.have.size(1)
 
@@ -57,16 +57,16 @@ class RepositoryServiceTest {
    fun `cannot add a duplicate file repository`() {
       val folder = folder.newFolder("project")
 
-      val request = CreateFileRepositoryRequest(
+      val request = CreateFileProjectStoreRequest(
          folder.canonicalPath,
          true,
          loader = TaxiPackageLoaderSpec,
          newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
       )
-      repositoryService.createFileRepository(request)
+      workspaceService.createFileRepository(request)
 
       assertFailsWith<BadRequestException> {
-         repositoryService.createFileRepository(request)
+         workspaceService.createFileRepository(request)
       }
 
    }
@@ -75,15 +75,15 @@ class RepositoryServiceTest {
    fun `cannot add a duplicate file repository with differing editable`() {
       val folder = folder.newFolder("project")
 
-      val request = CreateFileRepositoryRequest(
+      val request = CreateFileProjectStoreRequest(
          folder.canonicalPath, true,
          loader = TaxiPackageLoaderSpec,
          newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
       )
-      repositoryService.createFileRepository(request)
+      workspaceService.createFileRepository(request)
 
       assertFailsWith<BadRequestException> {
-         repositoryService.createFileRepository(request.copy(isEditable = false))
+         workspaceService.createFileRepository(request.copy(isEditable = false))
       }
    }
 
@@ -92,12 +92,12 @@ class RepositoryServiceTest {
       // use resolve, to ensure the repository creates the directory
       val folder = folder.root.resolve("project/")
 
-      val request = CreateFileRepositoryRequest(
+      val request = CreateFileProjectStoreRequest(
          folder.canonicalPath, true,
          loader = TaxiPackageLoaderSpec,
          newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
       )
-      repositoryService.createFileRepository(request)
+      workspaceService.createFileRepository(request)
 
       folder.exists().should.be.`true`
       val taxiConfFile = folder.resolve("taxi.conf")
@@ -111,19 +111,19 @@ class RepositoryServiceTest {
 
    @Test
    fun `can add a git repository`() {
-      repositoryService.listRepositories()
+      workspaceService.listRepositories()
          .git?.repositories?.should?.be?.empty
 
-      repositoryService.createGitRepository(
-         GitRepositoryChangeRequest(
+      workspaceService.createGitProjectStore(
+         GitProjectStoreChangeRequest(
             "test-repo",
             "https://github.com/test/repo",
             "master",
          )
       )
 
-      repositoryService.listRepositories().git!!.repositories.should.have.size(1)
-      val gitRepo = repositoryService.listRepositories().git!!.repositories.single()
+      workspaceService.listRepositories().git!!.repositories.should.have.size(1)
+      val gitRepo = workspaceService.listRepositories().git!!.repositories.single()
       gitRepo.name.should.equal("test-repo")
       gitRepo.uri.should.equal("https://github.com/test/repo")
       gitRepo.branch.should.equal("master")

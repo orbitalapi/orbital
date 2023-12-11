@@ -12,8 +12,8 @@ import com.orbitalhq.query.HistoryEventConsumerProvider
 import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.queryService.BaseQueryServiceTest
 import com.orbitalhq.queryService.TestSpringConfig
-import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.spring.invokers.Invoker
 import com.orbitalhq.spring.invokers.testVyne
 import com.orbitalhq.utils.Ids
@@ -24,8 +24,6 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.flow.toList
-import org.junit.Before
-import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -70,10 +68,10 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
 
    }
    @MockBean
-   lateinit var eventDispatcher: RepositorySpecLifecycleEventDispatcher
+   lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
 
    @MockBean
-   lateinit var configLoader : SchemaRepositoryConfigLoader
+   lateinit var configLoader : WorkspaceConfigLoader
 
 
 

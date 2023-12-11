@@ -2,12 +2,12 @@ package com.orbitalhq.schemaServer.core.repositories
 
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.git.GitOperations
-import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
+import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.PackageType
 import com.orbitalhq.schemaServer.packages.SoapPackageLoaderSpec
 import com.orbitalhq.schemaServer.repositories.*
-import com.orbitalhq.schemaServer.repositories.git.GitRepositoryChangeRequest
+import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
 import com.orbitalhq.spring.http.BadRequestException
 import com.orbitalhq.toVynePackageIdentifier
 import lang.taxi.packages.TaxiPackageLoader
@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono
 import java.nio.file.Paths
 
 @RestController
-class RepositoryService(private val configRepo: SchemaRepositoryConfigLoader) : RepositoryServiceApi {
+class WorkspaceService(private val configRepo: WorkspaceConfigLoader) : WorkspaceServiceApi {
     companion object {
         private val logger = KotlinLogging.logger {}
     }
@@ -31,12 +31,12 @@ class RepositoryService(private val configRepo: SchemaRepositoryConfigLoader) : 
     }
 
     // For testing, not part of the REST API
-    fun listRepositories(): SchemaRepositoryConfig {
+    fun listRepositories(): WorkspaceConfig {
         return configRepo.load()
     }
 
     @PostMapping("/api/repositories/file")
-    override fun createFileRepository(@RequestBody request: CreateFileRepositoryRequest): Mono<Unit> {
+    override fun createFileRepository(@RequestBody request: CreateFileProjectStoreRequest): Mono<Unit> {
         val fileSpec = request.toRepositorySpec()
         try {
             configRepo.addFileSpec(fileSpec)
@@ -47,19 +47,19 @@ class RepositoryService(private val configRepo: SchemaRepositoryConfigLoader) : 
     }
 
     @PostMapping("/api/repositories/file/test")
-    override fun testFileRepository(@RequestBody request: FileRepositoryTestRequest): Mono<FileRepositoryTestResponse> {
+    override fun testFileProjectStore(@RequestBody request: FileProjectStoreTestRequest): Mono<FileProjectStoreTestResponse> {
         return try {
             val project = TaxiPackageLoader.forDirectoryContainingTaxiFile(Paths.get(request.path)).load()
-            Mono.just(FileRepositoryTestResponse(request.path, true, project.identifier.toVynePackageIdentifier()))
+            Mono.just(FileProjectStoreTestResponse(request.path, true, project.identifier.toVynePackageIdentifier()))
         } catch (e: Exception) {
             logger.info { "Could not find a package at ${request.path} - maybe it doesn't exist? Error: ${e.message}" }
-            Mono.just(FileRepositoryTestResponse(request.path, false, null))
+            Mono.just(FileProjectStoreTestResponse(request.path, false, null))
         }
     }
 
 
     @PostMapping("/api/repositories/git")
-    override fun createGitRepository(request: GitRepositoryChangeRequest): Mono<Unit> {
+    override fun createGitProjectStore(request: GitProjectStoreChangeRequest): Mono<Unit> {
         val config = request.toRepositorySpec()
         try {
             configRepo.addGitSpec(config)
@@ -83,8 +83,8 @@ class RepositoryService(private val configRepo: SchemaRepositoryConfigLoader) : 
     }
 }
 
-fun GitRepositoryChangeRequest.toRepositorySpec(): GitRepositorySpec {
-    return GitRepositorySpec(
+fun GitProjectStoreChangeRequest.toRepositorySpec(): GitProjectStoreSpec {
+    return GitProjectStoreSpec(
         this.name,
         this.uri,
         this.branch,
@@ -92,7 +92,7 @@ fun GitRepositoryChangeRequest.toRepositorySpec(): GitRepositorySpec {
     )
 }
 
-fun CreateFileRepositoryRequest.toRepositorySpec(): FileSystemPackageSpec {
+fun CreateFileProjectStoreRequest.toRepositorySpec(): FileSystemPackageSpec {
     val packageIdentifier = when (this.loader.packageType) {
         PackageType.Taxi -> this.newProjectIdentifier
 

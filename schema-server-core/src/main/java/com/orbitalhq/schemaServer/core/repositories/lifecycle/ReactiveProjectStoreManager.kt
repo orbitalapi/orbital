@@ -17,12 +17,12 @@ import java.nio.file.Path
  * Watches spec lifecycle events, (eg., adding and removing new repositories)
  * and builds the corresponding repositories for them
  */
-class ReactiveRepositoryManager(
+class ReactiveProjectStoreManager(
    private val fileRepoFactory: FileSystemPackageLoaderFactory,
    private val gitRepoFactory: GitSchemaPackageLoaderFactory,
    private val specEventSource: RepositorySpecLifecycleEventSource,
-   private val eventDispatcher: RepositoryLifecycleEventDispatcher,
-   private val repositoryEventSource: RepositoryLifecycleEventSource
+   private val eventDispatcher: ProjectStoreLifecycleEventDispatcher,
+   private val repositoryEventSource: ProjectStoreLifecycleEventSource
 ) {
 
    fun getLoaderOrNull(packageIdentifier: PackageIdentifier): SchemaPackageTransport? {
@@ -45,10 +45,10 @@ class ReactiveRepositoryManager(
       fun testWithFileRepo(
          projectPath: Path? = null,
          isEditable: Boolean = false,
-         eventSource: RepositoryLifecycleManager = RepositoryLifecycleManager()
+         eventSource: ProjectStoreLifecycleManager = ProjectStoreLifecycleManager()
 
-      ): ReactiveRepositoryManager {
-         val manager = ReactiveRepositoryManager(
+      ): ReactiveProjectStoreManager {
+         val manager = ReactiveProjectStoreManager(
             FileSystemPackageLoaderFactory(),
             GitSchemaPackageLoaderFactory(SchemaSourcesAdaptorFactory()),
             eventSource,
@@ -114,7 +114,7 @@ class ReactiveRepositoryManager(
          gitRepoFactory.build(event.config, event.spec)
       }.subscribe { loader ->
          _gitLoaders.add(loader)
-         eventDispatcher.gitRepositoryAdded(loader)
+         eventDispatcher.gitProjectStoreAdded(loader)
       }
    }
 
@@ -125,7 +125,7 @@ class ReactiveRepositoryManager(
          )
       }.subscribe { loader: FileSystemPackageLoader ->
          _fileLoaders.add(loader)
-         eventDispatcher.fileRepositoryAdded(loader)
+         eventDispatcher.fileProjectStoreAdded(loader)
       }
 
       specEventSource.fileSpecAdded

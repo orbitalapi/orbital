@@ -16,8 +16,6 @@ package com.orbitalhq.queryService.schemas.importing
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.io.Resources
 import com.orbitalhq.PackageIdentifier
-import com.orbitalhq.PackageMetadata
-import com.orbitalhq.ParsedPackage
 import com.orbitalhq.UriSafePackageIdentifier
 import com.orbitalhq.cockpit.core.schemas.editor.LocalSchemaEditingService
 import com.orbitalhq.cockpit.core.schemas.importing.CompositeSchemaImporter
@@ -27,7 +25,7 @@ import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schema.consumer.SimpleSchemaStore
 import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.schemaServer.packages.PackageWithDescription
 import com.orbitalhq.schemaServer.packages.PackagesServiceApi
 import com.orbitalhq.schemaServer.packages.SourcePackageDescription
@@ -60,7 +58,7 @@ abstract class BaseSchemaConverterServiceTest {
    ): CompositeSchemaImporter {
       copySampleProjectTo(tempFolder.root, projectName)
       val schemaEditorService = SchemaEditorService(
-         ReactiveRepositoryManager.testWithFileRepo(
+         ReactiveProjectStoreManager.testWithFileRepo(
             tempFolder.root.toPath(),
             isEditable = true
          ),

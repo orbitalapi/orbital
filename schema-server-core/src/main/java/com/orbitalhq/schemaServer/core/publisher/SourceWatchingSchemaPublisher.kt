@@ -3,7 +3,7 @@ package com.orbitalhq.schemaServer.core.publisher
 import arrow.core.Either
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.schema.publisher.SchemaPublisherTransport
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositoryLifecycleEventSource
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleEventSource
 import com.orbitalhq.schemas.Schema
 import lang.taxi.CompilationException
 import lang.taxi.errors
@@ -19,7 +19,7 @@ import reactor.core.scheduler.Schedulers
  */
 class SourceWatchingSchemaPublisher(
    private val schemaPublisher: SchemaPublisherTransport,
-   private val eventSource: RepositoryLifecycleEventSource
+   private val eventSource: ProjectStoreLifecycleEventSource
 ) {
    private val logger = KotlinLogging.logger {}
 

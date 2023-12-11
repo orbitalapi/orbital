@@ -2,11 +2,11 @@ package com.orbitalhq.schemaServer.core.config
 
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
-import com.orbitalhq.schemaServer.core.repositories.FileSchemaRepositoryConfigLoader
-import com.orbitalhq.schemaServer.core.repositories.InMemorySchemaRepositoryConfigLoader
-import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfig
-import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.repositories.FileWorkspaceConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.InMemoryWorkspaceConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfig
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import mu.KotlinLogging
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -15,8 +15,14 @@ import org.springframework.context.annotation.Configuration
 import java.nio.file.Path
 import java.nio.file.Paths
 
+/**
+ * This is the command line / env-var settings passed to determine
+ * where to read workspace config from.
+ *
+ * Not the actual workspace.conf file, which is modelled by WorkspaceConfig
+ */
 @ConfigurationProperties(prefix = "vyne.workspace")
-data class WorkspaceConfig(
+data class WorkspaceSettings(
    /**
     * A path to the config file containing the workspace config.
     */
@@ -40,7 +46,7 @@ data class WorkspaceConfig(
 @Configuration
 @EnableConfigurationProperties(
    value = [
-      WorkspaceConfig::class
+      WorkspaceSettings::class
    ]
 )
 class WorkspaceLoaderConfig {
@@ -51,22 +57,22 @@ class WorkspaceLoaderConfig {
    // Place this here to allow overriding of the config loader in tests.
    @Bean
    fun configRepoLoader(
-      workspaceConfig: WorkspaceConfig,
-      eventDispatcher: RepositorySpecLifecycleEventDispatcher
-   ): SchemaRepositoryConfigLoader {
+      workspaceConfig: WorkspaceSettings,
+      eventDispatcher: ProjectSpecLifecycleEventDispatcher
+   ): WorkspaceConfigLoader {
       return if (workspaceConfig.projectFile != null) {
          logger.info { "A single-project workspace has been configured for ${workspaceConfig.projectFile}. Ignoring any other config from ${workspaceConfig.configFile}" }
-         return InMemorySchemaRepositoryConfigLoader(
-            SchemaRepositoryConfig(
+         return InMemoryWorkspaceConfigLoader(
+            WorkspaceConfig(
                FileSystemSchemaRepositoryConfig(
-                  projects = listOf(FileSystemPackageSpec(workspaceConfig.projectFile!!, isEditable = true)),
+                  projects = listOf(FileSystemPackageSpec(workspaceConfig.projectFile, isEditable = true)),
                )
             ),
             eventDispatcher
          )
       } else {
          logger.info { "Using workspace config file at ${workspaceConfig.configFile}" }
-         FileSchemaRepositoryConfigLoader(workspaceConfig.configFile, eventDispatcher = eventDispatcher)
+         FileWorkspaceConfigLoader(workspaceConfig.configFile, eventDispatcher = eventDispatcher)
       }
    }
 

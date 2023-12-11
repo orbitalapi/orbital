@@ -3,16 +3,16 @@ package com.orbitalhq.schemaServer.core.repositories
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
-import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
+import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecAddedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.GitSpecAddedEvent
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.utils.concat
 import mu.KotlinLogging
 
-class InMemorySchemaRepositoryConfigLoader(
-   private var config: SchemaRepositoryConfig, private val eventDispatcher: RepositorySpecLifecycleEventDispatcher
-) : SchemaRepositoryConfigLoader {
+class InMemoryWorkspaceConfigLoader(
+   private var config: WorkspaceConfig, private val eventDispatcher: ProjectSpecLifecycleEventDispatcher
+) : WorkspaceConfigLoader {
 
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -39,7 +39,7 @@ class InMemorySchemaRepositoryConfigLoader(
       }
    }
 
-   override fun load(): SchemaRepositoryConfig = config
+   override fun load(): WorkspaceConfig = config
    override fun safeConfigJson(): String {
       return jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(config)
    }
@@ -53,7 +53,7 @@ class InMemorySchemaRepositoryConfigLoader(
       eventDispatcher.fileRepositorySpecAdded(FileSpecAddedEvent(fileSpec, config.file!!))
    }
 
-   override fun addGitSpec(gitSpec: GitRepositorySpec) {
+   override fun addGitSpec(gitSpec: GitProjectStoreSpec) {
       config = config.copy(
          git = config.gitConfigOrDefault.copy(
             repositories = config.gitConfigOrDefault.repositories.concat(gitSpec)

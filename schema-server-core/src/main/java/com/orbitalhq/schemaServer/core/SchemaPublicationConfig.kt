@@ -4,10 +4,10 @@ import com.orbitalhq.schema.publisher.SchemaPublisherTransport
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoaderFactory
 import com.orbitalhq.schemaServer.core.publisher.SourceWatchingSchemaPublisher
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositoryLifecycleEventDispatcher
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositoryLifecycleEventSource
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositoryLifecycleManager
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleEventSource
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventSource
 import mu.KotlinLogging
 import org.springframework.context.annotation.Bean
@@ -21,10 +21,10 @@ class SchemaPublicationConfig {
    @Bean
    fun repositoryManager(
       eventSource: RepositorySpecLifecycleEventSource,
-      eventDispatcher: RepositoryLifecycleEventDispatcher,
-      repositoryEventSource: RepositoryLifecycleEventSource
-   ): ReactiveRepositoryManager {
-      return ReactiveRepositoryManager(
+      eventDispatcher: ProjectStoreLifecycleEventDispatcher,
+      repositoryEventSource: ProjectStoreLifecycleEventSource
+   ): ReactiveProjectStoreManager {
+      return ReactiveProjectStoreManager(
          FileSystemPackageLoaderFactory(),
          GitSchemaPackageLoaderFactory(),
          eventSource, eventDispatcher, repositoryEventSource
@@ -33,13 +33,13 @@ class SchemaPublicationConfig {
 
    @Bean
    fun sourceWatchingSchemaPublisher(
-      eventSource: RepositoryLifecycleEventSource,
+      eventSource: ProjectStoreLifecycleEventSource,
       schemaPublisher: SchemaPublisherTransport
    ): SourceWatchingSchemaPublisher {
       return SourceWatchingSchemaPublisher(schemaPublisher, eventSource)
    }
 
    @Bean
-   fun repositoryLifecycleManager(): RepositoryLifecycleManager = RepositoryLifecycleManager()
+   fun repositoryLifecycleManager(): ProjectStoreLifecycleManager = ProjectStoreLifecycleManager()
 }
 

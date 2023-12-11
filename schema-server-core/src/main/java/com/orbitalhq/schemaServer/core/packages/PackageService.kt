@@ -7,9 +7,9 @@ import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schema.publisher.ExpiringSourcesStore
 import com.orbitalhq.schema.publisher.PublisherType
 import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
-import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
-import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
+import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.schemaServer.packages.PackageWithDescription
 import com.orbitalhq.schemaServer.packages.PackagesServiceApi
 import com.orbitalhq.schemaServer.packages.SourcePackageDescription
@@ -28,8 +28,8 @@ import reactor.core.publisher.Mono
 class PackageService(
    private val expiringSourcesStore: ExpiringSourcesStore,
    private val schemaStore: SchemaStore,
-   private val repositoryManager: ReactiveRepositoryManager,
-   private val configRepo: SchemaRepositoryConfigLoader
+   private val repositoryManager: ReactiveProjectStoreManager,
+   private val configRepo: WorkspaceConfigLoader
 ) : PackagesServiceApi {
 
    companion object {
@@ -59,7 +59,7 @@ class PackageService(
             val packageDescription = packageWithDescription.description
             when (packageDescription.publisherType) {
                PublisherType.GitRepo -> {
-                  val repositoryName = (packageDescription.packageConfig as GitRepositorySpec).name
+                  val repositoryName = (packageDescription.packageConfig as GitProjectStoreSpec).name
                   configRepo.removeGitRepository(repositoryName, packageDescription.identifier)
                }
 

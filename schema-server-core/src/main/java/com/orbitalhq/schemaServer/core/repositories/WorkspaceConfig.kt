@@ -3,10 +3,14 @@ package com.orbitalhq.schemaServer.core.repositories
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
-import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
+import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaRepositoryConfig
 
-data class SchemaRepositoryConfig(
+/**
+ * Class representing the workspace.conf file that defines
+ * the various locations that taxi projects are loaded from
+ */
+data class WorkspaceConfig(
    val file: FileSystemSchemaRepositoryConfig? = null,
    val git: GitSchemaRepositoryConfig? = null
 ) {
@@ -20,13 +24,17 @@ data class SchemaRepositoryConfig(
    val fileConfigOrDefault:FileSystemSchemaRepositoryConfig = file ?: FileSystemSchemaRepositoryConfig()
 }
 
-
-interface SchemaRepositoryConfigLoader {
-   fun load(): SchemaRepositoryConfig
+/**
+ * Responsible for reading a workspace.conf file from somewhere.
+ *
+ * Workspace.conf is a HOCON file, which can be fetched from a local disk
+ */
+interface WorkspaceConfigLoader {
+   fun load(): WorkspaceConfig
    fun safeConfigJson(): String
    fun addFileSpec(fileSpec: FileSystemPackageSpec)
 
-   fun addGitSpec(gitSpec: GitRepositorySpec)
+   fun addGitSpec(gitSpec: GitProjectStoreSpec)
    fun removeGitRepository(repositoryName: String, packageIdentifier: PackageIdentifier): List<PackageIdentifier>
    fun removeFileRepository(packageIdentifier: PackageIdentifier): List<PackageIdentifier>
 }

@@ -11,8 +11,8 @@ import com.orbitalhq.queryService.TestSchemaProvider
 import com.orbitalhq.queryService.VyneQueryIntegrationTest
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
-import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfigLoader
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.spring.config.TestDiscoveryClientConfig
 import org.jose4j.jwk.RsaJsonWebKey
@@ -30,7 +30,6 @@ import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
-import org.springframework.core.io.ClassPathResource
 import org.springframework.http.*
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
@@ -117,10 +116,10 @@ class VyneQuerySecurityIntegrationTest {
 
 
    @MockBean
-   lateinit var eventDispatcher: RepositorySpecLifecycleEventDispatcher
+   lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
 
    @MockBean
-   lateinit var configLoader : SchemaRepositoryConfigLoader
+   lateinit var configLoader : WorkspaceConfigLoader
 
 
    @TestConfiguration

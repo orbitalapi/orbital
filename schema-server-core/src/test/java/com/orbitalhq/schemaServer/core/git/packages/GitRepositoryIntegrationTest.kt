@@ -7,12 +7,12 @@ import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoaderFact
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoaderFactory
 import com.orbitalhq.schemaServer.core.git.GitSchemaRepositoryConfig
 import com.orbitalhq.schemaServer.core.publisher.SourceWatchingSchemaPublisher
-import com.orbitalhq.schemaServer.core.repositories.InMemorySchemaRepositoryConfigLoader
-import com.orbitalhq.schemaServer.core.repositories.RepositoryService
-import com.orbitalhq.schemaServer.core.repositories.SchemaRepositoryConfig
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositoryLifecycleManager
-import com.orbitalhq.schemaServer.repositories.git.GitRepositoryChangeRequest
+import com.orbitalhq.schemaServer.core.repositories.InMemoryWorkspaceConfigLoader
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceService
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfig
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
+import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.utils.asA
 import com.orbitalhq.utils.files.ReactivePollingFileSystemMonitor
@@ -57,21 +57,21 @@ class GitRepositoryIntegrationTest {
       deployTestProjectToRemoteGitPath()
 
       // Setup: Loading the config from disk
-      val eventDispatcher = RepositoryLifecycleManager()
+      val eventDispatcher = ProjectStoreLifecycleManager()
 //      val loader = FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
-      val loader = InMemorySchemaRepositoryConfigLoader(
-         SchemaRepositoryConfig(
+      val loader = InMemoryWorkspaceConfigLoader(
+         WorkspaceConfig(
             git = GitSchemaRepositoryConfig(
                checkoutRoot = localRepoDir.root.toPath(),
             )
          ),
          eventDispatcher
       )
-      val repositoryService = RepositoryService(loader)
+      val workspaceService = WorkspaceService(loader)
 
       // Setup: Building the repository manager, which should
       // create new repositories as config is added
-      val repositoryManager = ReactiveRepositoryManager(
+      val repositoryManager = ReactiveProjectStoreManager(
          FileSystemPackageLoaderFactory(),
          GitSchemaPackageLoaderFactory(
             changeDetectionMethod = FileChangeDetectionMethod.POLL,
@@ -89,8 +89,8 @@ class GitRepositoryIntegrationTest {
       )
 
       // Test: Add the git repository
-      repositoryService.createGitRepository(
-         GitRepositoryChangeRequest(
+      workspaceService.createGitProjectStore(
+         GitProjectStoreChangeRequest(
             "my-git-repo",
             uri = remoteRepoDir.root.toURI().toASCIIString(),
             branch = "master",

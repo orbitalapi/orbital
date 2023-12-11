@@ -9,20 +9,19 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.connectors.soap.SoapWsdlSourceConverter
-import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.rsocket.CBORJackson
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
-import com.orbitalhq.schemaServer.core.git.GitRepositorySpec
+import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoaderFactory
 import com.orbitalhq.schemaServer.core.publisher.SourceWatchingSchemaPublisher
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveRepositoryManager
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositoryLifecycleManager
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.SoapPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
-import com.orbitalhq.schemaServer.repositories.CreateFileRepositoryRequest
+import com.orbitalhq.schemaServer.repositories.CreateFileProjectStoreRequest
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.schemaStore.TaxiSchemaValidator
 import com.orbitalhq.schemas.readers.TaxiSourceConverter
@@ -46,8 +45,8 @@ class FileRepositoryIntegrationTest {
    @Test
    fun `adding a file repository to an empty folder creates a taxi project`() {
       val configFile = folder.root.resolve("repositories.conf")
-      val eventDispatcher = RepositoryLifecycleManager()
-      val loader = FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
+      val eventDispatcher = ProjectStoreLifecycleManager()
+      val loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
 
       val projectFolder = folder.newFolder().toPath()
       loader.addFileSpec(
@@ -69,8 +68,8 @@ class FileRepositoryIntegrationTest {
       Resources.copy(Resources.getResource("open-api/petstore-expanded.yaml"), openApiSpec.outputStream())
 
       val configFile = folder.root.resolve("repositories.conf")
-      val eventDispatcher = RepositoryLifecycleManager()
-      val loader = FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
+      val eventDispatcher = ProjectStoreLifecycleManager()
+      val loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
 
       loader.addFileSpec(
          FileSystemPackageSpec(
@@ -96,7 +95,7 @@ class FileRepositoryIntegrationTest {
 
 
       repositoryService.createFileRepository(
-         CreateFileRepositoryRequest(
+         CreateFileProjectStoreRequest(
             projectFolder.canonicalPath,
             true,
             loader = SoapPackageLoaderSpec(
@@ -130,7 +129,7 @@ class FileRepositoryIntegrationTest {
       // First, create the new repository
       val projectFolder = folder.newFolder("my-project")
       repositoryService.createFileRepository(
-         CreateFileRepositoryRequest(
+         CreateFileProjectStoreRequest(
             projectFolder.canonicalPath,
             true,
             loader = TaxiPackageLoaderSpec,
@@ -156,16 +155,16 @@ class FileRepositoryIntegrationTest {
 
    }
 
-   private fun setupServices(): Triple<RepositoryService, ReactiveRepositoryManager, LocalValidatingSchemaStoreClient> {
+   private fun setupServices(): Triple<WorkspaceService, ReactiveProjectStoreManager, LocalValidatingSchemaStoreClient> {
       // Setup: Loading the config from disk
       val configFile = folder.root.resolve("repositories.conf")
-      val eventDispatcher = RepositoryLifecycleManager()
-      val loader = FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
-      val repositoryService = RepositoryService(loader)
+      val eventDispatcher = ProjectStoreLifecycleManager()
+      val loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
+      val workspaceService = WorkspaceService(loader)
 
       // Setup: Building the file repository, which should
       // create new repositories as config is added
-      val repositoryManager = ReactiveRepositoryManager(
+      val repositoryManager = ReactiveProjectStoreManager(
          FileSystemPackageLoaderFactory(),
          GitSchemaPackageLoaderFactory(),
          eventDispatcher, eventDispatcher, eventDispatcher
@@ -186,20 +185,20 @@ class FileRepositoryIntegrationTest {
          schemaClient,
          eventDispatcher
       )
-      return Triple(repositoryService, repositoryManager, schemaClient)
+      return Triple(workspaceService, repositoryManager, schemaClient)
    }
 
    @Test
    fun `declaring projects that contain additional sources are loaded into the schema`() {
       // Setup: Loading the config from disk
       val configFile = folder.root.resolve("repositories.conf")
-      val eventDispatcher = RepositoryLifecycleManager()
-      val loader = FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
-      val repositoryService = RepositoryService(loader)
+      val eventDispatcher = ProjectStoreLifecycleManager()
+      val loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
+      val workspaceService = WorkspaceService(loader)
 
       // Setup: Building the file repository, which should
       // create new repositories as config is added
-      val repositoryManager = ReactiveRepositoryManager(
+      val repositoryManager = ReactiveProjectStoreManager(
          FileSystemPackageLoaderFactory(),
          GitSchemaPackageLoaderFactory(),
          eventDispatcher, eventDispatcher, eventDispatcher
@@ -214,8 +213,8 @@ class FileRepositoryIntegrationTest {
       )
 
       val path = Resources.getResource("additional-sources").toURI().toPath()
-      repositoryService.createFileRepository(
-         CreateFileRepositoryRequest(
+      workspaceService.createFileRepository(
+         CreateFileProjectStoreRequest(
             path = path.absolutePathString(),
             isEditable = false
          )
@@ -248,13 +247,13 @@ class FileRepositoryIntegrationTest {
       // Setup: Loading the config from disk
       val configFile = folder.root.resolve("repositories.conf")
       val setupLoader =
-         FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = RepositoryLifecycleManager())
-      val setupRepositoryService = RepositoryService(setupLoader)
+         FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = ProjectStoreLifecycleManager())
+      val setupWorkspaceService = WorkspaceService(setupLoader)
 
       // First, create the project, and write some source.
       val projectFolder = folder.newFolder("my-project")
-      setupRepositoryService.createFileRepository(
-         CreateFileRepositoryRequest(
+      setupWorkspaceService.createFileRepository(
+         CreateFileProjectStoreRequest(
             projectFolder.canonicalPath,
             true,
             loader = TaxiPackageLoaderSpec,
@@ -266,12 +265,12 @@ class FileRepositoryIntegrationTest {
 
 
       // Now, "restart", by creating a new set of components.
-      val eventDispatcher = RepositoryLifecycleManager()
-      val loader = FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
+      val eventDispatcher = ProjectStoreLifecycleManager()
+      val loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
 
       // Setup: Building the file repository, which should
       // create new repositories as config is added
-      val repositoryManager = ReactiveRepositoryManager(
+      val repositoryManager = ReactiveProjectStoreManager(
          FileSystemPackageLoaderFactory(),
          GitSchemaPackageLoaderFactory(),
          eventDispatcher, eventDispatcher, eventDispatcher
@@ -300,7 +299,7 @@ class FileRepositoryIntegrationTest {
    fun `can delete git repository`() {
       val configFile = folder.root.resolve("repositories.conf")
       val schemaRepository =
-         FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = RepositoryLifecycleManager())
+         FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = ProjectStoreLifecycleManager())
 
       schemaRepository.load()
          .git?.repositories?.should?.be?.empty
@@ -317,7 +316,7 @@ class FileRepositoryIntegrationTest {
    fun `can delete file repository`() {
       val configFile = folder.root.resolve("repositories.conf")
       val schemaRepository =
-         FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = RepositoryLifecycleManager())
+         FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = ProjectStoreLifecycleManager())
 
       schemaRepository.load()
          .git?.repositories?.should?.be?.empty
@@ -335,7 +334,7 @@ class FileRepositoryIntegrationTest {
    fun `throws error removing file repository that doesn't exist`() {
       val configFile = folder.root.resolve("repositories.conf")
       val schemaRepository =
-         FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = RepositoryLifecycleManager())
+         FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = ProjectStoreLifecycleManager())
 
       schemaRepository.load()
          .git?.repositories?.should?.be?.empty
@@ -353,7 +352,7 @@ class FileRepositoryIntegrationTest {
    fun `throws error removing git repository that doesn't exist`() {
       val configFile = folder.root.resolve("repositories.conf")
       val schemaRepository =
-         FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = RepositoryLifecycleManager())
+         FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = ProjectStoreLifecycleManager())
 
       schemaRepository.load()
          .git?.repositories?.should?.be?.empty
@@ -367,16 +366,16 @@ class FileRepositoryIntegrationTest {
 
    }
 
-   private fun createFourRepositories(schemaRepository: FileSchemaRepositoryConfigLoader) {
+   private fun createFourRepositories(schemaRepository: FileWorkspaceConfigLoader) {
       schemaRepository.addGitSpec(
-         GitRepositorySpec(
+         GitProjectStoreSpec(
             "test-repo-1",
             "https://github.com/test/repo1",
             "master",
          )
       )
       schemaRepository.addGitSpec(
-         GitRepositorySpec(
+         GitProjectStoreSpec(
             "test-repo-2",
             "https://github.com/test/repo2",
             "master",
@@ -403,7 +402,7 @@ class FileRepositoryIntegrationTest {
 
 }
 
-private fun FileSchemaRepositoryConfigLoader.shouldHaveRepositories(fileRepoCount: Int, gitRepoCount: Int) {
+private fun FileWorkspaceConfigLoader.shouldHaveRepositories(fileRepoCount: Int, gitRepoCount: Int) {
    this.load()
       .git?.repositories?.shouldHaveSize(gitRepoCount)
    this.load()
