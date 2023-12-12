@@ -8,7 +8,7 @@ import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoaderFactory
 import com.orbitalhq.schemaServer.core.git.GitSchemaRepositoryConfig
 import com.orbitalhq.schemaServer.core.publisher.SourceWatchingSchemaPublisher
 import com.orbitalhq.schemaServer.core.repositories.InMemoryWorkspaceConfigLoader
-import com.orbitalhq.schemaServer.core.repositories.WorkspaceService
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceProjectsService
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfig
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
@@ -16,35 +16,15 @@ import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.utils.asA
 import com.orbitalhq.utils.files.ReactivePollingFileSystemMonitor
-import org.eclipse.jgit.api.Git
-import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
-class GitRepositoryIntegrationTest {
+class GitRepositoryIntegrationTest : BaseGitTest() {
 
-   @Rule
-   @JvmField
-   val configFolder = TemporaryFolder()
 
-   @Rule
-   @JvmField
-   val remoteRepoDir = TemporaryFolder()
-
-   @Rule
-   @JvmField
-   val localRepoDir = TemporaryFolder()
-   lateinit var remoteRepo: Git
-
-   @Before
-   fun createGitRemote() {
-      remoteRepo = Git.init().setDirectory(remoteRepoDir.root).call()
-   }
 
    private fun deployTestProjectToRemoteGitPath(pathInRepository: Path = Paths.get(".")) {
       remoteRepoDir.root.resolve(pathInRepository.toString()).toPath().deployProject("sample-project")
@@ -67,7 +47,7 @@ class GitRepositoryIntegrationTest {
          ),
          eventDispatcher
       )
-      val workspaceService = WorkspaceService(loader)
+      val workspaceProjectsService = WorkspaceProjectsService(loader)
 
       // Setup: Building the repository manager, which should
       // create new repositories as config is added
@@ -89,7 +69,7 @@ class GitRepositoryIntegrationTest {
       )
 
       // Test: Add the git repository
-      workspaceService.createGitProjectStore(
+      workspaceProjectsService.createGitProjectStore(
          GitProjectStoreChangeRequest(
             "my-git-repo",
             uri = remoteRepoDir.root.toURI().toASCIIString(),

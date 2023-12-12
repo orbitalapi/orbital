@@ -34,7 +34,8 @@ import kotlin.io.path.*
 class FileWorkspaceConfigLoader(
    private val configFilePath: Path,
    fallback: Config = ConfigFactory.systemEnvironment(),
-   private val eventDispatcher: ProjectSpecLifecycleEventDispatcher
+   private val eventDispatcher: ProjectSpecLifecycleEventDispatcher,
+   emitStateOnInit: Boolean = true
 ) :
    BaseHoconConfigFileRepository<WorkspaceConfig>(
       configFilePath, fallback
@@ -46,10 +47,15 @@ class FileWorkspaceConfigLoader(
       registerCustomType(UriHoconSupport)
       registerCustomType(InstantHoconSupport)
 
-      emitInitialState()
+      if (emitStateOnInit) {
+         emitCurrentState()
+      }
+
    }
 
-   private fun emitInitialState() {
+   override val isReadOnly: Boolean = false
+
+   fun emitCurrentState() {
       val initialConfig = load()
       logger.info { "Repository config at $configFilePath loaded with ${initialConfig.repoCountDescription()}" }
       initialConfig.file?.let { fileConfig ->
