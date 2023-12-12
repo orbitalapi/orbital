@@ -22,12 +22,12 @@ import '@angular/localize/init';
 import 'zone.js';  // Included with Angular CLI.
 
 
-// https://stackoverflow.com/a/51232137/59015
-// Note, these became required when we added a dependency to Slate for the wiki style editing
-// If we migrate from Slate, or these become unrequired by slate, then remove them here.
-import * as process from 'process';
-window['process'] = process;
-window['global'] = (window as any);
+// // https://stackoverflow.com/a/51232137/59015
+// // Note, these became required when we added a dependency to Slate for the wiki style editing
+// // If we migrate from Slate, or these become unrequired by slate, then remove them here.
+// import * as process from 'process';
+// window['process'] = process;
+// window['global'] = (window as any);
 /***************************************************************************************************
  * APPLICATION IMPORTS
  */
