@@ -1,13 +1,26 @@
 package com.orbitalhq.spring.http.auth.schemes
 
-import com.orbitalhq.auth.schemes.*
+import com.orbitalhq.auth.schemes.AuthScheme
+import com.orbitalhq.auth.schemes.AuthSchemeProvider
+import com.orbitalhq.auth.schemes.AuthTokens
+import com.orbitalhq.auth.schemes.BasicAuth
+import com.orbitalhq.auth.schemes.Cookie
+import com.orbitalhq.auth.schemes.HttpHeader
+import com.orbitalhq.auth.schemes.OAuth2
+import com.orbitalhq.auth.schemes.QueryParam
+import com.orbitalhq.auth.schemes.SimpleAuthSchemeProvider
 import com.orbitalhq.schemas.ServiceName
 import com.orbitalhq.spring.http.auth.oauthAuthorizedClientManager
 import mu.KotlinLogging
 import org.springframework.security.oauth2.client.AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager
+import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientService
 import org.springframework.security.oauth2.client.web.reactive.function.client.ServerOAuth2AuthorizedClientExchangeFilterFunction
 import org.springframework.stereotype.Component
-import org.springframework.web.reactive.function.client.*
+import org.springframework.web.reactive.function.client.ClientRequest
+import org.springframework.web.reactive.function.client.ClientResponse
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction
+import org.springframework.web.reactive.function.client.ExchangeFilterFunctions
+import org.springframework.web.reactive.function.client.ExchangeFunction
 import org.springframework.web.reactive.function.client.WebClient.RequestHeadersSpec
 import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Mono
@@ -16,8 +29,8 @@ import kotlin.jvm.optionals.getOrNull
 @Component
 class AuthWebClientCustomizer(
    private val oauthClientManager: AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager,
+   private val oauthClientService: ReactiveOAuth2AuthorizedClientService,
    private val repository: AuthSchemeProvider,
-
    ) {
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -27,8 +40,10 @@ class AuthWebClientCustomizer(
 
       fun forTokens(authTokens: AuthTokens): AuthWebClientCustomizer {
          val authSchemeProvider = SimpleAuthSchemeProvider(authTokens)
+         val (authorizedClientService,oauthClientManager) = oauthAuthorizedClientManager(authSchemeProvider)
          return AuthWebClientCustomizer(
-            oauthAuthorizedClientManager(authSchemeProvider),
+            oauthClientManager,
+            authorizedClientService,
             authSchemeProvider
          )
       }
@@ -67,7 +82,7 @@ class AuthWebClientCustomizer(
          )
 
          is Cookie -> cookieFilterFunction(authScheme)
-         is OAuth2 -> oauthFilterFunction(serviceName)
+         is OAuth2 -> oauthFilterFunction(serviceName, authScheme)
          is QueryParam -> queryParamFilterFunction(authScheme)
          is HttpHeader -> httpHeaderFilterFunction(authScheme)
          else -> error("Support for auth schema ${authScheme::class.simpleName} is not implemented")
@@ -113,11 +128,19 @@ class AuthWebClientCustomizer(
       }
    }
 
-   private fun oauthFilterFunction(serviceName: ServiceName): ExchangeFilterFunction {
-      val oauth2FilterFunction = ServerOAuth2AuthorizedClientExchangeFilterFunction(oauthClientManager)
-      oauth2FilterFunction.setDefaultOAuth2AuthorizedClient(true)
-      oauth2FilterFunction.setDefaultClientRegistrationId(serviceName)
-      return oauth2FilterFunction
+   private fun oauthFilterFunction(serviceName: ServiceName, authScheme: OAuth2): ExchangeFilterFunction {
+
+      // See comments on RefreshTokenExchangeFilterFunction as to why we have to use a different
+      // function here.
+      return if (authScheme.grantType == OAuth2.AuthorizationGrantType.RefreshToken) {
+         RefreshTokenExchangeFilterFunction(serviceName, authScheme, oauthClientService)
+      } else {
+         val oauth2FilterFunction = ServerOAuth2AuthorizedClientExchangeFilterFunction(oauthClientManager)
+         oauth2FilterFunction.setDefaultOAuth2AuthorizedClient(true)
+         oauth2FilterFunction.setDefaultClientRegistrationId(serviceName)
+         oauth2FilterFunction
+
+      }
    }
 }
 

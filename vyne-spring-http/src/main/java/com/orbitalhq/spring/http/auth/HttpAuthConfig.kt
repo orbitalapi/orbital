@@ -2,6 +2,8 @@ package com.orbitalhq.spring.http.auth
 
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.auth.schemes.AuthSchemeProvider
+import com.orbitalhq.auth.schemes.OAuth2
+import com.orbitalhq.auth.schemes.getAllOfType
 import com.orbitalhq.auth.tokens.AuthTokenRepository
 import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.schema.consumer.SchemaChangedEventProvider
@@ -10,17 +12,21 @@ import com.orbitalhq.spring.config.EnvVariablesConfig
 import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.spring.http.auth.schemes.HoconAuthTokensRepository
 import com.orbitalhq.spring.http.auth.schemes.HoconOAuthClientRegistrationRepository
+import com.orbitalhq.spring.http.auth.schemes.createAuthorizedClient
 import mu.KotlinLogging
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
+import org.springframework.security.authentication.AnonymousAuthenticationToken
+import org.springframework.security.core.authority.AuthorityUtils
 import org.springframework.security.oauth2.client.AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager
 import org.springframework.security.oauth2.client.InMemoryReactiveOAuth2AuthorizedClientService
 import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientService
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.Instant
 
 //@ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.auth")
@@ -49,7 +55,11 @@ class HttpAuthConfig {
       logger.info { "Using auth config file at ${config.configFile.toFile().canonicalPath}" }
       return HoconAuthTokensRepository(
          listOf(
-            FileConfigSourceLoader(envVariablesConfig.envVariablesPath, failIfNotFound = false, packageIdentifier = EnvVariablesConfig.PACKAGE_IDENTIFIER),
+            FileConfigSourceLoader(
+               envVariablesConfig.envVariablesPath,
+               failIfNotFound = false,
+               packageIdentifier = EnvVariablesConfig.PACKAGE_IDENTIFIER
+            ),
             SchemaConfigSourceLoader(eventProvider, "env.conf"),
             FileConfigSourceLoader(
                config.configFile,
@@ -63,7 +73,12 @@ class HttpAuthConfig {
 
    @Bean
    fun oauthClientManager(authSchemeProvider: AuthSchemeProvider): AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager {
-      return oauthAuthorizedClientManager(authSchemeProvider)
+      return oauthAuthorizedClientManager(authSchemeProvider).second
+   }
+
+   @Bean
+   fun oauthAuthorizedClientService(authSchemeProvider: AuthSchemeProvider): ReactiveOAuth2AuthorizedClientService {
+      return oauthAuthorizedClientManager(authSchemeProvider).first
    }
 
    @Bean
@@ -82,15 +97,46 @@ class HttpAuthConfig {
 }
 
 // exposed to make testing easier
-fun oauthAuthorizedClientManager(authSchemeProvider: AuthSchemeProvider): AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager {
+fun oauthAuthorizedClientManager(authSchemeProvider: AuthSchemeProvider): Pair<ReactiveOAuth2AuthorizedClientService, AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager> {
    val oAuthClientRegistrationRepository = HoconOAuthClientRegistrationRepository(
       authSchemeProvider
    )
    val authorizedClientService: ReactiveOAuth2AuthorizedClientService =
       InMemoryReactiveOAuth2AuthorizedClientService(oAuthClientRegistrationRepository)
 
-   return AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager(
+   // Support for the RefreshToken flow (see RefreshTokenExchangeFilterFunction).
+   // Add all known refresh tokens as pre-expired access tokens, forcing refresh on first usage.
+   registerRefreshTokens(authSchemeProvider, authorizedClientService)
+
+   return authorizedClientService to AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager(
       oAuthClientRegistrationRepository,
       authorizedClientService
    )
 }
+
+/**
+ * Creates registrations in the authorizedClientService
+ * for any refresh tokens we've been provided.
+ *
+ * Registers an expired Access Token, forcing the token to be refreshed
+ * on first call.
+ */
+private fun registerRefreshTokens(
+   authSchemeProvider: AuthSchemeProvider,
+   authorizedClientService: ReactiveOAuth2AuthorizedClientService
+) {
+   authSchemeProvider.getAllOfType<OAuth2>()
+      .filter { (serviceName, token) -> token.refreshToken != null }
+      .forEach { (serviceName, oauthToken) ->
+
+         val (principal, client) = oauthToken.createAuthorizedClient(
+            serviceName, "expiredToken", Instant.MIN,
+            Instant.MIN.plusSeconds(60)
+         )
+         authorizedClientService.saveAuthorizedClient(
+            client, principal
+         ).subscribe()
+      }
+}
+
+
