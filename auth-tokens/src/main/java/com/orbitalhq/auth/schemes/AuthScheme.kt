@@ -156,7 +156,7 @@ data class OAuth2(
    val scopes: List<String> = emptyList(),
    val grantType: AuthorizationGrantType,
    val method: AuthenticationMethod = AuthenticationMethod.Basic,
-
+   val refreshToken: String? = null,
 
    ) : AuthScheme() {
    enum class AuthorizationGrantType {
@@ -176,5 +176,6 @@ data class OAuth2(
          clientSecret = MASKED_PASSWORD,
       )
    }
+
 }
 

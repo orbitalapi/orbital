@@ -29,6 +29,10 @@ object EmptyAuthSchemeRepository : AuthSchemeRepository {
       return null
    }
 
+   override fun getAll(): Map<ServiceName,AuthScheme> {
+      return emptyMap()
+   }
+
    override fun saveToken(
       targetPackage: PackageIdentifier,
       serviceName: String,

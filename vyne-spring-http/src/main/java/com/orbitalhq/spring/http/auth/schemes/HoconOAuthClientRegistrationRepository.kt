@@ -37,13 +37,7 @@ class HoconOAuthClientRegistrationRepository(
                val authScheme = authSchemeProvider.getAuthScheme(registrationId)
                   ?: error("No Auth defined for registration $registrationId")
                require(authScheme is OAuth2) { "Expected auth scheme $registrationId to be ${OAuth2::class.simpleName} but was ${authScheme::class.simpleName}" }
-               val registration = ClientRegistration.withRegistrationId(registrationId)
-                  .clientId(authScheme.clientId)
-                  .clientSecret(authScheme.clientSecret)
-                  .tokenUri(authScheme.accessTokenUrl)
-                  .clientAuthenticationMethod(authScheme.method.asSpringAuthMethod())
-                  .authorizationGrantType(authScheme.grantType.asSpringGrantType())
-                  .build()
+               val registration = authScheme.asClientRegistration(registrationId)
                logger.debug { "Created OAuth registration from registered token $registrationId" }
                registration
             }
@@ -56,20 +50,3 @@ class HoconOAuthClientRegistrationRepository(
 }
 
 
-private fun OAuth2.AuthorizationGrantType.asSpringGrantType(): AuthorizationGrantType {
-   return when (this) {
-      OAuth2.AuthorizationGrantType.ClientCredentials -> AuthorizationGrantType.CLIENT_CREDENTIALS
-      OAuth2.AuthorizationGrantType.RefreshToken -> AuthorizationGrantType.REFRESH_TOKEN
-      OAuth2.AuthorizationGrantType.AuthorizationCode -> AuthorizationGrantType.AUTHORIZATION_CODE
-   }
-
-}
-
-private fun OAuth2.AuthenticationMethod.asSpringAuthMethod(): ClientAuthenticationMethod {
-   return when (this) {
-      OAuth2.AuthenticationMethod.Basic -> ClientAuthenticationMethod.CLIENT_SECRET_BASIC
-      OAuth2.AuthenticationMethod.JWT -> ClientAuthenticationMethod.CLIENT_SECRET_JWT
-      OAuth2.AuthenticationMethod.Post -> ClientAuthenticationMethod.CLIENT_SECRET_POST
-   }
-
-}

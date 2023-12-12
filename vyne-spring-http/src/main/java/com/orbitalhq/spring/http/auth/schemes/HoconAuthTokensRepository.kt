@@ -27,6 +27,10 @@ class HoconAuthTokensRepository(
       return AuthTokens.fromConfig(config)
    }
 
+   override fun getAll(): Map<ServiceName,AuthScheme> {
+      return typedConfig().authenticationTokens
+   }
+
    override fun emptyConfig(): AuthTokens = AuthTokens(emptyMap())
 
    override fun saveToken(
