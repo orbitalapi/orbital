@@ -173,6 +173,7 @@ license.json
 services.conf
 ./config/
 gitWorkingDir/
+.orbital/
 
 /search/
 /schemas/

@@ -32,15 +32,15 @@ data class GitSshAuth(
 )
 
 data class GitProjectStoreSpec(
-   val name: String,
+   override val name: String,
 
    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-   val uri: String,
-   val branch: String,
+   override val uri: String,
+   override val branch: String,
    @get:JsonIgnore
-   val sshAuth: GitSshAuth? = null,
+   override val sshAuth: GitSshAuth? = null,
    @get:JsonIgnore
-   val credentials: GitCredentials? = null,
+   override val credentials: GitCredentials? = null,
    val pullRequestConfig: GitUpdateFlowConfig? = null,
    val isEditable: Boolean = pullRequestConfig != null,
 
@@ -51,11 +51,9 @@ data class GitProjectStoreSpec(
    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
    val path: Path = Paths.get("/"),
    val loader: PackageLoaderSpec = TaxiPackageLoaderSpec
-) {
+) : GitRepositoryConnectionConfig {
    @JsonProperty("uri", access = JsonProperty.Access.READ_ONLY)
    val redactedUri = redactUrl(uri)
-
-   val description: String = "$name - $redactedUri / $branch"
 
    @JsonProperty("path", access = JsonProperty.Access.READ_ONLY)
    val pathWithinRepository = path.toString()

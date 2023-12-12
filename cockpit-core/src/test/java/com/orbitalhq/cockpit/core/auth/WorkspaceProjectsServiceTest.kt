@@ -19,13 +19,11 @@ import org.springframework.boot.SpringBootConfiguration
 import org.springframework.boot.autoconfigure.domain.EntityScan
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.security.core.Authentication
-import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.test.context.ContextConfiguration
-import reactor.core.publisher.Mono
 
 
-@ContextConfiguration(classes = [WorkspaceServiceTest.Companion.Config::class])
-class WorkspaceServiceTest : DatabaseTest() {
+@ContextConfiguration(classes = [WorkspaceProjectsServiceTest.Companion.Config::class])
+class WorkspaceProjectsServiceTest : DatabaseTest() {
 
     companion object {
         @SpringBootConfiguration

@@ -1,7 +1,7 @@
 package com.orbitalhq.schemaServer.core.repositories
 
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
-import com.orbitalhq.schemaServer.core.git.GitOperations
+import com.orbitalhq.schemaServer.core.git.GitUtils
 import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.PackageType
@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono
 import java.nio.file.Paths
 
 @RestController
-class WorkspaceService(private val configRepo: WorkspaceConfigLoader) : WorkspaceServiceApi {
+class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) : WorkspaceServiceApi {
     companion object {
         private val logger = KotlinLogging.logger {}
     }
@@ -71,7 +71,7 @@ class WorkspaceService(private val configRepo: WorkspaceConfigLoader) : Workspac
 
     @PostMapping("/api/repositories/git", params = ["test"])
     override fun testGitConnection(request: GitConnectionTestRequest): Mono<GitConnectionTestResult> {
-        return Mono.just(GitOperations.testConnection(request.uri))
+        return Mono.just(GitUtils.testConnection(request.uri))
             .map { testResult ->
                 GitConnectionTestResult(
                     successful = testResult.successful,

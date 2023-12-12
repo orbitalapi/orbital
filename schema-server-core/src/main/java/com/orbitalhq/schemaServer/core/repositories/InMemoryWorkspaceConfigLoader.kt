@@ -22,6 +22,7 @@ class InMemoryWorkspaceConfigLoader(
       emitInitialState()
    }
 
+   override val isReadOnly: Boolean = false
    private fun emitInitialState() {
       logger.info { "In memory schema config running - registering initial state" }
       config.file?.let { fileConfig ->

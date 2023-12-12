@@ -37,5 +37,13 @@ interface WorkspaceConfigLoader {
    fun addGitSpec(gitSpec: GitProjectStoreSpec)
    fun removeGitRepository(repositoryName: String, packageIdentifier: PackageIdentifier): List<PackageIdentifier>
    fun removeFileRepository(packageIdentifier: PackageIdentifier): List<PackageIdentifier>
+
+   /**
+    * Indicates if this loader supports write operations (like adding git specs, etc)
+    */
+   val isReadOnly: Boolean
+
+   val supportsWriteOperations: Boolean
+      get() = !isReadOnly
 }
 

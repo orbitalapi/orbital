@@ -155,12 +155,12 @@ class FileRepositoryIntegrationTest {
 
    }
 
-   private fun setupServices(): Triple<WorkspaceService, ReactiveProjectStoreManager, LocalValidatingSchemaStoreClient> {
+   private fun setupServices(): Triple<WorkspaceProjectsService, ReactiveProjectStoreManager, LocalValidatingSchemaStoreClient> {
       // Setup: Loading the config from disk
       val configFile = folder.root.resolve("repositories.conf")
       val eventDispatcher = ProjectStoreLifecycleManager()
       val loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
-      val workspaceService = WorkspaceService(loader)
+      val workspaceProjectsService = WorkspaceProjectsService(loader)
 
       // Setup: Building the file repository, which should
       // create new repositories as config is added
@@ -185,7 +185,7 @@ class FileRepositoryIntegrationTest {
          schemaClient,
          eventDispatcher
       )
-      return Triple(workspaceService, repositoryManager, schemaClient)
+      return Triple(workspaceProjectsService, repositoryManager, schemaClient)
    }
 
    @Test
@@ -194,7 +194,7 @@ class FileRepositoryIntegrationTest {
       val configFile = folder.root.resolve("repositories.conf")
       val eventDispatcher = ProjectStoreLifecycleManager()
       val loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
-      val workspaceService = WorkspaceService(loader)
+      val workspaceProjectsService = WorkspaceProjectsService(loader)
 
       // Setup: Building the file repository, which should
       // create new repositories as config is added
@@ -213,7 +213,7 @@ class FileRepositoryIntegrationTest {
       )
 
       val path = Resources.getResource("additional-sources").toURI().toPath()
-      workspaceService.createFileRepository(
+      workspaceProjectsService.createFileRepository(
          CreateFileProjectStoreRequest(
             path = path.absolutePathString(),
             isEditable = false
@@ -248,11 +248,11 @@ class FileRepositoryIntegrationTest {
       val configFile = folder.root.resolve("repositories.conf")
       val setupLoader =
          FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = ProjectStoreLifecycleManager())
-      val setupWorkspaceService = WorkspaceService(setupLoader)
+      val setupWorkspaceProjectsService = WorkspaceProjectsService(setupLoader)
 
       // First, create the project, and write some source.
       val projectFolder = folder.newFolder("my-project")
-      setupWorkspaceService.createFileRepository(
+      setupWorkspaceProjectsService.createFileRepository(
          CreateFileProjectStoreRequest(
             projectFolder.canonicalPath,
             true,

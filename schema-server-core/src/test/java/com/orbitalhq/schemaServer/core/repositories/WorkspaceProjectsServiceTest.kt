@@ -14,29 +14,29 @@ import org.junit.rules.TemporaryFolder
 import kotlin.test.assertFailsWith
 
 
-class WorkspaceServiceTest {
+class WorkspaceProjectsServiceTest {
 
    @Rule
    @JvmField
    val folder = TemporaryFolder()
 
-   lateinit var workspaceService: WorkspaceService
+   lateinit var workspaceProjectsService: WorkspaceProjectsService
 
    @Before
    fun setup() {
       val configFile = folder.root.resolve("repositories.conf")
       val loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = ProjectStoreLifecycleManager())
-      workspaceService = WorkspaceService(loader)
+      workspaceProjectsService = WorkspaceProjectsService(loader)
    }
 
    @Test
    fun `can add a file repository`() {
-      workspaceService.listRepositories()
+      workspaceProjectsService.listRepositories()
          .file?.projects?.should?.be?.empty
 
       val folder = folder.newFolder("project")
 
-      workspaceService.createFileRepository(
+      workspaceProjectsService.createFileRepository(
          CreateFileProjectStoreRequest(
             folder.canonicalPath, true,
             loader = TaxiPackageLoaderSpec,
@@ -44,7 +44,7 @@ class WorkspaceServiceTest {
          )
       )
 
-      val repositoryConfig = workspaceService.listRepositories()
+      val repositoryConfig = workspaceProjectsService.listRepositories()
       repositoryConfig
          .file!!.projects.should.have.size(1)
 
@@ -63,10 +63,10 @@ class WorkspaceServiceTest {
          loader = TaxiPackageLoaderSpec,
          newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
       )
-      workspaceService.createFileRepository(request)
+      workspaceProjectsService.createFileRepository(request)
 
       assertFailsWith<BadRequestException> {
-         workspaceService.createFileRepository(request)
+         workspaceProjectsService.createFileRepository(request)
       }
 
    }
@@ -80,10 +80,10 @@ class WorkspaceServiceTest {
          loader = TaxiPackageLoaderSpec,
          newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
       )
-      workspaceService.createFileRepository(request)
+      workspaceProjectsService.createFileRepository(request)
 
       assertFailsWith<BadRequestException> {
-         workspaceService.createFileRepository(request.copy(isEditable = false))
+         workspaceProjectsService.createFileRepository(request.copy(isEditable = false))
       }
    }
 
@@ -97,7 +97,7 @@ class WorkspaceServiceTest {
          loader = TaxiPackageLoaderSpec,
          newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
       )
-      workspaceService.createFileRepository(request)
+      workspaceProjectsService.createFileRepository(request)
 
       folder.exists().should.be.`true`
       val taxiConfFile = folder.resolve("taxi.conf")
@@ -111,10 +111,10 @@ class WorkspaceServiceTest {
 
    @Test
    fun `can add a git repository`() {
-      workspaceService.listRepositories()
+      workspaceProjectsService.listRepositories()
          .git?.repositories?.should?.be?.empty
 
-      workspaceService.createGitProjectStore(
+      workspaceProjectsService.createGitProjectStore(
          GitProjectStoreChangeRequest(
             "test-repo",
             "https://github.com/test/repo",
@@ -122,8 +122,8 @@ class WorkspaceServiceTest {
          )
       )
 
-      workspaceService.listRepositories().git!!.repositories.should.have.size(1)
-      val gitRepo = workspaceService.listRepositories().git!!.repositories.single()
+      workspaceProjectsService.listRepositories().git!!.repositories.should.have.size(1)
+      val gitRepo = workspaceProjectsService.listRepositories().git!!.repositories.single()
       gitRepo.name.should.equal("test-repo")
       gitRepo.uri.should.equal("https://github.com/test/repo")
       gitRepo.branch.should.equal("master")
