@@ -412,8 +412,6 @@ terraform-deploy-prod-voyager:
       when:                          always
       reports:
          container_scanning:          gl-container-scanning-report.json
-   tags:
-      - docker-runner
 
 scan-orbital:
    extends: .container_scanning
