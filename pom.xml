@@ -13,7 +13,7 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-parent</artifactId>
       <!-- Looks like 3.1.0 is breaking our natifve image build.  Let's wait for a couple of patch releases there -->
-      <version>3.1.3</version>
+      <version>3.1.6</version>
    </parent>
 
    <url>https://orbitalhq.com</url>
@@ -31,7 +31,8 @@
        Saves us duplicating
        -->
       <owasp-exclusions-file>../whitelisted-cvss-list.xml</owasp-exclusions-file>
-      <taxi.version>1.44.3</taxi.version>
+      <taxi.version>1.45.0-SNAPSHOT</taxi.version>
+
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -60,11 +61,14 @@
 
       <http4k.version>4.39.0.0</http4k.version>
       <hazelcast-jet.version>4.5</hazelcast-jet.version>
-      <hazelcast.version>5.3.1</hazelcast.version>
-      <testcontainers.version>1.19.0</testcontainers.version>
-      <h2.version>2.1.214</h2.version>
-      <guava.version>32.1.2-jre</guava.version>
-      <reactor-bom.version>2022.0.5</reactor-bom.version>
+      <hazelcast.version>5.3.6</hazelcast.version>
+      <testcontainers.version>1.19.3</testcontainers.version>
+      <!-- Override H2 version : CVE-2022-45868 fixed in 2.2.220 -->
+      <h2.version>2.2.220</h2.version>
+      <guava.version>32.1.3-jre</guava.version>
+      <reactor-bom.version>2023.0.0</reactor-bom.version>
+
+      <jgit.version>6.8.0.202311291450-r</jgit.version>
       <!--      <netty.version>4.1.75.Final</netty.version>-->
       <!-- CVE-2022-31692  -->
       <!--      <spring-security.version>5.7.5</spring-security.version>-->
@@ -79,7 +83,10 @@
       -->
       <snakeyaml.version>2.0</snakeyaml.version>
 
-      <kafka.version>3.5.1</kafka.version>
+      <kafka.version>3.6.1</kafka.version>
+
+      <!-- CVE-2023-6378 , Fixed in 1.4.12 -->
+      <logback.version>1.4.12</logback.version>
    </properties>
 
    <modules>
@@ -287,6 +294,13 @@
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
             <version>3.19.6</version>
+         </dependency>
+
+         <!-- rabbitmq amp client CVE-2023-46120 -->
+         <dependency>
+            <groupId>com.rabbitmq</groupId>
+            <artifactId>amqp-client</artifactId>
+            <version>5.18.0</version>
          </dependency>
 
          <!-- https://security.snyk.io/vuln/SNYK-JAVA-ORGAPACHETOMCATEMBED-5862028

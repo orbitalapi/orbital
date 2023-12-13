@@ -12,7 +12,7 @@
    <artifactId>analytics</artifactId>
 
    <properties>
-      <posthog.version>1.1.0</posthog.version>
+      <posthog.version>1.1.1</posthog.version>
    </properties>
 
    <dependencies>
