@@ -260,6 +260,12 @@ class StubService(
       return this
    }
 
+   fun addResponseReturningInputs(stubOperationKey: String):StubService {
+      return addResponse(stubOperationKey) { op, parameters ->
+         listOf(parameters[0].second)
+      }
+   }
+
    fun addResponse(
       stubOperationKey: String,
       response: TypedCollection,

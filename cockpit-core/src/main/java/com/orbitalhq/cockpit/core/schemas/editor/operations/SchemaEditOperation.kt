@@ -88,7 +88,7 @@ abstract class SchemaEditOperation {
             error("Cannot edit source file ${edit.sourceName} as it is not found in this source package")
          }
          return sourcePackage.copy(
-            sources = sourcePackage.sources + VersionedSource(
+            sources = sourcePackage.sourcesWithPackageIdentifier + VersionedSource(
                edit.sourceName,
                sourcePackage.identifier.version,
                edit.newText

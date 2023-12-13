@@ -26,6 +26,7 @@ import com.orbitalhq.spring.config.*
 import com.orbitalhq.spring.http.auth.HttpAuthConfig
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
 import mu.KotlinLogging
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -150,8 +151,11 @@ class JetConfiguration {
    }
 
    @Bean
-   fun instance(): HazelcastInstance {
+   fun instance(@Value("\${vyne.hazelcast.port:25701}") hazelcastPort: Int = 25701): HazelcastInstance {
       val config = Config()
+      config.clusterName = "orbital-stream-server"
+      config.networkConfig.port = hazelcastPort
+      config.networkConfig.isPortAutoIncrement = true
       config.jetConfig.isEnabled = true
       config.managedContext = springManagedContext()
       return Hazelcast.newHazelcastInstance(config)

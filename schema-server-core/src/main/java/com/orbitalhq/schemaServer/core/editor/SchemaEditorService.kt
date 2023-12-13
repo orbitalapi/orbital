@@ -89,7 +89,7 @@ class SchemaEditorService(
                   listOf(queryWithName)
                )
             ).map {
-               taxiQuery.asSavedQuery()
+               taxiQuery.asSavedQuery(request.source.packageIdentifier)
             }
          }
    }

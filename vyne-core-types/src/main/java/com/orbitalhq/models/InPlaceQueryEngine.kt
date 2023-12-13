@@ -27,15 +27,17 @@ interface InPlaceQueryEngine {
    suspend fun findType(
       type: Type,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-      permittedStrategy: PermittedQueryStrategies = PermittedQueryStrategies.EVERYTHING
+      permittedStrategy: PermittedQueryStrategies = PermittedQueryStrategies.EVERYTHING,
+      failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
    ): Flow<TypedInstance> {
-      return this.findType(type, permittedStrategy)
+      return this.findType(type, permittedStrategy, failureBehaviour)
          .filter { spec.isValid(it) }
    }
 
    suspend fun findType(
       type: Type,
-      permittedStrategy: PermittedQueryStrategies = PermittedQueryStrategies.EVERYTHING
+      permittedStrategy: PermittedQueryStrategies = PermittedQueryStrategies.EVERYTHING,
+      failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
    ): Flow<TypedInstance>
 
    fun only(fact: TypedInstance, scopedFacts: List<ScopedFact> = emptyList(), inheritParent: Boolean = true): InPlaceQueryEngine {

@@ -42,24 +42,6 @@ fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> 
    return profilerOperation.remoteCalls + profilerOperation.children.flatMap { collateRemoteCalls(it) }
 }
 
-enum class FailureBehaviour {
-
-   /**
-    * Throwing is the original behaviour. However, this becomes destructive
-    * when throwing inside a mapping operation, as it kills the other
-    * active mapping operations.
-    */
-   THROW,
-
-   /**
-    * If a query fails, send a typed null, with a DataSource of
-    * FailedSearch.
-    *
-    * This is less destructive than throwing an exception, but
-    * can be ambiguous for consumers.
-    */
-   SEND_TYPED_NULL;
-}
 
 object QueryCancellationRequest
 // Design choice:
@@ -158,7 +140,7 @@ data class QueryContext(
    suspend fun find(
       queryString: QueryExpression,
       permittedStrategy: PermittedQueryStrategies = PermittedQueryStrategies.EVERYTHING,
-      failureBehaviour: FailureBehaviour = FailureBehaviour.THROW,
+      failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
       metricsTags: MetricTags = MetricTags.NONE
    ): QueryResult = queryEngine.find(
       queryString,
@@ -168,14 +150,14 @@ data class QueryContext(
       metricsTags = metricsTags
    )
 
-   suspend fun find(target: QuerySpecTypeNode, failureBehaviour: FailureBehaviour = FailureBehaviour.THROW,
+   suspend fun find(target: QuerySpecTypeNode, failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
                     metricsTags: MetricTags = MetricTags.NONE): QueryResult = queryEngine.find(target, this.newSearchContext(), failureBehaviour = failureBehaviour, metricsTags = metricsTags)
-   suspend fun find(target: Set<QuerySpecTypeNode>, failureBehaviour: FailureBehaviour = FailureBehaviour.THROW,
+   suspend fun find(target: Set<QuerySpecTypeNode>, failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
                     metricsTags: MetricTags = MetricTags.NONE): QueryResult = queryEngine.find(target, this.newSearchContext(), failureBehaviour = failureBehaviour, metricsTags = metricsTags)
    suspend fun find(
       target: QuerySpecTypeNode,
       excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
-      failureBehaviour:FailureBehaviour = FailureBehaviour.THROW,
+      failureBehaviour:QueryFailureBehaviour = QueryFailureBehaviour.THROW,
       metricsTags: MetricTags = MetricTags.NONE
    ): QueryResult =
       queryEngine.find(target, this.newSearchContext(), excludedOperations, failureBehaviour = failureBehaviour, metricsTags = metricsTags)
@@ -231,7 +213,7 @@ data class QueryContext(
             mappingQueryEngine.find(
                expression,
                mappingQueryContext,
-               failureBehaviour = FailureBehaviour.SEND_TYPED_NULL
+               failureBehaviour = QueryFailureBehaviour.SEND_TYPED_NULL
             )
          } catch (e: Exception) {
             QueryResult(
@@ -365,8 +347,8 @@ data class QueryContext(
    }
 
 
-   override suspend fun findType(type: Type, permittedStrategy: PermittedQueryStrategies): Flow<TypedInstance> {
-      return this.find(TypeQueryExpression(type), permittedStrategy)
+   override suspend fun findType(type: Type, permittedStrategy: PermittedQueryStrategies, failureBehaviour: QueryFailureBehaviour): Flow<TypedInstance> {
+      return this.find(TypeQueryExpression(type), permittedStrategy, failureBehaviour = failureBehaviour)
          .results
    }
 

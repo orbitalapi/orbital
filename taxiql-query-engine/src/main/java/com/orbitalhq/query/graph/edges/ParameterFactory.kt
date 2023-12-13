@@ -3,6 +3,8 @@ package com.orbitalhq.query.graph.edges
 import com.orbitalhq.models.*
 import com.orbitalhq.models.facts.CopyOnWriteFactBag
 import com.orbitalhq.models.facts.FactDiscoveryStrategy
+import com.orbitalhq.models.facts.ScopedFact
+import com.orbitalhq.query.MetricTags
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.QuerySpecTypeNode
 import com.orbitalhq.query.SearchGraphExclusion
@@ -13,6 +15,7 @@ import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.log
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import lang.taxi.types.PrimitiveType
@@ -158,6 +161,34 @@ class ParameterFactory {
       candidateValue: TypedInstance? = null,
       typesCurrentlyUnderConstruction: Set<Type> = emptySet()
    ): TypedInstance {
+      // MP 6-Dec-23: The original impl. (below), duplicates much of the logic factored into the TypedObjectFactory.
+      // This means things like expression evaluation are handled inconsistently.
+      // I don't believe there's a reason for handling this evaluation seperately.
+      // Adding logging to debug and track down
+
+      // When searching to construct a parameter for an operation, exclude the operation itself.
+      // Otherwise, if an operation result includes an input parameter, we can end up in a recursive loop, trying to
+      // construct a request for the operation to discover a parameter needed to construct a request for the operation.
+      val queryContextWithOperationExclusion = QueryContextWithOperationExclusion(context, operation)
+
+      val built = TypedObjectFactory(
+         paramType,
+         context.facts,
+         context.schema,
+         source = UndefinedSource,
+         inPlaceQueryEngine = queryContextWithOperationExclusion
+      ).build()
+      if (hasValue(built)) {
+         return built
+      }
+
+
+      // Legacy impl. below. Need to understand if there's any differences here, than from what (is / would be / should be) returned
+      // from the TypedObjectFactory
+
+      // We need to understand if this can happen, and if further attempts below will yield a different result
+      log().warn("Parameter construction via TypedObjectFactory failed. Investigate scenario to understand")
+
       require(!paramType.isCollection) {
          "This method is intended for building objects, not collections."
       }
@@ -186,14 +217,7 @@ class ParameterFactory {
             // When searching to construct a parameter for an operation, exclude the operation itself.
             // Otherwise, if an operation result includes an input parameter, we can end up in a recursive loop, trying to
             // construct a request for the operation to discover a parameter needed to construct a request for the operation.
-            val excludedOperations = operation?.let {
-               setOf(
-                  SearchGraphExclusion(
-                     "Operation is excluded as we're searching for an input for it",
-                     it
-                  )
-               )
-            } ?: emptySet()
+            val excludedOperations = excludeOperationFromSearch(operation)
             val queryResult = try {
                context.find(QuerySpecTypeNode(attributeType), excludedOperations)
                   .results.firstOrNull()
@@ -261,6 +285,59 @@ class ParameterFactory {
 
       val dataSource = MixedSources.singleSourceOrMixedSources(fields.map { it.value })
       return TypedObject(paramType, fields, dataSource)
+   }
+
+   private fun excludeOperationFromSearch(operation: RemoteOperation?): Set<SearchGraphExclusion<RemoteOperation>> {
+      val excludedOperations = operation?.let {
+         setOf(
+            SearchGraphExclusion(
+               "Operation is excluded as we're searching for an input for it",
+               it
+            )
+         )
+      } ?: emptySet()
+      return excludedOperations
+   }
+
+}
+
+/**
+ * A special InPlaceQueryEngine, which ensures that the specified operation is excluded from any searches.
+ *
+ * Otherwise, if an operation result includes an input parameter, we can end up in a recursive loop, trying to
+ * construct a request for the operation to discover a parameter needed to construct a request for the operation.
+ */
+private class QueryContextWithOperationExclusion(
+   private val context: QueryContext,
+   private val operation: RemoteOperation?
+) : InPlaceQueryEngine {
+   private val excludedOperations = operation?.let {
+      setOf(
+         SearchGraphExclusion(
+            "Operation is excluded as we're searching for an input for it",
+            it
+         )
+      )
+   } ?: emptySet()
+   override fun withAdditionalFacts(facts: List<TypedInstance>, scopedFacts: List<ScopedFact>): InPlaceQueryEngine {
+      return QueryContextWithOperationExclusion(context.withAdditionalFacts(facts, scopedFacts), operation)
+   }
+
+   override fun only(
+      facts: List<TypedInstance>,
+      scopedFacts: List<ScopedFact>,
+      inheritParent: Boolean
+   ): InPlaceQueryEngine {
+      return QueryContextWithOperationExclusion(context.only(facts, scopedFacts, inheritParent), operation)
+   }
+
+   override suspend fun findType(
+      type: Type,
+      permittedStrategy: PermittedQueryStrategies,
+      failureBehaviour: QueryFailureBehaviour
+   ): Flow<TypedInstance> {
+      return context.find(QuerySpecTypeNode(type), excludedOperations, failureBehaviour, MetricTags.NONE)
+         .results
    }
 
 }

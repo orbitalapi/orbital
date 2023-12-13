@@ -28,7 +28,7 @@ class SchemaWithSourcesSchemaProvider(
 ) : SchemaProvider {
    override val versionedSources: List<VersionedSource>
       get() {
-         return packages.flatMap { it.sources }
+         return packages.flatMap { it.sourcesWithPackageIdentifier }
       }
 
 }

@@ -212,21 +212,21 @@ data class ValidationFilterContext(
    fun createMetricCounters(pipelineName: String) {
       messageCount = Counter
          .builder("orbital.pipelines.received")
-         .tag("pipeline", pipelineName)
+         .tag("queryStream", pipelineName)
          .baseUnit("items")
          .description("Count of items received as inputs to the pipeline.")
          .register(meterRegistry)
 
       processedCounter = Counter
          .builder("orbital.pipelines.processed")
-         .tag("pipeline", pipelineName)
+         .tag("queryStream", pipelineName)
          .baseUnit("items")
          .description("Count of items processed successfully as part of the pipeline execution.")
          .register(meterRegistry)
 
       validationFailedCounter = Counter
          .builder("orbital.pipelines.validationFailed")
-         .tag("pipeline", pipelineName)
+         .tag("queryStream", pipelineName)
          .baseUnit("items")
          .description("Count of items for which the validation failed as part of the pipeline execution.")
          .register(meterRegistry)

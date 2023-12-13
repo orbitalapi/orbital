@@ -29,6 +29,8 @@ data class PackageSourceName(
 @kotlinx.serialization.Serializable
 data class VersionedSource(
    val name: String,
+   // TODO : Can we just remove this constructor?
+   @Deprecated("use packageIdentifier.source instead")
    val version: String,
    val content: String,
    val packageIdentifier: PackageIdentifier?,

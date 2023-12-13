@@ -60,7 +60,7 @@ interface QueryEngine {
       context: QueryContext,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate,
-      failureBehaviour: FailureBehaviour = FailureBehaviour.THROW,
+      failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
       metricsTags: MetricTags = MetricTags.NONE
    ): QueryResult
 
@@ -69,7 +69,7 @@ interface QueryEngine {
       context: QueryContext,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate,
-      failureBehaviour: FailureBehaviour = FailureBehaviour.THROW,
+      failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
       metricsTags: MetricTags = MetricTags.NONE
    ): QueryResult
 
@@ -78,7 +78,7 @@ interface QueryEngine {
       context: QueryContext,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate,
-      failureBehaviour: FailureBehaviour = FailureBehaviour.THROW,
+      failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
       metricsTags: MetricTags = MetricTags.NONE
    ): QueryResult
 
@@ -87,7 +87,7 @@ interface QueryEngine {
       context: QueryContext,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate,
-      failureBehaviour: FailureBehaviour = FailureBehaviour.THROW,
+      failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
       metricsTags: MetricTags = MetricTags.NONE
    ): QueryResult
 
@@ -97,7 +97,7 @@ interface QueryEngine {
       excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate,
-      failureBehaviour: FailureBehaviour = FailureBehaviour.THROW,
+      failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
       metricsTags: MetricTags = MetricTags.NONE
    ): QueryResult
 
@@ -439,7 +439,7 @@ class StatefulQueryEngine(
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
-      failureBehaviour: FailureBehaviour      ,
+      failureBehaviour: QueryFailureBehaviour,
       metricsTags: MetricTags
    ): QueryResult {
       val target = queryParser.parse(queryString)
@@ -451,7 +451,7 @@ class StatefulQueryEngine(
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
-      failureBehaviour: FailureBehaviour,
+      failureBehaviour: QueryFailureBehaviour,
       metricsTags: MetricTags
    ): QueryResult {
       return find(TypeQueryExpression(type), context, spec, applicableStrategiesPredicate, failureBehaviour, metricsTags)
@@ -462,7 +462,7 @@ class StatefulQueryEngine(
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
-      failureBehaviour: FailureBehaviour,
+      failureBehaviour: QueryFailureBehaviour,
       metricsTags: MetricTags
    ): QueryResult {
       return find(setOf(target), context, spec, applicableStrategiesPredicate, failureBehaviour, metricsTags)
@@ -473,7 +473,7 @@ class StatefulQueryEngine(
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
-      failureBehaviour: FailureBehaviour,
+      failureBehaviour: QueryFailureBehaviour,
       metricsTags: MetricTags
    ): QueryResult {
       try {
@@ -493,7 +493,7 @@ class StatefulQueryEngine(
       excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
       spec: TypedInstanceValidPredicate,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
-      failureBehaviour: FailureBehaviour,
+      failureBehaviour: QueryFailureBehaviour,
       metricsTags: MetricTags
    ): QueryResult {
       try {
@@ -521,7 +521,7 @@ class StatefulQueryEngine(
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
-      failureBehaviour: FailureBehaviour = FailureBehaviour.THROW,
+      failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
       metricsTags: MetricTags
    ): QueryResult {
 
@@ -556,7 +556,7 @@ class StatefulQueryEngine(
       spec: TypedInstanceValidPredicate,
       excludedOperations: Set<SearchGraphExclusion<RemoteOperation>> = emptySet(),
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
-      failureBehaviour: FailureBehaviour = FailureBehaviour.THROW,
+      failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
       metricsTags: MetricTags
    ): QueryResult {
       val queryStartTime = Instant.now()
@@ -651,7 +651,7 @@ class StatefulQueryEngine(
             // async channel flow, somewhere.
             // So, leaving it to callers.
             when (failureBehaviour) {
-               FailureBehaviour.SEND_TYPED_NULL -> {
+               QueryFailureBehaviour.SEND_TYPED_NULL -> {
                   send(
                      TypedNull.create(
                         target.type,
@@ -660,7 +660,7 @@ class StatefulQueryEngine(
                   )
                }
 
-               FailureBehaviour.THROW -> {
+               QueryFailureBehaviour.THROW -> {
                   if (strategyProvidedFlow) {
                      // We found a strategy which provided a flow of data, but the flow didn't yield any results.
                      // TODO : Should we just be closing here?  Perhaps we should emit some form of TypedNull,

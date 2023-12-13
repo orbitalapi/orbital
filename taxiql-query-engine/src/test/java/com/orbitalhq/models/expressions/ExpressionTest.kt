@@ -715,6 +715,35 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
    }
 
    @Test
+   fun `can project to an inline type with an expression`():Unit = runBlocking {
+      val (vyne, stub) = testVyne("""
+         model Person {
+            first : FirstName inherits String
+            last : LastName inherits String
+            city : CityName inherits String
+         }
+
+         parameter model UpdateRequest {
+            name : FirstName + ' ' + LastName
+         }
+
+         service PersonService {
+            operation findPerson():Person
+
+            write operation doUpdate(UpdateRequest):UpdateRequest
+         }
+      """.trimIndent()
+      )
+      stub.addResponse("findPerson", vyne.parseJson("Person", """{ "first" : "Jimmy", "last" : "Schmitt" , "city" : "London" } """))
+      stub.addResponseReturningInputs("doUpdate")
+      val result = vyne.query("""find { Person }
+         call PersonService::doUpdate
+      """).firstRawObject()
+
+      result.shouldBe(mapOf("name" to "Jimmy Schmitt"))
+   }
+
+   @Test
    fun `can use a type reference in a model`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """

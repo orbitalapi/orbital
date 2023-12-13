@@ -113,7 +113,7 @@ class DefaultOperationInvocationService(
 
       // Try to resolve any unresolved params
       val resolvedParams = unresolvedParams.map { (param,paramQuerySpec) ->
-         val failureBehaviour = if (param.nullable) FailureBehaviour.THROW else FailureBehaviour.SEND_TYPED_NULL
+         val failureBehaviour = if (param.nullable) QueryFailureBehaviour.SEND_TYPED_NULL else QueryFailureBehaviour.THROW
          val queryResult = context.queryEngine.find(paramQuerySpec, context, failureBehaviour = failureBehaviour)
          when {
              !queryResult.isFullyResolved && !param.nullable -> {
