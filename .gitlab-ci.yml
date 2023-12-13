@@ -302,12 +302,6 @@ publish-query-node-to-docker-hub:
       projectDir: query-node-native
       microservice_orbital: query-node
 
-#publish-schema-server-to-docker-hub:
-#   extends: .publish-to-docker-hub
-#   variables:
-#      projectDir: schema-server
-#      microservice_orbital: schema-server
-
 
 publish-voyager-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
@@ -348,171 +342,6 @@ publish-voyager-to-gitlab-container-registry:
          -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${tag}"
          -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${CI_COMMIT_SHORT_SHA}" .
 
-#publish-pipelines-to-gitlab-container-registry:
-#   extends: .publish-to-gitlab-container-registry
-#   variables:
-#      projectDir: pipelines/pipeline-jet
-#      microservice_vyne: pipeline
-#      microservice_orbital: pipelines
-
-#terraform-validate:
-#   extends: .terraform:validate
-#   needs: [ ]
-#   stage: build
-
-#build-helm:
-#   stage: build
-#   image:
-#      name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/alpine/helm:3.11.1
-#      entrypoint: [ "" ]
-#   script:
-#      - cd ${CI_PROJECT_DIR}/infra/helm/vyne-helm
-#      - helm package .
-#      - helm repo index .
-#      - cp *.tgz charts
-#      - cp artifacthub-repo.yml index.yaml charts
-#   artifacts:
-#      paths:
-#         - infra/helm/vyne-helm/charts
-#
-
-#
-#terraform-deploy-dev:
-#   extends: .terraform-deploy
-#   stage: deploy
-#   environment:
-#      name: $TF_STATE_NAME_DEV
-#   variables:
-#      TF_ROOT: ${CI_PROJECT_DIR}/infra/terraform/environments/$TF_STATE_NAME_DEV
-#      TF_STATE_NAME: $TF_STATE_NAME_DEV
-#      TF_VAR_environment: $TF_STATE_NAME_DEV
-#   rules:
-#      -  if: $CI_COMMIT_BRANCH == "develop"
-#         when: manual
-#      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
-#         when: never
-#
-
-#terraform-deploy-prod:
-#   extends: .terraform-deploy
-#   stage: deploy
-#   environment:
-#      name: $TF_STATE_NAME_PROD
-#   variables:
-#      TF_ROOT: ${CI_PROJECT_DIR}/infra/terraform/environments/$TF_STATE_NAME_PROD
-#      TF_STATE_NAME: $TF_STATE_NAME_PROD
-#      TF_VAR_environment: $TF_STATE_NAME_PROD
-#   rules:
-#      -  if: $CI_COMMIT_BRANCH == "main"
-
-#.e2e-tests:
-#   stage: verify
-#   #   Disabling e2e tests for a bit.
-#   when: manual
-#   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:23.0.1
-#   tags:
-#      - docker-heavy
-#   #   retry: 2
-#   before_script:
-#      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-#      - PROJECT_VERSION=$(cat build-version.txt)
-#      - |
-#         if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
-#           tag="latest"
-#           versionTag="$PROJECT_VERSION"
-#         elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
-#            tag="next"
-#            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
-#         else
-#            tag="$CI_COMMIT_BRANCH"
-#            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
-#         fi
-#         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
-#         echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
-#      - cd e2e-tests/
-#      - docker build -t e2e .
-#   script:
-#      - cd demos/
-#      - mkdir -p vyne/schema-server/projects
-#      - mkdir -p vyne/config
-#      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker-compose.yml
-#      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/schema-server.conf -P vyne/schema-server
-#      - wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/projects/taxi.conf -P vyne/schema-server/projects
-#      - wget https://gitlab.com/vyne/demos/-/raw/master/films/services.conf -P vyne/config
-#      - |
-#         VYNE_VERSION=$versionTag \
-#            docker compose -f docker-compose.yml -f e2e.docker-compose.yml up --exit-code-from e2e
-
-#e2e-tests-master:
-#   extends: .e2e-tests
-#   only:
-#      - master
-#   needs:
-#      - build-jvm-master
-#      - publish-vyne-to-gitlab-container-registry
-#      - publish-schema-server-to-gitlab-container-registry
-#   dependencies:
-#      - build-jvm-master
-#
-#e2e-tests-develop:
-#   extends: .e2e-tests
-#   only:
-#      - develop
-#   needs:
-#      - build-jvm-develop
-#      - publish-vyne-to-gitlab-container-registry
-#      - publish-schema-server-to-gitlab-container-registry
-#   dependencies:
-#      - build-jvm-develop
-#
-#e2e-tests-other-branches:
-#   extends: .e2e-tests
-#   except:
-#      - develop
-#      - master
-#   needs:
-#      - build-jvm-branch
-#      - publish-vyne-to-gitlab-container-registry
-#      - publish-schema-server-to-gitlab-container-registry
-#   dependencies:
-#      - build-jvm-branch
-
-#terraform-deploy-dev-voyager:
-#   extends: .terraform-deploy
-#   stage: deploy
-#   environment:
-#      name: $TF_STATE_NAME_DEV
-#   variables:
-#      TF_ROOT: ${CI_PROJECT_DIR}/voyager/terraform/environments/$TF_STATE_NAME_DEV
-#      TF_STATE_NAME: taxi_playground_$TF_STATE_NAME_DEV
-#      TF_VAR_environment: $TF_STATE_NAME_DEV
-#      TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
-#   rules:
-#      -  if: $CI_COMMIT_BRANCH == "develop"
-#         when: 'always'
-#      -  if: $CI_COMMIT_BRANCH == "master"
-#         when: 'never'
-#      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
-#         when: 'never'
-#
-#terraform-deploy-prod-voyager:
-#   extends: .terraform-deploy
-#   stage: deploy
-#   environment:
-#      name: $TF_STATE_NAME_PROD
-#   variables:
-#      TF_ROOT: ${CI_PROJECT_DIR}/voyager/terraform/environments/$TF_STATE_NAME_PROD
-#      TF_STATE_NAME: taxi_playground_$TF_STATE_NAME_PROD
-#      TF_VAR_environment: $TF_STATE_NAME_PROD
-#      TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
-#   rules:
-#      -  if: $CI_COMMIT_BRANCH == "develop"
-#         when: 'manual'
-#      -  if: $CI_COMMIT_BRANCH == "master"
-#         when: 'always'
-#      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
-#         when: 'never'
-
 .terraform-deploy:
   extends: .terraform:deploy
   stage: deploy
@@ -545,3 +374,53 @@ terraform-deploy-prod-voyager:
       TF_VAR_environment: $TF_STATE_NAME_PROD
       TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
    when: manual
+
+.container_scanning:
+   image:
+      name: docker.io/aquasec/trivy:latest
+      entrypoint: [""]
+   stage: verify
+   only:
+      - develop
+   variables:
+      # No need to clone the repo, we exclusively work on artifacts.  See
+      # https://docs.gitlab.com/ee/ci/runners/README.html#git-strategy
+      GIT_STRATEGY: none
+#      Required if reading from Gitlab registry:
+#      TRIVY_USERNAME: "$CI_REGISTRY_USER"
+#      TRIVY_PASSWORD: "$CI_REGISTRY_PASSWORD"
+#      TRIVY_AUTH_URL: "$CI_REGISTRY"
+      FULL_IMAGE_NAME: $imageName
+   script:
+      - trivy --version
+      # cache cleanup is needed when scanning images with the same tags, it does not remove the database
+      - time trivy image --clear-cache
+      # update vulnerabilities db
+      - time trivy --download-db-only --no-progress --cache-dir .trivycache/
+      # Builds report and puts it in the default workdir $CI_PROJECT_DIR, so `artifacts:` can take it from there
+      - time trivy --exit-code 0 --cache-dir .trivycache/ --no-progress --format template --template "@/contrib/gitlab.tpl"
+         --output "$CI_PROJECT_DIR/gl-container-scanning-report.json" "$FULL_IMAGE_NAME"
+      # Prints full report
+      - time trivy --exit-code 0 --cache-dir .trivycache/ --no-progress "$FULL_IMAGE_NAME"
+      # Fail on critical vulnerabilities
+      - time trivy --exit-code 1 --cache-dir .trivycache/ --severity CRITICAL --no-progress "$FULL_IMAGE_NAME"
+   cache:
+      paths:
+         - .trivycache/
+   # Enables https://docs.gitlab.com/ee/user/application_security/container_scanning/ (Container Scanning report is available on GitLab EE Ultimate or GitLab.com Gold)
+   artifacts:
+      when:                          always
+      reports:
+         container_scanning:          gl-container-scanning-report.json
+   tags:
+      - docker-runner
+
+scan-orbital:
+   extends: .container_scanning
+   variables:
+      imageName: orbitalhq/orbital
+
+scan-pipeline:
+   extends: .container_scanning
+   variables:
+      imageName: orbitalhq/stream-server
