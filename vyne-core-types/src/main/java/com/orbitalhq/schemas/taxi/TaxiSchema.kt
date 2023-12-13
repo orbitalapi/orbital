@@ -19,6 +19,7 @@ import lang.taxi.types.ArrayType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.StreamType
 import lang.taxi.types.TypeReference
+import lang.taxi.utils.log
 import mu.KotlinLogging
 import java.nio.file.Path
 
@@ -476,34 +477,28 @@ fun lang.taxi.types.Type.toVyneType(schema: Schema): Type {
 }
 
 
-private fun lang.taxi.sources.SourceCode.toVyneSource(packageIdentifier: PackageIdentifier?): VersionedSource {
+private fun lang.taxi.sources.SourceCode.toVyneSource(packageIdentifier: PackageIdentifier? = null): VersionedSource {
    // TODO : Find the version.
+   val (sourceNamePackageIdentifier, sourceName) = VersionedSource.splitPackageIdentifier(this.sourceName)
+   if (packageIdentifier != null && sourceNamePackageIdentifier != null && sourceNamePackageIdentifier != packageIdentifier) {
+      log().warn("Converting Taxi source to VersionedSource - two package identifiers are provided which are different - ${packageIdentifier.id} and ${sourceNamePackageIdentifier.id}")
+   }
+   if (packageIdentifier == null && sourceNamePackageIdentifier == null) {
+      log().warn("Constructing VersionedSource without a PackageIdentifier can cause errors with edits")
+   }
+   val packageIdentifierToUse = packageIdentifier ?: sourceNamePackageIdentifier
+
    return VersionedSource(
       this.sourceName,
-      VersionedSource.DEFAULT_VERSION.toString(),
+      packageIdentifier?.version ?: VersionedSource.DEFAULT_VERSION.toString(),
       this.content,
-      packageIdentifier,
+      packageIdentifierToUse,
       language = this.language
    )
 }
 
-private fun lang.taxi.sources.SourceCode.toVyneSource(): VersionedSource {
-   // TODO : Find the version.
-   return VersionedSource(
-      this.sourceName,
-      VersionedSource.DEFAULT_VERSION.toString(),
-      this.content,
-      language = this.language
-   )
-}
-
-
-fun List<lang.taxi.types.CompilationUnit>.toVyneSources(packageIdentifier: PackageIdentifier?): List<VersionedSource> {
+fun List<lang.taxi.types.CompilationUnit>.toVyneSources(packageIdentifier: PackageIdentifier? = null): List<VersionedSource> {
    return this.map { it.source.toVyneSource(packageIdentifier) }
-}
-
-fun List<lang.taxi.types.CompilationUnit>.toVyneSources(): List<VersionedSource> {
-   return this.map { it.source.toVyneSource() }
 }
 
 fun List<CompilationError>.toMessage(): String {
@@ -511,10 +506,10 @@ fun List<CompilationError>.toMessage(): String {
 }
 
 
-fun TaxiQlQuery.asSavedQuery(): SavedQuery {
+fun TaxiQlQuery.asSavedQuery(packageIdentifier: PackageIdentifier? = null): SavedQuery {
    return SavedQuery(
       this.name.toVyneQualifiedName(),
-      this.compilationUnits.toVyneSources(),
+      this.compilationUnits.toVyneSources(packageIdentifier),
       SavedQuery.QueryKind.forQueryMode(this.queryMode),
       HttpOperation.fromQuery(this)
    )

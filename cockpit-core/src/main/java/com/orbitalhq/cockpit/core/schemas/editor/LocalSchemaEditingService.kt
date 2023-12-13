@@ -295,7 +295,7 @@ class LocalSchemaEditingService(
    }
 
    fun submitEdits(sourcePackage: SourcePackage): Mono<SchemaEditResponse> {
-      return submitEdits(sourcePackage.sources, sourcePackage.identifier)
+      return submitEdits(sourcePackage.sourcesWithPackageIdentifier, sourcePackage.identifier)
    }
 
    fun submitEdits(

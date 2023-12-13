@@ -11,13 +11,6 @@
 
    <artifactId>pipeline-jet</artifactId>
 
-   <properties>
-      <!-- Pipelines use Java 11, as we use  CompletableFuture.failedFuture(...) -->
-
-
-      <hazelcast.version>5.2.2</hazelcast.version>
-   </properties>
-
    <dependencies>
       <dependency>
          <groupId>com.github.ben-manes.caffeine</groupId>

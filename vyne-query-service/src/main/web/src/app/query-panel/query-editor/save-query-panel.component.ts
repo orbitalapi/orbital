@@ -127,7 +127,10 @@ export class SaveQueryPanelComponent {
         [Validators.required, Validators.pattern('[a-zA-Z](\\w|\\d)*')])
     })
     this.packagesService.listPackages()
-      .subscribe(result => this.packages = result);
+      .subscribe(result => {
+        this.packages = result;
+        changeRef.markForCheck();
+      });
   }
 
   get hasEditablePackages(): boolean {
