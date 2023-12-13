@@ -1,5 +1,5 @@
 ARG REGISTRY
-FROM ${REGISTRY}eclipse-temurin:17-jre-jammy
+FROM ${REGISTRY}eclipse-temurin:17-jre-alpine
 
 COPY target/schema-server.jar /opt/service/
 

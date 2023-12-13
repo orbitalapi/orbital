@@ -1,7 +1,7 @@
 ARG REGISTRY
-FROM ${REGISTRY}eclipse-temurin:17-jre-jammy
+FROM ${REGISTRY}eclipse-temurin:17-jre-alpine
 
-RUN apt-get update && apt-get install zip -y
+RUN apk --no-cache add zip
 
 WORKDIR /opt/service/
 

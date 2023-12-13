@@ -245,4 +245,15 @@ Adding -Xextended-compiler-checks argument might provide additional information.
          </plugin>
       </plugins>
    </build>
+   <dependencyManagement>
+      <dependencies>
+         <!-- this shouldn't be required, but for some reason we're pulling in an old dep (6.4.x), which
+         has vulnerabilities -->
+         <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit</artifactId>
+            <version>${jgit.version}</version>
+         </dependency>
+      </dependencies>
+   </dependencyManagement>
 </project>
