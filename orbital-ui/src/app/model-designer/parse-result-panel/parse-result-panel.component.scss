@@ -1,0 +1,27 @@
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+app-type-named-instance-tree, app-tabbed-results-view, app-json-viewer {
+  flex-grow: 1;
+  height: 500px;
+}
+
+progress {
+  width: 10rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.center {
+  justify-content: center;
+}
+
+
+.spacer {
+  flex-grow: 1;
+}

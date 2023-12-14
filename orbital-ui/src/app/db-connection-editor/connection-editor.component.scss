@@ -1,0 +1,46 @@
+@import "src/styles";
+@import "src/forms";
+
+.form-container {
+  //max-width: 500px;
+}
+
+.form-body {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+app-dyanmic-form-component {
+  width: 100%;
+  display: block;
+}
+
+.form-buttons {
+  display: flex;
+  width: 100%;
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+.test-result-box {
+  border: 1px solid rgba($error-dark, 0.6);
+  border-radius: 4px;
+  padding: 0.5rem;
+  background-color: rgba($error-light, 0.1);
+  color: $error-dark;
+  font-size: 0.9rem;
+}
+.error-message {
+  border-color: rgba($error-dark, 0.6);
+  background-color: rgba($error-light, 0.1);
+  color: $error-dark;
+}
+
+.success-message {
+  border-color: rgba($success-dark, 0.6);
+  background-color: rgba($success-light, 0.1);
+  color: $success-dark;
+}

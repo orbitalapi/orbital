@@ -1,0 +1,20 @@
+<div [formGroup]="config">
+  <app-form-row helpText="Paste the Vyne query to call periodically" title="Query">
+    <mat-form-field appearance="outline">
+      <mat-label>Query</mat-label>
+      <textarea
+        aria-label="Query"
+        formControlName="query"
+        matInput></textarea>
+      <mat-hint align="start"><strong>Click <a [routerLink]="['/query/editor']" target="_blank">here</a> to open the
+        query editor on a new tab.</strong></mat-hint>
+    </mat-form-field>
+
+  </app-form-row>
+  <app-form-row
+    helpText="Define the schedule to poll.  Use a cron job syntax, or select one of the examples provided to get started"
+    title="Schedule">
+    <app-polling-schedule-form-input
+      formControlName="pollSchedule"></app-polling-schedule-form-input>
+  </app-form-row>
+</div>

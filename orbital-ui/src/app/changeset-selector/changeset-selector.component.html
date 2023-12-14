@@ -1,0 +1,13 @@
+<ng-container *ngIf="availableChangesets$ | async as availableChangesets">
+  <mat-form-field *ngIf="value !== null" appearance="fill">
+    <mat-label>Draft</mat-label>
+    <mat-select [value]="value.name">
+      <mat-option
+        (click)="selectChangeset(changeset)"
+        *ngFor="let changeset of availableChangesets"
+        [value]="changeset.name">
+        {{changeset.name}}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+</ng-container>

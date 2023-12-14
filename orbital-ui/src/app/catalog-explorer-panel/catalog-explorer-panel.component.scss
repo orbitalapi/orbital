@@ -1,0 +1,21 @@
+@import "src/theme";
+
+:host {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  flex-grow: 1;
+}
+.search-container {
+  tui-input {
+    margin-bottom: 1rem;
+  }
+  border-bottom: 1px solid $slate-300;
+  padding: 0 0.5rem;
+}
+
+app-catalog-panel-search-results {
+  display: block;
+  overflow-y: scroll;
+  flex-grow: 1;
+}

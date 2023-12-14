@@ -1,0 +1,36 @@
+@import "src/theme";
+.type-container {
+  font-size: 0.8rem;
+  background-color: white;
+  border: 1px solid rgba($vyne-lilac, 0.3);
+  border-radius: 4px;
+  padding: 6px 8px;
+  width: fit-content;
+}
+.title {
+  font-weight: bold;
+  margin-bottom: 0.2rem;
+}
+.field-list {
+  td {
+    vertical-align: top;
+    padding-right: 1rem;
+  }
+  .type-name {
+    font-family: $mono;
+  }
+  .button-column {
+    padding-right: 0.4rem
+  }
+}
+
+.expand-button {
+  border: 1px solid rgba($vyne-lilac, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.primitive-type-name {
+  padding-left: 1rem;
+  color: lighten($body, 20);
+}

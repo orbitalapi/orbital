@@ -1,0 +1,37 @@
+@import "src/theme";
+
+.icon {
+  width: 38px;
+  margin-right: 2rem;
+}
+
+::ng-deep .mat-expansion-panel-header-title {
+  align-items: center;
+}
+
+.url-section {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-radius: 4px;
+  color: $code-base;
+  font-family: $mono;
+  background-color: $code-background;
+  margin-bottom: 1rem;
+
+  .http-method {
+    background-color: $vyne-green;
+    padding: 0.25rem;
+    border-radius: 4px;
+    margin-right: 1rem;
+  }
+}
+
+.button-row {
+  display: flex;
+  align-items: center;
+
+  span {
+    margin-left: 1rem;
+  }
+}

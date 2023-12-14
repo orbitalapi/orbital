@@ -1,0 +1,41 @@
+@import "src/theme";
+
+.contents-table {
+  font-family: $font-sans-alt;
+  min-width: 15rem;
+  position: absolute;
+  right: 2vh;
+}
+
+h4 {
+  font-family: $font-sans-alt;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: $blue-grey-2;
+  margin: 0;
+  border-bottom: 1px solid rgba($blue-grey-2, 0.25);
+}
+
+ul.list-reset {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  list-style: none;
+  border-bottom: 1px solid rgba($blue-grey-2, 0.25);
+  padding: 0.25rem 0;
+  font-size: 0.9rem;
+  color: $purple-grey;
+  a {
+    text-decoration: none;
+    color: $purple-grey;
+    transition: all .2s ease-out;
+  }
+
+  a:hover {
+    padding-left: 0.25rem;
+    color: $dark-grey-3;
+  }
+}

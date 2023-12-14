@@ -1,0 +1,12 @@
+export const homePageUrl: string = 'http://18.132.42.238:9022' //'http://localhost:9022'
+export const dataCatalog: string = '/catalog'
+export const schemaExplorer: string = '/schema-explorer'
+export const queryBuilder: string = '/query-wizard'
+export const dataExplorerUrl: string = '/data-explorer'
+export const queryHistory: string = '/query-history/'
+export const cask: string = '/cask-viewer'
+// api
+export const apiQueryHistory: string = '/api/query/history'
+export const apiCask: string = '/api/casks/'
+export const apiClient: string = '/api/query/active/clientId/'
+export const serviceExplorerUrl: string = '/services/vyne.cask.smyrna.orders.OrderCaskService'

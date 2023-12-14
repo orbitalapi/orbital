@@ -1,0 +1,13 @@
+@import "src/theme";
+
+:host {
+  display: flex;
+  width: 50%;
+  justify-content: space-between;
+}
+
+.column {
+  min-width: 10rem;
+  margin-right: 1rem;
+}
+

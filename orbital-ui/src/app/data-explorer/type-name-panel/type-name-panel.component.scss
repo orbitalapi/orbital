@@ -1,0 +1,31 @@
+.container {
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.panel-title{
+  margin-left: 2rem;
+}
+.type-name-configuration {
+  display: flex;
+  align-items: center;
+  margin: 1rem 0rem 1rem 1rem;
+
+  width: 90%;
+
+
+  span {
+    margin: 0 2rem;
+  }
+.enter-type-field {
+  min-width: 300px;
+  width: 90%;
+}
+.generate-schema-button{
+  margin-left: 2rem;
+}
+}
+

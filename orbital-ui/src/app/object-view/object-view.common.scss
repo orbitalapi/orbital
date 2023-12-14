@@ -1,0 +1,13 @@
+.type-name {
+  font-family: $mono;
+  color: $vyne-lilac;
+  float: left;
+  background-color: rgba($vyne-lilac, 0.1);
+  font-size: 0.8rem;
+
+  border: 1px solid rgba($vyne-lilac, 0.6);
+  border-radius: 6px;
+
+  width: fit-content;
+  padding: 0.2rem 0.4rem;
+}

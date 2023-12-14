@@ -1,0 +1,31 @@
+<h2>New draft</h2>
+<tui-input [formControl]="nameControl">
+  Specify a title for the changes you're proposing.
+  <input
+    tuiTextfield
+  />
+</tui-input>
+<div class="error-message-box" *ngIf="errorMessage">
+  {{errorMessage}}
+</div>
+
+<div class="button-bar">
+  <button
+    tuiButton
+    type="button"
+    class="tui-space_right-3"
+    size="m"
+    appearance="outline"
+    (click)="context.completeWith(null)">
+    Cancel
+  </button>
+  <span class="spacer"></span>
+  <button
+    tuiButton
+    type="button"
+    size="m"
+    appearance="primary"
+    (click)="save(nameControl.value)">
+    Done
+  </button>
+</div>

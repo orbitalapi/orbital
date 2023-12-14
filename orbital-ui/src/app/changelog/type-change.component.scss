@@ -1,0 +1,17 @@
+@import "src/theme";
+@import "./diff-entry.component";
+
+.container {
+  display: flex;
+  align-items: center;
+
+  font-size: 90%;
+}
+
+.badge {
+  background-color: $primary-dark;
+  color: $white;
+  font-family: $mono;
+}
+
+

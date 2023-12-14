@@ -1,0 +1,9 @@
+@import "src/theme";
+
+::ng-deep {
+  tui-expand {
+    background-color: $slate-800;
+    color: $slate-50;
+  }
+}
+

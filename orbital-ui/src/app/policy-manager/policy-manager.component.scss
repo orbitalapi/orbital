@@ -1,0 +1,54 @@
+@import "src/theme";
+
+mat-toolbar {
+  flex: 0 0 96px;
+  z-index: 999;
+}
+
+.content {
+  //padding: 20px;
+  //display: flex;
+}
+.policy-list {
+  background-color: $light-purple-grey;
+  border: 1px solid $light-purple-grey-300;
+  width: 250px;
+  height: 100%;
+  padding: 20px;
+}
+
+.policy-editor-container {
+  flex-grow: 1;
+}
+
+.policy-list-member {
+  padding: 10px;
+  border-bottom: 1px solid $light-purple-grey-300;
+
+  &:hover {
+    background-color: rgba($dark-grey-2, 0.1);
+    cursor: pointer;
+  }
+
+  &.selected {
+    border-radius: 3px;
+    padding: 8px;
+    border: 2px solid $vyne-lilac;
+    background-color: rgba($vyne-lilac, 0.1);
+  }
+}
+
+.policy-name {
+  padding-right: 20px;
+}
+
+.empty-state {
+  width: 100%;
+
+  padding: 20px 0;
+
+  .button-container {
+    padding-top: 20px;
+  }
+
+}

@@ -1,0 +1,60 @@
+@import "src/theme";
+
+.url {
+  font-family: $mono;
+  font-weight: 200;
+  font-size: 0.85rem;
+}
+
+$http-get-color: lighten($green, 20%);
+$http-post-color: lighten($vyne-blue, 15%);
+$http-put-color: $vyne-yellow;
+$http-delete-color: lighten($red-light, 20%);
+$http-other-color: $vyne-yellow;
+
+@mixin http-border($color) {
+  border-left: 4px solid $color !important;
+}
+
+.http-method {
+  padding: 0.25rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+td.get-method {
+  @include http-border($http-get-color);
+}
+
+td.post-method {
+  @include http-border($http-post-color);
+}
+
+td.put-method {
+  @include http-border($http-put-color);
+}
+
+td.delete-method {
+  @include http-border($http-delete-color);
+}
+
+// HTTP Methods
+span.get-method {
+  background-color: $http-get-color
+}
+
+span.post-method {
+  background-color: $http-post-color;
+}
+
+span.put-method {
+  background-color: $http-put-color;
+}
+
+span.delete-method {
+  background-color: $http-delete-color;
+}
+
+span.other-method {
+  background-color: $purple-grey;
+}

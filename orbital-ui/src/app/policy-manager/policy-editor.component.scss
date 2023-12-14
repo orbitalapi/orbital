@@ -1,0 +1,31 @@
+@import "src/theme";
+@import "policy-manager-common-styles";
+
+.read-only-title {
+  display: flex;
+  align-items: center;
+  h4 {
+    padding-right: 24px;
+  }
+}
+.line-wrapper {
+  display: flex;
+  align-items: center;
+  padding-bottom: 8px;
+}
+
+//::ng-deep .mat-form-field-infix {
+//  border-top: none;
+//}
+
+.title-form-field {
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+.button-container {
+  button {
+    margin-right: 8px;
+  }
+  margin-top: 20px;
+}

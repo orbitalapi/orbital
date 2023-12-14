@@ -1,0 +1,42 @@
+@import "src/theme";
+
+.search-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.5rem;
+}
+
+::ng-deep {
+  .type-name {
+    margin-bottom: 3px;
+
+    .matchedText {
+      border-bottom: 2px solid $vyne-primary;
+      font-weight: bold;
+      color: darken($body, 30%);
+    }
+
+  }
+
+  .type-doc {
+    font-size: 0.9rem;
+    color: lighten($body, 5%);
+    margin: 0.5rem 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+
+    .matchedText {
+      border-bottom: 2px solid $vyne-primary;
+      font-weight: bold;
+      color: darken($body, 30%);
+    }
+  }
+
+  .fully-qualified-name {
+    .matchedText {
+      border-bottom: 2px solid $vyne-lilac;
+      font-weight: bold;
+    }
+  }
+}

@@ -1,0 +1,15 @@
+@import "src/styles";
+
+$wizard-component-width: 800px;
+
+.container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  margin-top: 3rem;
+}
+
+app-connection-editor {
+  width: $wizard-component-width;
+}

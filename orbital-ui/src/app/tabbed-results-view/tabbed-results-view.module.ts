@@ -1,0 +1,34 @@
+import {NgModule} from '@angular/core';
+import {TabbedResultsViewComponent} from './tabbed-results-view.component';
+import {MatLegacyTabsModule as MatTabsModule} from '@angular/material/legacy-tabs';
+import {ObjectViewModule} from '../object-view/object-view.module';
+import {CallExplorerModule} from '../query-panel/taxi-viewer/call-explorer/call-explorer.module';
+import {CommonModule} from '@angular/common';
+import {LineageDisplayModule} from '../lineage-display/lineage-display.module';
+import {ExpandingPanelSetModule} from '../expanding-panelset/expanding-panel-set.module';
+import {TuiTabsModule} from '@taiga-ui/kit';
+import {TuiButtonModule, TuiDataListModule, TuiHostedDropdownModule, TuiSvgModule} from '@taiga-ui/core';
+import {JsonViewerModule} from 'src/app/json-viewer/json-viewer.module';
+
+@NgModule({
+    imports: [
+        MatTabsModule,
+      ObjectViewModule,
+      CommonModule,
+      CallExplorerModule,
+      LineageDisplayModule,
+      ExpandingPanelSetModule,
+      TuiTabsModule,
+      TuiHostedDropdownModule,
+      TuiButtonModule,
+      TuiSvgModule,
+      TuiDataListModule,
+      JsonViewerModule
+
+    ],
+  exports: [TabbedResultsViewComponent],
+  declarations: [TabbedResultsViewComponent],
+  providers: []
+})
+export class TabbedResultsViewModule {
+}

@@ -1,0 +1,40 @@
+@import "./policy-editor.component";
+
+.statement-editor-wrapper {
+  border: 3px solid $vyne-lilac;
+  background-color: $light-purple-grey;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+app-type-autocomplete {
+  padding: 0 20px 0 10px;
+  min-width: 250px;
+}
+
+.operator-wrapper {
+  padding-right: 20px;
+  mat-form-field {
+    width: 200px;
+  }
+}
+
+// Align the prefix text with the material input text
+.line-prefix.line-component {
+  margin-top: -18px;
+}
+
+.statement-parts-wrapper {
+  display: flex;
+  border-radius: 3px;
+  padding: 8px 8px 8px 0;
+  //background-color: $light-purple-grey;
+  //border: 1px solid $light-purple-grey-300;
+  border: 2px solid $vyne-lilac;
+  background-color: rgba($vyne-lilac, 0.1);
+  margin-left: 8px;
+}
+
+app-instruction-selector {
+  padding-left: 8px;
+}

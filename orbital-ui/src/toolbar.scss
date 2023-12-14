@@ -1,0 +1,18 @@
+@import "src/theme";
+
+// Whenever the search bar container appears in the toolbar,
+// give it consistent space
+app-search-bar-container {
+  margin-left: 2rem;
+}
+
+.toolbar-spacer {
+  flex-grow: 1;
+}
+
+mat-toolbar {
+  flex: 0 0 $toolbar-height;
+  z-index: 999;
+  display: flex;
+  //padding-right: 4rem;
+}
