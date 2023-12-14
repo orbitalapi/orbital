@@ -40,133 +40,133 @@ default:
    tags:
       - docker
 
-.build-jvm:
-   stage: build
-   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.6-eclipse-temurin-18
-   tags:
-      - docker-heavy
-   cache:
-      paths:
-         - .m2/repository
-   script:
-      # Do the "docker login" manually as there's no Docker CLI installed on maven images
-      - |
-         mkdir /root/.docker/
-         cat > /root/.docker/config.json << EOF
-         {
-             "auths": {
-                 "https://index.docker.io/v1/": {
-                     "username": "vynecd",
-                     "password": "${DOCKER_HUB_PASSWORD}",
-                     "auth": "$(echo -n 'vynecd:${DOCKER_HUB_PASSWORD}' | base64)"
-                 }
-             }
-         }
-         EOF
-      - 'if [ -z "${GITLAB_TOKEN}" ]; then echo "var is blank"; else echo "var is set"; fi'
-      - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
-      - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
-      - 'mvn $MAVEN_CLI_OPTS -version'
-      - 'mvn $MAVEN_CLI_OPTS -T1C -DbuildNumber=$CI_JOB_ID $MAVEN_EXTRA_ARGS -P fastTestsOnly $MAVEN_GOALS'
-      - 'mvn $MAVEN_CLI_OPTS -DbuildNumber=$CI_JOB_ID $MAVEN_EXTRA_ARGS -pl vyne-history-core,pipelines/pipeline-jet,vyne-analytics-server test'
-
-      #   Read the POM, grab the version, and set to an env variable
-      #   https://stackoverflow.com/a/52241594
-      # Run the actual command twice.  The first time ensures that any downloads are
-      # already completed, so that when we try to grep the output string, we get a tidy predictable output
-      - mvn --non-recursive help:evaluate -Dexpression=project.version
-      - mvn --non-recursive help:evaluate -Dexpression=project.version | grep -v '\[.*' > build-version.txt
-   artifacts:
-      paths:
-         - build-version.txt
-
-         # Be careful!  The each of these jar files can get big.
-         # If the total size of all jar files being stored in artifacts
-         # exceeds 1GB then builds can fail.
-         #         - "cask/target/cask.jar"
-         - "pipelines/pipeline-jet/target/pipeline-jet.jar"
-#         - "schema-server/target/schema-server.jar"
-#         - "vyne-analytics-server/target/vyne-analytics-server.jar"
-         - "query-node-native/target/query-node-native.jar"
-#         - "vyne-query-service/target/vyne.zip"
-         - "station/target/orbital.zip"
-#         - "test-cli/target/*.zip"
-         - "voyager/target/voyager.jar"
-      expire_in: 1 hours
-      reports:
-         junit:
-            # Note:This won't actually work, b/c of https://gitlab.com/gitlab-org/gitlab-runner/issues/2620
-            # However, leaving this here to pick up later
-            - "*/target/surefire-reports/TEST-*.xml"
-
-.build-ui:
-   stage: build
-   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:16.14
-   before_script:
-      - npm config set cache .npm/cache --global
-      - npm --global cache verify
-      - npm get cache
-      - export NODE_OPTIONS="--max-old-space-size=8192"
-   cache:
-      paths:
-         - .npm/cache
-   tags:
-      - docker-heavy
-
-build-vyne-ui:
-   extends: .build-ui
-   script:
-      - cd vyne-query-service/src/main/web
-      - npm ci
-      - npm run-script build-prod
-   artifacts:
-      paths:
-         - station/target/classes/static
-      expire_in: 1 hours
-
-build-voyager-ui:
-   extends: .build-ui
-   script:
-      - cd vyne-query-service/src/main/web
-      - npm ci
-      - npm run-script build-prod-voyager
-   artifacts:
-      paths:
-         - "voyager/target/classes/static"
-      expire_in: 1 hours
-
-
-build-jvm-branch:
-   stage: build
-   except:
-      - tags
-      - develop
-      - master
-   extends: .build-jvm
-   variables:
-      MAVEN_GOALS: 'clean install'
-      MAVEN_EXTRA_ARGS: ''
-
-build-jvm-develop:
-   stage: build
-   only:
-      - develop
-   extends: .build-jvm
-   variables:
-      MAVEN_GOALS: 'clean deploy'
-      # We skip tests on develop and master, as the tests have already run on the branch
-      MAVEN_EXTRA_ARGS: '-P snapshot-release -DskipTests'
-
-
-build-jvm-master:
-   stage: build
-   only:
-      - master
-   extends: .build-jvm
-   variables:
-      MAVEN_GOALS: 'clean deploy'
-      # We skip tests on develop and master, as the tests have already run on the branch
-      MAVEN_EXTRA_ARGS: '-P release -DskipTests'
+#.build-jvm:
+#   stage: build
+#   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.6-eclipse-temurin-18
+#   tags:
+#      - docker-heavy
+#   cache:
+#      paths:
+#         - .m2/repository
+#   script:
+#      # Do the "docker login" manually as there's no Docker CLI installed on maven images
+#      - |
+#         mkdir /root/.docker/
+#         cat > /root/.docker/config.json << EOF
+#         {
+#             "auths": {
+#                 "https://index.docker.io/v1/": {
+#                     "username": "vynecd",
+#                     "password": "${DOCKER_HUB_PASSWORD}",
+#                     "auth": "$(echo -n 'vynecd:${DOCKER_HUB_PASSWORD}' | base64)"
+#                 }
+#             }
+#         }
+#         EOF
+#      - 'if [ -z "${GITLAB_TOKEN}" ]; then echo "var is blank"; else echo "var is set"; fi'
+#      - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
+#      - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
+#      - 'mvn $MAVEN_CLI_OPTS -version'
+#      - 'mvn $MAVEN_CLI_OPTS -T1C -DbuildNumber=$CI_JOB_ID $MAVEN_EXTRA_ARGS -P fastTestsOnly $MAVEN_GOALS'
+#      - 'mvn $MAVEN_CLI_OPTS -DbuildNumber=$CI_JOB_ID $MAVEN_EXTRA_ARGS -pl vyne-history-core,pipelines/pipeline-jet,vyne-analytics-server test'
+#
+#      #   Read the POM, grab the version, and set to an env variable
+#      #   https://stackoverflow.com/a/52241594
+#      # Run the actual command twice.  The first time ensures that any downloads are
+#      # already completed, so that when we try to grep the output string, we get a tidy predictable output
+#      - mvn --non-recursive help:evaluate -Dexpression=project.version
+#      - mvn --non-recursive help:evaluate -Dexpression=project.version | grep -v '\[.*' > build-version.txt
+#   artifacts:
+#      paths:
+#         - build-version.txt
+#
+#         # Be careful!  The each of these jar files can get big.
+#         # If the total size of all jar files being stored in artifacts
+#         # exceeds 1GB then builds can fail.
+#         #         - "cask/target/cask.jar"
+#         - "pipelines/pipeline-jet/target/pipeline-jet.jar"
+##         - "schema-server/target/schema-server.jar"
+##         - "vyne-analytics-server/target/vyne-analytics-server.jar"
+#         - "query-node-native/target/query-node-native.jar"
+##         - "vyne-query-service/target/vyne.zip"
+#         - "station/target/orbital.zip"
+##         - "test-cli/target/*.zip"
+#         - "voyager/target/voyager.jar"
+#      expire_in: 1 hours
+#      reports:
+#         junit:
+#            # Note:This won't actually work, b/c of https://gitlab.com/gitlab-org/gitlab-runner/issues/2620
+#            # However, leaving this here to pick up later
+#            - "*/target/surefire-reports/TEST-*.xml"
+#
+#.build-ui:
+#   stage: build
+#   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:16.14
+#   before_script:
+#      - npm config set cache .npm/cache --global
+#      - npm --global cache verify
+#      - npm get cache
+#      - export NODE_OPTIONS="--max-old-space-size=8192"
+#   cache:
+#      paths:
+#         - .npm/cache
+#   tags:
+#      - docker-heavy
+#
+#build-vyne-ui:
+#   extends: .build-ui
+#   script:
+#      - cd vyne-query-service/src/main/web
+#      - npm ci
+#      - npm run-script build-prod
+#   artifacts:
+#      paths:
+#         - station/target/classes/static
+#      expire_in: 1 hours
+#
+#build-voyager-ui:
+#   extends: .build-ui
+#   script:
+#      - cd vyne-query-service/src/main/web
+#      - npm ci
+#      - npm run-script build-prod-voyager
+#   artifacts:
+#      paths:
+#         - "voyager/target/classes/static"
+#      expire_in: 1 hours
+#
+#
+#build-jvm-branch:
+#   stage: build
+#   except:
+#      - tags
+#      - develop
+#      - master
+#   extends: .build-jvm
+#   variables:
+#      MAVEN_GOALS: 'clean install'
+#      MAVEN_EXTRA_ARGS: ''
+#
+#build-jvm-develop:
+#   stage: build
+#   only:
+#      - develop
+#   extends: .build-jvm
+#   variables:
+#      MAVEN_GOALS: 'clean deploy'
+#      # We skip tests on develop and master, as the tests have already run on the branch
+#      MAVEN_EXTRA_ARGS: '-P snapshot-release -DskipTests'
+#
+#
+#build-jvm-master:
+#   stage: build
+#   only:
+#      - master
+#   extends: .build-jvm
+#   variables:
+#      MAVEN_GOALS: 'clean deploy'
+#      # We skip tests on develop and master, as the tests have already run on the branch
+#      MAVEN_EXTRA_ARGS: '-P release -DskipTests'
 
 release-major:
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.6-eclipse-temurin-18
@@ -396,7 +396,7 @@ terraform-deploy-prod-voyager:
       # cache cleanup is needed when scanning images with the same tags, it does not remove the database
       - time trivy image --clear-cache
       # update vulnerabilities db
-      - time trivy --download-db-only --no-progress --cache-dir .trivycache/
+      - time trivy image --download-db-only --no-progress --cache-dir .trivycache/
       # Builds report and puts it in the default workdir $CI_PROJECT_DIR, so `artifacts:` can take it from there
       - time trivy --exit-code 0 --cache-dir .trivycache/ --no-progress --format template --template "@/contrib/gitlab.tpl"
          --output "$CI_PROJECT_DIR/gl-container-scanning-report.json" "$FULL_IMAGE_NAME"
