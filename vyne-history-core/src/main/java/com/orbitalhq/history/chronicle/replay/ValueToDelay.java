@@ -1,6 +1,6 @@
 package com.orbitalhq.history.chronicle.replay;
 
-import ch.streamly.domain.WrappedValue;
+import com.orbitalhq.history.chronicle.domain.WrappedValue;
 
 class ValueToDelay<T> implements WrappedValue<T> {
    private final long delay;

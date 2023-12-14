@@ -1,6 +1,6 @@
 package com.orbitalhq.history.chronicle;
 
-import ch.streamly.domain.Timed;
+import com.orbitalhq.history.chronicle.domain.Timed;
 import com.orbitalhq.history.chronicle.replay.ReplayFlux;
 
 /**

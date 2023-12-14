@@ -1,6 +1,6 @@
 package com.orbitalhq.history.chronicle.replay;
 
-import ch.streamly.domain.ReplayValue;
+import com.orbitalhq.history.chronicle.domain.ReplayValue;
 import reactor.core.CoreSubscriber;
 import reactor.core.Scannable;
 import reactor.core.publisher.Flux;

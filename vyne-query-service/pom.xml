@@ -395,11 +395,6 @@
       <!--      </dependency>-->
 
       <dependency>
-         <groupId>ch.streamly</groupId>
-         <artifactId>chronicle-flux</artifactId>
-         <version>1.0.1</version>
-      </dependency>
-      <dependency>
          <groupId>com.squareup.okhttp3</groupId>
          <artifactId>mockwebserver</artifactId>
          <scope>test</scope>
