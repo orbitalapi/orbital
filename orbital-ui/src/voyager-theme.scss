@@ -1,0 +1,9 @@
+@import "./typography";
+@import "./common";
+@import "./tailwind-colors";
+.panel-toolbar {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid $slate-200;
+  padding: 1rem;
+}

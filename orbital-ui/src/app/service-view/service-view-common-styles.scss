@@ -1,4 +1,5 @@
-@import "src/theme";
+@import "src/common";
+@import "tailwind-colors";
 
 .url {
   font-family: $mono;
@@ -8,9 +9,9 @@
 
 $http-get-color: lighten($green, 20%);
 $http-post-color: lighten($vyne-blue, 15%);
-$http-put-color: $vyne-yellow;
+$http-put-color: $yellow-400;
 $http-delete-color: lighten($red-light, 20%);
-$http-other-color: $vyne-yellow;
+$http-other-color: $yellow-400;
 
 @mixin http-border($color) {
   border-left: 4px solid $color !important;
