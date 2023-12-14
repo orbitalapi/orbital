@@ -388,6 +388,7 @@ terraform-deploy-prod-voyager:
 #      TRIVY_AUTH_URL: "$CI_REGISTRY"
       FULL_IMAGE_NAME: $imageName
    script:
+      - docker login -u $CI_DEPENDENCY_PROXY_USER -p $CI_DEPENDENCY_PROXY_PASSWORD $CI_DEPENDENCY_PROXY_SERVER
       - trivy --version
       # cache cleanup is needed when scanning images with the same tags, it does not remove the database
       - time trivy image --clear-cache
