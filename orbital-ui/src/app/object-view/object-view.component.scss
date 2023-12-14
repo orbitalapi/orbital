@@ -1,0 +1,180 @@
+@import "src/theme";
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.viewport {
+  flex-grow: 1;
+}
+
+.tree-node {
+  display: flex;
+  align-items: center;
+  line-height: 1.4rem;
+
+  .field-name {
+    width: 7rem;
+    font-family: $mono;
+    color: $purple-grey;
+    margin-right: 2rem;
+    font-size: 0.8rem;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  .field-value {
+  }
+}
+
+.typed-value-container {
+  display: table-cell;
+  vertical-align: middle;
+  //padding-right: 1rem;
+}
+
+.selectable {
+  &:hover {
+    background-color: rgba($vyne-lilac, 0.1);
+    cursor: pointer;
+  }
+}
+
+.table-cell {
+  display: table-cell;
+  vertical-align: middle;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.top-level {
+  .type-name {
+    font-size: 1rem;
+    margin-bottom: 0.8rem;
+  }
+}
+
+.type-name {
+  font-family: $mono;
+  color: $vyne-lilac;
+  float: left;
+  background-color: rgba($vyne-lilac, 0.1);
+  font-size: 0.8rem;
+
+  border: 1px solid rgba($vyne-lilac, 0.6);
+  border-radius: 6px;
+
+  width: fit-content;
+  padding: 0.2rem 0.4rem;
+}
+
+.result-collection-member {
+  display: inline-table;
+  width: 100%;
+
+  .collection-index {
+    display: table-cell;
+    width: 3rem;
+    vertical-align: middle;
+    background-color: $dark-grey-1;
+    color: $light-grey-1;
+    text-align: center;
+  }
+
+  .collection-index.odd {
+    background-color: lighten($dark-grey-1, 20%);
+  }
+
+  .collection-member {
+    padding-left: 30px;
+  }
+}
+
+.downloadParsedDataButton {
+  float: right;
+  right: 0.4rem;
+}
+
+.typed-object-container {
+  display: inline-table;
+  border-collapse: collapse;
+
+  .attribute-row {
+    display: table-row;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid $border-dark;
+    }
+
+    &.object-row {
+      .attribute-name, .type-name-container {
+        vertical-align: top;
+        padding-top: 0.5rem;
+      }
+    }
+
+    .attribute-name {
+      padding-right: 1rem;
+      display: table-cell !important;
+      vertical-align: middle;
+      //width: 150px;
+      color: $dark-grey-1;
+      font-family: $mono;
+    }
+
+    .type-name-container {
+      display: table-cell;
+      vertical-align: middle;
+      padding-right: 1rem;
+    }
+
+    .attribute-value {
+      display: table-cell !important;
+      vertical-align: middle;
+      padding-left: 1rem;
+    }
+
+  }
+}
+
+
+// Tree styles
+
+.tree-node.child {
+  margin: 0.5rem 0 2rem;
+
+  &:before,
+  &:after {
+    content: '';
+    position: absolute;
+    left: -0.75rem;
+    z-index: -1;
+    top: 1rem;
+  }
+
+  &:before {
+    width: 1rem;
+    border-bottom: 1px solid var(--tui-base-04);
+  }
+
+
+}
+
+
+.tree-node.child.isLastChild {
+  &:after {
+    top: -1rem;
+    bottom: 6.5rem; // Magic variable, calculated by fiddling about.
+    border-left: 1px solid var(--tui-base-04);
+  }
+}
+
+
+.tree-node.child:not(.isLastChild) {
+  &:after {
+    top: -1.5rem;
+    bottom: 1rem;
+    border-left: 1px solid var(--tui-base-04);
+  }
+}

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+
+<svg
+   version="1.1"
+   id="Layer_1"
+   x="0px"
+   y="0px"
+   viewBox="0 0 270 270"
+   style="enable-background:new 0 0 270 270;"
+   xml:space="preserve"
+   sodipodi:docname="slack.svg"
+   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+   id="defs66" /><sodipodi:namedview
+   id="namedview64"
+   pagecolor="#ffffff"
+   bordercolor="#000000"
+   borderopacity="0.25"
+   inkscape:showpageshadow="2"
+   inkscape:pageopacity="0.0"
+   inkscape:pagecheckerboard="0"
+   inkscape:deskcolor="#d1d1d1"
+   showgrid="false"
+   inkscape:zoom="0.87407407"
+   inkscape:cx="-36.610169"
+   inkscape:cy="135.57203"
+   inkscape:window-width="1920"
+   inkscape:window-height="1112"
+   inkscape:window-x="-8"
+   inkscape:window-y="-8"
+   inkscape:window-maximized="1"
+   inkscape:current-layer="Layer_1" />
+<g
+   id="g61"
+   transform="matrix(1.9223348,0,0,1.9223348,-122.79909,-122.79909)"
+   >
+	<g
+   id="g41"
+   >
+		<path
+   class="st0"
+   d="m 99.4,151.2 c 0,7.1 -5.8,12.9 -12.9,12.9 -7.1,0 -12.9,-5.8 -12.9,-12.9 0,-7.1 5.8,-12.9 12.9,-12.9 h 12.9 z"
+   id="path37"
+    />
+		<path
+   class="st0"
+   d="m 105.9,151.2 c 0,-7.1 5.8,-12.9 12.9,-12.9 7.1,0 12.9,5.8 12.9,12.9 v 32.3 c 0,7.1 -5.8,12.9 -12.9,12.9 -7.1,0 -12.9,-5.8 -12.9,-12.9 0,0 0,-32.3 0,-32.3 z"
+   id="path39"
+    />
+	</g>
+	<g
+   id="g47"
+   >
+		<path
+   class="st0"
+   d="m 118.8,99.4 c -7.1,0 -12.9,-5.8 -12.9,-12.9 0,-7.1 5.8,-12.9 12.9,-12.9 7.1,0 12.9,5.8 12.9,12.9 v 12.9 z"
+   id="path43"
+    />
+		<path
+   class="st0"
+   d="m 118.8,105.9 c 7.1,0 12.9,5.8 12.9,12.9 0,7.1 -5.8,12.9 -12.9,12.9 H 86.5 c -7.1,0 -12.9,-5.8 -12.9,-12.9 0,-7.1 5.8,-12.9 12.9,-12.9 0,0 32.3,0 32.3,0 z"
+   id="path45"
+    />
+	</g>
+	<g
+   id="g53"
+   >
+		<path
+   class="st0"
+   d="m 170.6,118.8 c 0,-7.1 5.8,-12.9 12.9,-12.9 7.1,0 12.9,5.8 12.9,12.9 0,7.1 -5.8,12.9 -12.9,12.9 h -12.9 z"
+   id="path49"
+    />
+		<path
+   class="st0"
+   d="m 164.1,118.8 c 0,7.1 -5.8,12.9 -12.9,12.9 -7.1,0 -12.9,-5.8 -12.9,-12.9 V 86.5 c 0,-7.1 5.8,-12.9 12.9,-12.9 7.1,0 12.9,5.8 12.9,12.9 z"
+   id="path51"
+    />
+	</g>
+	<g
+   id="g59"
+   >
+		<path
+   class="st0"
+   d="m 151.2,170.6 c 7.1,0 12.9,5.8 12.9,12.9 0,7.1 -5.8,12.9 -12.9,12.9 -7.1,0 -12.9,-5.8 -12.9,-12.9 v -12.9 z"
+   id="path55"
+    />
+		<path
+   class="st0"
+   d="m 151.2,164.1 c -7.1,0 -12.9,-5.8 -12.9,-12.9 0,-7.1 5.8,-12.9 12.9,-12.9 h 32.3 c 7.1,0 12.9,5.8 12.9,12.9 0,7.1 -5.8,12.9 -12.9,12.9 z"
+   id="path57"
+    />
+	</g>
+</g>
+</svg>

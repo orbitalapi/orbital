@@ -1,0 +1,10 @@
+@import "src/app/expand-panel/expand-panel";
+@import "src/theme";
+
+.highlight-container {
+  background-color: $code-background;
+}
+
+td-highlight {
+  background-color: $code-background;
+}

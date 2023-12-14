@@ -1,0 +1,19 @@
+<mat-form-field appearance="outline">
+  <mat-label>Poll schedule</mat-label>
+  <input
+    (ngModelChange)="updateValue($event)"
+    [matAutocomplete]="auto"
+    [ngModel]="value"
+    aria-label="State"
+    matInput
+    placeholder="Enter or select a cron schedule">
+  <mat-autocomplete #auto="matAutocomplete">
+    <mat-option
+      *ngFor="let pollSchedule of pollSchedules"
+      [value]="pollSchedule.value"
+      class="schedule-selector">
+      <div class="header">{{ pollSchedule.label }}</div>
+      <div class="description">{{ pollSchedule.value }}</div>
+    </mat-option>
+  </mat-autocomplete>
+</mat-form-field>

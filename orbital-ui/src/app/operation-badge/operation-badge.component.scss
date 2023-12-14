@@ -1,0 +1,11 @@
+@import "src/theme";
+
+
+.badges {
+  display: flex;
+  align-items: center;
+  margin-right: 1rem;
+  .separator-slash {
+    margin: 0 0.5rem;
+  }
+}

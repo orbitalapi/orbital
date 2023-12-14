@@ -1,0 +1,36 @@
+@import "src/theme";
+
+.component-container {
+  margin-bottom: 10px;
+}
+.statement-line {
+  border-radius: 3px;
+  padding: 8px;
+  background-color: $light-purple-grey;
+  border: 1px solid $light-purple-grey-300;
+  //border: 2px solid $vyne-lilac;
+  //background-color: rgba($vyne-lilac, 0.1);
+
+  span {
+    margin-right: 10px;
+    display: inline-block;
+  }
+}
+
+.editable-content {
+  border-radius: 3px;
+  padding: 8px;
+  //background-color: $light-purple-grey;
+  //border: 1px solid $light-purple-grey-300;
+  border: 2px solid $vyne-lilac;
+  background-color: rgba($vyne-lilac, 0.1);
+  cursor: pointer;
+}
+
+.prefix-word {
+  padding-right: 20px;
+}
+
+.hint {
+  color: rgba(0, 0, 0, 0.4);
+}

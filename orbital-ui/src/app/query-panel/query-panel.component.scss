@@ -1,0 +1,17 @@
+@import "src/theme";
+@import "src/toolbar";
+
+:host {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.router-outlet {
+  flex-grow: 1;
+}
+
+.drawer-content {
+  margin: 2rem 3rem;
+  width: 40vw;
+}

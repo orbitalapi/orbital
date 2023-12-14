@@ -1,0 +1,18 @@
+@import "src/theme";
+
+:host {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  min-height: 2rem;
+
+  border-bottom: 1px solid $slate-200;
+  gap: 2rem;
+}
+.spacer {
+  flex-grow: 1;
+}
+
+.caption-small {
+  margin-right: 2rem;
+}

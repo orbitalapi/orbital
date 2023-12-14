@@ -1,0 +1,108 @@
+@import "src/theme";
+
+:host {
+  display: flex;
+  align-items: center;
+}
+
+
+::ng-deep tui-select {
+  tui-wrapper[data-appearance=textfield] {
+    box-shadow:  0 0 0 rgb(19 20 22 / 10%);
+  }
+}
+
+tui-select {
+  width: 8rem;
+  margin-right: 2rem;
+}
+
+.footer-bar {
+  // Provide a consistent height so that we don't jump around
+  // as buttons are replaced etc
+  //min-height: 36px;
+  display: flex;
+  align-items: center;
+}
+
+
+.error-message {
+  margin: 0 1rem;
+  //border: 1px solid rgba($bg-error, 0.6);
+  border-radius: 4px;
+  //background-color: rgba($bg-error, 0.1);
+  color: $error-dark;
+  font-size: 0.9rem;
+  flex-grow: 1;
+}
+
+app-counter-timer {
+  margin-right: 1rem;
+}
+.loader {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid $success-dark;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+
+  margin-right: 1rem;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+button {
+  flex-shrink: 0;
+}
+
+
+
+
+.progress {
+  margin-left: 2rem;
+  margin-right: 3rem;
+  display: flex;
+  align-items: center;
+
+  mat-progress-bar {
+    width: 250px;
+    margin-right: 1rem;
+  }
+}
+.running-timer {
+  color: $success-dark;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+
+  img {
+    width: 24px;
+    margin-right: 0.5rem;
+    animation-timing-function: ease-in-out;
+    animation-name: loading-spinner;
+    animation-duration: 1.4s;
+    animation-iteration-count: infinite;
+    //transform-origin: 50% 50%;
+    display: inline-block;
+  }
+}
+
+@keyframes loading-spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+

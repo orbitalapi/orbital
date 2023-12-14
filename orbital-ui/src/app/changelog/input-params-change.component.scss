@@ -1,0 +1,9 @@
+@import "src/theme";
+
+:host {
+  display: flex;
+}
+
+.col {
+  margin-right: 3rem;
+}

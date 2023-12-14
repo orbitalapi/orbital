@@ -116,7 +116,7 @@ default:
 build-vyne-ui:
    extends: .build-ui
    script:
-      - cd vyne-query-service/src/main/web
+      - cd orbital-ui
       - npm ci
       - npm run-script build-prod
    artifacts:
@@ -127,7 +127,7 @@ build-vyne-ui:
 build-voyager-ui:
    extends: .build-ui
    script:
-      - cd vyne-query-service/src/main/web
+      - cd orbital-ui
       - npm ci
       - npm run-script build-prod-voyager
    artifacts:

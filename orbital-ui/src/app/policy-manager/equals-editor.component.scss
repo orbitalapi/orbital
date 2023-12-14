@@ -1,0 +1,25 @@
+.component-container {
+
+  .property-input-container {
+    display: inline-flex;
+    align-items: center;
+
+    span {
+      padding-right: 10px;
+    }
+  }
+
+  mat-slide-toggle {
+    padding: 0 10px;
+  }
+}
+
+.selector-container {
+  // Compensate for the paddding below the mat-input container, and make it a little more snug.
+  margin-top: -15px;
+  font-size: 0.9rem;
+}
+
+.property-explainer {
+  padding-left: 10px;
+}

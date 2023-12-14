@@ -1,0 +1,47 @@
+@import "src/styles";
+
+:host {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  height: 350px;
+}
+
+.empty-container {
+  text-align: center;
+  flex-grow: 1;
+  display: flex;
+
+  .empty-container-content {
+    width: 35rem;
+    max-width: 70%;
+  }
+
+  &.vertical {
+    flex-direction: column;
+
+    img {
+      width: 40%;
+    }
+  }
+
+  &.horizontal {
+    flex-direction: row;
+
+    img {
+      height: 60%;
+    }
+  }
+
+
+  justify-content: space-around;
+  align-items: center;
+
+  p {
+    margin: 1rem 0 2rem;
+  }
+
+}

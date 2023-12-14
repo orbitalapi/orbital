@@ -1,0 +1,132 @@
+@import "src/theme";
+
+:host {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+
+  // Adding a height here is important, as it prevents the component
+  // growing forever when it's children (like the results panels)
+  // keep growing.
+  // The actual height gets overridden by flex.
+  height: 10px;
+}
+
+::ng-deep tui-text-area.flat {
+  tui-wrapper[data-appearance=textfield] {
+    box-shadow:  0 0 0 rgb(19 20 22 / 10%);
+  }
+}
+
+.query-input {
+  flex-grow: 1;
+}
+
+
+as-split {
+  flex-grow: 1;
+
+
+}
+as-split.query-panel-split {
+  // Override the height 100% set by the component, which causes the
+  // result panel to grow freaking huge.
+  // The flex actually manages the real height.
+  //height: 10px;
+}
+
+.code-editor-panel-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+
+  app-catalog-explorer-panel, app-query-history-panel, app-saved-queries-panel {
+    width: 400px;
+    overflow: auto;
+  }
+}
+.code-editor-section {
+  flex-grow: 1;
+  width: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mat-tab-header {
+  border-bottom: 0;
+}
+
+.code-viewer-container {
+  padding-top: 0.5rem;
+  // Note - this is the background color of the monaco code editor.
+  // Found it by using the eye dropper tool, can't see where it's configured.
+  background-color: $vscode-theme-code-background;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
+
+  // When resizing the splitter container, make sure this is the bit the grows
+  flex-grow: 1;
+
+  .code-editor {
+
+    width: 100%;
+    height: 100%;
+
+  }
+}
+
+.results-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+}
+
+
+.query-submit-button {
+  margin: 1rem 0;
+}
+
+.row {
+  width: 100%;
+  display: flex;
+  margin-top: 32px;
+  margin-bottom: 3px;
+}
+
+app-query-editor-toolbar {
+  // Overflow   hidden because the ngx-monaco editor is causing width sizing
+  // issues, which can incorrectly trigger horizontal scrollbars appearing
+  //overflow-x: hidden;
+
+  // When resizing the splitter, don't let this bar shrink
+  //flex-shrink: 0;
+  flex-grow: 1;
+}
+
+app-tabbed-results-view {
+  flex: 1;
+  display: flex;
+  //margin: 0 1rem;
+  flex-direction: column;
+  // Normally don't use height 100% with display flex, but without it, ag-grid doesn't render properly
+  height: 100%;
+}
+
+.partial-results-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  .partial-results-header {
+    margin: 1rem;
+  }
+  app-results-table {
+    height: 100%;
+  }
+}
+
+app-typed-instance-panel-container {
+  margin: 0 1rem;
+}

@@ -1,0 +1,37 @@
+@import 'src/theme';
+@import "src/forms";
+
+:host {
+  @extend .form-container;
+  display: flex;
+  flex-direction: column;
+  margin: auto;
+}
+.grid-wrapper {
+  max-height: 500px;
+  margin-bottom: 1rem;
+  flex-grow: 1;
+}
+.grid-wrapper::ng-deep {
+  .read-only-cell {
+    background-color: rgba($vyne-lilac, 0.1);
+  }
+
+  .editable-cell {
+    //background-color: blue !important;
+  }
+
+}
+
+.toolbar {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+
+  span, button, mat-progress-bar {
+    margin-right: 1rem;
+  }
+  mat-progress-bar {
+    width: 250px;
+  }
+}

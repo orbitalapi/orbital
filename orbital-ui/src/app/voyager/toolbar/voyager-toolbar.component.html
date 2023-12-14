@@ -1,0 +1,57 @@
+<img class="logo" src="assets/img/orbital_integrator_aqua_transparent-128x128.png">
+<span class="title">Voyager</span>
+
+<span class="nav-link">
+  <a tuiLink href="https://taxilang.org/" target="_blank" (click)="openNewSite($event, 'https://taxilang.org/')">
+    Taxi Language Reference
+  </a>
+</span>
+
+<span class="examples">Examples</span>
+<tui-select
+  tuiTextfieldSize="s"
+  [ngModel]="selectedExample"
+  (ngModelChange)="setExample($event)"
+>
+  Examples
+  <input
+    tuiTextfield
+    placeholder="Select an example"
+  />
+  <tui-data-list-wrapper
+    *tuiDataList
+    [items]="examples"
+  ></tui-data-list-wrapper>
+</tui-select>
+
+<div class="spacer"></div>
+<button tuiButton type="button" appearance="secondary" size="s" class="header-icon-spacer "
+        (click)="subscribeForUpdates()">
+  Get updates
+</button>
+<button class="header-icon-button header-icon-button-with-text header-icon-spacer "
+        tuiHintAppearance="onDark"
+        tuiHintDirection="left"
+        (click)="generateShareUrl.emit()">
+  <mat-icon svgIcon="share"></mat-icon>
+  Share
+</button>
+
+
+<a tuiLink href="https://github.com/orbitalapi/orbital" target="_blank"
+   (click)="openNewSite($event, 'https://github.com/orbitalapi/orbital')">
+  <mat-icon svgIcon="brandGitHub"></mat-icon>
+</a>
+<a tuiLink [href]="slackInviteLink" target="_blank"
+   (click)="openNewSite($event, slackInviteLink)"
+>
+  <mat-icon svgIcon="slack"></mat-icon>
+</a>
+
+<a class="built-by-orbital" tuiLink (click)="openNewSite($event, 'https://orbitalhq.com')" href="https://orbitalhq.com">
+  <div class="wrapper">
+    <span>Built by</span>
+    <mat-icon svgIcon="orbital"></mat-icon>
+  </div>
+  <!--    <img src="assets/img/orbital_integrator_citrus_transparent-256x256.png" class="icon">-->
+</a>

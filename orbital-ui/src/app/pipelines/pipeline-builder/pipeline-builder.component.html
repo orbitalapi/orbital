@@ -1,0 +1,69 @@
+<h2>Create a new pipeline</h2>
+<div class="two-column-form-row">
+  <app-form-row title="Pipeline name" helpText="Provide a unique name that describes the pipeline"
+                class="form-container-column" [formGroup]="pipelineSpecFg">
+    <mat-form-field appearance="outline">
+      <mat-label>Pipeline name</mat-label>
+      <input matInput formControlName="name" required autocomplete="off">
+      <mat-error *ngIf="pipelineSpecFg.controls['name'].invalid">This field is required</mat-error>
+    </mat-form-field>
+  </app-form-row>
+</div>
+<div class="two-column-form-row">
+  <app-form-row title="Source" helpText="Configure the source of the data feed" class="form-container-column">
+    <app-transport-selector direction="source"
+                            [transports]="pipelineSources"
+                            [control]="pipelineSpecFg.get('input')"
+    >
+    </app-transport-selector>
+  </app-form-row>
+</div>
+<div class="two-column-form-row">
+  <div class="input-editor-row form-container-column" *ngIf="pipelineSpecFg?.get('input')?.value">
+    <app-input-editor [transportSpecType]="pipelineSpecFg?.get('input')?.value.type"
+                      [schema]="schema"
+                      [connections]="connections"
+                      [pipelineTransportSpecFg]="pipelineSpecFg.get('inputSpec')"
+                      (payloadTypeChanged)="handleInputPayloadTypeChanged($event)"
+                      [label]="pipelineTransportLabel(pipelineSpecFg.get('input')?.value) + ' configuration'"></app-input-editor>
+  </div>
+  <app-schema-display-table *ngIf="inputType" [schema]="schema" [type]="inputType"
+                            class="info-box-column"></app-schema-display-table>
+</div>
+
+<div class="two-column-form-row">
+  <app-form-row title="Target" helpText="Configure the target of the data feed" class="form-container-column">
+    <app-transport-selector direction="target"
+                            [transports]="pipelineTargets"
+                            [control]="pipelineSpecFg.get('output')">
+    </app-transport-selector>
+  </app-form-row>
+</div>
+<div class="two-column-form-row">
+  <div class="input-editor-row form-container-column" *ngIf="pipelineSpecFg?.get('output')?.value">
+    <app-output-editor
+      [transportSpecType]="pipelineSpecFg?.get('output')?.value.type"
+      [schema]="schema"
+      [connections]="connections"
+      [label]="pipelineTransportLabel(pipelineSpecFg.get('output')?.value) + ' configuration'"
+      (payloadTypeChanged)="handleOutputPayloadTypeChanged($event)"
+      [pipelineTransportSpecFg]="pipelineSpecFg.get('outputSpec')"></app-output-editor>
+  </div>
+  <app-schema-display-table *ngIf="outputType" [schema]="schema" [type]="outputType"
+                            class="info-box-column"></app-schema-display-table>
+</div>
+<div class="two-column-form-row">
+  <div class="input-editor-row form-container-column">
+    <div class="form-buttons">
+      <!--    <button mat-stroked-button (click)="doTestConnection()" [disabled]="!isValid">Test connection</button>-->
+      <div class="spacer"></div>
+      <button mat-flat-button color="primary" [disabled]="pipelineSpecFg.invalid" (click)="emitCreatePipelineEvent()">
+        Create
+      </button>
+    </div>
+    <mat-progress-bar mode="indeterminate" *ngIf="working"></mat-progress-bar>
+    <div class="test-result-box error-message" *ngIf="!working && pipelineErrorMessage">Failed to create the
+      pipeline: {{ pipelineErrorMessage }}</div>
+    <div class="test-result-box success-message" *ngIf="!working && pipelineStatus">Pipeline created successfully</div>
+  </div>
+</div>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="38" height="38" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="38" y="30" width="28" height="12" transform="rotate(180 38 30)" fill="none" stroke="#4f46e5" stroke-width="2"
+        stroke-linejoin="round"/>
+  <path d="M42 40H6" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M42 8L6 8" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

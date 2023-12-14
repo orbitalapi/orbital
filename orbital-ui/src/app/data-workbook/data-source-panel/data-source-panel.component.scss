@@ -1,0 +1,17 @@
+@import "src/theme";
+
+.clear-icon {
+  width: 16px;
+}
+
+.container {
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  width: 100%;
+  background-color: white;
+
+  .upload-container {
+    width: 100%;
+  }
+}

@@ -1,0 +1,19 @@
+@import "src/theme";
+@import "src/typography";
+
+.changelog-entry {
+  display: flex;
+
+  border-bottom: 1px solid $borer-light;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+}
+
+.changelog-header {
+  width: 25rem;
+}
+
+app-diff-entry {
+
+}
+
