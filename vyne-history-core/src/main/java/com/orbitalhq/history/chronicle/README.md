@@ -6,3 +6,8 @@ to the our repo:
    been blocked on the newer versions of Chronicle due to the tailers not being thread-safe.
 
 Implementing these changes required very slight modifications to the original code.
+
+Code has been copied from the following repos
+
+https://github.com/streamly-ch/streamly-domain (Apache 2.0)
+https://github.com/matgabriel/chronicle-flux (Apache 2.0)

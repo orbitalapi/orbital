@@ -1,7 +1,7 @@
 package com.orbitalhq.history.chronicle.replay;
 
-import ch.streamly.domain.Timed;
-import ch.streamly.domain.TimedValue;
+import com.orbitalhq.history.chronicle.domain.Timed;
+import com.orbitalhq.history.chronicle.domain.TimedValue;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
