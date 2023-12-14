@@ -280,27 +280,23 @@ regression-test:
    before_script:
       - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
 
-publish-orbital-to-docker-hub:
-   extends: .publish-to-docker-hub
-   variables:
-      projectDir: station
-      microservice_orbital: orbital
-#      UI is now output to station directory by default, so this isn't required
-#   before_script:
-#      - mkdir -p station/target/classes
-#      - cp -a vyne-query-service/target/classes/static/. station/target/classes/static
-
-publish-pipeline-jet-to-docker-hub:
-   extends: .publish-to-docker-hub
-   variables:
-      projectDir: pipelines/pipeline-jet
-      microservice_orbital: stream-server
-
-publish-query-node-to-docker-hub:
-   extends: .publish-to-docker-hub
-   variables:
-      projectDir: query-node-native
-      microservice_orbital: query-node
+#publish-orbital-to-docker-hub:
+#   extends: .publish-to-docker-hub
+#   variables:
+#      projectDir: station
+#      microservice_orbital: orbital
+#
+#publish-pipeline-jet-to-docker-hub:
+#   extends: .publish-to-docker-hub
+#   variables:
+#      projectDir: pipelines/pipeline-jet
+#      microservice_orbital: stream-server
+#
+#publish-query-node-to-docker-hub:
+#   extends: .publish-to-docker-hub
+#   variables:
+#      projectDir: query-node-native
+#      microservice_orbital: query-node
 
 
 publish-voyager-to-gitlab-container-registry:
