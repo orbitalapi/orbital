@@ -8,8 +8,10 @@ import com.orbitalhq.spring.http.handleFeignErrors
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
 
-@ExcludeFromOrbitalStation
-@RestController
+// Excluded,
+//@ExcludeFromOrbitalStation
+//@RestController
+@Deprecated("Not used in Orbital Station")
 class SchemaEditorServiceFacade(
    private val schemaEditorApi: SchemaEditorApi,
 ) {

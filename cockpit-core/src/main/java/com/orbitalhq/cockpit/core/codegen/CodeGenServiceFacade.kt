@@ -7,8 +7,9 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
 
-@RestController
-@ExcludeFromOrbitalStation
+//@RestController
+//@ExcludeFromOrbitalStation
+@Deprecated("Not used in Orbital Station")
 class CodeGenServiceFacade(private val codeGenApi: CodeGenApi) {
 
    @GetMapping("/api/taxonomy/typescript", "/api/codegen/typescript")

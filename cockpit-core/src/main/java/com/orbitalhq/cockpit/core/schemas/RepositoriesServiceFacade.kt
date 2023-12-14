@@ -16,8 +16,9 @@ import reactor.core.publisher.Mono
 
 
 // Simple pass-through to the Schema server
-@RestController
-@ExcludeFromOrbitalStation
+//@RestController
+//@ExcludeFromOrbitalStation
+@Deprecated("Not used in Orbital Station")
 class RepositoriesServiceFacade(private val workspaceServiceApi: WorkspaceServiceApi) {
 
    @PostMapping("/api/repositories/file")

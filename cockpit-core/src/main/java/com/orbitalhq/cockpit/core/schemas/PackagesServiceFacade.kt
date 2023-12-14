@@ -15,9 +15,9 @@ import reactor.core.publisher.Mono
 
 
 // Simple pass-through to the Schema server
-@RestController
-@ExcludeFromOrbitalStation
-// When running as orbital, the
+//@RestController
+//@ExcludeFromOrbitalStation
+@Deprecated("Not used in Orbital Station")
 class PackagesServiceFacade(private val packagesServiceApi: PackagesServiceApi) {
 
    @GetMapping("/api/packages")

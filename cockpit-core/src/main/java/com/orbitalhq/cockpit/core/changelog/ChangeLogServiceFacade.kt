@@ -11,8 +11,9 @@ import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
 
 // Simple pass-through to the Schema server
-@RestController
-@ExcludeFromOrbitalStation
+//@RestController
+//@ExcludeFromOrbitalStation
+@Deprecated("Not used in Orbital Station")
 class ChangeLogServiceFacade(private val changeLogApi: ChangelogApi) {
 
    @GetMapping("/api/changelog")
