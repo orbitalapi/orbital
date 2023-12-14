@@ -412,9 +412,9 @@ terraform-deploy-prod-voyager:
 scan-orbital:
    extends: .container_scanning
    variables:
-      imageName: orbitalhq/orbital:next
+      imageName: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/orbitalhq/orbital:next
 
 scan-pipeline:
    extends: .container_scanning
    variables:
-      imageName: orbitalhq/stream-server:next
+      imageName: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/orbitalhq/stream-server:next
