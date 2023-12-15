@@ -9,6 +9,7 @@ import com.orbitalhq.schemas.ServiceName
 import mu.KotlinLogging
 import org.springframework.http.HttpHeaders
 import org.springframework.security.authentication.AuthenticationServiceException
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient
 import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientService
 import org.springframework.security.oauth2.core.OAuth2AccessToken
@@ -57,6 +58,13 @@ class RefreshTokenExchangeFilterFunction(
 
    override fun filter(request: ClientRequest, next: ExchangeFunction): Mono<ClientResponse> {
       return loadAuthorizedClient()
+         .onErrorResume { error ->
+            logger.warn { "An exception was thrown loading an authorized client for service $serviceName: ${error::class.simpleName} - ${error.message}" }
+            Mono.empty()
+         }
+//         .switchIfEmpty(Mono.fromCallable {
+//            error("No authorization client exists for service $serviceName - however one was expected. Cannot issue / reissue authentication token.")
+//         })
          .flatMap { client ->
             val reauthenticationRequest =
                if (isExpiring(client.accessToken)) {
@@ -78,8 +86,9 @@ class RefreshTokenExchangeFilterFunction(
          }
    }
 
-   private fun loadAuthorizedClient(): Mono<OAuth2AuthorizedClient> =
-      clientService.loadAuthorizedClient(serviceName, OAuth2Utils.ANONYMOUS_USER)
+   private fun loadAuthorizedClient(): Mono<OAuth2AuthorizedClient> {
+      return clientService.loadAuthorizedClient(serviceName, OAuth2Utils.ANONYMOUS_USER)
+   }
 
    private fun reauthenticate(oauthScheme: OAuth2): Mono<OAuth2AuthorizedClient> {
       val uri =
@@ -88,8 +97,25 @@ class RefreshTokenExchangeFilterFunction(
       return webClient.post()
          .uri(uri)
          .exchangeToMono { clientResponse ->
-            clientResponse.bodyToMono(Map::class.java)
-               .flatMap { responseMap -> convertResponseToAuthentication(responseMap) }
+            val errorMessage = "Attempt to authenticate $serviceName at ${oauthScheme.accessTokenUrl} failed with error code ${clientResponse.statusCode()}"
+            when {
+                clientResponse.statusCode().is4xxClientError -> {
+                   logger.warn { errorMessage }
+                   Mono.error(BadCredentialsException(errorMessage))
+                }
+               clientResponse.statusCode().is5xxServerError -> {
+                  logger.warn { errorMessage }
+                  Mono.error(AuthenticationServiceException(errorMessage))
+               }
+                else -> {
+                   clientResponse.bodyToMono(Map::class.java)
+                      .flatMap { responseMap -> convertResponseToAuthentication(responseMap) }
+                }
+            }
+
+         }
+         .onErrorResume { e ->
+            throw e
          }
          .flatMap { response ->
             val (principal, authorizedClient) = oauthScheme.createAuthorizedClient(

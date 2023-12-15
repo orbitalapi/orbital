@@ -9,7 +9,9 @@ import com.orbitalhq.config.ConfigSourceWriter
 import com.orbitalhq.config.MergingHoconConfigRepository
 import com.orbitalhq.config.getWriter
 import com.orbitalhq.schemas.ServiceName
+import com.orbitalhq.spring.http.auth.OAuthRefreshTokenManager
 import org.http4k.quoted
+
 
 /**
  * Reads the AuthTokens from Hocon files.
@@ -26,6 +28,11 @@ class HoconAuthTokensRepository(
    override fun extract(config: Config): AuthTokens {
       return AuthTokens.fromConfig(config)
    }
+
+   override fun handleConfigUpdated(newConfig: AuthTokens) {
+      super.handleConfigUpdated(newConfig)
+   }
+
 
    override fun getAll(): Map<ServiceName,AuthScheme> {
       return typedConfig().authenticationTokens
@@ -76,6 +83,11 @@ class HoconAuthTokensRepository(
    override val writeSupported: Boolean
       get() = TODO("Not yet implemented")
 
+   override fun getRegisteredKey(presentedKey: ServiceName): ServiceName? {
+      val authTokens = typedConfig().authenticationTokens
+      return getRegisteredKey(presentedKey, authTokens)
+   }
+
    override fun getAuthScheme(serviceName: ServiceName): AuthScheme? {
       return typedConfig().authenticationTokens[serviceName]
          ?: getWildcardMatch(serviceName)
@@ -85,6 +97,8 @@ class HoconAuthTokensRepository(
    private fun getWildcardMatch(serviceName: String): AuthScheme? {
       return getWildcardMatch(serviceName, typedConfig())
    }
+
+
 }
 
 

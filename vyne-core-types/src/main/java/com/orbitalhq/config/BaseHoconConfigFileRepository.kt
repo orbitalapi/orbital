@@ -6,11 +6,31 @@ import com.typesafe.config.*
 import io.github.config4k.registerCustomType
 import io.github.config4k.toConfig
 import mu.KotlinLogging
+import reactor.core.publisher.Flux
 import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Path
 
 private object CacheKey
+
+/**
+ * Interface that assists reverse lookups where repositories
+ * support registration of values against wildcards.
+ */
+interface RepositoryWithWildcardSupport {
+   /**
+    * Returns the original key that the token was registered with.
+    * eg: A token for a service named com.foo.Bar may have been registered
+    * with com.foo.*
+    *
+    * Returns null if no match is found
+    */
+   fun getRegisteredKey(presentedKey: String): String?
+}
+
+interface UpdatableConfigRepository<T : Any> {
+   val configUpdated: Flux<T>
+}
 
 interface HoconConfigRepository<T : Any> {
    fun emptyConfig(): T

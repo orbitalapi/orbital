@@ -3,7 +3,11 @@ package com.orbitalhq.spring.http.auth.schemes
 import com.google.common.cache.CacheBuilder
 import com.orbitalhq.auth.schemes.AuthSchemeProvider
 import com.orbitalhq.auth.schemes.OAuth2
+import com.orbitalhq.config.RepositoryWithWildcardSupport
+import com.orbitalhq.config.UpdatableConfigRepository
+import com.orbitalhq.schemas.ServiceName
 import mu.KotlinLogging
+import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientService
 import org.springframework.security.oauth2.client.registration.ClientRegistration
 import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository
 import org.springframework.security.oauth2.core.AuthorizationGrantType
@@ -17,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class HoconOAuthClientRegistrationRepository(
    private val authSchemeProvider: AuthSchemeProvider
-) : ReactiveClientRegistrationRepository {
+) : ReactiveClientRegistrationRepository, RepositoryWithWildcardSupport {
 
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -46,6 +50,10 @@ class HoconOAuthClientRegistrationRepository(
             sink.error(e)
          }
       }
+   }
+
+   override fun getRegisteredKey(presentedKey: ServiceName): ServiceName? {
+      return authSchemeProvider.getRegisteredKey(presentedKey)
    }
 }
 

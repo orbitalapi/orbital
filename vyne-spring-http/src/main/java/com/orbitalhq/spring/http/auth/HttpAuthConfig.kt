@@ -50,7 +50,7 @@ class HttpAuthConfig {
    fun configAuthTokenRepository(
       config: VyneHttpAuthConfig,
       eventProvider: SchemaChangedEventProvider,
-      envVariablesConfig: EnvVariablesConfig
+      envVariablesConfig: EnvVariablesConfig,
    ): HoconAuthTokensRepository {
       logger.info { "Using auth config file at ${config.configFile.toFile().canonicalPath}" }
       return HoconAuthTokensRepository(
@@ -67,7 +67,7 @@ class HttpAuthConfig {
                failIfNotFound = false
             ),
             SchemaConfigSourceLoader(eventProvider, "auth.conf")
-         )
+         ),
       )
    }
 
@@ -79,6 +79,13 @@ class HttpAuthConfig {
    @Bean
    fun oauthAuthorizedClientService(authSchemeProvider: AuthSchemeProvider): ReactiveOAuth2AuthorizedClientService {
       return oauthAuthorizedClientManager(authSchemeProvider).first
+   }
+
+   @Bean
+   fun oauthRefreshTokenManager(authorizedClientService: ReactiveOAuth2AuthorizedClientService, authSchemeProvider: AuthSchemeProvider): OAuthRefreshTokenManager {
+      val refreshTokenManager = OAuthRefreshTokenManager(authorizedClientService, authSchemeProvider)
+      refreshTokenManager.resetTokensOnUpdates(resetNow = true)
+      return refreshTokenManager
    }
 
    @Bean
@@ -101,42 +108,13 @@ fun oauthAuthorizedClientManager(authSchemeProvider: AuthSchemeProvider): Pair<R
    val oAuthClientRegistrationRepository = HoconOAuthClientRegistrationRepository(
       authSchemeProvider
    )
-   val authorizedClientService: ReactiveOAuth2AuthorizedClientService =
-      InMemoryReactiveOAuth2AuthorizedClientService(oAuthClientRegistrationRepository)
 
-   // Support for the RefreshToken flow (see RefreshTokenExchangeFilterFunction).
-   // Add all known refresh tokens as pre-expired access tokens, forcing refresh on first usage.
-   registerRefreshTokens(authSchemeProvider, authorizedClientService)
+   val authorizedClientService = WildcardMatchingOAuth2AuthorizedClientService(oAuthClientRegistrationRepository)
 
    return authorizedClientService to AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager(
       oAuthClientRegistrationRepository,
       authorizedClientService
    )
-}
-
-/**
- * Creates registrations in the authorizedClientService
- * for any refresh tokens we've been provided.
- *
- * Registers an expired Access Token, forcing the token to be refreshed
- * on first call.
- */
-private fun registerRefreshTokens(
-   authSchemeProvider: AuthSchemeProvider,
-   authorizedClientService: ReactiveOAuth2AuthorizedClientService
-) {
-   authSchemeProvider.getAllOfType<OAuth2>()
-      .filter { (serviceName, token) -> token.refreshToken != null }
-      .forEach { (serviceName, oauthToken) ->
-
-         val (principal, client) = oauthToken.createAuthorizedClient(
-            serviceName, "expiredToken", Instant.MIN,
-            Instant.MIN.plusSeconds(60)
-         )
-         authorizedClientService.saveAuthorizedClient(
-            client, principal
-         ).subscribe()
-      }
 }
 
 
