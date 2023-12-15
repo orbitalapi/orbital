@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
-import { SearchResult, SearchService } from '../search.service';
+import {Component} from '@angular/core';
+import {SearchResult, SearchService} from '../search.service';
 import {Observable, of, Subject} from 'rxjs';
-import { Router } from '@angular/router';
+import {Router} from '@angular/router';
 import {filter, startWith, switchMap} from "rxjs/operators";
 import {isNullOrUndefined} from "util";
 
@@ -11,33 +11,27 @@ import {isNullOrUndefined} from "util";
   styleUrls: ['./search-bar.component.scss'],
   template: `
 
-    <tui-combo-box *tuiLet="searchResults$ | async as items" tuiTextfieldSize="m" [ngModel]="selectedSearchItem"
-                   (ngModelChange)="valueChange($event)"
-                   (searchChange)="searchInputValueChanged($event)" [tuiTextfieldCleaner]="true"
-                   [tuiTextfieldLabelOutside]="true"
-                   [stringify]="emptyStringify"
-                   tuiTextfieldIconLeft="tuiIconSearch"
-    >
-      Search
-      <input placeholder="Search" tuiTextfield>
-      <tui-data-list-wrapper
-          *tuiDataList
-
-          [itemContent]="content"
-          [items]="items"
-      ></tui-data-list-wrapper>
-      <!--      <tui-data-list *tuiDataList>-->
-      <!--        <button *ngFor="let item of items" tuiOption (click)="navigateToMember(item)" class="search-result-button-wrapper">-->
-      <!--          <app-search-result [result]="item"></app-search-result>-->
-      <!--        </button>-->
-      <!--      </tui-data-list>-->
-    </tui-combo-box>
-    <ng-template
-        #content
-        let-data
-    >
-      <app-search-result [result]="data" (click)="navigateToMember(data)"></app-search-result>
-    </ng-template>
+      <tui-combo-box *tuiLet="searchResults$ | async as items" tuiTextfieldSize="m" [ngModel]="selectedSearchItem"
+                     (ngModelChange)="valueChange($event)"
+                     (searchChange)="searchInputValueChanged($event)" [tuiTextfieldCleaner]="true"
+                     [tuiTextfieldLabelOutside]="true"
+                     [stringify]="emptyStringify"
+                     tuiTextfieldIconLeft="tuiIconSearch"
+      >
+          Search
+          <input placeholder="Search" tuiTextfield>
+          <tui-data-list-wrapper
+                  *tuiDataList
+                  [itemContent]="content"
+                  [items]="items"
+          ></tui-data-list-wrapper>
+      </tui-combo-box>
+      <ng-template
+              #content
+              let-data
+      >
+          <app-search-result [result]="data" (click)="navigateToMember(data)"></app-search-result>
+      </ng-template>
   `
 })
 export class SearchBarContainerComponent {
@@ -52,6 +46,7 @@ export class SearchBarContainerComponent {
   get selectedSearchItem(): SearchResult | null {
     return null;
   }
+
   constructor(private service: SearchService, private router: Router) {
   }
 
@@ -63,13 +58,17 @@ export class SearchBarContainerComponent {
 
   readonly search$ = new Subject<string>()
   readonly searchResults$: Observable<SearchResult[]> =
-      this.search$.pipe(
-          filter(value => value !== null && value.length > 0),
-          switchMap(search => {
-            return this.service.search(search)
-                .pipe(startWith(null))
-          })
-      )
+    this.search$.pipe(
+      switchMap(search => {
+        if (search == null || search.length <= 1) {
+          return of([])
+        } else {
+          return this.service.search(search)
+            .pipe(startWith(null))
+        }
+      }),
+      startWith([])
+    )
 
 
   searchInputValueChanged(newValue: string | null) {
