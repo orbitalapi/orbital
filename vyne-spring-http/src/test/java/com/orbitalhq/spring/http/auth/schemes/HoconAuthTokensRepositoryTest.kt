@@ -23,6 +23,7 @@ class HoconAuthTokensRepositoryTest {
    @JvmField
    var folder: Path? = null
 
+
    @Test
    fun `when a token is defined with a wildcard then it is returned`() {
       val loader = SimpleConfigSourceLoader(
@@ -45,6 +46,40 @@ authenticationTokens {
       repo.getAuthScheme("com.foo.MyService").shouldNotBeNull()
       repo.getAuthScheme("foo.MyService").shouldBeNull()
    }
+
+   @Test
+   fun `can lookup a registration key from a token registered with wildcards`() {
+      val loader = SimpleConfigSourceLoader(
+         VersionedSource(
+            "auth.conf",
+            "1.0.0",
+            """
+authenticationTokens {
+   "com.foo.*" {
+      type: Basic
+      username: jimmy
+      password: password
+   }
+   "com.bar.Baz" {
+      type: Basic
+      username: jimmy
+      password: password
+   }
+}
+         """.trimIndent()
+         )
+      )
+      val repo = HoconAuthTokensRepository(listOf(loader))
+      repo.getRegisteredKey("com.foo.bar.MyService").shouldBe("com.foo.*")
+      repo.getRegisteredKey("com.foo.MyService").shouldBe("com.foo.*")
+      repo.getRegisteredKey("foo.MyService").shouldBeNull()
+
+      // These aren't registered with a wildcard, so should match exactly
+      repo.getRegisteredKey("com.bar.Baz").shouldBe("com.bar.Baz")
+      repo.getRegisteredKey("com.bar.foo.Baz").shouldBeNull()
+      repo.getRegisteredKey("Baz").shouldBeNull()
+   }
+
 
    @Test
    fun `can read a basic auth token config`() {
@@ -262,6 +297,7 @@ thePassword: hello
       val loadedToken = loadingRepo.getAuthScheme("MyService")
       loadedToken.shouldBe(readToken)
    }
+
 
 
 }

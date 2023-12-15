@@ -46,13 +46,13 @@ data class ConfigSource<T : Any>(
 abstract class MergingHoconConfigRepository<T : Any>(
    loaders: List<ConfigSourceLoader>,
    fallback: Config = ConfigFactory.systemEnvironment()
-) : HoconConfigRepository<T> {
+) : HoconConfigRepository<T>, UpdatableConfigRepository<T> {
    abstract fun extract(config: Config): T
 
    private val loaderTypeName: String = this::class.java.name
    private val configUpdatedSink = Sinks.many().multicast().directBestEffort<T>()
 
-   val configUpdated = configUpdatedSink.asFlux()
+   override val configUpdated = configUpdatedSink.asFlux()
 
    companion object {
       private object CacheKey
@@ -73,6 +73,8 @@ abstract class MergingHoconConfigRepository<T : Any>(
    protected fun invalidateCache() = configCache.invalidateAll()
 
    private var _configSources: List<ConfigSource<T>> = emptyList()
+
+   protected open fun handleConfigUpdated(newConfig: T) {}
 
    /**
     * A cache of loaded, merged config.
@@ -154,7 +156,10 @@ abstract class MergingHoconConfigRepository<T : Any>(
          logger.info { "($loaderTypeName) - Loader ${it.simpleName} indicates sources have changed. Invalidating caches" }
          configCache.invalidateAll()
          configCache.cleanUp()
+
          // Design choice:  Immediately reload the config, so that we get notified early if the config is invalid.
+         val updatedConfig = typedConfig()
+         handleConfigUpdated(updatedConfig)
          configUpdatedSink.emitNext(typedConfig(), Sinks.EmitFailureHandler.FAIL_FAST)
       }
       // Design choice:  Immediately reload the config, so that we get notified early if the config is invalid.

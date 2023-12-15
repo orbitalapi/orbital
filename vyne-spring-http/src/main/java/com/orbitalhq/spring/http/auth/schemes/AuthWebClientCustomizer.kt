@@ -10,6 +10,7 @@ import com.orbitalhq.auth.schemes.OAuth2
 import com.orbitalhq.auth.schemes.QueryParam
 import com.orbitalhq.auth.schemes.SimpleAuthSchemeProvider
 import com.orbitalhq.schemas.ServiceName
+import com.orbitalhq.spring.http.auth.OAuthRefreshTokenManager
 import com.orbitalhq.spring.http.auth.oauthAuthorizedClientManager
 import mu.KotlinLogging
 import org.springframework.security.oauth2.client.AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager
@@ -38,9 +39,22 @@ class AuthWebClientCustomizer(
          return forTokens(AuthTokens(emptyMap()))
       }
 
-      fun forTokens(authTokens: AuthTokens): AuthWebClientCustomizer {
+      /**
+       * Creates a AuthWebClientCustomizer.
+       * Can optionally also prepare OAUth refresh tokens, which is useful for
+       * short-lived customizers (ie., for a single request).
+       *
+       * For flows where the AuthWebClientCustomizer lives across multiple requests,
+       * you should register a dedicated OAuthRefreshTokenManager, which
+       * listens for configuration changes.
+       */
+      fun forTokens(authTokens: AuthTokens, oneTimeRefreshTokenReset: Boolean = false): AuthWebClientCustomizer {
          val authSchemeProvider = SimpleAuthSchemeProvider(authTokens)
          val (authorizedClientService,oauthClientManager) = oauthAuthorizedClientManager(authSchemeProvider)
+         if (oneTimeRefreshTokenReset) {
+            OAuthRefreshTokenManager(authorizedClientService, authSchemeProvider).resetRefreshTokens()
+         }
+
          return AuthWebClientCustomizer(
             oauthClientManager,
             authorizedClientService,

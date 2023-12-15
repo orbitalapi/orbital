@@ -24,7 +24,9 @@ class HttpAuthConfigTest {
             refreshToken = "my-refresh-token"
          ))
       ))
-      val (clientService,b) = oauthAuthorizedClientManager(authProvider)
+      val (clientService,clientManager) = oauthAuthorizedClientManager(authProvider)
+      val refreshTokenManager = OAuthRefreshTokenManager(clientService, authProvider)
+      refreshTokenManager.resetRefreshTokens()
       val authorizedClient = clientService.loadAuthorizedClient<OAuth2AuthorizedClient>("my-oauth-service", OAuth2Utils.ANONYMOUS_USER )
          .block()!!
       authorizedClient.refreshToken.tokenValue.shouldBe("my-refresh-token")

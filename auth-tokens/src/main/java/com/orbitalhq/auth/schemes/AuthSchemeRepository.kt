@@ -29,6 +29,10 @@ object EmptyAuthSchemeRepository : AuthSchemeRepository {
       return null
    }
 
+   override fun getRegisteredKey(presentedKey: String): String? {
+      return null
+   }
+
    override fun getAll(): Map<ServiceName,AuthScheme> {
       return emptyMap()
    }

@@ -79,7 +79,7 @@ class StandaloneVyneFactory(
       val sourcesHash = SourcePackageHasher.hash(sources)
       val schemaProvider = schemaCache.get(sourcesHash) {
          val timedSchema = measureTimedValue {
-            TaxiSchema.from(sources, sourceConverters = sourceConverterRegistry.converters )
+            TaxiSchema.from(sources, sourceConverters = sourceConverterRegistry.converters)
          }
          logger.info { "Building schema took ${timedSchema.duration}" }
          val schema = timedSchema.value
@@ -110,7 +110,7 @@ class StandaloneVyneFactory(
 
    private fun buildDynamoInvoker(connections: ConnectionsConfig, schemaProvider: SchemaProvider): DynamoDbInvoker {
       return DynamoDbInvoker(
-         connectionRegistry =  AwsInMemoryConnectionRegistry(connections.aws.values.toList()),
+         connectionRegistry = AwsInMemoryConnectionRegistry(connections.aws.values.toList()),
          schemaProvider = schemaProvider
       )
    }
@@ -139,10 +139,9 @@ class StandaloneVyneFactory(
       return RestTemplateInvoker(
          schemaProvider,
          builder,
-         AuthWebClientCustomizer.forTokens(message.authTokens),
+         AuthWebClientCustomizer.forTokens(message.authTokens, oneTimeRefreshTokenReset = true),
          DefaultRequestFactory()
-
-         )
+      )
    }
 
    private val jdbcConnectionFactoryCache = CacheBuilder.newBuilder()
