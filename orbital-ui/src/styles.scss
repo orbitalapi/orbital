@@ -1,31 +1,24 @@
 @use '@angular/material' as mat;
 
-@import "theme";
+@import "common";
 @import "node_modules/ag-grid-community/styles/ag-grid.css";
 @import "node_modules/ag-grid-community/styles/ag-theme-alpine.css";
 @import "t2-colors";
 
 // my other global styles
 :root {
-  // Used to use variables here (--tui-text-font: $font-sans), but it stopped working.
-  // Haven't really investigated why.
-  --tui-text-font: 'nunito-sans', sans-serif;
-  --tui-font-text: 'nunito-sans', sans-serif;
-
 
   --tui-radius-s: 0.3rem;
   --tui-radius-m: 0.4rem;
   --tui-radius-l: 0.5rem;
 
-  --tui-primary: #{$primary};
-  --tui-primary-hover: #{$primary-light};
   --tui-primary-active: #{$primary-dark};
-
 
   // After upgrading taiga 2->3, everything was shrunk
   // to 13px.  This seems to fix it.
   --tui-font-text-s: normal 1rem #{$body-font};
-
+  --tui-text-font: var(--body-font);
+  --tui-font-text: var(--body-font);
 }
 
 tui-dialog {

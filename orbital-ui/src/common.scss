@@ -1,9 +1,8 @@
 @use '@angular/material' as mat;
 @import "typography";
 @import "theme-colors";
-@import 'node_modules/@angular/material/theming';
 @import "code-formatter-theme";
-@import "t2-components";
+@import "components";
 @import "filters";
 
 $sidenav-width: 230px;
@@ -11,7 +10,7 @@ $toolbar-height: 5rem;
 
 .page-content {
   padding: 2rem;
-  background-color: $body-bg;
+  background-color: var(--component-bg-color);
   min-height: fit-content;
   height: 100%;
   flex-grow: 1;
@@ -143,3 +142,21 @@ $border-highlight: rgba($vyne-lilac, 0.6);
   width: calc(100vw - (#{$sidenav-width} + 60px));
   z-index: 2000;
 }
+
+.documentation {
+  flex-grow: 1;
+  table {
+    width: 100%;
+  }
+}
+
+
+.page-heading {
+  h1 {
+    margin-bottom: 0;
+    font-weight: 700;
+  }
+  margin-bottom: 2rem;
+}
+
+

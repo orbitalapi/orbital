@@ -14,7 +14,6 @@ export interface LandingPageCardConfig {
   styleUrls: ['./landing-page.component.scss'],
   template: `
     <div class='page-content'>
-      <h2>Welcome to Orbital</h2>
       <div class='row search-row'>
         <app-landing-card [cardConfig]='catalogCardConfig' [isEmpty]='true' layout='horizontal'
                           (emptyActionClicked)="router.navigate(['catalog'])"></app-landing-card>

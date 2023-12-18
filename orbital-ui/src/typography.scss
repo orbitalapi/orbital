@@ -1,9 +1,14 @@
-@import "fonts";
+// Don't import fonts here.
+// Import them in orbital-theme.scss
+// to make them swappable
+//@import "fonts";
 @import "theme-colors";
 
-$body-font: 'nunito-sans', sans-serif;
-$mono: 'jetbrains-mono', monospace;
-$headings-font: 'DM Sans', sans-serif;
+// Fonts moved to orbital-theme, to make them
+// swappable
+$body-font: var(--body-font);
+$mono: var(--mono-font);
+$headings-font: var(--headings-font);
 
 // Fonts used in documentation heavy pages
 $font-sans-docs: $body-font /*'Open Sans'*/,system-ui,BlinkMacSystemFont,-apple-system,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif;

@@ -1,7 +1,6 @@
-@use '@angular/material' as mat;
-@import "src/theme";
+@import "../../../common";
 @import "../../../voyager-app/styles.scss";
-@import "src/orbital-theme";
+@import "../../../voyager-theme";
 
 :host {
   display: flex;
@@ -57,11 +56,11 @@ button {
 }
 
 button.secondary {
-  border: 1px solid mat.get-color-from-palette($primary, 500);
+  border: 1px solid $sky-500;
   background-color: white;
 
   &:hover {
-    background-color: $base-3;
+    background-color: #dde6eb;
     cursor: pointer;
   }
 

@@ -1,10 +1,31 @@
-@import "src/orbital-app/variables";
-@import "src/orbital-app/typography";
-@import "src/orbital-app/orbital";
+@import "tailwind-colors";
+@import "theme-colors";
+@import "fonts";
+// Use this file to define things that are can be overridden
+// when white-labelling
+// For anything else, use common.scss or components.scss
 
-.panel-toolbar {
-  display: flex;
-  align-items: center;
-  border-bottom: 1px solid $border-light;
-  padding: 1rem;
+// Do not import this file from other scss files.
+// Instead, import common.scss
+// This file is linked in angular.json, to allow swapping
+// with other themes
+
+
+:root {
+  --navbar-bg-color: #{$midnight-grey};
+  --navbar-text-color: #{$gray-400};
+  --navbar-text-color-active: white;
+  --navbar-bg-color-active: #{$gray-800};
+
+  --app-background-color: #{$body-bg};
+
+  --component-bg-color: #{$slate-100};
+
+  --tui-primary: #{$primary};
+  --tui-primary-hover: #{$primary-light};
+  --tui-primary-active: #{$primary-dark};
+
+  --body-font: 'nunito-sans', sans-serif;
+  --mono-font: 'jetbrains-mono', monospace;
+  --headings-font: 'DM Sans', sans-serif;
 }

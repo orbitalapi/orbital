@@ -1,5 +1,5 @@
 @use '@angular/material' as mat;
-@import "../theme";
+@import "../common";
 
 :root {
   --body-font: #{$body-font};

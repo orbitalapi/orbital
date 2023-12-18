@@ -1,4 +1,4 @@
-@import "src/theme";
+@import "src/common";
 
 :host {
   height: 100%;
@@ -39,7 +39,7 @@
 }
 
 .logo-container {
-  padding: 1rem;
+  padding: 2rem 1rem;
 
   img {
     vertical-align: middle;
@@ -54,19 +54,18 @@
 .logo {
   display: flex;
   align-items: center;
-
-  img.integrator {
-    width: 48px;
-  }
-  img.wordmark {
-    height: 3rem;
+  img {
+    width: 100%;
+    height: auto;
+    max-width: 180px;
+    max-height: 50px;
   }
 }
 
 .sidenav {
   min-width: $sidenav-width;
   flex: 0;
-  background-color: $midnight-grey;
+  background-color: var(--navbar-bg-color);
 }
 
 .navbar-item {
@@ -84,11 +83,11 @@
     display: flex;
     align-items: center;
 
-    color: $gray-400;
+    color: var(--navbar-text-color);
 
     &:hover, &.active {
-      color: white;
-      background-color: $gray-800;
+      color: var(--navbar-text-color-active);
+      background-color: var(--navbar-bg-color-active);
     }
 
     .icon {
