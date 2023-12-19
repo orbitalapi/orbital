@@ -82,6 +82,9 @@ data class QueryContext(
 
    val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = ConcurrentHashMap(),
 
+   val queryOptions: QueryOptions,
+
+//   val failureBehaviour: FailureBehaviour = FailureBehaviour.THROW
    val metricsReporter: QueryMetricsReporter = NoOpMetricsReporter
 
 
@@ -263,6 +266,7 @@ data class QueryContext(
          queryId: String,
          eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
          scopedFacts: List<ScopedFact> = emptyList(),
+         queryOptions: QueryOptions,
          metricsReporter: QueryMetricsReporter = NoOpMetricsReporter
       ): QueryContext {
          return QueryContext(
@@ -273,6 +277,7 @@ data class QueryContext(
             clientQueryId = clientQueryId,
             queryId = queryId,
             eventBroker = eventBroker,
+            queryOptions =  queryOptions,
             metricsReporter = metricsReporter
          )
       }

@@ -2,7 +2,11 @@ package com.orbitalhq.schema.api
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.orbitalhq.*
+import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.ParsedPackage
+import com.orbitalhq.ParsedSource
+import com.orbitalhq.SourcePackage
+import com.orbitalhq.VersionedSource
 import com.orbitalhq.schemas.CompositeSchema
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.readers.StaticSourceConverterRegistry

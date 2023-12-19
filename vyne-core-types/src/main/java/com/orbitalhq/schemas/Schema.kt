@@ -336,6 +336,18 @@ interface Schema {
       }
    }
 
+   /**
+    * Returns a list of types that are not present in this schema.
+    * Considers the type directly passed, as well as any parameter types
+    */
+   fun findUnknownTypes(type: lang.taxi.types.Type):List<lang.taxi.types.Type> {
+      val unknownType = if (!this.hasType(type.qualifiedName)) {
+         listOf(type)
+      } else emptyList()
+      val unknownTypeParameters = type.typeParameters().flatMap { findUnknownTypes(it) }
+      return unknownType + unknownTypeParameters
+   }
+
 }
 
 

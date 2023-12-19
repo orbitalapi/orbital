@@ -1,6 +1,16 @@
 package com.orbitalhq.query
 
-import com.orbitalhq.models.*
+import com.orbitalhq.models.AccessorHandler
+import com.orbitalhq.models.DataSource
+import com.orbitalhq.models.FailedSearch
+import com.orbitalhq.models.MixedSources
+import com.orbitalhq.models.TypedCollection
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedInstancePredicateFactory
+import com.orbitalhq.models.TypedNull
+import com.orbitalhq.models.TypedObject
+import com.orbitalhq.models.TypedObjectFactory
+import com.orbitalhq.models.TypedValue
 import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.FactDiscoveryStrategy
 import com.orbitalhq.models.facts.FieldAndFactBag
@@ -9,7 +19,11 @@ import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.query.ExcludeQueryStrategyKlassPredicate.Companion.ExcludeObjectBuilder
 import com.orbitalhq.query.collections.CollectionBuilder
 import com.orbitalhq.query.collections.CollectionProjectionBuilder
-import com.orbitalhq.schemas.*
+import com.orbitalhq.schemas.AttributeName
+import com.orbitalhq.schemas.Field
+import com.orbitalhq.schemas.FieldSource
+import com.orbitalhq.schemas.QualifiedName
+import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.log
 import kotlinx.coroutines.flow.Flow
@@ -20,8 +34,9 @@ import lang.taxi.accessors.CollectionProjectionExpressionAccessor
 import lang.taxi.accessors.ConditionalAccessor
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.ObjectType
+import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
-import java.util.*
+import java.util.UUID
 
 class ObjectBuilder(
    val queryEngine: QueryEngine,
@@ -289,25 +304,32 @@ class ObjectBuilder(
             targetType
                .attributes
                .forEach { (attributeName, field) ->
-                  if (field.sourcedBy == null) {
-                     val fieldInstanceValidPredicate = buildSpecProvider.provide(field)
-                     val targetAttributeType = field.resolveType(context.schema)
-                     val returnTypedNull = true
-                     when (val value =
-                        sourceObjectType.getAttributeIdentifiedByType(targetAttributeType, returnTypedNull)) {
-                        is TypedNull -> missingAttributes[attributeName] = field
-                        else -> {
-                           val attributeSatisfiesPredicate = fieldInstanceValidPredicate.isValid(value)
-                           if (attributeSatisfiesPredicate) {
-                              populatedValues[attributeName] = convertValue(value, targetAttributeType, field.format)
-                           } else {
-                              missingAttributes[attributeName] = field
-                           }
+                  when {
+                     field.sourcedBy != null -> sourcedByAttributes[attributeName] = field
+                     PrimitiveType.isPrimitiveType(field.type.fullyQualifiedName) && field.format == null -> {
+                        // There's no point in trying to build primitive types.
+                        // Just tag it as missing. It's possible there's an expression to evaluate.
+                        missingAttributes[attributeName] = field
+                     }
 
+                     else -> {
+                        val fieldInstanceValidPredicate = buildSpecProvider.provide(field)
+                        val targetAttributeType = field.resolveType(context.schema)
+                        val returnTypedNull = true
+                        when (val value =
+                           sourceObjectType.getAttributeIdentifiedByType(targetAttributeType, returnTypedNull)) {
+                           is TypedNull -> missingAttributes[attributeName] = field
+                           else -> {
+                              val attributeSatisfiesPredicate = fieldInstanceValidPredicate.isValid(value)
+                              if (attributeSatisfiesPredicate) {
+                                 populatedValues[attributeName] = convertValue(value, targetAttributeType, field.format)
+                              } else {
+                                 missingAttributes[attributeName] = field
+                              }
+
+                           }
                         }
                      }
-                  } else {
-                     sourcedByAttributes[attributeName] = field
                   }
                }
          } else {
@@ -344,7 +366,12 @@ class ObjectBuilder(
                val fieldBuildType =
                   field.fieldProjection?.sourceType?.toVyneQualifiedName()?.let { context.schema.type(it) }
                      ?: field.resolveType(context.schema)
-               val value = build(fieldBuildType, buildSpec, theseFacts)
+               // Don't attempt to build primitive types.
+               // There's not enough context, and attempting to search for one is silly.
+               val value = if (!fieldBuildType.isPrimitive) {
+                  build(fieldBuildType, buildSpec, theseFacts)
+               } else null
+
 
 
                if (value != null) {

@@ -7,8 +7,16 @@ import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import kotlinx.coroutines.flow.Flow
 
+enum class OperationCachingBehaviour {
+   NO_CACHE,
+   CACHING_PERMITTED
+}
 interface OperationInvoker {
    fun canSupport(service: Service, operation: RemoteOperation): Boolean
+
+   fun getCachingBehaviour(service: Service, operation: RemoteOperation): OperationCachingBehaviour {
+      return OperationCachingBehaviour.CACHING_PERMITTED
+   }
 
    suspend fun invoke(
       service: Service,

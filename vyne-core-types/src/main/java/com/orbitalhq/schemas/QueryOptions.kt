@@ -31,6 +31,7 @@ object GlobalSharedCache : CachingStrategy()
  */
 data class NamedCache(val name: String) : CachingStrategy()
 
+data class RemoteCache(val connectionName: String) : CachingStrategy()
 
 data class QueryOptions(
    /**
@@ -50,7 +51,14 @@ data class QueryOptions(
     *
     * Enabling this uses a global cache, which is shared between queries
     */
-   val cachingStrategy: CachingStrategy = QueryScopedCache
+   val cachingStrategy: CachingStrategy = QueryScopedCache,
+
+   /**
+    * Some queries require state (such as joining streams).
+    * This indicates a connection to load from the the SourceLoadersConnectionRegistry
+    * which can be used to store state. (Typically a cache provider, such as Hazelcast or Redis)
+    */
+   val stateStoreConnectionName: String? = null
 ) {
 
    /**
@@ -82,13 +90,24 @@ data class QueryOptions(
 
       fun fromQuery(query: TaxiQlQuery): QueryOptions {
          val cachingStrategy: CachingStrategy = query.annotation("Cache")?.let { annotation ->
-            if (annotation.defaultParameterValue != null) {
-               NamedCache(annotation.defaultParameterValue as String)
-            } else GlobalSharedCache
+            when {
+               annotation.parameter("connection") != null -> RemoteCache(annotation.parameter("connection")!! as String)
+               annotation.defaultParameterValue != null -> NamedCache(annotation.defaultParameterValue as String)
+               else -> GlobalSharedCache
+            }
          } ?: QueryScopedCache
+
+         val stateStoreConnectionName:String? = query.annotation("StateStore")?.let { annotation ->
+            when {
+               annotation.parameter("connection") != null -> annotation.parameter("connection")!! as String
+               else -> null
+            }
+         }
+
          return QueryOptions(
             omitNulls = query.annotation("OmitNulls") != null,
-            cachingStrategy = cachingStrategy
+            cachingStrategy = cachingStrategy,
+            stateStoreConnectionName = stateStoreConnectionName
          )
       }
    }

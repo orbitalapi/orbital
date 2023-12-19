@@ -14,7 +14,6 @@ import lang.taxi.types.ArrayType
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.ObjectType
 import lang.taxi.types.isMapType
-import java.time.Instant
 
 interface TypedInstance {
    @get:JsonIgnore
@@ -145,7 +144,7 @@ interface TypedInstance {
          format: FormatsAndZoneOffset? = type.formatAndZoneOffset
       ): TypedInstance {
          return when {
-            value is TypedInstance -> value
+            value is TypedInstance && value.type.taxiType.isAssignableTo(type.taxiType) -> value
             value == null -> TypedNull.create(type)
             value is NullValue -> TypedNull.create(type)
             value is java.sql.Array -> {

@@ -3,6 +3,7 @@ package com.orbitalhq.history
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.models.*
 import com.orbitalhq.models.json.Jackson
+import com.orbitalhq.models.serde.DataSourceReference
 import com.orbitalhq.query.QueryResultEvent
 import com.orbitalhq.query.history.LineageRecord
 import com.orbitalhq.query.history.QueryResultRow
@@ -102,7 +103,7 @@ open class DatabaseResultRowPersistenceStrategy(
                   val recordAlreadyPersisted = previousLineageRecordId != null
 
                   try {
-                     if (recordAlreadyPersisted) null else LineageRecord(
+                     if (recordAlreadyPersisted || dataSource.name == DataSourceReference.NAME) null else LineageRecord(
                         dataSource.id,
                         queryId,
                         dataSource.name,
