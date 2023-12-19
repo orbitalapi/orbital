@@ -14,6 +14,15 @@ object ProjectionAnonymousTypeProvider {
 
    }
 
+   fun toVyneStreamOfAnonymousType(taxiType: lang.taxi.types.Type, schema: Schema): Type {
+      val cache = schema.typeCache.copy()
+
+      taxiType.typeParameters().map {
+         cache.add(TaxiTypeMapper.fromTaxiType(it, schema, cache))
+      }
+
+      return TaxiTypeMapper.fromTaxiType(taxiType, schema, cache)
+   }
    fun toVyneAnonymousType(taxiType: lang.taxi.types.Type, schema: Schema): Type {
       val parameterType = if (taxiType.typeParameters().isNotEmpty()) taxiType.typeParameters().first() else taxiType
       val vyneAnonymousType = TaxiTypeMapper.fromTaxiType(parameterType, schema)

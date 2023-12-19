@@ -134,6 +134,11 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <artifactId>hazelcast-connector</artifactId>
+         <groupId>com.orbitalhq</groupId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>taxi-lang-service</artifactId>
          <version>${taxi.version}</version>
@@ -432,6 +437,13 @@
       <dependency>
          <groupId>org.testcontainers</groupId>
          <artifactId>postgresql</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.hazelcast</groupId>
+         <artifactId>hazelcast</artifactId>
+         <version>${hazelcast.version}</version>
+         <classifier>tests</classifier>
          <scope>test</scope>
       </dependency>
    </dependencies>

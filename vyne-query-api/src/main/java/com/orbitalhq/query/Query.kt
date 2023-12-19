@@ -52,6 +52,9 @@ data class Query(
 @JsonDeserialize(`as` = TypeNameListQueryExpression::class)
 interface QueryExpression
 
+data class StreamJoiningExpression(val streamExpressions: List<TypeQueryExpression>) : QueryExpression
+
+
 interface MutatingQueryExpression : QueryExpression {
    val mutation: Mutation?
 

@@ -30,7 +30,7 @@ import java.time.Instant
 class QueryRouteService(
    private val schemaStore: SchemaStore,
    private val executor: RoutedQueryExecutor?,
-   private val queryPrefix:String = "/api/q",
+   private val queryPrefix:String = "/api/q/",
    private val metricsReporter: QueryMetricsReporter
 ) : HandlerFunction<ServerResponse> {
 
@@ -56,11 +56,14 @@ class QueryRouteService(
 
    fun router(): RouterFunction<ServerResponse> {
       return RouterFunctions.route({ request ->
-         val query = queryRouter.getQuery(request)
-         if (request.path().startsWith(queryPrefix) && query == null) {
-            logger.warn { "Request $request received did not match any queries" }
+         // Short circut
+         if (!request.path().startsWith(queryPrefix)) {
+            return@route false
          }
-         if (query != null) {
+         val query = queryRouter.getQuery(request)
+         if (query == null) {
+            logger.warn { "Request $request received did not match any queries" }
+         } else {
             logger.debug { "Request $request mapped to query ${query.name}" }
             request.attributes()[MATCHED_QUERY] = query
          }

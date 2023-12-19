@@ -1,6 +1,10 @@
 package com.orbitalhq.history.chart
 
 import com.orbitalhq.models.OperationResult
+import com.orbitalhq.query.CacheExchange
+import com.orbitalhq.query.connectors.CacheConnectionName
+import com.orbitalhq.query.connectors.CacheNames
+import com.orbitalhq.query.history.CacheNode
 import com.orbitalhq.query.history.DatabaseNode
 import com.orbitalhq.query.history.HttpOperationNode
 import com.orbitalhq.query.history.KafkaOperationNode
@@ -18,6 +22,9 @@ class LineageSankeyOperationNodeBuilder(private val schema: Schema) {
    private val jdbcTableAnnotationName = "com.orbitalhq.jdbc.Table".fqn()
 
    fun buildOperationNode(operationResult: OperationResult): SankeyOperationNodeDetails? {
+      if (isCachedOperation(operationResult.remoteCall.operationQualifiedName)) {
+         return buildCacheHit(operationResult)
+      }
       val (service, operation) = schema.remoteOperation(operationResult.remoteCall.operationQualifiedName)
       return when {
          isHttpApi(service, operation) -> buildHttpApi(service, operation, operationResult)
@@ -28,6 +35,21 @@ class LineageSankeyOperationNodeBuilder(private val schema: Schema) {
             null
          }
       }
+   }
+
+   private fun buildCacheHit(operationResult: OperationResult):SankeyOperationNodeDetails {
+      val exchange = operationResult.remoteCall.exchange as CacheExchange
+      return CacheNode(
+         connectionName = exchange.connectionName,
+         cacheName = exchange.cacheName,
+         cacheKey = exchange.cacheKey,
+      )
+   }
+
+   private fun isCachedOperation(operationQualifiedName: QualifiedName): Boolean {
+      val (service, operation) = OperationNames.serviceAndOperation(operationQualifiedName)
+      return CacheNames.isCacheName(service)
+
    }
 
    private fun buildDatabaseNode(

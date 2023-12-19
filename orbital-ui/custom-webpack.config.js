@@ -4,6 +4,9 @@ const VSCODE_DIR = path.join(__dirname, 'node_modules/vscode');
 
 // Workround to https://github.com/microsoft/monaco-editor/issues/3553#issuecomment-1432647208
 module.exports = {
+  watchOptions: {
+    ignored: '**/node_modules',
+  },
   module: {
     rules: [
       {

@@ -11,8 +11,8 @@ import com.nhaarman.mockito_kotlin.mock
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import com.orbitalhq.*
-import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import com.orbitalhq.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
+import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import com.orbitalhq.connectors.kafka.registry.InMemoryKafkaConnectorRegistry
@@ -29,7 +29,8 @@ import com.orbitalhq.pipelines.jet.sink.stream.StreamSinkSpec
 import com.orbitalhq.pipelines.jet.sink.stream.StreamSinkTarget
 import com.orbitalhq.pipelines.jet.sink.stream.StreamSinkTargetContainer
 import com.orbitalhq.pipelines.jet.source.PipelineSourceProvider
-import com.orbitalhq.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
+import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
+import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalOperationCacheProvider
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schema.consumer.SimpleSchemaStore
@@ -79,7 +80,8 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
                   SimpleSchemaProvider(taxiSchema),
                   WebClient.builder(),
                   AuthWebClientCustomizer.empty()
-               )
+               ),
+               LocalOperationCacheProvider.default()
             )
          )
       }
@@ -143,7 +145,8 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
                   SimpleSchemaProvider(schema),
                   WebClient.builder(),
                   AuthWebClientCustomizer.empty()
-               )
+               ),
+               LocalOperationCacheProvider.default()
             )
          )
       )

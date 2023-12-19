@@ -9,6 +9,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onEach
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -125,7 +126,6 @@ abstract class BaseOperationInvocationStrategy(
             preferredParams = emptySet(),
             providedParamValues = parameters.toList()
          )
-
          // NOTE - merge() will take signals from flows as they arrive !! order is not maintained !!
       }.merge().map {
 //         logger.info { "BaseOperationInvocationStrategy merge saw item" }
