@@ -19,4 +19,4 @@ RUN cd /opt/service && unzip orbital.zip
 
 WORKDIR /opt/service/
 
-CMD $BEFORE_START_COMMAND && orbital/bin/orbital  -Dspring.profiles.active=${PROFILE}  --spring.web.resources.static-locations=file:/opt/service/webapp $OPTIONS
+CMD $BEFORE_START_COMMAND && orbital/bin/orbital  -Dspring.profiles.active=${PROFILE}  --spring.web.resources.static-locations=file:/opt/service/webapp,classpath:/public $OPTIONS
