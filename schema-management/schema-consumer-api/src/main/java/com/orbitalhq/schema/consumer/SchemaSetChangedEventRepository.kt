@@ -42,7 +42,7 @@ abstract class SchemaSetChangedEventRepository : SchemaChangedEventProvider, Sch
     *
     * The event (which has already been emitted) is returned for convenience.
     */
-   fun emitNewSchemaIfDifferent(newSchemaSet: SchemaSet): SchemaSetChangedEvent? {
+   fun emitNewSchemaIfDifferent(newSchemaSet: com.orbitalhq.schema.api.SchemaSet): SchemaSetChangedEvent? {
       return SchemaSetChangedEvent.generateFor(lastSchemaSet, newSchemaSet)?.let { event ->
          logger.info("SchemaSet has been updated / created: $newSchemaSet - dispatching event.")
          lastSchemaSet = newSchemaSet

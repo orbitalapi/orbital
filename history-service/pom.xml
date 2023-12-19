@@ -53,6 +53,11 @@
          <groupId>org.springframework</groupId>
          <artifactId>spring-web</artifactId>
       </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>vyne-spring-http</artifactId>
+         <version>${project.version}</version>
+      </dependency>
    </dependencies>
 
 </project>

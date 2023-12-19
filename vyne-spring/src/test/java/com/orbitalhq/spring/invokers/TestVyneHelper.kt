@@ -1,7 +1,8 @@
 package com.orbitalhq.spring.invokers
 
 import com.orbitalhq.Vyne
-import com.orbitalhq.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
+import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
+import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalOperationCacheProvider
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
@@ -23,7 +24,7 @@ fun testVyne(schema: String, invoker: Invoker): Vyne {
          schemaProvider = SimpleSchemaProvider(schema)
       ).let {
          if (invoker == Invoker.RestTemplateWithCache) {
-            CacheAwareOperationInvocationDecorator(it)
+            CacheAwareOperationInvocationDecorator(it, LocalOperationCacheProvider.default())
          } else {
             it
          }

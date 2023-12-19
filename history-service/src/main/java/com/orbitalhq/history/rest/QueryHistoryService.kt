@@ -45,6 +45,7 @@ import reactor.kotlin.core.publisher.toFlux
 import java.nio.ByteBuffer
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
+import kotlin.jvm.optionals.getOrNull
 
 private val logger = KotlinLogging.logger {}
 
@@ -224,9 +225,35 @@ class QueryHistoryService(
          error("No dataSourceId is present on TypeNamedInstance for query $queryId row $rowValueHash path $attributePath")
       }
 
-      val linegaeRecord = lineageRecordRepository.findByQueryIdAndDataSourceId(queryId, nodeDetail.dataSourceId!!)
-         .map { lineageRecord -> nodeDetail.copy(source = lineageRecord.dataSourceJson) }.get()
-      return Mono.just(linegaeRecord)
+
+      // Look up the lineage record by the dataSourceId.
+      // Previously this used to search using queryId + dataSourceId.
+      // However, if a query opts-in to a long-lived cache, the data may have
+      // originated from a previous query, so have to search ONLY using dataSourceId.
+      val lineageRecords = lineageRecordRepository.findAllByDataSourceId(nodeDetail.dataSourceId!!)
+      val updatedQueryResultNodeDetails = lineageRecords.map {
+         nodeDetail.copy(source = it.dataSourceJson)
+      }
+      val lineageRecord = when {
+         updatedQueryResultNodeDetails.isEmpty() -> {
+            throw exceptionProvider.notFoundException("Request for queryId: $queryId, rowId: $rowValueHash, attributePath: $attributePath mapped to dataSourceId: ${nodeDetail.dataSourceId} but this was not found in the database")
+         }
+         updatedQueryResultNodeDetails.size > 1  -> {
+            logger.warn { "Received multiple records for dataSourceId ${nodeDetail.dataSourceId}, but expected one." }
+            updatedQueryResultNodeDetails.first()
+         }
+         else -> updatedQueryResultNodeDetails.single()
+      }
+      if (updatedQueryResultNodeDetails.size > 1) {
+         logger.warn { "Received multiple records for dataSourceId ${nodeDetail.dataSourceId}, but expected one." }
+      }
+
+
+//      val linegaeRecord = lineageRecordRepository.findByQueryIdAndDataSourceId(queryId, nodeDetail.dataSourceId!!)
+//         .map { lineageRecord -> nodeDetail.copy(source = lineageRecord.dataSourceJson) }.getOrNull()
+//         ?: throw exceptionProvider.notFoundException("Request for queryId: $queryId, rowId: $rowValueHash, attributePath: $attributePath mapped to dataSourceId: ${nodeDetail.dataSourceId} but this was not found in the database")
+
+      return Mono.just(lineageRecord)
    }
 
    @GetMapping("/api/query/history/{id}/{format}/export")

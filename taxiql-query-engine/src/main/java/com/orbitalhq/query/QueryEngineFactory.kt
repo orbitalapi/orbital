@@ -5,6 +5,7 @@ import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.metrics.NoOpMetricsReporter
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.format.ModelFormatSpec
+import com.orbitalhq.query.caching.StateStoreProvider
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.graph.EdgeNavigator
 import com.orbitalhq.query.graph.HipsterDiscoverGraphQueryStrategy
@@ -29,6 +30,7 @@ import com.orbitalhq.query.policyManager.DatasourceAwareOperationInvocationServi
 import com.orbitalhq.query.policyManager.PolicyAwareOperationInvocationServiceDecorator
 import com.orbitalhq.query.projection.LocalProjectionProvider
 import com.orbitalhq.query.projection.ProjectionProvider
+import com.orbitalhq.query.streams.StreamMergingQueryStrategy
 import com.orbitalhq.schemas.Schema
 
 
@@ -78,7 +80,9 @@ interface QueryEngineFactory {
          invokers: List<OperationInvoker>,
          formatSpecs:List<ModelFormatSpec> = emptyList(),
          projectionProvider: ProjectionProvider = LocalProjectionProvider(),
-         queryMetricsReporter: QueryMetricsReporter = NoOpMetricsReporter): QueryEngineFactory {
+         queryMetricsReporter: QueryMetricsReporter = NoOpMetricsReporter,
+         stateStoreProvider: StateStoreProvider? = null
+         ): QueryEngineFactory {
          val invocationService = operationInvocationService(invokers)
          val opInvocationEvaluator = OperationInvocationEvaluator(invocationService)
          val edgeEvaluator = EdgeNavigator(edgeEvaluators(opInvocationEvaluator))
@@ -90,12 +94,13 @@ interface QueryEngineFactory {
                ModelsScanStrategy(),
 //               ProjectionHeuristicsQueryStrategy(opInvocationEvaluator, vyneCacheConfiguration.vyneGraphBuilderCache),
                //               PolicyAwareQueryStrategyDecorator(
+               StreamMergingQueryStrategy(stateStoreProvider),
                DirectServiceInvocationStrategy(invocationService),
                QueryOperationInvocationStrategy(invocationService),
                //
                //              ),
                graphQueryStrategy,
-               ObjectBuilderStrategy()
+               ObjectBuilderStrategy(),
                //,HipsterGatherGraphQueryStrategy()
             ),
             projectionProvider,

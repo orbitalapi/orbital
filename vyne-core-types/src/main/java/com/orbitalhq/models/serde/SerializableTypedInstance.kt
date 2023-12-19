@@ -74,21 +74,25 @@ data class SerializableTypedInstance(
     * Converts this back to a TypedInstance, using the provided schema.
     * Format is not encoded (since it's knowable from the schema), so deserialization needs to
     * provide this.
-    * In practice, that means when deserializing and object with fields, grabbing the format from the field
+    * In practice, that means when deserializing and object with fields, grabbing the format from the field.
+    *
+    * Data source is not encoded in the original value, instead a DataSourceReference is written.
+    * When decoding, the caller may leave the original data source reference (suitable for sending
+    * the object over-the-wire), or update to another data source (suitable for loading from a cache)
+    *
     */
-   fun toTypedInstance(schema: Schema, format: FormatsAndZoneOffset? = null): TypedInstance {
-      val dataSource = DataSourceReference.staticSourceOrReference(dataSourceId)
+   fun toTypedInstance(schema: Schema, format: FormatsAndZoneOffset? = null, dataSource: DataSource = DataSourceReference.staticSourceOrReference(dataSourceId)): TypedInstance {
       val type = schema.type(this.typeName)
       val converted = when (this.value) {
          is MapWrapper -> {
             val typedInstances = this.value.value.mapValues { (name, mapValue) ->
                val field = type.attribute(name)
-               mapValue.toTypedInstance(schema, field.format)
+               mapValue.toTypedInstance(schema, field.format, dataSource)
             }
             TypedObject(type, typedInstances, dataSource)
          }
          is ListWrapper -> {
-            val typedInstances = this.value.value.map { it.toTypedInstance(schema) }
+            val typedInstances = this.value.value.map { it.toTypedInstance(schema, dataSource = dataSource) }
             TypedCollection(type, typedInstances, dataSource)
          }
          is SerializableTypedValueWrapper<*> -> TypedInstance.from(
@@ -121,10 +125,11 @@ data class SerializableTypedInstance(
  * Represents a reference to the original data source
  */
 data class DataSourceReference(override val id: String) : DataSource {
-   override val name: String = "DataSourceReference"
+   override val name: String = NAME
    override val failedAttempts: List<DataSource> = emptyList()
 
    companion object {
+      const val NAME = "DataSourceReference"
       /**
        * Returns the actual data source (if it's static), or an id-bound reference
        */

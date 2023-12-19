@@ -209,5 +209,9 @@ fallback-license.json
 **/fallback-license.json
 
 /auth.bak.conf
+/docs/.cache/
+/docs/public/
+
 
 .trivycache/
+

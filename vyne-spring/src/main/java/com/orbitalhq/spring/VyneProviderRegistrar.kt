@@ -1,7 +1,11 @@
 package com.orbitalhq.spring
 
 import com.orbitalhq.VyneCacheConfiguration
+import com.orbitalhq.query.caching.StateStoreProvider
+import com.orbitalhq.query.connectors.OperationCacheProviderBuilder
 import com.orbitalhq.query.connectors.OperationInvoker
+import com.orbitalhq.query.graph.operationInvocation.cache.OperationCacheFactory
+import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCacheProviderBuilder
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.spring.config.VyneSpringProjectionConfiguration
 import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
@@ -9,6 +13,7 @@ import com.orbitalhq.spring.invokers.RestTemplateInvoker
 import com.orbitalhq.spring.metrics.MicrometerMetricsReporter
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
 import io.micrometer.core.instrument.MeterRegistry
+import lang.taxi.packages.utils.log
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -28,6 +33,8 @@ class EnableVyneConfiguration {
       vyneCacheConfiguration: VyneCacheConfiguration,
       vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration,
       formatSpecRegistry: FormatSpecRegistry,
+      operationCacheFactory: OperationCacheFactory,
+      stateStoreProvider: StateStoreProvider?,
       meterRegistry: MeterRegistry
    ): VyneFactory {
       return VyneFactory(
@@ -36,9 +43,20 @@ class EnableVyneConfiguration {
          vyneCacheConfiguration,
          vyneSpringProjectionConfiguration,
          formatSpecRegistry = formatSpecRegistry,
+         operationCacheFactory = operationCacheFactory,
+         stateStoreProvider = stateStoreProvider,
          metricsReporter = MicrometerMetricsReporter(meterRegistry)
       )
    }
+
+   @Bean
+   fun operationCacheFactory(providers: List<OperationCacheProviderBuilder>):OperationCacheFactory {
+      log().info("Orbital has the following OperationCacheProviderBuilders registered: ${providers.joinToString { it::class.simpleName!! }}")
+      return OperationCacheFactory(providers = providers)
+   }
+
+   @Bean
+   fun localCacheProvider() = LocalCacheProviderBuilder()
 
    @Bean
    fun restTemplateOperationInvoker(

@@ -468,7 +468,7 @@ export interface QuerySankeyChartRow {
   id: number;
 }
 
-export type SankeyOperationNodeDetails = DatabaseNode | HttpOperationNode | KafkaOperationNode;
+export type SankeyOperationNodeDetails = DatabaseNode | HttpOperationNode | KafkaOperationNode | CacheNode;
 
 export interface DatabaseNode {
   connectionName: string;
@@ -489,11 +489,18 @@ export interface KafkaOperationNode {
   operationType: 'KafkaTopic';
 }
 
+export interface CacheNode {
+  connectionName: string;
+  cacheName: string;
+  cacheKey: string;
+  operationType: 'Cache';
+}
 
 export interface ChatParseResult {
   queryText: string;
   chatGptQuery: ChatGptQuery;
   taxi: string;
+
 }
 
 export interface ChatGptQuery {

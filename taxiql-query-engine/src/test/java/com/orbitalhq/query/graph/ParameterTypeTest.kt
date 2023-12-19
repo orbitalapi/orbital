@@ -9,7 +9,8 @@ import com.orbitalhq.expectTypedObject
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryEngineFactory
-import com.orbitalhq.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
+import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
+import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalOperationCacheProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -59,7 +60,7 @@ namespace vyne.example
 """
    private val schema = TaxiSchema.from(taxiDef)
    private val stubService = StubService(schema = schema)
-   private val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), CacheAwareOperationInvocationDecorator(stubService))
+   private val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), CacheAwareOperationInvocationDecorator(stubService, LocalOperationCacheProvider.default()))
    private val vyne = Vyne(listOf(schema), queryEngineFactory)
 
    /***
