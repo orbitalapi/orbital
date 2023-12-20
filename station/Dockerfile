@@ -2,9 +2,9 @@ ARG REGISTRY
 # Generating SOAP clients from WSDLs at runtime requires the JDK, not JRE
 # As Apache CXF generates and compiles code.
 # We need to use a temruin 21 alpine image as earlier versions don't support arm64
-FROM ${REGISTRY}eclipse-temurin:21-jdk-alpine
+FROM ${REGISTRY}eclipse-temurin:21-jdk-jammy
 
-RUN apk --no-cache add zip
+RUN apt-get update && apt-get install zip -y
 
 WORKDIR /opt/service/
 
