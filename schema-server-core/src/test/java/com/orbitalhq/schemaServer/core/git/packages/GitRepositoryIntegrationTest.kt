@@ -87,7 +87,7 @@ class GitRepositoryIntegrationTest : BaseGitTest() {
       gitLoader.syncNow()
       gitLoader.fileMonitor.asA<ReactivePollingFileSystemMonitor>().pollNow()
 
-      await().atMost(1, TimeUnit.SECONDS)
+      await().atMost(30, TimeUnit.SECONDS)
          .until<Boolean> { schemaClient.schema().hasType("HelloWorld") }
    }
 

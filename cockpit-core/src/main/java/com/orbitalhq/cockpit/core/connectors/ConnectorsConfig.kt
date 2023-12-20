@@ -1,5 +1,6 @@
 package com.orbitalhq.cockpit.core.connectors
 
+import com.orbitalhq.config.ConfigSourceLoader
 import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.connectors.VyneConnectionsConfig
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
@@ -17,20 +18,25 @@ class ConnectorsConfig {
    fun connectorsConfigRegistry(
       config: VyneConnectionsConfig,
       schemaStore: SchemaStore,
-      envVariablesConfig: EnvVariablesConfig
+      envVariablesConfig: EnvVariablesConfig,
+      additionalLoaders: List<ConfigSourceLoader>?
    ): SourceLoaderConnectorsRegistry {
-       return SourceLoaderConnectorsRegistry(
-         listOf(
-            FileConfigSourceLoader(envVariablesConfig.envVariablesPath, failIfNotFound = false, packageIdentifier = EnvVariablesConfig.PACKAGE_IDENTIFIER),
-            SchemaConfigSourceLoader(schemaStore, "env.conf"),
-            FileConfigSourceLoader(
-               config.configFile,
-               packageIdentifier = VyneConnectionsConfig.PACKAGE_IDENTIFIER,
-               failIfNotFound = false
-            ),
-            SchemaConfigSourceLoader(schemaStore, "connections.conf")
-         )
+      val builtinLoaders = listOf(
+         FileConfigSourceLoader(
+            envVariablesConfig.envVariablesPath,
+            failIfNotFound = false,
+            packageIdentifier = EnvVariablesConfig.PACKAGE_IDENTIFIER
+         ),
+         SchemaConfigSourceLoader(schemaStore, "env.conf"),
+         FileConfigSourceLoader(
+            config.configFile,
+            packageIdentifier = VyneConnectionsConfig.PACKAGE_IDENTIFIER,
+            failIfNotFound = false
+         ),
+         SchemaConfigSourceLoader(schemaStore, "connections.conf")
       )
-   }
 
+      val totalLoaders = additionalLoaders?.plus(builtinLoaders) ?: builtinLoaders
+      return SourceLoaderConnectorsRegistry(totalLoaders)
+   }
 }
