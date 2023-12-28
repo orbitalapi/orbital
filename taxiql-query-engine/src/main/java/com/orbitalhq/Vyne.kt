@@ -85,12 +85,12 @@ class Vyne(
       arguments: Map<String, Any?> = emptyMap(),
       metricsTags:MetricTags = MetricTags.NONE
    ): QueryResult {
-      val (taxiQlQuery, queryOptions) = parseQuery(vyneQlQuery)
-      return query(taxiQlQuery, queryId, clientQueryId, eventBroker, arguments, queryOptions = queryOptions, metricsTags)
+      val (taxiQlQuery, queryOptions, querySchema) = parseQuery(vyneQlQuery)
+      return query(taxiQlQuery, queryId, clientQueryId, eventBroker, arguments, queryOptions = queryOptions, metricsTags, querySchema = querySchema)
    }
 
 
-   fun parseQuery(vyneQlQuery: TaxiQLQueryString): Pair<TaxiQlQuery, QueryOptions> {
+   fun parseQuery(vyneQlQuery: TaxiQLQueryString): Triple<TaxiQlQuery, QueryOptions, TaxiSchema> {
       return this.schema.parseQuery(vyneQlQuery)
    }
 
@@ -101,10 +101,11 @@ class Vyne(
       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
       arguments: Map<String, Any?> = emptyMap(),
       queryOptions: QueryOptions,
-      metricsTags: MetricTags = MetricTags.NONE
+      metricsTags: MetricTags = MetricTags.NONE,
+      querySchema: Schema = schema
    ): QueryResult {
       val currentJob = currentCoroutineContext().job
-      val (queryContext, expression) = buildContextAndExpression(taxiQl, queryId, clientQueryId, eventBroker, arguments, queryOptions)
+      val (queryContext, expression) = buildContextAndExpression(taxiQl, queryId, clientQueryId, eventBroker, arguments, queryOptions, querySchema = querySchema)
       val queryCanceller = QueryCanceller(queryContext, currentJob)
       eventBroker.addHandler(queryCanceller)
       return when (taxiQl.queryMode) {
@@ -137,6 +138,7 @@ class Vyne(
       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
       arguments: Map<String, Any?> = emptyMap(),
       queryOptions: QueryOptions,
+      querySchema: Schema
    ): Pair<QueryContext, QueryExpression> {
 
       // The facts in taxiQL are the variables defined in a given {} block.
@@ -163,16 +165,14 @@ class Vyne(
       // I don't see why we would, but lets keep an eye...
       val scopedFacts = extractArgumentsFromQuery(taxiQl, arguments, formatSpecs)
 
-      val inlineTypes = findInlineTypesInQuery(taxiQl, schema)
-
       val queryContext = query(
          additionalFacts = additionalFacts.values.toSet(),
          queryId = queryId,
          clientQueryId = clientQueryId,
          eventBroker = eventBroker,
          scopedFacts = scopedFacts,
-         inlineTypes = inlineTypes,
-         queryOptions = queryOptions
+         queryOptions = queryOptions,
+         querySchema = querySchema
       )
          .responseType(deriveResponseType(taxiQl))
 
@@ -255,11 +255,10 @@ class Vyne(
       clientQueryId: String? = null,
       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
       scopedFacts: List<ScopedFact> = emptyList(),
-      inlineTypes: List<Type> = emptyList(),
-      queryOptions: QueryOptions = QueryOptions.default()
+      queryOptions: QueryOptions = QueryOptions.default(),
+      querySchema: Schema = this.schema
    ): QueryContext {
 
-      val schemaWithInlineTypes = createSchemaWithInlineTypes(this.schema, inlineTypes)
 
       // Design note:  I'm creating the queryEngine with ALL the fact sets, regardless of
       // what is asked for, but only providing the desired factSets to the queryContext.
@@ -268,7 +267,7 @@ class Vyne(
       // However, we may want to expand the set of factSets later, (eg., to include a caller
       // factSet), so leave them present in the queryEngine.
       // Hopefully, this lets us have the best of both worlds.
-      val queryEngine = queryEngine(setOf(FactSets.ALL), additionalFacts, schema = schemaWithInlineTypes)
+      val queryEngine = queryEngine(setOf(FactSets.ALL), additionalFacts, schema = querySchema)
       return queryEngine.queryContext(
          factSetIds = factSetIds,
          queryId = queryId,

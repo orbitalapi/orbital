@@ -213,11 +213,10 @@ class TaxiSchema(
          this.document.merge(schema.document),
          this.packages + schema.packages,
          this.functionRegistry.merge(schema.functionRegistry),
-//         additionalSources = this.additionalSources.mergeLists(schema.additionalSources)
       )
    }
 
-   override fun parseQuery(vyneQlQuery: TaxiQLQueryString): Pair<TaxiQlQuery, QueryOptions> {
+   override fun parseQuery(vyneQlQuery: TaxiQLQueryString): Triple<TaxiQlQuery, QueryOptions, TaxiSchema> {
       return queryCompiler.compile(vyneQlQuery)
    }
 

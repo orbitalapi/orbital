@@ -406,7 +406,7 @@ class QueryService(
       monitored(query = query, clientQueryId = clientQueryId, queryId = queryId, vyneUser = vyneUser) {
          logger.info { "[$queryId] $query" }
          val schema = schemaProvider.schema
-         val (taxiQlQuery, queryOptions) = schema.parseQuery(query)
+         val (taxiQlQuery, queryOptions, querySchema) = schema.parseQuery(query)
          logger.info { "[$queryId] using cache ${queryOptions.cachingStrategy}" }
          val vyne = vyneProvider.createVyne(vyneUser.facts(), schema, queryOptions)
          val historyWriterEventConsumer = historyWriterProvider.createEventConsumer(queryId, vyne.schema)
@@ -419,7 +419,8 @@ class QueryService(
                clientQueryId = clientQueryId,
                eventBroker = eventDispatcherForQuery,
                arguments = arguments,
-               queryOptions = queryOptions
+               queryOptions = queryOptions,
+               querySchema = querySchema
             )
          } catch (e: lang.taxi.CompilationException) {
             logger.info("The query failed compilation: ${e.message}")
