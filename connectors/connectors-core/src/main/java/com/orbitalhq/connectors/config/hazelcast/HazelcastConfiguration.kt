@@ -1,6 +1,7 @@
 package com.orbitalhq.connectors.config.hazelcast
 
 import com.orbitalhq.connectors.ConnectionParameterName
+import com.orbitalhq.connectors.config.hazelcast.HazelcastConnection.HAZELCAST_CLIENT_NAME
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConnection.HAZELCAST_CLUSTER_NAME
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConnection.HAZELCAST_ENTERPRISE_PASSWORD
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConnection.HAZELCAST_ENTERPRISE_USERNAME
@@ -68,7 +69,9 @@ class HazelcastConfiguration(
    fun hazelcastCloudDiscoveryToken() = connectionParameters[VIRIDIAN_DISCOVERY_TOKEN]
    fun hazelcastCloudClusterName() = connectionParameters[HazelcastConnection.VIRIDIAN_CLUSTER_ID]
 
-   fun hazelcastClusterName() = connectionParameters[HazelcastConnection.HAZELCAST_CLUSTER_NAME]
+   fun hazelcastClusterName() = connectionParameters[HAZELCAST_CLUSTER_NAME]
+
+   fun hazelcastClientName() = connectionParameters[HAZELCAST_CLIENT_NAME]
 
    fun username() = connectionParameters[HAZELCAST_ENTERPRISE_USERNAME];
    fun password() = connectionParameters[HAZELCAST_ENTERPRISE_PASSWORD];
@@ -87,4 +90,5 @@ object HazelcastConnection {
    const val HAZELCAST_ENTERPRISE_USERNAME = "username"
    const val HAZELCAST_ENTERPRISE_PASSWORD = "password"
    const val HAZELCAST_CLUSTER_NAME = "clusterName"
+   const val HAZELCAST_CLIENT_NAME = "clientName"
 }
