@@ -7,8 +7,15 @@ import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
 
 object HazelcastBuilder {
-   fun build(config:HazelcastConfiguration):HazelcastInstance {
+   fun build(config: HazelcastConfiguration, instanceNameSuffix: String = ""): HazelcastInstance {
       val clientConfig = ClientConfig().apply {
+         config.hazelcastClusterName()?.let {
+            clusterName = it
+         }
+
+         config.hazelcastClientName()?.let {
+            instanceName = "${it}$instanceNameSuffix"
+         }
          when {
             config.isSslEnabledCloudConfig() -> {
                networkConfig.sslConfig = SSLConfig().apply {
@@ -32,13 +39,11 @@ object HazelcastBuilder {
             }
 
             config.userNamePasswordAuthentication() -> {
-               clusterName = config.hazelcastClusterName()
-              securityConfig.setUsernamePasswordIdentityConfig(config.username()!!, config.password()!!)
+               securityConfig.setUsernamePasswordIdentityConfig(config.username()!!, config.password()!!)
                networkConfig.addAddress(*config.addresses.toTypedArray())
             }
 
             else -> {
-
                networkConfig.addAddress(*config.addresses.toTypedArray())
             }
          }
@@ -49,11 +54,11 @@ object HazelcastBuilder {
 }
 
 interface HazelcastInstanceProvider {
-   fun provide(config:HazelcastConfiguration): HazelcastInstance
+   fun provide(config: HazelcastConfiguration): HazelcastInstance
 }
 
 fun HazelcastInstance.doHealthCheck() {
    executeTransaction { _ ->
-       localEndpoint.uuid.toString()
+      localEndpoint.uuid.toString()
    }
 }

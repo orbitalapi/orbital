@@ -234,7 +234,7 @@ class HazelcastOperationCacheBuilder(
          require(connectors.hazelcast.containsKey(strategy.connectionName)) { "No connection for Hazelcast named ${strategy.connectionName} exists" }
 
          val connectionConfig = connectors.hazelcast[strategy.connectionName]!!
-         HazelcastBuilder.build(connectionConfig) to connectionConfig
+         HazelcastBuilder.build(connectionConfig, "_query") to connectionConfig
       }
 
       return HazelcastOperationCacheProvider(
