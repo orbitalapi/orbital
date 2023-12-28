@@ -1,8 +1,6 @@
 package com.orbitalhq
 
 import com.google.common.annotations.VisibleForTesting
-import com.orbitalhq.metrics.NoOpMetricsReporter
-import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.DefinedInSchema
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
@@ -12,8 +10,10 @@ import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.models.json.addKeyValuePair
 import com.orbitalhq.query.*
 import com.orbitalhq.query.graph.Algorithms
+import com.orbitalhq.query.planner.QueryExpressionBuilder
+import com.orbitalhq.query.planner.QueryPlanner
 import com.orbitalhq.schemas.*
-import com.orbitalhq.schemas.taxi.TaxiConstraintConverter
+import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.schemas.taxi.TaxiSchemaAggregator
 import com.orbitalhq.schemas.taxi.compileExpression
 import com.orbitalhq.utils.Ids
@@ -24,8 +24,6 @@ import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.query.FactValue
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
-import lang.taxi.types.StreamType
-import lang.taxi.types.UnionType
 import java.util.*
 
 enum class NodeTypes {
@@ -50,7 +48,8 @@ interface ModelContainer : SchemaContainer {
 class Vyne(
    schemas: List<Schema>,
    private val queryEngineFactory: QueryEngineFactory,
-   private val formatSpecs: List<ModelFormatSpec> = emptyList()
+   private val formatSpecs: List<ModelFormatSpec> = emptyList(),
+   private val queryPlanner: QueryPlanner = QueryPlanner(),
 ) : ModelContainer {
 
    init {
@@ -176,8 +175,7 @@ class Vyne(
       )
          .responseType(deriveResponseType(taxiQl))
 
-      val expressionBuilder = QueryExpressionBuilder()
-      val expression = expressionBuilder.build(taxiQl, this.schema)
+      val expression = queryPlanner.buildQueryExpression(taxiQl, querySchema)
       return Pair(queryContext, expression)
    }
 

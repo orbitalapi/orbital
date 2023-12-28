@@ -12,6 +12,7 @@ import lang.taxi.packages.SourcesType
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.types.ArrayType
+import lang.taxi.types.ObjectType
 
 
 /**
@@ -103,6 +104,21 @@ interface Schema {
       return services.flatMap { service ->
          service.operations.filter { operation -> typeMatchingStrategy.matches(requiredType, operation.returnType) }
             .map { service to it }
+      }.toSet()
+   }
+
+   fun operationsWithReturnTypeContaining(
+      requiredType: Type
+   ):Set<Pair<Service,RemoteOperation>> {
+      return services.flatMap { service ->
+         service.remoteOperations.filter { operation ->
+            val returnType = (operation.returnType.collectionType ?: operation.returnType).taxiType
+            when {
+               returnType.isAssignableTo(requiredType.taxiType) -> true
+               returnType is ObjectType && returnType.referencedTypes.any { it.isAssignableTo(requiredType.taxiType) } -> true
+               else -> false
+            }
+         }.map { service to it }
       }.toSet()
    }
 
@@ -313,7 +329,13 @@ interface Schema {
 
    }
 
-   fun parseQuery(vyneQlQuery: TaxiQLQueryString): Pair<TaxiQlQuery, QueryOptions>
+   /**
+    * Parses a TaxiQL query using the current schema.
+    * Returns a parsed TaxiQL Query, along with any explicit query options that were declared within the schema.
+    * Also returns a schema, which is a superset of this schema, plus any anonymous types declared within the TaxiQL
+    * schema.
+    */
+   fun parseQuery(vyneQlQuery: TaxiQLQueryString): Triple<TaxiQlQuery, QueryOptions, TaxiSchema>
 
    /**
     * Looks up the type, and will construct a new type from the provided taxi type if not present.

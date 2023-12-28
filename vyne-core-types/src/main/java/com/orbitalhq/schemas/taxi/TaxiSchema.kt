@@ -483,7 +483,7 @@ private fun lang.taxi.sources.SourceCode.toVyneSource(packageIdentifier: Package
       log().warn("Converting Taxi source to VersionedSource - two package identifiers are provided which are different - ${packageIdentifier.id} and ${sourceNamePackageIdentifier.id}")
    }
    if (packageIdentifier == null && sourceNamePackageIdentifier == null) {
-      log().warn("Constructing VersionedSource without a PackageIdentifier can cause errors with edits")
+      log().debug("Constructing VersionedSource without a PackageIdentifier can cause errors with edits")
    }
    val packageIdentifierToUse = packageIdentifier ?: sourceNamePackageIdentifier
 
