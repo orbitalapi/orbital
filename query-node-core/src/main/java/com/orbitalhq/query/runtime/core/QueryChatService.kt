@@ -1,8 +1,7 @@
 package com.orbitalhq.query.runtime.core
 
-import com.orbitalhq.query.chat.ChatGptQuery
+import com.orbitalhq.query.chat.TaxiQlGenerationResult
 import com.orbitalhq.query.chat.ChatQueryParser
-import com.orbitalhq.query.chat.TaxiQlGenerator
 import com.orbitalhq.schema.api.SchemaProvider
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -14,11 +13,11 @@ class QueryChatService(private val parser: ChatQueryParser, private val schemaPr
    @PostMapping("/api/query/chat/parse")
    fun parseChatQuery(@RequestBody queryText: String): ChatParseResult {
       val schema = schemaProvider.schema
-      val chatGptQuery = parser.parseToChatQuery(schema, queryText)
-      val taxi = TaxiQlGenerator.convertToTaxi(chatGptQuery, schema)
+      val generationResult = parser.generateQueryFromText(schema, queryText)
       return ChatParseResult(
          queryText,
-         chatGptQuery, taxi
+         generationResult,
+         generationResult.taxi
       )
    }
 
@@ -26,6 +25,6 @@ class QueryChatService(private val parser: ChatQueryParser, private val schemaPr
 
 data class ChatParseResult(
    val queryText: String,
-   val chatGptQuery: ChatGptQuery,
+   val chatGptQuery: TaxiQlGenerationResult,
    val taxi: String
 )
