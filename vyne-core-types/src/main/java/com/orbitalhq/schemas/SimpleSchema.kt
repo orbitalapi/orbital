@@ -13,7 +13,7 @@ class SimpleSchema(override val types: Set<Type>, override val services: Set<Ser
    }
 
    private val queryCompiler = DefaultQueryCompiler(this, 100)
-   override fun parseQuery(vyneQlQuery: TaxiQLQueryString): Triple<TaxiQlQuery, QueryOptions, TaxiSchema> {
+   override fun parseQuery(vyneQlQuery: TaxiQLQueryString, useCache: Boolean): Triple<TaxiQlQuery, QueryOptions, TaxiSchema> {
       return queryCompiler.compile(vyneQlQuery)
    }
 
