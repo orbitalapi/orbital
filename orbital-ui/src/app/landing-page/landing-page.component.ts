@@ -1,6 +1,7 @@
 import {Component} from '@angular/core';
 import {Router} from '@angular/router';
 import {QueryHistorySummary} from '../services/query.service';
+import {UiCustomisations} from "../../environments/ui-customisations";
 
 export interface LandingPageCardConfig {
   title: string;
@@ -14,6 +15,9 @@ export interface LandingPageCardConfig {
   styleUrls: ['./landing-page.component.scss'],
   template: `
     <div class='page-content'>
+      <div class="row title-row">
+        <h2>{{uiConfig.landingPageWelcomeText}}</h2>
+      </div>
       <div class='row search-row'>
         <app-landing-card [cardConfig]='catalogCardConfig' [isEmpty]='true' layout='horizontal'
                           (emptyActionClicked)="router.navigate(['catalog'])"></app-landing-card>
@@ -31,6 +35,7 @@ export class LandingPageComponent {
   constructor(public readonly router: Router) {
   }
 
+  readonly uiConfig = UiCustomisations;
 
   dataSources: any[] = [];
   recentQueries: QueryHistorySummary[] = [];
