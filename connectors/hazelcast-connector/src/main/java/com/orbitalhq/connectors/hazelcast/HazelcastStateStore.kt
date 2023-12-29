@@ -22,6 +22,7 @@ class HazelcastStateStoreProvider(
 ) : StateStoreProvider {
 
    private val hazelcastStores = ConcurrentHashMap<String, HazelcastStateStore>()
+   private val hazelcastInstanceCache = ConcurrentHashMap<String, HazelcastInstance>()
 
    override fun getCacheStore(connectionName: String, key: String, schema: Schema): StateStore? {
       val connectorsConfig = connectors.load()
@@ -30,8 +31,12 @@ class HazelcastStateStoreProvider(
       } else return null
 
       val cacheStoreKey = connectionName + key
+      val instanceKey = "${connectionName}_state"
+      val hazelcastInstance = hazelcastInstanceCache.getOrPut(instanceKey) {
+         HazelcastBuilder.build(hazelcastConfig, "_state")
+      }
+
       val cacheStore = hazelcastStores.getOrPut(cacheStoreKey) {
-         val hazelcastInstance = HazelcastBuilder.build(hazelcastConfig)
          HazelcastStateStore(hazelcastInstance, key, schema)
       }
       return cacheStore
