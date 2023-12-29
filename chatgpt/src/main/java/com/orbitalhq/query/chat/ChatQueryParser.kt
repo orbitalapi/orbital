@@ -186,18 +186,16 @@ find { ... } // Use `find` to fetch a request / response type data - similar to 
 
 stream { ... } // Use `stream` to request a continuous stream of data - similar to subscribing to a Kafka topic
 
-# If a stream clause is used in a projection then the projection must also close with an array token ([]).
-
+stream queries that contain a projection (eg: an `as` clause) must always end in an array token.
 # Here's an example:
 
-// build a stream of last trade events. Include the name of the trader (combine their first name and last name), the name of the instrument Also include the last traded price for the same instrument, and the ESG score (calculated as the average of the Environmental, Social and Governance pillar scores) for the instrument
+// build a stream of last trade events, including the traders name
 
+```
 stream { LastTradeEvent } as {
-  traderName : TraderName.FirstName + ' ' + TraderName.LastName
-  instrumentName : Instrument.Name
-  lastTradedPrice : LastTradedPrice
-  esgScore : (EnvironmentalPillarScore + SocialPillarScore + GovernancePillarScore) / 3
-}[]
+   tradersFullName : FullName
+}[] // Note the stream query ended in an array token
+```
 
 You can only create stream requests for types that are exposed as a stream operation.  You will be told which types are candidates for streaming.
 When requesting a stream, do not request an array.
@@ -282,7 +280,7 @@ data class TypeAndDescription(val typeName: String, val description: String?) {
 
 data class OpenAiChatRequest(
    val messages: List<OpenAiChatMessage>,
-   val model: String = OpenAiModel.GPT_3_5_TURBO_1106,
+   val model: String = OpenAiModel.GPT_4,
 )
 
 object OpenAiModel {

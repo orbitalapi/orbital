@@ -78,10 +78,13 @@ data class ConstrainedTypeNameQueryExpression(
    val constraint: List<OutputConstraint>
 ) : QueryExpression
 
-data class TypeQueryExpression(val type: Type) : QueryExpression {
+data class TypeQueryExpression(val type: Type) : QueryExpression
 
+// When the query planner rewrites the original query, and the projection scope also
+// needs to be amended
+data class RewrittenTypeQueryExpression(val type: Type, val amendedProjectionScope: ProjectionFunctionScope?): QueryExpression {
+   fun toTypeQueryExpression() = TypeQueryExpression(type)
 }
-
 data class TypeNameQueryExpression(val typeName: String) : QueryExpression {
    init {
       logger.warn { "TypeNameQueryExpression shouldn't be called - prefer TypeQueryExpression where possible" }

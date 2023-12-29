@@ -1,8 +1,6 @@
 package com.orbitalhq
 
 import com.google.common.annotations.VisibleForTesting
-import com.orbitalhq.metrics.NoOpMetricsReporter
-import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.DefinedInSchema
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
@@ -12,8 +10,10 @@ import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.models.json.addKeyValuePair
 import com.orbitalhq.query.*
 import com.orbitalhq.query.graph.Algorithms
+import com.orbitalhq.query.planner.QueryExpressionBuilder
+import com.orbitalhq.query.planner.QueryPlanner
 import com.orbitalhq.schemas.*
-import com.orbitalhq.schemas.taxi.TaxiConstraintConverter
+import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.schemas.taxi.TaxiSchemaAggregator
 import com.orbitalhq.schemas.taxi.compileExpression
 import com.orbitalhq.utils.Ids
@@ -24,8 +24,6 @@ import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.query.FactValue
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
-import lang.taxi.types.StreamType
-import lang.taxi.types.UnionType
 import java.util.*
 
 enum class NodeTypes {
@@ -50,7 +48,8 @@ interface ModelContainer : SchemaContainer {
 class Vyne(
    schemas: List<Schema>,
    private val queryEngineFactory: QueryEngineFactory,
-   private val formatSpecs: List<ModelFormatSpec> = emptyList()
+   private val formatSpecs: List<ModelFormatSpec> = emptyList(),
+   private val queryPlanner: QueryPlanner = QueryPlanner(),
 ) : ModelContainer {
 
    init {
@@ -85,12 +84,12 @@ class Vyne(
       arguments: Map<String, Any?> = emptyMap(),
       metricsTags:MetricTags = MetricTags.NONE
    ): QueryResult {
-      val (taxiQlQuery, queryOptions) = parseQuery(vyneQlQuery)
-      return query(taxiQlQuery, queryId, clientQueryId, eventBroker, arguments, queryOptions = queryOptions, metricsTags)
+      val (taxiQlQuery, queryOptions, querySchema) = parseQuery(vyneQlQuery)
+      return query(taxiQlQuery, queryId, clientQueryId, eventBroker, arguments, queryOptions = queryOptions, metricsTags, querySchema = querySchema)
    }
 
 
-   fun parseQuery(vyneQlQuery: TaxiQLQueryString): Pair<TaxiQlQuery, QueryOptions> {
+   fun parseQuery(vyneQlQuery: TaxiQLQueryString): Triple<TaxiQlQuery, QueryOptions, TaxiSchema> {
       return this.schema.parseQuery(vyneQlQuery)
    }
 
@@ -101,10 +100,11 @@ class Vyne(
       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
       arguments: Map<String, Any?> = emptyMap(),
       queryOptions: QueryOptions,
-      metricsTags: MetricTags = MetricTags.NONE
+      metricsTags: MetricTags = MetricTags.NONE,
+      querySchema: Schema = schema
    ): QueryResult {
       val currentJob = currentCoroutineContext().job
-      val (queryContext, expression) = buildContextAndExpression(taxiQl, queryId, clientQueryId, eventBroker, arguments, queryOptions)
+      val (queryContext: QueryContext, expression: QueryExpression) = buildContextAndExpression(taxiQl, queryId, clientQueryId, eventBroker, arguments, queryOptions, querySchema = querySchema)
       val queryCanceller = QueryCanceller(queryContext, currentJob)
       eventBroker.addHandler(queryCanceller)
       return when (taxiQl.queryMode) {
@@ -129,6 +129,12 @@ class Vyne(
 //      } ?: taxiQl.typesToFind.first().typeName.firstTypeParameterOrSelf
    }
 
+   data class ConstructedQueryContext(
+      val queryContext: QueryContext,
+      val expression: QueryExpression,
+      val taxiQl: TaxiQlQuery,
+      val querySchema: Schema
+   )
    @VisibleForTesting
    internal fun buildContextAndExpression(
       taxiQl: TaxiQlQuery,
@@ -137,7 +143,8 @@ class Vyne(
       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
       arguments: Map<String, Any?> = emptyMap(),
       queryOptions: QueryOptions,
-   ): Pair<QueryContext, QueryExpression> {
+      querySchema: Schema
+   ): ConstructedQueryContext {
 
       // The facts in taxiQL are the variables defined in a given {} block.
       // given allows declaration in two ways:
@@ -163,7 +170,7 @@ class Vyne(
       // I don't see why we would, but lets keep an eye...
       val scopedFacts = extractArgumentsFromQuery(taxiQl, arguments, formatSpecs)
 
-      val inlineTypes = findInlineTypesInQuery(taxiQl, schema)
+      val (expression, amendedTaxiQlQuery, amendedQuerySchema) = queryPlanner.buildQueryExpression(taxiQl, querySchema)
 
       val queryContext = query(
          additionalFacts = additionalFacts.values.toSet(),
@@ -171,59 +178,15 @@ class Vyne(
          clientQueryId = clientQueryId,
          eventBroker = eventBroker,
          scopedFacts = scopedFacts,
-         inlineTypes = inlineTypes,
-         queryOptions = queryOptions
+         queryOptions = queryOptions,
+         querySchema = amendedQuerySchema
       )
          .responseType(deriveResponseType(taxiQl))
-//      queryContext = taxiQl.projectedType?.let {
-//         queryContext.projectResultsTo(it, taxiQl.projectionScope) // Merge conflict, was : it.toVyneQualifiedName()
-//      } ?: queryContext
-
-      val constraintProvider = TaxiConstraintConverter(this.schema)
-      val queryExpressions = taxiQl.typesToFind.map { discoveryType ->
-
-         val targetType = when {
-            discoveryType.anonymousType != null -> ProjectionAnonymousTypeProvider.toVyneAnonymousType(discoveryType.anonymousType!!, schema)
-            StreamType.isStreamTypeName(discoveryType.typeName) && UnionType.isUnionType(discoveryType.type.typeParameters()[0]) -> {
-               val unionType = ProjectionAnonymousTypeProvider.toVyneStreamOfAnonymousType(discoveryType.type, schema)
-               unionType
-            }
-            else -> schema.type(discoveryType.typeName.toVyneQualifiedName())
-         }
-         val expression = if (discoveryType.constraints.isNotEmpty()) {
-            val constraints = constraintProvider.buildOutputConstraints(targetType, discoveryType.constraints)
-            ConstrainedTypeNameQueryExpression(targetType.name.parameterizedName, constraints)
-         } else {
-            TypeQueryExpression(targetType)
-         }
-
-         expression
-      }
-
-      val expression: QueryExpression = when {
-         queryExpressions.size > 1 -> {
-            val streamJoin =  (queryExpressions.all { it is TypeQueryExpression && it.type.isStream })
-            require(streamJoin) { "Multiple source types are only supported when joining streams" }
-            StreamJoiningExpression(queryExpressions as List<TypeQueryExpression>)
-               .applyProjection(taxiQl.projectedType, taxiQl.projectionScope, schema)
-         }
-         queryExpressions.size == 1 -> queryExpressions.first().let { expression ->
-            expression.applyProjection(taxiQl.projectedType, taxiQl.projectionScope, schema)
-         }
-
-         else -> null
-      }.let { possibleQueryExpression ->
-         // At this point we have either:
-         // Mutation -only query.
-         // Query-only query.
-         // Query-then-mutate query.
-         // Decorate encapsulates those and returns the correct expression
-         MutatingQueryExpression.decorate(possibleQueryExpression, taxiQl.mutation)
-      }
 
 
-
-      return Pair(queryContext, expression)
+      return ConstructedQueryContext(
+         queryContext, expression, amendedTaxiQlQuery, amendedQuerySchema
+      )
    }
 
    /**
@@ -300,11 +263,10 @@ class Vyne(
       clientQueryId: String? = null,
       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
       scopedFacts: List<ScopedFact> = emptyList(),
-      inlineTypes: List<Type> = emptyList(),
-      queryOptions: QueryOptions = QueryOptions.default()
+      queryOptions: QueryOptions = QueryOptions.default(),
+      querySchema: Schema = this.schema
    ): QueryContext {
 
-      val schemaWithInlineTypes = createSchemaWithInlineTypes(this.schema, inlineTypes)
 
       // Design note:  I'm creating the queryEngine with ALL the fact sets, regardless of
       // what is asked for, but only providing the desired factSets to the queryContext.
@@ -313,7 +275,7 @@ class Vyne(
       // However, we may want to expand the set of factSets later, (eg., to include a caller
       // factSet), so leave them present in the queryEngine.
       // Hopefully, this lets us have the best of both worlds.
-      val queryEngine = queryEngine(setOf(FactSets.ALL), additionalFacts, schema = schemaWithInlineTypes)
+      val queryEngine = queryEngine(setOf(FactSets.ALL), additionalFacts, schema = querySchema)
       return queryEngine.queryContext(
          factSetIds = factSetIds,
          queryId = queryId,
