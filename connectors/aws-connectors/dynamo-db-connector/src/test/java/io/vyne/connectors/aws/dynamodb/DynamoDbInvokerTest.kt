@@ -29,7 +29,7 @@ import software.amazon.awssdk.services.dynamodb.model.*
 @Testcontainers
 class DynamoDbInvokerTest {
 
-    private val localStackImage = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
+    private val localStackImage = DockerImageName.parse("localstack/localstack").withTag("3.0")
 
     @Container
     var localStack: LocalStackContainer = LocalStackContainer(localStackImage)

@@ -17,10 +17,12 @@ import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.utils.asA
 import com.orbitalhq.utils.files.ReactivePollingFileSystemMonitor
 import org.junit.Test
+import reactor.test.StepVerifier
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.absolutePathString
 
 class GitRepositoryIntegrationTest : BaseGitTest() {
 
@@ -77,6 +79,12 @@ class GitRepositoryIntegrationTest : BaseGitTest() {
 
          )
       )
+
+      StepVerifier
+         .create(eventDispatcher.gitSpecAdded)
+         .expectNextMatches { gitSpecAddedEvent ->
+         gitSpecAddedEvent.spec.name == "my-git-repo"
+      }.verifyTimeout(Duration.ofSeconds(1))
 
       await().atMost(1, TimeUnit.SECONDS)
          .until<Boolean> { repositoryManager.gitLoaders.size == 1 }
