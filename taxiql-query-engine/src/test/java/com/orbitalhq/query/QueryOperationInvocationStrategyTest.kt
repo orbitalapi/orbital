@@ -195,6 +195,7 @@ fun getQuerySpecNode(taxiQl: String, schema: TaxiSchema): QuerySpecTypeNode {
        queryId = UUID.randomUUID().toString(),
        clientQueryId = null,
        queryOptions = QueryOptions.default(),
+      querySchema =  vyne.schema
    )
    val queryParser = QueryParser(schema)
    val querySpecNodes = queryParser.parse(expression)

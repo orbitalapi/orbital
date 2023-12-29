@@ -287,7 +287,7 @@ data class Service(
    }
 
    val remoteOperations: List<RemoteOperation> =
-      operations + queryOperations + tableOperations.flatMap { it.queryOperations }
+      operations + streamOperations + queryOperations + tableOperations.flatMap { it.queryOperations }
 
 
    fun remoteOperation(name: String): RemoteOperation {

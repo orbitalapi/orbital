@@ -2,6 +2,7 @@ package com.orbitalhq.schemas
 
 import com.google.common.base.Stopwatch
 import com.google.common.cache.CacheBuilder
+import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.utils.log
 import lang.taxi.Compiler
 import lang.taxi.query.TaxiQLQueryString
@@ -12,25 +13,29 @@ import lang.taxi.query.TaxiQlQuery
  * Implementations may choose to cache
  */
 interface QueryCompiler {
-   fun compile(query: TaxiQLQueryString): Pair<TaxiQlQuery, QueryOptions>
+   /**
+    * Parses a TaxiQL query using the current schema.
+    * Returns a parsed TaxiQL Query, along with any explicit query options that were declared within the schema.
+    * Also returns a schema, which is a superset of this schema, plus any anonymous types declared within the TaxiQL
+    * schema.
+    */
+   fun compile(query: TaxiQLQueryString): Triple<TaxiQlQuery, QueryOptions, TaxiSchema>
 }
 
 class DefaultQueryCompiler(private val schema: Schema, cacheSize: Long = 0) : QueryCompiler {
    private val queryCache = CacheBuilder.newBuilder()
       .maximumSize(cacheSize)
-      .build<String, Pair<TaxiQlQuery, QueryOptions>>()
+      .build<String, Triple<TaxiQlQuery, QueryOptions, TaxiSchema>>()
 
-   override fun compile(query: TaxiQLQueryString): Pair<TaxiQlQuery, QueryOptions> {
-      val (compiledQuery, queryOptions) = queryCache.get(query) {
+   override fun compile(query: TaxiQLQueryString): Triple<TaxiQlQuery, QueryOptions, TaxiSchema> {
+      return queryCache.get(query) {
          val sw = Stopwatch.createStarted()
-         val vyneQuery = Compiler(source = query, importSources = listOf(this.schema.taxi)).queries().first()
+         val taxiDoc = Compiler(source = query, importSources = listOf(this.schema.taxi)).compile()
+         val taxiQlQuery = taxiDoc.queries.first()
+         val taxiSchema = TaxiSchema(taxiDoc, this.schema.packages, this.schema.functionRegistry)
+         val merged = taxiSchema.merge(this.schema.asTaxiSchema())
          log().debug("Compiled query in ${sw.elapsed().toMillis()}ms")
-         vyneQuery to QueryOptions.fromQuery(vyneQuery)
+         Triple(taxiQlQuery , QueryOptions.fromQuery(taxiQlQuery), merged)
       }
-//      val sw = Stopwatch.createStarted()
-//      val vyneQuery = Compiler(source = vyneQlQuery, importSources = listOf(this.schema.taxi)).queries().first()
-//      log().debug("Compiled query in ${sw.elapsed().toMillis()}ms")
-//      return vyneQuery to QueryOptions.fromQuery(vyneQuery)
-      return compiledQuery to queryOptions
    }
 }
