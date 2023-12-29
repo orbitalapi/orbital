@@ -282,7 +282,7 @@ data class TypeAndDescription(val typeName: String, val description: String?) {
 
 data class OpenAiChatRequest(
    val messages: List<OpenAiChatMessage>,
-   val model: String = OpenAiModel.GPT_3_5_TURBO_1106,
+   val model: String = OpenAiModel.GPT_4,
 )
 
 object OpenAiModel {
