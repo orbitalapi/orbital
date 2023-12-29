@@ -23,8 +23,10 @@ class QueryPlanner(cacheSize: Int = 50) {
    /**
     * Returns a QueryExpression - which is the top-level object that
     * Orbital uses to execute a TaxiQL Query.
+    *
+    * In building the expression, query rewriting may occur, so returns the schema that
     */
-   fun buildQueryExpression(taxiQl: TaxiQlQuery, querySchema: Schema): QueryExpression {
+   fun buildQueryExpression(taxiQl: TaxiQlQuery, querySchema: Schema): Triple<QueryExpression, TaxiQlQuery, Schema> {
       return queryExpressionBuilder.build(taxiQl, querySchema)
    }
 

@@ -104,7 +104,7 @@ class Vyne(
       querySchema: Schema = schema
    ): QueryResult {
       val currentJob = currentCoroutineContext().job
-      val (queryContext, expression) = buildContextAndExpression(taxiQl, queryId, clientQueryId, eventBroker, arguments, queryOptions, querySchema = querySchema)
+      val (queryContext: QueryContext, expression: QueryExpression) = buildContextAndExpression(taxiQl, queryId, clientQueryId, eventBroker, arguments, queryOptions, querySchema = querySchema)
       val queryCanceller = QueryCanceller(queryContext, currentJob)
       eventBroker.addHandler(queryCanceller)
       return when (taxiQl.queryMode) {
@@ -129,6 +129,12 @@ class Vyne(
 //      } ?: taxiQl.typesToFind.first().typeName.firstTypeParameterOrSelf
    }
 
+   data class ConstructedQueryContext(
+      val queryContext: QueryContext,
+      val expression: QueryExpression,
+      val taxiQl: TaxiQlQuery,
+      val querySchema: Schema
+   )
    @VisibleForTesting
    internal fun buildContextAndExpression(
       taxiQl: TaxiQlQuery,
@@ -138,7 +144,7 @@ class Vyne(
       arguments: Map<String, Any?> = emptyMap(),
       queryOptions: QueryOptions,
       querySchema: Schema
-   ): Pair<QueryContext, QueryExpression> {
+   ): ConstructedQueryContext {
 
       // The facts in taxiQL are the variables defined in a given {} block.
       // given allows declaration in two ways:
@@ -164,6 +170,8 @@ class Vyne(
       // I don't see why we would, but lets keep an eye...
       val scopedFacts = extractArgumentsFromQuery(taxiQl, arguments, formatSpecs)
 
+      val (expression, amendedTaxiQlQuery, amendedQuerySchema) = queryPlanner.buildQueryExpression(taxiQl, querySchema)
+
       val queryContext = query(
          additionalFacts = additionalFacts.values.toSet(),
          queryId = queryId,
@@ -171,12 +179,14 @@ class Vyne(
          eventBroker = eventBroker,
          scopedFacts = scopedFacts,
          queryOptions = queryOptions,
-         querySchema = querySchema
+         querySchema = amendedQuerySchema
       )
          .responseType(deriveResponseType(taxiQl))
 
-      val expression = queryPlanner.buildQueryExpression(taxiQl, querySchema)
-      return Pair(queryContext, expression)
+
+      return ConstructedQueryContext(
+         queryContext, expression, amendedTaxiQlQuery, amendedQuerySchema
+      )
    }
 
    /**
