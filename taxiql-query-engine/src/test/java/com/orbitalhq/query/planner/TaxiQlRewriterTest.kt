@@ -39,5 +39,27 @@ class TaxiQlRewriterTest : DescribeSpec({
     bar : Bar
    }[]""")
       }
+
+      it("should prepend an annotation if not present") {
+         val original = """find { Foo } as { bar : Bar }"""
+         val updated = TaxiQlRewriter().appendQueryAnnotationIfNotPresent(original, "@Cached")
+         updated.shouldBe("""@Cached
+            |$original
+         """.trimMargin())
+      }
+      it("should not prepend an annotation if already present") {
+         val original = """@Cached
+            |find { Foo } as { bar : Bar }""".trimMargin()
+         val updated = TaxiQlRewriter().appendQueryAnnotationIfNotPresent(original, "@Cached")
+         updated.shouldBe(original)
+      }
+      it("should prepend an annotation if not present but other annotations are") {
+         val original = """@Something
+            |find { Foo } as { bar : Bar }""".trimMargin()
+         val updated = TaxiQlRewriter().appendQueryAnnotationIfNotPresent(original, "@Cached")
+         updated.shouldBe("""@Something
+            |@Cached
+            |find { Foo } as { bar : Bar }""".trimMargin())
+      }
    }
 })

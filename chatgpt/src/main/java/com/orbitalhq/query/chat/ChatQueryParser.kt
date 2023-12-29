@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.orbitalhq.schemas.Schema
+import lang.taxi.CompilationException
 import lang.taxi.query.TaxiQLQueryString
+import lang.taxi.types.AnnotationType
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 import okhttp3.MediaType.Companion.toMediaType
@@ -13,15 +15,19 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.time.LocalDate
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTimedValue
 
 data class TaxiQlGenerationResult(
    val taxi: String,
 )
 
+@OptIn(ExperimentalTime::class)
 class ChatQueryParser(
    private val apiKey: String,
    private val client: OkHttpClient = OkHttpClient(),
-   private val mapper: ObjectMapper = ChatGptMapper
+   private val mapper: ObjectMapper = ChatGptMapper,
+   private val queryRefiner: GeneratedQueryRefiner = GeneratedQueryRefiner()
 ) {
 
    companion object {
@@ -31,7 +37,7 @@ class ChatQueryParser(
          .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
    }
 
-   fun generateQueryFromText(schema: Schema, queryText: String): TaxiQlGenerationResult {
+   private fun generateInitialConversation(schema: Schema, queryText: String): List<OpenAiChatMessage> {
       val scalarsAndDescriptions = buildScalars(schema)
       val modelsAndDescriptions = buildModelDescriptions(schema)
       val streamTypesAndDescriptions = buildStreamTypes(schema)
@@ -50,11 +56,11 @@ class ChatQueryParser(
          OpenAiChatMessage(OpenAiChatMessage.Role.system, systemPrompt),
          OpenAiChatMessage(OpenAiChatMessage.Role.user, userPrompt)
       )
+      return prompts
+   }
 
-      logger.debug { "ChatGPT request: \n$systemPrompt" }
-      val request = OpenAiChatRequest(prompts)
-
-
+   private fun submitConversation(messages: List<OpenAiChatMessage>): TaxiQlGenerationResult {
+      val request = OpenAiChatRequest(messages)
       val httpRequest = Request.Builder()
          .url("https://api.openai.com/v1/chat/completions")
          .addHeader("Authorization", "Bearer $apiKey")
@@ -67,8 +73,14 @@ class ChatQueryParser(
          val responseBody =
             mapper.readValue<OpenAiChatResponse>(response.body!!.bytes())
          val content = responseBody.choices.first().message.content.trim()
-         logger.info { "OpenAI response: \n${content}" }
+         if (content.startsWith("FAILURE")) {
+            // OpenAI almost always prefixes with FAILURE:, but sometimes only FAILURE
+            throw QueryGenerationFailedException(content.removePrefix("FAILURE").removePrefix(":"), messages)
+         }
          val startIndex = content.indexOfAny(listOf("find {", "stream {"))
+         if (startIndex == -1) {
+            throw QueryGenerationFailedException(content, messages)
+         }
          val trimmedQuery = content.substring(startIndex)
          return TaxiQlGenerationResult(taxi = trimmedQuery)
       } else {
@@ -78,14 +90,65 @@ class ChatQueryParser(
       }
    }
 
+   fun generateQueryFromText(schema: Schema, queryText: String): TaxiQlGenerationResult {
+      val messages = generateInitialConversation(schema, queryText)
+      return submitConversation(messages)
+   }
+
+   fun generateAndRefineQueryFromText(
+      schema: Schema,
+      queryText: String,
+      maxIterations: Int = 3
+   ): TaxiQlGenerationResult {
+      var iterationCount = 0
+      val conversation = mutableListOf<OpenAiChatMessage>()
+      conversation.addAll(generateInitialConversation(schema, queryText))
+
+      while (iterationCount < maxIterations) {
+         val response = submitConversation(conversation)
+         // attempt to compile the response
+         try {
+            val (parsedQuery, _, querySchema) = schema.parseQuery(response.taxi, useCache = false)
+            val (refinedQuery, duration) = measureTimedValue { queryRefiner.apply(parsedQuery,querySchema) }
+            logger.info { "Refining query took $duration" }
+            return response.copy(taxi = refinedQuery.first.source)
+         } catch (e: CompilationException) {
+            val errorMessage = "Compilation failed with exception: ${e.message}"
+            if (iterationCount < maxIterations - 1) {
+               logger.info { "$errorMessage - (Iteration $iterationCount of ${maxIterations - 1}. Will try again" }
+               conversation.add(OpenAiChatMessage(OpenAiChatMessage.Role.assistant, response.taxi))
+               conversation.add(
+                  OpenAiChatMessage(
+                     OpenAiChatMessage.Role.user,
+                     "That failed, with the following compilation error: \n> ${e.message}\n Provide an mended query."
+                  )
+               )
+            } else {
+               logger.info { "$errorMessage - giving up." }
+            }
+            iterationCount++
+         }
+      }
+      throw QueryGenerationFailedException(
+         "Failed to generate a working query after ${iterationCount + 1} attempts",
+         conversation
+      )
+
+   }
+
    private fun buildStreamTypes(schema: Schema): List<TypeAndDescription> {
       return schema.streamOperations
          .map { operation ->
+            val returnType = operation.returnType.typeParameters[0]
             val description = listOfNotNull(
-               operation.returnType.typeParameters[0].typeDoc,
-               operation.typeDoc?.let {"(returned from an operation with the following description: $it)" },
+               returnType.typeDoc,
+               operation.typeDoc?.let { "(returned from an operation with the following description: $it)" },
             ).joinToString("\n")
-            TypeAndDescription(operation.returnType.typeParameters[0].fullyQualifiedName, description)
+            TypeAndDescription(
+               returnType.fullyQualifiedName,
+               returnType.basePrimitiveTypeName?.shortDisplayName,
+               description
+            )
          }
    }
 
@@ -145,6 +208,12 @@ orderId:  OrderId // a field named "orderId" with type OrderId
 endDate: OrderEndDate // a field named "endDate" with type OrderEndDate
 }[]
 
+# When specifying criteria, you must consider the base type. For example, things that inherit from String should be quoted. Dates should be formatted according to their base type (whose name and expected format broadly align with types from java DateTime packages)
+# For example:
+```taxi
+type ReleaseDate inherits Date // should be queried as 'YYYY-MM-DD'
+type PerformanceStartDate inherits Instant // should be queried as 'YYYY-MM-DDTHH:NN:SSZ'
+```
 
 # In a projection, there are no commas after a field / type pair:
 
@@ -200,15 +269,19 @@ stream { LastTradeEvent } as {
 You can only create stream requests for types that are exposed as a stream operation.  You will be told which types are candidates for streaming.
 When requesting a stream, do not request an array.
 
-# The following field types can be used in your query:
-$scalars
+# The following models can be used as the starting point for your query (before a projection), as well as fields within the query:
 $models
+
+# The following field types can be used in your query. (The corresponding base type is shown in parenthesis):
+$scalars
+
 
 # The following types can be used for streams:
 $streams
 
+If you're unable to satisfy the request, prefix your response with FAILURE:
 
-Only respond to the user using code, do not include any explanations in your response.
+Only provide code. Any explanation can be included as // comments.
 
       """.trimIndent()
    }
@@ -233,6 +306,7 @@ Only respond to the user using code, do not include any explanations in your res
       return schema.types
          .asSequence()
          .filter { it.isScalar }
+         .filter { it.taxiType !is AnnotationType }
          .filter { type ->
             excludedNamespaces.none { excludedNamespace ->
                type.qualifiedName.namespace.startsWith(
@@ -241,7 +315,7 @@ Only respond to the user using code, do not include any explanations in your res
             }
          }
          .map { type ->
-            TypeAndDescription(type.name.name, type.typeDoc)
+            TypeAndDescription(type.name.name, type.basePrimitiveTypeName?.shortDisplayName, type.typeDoc)
          }
          .toList()
    }
@@ -261,19 +335,24 @@ Only respond to the user using code, do not include any explanations in your res
 //                 )
 //              }
 //         }
-         .map { TypeAndDescription(it.name.name, it.typeDoc) }
+         .map { TypeAndDescription(it.name.name, it.basePrimitiveTypeName?.shortDisplayName, it.typeDoc) }
          .toList()
    }
 }
 
-data class TypeAndDescription(val typeName: String, val description: String?) {
+data class TypeAndDescription(val typeName: String, val baseType: String?, val description: String?) {
    override fun toString(): String {
+      val typeWithBaseType = if (baseType.isNullOrEmpty()) {
+         typeName
+      } else {
+         "$typeName ($baseType)"
+      }
       val descriptionAsComment = if (description.isNullOrEmpty()) {
          ""
       } else {
          "// $description"
       }
-      return "Name: $typeName $descriptionAsComment"
+      return "Name: $typeWithBaseType $descriptionAsComment"
    }
 }
 
@@ -321,7 +400,7 @@ data class OpenAiCompletionsResponse(
 data class CompletionChoice(
    val text: String,
    val index: Int,
-   val logprobs: Map<String,Any>? = null,
+   val logprobs: Map<String, Any>? = null,
    val finish_reason: String
 )
 
@@ -329,7 +408,7 @@ data class ChatCompletionChoice(
    val index: String,
    val message: OpenAiChatMessage,
    val finish_reason: String,
-   val logprobs: Map<String,Any>? = null
+   val logprobs: Map<String, Any>? = null
 )
 
 data class ChatGptUsage(
@@ -337,3 +416,6 @@ data class ChatGptUsage(
    val completion_tokens: Int,
    val total_tokens: Int
 )
+
+class QueryGenerationFailedException(message: String, val conversation: List<OpenAiChatMessage>) :
+   RuntimeException(message)

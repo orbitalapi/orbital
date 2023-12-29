@@ -79,7 +79,27 @@ class ChatQueryParserTest : DescribeSpec({
          val srcPackage = TaxiSourcesLoader.loadPackage(path).asSourcePackage()
 
          val schema = TaxiSchema.from(listOf(taxiQL, srcPackage))
-         parser.parseToTaxiQl(schema, "Build a real time stream of trades. Include the name of the trader, the name of the instrument, the quantity and hit price on the order. Also include the last traded price for the same instrument, and the ESG score (calculated as the average of the Environmental, Social and Governance pillar scores) for the instrument")
+         val taxi = parser.parseToTaxiQl(schema, "Build a real time stream of trades. Include the name of the trader, the name of the instrument, the quantity and hit price on the order. Also include the last traded price for the same instrument, and the ESG score (calculated as the average of the Environmental, Social and Governance pillar scores) for the instrument")
+         println(taxi)
+      }
+
+      it("exploring date formatting") {
+         val parser = ChatQueryParser(apiKey)
+         val taxiQL = SourcePackage(
+            PackageMetadata.from("com.orbitalhq", "core-types", "1.0.0"),
+            listOf(
+               VersionedSource(
+                  "TaxiQL",
+                  version = "0.1.0",
+                  VyneQlGrammar.QUERY_TYPE_TAXI
+               )
+            )
+         )
+         val path = Paths.get("/home/martypitt/dev/orbital-demos/trading-demo/taxi")
+         val srcPackage = TaxiSourcesLoader.loadPackage(path).asSourcePackage()
+
+         val schema = TaxiSchema.from(listOf(taxiQL, srcPackage))
+         parser.generateAndRefineQueryFromText(schema, "Give me all the orders executed in the last month")
       }
    }
 })
