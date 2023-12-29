@@ -13,7 +13,7 @@ class QueryChatService(private val parser: ChatQueryParser, private val schemaPr
    @PostMapping("/api/query/chat/parse")
    fun parseChatQuery(@RequestBody queryText: String): ChatParseResult {
       val schema = schemaProvider.schema
-      val generationResult = parser.generateQueryFromText(schema, queryText)
+      val generationResult = parser.generateAndRefineQueryFromText(schema, queryText)
       return ChatParseResult(
          queryText,
          generationResult,

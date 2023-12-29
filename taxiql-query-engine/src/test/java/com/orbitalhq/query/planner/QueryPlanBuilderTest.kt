@@ -22,12 +22,14 @@ class QueryPlanBuilderTest : DescribeSpec({
                operation getCast(FilmId):Actor[]
             }
          """.trimIndent())
-         val (query,_,querySchema) = schema.parseQuery("""find { Film[] } as {
-            |name : FilmTitle
-            |cast : Actor[] as {
-            |  castMemberName : PersonName
-            |}[]
-            |}[]""".trimMargin())
+         val (query,_,querySchema) = schema.parseQuery(
+             """find { Film[] } as {
+                |name : FilmTitle
+                |cast : Actor[] as {
+                |  castMemberName : PersonName
+                |}[]
+                |}[]""".trimMargin()
+         )
          val metadata = QueryPlanner().buildMetadata(query, querySchema)
          metadata.typesAndCandidateSources.keys.map { it.type.name.shortDisplayName }
             .shouldContainAll("FilmTitle", "Actor[]", "PersonName", "Film[]")
@@ -47,12 +49,14 @@ class QueryPlanBuilderTest : DescribeSpec({
                stream analytics : Stream<Analytics>
             }
          """.trimIndent())
-         val (query,_,querySchema) = schema.parseQuery("""stream { Tweet } as {
-            | id : TweetId
-            | text : TweetText
-            | viewCount : ViewCount
-            |}[]
-         """.trimMargin())
+         val (query,_,querySchema) = schema.parseQuery(
+             """stream { Tweet } as {
+                | id : TweetId
+                | text : TweetText
+                | viewCount : ViewCount
+                |}[]
+             """.trimMargin()
+         )
          val metadata = QueryPlanner().buildMetadata(query, querySchema)
          metadata.allCandidateOperations.shouldHaveSize(2)
          metadata.candidateStreamOperations.shouldHaveSize(2)

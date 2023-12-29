@@ -19,7 +19,7 @@ interface QueryCompiler {
     * Also returns a schema, which is a superset of this schema, plus any anonymous types declared within the TaxiQL
     * schema.
     */
-   fun compile(query: TaxiQLQueryString): Triple<TaxiQlQuery, QueryOptions, TaxiSchema>
+   fun compile(query: TaxiQLQueryString, useCache: Boolean = true): Triple<TaxiQlQuery, QueryOptions, TaxiSchema>
 }
 
 class DefaultQueryCompiler(private val schema: Schema, cacheSize: Long = 0) : QueryCompiler {
@@ -27,15 +27,21 @@ class DefaultQueryCompiler(private val schema: Schema, cacheSize: Long = 0) : Qu
       .maximumSize(cacheSize)
       .build<String, Triple<TaxiQlQuery, QueryOptions, TaxiSchema>>()
 
-   override fun compile(query: TaxiQLQueryString): Triple<TaxiQlQuery, QueryOptions, TaxiSchema> {
-      return queryCache.get(query) {
+   override fun compile(query: TaxiQLQueryString, useCache: Boolean): Triple<TaxiQlQuery, QueryOptions, TaxiSchema> {
+      fun compileQuery(): Triple<TaxiQlQuery, QueryOptions, TaxiSchema> {
          val sw = Stopwatch.createStarted()
          val taxiDoc = Compiler(source = query, importSources = listOf(this.schema.taxi)).compile()
          val taxiQlQuery = taxiDoc.queries.first()
          val taxiSchema = TaxiSchema(taxiDoc, this.schema.packages, this.schema.functionRegistry)
          val merged = taxiSchema.merge(this.schema.asTaxiSchema())
          log().debug("Compiled query in ${sw.elapsed().toMillis()}ms")
-         Triple(taxiQlQuery , QueryOptions.fromQuery(taxiQlQuery), merged)
+         return Triple(taxiQlQuery, QueryOptions.fromQuery(taxiQlQuery), merged)
+      }
+
+      return if (useCache) {
+         queryCache.get(query) { compileQuery() }
+      } else {
+         compileQuery()
       }
    }
 }

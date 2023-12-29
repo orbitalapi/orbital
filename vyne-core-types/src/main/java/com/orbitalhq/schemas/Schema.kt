@@ -335,7 +335,7 @@ interface Schema {
     * Also returns a schema, which is a superset of this schema, plus any anonymous types declared within the TaxiQL
     * schema.
     */
-   fun parseQuery(vyneQlQuery: TaxiQLQueryString): Triple<TaxiQlQuery, QueryOptions, TaxiSchema>
+   fun parseQuery(vyneQlQuery: TaxiQLQueryString, useCache: Boolean = true): Triple<TaxiQlQuery, QueryOptions, TaxiSchema>
 
    /**
     * Looks up the type, and will construct a new type from the provided taxi type if not present.

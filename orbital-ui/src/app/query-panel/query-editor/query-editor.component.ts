@@ -381,7 +381,8 @@ export class QueryEditorComponent implements OnInit {
       }, error => {
         console.log('Failed to parse ChatGPT query');
         console.log(error);
-        this.lastErrorMessage = 'A problem occurred parsing the text to a query';
+        this.lastErrorMessage = `A problem occurred generating a query: ${error.error.message}`;
+
         this.currentState$.next('Error');
       });
   }
