@@ -6,6 +6,7 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
 import com.orbitalhq.schemas.*
 import com.orbitalhq.utils.log
+import lang.taxi.services.operations.constraints.ArgumentExpression
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.RelativeValueExpression
 
@@ -134,7 +135,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
    ): Boolean {
       return operationConstraint.propertyIdentifier == requiredConstraint.propertyIdentifier
          && operationConstraint.operator == requiredConstraint.operator
-         && operationConstraint.expectedValue is RelativeValueExpression
+         && operationConstraint.expectedValue is ArgumentExpression
          && requiredConstraint.expectedValue is ConstantValueExpression
 
    }
@@ -182,7 +183,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
                   )
                }
                .map { operationConstraint ->
-                  val path = (operationConstraint.expectedValue as RelativeValueExpression).path
+                  val path = (operationConstraint.expectedValue as ArgumentExpression).argument
                   val parameter = remoteOperation.parameter(path.path)
                      ?: error("Operation ${remoteOperation.name} does not expose a parameter called ${path.path}")
                   val value = (requiredConstraint.expectedValue as ConstantValueExpression).value

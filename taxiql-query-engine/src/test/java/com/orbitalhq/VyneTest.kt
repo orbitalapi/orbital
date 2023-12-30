@@ -1006,11 +1006,11 @@ type Broker2Order inherits Order {
 // operations
 service Broker1Service {
    operation getAllBroker1Orders() : Broker1Order[]
-   operation getBroker1Orders( start : OrderDate, end : OrderDate) : Broker1Order[] (OrderDate >= start, OrderDate < end)
+   operation getBroker1Orders( start : OrderDate, end : OrderDate) : Broker1Order[] (OrderDate >= start && OrderDate < end)
 }
 service Broker2Service {
    operation getAllBroker2Orders() : Broker2Order[]
-   operation getBroker2Orders( start : OrderDate, end : OrderDate) : Broker2Order[] (OrderDate >= start, OrderDate < end)
+   operation getBroker2Orders( start : OrderDate, end : OrderDate) : Broker2Order[] (OrderDate >= start && OrderDate < end)
 }
 
 """.trimIndent()
@@ -1846,7 +1846,7 @@ service ClientService {
          service CacheService {
             @StubResponse("findBetween")
             operation findByOrderDateTimeBetween(start : TransactionEventDateTime, end : TransactionEventDateTime ):
-                       OrderWindowSummary[]( TransactionEventDateTime >= start, TransactionEventDateTime < end )
+                       OrderWindowSummary[]( TransactionEventDateTime >= start && TransactionEventDateTime < end )
          }
       """.trimIndent()
       val stubInvocationService = StubService()

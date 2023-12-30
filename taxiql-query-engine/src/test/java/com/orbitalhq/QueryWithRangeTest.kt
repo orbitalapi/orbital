@@ -26,7 +26,7 @@ class QueryWithRangeTest {
       }
       service TradeService {
          operation findTrades(startDate:TradeDate,endDate:TradeDate) : Trade[](
-            TradeDate >= startDate,
+            TradeDate >= startDate &&
             TradeDate < endDate
          )
       }

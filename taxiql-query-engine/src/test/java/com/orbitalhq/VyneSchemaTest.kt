@@ -7,10 +7,14 @@ import com.orbitalhq.schemas.EnumValue
 import com.orbitalhq.schemas.Modifier
 import com.orbitalhq.schemas.PropertyToParameterConstraint
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import lang.taxi.Operator
+import lang.taxi.services.operations.constraints.ArgumentExpression
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.RelativeValueExpression
 import org.junit.Test
+import kotlin.math.exp
 
 class VyneSchemaTest {
    private fun vyneWithTestSchema():Vyne {
@@ -159,7 +163,11 @@ class VyneSchemaTest {
       operation.parameters[0].constraints.first().should.be.instanceof(PropertyToParameterConstraint::class.java)
       expect(operation.contract).not.`null`
       expect(operation.contract.constraints).size(1)
-      expect(operation.contract.constraints.first()).to.equal(PropertyToParameterConstraint(PropertyFieldNameIdentifier("currency"),Operator.EQUAL,RelativeValueExpression("target")))
+      val constraint = operation.contract.constraints.first() as PropertyToParameterConstraint
+      constraint.propertyIdentifier.shouldBe(PropertyFieldNameIdentifier("currency"))
+      constraint.operator.shouldBe(Operator.EQUAL)
+      val expectedValue = constraint.expectedValue.shouldBeInstanceOf<ArgumentExpression>()
+      expectedValue.argument.path.shouldBe("target")
    }
 
    @Test

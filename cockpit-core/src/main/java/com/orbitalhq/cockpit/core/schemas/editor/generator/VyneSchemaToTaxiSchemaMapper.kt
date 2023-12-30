@@ -112,7 +112,7 @@ class VyneSchemaToTaxiSchemaMapper(
    ) = Parameter(
       convertAnnotations(sourceParam.metadata),
       getOrCreateType(sourceParam.typeName),
-      sourceParam.name,
+      sourceParam.name!!,
       emptyList(), // TODO : Contraints
    )
 

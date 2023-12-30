@@ -341,10 +341,10 @@ type Broker2Order inherits Order {
 
 // operations
 service Broker1Service {
-   operation getBroker1Orders( start : OrderDate, end : OrderDate) : Broker1Order[] (OrderDate >= start, OrderDate < end)
+   operation getBroker1Orders( start : OrderDate, end : OrderDate) : Broker1Order[] (OrderDate >= start && OrderDate < end)
 }
 service Broker2Service {
-   operation getBroker2Orders( start : OrderDate, end : OrderDate) : Broker2Order[] (OrderDate >= start, OrderDate < end)
+   operation getBroker2Orders( start : OrderDate, end : OrderDate) : Broker2Order[] (OrderDate >= start && OrderDate < end)
 }
 
 service UserService {

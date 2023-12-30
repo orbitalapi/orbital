@@ -73,6 +73,6 @@ private fun ValueExpression.asParameterIdentifier(): PropertyIdentifier {
    return when (this) {
       is ConstantValueExpression -> error("I don't know what to do in this situation yet, let's see what the scneario looks like")
       is RelativeValueExpression -> PropertyFieldNameIdentifier(this.path)
-      is ArgumentExpression ->  error("I don't know what to do in this situation yet, let's see what the scneario looks like")
+      is ArgumentExpression ->  PropertyFieldNameIdentifier(this.argument.path)
    }
 }
