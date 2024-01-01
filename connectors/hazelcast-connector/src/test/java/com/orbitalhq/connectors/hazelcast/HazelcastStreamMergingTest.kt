@@ -44,7 +44,7 @@ class HazelcastStreamMergingTest : DescribeSpec({
          )
 
          val stateStoreProvider: StateStoreProvider = object : StateStoreProvider {
-            override fun getCacheStore(connectionName: String, key: String, schema: Schema): StateStore {
+            override fun getCacheStore(connectionName: String?, key: String, schema: Schema): StateStore {
                connectionName.shouldBe("localHzc")
                 return HazelcastStateStore(hazelcast, mapName, schema)
             }

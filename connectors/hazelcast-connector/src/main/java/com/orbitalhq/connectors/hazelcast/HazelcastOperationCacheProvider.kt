@@ -3,13 +3,7 @@ package com.orbitalhq.connectors.hazelcast
 import com.hazelcast.collection.IList
 import com.hazelcast.collection.ItemEvent
 import com.hazelcast.collection.ItemListener
-import com.hazelcast.core.EntryEvent
-import com.hazelcast.core.EntryListener
 import com.hazelcast.core.HazelcastInstance
-import com.hazelcast.map.MapEvent
-import com.hazelcast.multimap.MultiMap
-import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
-import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
 import com.orbitalhq.models.DataSourceUpdater
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.OperationResultDataSourceWrapper
@@ -20,7 +14,13 @@ import com.orbitalhq.query.CacheExchange
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
-import com.orbitalhq.query.connectors.*
+import com.orbitalhq.query.connectors.CacheNames
+import com.orbitalhq.query.connectors.CachingOperatorInvoker
+import com.orbitalhq.query.connectors.OperationCacheKey
+import com.orbitalhq.query.connectors.OperationCacheProvider
+import com.orbitalhq.query.connectors.OperationCacheProviderBuilder
+import com.orbitalhq.query.connectors.OperationInvocationParamMessage
+import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemas.CachingStrategy
 import com.orbitalhq.schemas.Parameter
@@ -34,7 +34,6 @@ import reactor.core.publisher.Flux
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 
 class HazelcastOperationCacheProvider(
    private val hazelcast: HazelcastInstance,
@@ -215,28 +214,19 @@ class HazelcastOperationCacheProvider(
  * caching results of operation calls.
  */
 class HazelcastOperationCacheBuilder(
-   private val connectors: SourceLoaderConnectorsRegistry,
+   private val hazelcastConnectionsManager: HazelcastConnectionsManager,
    private val schemaStore: SchemaStore,
    private val maxSize: Int = 10,
 ) :
    OperationCacheProviderBuilder {
-   private val hazelcastConnections = ConcurrentHashMap<String, Pair<HazelcastInstance, HazelcastConfiguration>>()
-
    override fun canBuild(strategy: CachingStrategy): Boolean {
       if (strategy !is RemoteCache) return false
-      return connectors.load().hazelcast.containsKey(strategy.connectionName)
+      return hazelcastConnectionsManager.canProvideHazelcastInstance(strategy.connectionName)
    }
 
    override fun buildOperationCache(strategy: CachingStrategy, maxSize: Int): OperationCacheProvider {
       require(strategy is RemoteCache)
-      val (client, config) = hazelcastConnections.getOrPut(strategy.connectionName) {
-         val connectors = connectors.load()
-         require(connectors.hazelcast.containsKey(strategy.connectionName)) { "No connection for Hazelcast named ${strategy.connectionName} exists" }
-
-         val connectionConfig = connectors.hazelcast[strategy.connectionName]!!
-         HazelcastBuilder.build(connectionConfig, "_query") to connectionConfig
-      }
-
+      val (client, config) = hazelcastConnectionsManager.hazelcastConnection(strategy.connectionName)
       return HazelcastOperationCacheProvider(
          client,
          schemaStore,
