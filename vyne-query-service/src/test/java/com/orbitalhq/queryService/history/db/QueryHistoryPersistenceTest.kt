@@ -5,6 +5,7 @@ import app.cash.turbine.testIn
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.jayway.awaitility.Awaitility.await
 import com.jayway.awaitility.Duration
+import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.winterbe.expekt.should
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import com.orbitalhq.history.db.LineageRecordRepository
@@ -111,6 +112,8 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
    @MockBean
    lateinit var configLoader : WorkspaceConfigLoader
 
+   @MockBean
+   lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
    @Autowired
    lateinit var queryHistoryRecordRepository: QueryHistoryRecordRepository

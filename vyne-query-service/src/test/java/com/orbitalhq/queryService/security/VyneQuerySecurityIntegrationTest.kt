@@ -1,6 +1,7 @@
 package com.orbitalhq.queryService.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.winterbe.expekt.should
 import io.kotest.matchers.booleans.shouldBeTrue
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
@@ -97,6 +98,9 @@ class VyneQuerySecurityIntegrationTest {
 
    @MockBean
    lateinit var queryMetricsReporter: QueryMetricsReporter
+
+   @MockBean
+   lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
    /**
     * see "authorisation/user-role-mappings.conf" in resources.

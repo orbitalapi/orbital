@@ -423,13 +423,13 @@ class ChangeLogServiceTest {
                   OperationNames.qualifiedName("People", "findPerson"),
                   oldDetails = listOf(
                      ChangeLogDiffFactory.ParameterDiff(
-                        null,
+                        "p0",
                         PrimitiveType.INTEGER.toVyneQualifiedName()
                      )
                   ),
                   newDetails = listOf(
-                     ChangeLogDiffFactory.ParameterDiff(null, PrimitiveType.INTEGER.toVyneQualifiedName()),
-                     ChangeLogDiffFactory.ParameterDiff(null, PrimitiveType.INTEGER.toVyneQualifiedName()),
+                     ChangeLogDiffFactory.ParameterDiff("p0", PrimitiveType.INTEGER.toVyneQualifiedName()),
+                     ChangeLogDiffFactory.ParameterDiff("p1", PrimitiveType.INTEGER.toVyneQualifiedName()),
                   )
                )
             )

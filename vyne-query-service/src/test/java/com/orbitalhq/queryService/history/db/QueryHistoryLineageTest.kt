@@ -4,6 +4,7 @@ import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import com.orbitalhq.VyneProvider
+import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.history.db.QueryHistoryDbWriter
 import com.orbitalhq.history.rest.QueryHistoryService
 import com.orbitalhq.formats.csv.CsvFormatSpec
@@ -78,6 +79,8 @@ class QueryHistoryLineageTest {
    @MockBean
    lateinit var queryMetricsReporter: QueryMetricsReporter
 
+   @MockBean
+   lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
    @Autowired
    lateinit var historyDbWriter: QueryHistoryDbWriter

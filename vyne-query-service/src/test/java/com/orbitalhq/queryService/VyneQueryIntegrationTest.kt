@@ -6,6 +6,7 @@ import com.winterbe.expekt.should
 import com.orbitalhq.StubService
 import com.orbitalhq.Vyne
 import com.orbitalhq.VyneProvider
+import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.formats.csv.CsvFormatSpec
@@ -133,6 +134,9 @@ class VyneQueryIntegrationTest : DatabaseTest() {
 
       @MockBean
       lateinit var configLoader : WorkspaceConfigLoader
+
+      @MockBean
+      lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
       @Bean
       @Primary

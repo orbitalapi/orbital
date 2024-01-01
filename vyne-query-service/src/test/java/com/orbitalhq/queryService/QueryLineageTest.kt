@@ -3,6 +3,7 @@ package com.orbitalhq.queryService
 import com.jayway.awaitility.Awaitility
 import com.orbitalhq.StubService
 import com.orbitalhq.Vyne
+import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.history.db.*
 import com.orbitalhq.models.json.parseJson
@@ -59,6 +60,9 @@ class QueryLineageTest : BaseQueryServiceTest() {
 
    @Autowired
    lateinit var datasource: DataSource
+
+   @MockBean
+   lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
    @Autowired
    lateinit var queryHistoryRecordRepository: QueryHistoryRecordRepository

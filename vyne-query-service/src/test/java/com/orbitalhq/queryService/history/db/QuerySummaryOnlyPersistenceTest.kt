@@ -2,6 +2,7 @@ package com.orbitalhq.queryService.history.db
 
 import app.cash.turbine.testIn
 import com.jayway.awaitility.Awaitility
+import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.winterbe.expekt.should
 import com.orbitalhq.history.db.QueryHistoryDbWriter
 import com.orbitalhq.history.db.QueryHistoryRecordRepository
@@ -59,6 +60,9 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
       } as PostgreSQLContainer<*>
 
    }
+
+   @MockBean
+   lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
    @Autowired
    lateinit var historyDbWriter: QueryHistoryDbWriter

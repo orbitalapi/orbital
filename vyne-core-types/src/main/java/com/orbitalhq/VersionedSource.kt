@@ -7,6 +7,7 @@ import com.google.common.hash.Hashing
 import com.orbitalhq.utils.log
 import lang.taxi.CompilationError
 import lang.taxi.errors
+import lang.taxi.formatter.TaxiCodeFormatter
 import lang.taxi.packages.TaxiPackageSources
 import lang.taxi.sources.SourceCode
 import lang.taxi.sources.SourceCodeLanguage
@@ -56,6 +57,10 @@ data class VersionedSource(
    )
 
    val packageQualifiedName = prependPackageIdentifier(packageIdentifier, name)
+
+   fun formattedContent():String {
+      return TaxiCodeFormatter.format(content)
+   }
 
    companion object {
       private val hashCharset = java.nio.charset.Charset.defaultCharset()

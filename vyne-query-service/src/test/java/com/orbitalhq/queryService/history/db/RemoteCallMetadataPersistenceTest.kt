@@ -3,6 +3,7 @@ package com.orbitalhq.queryService.history.db
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.jayway.awaitility.Awaitility
 import com.jayway.awaitility.Duration
+import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.history.db.*
 import com.orbitalhq.history.rest.QueryHistoryService
@@ -73,6 +74,8 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
    @MockBean
    lateinit var configLoader : WorkspaceConfigLoader
 
+   @MockBean
+   lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
 
    @Rule

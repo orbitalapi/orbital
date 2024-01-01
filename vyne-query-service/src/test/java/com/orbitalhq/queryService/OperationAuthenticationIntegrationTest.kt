@@ -8,6 +8,7 @@ import com.orbitalhq.auth.schemes.Cookie
 import com.orbitalhq.auth.schemes.HttpHeader
 import com.orbitalhq.auth.schemes.QueryParam
 import com.orbitalhq.auth.tokens.AuthTokenRepository
+import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.cockpit.core.security.AuthTokenConfigurationService
 import com.orbitalhq.http.MockWebServerRule
 import com.orbitalhq.metrics.QueryMetricsReporter
@@ -67,6 +68,8 @@ class OperationAuthenticationIntegrationTest : DatabaseTest() {
    @MockBean
    lateinit var configLoader : WorkspaceConfigLoader
 
+   @MockBean
+   lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
    @Rule
    @JvmField

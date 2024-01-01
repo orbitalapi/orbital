@@ -16,6 +16,7 @@ import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.utils.withoutWhitespace
+import lang.taxi.formatter.TaxiCodeFormatter
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -99,7 +100,6 @@ enum extension Bar {}""".withoutWhitespace()
       )
    }
 
-
    @Test
    fun `saving a query adds query annotation`() {
       val projectPath = projectHome.deployProject("sample-project")
@@ -122,7 +122,7 @@ enum extension Bar {}""".withoutWhitespace()
       val expected = """query MyQuery {
    find { Person }
 }""".trimIndent()
-      saved.sources.single().content.shouldBe(expected)
+      saved.sources.single().formattedContent().shouldBe(expected)
       val savedSource = projectPath.resolve("src/MyQuery.taxi").readText()
       savedSource.withoutWhitespace().shouldBe(expected.withoutWhitespace())
    }
