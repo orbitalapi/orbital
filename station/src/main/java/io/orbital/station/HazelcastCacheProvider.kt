@@ -1,6 +1,7 @@
 package io.orbital.station
 
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
+import com.orbitalhq.connectors.hazelcast.HazelcastConnectionsManager
 import com.orbitalhq.connectors.hazelcast.HazelcastOperationCacheBuilder
 import com.orbitalhq.connectors.hazelcast.HazelcastStateStoreProvider
 import com.orbitalhq.schema.consumer.SchemaStore
@@ -11,12 +12,17 @@ import org.springframework.context.annotation.Configuration
 class HazelcastOperationCacheConfig {
 
    @Bean
-   fun hazelcastOperationCacheProviderBuilder(connectors: SourceLoaderConnectorsRegistry, schemaStore: SchemaStore): HazelcastOperationCacheBuilder {
-      return HazelcastOperationCacheBuilder(connectors, schemaStore)
+   fun hazelcastConnectionsManager(connectors: SourceLoaderConnectorsRegistry): HazelcastConnectionsManager {
+      return HazelcastConnectionsManager(connectors)
+
+   }
+   @Bean
+   fun hazelcastOperationCacheProviderBuilder(hazelcastConnectionsManager: HazelcastConnectionsManager, schemaStore: SchemaStore): HazelcastOperationCacheBuilder {
+      return HazelcastOperationCacheBuilder(hazelcastConnectionsManager, schemaStore)
    }
 
    @Bean
-   fun hazelcastStateStoreProvider(connectors: SourceLoaderConnectorsRegistry): HazelcastStateStoreProvider {
-      return HazelcastStateStoreProvider(connectors)
+   fun hazelcastStateStoreProvider(hazelcastConnectionsManager: HazelcastConnectionsManager): HazelcastStateStoreProvider {
+      return HazelcastStateStoreProvider(hazelcastConnectionsManager)
    }
 }

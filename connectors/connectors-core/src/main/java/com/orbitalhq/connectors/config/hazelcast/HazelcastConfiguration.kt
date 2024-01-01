@@ -1,5 +1,7 @@
 package com.orbitalhq.connectors.config.hazelcast
 
+import com.google.common.base.MoreObjects
+import com.google.common.base.Objects
 import com.orbitalhq.connectors.ConnectionParameterName
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConnection.HAZELCAST_CLIENT_NAME
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConnection.HAZELCAST_CLUSTER_NAME
@@ -12,10 +14,12 @@ import com.orbitalhq.connectors.registry.ConnectorConfiguration
 import com.orbitalhq.connectors.registry.ConnectorType
 import com.orbitalhq.utils.obfuscateKeys
 import kotlinx.serialization.Serializable
+import lang.taxi.ImmutableEquality
 import java.util.Properties
 
+
 @Serializable
-class HazelcastConfiguration(
+data class HazelcastConfiguration(
    override val connectionName: String,
    val addresses: List<String> = listOf(),
    val operationCacheTtlSeconds: Int = 120,
@@ -24,6 +28,22 @@ class HazelcastConfiguration(
 
    override val driverName: String = HazelcastConnection.DRIVER_NAME
    override val type: ConnectorType = ConnectorType.CACHE
+
+   // Can't use ImmutableEquality here, as not Serializable
+   override fun hashCode(): Int {
+      return Objects.hashCode(addresses)
+   }
+
+   // Can't use ImmutableEquality here, as not Serializable
+   override fun equals(other: Any?): Boolean {
+      if (other == null) return false;
+      if ( this.javaClass != other.javaClass) return false;
+      val otherConfig = other as HazelcastConfiguration
+      return Objects.equal(this.addresses, otherConfig.addresses)
+   }
+
+
+
    override fun getUiDisplayProperties(): Map<String, Any> {
       return when {
          addresses.isEmpty() && connectionParameters.containsKey(VIRIDIAN_DISCOVERY_TOKEN) -> connectionParameters.obfuscateKeys(
