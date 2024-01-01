@@ -23,7 +23,8 @@ data class HazelcastConfiguration(
    override val connectionName: String,
    val addresses: List<String> = listOf(),
    val operationCacheTtlSeconds: Int = 120,
-   val connectionParameters: Map<ConnectionParameterName, String> = emptyMap()
+   val connectionParameters: Map<ConnectionParameterName, String> = emptyMap(),
+   override val default: Boolean = false
 ) : ConnectorConfiguration {
 
    override val driverName: String = HazelcastConnection.DRIVER_NAME
