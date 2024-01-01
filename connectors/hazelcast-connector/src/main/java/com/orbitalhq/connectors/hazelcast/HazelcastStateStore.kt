@@ -1,7 +1,6 @@
 package com.orbitalhq.connectors.hazelcast
 
 import com.hazelcast.core.HazelcastInstance
-import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.serde.SerializableTypedInstance
 import com.orbitalhq.models.serde.toSerializable
@@ -18,24 +17,12 @@ import java.util.concurrent.ConcurrentHashMap
  * which are used for things like storing interim state when merging streams
  */
 class HazelcastStateStoreProvider(
-   private val connectors: SourceLoaderConnectorsRegistry,
+   private val hazelcastConnectionsManager: HazelcastConnectionsManager,
 ) : StateStoreProvider {
-
    private val hazelcastStores = ConcurrentHashMap<String, HazelcastStateStore>()
-   private val hazelcastInstanceCache = ConcurrentHashMap<String, HazelcastInstance>()
-
-   override fun getCacheStore(connectionName: String, key: String, schema: Schema): StateStore? {
-      val connectorsConfig = connectors.load()
-      val hazelcastConfig = if (connectorsConfig.hazelcast.keys.isNotEmpty()) {
-         connectorsConfig.hazelcast[connectorsConfig.hazelcast.keys.first()]!!
-      } else return null
-
-      val cacheStoreKey = connectionName + key
-      val instanceKey = "${connectionName}_state"
-      val hazelcastInstance = hazelcastInstanceCache.getOrPut(instanceKey) {
-         HazelcastBuilder.build(hazelcastConfig, "_state")
-      }
-
+   override fun getCacheStore(connectionName: String?, key: String, schema: Schema): StateStore? {
+      val (hazelcastInstance, connectionsConfig) = hazelcastConnectionsManager.hazelcastConnection(connectionName)
+      val cacheStoreKey = connectionsConfig.connectionName + key
       val cacheStore = hazelcastStores.getOrPut(cacheStoreKey) {
          HazelcastStateStore(hazelcastInstance, key, schema)
       }

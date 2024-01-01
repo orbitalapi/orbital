@@ -6,6 +6,8 @@ import io.github.config4k.extract
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.config.*
 import com.orbitalhq.connectors.VyneConnectionsConfig
+import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
+import com.orbitalhq.connectors.config.hazelcast.HazelcastConnection
 import java.nio.file.Path
 
 /**
@@ -57,6 +59,14 @@ class SourceLoaderConnectorsRegistry(
       invalidateCache()
    }
 
+   fun defaultHazelcastConfiguration(): HazelcastConfiguration? {
+      val hazelcastConnectors = load().hazelcast
+      return hazelcastConnectors.values.firstOrNull { it.default }
+   }
+
+   fun hazelcastConfigurationForConnectionName(connectionName: String): HazelcastConfiguration? {
+     return load().hazelcast[connectionName]
+   }
 }
 
 

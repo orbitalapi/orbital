@@ -31,7 +31,10 @@ object GlobalSharedCache : CachingStrategy()
  */
 data class NamedCache(val name: String) : CachingStrategy()
 
-data class RemoteCache(val connectionName: String) : CachingStrategy()
+/**
+ * Defines a remote cache to use. If the connection name isn't passed, then the default connection is used.
+ */
+data class RemoteCache(val connectionName: String?) : CachingStrategy()
 
 data class QueryOptions(
    /**
@@ -91,7 +94,7 @@ data class QueryOptions(
       fun fromQuery(query: TaxiQlQuery): QueryOptions {
          val cachingStrategy: CachingStrategy = query.annotation("Cache")?.let { annotation ->
             when {
-               annotation.parameter("connection") != null -> RemoteCache(annotation.parameter("connection")!! as String)
+               annotation.parameter("connection") != null -> RemoteCache(annotation.parameter("connection") as? String?)
                annotation.defaultParameterValue != null -> NamedCache(annotation.defaultParameterValue as String)
                else -> GlobalSharedCache
             }

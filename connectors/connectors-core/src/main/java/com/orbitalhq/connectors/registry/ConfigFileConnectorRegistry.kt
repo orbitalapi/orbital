@@ -87,6 +87,8 @@ interface ConnectorConfiguration {
     * maps.obscureKeys()
     */
    fun getUiDisplayProperties(): Map<String, Any>
+   val default: Boolean
+      get() = false
 }
 
 enum class ConnectorType {
