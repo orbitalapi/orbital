@@ -21,7 +21,8 @@ class ConfigService(
    pipelineConfig: PipelineConfig,
    license: License,
    @Value("\${management.endpoints.web.base-path:/actuator}") actuatorPath: String,
-   val featureToggles: FeatureTogglesConfig
+   val featureToggles: FeatureTogglesConfig,
+   val customSettings: CustomSettings
 ) {
 
    private val configSummary =
@@ -30,7 +31,9 @@ class ConfigService(
          pipelineConfig,
          LicenseStatus.from(license),
          actuatorPath,
-         featureToggles
+         featureToggles,
+         customSettings.custom
+
       )
 
    @GetMapping("/api/config")
@@ -45,7 +48,16 @@ data class ConfigSummary(
    val pipelineConfig: PipelineConfig,
    val licenseStatus: LicenseStatus,
    val actuatorPath: String,
-   val featureToggles: FeatureTogglesConfig
+   val featureToggles: FeatureTogglesConfig,
+   val custom: Map<String,Any>
+)
+
+/**
+ * Settings that are provided for bespoke builds, or whitelabel builds.
+ */
+@ConfigurationProperties(prefix="vyne.config")
+data class CustomSettings(
+   val custom: Map<String,Any> = emptyMap()
 )
 
 @ConfigurationProperties(prefix = "vyne.toggles")

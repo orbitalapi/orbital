@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {BreakpointObserver} from '@angular/cdk/layout';
-import {BehaviorSubject} from 'rxjs';
-import {filter, map} from 'rxjs/operators';
+import {BehaviorSubject, combineLatest, merge, mergeAll, Observable} from 'rxjs';
+import {concatAll, filter, map} from 'rxjs/operators';
 import {AppInfo, AppInfoService} from '../services/app-info.service';
 import {NavigationEnd, Router} from '@angular/router';
 import {SchemaNotificationService} from '../services/schema-notification.service';
@@ -10,6 +10,7 @@ import {SystemAlert} from '../system-alert/system-alert.component';
 import {TypesService} from '../services/types.service';
 import {UserInfoService, VynePrivileges, VyneUser} from '../services/user-info.service';
 import {DatePipe} from '@angular/common';
+import {UiCustomisations} from "../../environments/ui-customisations";
 
 @Component({
   selector: 'vyne-app',
@@ -44,13 +45,6 @@ export class VyneComponent implements OnInit {
       testId: 'query-builder-sidebar',
       requiredAuthority: VynePrivileges.RunQuery
     },
-    // {
-    //   title: 'Data explorer',
-    //   icon: 'assets/img/data-explorer.svg',
-    //   route: 'data-explorer',
-    //   testId: 'data-explorer-sidebar',
-    //   requiredAuthority: VynePrivileges.BrowseCatalog
-    // },
     {
       title: 'Query history',
       icon: 'assets/img/tabler/clock-code.svg',
@@ -58,13 +52,6 @@ export class VyneComponent implements OnInit {
       testId: 'query-history-sidebar',
       requiredAuthority: VynePrivileges.ViewQueryHistory
     },
-    // {
-    //   title: 'Cask',
-    //   icon: 'assets/img/cask.svg',
-    //   route: 'cask-viewer',
-    //   testId: 'cask-sidebar',
-    //   requiredAuthority: VynePrivileges.ViewCaskDefinitions
-    // },
     {
       title: 'Connections',
       icon: 'assets/img/tabler/plug.svg',
@@ -103,8 +90,6 @@ export class VyneComponent implements OnInit {
   ].map(value => {
     return {
       title: value.title,
-      // icon: `assets/img/${value.icon}`,
-      // iconActive: `assets/img/${value.icon}`,
       icon: value.icon,
       iconActive: value.icon,
       route: value.route,
@@ -113,7 +98,16 @@ export class VyneComponent implements OnInit {
     };
   });
 
-  sidebarElements$: BehaviorSubject<SidebarElement[]> = new BehaviorSubject(this.sidebarElements);
+  customSidebarElements$: BehaviorSubject<SidebarElement[]> = new BehaviorSubject([]);
+  defaultSidebarElements$: BehaviorSubject<SidebarElement[]> = new BehaviorSubject<SidebarElement[]>(this.sidebarElements)
+  sidebarElements$: Observable<SidebarElement[]> = combineLatest(
+    [
+      this.defaultSidebarElements$,
+      this.customSidebarElements$,
+    ]
+  ).pipe(
+    map(([arr1, arr2]) => [...arr1, ...arr2])
+  )
 
   appInfo: AppInfo;
   userInfo: VyneUser | null = null;
@@ -127,7 +121,7 @@ export class VyneComponent implements OnInit {
               private snackbar: MatSnackBar,
               private userInfoService: UserInfoService,
               private datePipe: DatePipe,
-              ) {
+  ) {
     appInfoService
       .getConfig()
       .subscribe(config => {
@@ -137,6 +131,8 @@ export class VyneComponent implements OnInit {
         appInfoService
           .getAppInfo(config.actuatorPath)
           .subscribe(info => this.appInfo = info)
+
+        this.customSidebarElements$.next(UiCustomisations.customSidebarElements(config))
       });
     // When the user navigates using the router, scroll back to the top.
     // Won't always be appropriate, (ie., when there are anchor links),
@@ -179,7 +175,7 @@ export class VyneComponent implements OnInit {
         map(userInfo => this.sidebarElements
           .filter(sideBarElement => userInfo.grantedAuthorities.includes(sideBarElement.requiredAuthority))
         )
-      ).subscribe(filteredSideBarElements => this.sidebarElements$.next(filteredSideBarElements));
+      ).subscribe(filteredSideBarElements => this.defaultSidebarElements$.next(filteredSideBarElements));
   }
 
   private getAlertIndex() {
@@ -228,6 +224,7 @@ export interface SidebarElement {
   title: string;
   icon: string;
   iconActive: string;
-  route: string;
-  requiredAuthority: VynePrivileges;
+  route?: string;
+  requiredAuthority?: VynePrivileges;
+  externalUrl?: string;
 }

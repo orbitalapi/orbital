@@ -34,6 +34,7 @@ export class AppInfoService {
 
 }
 
+// Called ConfigSummary in the server code
 export interface AppConfig {
   analytics: {
     maxPayloadSizeInBytes: number
@@ -48,6 +49,7 @@ export interface AppConfig {
   actuatorPath: string;
   pipelineConfig: PipelineConfig;
   featureToggles: FeatureToggles;
+  custom: {[index:string]:any}
 }
 
 export interface FeatureToggles {

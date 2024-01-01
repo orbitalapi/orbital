@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.orbital.station.OrbitalStationConfig
 import com.orbitalhq.cockpit.core.CockpitCoreConfig
+import com.orbitalhq.cockpit.core.CustomSettings
 import com.orbitalhq.cockpit.core.FeatureTogglesConfig
 import com.orbitalhq.cockpit.core.WebUiUrlSupportFilter
 import com.orbitalhq.cockpit.core.lsp.LanguageServerConfig
@@ -81,6 +82,7 @@ import java.util.concurrent.TimeUnit
    VyneSpringHazelcastConfiguration::class,
    VyneUserConfig::class,
    FeatureTogglesConfig::class,
+   CustomSettings::class,
    EnvVariablesConfig::class
 )
 @Import(

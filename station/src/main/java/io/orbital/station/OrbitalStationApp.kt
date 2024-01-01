@@ -1,5 +1,6 @@
 package io.orbital.station
 
+import com.orbitalhq.cockpit.core.CustomSettings
 import com.orbitalhq.cockpit.core.DatabaseConfig
 import com.orbitalhq.cockpit.core.FeatureTogglesConfig
 import com.orbitalhq.cockpit.core.lsp.LanguageServerConfig
@@ -44,6 +45,7 @@ import java.util.concurrent.TimeUnit
    VyneSpringHazelcastConfiguration::class,
    VyneUserConfig::class,
    FeatureTogglesConfig::class,
+   CustomSettings::class,
    WorkspaceSettings::class,
    DatabaseConfig::class
 )
