@@ -68,6 +68,7 @@ export const SchemaNodeContainer = styled.div`
   }
 
   table {
+    border-spacing: 0;
     &.service {
       border-color: ${serviceNodeBorderColor};
     }

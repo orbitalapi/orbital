@@ -158,6 +158,31 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
     }
   });
 
+  // Build primary keys links for db's
+  operations
+    .filter(op => op.operationKind === "Table")
+    .forEach(operation => {
+      const nameParts = splitOperationQualifiedName(operation.qualifiedName.fullyQualifiedName);
+      const returnType = findType(schema, arrayMemberTypeNameOrTypeNameFromName(operation.returnTypeName).fullyQualifiedName)
+      Object.keys(returnType.attributes).forEach(fieldName => {
+        const field = returnType.attributes[fieldName]
+        if (field.metadata.some(metadata => metadata.name.fullyQualifiedName === "Id") && field.type.fullyQualifiedName === typeName.fullyQualifiedName) {
+          consumingOperations.push({
+            ...source,
+
+            targetNodeId: getNodeId('SERVICE', QualifiedName.from(nameParts.serviceName)),
+            targetHandleId: HandleIds.serviceOperationInbound(QualifiedName.from(nameParts.serviceName), QualifiedName.from(nameParts.operationName)),
+            targetNodeName: QualifiedName.from(nameParts.serviceName),
+            targetMemberType: 'OPERATION',
+
+            linkKind: 'entity'
+
+          });
+        }
+      })
+  })
+
+
   // BuildLinks from OperationReturnType -[to]-> this Type
   const producedByOperations: Link[] = [];
   operations.forEach(operation => {
@@ -185,7 +210,7 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
   // Build links for models which have this type as an attribute
   schema.types
     .filter(t => !t.name.name.startsWith('Anonymous'))
-    .filter(t => !t.isScalar)
+    // .filter(t => !t.isScalar)
     .filter(typeInSchema => {
       // Exclude our own type...
       if (typeInSchema.name.fullyQualifiedName === typeName.fullyQualifiedName) {
@@ -282,7 +307,7 @@ function buildServiceLinks(service: Service, schema: Schema, operations: Service
 
   collectAllServiceOperations(service)
     .forEach(serviceMember => {
-      operationLinks[serviceMember.name] = buildOperationLinks(serviceMember, service);
+      operationLinks[serviceMember.name] = buildOperationLinks(serviceMember, service, schema);
     });
   return new ServiceLinks(
     serviceInboundLinks,
@@ -310,7 +335,7 @@ export interface Link {
   linkKind: LinkKind;
 }
 
-function buildOperationLinks(operation: ServiceMember, service: Service): Links {
+function buildOperationLinks(operation: ServiceMember, service: Service, schema: Schema): Links {
   const serviceNodeId = getNodeId('SERVICE', service.name);
   const nameParts = splitOperationQualifiedName(operation.qualifiedName.fullyQualifiedName);
   const inputs: Link[] = operation.parameters.map(param => {
@@ -327,8 +352,32 @@ function buildOperationLinks(operation: ServiceMember, service: Service): Links 
       targetMemberType: 'OPERATION'
     } as Link;
   });
-
   let returnTypeName = arrayMemberTypeNameOrTypeNameFromName(operation.returnTypeName);
+
+  const primaryKeys:Link[] = [];
+  if (operation['operationKind'] === 'Table') {
+    const returnType = findType(schema, returnTypeName.fullyQualifiedName)
+    Object.keys(returnType.attributes).forEach(fieldName => {
+      const field = returnType.attributes[fieldName]
+      const isPrimaryKey = field.metadata.some(metadata => metadata.name.fullyQualifiedName === "Id")
+      if (isPrimaryKey) {
+        let fieldTypeName = field.type;
+        primaryKeys.push({
+          sourceNodeId: getNodeId('TYPE', fieldTypeName),
+          sourceHandleId: HandleIds.modelOutbound(fieldTypeName),
+          sourceNodeName: fieldTypeName,
+          sourceMemberType: 'TYPE',
+
+          targetNodeId: serviceNodeId,
+          targetHandleId: HandleIds.serviceOperationInbound(QualifiedName.from(nameParts.serviceName), QualifiedName.from(nameParts.operationName)),
+          targetNodeName: QualifiedName.from(nameParts.serviceName),
+          targetMemberType: 'OPERATION'
+        } as Link)
+      }
+    })
+  }
+
+
   const outputs: Link[] = [{
     sourceNodeId: serviceNodeId,
     sourceHandleId: HandleIds.serviceOperationOutbound(QualifiedName.from(nameParts.serviceName), QualifiedName.from(nameParts.operationName)),
@@ -344,7 +393,7 @@ function buildOperationLinks(operation: ServiceMember, service: Service): Links 
   }];
   // Not sure if returning operation links here is helpful.
   return {
-    inputs,
+    inputs: inputs.concat(primaryKeys),
     outputs
   };
 }
