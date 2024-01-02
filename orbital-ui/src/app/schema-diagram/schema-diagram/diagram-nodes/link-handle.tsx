@@ -18,7 +18,14 @@ export function LinkHandle(props: LinkHandleProps) {
   if (props.links.some(link => link.linkKind === 'lineage')) {
   }
 
-  const handleId = props.node.id === props.links[0].sourceNodeId ? props.links[0].sourceHandleId : props.links[0].targetHandleId;
+  // TODO : For some reason, we're getting passed a collection of links, not all of which are relevant to this
+  // node.
+  const ourLinks = props.links.filter(link => link.sourceNodeId === props.node.id || link.targetNodeId === props.node.id)
+  if (ourLinks.length === 0) {
+    console.error(`Incorrect links were passed to a handle - there were no links present for node id ${props.node.id}, instead the following links were present:`, props.links)
+  }
+
+  const handleId = props.node.id === ourLinks[0].sourceNodeId ? ourLinks[0].sourceHandleId : ourLinks[0].targetHandleId;
   const handleIdWithSide = props.allowConnectionToFloat ? HandleIds.appendPositionToHandleId(handleId, props.position) : handleId;
 
   function clickHandler() {

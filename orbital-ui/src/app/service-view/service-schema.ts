@@ -15,6 +15,7 @@ export const service: Service = {
   streamOperations: [],
   'operations': [
     {
+      operationKind: "ApiCall",
       'qualifiedName': {
         'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService@@getCustomerIdByEmail',
         'parameters': [],
@@ -92,6 +93,7 @@ export const service: Service = {
       }
     },
     {
+      operationKind: "ApiCall",
       'qualifiedName': {
         'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService@@getCustomer',
         'parameters': [],
@@ -169,6 +171,7 @@ export const service: Service = {
       }
     },
     {
+      operationKind: "ApiCall",
       'qualifiedName': {
         'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService@@getCustomers',
         'parameters': [],
@@ -251,6 +254,7 @@ export const service: Service = {
       }
     },
     {
+      operationKind: "ApiCall",
       'qualifiedName': {
         'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService@@getCustomerByEmail',
         'parameters': [],

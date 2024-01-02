@@ -11,7 +11,6 @@ import {
   ModelLinks,
   ServiceLinks, LinkKind
 } from './schema-chart-builder';
-import { isUndefined } from 'util';
 import { colors } from 'src/app/schema-diagram/schema-diagram/tailwind.colors';
 import { CSSProperties } from 'react';
 import {
@@ -20,6 +19,7 @@ import {
   serviceNodeBorderColor
 } from 'src/app/schema-diagram/schema-diagram/diagram-nodes/schema-node-container';
 import { AppendLinksHandler, SchemaMemberClickHandler } from 'src/app/schema-diagram/schema-diagram/schema-flow.react';
+import {isNullOrUndefined} from "../../utils/utils";
 
 export const HORIZONTAL_GAP = 50;
 
@@ -177,7 +177,7 @@ export class SchemaChartController {
     }
     const style: CSSProperties = {};
     if (sourceSchemaKind === 'TYPE' && targetSchemaKind === 'TYPE') {
-      lineColor = colors.lime['300'];
+      lineColor = colors.lime['500'];
       style.strokeDasharray = '5,5';
     }
     style.stroke = lineColor;
@@ -218,7 +218,14 @@ export class SchemaChartController {
       nodeLinks.filter(link => {
         return nodes.has(link.sourceNodeId) && nodes.has(link.targetNodeId)
       }).forEach(link => {
-        const edge = this.buildEdge(nodes.get(link.sourceNodeId), link.sourceHandleId, link.sourceMemberType, nodes.get(link.targetNodeId), link.targetHandleId, link.targetMemberType, link.linkKind, link.linkId)
+        const edge = this.buildEdge(nodes.get(link.sourceNodeId),
+          link.sourceHandleId,
+          link.sourceMemberType,
+          nodes.get(link.targetNodeId),
+          link.targetHandleId,
+          link.targetMemberType,
+          link.linkKind,
+          link.linkId)
         createdEdges.set(edge.id, edge);
       });
     })
@@ -234,7 +241,7 @@ export interface RelativeNodePosition {
 }
 
 export function isRelativeNodePosition(item: any): item is RelativeNodePosition {
-  return !isUndefined(item.node) && !isUndefined(item.direction);
+  return !isNullOrUndefined(item.node) && !isNullOrUndefined(item.direction);
 }
 
 export interface RelativeNodeXyPosition extends RelativeNodePosition {

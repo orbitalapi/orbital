@@ -17,13 +17,14 @@ function ModelNode(node: Node<MemberWithLinks>) {
     event.preventDefault();
     event.stopPropagation();
   }
+  const heading = type.isScalar ? 'Type' : 'Model';
 
   return (
     <SchemaNodeContainer>
       <table>
         <thead>
         <tr className={'small-heading'}>
-          <th colSpan={2}>Model</th>
+          <th colSpan={2}>{heading}</th>
         </tr>
         <tr className={'member-name'}>
           <th colSpan={2}>

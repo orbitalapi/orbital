@@ -143,15 +143,15 @@ export interface CompilationMessage {
 }
 
 export function groupBySource(messages: CompilationMessage[]): Map<string, CompilationMessage[]> {
-    return messages.reduce((acc, message) => {
-        const group = acc.get(message.sourceName)
-        if (!group) {
-            acc.set(message.sourceName, [message])
-        } else {
-            group.push(message)
-        }
-        return acc;
-    }, new Map<string, CompilationMessage[]>())
+  return messages.reduce((acc, message) => {
+    const group = acc.get(message.sourceName)
+    if (!group) {
+      acc.set(message.sourceName, [message])
+    } else {
+      group.push(message)
+    }
+    return acc;
+  }, new Map<string, CompilationMessage[]>())
 }
 
 export interface ParsedSource {
@@ -320,7 +320,7 @@ export interface Functional {
   returnTypeName: QualifiedName;
 }
 
-export interface Operation extends SchemaMemberNamed, Functional {
+export interface Operation extends SchemaMemberNamed, Functional, RemoteOperation {
   name: string;
   qualifiedName: QualifiedName;
   parameters: Parameter[];
@@ -344,7 +344,12 @@ export interface Version {
 
 export type VersionType = 'SemVer' | 'git-sha';
 
-export interface TableOperation extends SchemaMemberNamed {
+export interface RemoteOperation {
+  // nullable for backwards compatability. It's actually always populated
+  operationKind?: OperationKind;
+}
+
+export interface TableOperation extends SchemaMemberNamed, RemoteOperation {
   name: string;
   qualifiedName: QualifiedName;
   returnTypeName: QualifiedName;
@@ -354,7 +359,7 @@ export interface TableOperation extends SchemaMemberNamed {
   parameters: Parameter[];
 }
 
-export interface StreamOperation extends SchemaMemberNamed {
+export interface StreamOperation extends SchemaMemberNamed, RemoteOperation {
   name: string;
   qualifiedName: QualifiedName;
   returnTypeName: QualifiedName;
@@ -368,12 +373,14 @@ export interface ConsumedOperation {
   serviceName: string;
   operationName: string;
 }
+
 export interface ServiceLineage {
   consumes: ConsumedOperation[]
   stores: QualifiedName[]
   metadata: Metadata[]
 }
-export interface Service extends SchemaMemberNamed, Named, Documented {
+
+export interface Service extends SchemaMemberNamed, Named, Documented, RemoteOperation {
   fullyQualifiedName: string; // This is messy, and needs fixing up.
   operations: Operation[];
   queryOperations: QueryOperation[];
@@ -396,7 +403,7 @@ export function collectAllServiceOperations(service: Service): ServiceMember[] {
 }
 
 
-export interface QueryOperation {
+export interface QueryOperation extends RemoteOperation{
   name: string;
   qualifiedName: QualifiedName;
   contract?: any;
@@ -494,9 +501,12 @@ export class SchemaGraph {
     return graph;
   }
 
-  static fromMap(input: { nodes: { [index: string]: SchemaGraphNode }, links: { [index: number]: SchemaGraphLink } }): SchemaGraph {
+  static fromMap(input: {
+    nodes: { [index: string]: SchemaGraphNode },
+    links: { [index: number]: SchemaGraphLink }
+  }): SchemaGraph {
 
-    return new SchemaGraph(new Map(Object.entries(input.nodes)), new Map(Object.entries(input.links)) as any as Map<number,SchemaGraphLink>);
+    return new SchemaGraph(new Map(Object.entries(input.nodes)), new Map(Object.entries(input.links)) as any as Map<number, SchemaGraphLink>);
   }
 
   constructor(
@@ -581,7 +591,7 @@ export class SchemaMember {
   attributeNames: string[];
 
   // Facade to the new API
-  get schemaMemberReference():SchemaMemberReference {
+  get schemaMemberReference(): SchemaMemberReference {
     return {
       qualifiedName: this.name,
       kind: this.kind
@@ -664,6 +674,7 @@ export interface PackageSourceName {
 
   packageQualifiedName: string;
 }
+
 export interface VersionedSource {
   name: string;
   version: string;
