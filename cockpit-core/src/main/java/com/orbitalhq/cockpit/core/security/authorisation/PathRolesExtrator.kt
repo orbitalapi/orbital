@@ -1,24 +1,32 @@
 package com.orbitalhq.cockpit.core.security.authorisation
 
-import org.springframework.beans.factory.annotation.Value
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.stereotype.Component
+
 
 /**
  * Extracts roles from within a JWT token by specifying a path
  */
 @ConditionalOnProperty(
-   name = ["vyne.security.open-idp.jwt-type"],
-   havingValue = PathRolesExtractor.PathJwtKind,
-   matchIfMissing = true
+   name = ["vyne.security.open-idp.roles.format"],
+   havingValue = SimplePathBasedRolesExtractor.PathJwtKind,
+   matchIfMissing = false
 )
-open class PathRolesExtractor(
-   @Value("\${vyne.security.open-idp.jwt-roles-path}") val path: String
-) : JwtRolesExtractor {
-
+@Component
+class SimplePathBasedRolesExtractor(path: String) : BasePathRolesExtractor(path) {
    companion object {
       const val PathJwtKind = "path"
    }
+   @Autowired
+   constructor(idpConfig: VyneOpenIdpConnectConfig) : this(idpConfig.roles.path!!)
+}
+
+
+abstract class BasePathRolesExtractor(
+   val path: String
+) : JwtRolesExtractor {
 
    override fun getRoles(jwt: Jwt): Set<String> {
       val parts = path.split(".")
@@ -26,7 +34,7 @@ open class PathRolesExtractor(
       val consumedPath = mutableListOf<String>()
 
       val claimsAtPath = parts.foldIndexed(jwt.claims as Any) { index, acc, pathPart ->
-         require(acc is Map<*,*>) { "Internal error: Expected a Map<*,*> at $pathPart, but got ${acc::class.simpleName}"}
+         require(acc is Map<*, *>) { "Internal error: Expected a Map<*,*> at $pathPart, but got ${acc::class.simpleName}" }
 
          consumedPath.add(pathPart)
          val errorPrefix = "Misconfigured roles path at index $index (${consumedPath.joinToString(".")})."
@@ -43,7 +51,7 @@ open class PathRolesExtractor(
                error("$errorPrefix Expected to find a list of strings containing roles, but found a ${valueAtCurrentPath::class.simpleName}")
             }
          } else {
-            if (valueAtCurrentPath is Map<*,*>) {
+            if (valueAtCurrentPath is Map<*, *>) {
                valueAtCurrentPath
             } else {
                error("$errorPrefix Expected to find a Map, but found a ${valueAtCurrentPath::class.simpleName}")

@@ -17,6 +17,7 @@ interface FrontEndSecurityConfig {
   requireLoginOverHttps: boolean;
   accountManagementUrl: string | null;
   orgManagementUrl: string | null;
+  identityTokenKind: 'Access' | 'Id';
 }
 
 @Injectable()
