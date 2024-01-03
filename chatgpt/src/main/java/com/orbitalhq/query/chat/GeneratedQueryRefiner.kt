@@ -46,7 +46,7 @@ object ApplyStateStoreIfMultipleStreamsInvolved : QueryRefinerRule {
       queryRewriter: TaxiQlRewriter
    ): Pair<TaxiQlQuery, Schema> {
       val metadata = queryPlanner.buildMetadata(query, querySchema)
-      if (metadata.candidateStreamOperations.size > 1) {
+      if (metadata.minimumStreamOperations.size > 1) {
          val amended = queryRewriter.appendQueryAnnotationIfNotPresent(query.source, "@StateStore")
          return if (amended != query.source) {
             val (updatedQuery, _, updatedSchema) = querySchema.parseQuery(amended)
