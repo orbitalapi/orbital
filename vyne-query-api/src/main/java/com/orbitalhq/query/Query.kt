@@ -80,11 +80,6 @@ data class ConstrainedTypeNameQueryExpression(
 
 data class TypeQueryExpression(val type: Type) : QueryExpression
 
-// When the query planner rewrites the original query, and the projection scope also
-// needs to be amended
-data class RewrittenTypeQueryExpression(val type: Type, val amendedProjectionScope: ProjectionFunctionScope?): QueryExpression {
-   fun toTypeQueryExpression() = TypeQueryExpression(type)
-}
 data class TypeNameQueryExpression(val typeName: String) : QueryExpression {
    init {
       logger.warn { "TypeNameQueryExpression shouldn't be called - prefer TypeQueryExpression where possible" }
@@ -106,9 +101,7 @@ data class ProjectedExpression(val source: QueryExpression, val projection: Proj
 // TODO : Can we replace / collapse with FieldProjection?
 data class Projection(val type: Type, val scope: ProjectionFunctionScope?)
 
-data class TypeNameListQueryExpression(val typeNames: List<String>) : QueryExpression {
-   val qualifiedTypeNames = typeNames.map { it.fqn() }
-}
+data class TypeNameListQueryExpression(val typeNames: List<String>) : QueryExpression
 
 // Note - this doesn't exist yet, but I'm leaving it here so I remember why I chose
 // this object type over a simple string.
