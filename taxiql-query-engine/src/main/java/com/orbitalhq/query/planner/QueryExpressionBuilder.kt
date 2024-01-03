@@ -61,7 +61,7 @@ class QueryExpressionBuilder(private val queryPlanner: QueryPlanner) {
             // Here, we rewrite the discovery type from Stream<A> to Stream<A|B>
             // as if the user had written:
             // stream { A | B }
-            StreamType.isStreamTypeName(discoveryType.typeName) && queryMetadata.candidateStreamOperations.size > 1 -> {
+            StreamType.isStreamTypeName(discoveryType.typeName) && queryMetadata.minimumStreamOperations.size > 1 -> {
                val amendedTaxiQL = appendMissingStreamSourcesToTaxiQL(queryMetadata, discoveryType, taxiQl)
                if (amendedTaxiQL == taxiQl.source) {
                   schema.type(discoveryType.typeName.toVyneQualifiedName())

@@ -12,6 +12,9 @@ import lang.taxi.query.TaxiQlQuery
 import lang.taxi.types.ArrayType
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
+import mu.KotlinLogging
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * Constructs metadata about the query, useful for planning and query optimizing
@@ -21,6 +24,7 @@ class QueryMetadataBuilder(cacheSize: Int = 50) {
    private val cache: Cache<QueryPlanCacheKeyHashCode, QueryPlanMetadata> = CacheBuilder.newBuilder()
       .maximumSize(cacheSize.toLong())
       .build()
+
 
    /**
     * Creates query metadata, serving from the cache if available.
@@ -128,10 +132,63 @@ data class QueryPlanMetadata(
    val schema: Schema,
 ) {
    val allCandidateOperations = typesAndCandidateSources.values.flatten().distinctBy { it.second.qualifiedName }
-   val candidateStreamOperations = allCandidateOperations
-      .filter { (_, operation) -> operation is StreamOperation || operation.returnType.isStream}
 
-   val possibleStreamTypes = candidateStreamOperations.mapNotNull { it.second.returnType.typeParameters.firstOrNull() }
+   /**
+    * The set of the fewest operations required to attempt to serve this query.
+    */
+   private val minimumOperations: Set<Pair<Service, RemoteOperation>> = typesAndCandidateSources.let {
+      // Calculate the fewest number of sources we need to contact in order
+      // to complete this query, given that some attributes are available from multiple sources.
+      // This is effectively a Set-Cover problem, which is NP-Hard.
+      // This implementation follows the "Greedy" algorithm approach to solving.
+
+
+      // 1: Invert the map
+      val dataSourceToTypes = mutableMapOf<Pair<Service, RemoteOperation>, MutableSet<TypePresentInQuery>>()
+      typesAndCandidateSources.forEach { (type, possibleSources) ->
+         possibleSources.forEach { dataSource ->
+            val typesServed = dataSourceToTypes.getOrPut(dataSource) { mutableSetOf() }
+            typesServed.add(type)
+         }
+      }
+
+      // 2: Build a set of the required types. We'll mutate this as we assign a data source
+      // for each type
+      val requiredTypes = typesAndCandidateSources.keys
+         // Only consider types that have at least a single data source available
+         .filter { a -> typesAndCandidateSources[a]?.isNotEmpty() ?: false }
+         .toMutableSet()
+
+      // Don't iterate forever
+      val maximumPermittedLoops = requiredTypes.size * dataSourceToTypes.keys.size
+      var loopCount = 0
+
+      val selectedDataSources = mutableSetOf<Pair<Service, RemoteOperation>>()
+
+      // Loop, finding the "best" data source for the remaining types.
+      while (requiredTypes.isNotEmpty() && loopCount < maximumPermittedLoops) {
+         // We select the data source that covers the most "yet-to-be-covered" types.
+         val nextDataSource = dataSourceToTypes.maxByOrNull { it.value.count { type -> type in requiredTypes } }
+         if (nextDataSource != null) {
+            selectedDataSources.add(nextDataSource.key)
+            requiredTypes.removeAll(nextDataSource.value)
+         } else {
+            break
+         }
+         loopCount++
+      }
+      if (requiredTypes.isNotEmpty()) {
+         logger.warn { "Attempt to select minimum set of services for query failed - the following types were left unresolved (though do have data sources available) after the max iterations exceeded: ${requiredTypes.joinToString { it.type.name.shortDisplayName }}" }
+      }
+
+      selectedDataSources
+   }
+
+   val minimumStreamOperations = minimumOperations
+      .filter { (_, operation) -> operation is StreamOperation || operation.returnType.isStream }
+
+
+   val possibleStreamTypes = minimumStreamOperations.mapNotNull { it.second.returnType.typeParameters.firstOrNull() }
 }
 
 

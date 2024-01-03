@@ -59,7 +59,7 @@ class QueryPlanBuilderTest : DescribeSpec({
          )
          val metadata = QueryPlanner().buildMetadata(query, querySchema)
          metadata.allCandidateOperations.shouldHaveSize(2)
-         metadata.candidateStreamOperations.shouldHaveSize(2)
+         metadata.minimumStreamOperations.shouldHaveSize(2)
       }
    }
 })
