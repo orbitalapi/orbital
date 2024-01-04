@@ -1,5 +1,6 @@
 package com.orbitalhq.cockpit.core.security
 
+import com.orbitalhq.cockpit.core.security.authorisation.IdentityTokenKind
 import com.orbitalhq.cockpit.core.security.authorisation.VyneOpenIdpConnectConfig
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
@@ -22,7 +23,8 @@ class SecurityConfigController(private val openIdpConfiguration: VyneOpenIdpConn
          openIdpConfiguration.scope,
          openIdpConfiguration.requireHttps,
          accountManagementUrl =  openIdpConfiguration.accountManagementUrl,
-         orgManagementUrl = openIdpConfiguration.orgManagementUrl
+         orgManagementUrl = openIdpConfiguration.orgManagementUrl,
+         identityTokenKind = openIdpConfiguration.identityTokenKind
          )
 
 }
@@ -35,7 +37,8 @@ data class FrontEndSecurityConfig(
    val redirectUri: String? = null,
    val enabled: Boolean = issuerUrl != null,
    val accountManagementUrl: String?,
-   val orgManagementUrl:String?
+   val orgManagementUrl:String?,
+   val identityTokenKind: IdentityTokenKind
 )
 
 

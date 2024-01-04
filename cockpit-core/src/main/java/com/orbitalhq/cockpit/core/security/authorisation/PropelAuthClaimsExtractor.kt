@@ -8,7 +8,7 @@ import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.stereotype.Component
 
 @Component
-@ConditionalOnProperty(name = ["vyne.security.open-idp.jwt-type"], havingValue = PropelAuthJwtKind, matchIfMissing = false)
+@ConditionalOnProperty(name = ["vyne.security.open-idp.roles.format"], havingValue = PropelAuthJwtKind, matchIfMissing = false)
 class PropelAuthClaimsExtractor : JwtRolesExtractor {
    companion object {
       const val PropelAuthJwtKind = "propelauth"

@@ -12,9 +12,12 @@ fun getPreferredUserDisplayName(claims: Map<String, Any>): String {
 
    return when {
       hasClaims(JwtStandardClaims.PreferredUserName) -> claims[JwtStandardClaims.PreferredUserName]!! as String
+
       hasClaims(PropelAuthJwtTokenClaims.FirstName, PropelAuthJwtTokenClaims.LastName) -> listOf(claims[PropelAuthJwtTokenClaims.FirstName] as String, claims[PropelAuthJwtTokenClaims.LastName] as String)
          .filter { it.isNotEmpty() }
          .joinToString(" ")
+      // Fallback. Providers like Cognito don't actually server PerferredUserName unless explicitly configured to do so
+      hasClaims(JwtStandardClaims.Email) -> claims[JwtStandardClaims.Email]!! as String
       else -> error("Could not infer username from provided claims: $claims")
    }
 }
@@ -108,3 +111,4 @@ object PropelAuthJwtTokenClaims {
    const val PictureUrl = "picture_url"
    const val OrgIdToMemberInfo = "org_id_to_org_member_info"
 }
+
