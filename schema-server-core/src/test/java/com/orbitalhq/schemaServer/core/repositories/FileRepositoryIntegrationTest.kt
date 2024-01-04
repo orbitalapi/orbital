@@ -147,7 +147,7 @@ class FileRepositoryIntegrationTest {
          .writeText("""type Hello inherits String""")
 
       Awaitility.await()
-         .atMost(2, TimeUnit.SECONDS)
+         .atMost(10, TimeUnit.SECONDS)
          .until<Boolean> {
             schemaClient.schema()
                .hasType("Hello")

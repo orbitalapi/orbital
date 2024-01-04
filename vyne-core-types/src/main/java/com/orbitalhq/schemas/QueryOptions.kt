@@ -58,10 +58,16 @@ data class QueryOptions(
 
    /**
     * Some queries require state (such as joining streams).
-    * This indicates a connection to load from the the SourceLoadersConnectionRegistry
+    * When useStateStore = true, we need a connection to load from the the SourceLoadersConnectionRegistry
     * which can be used to store state. (Typically a cache provider, such as Hazelcast or Redis)
+    * Connection name can be null in which case we use the 'default' connection speficied in the taxonomy.
     */
-   val stateStoreConnectionName: String? = null
+   val stateStoreConnectionName: String? = null,
+   /**
+    * Some queries require state (such as joining streams).
+    * This indicates a connection to load from the the SourceLoadersConnectionRegistry
+    */
+   val useStateStore: Boolean = false
 ) {
 
    /**
@@ -92,15 +98,19 @@ data class QueryOptions(
       fun default() = QueryOptions()
 
       fun fromQuery(query: TaxiQlQuery): QueryOptions {
-         val cachingStrategy: CachingStrategy = query.annotation("Cache")?.let { annotation ->
-            when {
-               annotation.parameter("connection") != null -> RemoteCache(annotation.parameter("connection") as? String?)
-               annotation.defaultParameterValue != null -> NamedCache(annotation.defaultParameterValue as String)
-               else -> GlobalSharedCache
-            }
-         } ?: QueryScopedCache
+         val cacheAnnotation = query.annotation("Cache")
+         val cachingStrategy: CachingStrategy = when {
+            cacheAnnotation == null -> QueryScopedCache
+            cacheAnnotation.parameter("connection") != null -> RemoteCache(cacheAnnotation.parameter("connection") as? String?)
+            cacheAnnotation.defaultParameterValue != null -> NamedCache(cacheAnnotation.defaultParameterValue as String)
+            cacheAnnotation.parameter("connection") == null -> RemoteCache(null)
+            else -> GlobalSharedCache
+         }
 
-         val stateStoreConnectionName:String? = query.annotation("StateStore")?.let { annotation ->
+
+         val statStoreAnnotation = query.annotation("StateStore")
+         val useStateStore = statStoreAnnotation != null
+         val stateStoreConnectionName:String? = statStoreAnnotation?.let { annotation ->
             when {
                annotation.parameter("connection") != null -> annotation.parameter("connection")!! as String
                else -> null
@@ -110,7 +120,8 @@ data class QueryOptions(
          return QueryOptions(
             omitNulls = query.annotation("OmitNulls") != null,
             cachingStrategy = cachingStrategy,
-            stateStoreConnectionName = stateStoreConnectionName
+            stateStoreConnectionName = stateStoreConnectionName,
+            useStateStore = useStateStore
          )
       }
    }
