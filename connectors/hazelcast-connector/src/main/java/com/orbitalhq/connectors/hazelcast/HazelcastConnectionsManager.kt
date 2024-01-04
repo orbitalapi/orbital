@@ -11,14 +11,16 @@ object HazelcastConnections {
 
 class HazelcastConnectionsManager(private val connectors: SourceLoaderConnectorsRegistry) : HazelcastInstanceProvider {
    private val hazelcastConnections = ConcurrentHashMap<HazelcastConfiguration, HazelcastInstance>()
-   private val defaultHazelcastConnectionMap = ConcurrentHashMap<HazelcastConfiguration, HazelcastInstance>()
 
    fun hazelcastConnection(connectionName: String?): Pair<HazelcastInstance, HazelcastConfiguration> {
       return if (connectionName == null) {
          val defaultHazelcastConnection = connectors.defaultHazelcastConfiguration()
          require(defaultHazelcastConnection != null)
-         val hzInstance = defaultHazelcastConnectionMap.getOrPut(defaultHazelcastConnection) {
-            HazelcastBuilder.build(defaultHazelcastConnection, HazelcastConnections.QUERY_CACHE)
+         val hzInstance = hazelcastConnections.getOrPut(defaultHazelcastConnection) {
+            HazelcastBuilder.build(
+               defaultHazelcastConnection,
+               HazelcastConnections.QUERY_CACHE
+            )
          }
          hzInstance to defaultHazelcastConnection
       } else {

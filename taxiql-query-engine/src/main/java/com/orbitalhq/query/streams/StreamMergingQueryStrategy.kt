@@ -30,6 +30,7 @@ class StreamMergingQueryStrategy(
       if (mergedStreams.isEmpty()) {
          return QueryStrategyResult(null)
       }
+
       require(mergedStreams.size == 1) { "Expected a single MergedStream " }
       val streamType = mergedStreams.single().type
       val streamMemberType = streamType.typeParameters[0]
@@ -37,7 +38,7 @@ class StreamMergingQueryStrategy(
 
       val connectionName = context.queryOptions.stateStoreConnectionName
       "" // TODO : We need a way of getting this from the parsed query (similar to how we get Cache info)
-      val stateStore = if (stateStoreProvider != null && connectionName != null) {
+      val stateStore = if (context.queryOptions.useStateStore && stateStoreProvider != null) {
          stateStoreProvider.getCacheStore(
             connectionName,
             "StreamMerge_${streamMemberTaxiType.qualifiedName}",
