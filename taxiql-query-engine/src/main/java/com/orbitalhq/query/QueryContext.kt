@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.merge
 import lang.taxi.accessors.ProjectionFunctionScope
+import lang.taxi.expressions.Expression
 import lang.taxi.policies.Instruction
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
@@ -423,7 +424,7 @@ data class QueryContext(
          // We should limit, such that if an entity decalres an Id, then we should only invoke that service if the
          // @Id is known to us.
          // We expect to remove this once search-only-on-id is completed.
-         invokedService.metadata(ServiceAnnotations.Datasource.annotation).params[ServiceParams.Exclude.paramName]?.let { excludedServiceList ->
+         invokedService.firstMetadata(ServiceAnnotations.Datasource.annotation).params[ServiceParams.Exclude.paramName]?.let { excludedServiceList ->
             //TODO check taxi annotation param value schema generation.
             // as currently the value of 'excluded' is a list of string
             // but it comes as a string in the form of [[service1, service2]]
@@ -486,6 +487,17 @@ data class QueryContext(
       val querySpec = parseQuery(expression).single()
       return queryEngine.mutate(expression.mutation!!, querySpec, this, inputValue = null, metricsTags = metricsTags)
 
+   }
+
+   fun evaluate(expression: Expression, facts: FactBag = FactBag.empty()): TypedInstance {
+      return TypedObjectFactory(
+         schema.type(expression.returnType),
+         facts,
+         schema,
+         source = Provided, // TODO
+         inPlaceQueryEngine = this,
+         functionResultCache = this.functionResultCache,
+      ).evaluateExpression(expression)
    }
 }
 

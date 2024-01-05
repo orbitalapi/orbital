@@ -118,13 +118,13 @@ class StoreInvoker(
 
    private fun fetchConnection(service: Service): AzureStorageConnectorConfiguration {
       val connectionName =
-         service.metadata(AzureStoreConnectionTaxi.Annotations.AzureStoreService.NAME).params["connectionName"] as String
+         service.firstMetadata(AzureStoreConnectionTaxi.Annotations.AzureStoreService.NAME).params["connectionName"] as String
       val azureStoreConnectionConfig = connectionRegistry.getConnection(connectionName)
       logger.info { "Azure Store connection ${azureStoreConnectionConfig.connectionName} found in configurations" }
       return azureStoreConnectionConfig
    }
 
    private fun fetchContainer(operation: RemoteOperation): String {
-      return operation.metadata(AzureStoreConnectionTaxi.Annotations.StoreOperation.NAME).params[AzureStoreConnectionTaxi.Annotations.StoreOperation.containerMetadataName] as String
+      return operation.firstMetadata(AzureStoreConnectionTaxi.Annotations.StoreOperation.NAME).params[AzureStoreConnectionTaxi.Annotations.StoreOperation.containerMetadataName] as String
    }
 }

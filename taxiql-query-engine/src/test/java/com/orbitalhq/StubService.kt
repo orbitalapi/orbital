@@ -125,7 +125,7 @@ class StubService(
       val paramDescription = parameters.joinToString { "${it.second.type.name.shortDisplayName} = ${it.second.value}" }
       logger.debug { "Invoking ${service.name} -> ${operation.name}($paramDescription)" }
       val stubResponseKey = if (operation.hasMetadata("StubResponse")) {
-         val metadata = operation.metadata("StubResponse")
+         val metadata = operation.firstMetadata("StubResponse")
          (metadata.params["value"] as String?).orElse(operation.name)
       } else {
          operation.name

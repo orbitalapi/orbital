@@ -18,6 +18,7 @@ import com.orbitalhq.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
+import lang.taxi.expressions.Expression
 import lang.taxi.types.PrimitiveType
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -33,7 +34,8 @@ class ParameterFactory {
       paramType: Type,
       context: QueryContext,
       candidateValue: TypedInstance? = null,
-      operation: RemoteOperation? = null
+      operation: RemoteOperation? = null,
+      defaultValue: Expression? = null
    ): TypedInstance {
       // First, search only the top level for facts
       val firstLevelDiscovery = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)
@@ -54,10 +56,11 @@ class ParameterFactory {
          return anyDepthOneDistinct!!
       }
 
+      if (defaultValue != null) {
+         val evaluatedDefaultValue = context.evaluate(defaultValue)
+         return evaluatedDefaultValue
+      }
 
-//      if (startingPoint.type == paramType) {
-//         return EvaluatedLink.success(link, startingPoint, startingPoint)
-//      }
       if (!canConstructType(paramType)) {
          throw UnresolvedOperationParametersException(
             "No instance of type ${paramType.name} is present in the graph, and the type is not a parameter type, so cannot be constructed. ",
@@ -132,6 +135,7 @@ class ParameterFactory {
 
    private fun canConstructType(paramType: Type): Boolean {
       return when {
+         paramType.isPrimitive -> false // Don't attempt to construct a primitive type
          paramType.isScalar -> true
          paramType.isParameterType -> true
          paramType.isCollection -> canConstructType(paramType.collectionType!!)
@@ -319,6 +323,7 @@ private class QueryContextWithOperationExclusion(
          )
       )
    } ?: emptySet()
+
    override fun withAdditionalFacts(facts: List<TypedInstance>, scopedFacts: List<ScopedFact>): InPlaceQueryEngine {
       return QueryContextWithOperationExclusion(context.withAdditionalFacts(facts, scopedFacts), operation)
    }

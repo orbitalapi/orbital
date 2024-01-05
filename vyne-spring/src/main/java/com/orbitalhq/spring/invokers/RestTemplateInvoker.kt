@@ -42,8 +42,6 @@ import java.time.Instant
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
-inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
-
 class RestTemplateInvoker(
    val schemaProvider: SchemaProvider,
    val webClient: WebClient,

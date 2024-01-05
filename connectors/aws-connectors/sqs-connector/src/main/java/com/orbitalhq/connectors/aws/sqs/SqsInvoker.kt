@@ -78,9 +78,9 @@ class SqsInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String
    ): Flow<TypedInstance> {
-      val connectionName = service.metadata(SqsConnectorTaxi.Annotations.SqsService.NAME)
+      val connectionName = service.firstMetadata(SqsConnectorTaxi.Annotations.SqsService.NAME)
          .params[SqsConnectorTaxi.Annotations.SqsService.ConnectionNameParam] as String
-      val sqsOperation = operation.metadata(SqsConnectorTaxi.Annotations.SqsOperation.NAME)
+      val sqsOperation = operation.firstMetadata(SqsConnectorTaxi.Annotations.SqsOperation.NAME)
          .let { SqsConnectorTaxi.Annotations.SqsOperation.from(it) }
 
 

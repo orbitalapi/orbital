@@ -253,8 +253,6 @@ class OperationInvocationEvaluator(
       callArgs: Set<TypedInstance>,
       context: QueryContext
    ): TypedInstance {
-      // Danger - this .toList() call won't work with streaming queries!
-      // Needs to be fixed in 0.19
       return invocationService.invokeOperation(service, operation, callArgs, context).toList()
          .let { typedInstances ->
             when {
@@ -293,7 +291,7 @@ class OperationInvocationEvaluator(
          // for us, as we don't know what path was travelled to arrive here.
          when {
             edge.previousValue != null && edge.previousValue.type.isAssignableTo(requiredParam.type) -> edge.previousValue
-            else -> parameterFactory.discover(requiredParam.type, context, edge.previousValue, operation)
+            else -> parameterFactory.discover(requiredParam.type, context, edge.previousValue, operation, requiredParam.defaultValue)
          }
       } catch (e: Exception) {
          logger.warn { "Failed to discover param of type ${requiredParam.type.fullyQualifiedName} for operation ${operation.qualifiedName} - ${e::class.simpleName} ${e.message}" }
