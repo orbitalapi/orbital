@@ -10,6 +10,6 @@ fun RemoteOperation.hasHttpMetadata(): Boolean {
    if (!this.hasMetadata(annotationName)) {
       return false;
    }
-   val httpMeta = this.metadata(annotationName)
+   val httpMeta = this.firstMetadata(annotationName)
    return httpMeta.params.containsKey("url")
 }

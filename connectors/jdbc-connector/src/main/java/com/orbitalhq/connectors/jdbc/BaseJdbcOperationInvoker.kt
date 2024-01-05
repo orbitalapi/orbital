@@ -135,7 +135,7 @@ abstract class BaseJdbcOperationInvoker(
 
    protected fun getConnectionConfigAndTemplate(service: Service): Pair<JdbcConnectionConfiguration, NamedParameterJdbcTemplate> {
       val connectionName =
-         service.metadata(JdbcConnectorTaxi.Annotations.DatabaseOperation.NAME).params["connection"] as String
+         service.firstMetadata(JdbcConnectorTaxi.Annotations.DatabaseOperation.NAME).params["connection"] as String
       return connectionFactory.config(connectionName) to connectionFactory.jdbcTemplate(connectionName)
    }
 

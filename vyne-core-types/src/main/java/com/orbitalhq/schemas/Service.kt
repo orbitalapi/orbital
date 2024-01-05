@@ -332,7 +332,7 @@ data class OperationContract(
 
 fun RemoteOperation.httpOperationMetadata(): VyneHttpOperation {
    val metadataName = HttpOperation.NAME
-   val annotation = metadata(metadataName)
+   val annotation = firstMetadata(metadataName)
    val url = annotation.params["url"] as String
    val method = annotation.params["method"] as String
    return VyneHttpOperation(httpOperationMetadata = annotation, url = url, method = method)

@@ -58,7 +58,7 @@ class LineageSankeyOperationNodeBuilder(private val schema: Schema) {
       operationResult: OperationResult
    ): SankeyOperationNodeDetails? {
       val connectionName =
-         service.metadata("com.orbitalhq.jdbc.DatabaseService")?.params?.get("connection") as? String?
+         service.firstMetadata("com.orbitalhq.jdbc.DatabaseService")?.params?.get("connection") as? String?
             ?: "Unknown Db Connection"
       val memberType = operation.returnType.collectionType ?: operation.returnType
 
@@ -88,13 +88,13 @@ class LineageSankeyOperationNodeBuilder(private val schema: Schema) {
       operation: RemoteOperation,
       operationResult: OperationResult
    ): SankeyOperationNodeDetails? {
-      val metadata = service.metadata("com.orbitalhq.kafka.KafkaService")
+      val metadata = service.firstMetadata("com.orbitalhq.kafka.KafkaService")
       val connectionName = metadata.params.get("connectionName") as String?
       if (connectionName == null) {
          logger.warn { "Didn't receive the expected params in the Kafka service metadata.  Expected an annotation named com.orbitalhq.kafka.KafkaService, with a param connectionName" }
          return null
       }
-      val topic = operation.metadata("com.orbitalhq.kafka.KafkaOperation").params.get("topic") as String?
+      val topic = operation.firstMetadata("com.orbitalhq.kafka.KafkaOperation").params.get("topic") as String?
       if (topic == null) {
          logger.warn { "Didn't receive the expected params in the Kafka operation metadata.  Expected an annotation named com.orbitalhq.kafka.KafkaOperation, with a param topic" }
          return null
@@ -121,7 +121,7 @@ class LineageSankeyOperationNodeBuilder(private val schema: Schema) {
 
       // Use the address from the metadata, rather than the remote call,
       // as this is templated, and will be consistent between calls.
-      val path = operation.metadata(HttpOperation.NAME).params["url"] as String?
+      val path = operation.firstMetadata(HttpOperation.NAME).params["url"] as String?
       if (path == null) {
          logger.warn { "Could not construct an Http node for ${operation.qualifiedName} as no HttpOperation url metadata was found" }
          return null

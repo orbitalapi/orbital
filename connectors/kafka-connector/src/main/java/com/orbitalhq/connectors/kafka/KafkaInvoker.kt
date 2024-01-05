@@ -46,8 +46,8 @@ class KafkaInvoker(
       queryId: String
    ): Flow<TypedInstance> {
 
-      val connectionName = service.metadata("com.orbitalhq.kafka.KafkaService").params["connectionName"] as String
-      val kafkaOperation = operation.metadata(KafkaConnectorTaxi.Annotations.KafkaOperation.NAME)
+      val connectionName = service.firstMetadata("com.orbitalhq.kafka.KafkaService").params["connectionName"] as String
+      val kafkaOperation = operation.firstMetadata(KafkaConnectorTaxi.Annotations.KafkaOperation.NAME)
          .let { KafkaConnectorTaxi.Annotations.KafkaOperation.from(it) }
 
       return if (operation.operationType == OperationScope.MUTATION) {

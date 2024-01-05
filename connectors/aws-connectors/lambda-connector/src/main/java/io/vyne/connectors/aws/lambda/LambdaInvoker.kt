@@ -67,14 +67,14 @@ class LambdaInvoker(
 
    private fun fetchConnection(service: Service): AwsConnectionConfiguration {
       val connectionName =
-         service.metadata(LambdaConnectorTaxi.Annotations.LambdaInvocationService.NAME).params["connectionName"] as String
+         service.firstMetadata(LambdaConnectorTaxi.Annotations.LambdaInvocationService.NAME).params["connectionName"] as String
       val awsConnectionConfiguration = connectionRegistry.getConnection(connectionName)
       logger.info { "AWS connection ${awsConnectionConfiguration.connectionName} with region ${awsConnectionConfiguration.region} found in configurations" }
       return awsConnectionConfiguration
    }
 
    private fun fetchFunctionName(operation: RemoteOperation): String {
-      return operation.metadata(LambdaConnectorTaxi.Annotations.LambdaOperation.NAME)
+      return operation.firstMetadata(LambdaConnectorTaxi.Annotations.LambdaOperation.NAME)
          .params[LambdaConnectorTaxi.Annotations.LambdaOperation.operationMetadataName] as String
 
    }

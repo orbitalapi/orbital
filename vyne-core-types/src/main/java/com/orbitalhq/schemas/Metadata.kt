@@ -1,13 +1,12 @@
 package com.orbitalhq.schemas
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import lang.taxi.utils.quotedIfNecessary
 
 
-// TODO : Rename to annotations, to align with Taxi concept
-
+// TODO : Remove, and just use Taxi's annotation class.
 data class Metadata(
-   val name: QualifiedName, val params: Map<String, Any?> = emptyMap()
+   val name: QualifiedName,
+   val params: Map<String, Any?> = emptyMap(),
 ) {
    fun asTaxi(): String {
       val paramsList = params.map { (key, value) ->
@@ -29,9 +28,12 @@ data class Metadata(
 
 interface MetadataTarget {
    val metadata: List<Metadata>
-   fun metadata(name: String): Metadata {
+   fun firstMetadata(name: String): Metadata {
       return metadata.firstOrNull { it.name.fullyQualifiedName == name }
          ?: throw IllegalArgumentException("$name not present within this metadata")
+   }
+   fun allMetadata(name: String):List<Metadata> {
+      return metadata.filter { it.name.fullyQualifiedName == name }
    }
 
    fun hasMetadata(name: String): Boolean {

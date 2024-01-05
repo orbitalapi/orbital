@@ -423,7 +423,7 @@ data class QueryContext(
          // We should limit, such that if an entity decalres an Id, then we should only invoke that service if the
          // @Id is known to us.
          // We expect to remove this once search-only-on-id is completed.
-         invokedService.metadata(ServiceAnnotations.Datasource.annotation).params[ServiceParams.Exclude.paramName]?.let { excludedServiceList ->
+         invokedService.firstMetadata(ServiceAnnotations.Datasource.annotation).params[ServiceParams.Exclude.paramName]?.let { excludedServiceList ->
             //TODO check taxi annotation param value schema generation.
             // as currently the value of 'excluded' is a list of string
             // but it comes as a string in the form of [[service1, service2]]

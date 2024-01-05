@@ -178,14 +178,14 @@ class S3Invoker(
 
     private fun fetchConnection(service: Service): AwsConnectionConfiguration {
         val connectionName =
-            service.metadata(S3ConnectorTaxi.Annotations.S3Service.NAME).params["connectionName"] as String
+            service.firstMetadata(S3ConnectorTaxi.Annotations.S3Service.NAME).params["connectionName"] as String
         val awsConnectionConfiguration = connectionRegistry.getConnection(connectionName)
         logger.info { "AWS connection ${awsConnectionConfiguration.connectionName} with region ${awsConnectionConfiguration.region} found in configurations" }
         return awsConnectionConfiguration
     }
 
     private fun fetchBucket(operation: RemoteOperation): String {
-        return operation.metadata(S3ConnectorTaxi.Annotations.S3Operation.NAME).params[S3ConnectorTaxi.Annotations.S3Operation.bucketMetadataName] as String
+        return operation.firstMetadata(S3ConnectorTaxi.Annotations.S3Operation.NAME).params[S3ConnectorTaxi.Annotations.S3Operation.bucketMetadataName] as String
 
     }
 }
