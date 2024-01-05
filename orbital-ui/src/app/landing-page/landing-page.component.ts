@@ -55,14 +55,14 @@ export const RECENT_QUERIES: LandingPageCardConfig = {
 
 export const DATA_SOURCES: LandingPageCardConfig = {
   title: 'Sources',
-  emptyText: `Data sources and schemas define the places Orbital can fetch data.  Add a data source to get started.`,
+  emptyText: `Data sources and schemas define the places ${UiCustomisations.productName} can fetch data.  Add a data source to get started.`,
   emptyActionLabel: 'Add a data source',
   emptyStateImage: 'assets/img/illustrations/data-settings.svg'
 };
 
 export const DATA_CATALOG: LandingPageCardConfig = {
   title: 'Catalog',
-  emptyText: 'A one-stop searchable catalog of all your glossary items, data models, sources and APIs registered with Orbital.',
+  emptyText: `A one-stop searchable catalog of all your glossary items, data models, sources and APIs registered with ${UiCustomisations.productName}.`,
   emptyActionLabel: 'Search the catalog',
   emptyStateImage: 'assets/img/illustrations/catalog.svg'
 };
