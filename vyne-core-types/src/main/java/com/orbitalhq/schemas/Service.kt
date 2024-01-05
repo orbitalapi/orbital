@@ -8,6 +8,7 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.utils.ImmutableEquality
 import lang.taxi.annotations.HttpOperation
+import lang.taxi.expressions.Expression
 import lang.taxi.services.OperationScope
 import lang.taxi.types.Documented
 import java.io.Serializable
@@ -93,7 +94,8 @@ data class Parameter(
    override val metadata: List<Metadata> = emptyList(),
    val constraints: List<InputConstraint> = emptyList(),
    val typeDoc: String? = null,
-   val nullable: Boolean
+   val nullable: Boolean,
+   val defaultValue: Expression? = null
 ) : MetadataTarget, PartialParameter {
    fun isNamed(name: String): Boolean {
       return this.name != null && this.name == name

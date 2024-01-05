@@ -29,10 +29,6 @@ import kotlin.test.assertFails
 @ExperimentalCoroutinesApi
 class VyneQueryTest {
 
-   @Rule
-   @JvmField
-   val server = MockWebServerRule()
-
    @Test
    fun canQueryAnonymousTypes(): Unit = runBlocking {
       val (vyne, stub) = testVyne(

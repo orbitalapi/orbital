@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.merge
 import lang.taxi.accessors.ProjectionFunctionScope
+import lang.taxi.expressions.Expression
 import lang.taxi.policies.Instruction
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
@@ -486,6 +487,17 @@ data class QueryContext(
       val querySpec = parseQuery(expression).single()
       return queryEngine.mutate(expression.mutation!!, querySpec, this, inputValue = null, metricsTags = metricsTags)
 
+   }
+
+   fun evaluate(expression: Expression, facts: FactBag = FactBag.empty()): TypedInstance {
+      return TypedObjectFactory(
+         schema.type(expression.returnType),
+         facts,
+         schema,
+         source = Provided, // TODO
+         inPlaceQueryEngine = this,
+         functionResultCache = this.functionResultCache,
+      ).evaluateExpression(expression)
    }
 }
 

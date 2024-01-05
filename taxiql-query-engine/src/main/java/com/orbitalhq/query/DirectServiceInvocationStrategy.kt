@@ -4,11 +4,16 @@ import com.google.common.cache.CacheBuilder
 import com.orbitalhq.models.DefinedInSchema
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
-import com.orbitalhq.schemas.*
+import com.orbitalhq.schemas.Operation
+import com.orbitalhq.schemas.Parameter
+import com.orbitalhq.schemas.PropertyToParameterConstraint
+import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.Schema
+import com.orbitalhq.schemas.StreamOperation
+import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.log
 import lang.taxi.services.operations.constraints.ArgumentExpression
 import lang.taxi.services.operations.constraints.ConstantValueExpression
-import lang.taxi.services.operations.constraints.RelativeValueExpression
 
 // Note:  Currently tested via tests in VyneTest, no direct tests, but that'd be good to add.
 /**
@@ -63,8 +68,10 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
       target: Set<QuerySpecTypeNode>
    ): Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>> {
       // TODO try caching candidate operations on the context
-      return getCandidateOperations(context.schema, target)
-         .filter { (_, operationToParameters) -> operationToParameters.isNotEmpty() }
+      return getCandidateOperations(context.schema, target, context)
+         .filter { (_, operationToParameters) ->
+            operationToParameters.isNotEmpty()
+         }
 
    }
 
@@ -72,12 +79,12 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
    /**
     * Returns the operations that we can invoke, grouped by target query node.
     */
-   internal fun getCandidateOperations(
+   private fun getCandidateOperations(
       schema: Schema,
       target: Set<QuerySpecTypeNode>,
-      requireAllParametersResolved: Boolean = true
+      context: QueryContext
    ): Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>> {
-      val grouped = target.map { it to getCandidateOperations(schema, it, requireAllParametersResolved) }
+      val grouped = target.map { it to getCandidateOperations(schema, it, context) }
          .groupBy({ it.first }, { it.second })
 
       val result = grouped.mapValues { (_, operationParameterMaps) ->
@@ -91,10 +98,10 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
     * (either because they have no parameters, or because all their parameters are populated by constraints)
     * and the set of parameters that we have identified values for
     */
-   internal fun getCandidateOperations(
+   private fun getCandidateOperations(
       schema: Schema,
       target: QuerySpecTypeNode,
-      requireAllParametersResolved: Boolean
+      context: QueryContext
    ): Map<RemoteOperation, Map<Parameter, TypedInstance>> {
       val operationsForType = operationsForTypeCache.get(target.type) {
          val operations: Set<RemoteOperation> = schema.operations + schema.streamOperations
@@ -115,18 +122,35 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
                operation to operationParameters
             }
          }
+         .map { (operation, parameters) ->
+            provideUnpopulatedParametersWithDefaults(operation, parameters, context)
+         }
          .filter { (operation, populatedOperationParameters) ->
-            if (requireAllParametersResolved) {
-               // Check to see if there are any outstanding parameters that haven't been populated
-               val unpopulatedParams = operation.parameters.filter { parameter ->
-                  !populatedOperationParameters.containsKey(parameter) && !parameter.nullable
-               }
-               unpopulatedParams.isEmpty()
-            } else {
-               true
+            // Check to see if there are any outstanding parameters that haven't been populated
+            val unpopulatedParams = operation.parameters.filter { parameter ->
+               !populatedOperationParameters.containsKey(parameter) && !parameter.nullable
             }
+            unpopulatedParams.isEmpty()
          }
       return operations.toMap()
+   }
+
+   /**
+    * Adds any parameters that are so far unpopulated, but
+    * have a default expression that can be used to populate them
+    */
+   private fun provideUnpopulatedParametersWithDefaults(
+      operation: RemoteOperation,
+      parameters: Map<Parameter, TypedInstance>,
+      context: QueryContext
+   ): Pair<RemoteOperation, Map<Parameter, TypedInstance>> {
+      val defaultValues = operation.parameters
+         .filter { it.defaultValue != null }
+         .filter { !parameters.containsKey(it) }
+         .associateWith { parameter ->
+            context.evaluate(parameter.defaultValue!!)
+         }
+      return operation to (parameters + defaultValues)
    }
 
    private fun filterPropertyToParameterConstraint(

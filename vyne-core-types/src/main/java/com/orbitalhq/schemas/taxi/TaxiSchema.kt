@@ -193,7 +193,8 @@ class TaxiSchema(
          metadata = parseAnnotationsToMetadata(taxiParam.annotations),
          constraints = constraintConverter.buildConstraints(type, taxiParam.constraints),
          typeDoc = taxiParam.typeDoc,
-         nullable = taxiParam.nullable
+         nullable = taxiParam.nullable,
+         defaultValue = taxiParam.defaultValue
       )
    }
 

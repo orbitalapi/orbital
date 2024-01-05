@@ -366,7 +366,7 @@ class VyneGraphBuilder(
    private fun isReadOnlyOperation(operation: RemoteOperation) = operation.operationType == OperationScope.READ_ONLY
 
    private fun hasRawPrimitivesForInputs(operation: RemoteOperation): Boolean {
-      return operation.parameters.any { it.type.isPrimitive }
+      return operation.parameters.any { it.type.isPrimitive && it.defaultValue == null }
    }
 
    private fun buildTableOperationConnections(
