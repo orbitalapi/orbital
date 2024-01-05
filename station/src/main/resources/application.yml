@@ -18,11 +18,6 @@ spring:
    sql:
       init:
          mode: never
-   security:
-      oauth2:
-         resourceserver:
-            jwt:
-               jwk-set-uri: ${vyne.security.open-idp.jwks-uri:''}
    application:
       name: orbital-station
    flyway:

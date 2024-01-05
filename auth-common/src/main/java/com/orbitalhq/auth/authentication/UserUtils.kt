@@ -9,13 +9,21 @@ fun getPreferredUserDisplayName(claims: Map<String, Any>): String {
    fun hasClaims(vararg names: String): Boolean {
       return names.all { claims.containsKey(it) }
    }
+   fun concatClaims(vararg names: String): String {
+      return names.map { claims[it] as String? }
+         .filter { !it.isNullOrEmpty() }
+         .joinToString(" ")
+   }
 
    return when {
       hasClaims(JwtStandardClaims.PreferredUserName) -> claims[JwtStandardClaims.PreferredUserName]!! as String
 
-      hasClaims(PropelAuthJwtTokenClaims.FirstName, PropelAuthJwtTokenClaims.LastName) -> listOf(claims[PropelAuthJwtTokenClaims.FirstName] as String, claims[PropelAuthJwtTokenClaims.LastName] as String)
-         .filter { it.isNotEmpty() }
-         .joinToString(" ")
+      // Azure
+      hasClaims(JwtStandardClaims.Name) -> claims[JwtStandardClaims.Name]!! as String
+      hasClaims(JwtStandardClaims.GivenName, JwtStandardClaims.FamilyName) -> concatClaims(JwtStandardClaims.GivenName, JwtStandardClaims.FamilyName)
+      hasClaims(JwtStandardClaims.GivenName) -> claims[JwtStandardClaims.GivenName]!! as String
+
+      hasClaims(PropelAuthJwtTokenClaims.FirstName, PropelAuthJwtTokenClaims.LastName) -> concatClaims(PropelAuthJwtTokenClaims.FirstName, PropelAuthJwtTokenClaims.LastName)
       // Fallback. Providers like Cognito don't actually server PerferredUserName unless explicitly configured to do so
       hasClaims(JwtStandardClaims.Email) -> claims[JwtStandardClaims.Email]!! as String
       else -> error("Could not infer username from provided claims: $claims")
@@ -83,6 +91,9 @@ object JwtStandardClaims {
    // The RP MUST NOT rely upon this value being unique
    const val PreferredUserName = "preferred_username"
 
+   const val GivenName = "given_name"
+   const val FamilyName = "family_name"
+
    /**
     * URL of the End-User's profile picture.
     * This URL MUST refer to an image file (for example, a PNG, JPEG, or GIF image file),
@@ -112,3 +123,6 @@ object PropelAuthJwtTokenClaims {
    const val OrgIdToMemberInfo = "org_id_to_org_member_info"
 }
 
+object AzureTokenClaims {
+
+}
