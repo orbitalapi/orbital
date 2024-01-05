@@ -10,8 +10,10 @@ import {ENVIRONMENT, Environment} from 'src/app/services/environment';
 
 interface FrontEndSecurityConfig {
   issuerUrl: string;
+  oidcDiscoveryUrl: string;
   clientId: string;
   scope: string;
+
   redirectUri?: string | null;
   enabled: boolean;
   requireLoginOverHttps: boolean;
@@ -66,9 +68,7 @@ export class AuthService {
     try {
       const oauthEvent = await this.configureOAuthService();
       if (oauthEvent === true) {
-        const loginResult = await this.oauthService.loadDiscoveryDocumentAndLogin({
-          disableNonceCheck: true
-        });
+        const loginResult = await this.loadDiscoveryDocumentAndLogin();
         console.log('Login result: ' + loginResult);
         if (!loginResult) {
           return Promise.reject('Login failed')
@@ -90,6 +90,47 @@ export class AuthService {
       }
     } catch (e) {
       throw e;
+    }
+  }
+
+  /**
+   * Wrapper around this.oauthService.loadDiscoveryDocumentAndLogin
+   * which considers oidcDiscoveryUrl
+   */
+  async loadDiscoveryDocumentAndLogin() {
+    let loginOptions = {
+      disableNonceCheck: true
+    };
+
+    // This is the "normal" use-case ...
+    // The IDP follows OpenIDConnect conventions, so we can just
+    // load the discovery document from the convential url.
+    // Our OAuth library makes this use-case easy, so just call the method.
+    if (!this.securityConfig.oidcDiscoveryUrl) {
+      return await this.oauthService.loadDiscoveryDocumentAndLogin(loginOptions);
+    }
+
+    // The "exceptional" use-case is where the discoveryDocument lives at a non-conventional
+    // url.
+    // This isn't a big problem, but the library doesn't expose convenience methods for this flow,
+    // so we have to implement the loadDiscoveryDocumentAndLogin() method ourselves.
+    // The library internally is doing the following:
+    //  - loadDiscoveryDocumentAndLogin()
+    //    - calls loadDiscoveryDocument(url)
+    //      - calls tryLogin()
+    //  - then validation logic
+    //  - then call initLoginFlow.
+    //  -
+    const loginResult = await this.oauthService.loadDiscoveryDocument(this.securityConfig.oidcDiscoveryUrl).then(() => {
+      return this.oauthService.tryLogin(loginOptions);
+    });
+
+    // From @angular-oauth2-oidc/oauth-service loadDiscoveryDocumentAndLogin:
+    if (!this.oauthService.hasValidIdToken() || !this.oauthService.hasValidAccessToken()) {
+      this.oauthService.initLoginFlow();
+      return false;
+    } else {
+      return true;
     }
   }
 

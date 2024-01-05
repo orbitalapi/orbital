@@ -32,7 +32,8 @@ data class VyneOpenIdpConnectConfig(
    // Open Idp issuer Url
    val issuerUrl: String? = null,
    // The client Id defined in Idp for Orbital.
-   val clientId: String = "orbital",
+   // Null if enabled = false
+   val clientId: String? = null,
    // Scopes defined in Idp
    val scope: String = "openid profile email offline_access",
    // Require login via https
@@ -41,18 +42,25 @@ data class VyneOpenIdpConnectConfig(
    val orgManagementUrl: String? = null,
    val jwksUri: String? = null,
    val roles: JwtRolesConfig = JwtRolesConfig(),
-   val identityTokenKind: IdentityTokenKind = IdentityTokenKind.Access
+   val identityTokenKind: IdentityTokenKind = IdentityTokenKind.Access,
+
+   /**
+    * The url to load the oidc discovery document from.
+    * Normally is inferred from the issuerUrl
+    * (ie., ${issuerUrl}/.well-known/openid-configuration)
+    * However, some IDP's use a custom discovery url. (Azure).
+    */
+   val oidcDiscoveryUrl: String?,
 ) {
    init {
+      val configErrors = mutableListOf<String>()
+
+      fun idpProperty(key:String) = "vyne.security.open-idp.$key"
+      fun appendPrefixedError(message: String) = configErrors.add("When ${idpProperty("enabled")} = true, $message")
+
       if (enabled) {
-         val configErrors = listOf(
-            "jwks-uri" to jwksUri,
-            "issuer-url" to issuerUrl
-         ).mapNotNull { (configKey, value) ->
-            if (value == null) {
-               "When vyne.security.open-idp.enabled = true, you must also set vyne.security.open-idp.$configKey"
-            } else null
-         }
+         if (clientId == null) appendPrefixedError("${idpProperty("client-id")} must be set")
+         if (issuerUrl == null && oidcDiscoveryUrl == null) appendPrefixedError("either ${idpProperty("oidc-discovery-url")} or ${idpProperty("issuer-url")} must be set")
          if (configErrors.isNotEmpty()) {
             error(configErrors.joinToString("\n"))
          }

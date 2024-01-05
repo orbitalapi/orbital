@@ -1,5 +1,6 @@
 package com.orbitalhq.cockpit.core.security.authorisation
 
+import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.security.oauth2.jwt.Jwt
@@ -28,6 +29,9 @@ abstract class BasePathRolesExtractor(
    val path: String
 ) : JwtRolesExtractor {
 
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
    override fun getRoles(jwt: Jwt): Set<String> {
       val parts = path.split(".")
 
@@ -39,7 +43,8 @@ abstract class BasePathRolesExtractor(
          consumedPath.add(pathPart)
          val errorPrefix = "Misconfigured roles path at index $index (${consumedPath.joinToString(".")})."
          if (!acc.containsKey(pathPart)) {
-            error("$errorPrefix Expected to find a key $pathPart present, but it was not found. Present keys are ${acc.keys}")
+            logger.error { "$errorPrefix Expected to find a key $pathPart present, but it was not found. Present keys are ${acc.keys}" }
+            return emptySet()
          }
          val valueAtCurrentPath = acc.get(pathPart) ?: error("$errorPrefix Value was null.")
          val isLastPart = index == (parts.size - 1)
@@ -48,13 +53,15 @@ abstract class BasePathRolesExtractor(
             if (valueAtCurrentPath is List<*>) {
                valueAtCurrentPath
             } else {
-               error("$errorPrefix Expected to find a list of strings containing roles, but found a ${valueAtCurrentPath::class.simpleName}")
+               logger.error("$errorPrefix Expected to find a list of strings containing roles, but found a ${valueAtCurrentPath::class.simpleName}")
+               return emptySet()
             }
          } else {
             if (valueAtCurrentPath is Map<*, *>) {
                valueAtCurrentPath
             } else {
-               error("$errorPrefix Expected to find a Map, but found a ${valueAtCurrentPath::class.simpleName}")
+               logger.error("$errorPrefix Expected to find a Map, but found a ${valueAtCurrentPath::class.simpleName}")
+               return emptySet()
             }
          }
 
