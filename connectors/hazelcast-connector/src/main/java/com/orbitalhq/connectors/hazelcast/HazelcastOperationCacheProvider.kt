@@ -11,6 +11,7 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.serde.SerializableTypedInstance
 import com.orbitalhq.models.serde.toSerializable
 import com.orbitalhq.query.CacheExchange
+import com.orbitalhq.query.ConstructedQueryDataSource
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
@@ -116,26 +117,35 @@ class HazelcastOperationCacheProvider(
 
       // Initial state
       var foundCompletionMarker = false
-
-      val operationResult = OperationResult.from(
-         parameters,
-         RemoteCall(
-            service = CacheNames.cacheServiceName(connectionName).fqn(),
-            address = connectionAddress,
-            operation = CacheNames.CACHE_READ_OPERATION_NAME,
-            method = CacheNames.CACHE_READ_OPERATION_NAME,
-            durationMs = Duration.between(startTime, Instant.now()).toMillis(),
-            exchange = CacheExchange(
-               connectionName,
-               message.operation.name,
-               listName
-            ),
-            timestamp = startTime,
-            response = null, // Do we want to persist the response again?
-            responseMessageType = ResponseMessageType.FULL,
-            responseTypeName = operation.returnType.name
+      val remoteCall = RemoteCall(
+         service = CacheNames.cacheServiceName(connectionName).fqn(),
+         address = connectionAddress,
+         operation = CacheNames.CACHE_READ_OPERATION_NAME,
+         method = CacheNames.CACHE_READ_OPERATION_NAME,
+         durationMs = Duration.between(startTime, Instant.now()).toMillis(),
+         exchange = CacheExchange(
+            connectionName,
+            message.operation.name,
+            listName
          ),
+         timestamp = startTime,
+         response = null, // Do we want to persist the response again?
+         responseMessageType = ResponseMessageType.FULL,
+         responseTypeName = operation.returnType.name
       )
+
+      // Do we always get ConstructedQueryDataSource here? If so below check is redundant. QueryProfileChartBuilder
+      val isConstructedQueryDataSource = parameters[0].second.let { it.source is ConstructedQueryDataSource }
+      val operationResult =  if (isConstructedQueryDataSource) {
+         val constructedQueryDataSource = parameters[0].second.let { it.source as ConstructedQueryDataSource }
+         OperationResult.fromTypedInstances(
+            constructedQueryDataSource.inputs,
+            remoteCall
+         )
+      } else {
+         OperationResult.from(parameters, remoteCall)
+      }
+
       val dataSource = OperationResultDataSourceWrapper(operationResult)
 
       list.filter {

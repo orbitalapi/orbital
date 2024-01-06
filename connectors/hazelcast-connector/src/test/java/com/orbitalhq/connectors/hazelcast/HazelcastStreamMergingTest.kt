@@ -14,6 +14,7 @@ import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyne
 import com.orbitalhq.utils.Ids
+import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -22,6 +23,7 @@ import kotlin.time.Duration.Companion.seconds
 
 private val logger = KotlinLogging.logger {  }
 class HazelcastStreamMergingTest : DescribeSpec({
+   isolationMode = IsolationMode.InstancePerTest
    describe("Joining multiple streams using Hazelcast") {
       fun buildVyneAndHazelcast(mapName: String = Ids.id("Hazelcast-")): Triple<Vyne,StubService, HazelcastInstance> {
          val hazelcast = TestHazelcastInstanceFactory(1).newHazelcastInstance()
@@ -60,12 +62,13 @@ class HazelcastStreamMergingTest : DescribeSpec({
       }
 
       it("should run a query that joins multiple streams") {
+
          val (vyne,stub, hz) = buildVyneAndHazelcast()
-         val tweetFlow = MutableSharedFlow<TypedInstance>()
-         val analyticsFlow = MutableSharedFlow<TypedInstance>()
+         val tweetFlow = MutableSharedFlow<TypedInstance>(replay = 1)
+         val analyticsFlow = MutableSharedFlow<TypedInstance>(replay = 1)
          stub.addResponseFlow("tweets") { _, _ -> tweetFlow }
          stub.addResponseFlow("analytics") { _, _ -> analyticsFlow }
-
+         logger.info { "running a query with StateStore" }
          val results = vyne.query(
             """@StateStore(connection = "localHzc")
            | stream { Tweet | TweetAnalytics }
@@ -78,9 +81,8 @@ class HazelcastStreamMergingTest : DescribeSpec({
          )
             .results
 
-
-
          results.test(timeout = 30.seconds) {
+            logger.info { "emitting a tweet" }
             tweetFlow.emit(vyne.parseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" }"""))
             val first = expectTypedObject()
             first.toRawObject().shouldBe(
@@ -110,15 +112,14 @@ class HazelcastStreamMergingTest : DescribeSpec({
          hz.shutdown()
       }
 
-
       it("streams should not be joined when statestore is not specified") {
          val (vyne,stub, hz) = buildVyneAndHazelcast()
-         val tweetFlow = MutableSharedFlow<TypedInstance>()
-         val analyticsFlow = MutableSharedFlow<TypedInstance>()
+         val tweetFlow = MutableSharedFlow<TypedInstance>(replay = 1)
+         val analyticsFlow = MutableSharedFlow<TypedInstance>(replay = 1)
          stub.addResponseFlow("tweets") { _, _ -> tweetFlow }
          stub.addResponseFlow("analytics") { _, _ -> analyticsFlow }
 
-
+         logger.info { "running a query without StateStore" }
          val resultsWithoutStateStore = vyne.query(
             """
            | stream { Tweet | TweetAnalytics }
