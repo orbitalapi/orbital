@@ -78,5 +78,29 @@
             </exclusion>
          </exclusions>
       </dependency>
+
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
+      </dependency>
+
+      <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
+      <dependency>
+         <groupId>ch.qos.logback</groupId>
+         <artifactId>logback-core</artifactId>
+         <version>1.4.12</version>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>ch.qos.logback</groupId>
+         <artifactId>logback-classic</artifactId>
+         <version>1.4.12</version>
+         <scope>test</scope>
+      </dependency>
+
    </dependencies>
 </project>

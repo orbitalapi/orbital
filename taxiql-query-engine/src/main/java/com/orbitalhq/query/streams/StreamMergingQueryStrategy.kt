@@ -59,7 +59,7 @@ class StreamMergingQueryStrategy(
       }
          .merge()
          .map {
-            val typedInstance = TypedInstance.from(streamMemberType, it, context.schema)
+            val typedInstance = TypedInstance.from(type = streamMemberType, value = it, schema = context.schema, source = it.source)
             typedInstance
          }.flatMapMerge { value ->
             stateStore?.mergeNotNullValues(value)?.asFlow() ?: flowOf(value)
