@@ -38,7 +38,7 @@ interface FunctionInvoker {
       rawMessageBeingParsed: Any? = null,
       resultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf(),
 
-   ): TypedInstance
+      ): TypedInstance
 }
 
 data class FunctionResultCacheKey(
@@ -101,19 +101,40 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
          }
          log().warn("$message.  Not invoking this function, and returning null")
 
-         TypedNull.create(
-            returnType, FailedEvaluatedExpression(
-               function.asTaxi(), inputValues, message, unresolvedInputs
-            )
-         )
+         functionFailed(returnType, function, inputValues, message, unresolvedInputs)
       } else {
-         doInvoke(inputValues, schema, returnType, function, rawMessageBeingParsed, objectFactory, returnTypeFormat, resultCache)
+         doInvoke(
+            inputValues,
+            schema,
+            returnType,
+            function,
+            rawMessageBeingParsed,
+            objectFactory,
+            returnTypeFormat,
+            resultCache
+         )
       }
    }
+
+
 }
 
 fun functionOf(functionName: String, handler: FunctionHandler): InlineFunctionInvoker {
    return InlineFunctionInvoker(functionName, handler)
+}
+
+fun functionFailed(
+   returnType: Type,
+   function: FunctionAccessor,
+   inputValues: List<TypedInstance>,
+   message: String,
+   unresolvedInputs: List<com.orbitalhq.schemas.QualifiedName> = emptyList()
+): TypedNull {
+   return TypedNull.create(
+      returnType, FailedEvaluatedExpression(
+         function.asTaxi(), inputValues, message, unresolvedInputs
+      )
+   )
 }
 
 class InlineFunctionInvoker(override val functionName: QualifiedName, val handler: FunctionHandler) :
