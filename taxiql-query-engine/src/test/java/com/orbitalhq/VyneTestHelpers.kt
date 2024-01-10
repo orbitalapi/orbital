@@ -36,6 +36,9 @@ suspend fun QueryResult.typedObjects(): List<TypedObject> {
    return this.typedInstances() as List<TypedObject>
 }
 
+suspend fun QueryResult.firstRawValue():Any? {
+   return this.typedInstances().first().value
+}
 suspend fun QueryResult.rawObjects(): List<Map<String,Any?>> {
    return this.typedObjects().map { it.toRawObject() as Map<String,Any?> }
 }

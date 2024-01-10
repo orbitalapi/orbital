@@ -2,6 +2,7 @@ package com.orbitalhq.models.functions.stdlib
 
 import com.orbitalhq.models.functions.NamedFunctionInvoker
 import com.orbitalhq.models.functions.stdlib.collections.CollectionFiltering
+import com.orbitalhq.models.functions.stdlib.dates.Dates
 import com.orbitalhq.models.functions.stdlib.transform.Transformations
 
 object StdLib {
@@ -11,7 +12,8 @@ object StdLib {
       Collections.functions,
       CollectionFiltering.functions,
       ObjectFunctions.functions,
-      Transformations.functions
+      Transformations.functions,
+      Dates.functions
    ).flatten()
 }
 

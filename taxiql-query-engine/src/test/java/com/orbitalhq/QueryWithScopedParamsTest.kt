@@ -52,4 +52,35 @@ class QueryWithScopedParamsTest {
          ).firstRawObject()
       }
    }
+
+
+   @Test
+   fun `can evaluate expression in given clause`():Unit = runBlocking {
+      val (vyne) = testVyne("")
+       vyne.query("""given { message : String = upperCase("hello") }
+          |find { String }
+       """.trimMargin())
+          .firstRawValue()
+          .shouldBe("HELLO")
+   }
+
+   @Test
+   fun `can evaluate expression that references constant in given clause`():Unit = runBlocking {
+      val (vyne) = testVyne("type Result inherits String")
+      vyne.query("""given { message : String = "hello", result : Result = upperCase(message) }
+          |find { Result }
+       """.trimMargin())
+         .firstRawValue()
+         .shouldBe("HELLO")
+   }
+
+   @Test
+   fun `can evaluate expression that references another expression in given clause`():Unit = runBlocking {
+      val (vyne) = testVyne("type Result inherits String")
+      vyne.query("""given { message : String = "Hello", upper : String = upperCase(message), result : Result = lowerCase(message) }
+          |find { Result }
+       """.trimMargin())
+         .firstRawValue()
+         .shouldBe("hello")
+   }
 }

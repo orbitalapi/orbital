@@ -40,7 +40,7 @@ interface FactBag : Collection<TypedInstance> {
    }
 
    fun getScopedFactOrNull(scope: Argument): ScopedFact? {
-      return scopedFacts.firstOrNull { it.scope == scope }
+      return scopedFacts.firstOrNull { it.scope.name == scope.name }
    }
 
    fun rootAndScopedFacts(): List<TypedInstance> {
@@ -62,7 +62,7 @@ interface FactBag : Collection<TypedInstance> {
       }
 
    override fun iterator(): Iterator<TypedInstance> {
-      return rootAndScopedFacts().iterator()
+      return rootAndScopedFacts().distinct().iterator()
    }
 
    /**

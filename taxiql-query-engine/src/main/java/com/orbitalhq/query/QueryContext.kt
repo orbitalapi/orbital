@@ -187,7 +187,7 @@ data class QueryContext(
       val sourceFacts = when {
          // Don't use .isEmpty(), as it also considers scoped facts
          @Suppress("ReplaceSizeZeroCheckWithIsEmpty")
-         this.facts.size != 0 -> this.facts // given { ... }
+         this.facts.size != 0 -> this.facts.rootFacts() // given { ... }
          this.scopedFacts.isNotEmpty() -> this.scopedFacts.map { it.fact } // query foo( @RequestBody input:T[] ) ....
          else -> error("When calling map {}, exactly one input fact is expected, but none were found.")
       }

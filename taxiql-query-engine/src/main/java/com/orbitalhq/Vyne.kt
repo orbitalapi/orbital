@@ -1,16 +1,19 @@
 package com.orbitalhq
 
+import arrow.core.fold
 import com.google.common.annotations.VisibleForTesting
+import com.orbitalhq.models.AccessorReader
 import com.orbitalhq.models.DefinedInSchema
+import com.orbitalhq.models.FactBagValueSupplier
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObjectFactory
+import com.orbitalhq.models.facts.CopyOnWriteFactBag
 import com.orbitalhq.models.facts.ScopedFact
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.models.json.addKeyValuePair
 import com.orbitalhq.query.*
 import com.orbitalhq.query.graph.Algorithms
-import com.orbitalhq.query.planner.QueryExpressionBuilder
 import com.orbitalhq.query.planner.QueryPlanner
 import com.orbitalhq.schemas.*
 import com.orbitalhq.schemas.taxi.TaxiSchema
@@ -20,6 +23,7 @@ import com.orbitalhq.utils.Ids
 import com.orbitalhq.utils.log
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.job
+import lang.taxi.accessors.Argument
 import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.query.FactValue
 import lang.taxi.query.TaxiQLQueryString
@@ -82,10 +86,19 @@ class Vyne(
       clientQueryId: String? = null,
       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
       arguments: Map<String, Any?> = emptyMap(),
-      metricsTags:MetricTags = MetricTags.NONE
+      metricsTags: MetricTags = MetricTags.NONE
    ): QueryResult {
       val (taxiQlQuery, queryOptions, querySchema) = parseQuery(vyneQlQuery)
-      return query(taxiQlQuery, queryId, clientQueryId, eventBroker, arguments, queryOptions = queryOptions, metricsTags, querySchema = querySchema)
+      return query(
+         taxiQlQuery,
+         queryId,
+         clientQueryId,
+         eventBroker,
+         arguments,
+         queryOptions = queryOptions,
+         metricsTags,
+         querySchema = querySchema
+      )
    }
 
 
@@ -104,7 +117,15 @@ class Vyne(
       querySchema: Schema = schema
    ): QueryResult {
       val currentJob = currentCoroutineContext().job
-      val (queryContext: QueryContext, expression: QueryExpression) = buildContextAndExpression(taxiQl, queryId, clientQueryId, eventBroker, arguments, queryOptions, querySchema = querySchema)
+      val (queryContext: QueryContext, expression: QueryExpression) = buildContextAndExpression(
+         taxiQl,
+         queryId,
+         clientQueryId,
+         eventBroker,
+         arguments,
+         queryOptions,
+         querySchema = querySchema
+      )
       val queryCanceller = QueryCanceller(queryContext, currentJob)
       eventBroker.addHandler(queryCanceller)
       return when (taxiQl.queryMode) {
@@ -112,7 +133,10 @@ class Vyne(
          lang.taxi.query.QueryMode.FIND_ONE -> queryContext.find(expression, metricsTags = metricsTags)
          lang.taxi.query.QueryMode.STREAM -> queryContext.findAll(expression, metricsTags = metricsTags)
          lang.taxi.query.QueryMode.MAP -> queryContext.doMap(expression, metricsTags = metricsTags)
-         lang.taxi.query.QueryMode.MUTATE -> queryContext.mutate(expression as MutatingQueryExpression, metricsTags = metricsTags)
+         lang.taxi.query.QueryMode.MUTATE -> queryContext.mutate(
+            expression as MutatingQueryExpression,
+            metricsTags = metricsTags
+         )
       }
    }
 
@@ -135,6 +159,7 @@ class Vyne(
       val taxiQl: TaxiQlQuery,
       val querySchema: Schema
    )
+
    @VisibleForTesting
    internal fun buildContextAndExpression(
       taxiQl: TaxiQlQuery,
@@ -146,38 +171,26 @@ class Vyne(
       querySchema: Schema
    ): ConstructedQueryContext {
 
-      // The facts in taxiQL are the variables defined in a given {} block.
-      // given allows declaration in two ways:
-      // given { foo : Foo = 123 }
-      // and...
-      // query( foo : Foo ) { // arguments passed at query runtime
-      // given { foo }
-      //
-      // In the latter, we need to resolve foo against the arguments provided.
-
-      val additionalFacts = taxiQl.facts.map { variable ->
-         val argumentValue = variable.resolveValue(arguments)
-
-         variable.name to TypedInstance.from(
-            schema.type(argumentValue.fqn.parameterizedName),
-            argumentValue.value,
-            schema,
-            source = Provided
-         )
-      }.toMap()
+      val additionalFacts = convertTaxiQlFactToInstances(taxiQl, arguments)
 
       // TODO : Do we need to remove the arguments here that were used in the given {} block?
       // I don't see why we would, but lets keep an eye...
       val scopedFacts = extractArgumentsFromQuery(taxiQl, arguments, formatSpecs)
 
+      // Anything that was declared with a name in the given {} block
+      // is also eligible as a named variable within the query itself,
+      // so convert these to scoped facts
+      val namedScopedFacts = additionalFacts.map { (name,value) -> ScopedFact(ProjectionFunctionScope(name,value.type.taxiType), value) }
+
       val (expression, amendedTaxiQlQuery, amendedQuerySchema) = queryPlanner.buildQueryExpression(taxiQl, querySchema)
+
 
       val queryContext = query(
          additionalFacts = additionalFacts.values.toSet(),
          queryId = queryId,
          clientQueryId = clientQueryId,
          eventBroker = eventBroker,
-         scopedFacts = scopedFacts,
+         scopedFacts = scopedFacts + namedScopedFacts,
          queryOptions = queryOptions,
          querySchema = amendedQuerySchema
       )
@@ -189,6 +202,64 @@ class Vyne(
       )
    }
 
+   private fun convertTaxiQlFactToInstances(
+      taxiQl: TaxiQlQuery,
+      arguments: Map<String, Any?>
+   ): Map<String, TypedInstance> {
+      // The facts in taxiQL are the variables defined in a given {} block.
+      // given allows declaration in three ways:
+      // 1: given { foo : Foo = 123 }
+      // 2 : query( foo : Foo ) { // arguments passed at query runtime
+      // given { foo }
+      //
+      // 3: given { a : Foo = someExpression() } // values defined from expressions
+
+      // use-cases 1+2 are resolved simply here:
+      val constants = taxiQl.facts
+         .filter { it.value !is FactValue.Expression }
+         .map { variable ->
+            val argumentValue = variable.resolveValue(arguments)
+
+            val typedInstance = TypedInstance.from(
+               schema.type(argumentValue.fqn.parameterizedName),
+               argumentValue.value,
+               schema,
+               source = Provided
+            )
+            ScopedFact(ProjectionFunctionScope(variable.name, typedInstance.type.taxiType), typedInstance)
+//            variable.name to typedInstance
+         }
+      // usecase 3 (expressions) requires us to ??
+      // A Bit of hoop jumping so that the values already provided
+      // to us are available in the expressions we're evaluating.
+      // eg:
+      // given { name : String = 'foo' , upper = upperCase(name) }
+      val evaluatedExpressions = taxiQl.facts
+         .filter { it.value is FactValue.Expression }
+         .fold(constants) { previousParams, parameter ->
+            val facts = CopyOnWriteFactBag(emptyList(), schema, previousParams)
+            val valueSupplier = FactBagValueSupplier(facts, schema)
+            val accessorReader = AccessorReader(
+               valueSupplier,
+               schema.functionRegistry,
+               schema
+            )
+
+            val expression = parameter.value as FactValue.Expression
+            val evaluationResult = accessorReader.evaluate(
+               value = facts,
+               returnType = schema.type(parameter.type),
+               expression = expression.expression,
+               format = null,
+               dataSource = Provided
+            )
+            previousParams + ScopedFact(ProjectionFunctionScope(parameter.name, parameter.type), evaluationResult)
+         }
+      return evaluatedExpressions.map { it.scope.name to it.fact }
+         .toMap()
+
+   }
+
    /**
     * Returns a list of types that are defined in the query,
     * ie., not present in the base schema we're using
@@ -197,7 +268,8 @@ class Vyne(
       val inlineDiscoveryTypes: List<lang.taxi.types.Type> = taxiQl.typesToFind.flatMap { discoveryType ->
          schema.findUnknownTypes(discoveryType.type)
       }
-      val inlineProjectionType: List<lang.taxi.types.Type> = taxiQl.projectedType?.let { schema.findUnknownTypes(it) } ?: emptyList()
+      val inlineProjectionType: List<lang.taxi.types.Type> =
+         taxiQl.projectedType?.let { schema.findUnknownTypes(it) } ?: emptyList()
 
       val vyneTypes = (inlineDiscoveryTypes + inlineProjectionType).map {
          schema.typeCreateIfRequired(it)
@@ -431,7 +503,7 @@ fun QueryExpression.applyProjection(
    projectedType: lang.taxi.types.Type?,
    projectionScope: ProjectionFunctionScope?,
    schema: Schema
-):QueryExpression {
+): QueryExpression {
    if (projectedType == null) {
       return this
    }
