@@ -358,7 +358,7 @@ class QueryService(
                } catch (e: Exception) {
                   // Compilation exceptions hit here, before the flow exists.
                   val errorMessage = FailedSearchResponse(
-                     e.message!!,
+                     e.message ?: e::class.simpleName ?: "An unknown error occurred",
                      null,
                      websocketQuery.clientQueryId
                   )
