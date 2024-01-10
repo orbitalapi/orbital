@@ -6,6 +6,7 @@ import net.openhft.chronicle.queue.ExcerptAppender;
 import net.openhft.chronicle.queue.ExcerptTailer;
 import net.openhft.chronicle.queue.RollCycle;
 import net.openhft.chronicle.queue.RollCycles;
+import net.openhft.chronicle.queue.impl.StoreFileListener;
 import net.openhft.chronicle.queue.impl.single.SingleChronicleQueue;
 import net.openhft.chronicle.queue.impl.single.SingleChronicleQueueBuilder;
 import net.openhft.chronicle.queue.impl.single.SingleChronicleQueueStore;
@@ -45,7 +46,22 @@ public abstract class AbstractChronicleStore<I, O> implements FluxStore<I, O> {
 
    //package private for testing
    SingleChronicleQueue createQueue(String path) {
-      return SingleChronicleQueueBuilder.binary(path).rollCycle(rollCycle).build();
+      return SingleChronicleQueueBuilder
+         .binary(path)
+         .rollCycle(rollCycle)
+         .storeFileListener((cycle, file) -> {
+            if (file != null) {
+               final String filePath = file.getAbsolutePath();
+               try {
+                  LOGGER.info("deleting released chronicle file {} for cycle {}", filePath, cycle);
+                  final boolean deleted = file.delete();
+                  LOGGER.info("deleted released chronicle file {}, result => {}", filePath, deleted);
+               } catch (Exception e) {
+                  LOGGER.error("Error in deleting released chronicle file => " + filePath, e);
+               }
+            }
+         })
+         .build();
    }
 
    public void close() {
