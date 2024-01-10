@@ -1,5 +1,6 @@
 package io.orbital.station
 
+import com.fasterxml.jackson.core.StreamReadConstraints
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.cockpit.core.WebUiUrlSupportFilter
@@ -102,8 +103,14 @@ class JacksonConfig {
       return Jackson2ObjectMapperBuilderCustomizer { builder ->
          builder.featuresToEnable(
             MapperFeature.DEFAULT_VIEW_INCLUSION
-         )
+         ).postConfigurer { objectMapper ->
+            // Set the max length for Long's being read.
+            // Without this, numbers with infinite decimals cause exceptions
+            // when deserialized (eg., reading lineage back)
+            objectMapper.factory.setStreamReadConstraints(
+               StreamReadConstraints.defaults().rebuild().maxNumberLength(20000).build()
+            )
+         }
       }
    }
-
 }
