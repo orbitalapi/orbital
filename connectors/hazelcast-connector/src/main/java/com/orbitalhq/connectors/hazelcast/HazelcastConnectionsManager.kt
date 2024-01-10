@@ -35,7 +35,7 @@ class HazelcastConnectionsManager(private val connectors: SourceLoaderConnectors
 
    fun canProvideHazelcastInstance(connectionName: String?): Boolean {
       return (connectionName == null && connectors.defaultHazelcastConfiguration() != null) ||
-         connectors.hazelcastConfigurationForConnectionName(connectionName!!) != null
+         connectionName != null && connectors.hazelcastConfigurationForConnectionName(connectionName) != null
 
    }
 
