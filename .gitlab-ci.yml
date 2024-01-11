@@ -255,7 +255,7 @@ regression-test:
          docker buildx build
          --platform linux/arm64/v8,linux/amd64
          --push
-         -t "${registry_orbital}/${microservice_orbital}:${tag}${tagSuffix}"
+         -t "${registry_orbital}/${microservice_orbital}:${tag}${tag_suffix}"
          -t "${registry_orbital}/${microservice_orbital}:${versionTag}${tag_suffix}"
          .
 
@@ -291,7 +291,7 @@ publish-orbital-to-docker-hub-mac-m2:
    variables:
       projectDir: station
       microservice_orbital: orbital
-      tag_suffix: jammy # jammy is the name of ubuntu we use
+      tag_suffix: -jammy # jammy is the name of ubuntu we use
 publish-pipeline-jet-to-docker-hub:
    extends: .publish-to-docker-hub
    variables:
@@ -303,7 +303,7 @@ publish-pipeline-jet-to-docker-hub-mac-m2:
    variables:
       projectDir: pipelines/pipeline-jet
       microservice_orbital: stream-server
-      tag_suffix: jammy # jammy is the name of ubuntu we use.
+      tag_suffix: -jammy # jammy is the name of ubuntu we use.
 
 
 publish-query-node-to-docker-hub:
