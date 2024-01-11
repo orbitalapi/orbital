@@ -26,7 +26,12 @@ ARG REGISTRY
 # We need to use a temruin 21 alpine image as earlier versions don't support arm64
 FROM ${REGISTRY}eclipse-temurin:21-jdk-${BASE_IMAGE_TAG:-alpine}
 
-RUN apt-get update && apt-get install zip -y
+# Urgh. apt-get for ubuntu,apk for apline
+RUN if [ "$BASE_IMAGE_TAG" = "jammy" ]; then \
+   apt-get update && apt-get install zip -y \
+   ; else \
+   apk --no-cache add zip \
+   ; fi
 
 WORKDIR /opt/service/
 
