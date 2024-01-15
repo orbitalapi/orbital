@@ -18,13 +18,13 @@
 # Swapping back to jammy worked for M2's
 # Therefore, we produce two images:
 # -alpine (for prod) and -jammy (for mac's)
-ARG BASE_IMAGE_TAG
+ARG BASE_IMAGE_TAG=alpine
 
 ARG REGISTRY
 # Generating SOAP clients from WSDLs at runtime requires the JDK, not JRE
 # As Apache CXF generates and compiles code.
 # We need to use a temruin 21 alpine image as earlier versions don't support arm64
-FROM ${REGISTRY}eclipse-temurin:21-jdk-${BASE_IMAGE_TAG:-alpine}
+FROM ${REGISTRY}eclipse-temurin:21-jdk-${BASE_IMAGE_TAG}
 
 # Urgh. apt-get for ubuntu,apk for apline
 RUN if [ "$BASE_IMAGE_TAG" = "jammy" ]; then \
