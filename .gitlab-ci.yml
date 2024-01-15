@@ -232,6 +232,8 @@ regression-test:
       DOCKER_BUILDKIT: 1
       BUILDKIT_PROGRESS: plain
       PROGRESS_NO_TRUNC: 1
+   services:
+      - docker:dind      
    script:
       - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
       - PROJECT_VERSION=$(cat build-version.txt)
