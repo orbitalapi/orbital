@@ -235,6 +235,7 @@ regression-test:
    services:
       - docker:dind
    script:
+      - echo 'foo' > build-version.txt
       - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
       - PROJECT_VERSION=$(cat build-version.txt)
       - docker buildx create --use
