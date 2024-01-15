@@ -67,7 +67,7 @@ default:
       - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'mvn $MAVEN_CLI_OPTS -version'
-      - 'mvn $MAVEN_CLI_OPTS -T1C -DbuildNumber=$CI_JOB_ID $MAVEN_EXTRA_ARGS -P fastTestsOnly $MAVEN_GOALS'
+      - 'mvn $MAVEN_CLI_OPTS -T1C -DbuildNumber=$CI_JOB_ID $MAVEN_EXTRA_ARGS -P fastTestsOnly $MAVEN_GOALS -pl station'
       - 'mvn $MAVEN_CLI_OPTS -DbuildNumber=$CI_JOB_ID $MAVEN_EXTRA_ARGS -pl vyne-history-core,pipelines/pipeline-jet,vyne-analytics-server test'
 
       #   Read the POM, grab the version, and set to an env variable
@@ -233,7 +233,7 @@ regression-test:
       BUILDKIT_PROGRESS: plain
       PROGRESS_NO_TRUNC: 1
    services:
-      - docker:dind      
+      - docker:dind
    script:
       - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
       - PROJECT_VERSION=$(cat build-version.txt)

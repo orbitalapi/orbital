@@ -27,6 +27,7 @@ ARG REGISTRY
 FROM ${REGISTRY}eclipse-temurin:21-jdk-${BASE_IMAGE_TAG}
 
 # Urgh. apt-get for ubuntu,apk for apline
+RUN echo "Using base image $BASE_IMAGE_TAG"
 RUN if [ "$BASE_IMAGE_TAG" = "jammy" ]; then \
    apt-get update && apt-get install zip -y \
    ; else \
