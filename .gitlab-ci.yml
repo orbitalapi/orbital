@@ -37,14 +37,14 @@ stages:
    - release
 
 default:
-   tags:
-      - docker
+#   tags:
+#      - docker
 
 .build-jvm:
    stage: build
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.6-eclipse-temurin-18
-   tags:
-      - docker-heavy
+#   tags:
+#      - docker-heavy
    cache:
       paths:
          - .m2/repository
@@ -110,8 +110,8 @@ default:
    cache:
       paths:
          - .npm/cache
-   tags:
-      - docker-heavy
+#   tags:
+#      - docker-heavy
 
 build-vyne-ui:
    extends: .build-ui
