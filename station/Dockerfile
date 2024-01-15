@@ -24,16 +24,14 @@ ARG REGISTRY
 # Generating SOAP clients from WSDLs at runtime requires the JDK, not JRE
 # As Apache CXF generates and compiles code.
 # We need to use a temruin 21 alpine image as earlier versions don't support arm64
-FROM ${REGISTRY}eclipse-temurin:21-jdk-${BASE_IMAGE_TAG}
+FROM ${REGISTRY}eclipse-temurin:21-jdk-alpine as base-alpine
+RUN apk --no-cache add zip
 
-# Urgh. apt-get for ubuntu,apk for apline
-RUN echo "Using base image $BASE_IMAGE_TAG"
-RUN if [ "$BASE_IMAGE_TAG" = "jammy" ]; then \
-   apt-get update && apt-get install zip -y \
-   ; else \
-   apk --no-cache add zip \
-   ; fi
+FROM ${REGISTRY}eclipse-temurin:21-jdk-jammy as base-jammy
+RUN apt-get update && apt-get install zip -y
 
+# select the base image prepared dependening in gthe BASE_IMAGE_TAG passed
+FROM base-${BASE_IMAGE_TAG}
 WORKDIR /opt/service/
 
 COPY target/orbital.zip /opt/service/
