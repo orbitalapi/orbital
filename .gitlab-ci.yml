@@ -252,7 +252,7 @@ regression-test:
          fi
          echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
          echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
-         echo "Running with base image tag: $base_image_tag
+         echo "Running with base image tag: $base_image_tag"
       - cd $projectDir
       - >
          docker buildx build
