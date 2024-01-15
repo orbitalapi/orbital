@@ -252,12 +252,13 @@ regression-test:
          fi
          echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
          echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
+         echo "Running with base image tag: $base_image_tag
       - cd $projectDir
       - >
          docker buildx build
          --platform linux/arm64/v8,linux/amd64
          --push
-         --build-arg BASE_IMAGE_TAG=${base_image_tag}
+         --build-arg BASE_IMAGE_TAG=$base_image_tag
          -t "${registry_orbital}/${microservice_orbital}:${tag}${tag_suffix}"
          -t "${registry_orbital}/${microservice_orbital}:${versionTag}${tag_suffix}"
          .
