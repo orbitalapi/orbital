@@ -3,8 +3,9 @@
   flex-direction: column;
 }
 
-::ng-deep {
-  app-header-bar {
-    margin-left: 0 !important;
+:host ::ng-deep {
+  app-panel-header {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
 }

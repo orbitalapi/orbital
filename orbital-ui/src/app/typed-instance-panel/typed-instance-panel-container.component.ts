@@ -11,6 +11,7 @@ import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/Ba
   styleUrls: ['./typed-instance-panel-container.component.scss'],
   template: `
     <app-panel-header [title]="panelTitle" *ngIf="showPanelHeader">
+      <div class="spacer"></div>
       <button
         (click)="close.emit()"
         tuiIconButton
