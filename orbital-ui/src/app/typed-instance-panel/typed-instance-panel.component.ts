@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {QualifiedName, Type, InstanceLike, DataSource} from '../services/schema';
 import {QueryResultMemberCoordinates} from '../query-panel/instance-selected-event';
 import { Inheritable } from 'src/app/inheritence-graph/build.inheritable';
@@ -19,9 +19,6 @@ import { Inheritable } from 'src/app/inheritence-graph/build.inheritable';
       <section *ngIf="dataSource">
         <div class="row">
           <h3>Value lineage</h3>
-          <button mat-icon-button (click)="openFullLineage()">
-            <mat-icon>open_in_full</mat-icon>
-          </button>
         </div>
 
         <app-lineage-display [instance]="instance" [dataSource]="dataSource"
@@ -98,9 +95,5 @@ export class TypedInstancePanelComponent {
 
   closeTypedInstanceDrawer() {
     this.hasTypedInstanceDrawerClosed.emit(false);
-  }
-
-  openFullLineage() {
-
   }
 }
