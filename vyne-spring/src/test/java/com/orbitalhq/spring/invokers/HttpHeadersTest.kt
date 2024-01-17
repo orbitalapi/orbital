@@ -18,16 +18,6 @@ class HttpHeadersTest {
    @JvmField
    val server = MockWebServerRule()
 
-   private fun vyneWithHttpInvoker(src: String): Vyne {
-      return testVyne(src) { schema ->
-         listOf(
-            RestTemplateInvoker(
-               SimpleSchemaProvider(schema),
-               WebClient.create()
-            )
-         )
-      }
-   }
 
    @Test
    fun `http headers are passed`(): Unit = runBlocking {
@@ -148,5 +138,16 @@ class HttpHeadersTest {
          .rawObjects()
       val lastRequest = server.takeRequest()
       lastRequest.getHeader("Accept-Encoding").shouldBe("GZIP")
+   }
+}
+
+fun vyneWithHttpInvoker(src: String): Vyne {
+   return testVyne(src) { schema ->
+      listOf(
+         RestTemplateInvoker(
+            SimpleSchemaProvider(schema),
+            WebClient.create()
+         )
+      )
    }
 }

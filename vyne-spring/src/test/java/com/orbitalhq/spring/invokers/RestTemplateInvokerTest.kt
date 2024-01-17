@@ -475,6 +475,7 @@ namespace vyne {
       }
    }
 
+
    @Test
    @OptIn(ExperimentalTime::class)
    fun whenInvoking_paramsCanBePassedByTypeIfMatchedUnambiguously() {
@@ -759,8 +760,9 @@ namespace vyne {
    }
 
    @Test
-   fun `request body is populated on request`(): Unit = runBlocking{
-      val vyne = testVyne("""
+   fun `request body is populated on request`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
          type PersonId inherits String
          parameter model PersonRequest {
             id : PersonId
@@ -772,7 +774,8 @@ namespace vyne {
             @HttpOperation(method = "POST", url = "http://localhost:${server.port}/person")
             operation getPerson(@RequestBody PersonRequest):Person
           }
-      """, invoker = Invoker.RestTemplate)
+      """, invoker = Invoker.RestTemplate
+      )
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
             .setBody("""{ "name" : "Jimmy" }""")
@@ -817,5 +820,26 @@ namespace vyne {
       }
    }
 
+   @Test
+   fun `http urls resolve against base url`(): Unit = runBlocking {
+      val vyne = vyneWithHttpInvoker(
+         """
+         model Person {
+            name : Name inherits String
+         }
+         @HttpService(baseUrl="http://localhost:${server.port}")
+         service PeopleService {
+            @HttpOperation(method = "GET", url = "/people")
+            operation findPeople():Person[]
+         }
+      """.trimIndent()
+      )
+      server.addJsonResponse("""[ { "name" : "Jimmy" } ]""")
+      server.requestCount.shouldBe(0)
+      vyne.query(
+         """find { Person[] } """)
+         .rawObjects()
+      server.requestCount.shouldBe(1)
+   }
 
 }
