@@ -24,10 +24,17 @@ fun KafkaConnection.test(connection: KafkaConnectionConfiguration, timeout: Dura
    return try {
       AdminClient.create(connection.toAdminProps()).use { adminClient ->
          val nodes = adminClient.describeCluster(DescribeClusterOptions().timeoutMs(timeout.toMillis().toInt())).nodes().get()
-         return if (!nodes.isNullOrEmpty()) {
-            ConnectionSucceeded.right()
-         } else {
-            "Invalid Kafka Cluster".left()
+         if (nodes.isNullOrEmpty()) {
+            logger.info { "Could not retrieve nodes from kafka client - test failed" }
+            return "Unable to connect to Kafka cluster".left()
+         }
+         try {
+            logger.info { "Attempting to fetch topics for connection ${connection.connectionName}" }
+            val topics = adminClient.listTopics().listings().get()
+            logger.info { "Successfully fetched ${topics.size} topics" }
+            return ConnectionSucceeded.right()
+         } catch (e: Exception) {
+            TODO()
          }
       }
 
