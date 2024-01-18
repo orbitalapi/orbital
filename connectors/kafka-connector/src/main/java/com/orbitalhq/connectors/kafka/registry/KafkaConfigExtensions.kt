@@ -18,14 +18,15 @@ fun KafkaConnectionConfiguration.toReceiverOptions(offset: String = "latest"): R
    return ReceiverOptions.create(consumerProps)
 }
 
-fun KafkaConnectionConfiguration.toSenderOptions():SenderOptions<Any,Any> {
+fun KafkaConnectionConfiguration.toSenderOptions(): SenderOptions<Any, Any> {
    val producerProps = this.toProducerProps()
-   return SenderOptions.create<Any,Any>(producerProps)
+   return SenderOptions.create<Any, Any>(producerProps)
 }
+
 fun KafkaConnectionConfiguration.toAdminProps(): MutableMap<String, Any> {
-   val adminProps: MutableMap<String, Any> = HashMap()
+   val adminProps: MutableMap<String, Any> = this.connectionParameters.toMutableMap()
    adminProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = this.brokers
-   adminProps[ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG] =3000
+   adminProps[ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG] = 3000
    adminProps[ConsumerConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG] = 5000
    return adminProps
 }
@@ -34,7 +35,8 @@ fun KafkaConnectionConfiguration.toConsumerProps(offset: String = "latest"): Mut
    val brokers = this.brokers
    val groupId = this.groupId
 
-   val consumerProps: MutableMap<String, Any> = HashMap()
+
+   val consumerProps: MutableMap<String, Any> = this.connectionParameters.toMutableMap()
    consumerProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = brokers
    consumerProps[ConsumerConfig.GROUP_ID_CONFIG] = groupId
    consumerProps[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.qualifiedName!!
@@ -44,8 +46,8 @@ fun KafkaConnectionConfiguration.toConsumerProps(offset: String = "latest"): Mut
    return consumerProps
 }
 
-fun KafkaConnectionConfiguration.toProducerProps():MutableMap<String,Any> {
-   val producerProps = mutableMapOf<String,Any>()
+fun KafkaConnectionConfiguration.toProducerProps(): MutableMap<String, Any> {
+   val producerProps: MutableMap<String, Any> = this.connectionParameters.toMutableMap()
    producerProps[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = this.brokers
    producerProps[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.qualifiedName!!
    producerProps[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = ByteArraySerializer::class.qualifiedName!!
