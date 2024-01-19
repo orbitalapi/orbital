@@ -2,9 +2,7 @@ import {moduleMetadata, storiesOf} from '@storybook/angular';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {SearchBarComponent} from './search-bar.component';
 import {FormsModule} from '@angular/forms';
-import {NgSelectModule} from '@ng-select/ng-select';
 import {Subject} from 'rxjs';
 import {SearchResult} from '../search.service';
 import {searchResults} from '../search-result-list/search-result.stories';
@@ -19,8 +17,8 @@ const doSearch = function (string) {
 storiesOf('Search bar', module)
   .addDecorator(
     moduleMetadata({
-      declarations: [SearchBarComponent, SearchResultComponent],
-      imports: [CommonModule, BrowserModule, BrowserAnimationsModule, NgSelectModule, FormsModule]
+      declarations: [SearchResultComponent],
+      imports: [CommonModule, BrowserModule, BrowserAnimationsModule, FormsModule]
     })
   ).add('search box', () => {
   return {

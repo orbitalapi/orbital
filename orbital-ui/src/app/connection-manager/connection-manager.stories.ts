@@ -1,6 +1,4 @@
 import {moduleMetadata, storiesOf} from '@storybook/angular';
-import {CaskViewerModule} from '../cask-viewer/cask-viewer.module';
-import {SearchModule} from '../search/search.module';
 import {RouterTestingModule} from '@angular/router/testing';
 import {ConnectionManagerModule} from './connection-manager.module';
 import {BrowserModule} from '@angular/platform-browser';
