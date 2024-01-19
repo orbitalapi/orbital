@@ -156,6 +156,36 @@
               "src/**/*.html"
             ]
           }
+        },
+        "storybook": {
+          "builder": "@storybook/angular:start-storybook",
+          "options": {
+            "configDir": ".storybook",
+            "browserTarget": "vyne-app:build",
+            "compodoc": true,
+            "compodocArgs": [
+              "-e",
+              "json",
+              "-d",
+              "."
+            ],
+            "port": 6006
+          }
+        },
+        "build-storybook": {
+          "builder": "@storybook/angular:build-storybook",
+          "options": {
+            "configDir": ".storybook",
+            "browserTarget": "vyne-app:build",
+            "compodoc": true,
+            "compodocArgs": [
+              "-e",
+              "json",
+              "-d",
+              "."
+            ],
+            "outputDir": "dist/storybook/vyne-app"
+          }
         }
       }
     },
@@ -182,12 +212,10 @@
             "polyfills": "src/voyager-app/polyfills.ts",
             "tsConfig": "src/voyager-app/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
-            "scripts": [
-            ],
+            "scripts": [],
             "customWebpackConfig": {
               "path": "./custom-webpack.config.js"
             },
-
             "assets": [
               "src/taxi-logo-48x48.png",
               "src/assets",

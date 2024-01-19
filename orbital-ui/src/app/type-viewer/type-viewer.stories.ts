@@ -10,7 +10,6 @@ import {TocHostDirective} from './toc-host.directive';
 import {TypeViewerModule} from './type-viewer.module';
 import {findType, fqn, Metadata, Schema} from '../services/schema';
 import {DATA_OWNER_FQN, DATA_OWNER_TAG_OWNER_NAME} from '../data-catalog/data-catalog.models';
-import {TagsSectionComponent} from './tags-section/tags-section.component';
 import {testSchema} from '../object-view/test-schema';
 
 const type = {
