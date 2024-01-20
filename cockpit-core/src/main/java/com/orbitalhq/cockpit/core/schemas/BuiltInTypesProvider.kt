@@ -1,6 +1,7 @@
 package com.orbitalhq.cockpit.core.schemas
 
 import com.orbitalhq.*
+import com.orbitalhq.annotations.http.HttpRetryAnnotationSchema
 import com.orbitalhq.cockpit.core.catalog.DataOwnerAnnotations
 import com.orbitalhq.connectors.aws.lambda.LambdaConnectorTaxi
 import com.orbitalhq.connectors.aws.s3.S3ConnectorTaxi
@@ -77,6 +78,11 @@ object BuiltInTypesProvider {
             "0.1.0",
             XmlAnnotationSpec.taxi
          ),
+         VersionedSource(
+            "HttpRetryAnnotationSchema",
+            "0.1.0",
+            HttpRetryAnnotationSchema.schema
+         )
       ),
       emptyMap()
    )

@@ -26,7 +26,9 @@ import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.annotations.HttpService
 import mu.KotlinLogging
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatusCode
 import org.springframework.http.MediaType
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.web.reactive.function.client.*
@@ -37,10 +39,12 @@ import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import reactor.netty.http.client.HttpClient
 import reactor.netty.resources.ConnectionProvider
+import java.net.URI
 import java.time.Duration
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.function.Predicate
 
 class RestTemplateInvoker(
    val schemaProvider: SchemaProvider,
@@ -106,6 +110,7 @@ class RestTemplateInvoker(
       logger.info { "Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}" }
 
       val (_, url, method) = operation.httpOperationMetadata()
+      val retrySpec = operation.retrySpec()
       val httpMethod = HttpMethod.valueOf(method)
       //val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation", OperationType.REMOTE_CALL) { httpInvokeOperation ->
 
@@ -138,44 +143,25 @@ class RestTemplateInvoker(
          request.bodyValue(httpEntity.body)
       }
 
-      logger.info { "[$queryId] - Performing $httpMethod to ${expandedUri.toASCIIString()}" }
+      logger.info { "[$queryId] - Performing $httpMethod to ${expandedUri.toASCIIString()} with retry specification => ${retrySpec?.toLogString()}" }
 
       val remoteCallId = UUID.randomUUID().toString()
+
       val results = request
          .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML)
          .exchange()
-         .onErrorMap { error ->
-            val remoteCall = RemoteCall(
-               remoteCallId = remoteCallId,
-               responseId = UUID.randomUUID().toString(),
-               service = service.name,
-               address = expandedUri.toASCIIString(),
-               operation = operation.name,
-               responseTypeName = operation.returnType.name,
-               method = httpMethod.name(),
-               requestBody = httpEntity.body,
-               resultCode = -1,
-               durationMs = 0,
-               response = null,
-               timestamp = Instant.now(),
-               responseMessageType = ResponseMessageType.FULL,
-               isFailed = true,
-               exchange = HttpExchange(
-                  url = expandedUri.toASCIIString(),
-                  verb = httpMethod.name(),
-                  requestBody = httpEntity.body?.toString(),
-                  responseCode = -1,
-                  responseSize = 0
-               )
-            )
-            eventDispatcher.reportRemoteOperationInvoked(OperationResult.from(parameters, remoteCall), queryId)
-            OperationInvocationException(
-               "Failed to invoke service ${operation.name} at url $absoluteUrl - ${error.message ?: "No message in instance of ${error::class.simpleName}"}",
-               0,
-               remoteCall,
-               parameters
-            )
-         }
+         .onErrorMap { error -> mapError(
+            error,
+            remoteCallId,
+            service,
+            operation,
+            httpEntity,
+            httpMethod,
+            expandedUri,
+            eventDispatcher,
+            absoluteUrl,
+            queryId,
+            parameters) }
          .metrics()
          .elapsed()
          .publishOn(Schedulers.boundedElastic())
@@ -220,6 +206,9 @@ class RestTemplateInvoker(
             }
 
             if (clientResponse.statusCode().isError) {
+               if (retrySpec != null && retrySpec.responseCodes.contains(clientResponse.statusCode().value())) {
+                  return@flatMapMany Mono.error(RestRetryException("retry", clientResponse.statusCode().value()))
+               }
                return@flatMapMany clientResponse.bodyToMono<String>()
                   .switchIfEmpty(Mono.just(""))
                   .map { responseBody ->
@@ -275,8 +264,25 @@ class RestTemplateInvoker(
             }
          }
 
-      return results.asFlow().flowOn(Dispatchers.IO)
-
+      return if (retrySpec != null) {
+         results
+            .retryWhen(retrySpec.retrySpec)
+            .onErrorMap { error -> mapError(
+               error,
+               remoteCallId,
+               service,
+               operation,
+               httpEntity,
+               httpMethod,
+               expandedUri,
+               eventDispatcher,
+               absoluteUrl,
+               queryId,
+               parameters) }
+            .asFlow().flowOn(Dispatchers.IO)
+      } else {
+         results.asFlow().flowOn(Dispatchers.IO)
+      }
    }
 
    private fun getContentTypeFromResponseType(returnType: Type): MediaType {
@@ -295,6 +301,49 @@ class RestTemplateInvoker(
       return mediaType
    }
 
+   private fun mapError(error: Throwable,
+                        remoteCallId: String,
+                        service: Service,
+                        operation: RemoteOperation,
+                        httpEntity: HttpEntity<*>,
+                        httpMethod: HttpMethod,
+                        expandedUri: URI,
+                        eventDispatcher: QueryContextEventDispatcher,
+                        absoluteUrl: String,
+                        queryId: String,
+                        parameters: List<Pair<Parameter, TypedInstance>>
+   ): Throwable {
+      val remoteCall = RemoteCall(
+         remoteCallId = remoteCallId,
+         responseId = UUID.randomUUID().toString(),
+         service = service.name,
+         address = expandedUri.toASCIIString(),
+         operation = operation.name,
+         responseTypeName = operation.returnType.name,
+         method = httpMethod.name(),
+         requestBody = httpEntity.body,
+         resultCode = -1,
+         durationMs = 0,
+         response = null,
+         timestamp = Instant.now(),
+         responseMessageType = ResponseMessageType.FULL,
+         isFailed = true,
+         exchange = HttpExchange(
+            url = expandedUri.toASCIIString(),
+            verb = httpMethod.name(),
+            requestBody = httpEntity.body?.toString(),
+            responseCode = -1,
+            responseSize = 0
+         )
+      )
+      eventDispatcher.reportRemoteOperationInvoked(OperationResult.from(parameters, remoteCall), queryId)
+      return OperationInvocationException(
+         "Failed to invoke service ${operation.name} at url $absoluteUrl - ${error.message ?: "No message in instance of ${error::class.simpleName}"}",
+         0,
+         remoteCall,
+         parameters
+      )
+   }
    private fun prependServiceBaseUrl(service: Service, url: String): String {
       val serviceMetadata = service.metadata.singleOrNull { it.name == HttpService.NAME.fqn() }
          ?.let { metadata -> HttpService.fromParams(metadata.params) }
@@ -331,13 +380,13 @@ class RestTemplateInvoker(
 
       val isPreparsed = headers
          .header(com.orbitalhq.http.HttpHeaders.CONTENT_PREPARSED).let { headerValues ->
-            headerValues != null && headerValues.isNotEmpty() && headerValues.first() == true.toString()
+             headerValues.isNotEmpty() && headerValues.first() == true.toString()
          }
       // If the content has been pre-parsed upstream, we don't evaluate accessors
       val evaluateAccessors = !isPreparsed
       val operationResult = OperationResult.from(parameters, remoteCall)
 
-      val type = inferContentType(operation, headers, result)
+      val type = inferContentType(operation, headers)
       eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
       val typedInstance = TypedInstance.from(
          type,
@@ -354,7 +403,7 @@ class RestTemplateInvoker(
       }
    }
 
-   private fun inferContentType(operation: RemoteOperation, headers: ClientResponse.Headers, result: String): Type {
+   private fun inferContentType(operation: RemoteOperation, headers: ClientResponse.Headers): Type {
       val mediaType: MediaType? = headers.contentType().orElse(null)
       when (mediaType) {
          // If we're consuming an event stream, and the return contract was a collection, we're actually consuming a single instance
@@ -364,3 +413,8 @@ class RestTemplateInvoker(
       return operation.returnType.collectionType ?: operation.returnType
    }
 }
+
+class RestRetryException(
+   message: String,
+   val httpStatus: Int
+) : RuntimeException(message)
