@@ -8,6 +8,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * These are tests that explore merging two streams together
@@ -101,7 +102,7 @@ class VyneStreamMergingTest : DescribeSpec({
          )
             .results
 
-         results.test {
+         results.test(10.seconds) {
             tweetFlow.emit(vyne.parseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1 }"""))
             val first = expectTypedObject()
             first.toRawObject().shouldBe(

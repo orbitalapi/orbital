@@ -3,7 +3,9 @@ package com.orbitalhq.schemas
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.google.common.base.MoreObjects
 import com.orbitalhq.VersionedSource
+import com.orbitalhq.annotations.http.HttpRetryAnnotationSchema
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.utils.ImmutableEquality
@@ -11,7 +13,11 @@ import lang.taxi.annotations.HttpOperation
 import lang.taxi.expressions.Expression
 import lang.taxi.services.OperationScope
 import lang.taxi.types.Documented
+import reactor.util.retry.Retry
+import reactor.util.retry.RetryBackoffSpec
 import java.io.Serializable
+import java.math.BigDecimal
+import java.time.Duration
 
 
 typealias OperationName = String
@@ -340,8 +346,42 @@ fun RemoteOperation.httpOperationMetadata(): VyneHttpOperation {
    return VyneHttpOperation(httpOperationMetadata = annotation, url = url, method = method)
 }
 
-data class VyneHttpOperation(val httpOperationMetadata: Metadata, val url: String, val method: String)
+fun RemoteOperation.retrySpec(): VyneHttpRetrySpec? {
+   return if (hasMetadata(HttpRetryAnnotationSchema.NAME)) {
+      val annotation = firstMetadata(HttpRetryAnnotationSchema.NAME)
+      val responseCodes = annotation.params["responseCode"] as List<Int>
+      val fixedRetryPolicy = annotation.params["fixedRetryPolicy"] as? Map<String, Int>
+      val exponentialRetryPolicy = annotation.params["exponentialRetryPolicy"] as? Map<String, Any>
 
+      when {
+         fixedRetryPolicy != null -> VyneHttpRetrySpec(
+            responseCodes = responseCodes.toSet(),
+            retrySpec = Retry.fixedDelay(fixedRetryPolicy["maxRetries"]!!.toLong(), Duration.ofSeconds(fixedRetryPolicy["retryDelay"]!!.toLong()))
+         )
+         exponentialRetryPolicy != null ->
+            VyneHttpRetrySpec(
+               responseCodes = responseCodes.toSet(),
+               retrySpec = Retry.backoff( (exponentialRetryPolicy["maxRetries"]!! as Int).toLong(), Duration.ofSeconds( (exponentialRetryPolicy["retryDelay"]!! as Int).toLong())).jitter(
+                  ((exponentialRetryPolicy["jitter"]!! as BigDecimal)).toDouble())
+         )
+         else -> null
+      }
+   } else {
+      null
+   }
+}
+
+data class VyneHttpOperation(val httpOperationMetadata: Metadata, val url: String, val method: String)
+data class VyneHttpRetrySpec(val responseCodes: Set<Int>, val retrySpec: RetryBackoffSpec) {
+   fun toLogString() {
+      MoreObjects.toStringHelper(this)
+         .add("responseCode", responseCodes)
+         .add("maxAttempts", retrySpec.maxAttempts)
+         .add("minBackoff", retrySpec.minBackoff)
+         .add("maxBackoff", retrySpec.maxBackoff)
+         .add("jitter", retrySpec.jitterFactor)
+   }
+}
 /**
  * Use this exception when we failed to actually send the request.
  * There's no response code or remote call, because we never got the request away

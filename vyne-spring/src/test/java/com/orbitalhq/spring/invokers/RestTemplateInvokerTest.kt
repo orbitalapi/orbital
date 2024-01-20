@@ -14,8 +14,10 @@ import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContext
+import com.orbitalhq.query.UnresolvedTypeInQueryException
 import com.orbitalhq.rawObjects
 import com.orbitalhq.schema.api.SimpleSchemaProvider
+import com.orbitalhq.schemas.OperationInvocationException
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.typedObjects
@@ -36,6 +38,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Consumer
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.time.ExperimentalTime
 
 private val logger = KotlinLogging.logger {}
@@ -748,6 +751,7 @@ namespace vyne {
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
             .setBody("""[ { "name" : "Jimmy" }]""")
+
       }
       vyne.query("""given { key : ApiKey = "hello" } find { Person[] }""")
          .rawObjects()
@@ -821,6 +825,7 @@ namespace vyne {
    }
 
    @Test
+
    fun `http urls resolve against base url`(): Unit = runBlocking {
       val vyne = vyneWithHttpInvoker(
          """
@@ -842,4 +847,136 @@ namespace vyne {
       server.requestCount.shouldBe(1)
    }
 
+   fun `can use fixed retry policy`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
+         type ApiKey inherits String
+         model Person {
+            name : Name inherits String
+         }
+         service PersonService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people?apiKey={apiKey}")
+            @HttpRetry(responseCode = [502, 503], fixedRetryPolicy = @HttpFixedRetryPolicy(maxRetries = 2, retryDelay = 1))
+            operation listPeople(apiKey:ApiKey):Person[]
+          }
+      """, invoker = Invoker.RestTemplate
+      )
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""{}""")
+            .setResponseCode(501)
+
+      }
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""{}""")
+            .setResponseCode(502)
+
+
+      }
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""[ { "name" : "Jimmy" }]""")
+
+      }
+      vyne.query("""given { key : ApiKey = "hello" } find { Person[] }""")
+         .rawObjects()
+
+      expectRequestCount(3)
+      expectRequest { request ->
+         assertEquals("/people?apiKey=hello", request.path)
+         assertEquals(HttpMethod.GET.name(), request.method)
+      }
+   }
+
+   @Test
+   fun `can use exponential retry policy`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
+         type ApiKey inherits String
+         model Person {
+            name : Name inherits String
+         }
+         service PersonService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people?apiKey={apiKey}")
+            @HttpRetry(responseCode = [502, 503], exponentialRetryPolicy = @HttpExponentialRetryPolicy(maxRetries = 2, retryDelay = 1, jitter = 0.75))
+            operation listPeople(apiKey:ApiKey):Person[]
+          }
+      """, invoker = Invoker.RestTemplate
+      )
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""{}""")
+            .setResponseCode(501)
+
+      }
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""{}""")
+            .setResponseCode(502)
+
+
+      }
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""[ { "name" : "Jimmy" }]""")
+
+      }
+      vyne.query("""given { key : ApiKey = "hello" } find { Person[] }""")
+         .rawObjects()
+
+      expectRequestCount(3)
+      expectRequest { request ->
+         assertEquals("/people?apiKey=hello", request.path)
+         assertEquals(HttpMethod.GET.name(), request.method)
+      }
+   }
+
+   @Test
+   fun `error is not swallowed when retry policy is exhausted`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
+         type ApiKey inherits String
+         model Person {
+            name : Name inherits String
+         }
+         service PersonService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people")
+            @HttpRetry(responseCode = [502, 503], exponentialRetryPolicy = @HttpExponentialRetryPolicy(maxRetries = 2, retryDelay = 1, jitter = 0.75))
+            operation listPeople():Person[]
+          }
+      """, invoker = Invoker.RestTemplate
+      )
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""[ { "name" : "Jimmy" }]""")
+            .setResponseCode(501)
+
+      }
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""[ { "name" : "Jimmy" }]""")
+            .setResponseCode(502)
+      }
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""[ { "name" : "Jimmy" }]""")
+            .setResponseCode(502)
+
+      }
+      assertFailsWith<OperationInvocationException> {
+         vyne.query(
+            """
+         find { Person[] }
+      """.trimMargin()
+         )
+            .rawObjects()
+      }
+   }
 }

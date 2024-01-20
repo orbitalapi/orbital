@@ -1,6 +1,7 @@
 package com.orbitalhq.spring.invokers
 
 import com.orbitalhq.Vyne
+import com.orbitalhq.annotations.http.HttpRetryAnnotationSchema
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
 import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalOperationCacheProvider
 import com.orbitalhq.schema.api.SimpleSchemaProvider
@@ -14,14 +15,17 @@ enum class Invoker {
 }
 
 fun testVyne(schema: String, invoker: Invoker): Vyne {
-   return com.orbitalhq.testVyne(schema) { schema ->
-      val invoker = RestTemplateInvoker(
+   val schemeWithRetryImport = StringBuilder().appendLine(HttpRetryAnnotationSchema.imports).appendLine(schema).toString()
+   val schemas = listOf(
+      HttpRetryAnnotationSchema.schema, schemeWithRetryImport)
+   return com.orbitalhq.testVyne(schemas) { taxi ->
+      val restTemplateInvoker = RestTemplateInvoker(
          webClient = WebClient.builder()
             .exchangeStrategies(ExchangeStrategies.builder()
                .codecs { config -> config.defaultCodecs().maxInMemorySize(2 * 1024 * 1024) }
                .build()
             ).build(),
-         schemaProvider = SimpleSchemaProvider(schema)
+         schemaProvider = SimpleSchemaProvider(taxi)
       ).let {
          if (invoker == Invoker.RestTemplateWithCache) {
             CacheAwareOperationInvocationDecorator(it, LocalOperationCacheProvider.default())
@@ -29,6 +33,6 @@ fun testVyne(schema: String, invoker: Invoker): Vyne {
             it
          }
       }
-      listOf(invoker)
+      listOf(restTemplateInvoker)
    }
 }
