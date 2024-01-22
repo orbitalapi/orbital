@@ -356,9 +356,22 @@ class ObjectBuilder(
                // The TypedObjectFactory has the expression evaluation logic,
                // so leave the value as un-populated.
             } else {
-               // We need to pass parent facts around, so that when constructing nested objects, children fields have reference to parent facts.
+               // MP 20-Jan-24: We used to pass parent facts here for nested objects, so children
+               // could have reference to them.
+               // However, referencing parent fields by name is problematic if both child and parent
+               // have a field with the same name.
+               // eg:
+               // Movie {
+               //  id : 1
+               //  director : Director {
+               //    id : 2
+               //  }
+               // ?
+               // Here, "id" is ambiguous.
+               // Therefore, breaking this behaviour, and will need to see what happens to work
+               // out what to do next.
                val theseFacts =
-                  FieldAndFactBag(populatedValues, emptyList(), context.scopedFacts, context.schema).merge(facts)
+                  FieldAndFactBag(emptyMap(), emptyList(), context.scopedFacts, context.schema).merge(facts)
 
                // When building a field, populate the source (unprojected) type.
                // When we go to construct the final object (In TypedObjectFactory), this source

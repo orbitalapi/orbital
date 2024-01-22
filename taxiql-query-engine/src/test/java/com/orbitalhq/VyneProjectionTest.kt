@@ -3084,4 +3084,38 @@ find { Movie } as {
       )
    }
 
+   // ORB-119
+   @Test
+   fun `projected objects where parent and child have the same field names are populated correctly`():Unit = runBlocking() {
+      val (vyne,stub) = testVyne("""
+            type DirectorId inherits Int
+            type MovieId inherits Int
+
+            model Movie {
+               movieId : MovieId
+               directorId : DirectorId
+            }
+            service MovieService {
+               operation getMovie():Movie
+            }
+         """.trimIndent())
+      val movie = vyne.parseJson("Movie", """ { "movieId" : 1, "directorId" : 2 }""")
+      stub.addResponse("getMovie", movie)
+
+      val result = vyne.query(
+         """find { Movie } as {
+            |id : MovieId
+            |crew : {
+            |  id : DirectorId
+            |}
+            |}
+         """.trimMargin()
+      )
+         .firstRawObject()
+      result
+         .shouldBe(mapOf("id" to 1, "crew" to mapOf("id" to 2)))
+
+
+   }
+
 }
