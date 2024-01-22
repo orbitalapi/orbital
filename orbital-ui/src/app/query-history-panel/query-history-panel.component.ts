@@ -1,26 +1,42 @@
 import {Component, EventEmitter, Output} from '@angular/core';
-import {QueryHistorySummary, QueryService} from "../services/query.service";
+import {QueryHistorySummary} from "../services/query.service";
+import {QueryHistoryStoreService} from '../services/query-history-store.service';
 
 @Component({
   selector: 'app-query-history-panel',
   styleUrls: ['./query-history-panel.component.scss'],
   template: `<div>
-    <app-query-history-entry *ngFor="let summary of history"
-                             (click)="queryHistoryElementClicked.emit(summary)"
-        [history]="summary"
-    ></app-query-history-entry>
+    <ng-container *ngIf="historyStoreService.history$ | async as history">
+      <!-- Show a spinner if state is loading -->
+      <progress
+        max="100"
+        tuiProgressBar
+        size='xs'
+        new
+        *ngIf='history.isLoading'
+      ></progress>
+      <!-- Show the data if state is loaded -->
+      <div *ngIf="history.value?.length !== 0">
+        <app-query-history-entry *ngFor="let summary of history.value"
+                                 (click)="queryHistoryElementClicked.emit(summary)"
+                                 [history]="summary">
+        </app-query-history-entry>
+      </div>
+      <tui-notification *ngIf='history.value?.length === 0'>
+        No queries have been run yet
+      </tui-notification>
+      <!-- Show an error message if state is error -->
+      <tui-notification *ngIf='history.error' status='error'>
+        {{history.error.message}}
+      </tui-notification>
+    </ng-container>
   </div>`
 })
 export class QueryHistoryPanelComponent {
-  history: QueryHistorySummary[];
-
   @Output()
   queryHistoryElementClicked = new EventEmitter<QueryHistorySummary>();
 
-  constructor(private historyService: QueryService) {
-    historyService.getHistory()
-      .subscribe(result => {
-        this.history = result.filter(r => r.taxiQl !== null);
-      })
+  constructor(public historyStoreService: QueryHistoryStoreService) {
+    historyStoreService.getHistory();
   }
 }

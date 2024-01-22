@@ -1,12 +1,6 @@
-<app-panel-header title="Query History">
-  <div class="spacer"></div>
-  <button appearance="outline" size="s"
-          tuiButton
-          type="button" class='button-small menu-bar-button' (click)="loadQuerySummaries()">Refresh
-  </button>
-</app-panel-header>
+<app-panel-header title="Query History"/>
 <div class="container">
-  <app-query-list [historyRecords]="history"
+  <app-query-list [historyRecords]="history$ | async"
                   [activeQueries]="activeQueries"
                   (cancelActiveQuery)="cancelActiveQuery($event)"
                   (recordSelected)="setActiveRecord($event)"></app-query-list>

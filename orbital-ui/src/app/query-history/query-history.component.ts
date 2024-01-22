@@ -14,6 +14,7 @@ import {AppInfoService, AppConfig} from '../services/app-info.service';
 import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
 import {ExportFormat, ResultsDownloadService} from 'src/app/results-download/results-download.service';
 import {isNullOrUndefined} from "../utils/utils";
+import {HttpRequestState, httpRequestStates} from 'ngx-http-request-state';
 
 @Component({
   selector: 'app-query-history',
@@ -21,7 +22,7 @@ import {isNullOrUndefined} from "../utils/utils";
   styleUrls: ['./query-history.component.scss']
 })
 export class QueryHistoryComponent extends BaseQueryResultDisplayComponent implements OnInit, OnDestroy {
-  history: QueryHistorySummary[];
+  history$: Observable<HttpRequestState<QueryHistorySummary[]>>
   activeRecordResults$: Observable<InstanceLike>;
   activeRecordResultType: Type;
   activeQueryProfileData$: Observable<QueryProfileData>;
@@ -79,8 +80,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   }
 
   loadQuerySummaries() {
-    this.subscriptions.push(this.queryService.getHistory()
-      .subscribe(history => this.history = history));
+    this.history$ = this.queryService.getHistory().pipe(httpRequestStates());
   }
 
   typeName(qualifiedTypeName: string) {

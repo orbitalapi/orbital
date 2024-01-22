@@ -7,3 +7,7 @@ app-query-history-entry {
   border-radius: 4px;
   border-bottom: 1px solid $slate-300;
 }
+
+[tuiProgressBar][tuiProgressBar] {
+  border-radius: 0;
+}

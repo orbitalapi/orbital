@@ -21,6 +21,7 @@ import {
   randomId,
   ResultMode
 } from '../../services/query.service';
+import {QueryHistoryStoreService} from '../../services/query-history-store.service';
 import {QueryLanguage, QueryState} from './query-editor-toolbar.component';
 import {isQueryResult, QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
 import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
@@ -122,6 +123,7 @@ export class QueryEditorComponent implements OnInit {
   savedQuery: SavedQuery = null;
 
   constructor(private queryService: QueryService,
+              private queryHistoryStoreService: QueryHistoryStoreService,
               private fileService: ResultsDownloadService,
               private dialogService: MatDialog,
               private activeQueryNotificationService: ActiveQueriesNotificationService,
@@ -285,7 +287,7 @@ export class QueryEditorComponent implements OnInit {
     }
     this.queryProfileData$ = null;
     this.loadProfileData();
-
+    this.queryHistoryStoreService.getHistory();
   }
 
   cancelQuery() {
