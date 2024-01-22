@@ -12,6 +12,7 @@ import com.orbitalhq.models.json.parseJsonModel
 import com.orbitalhq.query.connectors.OperationResponseHandler
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -579,5 +580,83 @@ class HipsterDiscoverGraphQueryStrategyTest {
 
       // We should not have called this service
       stub.invocations["lookupFilmsForDate"]?.shouldBeNull()
+   }
+
+   // ORB-117
+   @Test
+   fun `fields on anonymous classes are considered for links`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         model Movie {
+            id : MovieId inherits Int
+             // This is the test -- this object isn't explicitly defined.
+            productionTeam : {
+               director : DirectorId inherits Int
+            }
+         }
+
+         model Director {
+            name : PersonName inherits String
+         }
+         service Movies {
+            operation getMovie():Movie
+            operation getDirector(DirectorId):Director
+         }
+      """.trimIndent()
+      )
+      stub.addResponse(
+         "getMovie", vyne.parseJson(
+            "Movie", """
+         {
+            "id" : 1,
+            "productionTeam" : {
+               "director" : 2
+            }
+         }
+      """.trimIndent()
+         )
+      )
+      stub.addResponse("getDirector", vyne.parseJson("Director", """{ "name" : "Jimmy" }"""))
+      val result = vyne.query(
+         """
+         find { Movie } as {
+            id : MovieId
+            director : PersonName
+         }
+      """.trimIndent()
+      )
+      val movie = result.firstRawObject()
+      movie.shouldBe(mapOf("id" to 1, "director" to "Jimmy"))
+      stub.invocations["getDirector"]!!.single().value!!.shouldBe(2)
+   }
+
+   // ORB-117
+   @Test
+   fun `can use the value returned from a nested anonymous type as the input into another operation`():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+         model Movie {
+            id : MovieId inherits Int
+            productionTeam : { // This is the test -- this object isn't explicitly defined.
+               director : DirectorId inherits Int
+            }
+
+         }
+         model Director {
+            name : PersonName inherits String
+         }
+         service Movies {
+            operation getMovie(MovieId):Movie
+            operation getDirector(DirectorId):Director
+         }
+      """.trimIndent())
+      stub.addResponse("getMovie", vyne.parseJson("Movie", """{ "id" : 1, "productionTeam" : { "director" : 100 } }"""))
+      stub.addResponse("getDirector", vyne.parseJson("Director", """{ "name" : "Jimmy" }"""))
+
+      val result = vyne.query("""given { MovieId = 1 } find {
+         |  director : PersonName
+         |}
+      """.trimMargin())
+         .firstRawObject()
+      result.shouldBe(mapOf("director" to "Jimmy"))
    }
 }

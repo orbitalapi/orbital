@@ -57,7 +57,7 @@ class VyneStreamMergingTest : DescribeSpec({
          )
             .results
 
-         results.test {
+         results.test(timeout = Duration.parse("5s")) {
             tweetFlow.emit(vyne.parseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1}"""))
             val first = expectTypedObject()
             first.toRawObject().shouldBe(

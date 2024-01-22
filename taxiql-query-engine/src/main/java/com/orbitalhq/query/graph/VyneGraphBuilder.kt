@@ -780,8 +780,11 @@ class VyneGraphBuilder(
       // The member instance we have can populate required params
       connections.addConnection(memberInstance, parameter(type.name.parameterizedName), Relationship.CAN_POPULATE)
       connections.addConnection(memberInstance, type(type), Relationship.IS_INSTANCE_OF)
+      val nestedConnections = type.attributes.entries.flatMap { (fieldName, field) ->
+         buildProvidedInstanceAttributeConnections(field.type.parameterizedName, fieldName, providedInstanceMember, schema.type(field.type))
+      }
 
-      return connections
+      return connections + nestedConnections
    }
 
    private fun createProvidedInstanceAttribute(
