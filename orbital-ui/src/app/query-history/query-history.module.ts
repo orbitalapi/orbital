@@ -19,10 +19,11 @@ import { MatLegacyProgressBarModule as MatProgressBarModule } from '@angular/mat
 import { TabbedResultsViewModule } from '../tabbed-results-view/tabbed-results-view.module';
 import { AngularSplitModule } from 'angular-split';
 import { ExpandingPanelSetModule } from '../expanding-panelset/expanding-panel-set.module';
-import { TuiButtonModule } from '@taiga-ui/core';
+import {TuiButtonModule, TuiNotificationModule} from '@taiga-ui/core';
 import { RouterModule } from '@angular/router';
 import { ResultsDownloadModule } from 'src/app/results-download/results-download.module';
 import { TruncatePipeModule } from 'src/app/truncate-pipe/truncate-pipe.module';
+import {TuiProgressModule} from '@taiga-ui/kit';
 
 @NgModule({
   imports: [
@@ -53,7 +54,9 @@ import { TruncatePipeModule } from 'src/app/truncate-pipe/truncate-pipe.module';
         path: ':queryResponseId',
         component: QueryHistoryComponent,
       },
-    ])
+    ]),
+    TuiNotificationModule,
+    TuiProgressModule
   ],
   exports: [QueryHistoryComponent, QueryListComponent],
   declarations: [

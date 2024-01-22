@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common';
 import { QueryHistoryPanelComponent } from './query-history-panel.component';
 import { QueryHistoryEntryComponent } from './query-history-entry.component';
 import {TruncatePipeModule} from "../truncate-pipe/truncate-pipe.module";
-
-
+import {TuiNotificationModule} from '@taiga-ui/core';
+import {TuiProgressModule} from '@taiga-ui/kit';
 
 @NgModule({
   declarations: [
@@ -16,7 +16,9 @@ import {TruncatePipeModule} from "../truncate-pipe/truncate-pipe.module";
   ],
   imports: [
     CommonModule,
-    TruncatePipeModule
+    TruncatePipeModule,
+    TuiNotificationModule,
+    TuiProgressModule
   ]
 })
 export class QueryHistoryPanelModule { }

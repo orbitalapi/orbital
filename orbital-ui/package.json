@@ -82,6 +82,7 @@
     "ng-apexcharts": "^1.8.0",
     "ngx-file-drop": "^16.0.0",
     "ngx-highlightjs": "^5.0.0",
+    "ngx-http-request-state": "^3.1.0",
     "ngx-markdown": "^16.0.0",
     "ngx-moment": "^6.0.2",
     "plausible-tracker": "^0.3.8",
