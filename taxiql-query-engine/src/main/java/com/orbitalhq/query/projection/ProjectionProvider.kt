@@ -6,6 +6,7 @@ import com.orbitalhq.query.MetricTags
 import com.orbitalhq.query.Projection
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.TypedInstanceWithMetadata
+import com.orbitalhq.schemas.Type
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -14,6 +15,18 @@ import kotlinx.coroutines.flow.Flow
  */
 interface ProjectionProvider {
 
-    fun project(results: Flow<TypedInstance>, projection: Projection, context: QueryContext, globalFacts: FactBag,  metricTags: MetricTags = MetricTags.NONE): Flow<TypedInstanceWithMetadata>
+    fun project(
+       source: Flow<TypedInstance>,
+       /**
+        * In the case of streams and arrays, the declared source type may be of Foo[],
+        * and the projection may be of type Foo.
+        * This determines how the downstream projection will be performed (map vs transform)
+        */
+       declaredSourceType: Type,
+       projection: Projection,
+       context: QueryContext,
+       globalFacts: FactBag,
+       metricTags: MetricTags = MetricTags.NONE
+    ): Flow<TypedInstanceWithMetadata>
 
 }

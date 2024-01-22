@@ -712,7 +712,7 @@ class StatefulQueryEngine(
             // The projection provider handles picking the correct entity to project,
             // so we don't need to consdier that here.
             val factsToPropagate = initialState.toFactBag(schema)
-            projectionProvider.project(resultsFlow, target.projection, context, factsToPropagate)
+            projectionProvider.project(resultsFlow,target.type, target.projection, context, factsToPropagate)
                .map { projectedInstanceWithMetadata ->
                   if (!isStreamingQuery) {
                      projectedInstanceWithMetadata.copy(processingStart = queryStartTime)

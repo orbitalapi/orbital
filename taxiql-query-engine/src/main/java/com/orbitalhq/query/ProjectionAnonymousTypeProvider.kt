@@ -24,16 +24,14 @@ object ProjectionAnonymousTypeProvider {
       return TaxiTypeMapper.fromTaxiType(taxiType, schema, cache)
    }
    fun toVyneAnonymousType(taxiType: lang.taxi.types.Type, schema: Schema): Type {
-      val parameterType = if (taxiType.typeParameters().isNotEmpty()) taxiType.typeParameters().first() else taxiType
-      val vyneAnonymousType = TaxiTypeMapper.fromTaxiType(parameterType, schema)
-//      schema.typeCache.registerAnonymousType(vyneAnonymousType)
-//      val retValue = schema.type(taxiType.toVyneQualifiedName())
-//      (parameterType as ObjectType).fields.forEach { anonymoustTypeField ->
-//         if (anonymoustTypeField.type.anonymous) {
-//            toVyneAnonymousType(anonymoustTypeField.type, schema)
-//         }
-//      }
-      return vyneAnonymousType
+      // MP 22-Jan-24: This used to unwrap array types, so the
+      // return value of T[] was T.
+      // That was to handle cases where we're projecting
+      // find { Foo[] } as { ... }
+      // The logic has been encapsulated in LocalProjectionProvider,
+      // where we correctly handle multiple edge cases around
+      // Source and Target types.
+      return TaxiTypeMapper.fromTaxiType(taxiType, schema)
    }
 }
 

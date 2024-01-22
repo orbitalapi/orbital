@@ -87,7 +87,7 @@ class FunctionProjectionTest {
       val results = vyne.query(
          """find { Movie[] } as {
             // Selecting the first person as the star
-             starring : Person = first(Person[]) as ActorsUnionId
+             starring : ActorsUnionId = first(Person[]) as ActorsUnionId
          }[]
       """
       )
