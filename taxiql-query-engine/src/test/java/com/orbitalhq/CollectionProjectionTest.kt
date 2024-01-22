@@ -5,6 +5,7 @@ import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.utils.asA
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
@@ -218,5 +219,74 @@ class CollectionProjectionTest {
          // Not sensible, just that's the point of the test.
          reviews.should.have.size(6)
       }
+   }
+
+   @Test
+   fun `can use a value from an iterated collection as input into another operation`() : Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+         model MovieSchedule {
+            date : Date
+            movies : Movie[]
+         }
+         type PerformanceDate inherits Date
+         model Movie {
+            id : MovieId inherits Int
+            director : DirectorId inherits Int
+         }
+         model Director {
+            name : PersonName inherits String
+         }
+         service Movies {
+            operation getMovieSchedule(PerformanceDate):MovieSchedule
+            operation getDirector(DirectorId):Director
+         }
+      """.trimIndent())
+      val schedule =
+         vyne.parseJson("MovieSchedule", """{ "date" : "2023-11-10", "movies" : [ { "id" : 1, "director" : 100 } ] }""")
+      stub.addResponse("getMovieSchedule", schedule)
+      stub.addResponse("getDirector", vyne.parseJson("Director", """{ "name" : "Jimmy" }"""))
+
+      val result = vyne.query("""given { PerformanceDate = '2023-11-10' }
+         |find { MovieSchedule } as (Movie[]) -> {
+         |  id : MovieId
+         |  director : PersonName
+         |}[]
+      """.trimMargin())
+         .firstRawObject()
+      result.shouldBe(mapOf(
+         "id" to 1,
+         "director" to "Jimmy"))
+   }
+
+   @Test
+   fun `will map a returned collection`():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+         type PerformanceDate inherits Date
+         model Movie {
+            id : MovieId inherits Int
+            director : DirectorId inherits Int
+         }
+         model Director {
+            name : PersonName inherits String
+         }
+         service Movies {
+            operation getMovies():Movie[]
+            operation getDirector(DirectorId):Director
+         }
+      """.trimIndent())
+      val movies =
+         vyne.parseJson("Movie[]", """[ { "id" : 1, "director" : 100 } ]""")
+      stub.addResponse("getMovies", movies)
+      stub.addResponse("getDirector", vyne.parseJson("Director", """{ "name" : "Jimmy" }"""))
+
+      val result = vyne.query("""find { Movie[] } as  {
+         |  id : MovieId
+         |  director : PersonName
+         |}[]
+      """.trimMargin())
+         .firstRawObject()
+      result.shouldBe(mapOf(
+         "id" to 1,
+         "director" to "Jimmy"))
    }
 }

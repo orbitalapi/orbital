@@ -16,6 +16,7 @@ import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.TypedInstanceWithMetadata
 import com.orbitalhq.query.projection.ProjectionProvider
 import com.orbitalhq.query.withProcessingMetadata
+import com.orbitalhq.schemas.Type
 import com.spikhalskiy.futurity.Futurity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapMerge
@@ -44,6 +45,7 @@ class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistrib
 
    override fun project(
       results: Flow<TypedInstance>,
+      declaredSourceType: Type,
       projection: Projection,
       context: QueryContext,
       globalFacts: FactBag,
