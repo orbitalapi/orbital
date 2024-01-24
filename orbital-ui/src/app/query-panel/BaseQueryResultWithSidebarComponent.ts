@@ -17,9 +17,10 @@ import {QueryService} from '../services/query.service';
 import {TypesService} from '../services/types.service';
 import {InstanceSelectedEvent, QueryResultMemberCoordinates} from './instance-selected-event';
 import {buildInheritable, Inheritable} from 'src/app/inheritence-graph/build.inheritable';
+import {ComponentWithSubscriptions} from '../utils/component-with-subscriptions';
 
 @Directive()
-export abstract class BaseQueryResultWithSidebarComponent {
+export abstract class BaseQueryResultWithSidebarComponent extends ComponentWithSubscriptions {
 
   shouldTypedInstancePanelBeVisible: boolean;
   selectedTypeInstanceDataSource: DataSource;
@@ -28,6 +29,7 @@ export abstract class BaseQueryResultWithSidebarComponent {
   selectedInstanceQueryCoordinates: QueryResultMemberCoordinates;
   inheritanceView: Inheritable;
   discoverableTypes: QualifiedName[];
+  isLoading: boolean;
 
   schema: Schema;
 
@@ -42,6 +44,7 @@ export abstract class BaseQueryResultWithSidebarComponent {
   // }
 
   protected constructor(protected queryService: QueryService, protected typeService: TypesService, protected changeDetector: ChangeDetectorRef) {
+    super();
     typeService.getTypes()
       .subscribe(schema => this.schema = schema);
   }
@@ -63,6 +66,7 @@ export abstract class BaseQueryResultWithSidebarComponent {
   onQueryResultSelected($event: QueryResultInstanceSelectedEvent) {
     const eventTypeInstance = $event.instanceSelectedEvent.selectedTypeInstance;
     if ($event.instanceSelectedEvent.rowValueId) {
+      this.isLoading = true;
       this.queryService.getQueryResultNodeDetail(
         $event.instanceSelectedEvent.queryId, $event.instanceSelectedEvent.rowValueId, $event.instanceSelectedEvent.attributeName
       )
@@ -74,6 +78,7 @@ export abstract class BaseQueryResultWithSidebarComponent {
           this.typeService.getDiscoverableTypes(this.selectedTypeInstanceType.name.parameterizedName)
             .subscribe(result => {
               this.discoverableTypes = result;
+              this.isLoading = false;
               this.changeDetector.markForCheck();
             });
 

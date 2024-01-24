@@ -82,7 +82,6 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
   instances: InstanceLike[];
   private _displayMode: DisplayMode = 'table';
   private _instances$: Observable<InstanceLike>;
-  private _instanceSubscription: Subscription;
   @Input()
     // eslint-disable-next-line @typescript-eslint/no-inferrable-types
   selectable: boolean = false;
@@ -105,15 +104,13 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
     if (value === this._instances$) {
       return;
     }
-    if (this._instanceSubscription) {
-      this._instanceSubscription.unsubscribe();
-    }
+
     this._instances$ = value;
     this.instances = [];
-    this._instances$.subscribe(next => {
+    this.unsubscribeOnClose(this._instances$.subscribe(next => {
       this.instances.push(next);
       this.instancesChanged$.emit();
-    });
+    }));
 
   }
 

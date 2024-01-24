@@ -12,6 +12,7 @@ import {MatLegacyButtonModule as MatButtonModule} from '@angular/material/legacy
 import {MatIconModule} from '@angular/material/icon';
 import {ExpandingPanelSetModule} from '../expanding-panelset/expanding-panel-set.module';
 import {TuiButtonModule} from '@taiga-ui/core';
+import {TuiLineClampModule, TuiProgressModule} from '@taiga-ui/kit';
 
 
 @NgModule({
@@ -26,7 +27,9 @@ import {TuiButtonModule} from '@taiga-ui/core';
     MatButtonModule,
     MatIconModule,
     ExpandingPanelSetModule,
-    TuiButtonModule
+    TuiButtonModule,
+    TuiLineClampModule,
+    TuiProgressModule
   ],
     exports: [TypedInstancePanelContainerComponent, TypedInstancePanelComponent],
   declarations: [

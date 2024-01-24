@@ -15,17 +15,18 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
   template: `
     <div class='toolbar'>
       <mat-button-toggle-group [(ngModel)]='displayMode' data-e2e-id='profiler-call-operation-selection'>
-        <mat-button-toggle value='lineage' data-e2e-id='call-select'>
+        <mat-button-toggle value='lineage' data-e2e-id='call-select' title='Query Lineage'>
           <img class='icon' src='assets/img/lineage-nodes.svg'>
         </mat-button-toggle>
-        <mat-button-toggle value='sequence' data-e2e-id='call-select'>
+        <mat-button-toggle value='sequence' data-e2e-id='call-select' title='Sequence Diagram'>
           <img class='icon' src='assets/img/sequence.svg'>
         </mat-button-toggle>
-        <mat-button-toggle value='stats' data-e2e-id='operation-select'>
+        <mat-button-toggle value='stats' data-e2e-id='operation-select' title='Stats'>
           <img class='icon' src='assets/img/table-view.svg'>
         </mat-button-toggle>
       </mat-button-toggle-group>
     </div>
+    <app-query-lineage *ngIf="displayMode === 'lineage'" [rows]='querySankeyChartRows$ | async'></app-query-lineage>
     <div class='sequence-diagram-container' *ngIf="displayMode === 'sequence'">
       <as-split direction='horizontal' unit='pixel'>
         <as-split-area [size]='500'>
@@ -59,7 +60,6 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
       </as-split>
     </div>
     <app-service-stats *ngIf="displayMode === 'stats'" [operationStats]='operationStats$ | async'></app-service-stats>
-    <app-query-lineage *ngIf="displayMode === 'lineage'" [rows]='querySankeyChartRows$ | async'></app-query-lineage>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./call-explorer.component.scss']

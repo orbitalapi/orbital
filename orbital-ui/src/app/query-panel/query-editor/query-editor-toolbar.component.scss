@@ -5,7 +5,6 @@
   align-items: center;
 }
 
-
 ::ng-deep tui-select {
   tui-wrapper[data-appearance=textfield] {
     box-shadow:  0 0 0 rgb(19 20 22 / 10%);
@@ -14,7 +13,7 @@
 
 tui-select {
   width: 8rem;
-  margin-right: 2rem;
+  margin-right: 1rem;
 }
 
 .footer-bar {
@@ -24,7 +23,6 @@ tui-select {
   display: flex;
   align-items: center;
 }
-
 
 .error-message {
   margin: 0 1rem;
@@ -36,9 +34,6 @@ tui-select {
   flex-grow: 1;
 }
 
-app-counter-timer {
-  margin-right: 1rem;
-}
 .loader {
   width: 1rem;
   height: 1rem;
@@ -48,8 +43,7 @@ app-counter-timer {
   display: inline-block;
   box-sizing: border-box;
   animation: rotation 1s linear infinite;
-
-  margin-right: 1rem;
+  margin-right: 0.5rem;
 }
 
 @keyframes rotation {
@@ -64,9 +58,6 @@ app-counter-timer {
 button {
   flex-shrink: 0;
 }
-
-
-
 
 .progress {
   margin-left: 2rem;
@@ -84,6 +75,12 @@ button {
   font-size: 0.9rem;
   display: flex;
   align-items: center;
+
+  &:not(.no-separator):after {
+    content: "|";
+    color: $gray-200;
+    margin: 0 0.5rem;
+  }
 
   img {
     width: 24px;
@@ -105,4 +102,3 @@ button {
     transform: rotate(360deg);
   }
 }
-

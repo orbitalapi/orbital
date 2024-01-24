@@ -4,9 +4,9 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {DownloadClickedEvent} from '../object-view/object-view-container.component';
 import {TypesService} from '../services/types.service';
 import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDisplayComponent';
-import {Observable, ReplaySubject} from 'rxjs';
+import {combineLatest, Observable, ReplaySubject} from 'rxjs';
 import {InstanceLike, tryFindType, Type} from '../services/schema';
-import {take, tap} from 'rxjs/operators';
+import {map, startWith, take, tap} from 'rxjs/operators';
 import {ActiveQueriesNotificationService, RunningQueryStatus} from '../services/active-queries-notification-service';
 import {ValueWithTypeName} from '../services/models';
 import {Subscription} from 'rxjs';
@@ -26,6 +26,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   activeRecordResults$: Observable<InstanceLike>;
   activeRecordResultType: Type;
   activeQueryProfileData$: Observable<QueryProfileData>;
+  isQueryLoading$: Observable<boolean>;
 
   instanceSelected$ = new ReplaySubject<QueryResultInstanceSelectedEvent>(1);
   sidePanelVisible: boolean = false;
@@ -51,8 +52,6 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
       .subscribe(next => this.config = next);
   }
 
-
-  profileLoading = false;
   profilerOperation: QueryProfileData;
 
   private selectedQueryId: string = null;
@@ -135,6 +134,13 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
       );
     // Don't subscribe here.  We'll only fetch these results if the user opens the profile data
     this.activeQueryProfileData$ = this.queryService.getQueryProfile(selectedQueryId);
+
+    this.isQueryLoading$ = combineLatest([
+      this.activeRecordResults$.pipe(map(val => false), startWith(true)),
+      this.activeQueryProfileData$.pipe(map(val => false), startWith(true))
+    ]).pipe(
+      map(([resultsLoaded, profileDataLoaded]) => resultsLoaded || profileDataLoaded)
+    );
   }
 
   get queryId(): string {

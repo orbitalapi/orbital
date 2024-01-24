@@ -10,6 +10,13 @@ import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/Ba
   selector: 'app-typed-instance-panel-container',
   styleUrls: ['./typed-instance-panel-container.component.scss'],
   template: `
+    <progress
+      max="100"
+      tuiProgressBar
+      size='xs'
+      new
+      *ngIf='isLoading'
+    ></progress>
     <app-panel-header [title]="panelTitle" *ngIf="showPanelHeader">
       <div class="spacer"></div>
       <button
@@ -54,9 +61,9 @@ export class TypedInstancePanelContainerComponent extends BaseQueryResultWithSid
     }
     this._queryResultSelectedEvent$ = value;
     if (this.queryResultSelectedEvent$) {
-      this.queryResultSelectedEvent$.subscribe(event => {
+      this.unsubscribeOnClose(this.queryResultSelectedEvent$.subscribe(event => {
         this.onQueryResultSelected(event);
-      })
+      }))
     }
   }
 
@@ -74,9 +81,9 @@ export class TypedInstancePanelContainerComponent extends BaseQueryResultWithSid
     }
     this._instanceSelected$ = value;
     if (this.instanceSelected$) {
-      this.instanceSelected$.subscribe(event => {
+      this.unsubscribeOnClose(this.instanceSelected$.subscribe(event => {
         this.onTypedInstanceSelected(event);
-      })
+      }))
     }
   }
 

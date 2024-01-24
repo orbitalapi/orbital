@@ -22,29 +22,42 @@ import { map, scan, tap } from 'rxjs/operators';
     <!--    <app-error-panel *ngIf="lastQueryResultAsSuccess?.unmatchedNodes?.length > 0"-->
     <!--                     [queryResult]="lastQueryResultAsSuccess">-->
     <!--    </app-error-panel>-->
+    <progress
+      max="100"
+      tuiProgressBar
+      size='xs'
+      new
+      *ngIf='isQueryRunning'
+    ></progress>
     <div class="alert" *ngIf="responseIsLarge$ | async">The response is really big. Some features have been disabled.
     </div>
     <app-panel-header title="Results" alignItems="left">
-      <tui-tabs [(activeItemIndex)]="activeTabIndex" *ngIf="showResultsPanel"
-                (activeItemIndexChange)="onTabIndexChanged()">
-        <button tuiTab [disabled]="responseIsLarge$ | async">
+      <tui-tabs-with-more [(activeItemIndex)]="activeTabIndex" *ngIf="showResultsPanel"
+                (activeItemIndexChange)="onTabIndexChanged()"
+                [moreContent]='more'
+      >
+        <button *tuiItem tuiTab [disabled]="responseIsLarge$ | async" [class.tui-skeleton]='true'>
           <img src="assets/img/tabler/table.svg" class="tab-icon">
           Table
         </button>
-        <button tuiTab [disabled]="responseIsLarge$ | async">
+        <button *tuiItem tuiTab [disabled]="responseIsLarge$ | async">
           <img src="assets/img/tree-list.svg" class="tab-icon">
           Tree
         </button>
-        <button tuiTab>
+        <button *tuiItem tuiTab>
           <img src="assets/img/tabler/code-dots.svg" class="tab-icon">
           Raw
         </button>
-        <button tuiTab *ngIf="profilerEnabled">
-          <img src="assets/img/tabler/gauge.svg" class="tab-icon">
-          Profiler
-        </button>
-      </tui-tabs>
-      <div class="spacer"></div>
+        <ng-container *ngIf='profilerEnabled'>
+          <button *tuiItem tuiTab >
+            <img src="assets/img/tabler/gauge.svg" class="tab-icon">
+            Profiler
+          </button>
+        </ng-container>
+      </tui-tabs-with-more>
+      <ng-template #more>
+        <tui-svg src="tuiIconMoreHorizontalLarge"></tui-svg>
+      </ng-template>
       <tui-hosted-dropdown
           *ngIf="showResultsPanel && downloadSupported"
         tuiDropdownAlign="left"
@@ -109,6 +122,8 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
 // workaround for lack of enum support in templates
   downloadFileType = ExportFormat;
 
+  @Input()
+  isQueryRunning: boolean
 
   constructor(protected typeService: TypesService, protected appInfoService: AppInfoService, private dialogService: MatDialog, private changeDetector: ChangeDetectorRef) {
     super(typeService);
