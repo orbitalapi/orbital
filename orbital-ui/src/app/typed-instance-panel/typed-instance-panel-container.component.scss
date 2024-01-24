@@ -1,6 +1,7 @@
 :host {
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 :host ::ng-deep {
@@ -8,4 +9,9 @@
     padding-left: 0 !important;
     padding-right: 0 !important;
   }
+}
+
+progress {
+  position: absolute;
+  top: 48px;
 }

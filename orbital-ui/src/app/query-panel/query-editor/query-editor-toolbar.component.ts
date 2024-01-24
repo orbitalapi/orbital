@@ -87,16 +87,8 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
             <img src='assets/img/tabler/player-play.svg' class='filter-white'>
             Run
         </button>
-        <div class='running-timer' *ngIf="(currentState$ | async) === 'Generating'">
-            <span class='loader'></span>
-            <span>Thinking...&nbsp;</span>
-        </div>
-        <div class='running-timer' *ngIf="(currentState$ | async) === 'Running'">
-            <span class='loader'></span>
-            <span>Running...&nbsp;</span>
-            <app-counter-timer *ngIf='queryStarted' [startDate]='queryStarted'></app-counter-timer>
 
-
+        <div *ngIf="(currentState$ | async) === 'Running'">
             <div class='progress'
                  *ngIf="queryStarted && percentComplete > 0 && runningQueryStatus.queryType !== 'STREAMING' && runningQueryStatus.estimatedProjectionCount !== 0">
                 <mat-progress-bar mode='determinate' [value]='percentComplete'></mat-progress-bar>
@@ -110,15 +102,42 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
                 <span>{{ runningQueryStatus.completedProjections}}</span>
             </div>
 
-            <button mat-stroked-button *ngIf="(currentState$ | async) === 'Running'" color='accent'
+            <button tuiButton size="s" appearance="outline"
+                    class='button-small menu-bar-button'
                     (click)='cancelQuery.emit()'
-            >Cancel
+            >
+              <span class='running-timer'>
+                <span class='loader'></span>
+                <span>Running...&nbsp;</span>
+                <app-counter-timer *ngIf='queryStarted' [startDate]='queryStarted'></app-counter-timer>
+              </span>
+              Cancel
             </button>
         </div>
 
-        <div class='running-timer' *ngIf="(currentState$ | async) === 'Cancelling'">
-            <span class='loader'></span>
-            <span>Cancelling...</span>
+        <div *ngIf="(currentState$ | async) === 'Generating'">
+          <button tuiButton size="s" appearance="outline"
+                  class='button-small menu-bar-button'
+                  [disabled]='true'
+          >
+            <span class='running-timer no-separator'>
+              <span class='loader'></span>
+              <span>Thinking...</span>
+            </span>
+          </button>
+        </div>
+
+        <div *ngIf="(currentState$ | async) === 'Cancelling'">
+          <button tuiButton size="s" appearance="outline"
+                  class='button-small menu-bar-button'
+                  [disabled]='true'
+          >
+            <span class='running-timer'>
+              <span class='loader'></span>
+              <span>Cancelling...</span>
+            </span>
+            Cancel
+          </button>
         </div>
     `,
     styleUrls: ['./query-editor-toolbar.component.scss']

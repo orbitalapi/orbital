@@ -9,8 +9,14 @@ import { Inheritable } from 'src/app/inheritence-graph/build.inheritable';
     <div class="container" *ngIf="type">
       <div class="type-name">
         <h2>{{type?.name?.name}}</h2>
-        <h3>{{instance?.value}}</h3>
-
+        <tui-line-clamp
+          [content]="instanceValue"
+          [lineHeight]="36"
+          [linesLimit]="3"
+        ></tui-line-clamp>
+        <ng-template #instanceValue>
+          <h3>{{instance?.value}}</h3>
+        </ng-template>
         <span class="mono-badge">{{type?.name?.fullyQualifiedName}}</span>
       </div>
       <section>

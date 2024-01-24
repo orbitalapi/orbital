@@ -14,7 +14,9 @@
 .spacer {
   flex-grow: 1;
 }
-tui-tabs {
+tui-tabs-with-more {
+  width: 100%;
+
   button {
     font-family: $headings-font;
     font-size: 0.9rem ;
@@ -52,4 +54,8 @@ tui-tabs {
   margin: 0.5rem 1rem 0;
   border: 1px solid rgba($vyne-lilac, 0.4);
   border-radius: 4px;
+}
+
+progress {
+  position: absolute;
 }

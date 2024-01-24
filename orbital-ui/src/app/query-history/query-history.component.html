@@ -3,9 +3,16 @@
   <app-query-list [historyRecords]="history$ | async"
                   [activeQueries]="activeQueries"
                   (cancelActiveQuery)="cancelActiveQuery($event)"
-                  (recordSelected)="setActiveRecord($event)"></app-query-list>
+                  (recordSelected)="setActiveRecord($event); sidePanelVisible = false;"></app-query-list>
   <as-split direction="horizontal" unit="pixel">
     <as-split-area>
+      <progress
+        max="100"
+        tuiProgressBar
+        size='xs'
+        new
+        *ngIf='isQueryLoading$ | async'
+      ></progress>
       <app-tabbed-results-view *ngIf="activeRecordResults$"
                                [profileData$]="activeQueryProfileData$"
                                [instances$]="activeRecordResults$"

@@ -59,6 +59,7 @@
                                  [anonymousTypes]='anonymousTypes'
                                  (instanceSelected)='valuePanelVisible = true; instanceSelected$.next($event)'
                                  (downloadClicked)='downloadQueryHistory($event.format)'
+                                 [isQueryRunning]='(currentState$ | async) === "Running" || (isProfileDataLoading$ | async)'
         ></app-tabbed-results-view>
 
       </as-split-area>

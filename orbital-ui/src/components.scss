@@ -22,7 +22,12 @@ button.button-small {
 
 
 .menu-bar-button {
-  margin-right: 2rem;
+  margin-left: 0.5rem;
+
+  &:last-child:not(:only-child) {
+    margin-left: 1rem;
+  }
+
   &[data-appearance='outline'] {
     background-color: $white;
     border: none;

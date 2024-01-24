@@ -116,6 +116,7 @@ export class QueryService {
 
   getHistory(): Observable<QueryHistorySummary[]> {
     return this.http.get<QueryHistorySummary[]>(`${this.environment.serverUrl}/api/query/history`, this.httpOptions);
+    //return throwError(() => new Error("something went pear"))
   }
 
   getQueryResultNodeDetail(queryId: string, rowValueId: number, attributePath: string): Observable<QueryResultNodeDetail> {

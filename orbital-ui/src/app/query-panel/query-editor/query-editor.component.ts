@@ -9,7 +9,7 @@ import {
   OnInit,
   Output
 } from '@angular/core';
-import {tap} from 'rxjs/operators';
+import {map, startWith, tap} from 'rxjs/operators';
 
 import {editor, KeyCode, KeyMod} from 'monaco-editor';
 import {
@@ -86,6 +86,7 @@ export class QueryEditorComponent implements OnInit {
   private latestQueryStatus: RunningQueryStatus | null = null;
   results$: Subject<InstanceLike>;
   queryProfileData$: Observable<QueryProfileData>;
+  isProfileDataLoading$: Observable<boolean>;
   queryMetadata$: Observable<RunningQueryStatus>;
 
   customActions: editor.IActionDescriptor[];
@@ -100,8 +101,6 @@ export class QueryEditorComponent implements OnInit {
   }
 
   lastErrorMessage: string | null;
-
-  loading = false;
 
   schema: Schema;
   currentState$: BehaviorSubject<QueryState> = new BehaviorSubject<QueryState>('Editing');
@@ -184,7 +183,6 @@ export class QueryEditorComponent implements OnInit {
     this.lastQueryResult = null;
     this.lastErrorMessage = null;
     this.queryReturnedResults = false;
-    this.loading = true;
     this.loadingChanged.emit(true);
     this.queryClientId = randomId();
     this.resultType = null;
@@ -203,7 +201,6 @@ export class QueryEditorComponent implements OnInit {
     this.prepareToSubmitQuery();
 
     const queryErrorHandler = (error: FailedSearchResponse) => {
-      this.loading = false;
       this.lastQueryResult = error;
       console.error('Search failed: ' + JSON.stringify(error));
       this.queryResultUpdated.emit(this.lastQueryResult);
@@ -274,7 +271,6 @@ export class QueryEditorComponent implements OnInit {
   }
 
   private handleQueryFinished() {
-    this.loading = false;
     this.loadingChanged.emit(false);
     const currentState = this.currentState$.getValue();
     // If we're already in an error state, then don't change the state.
@@ -324,6 +320,7 @@ export class QueryEditorComponent implements OnInit {
     }
 
     this.queryProfileData$ = this.queryService.getQueryProfileFromClientId(this.queryClientId);
+    this.isProfileDataLoading$ = this.queryProfileData$.pipe(map(val => false), startWith(true))
     this.changeDetector.markForCheck();
   }
 
