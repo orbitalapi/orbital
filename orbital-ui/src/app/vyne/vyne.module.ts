@@ -14,6 +14,7 @@ import { MatIconModule } from '@angular/material/icon';
 import {PolymorpheusModule} from "@tinkoff/ng-polymorpheus";
 import {DraftManagementBarModule} from "../draft-management-bar/draft-management-bar.module";
 import {HeaderBarModule} from "../header-bar/header-bar.module";
+import {TuiProgressModule} from '@taiga-ui/kit';
 
 @NgModule({
     imports: [
@@ -29,7 +30,8 @@ import {HeaderBarModule} from "../header-bar/header-bar.module";
         TuiButtonModule,
         DraftManagementBarModule,
         HeaderBarModule,
-        TuiSvgModule
+        TuiSvgModule,
+        TuiProgressModule
     ],
   exports: [VyneComponent],
   declarations: [VyneComponent],

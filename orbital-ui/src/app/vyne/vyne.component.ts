@@ -1,9 +1,9 @@
 import {Component, OnInit} from '@angular/core';
 import {BreakpointObserver} from '@angular/cdk/layout';
-import {BehaviorSubject, combineLatest, merge, mergeAll, Observable} from 'rxjs';
-import {concatAll, filter, map} from 'rxjs/operators';
+import {BehaviorSubject, combineLatest, Observable} from 'rxjs';
+import {filter, map} from 'rxjs/operators';
 import {AppInfo, AppInfoService} from '../services/app-info.service';
-import {NavigationEnd, Router} from '@angular/router';
+import {NavigationEnd, RouteConfigLoadEnd, RouteConfigLoadStart, Router} from '@angular/router';
 import {SchemaNotificationService} from '../services/schema-notification.service';
 import {MatLegacySnackBar as MatSnackBar} from '@angular/material/legacy-snack-bar';
 import {SystemAlert} from '../system-alert/system-alert.component';
@@ -113,6 +113,8 @@ export class VyneComponent implements OnInit {
   userInfo: VyneUser | null = null;
   alerts: SystemAlert[] = [];
 
+  isLoadingRoute: boolean;
+
   constructor(private breakpointObserver: BreakpointObserver,
               private appInfoService: AppInfoService,
               private router: Router,
@@ -216,6 +218,13 @@ export class VyneComponent implements OnInit {
           this.setCompilationErrorAlert();
         }
       });
+    this.router.events.subscribe(event => {
+      if (event instanceof RouteConfigLoadStart) {
+        this.isLoadingRoute = true;
+      } else if (event instanceof RouteConfigLoadEnd) {
+        this.isLoadingRoute = false;
+      }
+    });
   }
 }
 
