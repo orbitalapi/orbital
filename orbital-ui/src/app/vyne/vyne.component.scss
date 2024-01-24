@@ -30,8 +30,21 @@
   border-radius: 8px;
   border: 1px solid $slate-200;
   // tailwind drop-shadow-md
-  filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06))
+  filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06));
 
+  &.isLoading {
+    opacity: 0.5;
+    cursor: progress;
+
+    // assume the sibling content to the router-outlet is the content
+    // being unloaded and as we can't set pointer-events: none and change
+    // the cursor on the same element we're using this trick instead
+    ::ng-deep {
+      router-outlet ~ .ng-star-inserted {
+        pointer-events: none;
+      }
+    }
+  }
 }
 
 .sidenav-container {
@@ -112,8 +125,14 @@
 .appInfo {
   font-family: $headings-font;
   position: absolute;
-  bottom: 0px;
+  bottom: 0;
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.6);
   padding: 15px;
+}
+
+progress {
+  position: absolute;
+  width: calc(100% - $sidenav-width);
+  top: 53px;
 }
