@@ -24,6 +24,14 @@ export const VYNE_ROUTES = RouterModule.forRoot(
         {
             path: 'query',
             loadChildren: () => import('./query-panel/query-panel.route.module').then(m => m.QueryPanelRouteModule),
+            canActivate: [AuthGuard],
+            data: {requiredAuthority: VynePrivileges.RunQuery}
+        },
+        {
+            path: 'query-history',
+            loadChildren: () => import('./query-history/query-history.module').then(m => m.QueryHistoryModule),
+            canActivate: [AuthGuard],
+            data: {requiredAuthority: VynePrivileges.ViewQueryHistory}
         },
         {
             path: 'designer',
@@ -42,12 +50,6 @@ export const VYNE_ROUTES = RouterModule.forRoot(
             loadChildren: () => import('./schema-importer/schema-importer.module').then(m => m.SchemaImporterModule),
             canActivate: [AuthGuard],
             data: {requiredAuthority: VynePrivileges.EditSchema}
-        },
-        {
-            path: 'query-history',
-            loadChildren: () => import('./query-history/query-history.module').then(m => m.QueryHistoryModule),
-            canActivate: [AuthGuard],
-            data: {requiredAuthority: VynePrivileges.ViewQueryHistory}
         },
         {
             path: 'connection-manager',
