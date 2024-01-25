@@ -3,6 +3,7 @@
 :host {
   display: flex;
   align-items: center;
+  justify-content: right;
 }
 
 ::ng-deep tui-select {
@@ -22,16 +23,6 @@ tui-select {
   //min-height: 36px;
   display: flex;
   align-items: center;
-}
-
-.error-message {
-  margin: 0 1rem;
-  //border: 1px solid rgba($bg-error, 0.6);
-  border-radius: 4px;
-  //background-color: rgba($bg-error, 0.1);
-  color: $error-dark;
-  font-size: 0.9rem;
-  flex-grow: 1;
 }
 
 .loader {

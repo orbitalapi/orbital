@@ -206,7 +206,7 @@ export class QueryEditorComponent implements OnInit {
       this.queryResultUpdated.emit(this.lastQueryResult);
       this.loadingChanged.emit(false);
       this.currentState$.next('Error');
-      this.lastErrorMessage = this.lastQueryResult.message;
+      this.lastErrorMessage = this.formatErrorMessage(this.lastQueryResult.message);
     };
 
     const queryMessageHandler = (message: StreamingQueryMessage) => {
@@ -434,5 +434,9 @@ export class QueryEditorComponent implements OnInit {
     this.savedQuery = selectedQuery;
     this.query = selectedQuery.sources[0].content;
     this.changeDetector.markForCheck();
+  }
+
+  private formatErrorMessage(val: string): string {
+    return val?.replace("[Error]", "\n[Error]");
   }
 }
