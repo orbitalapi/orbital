@@ -10,7 +10,6 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
     changeDetection: ChangeDetectionStrategy.OnPush,
     selector: 'app-query-editor-toolbar',
     template: `
-        <span class='error-message'>{{ error }}</span>
         <tui-select
                 *ngIf='config?.featureToggles?.chatGptEnabled'
                 tuiTextfieldSize='s'
@@ -175,12 +174,8 @@ export class QueryEditorToolbar {
     @Input()
     publishAsHttpEndpointEnabled: boolean = false;
 
-
     @Input()
     currentState$: Observable<QueryState>;
-
-    @Input()
-    error: string;
 
     @Output()
     copyQuery = new EventEmitter<CopyQueryFormat>();
@@ -190,7 +185,6 @@ export class QueryEditorToolbar {
 
     @Input()
     queryStarted: Date;
-
 
     @Output()
     cancelQuery = new EventEmitter();

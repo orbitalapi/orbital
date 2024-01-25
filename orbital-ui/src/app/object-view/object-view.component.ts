@@ -49,7 +49,7 @@ export interface ResultTreeMember {
       [childrenHandler]="treeChildrenHandler"></tui-tree>
     <ng-template #treeContent let-item>
       <div class="tree-node">
-        <div *ngIf="treeNode(item).fieldName" class="field-name">{{treeNode(item).fieldName}}</div>
+        <div *ngIf="treeNode(item).fieldName" class="field-name">{{treeNode(item)?.fieldName}}</div>
         <div class="field-value" [class.selectable]="selectable"
              (click)="onAttributeClicked(item)">{{treeNode(item).value}}</div>
       </div>

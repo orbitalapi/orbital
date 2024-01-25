@@ -24,7 +24,6 @@
               <app-query-editor-toolbar
                 (executeQuery)='submitQuery()'
                 [currentState$]='currentState$'
-                [error]='lastErrorMessage'
                 [(queryLanguage)]='queryLanguage'
                 [runningQueryStatus]='queryMetadata$ | async'
                 (cancelQuery)='cancelQuery()'
@@ -35,6 +34,14 @@
               >
               </app-query-editor-toolbar>
             </app-panel-header>
+            <tui-notification
+              size="s"
+              status="error"
+              *ngIf='lastErrorMessage'
+              class='error-notification'
+            >
+              <div class='error-message'>{{ lastErrorMessage }}</div>
+            </tui-notification>
             <div class='code-viewer-container' *ngIf='queryLanguage === "TaxiQL"'>
               <app-code-editor
                 class='code-editor'

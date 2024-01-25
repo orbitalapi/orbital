@@ -136,7 +136,7 @@ export class QueryService {
     return this.http.get<QueryProfileData>(`${this.environment.serverUrl}/api/query/history/clientId/${clientQueryId}/profile`, this.httpOptions)
       .pipe(
         shareReplay(1),
-        map(profileData => this.parseRemoteCallTimestampsAsDates(profileData))
+        map(profileData => profileData ? this.parseRemoteCallTimestampsAsDates(profileData) : null)
       ) // This observable is shared
       ;
   }
