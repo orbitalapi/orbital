@@ -15,6 +15,7 @@ import com.orbitalhq.history.rest.export.ExportFormat
 import com.orbitalhq.history.rest.export.QueryHistoryExporter
 import com.orbitalhq.history.rest.export.RegressionPackProvider
 import com.orbitalhq.query.QueryProfileData
+import com.orbitalhq.query.QueryResponse
 import com.orbitalhq.query.ValueWithTypeName
 import com.orbitalhq.query.history.LineageRecord
 import com.orbitalhq.query.history.PartialRemoteCallResponse
@@ -31,6 +32,8 @@ import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.MediaType
 import org.springframework.http.server.reactive.ServerHttpResponse
+import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.core.RowMapper
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -43,6 +46,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
 import java.nio.ByteBuffer
+import java.sql.ResultSet
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import kotlin.jvm.optionals.getOrNull
@@ -61,44 +65,61 @@ class QueryHistoryService(
    private val objectMapper: ObjectMapper,
    private val regressionPackProvider: RegressionPackProvider,
    private val queryAnalyticsConfig: QueryAnalyticsConfig,
-   private val exceptionProvider: ExceptionProvider
+   private val exceptionProvider: ExceptionProvider,
+   private val jdbcTemplate: JdbcTemplate
 ) : QueryHistoryServiceRestApi {
    private val remoteCallAnalyzer = RemoteCallAnalyzer()
 
-//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+   //   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    @DeleteMapping("/api/query/history")
    fun clearHistory() {
       queryHistoryRecordRepository.deleteAll()
    }
 
-//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewQueryHistory}')")
+   //   @PreAuthorize("hasAuthority('${VynePrivileges.ViewQueryHistory}')")
    @GetMapping("/api/query/history")
    override fun listHistory(): Flux<QuerySummary> {
+      val querySummaryStream = jdbcTemplate.queryForStream(
+         "SELECT * FROM QUERY_SUMMARY ORDER BY start_time DESC LIMIT ${queryAnalyticsConfig.pageSize} OFFSET 0"
 
-      return queryHistoryRecordRepository
-         .findAllByOrderByStartTimeDesc(PageRequest.of(0, queryAnalyticsConfig.pageSize)).toFlux().flatMap {
-            Mono.zip(
-               Mono.just(it),
-               Mono.just(queryResultRowRepository.countAllByQueryId(it.queryId))
-            ) { querySummaryRecord: QuerySummary, recordCount: Int ->
-               val derivedRecordCount = when {
-                  querySummaryRecord.recordCount == null -> recordCount
-                  recordCount == 0 && querySummaryRecord.recordCount != null -> querySummaryRecord.recordCount
-                  else -> recordCount
-               }
-               querySummaryRecord.recordCount = derivedRecordCount
-               querySummaryRecord.durationMs = querySummaryRecord.endTime?.let {
-                  Duration.between(
-                     querySummaryRecord.startTime,
-                     querySummaryRecord.endTime
-                  ).toMillis()
-               }
-               querySummaryRecord
-            }
+      ) { rs, rowNum ->
+         val querySummary = QuerySummary(
+            id = rs.getLong("id"),
+            queryId = rs.getString("query_id"),
+            clientQueryId = rs.getString("client_query_id"),
+            taxiQl = rs.getString("taxi_ql"),
+            queryJson = rs.getString("query_json"),
+            startTime = rs.getTimestamp("start_time").toInstant(),
+            responseStatus = QueryResponse.ResponseStatus.valueOf(rs.getString("response_status")),
+            endTime = rs.getTimestamp("end_time")?.toInstant(),
+            recordCount = rs.getInt("record_count"),
+            errorMessage = rs.getString("error_message"),
+            anonymousTypesJson = rs.getString("anonymous_types_json"),
+            responseType = rs.getString("response_type")
+         )
+
+         querySummary.durationMs = querySummary.endTime?.let {
+            Duration.between(
+               querySummary.startTime,
+               querySummary.endTime
+            ).toMillis()
          }
+         querySummary
+      }
+
+
+
+      return Flux.fromStream(querySummaryStream.map { querySummary ->
+         if (querySummary.recordCount == null) {
+            val recordCountFromRows = queryResultRowRepository.countAllByQueryId(querySummary.queryId)
+            querySummary.copy(recordCount = recordCountFromRows)
+         } else {
+            querySummary
+         }
+      })
    }
 
-//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+   //   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    @GetMapping("/api/query/history/clientId/{clientId}/calls")
    fun getRemoteCallListByClientId(@PathVariable("clientId") clientQueryId: String): Mono<List<PartialRemoteCallResponse>> {
       val historyRecord = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
@@ -107,7 +128,7 @@ class QueryHistoryService(
       return Mono.just(responses)
    }
 
-//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+   //   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    @GetMapping("/api/query/history/summary/clientId/{clientId}")
    override fun getQuerySummary(@PathVariable("clientId") clientQueryId: String): Mono<QuerySummary> {
       logger.info { "Getting query summary for query client id $clientQueryId" }
@@ -116,7 +137,7 @@ class QueryHistoryService(
       } ?: Mono.empty()
    }
 
-//   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+   //   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    @GetMapping("/api/query/history/calls/{remoteCallId}")
    override fun getRemoteCallResponse(@PathVariable("remoteCallId") remoteCallId: String): Mono<String> {
       logger.info { "getting remote call responses for call id $remoteCallId" }
@@ -238,10 +259,12 @@ class QueryHistoryService(
          updatedQueryResultNodeDetails.isEmpty() -> {
             throw exceptionProvider.notFoundException("Request for queryId: $queryId, rowId: $rowValueHash, attributePath: $attributePath mapped to dataSourceId: ${nodeDetail.dataSourceId} but this was not found in the database")
          }
-         updatedQueryResultNodeDetails.size > 1  -> {
+
+         updatedQueryResultNodeDetails.size > 1 -> {
             logger.warn { "Received multiple records for dataSourceId ${nodeDetail.dataSourceId}, but expected one." }
             updatedQueryResultNodeDetails.first()
          }
+
          else -> updatedQueryResultNodeDetails.single()
       }
       if (updatedQueryResultNodeDetails.size > 1) {

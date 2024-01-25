@@ -25,11 +25,9 @@ data class QuerySummary(
    @Column(name = "client_query_id")
    val clientQueryId: String,
    @Column(name = "taxi_ql")
-   @Lob
    val taxiQl: String?,
    // Note - attempts to use the actual object here (rather than the
    // json) have failed.
-
    @JsonRawValue
    @Column(name = "query_json", columnDefinition = "CLOB(100000)", length = 100000)
    val queryJson: String?,
