@@ -2,6 +2,7 @@ package com.orbitalhq.queryService.history.db
 
 import app.cash.turbine.test
 import app.cash.turbine.testIn
+import app.cash.turbine.withTurbineTimeout
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.jayway.awaitility.Awaitility.await
 import com.jayway.awaitility.Duration
@@ -73,11 +74,13 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
+import reactor.kotlin.test.test
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 private val logger = KotlinLogging.logger {}
@@ -410,14 +413,20 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       var results = mutableListOf<ValueWithTypeName>()
       runTest {
 
-         val turbine =
-            queryService.submitVyneQlQuery(query, clientQueryId = id, resultMode = ResultMode.TYPED).body.testIn(this)
+         withTurbineTimeout(10.seconds) {
+            val turbine =
+               queryService.submitVyneQlQuery(
+                  query,
+                  clientQueryId = id,
+                  resultMode = ResultMode.TYPED
+               ).body.testIn(this)
 
-         // Capture 3 results.
-         results.add(turbine.awaitItem() as ValueWithTypeName)
-         results.add(turbine.awaitItem() as ValueWithTypeName)
-         results.add(turbine.awaitItem() as ValueWithTypeName)
-         turbine.awaitComplete()
+            // Capture 3 results.
+            results.add(turbine.awaitItem() as ValueWithTypeName)
+            results.add(turbine.awaitItem() as ValueWithTypeName)
+            results.add(turbine.awaitItem() as ValueWithTypeName)
+            turbine.awaitComplete()
+         }
       }
 
       // Check the lineage on the results
@@ -441,6 +450,11 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
          historyService.getNodeDetail(results[1].queryId!!, results[1].valueId, "authorName").block()
       firstRecordNodeDetail.should.equal(secondRecordNodeDetail)
       firstRecordNodeDetail.source.should.not.be.empty
+
+      historyService.listHistory().test()
+         .expectNextMatches { querySummary ->
+            querySummary.recordCount == 3 && querySummary.responseStatus == QueryResponse.ResponseStatus.COMPLETED
+         }.verifyComplete()
    }
 
    @Test
