@@ -614,7 +614,6 @@ class StatefulQueryEngine(
                   .onCompletion {
                      StrategyPerformanceProfiler.record(queryStrategy::class.simpleName!!, stopwatch.elapsed())
                   }
-                  .takeWhile { !context.cancelRequested }
                   .collectIndexed { _, value ->
                      resultsReceivedFromStrategy = true
 
@@ -627,7 +626,7 @@ class StatefulQueryEngine(
                      } else {
                         listOf(value)
                      }
-                     emitTypedInstances(valueAsCollection, !isActive, failedAttempts) { instance ->
+                     emitTypedInstances(valueAsCollection, (!isActive || context.cancelRequested), failedAttempts) { instance ->
                         if (instance is TypedNull) {
                            logger.debug { "Emitting TypedNull of type ${instance.type.qualifiedName.shortDisplayName} produced from strategy ${queryStrategy::class.simpleName} in search for ${target.description}" }
                         } else {
@@ -692,6 +691,8 @@ class StatefulQueryEngine(
          if (exception !is CancellationException) {
             metricsReporter.failed(Duration.between(queryStartTime, Instant.now()), metricsTags)
             throw exception
+         } else if (context.cancelRequested) {
+            throw  exception
          }
       }
 

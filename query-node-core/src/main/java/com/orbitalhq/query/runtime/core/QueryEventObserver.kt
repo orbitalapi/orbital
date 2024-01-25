@@ -168,7 +168,6 @@ class QueryLifecycleEventObserver(
             }
             .onCompletion { error ->
                if (error == null) {
-
                   val event = QueryCompletedEvent(
                      queryId = queryResult.queryResponseId,
                      timestamp = Instant.now(),
@@ -178,11 +177,19 @@ class QueryLifecycleEventObserver(
                      recordCount = activeQueryMonitor?.queryMetaData(queryResult.queryResponseId)?.completedProjections
                         ?: 0
                   )
-
                   consumer.handleEvent(event)
 //                  metricsEventConsumer.handleEvent(event)
                } else {
                   val event = when (error) {
+                     is kotlinx.coroutines.CancellationException ->  StreamingQueryCancelledEvent(
+                        query,
+                        queryResult.queryResponseId,
+                        queryResult.clientQueryId,
+                        Instant.now(),
+                        error.message ?: "No message provided",
+                        queryStartTime,
+                        activeQueryMonitor?.queryMetaData(queryResult.queryResponseId)?.completedProjections ?: 0
+                     )
                      is QueryCancelledException -> StreamingQueryCancelledEvent(
                         query,
                         queryResult.queryResponseId,

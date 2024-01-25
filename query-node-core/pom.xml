@@ -193,5 +193,10 @@
          <artifactId>taxi-stdlib-annotations</artifactId>
          <version>${taxi.version}</version>
       </dependency>
+      <dependency>
+         <groupId>app.cash.turbine</groupId>
+         <artifactId>turbine-jvm</artifactId>
+         <scope>test</scope>
+      </dependency>
    </dependencies>
 </project>
