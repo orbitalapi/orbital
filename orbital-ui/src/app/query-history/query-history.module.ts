@@ -20,7 +20,7 @@ import { TabbedResultsViewModule } from '../tabbed-results-view/tabbed-results-v
 import { AngularSplitModule } from 'angular-split';
 import { ExpandingPanelSetModule } from '../expanding-panelset/expanding-panel-set.module';
 import {TuiButtonModule, TuiNotificationModule} from '@taiga-ui/core';
-import { RouterModule } from '@angular/router';
+import {RouterModule, UrlSegment} from '@angular/router';
 import { ResultsDownloadModule } from 'src/app/results-download/results-download.module';
 import { TruncatePipeModule } from 'src/app/truncate-pipe/truncate-pipe.module';
 import {TuiProgressModule} from '@taiga-ui/kit';
@@ -47,11 +47,18 @@ import {TuiProgressModule} from '@taiga-ui/kit';
     ResultsDownloadModule,
     RouterModule.forChild([
       {
-        path: '',
-        component: QueryHistoryComponent,
-      },
-      {
-        path: ':queryResponseId',
+        // ORB-120 - avoid double loading the query-history component for deep links
+        matcher: (url) => {
+          if (url.length === 1 && url[0].path) {
+            return {
+              consumed: url,
+              posParams: {
+                queryResponseId: new UrlSegment(url[0].path, {})
+              }
+            };
+          }
+          return {consumed: url, posParams: {}}
+        },
         component: QueryHistoryComponent,
       },
     ]),
