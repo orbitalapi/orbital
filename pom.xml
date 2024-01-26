@@ -76,6 +76,8 @@
       <junit.jupiter.version>5.9.2</junit.jupiter.version>
       <junit.vintage.version>5.9.2</junit.vintage.version>
 
+      <json-path.version>2.9.0</json-path.version>
+
 
       <!-- Critical vulnerability in SnakeYaml.
       Due to be upgraded to 2.0 by default in Spring Boot 3.2
