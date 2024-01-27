@@ -175,7 +175,8 @@ class TypedInstanceConverter(private val mapper: TypedInstanceMapper) {
 
    private fun unwrapMap(
       valueMap: Map<String, Any>,
-      collectDataSourcesTo: MutableList<Pair<TypedInstance, DataSource>>? = null
+      collectDataSourcesTo: MutableList<Pair<TypedInstance, DataSource>>? = null,
+      metadata: Map<String, Any>? = null
    ): Map<String, Any?> {
       val unwrapped = valueMap.map { (entryKey, entryValue) ->
          val converted = when (entryValue) {

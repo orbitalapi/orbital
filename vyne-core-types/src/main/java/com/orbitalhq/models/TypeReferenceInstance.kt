@@ -17,6 +17,7 @@ data class TypeReferenceInstance private constructor(override val type: Type) : 
    override val value: Any = type
    override val source: DataSource = DefinedInSchema
    override val nodeId: String = Ids.fastUuid()
+   override val metadata: Map<String, Any> = emptyMap()
 
    override fun withTypeAlias(typeAlias: Type): TypedInstance {
       TODO("Not yet implemented")

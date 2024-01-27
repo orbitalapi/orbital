@@ -10,7 +10,13 @@ import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 
 @Deprecated("Replaced by CsvFormat")
-class CsvCollectionParser(val content: String, val type: Type, val schema: Schema, val source:DataSource, val functionRegistry: FunctionRegistry = FunctionRegistry.default, val inPlaceQueryEngine: InPlaceQueryEngine? = null) {
+class CsvCollectionParser(val content: String,
+                          val type: Type,
+                          val schema: Schema,
+                          val source:DataSource,
+                          val functionRegistry: FunctionRegistry = FunctionRegistry.default,
+                          val inPlaceQueryEngine: InPlaceQueryEngine? = null,
+                          val metadata: Map<String, Any>) {
    private val memberType: Type
 
    init {
@@ -23,7 +29,13 @@ class CsvCollectionParser(val content: String, val type: Type, val schema: Schem
       val typedInstances = content.lineSequence()
          .drop(1) // Ignore the header
          .filter { it.isNotBlank() && it.isNotEmpty() }
-         .map { TypedObjectFactory(memberType,it,schema, source = source, functionRegistry = functionRegistry, inPlaceQueryEngine = inPlaceQueryEngine, formatSpecs = emptyList()).build() }
+         .map { TypedObjectFactory(memberType,it,schema,
+            source = source,
+            functionRegistry = functionRegistry,
+            inPlaceQueryEngine = inPlaceQueryEngine,
+            formatSpecs = emptyList(),
+            metadata = metadata
+         ).build() }
          .toList()
       return TypedCollection.from(typedInstances, source)
    }

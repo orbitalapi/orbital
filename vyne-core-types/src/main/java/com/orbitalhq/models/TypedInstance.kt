@@ -38,6 +38,8 @@ interface TypedInstance {
          return type.name.parameterizedName
       }
 
+   val metadata: Map<String, Any>
+
    // It's up to instances of this to reconstruct themselves with their type
    // set to the value of the typeAlias.
    fun withTypeAlias(typeAlias: Type): TypedInstance
@@ -54,7 +56,7 @@ interface TypedInstance {
    fun valueEquals(valueToCompare: TypedInstance): Boolean
 
    companion object {
-
+      const val EXPIRY_METADATA = "expiredAt"
       fun fromNamedType(
          typeNamedInstance: TypeNamedInstance,
          schema: Schema,
@@ -141,7 +143,8 @@ interface TypedInstance {
          formatSpecs: List<ModelFormatSpec> = emptyList(),
          inPlaceQueryEngine: InPlaceQueryEngine? = null,
          parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
-         format: FormatsAndZoneOffset? = type.formatAndZoneOffset
+         format: FormatsAndZoneOffset? = type.formatAndZoneOffset,
+         metadata: Map<String, Any> = emptyMap()
       ): TypedInstance {
          return when {
             value is TypedInstance && value.type.taxiType.isAssignableTo(type.taxiType) -> value
@@ -161,7 +164,8 @@ interface TypedInstance {
                   formatSpecs,
                   inPlaceQueryEngine,
                   parsingErrorBehaviour,
-                  format
+                  format,
+                  metadata
                )
             }
 
@@ -181,7 +185,8 @@ interface TypedInstance {
                         formatSpecs = formatSpecs,
                         functionRegistry = functionRegistry,
                         parsingErrorBehaviour = parsingErrorBehaviour,
-                        format = format
+                        format = format,
+                        metadata = metadata
                      )
                   },
                   source
@@ -210,6 +215,7 @@ interface TypedInstance {
                inPlaceQueryEngine = inPlaceQueryEngine,
                formatSpecs = formatSpecs,
                parsingErrorBehaviour = parsingErrorBehaviour,
+               metadata = metadata
             ).build()
 
             // This is a bit special...value isn't a collection, but the type is.  Oooo!
@@ -226,7 +232,8 @@ interface TypedInstance {
                functionRegistry = functionRegistry,
                inPlaceQueryEngine = inPlaceQueryEngine,
                formatSpecs = formatSpecs,
-               parsingErrorBehaviour = parsingErrorBehaviour
+               parsingErrorBehaviour = parsingErrorBehaviour,
+               metadata = metadata
             )
          }
       }
