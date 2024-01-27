@@ -11,7 +11,8 @@ import mu.KotlinLogging
 data class TypedCollection(
    override val type: Type,
    override val value: List<TypedInstance>,
-   override val source: DataSource = MixedSources
+   override val source: DataSource = MixedSources,
+   override val metadata: Map<String, Any> = emptyMap()
 ) : List<TypedInstance> by value, TypedInstance {
    private val equality = ImmutableEquality(this, TypedCollection::type, TypedCollection::value)
    override val nodeId: String = Ids.fastUuid()

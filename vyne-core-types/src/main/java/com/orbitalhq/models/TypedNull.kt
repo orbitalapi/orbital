@@ -26,6 +26,7 @@ data class TypedNull private constructor(private val wrapper: TypedNullWrapper,
        }
    }
    override val nodeId: String = Ids.fastUuid()
+   override val metadata: Map<String, Any> = emptyMap()
 
    companion object {
       // Intern the wrappers, so that we can do fast equality checks

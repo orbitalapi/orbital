@@ -15,7 +15,8 @@ import lang.taxi.types.FormatsAndZoneOffset
 class DeferredExpression(
    val expression: LambdaExpression,
    private val schema: Schema,
-   override val source: DataSource
+   override val source: DataSource,
+   override val metadata: Map<String, Any> = emptyMap()
 ) : DeferredTypedInstance, TypedInstance {
    override val type: Type = schema.type(expression.returnType)
    override val value: Any = expression.asTaxi()
@@ -64,6 +65,7 @@ data class DeferredProjection(
    //   override val type: Type = schema.type(projection.projectedType)
    override val value: Any? = sourceInstance.value
    override val nodeId: String = Ids.fastUuid()
+   override val metadata: Map<String, Any> = emptyMap()
 
    private val equality = ImmutableEquality(
       this,

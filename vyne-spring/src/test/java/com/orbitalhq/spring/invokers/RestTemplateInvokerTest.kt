@@ -13,8 +13,8 @@ import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedInstance.Companion.EXPIRY_METADATA
 import com.orbitalhq.query.QueryContext
-import com.orbitalhq.query.UnresolvedTypeInQueryException
 import com.orbitalhq.rawObjects
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.OperationInvocationException
@@ -146,6 +146,7 @@ namespace vyne {
 
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(json)
+         response.setHeader("Cache-Control", "max-age=604800, must-revalidate")
       }
 
       val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}")).withBuiltIns()
@@ -168,6 +169,7 @@ namespace vyne {
          expect(instance.type.fullyQualifiedName).to.equal("vyne.Client")
          expect(instance["name"].value).to.equal("Notional")
          expect((instance["contacts"] as TypedCollection)).size.to.equal(2)
+         expect(instance.metadata.containsKey(EXPIRY_METADATA))
          turbine.awaitComplete()
          expectRequestCount(1)
          expectRequest { request ->
@@ -186,6 +188,7 @@ namespace vyne {
 
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(json)
+         response.setHeader("Cache-Control", "max-age=604800, no-transform")
       }
 
       val vyne = testVyne(
@@ -210,7 +213,8 @@ namespace vyne {
 
       runTest {
          val turbine = vyne.query("find { Person[] }").results.testIn(this)
-         turbine.awaitItem()
+         val instance = turbine.expectTypedObject()
+         expect(instance.metadata.containsKey(EXPIRY_METADATA))
          turbine.awaitComplete()
 
          expectRequestCount(1)
@@ -784,7 +788,7 @@ namespace vyne {
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
             .setBody("""{ "name" : "Jimmy" }""")
       }
-      val result = vyne.query("""given { PersonId = "1" } find { Person }""")
+      vyne.query("""given { PersonId = "1" } find { Person }""")
          .rawObjects()
       expectRequestCount(1)
       expectRequest { request ->

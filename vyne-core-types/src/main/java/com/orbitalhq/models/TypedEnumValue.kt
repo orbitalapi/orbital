@@ -54,6 +54,7 @@ data class TypedEnumValue(
    private val valueKind: EnumValueKind = EnumValueKind.VALUE
 ) : TypedInstance {
    override val nodeId: String = Ids.fastUuid()
+   override val metadata: Map<String, Any> = emptyMap()
 
    override fun toString(): String {
       return "${type.qualifiedName.longDisplayName}.$enumValue"

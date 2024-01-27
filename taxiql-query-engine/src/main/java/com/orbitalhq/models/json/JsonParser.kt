@@ -53,19 +53,21 @@ fun parseJson(
    typeName: String,
    json: String,
    source: DataSource = Provided,
-   functionRegistry: FunctionRegistry = FunctionRegistry.default
+   functionRegistry: FunctionRegistry = FunctionRegistry.default,
+   metadata: Map<String, Any> = emptyMap()
 ): TypedInstance {
    val type = schema.type(typeName.fqn().parameterizedName)
-   return TypedInstance.from(type, json, schema, source = source, functionRegistry = functionRegistry)
+   return TypedInstance.from(type, json, schema, source = source, functionRegistry = functionRegistry, metadata = metadata)
 }
 
 fun ModelContainer.parseJson(
    typeName: String,
    json: String,
    source: DataSource = Provided,
-   functionRegistry: FunctionRegistry = FunctionRegistry.default
+   functionRegistry: FunctionRegistry = FunctionRegistry.default,
+   metadata: Map<String, Any> = emptyMap()
 ): TypedInstance {
-   return parseJson(this.schema, typeName, json, source, functionRegistry)
+   return parseJson(this.schema, typeName, json, source, functionRegistry, metadata)
 }
 
 @Deprecated("Call TypedInstance.from() instead.  This method has bugs with nested objects, and does not handle accessors or advanced features.")

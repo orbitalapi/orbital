@@ -67,7 +67,8 @@ import java.time.temporal.Temporal
 data class SerializableTypedInstance(
    val typeName: String,
    val value: SerializableTypedValue,
-   val dataSourceId: String
+   val dataSourceId: String,
+   val metadata: SerializableTypedValueMapWrapper
 ) : SerializableTypedValue() {
 
    /**
@@ -83,17 +84,21 @@ data class SerializableTypedInstance(
     */
    fun toTypedInstance(schema: Schema, format: FormatsAndZoneOffset? = null, dataSource: DataSource = DataSourceReference.staticSourceOrReference(dataSourceId)): TypedInstance {
       val type = schema.type(this.typeName)
+      val mapMetadata =  metadata.value.mapValues { (it.value as SerializableTypedValueWrapper<*>).value!!}
       val converted = when (this.value) {
          is MapWrapper -> {
             val typedInstances = this.value.value.mapValues { (name, mapValue) ->
                val field = type.attribute(name)
                mapValue.toTypedInstance(schema, field.format, dataSource)
             }
-            TypedObject(type, typedInstances, dataSource)
+
+
+
+            TypedObject(type, typedInstances, dataSource, mapMetadata)
          }
          is ListWrapper -> {
             val typedInstances = this.value.value.map { it.toTypedInstance(schema, dataSource = dataSource) }
-            TypedCollection(type, typedInstances, dataSource)
+            TypedCollection(type, typedInstances, dataSource, mapMetadata)
          }
          is SerializableTypedValueWrapper<*> -> TypedInstance.from(
             type,
@@ -101,8 +106,8 @@ data class SerializableTypedInstance(
             schema,
             source = dataSource,
             evaluateAccessors = false,
-            format = format
-
+            format = format,
+            metadata = mapMetadata
          )
          is SerializedNull -> TypedNull.create(type, dataSource)
          is SerializableTypedInstance -> error("Unhandled type of SerializableTypedInstance: ${this.value::class.simpleName}")
@@ -188,6 +193,9 @@ class MapWrapper(override val value: Map<String, SerializableTypedInstance>) :
    SerializableTypedValueWrapper<Map<String, SerializableTypedInstance>>()
 
 @Serializable
+class SerializableTypedValueMapWrapper(override val value: Map<String, SerializableTypedValue>) : SerializableTypedValueWrapper<Map<String, SerializableTypedValue>>()
+
+@Serializable
 class ListWrapper(override val value: List<SerializableTypedInstance>) :
    SerializableTypedValueWrapper<List<SerializableTypedInstance>>()
 
@@ -217,7 +225,8 @@ object SerializableTypeMapper : TypedInstanceMapper {
       return SerializableTypedInstance(
          original.typeName,
          wrappedMap,
-         original.source.id
+         original.source.id,
+         SerializableTypedValueMapWrapper(original.metadata.mapValues { wrapAsSerialisable(it.value) }.filter { it.value != null }.mapValues { it.value!! })
       )
    }
 
@@ -225,20 +234,14 @@ object SerializableTypeMapper : TypedInstanceMapper {
       return SerializableTypedInstance(
          original.typeName,
          ListWrapper(value as List<SerializableTypedInstance>),
-         original.source.id
+         original.source.id,
+         SerializableTypedValueMapWrapper(original.metadata.mapValues { wrapAsSerialisable(it.value) }.filter { it.value != null }.mapValues { it.value!! })
       )
    }
 
    override fun map(typedInstance: TypedInstance): SerializableTypedValue {
-      val serializableValue = when (val formattedValue = typedInstance.value) {
-         null -> SerializedNull
-         is String -> StringWrapper(formattedValue)
-         is Int -> IntWrapper(formattedValue)
-         is BigDecimal -> BigDecimalWrapper(formattedValue)
-         is Boolean -> BooleanWrapper(formattedValue)
-         is Temporal -> TemporalWrapper(formattedValue)
-         else -> error("No serializer support provided for type ${formattedValue::class.simpleName}")
-      }
+      val serializableValue = wrapAsSerialisable(typedInstance.value)
+         ?: error("No serializer support provided for type ${typedInstance.value!!::class.simpleName}")
       return wrapValueInSerializable(typedInstance, serializableValue)
    }
 
@@ -249,8 +252,22 @@ object SerializableTypeMapper : TypedInstanceMapper {
       return SerializableTypedInstance(
          instance.typeName,
          value,
-         instance.source.id
+         instance.source.id,
+         SerializableTypedValueMapWrapper(instance.metadata.mapValues { wrapAsSerialisable(it.value) }.filter { it.value != null }.mapValues { it.value!! })
       )
+   }
+
+   private fun wrapAsSerialisable(formattedValue: Any?): SerializableTypedValue? {
+      return when (formattedValue) {
+         null -> SerializedNull
+         is String -> StringWrapper(formattedValue)
+         is Int -> IntWrapper(formattedValue)
+         is BigDecimal -> BigDecimalWrapper(formattedValue)
+         is Boolean -> BooleanWrapper(formattedValue)
+         is Temporal -> TemporalWrapper(formattedValue)
+         else -> null
+      }
+     // return wrapValueInSerializable(typedInstance, serializableValue)
    }
 }
 
