@@ -6,6 +6,7 @@ import com.orbitalhq.http.UriVariableProvider
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedInstance.Companion.EXPIRY_METADATA
 import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
@@ -378,6 +379,7 @@ class RestTemplateInvoker(
       // Logging responses in our logs is a security issue.  Let's not do this.
 //      logger.debug { "Result of ${operation.name} was $result" }
 
+      val itemExpiredAt = HttpCacheControl.parse(headers.asHttpHeaders())?.expiredAt()
       val isPreparsed = headers
          .header(com.orbitalhq.http.HttpHeaders.CONTENT_PREPARSED).let { headerValues ->
              headerValues.isNotEmpty() && headerValues.first() == true.toString()
@@ -388,13 +390,19 @@ class RestTemplateInvoker(
 
       val type = inferContentType(operation, headers)
       eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
+
+      val metadata: Map<String, Any> = itemExpiredAt?.let {
+         mapOf(EXPIRY_METADATA to it)
+      } ?: emptyMap()
+
       val typedInstance = TypedInstance.from(
          type,
          result,
          schemaProvider.schema,
          source = operationResult.asOperationReferenceDataSource(),
          evaluateAccessors = evaluateAccessors,
-         formatSpecs = formats.formats
+         formatSpecs = formats.formats,
+         metadata = metadata
       )
       return if (typedInstance is TypedCollection) {
          Flux.fromIterable(typedInstance.value)
