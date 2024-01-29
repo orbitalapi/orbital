@@ -20,7 +20,7 @@ export interface SaveQueryPanelProps {
                         status="error"
       >
         You don't currently have any projects that are editable. Add or configure a project in the <a
-        [routerLink]="['schemas']">Schemas</a> view
+        [routerLink]="['/schemas']" (click)='close()'>Schemas</a> view
       </tui-notification>
       <form [formGroup]="formGroup">
 
