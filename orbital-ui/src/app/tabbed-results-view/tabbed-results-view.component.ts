@@ -33,8 +33,8 @@ import { map, scan, tap } from 'rxjs/operators';
     </div>
     <app-panel-header title="Results" alignItems="left">
       <tui-tabs-with-more [(activeItemIndex)]="activeTabIndex" *ngIf="showResultsPanel"
-                (activeItemIndexChange)="onTabIndexChanged()"
-                [moreContent]='more'
+                          (activeItemIndexChange)="onTabIndexChanged()"
+                          [moreContent]='more'
       >
         <button *tuiItem tuiTab [disabled]="responseIsLarge$ | async" [class.tui-skeleton]='true'>
           <img src="assets/img/tabler/table.svg" class="tab-icon">
@@ -49,7 +49,7 @@ import { map, scan, tap } from 'rxjs/operators';
           Raw
         </button>
         <ng-container *ngIf='profilerEnabled'>
-          <button *tuiItem tuiTab >
+          <button *tuiItem tuiTab>
             <img src="assets/img/tabler/gauge.svg" class="tab-icon">
             Profiler
           </button>
@@ -59,12 +59,13 @@ import { map, scan, tap } from 'rxjs/operators';
         <tui-svg src="tuiIconMoreHorizontalLarge"></tui-svg>
       </ng-template>
       <tui-hosted-dropdown
-          *ngIf="showResultsPanel && downloadSupported"
+        *ngIf="showResultsPanel && downloadSupported"
         tuiDropdownAlign="left"
-        [content]="dropdown"
+        [content]="downloadDropdown"
         [(open)]="downloadMenuOpen"
       >
-        <button tuiButton type="button" appearance="outline" [iconRight]="icon" size="s"  class="button-small menu-bar-button">
+        <button tuiButton type="button" appearance="outline" [iconRight]="downloadIcon" size="s"
+                class="button-small menu-bar-button">
           Download
         </button>
       </tui-hosted-dropdown>
@@ -82,16 +83,16 @@ import { map, scan, tap } from 'rxjs/operators';
       [anonymousTypes]="anonymousTypes"
       (instanceClicked)="instanceClicked($event,type.name)"></app-object-view-container>
     <app-call-explorer [queryProfileData$]="profileData$"
-                       *ngIf="activeTabIndex === 3 && showResultsPanel"></app-call-explorer>
+                       *ngIf="activeTabIndex === 3 && showResultsPanel && !isQueryRunning"></app-call-explorer>
 
-    <ng-template #icon>
+    <ng-template #downloadIcon>
       <tui-svg
         src="tuiIconChevronDown"
         class="icon"
         [class.icon_rotated]="downloadMenuOpen"
       ></tui-svg>
     </ng-template>
-    <ng-template #dropdown>
+    <ng-template #downloadDropdown>
       <tui-data-list>
         <button tuiOption (click)="onDownloadClicked(downloadFileType.JSON)"
                 [disabled]="!config?.analytics.persistResults">as JSON
@@ -177,7 +178,7 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
     // If we're currently on the Profiler tab, switch back, as the
     // profile data is now stale.
     if (this.activeTabIndex === this.PROFILER_TAB_INDEX) {
-      this.activeTabIndex = 0;
+      //this.activeTabIndex = 0;
     }
 
     this.jsonInstances$ = this.instances$.pipe(
