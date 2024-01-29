@@ -3,7 +3,7 @@ import {SidebarElement} from "../app/vyne/vyne.component";
 
 export const UiCustomisations = {
   landingPageWelcomeText: 'Welcome to Orbital',
-  productName: 'Hazelcast Connect',
+  productName: 'Orbital',
   customSidebarElements: function (appConfig: AppConfig): SidebarElement[] {
     return [];
   }
