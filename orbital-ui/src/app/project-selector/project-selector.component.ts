@@ -9,7 +9,7 @@ import {ControlValueAccessor, NG_VALUE_ACCESSOR} from "@angular/forms";
                       status="error"
     >
       You don't currently have any projects that are editable. Add or configure a project in the <a
-        [routerLink]="['schemas']">Schemas</a> view
+        [routerLink]="['/schemas']">Schemas</a> view
     </tui-notification>
 
     <tui-select
