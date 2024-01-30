@@ -109,7 +109,7 @@ import { NewTypeSpec } from 'src/app/type-editor/new-type-spec';
               [columnDefs]="columnDefs"
               [singleClickEdit]="true"
               [defaultColDef]="defaultColDef"
-              [frameworkComponents]="frameworkComponents"
+              [components]="frameworkComponents"
               (gridReady)="onGridReady($event)"
             ></ag-grid-angular>
           </div>

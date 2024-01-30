@@ -22,9 +22,9 @@ import {PackagesService, SourcePackageDescription} from "../package-viewer/packa
     <div class="importer-step step" *ngIf="wizardStep === 'importSchema'">
       <h2 *ngIf="title">Add a new schema</h2>
       <div class="form-container">
-        <app-schema-source-panel
+        <app-schema-source-panel *ngIf="packages$ && connections"
           [packages]="packages$ | async"
-          [dbConnections]="connections.connections"
+          [dbConnections]="connections?.connections"
           (dbConnectionChanged)="onDbConnectionChanged($event)"
           [tables$]="mappedTables$"
           (convertSchema)="convertSchema($event)"

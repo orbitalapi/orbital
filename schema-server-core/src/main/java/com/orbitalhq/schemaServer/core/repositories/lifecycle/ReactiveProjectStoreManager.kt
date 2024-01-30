@@ -1,6 +1,10 @@
 package com.orbitalhq.schemaServer.core.repositories.lifecycle
 
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.config.ConfigSourceWriter
+import com.orbitalhq.config.ConfigSourceWriterProvider
+import com.orbitalhq.config.FileConfigSourceLoader
+import com.orbitalhq.schema.publisher.ProjectLoaderManager
 import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
 import com.orbitalhq.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
 import com.orbitalhq.schemaServer.core.adaptors.taxi.TaxiSchemaSourcesAdaptor
@@ -12,6 +16,7 @@ import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoaderFactory
 import com.orbitalhq.utils.files.ReactiveWatchingFileSystemMonitor
 import mu.KotlinLogging
 import java.nio.file.Path
+import kotlin.io.path.isRegularFile
 
 /**
  * Watches spec lifecycle events, (eg., adding and removing new repositories)
@@ -23,14 +28,14 @@ class ReactiveProjectStoreManager(
    private val specEventSource: RepositorySpecLifecycleEventSource,
    private val eventDispatcher: ProjectStoreLifecycleEventDispatcher,
    private val repositoryEventSource: ProjectStoreLifecycleEventSource
-) {
+) : ProjectLoaderManager {
 
-   fun getLoaderOrNull(packageIdentifier: PackageIdentifier): SchemaPackageTransport? {
+   override fun getLoaderOrNull(packageIdentifier: PackageIdentifier): SchemaPackageTransport? {
       return loaders
          .firstOrNull { it.packageIdentifier.unversionedId == packageIdentifier.unversionedId }
    }
 
-   fun getLoader(packageIdentifier: PackageIdentifier): SchemaPackageTransport {
+   override fun getLoader(packageIdentifier: PackageIdentifier): SchemaPackageTransport {
       val loader = getLoaderOrNull(packageIdentifier)
          ?: error("No file loader exists for package ${packageIdentifier.unversionedId}")
 
@@ -72,7 +77,7 @@ class ReactiveProjectStoreManager(
 
    private val _gitLoaders = mutableListOf<GitSchemaPackageLoader>()
 
-   val loaders: List<SchemaPackageTransport>
+   override val loaders: List<SchemaPackageTransport>
       get() = _fileLoaders + _gitLoaders
    val fileLoaders: List<FileSystemPackageLoader>
       get() {
@@ -131,7 +136,7 @@ class ReactiveProjectStoreManager(
       specEventSource.fileSpecAdded
    }
 
-   val editableLoaders: List<FileSystemPackageLoader>
+   override val editableLoaders: List<FileSystemPackageLoader>
       get() {
          return _fileLoaders.filter { it.isEditable() }
       }

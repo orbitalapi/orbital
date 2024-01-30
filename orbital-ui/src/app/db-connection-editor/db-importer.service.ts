@@ -55,21 +55,21 @@ export type SimpleDataType = 'STRING' | 'NUMBER' | 'BOOLEAN';
 export interface JdbcConnectionConfiguration {
   connectionName: string;
   jdbcDriver: string;
-  connectionType: ConnectorType;
+  type: ConnectorType;
   connectionParameters: { [key: string]: any };
 }
 
 export interface MessageBrokerConfiguration {
   connectionName: string;
   driverName: string;
-  connectionType: ConnectorType;
+  type: ConnectorType;
   connectionParameters: { [key: string]: any };
 }
 
 export interface AwsConnectionConfiguration {
   connectionName: string;
   driverName: string;
-  connectionType: ConnectorType;
+  type: ConnectorType;
   connectionParameters: { [key: string]: any };
 }
 
@@ -95,26 +95,24 @@ export class DbConnectionService {
     return this.http.get<ConnectionsListResponse>(`${environment.serverUrl}/api/connections`);
   }
 
-  testConnection(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration | AwsConnectionConfiguration): Observable<any> {
-    const url = DbConnectionService.getConnectionUrl(connectionConfig);
-    return this.http.post(`${environment.serverUrl}${url}?test=true`, connectionConfig);
+  testConnection(packageIdentifier: PackageIdentifier, connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration | AwsConnectionConfiguration): Observable<ConnectionStatus> {
+    const url = DbConnectionService.getConnectionUrl(packageIdentifier, connectionConfig);
+    return this.http.post<ConnectionStatus>(`${environment.serverUrl}${url}?test=true`, connectionConfig);
   }
 
-  createConnection(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration | AwsConnectionConfiguration): Observable<ConnectorSummary> {
-    const url = DbConnectionService.getConnectionUrl(connectionConfig);
+  createConnection(packageIdentifier: PackageIdentifier, connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration | AwsConnectionConfiguration): Observable<ConnectorSummary> {
+    const url = DbConnectionService.getConnectionUrl(packageIdentifier, connectionConfig);
     return this.http.post<ConnectorSummary>(`${environment.serverUrl}${url}`, connectionConfig);
   }
 
-  private static getConnectionUrl(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration): string {
-    switch (connectionConfig.connectionType) {
+  private static getConnectionUrl(packageIdentifier: PackageIdentifier, connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration): string {
+    switch (connectionConfig.type) {
       case 'JDBC':
-        return '/api/connections/jdbc';
+        return `/api/packages/${packageIdentifier.uriSafeId}/connections/jdbc`;
       case 'MESSAGE_BROKER':
-        return '/api/connections/message-broker';
+        return `/api/packages/${packageIdentifier.uriSafeId}/connections/message-broker`;
       case 'AWS':
-        return '/api/connections/aws';
-      case 'AZURE_STORAGE':
-        return '/api/connections/azure_storage';
+        return `/api/packages/${packageIdentifier.uriSafeId}/connections/aws`;
     }
   }
 

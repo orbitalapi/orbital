@@ -1,10 +1,19 @@
 <app-header-component-layout [title]="mode === 'create' ? 'Add new connection' : 'Edit connection'">
 
   <div class="form-container">
-    <div class="form-body" [formGroup]="connectionDetails">
+    <!-- has to be outside of the formGroup for the ngModel binding to work -->
+    <app-project-selector
+      prompt="Select a project to save the connection to"
+      [packages]="packages$ | async"
+      [(ngModel)]="selectedPackage"
+      [disabled]="mode !== 'create'"
+      class="tui-form-field"
+    ></app-project-selector>
+    <form class="form-body" [formGroup]="connectionDetails" *ngIf="connectionDetails">
+
       <div class="tui-form-field">
         <tui-input [required]="true" formControlName="connectionName">Connection name</tui-input>
-        <tui-field-error formControlName="connectionName"></tui-field-error>
+        <tui-error formControlName="connectionName"  [error]="[] | tuiFieldError | async"></tui-error>
       </div>
       <div class="tui-form-field">
         <tui-combo-box
@@ -18,12 +27,12 @@
                                  [itemContent]="stringifyJdbcDriver | tuiStringifyContent">
           </tui-data-list-wrapper>
         </tui-combo-box>
-        <tui-field-error formControlName="jdbcDriver"></tui-field-error>
+        <tui-error formControlName="jdbcDriver"  [error]="[] | tuiFieldError | async"></tui-error>
       </div>
-    </div>
+    </form>
     <form [formGroup]="connectionDetails">
-      <app-dyanmic-form-component *ngFor="let formElement of formElements" [form]="driverParameters"
-                                  [spec]="formElement"></app-dyanmic-form-component>
+      <app-dynamic-form-component *ngFor="let formElement of formElements" [form]="driverParameters"
+                                  [spec]="formElement"></app-dynamic-form-component>
     </form>
 
 
@@ -34,7 +43,7 @@
       <button tuiButton appearance="primary" size="m" [disabled]="!isValid" (click)="createConnection()">Create</button>
     </div>
   </div>
-  <mat-progress-bar mode="indeterminate" *ngIf="working"></mat-progress-bar>
-  <div class="test-result-box error-message" *ngIf="!working && hasTestFailure">{{ testResult.message}}</div>
-  <div class="test-result-box success-message" *ngIf="!working && testSuccessful">{{ testResult.message }}</div>
+  <progress tuiProgressBar size="s" *ngIf="working"></progress>
+  <div class="test-result-box error-message" *ngIf="!working && hasTestFailure">{{ testResult.errorMessage }}</div>
+  <div class="test-result-box success-message" *ngIf="!working && testSuccessful">Connection tested successfully</div>
 </app-header-component-layout>

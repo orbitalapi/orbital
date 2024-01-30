@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit
 class AwsSqsQueryDispatcherTest {
 
 
-   private val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
+   private val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("3.0")
 
    @JvmField
    @Rule
@@ -202,9 +202,9 @@ class AwsSqsQueryDispatcherTest {
    private fun createDispatcher(): AwsSqsQueryDispatcher {
       val schemaProvider = SimpleSchemaProvider(TaxiSchema.empty())
       return AwsSqsQueryDispatcher(
-         ServicesConfigRepository(configRoot!!.root.resolve("services.conf").toPath()),
+         ServicesConfigRepository(configRoot.root.resolve("services.conf").toPath()),
          EmptyAuthSchemeRepository,
-          SourceLoaderConnectorsRegistry(configRoot!!.root.resolve("connections.conf").toPath()),
+          SourceLoaderConnectorsRegistry.forPath(configRoot.root.resolve("connections.conf").toPath()),
          schemaProvider,
          sqsClient,
          queryQueueAddress = queryQueueUrl

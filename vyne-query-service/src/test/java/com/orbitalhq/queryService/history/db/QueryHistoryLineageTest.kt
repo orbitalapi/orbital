@@ -19,6 +19,7 @@ import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -69,6 +70,8 @@ class QueryHistoryLineageTest {
       } as PostgreSQLContainer<*>
 
    }
+   @MockBean
+   lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
    @MockBean
    lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher

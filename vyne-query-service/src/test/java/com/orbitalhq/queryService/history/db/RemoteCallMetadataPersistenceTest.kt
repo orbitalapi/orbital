@@ -15,6 +15,7 @@ import com.orbitalhq.queryService.BaseQueryServiceTest
 import com.orbitalhq.queryService.TestSpringConfig
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.spring.invokers.Invoker
 import com.orbitalhq.spring.invokers.testVyne
 import com.orbitalhq.utils.Ids
@@ -68,6 +69,10 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
       } as PostgreSQLContainer<*>
 
    }
+
+   @MockBean
+   lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
+
    @MockBean
    lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
 

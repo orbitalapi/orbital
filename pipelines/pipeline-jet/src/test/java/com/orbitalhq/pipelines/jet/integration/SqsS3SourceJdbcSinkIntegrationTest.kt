@@ -25,7 +25,7 @@ import org.testcontainers.utility.DockerImageName
 @Testcontainers
 @RunWith(SpringRunner::class)
 class SqsS3SourceJdbcSinkIntegrationTest : BaseJetIntegrationTest() {
-   private val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
+   private val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("3.0")
    private lateinit var sqsQueueUrl: String
 
    private lateinit var postgresSQLContainerFacade: PostgresSQLContainerFacade

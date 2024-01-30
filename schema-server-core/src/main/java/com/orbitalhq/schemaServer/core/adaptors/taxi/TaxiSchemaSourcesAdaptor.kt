@@ -14,7 +14,7 @@ import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.toPath
 
-class TaxiSchemaSourcesAdaptor : SchemaSourcesAdaptor {
+class TaxiSchemaSourcesAdaptor : SchemaSourcesAdaptor{
    private val logger = KotlinLogging.logger {}
 
    fun loadTaxiProject(transport: SchemaPackageTransport): Mono<Pair<Path, TaxiPackageProject>> {
@@ -29,6 +29,7 @@ class TaxiSchemaSourcesAdaptor : SchemaSourcesAdaptor {
             val taxiFilePath = uri.toPath()
             val project = TaxiProjectLoader().withConfigFileAt(taxiFilePath)
                .load()
+               .copy(packageRootPath = taxiFilePath.parent)
             taxiFilePath to project
          }
    }
@@ -56,5 +57,4 @@ class TaxiSchemaSourcesAdaptor : SchemaSourcesAdaptor {
           }
       }
    }
-
 }

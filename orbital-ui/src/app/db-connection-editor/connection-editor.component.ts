@@ -1,16 +1,18 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {
   ConnectionDriverConfigOptions,
+  ConnectionStatus,
   ConnectorSummary,
   ConnectorType,
   DbConnectionService,
   JdbcConnectionConfiguration
 } from './db-importer.service';
-import {ComponentType, DynamicFormComponentSpec} from './dynamic-form-component.component';
-import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
+import {DynamicFormComponentSpec, InputType} from './dynamic-form-component.component';
+import {FormGroup, UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 // import {TuiInputModeT, TuiInputTypeT} from '@taiga-ui/cdk';
 import {isNullOrUndefined} from 'util';
-import {TuiInputMode, TuiInputType} from "@taiga-ui/cdk";
+import {SourcePackageDescription} from "../package-viewer/packages.service";
+import {Observable} from "rxjs";
 
 export type ConnectionEditorMode = 'create' | 'edit';
 
@@ -24,6 +26,11 @@ export class ConnectionEditorComponent {
   formElements: DynamicFormComponentSpec[];
 
   @Input()
+  packages$: Observable<SourcePackageDescription[]>;
+
+  selectedPackage: SourcePackageDescription = null;
+
+  @Input()
   selectedDriverId: string | null = null;
 
   @Input()
@@ -33,15 +40,15 @@ export class ConnectionEditorComponent {
   mode: ConnectionEditorMode = 'create';
 
   working = false;
-  testResult: ConnectionTestResult;
+  testResult: ConnectionStatus;
 
 
   get hasTestFailure() {
-    return this.testResult && this.testResult.success === false;
+    return this.testResult && this.testResult.status === 'ERROR';
   }
 
   get testSuccessful() {
-    return this.testResult && this.testResult.success;
+    return this.testResult && this.testResult.status === 'OK';
   }
 
   @Input()
@@ -68,7 +75,7 @@ export class ConnectionEditorComponent {
   connectionCreated = new EventEmitter<ConnectorSummary>();
 
   connectionDetails: UntypedFormGroup;
-  driverParameters: UntypedFormGroup; // A nested formGroup within the driverParameters
+  driverParameters: UntypedFormGroup; // A nested formGroup within the connectionDetails
 
   constructor(private dbConnectionService: DbConnectionService) {
     dbConnectionService.getDrivers()
@@ -112,29 +119,24 @@ export class ConnectionEditorComponent {
 
   private buildFormInputs() {
     const elements: DynamicFormComponentSpec[] = this.selectedDriver.parameters
-        .filter(param => param.visible)
-        .map(param => {
-          let componentType: ComponentType = 'input';
-          let textFieldType: TuiInputType = 'text';
-          let textFieldMode: TuiInputMode = 'text';
-          if (param.dataType === 'STRING' && param.sensitive) {
-            textFieldType = 'password';
-          } else if (param.dataType === 'NUMBER') {
-            textFieldMode = 'numeric';
-          } else if (param.dataType === 'BOOLEAN') {
-            componentType = 'checkbox';
-            textFieldType = null;
-          }
-          return new DynamicFormComponentSpec(
-            componentType,
-        param.templateParamName,
-        param.displayName,
-        param.required,
-        textFieldMode,
-        textFieldType,
-        param.defaultValue,
-      );
-    });
+      .filter(param => param.visible)
+      .map(param => {
+        let inputType: InputType = 'text';
+        if (param.dataType === 'STRING' && param.sensitive) {
+          inputType = 'password';
+        } else if (param.dataType === 'NUMBER') {
+          inputType = 'number';
+        } else if (param.dataType === 'BOOLEAN') {
+          inputType = "checkbox"
+        }
+        return new DynamicFormComponentSpec(
+          param.templateParamName,
+          param.displayName,
+          param.required,
+          inputType,
+          param.defaultValue,
+        );
+      });
     const connectionParameters = {};
     elements.forEach(element => {
       connectionParameters[element.key] = element.required ?
@@ -148,50 +150,54 @@ export class ConnectionEditorComponent {
 
 
   get isValid() {
-    return this.connectionDetails.valid;
+    return this.connectionDetails.valid && this.selectedPackage !== null;
   }
 
   createConnection() {
     this.working = true;
-    this.dbConnectionService.createConnection(this.getConnectionConfiguration())
+    this.dbConnectionService.createConnection(this.selectedPackage.identifier, this.getConnectionConfiguration())
       .subscribe(result => {
         this.working = false;
-        this.testResult = {
-          success: true,
-          message: 'Connection created.'
-        };
+        this.testResult = result.connectionStatus
         this.connectionCreated.emit(result);
       }, error => {
         this.working = false;
         this.testResult = {
-          success: false,
-          message: error.error.message
+          status: 'ERROR',
+          errorMessage: error.error.message,
+          timestamp: new Date()
         };
       });
   }
 
   private getConnectionConfiguration(): JdbcConnectionConfiguration {
+    const connectionParameters = this.connectionDetails.getRawValue().connectionParameters || {};
+    // ConnectionParams must be sent to the server as a Map<String,String>,
+    // or deserialization errors occur
+    // See: ORB-132
+    Object.keys(connectionParameters).map(key => {
+      connectionParameters[key] = String(connectionParameters[key]);
+    });
     return {
       ...this.connectionDetails.getRawValue(),
+      connectionParameters,
       jdbcDriver: this.selectedDriver.driverName,
-      connectionType: this.selectedDriver.connectorType
+      type: this.selectedDriver.connectorType
     }
   }
 
   doTestConnection() {
     this.working = true;
-    this.dbConnectionService.testConnection(this.getConnectionConfiguration())
+    this.dbConnectionService.testConnection(this.selectedPackage.identifier, this.getConnectionConfiguration())
       .subscribe(testResult => {
         this.working = false;
-        this.testResult = {
-          success: true,
-          message: 'Connection tested successfully'
-        };
+        this.testResult = testResult;
       }, error => {
         this.working = false;
         this.testResult = {
-          success: false,
-          message: error.error.message
+          status: 'ERROR',
+          errorMessage: error.error.message,
+          timestamp: new Date()
         };
       });
   }
@@ -211,7 +217,3 @@ export class ConnectionEditorComponent {
   }
 }
 
-export interface ConnectionTestResult {
-  success: boolean;
-  message?: string | null;
-}

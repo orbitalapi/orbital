@@ -21,6 +21,4 @@ class SourceLoaderJdbcConnectionRegistry(
    SourceLoaderConnectionRegistryAdapter<JdbcConnectionConfiguration>(
       sourceLoaderConnectorsRegistry,
       ConnectionsConfig::jdbc
-   ) {
-   constructor(path: Path) : this(SourceLoaderConnectorsRegistry(path))
-}
+   )

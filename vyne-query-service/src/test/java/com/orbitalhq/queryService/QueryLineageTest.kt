@@ -13,6 +13,7 @@ import com.orbitalhq.query.history.QuerySankeyChartRow
 import com.orbitalhq.query.history.SankeyNodeType
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.testVyne
 import com.winterbe.expekt.should
 import io.kotest.matchers.collections.shouldHaveSize
@@ -51,6 +52,10 @@ import javax.sql.DataSource
 @Testcontainers
 @ActiveProfiles("test")
 class QueryLineageTest : BaseQueryServiceTest() {
+
+   @MockBean
+   lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
+
 
    @MockBean
    lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher

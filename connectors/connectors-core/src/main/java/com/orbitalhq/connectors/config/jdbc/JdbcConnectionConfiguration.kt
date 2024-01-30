@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.config.jdbc
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.orbitalhq.connectors.ConnectionParameterName
 import com.orbitalhq.connectors.IConnectionParameter
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
@@ -43,6 +44,7 @@ data class DefaultJdbcConnectionConfiguration(
    }
 }
 
+@JsonDeserialize(`as` = DefaultJdbcConnectionConfiguration::class)
 interface JdbcConnectionConfiguration : ConnectorConfiguration {
    override val connectionName: String
    val jdbcDriver: JdbcDriver

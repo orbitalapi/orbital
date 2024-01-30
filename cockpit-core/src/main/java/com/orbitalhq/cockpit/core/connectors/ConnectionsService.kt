@@ -44,7 +44,10 @@ class ConnectionsService(
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections/drivers")
    fun listAvailableDrivers(): Flux<ConnectionDriverOptions> {
-      return Flux.fromIterable(JdbcDriverOptions.driverOptions + KafkaConnection.driverOptions + AwsConnection.driverOptions + AzureStorageConnection.driverOptions)
+      return Flux.fromIterable(JdbcDriverOptions.driverOptions +
+         KafkaConnection.driverOptions +
+         AwsConnection.driverOptions
+         /*+ AzureStorageConnection.driverOptions */)
    }
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")

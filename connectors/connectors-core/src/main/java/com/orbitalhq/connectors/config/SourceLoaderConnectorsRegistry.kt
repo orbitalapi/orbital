@@ -7,7 +7,6 @@ import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.config.*
 import com.orbitalhq.connectors.VyneConnectionsConfig
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
-import com.orbitalhq.connectors.config.hazelcast.HazelcastConnection
 import java.nio.file.Path
 
 /**
@@ -22,23 +21,33 @@ import java.nio.file.Path
  * uses loaders, which supports pulling from schemas etc.
  */
 class SourceLoaderConnectorsRegistry(
-   loaders: List<ConfigSourceLoader>,
+   private val loaders: List<ConfigSourceLoader>,
+   /**
+    * To enable writing, pass a writerProvider - (normally a
+    * ProjectManagerConfigSourceLoader) here
+    */
+   writerProviders: List<ConfigSourceWriterProvider> = emptyList(),
    fallback: Config = ConfigFactory.systemEnvironment(),
-) : MergingHoconConfigRepository<ConnectionsConfig>(loaders, fallback) {
+) : MergingHoconConfigRepository<ConnectionsConfig>(loaders, writerProviders, fallback) {
 
-   private val writers = loaders.filterIsInstance<ConfigSourceWriter>()
-
-   // for testing
-   constructor(path: Path, fallback: Config = ConfigFactory.systemEnvironment()) : this(
-      listOf(
-         FileConfigSourceLoader(
+   companion object {
+      fun forPath(
+         path: Path, fallback: Config = ConfigFactory.systemEnvironment()
+      ): SourceLoaderConnectorsRegistry {
+         val loader = FileConfigSourceLoader(
             path,
             packageIdentifier = VyneConnectionsConfig.PACKAGE_IDENTIFIER,
             failIfNotFound = false
          )
-      ),
-      fallback
-   )
+
+         return SourceLoaderConnectorsRegistry(
+            loaders = listOf(loader),
+            writerProviders = listOf(SimpleConfigSourceWriterProvider(loader)),
+            fallback
+         )
+
+      }
+   }
 
    override fun extract(config: Config): ConnectionsConfig = config.extract()
 
@@ -49,12 +58,12 @@ class SourceLoaderConnectorsRegistry(
    fun load(): ConnectionsConfig = typedConfig()
 
    fun loadUnresolvedConfig(packageIdentifier: PackageIdentifier): Config {
-      val writer = writers.getWriter(packageIdentifier)
+      val writer = this.getWriter(packageIdentifier)
       return loadUnresolvedConfig(writer, packageIdentifier)
    }
 
    fun saveConfig(packageIdentifier: PackageIdentifier, config: Config) {
-      val writer = writers.getWriter(packageIdentifier)
+      val writer = this.getWriter(packageIdentifier)
       writer.saveConfig(config)
       invalidateCache()
    }
@@ -65,7 +74,7 @@ class SourceLoaderConnectorsRegistry(
    }
 
    fun hazelcastConfigurationForConnectionName(connectionName: String): HazelcastConfiguration? {
-     return load().hazelcast[connectionName]
+      return load().hazelcast[connectionName]
    }
 }
 

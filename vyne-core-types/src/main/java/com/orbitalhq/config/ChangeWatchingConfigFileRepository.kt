@@ -13,10 +13,12 @@ abstract class ChangeWatchingConfigFileRepository<T : Any>(
 
    private var watcherThread: Thread? = null
    private val registeredWatchKeys = mutableListOf<WatchKey>()
+   private var watchService: WatchService? = null
 
    private val logger = KotlinLogging.logger {}
 
    fun stopWatching() {
+      this.watchService?.close()
       this.watcherThread?.interrupt()
    }
 
@@ -31,10 +33,10 @@ abstract class ChangeWatchingConfigFileRepository<T : Any>(
          this.watcherThread = Thread {
             val canonicalParentPath = configFilePath.toFile().canonicalFile.parentFile.toPath()
             logger.info("Starting to watch $canonicalParentPath")
-            val watchService = FileSystems.getDefault().newWatchService()
+            watchService = FileSystems.getDefault().newWatchService()
             registeredWatchKeys.add(
                canonicalParentPath.register(
-                  watchService,
+                  watchService!!,
                   StandardWatchEventKinds.ENTRY_CREATE,
                   StandardWatchEventKinds.ENTRY_DELETE,
                   StandardWatchEventKinds.ENTRY_MODIFY,
@@ -44,7 +46,7 @@ abstract class ChangeWatchingConfigFileRepository<T : Any>(
 
             try {
                while (true) {
-                  val key = watchService.take()
+                  val key = watchService!!.take()
                   key.pollEvents()
                      .mapNotNull {
                         it.context() as? Path

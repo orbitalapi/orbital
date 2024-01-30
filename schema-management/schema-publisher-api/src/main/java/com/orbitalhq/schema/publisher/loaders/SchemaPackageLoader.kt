@@ -5,9 +5,11 @@ import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.schema.publisher.PublisherType
+import lang.taxi.packages.TaxiPackageProject
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.net.URI
+import java.nio.file.Path
 import java.util.*
 
 
@@ -69,6 +71,7 @@ interface SchemaPackageTransport {
     * If called multiple times, the same Flux<> should be returned
     */
    fun start(): Flux<SourcePackage>
+   fun loadNow(): Mono<SourcePackage>
 
    val description: String
 
@@ -100,3 +103,16 @@ interface SchemaSourcesAdaptor {
    fun convert(packageMetadata: PackageMetadata, transport: SchemaPackageTransport): Mono<SourcePackage>
 }
 
+/**
+ * Couldn't think of a better name.
+ * Indicates a type of SchemaSourcesAdaptor which will also expose a TaxiPackageProject.
+ * Often, the PackageMetadata exposed in SchemaSourcesAdaptor is sufficient.
+ * However, for certain file-based operations, the full TaxiPackageProject is required
+ */
+interface LoaderExposingTaxiProject {
+   /**
+    * Returns the path of the taxi.conf file,
+    * and the package project loaded from it.
+    */
+   fun loadTaxiProject(): Mono<Pair<Path, TaxiPackageProject>>
+}
