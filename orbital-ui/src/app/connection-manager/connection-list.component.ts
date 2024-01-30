@@ -72,17 +72,7 @@ export class ConnectionListComponent {
   connections$: Observable<ConnectionsListResponse>;
 
   createNewConnection() {
-    this.dialogService
-      .open(
-        `<div>
-    <p>Connections are defined in your Taxi projects</p>
-    <p>Click to learn more about how to <a href="https://orbitalhq.com/docs/describing-data-sources/configuring-connections" target="_blank">add connections</a>, or how <a href="https://orbitalhq.com/docs/deploying/managing-secrets"
-                                                   target="_blank">secrets are managed</a> in our docs.</p>
-</div>`,
-        {label: 'Add a new connection'},
-      )
-      .subscribe();
-    // this.router.navigate(['connection-manager', 'new']);
+    this.router.navigate(['connection-manager', 'new']);
   }
 
   viewConnection(connection: ConnectorSummary) {

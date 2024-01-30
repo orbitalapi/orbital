@@ -10,6 +10,13 @@ import reactor.core.publisher.Sinks
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * Wraps a SchemaSource (eg, SchemaSet) and turns it into a ConfigSourceLoader.
+ * As this class operates at the Schema level (which is already merged, and detatched from the underlying file system), it cannot support
+ * writes.
+ *
+ * Note: Consider using a ProjectManagerConfigSourceLoader, which supports writes as well.
+ */
 class SchemaConfigSourceLoader(
    schemaEventSource: SchemaChangedEventProvider,
    /**
@@ -19,17 +26,11 @@ class SchemaConfigSourceLoader(
     */
    private val filePattern: String,
    private val sourceType: SourcesType = "@orbital/config"
-) : ConfigSourceLoader {
-
-   private val sink = Sinks.many().multicast().directBestEffort<Class<out ConfigSourceLoader>>()
+) : BaseCachingConfigLoader(filePattern) {
 
    companion object {
       private val logger = KotlinLogging.logger {}
-
-      object CacheKey
    }
-
-   private val contentCache = ConcurrentHashMap<CacheKey, List<SourcePackage>>()
 
    init {
       Flux.from(schemaEventSource.schemaChanged)
@@ -37,6 +38,8 @@ class SchemaConfigSourceLoader(
             val schema = event.newSchemaSet.schema
             load(schema)
          }
+
+      // Load initial state
       if (schemaEventSource is SchemaStore) {
          load(schemaEventSource.schema())
       } else {
@@ -44,43 +47,12 @@ class SchemaConfigSourceLoader(
       }
    }
 
+
    private fun load(schema: Schema) {
-      // This is a hack, and should find a tidier way.
-      // Need to support passing a filename - eg: auth.conf,
-      // which should match /a/b/c/auth.conf and auth.conf
-      // However, also want to support passing *.conf, which should support /a/b/c/foo.conf and foo.conf
-      // So, expanding *.conf to **.conf and auth.conf to **auth.conf.
-      // This is a hack, but there's test coverage, so feel free to improve.
-      val pathGlob = if (filePattern.startsWith("*")) {
-         "glob:*$filePattern"
-      } else {
-         "glob:**$filePattern"
-      }
-      val pathMatcher = Paths.get(filePattern).fileSystem.getPathMatcher(pathGlob)
-      val filename = Paths.get(filePattern).fileName.toString()
       val sources = schema.additionalSources[sourceType] ?: emptyList()
-      val hoconSources = sources.map { sourcePackage ->
-         val requestedSources = sourcePackage.sources
-            .filter { pathMatcher.matches(Paths.get(it.name)) }
-         sourcePackage.copy(sources = requestedSources)
-      }
-      val matchedFileNames = hoconSources.flatMap { it.sources }
-         .map { it.name }
-      logger.info { "Loading content from schema with ${schema.packages.size} packages for pattern $pathGlob found ${matchedFileNames.size} matches - ${matchedFileNames.joinToString(", ")}" }
-      contentCache[CacheKey] = hoconSources
-      sink.emitNext(SchemaConfigSourceLoader::class.java, Sinks.EmitFailureHandler.FAIL_FAST)
+      buildConfigSourcesCache(sources)
    }
 
-   override fun load(): List<SourcePackage> {
-      val loaded = contentCache[CacheKey]
-      return if (loaded == null) {
-         logger.warn { "The schema has not provided any updates yet." }
-         emptyList()
-      } else {
-         loaded
-      }
-   }
 
-   override val contentUpdated: Flux<Class<out ConfigSourceLoader>>
-      get() = sink.asFlux()
+
 }

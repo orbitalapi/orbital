@@ -25,7 +25,7 @@ import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 
 class AwsS3SinkTest : BaseJetIntegrationTest() {
-   val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
+   val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("3.0")
    val bucket = "testbucket"
    val objectKey = "example.csv"
 

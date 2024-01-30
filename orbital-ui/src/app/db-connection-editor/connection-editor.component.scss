@@ -1,17 +1,7 @@
 @import "src/styles";
 @import "src/forms";
 
-.form-container {
-  //max-width: 500px;
-}
-
-.form-body {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-app-dyanmic-form-component {
+app-dynamic-form-component {
   width: 100%;
   display: block;
 }

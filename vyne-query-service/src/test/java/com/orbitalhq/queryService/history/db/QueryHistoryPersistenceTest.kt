@@ -35,6 +35,7 @@ import com.orbitalhq.queryService.TestSpringConfig
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.spring.invokers.Invoker
 import com.orbitalhq.spring.invokers.RestTemplateInvoker
@@ -111,6 +112,9 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
    }
    @MockBean
    lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
+
+   @MockBean
+   lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
    @MockBean
    lateinit var configLoader : WorkspaceConfigLoader

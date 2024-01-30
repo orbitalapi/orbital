@@ -34,7 +34,7 @@ private val logger = KotlinLogging.logger { }
 @Testcontainers
 class SqsInvokerTest {
    private val sqsQueueName = "movies"
-   private val localStackImage = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
+   private val localStackImage = DockerImageName.parse("localstack/localstack").withTag("3.0")
 
    @JvmField
    @Rule

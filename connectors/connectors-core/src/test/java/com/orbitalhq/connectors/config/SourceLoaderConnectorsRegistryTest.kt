@@ -23,7 +23,7 @@ class SourceLoaderConnectorsRegistryTest {
          Resources.getResource("mixed-connections.conf")
             .toURI()
       )
-       val config = SourceLoaderConnectorsRegistry(path).load()
+       val config = SourceLoaderConnectorsRegistry.forPath(path).load()
       val bytes = Cbor.encodeToByteArray(config)
       val fromBytes = Cbor.decodeFromByteArray<ConnectionsConfig>(bytes)
       fromBytes.shouldBe(config)
@@ -43,7 +43,8 @@ class SourceLoaderConnectorsRegistryTest {
          listOf(
             FileConfigSourceLoader(path1, packageIdentifier = FileConfigSourceLoader.LOCAL_PACKAGE_IDENTIFIER),
             FileConfigSourceLoader(path2, packageIdentifier = FileConfigSourceLoader.LOCAL_PACKAGE_IDENTIFIER),
-         )
+         ),
+          writerProviders = emptyList()
       ).load()
       config.jdbc.shouldHaveKeys("another-connection", "connection-2", "connection-3", "connection-4")
       config.kafka.shouldHaveKeys("kafka-connection", "kafka-connection-2")
@@ -55,7 +56,7 @@ class SourceLoaderConnectorsRegistryTest {
          Resources.getResource("mixed-connections.conf")
             .toURI()
       )
-       val config = SourceLoaderConnectorsRegistry(path).load()
+       val config = SourceLoaderConnectorsRegistry.forPath(path).load()
       config.shouldBe(
          ConnectionsConfig(
             jdbc = mapOf(

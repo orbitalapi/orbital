@@ -35,9 +35,12 @@ class FileBasedDiscoveryClientTest {
       )
       val stubEnvConfig = mapOf("VYNE_HOST" to "localhost").toHocon()
       val configRepository = ServicesConfigRepository(configFile,stubEnvConfig)
-      val client = FileBasedDiscoveryClient(configRepository)
-      val queryServer = client.getInstances("query-server").single()
-      queryServer.uri.toASCIIString().should.equal("http://localhost:9090")
+      FileBasedDiscoveryClient(configRepository).use { client ->
+         val queryServer = client.getInstances("query-server").single()
+         queryServer.uri.toASCIIString().should.equal("http://localhost:9090")
+
+      }
+
    }
 
    @Test
@@ -46,13 +49,13 @@ class FileBasedDiscoveryClientTest {
       Files.exists(configFile).should.be.`false`
 
       // Create the client, which should generate a default file
-      val client = FileBasedDiscoveryClient(configFile)
-
-      Files.exists(configFile).should.be.`true`
-      client.services.should.have.size(ServicesConfig.DEFAULT.services.size)
-      val schemaServer = client.getInstances("orbital-server").first()
-      val rsocket = schemaServer.metadata["rsocket"]
-      rsocket.shouldBe("tcp://orbital:7655")
+      FileBasedDiscoveryClient(configFile).use { client ->
+         Files.exists(configFile).should.be.`true`
+         client.services.should.have.size(ServicesConfig.DEFAULT.services.size)
+         val schemaServer = client.getInstances("orbital-server").first()
+         val rsocket = schemaServer.metadata["rsocket"]
+         rsocket.shouldBe("tcp://orbital:7655")
+      }
    }
 
    @Test
@@ -66,17 +69,16 @@ class FileBasedDiscoveryClientTest {
 }
 """
       )
-      val client = FileBasedDiscoveryClient(configFile)
+       FileBasedDiscoveryClient(configFile).use { client ->
+          client.services.should.have.size(1)
 
-      client.services.should.have.size(1)
+          client.watchForChanges()
 
-      client.watchForChanges()
+          // Wait a bit for everything to register
+          Thread.sleep(500)
 
-      // Wait a bit for everything to register
-      Thread.sleep(500)
-
-      configFile.writeText(
-         """services {
+          configFile.writeText(
+             """services {
     query-server {
       url="http://vyne"
     }
@@ -85,10 +87,12 @@ class FileBasedDiscoveryClientTest {
     }
 }
 """
-      )
-      Awaitility.await().atMost(3, TimeUnit.SECONDS).until<Boolean> {
-         client.services.size == 2
-      }
+          )
+          Awaitility.await().atMost(3, TimeUnit.SECONDS).until<Boolean> {
+             client.services.size == 2
+          }
+
+       }
    }
 }
 

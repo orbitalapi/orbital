@@ -1,17 +1,17 @@
 package com.orbitalhq.cockpit.core.connectors.jdbc
 
-import arrow.core.getOrHandle
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.VersionedSource
-import com.orbitalhq.cockpit.core.connectors.ConnectionTestedSuccessfully
 import com.orbitalhq.cockpit.core.schemas.editor.LocalSchemaEditingService
-import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
+import com.orbitalhq.config.ConfigSourceWriterProvider
+import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.*
 import com.orbitalhq.connectors.jdbc.registry.JdbcConnectionRegistry
 import com.orbitalhq.connectors.registry.ConnectionStatus
 import com.orbitalhq.connectors.registry.ConnectorConfigurationSummary
+import com.orbitalhq.connectors.registry.MutableConnectionRegistry
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemaServer.editor.SchemaEditResponse
 import com.orbitalhq.schemas.Field
@@ -21,7 +21,6 @@ import com.orbitalhq.schemas.QualifiedNameAsStringDeserializer
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.toVyneQualifiedName
 import com.orbitalhq.security.VynePrivileges
-import com.orbitalhq.utils.orElse
 import lang.taxi.generators.SchemaWriter
 import lang.taxi.types.Annotatable
 import lang.taxi.types.Annotation
@@ -37,6 +36,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 
 private val logger = KotlinLogging.logger {}
 
@@ -45,7 +45,7 @@ class JdbcConnectorService(
    private val connectionFactory: JdbcConnectionFactory,
    private val connectionRegistry: JdbcConnectionRegistry,
    private val schemaProvider: SchemaProvider,
-   private val schemaEditor: LocalSchemaEditingService
+   private val schemaEditor: LocalSchemaEditingService,
 ) {
 
    // Have moved much of this to ConnectionsService
@@ -189,8 +189,8 @@ class JdbcConnectorService(
 
 
    @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
-   @PostMapping("/api/connections/jdbc", params = ["test=true"])
-   fun testConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration): Mono<ConnectionStatus> {
+   @PostMapping("/api/packages/{packageUri}/connections/jdbc", params = ["test=true"])
+   fun testConnection(@RequestBody connectionConfig: JdbcConnectionConfiguration): Mono<ConnectionStatus> {
       logger.info("Testing connection: $connectionConfig")
       return JdbcHealthCheckProvider.testConnection(connectionConfig)
    }
@@ -198,14 +198,21 @@ class JdbcConnectorService(
    @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
    @PostMapping("/api/packages/{packageUri}/connections/jdbc")
    fun createConnection(
-      @RequestBody connectionConfig: DefaultJdbcConnectionConfiguration,
-      @PathVariable("packageUri2") packageUri: String
+      @RequestBody connectionConfig: JdbcConnectionConfiguration,
+      @PathVariable("packageUri") packageUri: String
    ):
       Mono<ConnectorConfigurationSummary> {
-      testConnection(connectionConfig);
-      TODO("Not currently supported - need to migrate to package based writing")
-//        connectionRegistry.register(connectionConfig)
-//        return Mono.just(ConnectorConfigurationSummary(connectionConfig))
+      val packageIdentifier = PackageIdentifier.fromUriSafeId(packageUri)
+      return testConnection(connectionConfig).map {
+         if (connectionRegistry !is MutableConnectionRegistry<*>) {
+            error("The provided ConnectionRegistry does not support updates")
+         } else {
+            val connectionEditor = connectionRegistry as MutableConnectionRegistry<JdbcConnectionConfiguration>
+            connectionRegistry.register(packageIdentifier, connectionConfig)
+            ConnectorConfigurationSummary(packageIdentifier, connectionConfig)
+         }
+      }.subscribeOn(Schedulers.boundedElastic());
+
    }
 }
 

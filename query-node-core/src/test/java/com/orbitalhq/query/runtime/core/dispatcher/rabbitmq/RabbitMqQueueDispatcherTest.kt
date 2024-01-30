@@ -199,9 +199,9 @@ class RabbitMqQueueDispatcherTest {
       return RabbitMqQueueDispatcher(
          rabbitSender,
          rabbitReceiver,
-         ServicesConfigRepository(configRoot!!.root.resolve("services.conf").toPath()),
+         ServicesConfigRepository(configRoot.root.resolve("services.conf").toPath()),
          EmptyAuthSchemeRepository,
-          SourceLoaderConnectorsRegistry(configRoot!!.root.resolve("connections.conf").toPath()),
+          SourceLoaderConnectorsRegistry.forPath(configRoot.root.resolve("connections.conf").toPath()),
          schemaProvider,
       )
    }

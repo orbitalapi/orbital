@@ -1,7 +1,6 @@
 package com.orbitalhq.connectors.aws.lambda
 
 import com.google.common.io.Resources
-import com.winterbe.expekt.should
 import com.orbitalhq.StubService
 import com.orbitalhq.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
@@ -12,38 +11,50 @@ import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.testVyne
 import com.orbitalhq.typedObjects
+import com.winterbe.expekt.should
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.junit.Before
-import org.junit.BeforeClass
+import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.testcontainers.containers.localstack.LocalStackContainer
-import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
 import org.testcontainers.utility.MountableFile
+import software.amazon.awssdk.core.SdkBytes
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.lambda.LambdaClient
+import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest
+import software.amazon.awssdk.services.lambda.model.FunctionCode
+import software.amazon.awssdk.services.lambda.model.GetFunctionConfigurationRequest
+import software.amazon.awssdk.services.lambda.model.GetFunctionRequest
+import software.amazon.awssdk.services.lambda.waiters.LambdaWaiter
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.File
 import java.math.BigDecimal
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlin.jvm.optionals.getOrNull
 
 private val logger = KotlinLogging.logger {  }
 @Testcontainers
 class LambdaInvokerTest {
+   @JvmField
+   @Rule
+   var localStack: LocalStackContainer = LocalStackContainer(localStackImage)
+      .withServices(LocalStackContainer.Service.LAMBDA)
+      .withEnv("LAMBDA_SYNCHRONOUS_CREATE", "1")
+      .withEnv("DEBUG", "1")
+
    companion object {
       private fun File.bufferedOutputStream(size: Int = 8192) = BufferedOutputStream(this.outputStream(), size)
       private fun File.zipOutputStream(size: Int = 8192) = ZipOutputStream(this.bufferedOutputStream(size))
       private fun File.bufferedInputStream(size: Int = 8192) = BufferedInputStream(this.inputStream(), size)
       private fun File.asZipEntry() = ZipEntry(this.name)
-      private val localStackImage = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
+      private val localStackImage = DockerImageName.parse("localstack/localstack").withTag("3.0")
       private val folder = TemporaryFolder()
-
-      @Container
-      var localStack: LocalStackContainer = LocalStackContainer(localStackImage)
-         .withServices(LocalStackContainer.Service.LAMBDA)
 
       private fun createLambdaPackages(): String {
          folder.create()
@@ -57,40 +68,38 @@ class LambdaInvokerTest {
          }
          return packageFile.path
       }
-
-      @BeforeClass
-      @JvmStatic
-      fun before() {
-
-         localStack
-            .withCopyFileToContainer(MountableFile.forHostPath(createLambdaPackages()),
-               "/tmp/localstack/index.zip")
-
-         localStack.start()
-
-         val lambdaCreationResult =  localStack.execInContainer(
-            "awslocal", "lambda", "create-function",
-            "--function-name", "streamingprovider",
-            "--runtime", "nodejs12.x",
-            "--region","us-east-1",
-            "--handler", "index.handler",
-            "--role", "arn:aws:iam::123456:role/test",
-            "--zip-file","fileb:///tmp/localstack/index.zip",
-            "--environment", "Variables={AWS_ACCESS_KEY_ID=${localStack.accessKey},AWS_SECRET_ACCESS_KEY=${localStack.secretKey}}"
-         )
-         logger.info { lambdaCreationResult.stdout }
-         if (lambdaCreationResult.stderr.isNotBlank()) {
-            logger.error { "error in creating lambda function  ${lambdaCreationResult.stderr}" }
-         }
-
-      }
-
    }
 
    private val connectionRegistry = AwsInMemoryConnectionRegistry()
 
    @Before
    fun beforeTest() {
+     val lambdaClient =  LambdaClient.builder()
+         .endpointOverride(localStack.getEndpointOverride(LocalStackContainer.Service.LAMBDA))
+         .region(Region.of(localStack.region))
+         .build()
+
+      val codeZip = File(createLambdaPackages()).inputStream()
+      val codeBytes = SdkBytes.fromInputStream(codeZip)
+      val functionBuildRequest =  CreateFunctionRequest.builder()
+         .functionName("streamingprovider")
+         .runtime(software.amazon.awssdk.services.lambda.model.Runtime.NODEJS12_X)
+         .handler("index.handler")
+         .code(FunctionCode.builder().zipFile(codeBytes).build())
+         .role("arn:aws:iam::123456789012:role/irrelevant")
+         .timeout(60)
+         .memorySize(512)
+         .build()
+
+      lambdaClient.createFunction(functionBuildRequest)
+
+      val waiterResponse = LambdaWaiter
+         .builder()
+         .client(lambdaClient)
+         .build()
+         .waitUntilFunctionActive(
+         GetFunctionConfigurationRequest.builder().functionName("streamingprovider").build())
+
       val connectionConfig = AwsConnectionConfiguration(connectionName = "vyneAws",
           region = localStack.region,
           accessKey = localStack.accessKey,

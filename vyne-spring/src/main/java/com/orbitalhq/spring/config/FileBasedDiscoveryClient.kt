@@ -6,6 +6,7 @@ import mu.KotlinLogging
 import org.springframework.cloud.client.DefaultServiceInstance
 import org.springframework.cloud.client.ServiceInstance
 import org.springframework.cloud.client.discovery.DiscoveryClient
+import java.io.Closeable
 import java.net.URI
 import java.nio.file.Path
 
@@ -46,7 +47,7 @@ abstract class BaseConfigDiscoveryClient : DiscoveryClient {
  *
  * If the file doesn't exist on startup, a default file is created.
  */
-class FileBasedDiscoveryClient(private val configRepository: ServicesConfigRepository) : BaseConfigDiscoveryClient() {
+class FileBasedDiscoveryClient(private val configRepository: ServicesConfigRepository) : BaseConfigDiscoveryClient(), Closeable {
    constructor(path: Path) : this(ServicesConfigRepository(path))
 
    companion object {
@@ -100,6 +101,9 @@ class FileBasedDiscoveryClient(private val configRepository: ServicesConfigRepos
 
 
    override fun description(): String = "File based discovery client using config at ${configRepository.path}"
+   override fun close() {
+      configRepository.stopWatching()
+   }
 }
 
 class StaticServicesConfigDiscoveryClient(private val servicesConfig: ServicesConfig) : BaseConfigDiscoveryClient() {
