@@ -1,6 +1,7 @@
 package com.orbitalhq.schemaServer.core.file.packages
 
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.schema.publisher.PublisherType
@@ -33,7 +34,7 @@ class FileSystemPackageLoader(
    // to act as the decorator to the underlying transport, and
    // do things like filter out uris etc
    private val transportDecorator: SchemaPackageTransport? = null
-) : SchemaPackageTransport {
+) : SchemaPackageTransport, LoaderExposingTaxiProject  {
 
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -81,9 +82,9 @@ class FileSystemPackageLoader(
          }
    }
 
-   fun loadNow(): Mono<SourcePackage> {
+   override fun loadNow(): Mono<SourcePackage> {
       return adaptor.buildMetadata(transport)
-         .flatMap { packageMetadata ->
+         .flatMap { packageMetadata: PackageMetadata ->
             adaptor.convert(packageMetadata, this)
          }.doOnNext {
             if (this._packageIdentifier == null) {
@@ -96,7 +97,7 @@ class FileSystemPackageLoader(
     * Returns the path of the taxi.conf file,
     * and the package project loaded from it.
     */
-   fun loadTaxiProject(): Mono<Pair<Path, TaxiPackageProject>> {
+   override fun loadTaxiProject(): Mono<Pair<Path, TaxiPackageProject>> {
       if (adaptor is TaxiSchemaSourcesAdaptor) {
          return adaptor.loadTaxiProject(this.transport)
       } else {

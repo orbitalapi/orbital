@@ -28,9 +28,10 @@ data class PipelineSpecList(
 
 class PipelineConfigRepository(
    loaders: List<ConfigSourceLoader>,
+   writerProviders: List<ConfigSourceWriterProvider> = emptyList(),
    fallback: Config = ConfigFactory.systemEnvironment(),
 
-   ) : MergingHoconConfigRepository<List<PipelineSpec<*, *>>>(loaders, fallback) {
+   ) : MergingHoconConfigRepository<List<PipelineSpec<*, *>>>(loaders, writerProviders, fallback) {
 
    private val mapper: ObjectMapper = PipelineJsonConfig.lenientReadingMapper()
    private val writers: List<ConfigSourceWriter> = loaders.filterIsInstance<ConfigSourceWriter>()

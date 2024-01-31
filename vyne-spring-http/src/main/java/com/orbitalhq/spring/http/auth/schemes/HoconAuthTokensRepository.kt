@@ -6,6 +6,7 @@ import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.auth.schemes.*
 import com.orbitalhq.config.ConfigSourceLoader
 import com.orbitalhq.config.ConfigSourceWriter
+import com.orbitalhq.config.ConfigSourceWriterProvider
 import com.orbitalhq.config.MergingHoconConfigRepository
 import com.orbitalhq.config.getWriter
 import com.orbitalhq.schemas.ServiceName
@@ -20,10 +21,9 @@ import org.http4k.quoted
  */
 class HoconAuthTokensRepository(
    private val loaders: List<ConfigSourceLoader>,
+   writerProviders: List<ConfigSourceWriterProvider> = emptyList(),
    fallback: Config = ConfigFactory.systemEnvironment(),
-) : AuthSchemeProvider, AuthSchemeRepository, MergingHoconConfigRepository<AuthTokens>(loaders, fallback) {
-
-   private val writers = loaders.filterIsInstance<ConfigSourceWriter>()
+) : AuthSchemeProvider, AuthSchemeRepository, MergingHoconConfigRepository<AuthTokens>(loaders, writerProviders, fallback) {
 
    override fun extract(config: Config): AuthTokens {
       return AuthTokens.fromConfig(config)
@@ -45,7 +45,7 @@ class HoconAuthTokensRepository(
       serviceName: String,
       token: AuthScheme
    ): SanitizedAuthScheme {
-      val writer = writers.getWriter(targetPackage)
+      val writer = getWriter(targetPackage)
       val existingValues = loadUnresolvedConfig(writer, targetPackage)
 
       // Note: calling asHocon(), which defers to the AuthScheme kotlin-specific

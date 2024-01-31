@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit
 class S3InvokerTest {
    private val bucket = "testbucket"
    private val objectKey = "myfile"
-   private val localStackImage = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
+   private val localStackImage = DockerImageName.parse("localstack/localstack").withTag("3.0")
 
    @JvmField
    @Rule

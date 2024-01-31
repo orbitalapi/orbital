@@ -9,7 +9,7 @@ import {ControlValueAccessor, NG_VALUE_ACCESSOR} from "@angular/forms";
                       status="error"
     >
       You don't currently have any projects that are editable. Add or configure a project in the <a
-        [routerLink]="['schemas']">Schemas</a> view
+        [routerLink]="['/schemas']">Schemas</a> view
     </tui-notification>
 
     <tui-select
@@ -18,7 +18,7 @@ import {ControlValueAccessor, NG_VALUE_ACCESSOR} from "@angular/forms";
       (ngModelChange)="setValue($event)"
 
     >
-      {{prompt}}
+      {{ prompt }}
       <input
         tuiTextfield [disableControl]="disabled"
       />
@@ -51,8 +51,8 @@ export class ProjectSelectorComponent implements ControlValueAccessor {
   @Input()
   selectedPackage: SourcePackageDescription | null;
 
-    @Input()
-    showErrorIfNoEditable: boolean = false;
+  @Input()
+  showErrorIfNoEditable: boolean = false;
 
   get editablePackages(): SourcePackageDescription[] {
     if (!this.packages) {
@@ -64,9 +64,9 @@ export class ProjectSelectorComponent implements ControlValueAccessor {
     }
   }
 
-    get hasEditablePackages(): boolean {
-        return this.editablePackages.length > 0;
-    }
+  get hasEditablePackages(): boolean {
+    return this.editablePackages.length > 0;
+  }
 
   readonly stringify = (item: SourcePackageDescription) => item.identifier.name;
 

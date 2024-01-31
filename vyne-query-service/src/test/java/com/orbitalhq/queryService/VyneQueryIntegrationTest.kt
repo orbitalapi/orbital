@@ -17,6 +17,7 @@ import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.SimpleVyneProvider
@@ -56,6 +57,9 @@ import kotlin.test.assertEquals
 )
 @ActiveProfiles("test")
 class VyneQueryIntegrationTest : DatabaseTest() {
+
+   @MockBean
+   lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
 
    @MockBean

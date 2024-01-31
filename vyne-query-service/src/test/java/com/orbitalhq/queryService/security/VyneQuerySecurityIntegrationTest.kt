@@ -14,6 +14,7 @@ import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.spring.config.TestDiscoveryClientConfig
 import org.jose4j.jwk.RsaJsonWebKey
@@ -90,6 +91,10 @@ class VyneQuerySecurityIntegrationTest {
 
    @Value("\${wiremock.server.baseUrl}")
    private lateinit var wireMockServerBaseUrl: String
+
+   @MockBean
+   lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
+
 
    @Autowired
    private lateinit var restTemplate: TestRestTemplate

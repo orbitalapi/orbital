@@ -55,6 +55,13 @@ class GitSchemaPackageLoader(
       )
    }
 
+   override fun loadNow(): Mono<SourcePackage> {
+      return Mono.create<Unit> { sink ->
+         syncNow()
+         sink.success()
+      }.flatMap { filePackageLoader.loadNow() }
+   }
+
    override fun start(): Flux<SourcePackage> {
       return GitRepoSync(workingDir, config, gitPollFrequency)
          .start()

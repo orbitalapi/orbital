@@ -8,6 +8,7 @@ import com.orbitalhq.models.DataSourceUpdater
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.OperationResultDataSourceWrapper
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedInstance.Companion.EXPIRY_METADATA
 import com.orbitalhq.models.serde.SerializableTypedInstance
 import com.orbitalhq.models.serde.toSerializable
 import com.orbitalhq.query.CacheExchange
@@ -152,15 +153,18 @@ class HazelcastOperationCacheProvider(
          val isCompletionMarker = it.contentEquals(COMPLETION_MARKER)
          foundCompletionMarker = foundCompletionMarker || isCompletionMarker
          !isCompletionMarker
-      }.map {
+      }.mapNotNull {
          val typedInstance =
             SerializableTypedInstance.fromBytes(it).toTypedInstance(schemaStore.schema(), dataSource = dataSource)
-
-         // Update the datasource. The existing data source (a DataSourceReference)
-         // points to a data source from when this was cached, which is not neccessarily
-         // the same query as the current one.
-         DataSourceUpdater.update(typedInstance, dataSource)
-
+         val expiredAt = typedInstance.metadata[EXPIRY_METADATA] as? Instant
+         if (expiredAt != null && Instant.now().isAfter(expiredAt)) {
+            null
+         } else {
+            // Update the datasource. The existing data source (a DataSourceReference)
+            // points to a data source from when this was cached, which is not neccessarily
+            // the same query as the current one.
+            DataSourceUpdater.update(typedInstance, dataSource)
+         }
       }.forEach {
          sink.next(it)
       }

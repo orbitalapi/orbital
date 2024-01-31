@@ -292,6 +292,7 @@ thePassword: hello
                failIfNotFound = true
             )
          ),
+         emptyList(),
          fallback
       )
       val loadedToken = loadingRepo.getAuthScheme("MyService")

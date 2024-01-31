@@ -11,7 +11,6 @@ import com.orbitalhq.SourcePackage
 import com.typesafe.config.ConfigResolver
 import com.typesafe.config.ConfigValue
 import mu.KotlinLogging
-import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 
 /**
@@ -44,9 +43,15 @@ data class ConfigSource<T : Any>(
  * as the merging nature makes this complex.
  */
 abstract class MergingHoconConfigRepository<T : Any>(
-   loaders: List<ConfigSourceLoader>,
+   configRepo: ConfigSourceRepository,
    fallback: Config = ConfigFactory.systemEnvironment()
-) : HoconConfigRepository<T>, UpdatableConfigRepository<T> {
+) : HoconConfigRepository<T>, UpdatableConfigRepository<T>, ConfigSourceWriterProvider by configRepo {
+   constructor(
+      loaders: List<ConfigSourceLoader>,
+      writerProviders: List<ConfigSourceWriterProvider> = emptyList(),
+      fallback: Config
+   ) : this(ConfigSourceRepository(loaders, writerProviders), fallback)
+
    abstract fun extract(config: Config): T
 
    private val loaderTypeName: String = this::class.java.name
@@ -59,6 +64,9 @@ abstract class MergingHoconConfigRepository<T : Any>(
 
       private val logger = KotlinLogging.logger {}
    }
+
+
+
 
    override fun typedConfig(): T {
       return configCache[CacheKey]
@@ -82,8 +90,7 @@ abstract class MergingHoconConfigRepository<T : Any>(
    private val configCache = CacheBuilder.newBuilder()
       .build(object : CacheLoader<CacheKey, T>() {
          override fun load(key: CacheKey): T {
-            val loadedSources = loaders.flatMap { it.load() }
-               .filter { it.sources.isNotEmpty() }
+            val loadedSources = configRepo.loadAll()
             return if (loadedSources.isEmpty()) {
                logger.info { "($loaderTypeName) - Loaders returned no config sources, so starting with an empty one." }
                emptyConfig()
@@ -151,8 +158,7 @@ abstract class MergingHoconConfigRepository<T : Any>(
 
 
    init {
-      val allFluxes = loaders.map { it.contentUpdated }
-      Flux.merge(allFluxes).subscribe {
+      configRepo.contentUpdated.subscribe {
          logger.info { "($loaderTypeName) - Loader ${it.simpleName} indicates sources have changed. Invalidating caches" }
          configCache.invalidateAll()
          configCache.cleanUp()

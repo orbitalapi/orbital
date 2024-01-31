@@ -11,6 +11,7 @@ import com.orbitalhq.testVyne
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldHaveSize
+import java.time.Instant
 
 class HazelcastCacheProviderTest : DescribeSpec({
    describe("Hazelcast operation cache") {
@@ -120,6 +121,57 @@ class HazelcastCacheProviderTest : DescribeSpec({
 
          val resultFromCache = operationFlux2.collectList().block()!!
          resultFromCache.shouldHaveSize(1)
+
+         // Shouldn't have called the stub again
+         stub.invocations.shouldHaveSize(1)
+      }
+
+      it("expired items should not be returned from cache.") {
+         val cacheProvider = HazelcastOperationCacheProvider(
+            hazelcast,
+            schemaStore,
+            10,
+            "connectionName",
+            "connectionAddress"
+         )
+         val cacheKey = "testKey2"
+         val cache = cacheProvider.getCachingInvoker(
+            cacheKey, stub
+         )
+         val service = vyne.getService("PersonService")
+         val operation = service.operation("findPerson")
+         val metadata = mapOf<String, Any>(TypedInstance.EXPIRY_METADATA to Instant.now().minusSeconds(3600))
+         stub.addResponse("findPerson", vyne.parseJson(typeName = "Person", json = """{ "id" : "1", "name" : "Jimmy" }""", metadata = metadata))
+         val operationFlux = cache.invoke(
+            OperationInvocationParamMessage(
+               service,
+               operation,
+               parameters = listOf(operation.parameters[0] to TypedInstance.from(type = vyne.type("PersonId"), value = "1", schema  = vyne.schema)),
+               mock {  },
+               "queryId"
+            )
+         )
+         // Send a second request before the first one is completed
+         // (ie., before we've subscribed to the first one)
+         val operationFlux2 = cache.invoke(
+            OperationInvocationParamMessage(
+               service,
+               operation,
+               parameters = listOf(operation.parameters[0] to TypedInstance.from(vyne.type("PersonId"), "1", vyne.schema)),
+               mock {  },
+               "queryId"
+            )
+         )
+
+
+         val result = operationFlux.collectList().block()!!
+         result.shouldHaveSize(1)
+
+         stub.invocations.shouldHaveSize(1)
+
+
+         val resultFromCache = operationFlux2.collectList().block()!!
+         resultFromCache.shouldHaveSize(0)
 
          // Shouldn't have called the stub again
          stub.invocations.shouldHaveSize(1)

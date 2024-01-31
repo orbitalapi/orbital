@@ -56,7 +56,8 @@ data class TypedValue private constructor(
    override val type: Type,
    override val value: Any,
    override val source: DataSource,
-   val format: FormatsAndZoneOffset? = null
+   val format: FormatsAndZoneOffset? = null,
+   override val metadata: Map<String, Any> = emptyMap()
 ) : TypedInstance {
    private val equality = ImmutableEquality(this, TypedValue::type, TypedValue::value)
    private val hash: Int by lazy { equality.hash() }

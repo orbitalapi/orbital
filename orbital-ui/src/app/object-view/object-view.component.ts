@@ -49,9 +49,9 @@ export interface ResultTreeMember {
       [childrenHandler]="treeChildrenHandler"></tui-tree>
     <ng-template #treeContent let-item>
       <div class="tree-node">
-        <div *ngIf="treeNode(item).fieldName" class="field-name">{{treeNode(item)?.fieldName}}</div>
+        <div *ngIf="treeNode(item)?.fieldName" class="field-name">{{treeNode(item)?.fieldName}}</div>
         <div class="field-value" [class.selectable]="selectable"
-             (click)="onAttributeClicked(item)">{{treeNode(item).value}}</div>
+             (click)="onAttributeClicked(item)">{{treeNode(item)?.value}}</div>
       </div>
     </ng-template>
   `
@@ -69,7 +69,6 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
     // eslint-disable-next-line @typescript-eslint/no-inferrable-types
   selectable: boolean = false;
 
-  private instanceUpdateSubscription: Subscription;
   private _instances$: Observable<InstanceLike>
   @Input()
   get instances$(): Observable<InstanceLike> {
@@ -79,9 +78,6 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
   set instances$(value: Observable<InstanceLike>) {
     if (value === this._instances$) {
       return;
-    }
-    if (this.instanceUpdateSubscription) {
-      this.instanceUpdateSubscription.unsubscribe();
     }
     this._instances$ = value;
     // Set the instance to an array, as we'll be appending to it as we receive items from the subscription
@@ -137,7 +133,6 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
   }
 
   private subscribeForUpdates(source: Observable<InstanceLike>) {
-    this.treeData = [];
     this.treeDataPages = [];
     this.treeDataCurrentPage = 0;
 
@@ -145,16 +140,16 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
     // checkIfReady() loop - chances are we're already inside of one.
     this._instance = [];
     const pageSize = 20;
-
-    this.instanceUpdateSubscription = source.subscribe(instance => {
+    this.unsubscribeAllNow();
+    this.unsubscribeOnClose(source.subscribe(instance => {
       const instanceArray = this.instance as InstanceLike[];
       const newLength = instanceArray.push(instance)
       const pageNumber = Math.floor(newLength / pageSize)
-      const page = this.treeDataPages[pageNumber] || (this.treeDataPages[pageNumber] = []);
       const label = newLength.toString();// Use the index as the label
       const thisInstanceAsResultTree = this.buildTreeData(instance, label, '', instance as ValueWithTypeName)
-      page.push(thisInstanceAsResultTree)
-    })
+      if (!this.treeDataPages[pageNumber]) this.treeDataPages[pageNumber] = [];
+      this.treeDataPages[pageNumber].push(thisInstanceAsResultTree);
+    }));
   }
 
   onReady() {
@@ -163,11 +158,10 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
     }
   }
 
-  treeData: ResultTreeMember[] = [];
   treeDataPages: ResultTreeMember[][] = [];
   treeDataCurrentPage: number = 0;
 
-  treeChildrenHandler: TuiHandler<ResultTreeMember, ResultTreeMember[]> = item => Array.isArray(item) ? item : item.children;
+  treeChildrenHandler: TuiHandler<ResultTreeMember, ResultTreeMember[]> = item => Array.isArray(item) ? item : item?.children;
 
   private buildTreeData(instance: InstanceLikeOrCollection, fieldName: string = null, path: string = '', rootResultInstance: ValueWithTypeName | null = null): ResultTreeMember {
     if (Array.isArray(instance)) {

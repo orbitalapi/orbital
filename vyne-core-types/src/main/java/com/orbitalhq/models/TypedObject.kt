@@ -20,7 +20,8 @@ import mu.KotlinLogging
 data class TypedObject(
    override val type: Type,
    private val suppliedValue: Map<String, TypedInstance>,
-   override val source: DataSource
+   override val source: DataSource,
+   override val metadata: Map<String, Any> = emptyMap()
 ) : TypedInstance, Map<String, TypedInstance> {
 
    private val combinedValues: Map<String, TypedInstance> = type.defaultValues?.plus(suppliedValue) ?: suppliedValue
@@ -60,7 +61,8 @@ data class TypedObject(
          attributes: Map<String, Any>,
          schema: Schema,
          performTypeConversions: Boolean = true,
-         source: DataSource
+         source: DataSource,
+         metadata: Map<String, Any> = emptyMap()
       ): TypedObject {
          val typedAttributes: Map<String, TypedInstance> = attributes
             .filterKeys { type.hasAttribute(it) }
@@ -74,7 +76,7 @@ data class TypedObject(
                   source = source
                )
             }.toMap()
-         return TypedObject(type, typedAttributes, source)
+         return TypedObject(type, typedAttributes, source, metadata)
       }
 
       fun fromValue(
@@ -88,7 +90,8 @@ data class TypedObject(
          inPlaceQueryEngine: InPlaceQueryEngine? = null,
          formatSpecs: List<ModelFormatSpec> = emptyList(),
          parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
-         functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf()
+         functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf(),
+         metadata: Map<String, Any> = emptyMap()
       ): TypedInstance {
          return TypedObjectFactory(
             type,
@@ -101,7 +104,8 @@ data class TypedObject(
             inPlaceQueryEngine = inPlaceQueryEngine,
             formatSpecs = formatSpecs,
             parsingErrorBehaviour = parsingErrorBehaviour,
-            functionResultCache = functionResultCache
+            functionResultCache = functionResultCache,
+            metadata = metadata
          ).build()
       }
    }
@@ -132,7 +136,7 @@ data class TypedObject(
    }
 
    override fun withTypeAlias(typeAlias: Type): TypedInstance {
-      return TypedObject(typeAlias, combinedValues, source)
+      return TypedObject(typeAlias, combinedValues, source, metadata)
    }
 
    override fun valueEquals(valueToCompare: TypedInstance): Boolean {
@@ -241,7 +245,7 @@ data class TypedObject(
    }
 
    fun copy(replacingArgs: Map<AttributeName, TypedInstance>): TypedObject {
-      return TypedObject(this.type, this.value + replacingArgs, source)
+      return TypedObject(this.type, this.value + replacingArgs, source, metadata)
    }
 
    override val entries: Set<Map.Entry<String, TypedInstance>>

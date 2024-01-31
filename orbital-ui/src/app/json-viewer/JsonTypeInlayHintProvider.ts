@@ -29,7 +29,7 @@ export class JsonTypeInlayHintProvider implements monaco.languages.InlayHintsPro
   provideInlayHints(model: monaco.editor.ITextModel, range: monaco.Range, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.InlayHintList> {
     const registeredHints = JsonTypeInlayHintProvider.hintMap.getHints(model.uri)
     return {
-      hints: registeredHints,
+      hints: registeredHints || [],
       dispose: () => {
       },
     };

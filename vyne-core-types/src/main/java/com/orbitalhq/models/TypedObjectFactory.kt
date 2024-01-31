@@ -47,7 +47,8 @@ class TypedObjectFactory(
    private val formatSpecs: List<ModelFormatSpec> = emptyList(),
    private val parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
    private val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf(),
-   private val projectionScope: ProjectionFunctionScope? = null
+   private val projectionScope: ProjectionFunctionScope? = null,
+   private val metadata: Map<String, Any> = emptyMap()
 ) : EvaluationValueSupplier, ValueProjector {
 
    companion object {
@@ -283,7 +284,7 @@ class TypedObjectFactory(
       }.toMap()
 
       val attributes = decorator(mappedAttributes)
-      return TypedObject(type, attributes, source)
+      return TypedObject(type, attributes, source, metadata)
    }
 
    fun build(decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
@@ -293,8 +294,8 @@ class TypedObjectFactory(
    }
 
 
-   private fun readWithFormatSpecDeserializer(metadata: Metadata, modelFormatSpec: ModelFormatSpec): TypedInstance {
-      val parsedValue = modelFormatSpec.deserializer.parse(value, type, metadata, schema, source)
+   private fun readWithFormatSpecDeserializer(parammMetadata: Metadata, modelFormatSpec: ModelFormatSpec): TypedInstance {
+      val parsedValue = modelFormatSpec.deserializer.parse(value, type, parammMetadata, schema, source)
       // When parsing CSV, we may provide the type as T, and get back T[]
       val parsedType = if (parsedValue is Collection<*> && parsedValue.size > 1 && !type.isCollection) {
          type.asArrayType()
@@ -310,7 +311,8 @@ class TypedObjectFactory(
          functionRegistry = functionRegistry,
          formatSpecs = formatSpecs,
          inPlaceQueryEngine = inPlaceQueryEngine,
-         parsingErrorBehaviour = parsingErrorBehaviour
+         parsingErrorBehaviour = parsingErrorBehaviour,
+         metadata = metadata
       )
    }
 
@@ -337,7 +339,8 @@ class TypedObjectFactory(
             functionRegistry = functionRegistry,
             formatSpecs = formatSpecs,
             inPlaceQueryEngine = inPlaceQueryEngine,
-            parsingErrorBehaviour = parsingErrorBehaviour
+            parsingErrorBehaviour = parsingErrorBehaviour,
+            metadata = metadata
          )
       }
 
@@ -348,7 +351,8 @@ class TypedObjectFactory(
             schema,
             source,
             functionRegistry,
-            inPlaceQueryEngine
+            inPlaceQueryEngine,
+            metadata
          )
       }
       if (type.isScalar && type.hasExpression) {
@@ -366,7 +370,7 @@ class TypedObjectFactory(
       }.toMap()
 
       val decorated = xtimed("apply decorator") { decorator(mappedAttributes) }
-      return TypedObject(type, decorated, source)
+      return TypedObject(type, decorated, source, metadata)
    }
 
    private fun getOrBuild(attributeName: AttributeName, allowAccessorEvaluation: Boolean = true): TypedInstance {

@@ -5,7 +5,7 @@
    <parent>
       <artifactId>aws-connectors</artifactId>
       <groupId>com.orbitalhq</groupId>
-      <version>0.27.0</version>
+      <version>0.28.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -86,6 +86,21 @@
         <groupId>com.amazonaws</groupId>
         <artifactId>aws-java-sdk-lambda</artifactId>
         <version>1.12.411</version>
+        <scope>test</scope>
+     </dependency>
+
+     <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
+     <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-core</artifactId>
+        <version>1.4.12</version>
+        <scope>test</scope>
+     </dependency>
+
+     <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>1.4.12</version>
         <scope>test</scope>
      </dependency>
 

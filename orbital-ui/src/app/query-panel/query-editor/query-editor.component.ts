@@ -159,6 +159,7 @@ export class QueryEditorComponent implements OnInit {
   }
 
   submitQuery() {
+    this.valuePanelVisible = false;
     switch (this.queryLanguage) {
       case 'Text':
         this.submitTextQuery();
