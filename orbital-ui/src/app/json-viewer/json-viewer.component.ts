@@ -27,9 +27,7 @@ import InlayHintKind = languages.InlayHintKind;
   template: `
     <app-panel-header *ngIf="showHeader" [title]="title">
       <div class="spacer"></div>
-      <button (click)="applyFormat()"
-              tuiButton size="s" appearance="outline"
-              [disabled]="formatInProgress">{{ formatInProgress ? 'Formatting...' : 'Format'}}</button>
+      <button (click)="applyFormat()" tuiButton size="s" appearance="outline">Format</button>
       <button (click)="copyToClipboard()" tuiButton size="s" appearance="outline">{{ copyButtonText }}</button>
     </app-panel-header>
     <div #codeEditorContainer class="code-editor"></div>`,
@@ -38,11 +36,8 @@ import InlayHintKind = languages.InlayHintKind;
 })
 export class JsonViewerComponent implements OnDestroy {
 
-  formatLabel = 'Format'
-
   private _json: string;
   private pathFinder: JSONPathFinder
-  formatInProgress = false;
   copyButtonText = 'Copy'
   @Input()
   title: string;
@@ -131,14 +126,10 @@ export class JsonViewerComponent implements OnDestroy {
   }
 
   applyFormat() {
-    this.formatInProgress = true;
+    const val = this.monacoEditor.getValue();
+    const json = JSON.stringify(JSON.parse(val), null, 3);
+    this.monacoEditor.setValue(json);
     this.changeDetector.markForCheck();
-    this.monacoEditor.getAction('editor.action.formatDocument')
-      .run()
-      .then(result => {
-        this.formatInProgress = false;
-        this.changeDetector.markForCheck();
-      })
   }
 
   copyToClipboard() {
