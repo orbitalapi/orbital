@@ -50,6 +50,7 @@ class GitRepoSync(
    fun start(syncImmediately: Boolean = true): Flux<GitSyncStatus> {
       // A ticker which emits immediately, then on the gitPollFrequency thereafter
       val ticker = if (syncImmediately) {
+         syncNow(workingDir, config)
          Flux.just(0L)
             .concatWith(Flux.interval(gitPollFrequency))
       } else {

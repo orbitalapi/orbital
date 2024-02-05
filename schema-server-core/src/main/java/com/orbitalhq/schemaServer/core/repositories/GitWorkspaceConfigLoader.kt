@@ -35,9 +35,13 @@ class GitWorkspaceConfigLoader(
 
    init {
       repoSync.start(syncImmediately = syncUponInit)
-         .filter { it.pulledChanges }
-         .subscribe {
+         // We wait for the currentRef to change.
+         // This will trigger on startup (ie., the first instance),
+         // and then whenever the branch or current git ref updates.
+         .distinctUntilChanged { status -> status.currentRef }
+         .subscribe {syncStatus ->
             try {
+               logger.info { "Workspace from ${syncStatus.repository.redactedUrl} is now on ${syncStatus.currentRef} - refreshing workspace" }
                fileConfigLoader().emitCurrentState()
             } catch (e: Exception) {
                logger.info { "Failed to read workspace config: ${e.message}" }
