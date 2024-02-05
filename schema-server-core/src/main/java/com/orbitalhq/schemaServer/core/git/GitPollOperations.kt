@@ -5,14 +5,16 @@ import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.MergeCommand
 import org.eclipse.jgit.api.PullResult
 import org.eclipse.jgit.api.TransportConfigCallback
-import org.eclipse.jgit.lib.BranchConfig
+import org.eclipse.jgit.lib.Ref
 import org.eclipse.jgit.lib.Repository
 import org.eclipse.jgit.merge.MergeStrategy
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.Collections.singleton
 
+private val logger = KotlinLogging.logger {  }
 /**
  * Provides a wrapper around polling / fetching / pulling from a git repository
  */
@@ -67,28 +69,35 @@ open class GitPollOperations(
    fun fetchLatest(): GitSyncStatus {
       return try {
          if (existsLocally()) {
-            checkout()
+            logger.debug { "Pulling latest git from ${config.redactedUrl} on branch ${config.branch} to ${workingDir.absolutePath}" }
+            val checkoutRef = checkout()
             val pullResult = pull()
+            logger.debug { "Pull for ${config.redactedUrl} completed" }
+            val branchRef = pullResult.fetchResult.getAdvertisedRef(checkoutRef.name)
             GitSyncStatus(
                successful = true,
                pulledChanges = pullResult.fetchResult.trackingRefUpdates.isNotEmpty(),
                hasUnresolvedMerges = pullResult.mergeResult?.mergedCommits?.isNotEmpty() ?: false,
                repository = config,
-               checkoutRoot = workingDir.toPath()
+               checkoutRoot = workingDir.toPath(),
+               currentRef = GitRef(branchRef),
             )
          } else {
             val workingDirPath = workingDir.toPath()
             if (!Files.exists(workingDirPath.parent)) {
                Files.createDirectories(workingDirPath.parent)
             }
+            logger.info { "Cloning git repo from ${config.redactedUrl} on branch ${config.branch} to ${workingDir.absolutePath}" }
             clone()
-            checkout()
+            val ref = checkout()
+            logger.info { "Clone for ${config.redactedUrl} completed" }
             GitSyncStatus(
                successful = true,
                pulledChanges = true,
                hasUnresolvedMerges = false,
                repository = config,
-               checkoutRoot = workingDir.toPath()
+               checkoutRoot = workingDir.toPath(),
+               currentRef = GitRef(ref)
             )
          }
       } catch (e:Exception) {
@@ -113,7 +122,8 @@ open class GitPollOperations(
       Git.cloneRepository()
          .setDirectory(workingDir)
          .setURI(config.uri)
-         .setBranchesToClone(setOf(refBranchName))
+         .setBranchesToClone(singleton(refBranchName))
+         .setBranch( refBranchName )
          .setTransportConfigCallback(transportConfigCallback)
          .call()
          .use {
@@ -133,7 +143,7 @@ open class GitPollOperations(
       return pullResult
    }
 
-   fun checkout() {
+   fun checkout(): Ref {
       val createBranch =
          !git
             .branchList()
@@ -141,7 +151,7 @@ open class GitPollOperations(
             .map { it.name }
             .contains("refs/heads/${config.branch}")
 
-      git.checkout()
+      return git.checkout()
          .setCreateBranch(createBranch)
          .setStartPoint("origin/${config.branch}")
          .setName(config.branch)
@@ -149,12 +159,22 @@ open class GitPollOperations(
    }
 }
 
+/**
+ * Simplified version of git's Ref class, to manage equals()
+ */
+data class GitRef(
+   val objectId: String,
+   val name: String
+) {
+   constructor(ref: Ref) : this(ref.objectId.toString(), ref.name)
+}
 data class GitSyncStatus(
    val successful: Boolean,
    val pulledChanges: Boolean,
    val hasUnresolvedMerges: Boolean,
    val repository: GitRepositoryConnectionConfig,
    val checkoutRoot: Path,
+   val currentRef: GitRef? = null,
    val errorMessage: String? = null
 ) {
    val description: String

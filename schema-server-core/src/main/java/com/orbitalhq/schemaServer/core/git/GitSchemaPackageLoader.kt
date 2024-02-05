@@ -21,6 +21,7 @@ import java.nio.file.Paths
 import java.time.Duration
 import kotlin.io.path.toPath
 
+private val logger = KotlinLogging.logger {  }
 class GitSchemaPackageLoader(
    val workingDir: Path,
    override val config: GitProjectStoreSpec,
@@ -56,25 +57,28 @@ class GitSchemaPackageLoader(
    }
 
    override fun loadNow(): Mono<SourcePackage> {
-      return Mono.create<Unit> { sink ->
-         syncNow()
-         sink.success()
-      }.flatMap { filePackageLoader.loadNow() }
+      syncNow()
+      return filePackageLoader.loadNow()
    }
 
    override fun start(): Flux<SourcePackage> {
+      logger.info { "Starting with workingDir => $workingDir" }
       return GitRepoSync(workingDir, config, gitPollFrequency)
          .start()
-         .filter { it.pulledChanges }
-         .flatMap {
-            filePackageLoader.loadNow()
+         .index()
+         .filter {
+            (it.t1 == 0L && it.t2.successful) || it.t2.pulledChanges
          }
-         .mergeWith(filePackageLoader.start())
+         .flatMap {
+            filePackageLoader.start()
+         }
          .distinctUntilChanged()
    }
 
    fun syncNow() {
+      logger.info { "synching git repo to $workingDir" }
       GitRepoSync.syncNow(workingDir, config)
+      logger.info { "synched git repo to $workingDir" }
    }
 
    override fun listUris(): Flux<URI> {

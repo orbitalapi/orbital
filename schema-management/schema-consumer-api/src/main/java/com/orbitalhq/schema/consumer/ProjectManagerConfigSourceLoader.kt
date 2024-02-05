@@ -10,10 +10,12 @@ import com.orbitalhq.schema.publisher.loaders.LoaderExposingTaxiProject
 import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
 import com.orbitalhq.utils.toPath
 import lang.taxi.packages.SourcesType
+import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import java.nio.file.Path
 import java.nio.file.Paths
 
+private val logger = KotlinLogging.logger {  }
 /**
  * Wraps a ProjectLoaderManager (which is responsible for loading Taxi projects from places
  * like Git, Filesystems, etc)., and turns it into a ConfigSourceWriter / Loader.
@@ -55,6 +57,7 @@ class ProjectManagerConfigSourceLoader(
     * configured via the provided sourceType
     */
    private fun loadAdditionalSources(packageTransport: SchemaPackageTransport): SourcePackage {
+     logger.info { "loading additional sources for $packageTransport" }
       val sourcePackage = packageTransport.loadNow().block()!!
       return SourcePackage(
          sourcePackage.packageMetadata,
