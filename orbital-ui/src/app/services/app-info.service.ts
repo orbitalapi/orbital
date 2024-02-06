@@ -55,6 +55,7 @@ export interface AppConfig {
 export interface FeatureToggles {
   chatGptEnabled: boolean;
   workspacesEnabled: boolean;
+  onboardingEnabled: boolean;
 }
 export interface PipelineConfig {
   kibanaUrl: string;

@@ -1,0 +1,36 @@
+<header>
+  <h2 class="page-title">Welcome to {{ uiConfig.productName }}</h2>
+  <a
+    icon="tuiIconHelpCircle"
+    tuiLink
+    class="help-link"
+  >
+    Help
+  </a>
+</header>
+<div class='page-content'>
+  <tui-stepper class="stepper" orientation="vertical">
+    <a
+      routerLink="/onboarding/project"
+      routerLinkActive
+      tuiStep
+    >
+      Create Project
+    </a>
+    <a
+      routerLink="/onboarding/data-source"
+      routerLinkActive
+      tuiStep
+    >
+      Create Data source
+    </a>
+    <a
+      routerLink="/onboarding/explore"
+      routerLinkActive
+      tuiStep
+    >
+      Explore tooling
+    </a>
+  </tui-stepper>
+  <router-outlet></router-outlet>
+</div>

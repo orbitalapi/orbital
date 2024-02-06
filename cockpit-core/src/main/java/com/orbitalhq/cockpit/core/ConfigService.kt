@@ -63,7 +63,8 @@ data class CustomSettings(
 @ConfigurationProperties(prefix = "vyne.toggles")
 data class FeatureTogglesConfig(
    val chatGptEnabled: Boolean = false,
-   val workspacesEnabled: Boolean = false
+   val workspacesEnabled: Boolean = false,
+   val onboardingEnabled: Boolean = false
 )
 
 data class LicenseStatus(

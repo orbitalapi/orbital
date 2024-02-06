@@ -1,0 +1,21 @@
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 2rem 2rem 0 2rem;
+  background-color: var(--component-bg-color);
+}
+
+.page-title {
+  margin: 0;
+}
+
+.page-content {
+  display: flex;
+  flex-direction: row;
+  padding: 2rem;
+}
+
+.stepper {
+  min-width: 220px;
+}
