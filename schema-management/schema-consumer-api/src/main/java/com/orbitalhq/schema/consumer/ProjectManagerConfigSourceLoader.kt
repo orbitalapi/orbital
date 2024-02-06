@@ -95,6 +95,7 @@ class ProjectManagerConfigSourceLoader(
             } else {
                taxiConf.packageRootPath!!.resolve(sourcePatternPath)
             }
+            configFilePath.parent.toFile().mkdirs()
             configFilePath.toFile().createNewFile()
             configFilePath
          }
