@@ -1,0 +1,74 @@
+<h3 class="intro-text">Looks like you might be new to Orbital, let’s get you up to speed!</h3>
+<p>Firstly you’ll need to create a new Project. Projects are [insert Project definition]</p>
+<p>You can create a Project via the {{ uiConfig.productName }} interface (where you are now) or via a microservice.</p>
+<p>So what’s it gonna be? </p>
+<div class="container tui-space_top-4">
+  <tui-island>
+    <div class="tui-space_bottom-2">
+      <tui-avatar
+        avatarUrl="assets/img/tabler/brand-git.svg"
+        new
+        [rounded]="true"
+        size="xs"
+        class="icon"
+      ></tui-avatar>
+      <h3 class="tui-island__title">Git Repository</h3>
+      <p class="tui-island__paragraph">
+        Connect Orbital to a Git repository to add individual OpenAPI schemas, or entire Taxi projects
+      </p>
+    </div>
+    <button
+      appearance="flat"
+      size="m"
+      tuiButton
+      type="button"
+      class="tui-island__footer-button"
+    >
+      Create
+    </button>
+  </tui-island>
+  <tui-island>
+    <div class="tui-space_bottom-2">
+      <tui-avatar
+        avatarUrl="assets/img/tabler/server.svg"
+        new
+        [rounded]="true"
+        size="xs"
+        class="icon"
+      ></tui-avatar>
+      <h3 class="tui-island__title">Local disk</h3>
+      <p class="tui-island__paragraph">Read projects directly from the local machine.</p>
+    </div>
+    <button
+      appearance="flat"
+      size="m"
+      tuiButton
+      type="button"
+      class="tui-island__footer-button"
+    >
+      Create
+    </button>
+  </tui-island>
+  <tui-island>
+    <div class="tui-space_bottom-2">
+      <tui-avatar
+        avatarUrl="assets/img/tabler/topology-star-3.svg"
+        new
+        [rounded]="true"
+        size="xs"
+        class="icon"
+      ></tui-avatar>
+      <h3 class="tui-island__title">Microservice</h3>
+      <p class="tui-island__content ">Need a description (and action) for this...</p>
+    </div>
+    <button
+      appearance="flat"
+      size="m"
+      tuiButton
+      type="button"
+      class="tui-island__footer-button"
+    >
+      Create
+    </button>
+  </tui-island>
+</div>

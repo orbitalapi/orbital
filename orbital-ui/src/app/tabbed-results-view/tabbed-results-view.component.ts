@@ -36,7 +36,7 @@ import { map, scan, tap } from 'rxjs/operators';
                           (activeItemIndexChange)="onTabIndexChanged()"
                           [moreContent]='more'
       >
-        <button *tuiItem tuiTab [disabled]="responseIsLarge$ | async" [class.tui-skeleton]='true'>
+        <button *tuiItem tuiTab [disabled]="responseIsLarge$ | async">
           <img src="assets/img/tabler/table.svg" class="tab-icon">
           Table
         </button>
