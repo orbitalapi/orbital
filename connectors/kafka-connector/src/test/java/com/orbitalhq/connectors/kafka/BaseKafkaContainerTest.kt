@@ -16,6 +16,9 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import mu.KotlinLogging
+import org.apache.kafka.clients.admin.Admin
+import org.apache.kafka.clients.admin.AdminClientConfig
+import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.clients.producer.ProducerConfig
@@ -33,6 +36,7 @@ import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import java.time.Instant
 import java.util.*
+import java.util.Collections.singleton
 import kotlin.random.Random
 
 @Testcontainers
@@ -85,6 +89,14 @@ abstract class BaseKafkaContainerTest {
       this.connectionRegistry = connectionRegistry
 
       return kafkaProducer to connectionRegistry
+   }
+
+   fun createTopic(topic: String, numPartitions: Int = 1) {
+      val adminProperties = Properties();
+      adminProperties[AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaContainer.bootstrapServers
+      val admin = Admin.create(adminProperties)
+      val newTopic = NewTopic(topic, numPartitions, 1)
+      admin.createTopics(singleton(newTopic))
    }
 
    fun sendMessage(message: ByteArray, topic: String = "movies"): RecordMetadata {

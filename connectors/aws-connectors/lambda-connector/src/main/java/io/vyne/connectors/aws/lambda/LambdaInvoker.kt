@@ -16,6 +16,7 @@ import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.OperationInvocationException
 import com.orbitalhq.schemas.Parameter
+import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import kotlinx.coroutines.CoroutineDispatcher
@@ -59,7 +60,8 @@ class LambdaInvoker(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String
+      queryId: String,
+      queryOptions: QueryOptions
    ): Flow<TypedInstance> {
       val awsConnection = fetchConnection(service)
       return invokeAwsLambda(awsConnection, parameters, service, operation, eventDispatcher, queryId)

@@ -2,6 +2,7 @@ package com.orbitalhq.connectors.kafka.registry
 
 import com.orbitalhq.connectors.config.kafka.KafkaConnection
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
+import com.orbitalhq.connectors.kafka.KafkaConsumerRequest
 import com.orbitalhq.connectors.valueOrThrowNiceMessage
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
@@ -13,8 +14,8 @@ import reactor.kafka.receiver.ReceiverOptions
 import reactor.kafka.sender.SenderOptions
 
 
-fun KafkaConnectionConfiguration.toReceiverOptions(offset: String = "latest"): ReceiverOptions<Int, ByteArray> {
-   val consumerProps = this.toConsumerProps(offset)
+fun KafkaConnectionConfiguration.toReceiverOptions(offset: String = "latest", request: KafkaConsumerRequest): ReceiverOptions<Int, ByteArray> {
+   val consumerProps = this.toConsumerProps(offset, request)
    return ReceiverOptions.create(consumerProps)
 }
 
@@ -31,10 +32,9 @@ fun KafkaConnectionConfiguration.toAdminProps(): MutableMap<String, Any> {
    return adminProps
 }
 
-fun KafkaConnectionConfiguration.toConsumerProps(offset: String = "latest"): MutableMap<String, Any> {
+fun KafkaConnectionConfiguration.toConsumerProps(offset: String = "latest", request: KafkaConsumerRequest? = null): MutableMap<String, Any> {
    val brokers = this.brokers
-   val groupId = this.groupId
-
+   val groupId = request?.streamSourceId ?: this.groupId
 
    val consumerProps: MutableMap<String, Any> = this.connectionParameters.toMutableMap()
    consumerProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = brokers

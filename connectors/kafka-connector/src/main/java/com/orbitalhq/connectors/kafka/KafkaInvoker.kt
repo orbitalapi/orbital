@@ -9,6 +9,7 @@ import com.orbitalhq.query.QueryContextSchemaProvider
 import com.orbitalhq.query.connectors.OperationCachingBehaviour
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schemas.Parameter
+import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import kotlinx.coroutines.flow.Flow
@@ -43,7 +44,8 @@ class KafkaInvoker(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String
+      queryId: String,
+      queryOptions: QueryOptions
    ): Flow<TypedInstance> {
 
       val connectionName = service.firstMetadata("com.orbitalhq.kafka.KafkaService").params["connectionName"] as String
@@ -53,7 +55,7 @@ class KafkaInvoker(
       return if (operation.operationType == OperationScope.MUTATION) {
          publishToTopic(connectionName, kafkaOperation, service, operation, eventDispatcher, queryId, parameters)
       } else {
-         subscribeToTopic(connectionName, kafkaOperation, service, operation, eventDispatcher, queryId)
+         subscribeToTopic(connectionName, kafkaOperation, service, operation, eventDispatcher, queryId, queryOptions)
       }
 
    }
@@ -86,7 +88,8 @@ class KafkaInvoker(
       service: Service,
       operation: RemoteOperation,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String
+      queryId: String,
+      queryOptions: QueryOptions
    ): Flow<TypedInstance> {
       val stream = streamManager.getStream(
          KafkaConsumerRequest(
@@ -94,7 +97,8 @@ class KafkaInvoker(
             kafkaOperation.topic,
             kafkaOperation.offset,
             service,
-            operation
+            operation,
+            streamSourceId = queryOptions.streamConsumerId
          )
       ).map { instance ->
          val dataSource = instance.source

@@ -51,7 +51,8 @@ class OperationService(
             operation,
             parameterTypedInstances,
             NoOpQueryContextEventDispatcher,
-            invocationId
+            invocationId,
+            QueryOptions()
          )
             .map { value: TypedInstance -> serialiser.serialize(value, schemaProvider.schema) }
             .filterNotNull()

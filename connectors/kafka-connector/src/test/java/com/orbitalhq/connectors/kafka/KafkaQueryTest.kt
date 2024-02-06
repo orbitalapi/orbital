@@ -1,25 +1,16 @@
 package com.orbitalhq.connectors.kafka
 
 import com.jayway.awaitility.Awaitility.await
-import com.winterbe.expekt.should
 import com.orbitalhq.Vyne
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
-import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
-import com.orbitalhq.connectors.jdbc.HikariJdbcConnectionFactory
-import com.orbitalhq.connectors.jdbc.NamedTemplateConnection
-import com.orbitalhq.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
-import com.orbitalhq.connectors.kafka.registry.InMemoryKafkaConnectorRegistry
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.protobuf.wire.RepoBuilder
-import com.orbitalhq.query.QueryResult
-import com.orbitalhq.schema.api.SimpleSchemaProvider
-import com.orbitalhq.schemas.taxi.TaxiSchema
-import com.orbitalhq.testVyne
-import com.zaxxer.hikari.HikariConfig
+import com.winterbe.expekt.should
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -28,18 +19,13 @@ import lang.taxi.generators.protobuf.TaxiGenerator
 import mu.KotlinLogging
 import okio.fakefilesystem.FakeFileSystem
 import org.apache.kafka.clients.producer.*
-import org.apache.kafka.common.serialization.ByteArraySerializer
-import org.apache.kafka.common.serialization.StringSerializer
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Configuration
-import org.springframework.jdbc.core.JdbcTemplate
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.test.context.junit4.SpringRunner
-import java.time.Instant
 import java.util.*
 import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.random.Random
@@ -63,18 +49,18 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
    @Test
    fun `can use a TaxiQL statement to consume kafka stream`(): Unit = runBlocking {
 
-      val (vyne, _) = vyneWithKafkaInvoker(defaultSchema)
-
-      val message1 = "{\"id\": \"1234\",\"title\": \"Title 1\"}"
-      val message2 = "{\"id\": \"5678\",\"title\": \"Title 2\"}"
-
+      val (vyne, kafkaStreamManager) = vyneWithKafkaInvoker(defaultSchema)
       sendMessage(message("message1"))
       sendMessage(message("message2"))
 
-      val result = vyne.query("""stream { Movie }""")
-         .results.take(2).toList() as List<TypedObject>
 
+      val result = vyne.query("""
+         stream { Movie }"""
+         .trimIndent())
+
+         .results.take(2).toList() as List<TypedObject>
       result.should.have.size(2)
+
    }
 
    @Test
@@ -133,7 +119,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
 
       await().atMost(10, SECONDS).until<Boolean> { resultsFromQuery1.size == 2 }
 
-      var currentMessageCount = streamManager.getActiveConsumerMessageCounts()
+      val currentMessageCount = streamManager.getActiveConsumerMessageCounts()
          .values.first().get()
 
       currentMessageCount.should.equal(2)
@@ -208,7 +194,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       """.trimIndent()
       val taxi = listOf(serviceTaxi)
          .joinToString("\n")
-      val (vyne, streamManager) = vyneWithKafkaInvoker(taxi)
+      val (vyne, _) = vyneWithKafkaInvoker(taxi)
 
       val resultsFromQuery1 = mutableListOf<TypedInstance>()
       val query1 = runBlocking { vyne.query("""stream { HelloWorld }""") }
@@ -236,6 +222,101 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       )
    }
 
+   @Test
+   fun `when there are two active queries with same stream consumer id only one of them gets the data`(): Unit = runBlocking {
+
+      val singlePartitionTopic = "films_${Random.nextInt()}"
+      createTopic(singlePartitionTopic)
+      val moviesExSchema = """
+               ${KafkaConnectorTaxi.Annotations.imports}
+               type MovieId inherits String
+               type MovieTitle inherits String
+
+               model Movie {
+                  id : MovieId
+                  title : MovieTitle
+               }
+
+               @KafkaService( connectionName = "moviesConnection" )
+               service MovieService {
+                  @KafkaOperation( topic = "$singlePartitionTopic", offset = "earliest" )
+                  stream streamMovieQuery:Stream<Movie>
+               }
+
+            """.trimIndent()
+      val (vyne1, _) = vyneWithKafkaInvoker(moviesExSchema)
+      (0..9).forEach {
+         sendMessage(message("message$it"), singlePartitionTopic)
+      }
+
+      val result = vyne1.query("""
+         @StreamConsumer(id = "123")
+         stream { Movie }"""
+         .trimIndent())
+         .results
+         .map { "query1" to it }
+
+      val (vyne2, _) = vyneWithKafkaInvoker(moviesExSchema)
+      val result2 = vyne2.query("""
+         @StreamConsumer(id = "123")
+         stream { Movie }"""
+         .trimIndent())
+         .results
+         .map { "query2" to it }
+
+     val mergedResults = merge(result, result2).take(10).toList()
+
+      val groupByQuery = mergedResults.groupBy { it.first }
+      groupByQuery.keys.size.should.equal(1)
+   }
+
+
+   @Test
+   fun `A test where there are two active queries with different StreamConsumer id values, to show that the records are received by both`(): Unit = runBlocking {
+      val singlePartitionTopic = "arthouse_${Random.nextInt()}"
+      createTopic(singlePartitionTopic)
+      val moviesExSchema = """
+               ${KafkaConnectorTaxi.Annotations.imports}
+               type MovieId inherits String
+               type MovieTitle inherits String
+
+               model Movie {
+                  id : MovieId
+                  title : MovieTitle
+               }
+
+               @KafkaService( connectionName = "moviesConnection" )
+               service MovieService {
+                  @KafkaOperation( topic = "$singlePartitionTopic", offset = "earliest" )
+                  stream streamMovieQuery:Stream<Movie>
+               }
+
+            """.trimIndent()
+      val (vyne1, _) = vyneWithKafkaInvoker(moviesExSchema)
+      (0..9).forEach {
+         sendMessage(message("message$it"), singlePartitionTopic)
+      }
+
+      val result = vyne1.query("""
+         @StreamConsumer(id = "123")
+         stream { Movie }"""
+         .trimIndent())
+         .results
+         .map { "query1" to it }
+
+      val (vyne2, _) = vyneWithKafkaInvoker(moviesExSchema)
+      val result2 = vyne2.query("""
+         @StreamConsumer(id = "1234")
+         stream { Movie }"""
+         .trimIndent())
+         .results
+         .map { "query2" to it }
+
+      val mergedResults = merge(result, result2).take(10).toList()
+
+      val groupByQuery = mergedResults.groupBy { it.first }
+      groupByQuery.keys.size.should.equal(2)
+   }
 
 
 

@@ -36,6 +36,45 @@ data class NamedCache(val name: String) : CachingStrategy()
  */
 data class RemoteCache(val connectionName: String?) : CachingStrategy()
 
+object QueryOptionParameterKeys {
+   const val Cache = "Cache"
+   const val StateStore = "StateStore"
+   const val StreamConsumer = "StreamConsumer"
+
+   fun cacheStrategy(query: TaxiQlQuery): CachingStrategy {
+      val cacheAnnotation = query.annotation(Cache)
+     return when {
+         cacheAnnotation == null -> QueryScopedCache
+         cacheAnnotation.parameter("connection") != null -> RemoteCache(cacheAnnotation.parameter("connection") as? String?)
+         cacheAnnotation.defaultParameterValue != null -> NamedCache(cacheAnnotation.defaultParameterValue as String)
+         cacheAnnotation.parameter("connection") == null -> RemoteCache(null)
+         else -> GlobalSharedCache
+      }
+   }
+
+   fun stateStoreConnectionName(query: TaxiQlQuery): Pair<Boolean, String?>  {
+      val statStoreAnnotation = query.annotation(StateStore)
+      val useStateStore = statStoreAnnotation != null
+     return Pair(useStateStore, statStoreAnnotation?.let { annotation ->
+         when {
+            annotation.parameter("connection") != null -> annotation.parameter("connection")!! as String
+            else -> null
+         }
+      })
+   }
+
+   fun streamConsumerId(query: TaxiQlQuery): String? {
+      val streamConsumer = query.annotation(StreamConsumer)
+      return streamConsumer?.let { annotation ->
+         when {
+            annotation.parameter("id") != null -> annotation.parameter("id")!! as String
+            else -> null
+         }
+      }
+   }
+
+}
+
 data class QueryOptions(
    /**
     * indciates that fields which are null
@@ -58,16 +97,21 @@ data class QueryOptions(
 
    /**
     * Some queries require state (such as joining streams).
-    * When useStateStore = true, we need a connection to load from the the SourceLoadersConnectionRegistry
+    * When useStateStore = true, we need a connection to load from the  SourceLoadersConnectionRegistry
     * which can be used to store state. (Typically a cache provider, such as Hazelcast or Redis)
-    * Connection name can be null in which case we use the 'default' connection speficied in the taxonomy.
+    * Connection name can be null in which case we use the 'default' connection specified in the taxonomy.
     */
    val stateStoreConnectionName: String? = null,
    /**
     * Some queries require state (such as joining streams).
-    * This indicates a connection to load from the the SourceLoadersConnectionRegistry
+    * This indicates a connection to load from the SourceLoadersConnectionRegistry
     */
-   val useStateStore: Boolean = false
+   val useStateStore: Boolean = false,
+
+   /**
+    * Streaming Queries might require an id which will be used to manage streaming subscriptions downstream (e.g. Setting the consumer group Ids for Kafka)
+    */
+   val streamConsumerId: String? = null
 ) {
 
    /**
@@ -98,30 +142,15 @@ data class QueryOptions(
       fun default() = QueryOptions()
 
       fun fromQuery(query: TaxiQlQuery): QueryOptions {
-         val cacheAnnotation = query.annotation("Cache")
-         val cachingStrategy: CachingStrategy = when {
-            cacheAnnotation == null -> QueryScopedCache
-            cacheAnnotation.parameter("connection") != null -> RemoteCache(cacheAnnotation.parameter("connection") as? String?)
-            cacheAnnotation.defaultParameterValue != null -> NamedCache(cacheAnnotation.defaultParameterValue as String)
-            cacheAnnotation.parameter("connection") == null -> RemoteCache(null)
-            else -> GlobalSharedCache
-         }
-
-
-         val statStoreAnnotation = query.annotation("StateStore")
-         val useStateStore = statStoreAnnotation != null
-         val stateStoreConnectionName:String? = statStoreAnnotation?.let { annotation ->
-            when {
-               annotation.parameter("connection") != null -> annotation.parameter("connection")!! as String
-               else -> null
-            }
-         }
-
+         val cachingStrategy: CachingStrategy = QueryOptionParameterKeys.cacheStrategy(query)
+         val (useStateStore, stateStoreConnectionName) = QueryOptionParameterKeys.stateStoreConnectionName(query)
+         val streamConsumerId = QueryOptionParameterKeys.streamConsumerId(query)
          return QueryOptions(
             omitNulls = query.annotation("OmitNulls") != null,
             cachingStrategy = cachingStrategy,
             stateStoreConnectionName = stateStoreConnectionName,
-            useStateStore = useStateStore
+            useStateStore = useStateStore,
+            streamConsumerId = streamConsumerId
          )
       }
    }

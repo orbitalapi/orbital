@@ -19,6 +19,7 @@ import com.orbitalhq.query.graph.operationInvocation.DefaultOperationInvocationS
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
 import com.orbitalhq.schemas.OperationNames
 import com.orbitalhq.schemas.Parameter
+import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Service
@@ -120,7 +121,8 @@ class StubService(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String
+      queryId: String,
+      queryOptions: QueryOptions
    ): Flow<TypedInstance> {
       val paramDescription = parameters.joinToString { "${it.second.type.name.shortDisplayName} = ${it.second.value}" }
       logger.debug { "Invoking ${service.name} -> ${operation.name}($paramDescription)" }

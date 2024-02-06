@@ -8,6 +8,7 @@ import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
+import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import kotlinx.coroutines.CoroutineDispatcher
@@ -37,7 +38,8 @@ class DynamoDbInvoker(
         operation: RemoteOperation,
         parameters: List<Pair<Parameter, TypedInstance>>,
         eventDispatcher: QueryContextEventDispatcher,
-        queryId: String
+        queryId: String,
+        queryOptions: QueryOptions
     ): Flow<TypedInstance> {
         return when {
             operation.operationType == OperationScope.READ_ONLY -> queryInvoker.invoke(

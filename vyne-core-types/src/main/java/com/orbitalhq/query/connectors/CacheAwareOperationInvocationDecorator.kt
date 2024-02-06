@@ -3,6 +3,7 @@ package com.orbitalhq.query.connectors
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.schemas.Parameter
+import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import com.orbitalhq.utils.abbreviate
@@ -47,13 +48,14 @@ class CacheAwareOperationInvocationDecorator(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String
+      queryId: String,
+      queryOptions: QueryOptions
    ): Flow<TypedInstance> {
       if (!isCacheable(operation, service, invoker)) {
-         return invoker.invoke(service, operation, parameters, eventDispatcher, queryId)
+         return invoker.invoke(service, operation, parameters, eventDispatcher, queryId, queryOptions)
       }
 
-      val (key, params) = getCacheKeyAndParamMessage(service, operation, parameters, eventDispatcher, queryId)
+      val (key, params) = getCacheKeyAndParamMessage(service, operation, parameters, eventDispatcher, queryId, queryOptions)
 
       val cachingInvoker = cacheProvider.getCachingInvoker(key, invoker)
 //      val actor = actorCache.get(key) {
@@ -131,11 +133,12 @@ class CacheAwareOperationInvocationDecorator(
          operation: RemoteOperation,
          parameters: List<Pair<Parameter, TypedInstance>>,
          eventDispatcher: QueryContextEventDispatcher,
-         queryId: String
+         queryId: String,
+         queryOptions: QueryOptions
       ): Pair<String, OperationInvocationParamMessage> {
          return generateCacheKey(service, operation, parameters) to
             OperationInvocationParamMessage(
-               service, operation, parameters, eventDispatcher, queryId
+               service, operation, parameters, eventDispatcher, queryId, queryOptions
             )
       }
 
@@ -192,7 +195,8 @@ class CachingOperatorInvoker(
          operation: RemoteOperation,
          parameters: List<Pair<Parameter, TypedInstance>>,
          eventDispatcher: QueryContextEventDispatcher,
-         queryId: String) = message
+         queryId: String,
+         queryOptions: QueryOptions) = message
 
       // A bit of async framework hopping here.
       // Invoker.invoke() is a suspend function, but we need to operate in a flux to allow
@@ -205,7 +209,7 @@ class CachingOperatorInvoker(
          // worked when we wrote the underlying interface.
          runBlocking {
             try {
-               invoker.invoke(service, operation, parameters, eventDispatcher, queryId)
+               invoker.invoke(service, operation, parameters, eventDispatcher, queryId, queryOptions)
                   .asFlux()
                   .doOnError {exception ->
                      logger.info { "Operation with cache key ${cacheKey.abbreviate()} failed with exception ${exception::class.simpleName} ${exception.message}.  This operation with params will not be attempted again.  Future attempts will have this error replayed" }
@@ -237,6 +241,7 @@ data class OperationInvocationParamMessage(
    val operation: RemoteOperation,
    val parameters: List<Pair<Parameter, TypedInstance>>,
    val eventDispatcher: QueryContextEventDispatcher,
-   val queryId: String
+   val queryId: String,
+   val queryOptions: QueryOptions
 ) {
 }
