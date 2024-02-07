@@ -1,21 +1,51 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: var(--component-bg-color);
+  height: 100%;
+}
+
 header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  padding: 2rem 2rem 0 2rem;
-  background-color: var(--component-bg-color);
 }
 
 .page-title {
   margin: 0;
 }
 
+.page-container {
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+}
+
 .page-content {
   display: flex;
   flex-direction: row;
-  padding: 2rem;
 }
 
 .stepper {
   min-width: 220px;
+}
+
+// connection between stepper icons
+:host ::ng-deep {
+  tui-stepper {
+    a:not(:last-child) {
+      &:after {
+        position: absolute;
+        left: 16px;
+        top: 34px;
+        display: block;
+        height: 16px;
+        width: 1px;
+        background: rgba(0,0,0,.06);
+        content: "";
+      }
+    }
+  }
 }

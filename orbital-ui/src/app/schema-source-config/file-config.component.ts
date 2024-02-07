@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import { projectTypeToString } from 'src/app/schema-source-config/git-config.component';
 import {
   FileSystemPackageSpec,
@@ -146,6 +146,14 @@ import { of } from 'rxjs';
       </div>
     </form>
     <div *ngIf='editable' class='form-button-bar'>
+      <button
+        tuiButton
+        *ngIf="isOnboardingMode"
+        appearance="secondary"
+        [size]="'m'"
+        (click)="goBackOnboarding.emit()"
+      >Back
+      </button>
       <button tuiButton [showLoader]='working' [size]="'m'" (click)='doCreate()' [disabled]='gitForm.invalid'>Create
       </button>
     </div>
@@ -163,6 +171,12 @@ export class FileConfigComponent {
   fileSystemPackageConfig: FileSystemPackageSpec = new FileSystemPackageSpec();
   @Input()
   editable: boolean = true;
+  @Output()
+  localFileAdded: EventEmitter<void> = new EventEmitter()
+  @Input()
+  isOnboardingMode: boolean;
+  @Output()
+  goBackOnboarding: EventEmitter<void> = new EventEmitter();
   working = false;
   saveResultMessage: Message;
 
@@ -233,6 +247,7 @@ export class FileConfigComponent {
     this.saveResultMessage = null;
     this.schemaService.addNewFileRepository(this.fileSystemPackageConfig)
       .subscribe(result => {
+          this.localFileAdded.emit();
           this.working = false;
           this.saveResultMessage = {
             message: 'The local disk repository was added successfully',

@@ -9,6 +9,7 @@ import {HeaderComponentLayoutModule} from "../header-component-layout/header-com
 import {TuiFieldErrorPipeModule, TuiInputModule, TuiTabsModule} from "@taiga-ui/kit";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {TuiButtonModule, TuiErrorModule, TuiNotificationModule} from "@taiga-ui/core";
+import { UiCustomisations } from '../../environments/ui-customisations';
 
 
 @NgModule({
@@ -21,6 +22,7 @@ import {TuiButtonModule, TuiErrorModule, TuiNotificationModule} from "@taiga-ui/
             {
                 path: 'new',
                 component: NewWorkspaceComponent,
+                title: `${UiCustomisations.productName}: Workspaces`
                 // canActivate: [AuthGuard],
                 // data: {requiredAuthority: VynePrivileges.CreateWorkspace}
             }

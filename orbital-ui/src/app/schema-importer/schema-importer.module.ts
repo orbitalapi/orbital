@@ -58,6 +58,7 @@ import {SchemaSourceConfigModule} from 'src/app/schema-source-config/schema-sour
 import {ExpandingPanelSetModule} from "../expanding-panelset/expanding-panel-set.module";
 import {CodeEditorModule} from "../code-editor/code-editor.module";
 import {ProjectSelectorModule} from "../project-selector/project-selector.module";
+import { UiCustomisations } from '../../environments/ui-customisations';
 
 
 @NgModule({
@@ -114,6 +115,7 @@ import {ProjectSelectorModule} from "../project-selector/project-selector.module
       {
         path: '',
         component: OrbitalSchemaImporterContainerComponent,
+        title: `${UiCustomisations.productName}: Schemas`
       },
     ]),
     TuiRadioBlockModule,

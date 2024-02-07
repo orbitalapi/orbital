@@ -19,6 +19,7 @@ import { RouterModule } from '@angular/router';
 import { AuthManagerService } from 'src/app/auth-manager/auth-manager.service';
 import { HeaderComponentLayoutModule } from 'src/app/header-component-layout/header-component-layout.module';
 import { AddTokenPanelComponent } from './add-token-panel.component';
+import { UiCustomisations } from '../../environments/ui-customisations';
 
 @NgModule({
     imports: [
@@ -39,6 +40,7 @@ import { AddTokenPanelComponent } from './add-token-panel.component';
             {
                 path: '',
                 component: AuthManagerComponent,
+                title: `${UiCustomisations.productName}: Authentication`
             },
         ]),
         HeaderComponentLayoutModule

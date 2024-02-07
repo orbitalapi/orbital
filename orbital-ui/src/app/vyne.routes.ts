@@ -3,12 +3,14 @@ import { AuthGuard } from 'src/app/services/auth.guard';
 import { VynePrivileges } from 'src/app/services/user-info.service';
 import { LandingPageContainerComponent } from 'src/app/landing-page/landing-page-container.component';
 import { FeatureFlagGuard } from './services/feature-flag.guard';
+import { UiCustomisations } from '../environments/ui-customisations';
 
 export const VYNE_ROUTES = RouterModule.forRoot(
   [
     {
       path: '',
-      component: LandingPageContainerComponent
+      component: LandingPageContainerComponent,
+      title: `${UiCustomisations.productName}`
     },
     {
       path: 'onboarding', // working title for now...
@@ -26,7 +28,8 @@ export const VYNE_ROUTES = RouterModule.forRoot(
       path: 'services',
       loadChildren: () => import('./service-view/service-view.module').then(m => m.ServiceViewModule),
       canActivate: [AuthGuard],
-      data: {requiredAuthority: VynePrivileges.BrowseCatalog}
+      data: {requiredAuthority: VynePrivileges.BrowseCatalog},
+      title: `${UiCustomisations.productName}: Services`
     },
     {
       path: 'query',

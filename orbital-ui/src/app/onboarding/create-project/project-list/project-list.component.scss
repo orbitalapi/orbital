@@ -1,0 +1,22 @@
+td {
+  vertical-align: middle;
+}
+
+.name {
+  font-weight: bold;
+}
+
+.icon-bar {
+  opacity: 0.8;
+  display: flex;
+
+  img {
+    margin-right: 0.25rem;
+    width: 1rem;
+  }
+
+  .is-editable {
+    margin-left: 1rem;
+    display: flex;
+  }
+}

@@ -16,6 +16,7 @@ import {HeaderComponentLayoutModule} from 'src/app/header-component-layout/heade
 import {ConnectionDetailViewComponent} from './connection-detail-view.component';
 import {ConnectionStatusComponent} from "./connection-status.component";
 import {MomentModule} from "ngx-moment";
+import { UiCustomisations } from '../../environments/ui-customisations';
 
 @NgModule({
   imports: [
@@ -31,12 +32,13 @@ import {MomentModule} from "ngx-moment";
       {
         path: '',
         component: ConnectionManagerComponent,
+        title: `${UiCustomisations.productName}: Connections`,
         children: [
           {
             path: '',
             component: ConnectionListComponent,
             canActivate: [AuthGuard],
-            data: {requiredAuthority: VynePrivileges.ViewConnections}
+            data: {requiredAuthority: VynePrivileges.ViewConnections},
           },
           {
             path: 'new',

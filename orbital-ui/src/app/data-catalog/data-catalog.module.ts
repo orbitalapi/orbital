@@ -23,6 +23,7 @@ import { TypeListModule } from 'src/app/type-list/type-list.module';
 import { HeaderComponentLayoutModule } from 'src/app/header-component-layout/header-component-layout.module';
 import { TuiTabsModule } from '@taiga-ui/kit';
 import { SchemaDiagramModule } from 'src/app/schema-diagram/schema-diagram.module';
+import { UiCustomisations } from '../../environments/ui-customisations';
 
 
 @NgModule({
@@ -45,18 +46,20 @@ import { SchemaDiagramModule } from 'src/app/schema-diagram/schema-diagram.modul
     TypeViewerModule,
     TypeListModule,
     RouterModule.forChild([
-      { path: '', component: DataCatalogContainerComponent },
+      { path: '', component: DataCatalogContainerComponent, title: `${UiCustomisations.productName}: Catalog` },
       {
         path: 'browse',
         component: TypeListComponent,
         canActivate: [AuthGuard],
-        data: { requiredAuthority: VynePrivileges.BrowseCatalog }
+        data: { requiredAuthority: VynePrivileges.BrowseCatalog },
+        title: `${UiCustomisations.productName}: Catalog`
       },
       {
         path: ':typeName',
         component: TypeViewerContainerComponent,
         canActivate: [AuthGuard],
-        data: { requiredAuthority: VynePrivileges.BrowseCatalog }
+        data: { requiredAuthority: VynePrivileges.BrowseCatalog },
+        title: `${UiCustomisations.productName}: Catalog`
       }
     ]),
     HeaderComponentLayoutModule,
