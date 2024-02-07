@@ -7,6 +7,7 @@ import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schemas.Parameter
+import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Service
@@ -31,7 +32,8 @@ class ReplayingOperationInvoker(private val remoteCalls: List<RemoteCall>, priva
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String
+      queryId: String,
+      queryOptions: QueryOptions
    ): Flow<TypedInstance> {
       val (_, url, _) = operation.httpOperationMetadata()
       val uriVariables = uriVariableProvider.getUriVariables(parameters, url)

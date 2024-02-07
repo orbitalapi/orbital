@@ -40,7 +40,8 @@ data class KafkaConsumerRequest(
    val topicName: String,
    val offset: KafkaConnectorTaxi.Annotations.KafkaOperation.Offset,
    val service: Service,
-   val operation: RemoteOperation
+   val operation: RemoteOperation,
+   val streamSourceId: String? = null
 ) {
    val messageType = operation.returnType.name
 }
@@ -179,8 +180,9 @@ class KafkaStreamManager(
       val topic = request.topicName
       val offset = request.offset.toString().lowercase(Locale.getDefault())
 
-      return connectionConfiguration to connectionConfiguration.toReceiverOptions(offset)
+      return connectionConfiguration to connectionConfiguration.toReceiverOptions(offset, request)
          .subscription(listOf(topic))
    }
+
 }
 

@@ -7,6 +7,7 @@ import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.query.connectors.OperationInvocationParamMessage
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.consumer.SimpleSchemaStore
+import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.testVyne
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldHaveSize
@@ -53,7 +54,8 @@ class HazelcastCacheProviderTest : DescribeSpec({
                operation,
                parameters = listOf(operation.parameters[0] to TypedInstance.from(vyne.type("PersonId"), "1", vyne.schema)),
                mock {  },
-               "queryId"
+               "queryId",
+               QueryOptions()
             )
          )
          val result = operationFlux.collectList().block()!!
@@ -68,7 +70,8 @@ class HazelcastCacheProviderTest : DescribeSpec({
                operation,
                parameters = listOf(operation.parameters[0] to TypedInstance.from(vyne.type("PersonId"), "1", vyne.schema)),
                mock {  },
-               "queryId"
+               "queryId",
+               QueryOptions()
             )
          )
          val resultFromCache = operationFlux2.collectList().block()!!
@@ -97,7 +100,8 @@ class HazelcastCacheProviderTest : DescribeSpec({
                operation,
                parameters = listOf(operation.parameters[0] to TypedInstance.from(vyne.type("PersonId"), "1", vyne.schema)),
                mock {  },
-               "queryId"
+               "queryId",
+               QueryOptions()
             )
          )
          // Send a second request before the first one is completed
@@ -108,7 +112,8 @@ class HazelcastCacheProviderTest : DescribeSpec({
                operation,
                parameters = listOf(operation.parameters[0] to TypedInstance.from(vyne.type("PersonId"), "1", vyne.schema)),
                mock {  },
-               "queryId"
+               "queryId",
+               QueryOptions()
             )
          )
 
@@ -148,7 +153,8 @@ class HazelcastCacheProviderTest : DescribeSpec({
                operation,
                parameters = listOf(operation.parameters[0] to TypedInstance.from(type = vyne.type("PersonId"), value = "1", schema  = vyne.schema)),
                mock {  },
-               "queryId"
+               "queryId",
+               QueryOptions()
             )
          )
          // Send a second request before the first one is completed
@@ -159,7 +165,8 @@ class HazelcastCacheProviderTest : DescribeSpec({
                operation,
                parameters = listOf(operation.parameters[0] to TypedInstance.from(vyne.type("PersonId"), "1", vyne.schema)),
                mock {  },
-               "queryId"
+               "queryId",
+               QueryOptions()
             )
          )
 

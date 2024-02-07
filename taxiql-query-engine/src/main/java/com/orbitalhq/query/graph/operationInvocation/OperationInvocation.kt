@@ -60,7 +60,7 @@ class DefaultOperationInvocationService(
       )
 
       val startTime = Instant.now()
-      val result = invoker.invoke(service, operation, validatedParams, context, context.queryId)
+      val result = invoker.invoke(service, operation, validatedParams, context, context.queryId, context.queryOptions)
       StrategyPerformanceProfiler.record(
          "OperationInvocationService.invoker.invoke",
          Duration.between(startTime, Instant.now())

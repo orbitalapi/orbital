@@ -19,6 +19,7 @@ import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalOperationC
 import com.orbitalhq.schemas.Operation
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QualifiedName
+import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.Type
@@ -63,6 +64,7 @@ class CacheAwareOperationInvocationDecoratorTest {
       val type =
          Type(name = QualifiedName.from("type1"), sources = listOf(), taxiType = PrimitiveType.STRING, typeDoc = null)
       val mockedTypeInstance = mock<TypedInstance>()
+      val queryOptions = QueryOptions()
       val service = Service(QualifiedName.from("srv1"), listOf(), listOf(), listOf(), listOf(), listOf(), listOf())
       val operation = Operation(
          qualifiedName = QualifiedName.from("op1@@op1"),
@@ -78,20 +80,20 @@ class CacheAwareOperationInvocationDecoratorTest {
          )
       )
       runBlocking {
-         whenever(mockOperationInvoker.invoke(any(), any(), any(), any(), any())).thenReturn(flow {
-
+         whenever(mockOperationInvoker.invoke(any(), any(), any(), any(), any(), any())).thenReturn(flow {
             emit(
                mockedTypeInstance
             )
          })
-         cacheAware.invoke(service, operation, params, mockQueryContext, "MOCK_QUERY_ID").toList()
-         cacheAware.invoke(service, operation, params, mockQueryContext, "MOCK_QUERY_ID").toList()
+         cacheAware.invoke(service, operation, params, mockQueryContext, "MOCK_QUERY_ID", queryOptions).toList()
+         cacheAware.invoke(service, operation, params, mockQueryContext, "MOCK_QUERY_ID", queryOptions).toList()
          verify(mockOperationInvoker, times(1)).invoke(
             service,
             operation,
             params,
             mockQueryContext,
-            "MOCK_QUERY_ID"
+            "MOCK_QUERY_ID",
+            queryOptions
          )
       }
    }
@@ -120,12 +122,14 @@ class CacheAwareOperationInvocationDecoratorTest {
          }
       val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker, LocalOperationCacheProvider.default())
       val (service, operation) = schema.operation("Service@@sayHello".fqn())
+      val queryOptions = QueryOptions(streamConsumerId = "id")
       val result = cachingInvoker.invoke(
          service,
          operation,
          listOf(param("A")),
          mock { },
-         Ids.id("queryId")
+         Ids.id("queryId"),
+         queryOptions
       ).toList()
       result.should.have.size(1)
       result.first().value.should.equal("Hello")
@@ -135,7 +139,8 @@ class CacheAwareOperationInvocationDecoratorTest {
          operation,
          listOf(param("A")),
          mock { },
-         Ids.id("queryId")
+         Ids.id("queryId"),
+         queryOptions
       ).toList()
       cachedResult.should.have.size(1)
       cachedResult.first().value.should.equal("Hello")
@@ -165,7 +170,8 @@ class CacheAwareOperationInvocationDecoratorTest {
             operation,
             listOf(),
             mock { },
-            Ids.id("queryId")
+            Ids.id("queryId"),
+            mock {}
          ).toList()
          result.should.have.size(5)
          result.first().value.should.equal("Hello")
@@ -177,7 +183,8 @@ class CacheAwareOperationInvocationDecoratorTest {
             operation,
             listOf(),
             mock { },
-            Ids.id("queryId")
+            Ids.id("queryId"),
+            mock {}
          ).toList()
          resultFromSecondAttempt.should.have.size(5)
          invoker.invokedCalls.should.have.size(2)
@@ -195,7 +202,8 @@ class CacheAwareOperationInvocationDecoratorTest {
             operation,
             listOf(param("A")),
             mock { },
-            Ids.id("queryId")
+            Ids.id("queryId"),
+            mock {}
          ).toList()
       }
    }
@@ -220,7 +228,8 @@ class CacheAwareOperationInvocationDecoratorTest {
          operation,
          emptyList(),
          mock { },
-         Ids.id("queryId")
+         Ids.id("queryId"),
+         mock {}
       )
       val words = listOf("Hello".asTypedString(), "World".asTypedString())
       flow.tryEmit(words[0])
@@ -240,7 +249,8 @@ class CacheAwareOperationInvocationDecoratorTest {
          operation,
          emptyList(),
          mock { },
-         Ids.id("queryId")
+         Ids.id("queryId"),
+         mock {}
       ).test {
          expect("Hello".asTypedString())
          expect("World".asTypedString())
@@ -317,7 +327,8 @@ class CacheAwareOperationInvocationDecoratorTest {
                operation,
                emptyList(),
                mock { },
-               Ids.id("queryId")
+               Ids.id("queryId"),
+               mock {}
             ).testIn(this)
             val error = turbine.awaitError()
             error.message.should.equal("You shall not pass")
@@ -366,7 +377,7 @@ class CacheAwareOperationInvocationDecoratorTest {
                launch {
                   logger.info { "Initiating call with input ${inputValue.second.toRawObject()}" }
                   val result = try {
-                     cachingInvoker.invoke(service, operation, listOf(inputValue), eventDispatcher, Ids.id("queryId"))
+                     cachingInvoker.invoke(service, operation, listOf(inputValue), eventDispatcher, Ids.id("queryId"), QueryOptions())
                         .toList().first()
                   } catch (exception: Exception) {
                      exception
@@ -402,7 +413,8 @@ private class ExceptionThrowingInvoker(val exception: Throwable = UnsupportedOpe
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String
+      queryId: String,
+      queryOptions: QueryOptions
    ): Flow<TypedInstance> {
       throw exception
    }
@@ -423,7 +435,8 @@ private class ConcurrentAccessProhibitedInvoker(private val handler: (List<Pair<
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String
+      queryId: String,
+      queryOptions: QueryOptions
    ): Flow<TypedInstance> {
       val cacheKey = CacheAwareOperationInvocationDecorator.generateCacheKey(
          service,

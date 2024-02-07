@@ -19,6 +19,7 @@ import com.orbitalhq.rawObjects
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.OperationInvocationException
 import com.orbitalhq.schemas.Parameter
+import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.typedObjects
 import com.orbitalhq.utils.Benchmark
@@ -163,7 +164,7 @@ namespace vyne {
             .invoke(
                service, operation, listOf(
                   paramAndType("vyne.ClientName", "notional", schema)
-               ), queryContext, "MOCK_QUERY_ID"
+               ), queryContext, "MOCK_QUERY_ID", QueryOptions()
             ).testIn(this)
          val instance = turbine.expectTypedObject()
          expect(instance.type.fullyQualifiedName).to.equal("vyne.Client")
@@ -410,7 +411,7 @@ namespace vyne {
             service, operation, listOf(
                paramAndType("vyne.ClientId", "myClientId", schema),
                paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
-            ), mock { }, "testQuery"
+            ), mock { }, "testQuery", QueryOptions()
          ).testIn(this)
 
          val typedInstance = turbine.expectTypedObject()
@@ -466,7 +467,7 @@ namespace vyne {
          ).invoke(
             service, operation, listOf(
                paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
-            ), mock { }, "MOCK_QUERY_ID"
+            ), mock { }, "MOCK_QUERY_ID", QueryOptions()
          )
             .testIn(this)
          val typedInstance = turbine.expectTypedObject()
@@ -507,7 +508,7 @@ namespace vyne {
          ).invoke(
             service, operation, listOf(
                paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
-            ), mock { }, "MOCK_QUERY_ID"
+            ), mock { }, "MOCK_QUERY_ID", QueryOptions()
          ).testIn(this)
 
          turbine.expectTypedObject()
@@ -564,7 +565,7 @@ namespace vyne {
             webClient = webClient,
             schemaProvider = SimpleSchemaProvider(schema)
          )
-            .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID")
+            .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID", QueryOptions())
             .testIn(this)
          val instance = turbine.expectTypedObject()
          instance["id"].value.should.equal("100")
@@ -619,7 +620,7 @@ namespace vyne {
             webClient = webClient,
             schemaProvider = SimpleSchemaProvider(schema)
          )
-            .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID")
+            .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID", QueryOptions())
             .testIn(this)
 
          val instance = turbine.expectTypedObject()
