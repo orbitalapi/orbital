@@ -19,10 +19,10 @@ class AccessorReaderTest {
    fun canParseTypedObjectWhenAccessorIsDeclared() {
       val src = """
 type Money {
-   amount : MoneyAmount as Decimal
-   currency : Currency as String
+   amount : MoneyAmount inherits Decimal
+   currency : Currency inherits String
 }
-type alias Instrument as String
+type Instrument inherits String
 type NearLegNotional inherits Money {}
 type FarLegNotional inherits Money {}
 

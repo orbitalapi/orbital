@@ -27,9 +27,8 @@ class TaxiSchemaSourcesAdaptor : SchemaSourcesAdaptor{
          .map { uri ->
             logger.info { "Reading taxi package file at $uri" }
             val taxiFilePath = uri.toPath()
-            val project = TaxiProjectLoader().withConfigFileAt(taxiFilePath)
+            val project = TaxiProjectLoader(taxiFilePath)
                .load()
-               .copy(packageRootPath = taxiFilePath.parent)
             taxiFilePath to project
          }
    }

@@ -12,8 +12,8 @@ import java.math.BigDecimal
 class CsvQueryTest {
    private val testType = "OrderWindowSummary"
    private val defaultSchema = """
-         type alias Price as Decimal
-         type alias Symbol as String
+         type Price inherits Decimal
+         type Symbol inherits String
           @com.orbitalhq.formats.Csv(
                      delimiter = ",",
                      nullValue = "NULL"

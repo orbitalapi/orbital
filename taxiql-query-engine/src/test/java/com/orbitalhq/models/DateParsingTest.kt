@@ -193,15 +193,15 @@ class DateParsingTest {
    fun `can parse string to date`() {
       val schema = TaxiSchema.from(
          """
+         @Format("dd/MMM/yyyy")
          type NearLegDate inherits Date
+         @Format("dd/MMM/yyyy")
          type FarLegDate inherits Date
          type OrderId inherits String
          model Order {
             orderId : OrderId by jsonPath("$.orderId")
-            @Format("dd/MMM/yyyy")
-            nearLegDate : NearLegDate by left(jsonPath("$.eventDate"), indexOf(jsonPath("$.eventDate"),";"))
-            @Format("dd/MMM/yyyy")
-            farLegDate : FarLegDate by right(jsonPath("$.eventDate"), indexOf(jsonPath("$.eventDate"),";") + 1)
+            nearLegDate : NearLegDate by parseDate(left(jsonPath("$.eventDate"), indexOf(jsonPath("$.eventDate"),";")))
+            farLegDate : FarLegDate by parseDate(right(jsonPath("$.eventDate"), indexOf(jsonPath("$.eventDate"),";") + 1))
          }
          model OutputOrder {
             orderId : OrderId
@@ -242,9 +242,9 @@ class DateParsingTest {
          model Order {
             orderId : OrderId by column(1)
             @Format("dd/MMM/yyyy")
-            nearLegDate : NearLegDate by left(column(2), indexOf(column(2),";"))
+            nearLegDate : NearLegDate by parseDate(left(column(2), indexOf(column(2),";")))
             @Format("dd/MMM/yyyy")
-            farLegDate : FarLegDate by right(column(2), indexOf(column(2),";") + 1)
+            farLegDate : FarLegDate by parseDate(right(column(2), indexOf(column(2),";") + 1))
          }
          model OutputOrder {
             orderId : OrderId

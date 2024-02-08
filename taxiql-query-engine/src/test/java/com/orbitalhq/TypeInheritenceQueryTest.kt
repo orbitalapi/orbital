@@ -10,7 +10,7 @@ import org.junit.Test
 class TypeInheritenceQueryTest {
    val schema = """
 type FxSingleLeg {
-   notional : Notional as Decimal
+   notional : Notional inherits Decimal
 }
 
 type NearLegNotional inherits Notional

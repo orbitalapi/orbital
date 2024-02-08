@@ -179,7 +179,7 @@ class FileWorkspaceConfigLoader(
          error("Failed to create directory $path for taxi project")
       }
       val taxiPackageLoader = TaxiPackageLoader.forDirectoryContainingTaxiFile(fileSpec.path)
-      val taxiConfPath = taxiPackageLoader.path!!
+      val taxiConfPath = taxiPackageLoader.taxiConfFilePath!!
       if (!taxiConfPath.exists()) {
          if (fileSpec.packageIdentifier == null) {
             error("There is no Taxi project at ${fileSpec.path}, however cannot create an empty one as a package identifier wasn't provided")

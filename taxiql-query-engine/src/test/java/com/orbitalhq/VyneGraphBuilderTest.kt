@@ -39,9 +39,9 @@ class VyneGraphBuilderTest {
    fun generatesParamsCorrectly() {
       val taxiDef = """
     type Customer {
-      email : CustomerEmailAddress as String
-      id : CustomerId as Int
-      name : CustomerName as String
+      email : CustomerEmailAddress inherits String
+      id : CustomerId inherits Int
+      name : CustomerName inherits String
    }
    service CustomerService {
       operation getCustomerByEmail(  CustomerEmailAddress ) : Customer

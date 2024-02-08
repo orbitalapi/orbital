@@ -59,7 +59,7 @@ namespace vyne {
         deets : String
     }
 
-    type alias ClientId as String
+    type ClientId inherits String
 
      type CreditCostResponse {
         stuff : String

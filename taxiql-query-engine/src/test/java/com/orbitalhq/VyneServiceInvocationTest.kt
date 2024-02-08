@@ -25,14 +25,14 @@ class VyneServiceInvocationTest {
          """
          model Trade {
             @Id
-            tradeId : TradeId as String
-            traderId : TraderUserId as String
-            isin : Isin as String
-            settlementDate : SettlementDate as Date
+            tradeId : TradeId inherits String
+            traderId : TraderUserId inherits String
+            isin : Isin inherits String
+            settlementDate : SettlementDate inherits Date
          }
          model Output {
             @FirstNotEmpty
-            settlementDate : SettlementDate as Date
+            settlementDate : SettlementDate inherits Date
          }
          model Product {
             @Id

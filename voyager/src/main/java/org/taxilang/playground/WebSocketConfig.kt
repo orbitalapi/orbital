@@ -1,6 +1,6 @@
 package org.taxilang.playground
 
-import lang.taxi.packages.utils.log
+import lang.taxi.utils.log
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

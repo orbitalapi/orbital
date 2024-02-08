@@ -1,7 +1,7 @@
 package com.orbitalhq.cockpit.core
 
 import com.orbitalhq.spring.http.websocket.WebSocketController
-import lang.taxi.packages.utils.log
+import lang.taxi.utils.log
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered

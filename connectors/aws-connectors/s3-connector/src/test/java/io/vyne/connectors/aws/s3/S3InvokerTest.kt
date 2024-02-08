@@ -45,8 +45,8 @@ class S3InvokerTest {
          import com.orbitalhq.aws.s3.S3Service
          import com.orbitalhq.aws.s3.S3Operation
          import  ${VyneQlGrammar.QUERY_TYPE_NAME}
-         type alias Price as Decimal
-         type alias Symbol as String
+         type Price inherits Decimal
+         type Symbol inherits String
           @com.orbitalhq.formats.Csv(
                      delimiter = ",",
                      nullValue = "NULL"

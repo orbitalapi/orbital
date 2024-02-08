@@ -176,7 +176,10 @@ class AccessorReader(
                log().debug("Received a data source to LiteralAccessor that wasn't MixedSources.  See comments and investigate this.")
                source
             }
-            return TypedInstance.from(targetType, accessor.value, schema, source = dataSource)
+            // Note: We upcast the type (an attempt to upgrade from Any) if possible.
+            // Sometimes literals are declared as Any, and we have richer type information in the value,
+            // so we use that.
+            return TypedInstance.from(TypeUtils.upcastIfPossible(schema.type(accessor.returnType),targetType), accessor.value, schema, source = dataSource)
          }
 
          is FunctionExpressionAccessor -> evaluateFunctionExpressionAccessor(
@@ -279,6 +282,11 @@ class AccessorReader(
             WhenBlockEvaluator(
                this.objectFactory, schema, this
             ).evaluate(value, accessor, source, targetType, format)
+         }
+         is CastExpression -> {
+            val evaluatedExpression = read(value, targetType, accessor.expression, schema, nullValues, source, format, nullable, allowContextQuerying)
+            val castType = schema.type(accessor.type)
+            TypedInstance.from(castType,evaluatedExpression.value, schema,source = EvaluatedExpression(expressionTaxi = accessor.asTaxi(), listOf(evaluatedExpression)))
          }
          else -> {
             TODO("Support for accessor not implemented with type $accessor")

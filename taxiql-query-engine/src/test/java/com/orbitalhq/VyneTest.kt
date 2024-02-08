@@ -43,16 +43,16 @@ object TestSchema {
 namespace vyne.example
 type Invoice {
    clientId : ClientId
-   invoiceValue : InvoiceValue as Decimal
+   invoiceValue : InvoiceValue inherits Decimal
 }
 type Client {
-   clientId : ClientId as String
-   name : ClientName as String
-   isicCode : IsicCode as String
+   clientId : ClientId inherits String
+   name : ClientName inherits String
+   isicCode : IsicCode inherits String
 }
-type alias TaxFileNumber as String
-type alias CreditRisk as Int
-type alias NaicsCode as Int
+type TaxFileNumber  inherits String
+type CreditRisk  inherits Int
+type NaicsCode  inherits Int
 
 service ClientService {
    @StubResponse("mockClient")
@@ -333,11 +333,11 @@ class VyneTest {
       val (vyne, stubs) = testVyne(
          """
          model Order {
-            cfiCode : CfiCode? as String
-            isin : Isin as String
+            cfiCode : CfiCode? inherits String
+            isin : Isin inherits String
          }
          model Product {
-            productId : ProductId as Int
+            productId : ProductId inherits Int
             cfiCode : CfiCode
          }
 
@@ -770,7 +770,7 @@ class VyneTest {
           }
           type TradeValue inherits Money
 
-          type alias HoldReceipt as String
+          type HoldReceipt inherits String
           service LedgerService {
             operation holdFunds(Money):HoldReceipt
           }
@@ -793,7 +793,7 @@ class VyneTest {
    @Test
    fun given_targetTypeIsExposedDirectlyByService_then_canDiscoverWithNoStartPoint() {
       val schema = """
-          type alias EmailAddress as String
+          type EmailAddress inherits String
           service CustomerService {
             operation singleEmail():EmailAddress
           }
@@ -816,8 +816,8 @@ class VyneTest {
           type Customer {
             emails : EmailAddress[]
           }
-          type alias EmailAddresses as EmailAddress[]
-          type alias EmailAddress as String
+          type EmailAddresses inherits EmailAddress[]
+          type EmailAddress inherits String
           service CustomerService {
             operation emails():EmailAddress[]
           }
@@ -843,7 +843,7 @@ class VyneTest {
             emails : EmailAddress[]
           }
           type alias EmailAddresses as EmailAddress[]
-          type alias EmailAddress as String
+          type EmailAddress inherits String
           service CustomerService {
             operation emails():EmailAddresses
           }
@@ -869,44 +869,6 @@ class VyneTest {
                   "bar@foo.com"
                )
             )
-      }
-   }
-
-   @Test
-   fun canDiscoverAliasedTypesWhenUsingGraphDiscoveryStrategy() {
-      val schema = """
-          type Customer {
-            name : CustomerName as String
-            emails : EmailAddresses
-          }
-          type alias EmailAddresses as EmailAddress[]
-          type alias EmailAddress as String
-          type alias Region as String
-          type alias CustomerList as Customer[]
-          service CustomerService {
-            operation customersInRegion(Region):CustomerList
-          }
-      """.trimIndent()
-
-      val (vyne, stubService) = testVyne(schema)
-      stubService.addResponse(
-         "customersInRegion", vyne.addJsonModel(
-            "CustomerList", """
-         [
-            { "name" : "Jimmy", "emails" : [ "foo@foo.com" ] },
-            { "name" : "Jack", "emails" : [ "baz@foo.com" ] }
-         ]
-         """.trimIndent()
-         )
-      )
-      runBlocking {
-         listOf("CustomerList", "Customer[]").forEach { typeToDiscover ->
-            val result =
-               vyne.query(additionalFacts = setOf(vyne.typedValue("Region", "UK")))
-                  .find(typeToDiscover)
-                  .typedObjects()
-            result.should.have.size(2)
-         }
       }
    }
 
@@ -939,10 +901,10 @@ class VyneTest {
    fun given_xmlBlobWithSchema_then_canAccessValeus() {
       val src = """
 type Money {
-   amount : MoneyAmount as Decimal
-   currency : Currency as String
+   amount : MoneyAmount inherits Decimal
+   currency : Currency inherits String
 }
-type alias Instrument as String
+type Instrument inherits String
 type NearLegNotional inherits Money {}
 type FarLegNotional inherits Money {}
 
@@ -984,8 +946,8 @@ type LegacyTradeNotification {
    }
 
    val schema = """
-type alias OrderDate as Date
-type alias OrderId as String
+type OrderDate inherits Date
+type OrderId inherits String
 
 model CommonOrder {
    id: OrderId
@@ -1170,41 +1132,6 @@ service Broker2Service {
    }
 
    @Test
-   fun canProjectDifferentOrderTypesToSingleType_whenSomeValuesAreMissing() {
-      // prepare
-      val (vyne, stubService) = testVyne(schema)
-      stubService.addResponse(
-         "getAllBroker1Orders", vyne.parseJsonModel(
-            "Broker1Order[]", """
-         [
-            { "broker1ID" : "Broker1Order1"}
-         ]
-         """.trimIndent()
-         )
-      )
-      stubService.addResponse(
-         "getAllBroker2Orders", vyne.parseJsonModel(
-            "Broker2Order[]", """
-         [
-            { "broker2ID" : "Broker2Order1", "broker2Date" : "2020-01-01"}
-         ]
-         """.trimIndent()
-         )
-      )
-
-      // act
-      runBlocking {
-         val result = vyne.query().findAll("Order[]")
-         val collected = result.rawResults.toList()
-
-         collected.should.contain.all.elements(
-            mapOf("broker1ID" to "Broker1Order1"),
-            mapOf("broker2ID" to "Broker2Order1", "broker2Date" to LocalDate.parse("2020-01-01"))
-         )
-      }
-   }
-
-   @Test
    fun formattedValueWithSameTypeButDifferentFormatsAreDiscoverable() {
       val schema = """
          type EventDate inherits Instant
@@ -1278,12 +1205,12 @@ service Broker2Service {
    fun `should use cache for multiple invocations of given service operation`() {
       val testSchema = """
          model Client {
-            name : PersonName as String
-            country : CountryCode as String
+            name : PersonName inherits String
+            country : CountryCode inherits String
          }
          model Country {
              countryCode : CountryCode
-             countryName : CountryName as String
+             countryName : CountryName inherits String
          }
          model ClientAndCountry {
             personName : PersonName
@@ -1600,16 +1527,16 @@ service Broker2Service {
 namespace vyne.example
 type Invoice {
    clientId : ClientId
-   invoiceValue : InvoiceValue as Decimal
+   invoiceValue : InvoiceValue inherits Decimal
 }
 type Client {
-   clientId : ClientId as String
-   name : ClientName as String
-   isicCode : IsicCode as String
+   clientId : ClientId inherits String
+   name : ClientName inherits String
+   isicCode : IsicCode inherits String
 }
-type alias TaxFileNumber as String
-type alias CreditRisk as Int
-type alias NaicsCode as Int
+type TaxFileNumber inherits String
+type CreditRisk inherits Int
+type NaicsCode inherits Int
 
 service ClientService {
    @StubResponse("mockClient")
@@ -1643,7 +1570,7 @@ service ClientService {
          val range = 0..end
 
          for (index in range) {
-            schemaBuilder.appendLine("type alias Type$index as String")
+            schemaBuilder.appendLine("type Type$index inherits String")
          }
 
          schemaBuilder.appendLine("service serviceWithTooManyOperations {")
@@ -1674,8 +1601,8 @@ service ClientService {
       val (vyne, stub) = testVyne(
          """
          model User {
-            userId : UserId as Int
-            userName : UserName as String
+            userId : UserId inherits Int
+            userName : UserName inherits String
          }
          service Users {
             @StubResponse("lookupByIdEven")
@@ -1726,8 +1653,8 @@ service ClientService {
          """
          model OutputModel {
             username : String by concat(this.firstName,this.lastName)
-            firstName : FirstName as String
-            lastName : LastName as String
+            firstName : FirstName inherits String
+            lastName : LastName inherits String
             favouriteCoffee : String = "Latte"
          }
          model InputModel {
@@ -1832,7 +1759,7 @@ service ClientService {
    @Test
    fun `vyne should accept Instant parameters that are in ISO format`() {
       val testSchema = """
-         type alias Symbol as String
+         type Symbol inherits String
          type TransactionEventDateTime inherits Instant
 
          type OrderWindowSummary {

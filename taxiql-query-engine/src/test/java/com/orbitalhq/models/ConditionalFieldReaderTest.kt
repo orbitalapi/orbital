@@ -10,12 +10,12 @@ import java.time.Instant
 
 class ConditionalFieldReaderTest {
    val schema = """
-type alias CurrencySymbol as String
+type CurrencySymbol inherits String
 type Money {
    quantity : Decimal
    currency : CurrencySymbol
 }
-type alias CounterpartyId as String
+type CounterpartyId inherits String
 
 type DealtAmount inherits Money // hehehehe
 type SettlementAmount inherits Money
@@ -133,8 +133,8 @@ type TransformedTradeRecord {
    fun conditionalWithNoMatchSetsNull() {
       val (vyne, _) = testVyne( """
       type Order {
-         bankDirection: BankDirection as String
-         clientDirection: ClientDirection as String by when (this.bankDirection) {
+         bankDirection: BankDirection inherits String
+         clientDirection: ClientDirection inherits String = when (this.bankDirection) {
             "Buy" -> "Sell"
             "Sell" -> "Buy"
             else -> null
@@ -153,8 +153,8 @@ type TransformedTradeRecord {
    fun `can use a function inside the when selection clause`() {
       val (vyne, _) = testVyne( """
       type Order {
-         bankDirection: BankDirection as String
-         clientDirection: ClientDirection as String by when (upperCase(this.bankDirection)) {
+         bankDirection: BankDirection inherits String
+         clientDirection: ClientDirection inherits String by when (upperCase(this.bankDirection)) {
             "BUY" -> "Sell"
             "SELL" -> "Buy"
             else -> null

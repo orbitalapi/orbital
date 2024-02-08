@@ -4,7 +4,7 @@ import com.google.common.cache.CacheBuilder
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.spring.http.websocket.WebSocketController
 import lang.taxi.lsp.sourceService.WorkspaceSourceServiceFactory
-import lang.taxi.packages.utils.log
+import lang.taxi.utils.log
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Mono

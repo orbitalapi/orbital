@@ -16,16 +16,16 @@ import java.nio.file.Paths
 class SchemaProvidersTest {
    val source = """
 type Person {
-   firstName : FirstName as String
-   lastName : LastName as String
+   firstName : FirstName inherits String
+   lastName : LastName inherits String
    address : Address
 }
 type Book {
    author : Person
 }
 type Address {
-   streetNumber : StreetNumber as Int
-   streetName : StreetName as String
+   streetNumber : StreetNumber inherits Int
+   streetName : StreetName inherits String
 }
 
 service MyService {

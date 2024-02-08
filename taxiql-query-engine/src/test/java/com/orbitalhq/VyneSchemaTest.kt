@@ -20,23 +20,24 @@ class VyneSchemaTest {
    private fun vyneWithTestSchema():Vyne {
       val taxiDef = """
          namespace vyne.example
+         type ClientId inherits String
          type Invoice {
             clientId : ClientId
             amount : Money
          }
          type Money {
-            value : MoneyAmount as Decimal
-            currency : CurrencySymbol as String
+            value : MoneyAmount inherits Decimal
+            currency : CurrencySymbol inherits String
          }
          type Client {
             @Id
-            clientId : ClientId as String
-            name : ClientName as String
+            clientId : ClientId
+            name : ClientName inherits String
             clientType : ClientType
             emailAddresses : EmailAddress[]
          }
 
-         type alias EmailAddress as String
+         type EmailAddress inherits String
 
          enum ClientType {
             INDIVIDUAL,
@@ -59,7 +60,7 @@ class VyneSchemaTest {
          // Entirely unrelated type
          type Website {}
 
-         type alias TaxFileNumber as String
+         type TaxFileNumber inherits String
 
          service ClientService {
             operation findClient(TaxFileNumber):Client
@@ -118,7 +119,7 @@ class VyneSchemaTest {
    @Test
    fun canLookUpParameterisedType() {
       val taxiDef = """
-          type alias EmailAddress as String
+          type EmailAddress inherits String
       """.trimIndent()
       val schema = TaxiSchema.from(taxiDef)
       expect(schema.hasType("lang.taxi.Array"))
@@ -135,12 +136,12 @@ class VyneSchemaTest {
       val taxiDef = """
           namespace foo {
             type Customer {
-               firstName : FirstName as String
+               firstName : FirstName inherits String
             }
           }
           namespace bar {
             type Customer {
-               lastName : LastName as String
+               lastName : LastName inherits String
             }
           }
       """.trimIndent()
@@ -178,14 +179,6 @@ class VyneSchemaTest {
    }
 
    @Test
-   fun shouldParseTypeAliases() {
-      val vyne = vyneWithTestSchema()
-      val type = vyne.getType("vyne.example.TaxFileNumber")
-      expect(type.aliasForTypeName!!.name).to.equal("String")
-      expect(type.sources.first().content).to.not.be.empty
-   }
-
-   @Test
    fun shouldParseEnumTypes() {
       val vyne = vyneWithTestSchema()
       val type = vyne.getType("vyne.example.BankXDirection")
@@ -202,7 +195,7 @@ class VyneSchemaTest {
 service Test {
    operation `find`():EmailAddress[]
 }
-type alias EmailAddress as String
+type EmailAddress inherits String
       """.trimIndent()
       val schema = TaxiSchema.from(taxiDef)
       val operation = schema.service("Test").operation("`find`")

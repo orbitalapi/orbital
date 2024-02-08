@@ -21,8 +21,8 @@ class QueryWithRangeTest {
    fun givenQueryWithRangeParameters_then_callsService() {
       val schema = """
       type Trade {
-         id : TradeId as String
-         timestamp : TradeDate as Instant
+         id : TradeId inherits String
+         timestamp : TradeDate inherits Instant
       }
       service TradeService {
          operation findTrades(startDate:TradeDate,endDate:TradeDate) : Trade[](

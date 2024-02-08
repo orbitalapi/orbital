@@ -75,17 +75,17 @@ class VyneQueryIntegrationTest : DatabaseTest() {
       val source = """
          namespace com.orbitalhq.queryService {
             type User {
-               userId : UserId as String
-               userName : Username as String
+               userId : UserId inherits String
+               userName : Username inherits String
             }
             type UserWithNulls {
-               userId : UserId as String
-               userName : Username as String
+               userId : UserId inherits String
+               userName : Username inherits String
             }
 
             type Empty {
-               emptyId : EmptyId as String
-               userName : Username as String
+               emptyId : EmptyId inherits String
+               userName : Username inherits String
             }
 
             service UserService {
@@ -105,8 +105,8 @@ class VyneQueryIntegrationTest : DatabaseTest() {
             delimiter = "|",
             nullValue = "NULL")
             model ModelWithCsvFormat {
-               field1: Field1 as String by column("field1")
-               field2: Field2 as Int by column("field2")
+               field1: Field1 inherits String by column("field1")
+               field2: Field2 inherits Int by column("field2")
             }
        }
 

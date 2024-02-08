@@ -50,8 +50,8 @@ class S3SourceTest : BaseJetIntegrationTest() {
    @Test
    fun `can read a csv file from s3`() {
       val coinBaseSchema = """
-type alias Price as Decimal
-type alias Symbol as String
+type Price inherits Decimal
+type Symbol inherits String
 @com.orbitalhq.formats.Csv(
   delimiter = ",",
   nullValue = "NULL"

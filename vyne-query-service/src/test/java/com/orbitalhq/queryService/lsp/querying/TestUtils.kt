@@ -7,6 +7,7 @@ import lang.taxi.lsp.LspServicesConfig
 import lang.taxi.lsp.TaxiCompilerService
 import lang.taxi.lsp.TaxiTextDocumentService
 import lang.taxi.lsp.completion.CompositeCompletionService
+import lang.taxi.lsp.completion.DefaultCompletionProvider
 import lang.taxi.lsp.completion.EditorCompletionService
 import lang.taxi.lsp.sourceService.InMemoryWorkspaceSourceService
 import org.eclipse.lsp4j.InitializeParams
@@ -41,9 +42,10 @@ private fun getDocumentService(
       compilerService = compilerService,
       completionService = CompositeCompletionService(
          listOfNotNull(
-            if (includeEditorCompletionService) EditorCompletionService(compilerService.typeProvider) else null,
+            DefaultCompletionProvider(compilerService.typeCompletionBuilder),
+            if (includeEditorCompletionService) EditorCompletionService(compilerService.typeCompletionBuilder) else null,
             if (includeQueryCompletionService) QueryCodeCompletionProvider(
-               compilerService.typeProvider,
+               compilerService.typeCompletionBuilder,
                schema
             ) else null
          )

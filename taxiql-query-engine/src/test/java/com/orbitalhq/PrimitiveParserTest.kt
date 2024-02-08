@@ -149,7 +149,7 @@ type OrderNumber inherits String
    @Test
    fun canParsePrimitive() {
       val src = """
-type alias OrderNumber as String
+type OrderNumber inherits String
       """.trimIndent()
       val schema = TaxiSchema.from(src)
       val enum = PrimitiveParser().parse("order_1", schema.type("OrderNumber"), Provided, format = null)
@@ -164,7 +164,7 @@ type alias OrderNumber as String
       exception.expect(DataParsingException::class.java)
 
       val src = """
-type alias OrderNumber as Int
+type OrderNumber inherits Int
       """.trimIndent()
       val schema = TaxiSchema.from(src)
       PrimitiveParser().parse("order_1", schema.type("OrderNumber"), Provided, format = null)
@@ -173,7 +173,7 @@ type alias OrderNumber as Int
    @Test
    fun `when cannot parse a value a typed null is returned with a meaningful error`() {
       val src = """
-type alias OrderNumber as Int
+type OrderNumber inherits Int
       """.trimIndent()
       val schema = TaxiSchema.from(src)
       val value = PrimitiveParser().parse("order_1", schema.type("OrderNumber"), Provided, parsingErrorBehaviour = ParsingFailureBehaviour.ReturnTypedNull, format = null)
@@ -186,7 +186,7 @@ type alias OrderNumber as Int
    @Test
    fun parseLongAsInstant() {
       val src = """
-type alias OrderDate as Instant
+type OrderDate inherits Instant
       """.trimIndent()
       val schema = TaxiSchema.from(src)
       val value = PrimitiveParser().parse(java.lang.Long.valueOf(1575389279798), schema.type("OrderDate"), Provided, format = null)
@@ -196,7 +196,7 @@ type alias OrderDate as Instant
    @Test
    fun reportMeaningfulException() {
       val src = """
-type alias OrderDate as Instant
+type OrderDate inherits Instant
       """.trimIndent()
       val schema = TaxiSchema.from(src)
 

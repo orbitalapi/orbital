@@ -47,11 +47,11 @@ import kotlin.time.ExperimentalTime
 class VyneProjectionTest {
    val testSchema = """
 // Primitives
-type alias OrderId as String
-type alias TradeId as String
-type alias OrderDate as Date
-type alias Price as Decimal
-type alias TradeNo as String
+type OrderId  inherits String
+type TradeId  inherits String
+type OrderDate  inherits Date
+type Price  inherits Decimal
+type TradeNo  inherits String
 
 model CommonOrder {
    id: OrderId
@@ -317,8 +317,8 @@ service Broker1Service {
    fun `project an array of Orders to the array of CommonOrder`() = runBlocking {
       // prepare
       val schema = """
-type alias OrderDate as Date
-type alias OrderId as String
+type OrderDate inherits Date
+type OrderId inherits String
 type UserId inherits String
 type UserName inherits String
 
@@ -437,8 +437,8 @@ service UserService {
       // prepare
       val schema = """
 // Primitives
-type alias OrderId as String
-type alias OrderDate as Date
+type OrderId inherits String
+type OrderDate inherits Date
 type InstrumentId inherits String
 type InstrumentDescription inherits String
 
@@ -563,12 +563,12 @@ service InstrumentService {
       val noOfRecords = 100
       val schema = """
 // Primitives
-type alias OrderId as String
-type alias TradeId as String
-type alias OrderDate as Date
-type alias Price as Decimal
-type alias TradeNo as String
-type alias IdentifierClass as String
+type OrderId  inherits String
+type TradeId  inherits String
+type OrderDate  inherits Date
+type Price  inherits Decimal
+type TradeNo  inherits String
+type IdentifierCl inheritss  inherits String
 
 enum Direction {
    BUY,
@@ -1219,12 +1219,12 @@ service Broker1Service {
    fun `A service annotated with @DataSource will not be invoked twice`() = runBlocking {
       val testSchema = """
          model Client {
-            name : PersonName as String
-            country : CountryCode as String
+            name : PersonName inherits String
+            country : CountryCode inherits String
          }
          model Country {
              countryCode : CountryCode
-             countryName : CountryName as String
+             countryName : CountryName inherits String
          }
          model ClientAndCountry {
             personName : PersonName
@@ -1280,12 +1280,12 @@ service Broker1Service {
    fun `All services referenced in @DataSource will not be invoked twice`() = runBlocking {
       val testSchema = """
          model Client {
-            name : PersonName as String
-            country : CountryCode as String
+            name : PersonName inherits String
+            country : CountryCode inherits String
          }
          model Country {
              countryCode : CountryCode
-             countryName : CountryName as String
+             countryName : CountryName inherits String
          }
          model ClientAndCountry {
             personName : PersonName
@@ -1450,7 +1450,7 @@ service Broker1Service {
          type FilledNotional inherits Decimal
 
          model InputModel {
-           multiplier: UnitMultiplier = 2
+           multiplier: UnitMultiplier = 2.0
            qtyFill: QtyFill
          }
 
@@ -1557,7 +1557,7 @@ service Broker1Service {
          type InputId inherits String
 
          model InputModel {
-           multiplier: UnitMultiplier = 2
+           multiplier: UnitMultiplier = 2.0
            qtyFill: QtyFill
            id: InputId
          }
@@ -1616,7 +1616,7 @@ service Broker1Service {
          type TraderSurname inherits String
 
          model InputModel {
-           multiplier: UnitMultiplier =2
+           multiplier: UnitMultiplier = 2.0
            qtyFill: QtyFill
            id: InputId
            traderId: TraderId

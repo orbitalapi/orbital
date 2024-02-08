@@ -8,8 +8,14 @@ import lang.taxi.lsp.TaxiCompilerService
 import lang.taxi.lsp.TaxiLanguageServer
 import lang.taxi.lsp.TaxiTextDocumentService
 import lang.taxi.lsp.completion.CompositeCompletionService
+import lang.taxi.lsp.completion.DefaultCompletionProvider
+import lang.taxi.lsp.completion.TypeCompletionBuilder
+import lang.taxi.lsp.completion.TypeRepository
 import lang.taxi.lsp.sourceService.WorkspaceSourceServiceFactory
-import lang.taxi.packages.utils.log
+import lang.taxi.types.AnnotationType
+import lang.taxi.types.EnumType
+import lang.taxi.types.QualifiedName
+import lang.taxi.types.Type
 import org.eclipse.lsp4j.jsonrpc.RemoteEndpoint
 import org.eclipse.lsp4j.jsonrpc.json.JsonRpcMethod
 import org.eclipse.lsp4j.jsonrpc.json.MessageJsonHandler
@@ -18,6 +24,25 @@ import org.eclipse.lsp4j.services.LanguageClient
 import org.eclipse.lsp4j.services.LanguageServer
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+
+class SchemaTypeRepository(private val schema: Schema) : TypeRepository {
+   override fun getTypeNames(): List<Pair<QualifiedName, Type?>> {
+      TODO("Not yet implemented")
+   }
+
+   override fun getTypeName(text: String): QualifiedName? {
+      TODO("Not yet implemented")
+   }
+
+   override fun getEnumType(fullyQualifiedName: String): EnumType? {
+      TODO("Not yet implemented")
+   }
+
+   override fun annotation(annotationName: String): AnnotationType? {
+      TODO("Not yet implemented")
+   }
+
+}
 
 /**
  * An instance of a taxi Language Server that lives for as long as
@@ -35,6 +60,7 @@ class WebsocketSessionLanguageServer(
    private fun buildLanguageServer(schema: Schema): TaxiLanguageServer {
       val compilerConfig = CompilerConfig()
       val compilerService = TaxiCompilerService(compilerConfig)
+      val completionBuilder = TypeCompletionBuilder()
       val textDocumentService = TaxiTextDocumentService(
          LspServicesConfig(
             compilerService,
@@ -43,7 +69,8 @@ class WebsocketSessionLanguageServer(
                   // Disabling the Editor completion service, as users are really only writing queries through our
                   // browser editor.  Can uncomment if useful.
 //                  EditorCompletionService(compilerService.typeProvider),
-                  QueryCodeCompletionProvider(compilerService.typeProvider, schema)
+                  DefaultCompletionProvider(completionBuilder),
+                  QueryCodeCompletionProvider(completionBuilder, schema)
                )
             )
          )
@@ -61,7 +88,7 @@ class WebsocketSessionLanguageServer(
    fun consume(message: String) {
       try {
          remoteEndpoint.consume(jsonHandler.parseMessage(message))
-      } catch (e:NullPointerException) {
+      } catch (e: NullPointerException) {
          if (e.message == """Cannot invoke "java.util.concurrent.CompletableFuture.thenAccept(java.util.function.Consumer)" because "future" is null""") {
             // Do nothing. We see this error whenever a user closes a connection, and
             // can't seem to find a way to prevent it.
