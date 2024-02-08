@@ -1,8 +1,19 @@
-<h3 class="intro-text">Looks like you might be new to Orbital, let’s get you up to speed!</h3>
-<p>Firstly you’ll need to create a new Project. Projects are [insert Project definition]</p>
-<p>You can create a Project via the {{ uiConfig.productName }} interface (where you are now) or via a microservice.</p>
-<p>So what’s it gonna be? </p>
-<div class="container tui-space_top-4">
+<ng-container *ngIf="step !== 'projectCreated'; else projectCreated">
+  <h3 class="intro-text">Looks like you might be new to Orbital, let’s get you up to speed!</h3>
+  <p>Firstly you’ll need to create a new Project. Projects are [insert Project definition]</p>
+  <p>You can create a Project via the {{ uiConfig.productName }} interface (where you are now) or via a microservice.</p>
+  <p>So what’s it gonna be? </p>
+</ng-container>
+<ng-template #projectCreated>
+  <div class="project-created">
+    <h3 class="intro-text">Great! Now that you've created a Project, continue on to create a Data source for it</h3>
+    <button tuiButton size="m" class="next-step" [routerLink]="['/onboarding/data-source' ]">Next step</button>
+  </div>
+</ng-template>
+<app-project-list #projectList [isListOpen]="step === 'projectCreated'"></app-project-list>
+
+<!--Options-->
+<div class="island-container tui-space_top-4" *ngIf="step === 'options'">
   <tui-island>
     <div class="tui-space_bottom-2">
       <tui-avatar
@@ -23,6 +34,7 @@
       tuiButton
       type="button"
       class="tui-island__footer-button"
+      (click)="step = 'gitRepo'"
     >
       Create
     </button>
@@ -45,6 +57,7 @@
       tuiButton
       type="button"
       class="tui-island__footer-button"
+      (click)="step = 'localDisk'"
     >
       Create
     </button>
@@ -67,8 +80,75 @@
       tuiButton
       type="button"
       class="tui-island__footer-button"
+      (click)="step = 'microService'"
     >
       Create
     </button>
   </tui-island>
 </div>
+
+<!--Git Repo-->
+<tui-island class="tui-space_top-4" *ngIf="step === 'gitRepo'">
+  <div>
+    <tui-avatar
+      avatarUrl="assets/img/tabler/brand-git.svg"
+      new
+      [rounded]="true"
+      size="xs"
+      class="icon"
+    ></tui-avatar>
+    <h3 class="tui-island__title">Git Repository</h3>
+    <app-git-config
+      [isOnboardingMode]="true"
+      (gitRepoAdded)="step = 'projectCreated'"
+      (goBackOnboarding)="step = 'options'"
+    >
+    </app-git-config>
+  </div>
+</tui-island>
+
+<!--Local disk-->
+<tui-island class="tui-space_top-4" *ngIf="step === 'localDisk'">
+  <div>
+    <tui-avatar
+      avatarUrl="assets/img/tabler/server.svg"
+      new
+      [rounded]="true"
+      size="xs"
+      class="icon"
+    ></tui-avatar>
+    <h3 class="tui-island__title">Local disk</h3>
+    <app-file-config
+      [isOnboardingMode]="true"
+      (localFileAdded)="step = 'projectCreated'"
+      (goBackOnboarding)="step = 'options'">
+
+    </app-file-config>
+  </div>
+</tui-island>
+
+<!--Microservice-->
+<tui-island class="tui-space_top-4" *ngIf="step === 'microService'">
+  <div class="tui-space_bottom-2">
+    <tui-avatar
+      avatarUrl="assets/img/tabler/server.svg"
+      new
+      [rounded]="true"
+      size="xs"
+      class="icon"
+    ></tui-avatar>
+    <h3 class="tui-island__title">Microservice</h3>
+    <p class="tui-island__content ">What to put in here???</p>
+  </div>
+  <button
+    appearance="flat"
+    size="m"
+    tuiButton
+    type="button"
+    class="tui-island__footer-button"
+    (click)="step = 'options'"
+  >
+    Back
+  </button>
+</tui-island>
+

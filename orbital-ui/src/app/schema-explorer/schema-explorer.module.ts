@@ -29,6 +29,7 @@ import { ChangesetSelectorModule } from '../changeset-selector/changeset-selecto
 import { SchemaSettingsComponent } from './schema-settings.component';
 import { SchemaSourceConfigModule } from 'src/app/schema-source-config/schema-source-config.module';
 import {ExpandingPanelSetModule} from "../expanding-panelset/expanding-panel-set.module";
+import { UiCustomisations } from '../../environments/ui-customisations';
 
 
 @NgModule({
@@ -62,10 +63,14 @@ import {ExpandingPanelSetModule} from "../expanding-panelset/expanding-panel-set
                 component: SchemaExplorerContainerComponent,
                 children: [
                     {
-                        path: '', component: SchemaSummaryViewComponent
+                        path: '',
+                        component: SchemaSummaryViewComponent,
+                        title: `${UiCustomisations.productName}: Schemas`
                     },
                     {
-                        path: ':packageName', component: SchemaExplorerComponent
+                        path: ':packageName',
+                        component: SchemaExplorerComponent,
+                        title: `${UiCustomisations.productName}: Schemas`
                     }
                 ]
             },

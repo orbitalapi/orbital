@@ -13,6 +13,7 @@ import { AuthGuard } from 'src/app/services/auth.guard';
 import { VynePrivileges } from 'src/app/services/user-info.service';
 import { OperationViewContainerComponent } from 'src/app/operation-view/operation-view-container.component';
 import { OperationViewModule } from 'src/app/operation-view/operation-view.module';
+import { UiCustomisations } from '../../environments/ui-customisations';
 
 @NgModule({
   imports: [
@@ -29,13 +30,15 @@ import { OperationViewModule } from 'src/app/operation-view/operation-view.modul
         path: ':serviceName',
         component: ServiceViewContainerComponent,
         canActivate: [AuthGuard],
-        data: { requiredAuthority: VynePrivileges.BrowseCatalog }
+        data: { requiredAuthority: VynePrivileges.BrowseCatalog },
+        title: `${UiCustomisations.productName}: Service`
       },
       {
         path: ':serviceName/:operationName',
         component: OperationViewContainerComponent,
         canActivate: [AuthGuard],
-        data: { requiredAuthority: VynePrivileges.BrowseCatalog }
+        data: { requiredAuthority: VynePrivileges.BrowseCatalog },
+        title: `${UiCustomisations.productName}: Service`
       },
     ])
   ],

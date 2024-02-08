@@ -24,6 +24,7 @@ import {RouterModule, UrlSegment} from '@angular/router';
 import { ResultsDownloadModule } from 'src/app/results-download/results-download.module';
 import { TruncatePipeModule } from 'src/app/truncate-pipe/truncate-pipe.module';
 import {TuiProgressModule} from '@taiga-ui/kit';
+import { UiCustomisations } from '../../environments/ui-customisations';
 
 @NgModule({
   imports: [
@@ -60,6 +61,7 @@ import {TuiProgressModule} from '@taiga-ui/kit';
           return {consumed: url, posParams: {}}
         },
         component: QueryHistoryComponent,
+        title: `${UiCustomisations.productName}: Query history`
       },
     ]),
     TuiNotificationModule,

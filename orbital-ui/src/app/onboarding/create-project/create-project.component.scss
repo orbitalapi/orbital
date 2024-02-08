@@ -1,8 +1,11 @@
+:host {
+  overflow: hidden;
+}
+
 :host ::ng-deep {
   tui-island {
     display: flex;
     flex-direction: column;
-    max-width: 300px;
 
     .tui-island__footer-button {
       margin-top: auto;
@@ -14,7 +17,16 @@
   margin-top: 0;
 }
 
-.container {
+.project-created {
+  margin-bottom: 2rem;
+
+  .next-step {
+    display: block;
+    margin-left: auto;
+  }
+}
+
+.island-container {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;

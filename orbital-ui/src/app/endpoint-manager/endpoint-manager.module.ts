@@ -10,6 +10,7 @@ import {CodeViewerModule} from "../code-viewer/code-viewer.module";
 import {NgApexchartsModule} from "ng-apexcharts";
 import {FormsModule} from "@angular/forms";
 import {TuiDataListModule, TuiTextfieldControllerModule} from "@taiga-ui/core";
+import { UiCustomisations } from '../../environments/ui-customisations';
 
 @NgModule({
   declarations: [
@@ -21,11 +22,13 @@ import {TuiDataListModule, TuiTextfieldControllerModule} from "@taiga-ui/core";
         RouterModule.forChild([
             {
                 path: '',
-                component: EndpointListComponent
+                component: EndpointListComponent,
+                title: `${UiCustomisations.productName}: Endpoints`
             },
             {
                 path: ':endpointName',
-                component: EndpointMonitorComponent
+                component: EndpointMonitorComponent,
+                title: `${UiCustomisations.productName}: Endpoints`
             }
         ]),
         HeaderComponentLayoutModule,

@@ -1,36 +1,40 @@
-<header>
-  <h2 class="page-title">Welcome to {{ uiConfig.productName }}</h2>
-  <a
-    icon="tuiIconHelpCircle"
-    tuiLink
-    class="help-link"
-  >
-    Help
-  </a>
-</header>
-<div class='page-content'>
-  <tui-stepper class="stepper" orientation="vertical">
+<div class='page-container'>
+  <header>
+    <h2 class="page-title">Welcome to {{ uiConfig.productName }}</h2>
     <a
-      routerLink="/onboarding/project"
-      routerLinkActive
-      tuiStep
+      icon="tuiIconHelpCircle"
+      tuiLink
+      class="help-link"
     >
-      Create Project
+      Help
     </a>
-    <a
-      routerLink="/onboarding/data-source"
-      routerLinkActive
-      tuiStep
-    >
-      Create Data source
-    </a>
-    <a
-      routerLink="/onboarding/explore"
-      routerLinkActive
-      tuiStep
-    >
-      Explore tooling
-    </a>
-  </tui-stepper>
-  <router-outlet></router-outlet>
+  </header>
+  <div class="page-content">
+    <tui-stepper class="stepper" orientation="vertical">
+      <button
+        routerLink="/onboarding/project"
+        routerLinkActive
+        tuiStep
+        [stepState]="(currentStepIndex$ | async) === 0 ? 'normal' : 'pass'"
+      >
+        Create Project
+      </button>
+      <button
+        routerLink="/onboarding/data-source"
+        routerLinkActive
+        tuiStep
+        [stepState]="(currentStepIndex$ | async) <= 1 ? 'normal' : 'pass'"
+      >
+        Create Data source
+      </button>
+      <button
+        routerLink="/onboarding/explore"
+        routerLinkActive
+        tuiStep
+      >
+        Explore tooling
+      </button>
+    </tui-stepper>
+    <router-outlet></router-outlet>
+  </div>
 </div>

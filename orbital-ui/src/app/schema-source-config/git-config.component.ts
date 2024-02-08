@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import {
-  ConvertSchemaEvent,
   GitPullRequestConfig,
   GitRepositoryConfig,
   LoadablePackageType,
@@ -59,7 +58,8 @@ export const projectTypeToString = (item: LoadablePackageType) => {
                 </button>
               </div>
               <div class="test-result-box error-message"
-                   *ngIf="!testingConnection && connectionTestResult && !connectionTestResult.successful">{{ connectionTestResult.errorMessage }}</div>
+                   *ngIf="!testingConnection && connectionTestResult && !connectionTestResult.successful">{{ connectionTestResult.errorMessage }}
+              </div>
               <div class="test-result-box success-message"
                    *ngIf="!testingConnection && connectionTestResult && connectionTestResult.successful ">
                 Connection tested successfully
@@ -97,7 +97,8 @@ export const projectTypeToString = (item: LoadablePackageType) => {
                   Branch
                   <tui-data-list *tuiDataList>
                     <button tuiOption *ngFor="let branchName of availableBranches"
-                            [value]="branchName">{{ branchName }}</button>
+                            [value]="branchName">{{ branchName }}
+                    </button>
                   </tui-data-list>
                 </tui-combo-box>
                 <p *ngIf="availableBranches === null" class="help-text" style="width: 100%">Test your git
@@ -123,7 +124,7 @@ export const projectTypeToString = (item: LoadablePackageType) => {
                 Project type
                 <tui-data-list *tuiDataList>
                   <button tuiOption value="Taxi">{{ stringifyProjectType('Taxi') }}</button>
-                  <button tuiOption value="OpenApi">{{ stringifyProjectType('OpenApi')}}</button>
+                  <button tuiOption value="OpenApi">{{ stringifyProjectType('OpenApi') }}</button>
                 </tui-data-list>
               </tui-select>
             </div>
@@ -151,13 +152,13 @@ export const projectTypeToString = (item: LoadablePackageType) => {
                       Path
                     </tui-input>
                     <p class="help-text" style="width: 100%;">We'll look for a Taxi config file at
-                      <code>{{expectedTaxiConfLocation}}</code></p>
+                      <code>{{ expectedTaxiConfLocation }}</code></p>
                   </div>
                 </div>
 
               </div>
             </div>
-            <div class="form-row">
+            <div class="form-row disabled">
               <div class="form-item-description-container">
                 <h3>Enable edits and pull requests</h3>
                 <div class="help-text">
@@ -195,6 +196,14 @@ export const projectTypeToString = (item: LoadablePackageType) => {
       </div>
     </form>
     <div class="form-button-bar" *ngIf="editable">
+      <button
+        tuiButton
+        *ngIf="isOnboardingMode"
+        appearance="secondary"
+        [size]="'m'"
+        (click)="goBackOnboarding.emit()"
+      >Back
+      </button>
       <button tuiButton [showLoader]="working" [size]="'m'" (click)="doCreate()" [disabled]="gitForm.invalid">Create
       </button>
     </div>
@@ -215,7 +224,11 @@ export class GitConfigComponent {
   @Input()
   editable: boolean = true;
   @Output()
-  loadSchema = new EventEmitter<ConvertSchemaEvent>()
+  gitRepoAdded: EventEmitter<void> = new EventEmitter()
+  @Input()
+  isOnboardingMode: boolean;
+  @Output()
+  goBackOnboarding: EventEmitter<void> = new EventEmitter();
 
   constructor(private schemaService: SchemaImporterService, private changeDetector: ChangeDetectorRef) {
   }
@@ -281,6 +294,7 @@ export class GitConfigComponent {
     this.saveResultMessage = null;
     this.schemaService.addNewGitRepository(this.gitConfig)
       .subscribe(result => {
+          this.gitRepoAdded.emit();
           this.working = false;
           this.saveResultMessage = {
             message: 'The git repository was added successfully',

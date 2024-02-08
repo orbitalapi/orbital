@@ -21,3 +21,8 @@
   background-color: rgba($success-light, 0.1);
   color: $success-dark;
 }
+
+.disabled {
+  opacity: 50%;
+  pointer-events: none;
+}

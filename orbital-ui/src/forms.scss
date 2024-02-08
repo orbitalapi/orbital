@@ -69,11 +69,15 @@ app-description-editor {
 }
 
 .form-button-bar {
-  margin-bottom: 1rem;
   display: flex;
   align-items: center;
+  justify-content: space-between;
 
-  span, button, mat-progress-bar {
+  button:only-child {
+    margin-left: auto;
+  }
+
+  span, mat-progress-bar {
     margin-right: 1rem;
   }
 
