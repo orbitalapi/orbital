@@ -11,9 +11,9 @@ class TypeTest {
    // We need a construct like type Name : String support
    // See LENS-72
    val taxi = """
-      type alias EyeColour as String
-      type alias Name as String
-      type alias Identifier as Name
+      type EyeColour inherits String
+      type Name inherits String
+      type Identifier inherits Name
 
       type FirstName inherits Name
       type alias GivenName as FirstName
@@ -164,7 +164,7 @@ class TypeTest {
    @Test
    fun typeAliasesOnFormattedTypesShouldResolveCorrectly() {
       val schema = TaxiSchema.from("""
-         type alias EventDate as Instant
+         type EventDate inherits Instant
       """)
       schema.type("EventDate").resolveAliases().fullyQualifiedName.should.equal("EventDate")
    }

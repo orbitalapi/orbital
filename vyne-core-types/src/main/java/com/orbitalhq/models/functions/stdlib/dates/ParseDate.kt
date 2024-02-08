@@ -35,6 +35,7 @@ object ParseDate : NullSafeInvoker() {
          )
 
       val valueToParse = inputValues[0]
+      val format = returnTypeFormat ?: returnType.formatAndZoneOffset
       val result = when (baseDateType.fullyQualifiedName) {
          PrimitiveType.INSTANT.qualifiedName,
          PrimitiveType.DATE_TIME.qualifiedName,
@@ -42,10 +43,14 @@ object ParseDate : NullSafeInvoker() {
             // Date parsing is already handled in the TypedInstance.from() method,
             // so just defer to that.
             TypedInstance.from(
-               returnType, valueToParse.value, schema, source = EvaluatedExpression(
+               returnType,
+               valueToParse.value,
+               schema,
+               source = EvaluatedExpression(
                   function.asTaxi(),
                   inputValues,
-               )
+               ),
+               format = format
             )
          }
 

@@ -117,7 +117,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       sendMessage(message("message1"))
       sendMessage(message("message2"))
 
-      await().atMost(10, SECONDS).until<Boolean> { resultsFromQuery1.size == 2 }
+      await().atMost(20, SECONDS).until<Boolean> { resultsFromQuery1.size == 2 }
 
       val currentMessageCount = streamManager.getActiveConsumerMessageCounts()
          .values.first().get()
@@ -131,7 +131,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
 
       // getActiveConsumerMessageCounts() onyl returns topics we're still subscribed to.
       // So should return empty, indicating that an unsubscribe happened
-      await().atMost(5, SECONDS).until<Boolean> { streamManager.getActiveConsumerMessageCounts().isEmpty() }
+      await().atMost(20, SECONDS).until<Boolean> { streamManager.getActiveConsumerMessageCounts().isEmpty() }
 
       logger.info { "These should not be received... check the logs..." }
       sendMessage(message("message5"))

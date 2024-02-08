@@ -77,8 +77,8 @@ class FirstNotEmptyTest {
       val schema = TaxiSchema.from(
          """
          model TradeInput {
-            isin : Isin as String
-            productName : ProductName as String
+            isin : Isin inherits String
+            productName : ProductName inherits String
          }
          service CalendarService {
             @StubResponse("lookupProduct")
@@ -114,8 +114,8 @@ class FirstNotEmptyTest {
          val schema = TaxiSchema.from(
             """
          model TradeInput {
-            isin : Isin as String
-            productName : ProductName as String
+            isin : Isin inherits String
+            productName : ProductName inherits String
          }
          service CalendarService {
             @StubResponse("lookupProduct")
@@ -157,7 +157,7 @@ class FirstNotEmptyTest {
          """
          type ExpiryDate inherits Date
          model TradeInput {
-            isin : Isin as String
+            isin : Isin inherits String
             @Format("dd-MMM-yy")
             expiryDate : ExpiryDate
          }
@@ -201,8 +201,8 @@ class FirstNotEmptyTest {
          val schema = TaxiSchema.from(
             """
          model TradeInput {
-            isin : Isin as String
-            productName : ProductName as String
+            isin : Isin inherits String
+            productName : ProductName inherits String
          }
          service CalendarService {
             @StubResponse("lookupProductA")
@@ -347,8 +347,8 @@ class FirstNotEmptyTest {
          val schema = TaxiSchema.from(
             """
          model TradeInput {
-            isin : Isin as String
-            productName : ProductName as String
+            isin : Isin inherits String
+            productName : ProductName inherits String
          }
          service CalendarService {
             @StubResponse("lookupProductA")
@@ -410,8 +410,8 @@ class FirstNotEmptyTest {
          val schema = TaxiSchema.from(
             """
          model TradeInput {
-            isin : Isin as String
-            productName : ProductName as String
+            isin : Isin inherits String
+            productName : ProductName inherits String
          }
          service ProductService {
             @StubResponse("lookupProduct")
@@ -481,8 +481,8 @@ class FirstNotEmptyTest {
          val schema = TaxiSchema.from(
             """
          model TradeInput {
-            isin : Isin as String
-            productName : ProductName as String
+            isin : Isin inherits String
+            productName : ProductName inherits String
          }
          service CalendarService {
             @StubResponse("lookupProductA")

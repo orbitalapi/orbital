@@ -378,7 +378,7 @@ class StringsTest {
          model SomeModel {
             attReferenceRateTermValue : ResetLength?
             attReferenceRateTermUnit : ResetTerm?
-            attResetFrequencyStr : ResetFrequencyStr? by concat (this.attReferenceRateTermValue, this.attReferenceRateTermUnit)
+            attResetFrequencyStr : ResetFrequencyStr? by concat(this.attReferenceRateTermValue, this.attReferenceRateTermUnit)
          }
       """.trimIndent()
       )

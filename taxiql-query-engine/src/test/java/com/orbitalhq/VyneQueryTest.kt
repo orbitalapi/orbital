@@ -333,7 +333,7 @@ class VyneQueryTest {
          }
 
          model Person {
-            id : PersonId as String
+            id : PersonId inherits String
             sex: Sex
          }
 
@@ -392,7 +392,7 @@ class VyneQueryTest {
          }
 
          model Person {
-            id : PersonId as String
+            id : PersonId inherits String
             sex: Sex
          }
 
@@ -530,7 +530,7 @@ class VyneQueryTest {
          }
 
          service EnhancedDataService  {
-             operation getEnhancedData( isin : Isin) : EnhancedData
+             operation getEnhancedData(isin : Isin) : EnhancedData
          }
 
          service IsinService {
@@ -544,7 +544,7 @@ class VyneQueryTest {
            }
 
            enhancedYear: Year? by when {
-                Isin == "123" && this.category == "Enhanced" -> EnhancedYear
+                Isin == "123" && this.category == "Enhanced" -> (Year) EnhancedYear
                else -> null
            }
 

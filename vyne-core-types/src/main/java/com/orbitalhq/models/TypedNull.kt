@@ -4,7 +4,7 @@ import com.google.common.collect.Interners
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.Ids
 import com.orbitalhq.utils.ImmutableEquality
-import lang.taxi.packages.utils.log
+import lang.taxi.utils.log
 
 // TypedNull is very cachable, except for the source attribute.
 // So, we create an internal wrapper, and cache that.

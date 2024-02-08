@@ -16,19 +16,19 @@ import java.math.BigDecimal
 
 class JsonModelParserTest {
    val taxiDef = """
-type alias Email as String
+type Email inherits String
 type Address {
-   houseNumber : HouseNumber as Int
-   street : StreetName as String
-   postCode : PostCode as String
+   houseNumber : HouseNumber inherits Int
+   street : StreetName inherits String
+   postCode : PostCode inherits String
 }
 enum BuildingType {
   House,
   Flat
 }
 type Client {
-   clientId : ClientId as String
-   name : ClientName as String
+   clientId : ClientId inherits String
+   name : ClientName inherits String
    buildingType : BuildingType
    emails : Email[]
    address : Address

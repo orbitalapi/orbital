@@ -22,14 +22,14 @@ import kotlin.time.ExperimentalTime
 class ConstraintsAndConversionsTest {
    val taxiDef = """
 type Money {
-   amount : Amount as Decimal
-   currency : Currency as String
+   amount : Amount inherits Decimal
+   currency : Currency inherits String
 }
 
-type alias Risk as Decimal
+type Risk inherits Decimal
 // For demonstrating constraints on request objects
-type alias ClientRisk as Decimal
-type alias ClientId as String
+type ClientRisk inherits Decimal
+type ClientId inherits String
 
 // For demonstrating constraints on request objects
 parameter type ClientRiskRequest {
@@ -110,9 +110,9 @@ service MyService {
    @Test
    fun given_paramIsOfWrongType_and_typeConversionServiceExists_that_itIsConverted()  {
       val taxiDef = """
-type alias UkSic2003 as String
-type alias UkSic2007 as String
-type alias Foo as String
+type UkSic2003 inherits String
+type UkSic2007 inherits String
+type Foo inherits String
 service TestService {
    @StubResponse("calculateFoo")
    operation calculateFoo(UkSic2007):Foo
@@ -142,9 +142,9 @@ service TestService {
    @Test
    fun given_requestObjectContainsParamOfWrongType_and_typeConversionServiceExists_that_itIsConverted() {
       val taxiDef = """
-type alias UkSic2003 as String
-type alias UkSic2007 as String
-type alias Foo as String
+type UkSic2003 inherits String
+type UkSic2007 inherits String
+type Foo inherits String
 parameter type RequestObject {
    input : UkSic2007
 }

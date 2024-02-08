@@ -179,7 +179,7 @@ class QueryHistoryDbWriter(
       val currentMillis = System.currentTimeMillis()
       eventConsumers.entries.forEach {
          if ((currentMillis - it.key.lastWriteTime.get()) > 120000) {
-            logger.info { "Query ${it.value} is not expecting any more results.. Shutting down the result writer." }
+            logger.debug { "Query ${it.value} is not expecting any more results.. Shutting down the result writer." }
             it.key.shutDown()
             entriesTobeRemoved.add(it)
          }

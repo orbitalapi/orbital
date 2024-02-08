@@ -38,24 +38,24 @@ namespace test {
     type Trade {
         id : TradeId as Int
 //        deskId : DeskId
-        counterParty : CounterPartyId as String
-        amount : TradeAmount as Decimal
+        counterParty : CounterPartyId inherits String
+        amount : TradeAmount inherits Decimal
     }
-    type alias Group as String
+    type Group inherits String
     type UserAuthorization {
-        groups : Groups as Group[]
+        groups : Groups inherits Group[]
     }
     type Client {
       id : CounterPartyId
-      deskId : ClientDeskId as DeskId
+      deskId : ClientDeskId inherits DeskId
     }
 
-   type alias SessionToken as String
+   type SessionToken inherits String
    type User {
-      userId : UserId as String
-      userName : UserName as String
+      userId : UserId inherits String
+      userName : UserName inherits String
       auth : UserAuthorization
-      deskId : DeskId as String?
+      deskId : DeskId inherits String?
    }
    type TraderConfig {
       userName : UserName

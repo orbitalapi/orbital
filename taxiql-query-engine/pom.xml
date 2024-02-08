@@ -128,9 +128,10 @@
       </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>
-         <artifactId>taxi-writer</artifactId>
+         <artifactId>compiler</artifactId>
          <version>${taxi.version}</version>
          <scope>test</scope>
+         <type>test-jar</type>
       </dependency>
       <dependency>
          <groupId>org.jetbrains.kotlinx</groupId>

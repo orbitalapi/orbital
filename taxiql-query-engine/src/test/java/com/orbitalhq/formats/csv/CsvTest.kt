@@ -17,8 +17,8 @@ class CsvTest  {
 
    @Test
    fun canReadCsvData() {
-      val src = """type alias FirstName as String
-type alias LastName as String
+      val src = """type FirstName inherits String
+type LastName inherits String
 type Person {
    firstName : FirstName by column(1)
    lastName : LastName by column(2)
@@ -34,8 +34,8 @@ type Person {
 
    @Test
    fun canReadCsvDataWithMultipleRecords() {
-      val src = """type alias FirstName as String
-type alias LastName as String
+      val src = """type FirstName inherits String
+type LastName inherits String
 type Person {
    firstName : FirstName by column(1)
    lastName : LastName by column(2)
@@ -56,8 +56,8 @@ type alias PersonList as Person[]
 
    @Test
    fun canBuildListFromCsvDataWIthMultipleRecords() {
-      val src = """type alias FirstName as String
-type alias LastName as String
+      val src = """type FirstName inherits String
+type LastName inherits String
 type Person {
    firstName : FirstName by column(1)
    lastName : LastName by column(2)

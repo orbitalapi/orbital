@@ -23,14 +23,14 @@ namespace vyne.creditInc {
     type Client {
         clientId : ClientId
     }
-    type alias ClientId as String
+    type ClientId inherits String
      type Invoice {
         clientId : ClientId
         settlementDate : settlementDate
         amount : Money
     }
 
-    type alias settlementDate as Date
+    type settlementDate inherits Date
 }
 
 namespace vyne.creditInc {
@@ -40,8 +40,8 @@ namespace vyne.creditInc {
         sicCode : isic.uk.SIC2008
     }
 
-    type alias ClientId as String
-    type alias ClientName as String
+    type ClientId inherits String
+    type ClientName inherits String
 }
 
 namespace io.osmosis.demos.creditInc.clientLookup {
@@ -57,8 +57,8 @@ namespace vyne.creditInc {
         amount : MoneyAmount
     }
 
-    type alias Currency as String
-    type alias MoneyAmount as Decimal
+    type Currency inherits String
+    type MoneyAmount inherits Decimal
 }
 
 namespace io.osmosis.demos.invictus.rates {
@@ -77,12 +77,12 @@ namespace vyne.creditInc {
         currency : Currency
         value : MoneyAmount
     }
-    type alias Currency as String
-    type alias MoneyAmount as Decimal
+    type Currency inherits String
+    type MoneyAmount inherits Decimal
      type CreditCostResponse {
         cost : CreditRiskCost
     }
-    type alias CreditRiskCost as Decimal
+    type CreditRiskCost inherits Decimal
 }
 
 namespace vyne.creditInc.creditMarkup {
@@ -93,8 +93,8 @@ namespace vyne.creditInc.creditMarkup {
 }
 
 namespace isic.uk {
-    type alias SIC2003 as String
-    type alias SIC2008 as String
+    type SIC2003 inherits String
+    type SIC2008 inherits String
 }
 
 namespace io.osmosis.demos.creditInc.isic {

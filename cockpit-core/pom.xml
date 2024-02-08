@@ -73,7 +73,8 @@
       </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>
-         <artifactId>test-utils</artifactId>
+         <artifactId>compiler</artifactId>
+<type>test-jar</type>
          <version>${taxi.version}</version>
          <scope>test</scope>
       </dependency>

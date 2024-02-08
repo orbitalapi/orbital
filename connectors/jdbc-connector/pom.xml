@@ -39,6 +39,11 @@
          <version>${taxi.version}</version>
       </dependency>
       <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>compiler</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>connectors-core</artifactId>
          <version>${project.version}</version>
@@ -66,24 +71,16 @@
          </exclusions>
       </dependency>
       <dependency>
-         <groupId>org.taxilang</groupId>
-         <artifactId>taxi-writer</artifactId>
-         <version>${taxi.version}</version>
-      </dependency>
-      <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>utils</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>
-         <artifactId>test-utils</artifactId>
+         <artifactId>compiler</artifactId>
+         <type>test-jar</type>
          <version>${taxi.version}</version>
          <scope>test</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.taxilang</groupId>
-         <artifactId>compiler</artifactId>
       </dependency>
       <dependency>
          <groupId>com.orbitalhq</groupId>

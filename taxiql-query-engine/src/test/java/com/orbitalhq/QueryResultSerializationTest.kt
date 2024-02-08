@@ -15,9 +15,9 @@ class QueryResultSerializationTest {
 
    val taxiDef = """
  type Client {
-   clientId : ClientId as String
-   name : ClientName as String
-   isicCode : IsicCode as String
+   clientId : ClientId inherits String
+   name : ClientName inherits String
+   isicCode : IsicCode inherits String
 }
    """.trimIndent()
 

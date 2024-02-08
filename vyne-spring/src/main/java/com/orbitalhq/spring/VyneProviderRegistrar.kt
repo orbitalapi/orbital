@@ -13,7 +13,7 @@ import com.orbitalhq.spring.invokers.RestTemplateInvoker
 import com.orbitalhq.spring.metrics.MicrometerMetricsReporter
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
 import io.micrometer.core.instrument.MeterRegistry
-import lang.taxi.packages.utils.log
+import lang.taxi.utils.log
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import

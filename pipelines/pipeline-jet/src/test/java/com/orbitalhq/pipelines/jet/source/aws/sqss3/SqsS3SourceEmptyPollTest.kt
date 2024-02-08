@@ -66,8 +66,8 @@ class SqsS3SourceEmptyPollTest : BaseJetIntegrationTest() {
       // Pipeline S3 -> Direct
       // Date,Symbol,Open,High,Low,Close,Volume BTC,Volume USD
       val coinBaseSchema = """
-type alias Price as Decimal
-type alias Symbol as String
+type Price inherits Decimal
+type Symbol inherits String
 @com.orbitalhq.formats.Csv(
             delimiter = ",",
             nullValue = "NULL"

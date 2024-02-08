@@ -52,13 +52,13 @@ class LuceneSearchIndexerTest {
       val src = """
 [[ This is person, a human being ]]
 type Person {
-   firstName : FirstName as String
+   firstName : FirstName inherits String
 }
 
 [[ It probably barks ]]
 type Animal {
    @Indexed
-   breed : Breed as String
+   breed : Breed inherits String
 }
 
 

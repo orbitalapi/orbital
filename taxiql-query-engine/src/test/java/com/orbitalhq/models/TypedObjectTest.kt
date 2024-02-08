@@ -109,8 +109,8 @@ class TypedObjectTest {
       val schema = TaxiSchema.from(
          """
          model Person {
-            firstName : FirstName as String
-            title : Title as String = "foo"
+            firstName : FirstName inherits String
+            title : Title inherits String = "foo"
          }
       """.trimIndent()
       )
@@ -124,8 +124,8 @@ class TypedObjectTest {
       val schema = TaxiSchema.from(
          """
          model Person {
-            firstName : FirstName as String
-            title : Title as String = ""
+            firstName : FirstName inherits String
+            title : Title inherits String = ""
          }
       """.trimIndent()
       )

@@ -13,8 +13,8 @@ class TaxiGraphServiceTest {
 
    val taxi = """
        type Author {
-         firstName : FirstName as String
-         lastName : LastName as String
+         firstName : FirstName inherits String
+         lastName : LastName inherits String
        }
        type Book {
          author : Author
