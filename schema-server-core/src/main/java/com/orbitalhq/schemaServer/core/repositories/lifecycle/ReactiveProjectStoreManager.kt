@@ -15,6 +15,7 @@ import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoader
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoaderFactory
 import com.orbitalhq.utils.files.ReactiveWatchingFileSystemMonitor
 import mu.KotlinLogging
+import reactor.core.Disposable
 import java.nio.file.Path
 import kotlin.io.path.isRegularFile
 
@@ -28,7 +29,7 @@ class ReactiveProjectStoreManager(
    private val specEventSource: RepositorySpecLifecycleEventSource,
    private val eventDispatcher: ProjectStoreLifecycleEventDispatcher,
    private val repositoryEventSource: ProjectStoreLifecycleEventSource
-) : ProjectLoaderManager {
+) : ProjectLoaderManager, AutoCloseable {
 
    override fun getLoaderOrNull(packageIdentifier: PackageIdentifier): SchemaPackageTransport? {
       return loaders
@@ -88,19 +89,23 @@ class ReactiveProjectStoreManager(
          return _gitLoaders.toList()
       }
 
+   private val fileSpecAddedEventsSubscription: Disposable
+   private val gitSpecAddedEventSubscription: Disposable
+   private val repoRemovedEventSSubscription: Disposable
+
    init {
-      consumeFileSpecAddedEvents()
-      consumeGitSpecAddedEvents()
-      consumeRepoRemovedEvents()
+      fileSpecAddedEventsSubscription = consumeFileSpecAddedEvents()
+      gitSpecAddedEventSubscription = consumeGitSpecAddedEvents()
+      repoRemovedEventSSubscription = consumeRepoRemovedEvents()
    }
 
-   private fun consumeRepoRemovedEvents() {
+   private fun consumeRepoRemovedEvents(): Disposable {
 
       // Triggered when the user removes a reppository from the UI.
       // A bit of hoop jumping here as we dispatch the packages affected, rather than the loaders.
       // Also, this needs a test.
 
-      repositoryEventSource.sourcesRemoved.subscribe { packages ->
+     return repositoryEventSource.sourcesRemoved.subscribe { packages ->
          val fileLoadersToRemove = _fileLoaders.filter { fileLoader -> packages.contains(fileLoader.packageIdentifier) }
          if (fileLoadersToRemove.isNotEmpty()) {
             _fileLoaders.removeAll(fileLoadersToRemove)
@@ -114,8 +119,8 @@ class ReactiveProjectStoreManager(
       }
    }
 
-   private fun consumeGitSpecAddedEvents() {
-      specEventSource.gitSpecAdded.map { event ->
+   private fun consumeGitSpecAddedEvents(): Disposable {
+     return specEventSource.gitSpecAdded.map { event ->
          gitRepoFactory.build(event.config, event.spec)
       }.subscribe { loader ->
          _gitLoaders.add(loader)
@@ -123,8 +128,8 @@ class ReactiveProjectStoreManager(
       }
    }
 
-   private fun consumeFileSpecAddedEvents() {
-      specEventSource.fileSpecAdded.map { event ->
+   private fun consumeFileSpecAddedEvents(): Disposable {
+      return specEventSource.fileSpecAdded.map { event ->
          fileRepoFactory.build(
             event.config, event.spec
          )
@@ -133,12 +138,18 @@ class ReactiveProjectStoreManager(
          eventDispatcher.fileProjectStoreAdded(loader)
       }
 
-      specEventSource.fileSpecAdded
+      //specEventSource.fileSpecAdded
    }
 
    override val editableLoaders: List<FileSystemPackageLoader>
       get() {
          return _fileLoaders.filter { it.isEditable() }
       }
+
+   override fun close() {
+      fileSpecAddedEventsSubscription.dispose()
+      gitSpecAddedEventSubscription.dispose()
+      repoRemovedEventSSubscription.dispose()
+   }
 
 }

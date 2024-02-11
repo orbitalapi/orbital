@@ -27,6 +27,11 @@ object BuiltInTypesProvider {
             "0.1.0",
             UserType.USERNAME_TYPEDEF
          ),
+         VersionedSource(
+            "JwtTypes",
+            "0.1.0",
+            JWTClaimType.JWTClaimTypeDefinition
+         ),
          ErrorType.queryErrorVersionedSource,
          VersionedSource(
             "JdbcConnectors",

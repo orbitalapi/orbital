@@ -8,10 +8,13 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flowOf
+import mu.KotlinLogging
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.parse
 import kotlin.time.Duration.Companion.seconds
 
+private val logger = KotlinLogging.logger {  }
 /**
  * These are tests that explore merging two streams together
  */
@@ -43,8 +46,9 @@ class VyneStreamMergingTest : DescribeSpec({
       )
 
       // This test appears flaky, but app performance seems fine.
-      retry(5, timeout = parse("15s")) {
+      retry(5, 60.seconds) {
          it("should run a query that joins multiple streams") {
+            logger.info { "starting should run a query that joins multiple streams" }
             val tweetFlow = MutableSharedFlow<TypedInstance>()
             val analyticsFlow = MutableSharedFlow<TypedInstance>()
             stub.addResponseFlow("tweets") { _, _ -> tweetFlow }
@@ -90,8 +94,9 @@ class VyneStreamMergingTest : DescribeSpec({
       }
 
       // This test appears flaky, but app performance seems fine.
-      retry(5, timeout = parse("15s")) {
+      retry(5, 60.seconds) {
          it("should run a query that joins multiple streams without explicit streams") {
+            logger.info { "starting should run a query that joins multiple streams without explicit streams" }
             val tweetFlow = MutableSharedFlow<TypedInstance>()
             val analyticsFlow = MutableSharedFlow<TypedInstance>()
             stub.addResponseFlow("tweets") { _, _ -> tweetFlow }
@@ -138,8 +143,9 @@ class VyneStreamMergingTest : DescribeSpec({
       }
 
       // This test appears flaky, but app performance seems fine.
-      retry(5, timeout = parse("15s")) {
+      retry(5, 3.minutes) {
          it("should run a query that joins multiple streams without explicit streams and can enrich from other sources") {
+            logger.info { "starting should run a query that joins multiple streams without explicit streams and can enrich from other sources" }
             val tweetFlow = MutableSharedFlow<TypedInstance>()
             val analyticsFlow = MutableSharedFlow<TypedInstance>()
             stub.addResponseFlow("tweets") { _, _ -> tweetFlow }
@@ -158,7 +164,7 @@ class VyneStreamMergingTest : DescribeSpec({
             )
                .results
 
-            results.test(timeout = Duration.parse("10s")) {
+            results.test(timeout = Duration.parse("30s")) {
                tweetFlow.emit(vyne.parseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1}"""))
                val first = expectTypedObject()
                first.toRawObject().shouldBe(

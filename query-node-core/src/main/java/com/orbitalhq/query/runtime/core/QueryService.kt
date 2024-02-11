@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.orbitalhq.FactSetId
 import com.orbitalhq.FactSets
+import com.orbitalhq.JWTClaimType
 import com.orbitalhq.Vyne
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.auth.authentication.VyneUser
@@ -396,6 +397,11 @@ class QueryService(
          .responseWithQueryHistoryListener("Adhoc query", queryResponse)
    }
 
+   private fun extractJwtClaimFactFromQueryParameters(schema: Schema, parameters: List<lang.taxi.query.Parameter>): String? {
+      val jwtParameter = parameters.firstOrNull { it.type.inheritsFrom(schema.taxiType(JWTClaimType.JWTClaim)) }
+      return jwtParameter?.type?.qualifiedName
+
+   }
    private suspend fun vyneQLQuery(
       query: TaxiQLQueryString,
       vyneUser: VyneUser? = null,
@@ -408,7 +414,10 @@ class QueryService(
          val schema = schemaProvider.schema
          val (taxiQlQuery, queryOptions, querySchema) = schema.parseQuery(query)
          logger.info { "[$queryId] using cache ${queryOptions.cachingStrategy}" }
-         val vyne = vyneProvider.createVyne(vyneUser.facts(), schema, queryOptions)
+         val executionContextFacts = vyneUser.facts(
+            extractJwtClaimFactFromQueryParameters(schema, taxiQlQuery.parameters)
+         )
+         val vyne = vyneProvider.createVyne(executionContextFacts,  schema, queryOptions)
          val historyWriterEventConsumer = historyWriterProvider.createEventConsumer(queryId, vyne.schema)
          val response = try {
             val eventDispatcherForQuery =
@@ -420,7 +429,8 @@ class QueryService(
                eventBroker = eventDispatcherForQuery,
                arguments = arguments,
                queryOptions = queryOptions,
-               querySchema = querySchema
+               querySchema = querySchema,
+               executionContextFacts = executionContextFacts
             )
          } catch (e: lang.taxi.CompilationException) {
             logger.info("The query failed compilation: ${e.message}")

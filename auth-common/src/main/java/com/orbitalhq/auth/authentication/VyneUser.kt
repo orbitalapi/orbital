@@ -63,7 +63,11 @@ data class VyneUser(
 
    // Not persisted, assigned at runtime
    @Transient
-   val isAuthenticated: Boolean = true
+   val isAuthenticated: Boolean = true,
+
+   // Not persisted.
+   @Transient
+   val claims: Map<String, Any> = emptyMap()
 ) {
    companion object {
       fun anonymousUser(grantedAuthorities: Set<VyneGrantedAuthority>) =

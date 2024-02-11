@@ -19,6 +19,7 @@ import com.orbitalhq.schemas.*
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.schemas.taxi.TaxiSchemaAggregator
 import com.orbitalhq.schemas.taxi.compileExpression
+import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.Ids
 import com.orbitalhq.utils.log
 import kotlinx.coroutines.currentCoroutineContext
@@ -26,8 +27,10 @@ import kotlinx.coroutines.job
 import lang.taxi.accessors.Argument
 import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.query.FactValue
+import lang.taxi.query.Parameter
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
+import lang.taxi.types.TypedValue
 import java.util.*
 
 enum class NodeTypes {
@@ -114,7 +117,8 @@ class Vyne(
       arguments: Map<String, Any?> = emptyMap(),
       queryOptions: QueryOptions,
       metricsTags: MetricTags = MetricTags.NONE,
-      querySchema: Schema = schema
+      querySchema: Schema = schema,
+      executionContextFacts: Set<Fact> = emptySet()
    ): QueryResult {
       val currentJob = currentCoroutineContext().job
       val (queryContext: QueryContext, expression: QueryExpression) = buildContextAndExpression(
@@ -124,7 +128,8 @@ class Vyne(
          eventBroker,
          arguments,
          queryOptions,
-         querySchema = querySchema
+         querySchema = querySchema,
+         executionContextFacts = executionContextFacts
       )
       val queryCanceller = QueryCanceller(queryContext, currentJob)
       eventBroker.addHandler(queryCanceller)
@@ -168,14 +173,15 @@ class Vyne(
       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
       arguments: Map<String, Any?> = emptyMap(),
       queryOptions: QueryOptions,
-      querySchema: Schema
+      querySchema: Schema,
+      executionContextFacts: Set<Fact> = emptySet()
    ): ConstructedQueryContext {
 
-      val additionalFacts = convertTaxiQlFactToInstances(taxiQl, arguments)
+      val additionalFacts = convertTaxiQlFactToInstances(taxiQl, arguments, executionContextFacts)
 
-      // TODO : Do we need to remove the arguments here that were used in the given {} block?
-      // I don't see why we would, but lets keep an eye...
-      val scopedFacts = extractArgumentsFromQuery(taxiQl, arguments, formatSpecs)
+      val givenFacts = taxiQl.facts.map { it.name }.toSet()
+      val filteredParams = taxiQl.parameters.filter { !givenFacts.contains(it.name) }
+      val scopedFacts = extractArgumentsFromQuery(filteredParams, arguments, formatSpecs)
 
       // Anything that was declared with a name in the given {} block
       // is also eligible as a named variable within the query itself,
@@ -204,7 +210,8 @@ class Vyne(
 
    private fun convertTaxiQlFactToInstances(
       taxiQl: TaxiQlQuery,
-      arguments: Map<String, Any?>
+      arguments: Map<String, Any?>,
+      executionContextFacts: Set<Fact> = emptySet()
    ): Map<String, TypedInstance> {
       // The facts in taxiQL are the variables defined in a given {} block.
       // given allows declaration in three ways:
@@ -216,9 +223,11 @@ class Vyne(
 
       // use-cases 1+2 are resolved simply here:
       val constants = taxiQl.facts
-         .filter { it.value !is FactValue.Expression }
+         .filter { it.value !is FactValue.Expression}
          .map { variable ->
-            val argumentValue = variable.resolveValue(arguments)
+            val argumentValue = executionContextFacts.filter {fact ->
+              fact.qualifiedName == variable.type.toVyneQualifiedName()
+            }.map { fact -> TypedValue(schema.taxiType (fact.qualifiedName), fact.value) }.firstOrNull() ?: variable.resolveValue(arguments)
 
             val typedInstance = TypedInstance.from(
                schema.type(argumentValue.fqn.parameterizedName),
@@ -260,6 +269,10 @@ class Vyne(
 
    }
 
+   private fun userPrincipalFact(fact: FactValue): Boolean {
+      return fact.type.inheritsFrom(this.type(JWTClaimType.JWTClaim.fullyQualifiedName).taxiType)
+   }
+
    /**
     * Returns a list of types that are defined in the query,
     * ie., not present in the base schema we're using
@@ -279,10 +292,10 @@ class Vyne(
    }
 
    private fun extractArgumentsFromQuery(
-      taxiQl: TaxiQlQuery,
+      parameters: List<Parameter>,
       arguments: Map<String, Any?>,
       formatSpecs: List<ModelFormatSpec>
-   ) = taxiQl.parameters.map { parameter ->
+   ) = parameters.map { parameter ->
       val argValue = when {
          arguments.containsKey(parameter.name) -> TypedInstance.from(
             schema.type(parameter.type),
