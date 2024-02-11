@@ -91,12 +91,7 @@ class VyneFactory(
          queryPlanner = queryPlanner
       )
       facts.forEach { fact ->
-         val typedInstance = TypedInstance.fromNamedType(
-            TypeNamedInstance(fact.typeName, fact.value),
-            vyne.schema,
-            true,
-            DefinedInSchema
-         )
+         val typedInstance = TypedInstance.from(vyne.schema.type(fact.typeName), fact.value, vyne.schema)
          vyne.addModel(typedInstance, fact.factSetId)
       }
 

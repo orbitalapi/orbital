@@ -29,7 +29,7 @@ data class JWSBuilder(
    fun subject(subject: String) = apply { this.claimsSubject = subject }
    fun clientId(clientId: String) = apply { this.claimsClientId = clientId }
 
-   fun build(roles: List<String> = emptyList()): JsonWebSignature {
+   fun build(roles: List<String> = emptyList(), customClaims: Map<String, Any> = emptyMap()): JsonWebSignature {
       // The JWT Claims Set represents a JSON object whose members are the claims conveyed by the JWT.
       val rolesClaim = mapOf(KeycloakRolesExtractor.Roles to roles)
       val claims = JwtClaims().apply {
@@ -45,6 +45,9 @@ data class JWSBuilder(
          setClaim(JwtStandardClaims.Email, "$claimsSubject@vyne.co")
          setClaim(KeycloakRolesExtractor.RealmAccess, rolesClaim)
          claimsClientId?.let { setClaim(JwtStandardClaims.ClientId, it) }
+         customClaims.forEach { (name, value) ->
+            setClaim(name, value)
+         }
       }
 
       val jws = JsonWebSignature().apply {

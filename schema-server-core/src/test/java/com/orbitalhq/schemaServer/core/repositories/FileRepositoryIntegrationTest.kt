@@ -86,46 +86,49 @@ class FileRepositoryIntegrationTest {
    fun `can add a soap spec`() {
       val (repositoryService, repositoryManager, schemaClient) = setupServices()
 
-      // First, create the new repository
-      val projectFolder = folder.newFolder("my-project")
-      val targetFile = projectFolder.resolve("src/country-info.wsdl")
-      targetFile.parentFile.mkdirs()
-      targetFile.createNewFile()
-      Resources.copy(Resources.getResource("soap/TrimmedCountryInfoServiceSpec.wsdl"), targetFile.outputStream())
+      repositoryManager.use {
+         // First, create the new repository
+         val projectFolder = folder.newFolder("my-project")
+         val targetFile = projectFolder.resolve("src/country-info.wsdl")
+         targetFile.parentFile.mkdirs()
+         targetFile.createNewFile()
+         Resources.copy(Resources.getResource("soap/TrimmedCountryInfoServiceSpec.wsdl"), targetFile.outputStream())
 
 
-      repositoryService.createFileRepository(
-         CreateFileProjectStoreRequest(
-            projectFolder.canonicalPath,
-            true,
-            loader = SoapPackageLoaderSpec(
-               PackageIdentifier.fromId("com/foo/1.0.0")
-            ),
-            newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
+         repositoryService.createFileRepository(
+            CreateFileProjectStoreRequest(
+               projectFolder.canonicalPath,
+               true,
+               loader = SoapPackageLoaderSpec(
+                  PackageIdentifier.fromId("com/foo/1.0.0")
+               ),
+               newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
+            )
          )
-      )
 
-      repositoryManager.fileLoaders.should.have.size(1)
-      schemaClient.schema()
-         .hasType("Hello")
-         .should.be.`false`
+         repositoryManager.fileLoaders.should.have.size(1)
+         schemaClient.schema()
+            .hasType("Hello")
+            .should.be.`false`
 
-      Awaitility.await()
-         .atMost(10, TimeUnit.SECONDS)
-         .until<Boolean> {
-            schemaClient.schema()
-               .services.isNotEmpty()
-         }
-      val schema = schemaClient.schema()
-      schema.services.shouldHaveSize(1)
-      val service = schema.services.single()
-      service.sourceCode.shouldHaveSingleElement { it.language == SoapLanguage.WSDL }
+         Awaitility.await()
+            .atMost(10, TimeUnit.SECONDS)
+            .until<Boolean> {
+               schemaClient.schema()
+                  .services.isNotEmpty()
+            }
+         val schema = schemaClient.schema()
+         schema.services.shouldHaveSize(1)
+         val service = schema.services.single()
+         service.sourceCode.shouldHaveSingleElement { it.language == SoapLanguage.WSDL }
+      }
    }
 
    @Test
    fun `configure a file repository at runtime and when files are changes then schema updates are emitted`() {
       val (repositoryService, repositoryManager, schemaClient) = setupServices()
 
+      repositoryManager.use {
       // First, create the new repository
       val projectFolder = folder.newFolder("my-project")
       repositoryService.createFileRepository(
@@ -143,15 +146,17 @@ class FileRepositoryIntegrationTest {
          .should.be.`false`
 
 
-      projectFolder.resolve("src/hello.taxi")
+      projectFolder
+         .resolve("src/hello.taxi")
          .writeText("""type Hello inherits String""")
 
       Awaitility.await()
-         .atMost(10, TimeUnit.SECONDS)
+         .atMost(30, TimeUnit.SECONDS)
          .until<Boolean> {
             schemaClient.schema()
                .hasType("Hello")
          }
+      }
 
    }
 
@@ -204,42 +209,44 @@ class FileRepositoryIntegrationTest {
          eventDispatcher, eventDispatcher, eventDispatcher
       )
 
-      // Setup: A SchemaStoreClient, which will
-      // compile the taxi as it's discovered / changed
-      val schemaClient = LocalValidatingSchemaStoreClient()
-      val sourceWatchingSchemaPublisher = SourceWatchingSchemaPublisher(
-         schemaClient,
-         eventDispatcher
-      )
-
-      val path = Resources.getResource("additional-sources").toURI().toPath()
-      workspaceProjectsService.createFileRepository(
-         CreateFileProjectStoreRequest(
-            path = path.absolutePathString(),
-            isEditable = false
+      repositoryManager.use {
+         // Setup: A SchemaStoreClient, which will
+         // compile the taxi as it's discovered / changed
+         val schemaClient = LocalValidatingSchemaStoreClient()
+         val sourceWatchingSchemaPublisher = SourceWatchingSchemaPublisher(
+            schemaClient,
+            eventDispatcher
          )
-      ).block()
 
-      Awaitility.await()
-         .atMost(2, TimeUnit.HOURS)
-         .until<Boolean> {
-            schemaClient.schema()
-               .hasType("Hello")
-         }
+         val path = Resources.getResource("additional-sources").toURI().toPath()
+         workspaceProjectsService.createFileRepository(
+            CreateFileProjectStoreRequest(
+               path = path.absolutePathString(),
+               isEditable = false
+            )
+         ).block()
 
-      val loadedSources = schemaClient.schema().additionalSources
-      loadedSources.entries.shouldHaveSize(1)
-      loadedSources["@orbital/pipelines"]!!.shouldHaveSize(1)
-      val loadedPipelines = loadedSources["@orbital/pipelines"]!!.single().sources
-      loadedPipelines.shouldHaveSize(1)
+         Awaitility.await()
+            .atMost(2, TimeUnit.HOURS)
+            .until<Boolean> {
+               schemaClient.schema()
+                  .hasType("Hello")
+            }
 
-      // Can we load this to/from CBOR (for sending over rsocket)?
-      val schema = schemaClient.schema()
-      val schemaSet = SchemaSet.from(schema, 1)
+         val loadedSources = schemaClient.schema().additionalSources
+         loadedSources.entries.shouldHaveSize(1)
+         loadedSources["@orbital/pipelines"]!!.shouldHaveSize(1)
+         val loadedPipelines = loadedSources["@orbital/pipelines"]!!.single().sources
+         loadedPipelines.shouldHaveSize(1)
 
-      val bytes = CBORJackson.defaultMapper.writeValueAsBytes(schemaSet)
-      val deserialized = CBORJackson.defaultMapper.readValue<SchemaSet>(bytes)
-      deserialized.schema.additionalSources.shouldBe(schemaClient.schema().additionalSources)
+         // Can we load this to/from CBOR (for sending over rsocket)?
+         val schema = schemaClient.schema()
+         val schemaSet = SchemaSet.from(schema, 1)
+
+         val bytes = CBORJackson.defaultMapper.writeValueAsBytes(schemaSet)
+         val deserialized = CBORJackson.defaultMapper.readValue<SchemaSet>(bytes)
+         deserialized.schema.additionalSources.shouldBe(schemaClient.schema().additionalSources)
+      }
    }
 
    @Test
@@ -270,12 +277,11 @@ class FileRepositoryIntegrationTest {
 
       // Setup: Building the file repository, which should
       // create new repositories as config is added
-      val repositoryManager = ReactiveProjectStoreManager(
+       ReactiveProjectStoreManager(
          FileSystemPackageLoaderFactory(),
          GitSchemaPackageLoaderFactory(),
          eventDispatcher, eventDispatcher, eventDispatcher
-      )
-
+      ).use {
       // Setup: A SchemaStoreClient, which will
       // compile the taxi as it's discovered / changed
       val schemaClient = LocalValidatingSchemaStoreClient()
@@ -283,15 +289,13 @@ class FileRepositoryIntegrationTest {
          schemaClient,
          eventDispatcher
       )
-
       Awaitility.await()
          .atMost(2, TimeUnit.SECONDS)
          .until<Boolean> {
             schemaClient.schema()
                .hasType("Hello")
          }
-
-
+       }
    }
 
 

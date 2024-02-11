@@ -12,3 +12,12 @@ object UserType {
          |   type ${USERNAME.name} inherits String
          |}""".trimMargin()
 }
+
+object JWTClaimType {
+   val JWTClaim = "${VyneTypes.NAMESPACE}.JwtClaim".fqn()
+   val JWTClaimTypeDefinition = """namespace ${JWTClaim.namespace} {
+         |   model ${JWTClaim.name} {
+         |
+         |   }
+         |}""".trimMargin()
+}
