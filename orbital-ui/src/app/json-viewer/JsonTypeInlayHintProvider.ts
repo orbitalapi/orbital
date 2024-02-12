@@ -1,37 +1,45 @@
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
-import {Subject} from "rxjs";
-
-class HintMap {
-  private readonly hints: Map<monaco.Uri, monaco.languages.InlayHint[]> = new Map()
-  hintsUpdated = new Subject<void>()
-  registerHints(uri: monaco.Uri, hints: monaco.languages.InlayHint[]) {
-    this.hints.set(uri, hints);
-    this.hintsUpdated.next();
-  }
-  getHints(uri: monaco.Uri):monaco.languages.InlayHint[] {
-    return this.hints.get(uri);
-  }
-}
+import {TypePosition} from "../model-designer/taxi-parser.service";
+import {languages} from 'monaco-editor';
+import InlayHint = languages.InlayHint;
+import InlayHintKind = languages.InlayHintKind;
 
 export class JsonTypeInlayHintProvider implements monaco.languages.InlayHintsProvider {
 
-  public static readonly hintMap = new HintMap();
   private _onDidChange = new monaco.Emitter<void>()
 
+  private inlayHints = new Map<string,InlayHint[]>();
+  private counter = 0;
+
   constructor() {
-    JsonTypeInlayHintProvider.hintMap.hintsUpdated.subscribe(next => {
-      this._onDidChange.fire();
-    })
   }
 
   onDidChangeInlayHints:monaco.IEvent<void> = this._onDidChange.event;
 
   provideInlayHints(model: monaco.editor.ITextModel, range: monaco.Range, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.InlayHintList> {
-    const registeredHints = JsonTypeInlayHintProvider.hintMap.getHints(model.uri)
+    const hints = this.inlayHints.get(model.uri.path) || [];
     return {
-      hints: registeredHints || [],
+      hints,
       dispose: () => {
       },
     };
+  }
+
+  setHints(modelUri: string, value: TypePosition[]) {
+    this.counter++;
+    const hints = value.map(hint => {
+      return {
+        kind: InlayHintKind.Type,
+        label: hint.type.shortDisplayName,
+        position: {
+          column: hint.start.char,
+          lineNumber: hint.start.line
+        },
+        tooltip: hint.type.longDisplayName,
+        paddingLeft: true
+      }
+    })
+    this.inlayHints.set(modelUri, hints);
+    this._onDidChange.fire()
   }
 }

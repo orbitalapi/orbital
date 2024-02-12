@@ -34,12 +34,17 @@ export interface TaxiParseResult {
   hasErrors: boolean;
 }
 
-export interface SourceLocation {
+// called SourceLocation on the server.
+export interface Position {
   line: number;
   char: number;
 }
 export interface TypePosition {
-  start: SourceLocation
+  start: Position
+  /**
+   * The number of characters in total from the start
+   * that this position begins.
+   */
   startOffset: number;
   path: string;
   type: QualifiedName;

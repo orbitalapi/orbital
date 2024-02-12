@@ -40,7 +40,9 @@ import { ExportFormat } from 'src/app/results-download/results-download.service'
                        (instanceClicked)="instanceClicked.emit($event)">
       </app-object-view>
       <app-json-results-view *ngIf="displayMode === 'json'"
-                             [instances$]="instances$">
+                             [instances$]="instances$"
+                             [schema]="schema"
+                             >
 
       </app-json-results-view>
     </ng-container>

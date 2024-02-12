@@ -7,7 +7,7 @@ import {
   OnDestroy,
   ViewChild
 } from '@angular/core';
-import {editor, languages} from 'monaco-editor';
+import {editor} from 'monaco-editor';
 
 
 // Import the core monaco editor
@@ -15,17 +15,20 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 
 import {JSONPathFinder} from 'src/app/json-viewer/JsonPathFinder';
 import {Clipboard} from '@angular/cdk/clipboard';
-import {TypePosition} from "../model-designer/taxi-parser.service";
 import {JsonTypeInlayHintProvider} from "./JsonTypeInlayHintProvider";
+import {isNullOrUndefined} from "../utils/utils";
+import {SourceWithTypeHints} from "./json-results-view.component";
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 import ITextModel = editor.ITextModel;
-import InlayHint = languages.InlayHint;
-import InlayHintKind = languages.InlayHintKind;
+
 
 @Component({
   selector: 'app-json-viewer',
   template: `
     <app-panel-header *ngIf="showHeader" [title]="title">
+       <tui-checkbox-labeled [(ngModel)]="showTypeHints" *ngIf="hasTypes">
+        Show types
+    </tui-checkbox-labeled>
       <div class="spacer"></div>
       <button (click)="applyFormat()" tuiButton size="s" appearance="outline">Format</button>
       <button (click)="copyToClipboard()" tuiButton size="s" appearance="outline">{{ copyButtonText }}</button>
@@ -36,7 +39,7 @@ import InlayHintKind = languages.InlayHintKind;
 })
 export class JsonViewerComponent implements OnDestroy {
 
-  private _json: string;
+  private _json: string | SourceWithTypeHints;
   private pathFinder: JSONPathFinder
   copyButtonText = 'Copy'
   @Input()
@@ -44,60 +47,60 @@ export class JsonViewerComponent implements OnDestroy {
   @Input()
   showHeader = true;
 
-  private _typeHints: TypePosition[] | null = null;
-  private inlayHints: InlayHint[] = null;
+  private hintProvider: JsonTypeInlayHintProvider = new JsonTypeInlayHintProvider();
 
   constructor(private changeDetector: ChangeDetectorRef, private clipboard: Clipboard) {
+    monaco.languages.registerInlayHintsProvider("json", this.hintProvider)
   }
 
-  @Input()
-  get typeHints(): TypePosition[] | null {
-    return this._typeHints;
+  get hasTypes(): Boolean {
+    return !isNullOrUndefined(this._json) && typeof this._json !== 'string' && (this._json as SourceWithTypeHints).typeHints.length > 0;
   }
 
-  set typeHints(value: TypePosition[] | null) {
-    if (value === this._typeHints) {
-      return;
-    }
-    this._typeHints = value;
-    this.inlayHints = this.typeHints.map(hint => {
-      return {
-        kind: InlayHintKind.Type,
-        label: hint.type.shortDisplayName,
-        position: {
-          column: hint.start.char,
-          lineNumber: hint.start.line
-        },
-        tooltip: hint.type.longDisplayName,
-        paddingLeft: true
-      }
-    })
-    if (this.modelUri) {
-      JsonTypeInlayHintProvider.hintMap.registerHints(this.modelUri, this.inlayHints);
-    }
+  private _showTypeHints: Boolean = true;
+  get showTypeHints(): Boolean {
+    return this._showTypeHints;
+  }
+  set showTypeHints(value) {
+    this._showTypeHints = value;
+    this.updateHintsIfPossible()
+    this.changeDetector.markForCheck();
   }
 
   private _readOnly: boolean = false;
   @Input()
-  get readOnly():boolean {
+  get readOnly(): boolean {
     return this._readOnly;
   }
+
   set readOnly(value) {
     this._readOnly = value;
     this.createOrUpdateEditor();
   }
+
+  get jsonString(): string {
+    if (isNullOrUndefined(this._json)) {
+      return null;
+    }
+    if (typeof this._json === 'string') {
+      return this._json;
+    } else {
+      return (this._json as SourceWithTypeHints).source
+    }
+  }
+
   @Input()
-  get json(): string {
+  get json(): string | SourceWithTypeHints {
     return this._json;
   }
 
-  set json(value: string) {
+  set json(value: string | SourceWithTypeHints) {
     if (value === this._json) {
       return;
     }
     this._json = value;
     try {
-      this.pathFinder = new JSONPathFinder(this.json)
+      this.pathFinder = new JSONPathFinder(this.jsonString)
     } catch (e) {
       console.error(`Failed to build JSON Path finder: ${e}`)
       this.pathFinder = null;
@@ -145,29 +148,22 @@ export class JsonViewerComponent implements OnDestroy {
       });
   }
 
-  modelUri:monaco.Uri = null;
+  modelUri: monaco.Uri = null;
+
   private createOrUpdateEditor(): void {
     if (!this.codeEditorContainer) {
       return;
     }
-    if (!this.json) {
+    if (isNullOrUndefined(this.json)) {
       return;
     }
+    const monacoTextModel = this.createNewTextModel();
+    this.updateHintsIfPossible()
+
+
     if (this.monacoEditor) {
-      this.monacoEditor.getModel().setValue(this.json);
+      this.monacoEditor.setModel(monacoTextModel)
     } else {
-      let monacoTextModel: ITextModel
-      if (this.json) {
-        this.modelUri = monaco.Uri.parse(`inmemory://json-file-${Date.now()}.json`); // a made up unique URI for our model
-        if (this.inlayHints) {
-          JsonTypeInlayHintProvider.hintMap.registerHints(this.modelUri, this.inlayHints)
-        }
-        monacoTextModel = monaco.editor.createModel(this.json, 'json', this.modelUri)
-      }
-
-
-      monaco.languages.registerInlayHintsProvider("json", new JsonTypeInlayHintProvider())
-
       this.monacoEditor = monaco.editor.create(this._codeEditorContainer.nativeElement, {
         model: monacoTextModel,
         glyphMargin: true,
@@ -177,6 +173,8 @@ export class JsonViewerComponent implements OnDestroy {
         folding: true,
         codeLens: true,
         inlayHints: {
+          fontFamily: 'nunito-sans',
+          fontSize: 13,
           enabled: 'on'
         }
       });
@@ -207,5 +205,25 @@ export class JsonViewerComponent implements OnDestroy {
         }
       })
     }
+  }
+
+  private createNewTextModel(): ITextModel {
+    this.modelUri = monaco.Uri.parse(`inmemory://json-file-${Date.now()}.json`); // a made up unique URI for our model
+    return monaco.editor.createModel(this.jsonString, 'json', this.modelUri)
+  }
+
+  private updateHintsIfPossible() {
+    if (!this.modelUri) return;
+    if (isNullOrUndefined(this.json)) return
+    if (typeof this.json === 'string') {
+      // Remove any lingering type hints
+      this.hintProvider.setHints(this.modelUri.path, []);
+    } else {
+      const src = this.json as SourceWithTypeHints;
+      const typeHints = this.showTypeHints ? src.typeHints : [];
+      this.hintProvider.setHints(this.modelUri.path, typeHints);
+    }
+
+
   }
 }

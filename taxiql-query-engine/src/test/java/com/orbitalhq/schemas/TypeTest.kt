@@ -2,6 +2,7 @@ package com.orbitalhq.schemas
 
 import com.winterbe.expekt.should
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import io.kotest.matchers.collections.shouldHaveSize
 import org.junit.Test
 
 class TypeTest {
@@ -167,5 +168,22 @@ class TypeTest {
          type EventDate inherits Instant
       """)
       schema.type("EventDate").resolveAliases().fullyQualifiedName.should.equal("EventDate")
+   }
+
+   @Test
+   fun `nested anonymous types are returned`() {
+      val schema = TaxiSchema.from("""
+         model Film {
+            crew : {
+               cast : {
+                  names : String[]
+                  agents : {
+                     agentName : String
+                  }[] // testing nested array anonymous types
+               }
+            }
+         }
+      """.trimIndent())
+      schema.type("Film").anonymousTypes.shouldHaveSize(3)
    }
 }
