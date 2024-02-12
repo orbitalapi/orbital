@@ -1,6 +1,7 @@
 package com.orbitalhq.schemaServer.core.file.packages
 
 import com.orbitalhq.VersionedSource
+import com.orbitalhq.utils.resolvePossiblyAbsolutePath
 import lang.taxi.packages.TaxiPackageProject
 import mu.KotlinLogging
 import reactor.core.publisher.Mono
@@ -33,7 +34,7 @@ class FileSystemPackageWriter {
       modifiedSources: List<VersionedSource>
    ): List<VersionedSource> {
       return modifiedSources.map { modifiedSource ->
-         val sourcePath = sourceRoot.resolve(modifiedSource.name)
+         val sourcePath = resolvePossiblyAbsolutePath(modifiedSource.name, sourceRoot)
          sourcePath.parent.toFile().mkdirs()
          sourcePath.toFile().writeText(modifiedSource.content)
          logger.info { "Source file $sourcePath updated" }
