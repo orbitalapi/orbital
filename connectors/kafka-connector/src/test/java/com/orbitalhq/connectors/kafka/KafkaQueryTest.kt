@@ -18,7 +18,6 @@ import kotlinx.coroutines.runBlocking
 import lang.taxi.generators.protobuf.TaxiGenerator
 import mu.KotlinLogging
 import okio.fakefilesystem.FakeFileSystem
-import org.apache.kafka.clients.producer.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -26,9 +25,11 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Configuration
 import org.springframework.test.context.junit4.SpringRunner
-import java.util.*
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.random.Random
+
 
 @SpringBootTest(classes = [KafkaQueryTestConfig::class])
 @RunWith(SpringRunner::class)

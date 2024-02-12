@@ -135,18 +135,28 @@ data class Type(
 //      Type::typeDoc
    )
 
+   /**
+    * Returns the anonymous types present on the attributes of this type, including
+    * any nested anoymous types present on fields
+    */
    @JsonIgnore
    val anonymousTypes: Set<Type>
 
-   private fun collectAnonymousTypes(): Set<Type> {
+   /**
+    * Collects all anoymous types on fields, including any inner anonymous types present on those fields.
+    * ie., recurses through all anonymous types to build a full tree of anonymous types.
+    */
+   private fun collectAnonymousTypes(type:Type = this): Set<Type> {
       val result = mutableSetOf<Type>()
-      if (this.taxiType.anonymous) {
-         result.add(this)
+      if (type.taxiType.anonymous) {
+         result.add(type)
       }
-      if (this.collectionAnonymousType != null) {
-         result.add(collectionAnonymousType)
+      if (type.collectionAnonymousType != null) {
+         result.addAll(collectAnonymousTypes(type.collectionAnonymousType))
       }
-      this.attributes.values.mapNotNullTo(result) { it.anonymousType }
+      type.attributes.values.flatMapTo(result) {field ->
+         field.anonymousType?.collectAnonymousTypes() ?: emptySet()
+      }
       return result
    }
 

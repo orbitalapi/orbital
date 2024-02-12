@@ -4,6 +4,8 @@ import { JsonViewerComponent } from './json-viewer.component';
 import { JsonResultsViewComponent } from './json-results-view.component';
 import { ExpandingPanelSetModule } from 'src/app/expanding-panelset/expanding-panel-set.module';
 import { TuiButtonModule } from '@taiga-ui/core';
+import {TuiCheckboxLabeledModule} from "@taiga-ui/kit";
+import {FormsModule} from "@angular/forms";
 
 
 @NgModule({
@@ -18,7 +20,9 @@ import { TuiButtonModule } from '@taiga-ui/core';
   imports: [
     CommonModule,
     ExpandingPanelSetModule,
-    TuiButtonModule
+    TuiButtonModule,
+    TuiCheckboxLabeledModule,
+    FormsModule
   ]
 })
 export class JsonViewerModule { }
