@@ -19,6 +19,7 @@ import {
 } from '../../../db-connection-editor/db-connection-editor-dialog.component';
 import { PackageIdentifier } from '../../../package-viewer/packages.service';
 import { ConnectionFiltersModule } from '../../../utils/connections.pipe';
+import { DbConnectionEditorModule } from '../../../db-connection-editor/db-connection-editor.module';
 
 @Component({
   selector: 'app-database-table-config',
@@ -34,7 +35,8 @@ import { ConnectionFiltersModule } from '../../../utils/connections.pipe';
     TuiStringifyContentPipeModule,
     TuiFilterByInputPipeModule,
     TuiButtonModule,
-    TuiInputModule
+    TuiInputModule,
+    DbConnectionEditorModule
   ],
   template: `
     <div class="form-container">
@@ -164,8 +166,7 @@ export class DatabaseTableConfigComponent {
   createNewConnection() {
     this.dialogService.open<ConnectorSummary>(new PolymorpheusComponent(DbConnectionEditorDialogComponent, this.injector),
       {
-        data: new ConnectionEditorContext(null, 'JDBC'),
-
+        data: new ConnectionEditorContext(null, 'JDBC', 'edit', this.packageIdentifier),
       })
       .subscribe((result: ConnectorSummary) => {
         this.connections.push(result);

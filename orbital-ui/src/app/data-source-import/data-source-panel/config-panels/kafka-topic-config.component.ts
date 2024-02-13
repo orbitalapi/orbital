@@ -16,6 +16,7 @@ import { PackageIdentifier } from '../../../package-viewer/packages.service';
 import { UiCustomisations } from '../../../../environments/ui-customisations';
 import { ConnectionFiltersModule } from '../../../utils/connections.pipe';
 import { TypeAutocompleteModule } from '../../../type-autocomplete/type-autocomplete.module';
+import { DbConnectionEditorModule } from '../../../db-connection-editor/db-connection-editor.module';
 
 @Component({
   selector: 'app-kafka-topic-config',
@@ -30,7 +31,8 @@ import { TypeAutocompleteModule } from '../../../type-autocomplete/type-autocomp
     TuiDataListModule,
     TuiSvgModule,
     ConnectionFiltersModule,
-    TypeAutocompleteModule
+    TypeAutocompleteModule,
+    DbConnectionEditorModule
   ],
   template: `
     <div class="form-container">
@@ -204,7 +206,7 @@ export class KafkaTopicConfigComponent {
   createNewConnection() {
     this.dialogService.open<ConnectorSummary>(new PolymorpheusComponent(DbConnectionEditorDialogComponent, this.injector),
       {
-        data: new ConnectionEditorContext('KAFKA'),
+        data: new ConnectionEditorContext('KAFKA', null, 'edit', this.packageIdentifier),
         size: 'l'
       })
       .subscribe((result: ConnectorSummary) => {
