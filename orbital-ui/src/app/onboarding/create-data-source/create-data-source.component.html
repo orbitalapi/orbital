@@ -1,2 +1,23 @@
-<h3 class="intro-text">Now that you’ve got a Project setup, let’s add your first data source</h3>
-<p>create-data-source works!</p>
+<ng-container *ngIf="step !== 'dataSourceCreated'; else hasCreatedTemplate">
+  <h3 class="intro-text">Now that you’ve got a Project setup, let’s add your first data source!</h3>
+  <p>Data sources are [insert Data source definition].
+  <p>First select a Project to add the Data source to from the dropdown below.<br/>Then choose a Data source from the options available to start adding it the Project you've selected.</p>
+</ng-container>
+<ng-template #hasCreatedTemplate>
+  <div class="data-source-created">
+    <h3 class="intro-text">Great! Now that you've created a Data source, continue on to explore some more {{ uiConfig.productName }} tooling</h3>
+    <p class="next-step">
+      (or feel free to create another Data source)
+      <button tuiButton size="m" class="next-step" [routerLink]="['/onboarding/explore' ]">Next step</button>
+    </p>
+  </div>
+</ng-template>
+
+<app-schema-importer
+  title=""
+  dataSourceDisplayType="buttons"
+  useIslandContainer="true"
+  (dataSourceAdded)="step = 'dataSourceCreated'"
+></app-schema-importer>
+
+

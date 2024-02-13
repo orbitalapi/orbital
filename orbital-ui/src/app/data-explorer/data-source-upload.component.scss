@@ -1,25 +1,29 @@
-::ng-deep .drop-container {
-  padding: 1rem;
+:host ::ng-deep {
+  .drop-container {
+    padding: 1rem;
+  }
 }
 
-::ng-deep .drop-container-content {
-  display: flex;
-  align-items: center;
+:host ::ng-deep {
+  .drop-container-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 
-  img {
-    width: 2rem;
-    margin-right: 1rem;
+    img {
+      width: 2rem;
+      margin-right: 1rem;
+    }
+
+    button {
+      margin-left: 1rem;
+    }
+
+    .hidden-browse-button {
+      width: 0;
+      padding: 0;
+      margin: 0;
+      border: none;
+    }
   }
-
-  button {
-    margin-left: 3rem;
-  }
-
-  .hidden-browse-button {
-    width: 0;
-    padding: 0;
-    margin: 0;
-    border: none;
-  }
-
 }

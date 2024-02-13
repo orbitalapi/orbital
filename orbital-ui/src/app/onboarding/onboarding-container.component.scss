@@ -21,6 +21,7 @@ header {
   display: flex;
   flex-direction: column;
   padding: 2rem;
+  flex-grow: 1;
 }
 
 .page-content {
@@ -29,13 +30,13 @@ header {
 }
 
 .stepper {
-  min-width: 220px;
+  flex: 1 0 auto;
 }
 
 // connection between stepper icons
 :host ::ng-deep {
   tui-stepper {
-    a:not(:last-child) {
+    button:not(:last-child) {
       &:after {
         position: absolute;
         left: 16px;
@@ -43,7 +44,7 @@ header {
         display: block;
         height: 16px;
         width: 1px;
-        background: rgba(0,0,0,.06);
+        background: rgba(0,0,0,.1);
         content: "";
       }
     }

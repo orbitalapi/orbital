@@ -36,6 +36,6 @@ export class AddDataSourcePage {
    // This is only needed due to having two texts "Kafka topic" on the same page
    async setKafkaTopic(value: string): Promise<void> {
       await this.page.waitForTimeout(1000); // Don't ask why this removes some flakiness
-      await this.page.locator(`.form-row:has-text("Set the topic for Vyne to consume from") tui-wrapper:has-text("Kafka topic") input`).fill(value);
+      await this.page.locator(`.form-row:has-text("Set the topic for") tui-wrapper:has-text("Kafka topic") input`).fill(value);
    }
 }

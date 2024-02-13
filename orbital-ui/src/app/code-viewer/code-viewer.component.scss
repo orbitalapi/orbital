@@ -2,20 +2,14 @@
 
 :host {
   background-color: $code-viewer-tooling-background;
-  display: flex;
-  //font-family: $font-sans-alt;
-}
-
-app-code-editor {
-  height: 100%;
+  display: grid; // flex doesn't allow the Monaco editor to size correctly horizontally, so using grid instead
+  grid-template-columns: 38% 62%;
 }
 
 .file-list {
-  min-width: 20rem;
-  //margin-top: 48px; // to match height of the tab bar
+  margin-top: 1rem;
   margin-left: 1rem;
   font-size: 0.9rem;
-  height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -24,7 +18,7 @@ app-code-editor {
   display: flex;
   align-items: center;
   //color: $dark-list-item;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.5rem;
 
   img {
     width: 16px;
@@ -40,7 +34,6 @@ app-code-editor {
 
   .file-name {
     flex-grow: 1;
-    margin-right: 2rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -54,7 +47,6 @@ app-code-editor {
     font-size: 0.6rem;
   }
 
-
   .error-count {
     background-color: rgba($red-light, 0.5);
     color: $purple-white;
@@ -64,7 +56,6 @@ app-code-editor {
     margin-right: 0.6rem;
     font-size: 0.6rem;
   }
-
 }
 
 .highlight-container {

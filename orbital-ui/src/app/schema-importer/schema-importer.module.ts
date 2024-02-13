@@ -1,6 +1,6 @@
-import {NgModule} from '@angular/core';
-import {CommonModule} from '@angular/common';
-import {SchemaImporterComponent} from './schema-importer.component';
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { SchemaImporterComponent } from './schema-importer.component';
 import {
   TuiAccordionModule,
   TuiAvatarModule,
@@ -11,6 +11,7 @@ import {
   TuiDataListWrapperModule,
   TuiFilterByInputPipeModule,
   TuiInputModule,
+  TuiIslandModule,
   TuiRadioBlockModule,
   TuiSelectModule,
   TuiStringifyContentPipeModule,
@@ -19,7 +20,7 @@ import {
   TuiTextAreaModule,
   TuiTreeModule
 } from '@taiga-ui/kit';
-import {FormsModule, ReactiveFormsModule} from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   TuiButtonModule,
   TuiDataListModule,
@@ -30,44 +31,49 @@ import {
   TuiSvgModule,
   TuiTextfieldControllerModule
 } from '@taiga-ui/core';
-import {TypeViewerModule} from '../type-viewer/type-viewer.module';
-import {SchemaSourcePanelComponent} from './schema-source-panel/schema-source-panel.component';
-import {SwaggerConfigComponent} from './schema-source-panel/config-panels/swagger-config.component';
-import {JsonSchemaConfigComponent} from './schema-source-panel/config-panels/jsonschema-config.component';
-import {DataExplorerModule} from '../data-explorer/data-explorer.module';
-import {MatLegacyButtonModule as MatButtonModule} from '@angular/material/legacy-button';
-import {DatabaseTableConfigComponent} from './schema-source-panel/config-panels/database-table-config.component';
-import {DbConnectionEditorModule} from '../db-connection-editor/db-connection-editor.module';
-import {HeaderBarModule} from '../header-bar/header-bar.module';
-import {OperationViewModule} from '../operation-view/operation-view.module';
-import {KafkaTopicConfigComponent} from './schema-source-panel/config-panels/kafka-topic-config.component';
-import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
-import {ProtobufConfigComponent} from './schema-source-panel/config-panels/protobuf-config.component';
-import {ConnectionFiltersModule} from '../utils/connections.pipe';
-import {AngularSplitModule} from 'angular-split';
-import {RouterModule} from '@angular/router';
-import {SchemaExplorerTableModule} from 'src/app/schema-explorer-table/schema-explorer-table.module';
-import {AddSchemaTypeSelectorComponent} from './add-schema-type-selector/add-schema-type-selector.component';
-import {OrbitalSchemaImporterContainerComponent} from './orbital-schema-importer-container.component';
-import {PushSchemaConfigPanelComponent} from 'src/app/schema-importer/push-panel/push-schema-config-panel.component';
-import {SchemaImporterContainerComponent} from './schema-importer-container.component';
-import {CdPipelineInstructionsComponent} from './push-panel/cd-pipeline-instructions.component';
-import {ApplicationPushInstructionsComponent} from './push-panel/application-push-instructions.component';
-import {HeaderComponentLayoutModule} from 'src/app/header-component-layout/header-component-layout.module';
-import {SchemaSourceConfigModule} from 'src/app/schema-source-config/schema-source-config.module';
-import {ExpandingPanelSetModule} from "../expanding-panelset/expanding-panel-set.module";
-import {CodeEditorModule} from "../code-editor/code-editor.module";
-import {ProjectSelectorModule} from "../project-selector/project-selector.module";
+import { TypeViewerModule } from '../type-viewer/type-viewer.module';
+import { SchemaSourcePanelComponent } from './schema-source-panel/schema-source-panel.component';
+import { SwaggerConfigComponent } from './schema-source-panel/config-panels/swagger-config.component';
+import { JsonSchemaConfigComponent } from './schema-source-panel/config-panels/jsonschema-config.component';
+import { DataExplorerModule } from '../data-explorer/data-explorer.module';
+import { MatLegacyButtonModule as MatButtonModule } from '@angular/material/legacy-button';
+import { DatabaseTableConfigComponent } from './schema-source-panel/config-panels/database-table-config.component';
+import { DbConnectionEditorModule } from '../db-connection-editor/db-connection-editor.module';
+import { HeaderBarModule } from '../header-bar/header-bar.module';
+import { OperationViewModule } from '../operation-view/operation-view.module';
+import { KafkaTopicConfigComponent } from './schema-source-panel/config-panels/kafka-topic-config.component';
+import { TypeAutocompleteModule } from '../type-autocomplete/type-autocomplete.module';
+import { ProtobufConfigComponent } from './schema-source-panel/config-panels/protobuf-config.component';
+import { ConnectionFiltersModule } from '../utils/connections.pipe';
+import { AngularSplitModule } from 'angular-split';
+import { RouterModule } from '@angular/router';
+import { SchemaExplorerTableModule } from 'src/app/schema-explorer-table/schema-explorer-table.module';
+import { AddSchemaTypeSelectorComponent } from './add-schema-type-selector/add-schema-type-selector.component';
+import { OrbitalSchemaImporterContainerComponent } from './orbital-schema-importer-container.component';
+import { PushSchemaConfigPanelComponent } from 'src/app/schema-importer/push-panel/push-schema-config-panel.component';
+import { SchemaImporterContainerComponent } from './schema-importer-container.component';
+import { CdPipelineInstructionsComponent } from './push-panel/cd-pipeline-instructions.component';
+import { ApplicationPushInstructionsComponent } from './push-panel/application-push-instructions.component';
+import { HeaderComponentLayoutModule } from 'src/app/header-component-layout/header-component-layout.module';
+import { SchemaSourceConfigModule } from 'src/app/schema-source-config/schema-source-config.module';
+import { ExpandingPanelSetModule } from '../expanding-panelset/expanding-panel-set.module';
+import { CodeEditorModule } from '../code-editor/code-editor.module';
+import { ProjectSelectorModule } from '../project-selector/project-selector.module';
 import { UiCustomisations } from '../../environments/ui-customisations';
 
-
 @NgModule({
-  exports: [SchemaImporterComponent,
-    SchemaSourcePanelComponent, KafkaTopicConfigComponent,],
-  declarations: [SchemaImporterComponent,
+  exports: [
+    SchemaImporterComponent,
     SchemaSourcePanelComponent,
-    SwaggerConfigComponent, JsonSchemaConfigComponent,
-    DatabaseTableConfigComponent, KafkaTopicConfigComponent,
+    KafkaTopicConfigComponent,
+  ],
+  declarations: [
+    SchemaImporterComponent,
+    SchemaSourcePanelComponent,
+    SwaggerConfigComponent,
+    JsonSchemaConfigComponent,
+    DatabaseTableConfigComponent,
+    KafkaTopicConfigComponent,
     ProtobufConfigComponent,
     AddSchemaTypeSelectorComponent,
     OrbitalSchemaImporterContainerComponent,
@@ -125,7 +131,8 @@ import { UiCustomisations } from '../../environments/ui-customisations';
     HeaderComponentLayoutModule,
     ExpandingPanelSetModule,
     CodeEditorModule,
-    ProjectSelectorModule
+    ProjectSelectorModule,
+    TuiIslandModule
   ]
 })
 export class SchemaImporterModule {

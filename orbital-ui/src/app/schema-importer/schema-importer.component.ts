@@ -1,28 +1,30 @@
-import {Component, Input} from '@angular/core';
-import {SchemaSubmissionResult, TypesService} from '../services/types.service';
-import {Message, PartialSchema, Schema} from '../services/schema';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { SchemaSubmissionResult, TypesService } from '../services/types.service';
+import { Message, Schema } from '../services/schema';
 import {
   ConnectionsListResponse,
   ConnectorSummary,
   DbConnectionService,
   MappedTable
 } from '../db-connection-editor/db-importer.service';
-import {ConvertSchemaEvent} from './schema-importer.models';
-import {SchemaEdit, SchemaEditOperation, SchemaImporterService} from './schema-importer.service';
-import {Observable} from 'rxjs/internal/Observable';
-import {shareReplay} from 'rxjs/operators';
-import {appInstanceType} from 'src/app/app-config/app-instance.vyne';
-import {PackagesService, SourcePackageDescription} from "../package-viewer/packages.service";
+import { ConvertSchemaEvent } from './schema-importer.models';
+import { SchemaEdit, SchemaEditOperation, SchemaImporterService } from './schema-importer.service';
+import { Observable } from 'rxjs/internal/Observable';
+import { shareReplay } from 'rxjs/operators';
+import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
+import { PackagesService, SourcePackageDescription } from '../package-viewer/packages.service';
+import { BehaviorSubject } from 'rxjs';
 
 
 @Component({
   selector: 'app-schema-importer',
   styleUrls: ['./schema-importer.component.scss'],
   template: `
-    <div class="importer-step step" *ngIf="wizardStep === 'importSchema'">
-      <h2 *ngIf="title">Add a new schema</h2>
+    <div class="importer-step step" *ngIf="(wizardStep | async) === 'importSchema'">
+      <h2 *ngIf="title">{{ title }}</h2>
       <div class="form-container">
-        <app-schema-source-panel *ngIf="packages$ && connections"
+        <app-schema-source-panel
+          *ngIf="(packages$ | async) && connections"
           [packages]="packages$ | async"
           [dbConnections]="connections?.connections"
           (dbConnectionChanged)="onDbConnectionChanged($event)"
@@ -30,13 +32,17 @@ import {PackagesService, SourcePackageDescription} from "../package-viewer/packa
           (convertSchema)="convertSchema($event)"
           [schema]="schema"
           [working]="working"
+          [dataSourceDisplayType]="dataSourceDisplayType"
+          [useIslandContainer]="useIslandContainer"
         ></app-schema-source-panel>
-        <tui-notification status="error" *ngIf="schemaConversionError">{{schemaConversionError}}
+        <tui-notification (close)="schemaConversionError = ''" status="error" *ngIf="schemaConversionError"
+                          class="notification-error">{{ schemaConversionError }}
         </tui-notification>
       </div>
     </div>
-    <div class="configuration-step step" *ngIf="wizardStep === 'configureTypes'">
-      <h2>Configure the schema</h2>
+    <div class="configuration-step step" *ngIf="(wizardStep | async) === 'configureTypes'">
+      <h2>Configure the Data source</h2>
+      <p>[Need some explanatory info here]</p>
       <app-schema-explorer-table [partialSchema]="schemaSubmissionResult"
                                  [schema]="schema"
                                  [working]="working"
@@ -45,16 +51,30 @@ import {PackagesService, SourcePackageDescription} from "../package-viewer/packa
                                  (save)="submitEdits($event)"
       ></app-schema-explorer-table>
     </div>
+    <tui-notification
+      [status]="schemaSaveResultMessage.level.toLowerCase()"
+      *ngIf="schemaSaveResultMessage && schemaSaveResultMessage.level === 'ERROR'"
+      class="notification-error"
+    >
+      {{ schemaSaveResultMessage.message }}
+    </tui-notification>
   `,
   host: {'class': appInstanceType.appType},
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SchemaImporterComponent {
-  wizardStep: 'importSchema' | 'configureTypes' = 'importSchema';
+  wizardStep: BehaviorSubject<'importSchema' | 'configureTypes'> = new BehaviorSubject('importSchema');
 
   packages$: Observable<SourcePackageDescription[]>
 
   @Input()
   title = 'Add a new schema';
+  @Input()
+  dataSourceDisplayType: 'list' | 'buttons' = 'list';
+  @Input()
+  useIslandContainer: boolean;
+  @Output()
+  dataSourceAdded: EventEmitter<void> = new EventEmitter()
 
   connections: ConnectionsListResponse;
   mappedTables$: Observable<MappedTable[]>;
@@ -69,6 +89,7 @@ export class SchemaImporterComponent {
               private schemaService: SchemaImporterService,
               private typeService: TypesService,
               private packagesService: PackagesService,
+              private changeDetector: ChangeDetectorRef
   ) {
     this.packages$ = packagesService.listPackages();
     dbService.getConnections()
@@ -86,13 +107,15 @@ export class SchemaImporterComponent {
     this.working = true;
     this.schemaService.convertSchema($event).subscribe((result: SchemaSubmissionResult) => {
       this.schemaSubmissionResult = result;
-      this.wizardStep = 'configureTypes';
+      this.wizardStep.next('configureTypes');
       console.log(JSON.stringify(result));
       this.working = false;
+      this.changeDetector.markForCheck();
     }, error => {
       console.error(JSON.stringify(error));
-      this.schemaConversionError = error.error?.message || 'An error occurred';
+      this.schemaConversionError = error.error?.message || error.message || 'An error occurred';
       this.working = false;
+      this.changeDetector.markForCheck();
     });
   }
 
@@ -111,14 +134,18 @@ export class SchemaImporterComponent {
             message: 'The schema was updated successfully',
             level: 'SUCCESS',
           };
+          this.wizardStep.next('importSchema');
+          this.dataSourceAdded.emit();
+          this.changeDetector.markForCheck();
         },
         error => {
           console.error(JSON.stringify(error));
           this.schemaSaveResultMessage = {
             message: error.error?.message || 'An error occurred',
-            level: 'FAILURE',
+            level: 'ERROR',
           };
           this.working = false;
+          this.changeDetector.markForCheck();
         },
       );
   }
