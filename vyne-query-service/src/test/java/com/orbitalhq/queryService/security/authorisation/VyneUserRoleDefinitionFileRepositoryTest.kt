@@ -29,7 +29,7 @@ class VyneUserRoleDefinitionFileRepositoryTest {
 
       platformManager!!.grantedAuthorities.should.equal(
          setOf(
-            VyneGrantedAuthority.BrowseSchema,
+            VyneGrantedAuthority.BrowseProjects,
             VyneGrantedAuthority.EditSchema,
             VyneGrantedAuthority.CancelQuery,
             VyneGrantedAuthority.ViewHistoricQueryResults,

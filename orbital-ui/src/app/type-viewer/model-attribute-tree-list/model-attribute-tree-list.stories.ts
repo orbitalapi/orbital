@@ -2,7 +2,7 @@ import {moduleMetadata, storiesOf} from '@storybook/angular';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {schemaWithNestedTypes} from '../../schema-importer/schema-importer.data';
+import {schemaWithNestedTypes} from '../../data-source-import/data-source-import.data';
 import { TypeViewerModule } from '../type-viewer.module';
 import { VERY_LARGE_SCHEMA } from './very-large-schema';
 

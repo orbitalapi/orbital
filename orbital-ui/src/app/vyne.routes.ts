@@ -50,16 +50,24 @@ export const VYNE_ROUTES = RouterModule.forRoot(
       data: {requiredAuthority: VynePrivileges.EditSchema}
     },
     {
-      path: 'schemas',
-      loadChildren: () => import('./schema-explorer/schema-explorer.module').then(m => m.SchemaExplorerModule),
+      path: 'projects',
+      loadChildren: () => import('./project-explorer/project-explorer.module').then(m => m.ProjectExplorerModule),
       canActivate: [AuthGuard],
-      data: {requiredAuthority: VynePrivileges.BrowseSchema},
+      data: {requiredAuthority: VynePrivileges.BrowseProjects},
+    },
+    {
+      path: 'schemas',
+      redirectTo: 'projects'
+    },
+    {
+      path: 'project-import',
+      loadChildren: () => import('./project-import/project-import.route.module').then(m => m.ProjectImportRouteModule),
+      canActivate: [AuthGuard],
+      data: {requiredAuthority: VynePrivileges.EditSchema}
     },
     {
       path: 'schema-importer',
-      loadChildren: () => import('./schema-importer/schema-importer.module').then(m => m.SchemaImporterModule),
-      canActivate: [AuthGuard],
-      data: {requiredAuthority: VynePrivileges.EditSchema}
+      redirectTo: 'project-import'
     },
     {
       path: 'connection-manager',

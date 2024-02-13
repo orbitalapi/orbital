@@ -1,6 +1,6 @@
 // homepage buttons
 export const dataCatalogButton = ':nth-child(1) > a' // data-e2e-id="data-catalog-sidebar"
-export const schemaExplorerButton = ':nth-child(2) > a'// data-e2e-id="schema-explorer-sidebar"
+export const projectsExplorerButton = ':nth-child(2) > a'// data-e2e-id="projects-explorer-sidebar"
 export const queryBuilderButton = ':nth-child(3) > a'// data-e2e-id="query-builder-sidebar"
 export const dataExplorerButton = ':nth-child(4) > a'// data-e2e-id="data-explorer-sidebar"
 export const queryHistoryButton = ':nth-child(5) > a'// data-e2e-id="query-history-sidebar"

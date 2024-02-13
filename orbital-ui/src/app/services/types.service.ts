@@ -33,7 +33,7 @@ import {ValueWithTypeName} from './models';
 import {ENVIRONMENT, Environment} from './environment';
 import {TuiDialogService} from '@taiga-ui/core';
 import {PackageIdentifier, PackageMetadata, SourcePackageDescription} from "../package-viewer/packages.service";
-import {SchemaEditOperation} from "../schema-importer/schema-importer.service";
+import {SchemaEditOperation} from "../project-import/schema-importer.service";
 import {SavedQuery} from "./type-editor.service";
 
 

@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { ParsedSource, PartialSchema } from '../services/schema';
 import { map } from 'rxjs/operators';
-import { FileSystemPackageSpec, GitRepositoryConfig } from 'src/app/schema-importer/schema-importer.models';
+import { FileSystemPackageSpec, GitRepositoryConfig } from 'src/app/project-import/project-import.models';
 
 @Injectable({
   providedIn: 'root',

@@ -5,7 +5,7 @@
 // The value is switched at compile time for Orbital (configured in angular.json).
 //
 // eg: (in a route...)
-// component: appInstanceType.appType == 'vyne' ? SchemaExplorerContainerComponent : OrbitalSchemaExplorerContainerComponent
+// component: appInstanceType.appType == 'vyne' ? ProjectExplorerContainerComponent : OrbitalSchemaExplorerContainerComponent
 import { AppType } from 'src/app/app-config/app-type';
 
 export const appInstanceType: { appType: AppType } = {
