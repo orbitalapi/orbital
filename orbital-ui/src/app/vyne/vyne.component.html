@@ -46,12 +46,12 @@
       tuiProgressBar
       size='xs'
       new
-      *ngIf='isLoadingRoute'
+      *ngIf='isLoadingRoute$ | async'
     ></progress>
     <div class="alerts-container">
         <app-system-alert *ngFor="let alert of alerts" [alert]="alert"></app-system-alert>
     </div>
-    <div class="app-page-content" [ngClass]="{ isLoading: isLoadingRoute}">
+    <div class="app-page-content" [ngClass]="{ isLoading: isLoadingRoute$ | async}">
         <router-outlet></router-outlet>
         <app-draft-management-bar></app-draft-management-bar>
     </div>

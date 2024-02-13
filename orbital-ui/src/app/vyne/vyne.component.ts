@@ -113,7 +113,7 @@ export class VyneComponent implements OnInit {
   userInfo: VyneUser | null = null;
   alerts: SystemAlert[] = [];
 
-  isLoadingRoute: boolean;
+  isLoadingRoute$: Observable<boolean>;
 
   constructor(private breakpointObserver: BreakpointObserver,
               private appInfoService: AppInfoService,
@@ -218,13 +218,11 @@ export class VyneComponent implements OnInit {
           this.setCompilationErrorAlert();
         }
       });
-    this.router.events.subscribe(event => {
-      if (event instanceof RouteConfigLoadStart) {
-        this.isLoadingRoute = true;
-      } else if (event instanceof RouteConfigLoadEnd) {
-        this.isLoadingRoute = false;
-      }
-    });
+    this.isLoadingRoute$ = this.router.events
+      .pipe(
+        filter(event => event instanceof RouteConfigLoadStart || event instanceof RouteConfigLoadEnd),
+        map(event => event instanceof RouteConfigLoadStart)
+      )
   }
 }
 

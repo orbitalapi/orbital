@@ -10,6 +10,7 @@ import {
 import {TuiDialogService} from '@taiga-ui/core';
 import {isNullOrUndefined} from 'util';
 import {PackageIdentifier} from "../../../package-viewer/packages.service";
+import { UiCustomisations } from '../../../../environments/ui-customisations';
 
 @Component({
   selector: 'app-kafka-topic-config',
@@ -48,7 +49,7 @@ import {PackageIdentifier} from "../../../package-viewer/packages.service";
           <div class="form-item-description-container">
             <h3>Topic</h3>
             <div class="help-text">
-              Set the topic for Vyne to consume from
+              Set the topic for {{ uiConfig.productName }} to consume from
             </div>
           </div>
           <div class="form-element">
@@ -61,7 +62,7 @@ import {PackageIdentifier} from "../../../package-viewer/packages.service";
           <div class="form-item-description-container">
             <h3>Topic offset</h3>
             <div class="help-text">
-              Set the offset rules. This determines where to start reading from when Vyne connects to the topic the
+              Set the offset rules. This determines where to start reading from when {{ uiConfig.productName }} connects to the topic the
               first time.
             </div>
           </div>
@@ -139,14 +140,14 @@ import {PackageIdentifier} from "../../../package-viewer/packages.service";
     </div>
 
     <div class="form-button-bar">
-      <button tuiButton [showLoader]="working" (click)="doCreate()" [size]="'m'">Create
+      <button tuiButton [showLoader]="working" (click)="doCreate()" [size]="'m'">Next
       </button>
     </div>
   `,
   styleUrls: ['./kafka-topic-config.component.scss']
 })
 export class KafkaTopicConfigComponent {
-
+  readonly uiConfig = UiCustomisations;
   kafkaTopicOptions: KafkaTopicConverterOptions = new KafkaTopicConverterOptions();
 
   constructor(@Inject(Injector) private readonly injector: Injector,

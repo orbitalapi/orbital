@@ -15,7 +15,7 @@
 .radio-bar-container {
   margin: 0 1rem 1rem;
   // To stop it going full-width
-  width: 30em;
+  max-width: 20em;
 }
 
 .documentation-content-container {
@@ -27,10 +27,10 @@
 .button-bar {
   display: flex;
   padding-top: 1rem;
-  border-top: 1px solid rgba($vyne-lilac, 0.3);
+  justify-content: right;
 
   button {
-    margin-right: 1rem;
+    margin-left: 1rem;
   }
 }
 

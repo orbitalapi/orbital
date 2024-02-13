@@ -1,3 +1,28 @@
+:host {
+  display: flex; // This is required to allow the Monaco editor to stretch vertically
+  flex-direction: column;
+}
+
 .intro-text {
   margin-top: 0;
+}
+
+:host ::ng-deep {
+  app-schema-importer {
+    background-color: transparent !important;
+  }
+}
+
+.data-source-created {
+  margin-bottom: 2rem;
+
+  h3 {
+    margin-right: 1rem;
+  }
+
+  .next-step {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
 }

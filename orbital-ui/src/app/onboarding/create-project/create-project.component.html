@@ -1,19 +1,22 @@
-<ng-container *ngIf="step !== 'projectCreated'; else projectCreated">
+<ng-container *ngIf="step !== 'projectCreated' && !hasCreatedProject; else hasCreatedTemplate">
   <h3 class="intro-text">Looks like you might be new to Orbital, let’s get you up to speed!</h3>
-  <p>Firstly you’ll need to create a new Project. Projects are [insert Project definition]</p>
+  <p>Firstly you’ll need to create a new Project. Projects are [insert Project definition].</p>
   <p>You can create a Project via the {{ uiConfig.productName }} interface (where you are now) or via a microservice.</p>
   <p>So what’s it gonna be? </p>
 </ng-container>
-<ng-template #projectCreated>
+<ng-template #hasCreatedTemplate>
   <div class="project-created">
     <h3 class="intro-text">Great! Now that you've created a Project, continue on to create a Data source for it</h3>
-    <button tuiButton size="m" class="next-step" [routerLink]="['/onboarding/data-source' ]">Next step</button>
+    <p class="next-step">
+      (or feel free to hang around and create another Project, now that you're a pro at that)
+      <button tuiButton size="m" [routerLink]="['/onboarding/data-source' ]">Next step</button>
+    </p>
   </div>
 </ng-template>
 <app-project-list #projectList [isListOpen]="step === 'projectCreated'"></app-project-list>
 
 <!--Options-->
-<div class="island-container tui-space_top-4" *ngIf="step === 'options'">
+<div class="island-container tui-space_top-4" *ngIf="step === 'options' || step === 'projectCreated'">
   <tui-island>
     <div class="tui-space_bottom-2">
       <tui-avatar
@@ -100,7 +103,7 @@
     <h3 class="tui-island__title">Git Repository</h3>
     <app-git-config
       [isOnboardingMode]="true"
-      (gitRepoAdded)="step = 'projectCreated'"
+      (gitRepoAdded)="step = 'projectCreated'; hasCreatedProject = true"
       (goBackOnboarding)="step = 'options'"
     >
     </app-git-config>
@@ -120,7 +123,7 @@
     <h3 class="tui-island__title">Local disk</h3>
     <app-file-config
       [isOnboardingMode]="true"
-      (localFileAdded)="step = 'projectCreated'"
+      (localFileAdded)="step = 'projectCreated'; hasCreatedProject = true"
       (goBackOnboarding)="step = 'options'">
 
     </app-file-config>

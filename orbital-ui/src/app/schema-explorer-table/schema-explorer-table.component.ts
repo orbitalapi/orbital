@@ -66,9 +66,6 @@ import {SchemaEditOperation} from "../schema-importer/schema-importer.service";
     </div>
     <div class="button-bar" *ngIf="editable">
       <button tuiButton size="m" (click)="savePendingEdits()" [showLoader]="working">Save</button>
-      <tui-notification status="success" *ngIf="saveResultMessage && saveResultMessage.level === 'SUCCESS'">
-        {{ saveResultMessage.message }}
-      </tui-notification>
     </div>
 
   `,
@@ -82,6 +79,7 @@ export class SchemaExplorerTableComponent {
   selectedModel: Type;
   selectedOperation: ServiceMember;
 
+  // TODO: this should only be handling the error state - be good to align these around the TUI notification
   @Input()
   saveResultMessage: Message;
 

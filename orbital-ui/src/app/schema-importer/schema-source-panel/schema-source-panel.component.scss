@@ -5,10 +5,24 @@
   @extend .form-container;
 }
 
-.config-container {
-  margin-top: 2rem;
-}
-
 app-project-selector {
   margin-bottom: 1rem;
+}
+
+.data-source-options-container {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.island {
+  margin-top: 1rem;
+
+  .config-container {
+    margin-top: 1rem;
+  }
+}
+
+.config-container {
+  margin-top: 2rem;
 }

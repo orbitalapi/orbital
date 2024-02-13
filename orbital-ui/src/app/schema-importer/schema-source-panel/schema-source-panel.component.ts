@@ -11,52 +11,76 @@ import {SourcePackageDescription} from "../../package-viewer/packages.service";
   template: `
     <div>
       <app-project-selector
-        prompt="Select a project to save the schema to"
+        prompt="Select a project to add the data source to"
         [packages]="packages"
         [(ngModel)]="selectedPackage"
       ></app-project-selector>
       <tui-select
+        *ngIf="dataSourceDisplayType === 'list'"
         [stringify]="stringify"
         [(ngModel)]="schemaType"
+        [disabled]="!selectedPackage"
       >
-        Select a schema type to import
+        Select a data source to add
         <tui-data-list-wrapper
           *tuiDataList
           [items]="schemaTypes | tuiFilterByInputWith : stringify"
           [itemContent]="stringify | tuiStringifyContent"
         ></tui-data-list-wrapper>
       </tui-select>
-      <div [ngSwitch]="schemaType?.id" class="config-container">
-        <app-swagger-config *ngSwitchCase="'swagger'"
-                            [packageIdentifier]="selectedPackage?.identifier"
-                            (loadSchema)="convertSchema.emit($event)"
-                            [working]="working">
-        </app-swagger-config>
-        <app-jsonschema-config *ngSwitchCase="'jsonSchema'"
-                               [packageIdentifier]="selectedPackage?.identifier"
-                               [working]="working"
-                               (loadSchema)="convertSchema.emit($event)">
-        </app-jsonschema-config>
-        <app-database-table-config [connections]="dbConnections | databases"
-                                   *ngSwitchCase="'databaseTable'"
-                                   [tables$]="tables$"
-                                   [packageIdentifier]="selectedPackage?.identifier"
-                                   (connectionChanged)="dbConnectionChanged.emit($event)"
-                                   (loadSchema)="convertSchema.emit($event)"
-                                   [working]="working"
-        ></app-database-table-config>
-        <app-kafka-topic-config [connections]="dbConnections | messageBrokers"
-                                [schema]="schema"
-                                [working]="working"
-                                [packageIdentifier]="selectedPackage?.identifier"
-                                (loadSchema)="convertSchema.emit($event)"
-                                *ngSwitchCase="'kafkaTopic'"></app-kafka-topic-config>
-        <app-protobuf-config [working]="working"
-                             [packageIdentifier]="selectedPackage?.identifier"
-                             (loadSchema)="convertSchema.emit($event)"
-                             *ngSwitchCase="'protobuf'"
-        ></app-protobuf-config>
+      <div
+        *ngIf="dataSourceDisplayType === 'buttons'"
+        class="data-source-options-container"
+      >
+        <button
+          *ngFor="let schemaT of schemaTypes"
+          [disabled]="!selectedPackage"
+          [appearance]="schemaType === schemaT ? 'whiteblock-active' : 'whiteblock'"
+          (click)="schemaType = schemaT"
+          tuiButton size="m"
+          iconRight="tuiIconPlus"
+        >
+          {{schemaT.label}}
+        </button>
       </div>
+      <ng-container *ngIf="useIslandContainer && schemaType?.id; else forms">
+        <tui-island class="island">
+          <ng-container *ngTemplateOutlet="forms"></ng-container>
+        </tui-island>
+      </ng-container>
+      <ng-template #forms>
+        <div [ngSwitch]="schemaType?.id" class="config-container">
+          <app-swagger-config *ngSwitchCase="'swagger'"
+                              [packageIdentifier]="selectedPackage?.identifier"
+                              (loadSchema)="convertSchema.emit($event)"
+                              [working]="working">
+          </app-swagger-config>
+          <app-jsonschema-config *ngSwitchCase="'jsonSchema'"
+                                 [packageIdentifier]="selectedPackage?.identifier"
+                                 [working]="working"
+                                 (loadSchema)="convertSchema.emit($event)">
+          </app-jsonschema-config>
+          <app-database-table-config [connections]="dbConnections | databases"
+                                     *ngSwitchCase="'databaseTable'"
+                                     [tables$]="tables$"
+                                     [packageIdentifier]="selectedPackage?.identifier"
+                                     (connectionChanged)="dbConnectionChanged.emit($event)"
+                                     (loadSchema)="convertSchema.emit($event)"
+                                     [working]="working"
+          ></app-database-table-config>
+          <app-kafka-topic-config [connections]="dbConnections | messageBrokers"
+                                  [schema]="schema"
+                                  [working]="working"
+                                  [packageIdentifier]="selectedPackage?.identifier"
+                                  (loadSchema)="convertSchema.emit($event)"
+                                  *ngSwitchCase="'kafkaTopic'"></app-kafka-topic-config>
+          <app-protobuf-config [working]="working"
+                               [packageIdentifier]="selectedPackage?.identifier"
+                               (loadSchema)="convertSchema.emit($event)"
+                               *ngSwitchCase="'protobuf'"
+          ></app-protobuf-config>
+        </div>
+      </ng-template>
     </div>
   `
 })
@@ -65,7 +89,7 @@ export class SchemaSourcePanelComponent {
   schemaTypes: SchemaType[] = [
     // { 'label' : 'Taxi', id: 'taxi'},
     {'label': 'Swagger / OpenAPI', id: 'swagger'},
-    {'label': 'JsonSchema', id: 'jsonSchem'},
+    {'label': 'JsonSchema', id: 'jsonSchema'},
     {'label': 'Database table', id: 'databaseTable'},
     {'label': 'Kafka topic', id: 'kafkaTopic'},
     {'label': 'Protobuf', id: 'protobuf'},
@@ -77,10 +101,10 @@ export class SchemaSourcePanelComponent {
 
   readonly stringify = (item: SchemaType) => item.label;
 
+  selectedPackage: SourcePackageDescription
+
   @Input()
   packages: SourcePackageDescription[];
-
-  selectedPackage: SourcePackageDescription
 
   @Input()
   working: boolean = false;
@@ -94,12 +118,17 @@ export class SchemaSourcePanelComponent {
   @Output()
   dbConnectionChanged = new EventEmitter<ConnectorSummary>();
 
-
   @Output()
   convertSchema = new EventEmitter<ConvertSchemaEvent>();
 
   @Input()
   schema : Schema
+
+  @Input()
+  dataSourceDisplayType: 'list' | 'buttons' = 'list';
+
+  @Input()
+  useIslandContainer: boolean;
 
 }
 

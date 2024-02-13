@@ -87,7 +87,7 @@ import {PackageIdentifier} from "../../../package-viewer/packages.service";
     </div>
 
     <div class="form-button-bar">
-      <button tuiButton [showLoader]="working" (click)="doCreate()" [size]="'m'">Create
+      <button tuiButton [showLoader]="working" (click)="doCreate()" [size]="'m'">Next
       </button>
     </div>
   `,

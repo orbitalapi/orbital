@@ -30,6 +30,8 @@
   }
   .form-item-description-container {
     margin-bottom: 1rem;
+    flex: 0.75;
+
     p:first-child {
       margin-top: 0;
     }
@@ -39,13 +41,15 @@
   }
 
 
-
   .help-text {
-    width: 24rem;
     font-size: 0.95rem;
   }
 
-  mat-form-field, app-type-autocomplete, app-schema-member-autocomplete, .form-element {
+  .form-element {
+    flex: 1;
+  }
+
+  mat-form-field, app-type-autocomplete, app-schema-member-autocomplete {
     flex-grow: 1;
   }
 

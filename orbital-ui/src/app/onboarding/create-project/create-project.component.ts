@@ -27,5 +27,6 @@ import { RouterLink } from '@angular/router';
 export class CreateProjectComponent {
   readonly uiConfig = UiCustomisations;
 
-  step: 'options' | 'gitRepo' | 'projectCreated' | 'localDisk' | 'microService' = 'options';
+  step: 'options' | 'projectCreated' | 'gitRepo' | 'localDisk' | 'microService' = 'options';
+  hasCreatedProject: boolean;
 }
