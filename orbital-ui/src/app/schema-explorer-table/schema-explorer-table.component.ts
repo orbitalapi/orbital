@@ -3,7 +3,7 @@ import {Message, Operation, PartialSchema, Schema, ServiceMember, Type, Versione
 import {Observable, ReplaySubject} from 'rxjs';
 import {tap} from 'rxjs/operators';
 import {SchemaSubmissionResult} from "../services/types.service";
-import {SchemaEditOperation} from "../schema-importer/schema-importer.service";
+import {SchemaEditOperation} from "../project-import/schema-importer.service";
 
 @Component({
   selector: 'app-schema-explorer-table',

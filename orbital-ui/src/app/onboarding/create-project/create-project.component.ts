@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { TuiAvatarModule, TuiIslandModule, TuiStepperModule } from '@taiga-ui/kit';
 import { TuiButtonModule } from '@taiga-ui/core';
 import { UiCustomisations } from '../../../environments/ui-customisations';
-import { SchemaSourceConfigModule } from '../../schema-source-config/schema-source-config.module';
+import { ProjectSourceConfigModule } from '../../project-import/project-source-config/project-source-config.module';
 import { ProjectListComponent } from './project-list/project-list.component';
 import { RouterLink } from '@angular/router';
 
@@ -17,7 +17,7 @@ import { RouterLink } from '@angular/router';
     TuiIslandModule,
     TuiButtonModule,
     TuiAvatarModule,
-    SchemaSourceConfigModule,
+    ProjectSourceConfigModule,
     ProjectListComponent
   ],
   templateUrl: './create-project.component.html',

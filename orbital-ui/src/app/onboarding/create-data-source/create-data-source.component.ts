@@ -3,12 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TuiButtonModule } from '@taiga-ui/core';
 import { UiCustomisations } from '../../../environments/ui-customisations';
-import { SchemaImporterModule } from '../../schema-importer/schema-importer.module';
+import { DataSourceImportComponent } from '../../data-source-import/data-source-import.component';
 
 @Component({
   selector: 'app-create-data-source',
   standalone: true,
-  imports: [CommonModule, RouterLink, TuiButtonModule, SchemaImporterModule],
+  imports: [CommonModule, RouterLink, TuiButtonModule, DataSourceImportComponent],
   templateUrl: './create-data-source.component.html',
   styleUrls: ['./create-data-source.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush

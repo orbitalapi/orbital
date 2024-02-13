@@ -4,7 +4,7 @@ import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {of} from 'rxjs';
 import {searchResults} from '../../search/search-result-list/search-result.stories';
-import {schemaWithNestedTypes} from '../../schema-importer/schema-importer.data';
+import {schemaWithNestedTypes} from '../../data-source-import/data-source-import.data';
 import {OperationQueryResult} from '../../services/types.service';
 import {SearchResultDocs} from './type-search.component';
 import {TypeViewerModule} from '../type-viewer.module';

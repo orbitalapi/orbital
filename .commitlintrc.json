@@ -36,7 +36,7 @@
          "ui/query-history",
          "ui/results-tree",
          "ui/schema-explorer",
-         "ui/schema-importer",
+         "ui/project-import",
          "ui/sequence-diagram"
       ]
    }
