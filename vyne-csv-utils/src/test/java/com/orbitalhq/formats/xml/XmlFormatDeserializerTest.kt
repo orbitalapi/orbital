@@ -176,12 +176,13 @@ model MyMessage {
 
 @com.orbitalhq.formats.Xml
 model Person {
+    id : PersonId inherits String
     name : PersonName inherits String
 }"""
          )
          val src = """{
     "messageId" : "123",
-    "xmlRecord" : "<person><name>Jimmy</name></person>"
+    "xmlRecord" : "<person id=\"jj\"><name>Jimmy</name></person>"
 }"""
          val typedInstance = TypedInstance.from(
             schema.type("MyMessage"), src, schema,
@@ -191,10 +192,27 @@ model Person {
          typedInstance.toRawObject().shouldBe(
             mapOf(
                "messageId" to "123",
-               "xmlRecord" to mapOf("name" to "Jimmy")
+               "xmlRecord" to mapOf("name" to "Jimmy", "id" to "jj")
             ),
 
          )
+      }
+
+      it("is possible to embed xml inside json") {
+         val schema = TaxiSchema.from("""
+            model MessageWrapper {
+               messageId : MessageId inherits Int
+               content: MessagePayload
+            }
+
+            @com.orbitalhq.formats.Xml
+            model MessagePayload {
+               id : RowId inherits String
+               name : PersonName inherits String
+            }
+         """)
+
+
       }
    }
 })
