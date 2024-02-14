@@ -348,7 +348,7 @@ namespace vyne {
             @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/people")
             operation findPeople():Person[]
             @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/country/{id}")
-            operation findCountry(@PathVariable id : CountryId):Country
+            operation findCountry(@PathVariable("id") id : CountryId):Country
          }
       """, Invoker.RestTemplateWithCache
             )

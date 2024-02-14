@@ -124,7 +124,7 @@ fun testVyneWithStub(schema: String, invokerProvider: (TaxiSchema) -> List<Opera
 
 fun testVyne(schemas: List<String>, invokerProvider: (TaxiSchema) -> List<OperationInvoker>): Vyne {
    // Note : We bake-in HttpService in our tests, as for years it was impicilty available
-   val schema = TaxiSchema.fromStrings(listOf(HttpService.asTaxi()) + schemas )
+   val schema = TaxiSchema.fromStrings(listOf(HttpService.asTaxi()) + schemas , onErrorBehaviour = TaxiSchema.Companion.TaxiSchemaErrorBehaviour.THROW_EXCEPTION)
    val invokers = invokerProvider(schema)
    return testVyne(schema, invokers)
 }
