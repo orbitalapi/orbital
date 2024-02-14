@@ -27,7 +27,7 @@ object VynePrivileges {
    const val ViewQueryHistory = "VIEW_HISTORIC_QUERY_LIST"
    const val ViewHistoricQueryResults = "VIEW_HISTORIC_QUERY_RESULT"
    const val BrowseCatalog = "BROWSE_CATALOG"
-   const val BrowseProjects = "BROWSE_PROJECTS"
+   const val BrowseSchema = "BROWSE_SCHEMA"
    const val EditSchema = "EDIT_SCHEMA"
    const val ViewCaskDefinitions = "VIEW_CASK_DEFINITIONS"
    const val EditCaskDefinitions = "EDIT_CASK_DEFINITIONS"
@@ -51,7 +51,7 @@ enum class VyneGrantedAuthority(val constantValue: GrantedAuthorityName) {
    ViewQueryHistory(VynePrivileges.ViewQueryHistory),
    ViewHistoricQueryResults(VynePrivileges.ViewHistoricQueryResults),
    BrowseCatalog(VynePrivileges.BrowseCatalog),
-   BrowseProjects(VynePrivileges.BrowseProjects),
+   BrowseSchema(VynePrivileges.BrowseSchema),
    EditSchema(VynePrivileges.EditSchema),
    ViewCaskDefinitions(VynePrivileges.ViewCaskDefinitions),
    EditCaskDefinitions(VynePrivileges.EditCaskDefinitions),

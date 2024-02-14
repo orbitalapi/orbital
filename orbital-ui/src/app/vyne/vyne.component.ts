@@ -34,7 +34,7 @@ export class VyneComponent implements OnInit {
       icon: 'assets/img/tabler/folder-code.svg',
       route: 'projects',
       testId: 'projects-explorer-sidebar',
-      requiredAuthority: VynePrivileges.BrowseProjects
+      requiredAuthority: VynePrivileges.BrowseSchema
     },
     {
       title: 'Query editor',
@@ -70,14 +70,14 @@ export class VyneComponent implements OnInit {
       icon: 'assets/img/tabler/tools.svg',
       route: 'designer',
       testId: 'designer',
-      requiredAuthority: VynePrivileges.BrowseProjects
+      requiredAuthority: VynePrivileges.BrowseSchema
     },
     {
       title: 'Endpoints',
       icon: 'assets/img/tabler/traffic-lights.svg',
       route: 'endpoints',
       testId: 'endpoints',
-      requiredAuthority: VynePrivileges.BrowseProjects
+      requiredAuthority: VynePrivileges.BrowseSchema
     },
     // {
     //   title: 'Pipeline manager',
