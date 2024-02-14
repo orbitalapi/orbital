@@ -198,21 +198,41 @@ model Person {
          )
       }
 
-      it("is possible to embed xml inside json") {
-         val schema = TaxiSchema.from("""
-            model MessageWrapper {
-               messageId : MessageId inherits Int
-               content: MessagePayload
+      it("is possible to use complex expressions on xml embedded in json") {
+         val schema = TaxiSchema.from(
+            """
+               model MyMessage {
+                   messageId : MessageId inherits String
+                   xmlRecord : Foo
+               }
+
+               @com.orbitalhq.formats.Xml
+         model Foo {
+            assetClass : String by xpath("/Foo/assetClass")
+            identifierValue : String? by when (this.assetClass) {
+               "FXD" -> left(xpath("/Foo/symbol"),6)
+               else -> xpath("/Foo/isin")
             }
+         }
+         """.trimIndent()
+         )
 
-            @com.orbitalhq.formats.Xml
-            model MessagePayload {
-               id : RowId inherits String
-               name : PersonName inherits String
-            }
-         """)
+         fun xml(assetClass: String) = """<Foo><assetClass>$assetClass</assetClass><symbol>GBPUSD-100293</symbol><isin>ISIN-138443</isin></Foo>"""
 
-
+         val json = """
+            { "messageId" : "123" , "xmlRecord" : "${xml("FXD")}" }
+         """.trimIndent()
+         val typedInstance = TypedInstance.from(
+            schema.type("MyMessage"), json, schema,
+            source = Provided,
+            formatSpecs = listOf(XmlFormatSpec)
+         )
+         typedInstance.toRawObject().shouldBe(
+            mapOf(
+               "messageId" to "123",
+               "xmlRecord" to mapOf("assetClass" to "FXD", "identifierValue" to "GBPUSD")
+            ),
+            )
       }
    }
 })
