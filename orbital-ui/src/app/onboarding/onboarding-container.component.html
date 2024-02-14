@@ -16,6 +16,7 @@
         routerLinkActive
         tuiStep
         [stepState]="(currentStepIndex$ | async) === 0 ? 'normal' : 'pass'"
+        [disabled]="(currentStepIndex$ | async) > 0"
       >
         Create Project
       </button>
@@ -24,6 +25,7 @@
         routerLinkActive
         tuiStep
         [stepState]="(currentStepIndex$ | async) <= 1 ? 'normal' : 'pass'"
+        [disabled]="(currentStepIndex$ | async) > 1"
       >
         Create Data source
       </button>

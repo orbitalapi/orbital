@@ -4,6 +4,7 @@ import {Observable, ReplaySubject} from 'rxjs';
 import {tap} from 'rxjs/operators';
 import {SchemaSubmissionResult} from "../services/types.service";
 import {SchemaEditOperation} from "../project-import/schema-importer.service";
+import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
 
 @Component({
   selector: 'app-schema-explorer-table',
@@ -53,6 +54,7 @@ import {SchemaEditOperation} from "../project-import/schema-importer.service";
               *ngIf="displayMode === 'code'"
               class='code-editor'
               [sources]="versionedSources"
+              [flexboxMode]="codeViewerFlexBoxMode"
             ></app-code-viewer>
           </div>
 
@@ -94,6 +96,9 @@ export class SchemaExplorerTableComponent {
 
   @Input()
   allowTryItOut: boolean = false;
+
+  @Input()
+  codeViewerFlexBoxMode: CodeViewerFlexBoxMode = 'flex'
 
   get versionedSources(): VersionedSource[] {
     if (!this._partialSchema) {

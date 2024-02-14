@@ -1,2 +1,39 @@
-<h3 class="intro-text">Congratulations! Try some of the amazing Orbital tools at your disposal</h3>
-<p>explore works!</p>
+<h3 class="intro-text">Congratulations! Try some of the amazing {{ uiConfig.productName }} tools at your disposal</h3>
+<div class="island-container tui-space_top-4">
+  <tui-island>
+    <img src="assets/img/illustrations/catalog.svg">
+    <div>
+      <h3 class="tui-island__title">Catalog</h3>
+      <p class="tui-island__paragraph">
+        A one-stop searchable catalog of all your glossary items, data models, sources and APIs registered with {{ uiConfig.productName }}.
+      </p>
+      <p class="tui-island__paragraph tui-island__paragraph_button action-button">
+        <button tuiButton appearance="outline" size="m" [routerLink]="['/catalog']">Search the catalog</button>
+      </p>
+    </div>
+  </tui-island>
+  <tui-island>
+    <img src="assets/img/illustrations/mind-map-monochromatic.svg">
+    <div>
+      <h3 class="tui-island__title">Diagrams</h3>
+      <p class="tui-island__paragraph">
+        Explore your architecture diagrams to get a visual hierarchy of how data is connected in your Project
+      </p>
+      <p class="tui-island__paragraph tui-island__paragraph_button action-button">
+        <button tuiButton appearance="outline" size="m" [routerLink]="['/catalog/diagram']">Explore diagrams</button>
+      </p>
+    </div>
+  </tui-island>
+  <tui-island>
+    <img class="query-image" src="assets/img/illustrations/search-engine.svg">
+    <div>
+      <h3 class="tui-island__title">Queries</h3>
+      <p class="tui-island__paragraph">
+        Run queries to link data from across all the registered data sources. Get started by running your first query.
+      </p>
+      <p class="tui-island__paragraph tui-island__paragraph_button action-button">
+        <button tuiButton appearance="outline" size="m" [routerLink]="['/query/editor']">Create query</button>
+      </p>
+    </div>
+  </tui-island>
+</div>

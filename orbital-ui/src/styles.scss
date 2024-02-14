@@ -58,6 +58,16 @@ tui-dropdown-host {
 //  box-shadow: 0 1px 2px rgb(19 20 22 / 10%);
 //}
 
+[tuiWrapper][data-appearance='outline'],
+[tuiWrapper][data-appearance='whiteblock'] {
+  color: var(--tui-link-night);
+
+  &:hover {
+    color: var(--tui-link-night-hover);
+  }
+}
+
+
 tui-root {
   // Without this, the app wasn't filling the full height.
   // See : https://github.com/TinkoffCreditSystems/taiga-ui/discussions/1009

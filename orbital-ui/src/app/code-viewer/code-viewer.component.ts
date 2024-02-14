@@ -1,10 +1,12 @@
-import {Component, Input} from '@angular/core';
+import { Component, HostBinding, Input } from '@angular/core';
 import {CompilationMessage, ParsedSource, VersionedSource} from '../services/schema';
 
 declare const require: any;
 /* eslint-disable-next-line */
 // let hljs: any = require('highlight.js/lib');
 // hljs.registerLanguage('taxi', taxiLangDef);
+
+export type CodeViewerFlexBoxMode = 'grid' | 'flex';
 
 @Component({
   selector: 'app-code-viewer',
@@ -29,6 +31,11 @@ export class CodeViewerComponent {
 
   @Input()
   sidebarMode: SidebarMode = 'Auto';
+
+  @Input()
+  flexboxMode: CodeViewerFlexBoxMode = 'flex';
+
+  @HostBinding('class.flex-grid') get className() { return this.flexboxMode === 'grid' }
 
   selectedSource: VersionedSource;
   selectedSourceErrors: CompilationMessage[];

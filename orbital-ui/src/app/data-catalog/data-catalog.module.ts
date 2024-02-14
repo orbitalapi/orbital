@@ -21,7 +21,7 @@ import { TypeViewerContainerComponent } from 'src/app/type-viewer/type-viewer-co
 import { TypeViewerModule } from 'src/app/type-viewer/type-viewer.module';
 import { TypeListModule } from 'src/app/type-list/type-list.module';
 import { HeaderComponentLayoutModule } from 'src/app/header-component-layout/header-component-layout.module';
-import { TuiTabsModule } from '@taiga-ui/kit';
+import { TuiProgressModule, TuiStepperModule, TuiTabsModule } from '@taiga-ui/kit';
 import { SchemaDiagramModule } from 'src/app/schema-diagram/schema-diagram.module';
 import { UiCustomisations } from '../../environments/ui-customisations';
 
@@ -45,8 +45,14 @@ import { UiCustomisations } from '../../environments/ui-customisations';
     HeaderBarModule,
     TypeViewerModule,
     TypeListModule,
+    HeaderComponentLayoutModule,
+    TuiTabsModule,
+    SchemaDiagramModule,
+    TuiStepperModule,
+    TuiProgressModule,
     RouterModule.forChild([
       { path: '', component: DataCatalogContainerComponent, title: `${UiCustomisations.productName}: Catalog` },
+      { path: 'diagram', component: DataCatalogContainerComponent, title: `${UiCustomisations.productName}: Catalog` },
       {
         path: 'browse',
         component: TypeListComponent,
@@ -61,10 +67,7 @@ import { UiCustomisations } from '../../environments/ui-customisations';
         data: { requiredAuthority: VynePrivileges.BrowseCatalog },
         title: `${UiCustomisations.productName}: Catalog`
       }
-    ]),
-    HeaderComponentLayoutModule,
-    TuiTabsModule,
-    SchemaDiagramModule
+    ])
   ]
 })
 export class DataCatalogModule {

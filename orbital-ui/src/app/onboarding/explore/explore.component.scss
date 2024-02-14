@@ -1,3 +1,28 @@
 .intro-text {
   margin-top: 0;
 }
+
+.island-container {
+  display: flex;
+  flex-direction: column;
+
+  tui-island {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+
+    img {
+      max-width: 210px;
+      margin-right: 1rem;
+
+      &.query-image {
+        margin: -65px -20px -35px -20px;
+        max-width: 262px;
+      }
+    }
+  }
+}
+
+.action-button {
+  text-align: center;
+}
