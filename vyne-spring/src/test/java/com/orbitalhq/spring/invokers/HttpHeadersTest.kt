@@ -7,10 +7,14 @@ import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyne
 import io.kotest.common.runBlocking
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import org.junit.Rule
 import org.junit.Test
 import org.springframework.web.reactive.function.client.WebClient
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class HttpHeadersTest {
 
@@ -110,6 +114,99 @@ class HttpHeadersTest {
       val lastRequest = server.takeRequest()
       lastRequest.getHeader("Cache-Control").shouldBe("max-age=9600")
       lastRequest.getHeader("Accept-Encoding").shouldBe("GZIP")
+   }
+
+   @Test
+   fun `can use a date expression on modified since`():Unit = runBlocking {
+      val vyne = vyneWithHttpInvoker(
+         """
+         model Person {
+            name : Name inherits String
+         }
+         service PeopleService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people")
+            operation findPeople(
+               @HttpHeader(name = "If-Modified-Since") ifModifiedSince : Instant = addDays(now(), -1)
+            ):Person[]
+         }
+      """.trimIndent()
+      )
+      prepareServerResponse()
+      vyne.query(
+         """
+         find { Person[] } """
+      )
+         .rawObjects()
+      val lastRequest = server.takeRequest()
+      val modifiedSinceHeader = lastRequest.getHeader("If-Modified-Since")
+
+      modifiedSinceHeader.shouldNotBeNull()
+      val parsedInstant = Instant.parse(modifiedSinceHeader)
+      // if that parsed, then the test is ok
+   }
+
+   @Test
+   fun `can use a formatted type expression on modified since`():Unit = runBlocking {
+      val dateFormat = "dd/MMM/yyyy HH:mm:ss"
+      val vyne = vyneWithHttpInvoker(
+         """
+         @Format("$dateFormat")
+         type CustomModifiedSinceHeader inherits Instant
+         model Person {
+            name : Name inherits String
+         }
+         service PeopleService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people")
+            operation findPeople(
+               @HttpHeader(name = "If-Modified-Since") ifModifiedSince : CustomModifiedSinceHeader = (CustomModifiedSinceHeader) addDays(now(), -1)
+            ):Person[]
+         }
+      """.trimIndent()
+      )
+      prepareServerResponse()
+      vyne.query(
+         """
+         find { Person[] } """
+      )
+         .rawObjects()
+      val lastRequest = server.takeRequest()
+      val modifiedSinceHeader = lastRequest.getHeader("If-Modified-Since")
+
+      modifiedSinceHeader.shouldNotBeNull()
+      val formatter = DateTimeFormatter.ofPattern(dateFormat)
+      val parsedResult =  LocalDateTime.parse(modifiedSinceHeader, formatter)
+      // if that parsed, then the test is ok
+   } @Test
+   fun `can use a formatted type expression on modified since with standard format`():Unit = runBlocking {
+      val dateFormat = "yyyy-MM-dd'T'HH:mm:ssX"
+      val vyne = vyneWithHttpInvoker(
+         """
+         @Format("$dateFormat")
+         type CustomModifiedSinceHeader inherits Instant
+         model Person {
+            name : Name inherits String
+         }
+         service PeopleService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people")
+            operation findPeople(
+               @HttpHeader(name = "If-Modified-Since") ifModifiedSince : CustomModifiedSinceHeader = (CustomModifiedSinceHeader) addDays(now(), -1)
+            ):Person[]
+         }
+      """.trimIndent()
+      )
+      prepareServerResponse()
+      vyne.query(
+         """
+         find { Person[] } """
+      )
+         .rawObjects()
+      val lastRequest = server.takeRequest()
+      val modifiedSinceHeader = lastRequest.getHeader("If-Modified-Since")
+
+      modifiedSinceHeader.shouldNotBeNull()
+      val formatter = DateTimeFormatter.ofPattern(dateFormat)
+      val parsedResult =  LocalDateTime.parse(modifiedSinceHeader, formatter)
+      // if that parsed, then the test is ok
    }
 
 

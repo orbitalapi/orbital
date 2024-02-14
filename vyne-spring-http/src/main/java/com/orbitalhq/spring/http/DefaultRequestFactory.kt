@@ -48,7 +48,8 @@ class DefaultRequestFactory : HttpRequestFactory {
             if (!typedInstance.type.isAssignableTo(parameter.type)) {
                logger.error { "Failed to build headers for operation ${operation.name} - Parameter at index $index was expected to be type ${parameter.type.name.shortDisplayName} but was ${typedInstance.type.name.shortDisplayName}" }
             }
-            val headerValue = typedInstance.value?.toString() ?: ""
+
+            val headerValue = typedInstance.toRawObject()?.toString() ?: ""
             headers.put(annotation.name, annotation.asValue(headerValue))
          }
       }
