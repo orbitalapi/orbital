@@ -34,7 +34,7 @@ export class VyneComponent implements OnInit {
       icon: 'assets/img/tabler/folder-code.svg',
       route: 'projects',
       testId: 'projects-explorer-sidebar',
-      requiredAuthority: VynePrivileges.BrowseSchema
+      requiredAuthority: VynePrivileges.BrowseProjects
     },
     {
       title: 'Query editor',
@@ -70,14 +70,14 @@ export class VyneComponent implements OnInit {
       icon: 'assets/img/tabler/tools.svg',
       route: 'designer',
       testId: 'designer',
-      requiredAuthority: VynePrivileges.BrowseSchema
+      requiredAuthority: VynePrivileges.BrowseProjects
     },
     {
       title: 'Endpoints',
       icon: 'assets/img/tabler/traffic-lights.svg',
       route: 'endpoints',
       testId: 'endpoints',
-      requiredAuthority: VynePrivileges.BrowseSchema
+      requiredAuthority: VynePrivileges.BrowseProjects
     },
     // {
     //   title: 'Pipeline manager',
@@ -175,7 +175,7 @@ export class VyneComponent implements OnInit {
       .pipe(
         filter(userInfo => userInfo != null),
         map(userInfo => this.sidebarElements
-              .filter(sideBarElement => userInfo.grantedAuthorities.includes(sideBarElement.requiredAuthority))
+          .filter(sideBarElement => userInfo.grantedAuthorities.includes(sideBarElement.requiredAuthority))
         )
       ).subscribe(filteredSideBarElements => this.defaultSidebarElements$.next(filteredSideBarElements));
   }
