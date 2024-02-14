@@ -810,6 +810,13 @@ class AccessorReader(
             readModelAttributeSelector(expression, false, schema)
          }
 
+         is CastExpression -> {
+            val uncastExpressionResult = evaluate(value, returnType, expression.expression, schema, nullValues, dataSource, format, resultCache)
+            val castType = schema.type(expression.type)
+
+            val castValue = TypedInstance.from(castType, uncastExpressionResult.value, schema, source = uncastExpressionResult.source)
+            castValue
+         }
          else -> TODO("Support for expression type ${expression::class.toString()} is not yet implemented")
       }
    }

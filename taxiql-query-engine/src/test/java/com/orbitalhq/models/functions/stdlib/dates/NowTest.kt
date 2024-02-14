@@ -28,7 +28,7 @@ class NowTest {
    fun `can get now as dateTime`():Unit = runBlocking {
       val (vyne, _) = testVyne("")
       val result = vyne
-         .query("""find { result : DateTime = now() }"""
+         .query("""find { result : DateTime = currentDateTime() }"""
          )
          .firstTypedObject()
       result.shouldNotBeNull()
@@ -41,7 +41,7 @@ class NowTest {
    fun `can get now as date`():Unit = runBlocking {
       val (vyne, _) = testVyne("")
       val result = vyne
-         .query("""find { result : Date = now() }"""
+         .query("""find { result : Date = currentDate() }"""
          )
          .firstTypedObject()
       result.shouldNotBeNull()
@@ -54,7 +54,7 @@ class NowTest {
    fun `can get now as time`():Unit = runBlocking {
       val (vyne, _) = testVyne("")
       val result = vyne
-         .query("""find { result : Time = now() }"""
+         .query("""find { result : Time = currentTime() }"""
          )
          .firstTypedObject()
       result.shouldNotBeNull()

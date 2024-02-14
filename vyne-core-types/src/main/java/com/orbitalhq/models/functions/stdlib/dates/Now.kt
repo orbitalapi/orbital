@@ -9,6 +9,9 @@ import com.orbitalhq.models.functions.functionFailed
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import lang.taxi.functions.FunctionAccessor
+import lang.taxi.functions.stdlib.CurrentDate
+import lang.taxi.functions.stdlib.CurrentDateTime
+import lang.taxi.functions.stdlib.CurrentTime
 import lang.taxi.functions.stdlib.Now
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.PrimitiveType
@@ -17,10 +20,9 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.temporal.Temporal
 
-object Now : NamedFunctionInvoker {
-   override val functionName: QualifiedName = Now.name
-
+abstract class BaseCurrentTimeInvoker(private val valueProvider: () -> Temporal) : NamedFunctionInvoker {
    override fun invoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
@@ -31,19 +33,7 @@ object Now : NamedFunctionInvoker {
       rawMessageBeingParsed: Any?,
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
-      val now = when (returnType.basePrimitiveTypeName?.fullyQualifiedName) {
-         PrimitiveType.INSTANT.qualifiedName -> Instant.now()
-         PrimitiveType.LOCAL_DATE.qualifiedName -> LocalDate.now()
-         PrimitiveType.DATE_TIME.qualifiedName -> LocalDateTime.now()
-         PrimitiveType.TIME.qualifiedName -> LocalTime.now()
-         else -> return functionFailed(
-            returnType,
-            function,
-            inputValues,
-            "now() is not supported for type ${returnType.name.shortDisplayName}"
-         )
-      }
-
+      val now = valueProvider()
       return TypedInstance.from(
          returnType, now, schema, source = EvaluatedExpression(
             function.asTaxi(),
@@ -51,4 +41,20 @@ object Now : NamedFunctionInvoker {
          )
       )
    }
+}
+
+object Now : BaseCurrentTimeInvoker(Instant::now) {
+   override val functionName: QualifiedName = Now.name
+}
+
+object CurrentDate : BaseCurrentTimeInvoker(LocalDate::now) {
+   override val functionName: QualifiedName = CurrentDate.name
+}
+
+object CurrentDateTime : BaseCurrentTimeInvoker(LocalDateTime::now) {
+   override val functionName: QualifiedName = CurrentDateTime.name
+}
+
+object CurrentTime : BaseCurrentTimeInvoker(LocalTime::now) {
+   override val functionName: QualifiedName = CurrentTime.name
 }
