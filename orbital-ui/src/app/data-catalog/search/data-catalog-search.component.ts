@@ -11,6 +11,7 @@ import { Observable } from 'rxjs/internal/Observable';
   selector: 'app-data-catalog-search',
   template: `
     <div class='search-bar-container'>
+      <ng-content></ng-content>
       <div class='input-container'>
         <mat-form-field appearance='standard' class='text-input'>
           <mat-label>Search for...</mat-label>

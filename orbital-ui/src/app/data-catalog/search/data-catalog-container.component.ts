@@ -1,11 +1,11 @@
-import {Component} from '@angular/core';
-import {ExpandableSearchResult, SearchResult, SearchService} from '../../search/search.service';
-
-import {Observable, of} from 'rxjs';
-import {map, tap} from 'rxjs/operators';
-import {ActivatedRoute, Router} from '@angular/router';
-import {TypesService} from 'src/app/services/types.service';
-import {Schema} from 'src/app/services/schema';
+import { Component, DestroyRef } from '@angular/core';
+import { ActivatedRoute, NavigationEnd, Router, Scroll } from '@angular/router';
+import { Observable, of } from 'rxjs';
+import { filter, map, tap } from 'rxjs/operators';
+import { ExpandableSearchResult, SearchResult, SearchService } from '../../search/search.service';
+import { TypesService } from 'src/app/services/types.service';
+import { Schema } from 'src/app/services/schema';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-data-catalog-container',
@@ -14,47 +14,69 @@ import {Schema} from 'src/app/services/schema';
                                  description='The data catalog contains all models, attributes, services and operations published to Orbital. You can search by
           name, or search for tags using # (eg: #MyTag)' [padBottom]='false' [displayBody]='false'>
       <ng-container ngProjectAs='header-components'>
-        <tui-tabs [(activeItemIndex)]='activeTabIndex'>
+        <tui-tabs>
           <!--          <button tuiTab>Push from application</button>-->
           <!--          <button tuiTab>CI Pipeline</button>-->
-          <button tuiTab>Search</button>
-          <button tuiTab>Services diagram</button>
+          <button tuiTab routerLink="/catalog" routerLinkActive>Search</button>
+          <button tuiTab routerLink="/catalog/diagram" routerLinkActive>Services diagram</button>
         </tui-tabs>
       </ng-container>
 
     </app-header-component-layout>
-    <mat-progress-bar mode='query' [class.loading]='loading'></mat-progress-bar>
     <app-data-catalog-search [searchResults]='searchResults'
                              [initialSearchTerm]='lastSearchTerm'
                              [atLeastOneSearchCompleted]='searchPerformed'
                              (searchValueUpdated)='search($event)'
-                             *ngIf='activeTabIndex===0'
-    ></app-data-catalog-search>
-    <app-schema-diagram *ngIf='activeTabIndex===1' [schema$]='schema$' displayedMembers='services'></app-schema-diagram>
+                             *ngIf='(activeTabIndex$ | async) === 0'
+    >
+      <progress
+        max="100"
+        tuiProgressBar
+        size='xs'
+        new
+        *ngIf="isLoading"
+      ></progress>
+    </app-data-catalog-search>
+    <app-schema-diagram *ngIf='(activeTabIndex$ | async) === 1' [schema$]='schema$'
+                        displayedMembers='services'></app-schema-diagram>
   `,
   styleUrls: ['./data-catalog-container.component.scss']
 })
 export class DataCatalogContainerComponent {
-  schema$: Observable<Schema>;
-  activeTabIndex: number = 0;
-
-  constructor(private service: SearchService, private router: Router, private activatedRoute: ActivatedRoute,
-              private schemaService: TypesService) {
-    activatedRoute.queryParams.subscribe(params => {
-      if (params.search && this.lastSearchTerm !== params.search) {
-        this.search(params.search);
-      }
-    });
-    this.schema$ = schemaService.getTypes();
-  }
-
-  loading = false;
+  readonly schema$: Observable<Schema>;
+  readonly activeTabIndex$: Observable<number>;
+  isLoading = false;
   searchPerformed = false;
   searchResults: Observable<ExpandableSearchResult[]> = of([]);
   lastSearchTerm = '';
 
+  constructor(
+    private service: SearchService,
+    private router: Router,
+    private activatedRoute: ActivatedRoute,
+    private schemaService: TypesService,
+    private destroyRef: DestroyRef
+  ) {
+    activatedRoute.queryParams
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        if (params.search && this.lastSearchTerm !== params.search) {
+          this.search(params.search);
+        }
+      });
+    this.activeTabIndex$ = this.router.events.pipe(
+      // NOTE: The Scroll event occurs here when the page first loads, not the NavigationEnd one
+      filter((event) => event instanceof NavigationEnd || (event instanceof Scroll && event.routerEvent instanceof NavigationEnd)),
+      map((event) => event instanceof Scroll ? event.routerEvent as NavigationEnd : event as NavigationEnd),
+      map((event: NavigationEnd) => this.getActiveTabIndex(event.url.split('?')[0]))
+    );
+    this.schema$ = schemaService.getTypes();
+  }
+
+
+
   search(searchTerm: string) {
-    this.loading = true;
+    this.isLoading = true;
     this.lastSearchTerm = searchTerm;
     this.router.navigate([],
       {
@@ -68,18 +90,27 @@ export class DataCatalogContainerComponent {
         map((searchResults: SearchResult[]) => searchResults.map(searchResult => this.toExpandableSearch(searchResult))),
         tap(_ => {
           this.searchPerformed = true;
-          this.loading = false;
+          this.isLoading = false;
         }, error => {
           console.log('Search failed: ' + JSON.stringify(error));
-          this.loading = false;
+          this.isLoading = false;
         }));
   }
 
-  toExpandableSearch(searchResult: SearchResult) {
+  private toExpandableSearch(searchResult: SearchResult) {
     return {
       ...searchResult,
       consumersExpanded: false,
       producersExpanded: false
     };
+  }
+
+  private getActiveTabIndex(url: string): number {
+    switch (url) {
+      case '/catalog':
+        return 0;
+      case '/catalog/diagram':
+        return 1;
+    }
   }
 }

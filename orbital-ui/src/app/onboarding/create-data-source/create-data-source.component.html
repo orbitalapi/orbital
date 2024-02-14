@@ -8,7 +8,7 @@
     <h3 class="intro-text">Great! Now that you've created a Data source, continue on to explore some more {{ uiConfig.productName }} tooling</h3>
     <p class="next-step">
       (or feel free to create another Data source)
-      <button tuiButton size="m" class="next-step" [routerLink]="['/onboarding/explore' ]">Next step</button>
+      <button tuiButton size="m" class="next-step" [routerLink]="['/onboarding/explore']">Next step</button>
     </p>
   </div>
 </ng-template>
@@ -17,6 +17,7 @@
   title=""
   dataSourceDisplayType="buttons"
   useIslandContainer="true"
+  codeViewerFlexBoxMode="grid"
   (dataSourceAdded)="step = 'dataSourceCreated'"
 ></app-data-source-import>
 

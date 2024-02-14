@@ -2,19 +2,35 @@
   overflow: hidden;
 }
 
-:host ::ng-deep {
+.intro-text {
+  margin-top: 0;
+}
+
+.island-container {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 1rem;
+
   tui-island {
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
 
-    .tui-island__footer-button {
-      margin-top: auto;
+    .tui-island__paragraph_button {
+      text-align: right;
     }
   }
 }
 
-.intro-text {
-  margin-top: 0;
+.icon {
+  background-color: var(--tui-secondary);
+  padding: 0.5rem;
+  float: right;
+
+  ::ng-deep img {
+    filter: invert(82%) sepia(0%) saturate(1499%) hue-rotate(167deg) brightness(93%) contrast(89%);
+  }
 }
 
 .project-created {
@@ -28,22 +44,5 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-  }
-}
-
-.island-container {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 1rem;
-}
-
-.icon {
-  background-color: var(--tui-secondary);
-  padding: 0.5rem;
-  float: right;
-
-  ::ng-deep img {
-    filter: invert(82%) sepia(0%) saturate(1499%) hue-rotate(167deg) brightness(93%) contrast(89%);
   }
 }

@@ -18,6 +18,7 @@ import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
 import { PackagesService, SourcePackageDescription } from '../package-viewer/packages.service';
 import { DataSourcePanelComponent } from './data-source-panel/data-source-panel.component';
 import { SchemaExplorerTableModule } from '../schema-explorer-table/schema-explorer-table.module';
+import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
 
 @Component({
   selector: 'app-data-source-import',
@@ -53,6 +54,7 @@ import { SchemaExplorerTableModule } from '../schema-explorer-table/schema-explo
                                  [working]="working"
                                  [saveResultMessage]="schemaSaveResultMessage"
                                  [editable]="true"
+                                 [codeViewerFlexBoxMode]="codeViewerFlexBoxMode"
                                  (save)="submitEdits($event)"
       ></app-schema-explorer-table>
     </div>
@@ -78,6 +80,8 @@ export class DataSourceImportComponent {
   dataSourceDisplayType: 'list' | 'buttons' = 'list';
   @Input()
   useIslandContainer: boolean;
+  @Input()
+  codeViewerFlexBoxMode: CodeViewerFlexBoxMode = 'flex';
   @Output()
   dataSourceAdded: EventEmitter<void> = new EventEmitter()
 
