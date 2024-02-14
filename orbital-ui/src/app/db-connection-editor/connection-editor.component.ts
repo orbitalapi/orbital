@@ -28,6 +28,7 @@ export class ConnectionEditorComponent {
   @Input()
   packages$: Observable<SourcePackageDescription[]>;
 
+  @Input()
   selectedPackage: SourcePackageDescription = null;
 
   @Input()
