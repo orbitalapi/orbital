@@ -53,7 +53,7 @@ export const VYNE_ROUTES = RouterModule.forRoot(
       path: 'projects',
       loadChildren: () => import('./project-explorer/project-explorer.module').then(m => m.ProjectExplorerModule),
       canActivate: [AuthGuard],
-      data: {requiredAuthority: VynePrivileges.BrowseSchema},
+      data: {requiredAuthority: VynePrivileges.BrowseProjects},
     },
     {
       path: 'schemas',
