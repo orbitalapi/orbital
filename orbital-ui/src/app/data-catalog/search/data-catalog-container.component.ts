@@ -1,5 +1,5 @@
 import { Component, DestroyRef } from '@angular/core';
-import { ActivatedRoute, NavigationEnd, Router, Scroll } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, NavigationSkipped, Router, Scroll } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { filter, map, tap } from 'rxjs/operators';
 import { ExpandableSearchResult, SearchResult, SearchService } from '../../search/search.service';
@@ -66,9 +66,12 @@ export class DataCatalogContainerComponent {
       });
     this.activeTabIndex$ = this.router.events.pipe(
       // NOTE: The Scroll event occurs here when the page first loads, not the NavigationEnd one
-      filter((event) => event instanceof NavigationEnd || (event instanceof Scroll && event.routerEvent instanceof NavigationEnd)),
-      map((event) => event instanceof Scroll ? event.routerEvent as NavigationEnd : event as NavigationEnd),
-      map((event: NavigationEnd) => this.getActiveTabIndex(event.url.split('?')[0]))
+      filter((event) => {
+        return event instanceof NavigationEnd ||
+          event instanceof Scroll && (event.routerEvent instanceof NavigationEnd || event.routerEvent instanceof NavigationSkipped)
+      }),
+      map((event) => event instanceof Scroll ? event.routerEvent : event),
+      map((event: NavigationEnd | NavigationSkipped) => this.getActiveTabIndex(event.url.split('?')[0]))
     );
     this.schema$ = schemaService.getTypes();
   }
