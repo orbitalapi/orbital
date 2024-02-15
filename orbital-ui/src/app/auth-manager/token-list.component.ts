@@ -1,11 +1,11 @@
-import {ChangeDetectionStrategy, Component, EventEmitter, Inject, Injector, Input, Output} from '@angular/core';
-import {Observable} from 'rxjs/internal/Observable';
-import {AuthScheme, AuthTokenMap, NoCredentialsAuthToken} from './auth-manager.service';
-import {of} from "rxjs";
-import {TuiDialogService} from "@taiga-ui/core";
-import {PolymorpheusComponent} from "@tinkoff/ng-polymorpheus";
-import {AddTokenPanelComponent} from "./add-token-panel.component";
-import {map} from "rxjs/operators";
+import { ChangeDetectionStrategy, Component, EventEmitter, Inject, Injector, Input, Output } from '@angular/core';
+import { Observable } from 'rxjs/internal/Observable';
+import { AuthScheme, AuthTokenMap, NoCredentialsAuthToken } from './auth-manager.service';
+import { of } from 'rxjs';
+import { TuiDialogService } from '@taiga-ui/core';
+import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
+import { AddTokenPanelComponent } from './add-token-panel.component';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-token-list',
@@ -15,7 +15,8 @@ import {map} from "rxjs/operators";
       title="Authentication Tokens"
       description="These tokens will be used to authenticate Orbital to services.">
       <ng-container ngProjectAs="buttons">
-        <button tuiButton size="m" appearance="outline" (click)="showCreateTokenPopup()">Add a token
+        <button tuiButton size="m" appearance="primary" (click)="showCreateTokenPopup()">
+          Add a token
         </button>
       </ng-container>
       <div *ngIf="(tokenListSize$ | async) > 0; else empty">
@@ -34,8 +35,8 @@ import {map} from "rxjs/operators";
             <td>
               <table class="nested-table">
                 <tr *ngFor="let configParam of configParams(authScheme.value) | keyvalue">
-                  <td class="label-col">{{configParam.key}}</td>
-                  <td>{{configParam.value}}</td>
+                  <td class="label-col">{{ configParam.key }}</td>
+                  <td>{{ configParam.value }}</td>
 
                 </tr>
               </table>
@@ -53,9 +54,7 @@ import {map} from "rxjs/operators";
     <ng-template #empty>
       <div class="empty-state-container">
         <img src="assets/img/illustrations/authentication.svg">
-        <p>These tokens will be used to authenticate Orbital to services.
-        </p>
-        <button tuiButton size="l" appearance="primary" (click)="showCreateTokenPopup()">Add a token</button>
+        <p>No tokens have been created yet.</p>
       </div>
     </ng-template>
   `,
@@ -91,7 +90,6 @@ export class TokenListComponent {
     @Inject(TuiDialogService) private readonly dialogService: TuiDialogService,
   ) {
   }
-
 
 
   showCreateTokenPopup(): void {
@@ -141,7 +139,7 @@ export class TokenListComponent {
   // }
 
   configParams(authScheme: AuthScheme): any {
-    const {type, ...authSchemeWithoutType} = authScheme;
+    const { type, ...authSchemeWithoutType } = authScheme;
     return authSchemeWithoutType
     // return Object.entries(authScheme)
     //   .filter(entry => {
