@@ -19,11 +19,13 @@ import { TypeMemberTreeNode } from './model-member.component';
       <span class="field-spacer" *ngIf="treeNode.type.isScalar || treeNode.isNew">•</span>
       <tui-checkbox-labeled [size]="'m'"
                             [ngModel]="!treeNode.field.nullable"
+                            [class._readonly]="!editable"
                             (click)="(editable) ? treeNode.field.nullable = !treeNode.field.nullable : null;"
       >Required
       </tui-checkbox-labeled>
       <tui-checkbox-labeled [size]="'m'"
                             [(ngModel)]="memberHasIdAnnotation"
+                            [class._readonly]="!editable"
       >Id
       </tui-checkbox-labeled>
     </div>
