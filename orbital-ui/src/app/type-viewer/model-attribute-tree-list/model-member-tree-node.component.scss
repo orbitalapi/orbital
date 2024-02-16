@@ -35,9 +35,11 @@ tui-tag {
 
 .editable-description {
   cursor: pointer;
-  .no-description {
-    opacity: 0.5;
-  }
+}
+
+.no-description {
+  opacity: 0.5;
+  font-style: italic;
 }
 
 .description-editor {
