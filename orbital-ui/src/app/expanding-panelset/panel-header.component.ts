@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import { Component, HostBinding, Input, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-panel-header',
@@ -12,6 +12,10 @@ export class PanelHeaderComponent {
 
   @Input()
   title: string;
+  // Prevents tooltip displaying in browser
+  @HostBinding('attr.title') get getTitle(): null {
+    return null;
+  }
 
   @Input()
   icon: string

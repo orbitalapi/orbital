@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, HostBinding, Input } from '@angular/core';
 
 @Component({
   selector: 'app-header-component-layout',
@@ -43,6 +43,10 @@ export class HeaderComponentLayoutComponent {
 
   @Input()
   title: string;
+  // Prevents tooltip displaying in browser
+  @HostBinding('attr.title') get getTitle(): null {
+    return null;
+  }
 
   @Input()
   description: string;
