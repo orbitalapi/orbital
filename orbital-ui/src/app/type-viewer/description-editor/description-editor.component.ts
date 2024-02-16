@@ -6,10 +6,10 @@ import { UntypedFormControl } from '@angular/forms';
 @Component({
   selector: 'app-description-editor',
   template: `
-    <div class="wrapper" *ngIf="editable">
+    <div [class.is-editable]="editable">
       <div class="title-row">
         <h4>Description</h4>
-        <mat-icon (click)="isEditModeOn = true" *ngIf="!isEditModeOn">edit</mat-icon>
+        <mat-icon (click)="isEditModeOn = true" *ngIf="!isEditModeOn && editable">edit</mat-icon>
         <div class="spacer"></div>
         <div class="info-warning visible-on-changes" [class.has-changes]="hasChanges">
           <img src="assets/img/tabler/info-circle.svg">
@@ -26,9 +26,12 @@ import { UntypedFormControl } from '@angular/forms';
         <button mat-button (click)="cancelChanges()">Cancel</button>
         <button mat-raised-button color="primary" (click)="saveChanges()">Save changes</button>
       </div>
-      <markdown [data]="documentationSource.typeDoc" *ngIf="!isEditModeOn"></markdown>
+      <markdown
+        *ngIf="!isEditModeOn"
+        [data]="documentationSource.typeDoc ? documentationSource.typeDoc : 'No description here yet.'"
+        [class.no-description]="!documentationSource.typeDoc"
+      ></markdown>
     </div>
-
   `,
   styleUrls: ['./description-editor.component.scss'],
 })

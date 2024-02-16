@@ -32,13 +32,13 @@ import {methodClassFromName} from 'src/app/service-view/service-view-class-utils
                 [ngClass]="getMethodClass(operationSummary.method)">{{ operationSummary.method }}</span>
           <span class="url">{{operationSummary.url}}</span>
         </div>
-        <p class="subtle" *ngIf="!operationSummary.url">No url provided</p>
+        <p class="subtle actionable" *ngIf="!operationSummary.url">No url provided</p>
       </section>
       <section>
         <h4>Documentation</h4>
         <app-description-editor-container [type]="operation"
                                           *ngIf="operation?.typeDoc"></app-description-editor-container>
-        <p class="subtle" *ngIf="!operation?.typeDoc">No documentation provided</p>
+        <p class="subtle actionable" *ngIf="!operation?.typeDoc">No documentation provided</p>
       </section>
       <section>
         <h4>Returns</h4>
