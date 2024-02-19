@@ -3,6 +3,7 @@ package com.orbitalhq.queryService
 import app.cash.turbine.test
 import com.winterbe.expekt.should
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
+import com.orbitalhq.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -15,12 +16,14 @@ import kotlin.time.ExperimentalTime
 @ExperimentalCoroutinesApi
 class ActiveQueryMonitorTest {
 
+   val query = TaxiSchema.empty()
+      .parseQuery("find { hello: 1 + 2 }").first
    @Test
    fun `observe query meta data events`() = runBlocking {
 
       val queryId: String = UUID.randomUUID().toString()
       val queryMetaDataService = ActiveQueryMonitor()
-      queryMetaDataService.reportStart(queryId, null, "")
+      queryMetaDataService.reportStart(queryId, null, query)
 
       //given - queryId and a handle to the metadata shared flow
 
@@ -42,7 +45,7 @@ class ActiveQueryMonitorTest {
 
       //given - queryId and a handle to the metadata shared flow
       val queryId: String = UUID.randomUUID().toString()
-      queryMetaDataService.reportStart(queryId, null, "")
+      queryMetaDataService.reportStart(queryId, null, query)
       val eventFlow = queryMetaDataService.queryStatusUpdates(queryId)
 
       //when - many events regarding the query are published
@@ -70,7 +73,7 @@ class ActiveQueryMonitorTest {
       val queryId: String = UUID.randomUUID().toString()
 
       //when - many events regarding the query are published
-      queryMetaDataService.reportStart(queryId, null, "")
+      queryMetaDataService.reportStart(queryId, null, query)
       queryMetaDataService.incrementEmittedRecordCount(queryId)
       queryMetaDataService.incrementEmittedRecordCount(queryId)
       queryMetaDataService.incrementEmittedRecordCount(queryId)
