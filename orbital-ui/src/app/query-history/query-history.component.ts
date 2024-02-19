@@ -79,7 +79,11 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   }
 
   loadQuerySummaries() {
-    this.history$ = this.queryService.getHistory().pipe(httpRequestStates());
+    this.history$ = this.queryService.getHistory().pipe(
+      // We don't want any queries that are still running, they're already stored in the activeQueries prop
+      map(results => results.filter(result => result.responseStatus !== 'RUNNING')),
+      httpRequestStates()
+    );
   }
 
   typeName(qualifiedTypeName: string) {
