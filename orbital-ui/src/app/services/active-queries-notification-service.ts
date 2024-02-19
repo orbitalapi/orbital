@@ -40,14 +40,14 @@ export class ActiveQueriesNotificationService {
 
 export interface RunningQueryStatus {
   queryId: string;
-  vyneQlQuery: string;
+  taxiQlQuery: string;
   completedProjections: number;
   estimatedProjectionCount: number | null;
   startTime: Date;
   responseTypeName: string;
   running: boolean;
-  queryType: QueryType;
+  queryMode: QueryMode;
 }
 
-export type QueryType = 'STREAMING' | 'DETERMINANT';
+export type QueryMode = 'FIND_ALL' | 'MAP' | 'STREAM' | 'MUTATE'
 

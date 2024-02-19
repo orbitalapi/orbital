@@ -32,9 +32,7 @@ import {isNullOrUndefined} from 'util';
 
       <div class="timestamp-row">
         <span>{{historyRecord.startTime | amTimeAgo}}</span>
-        <button  class="icon-button" mat-icon-button (click)="queryAgain($event)" *ngIf="recordType === 'VyneQlQuery'">
-          <img src="assets/img/tabler/repeat.svg">
-        </button>
+        <img class="icon-button" src="assets/img/tabler/repeat.svg" (click)="queryAgain($event)" *ngIf="recordType === 'VyneQlQuery'">
       </div>
     </div>
   `,

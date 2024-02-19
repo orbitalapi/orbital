@@ -7,11 +7,13 @@ import {HttpRequestState} from 'ngx-http-request-state';
   selector: 'app-query-list',
   template: `
     <div class="list-container">
-      <div *ngFor="let record of activeQueries | keyvalue; trackBy: queryId"
-           (click)="activeQuerySelected.emit(record.value)"
-           class="history-item">
-        <app-active-query-card [queryStatus]="record.value" (cancel)="cancelActiveQuery.emit(record.value)"></app-active-query-card>
-      </div>
+      <app-active-query-card
+        *ngFor="let record of activeQueries | keyvalue; trackBy: queryId"
+        [queryStatus]="record.value"
+        [routerLink]="'/query-history/' + record.queryId"
+        routerLinkActive="selected-history-list-item"
+        (cancel)="cancelActiveQuery.emit(record.value)"
+      ></app-active-query-card>
       <ng-container *ngIf="historyRecords">
         <!-- Show a spinner if state is loading -->
         <progress
@@ -23,10 +25,12 @@ import {HttpRequestState} from 'ngx-http-request-state';
         ></progress>
         <!-- Show the data if state is loaded -->
         <div *ngIf="historyRecords.value?.length !== 0">
-          <div *ngFor="let historyRecord of historyRecords.value" (click)="recordSelected.emit(historyRecord)"
-               class="history-item">
-            <app-query-history-card [historyRecord]="historyRecord"></app-query-history-card>
-          </div>
+          <app-query-history-card
+            *ngFor="let historyRecord of historyRecords.value"
+            [routerLink]="'/query-history/' + historyRecord.queryId"
+            routerLinkActive="selected-history-list-item"
+            [historyRecord]="historyRecord">
+          </app-query-history-card>
         </div>
         <tui-notification *ngIf='historyRecords.value?.length === 0'>
           No queries have been run yet
@@ -61,4 +65,5 @@ export class QueryListComponent {
     return item.queryId;
   }
 
+  protected readonly JSON = JSON;
 }
