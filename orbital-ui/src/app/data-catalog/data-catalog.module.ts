@@ -12,7 +12,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { OperationBadgeModule } from '../operation-badge/operation-badge.module';
 import { DataCatalogContainerComponent } from './search/data-catalog-container.component';
 import { MatLegacyProgressBarModule as MatProgressBarModule } from '@angular/material/legacy-progress-bar';
-import { MatLegacyTooltipModule as MatTooltipModule } from '@angular/material/legacy-tooltip';
 import { HeaderBarModule } from '../header-bar/header-bar.module';
 import { TypeListComponent } from 'src/app/type-list/type-list.component';
 import { AuthGuard } from 'src/app/services/auth.guard';
@@ -41,7 +40,6 @@ import { UiCustomisations } from '../../environments/ui-customisations';
     OperationBadgeModule,
     MatIconModule,
     MatProgressBarModule,
-    MatTooltipModule,
     HeaderBarModule,
     TypeViewerModule,
     TypeListModule,

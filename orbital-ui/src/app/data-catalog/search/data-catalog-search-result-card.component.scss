@@ -1,14 +1,14 @@
 @import "src/common";
 
 :host {
-  width: 100%;
-  display: block;
   padding: 1rem 0;
-  flex-grow: 1;
 }
+
 .row {
   width: 100%;
+  display: flex;
 }
+
 markdown {
   max-height: 3rem;
   overflow: hidden;
@@ -24,12 +24,15 @@ markdown {
 .mono-badge {
   margin-right: 0.8rem;
 }
+
 .matched-name {
   font-size: 1.2rem;
 }
+
 .row-spacer {
   margin-top: 0.5rem;
 }
+
 .metadata {
   font-size: 0.8rem;
   margin-right: 0.8rem;
@@ -42,4 +45,15 @@ markdown {
     font-weight: bold;
     margin-right: 1rem;
   }
+}
+
+.badge {
+  background-color: rgba($vyne-lilac, 0.2);
+  color: $vyne-lilac;
+  font-weight: bold;
+  padding: 2px 4px;
+  font-size: 0.7rem;
+  margin-left: 0.5rem;
+  align-self: center;
+  text-transform: capitalize;
 }

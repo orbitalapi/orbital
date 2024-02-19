@@ -1,13 +1,15 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {SearchResult} from '../../search/search.service';
-import {Metadata, fqn} from '../../services/schema';
-import {DATA_OWNER_FQN, DATA_OWNER_TAG_OWNER_NAME} from '../data-catalog.models';
+import { Component, Input } from '@angular/core';
+import { SearchEntryType, SearchResult } from '../../search/search.service';
+import { Metadata, fqn } from '../../services/schema';
+import { DATA_OWNER_FQN, DATA_OWNER_TAG_OWNER_NAME } from '../data-catalog.models';
+import { isNullOrUndefined } from 'util';
 
 @Component({
   selector: 'app-data-catalog-search-result-card',
   template: `
     <div class="row">
-      <span class="matched-name" [matTooltip]="toolTip()">{{ shortDisplayName() }}</span>
+      <span class="matched-name">{{ shortDisplayName() }}</span>
+      <span class="badge">{{ memberType(searchResult.memberType) }}</span>
     </div>
     <div class="row">
       <span class="mono-badge small">{{ searchResult.qualifiedName.longDisplayName }}</span>
@@ -15,7 +17,7 @@ import {DATA_OWNER_FQN, DATA_OWNER_TAG_OWNER_NAME} from '../data-catalog.models'
     </div>
     <div class="row row-spacer key-value-pair" *ngIf="owner">
       <span class="key">Data owner:</span>
-      <span class="value">{{owner.params[dataTagOwnerName]}}</span>
+      <span class="value">{{ owner.params[dataTagOwnerName] }}</span>
     </div>
     <div class="row">
       <markdown [data]="searchResult.typeDoc | slice:0:500"></markdown>
@@ -59,19 +61,16 @@ export class DataCatalogSearchResultCardComponent {
     if (this.searchResult.matchedFieldName) {
       const parts = this.searchResult.matchedFieldName.split(':');
       const fullyQualifiedName = fqn(parts[0]);
-      return `${fullyQualifiedName.name}.${parts[1]}`;
+      return isNullOrUndefined(parts[1]) ? `${fullyQualifiedName.name}` : `${fullyQualifiedName.name}.${parts[1]}`;
     } else {
       return this.searchResult.qualifiedName.shortDisplayName;
     }
   }
 
-  toolTip() {
-    if (this.searchResult.matchedFieldName) {
-      const parts = this.searchResult.matchedFieldName.split(':');
-      const fullyQualifiedName = fqn(parts[0]);
-      return `Field ${parts[1]} on ${parts[0]}`;
-    } else {
-      return this.searchResult.qualifiedName.fullyQualifiedName;
+  memberType(member: SearchEntryType): string {
+    if (member === 'ATTRIBUTE') {
+      return 'Field';
     }
+    return member.toLowerCase();
   }
 }
