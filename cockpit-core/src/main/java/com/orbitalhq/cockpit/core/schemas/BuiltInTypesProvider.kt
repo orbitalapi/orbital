@@ -3,6 +3,7 @@ package com.orbitalhq.cockpit.core.schemas
 import com.orbitalhq.*
 import com.orbitalhq.annotations.http.HttpRetryAnnotationSchema
 import com.orbitalhq.cockpit.core.catalog.DataOwnerAnnotations
+import com.orbitalhq.connectors.aws.dynamodb.DynamoConnectorTaxi
 import com.orbitalhq.connectors.aws.lambda.LambdaConnectorTaxi
 import com.orbitalhq.connectors.aws.s3.S3ConnectorTaxi
 import com.orbitalhq.connectors.aws.sqs.SqsConnectorTaxi
@@ -74,6 +75,11 @@ object BuiltInTypesProvider {
             LambdaConnectorTaxi.schema
          ),
          VersionedSource(
+            "AwsDynamoConnectors",
+            "0.1.0",
+            DynamoConnectorTaxi.schema
+         ),
+         VersionedSource(
             "CsvFormat",
             "0.1.0",
             CsvAnnotationSpec.taxi
@@ -87,7 +93,7 @@ object BuiltInTypesProvider {
             "HttpRetryAnnotationSchema",
             "0.1.0",
             HttpRetryAnnotationSchema.schema
-         )
+         ),
       ),
       emptyMap()
    )
