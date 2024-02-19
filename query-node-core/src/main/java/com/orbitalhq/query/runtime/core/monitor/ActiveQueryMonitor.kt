@@ -12,7 +12,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
+import lang.taxi.query.QueryMode
 import lang.taxi.query.TaxiQLQueryString
+import lang.taxi.query.TaxiQlQuery
 import mu.KotlinLogging
 import java.time.Duration
 import java.time.Instant
@@ -82,7 +84,7 @@ class ActiveQueryMonitor {
       // guaranteed to be present, as the docs state that changes made by compute do not update the keys of the cache.
       // So, we have to do a bit of hoop jumping here.
       val newDefaultStatus = {
-         RunningQueryStatus(queryId, startTime = Instant.now(), queryType = QueryType.DETERMINANT) //
+         RunningQueryStatus(queryId, startTime = Instant.now(), queryMode = QueryMode.FIND_ALL) //
       }
       var updatedValue: RunningQueryStatus? = runningQueryCache.get(queryId) {
          val updatedValue = updater(newDefaultStatus())
@@ -99,13 +101,11 @@ class ActiveQueryMonitor {
       }
    }
 
-   fun reportStart(queryId: String, clientQueryId: String?, query: TaxiQLQueryString) {
+   fun reportStart(queryId: String, clientQueryId: String?, query: TaxiQlQuery) {
       logger.debug { "Reporting Query Starting - $queryId - [$query]" }
 
-      val queryType = if (query.startsWith("stream")) QueryType.STREAMING else QueryType.DETERMINANT
-
       storeAndEmit(queryId) {
-         it.copy(state = QueryResponse.ResponseStatus.RUNNING, vyneQlQuery = query, queryType = queryType)
+         it.copy(state = QueryResponse.ResponseStatus.RUNNING, taxiQlQuery = query.source, queryMode = query.queryMode)
 
       }
       if (clientQueryId != null) {
@@ -169,16 +169,12 @@ class ActiveQueryMonitor {
 
 data class RunningQueryStatus(
    val queryId: String,
-   val vyneQlQuery: TaxiQLQueryString? = null,
+   val taxiQlQuery: TaxiQLQueryString? = null,
    val completedProjections: Int = 0,
    val estimatedProjectionCount: Int = 0,
    val startTime: Instant,
    val running: Boolean = true,
    val state: QueryResponse.ResponseStatus = QueryResponse.ResponseStatus.UNKNOWN,
-   val queryType: QueryType
+   val queryMode: QueryMode
 )
 
-enum class QueryType {
-   STREAMING,
-   DETERMINANT
-}

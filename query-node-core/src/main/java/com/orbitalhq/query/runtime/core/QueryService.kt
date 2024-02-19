@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import lang.taxi.query.TaxiQLQueryString
+import lang.taxi.query.TaxiQlQuery
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -134,7 +135,7 @@ class QueryService(
    }
 
    suspend fun <T> monitored(
-      query: TaxiQLQueryString,
+      query: TaxiQlQuery,
       clientQueryId: String?,
       queryId: String, vyneUser: VyneUser?,
       block: suspend () -> T
@@ -408,16 +409,16 @@ class QueryService(
       clientQueryId: String?,
       queryId: String,
       arguments: Map<String, Any?> = emptyMap()
-   ): Pair<QueryResponse, QueryOptions> =
-      monitored(query = query, clientQueryId = clientQueryId, queryId = queryId, vyneUser = vyneUser) {
-         logger.info { "[$queryId] $query" }
-         val schema = schemaProvider.schema
-         val (taxiQlQuery, queryOptions, querySchema) = schema.parseQuery(query)
+   ): Pair<QueryResponse, QueryOptions> {
+      logger.info { "[$queryId] $query" }
+      val schema = schemaProvider.schema
+      val (taxiQlQuery, queryOptions, querySchema) = schema.parseQuery(query)
+      return monitored(query = taxiQlQuery, clientQueryId = clientQueryId, queryId = queryId, vyneUser = vyneUser) {
          logger.info { "[$queryId] using cache ${queryOptions.cachingStrategy}" }
          val executionContextFacts = vyneUser.facts(
             extractJwtClaimFactFromQueryParameters(schema, taxiQlQuery.parameters)
          )
-         val vyne = vyneProvider.createVyne(executionContextFacts,  schema, queryOptions)
+         val vyne = vyneProvider.createVyne(executionContextFacts, schema, queryOptions)
          val historyWriterEventConsumer = historyWriterProvider.createEventConsumer(queryId, vyne.schema)
          val response = try {
             val eventDispatcherForQuery =
@@ -467,8 +468,9 @@ class QueryService(
             FailedSearchResponse(e.message!!, null, queryId = queryId)
          }
          QueryLifecycleEventObserver(historyWriterEventConsumer, activeQueryMonitor)
-            .responseWithQueryHistoryListener(query, response) to queryOptions
+               .responseWithQueryHistoryListener(query, response) to queryOptions
       }
+   }
 
    private suspend fun executeQuery(query: Query, clientQueryId: String?): QueryResponse {
       val vyne = vyneProvider.createVyne()

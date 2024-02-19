@@ -1,39 +1,38 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {RunningQueryStatus} from '../services/active-queries-notification-service';
-import {Timespan} from '../query-panel/query-editor/counter-timer.component';
-import {isNullOrUndefined} from 'util';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { RunningQueryStatus } from '../services/active-queries-notification-service';
+import { Timespan } from '../query-panel/query-editor/counter-timer.component';
+import { isNullOrUndefined } from 'util';
 
 @Component({
   selector: 'app-active-query-card',
   template: `
     <div class="history-item" *ngIf="queryStatus">
-      <app-vyneql-record [taxiQlQuery]="queryStatus.vyneQlQuery"></app-vyneql-record>
+      <app-vyneql-record [taxiQlQuery]="queryStatus.taxiQlQuery"></app-vyneql-record>
 
       <div class="progress-container" *ngIf="progressMode === 'indeterminate'">
-        <mat-progress-bar [mode]="progressMode" [value]="progress"></mat-progress-bar>
+        <progress max="100" new size='xs' tuiProgressBar></progress>
       </div>
 
       <div class="progress-container" *ngIf="progressMode !== 'indeterminate'">
-        <mat-progress-bar [mode]="progressMode" [value]="progress"></mat-progress-bar>
+        <progress max="100" new size='xs' tuiProgressBar [value]="progress"></progress>
       </div>
-      
 
-      <div class="timestamp-row">
+      <div class="record-stats">
         <div class="record-stat">
-          <mat-icon class="clock-icon">schedule</mat-icon>
+          <img [src]="progressMode === 'indeterminate' ? 'assets/img/tabler/rss.svg' : 'assets/img/tabler/clock.svg'">
           <span>{{ duration() }}</span>
         </div>
 
-        <div class="record-stat" *ngIf="progressMode === 'indeterminate'">
+        <div class="record-stat" *ngIf="progressMode === 'indeterminate' || queryStatus.estimatedProjectionCount === 0">
           <span>{{ queryStatus.completedProjections }} records</span>
         </div>
-        
+
         <div class="record-stat" *ngIf="progressMode !== 'indeterminate'">
-          <span>{{ queryStatus.completedProjections }} of {{queryStatus.estimatedProjectionCount}} records</span>
+          <span>{{ queryStatus.completedProjections }} of {{ queryStatus.estimatedProjectionCount }} records</span>
         </div>
-        
+
         <span class="spacer"></span>
-        <mat-icon class="clock-icon" (click)="cancel.emit()">close</mat-icon>
+        <img class="icon-button" src="assets/img/tabler/x.svg" (click)="cancel.emit()" title="Cancel query">
       </div>
     </div>
   `,
@@ -48,13 +47,11 @@ export class ActiveQueryCardComponent {
   cancel = new EventEmitter();
 
   get progressMode(): 'determinate' | 'indeterminate' {
-
-    if (this.queryStatus.queryType === 'STREAMING' || isNullOrUndefined(this.queryStatus.estimatedProjectionCount)) {
+    if (this.queryStatus.queryMode === 'STREAM' || isNullOrUndefined(this.queryStatus.estimatedProjectionCount)) {
       return 'indeterminate';
     } else {
       return 'determinate';
     }
-
   }
 
   get progress(): number {

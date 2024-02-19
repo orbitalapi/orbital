@@ -89,16 +89,16 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
 
         <div *ngIf="(currentState$ | async) === 'Running'">
             <div class='progress'
-                 *ngIf="queryStarted && percentComplete > 0 && runningQueryStatus.queryType !== 'STREAMING' && runningQueryStatus.estimatedProjectionCount !== 0">
+                 *ngIf="queryStarted && percentComplete > 0 && runningQueryStatus.queryMode !== 'STREAM' && runningQueryStatus.estimatedProjectionCount !== 0">
                 <mat-progress-bar mode='determinate' [value]='percentComplete'></mat-progress-bar>
-                <span>{{ runningQueryStatus.completedProjections}} of {{ runningQueryStatus.estimatedProjectionCount}}
+                <span>{{ runningQueryStatus.completedProjections }} of {{ runningQueryStatus.estimatedProjectionCount }}
                     records</span>
             </div>
 
             <div class='progress'
-                 *ngIf="queryStarted && percentComplete > 0  && runningQueryStatus.queryType === 'STREAMING'">
+                 *ngIf="queryStarted && percentComplete > 0  && runningQueryStatus.queryMode === 'STREAM'">
                 <mat-progress-bar mode='indeterminate' [value]='percentComplete'></mat-progress-bar>
-                <span>{{ runningQueryStatus.completedProjections}}</span>
+                <span>{{ runningQueryStatus.completedProjections }}</span>
             </div>
 
             <button tuiButton size="s" appearance="outline"
