@@ -50,17 +50,6 @@ button {
   flex-shrink: 0;
 }
 
-.progress {
-  margin-left: 2rem;
-  margin-right: 3rem;
-  display: flex;
-  align-items: center;
-
-  mat-progress-bar {
-    width: 250px;
-    margin-right: 1rem;
-  }
-}
 .running-timer {
   color: $success-dark;
   font-size: 0.9rem;
@@ -80,8 +69,12 @@ button {
     animation-name: loading-spinner;
     animation-duration: 1.4s;
     animation-iteration-count: infinite;
-    //transform-origin: 50% 50%;
     display: inline-block;
+  }
+
+  .record-count {
+    color: $gray-400;
+    margin-left: 0.25rem;
   }
 }
 

@@ -32,7 +32,6 @@ import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {MatLegacyDialogModule as MatDialogModule} from '@angular/material/legacy-dialog';
 import {CodeEditorModule} from '../code-editor/code-editor.module';
 import {ResultsTableModule} from '../results-table/results-table.module';
-import {MatLegacyProgressBarModule as MatProgressBarModule} from '@angular/material/legacy-progress-bar';
 import {QueryBuilderComponent} from './query-wizard/query-builder.component';
 import {TabbedResultsViewModule} from '../tabbed-results-view/tabbed-results-view.module';
 import {RouterModule} from '@angular/router';
@@ -98,7 +97,6 @@ import {TuiActiveZoneModule} from "@taiga-ui/cdk";
         HeaderBarModule,
         MatDialogModule,
         ResultsTableModule,
-        MatProgressBarModule,
         CodeEditorModule,
         TabbedResultsViewModule,
         RouterModule,
