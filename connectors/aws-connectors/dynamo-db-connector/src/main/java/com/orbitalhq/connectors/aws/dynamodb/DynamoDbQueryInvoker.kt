@@ -148,16 +148,25 @@ class DynamoDbQueryInvoker(
       schema: Schema,
       dataSource: DataSource
    ): TypedInstance {
-      val itemValues: Map<String, Any> = item.map { (key, value) ->
-         key to when (value.type()) {
-            AttributeValue.Type.N -> BigDecimal(value.n())
-            AttributeValue.Type.BOOL -> value.bool()
-            AttributeValue.Type.S -> value.s()
-            else -> error("Parsing not implemented for type ${value.type().name}")
-         }
+      val itemValues: Map<String, Any?> = item.map { (key, value) ->
+         key to unwrapAttributeValue(value)
       }.toMap()
       val memberType = returnType.collectionType ?: returnType
       return TypedInstance.from(memberType, itemValues, schema, source = dataSource)
+   }
+
+   private fun unwrapAttributeValue(value: AttributeValue):Any? = when (value.type()) {
+      AttributeValue.Type.N -> BigDecimal(value.n())
+      AttributeValue.Type.BOOL -> value.bool()
+      AttributeValue.Type.S -> value.s()
+      AttributeValue.Type.SS -> value.ss()
+      AttributeValue.Type.NS -> value.ns()
+      AttributeValue.Type.L -> value.l().map { unwrapAttributeValue(it) }
+      AttributeValue.Type.M -> value.m().entries.map { (key,value) ->
+         key to unwrapAttributeValue(value)
+      }.toMap()
+      AttributeValue.Type.NUL -> null
+      else -> error("Parsing not implemented for type ${value.type().name}")
    }
 
 }
