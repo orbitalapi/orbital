@@ -314,6 +314,7 @@ service Broker1Service {
    }
 
    @Test
+   @Ignore("Querying on base types has been disabled: See ADR 20240215-find-does-not-query-on-base-types/")
    fun `project an array of Orders to the array of CommonOrder`() = runBlocking {
       // prepare
       val schema = """
@@ -2690,6 +2691,7 @@ service Broker1Service {
    }
 
    @Test
+   @Ignore("Querying on base types has been disabled: See ADR 20240215-find-does-not-query-on-base-types/")
    fun `when the initial query fails vyne doesnt attempt to perform a projection`(): Unit = runBlocking {
       val explodingProjectionProvider: ProjectionProvider = object : ProjectionProvider {
          override fun project(
@@ -2736,7 +2738,7 @@ service Broker1Service {
 
          ), emptyList())
       }
-      assertFailsWith<UnresolvedTypeInQueryException> {
+      assertFailsWith<OperationInvocationException> {
          vyne.query(
             """
          |given { apiKey : ApiKey = 'jimmy' }

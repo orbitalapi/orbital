@@ -7,13 +7,17 @@ import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.query.QueryFailedException
 import com.orbitalhq.query.UnresolvedTypeInQueryException
 import com.orbitalhq.schemas.fqn
+import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
+import kotlin.test.assertFails
 import kotlin.test.fail
 
 @ExperimentalCoroutinesApi
@@ -210,5 +214,67 @@ class VyneServiceInvocationTest {
          )
       }
 
+   @Test
+   fun `when a query is abmiguous as to which service to call then an exception is thrown`():Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         model Film {
+            title : Title inherits String
+         }
+         type ProducerId inherits String
+         type ReleasedYear inherits Int
+         service Films {
+            operation findFilmsByReleasedYear(ReleasedYear):Film[]
+            operation findFilmsByProducer(ProducerId):Film[]
+         }
+      """.trimIndent()
+      )
+      val response = vyne.parseJson("Film[]", """[ {"title" : "Star Wars"} ]""")
+      stub.addResponse("findFilmsByReleasedYear", response)
+      stub.addResponse("findFilmsByProducer", response)
+
+      val exception = assertThrows<QueryFailedException> {
+         vyne.query(
+            """
+         given { ProducerId = "123", ReleasedYear = 2023 }
+         find { Film[] }""".trimIndent()
+         ).rawObjects()
+      }
+      exception.message.shouldBe("Ambiguous query searching for Film[] - multiple operations were matched based on the provided inputs (ProducerId, ReleasedYear), with the same specificity: findFilmsByReleasedYear, findFilmsByProducer")
+   }
+
+   @Test
+   fun `when using a given clause then the most specific direct invocation is invoked`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         model Film {
+            title : FilmTitle inherits String
+         }
+         type ProducerId inherits String
+         service Films {
+            operation findFilms():Film[]
+            operation findFilmsByProducer(ProducerId):Film[]
+         }
+      """.trimIndent()
+      )
+      val response = vyne.parseJson("Film[]", """[ {"title" : "Star Wars"} ]""")
+      stub.addResponse("findFilms", response)
+      stub.addResponse("findFilmsByProducer", response)
+
+      vyne.query("""find { Film[] }""").rawObjects()
+      stub.callCount("findFilms").shouldBe(1)
+      stub.callCount("findFilmsByProducer").shouldBe(0)
+
+      stub.clearInvocations()
+
+      vyne.query(
+         """
+         given { ProducerId = "123" }
+         find { Film[] }""".trimIndent()
+      ).rawObjects()
+      stub.callCount("findFilms").shouldBe(0)
+      stub.callCount("findFilmsByProducer").shouldBe(1)
+
+   }
 
 }

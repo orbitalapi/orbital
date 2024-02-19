@@ -1,5 +1,7 @@
 package com.orbitalhq
 
+import com.google.common.collect.HashMultimap
+import com.google.common.collect.Multimaps
 import com.orbitalhq.models.DataSourceMutatingMapper
 import com.orbitalhq.models.DataSourceUpdater
 import com.orbitalhq.models.OperationResult
@@ -49,6 +51,7 @@ class StubService(
 
    fun clearInvocations() {
       invocations.clear()
+      calls.clear()
    }
 
    fun clearHandlers() {
@@ -114,6 +117,18 @@ class StubService(
       )
    }
 
+   val calls = HashMultimap.create<String,List<TypedInstance>>()
+
+   fun callCount(stubKey:String):Int {
+      return if (calls.containsKey(stubKey)) {
+         calls.get(stubKey).size
+      } else {
+         0
+      }
+   }
+
+
+   @Deprecated("Only tracks the most recent invocation per service. Prefer calls")
    val invocations = mutableMapOf<String, List<TypedInstance>>()
 
    override suspend fun invoke(
@@ -133,8 +148,9 @@ class StubService(
          operation.name
       }
 
-      invocations.put(stubResponseKey, parameters.map { it.second })
-
+      val paramValues = parameters.map { it.second }
+      invocations.put(stubResponseKey, paramValues)
+      calls.put(stubResponseKey, paramValues)
       if (!responses.containsKey(stubResponseKey) && !handlers.containsKey(stubResponseKey) && !flowHandlers.containsKey(
             stubResponseKey
          )
