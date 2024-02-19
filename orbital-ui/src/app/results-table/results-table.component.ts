@@ -189,6 +189,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
           valueGetter: (params: ValueGetterParams) => {
             return this.unwrap(params.data, fieldName);
           },
+          filter: true
         };
       });
       this.columnDefs = columnDefinitions;
