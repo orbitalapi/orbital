@@ -7,7 +7,7 @@ export function copyQueryAs(query: string, queryEndpoint: string, format: CopyQu
     return `curl -X POST '${queryEndpoint}' \\
   -H 'Content-Type: application/taxiql' \\
   -H 'Accept: text/event-stream;charset-UTF-8' \\
-  --data-raw '${query}'`
+  --data-raw '${query.replaceAll('\'', '"')}'`
   }
 
   if (format === 'query') {
