@@ -88,19 +88,6 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
         </button>
 
         <div *ngIf="(currentState$ | async) === 'Running'">
-            <div class='progress'
-                 *ngIf="queryStarted && percentComplete > 0 && runningQueryStatus.queryMode !== 'STREAM' && runningQueryStatus.estimatedProjectionCount !== 0">
-                <mat-progress-bar mode='determinate' [value]='percentComplete'></mat-progress-bar>
-                <span>{{ runningQueryStatus.completedProjections }} of {{ runningQueryStatus.estimatedProjectionCount }}
-                    records</span>
-            </div>
-
-            <div class='progress'
-                 *ngIf="queryStarted && percentComplete > 0  && runningQueryStatus.queryMode === 'STREAM'">
-                <mat-progress-bar mode='indeterminate' [value]='percentComplete'></mat-progress-bar>
-                <span>{{ runningQueryStatus.completedProjections }}</span>
-            </div>
-
             <button tuiButton size="s" appearance="outline"
                     class='button-small menu-bar-button'
                     (click)='cancelQuery.emit()'
@@ -109,6 +96,20 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
                 <span class='loader'></span>
                 <span>Running...&nbsp;</span>
                 <app-counter-timer *ngIf='queryStarted' [startDate]='queryStarted'></app-counter-timer>
+                <ng-container *ngIf="queryStarted && percentComplete > 0">
+                  <span
+                    *ngIf="runningQueryStatus.queryMode !== 'STREAM' && runningQueryStatus.estimatedProjectionCount !== 0"
+                    class="record-count"
+                  >
+                    ({{ runningQueryStatus.completedProjections }} of {{ runningQueryStatus.estimatedProjectionCount }} records)
+                  </span>
+                  <span
+                    *ngIf="runningQueryStatus.queryMode === 'STREAM' || runningQueryStatus.queryMode === 'FIND_ALL'"
+                    class="record-count"
+                  >
+                    ({{ runningQueryStatus.completedProjections }} records)
+                  </span>
+                </ng-container>
               </span>
               Cancel
             </button>
