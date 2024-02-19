@@ -140,7 +140,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
       val queryService = setupTestService(vyne, stub, buildHistoryConsumer())
       val clientQueryId = UUID.randomUUID().toString()
       queryService.submitVyneQlQuery(
-         """ find { Order[] } as {
+         """find { BloombergOrder[] } as {
             orderId : OrderId
             firstName : TraderFirstName
             lastName : TraderLastName
@@ -157,9 +157,9 @@ class QueryLineageTest : BaseQueryServiceTest() {
       Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until<Boolean> {
          sankeyReport =
             sankeyChartRowRepository.findAllByQueryId(queryHistoryRecordRepository.findByClientQueryId(clientQueryId)!!.queryId)
-         sankeyReport.size == 15
+         sankeyReport.size == 12
       }
-      sankeyReport.size.should.equal(15)
+      sankeyReport.size.should.equal(12)
       // ensure there's a row for each attribute
       sankeyReport
          .filter { it.targetNodeType == SankeyNodeType.AttributeName }
@@ -217,7 +217,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
       val queryService = setupTestService(vyne, stub, buildHistoryConsumer())
       val clientQueryId = UUID.randomUUID().toString()
       queryService.submitVyneQlQuery(
-         """ find { Order[] } as {
+         """ find { BloombergOrder[] } as {
             orderId : OrderId
             traderData : {
                firstName : TraderFirstName
@@ -237,7 +237,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
          val allRows = sankeyChartRowRepository.findAll()
          val isEmpty = allRows.size > 0
          sankeyReport = sankeyChartRowRepository.findAllByQueryId(queryId)
-         sankeyReport.size == 15
+         sankeyReport.size == 12
       }
       sankeyReport
          .filter { it.targetNodeType == SankeyNodeType.AttributeName }

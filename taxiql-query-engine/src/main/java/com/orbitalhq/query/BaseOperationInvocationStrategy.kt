@@ -1,6 +1,7 @@
 package com.orbitalhq.query
 
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
@@ -9,7 +10,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
-import kotlinx.coroutines.flow.onEach
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -28,7 +28,8 @@ abstract class BaseOperationInvocationStrategy(
       }
 
       val matchedNodes =
-         operations.mapNotNull { (queryNode, operationToParameters) ->
+         operations
+            .mapNotNull { (queryNode, operationToParameters) ->
             invokeOperation(queryNode, operationToParameters, context, target)
          }.merge().map {
 //            logger.info { "BaseOperationInvocationStrategy map received item" }
@@ -112,24 +113,83 @@ abstract class BaseOperationInvocationStrategy(
          return null
       }
 
+      val operation = selectMostSpecificOperation(operationsToInvoke, queryNode, context.facts)
+      return invokeOperation(operation, operationToParameters.getValue(operation), context, target)
+         .map { queryNode to it }
 
-      return operationsToInvoke.map { operation ->
-         val parameters = operationToParameters.getValue(operation)
-         val (service, _) = context.schema.remoteOperation(operation.qualifiedName)
-         // Adding logging as seeing too many http calls.
-         log().info("[${context.queryId}] As part of search for ${target.joinToString { it.description }} operation ${operation.qualifiedName} will be invoked.")
+      // Legacy implementation - invoke ALL services that match.
+      //
+      // The original intent was:
+      // model FamilyMember
+      // model Child inherits FamilyMember
+      // model Spouse inherits FamilyMember
+      //
+      // service PeopleService {
+      //    operation getChildren():Child
+      //    operation getSpouse():Spouse
+      // }
+      // Then a query such as;
+      // find { FamilyMember[] }
+      // should invoke both services, as we're querying at the abstract level.
+      //
+      // However, this was stopped, because it quickly becomes ambiguous in real-world scnearios.
+      // eg:
+      //  service Films {
+      //    operation findFilms():Film[]
+      //    operation findFilmsByProducer(ProducerId):Film[]
+      //  }
+      // in a query like:
+      //   given { ProducerId = "123" }
+      //   find { Film[] }
+      // The intent is that findFilmsByProducer() is called.
+      // However, we have enough information to call both services.
 
-         invocationService.invokeOperation(
-            service,
-            operation,
-            context = context,
-            preferredParams = emptySet(),
-            providedParamValues = parameters.toList()
-         )
-         // NOTE - merge() will take signals from flows as they arrive !! order is not maintained !!
-      }.merge().map {
-//         logger.info { "BaseOperationInvocationStrategy merge saw item" }
-         queryNode to it
+//      return operationsToInvoke.map { operation ->
+//         invokeOperation(operation, operationToParameters.getValue(operation), context, target)
+//         // NOTE - merge() will take signals from flows as they arrive !! order is not maintained !!
+//      }.merge().map {
+////         logger.info { "BaseOperationInvocationStrategy merge saw item" }
+//         queryNode to it
+//      }
+
+   }
+
+   private suspend fun invokeOperation(
+      operation: RemoteOperation,
+      parameters: Map<Parameter, TypedInstance>,
+      context: QueryContext,
+      target: Set<QuerySpecTypeNode>
+   ): Flow<TypedInstance> {
+      val (service, _) = context.schema.remoteOperation(operation.qualifiedName)
+      // Adding logging as seeing too many http calls.
+      log().info("[${context.queryId}] As part of search for ${target.joinToString { it.description }} operation ${operation.qualifiedName} will be invoked.")
+
+      return invocationService.invokeOperation(
+         service,
+         operation,
+         context = context,
+         preferredParams = emptySet(),
+         providedParamValues = parameters.toList()
+      )
+   }
+
+   private fun selectMostSpecificOperation(
+      operationsToInvoke: List<RemoteOperation>,
+      queryNode: QuerySpecTypeNode,
+      facts: FactBag
+   ): RemoteOperation {
+      return if (operationsToInvoke.size == 1) {
+         operationsToInvoke.single()
+      } else {
+         val operationsByParameterCount = operationsToInvoke.groupBy { it.parameters.size }
+              .toSortedMap()
+         val mostSpecificOperations = operationsByParameterCount[operationsByParameterCount.lastKey()]!!
+         if (mostSpecificOperations.size == 1) {
+            mostSpecificOperations.single()
+         } else {
+            val providedFacts = facts.rootFacts().joinToString { it.type.name.shortDisplayName }
+              throw QueryFailedException("Ambiguous query searching for ${queryNode.type.name.shortDisplayName} - multiple operations were matched based on the provided inputs ($providedFacts), with the same specificity: ${mostSpecificOperations.joinToString { it.name }}")
+         }
       }
 
    }

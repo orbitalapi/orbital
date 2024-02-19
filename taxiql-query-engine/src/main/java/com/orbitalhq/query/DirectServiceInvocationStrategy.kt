@@ -3,6 +3,7 @@ package com.orbitalhq.query
 import com.google.common.cache.CacheBuilder
 import com.orbitalhq.models.DefinedInSchema
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.query.graph.operation
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
 import com.orbitalhq.schemas.Operation
 import com.orbitalhq.schemas.Parameter
@@ -12,6 +13,7 @@ import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.StreamOperation
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.log
+import lang.taxi.services.OperationScope
 import lang.taxi.services.operations.constraints.ArgumentExpression
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 
@@ -106,7 +108,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
       val operationsForType = operationsForTypeCache.get(target.type) {
          val operations: Set<RemoteOperation> = schema.operations + schema.streamOperations
          (operations).filter {
-            it.returnType.isAssignableTo(target.type)
+            it.returnType.isAssignableTo(target.type) && it.operationType == OperationScope.READ_ONLY
          }
       }
       val operations = operationsForType
@@ -123,6 +125,9 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
             }
          }
          .map { (operation, parameters) ->
+            populateParamsFromContextValues(operation, parameters, context)
+         }
+         .map { (operation, parameters) ->
             provideUnpopulatedParametersWithDefaults(operation, parameters, context)
          }
          .filter { (operation, populatedOperationParameters) ->
@@ -133,6 +138,24 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
             unpopulatedParams.isEmpty()
          }
       return operations.toMap()
+   }
+
+   /**
+    * Looks for any unpopulated parameters that have values present in the
+    * query context (eg., from a given {} clause), and populates them
+    */
+   private fun populateParamsFromContextValues(
+      operation: RemoteOperation,
+      parameters: Map<Parameter, TypedInstance>,
+      context: QueryContext
+   ):Pair<RemoteOperation, Map<Parameter, TypedInstance>>  {
+      val populatedParams = operation.parameters
+         .filter { param -> !param.type.isPrimitive } // Don't attempt to populate raw primitives, they're too ambiguous
+         .filter { param -> context.hasFactOfType(param.type) }
+         .associateWith { param ->
+            context.getFact(param.type)
+         }
+      return operation to (parameters + populatedParams)
    }
 
    /**

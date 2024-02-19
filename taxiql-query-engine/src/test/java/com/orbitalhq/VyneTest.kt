@@ -1016,6 +1016,7 @@ service Broker2Service {
    }
 
    @Test
+   @Ignore("Querying on base types has been disabled: See ADR 20240215-find-does-not-query-on-base-types/")
    fun canGatherOrdersFromTwoDifferentServices_AndFilterByDateRange() {
       // prepare
       val (vyne, stubService) = testVyne(schema)
@@ -1051,6 +1052,7 @@ service Broker2Service {
 
 
    @Test
+   @Ignore("Querying on base types has been disabled: See ADR 20240215-find-does-not-query-on-base-types/")
    fun canProjectDifferentOrderTypesToSingleType() {
       // prepare
       val (vyne, stubService) = testVyne(schema)
@@ -1091,6 +1093,7 @@ service Broker2Service {
    }
 
    @Test
+   @Ignore("Querying on base types has been disabled: See ADR 20240215-find-does-not-query-on-base-types/")
    fun canProjectDifferentOrderTypesToSingleTypeFromUsingVyneQLQuery() {
       // prepare
       val (vyne, stubService) = testVyne(schema)

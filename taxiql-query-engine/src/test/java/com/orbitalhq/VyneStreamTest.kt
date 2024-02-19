@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import org.junit.Ignore
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -112,6 +113,7 @@ class VyneStreamTest {
 
 
    @Test
+   @Ignore("Querying on base types has been disabled: See ADR 20240215-find-does-not-query-on-base-types/")
    fun `will call all streaming endpoints that extend a base type for a streaming query`() {
       runTest {
          val (vyne, stub) = testVyne(
