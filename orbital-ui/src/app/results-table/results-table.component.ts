@@ -1,7 +1,6 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
 import {
   InstanceLike,
-  InstanceLikeOrCollection,
   isTypedInstance,
   isTypedNull,
   isTypeNamedInstance,
@@ -11,23 +10,15 @@ import {
   UntypedInstance
 } from '../services/schema';
 import {BaseTypedInstanceViewer, unwrapValue} from '../object-view/BaseTypedInstanceViewer';
-import {
-  CellClickedEvent,
-  FirstDataRenderedEvent,
-  GridReadyEvent,
-  ICellRendererFunc,
-  ValueGetterParams
-} from 'ag-grid-community';
-import {TypeInfoHeaderComponent} from './type-info-header.component';
+import {CellClickedEvent, FirstDataRenderedEvent, GridReadyEvent, ValueGetterParams} from 'ag-grid-community';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 import {isNullOrUndefined} from 'util';
-import {CaskService} from '../services/cask.service';
 import {GridApi} from 'ag-grid-community/dist/lib/gridApi';
 import {Observable} from 'rxjs';
 import {Subscription} from 'rxjs';
 import {ValueWithTypeName} from '../services/models';
 import * as moment from 'moment';
-import {buffer, bufferTime} from 'rxjs/operators';
+import {bufferTime} from 'rxjs/operators';
 import {isScalar} from "../object-view/object-view.component";
 
 @Component({
@@ -189,7 +180,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
           valueGetter: (params: ValueGetterParams) => {
             return this.unwrap(params.data, fieldName);
           },
-          filter: true
+          filter: typeof instanceValue[fieldName] === "number" ? 'agNumberColumnFilter' : 'agTextColumnFilter'
         };
       });
       this.columnDefs = columnDefinitions;
