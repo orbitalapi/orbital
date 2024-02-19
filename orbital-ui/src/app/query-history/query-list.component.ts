@@ -10,7 +10,7 @@ import {HttpRequestState} from 'ngx-http-request-state';
       <app-active-query-card
         *ngFor="let record of activeQueries | keyvalue; trackBy: queryId"
         [queryStatus]="record.value"
-        [routerLink]="'/query-history/' + record.queryId"
+        [routerLink]="'/query-history/' + record.key"
         routerLinkActive="selected-history-list-item"
         (cancel)="cancelActiveQuery.emit(record.value)"
       ></app-active-query-card>

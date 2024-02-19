@@ -32,7 +32,7 @@ import { isNullOrUndefined } from 'util';
         </div>
 
         <span class="spacer"></span>
-        <img class="icon-button" src="assets/img/tabler/x.svg" (click)="cancel.emit()" title="Cancel query">
+        <img class="icon-button" src="assets/img/tabler/x.svg" (click)="cancel.emit(); $event.stopImmediatePropagation()" title="Cancel query">
       </div>
     </div>
   `,
