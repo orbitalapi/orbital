@@ -2,12 +2,11 @@
 
 :host {
   display: flex;
-  width: 50%;
-  justify-content: space-between;
+  gap: 1rem;
+  flex-flow: row wrap;
 }
 
 .column {
-  min-width: 10rem;
-  margin-right: 1rem;
+  min-width: 11rem;
 }
 
