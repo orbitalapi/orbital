@@ -4,9 +4,9 @@ import {Component, Input, OnInit, Output} from '@angular/core';
   selector: 'app-system-alert',
   template: `
     <div *ngIf="alert" [ngClass]="alert.severity.toLowerCase()" class="container">
-      <span>{{ alert.message }}</span>
+      <span class="h3">{{ alert.message }}</span>
       <div class="action-container" *ngIf="alert.actionLabel">
-        <button mat-stroked-button (click)="alert.handler()">
+        <button tuiButton appearance="whiteblock" size="s" (click)="alert.handler()">
           {{ alert.actionLabel }}
         </button>
       </div>

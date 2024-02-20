@@ -14,6 +14,7 @@ import kotlinx.coroutines.reactor.mono
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.publisher.Sinks
 import java.net.URI
 import java.nio.file.FileSystems
 import java.nio.file.Path
@@ -21,7 +22,8 @@ import java.nio.file.Paths
 import java.time.Duration
 import kotlin.io.path.toPath
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
+
 class GitSchemaPackageLoader(
    val workingDir: Path,
    override val config: GitProjectStoreSpec,
@@ -34,10 +36,14 @@ class GitSchemaPackageLoader(
    override val publisherType: PublisherType = PublisherType.GitRepo
    override val description: String = "GitLoader at ${config.description}"
 
+
    private val filePackageLoader: FileSystemPackageLoader
 
    private var currentBranch = config.branch
    private val defaultBranchName = config.branch
+
+   private val gitStatusSink = Sinks.many().replay().latest<LoaderStatus>()
+   override val loaderStatus: Flux<LoaderStatus>
 
    init {
       val safePath = if (config.path.startsWith(FileSystems.getDefault().separator)) {
@@ -54,6 +60,13 @@ class GitSchemaPackageLoader(
          fileMonitor = fileMonitor,
          transportDecorator = this
       )
+      gitStatusSink.emitNext(LoaderStatus.STARTING, Sinks.EmitFailureHandler.FAIL_FAST)
+
+      val gitStatusMessages = gitStatusSink.asFlux()
+         .distinctUntilChanged()
+      val fileStatusMessages = filePackageLoader.loaderStatus
+      loaderStatus = GitFileLoaderStatus.build(gitStatusMessages, fileStatusMessages)
+         .doOnNext { status -> logger.info { "Git project loader at ${config.path} changed state: $status" } }
    }
 
    override fun loadNow(): Mono<SourcePackage> {
@@ -61,25 +74,53 @@ class GitSchemaPackageLoader(
       return filePackageLoader.loadNow()
    }
 
+
    override fun start(): Flux<SourcePackage> {
       logger.info { "Starting with workingDir => $workingDir" }
       return GitRepoSync(workingDir, config, gitPollFrequency)
          .start()
+         .doOnNext {
+            updateLoaderStatus(it)
+         }
          .index()
          .filter {
             (it.t1 == 0L && it.t2.successful) || it.t2.pulledChanges
          }
          .flatMap {
-            filePackageLoader.start()
+            try {
+               filePackageLoader.start()
+            } catch (e: Exception) {
+               gitStatusSink.emitNext(
+                  LoaderStatus.error("Failed to read git repository from disk: ${e.message ?: e::class.simpleName!!}"),
+                  Sinks.EmitFailureHandler.FAIL_FAST
+               )
+               null
+            }
          }
+         .filter { p -> p != null }
          .distinctUntilChanged()
    }
 
    fun syncNow() {
-      logger.info { "synching git repo to $workingDir" }
-      GitRepoSync.syncNow(workingDir, config)
-      logger.info { "synched git repo to $workingDir" }
+      logger.info { "syncing git repo to $workingDir" }
+      updateLoaderStatus(GitRepoSync.syncNow(workingDir, config))
+      logger.info { "synced git repo to $workingDir" }
    }
+
+   private fun updateLoaderStatus(syncStatus: GitSyncStatus) {
+      if (syncStatus.successful) {
+         gitStatusSink.emitNext(LoaderStatus.OK, Sinks.EmitFailureHandler.FAIL_FAST)
+      } else {
+         gitStatusSink.emitNext(
+            LoaderStatus.error(
+               syncStatus.errorMessage ?: "An unknown error occurred whilst pulling the git repository"
+            ), Sinks.EmitFailureHandler.FAIL_FAST
+         )
+      }
+   }
+
+   override val root: URI
+      get() = filePackageLoader.root
 
    override fun listUris(): Flux<URI> {
       val gitRoot = workingDir.resolve(".git/")

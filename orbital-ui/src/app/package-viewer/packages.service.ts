@@ -14,6 +14,14 @@ export class PackagesService {
   constructor(private readonly httpClient: HttpClient) {
   }
 
+  loadProjectLoadersWithErrors():Observable<ProjectLoaderWithStatus[]> {
+    return this.httpClient.get<ProjectLoaderWithStatus[]>(`${environment.serverUrl}/api/projectLoaders/unhealthy`);
+  }
+
+  loadWorkspaceConfigStatus():Observable<LoaderStatus> {
+    return this.httpClient.get<LoaderStatus>(`${environment.serverUrl}/api/workspace/status`);
+  }
+
   loadPackage(packageUri: string): Observable<PackageWithDescription> {
     return this.httpClient.get<PackageWithDescription>(`${environment.serverUrl}/api/packages/${packageUri}`);
   }
@@ -104,3 +112,13 @@ export interface PackageIdentifier {
 }
 
 export type UnversionedPackageIdentifier = string;
+
+export interface ProjectLoaderWithStatus {
+  loaderDescription: string;
+  status: LoaderStatus
+}
+
+export interface LoaderStatus {
+  state: 'OK' | 'ERROR' | 'STARTING'
+  message: string | null;
+}

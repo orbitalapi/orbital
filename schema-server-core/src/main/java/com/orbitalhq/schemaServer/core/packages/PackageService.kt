@@ -10,6 +10,7 @@ import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
 import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.UnhealthyLoaderWithStatus
 import com.orbitalhq.schemaServer.packages.PackageWithDescription
 import com.orbitalhq.schemaServer.packages.PackagesServiceApi
 import com.orbitalhq.schemaServer.packages.SourcePackageDescription
@@ -88,6 +89,10 @@ class PackageService(
       )
    }
 
+   @GetMapping("/api/projectLoaders/unhealthy")
+   fun getUnhealthyProjectLoaders(): List<UnhealthyLoaderWithStatus> {
+      return this.repositoryManager.unhealthyLoaders
+   }
    @GetMapping("/api/packages")
    override fun listPackages(): Mono<List<SourcePackageDescription>> {
       val packages = schemaStore.schemaSet.parsedPackages.map { parsedPackage ->

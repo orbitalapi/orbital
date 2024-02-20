@@ -1,0 +1,22 @@
+@import "src/common";
+@import "src/tables";
+
+:host {
+  background: $body-bg;
+  display: flex;
+  flex-grow: 1;
+}
+
+.project-list-container {
+  width: 100%;
+}
+
+app-header-component-layout {
+  flex-grow: 1;
+}
+
+.project-list {
+  @include orbital-table();
+  margin-top: 1rem;
+}
+

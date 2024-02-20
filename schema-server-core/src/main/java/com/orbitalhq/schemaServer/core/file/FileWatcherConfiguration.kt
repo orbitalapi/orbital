@@ -2,6 +2,7 @@ package com.orbitalhq.schemaServer.core.file
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.schema.publisher.loaders.ProjectTransportConfig
 import com.orbitalhq.schemaServer.packages.PackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
 import java.nio.file.Path
@@ -25,7 +26,7 @@ data class FileSystemPackageSpec(
    // but we can't know the package identifier until we've loaded the spec.
    // That could do with some work I guess..
    val packageIdentifier: PackageIdentifier? = null
-) {
+) : ProjectTransportConfig  {
 
    @JsonProperty(value = "path", access = JsonProperty.Access.READ_ONLY)
    val pathString: String = path.toString()

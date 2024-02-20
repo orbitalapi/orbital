@@ -11,6 +11,7 @@ import {TypesService} from '../services/types.service';
 import {UserInfoService, VynePrivileges, VyneUser} from '../services/user-info.service';
 import {DatePipe} from '@angular/common';
 import {UiCustomisations} from "../../environments/ui-customisations";
+import {PackagesService} from "../package-viewer/packages.service";
 
 @Component({
   selector: 'vyne-app',
@@ -123,6 +124,7 @@ export class VyneComponent implements OnInit {
               private snackbar: MatSnackBar,
               private userInfoService: UserInfoService,
               private datePipe: DatePipe,
+              private packagesService: PackagesService,
   ) {
     appInfoService
       .getConfig()
@@ -178,6 +180,36 @@ export class VyneComponent implements OnInit {
           .filter(sideBarElement => userInfo.grantedAuthorities.includes(sideBarElement.requiredAuthority))
         )
       ).subscribe(filteredSideBarElements => this.defaultSidebarElements$.next(filteredSideBarElements));
+
+    this.packagesService.loadProjectLoadersWithErrors()
+      .subscribe(projectsWithErrors => {
+        if (projectsWithErrors.length > 0) {
+          this.alerts.push({
+            id: 'project-config-errors',
+            severity: "Error",
+            message: `${projectsWithErrors.length} of your projects has a configuration problem`,
+            actionLabel: 'See details',
+            handler: () => {
+              this.router.navigate(['projects', 'problems'])
+            }
+          })
+        }
+      })
+
+    this.packagesService.loadWorkspaceConfigStatus()
+      .subscribe(status => {
+        if (status.state === "ERROR") {
+          this.alerts.push({
+            id: 'project-config-errors',
+            severity: "Error",
+            message: `Your workspace cannot be loaded: ${status.message}`,
+            actionLabel: 'Read docs',
+            handler: () => {
+              window.open('https://orbitalhq.com/docs/workspace/overview#workspace-conf-file', '_blank');
+            }
+          })
+        }
+      })
   }
 
   private getAlertIndex() {

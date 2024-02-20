@@ -2,6 +2,7 @@ package com.orbitalhq.schemaServer.core.git
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.orbitalhq.schema.publisher.loaders.ProjectTransportConfig
 import com.orbitalhq.schemaServer.packages.PackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
 import com.orbitalhq.schemaServer.repositories.git.GitUpdateFlowConfig
@@ -51,7 +52,7 @@ data class GitProjectStoreSpec(
    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
    val path: Path = Paths.get("/"),
    val loader: PackageLoaderSpec = TaxiPackageLoaderSpec
-) : GitRepositoryConnectionConfig {
+) : GitRepositoryConnectionConfig, ProjectTransportConfig {
    @JsonProperty("uri", access = JsonProperty.Access.READ_ONLY)
    val redactedUri = redactUrl(uri)
 

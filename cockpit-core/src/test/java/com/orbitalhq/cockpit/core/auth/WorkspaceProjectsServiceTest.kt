@@ -2,10 +2,13 @@ package com.orbitalhq.cockpit.core.auth
 
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.whenever
 import com.orbitalhq.auth.authentication.*
 import com.orbitalhq.cockpit.core.DatabaseTest
 import com.orbitalhq.cockpit.core.NotAuthorizedException
 import com.orbitalhq.cockpit.core.security.VyneUserJpaRepository
+import com.orbitalhq.schema.publisher.loaders.LoaderStatus
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import io.kotest.common.runBlocking
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldHaveSize
@@ -20,6 +23,7 @@ import org.springframework.boot.autoconfigure.domain.EntityScan
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.security.core.Authentication
 import org.springframework.test.context.ContextConfiguration
+import reactor.core.publisher.Flux
 
 
 @ContextConfiguration(classes = [WorkspaceProjectsServiceTest.Companion.Config::class])
@@ -57,12 +61,16 @@ class WorkspaceProjectsServiceTest : DatabaseTest() {
 
     @BeforeEach
     fun setup() {
+       val mockLoader:WorkspaceConfigLoader = mock {
+          on { loaderStatus } doReturn Flux.fromIterable(listOf(LoaderStatus.OK))
+       }
         workspaceService = WorkspaceService(
             userRepo,
             workspaceRepo,
             workspaceMembershipRepo,
             membershipRepo,
-            organisationRepo
+            organisationRepo,
+           mockLoader
         )
         organisationService = OrganisationService(
             organisationRepo,

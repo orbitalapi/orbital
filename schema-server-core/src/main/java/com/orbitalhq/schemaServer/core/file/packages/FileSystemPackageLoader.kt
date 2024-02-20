@@ -45,10 +45,15 @@ class FileSystemPackageLoader(
    private val fileEvents: Flux<List<FileSystemChangeEvent>> = fileMonitor.startWatching()
 
    private val sink = Sinks.many().replay().latest<SourcePackage>()
+   private val stateSink = Sinks.many().replay().latest<LoaderStatus>()
+   override val loaderStatus: Flux<LoaderStatus> = stateSink.asFlux()
+      .distinctUntilChanged()
+      .doOnNext { status -> logger.info { "File project loader at ${config.path} changed state: $status" } }
 
    init {
+      this.stateSink.emitNext(LoaderStatus.STARTING, Sinks.EmitFailureHandler.FAIL_FAST)
       this.fileEvents
-         .bufferTimeout(eventThrottleSize, eventThrottleDuration)
+//         .bufferTimeout(eventThrottleSize, eventThrottleDuration)
          .subscribe { _ ->
             logger.info { "Received change event from file system, triggering reload of package" }
             triggerLoad()
@@ -72,10 +77,16 @@ class FileSystemPackageLoader(
 
    private val transport: SchemaPackageTransport = transportDecorator ?: this
 
-   private fun triggerLoad() {
+   private fun triggerLoad(){
       loadNow()
+         .doOnError {e ->
+            stateSink.emitNext(LoaderStatus.error(e.message ?: "An unknown error occurred - ${e::class.simpleName!!}"), Sinks.EmitFailureHandler.FAIL_FAST)
+            logger.warn { "Triggered load failed: ${e.message}" }
+         }
+         .onErrorComplete()
          .subscribe { schemaPackage ->
             logger.info { "Updated schema package ${schemaPackage.identifier} loaded with ${schemaPackage.sources.size} source files and ${schemaPackage.additionalSources.size} additional sources.  Emitting event" }
+            stateSink.emitNext(LoaderStatus.OK, Sinks.EmitFailureHandler.FAIL_FAST)
             sink.emitNext(schemaPackage) { signalType, emitResult ->
                emitResult == Sinks.EmitResult.FAIL_NON_SERIALIZED
             }
@@ -109,6 +120,9 @@ class FileSystemPackageLoader(
       triggerLoad()
       return sink.asFlux()
    }
+
+   override val root: URI
+      get() = config.path.toUri()
 
    override fun listUris(): Flux<URI> {
       return config.path
