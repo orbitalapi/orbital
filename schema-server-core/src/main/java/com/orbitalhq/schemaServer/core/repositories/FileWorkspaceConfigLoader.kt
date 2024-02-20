@@ -7,6 +7,7 @@ import io.github.config4k.registerCustomType
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.config.BaseHoconConfigFileRepository
 import com.orbitalhq.config.toHocon
+import com.orbitalhq.schema.publisher.loaders.LoaderStatus
 import com.orbitalhq.schemaServer.core.adaptors.InstantHoconSupport
 import com.orbitalhq.schemaServer.core.adaptors.PackageLoaderSpecHoconSupport
 import com.orbitalhq.schemaServer.core.adaptors.UriHoconSupport
@@ -27,6 +28,8 @@ import lang.taxi.packages.TaxiPackageLoader
 import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.writers.ConfigWriter
 import mu.KotlinLogging
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.*
@@ -42,6 +45,12 @@ class FileWorkspaceConfigLoader(
    ), WorkspaceConfigLoader {
    private val logger = KotlinLogging.logger {}
 
+   private val stateSink = Sinks.many().replay().latest<LoaderStatus>()
+   override val loaderStatus: Flux<LoaderStatus> = stateSink.asFlux()
+//      .distinctUntilChanged()
+      .doOnNext { status -> logger.info { "File workspace loader at $configFilePath changed state: $status" } }
+
+
    init {
       registerCustomType(PackageLoaderSpecHoconSupport)
       registerCustomType(UriHoconSupport)
@@ -51,9 +60,11 @@ class FileWorkspaceConfigLoader(
          emitCurrentState()
       }
 
+      stateSink.emitNext(LoaderStatus.STARTING, Sinks.EmitFailureHandler.FAIL_FAST)
    }
 
    override val isReadOnly: Boolean = false
+
 
    fun emitCurrentState() {
       val initialConfig = load()
@@ -75,9 +86,23 @@ class FileWorkspaceConfigLoader(
       return getSafeConfigString(unresolvedConfig(), asJson = true)
    }
 
-   override fun load(): WorkspaceConfig {
-      val original = typedConfig()
-      return resolveRelativePaths(original)
+   override fun load(createDefaultIfAbsent: Boolean): WorkspaceConfig {
+      try {
+         if (!createDefaultIfAbsent && !configFilePath.exists()) {
+            throw IllegalStateException("No workspace file exists at $configFilePath")
+         }
+         val original = typedConfig()
+         val config = resolveRelativePaths(original)
+         stateSink.emitNext(LoaderStatus.OK, Sinks.EmitFailureHandler.FAIL_FAST)
+         return config
+      } catch (e: Exception) {
+         val message =
+            "Error when loading workspace config file at $configFilePath: ${e.message ?: e::class.simpleName}"
+         logger.warn { message }
+         stateSink.emitNext(LoaderStatus.error(message), Sinks.EmitFailureHandler.FAIL_FAST)
+         throw e
+      }
+
    }
 
    private fun makeRelativeToConfigFile(path: Path): Path {
@@ -252,6 +277,7 @@ class FileWorkspaceConfigLoader(
       eventDispatcher.schemaSourceRemoved(removedPackages)
       return removedPackages
    }
+
 
    fun save(schemaRepoConfig: WorkspaceConfig) {
       val newConfig = schemaRepoConfig.toHocon()

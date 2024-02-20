@@ -101,7 +101,7 @@ open class GitPollOperations(
             )
          }
       } catch (e:Exception) {
-         val errorMessage = "Failed to perform git sync to config ${config.name} - ${e::class.simpleName} - ${e.message}"
+         val errorMessage = "Failed to perform git sync to config ${config.name} at ${config.redactedUrl} - ${e::class.simpleName} - ${e.message}"
          logger.warn { errorMessage }
          GitSyncStatus(
             successful = false,
@@ -167,6 +167,9 @@ data class GitRef(
    val name: String
 ) {
    constructor(ref: Ref) : this(ref.objectId.toString(), ref.name)
+   companion object {
+      val UNKNOWN = GitRef("UNKNOWN", "UNKNOWN")
+   }
 }
 data class GitSyncStatus(
    val successful: Boolean,

@@ -1,10 +1,8 @@
 package com.orbitalhq.schemaServer.core.repositories.lifecycle
 
 import com.orbitalhq.PackageIdentifier
-import com.orbitalhq.config.ConfigSourceWriter
-import com.orbitalhq.config.ConfigSourceWriterProvider
-import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.schema.publisher.ProjectLoaderManager
+import com.orbitalhq.schema.publisher.loaders.LoaderStatus
 import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
 import com.orbitalhq.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
 import com.orbitalhq.schemaServer.core.adaptors.taxi.TaxiSchemaSourcesAdaptor
@@ -17,7 +15,6 @@ import com.orbitalhq.utils.files.ReactiveWatchingFileSystemMonitor
 import mu.KotlinLogging
 import reactor.core.Disposable
 import java.nio.file.Path
-import kotlin.io.path.isRegularFile
 
 /**
  * Watches spec lifecycle events, (eg., adding and removing new repositories)
@@ -30,6 +27,7 @@ class ReactiveProjectStoreManager(
    private val eventDispatcher: ProjectStoreLifecycleEventDispatcher,
    private val repositoryEventSource: ProjectStoreLifecycleEventSource
 ) : ProjectLoaderManager, AutoCloseable {
+
 
    override fun getLoaderOrNull(packageIdentifier: PackageIdentifier): SchemaPackageTransport? {
       return loaders
@@ -62,7 +60,7 @@ class ReactiveProjectStoreManager(
             eventSource
          )
          if (projectPath != null) {
-            manager._fileLoaders.add(
+            manager.addLoader(
                FileSystemPackageLoader(
                   FileSystemPackageSpec(projectPath, isEditable = isEditable),
                   TaxiSchemaSourcesAdaptor(),
@@ -74,19 +72,36 @@ class ReactiveProjectStoreManager(
       }
    }
 
-   private val _fileLoaders = mutableListOf<FileSystemPackageLoader>()
 
-   private val _gitLoaders = mutableListOf<GitSchemaPackageLoader>()
+   private val _unhealthyLoaders = mutableMapOf<SchemaPackageTransport, LoaderStatus>()
+
+   val unhealthyLoaders: List<UnhealthyLoaderWithStatus>
+      get() {
+         return _unhealthyLoaders.entries
+            .map { (loader, status) -> UnhealthyLoaderWithStatus(loader, status) }
+      }
+
+   // key: Loader, value: Disposable of the statusFeed
+   private val _loaders = mutableMapOf<SchemaPackageTransport, Disposable>()
 
    override val loaders: List<SchemaPackageTransport>
-      get() = _fileLoaders + _gitLoaders
+      get() = fileLoaders + gitLoaders
    val fileLoaders: List<FileSystemPackageLoader>
       get() {
-         return _fileLoaders.toList()
+         return _loaders
+            .keys
+            .filter { !_unhealthyLoaders.contains(it) }
+            .filterIsInstance<FileSystemPackageLoader>()
+            .toList()
+
       }
    val gitLoaders: List<GitSchemaPackageLoader>
       get() {
-         return _gitLoaders.toList()
+         return _loaders
+            .keys
+            .filter { !_unhealthyLoaders.contains(it) }
+            .filterIsInstance<GitSchemaPackageLoader>()
+            .toList()
       }
 
    private val fileSpecAddedEventsSubscription: Disposable
@@ -99,31 +114,45 @@ class ReactiveProjectStoreManager(
       repoRemovedEventSSubscription = consumeRepoRemovedEvents()
    }
 
+   private fun addLoader(loader: SchemaPackageTransport) {
+      val stateSubscription = loader.loaderStatus.subscribe { status ->
+         when (status.state) {
+            LoaderStatus.LoaderState.ERROR -> _unhealthyLoaders[loader] = status
+            else -> _unhealthyLoaders.remove(loader)
+         }
+      }
+      this._loaders[loader] = stateSubscription
+   }
+
+   private fun removeLoader(loader: SchemaPackageTransport) {
+      this._loaders.remove(loader)?.dispose()
+   }
+
    private fun consumeRepoRemovedEvents(): Disposable {
 
       // Triggered when the user removes a reppository from the UI.
       // A bit of hoop jumping here as we dispatch the packages affected, rather than the loaders.
       // Also, this needs a test.
 
-     return repositoryEventSource.sourcesRemoved.subscribe { packages ->
-         val fileLoadersToRemove = _fileLoaders.filter { fileLoader -> packages.contains(fileLoader.packageIdentifier) }
+      return repositoryEventSource.sourcesRemoved.subscribe { packages ->
+         val fileLoadersToRemove = fileLoaders.filter { fileLoader -> packages.contains(fileLoader.packageIdentifier) }
          if (fileLoadersToRemove.isNotEmpty()) {
-            _fileLoaders.removeAll(fileLoadersToRemove)
+            fileLoadersToRemove.forEach { removeLoader(it) }
             logger.info { "Removed ${fileLoadersToRemove.size} file loaders" }
          }
          val gitLoadersToRemove = gitLoaders.filter { gitLoader -> packages.contains(gitLoader.packageIdentifier) }
          if (gitLoadersToRemove.isNotEmpty()) {
             logger.info { "Removed ${gitLoadersToRemove.size} file loaders" }
-            _gitLoaders.removeAll(gitLoadersToRemove)
+            gitLoadersToRemove.forEach { removeLoader(it) }
          }
       }
    }
 
    private fun consumeGitSpecAddedEvents(): Disposable {
-     return specEventSource.gitSpecAdded.map { event ->
+      return specEventSource.gitSpecAdded.map { event ->
          gitRepoFactory.build(event.config, event.spec)
       }.subscribe { loader ->
-         _gitLoaders.add(loader)
+         addLoader(loader)
          eventDispatcher.gitProjectStoreAdded(loader)
       }
    }
@@ -134,7 +163,7 @@ class ReactiveProjectStoreManager(
             event.config, event.spec
          )
       }.subscribe { loader: FileSystemPackageLoader ->
-         _fileLoaders.add(loader)
+         addLoader(loader)
          eventDispatcher.fileProjectStoreAdded(loader)
       }
 
@@ -143,7 +172,7 @@ class ReactiveProjectStoreManager(
 
    override val editableLoaders: List<FileSystemPackageLoader>
       get() {
-         return _fileLoaders.filter { it.isEditable() }
+         return fileLoaders.filter { it.isEditable() }
       }
 
    override fun close() {
@@ -152,4 +181,11 @@ class ReactiveProjectStoreManager(
       repoRemovedEventSSubscription.dispose()
    }
 
+}
+
+data class UnhealthyLoaderWithStatus(
+   val loaderDescription: String,
+   val status: LoaderStatus
+) {
+   constructor(loader: SchemaPackageTransport, status: LoaderStatus) : this(loader.description, status)
 }

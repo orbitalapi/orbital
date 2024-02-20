@@ -1,10 +1,12 @@
 package com.orbitalhq.schemaServer.core.repositories
 
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.schema.publisher.loaders.LoaderStatus
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
 import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaRepositoryConfig
+import reactor.core.publisher.Flux
 
 /**
  * Class representing the workspace.conf file that defines
@@ -30,13 +32,15 @@ data class WorkspaceConfig(
  * Workspace.conf is a HOCON file, which can be fetched from a local disk
  */
 interface WorkspaceConfigLoader {
-   fun load(): WorkspaceConfig
+   fun load(createDefaultIfAbsent: Boolean = true): WorkspaceConfig
    fun safeConfigJson(): String
    fun addFileSpec(fileSpec: FileSystemPackageSpec)
 
    fun addGitSpec(gitSpec: GitProjectStoreSpec)
    fun removeGitRepository(repositoryName: String, packageIdentifier: PackageIdentifier): List<PackageIdentifier>
    fun removeFileRepository(packageIdentifier: PackageIdentifier): List<PackageIdentifier>
+
+   val loaderStatus: Flux<LoaderStatus>
 
    /**
     * Indicates if this loader supports write operations (like adding git specs, etc)

@@ -1,7 +1,11 @@
 import { Component, Directive } from '@angular/core';
 import { AppInfoService, AppConfig } from '../services/app-info.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { PackagesService, SourcePackageDescription } from 'src/app/package-viewer/packages.service';
+import {
+  PackagesService,
+  ProjectLoaderWithStatus,
+  SourcePackageDescription
+} from 'src/app/package-viewer/packages.service';
 import { Observable } from 'rxjs/internal/Observable';
 import { SchemaNotificationService } from 'src/app/services/schema-notification.service';
 
@@ -9,6 +13,7 @@ import { SchemaNotificationService } from 'src/app/services/schema-notification.
 export class BaseProjectExplorerContainer {
   config: AppConfig;
   packages: Observable<SourcePackageDescription[]>;
+  unhealthyLoaders$: Observable<ProjectLoaderWithStatus[]>;
 
   constructor(private configService: AppInfoService,
               private router: Router,
@@ -30,6 +35,11 @@ export class BaseProjectExplorerContainer {
 
   private loadProjects() {
     this.packages = this.packagesService.listPackages()
+    this.unhealthyLoaders$ = this.packagesService.loadProjectLoadersWithErrors()
+  }
+
+  showProjectsWithProblems() {
+    this.router.navigate(['problems'], { relativeTo: this.activatedRoute })
   }
 }
 
@@ -37,17 +47,21 @@ export class BaseProjectExplorerContainer {
 @Component({
   selector: 'app-project-explorer-container',
   template: `
-      <app-panel-header title="Projects">
-          <div class="spacer"></div>
-          <button tuiButton size="s" appearance="outline" class='button-small menu-bar-button' [routerLink]="['/project-import']">Add a new Project
+    <app-panel-header title="Projects">
+      <div class="spacer"></div>
+      <button tuiButton size="s" appearance="outline" class='button-small menu-bar-button'
+              [routerLink]="['/project-import']">Add a new project
 
-          </button>
-      </app-panel-header>
-      <div class="container">
-          <app-package-list [packages]="packages | async"
-                            (packageClicked)="navigateToPackage($event)"></app-package-list>
-          <router-outlet></router-outlet>
-      </div>
+      </button>
+    </app-panel-header>
+    <div class="container">
+      <app-package-list [packages]="packages | async"
+                        [projectsWithProblems]="unhealthyLoaders$ | async"
+                        (packageClicked)="navigateToPackage($event)"
+                        (showProjectsWithProblems)="showProjectsWithProblems()"
+      ></app-package-list>
+      <router-outlet></router-outlet>
+    </div>
 
   `,
   styleUrls: ['./project-explorer-container.component.scss']

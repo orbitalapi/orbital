@@ -2,6 +2,7 @@ package com.orbitalhq.schemaServer.core.repositories
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.schema.publisher.loaders.LoaderStatus
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecAddedEvent
@@ -9,10 +10,13 @@ import com.orbitalhq.schemaServer.core.repositories.lifecycle.GitSpecAddedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.utils.concat
 import mu.KotlinLogging
+import reactor.core.publisher.Flux
 
 class InMemoryWorkspaceConfigLoader(
    private var config: WorkspaceConfig, private val eventDispatcher: ProjectSpecLifecycleEventDispatcher
 ) : WorkspaceConfigLoader {
+
+   override val loaderStatus: Flux<LoaderStatus> = Flux.fromIterable(listOf(LoaderStatus.OK))
 
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -40,7 +44,7 @@ class InMemoryWorkspaceConfigLoader(
       }
    }
 
-   override fun load(): WorkspaceConfig = config
+   override fun load(createDefaultIfAbsent: Boolean): WorkspaceConfig = config
    override fun safeConfigJson(): String {
       return jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(config)
    }

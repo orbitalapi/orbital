@@ -10,6 +10,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.net.URI
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.*
 
 
@@ -57,6 +58,24 @@ data class SetActiveChangesetResponse(
    val changesetOverview: ChangesetOverview?
 )
 
+data class LoaderStatus(
+   val state: LoaderState,
+   val message: String
+) {
+   companion object {
+      val STARTING = LoaderStatus(LoaderState.STARTING, "Starting...")
+      val OK = LoaderStatus(LoaderState.OK, "Ok")
+      fun error(message: String) = LoaderStatus(LoaderState.ERROR, message)
+   }
+
+   enum class LoaderState {
+      OK,
+      ERROR,
+      STARTING
+
+   }
+}
+
 /**
  * Loads schema metadata (and often the schema itself) from
  * some location.
@@ -73,7 +92,16 @@ interface SchemaPackageTransport {
    fun start(): Flux<SourcePackage>
    fun loadNow(): Mono<SourcePackage>
 
+   val loaderStatus: Flux<LoaderStatus>
+
+
    val description: String
+
+   /**
+    * The root location where the sources live.
+    * All returned URIs should be relative to this
+    */
+   val root: URI
 
    fun listUris(): Flux<URI>
    fun readUri(uri: URI): Mono<ByteArray>
@@ -95,7 +123,7 @@ interface SchemaPackageTransport {
 
    val publisherType: PublisherType
 
-   val config: Any
+   val config: ProjectTransportConfig
 }
 
 interface SchemaSourcesAdaptor {
@@ -115,4 +143,15 @@ interface LoaderExposingTaxiProject {
     * and the package project loaded from it.
     */
    fun loadTaxiProject(): Mono<Pair<Path, TaxiPackageProject>>
+}
+
+interface ProjectTransportConfig {
+   /**
+    * The path within the loaded project where the taxi.conf file
+    * should be found. Returns the actual file path, not the directory
+    */
+   val pathToTaxiConf:Path
+      get() {
+         return Paths.get("taxi.conf")
+      }
 }

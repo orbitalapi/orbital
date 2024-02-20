@@ -36,7 +36,7 @@ class GitRepoSync(
          if (result.successful) {
             logger.debug { result.description }
          } else {
-            logger.info { result.description }
+            logger.warn { result.description }
          }
 
          return result

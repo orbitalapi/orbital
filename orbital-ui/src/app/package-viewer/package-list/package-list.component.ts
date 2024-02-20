@@ -1,11 +1,16 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
-import { SourcePackageDescription } from '../packages.service';
+import {ProjectLoaderWithStatus, SourcePackageDescription} from '../packages.service';
 
 @Component({
   selector: 'app-package-list',
   styleUrls: ['./package-list.component.scss'],
   template: `
     <div class="list-container">
+      <div *ngIf="projectsWithProblems?.length > 0" class="source-package-card error-state"
+           (click)="showProjectsWithProblems.emit()">
+        <img src="assets/img/tabler/exclamation-circle.svg">
+        <h3 class="package-title">{{ projectsWithProblems.length }} of your projects has a configuration problem</h3>
+      </div>
       <div *ngFor="let sourcePackage of packages" class="source-package-card"
            (click)="packageClicked.emit(sourcePackage)">
         <h3 class="package-title">{{ sourcePackage.identifier.name }}</h3>
@@ -13,23 +18,23 @@ import { SourcePackageDescription } from '../packages.service';
           <table>
             <tr>
               <td class="tag-title">Version</td>
-              <td>{{sourcePackage.identifier.version}}</td>
+              <td>{{ sourcePackage.identifier.version }}</td>
             </tr>
             <tr>
               <td class="tag-title">Organisation</td>
-              <td>{{sourcePackage.identifier.organisation}}</td>
+              <td>{{ sourcePackage.identifier.organisation }}</td>
             </tr>
             <tr>
               <td class="tag-title">Status</td>
-              <td><span [ngClass]="sourcePackage.health.status" class="status"> {{sourcePackage.health.status}}</span>
+              <td><span [ngClass]="sourcePackage.health.status" class="status"> {{ sourcePackage.health.status }}</span>
               </td>
             </tr>
           </table>
           <div class="icon-bar">
             <img [src]="getSourceIcon(sourcePackage)">
-            <span class="small">{{getSourceDescription(sourcePackage)}}</span>
+            <span class="small">{{ getSourceDescription(sourcePackage) }}</span>
             <span class="spacer"></span>
-            <img src="assets/img/tabler/lock-open.svg"  *ngIf="sourcePackage.editable">
+            <img src="assets/img/tabler/lock-open.svg" *ngIf="sourcePackage.editable">
             <span class="small" *ngIf="sourcePackage.editable">Editable</span>
           </div>
         </div>
@@ -42,7 +47,13 @@ import { SourcePackageDescription } from '../packages.service';
 export class PackageListComponent {
 
   @Input()
+  projectsWithProblems : ProjectLoaderWithStatus[]
+
+  @Input()
   packages: SourcePackageDescription[];
+
+  @Output()
+  showProjectsWithProblems = new EventEmitter()
 
   @Output()
   packageClicked = new EventEmitter<SourcePackageDescription>()

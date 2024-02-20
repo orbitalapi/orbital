@@ -51,7 +51,9 @@ $bg-info: rgba($blueish, 0.3);
 $bg-ok: $green-400;
 $bg-status-unknown: $slate-400;
 $bg-warn: $amber-400;
-$bg-error: $red-400;
+$bg-error: $red-200;
+// Use this for things like status dots, where you don't need text over it
+$bg-error-no-text: $red-400;
 
 $warning-2: #DD8902;
 

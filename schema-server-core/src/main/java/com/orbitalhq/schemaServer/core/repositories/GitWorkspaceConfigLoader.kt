@@ -1,15 +1,19 @@
 package com.orbitalhq.schemaServer.core.repositories
 
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.schema.publisher.loaders.LoaderStatus
 import com.orbitalhq.schemaServer.core.config.WorkspaceGitSettings
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
+import com.orbitalhq.schemaServer.core.git.GitFileLoaderStatus
 import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
+import com.orbitalhq.schemaServer.core.git.GitRef
 import com.orbitalhq.schemaServer.core.git.GitRepoSync
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import mu.KotlinLogging
-import java.nio.file.Files
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
 
 class GitWorkspaceConfigLoader(
    private val gitSettings: WorkspaceGitSettings,
@@ -33,51 +37,69 @@ class GitWorkspaceConfigLoader(
 
    override val isReadOnly: Boolean = true
 
+   private val fileConfigLoader: FileWorkspaceConfigLoader
+
+   private val gitStatusSink = Sinks.many().replay().latest<LoaderStatus>()
+   override val loaderStatus: Flux<LoaderStatus>
+
    init {
-      repoSync.start(syncImmediately = syncUponInit)
-         // We wait for the currentRef to change.
-         // This will trigger on startup (ie., the first instance),
-         // and then whenever the branch or current git ref updates.
-         .distinctUntilChanged { status -> status.currentRef }
-         .subscribe {syncStatus ->
-            try {
-               logger.info { "Workspace from ${syncStatus.repository.redactedUrl} is now on ${syncStatus.currentRef} - refreshing workspace" }
-               fileConfigLoader().emitCurrentState()
-            } catch (e: Exception) {
-               logger.info { "Failed to read workspace config: ${e.message}" }
-            }
-
-         }
-   }
-
-   override fun load(): WorkspaceConfig {
-      val sync = repoSync.syncNow()
-      if (sync.successful) {
-         return loadWorkspace()
-      } else {
-         error("Git sync failed: ${sync.errorMessage}")
-      }
-   }
-
-   private fun loadWorkspace(): WorkspaceConfig {
-      return fileConfigLoader().load()
-   }
-
-   private fun fileConfigLoader(): FileWorkspaceConfigLoader {
       val workspaceConfigPath = gitSettings.checkoutPath.resolve(gitSettings.path)
-      if (!Files.exists(workspaceConfigPath)) {
-         error("No workspace file exists at $workspaceConfigPath - Is the path within the git repo configured correctly? (Currently reading from ${gitSettings.path}")
-      }
-      return FileWorkspaceConfigLoader(
+      fileConfigLoader = FileWorkspaceConfigLoader(
          workspaceConfigPath,
          fallback,
          eventDispatcher,
          emitStateOnInit = false
       )
+      repoSync.start(syncImmediately = syncUponInit)
+         // We wait for the currentRef to change.
+         // This will trigger on startup (ie., the first instance),
+         // and then whenever the branch or current git ref updates.
+         .distinctUntilChanged { status -> status.currentRef ?: GitRef.UNKNOWN }
+         .subscribe { syncStatus ->
+            if (!syncStatus.successful) {
+               logger.warn { syncStatus.errorMessage!! }
+               gitStatusSink.emitNext(LoaderStatus.error(syncStatus.errorMessage!!), Sinks.EmitFailureHandler.FAIL_FAST)
+            } else {
+               gitStatusSink.emitNext(LoaderStatus.OK, Sinks.EmitFailureHandler.FAIL_FAST)
+               try {
+                  logger.info { "Workspace from ${syncStatus.repository.redactedUrl} is now on ${syncStatus.currentRef} - refreshing workspace" }
+                  fileConfigLoader.emitCurrentState()
+               } catch (e: Exception) {
+                  logger.info { "Failed to read workspace config: ${e.message}" }
+               }
+
+            }
+         }
+
+      val gitStatusMessages = gitStatusSink.asFlux()
+      val fileStatusMessages = fileConfigLoader.loaderStatus
+
+      loaderStatus = GitFileLoaderStatus.build(gitStatusMessages, fileStatusMessages)
+      gitStatusSink.tryEmitNext(LoaderStatus.STARTING).orThrow()
    }
 
+   override fun load(createDefaultIfAbsent: Boolean): WorkspaceConfig {
+      val sync = repoSync.syncNow()
+      if (sync.successful) {
+         gitStatusSink.emitNext(LoaderStatus.OK, Sinks.EmitFailureHandler.FAIL_FAST)
+         return loadWorkspace()
+      } else {
+         val message = "Git sync failed: ${sync.errorMessage}"
+         gitStatusSink.emitNext(
+            LoaderStatus.error(sync.errorMessage ?: "An unknown error occurred"),
+            Sinks.EmitFailureHandler.FAIL_FAST
+         )
+         error(message)
+      }
+   }
+
+   private fun loadWorkspace(): WorkspaceConfig {
+      return fileConfigLoader.load(createDefaultIfAbsent = false)
+   }
+
+
    override fun safeConfigJson(): String {
-      return fileConfigLoader().safeConfigJson()
+      return fileConfigLoader.safeConfigJson()
    }
 
    override fun addFileSpec(fileSpec: FileSystemPackageSpec) {
