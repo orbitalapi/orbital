@@ -88,6 +88,10 @@
 
       <!-- CVE-2023-6378 , Fixed in 1.4.12 -->
       <logback.version>1.4.12</logback.version>
+
+      <!--  CVE-2024-1597, Fixed in 42.7.2
+       https://avd.aquasec.com/nvd/cve-2024-1597 -->
+      <postgresql.version>42.7.2</postgresql.version>
    </properties>
 
    <modules>
