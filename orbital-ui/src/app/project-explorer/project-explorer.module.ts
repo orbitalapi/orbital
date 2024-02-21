@@ -78,6 +78,16 @@ import {HeaderComponentLayoutModule} from "../header-component-layout/header-com
             path: ':packageName',
             component: ProjectExplorerComponent,
             title: `${UiCustomisations.productName}: Projects`
+          },
+          {
+            path: ':packageName/:selectedTab',
+            component: ProjectExplorerComponent,
+            title: `${UiCustomisations.productName}: Projects`
+          },
+          {
+            path: ':packageName/:selectedTab/**',
+            component: ProjectExplorerComponent,
+            title: `${UiCustomisations.productName}: Projects`
           }
         ]
       },

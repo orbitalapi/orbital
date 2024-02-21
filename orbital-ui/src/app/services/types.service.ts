@@ -83,10 +83,6 @@ export class TypesService {
     return this.http.get<VersionedSource[]>(`${this.environment.serverUrl}/api/schemas`);
   }
 
-  getParsedSources(): Observable<ParsedSource[]> {
-    return this.http.get<ParsedSource[]>(`${this.environment.serverUrl}/api/parsedSources`);
-  }
-
   getLinksForNode = (node: SchemaGraphNode): Observable<SchemaGraph> => {
     return this.http
       .get<SchemaGraph>(`${this.environment.serverUrl}/api/nodes/${node.type}/${node.nodeId}/links`);

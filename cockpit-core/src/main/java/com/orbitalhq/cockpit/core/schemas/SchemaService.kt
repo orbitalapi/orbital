@@ -40,17 +40,9 @@ class SchemaService(
       return SchemaUpdatedNotification(
          schemaSet.id,
          schemaSet.generation,
-         schemaSet.sourcesWithErrors.size
+         schemaSet.sourcesWithErrors.size,
+         schemaSet.sourceNamesWithErrors
       )
-   }
-
-   @GetMapping(path = ["/api/parsedSources"])
-   fun getParsedSources(): List<ParsedSource> {
-      return if (schemaProvider is ParsedSourceProvider) {
-         schemaProvider.parsedSources.sortedBy { it.source.name }
-      } else {
-         emptyList()
-      }
    }
 
    @GetMapping(path = ["/api/schemas"])

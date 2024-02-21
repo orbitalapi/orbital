@@ -82,6 +82,9 @@ data class SchemaSet private constructor(
    val sourcesWithErrors = parsedPackages.filter { !it.isValid }.flatMap { it.sourcesWithErrors }
 
    @get:JsonIgnore
+   val sourceNamesWithErrors = sourcesWithErrors.map { SourceNameWithPackage(it.name, it.source.packageIdentifier) }
+
+   @get:JsonIgnore
    val allSources = parsedPackages.flatMap { sourcePackage -> sourcePackage.sources.map { it.source } }
 
    @get:JsonIgnore
@@ -236,3 +239,9 @@ data class SchemaSet private constructor(
 
 
 }
+
+
+data class SourceNameWithPackage(
+   val name: String,
+   val packageIdentifier: PackageIdentifier?
+)

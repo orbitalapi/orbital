@@ -29,9 +29,9 @@ fun KafkaConnection.test(connection: KafkaConnectionConfiguration, timeout: Dura
             return "Unable to connect to Kafka cluster".left()
          }
          try {
-            logger.info { "Attempting to fetch topics for connection ${connection.connectionName}" }
+            logger.debug { "Attempting to fetch topics for connection ${connection.connectionName}" }
             val topics = adminClient.listTopics().listings().get()
-            logger.info { "Successfully fetched ${topics.size} topics" }
+            logger.debug { "Successfully fetched ${topics.size} topics" }
             return ConnectionSucceeded.right()
          } catch (e: Exception) {
             TODO()

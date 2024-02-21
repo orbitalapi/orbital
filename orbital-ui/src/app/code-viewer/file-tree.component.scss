@@ -1,0 +1,62 @@
+@import "src/common";
+
+::ng-deep {
+  .t-children {
+    margin-left: 0.75rem !important;
+  }
+}
+
+tui-badge {
+  font-weight: bold !important;
+  font-family: $headings-font;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &.active {
+    color: $sky-800;
+    background-color: $slate-50;
+    font-weight: bold;
+    width: -webkit-fill-available;
+    width:  -moz-available;
+
+    button {
+      font-weight: bold;
+    }
+  }
+
+
+  &:hover {
+    background-color: $slate-200;
+    border-radius: 4px;
+    cursor: pointer;
+
+    button.tree-node {
+      color: $sky-800;
+      cursor: pointer;
+    }
+  }
+}
+
+.tree-node.has-error {
+  text-decoration: underline red;
+  text-decoration-thickness: 2px;
+}
+
+tui-tree {
+  font-size: 0.9rem;
+}
+//tui-svg {
+//  width: 0.9rem;
+//}
+
+button.tree-node {
+  border: none;
+  background-color: transparent;
+  &:hover {
+    cursor: pointer;
+  }
+}
