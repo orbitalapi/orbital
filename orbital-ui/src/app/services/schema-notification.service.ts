@@ -1,7 +1,10 @@
-import {Injectable} from '@angular/core';
-import {Observable} from 'rxjs';
+import {Inject, Injectable} from '@angular/core';
+import {concatWith, Observable} from 'rxjs';
 import {WebsocketService} from './websocket.service';
-import {share} from 'rxjs/operators';
+import {share, shareReplay} from 'rxjs/operators';
+import {PackageIdentifier} from "../package-viewer/packages.service";
+import {HttpClient} from "@angular/common/http";
+import {Environment, ENVIRONMENT} from "./environment";
 
 @Injectable({
   providedIn: 'root'
@@ -9,12 +12,24 @@ import {share} from 'rxjs/operators';
 export class SchemaNotificationService {
   private readonly schemaUpdates$: Observable<SchemaUpdatedNotification>;
 
-  constructor(private websocketService: WebsocketService) {
-    this.schemaUpdates$ = websocketService.connect('/api/schema/updates')
+  constructor(private websocketService: WebsocketService,
+              private http:HttpClient,
+              @Inject(ENVIRONMENT) private environment: Environment,
+              ) {
+
+    // Initial state over http,
+    // followed by stream of updates over websocket
+    this.schemaUpdates$ = this.getSchemaSummary()
       .pipe(
-        share()
+        concatWith(websocketService.connect('/api/schema/updates')),
+        shareReplay(1)
       );
   }
+
+  private getSchemaSummary(): Observable<SchemaUpdatedNotification> {
+    return this.http.get<SchemaUpdatedNotification>(`${this.environment.serverUrl}/api/schemas/summary`);
+  }
+
 
   createSchemaNotificationsSubscription(): Observable<SchemaUpdatedNotification> {
     return this.schemaUpdates$;
@@ -25,4 +40,10 @@ export interface SchemaUpdatedNotification {
   newId: number;
   generation: number;
   invalidSourceCount: number;
+  sourceNamesWithErrors: SourceNameWithPackage[]
+}
+
+export interface SourceNameWithPackage {
+  name: string;
+  packageIdentifier: PackageIdentifier
 }

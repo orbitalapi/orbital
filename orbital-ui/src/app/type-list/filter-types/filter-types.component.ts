@@ -1,8 +1,9 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, DestroyRef, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { Schema, SchemaMember, SchemaMemberKind } from '../../services/schema';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 export const SHOW_EVERYTHING: TypeFilterParams = {
   name: null,
@@ -78,7 +79,7 @@ export class TypeFilter {
 })
 
 
-export class FilterTypesComponent {
+export class FilterTypesComponent implements OnInit {
   @Input()
   expanded: boolean;
   filterTypesFormGroup: UntypedFormGroup;
@@ -100,27 +101,23 @@ export class FilterTypesComponent {
   formGroup: UntypedFormGroup;
 
 
-  constructor(fb: UntypedFormBuilder, private activatedRoute: ActivatedRoute, private router: Router, private location: Location) {
+  constructor(fb: UntypedFormBuilder,
+              private activatedRoute: ActivatedRoute,
+              private router: Router,
+              private location: Location,
+              private destroyRef: DestroyRef
+  ) {
     this.formGroup = fb.group({
       filter: fb.control(''),
       showTypes: fb.control(true),
       showServices: fb.control(true),
       showOperations: fb.control(true)
     });
+  }
 
-    this.activatedRoute.queryParamMap.subscribe(queryParams => {
-      const memberTypes = (queryParams.getAll('memberType') || []) as SchemaMemberKind[];
-      const memberTypesIsEmpty = memberTypes.length === 0;
-      const formValue = {
-        filter: queryParams.get('name'),
-        showTypes: memberTypesIsEmpty || memberTypes.includes('TYPE'),
-        showServices: memberTypesIsEmpty || memberTypes.includes('SERVICE'),
-        showOperations: memberTypesIsEmpty || memberTypes.includes('OPERATION')
-      };
-      this.formGroup.setValue(formValue, { emitEvent: false });
-    });
-
+  ngOnInit() {
     this.formGroup.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(result => {
         const types: SchemaMemberKind[] = [];
         if (result['showTypes']) types.push('TYPE');
@@ -132,6 +129,20 @@ export class FilterTypesComponent {
           memberType: types,
           namespace: null
         }, true);
+      });
+
+    this.activatedRoute.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(queryParams => {
+        const memberTypes = (queryParams.getAll('memberType') || []) as SchemaMemberKind[];
+        const memberTypesIsEmpty = memberTypes.length === 0;
+        const formValue = {
+          filter: queryParams.get('name'),
+          showTypes: memberTypesIsEmpty || memberTypes.includes('TYPE'),
+          showServices: memberTypesIsEmpty || memberTypes.includes('SERVICE'),
+          showOperations: memberTypesIsEmpty || memberTypes.includes('OPERATION')
+        };
+        this.formGroup.setValue(formValue, { emitEvent: true });
       });
   }
 
@@ -149,6 +160,6 @@ export class FilterTypesComponent {
         relativeTo: this.activatedRoute,
         queryParams: filter
       }).toString();
-    this.location.go(url);
+    this.location.replaceState(url);
   }
 }

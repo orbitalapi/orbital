@@ -268,7 +268,7 @@ fun TaxiPackageProject.toPackageMetadata(): PackageMetadata {
 fun TaxiPackageSources.asSourcePackage(): SourcePackage {
    return SourcePackage.withAdditionalSources(
       this.project.toPackageMetadata(),
-      this.versionedSources(),
+      this.versionedSources(relativeTo = this.project.packageRootPath),
       this.pathGlobs()
    )
 }

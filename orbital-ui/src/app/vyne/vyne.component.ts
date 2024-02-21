@@ -4,14 +4,14 @@ import {BehaviorSubject, combineLatest, Observable} from 'rxjs';
 import {filter, map} from 'rxjs/operators';
 import {AppInfo, AppInfoService} from '../services/app-info.service';
 import {NavigationEnd, RouteConfigLoadEnd, RouteConfigLoadStart, Router} from '@angular/router';
-import {SchemaNotificationService} from '../services/schema-notification.service';
+import {SchemaNotificationService, SourceNameWithPackage} from '../services/schema-notification.service';
 import {MatLegacySnackBar as MatSnackBar} from '@angular/material/legacy-snack-bar';
 import {SystemAlert} from '../system-alert/system-alert.component';
 import {TypesService} from '../services/types.service';
 import {UserInfoService, VynePrivileges, VyneUser} from '../services/user-info.service';
 import {DatePipe} from '@angular/common';
 import {UiCustomisations} from "../../environments/ui-customisations";
-import {PackagesService} from "../package-viewer/packages.service";
+import {PackageIdentifier, PackagesService} from "../package-viewer/packages.service";
 
 @Component({
   selector: 'vyne-app',
@@ -152,24 +152,31 @@ export class VyneComponent implements OnInit {
         document.querySelector('.app-page-content').scrollTop = 0;
       });
 
+    // Only show snackbar updates after we've loaded the initial state-of-the-world
+    let isFirstSchemaUpdate = true;
+
     this.schemaNotificationService.createSchemaNotificationsSubscription()
       .subscribe(schemaUpdateNotification => {
         let message: string;
-        if (schemaUpdateNotification.invalidSourceCount > 0) {
+        if (schemaUpdateNotification.sourceNamesWithErrors.length > 0) {
           message = 'Schema has been updated, but contains compilation errors';
-          this.setCompilationErrorAlert();
+          this.setCompilationErrorAlert(schemaUpdateNotification.sourceNamesWithErrors[0]);
         } else {
           message = 'Schema has been updated';
-          const alertIndex = this.getAlertIndex();
+          const alertIndex = this.getCompilationErrorsAlertIndex();
           if (alertIndex >= 0) {
             this.alerts.splice(alertIndex, 1);
           }
         }
-        this.snackbar.open(
-          message, 'Dismiss', {
-            duration: 5000,
-          }
-        );
+        if (!isFirstSchemaUpdate) {
+          this.snackbar.open(
+            message, 'Dismiss', {
+              duration: 5000,
+            }
+          );
+        }
+        isFirstSchemaUpdate = false;
+
       });
 
     this.userInfoService
@@ -212,7 +219,7 @@ export class VyneComponent implements OnInit {
       })
   }
 
-  private getAlertIndex() {
+  private getCompilationErrorsAlertIndex() {
     return this.alerts.findIndex(alert => alert.id === 'compilationErrors');
   }
 
@@ -228,28 +235,33 @@ export class VyneComponent implements OnInit {
     })
   }
 
-  private setCompilationErrorAlert() {
-    if (this.getAlertIndex() !== -1) {
+  private setCompilationErrorAlert(srcToNavigateTo: SourceNameWithPackage) {
+    if (this.getCompilationErrorsAlertIndex() !== -1) {
       return;
     }
+    // /projects/demo.vyne:films-demo:0.1.0/source?selectedFile=src%2Fstaff%2Ftypes%2FStaffId.taxi
     this.alerts.push({
       id: 'compilationErrors',
-      actionLabel: 'Go to schema explorer',
-      message: 'Compilation errors detected in schemas',
+      actionLabel: 'View sources',
+      message: 'Compilation errors detected',
       severity: 'Warning',
       handler: () => {
-        this.router.navigate(['schemas']);
+        this.router.navigate(['projects', srcToNavigateTo.packageIdentifier.uriSafeId, 'source'], {
+          queryParams: {
+            selectedFile: srcToNavigateTo.name
+          }
+        });
       }
     });
   }
 
   ngOnInit(): void {
-    this.typeService.getSchemaSummary()
-      .subscribe(summary => {
-        if (summary.invalidSourceCount > 0) {
-          this.setCompilationErrorAlert();
-        }
-      });
+    // this.typeService.getSchemaSummary()
+    //   .subscribe(summary => {
+    //     if (summary.invalidSourceCount > 0) {
+    //       this.setCompilationErrorAlert(summary.sourceNamesWithErrors[0]);
+    //     }
+    //   });
     this.isLoadingRoute$ = this.router.events
       .pipe(
         filter(event => event instanceof RouteConfigLoadStart || event instanceof RouteConfigLoadEnd),

@@ -63,3 +63,11 @@ app-object-view-container {
 section {
   margin-bottom: 2rem;
 }
+
+h1 {
+  display: flex;
+
+  .badge {
+    @include type-badge();
+  }
+}

@@ -12,8 +12,14 @@ import lang.taxi.packages.TaxiPackageSources
 import lang.taxi.sources.SourceCode
 import lang.taxi.sources.SourceCodeLanguage
 import lang.taxi.sources.SourceCodeLanguages
+import mu.KotlinLogging
 import java.io.Serializable
+import java.net.URI
+import java.nio.file.Path
 import java.time.Instant
+import kotlin.io.path.toPath
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * Identifies a VersionedSource file
@@ -145,8 +151,23 @@ data class ParsedSource(val source: VersionedSource, val errors: List<Compilatio
    val name = source.name
 }
 
-fun TaxiPackageSources.versionedSources(): List<VersionedSource> {
-   return this.sources.map { source -> source.asVersionedSource(this.project.version) }
+fun TaxiPackageSources.versionedSources(relativeTo: Path?): List<VersionedSource> {
+
+   return this.sources.map { source ->
+      source.asVersionedSource(this.project.version)
+         .let { versionedSource ->
+            if (relativeTo != null) {
+               try {
+                  versionedSource.copy(name = relativeTo.relativize(URI.create(versionedSource.name).toPath()).toString())
+               } catch (e:Exception) {
+                  logger.warn { "Failed to relativize path, will use original - ${e.message}" }
+                  versionedSource
+               }
+            } else {
+               versionedSource
+            }
+         }
+   }
 }
 
 fun SourceCode.asVersionedSource(version: String = VersionedSource.DEFAULT_VERSION.toString()): VersionedSource {

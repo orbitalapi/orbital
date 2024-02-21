@@ -48,12 +48,6 @@ markdown {
 }
 
 .badge {
-  background-color: rgba($vyne-lilac, 0.2);
-  color: $vyne-lilac;
-  font-weight: bold;
-  padding: 2px 4px;
+  @include type-badge();
   font-size: 0.7rem;
-  margin-left: 0.5rem;
-  align-self: center;
-  text-transform: capitalize;
 }

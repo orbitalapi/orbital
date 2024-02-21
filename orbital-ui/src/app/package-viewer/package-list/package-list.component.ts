@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
 import {ProjectLoaderWithStatus, SourcePackageDescription} from '../packages.service';
+import {TuiStatus} from "@taiga-ui/kit";
 
 @Component({
   selector: 'app-package-list',
@@ -11,9 +12,20 @@ import {ProjectLoaderWithStatus, SourcePackageDescription} from '../packages.ser
         <img src="assets/img/tabler/exclamation-circle.svg">
         <h3 class="package-title">{{ projectsWithProblems.length }} of your projects has a configuration problem</h3>
       </div>
-      <div *ngFor="let sourcePackage of packages" class="source-package-card"
-           (click)="packageClicked.emit(sourcePackage)">
-        <h3 class="package-title">{{ sourcePackage.identifier.name }}</h3>
+      <div
+        *ngFor="let sourcePackage of packages"
+        [routerLink]="sourcePackage.uriPath"
+        routerLinkActive="selected-list-item"
+        class="source-package-card"
+      >
+        <h3 class="package-title">
+          {{ sourcePackage.identifier.name }}
+          <tui-badge [status]="getPackageBadgeState(sourcePackage)" size="s"
+                     [value]="sourcePackage.health.status"></tui-badge>
+        </h3>
+        <div *ngIf="sourcePackage.health.status === 'Unhealthy'" class="unhealthy-state">
+          {{ getPackageState(sourcePackage) }}
+        </div>
         <div class="tag-table">
           <table>
             <tr>
@@ -23,11 +35,6 @@ import {ProjectLoaderWithStatus, SourcePackageDescription} from '../packages.ser
             <tr>
               <td class="tag-title">Organisation</td>
               <td>{{ sourcePackage.identifier.organisation }}</td>
-            </tr>
-            <tr>
-              <td class="tag-title">Status</td>
-              <td><span [ngClass]="sourcePackage.health.status" class="status"> {{ sourcePackage.health.status }}</span>
-              </td>
             </tr>
           </table>
           <div class="icon-bar">
@@ -47,10 +54,13 @@ import {ProjectLoaderWithStatus, SourcePackageDescription} from '../packages.ser
 export class PackageListComponent {
 
   @Input()
-  projectsWithProblems : ProjectLoaderWithStatus[]
+  projectsWithProblems: ProjectLoaderWithStatus[]
 
   @Input()
   packages: SourcePackageDescription[];
+
+  @Input()
+  packagesWithCompilationErrors: string[] = [];
 
   @Output()
   showProjectsWithProblems = new EventEmitter()
@@ -58,20 +68,52 @@ export class PackageListComponent {
   @Output()
   packageClicked = new EventEmitter<SourcePackageDescription>()
 
-  getSourceDescription(sourcePackage:SourcePackageDescription):string {
+  getSourceDescription(sourcePackage: SourcePackageDescription): string {
     switch (sourcePackage.publisherType) {
-      case 'FileSystem': return 'Read from disk'
+      case 'FileSystem':
+        return 'Read from disk'
       case 'GitRepo':
         return 'Git repo';
       case 'Pushed':
         return 'Pushed to Orbital';
     }
   }
+
   getSourceIcon(sourcePackage: SourcePackageDescription) {
     switch (sourcePackage.publisherType) {
-      case 'FileSystem': return 'assets/img/tabler/files.svg'
-      case 'GitRepo': return 'assets/img/tabler/git-merge.svg'
-      case 'Pushed': return 'assets/img/tabler/rss.svg'
+      case 'FileSystem':
+        return 'assets/img/tabler/file.svg'
+      case 'GitRepo':
+        return 'assets/img/tabler/git-merge.svg'
+      case 'Pushed':
+        return 'assets/img/tabler/rss.svg'
+    }
+  }
+
+  getPackageState(sourcePackage: SourcePackageDescription) {
+    if (this.packagesWithCompilationErrors.includes(sourcePackage.identifier.id)) {
+      return "Contains compilation errors"
+    } else {
+      if (sourcePackage.health.message) {
+        return `${sourcePackage.health.status} - ${sourcePackage.health.message}`
+      } else {
+        return sourcePackage.health.status
+      }
+    }
+  }
+
+  getPackageBadgeState(sourcePackage: SourcePackageDescription): TuiStatus {
+    if (this.packagesWithCompilationErrors.includes(sourcePackage.identifier.id)) {
+      return "error";
+    } else {
+      switch (sourcePackage.health.status) {
+        case "Healthy":
+          return "success"
+        case "Unhealthy":
+          return "error"
+        case "Unknown":
+          return "neutral"
+      }
     }
   }
 }

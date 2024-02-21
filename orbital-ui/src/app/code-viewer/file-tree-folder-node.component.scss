@@ -1,0 +1,21 @@
+@import "src/common";
+
+:host {
+  display: flex;
+}
+.expanded {
+  transform: rotate(90deg);
+}
+.expandable {
+  cursor: pointer;
+  border-radius: 50%;
+  &:hover {
+    background-color: $slate-200;
+  }
+}
+tui-svg {
+  padding: 3px;
+  width: 0.9rem;
+  height: 0.9rem;
+  transition: transform 0.1s ease;
+}

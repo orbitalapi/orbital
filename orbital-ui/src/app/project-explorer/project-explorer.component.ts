@@ -1,40 +1,46 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { SchemaNotificationService } from '../services/schema-notification.service';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit} from '@angular/core';
+import {ActivatedRoute, Router} from '@angular/router';
+import {SchemaNotificationService} from '../services/schema-notification.service';
 import {
   PackagesService,
   PackageWithDescription,
   ParsedPackage,
   SourcePackageDescription
 } from '../package-viewer/packages.service';
-import { Badge } from '../simple-badge-list/simple-badge-list.component';
+import {Badge} from '../simple-badge-list/simple-badge-list.component';
 import * as moment from 'moment';
-import { ChangeLogEntry, ChangelogService } from 'src/app/changelog/changelog.service';
-import { Observable } from 'rxjs';
-import { TypesService } from 'src/app/services/types.service';
-import { PartialSchema, Schema } from 'src/app/services/schema';
-import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
+import {ChangeLogEntry, ChangelogService} from 'src/app/changelog/changelog.service';
+import {Observable} from 'rxjs';
+import {TypesService} from 'src/app/services/types.service';
+import {PartialSchema, Schema} from 'src/app/services/schema';
+import {appInstanceType} from 'src/app/app-config/app-instance.vyne';
+import {integer} from "vscode-languageclient";
 
 @Component({
   selector: 'app-project-explorer',
   templateUrl: './project-explorer.component.html',
   styleUrls: ['./project-explorer.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { 'class': appInstanceType.appType }
+  host: {'class': appInstanceType.appType}
 })
 export class ProjectExplorerComponent implements OnInit {
 
 
   packageWithDescription: PackageWithDescription
   tabs = [
-    { label: 'Schema', icon: 'assets/img/tabler/table.svg' },
-    { label: 'Changelog', icon: 'assets/img/tabler/git-pull-request.svg' },
-    { label: 'Source', icon: 'assets/img/tabler/code.svg' },
-    { label: 'Settings', icon: 'assets/img/tabler/settings.svg' }
+    {label: 'Schema', icon: 'assets/img/tabler/table.svg', route: 'schema'},
+    {label: 'Changelog', icon: 'assets/img/tabler/git-pull-request.svg', route: 'changelog'},
+    {label: 'Source', icon: 'assets/img/tabler/code.svg', route: 'source'},
+    {label: 'Settings', icon: 'assets/img/tabler/settings.svg', route: 'settings'}
   ]
 
   get packageDescription(): SourcePackageDescription {
     return this.packageWithDescription?.description;
+  }
+
+  setActiveTab(index: integer) {
+    const newRoute = this.tabs[index].route;
+    this.router.navigate(['..',newRoute], {relativeTo: this.activatedRoute})
   }
 
 
@@ -55,9 +61,23 @@ export class ProjectExplorerComponent implements OnInit {
               private activatedRoute: ActivatedRoute,
               private changeDetector: ChangeDetectorRef,
               private changelogService: ChangelogService,
-              private typeService: TypesService
+              private typeService: TypesService,
+              private router: Router
   ) {
-
+    this.activatedRoute.paramMap.subscribe(
+      paramMap => {
+        const selectedTab = paramMap.get('selectedTab');
+        if (!selectedTab) {
+          this.router.navigate([this.tabs[0].route], {relativeTo: this.activatedRoute})
+        } else {
+          this.activeTabIndex = this.tabs.findIndex(tab => tab.route === selectedTab);
+          const activeTab = this.tabs[this.activeTabIndex];
+          if (activeTab.route === 'source') {
+            console.log(paramMap);
+          }
+        }
+      }
+    )
   }
 
   ngOnInit() {
