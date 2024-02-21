@@ -68,3 +68,11 @@ app-code-viewer {
   border-radius: 6px;
   border: 1px solid $slate-200;
 }
+
+h1 {
+  display: flex;
+
+  .badge {
+    @include type-badge();
+  }
+}

@@ -81,14 +81,6 @@ app-filter-types {
   }
 }
 
-.badge {
-  background-color: rgba($vyne-lilac, 0.2);
-  color: $vyne-lilac;
-  font-weight: bold;
-  padding: 2px 4px;
-  font-size: 0.7rem;
-}
-
 .schema-member-container {
   display: inline-table;
 
@@ -96,8 +88,9 @@ app-filter-types {
     display: flex;
     margin-bottom: 4px;
 
-    .badges {
-      margin-left: 8px;
+    .member-type-badge {
+      @include type-badge();
+      font-size: 0.7rem;
     }
   }
 
@@ -129,12 +122,6 @@ app-filter-types {
     width: 40rem;
   }
 
-  .member-package {
-    font-family: $mono;
-    font-size: 0.7rem;
-    color: $dark-grey-1
-  }
-
   .member-type-alias {
     vertical-align: middle;
     display: table-cell;
@@ -164,6 +151,7 @@ app-filter-types {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 700px; // An arbitary number because spanning forever looked poo. A better strategy is clearly needed
+  margin-top: 0.5rem;
 
   .summary {
     width: 100%;

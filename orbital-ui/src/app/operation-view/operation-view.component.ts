@@ -15,7 +15,7 @@ import {methodClassFromName} from 'src/app/service-view/service-view-class-utils
   template: `
     <div class="documentation" *ngIf="operation">
       <div class="page-heading">
-        <h1>{{operation.name}}</h1>
+        <h1>{{operation.name}}<span class="badge">{{ operation.operationKind }}</span></h1>
         <div class="badges">
             <span class="mono-badge">
               <a [routerLink]="['/services',operationSummary?.serviceName]">{{operationSummary?.serviceName}}</a>

@@ -1,2 +1,6 @@
 @import "src/toolbar";
 @import "src/common";
+
+:host {
+  display: flex;
+}

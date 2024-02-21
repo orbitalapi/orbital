@@ -102,10 +102,10 @@ class SchemaService(
    fun getOperation(
       @PathVariable("serviceName") serviceName: String,
       @PathVariable("operationName") operationName: String
-   ): Operation {
+   ): RemoteOperation {
       return schemaProvider.schema
          .service(serviceName)
-         .operation(operationName)
+         .remoteOperation(operationName)
    }
 
    @GetMapping(path = ["/api/types"])

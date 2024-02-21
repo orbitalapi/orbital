@@ -60,6 +60,16 @@ $font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system
 
   @include links();
 }
+@mixin type-badge($color: $vyne-lilac) {
+  background-color: rgba($color, 0.1);
+  color: rgba($color, 0.8);
+  font-weight: normal;
+  padding: 2px 4px;
+  font-size: 0.9rem;
+  margin-left: 0.75rem;
+  align-self: center;
+  text-transform: capitalize;
+}
 .mono-badge.small {
   font-size: 0.7rem !important;
 }

@@ -6,12 +6,11 @@
         <div class="schema-member-container">
           <div class="name-row">
             <div class="member-qualified-name">
-              <div class="member-name">{{ member.name.name}}
-                <div class="badges">
-                  <span class="badge">{{ memberType(member) }}</span>
-                </div>
+              <div class="member-name">
+                {{ member.name.name}}
+                <span class="member-type-badge">{{ memberType(member) }}</span>
               </div>
-              <div class="member-package">{{ member.name.fullyQualifiedName}}</div>
+              <div class="mono-badge small">{{ member.name.fullyQualifiedName}}</div>
             </div>
             <div class="member-type-alias">
               {{ member.aliasForType}}
