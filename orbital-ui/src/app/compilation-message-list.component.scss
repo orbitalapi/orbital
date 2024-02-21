@@ -17,11 +17,10 @@
   padding: 1rem;
 }
 
-tui-accordion::ng-deep {
-  .t-content {
-    padding: 0 !important;
-  }
+tui-badge {
+  margin: 0 1rem;
 }
+
 
 .accordion-header {
   display: flex;
@@ -29,7 +28,7 @@ tui-accordion::ng-deep {
 
   img {
     opacity: 0.7;
-    width: 20px;
+    width: 0.9rem;
     margin-right: 1rem;
   }
 }
@@ -38,11 +37,25 @@ tui-accordion::ng-deep {
   display: flex;
   align-items: center;
 
+  cursor: pointer;
+
   font-size: 0.8rem;
   color: $slate-800;
 
+  margin-left: 1rem;
+
+  img {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
   border-bottom: 1px solid $slate-300;
-  padding: 0.5rem;
+  padding: 0.5rem 0.5rem 0.5rem 2rem;
+
+  &:hover {
+    background-color: $slate-100;
+  }
+
 
   .message-line {
     flex-grow: 1;
@@ -50,5 +63,20 @@ tui-accordion::ng-deep {
     overflow: hidden;
     text-overflow: ellipsis;
     margin: 0 1rem;
+  }
+}
+
+::ng-deep tui-accordion-item{
+  button.t-header {
+    // Make the accordion header a little tighter
+    padding: .425rem .75rem .425rem 1rem !important;
+    min-height: unset !important;
+  }
+
+}
+
+::ng-deep tui-expand {
+  .t-content {
+    padding: 0 !important;
   }
 }

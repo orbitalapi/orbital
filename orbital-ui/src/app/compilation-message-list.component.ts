@@ -1,32 +1,32 @@
-import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
+import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
 import {CompilationMessage, groupBySource} from "./services/schema";
-import {isNullOrUndefined} from "util";
+import {isNullOrUndefined} from "./utils/utils";
 
 @Component({
     selector: 'app-compilation-message-list',
     template: `
-        <app-panel-header [title]="title"></app-panel-header>
-        <div *ngIf="!hasErrors" class="grow no-errors subtle">
-            <span>There are no problems detected.</span>
-        </div>
-        <div class="grow" *ngIf="hasErrors">
-            <tui-accordion [rounded]="false">
-                <tui-accordion-item *ngFor="let messageGroup of compilationMessageGroups" size="s">
-                    <div class="accordion-header">
-                        <img src='assets/img/tabler/file-text.svg'> {{ filenameOnly(messageGroup.source) }}
-                        ({{messageGroup.messages.length}})
-                    </div>
+      <app-panel-header [title]="title"></app-panel-header>
+      <div *ngIf="!hasErrors" class="grow no-errors subtle">
+        <span>There are no problems detected.</span>
+      </div>
+      <div class="grow" *ngIf="hasErrors">
+        <tui-accordion [rounded]="false" [closeOthers]="false">
+          <tui-accordion-item *ngFor="let messageGroup of compilationMessageGroups" size="s"  [open]="true">
+            <div class="accordion-header">
+              <img src='assets/img/tabler/align-left.svg'> {{ filenameOnly(messageGroup.source) }}
+              <tui-badge [value]="messageGroup.messages.length" status="primary" size="xs"></tui-badge>
+            </div>
 
-                    <div tuiAccordionItemContent>
-                        <div class="error-row" *ngFor="let compilationMessage of messageGroup.messages">
-                            <img [attr.src]="getSeverityIcon(compilationMessage.severity)" class="filter-error-light">
-                            <div class="message-line">{{ compilationMessage.detailMessage }}</div>
-                            <div>({{ compilationMessage.line}},{{compilationMessage.char}})</div>
-                        </div>
-                    </div>
-                </tui-accordion-item>
-            </tui-accordion>
-        </div>
+            <div tuiAccordionItemContent>
+              <div class="error-row" *ngFor="let compilationMessage of messageGroup.messages" (click)="messageClicked.emit(compilationMessage)">
+                <img [attr.src]="getSeverityIcon(compilationMessage.severity)" class="filter-error-light">
+                <div class="message-line">{{ compilationMessage.detailMessage }}</div>
+                <div>[Ln {{ compilationMessage.line }}, Col {{ compilationMessage.char }}]</div>
+              </div>
+            </div>
+          </tui-accordion-item>
+        </tui-accordion>
+      </div>
 
     `,
     styleUrls: ['./compilation-message-list.component.scss'],
@@ -34,13 +34,13 @@ import {isNullOrUndefined} from "util";
 })
 export class CompilationMessageListComponent {
 
-    constructor() {
-    }
-
     compilationMessageGroups: CompilationMessageGroup[] = []
 
 
     private _compilationMessages: CompilationMessage[];
+
+    @Output()
+    messageClicked = new EventEmitter<CompilationMessage>();
 
     @Input()
     get compilationMessages(): CompilationMessage[] {

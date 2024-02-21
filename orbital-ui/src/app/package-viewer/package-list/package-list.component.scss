@@ -9,11 +9,23 @@
   border-right: 1px solid $slate-300;
 }
 
-
 .source-package-card {
   padding: 2rem;
   border: 1px solid transparent;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+
+  &.selected-list-item {
+    background: $white;
+    border: 1px solid $vyne-lilac;
+    border-radius: 4px;
+  }
+
+  &:hover {
+    &:not(.selected-list-item) {
+      background-color: $slate-200;
+      cursor: pointer;
+    }
+  }
 
   &.error-state {
     padding: 1rem 1rem 1rem 2rem;
@@ -24,7 +36,6 @@
     h3 {
       margin: 0;
     }
-
 
     font-size: 0.9rem;
     background-color: $red-50;
@@ -39,19 +50,14 @@
       border-width: 2px;
     }
   }
-
-  &:hover {
-    background-color: white;
-    border: 1px solid $vyne-lilac;
-
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
 }
 
 .package-title {
   margin-bottom: 0.5rem;
+
+  tui-badge {
+    margin-left: 0.5rem;
+  }
 }
 
 .tag-table {
@@ -67,14 +73,22 @@
 }
 
 .icon-bar {
+  display: flex;
+  align-items: center;
   margin-top: 0.7rem;
   opacity: 0.8;
+
   img {
-    margin-right: 1rem;
+    margin-right: 0.5rem;
+    width: 16px;
   }
+
   .spacer {
     flex-grow: 1;
   }
-  display: flex;
-  align-items: center;
+}
+
+.unhealthy-state {
+  color: $error-dark;
+  margin-bottom: 0.5rem;
 }

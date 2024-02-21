@@ -1,5 +1,7 @@
-import { Component, HostBinding, Input } from '@angular/core';
+import {Component, HostBinding, Input} from '@angular/core';
 import {CompilationMessage, ParsedSource, VersionedSource} from '../services/schema';
+import {ActivatedRoute, Router} from "@angular/router";
+import {FilenameWithDecorators} from "./file-tree.component";
 
 declare const require: any;
 /* eslint-disable-next-line */
@@ -17,6 +19,11 @@ export class CodeViewerComponent {
 
   private _sources: ParsedSource[] | VersionedSource[];
 
+  parsedSources: ParsedSource[];
+  filenames: FilenameWithDecorators[];
+
+  errors: CompilationMessage[]
+
   @Input()
   get sources(): ParsedSource[] | VersionedSource[] {
     return this._sources;
@@ -24,8 +31,19 @@ export class CodeViewerComponent {
 
   set sources(value: ParsedSource[] | VersionedSource[]) {
     this._sources = value;
-    if (this.sources && (this.sources as any[]).length > 0) {
-      this.select(this.sources[0]);
+    this.parsedSources = convertToParsedSources(this.sources);
+    this.filenames = this.parsedSources.map(s => {
+      return {
+        filename: s.source.name,
+        errorCount: s.errors.length
+      }
+    });
+    this.errors = this.parsedSources.flatMap(s => s.errors);
+
+    if (this.parsedSources && this.parsedSources.length > 0 && !this.selectedFilename) {
+      this.select(this.parsedSources[0].source.name);
+    } else if (this.selectedFilename) {
+      this.activateSelectedSource();
     }
   }
 
@@ -35,30 +53,25 @@ export class CodeViewerComponent {
   @Input()
   flexboxMode: CodeViewerFlexBoxMode = 'flex';
 
-  @HostBinding('class.flex-grid') get className() { return this.flexboxMode === 'grid' }
+  @Input()
+  useRouter: boolean = true;
 
-  selectedSource: VersionedSource;
-  selectedSourceErrors: CompilationMessage[];
-
-  selectedIndex = 0;
-
-  private static isVersionedSource(source: ParsedSource | VersionedSource): source is VersionedSource {
-    if (!source) {
-      return false;
-    }
-    const isParsedSource = (source as ParsedSource).source !== undefined && (source as ParsedSource).errors !== undefined;
-    return !isParsedSource;
+  @HostBinding('class.flex-grid') get className() {
+    return this.flexboxMode === 'grid'
   }
 
-  private static versionedSource(input: ParsedSource | VersionedSource): VersionedSource {
-    if (CodeViewerComponent.isVersionedSource(input)) {
-      return input;
-    } else {
-      return (input as ParsedSource).source;
-    }
-  }
+  selectedSource: ParsedSource;
+  selectedFilename: string;
 
-  constructor() {
+  constructor(private activatedRoute: ActivatedRoute,
+              private router: Router) {
+    activatedRoute.queryParams.subscribe(params => {
+      const selectedFile = params['selectedFile']
+      if (selectedFile) {
+        this.selectedFilename = selectedFile;
+        this.activateSelectedSource()
+      }
+    });
   }
 
 
@@ -77,16 +90,80 @@ export class CodeViewerComponent {
     if (!this.selectedSource) {
       return '';
     } else {
-      return this.selectedSource.content;
+      return this.selectedSource.source.content;
     }
   }
 
-  select(source: ParsedSource | VersionedSource) {
-    this.selectedIndex = (this._sources as any[]).indexOf(source);
-    this.selectedSource = CodeViewerComponent.versionedSource(source);
-    this.selectedSourceErrors = (source as ParsedSource).errors || [];
+  private activateSelectedSource() {
+    if (!this.parsedSources || this.parsedSources.length == 0)
+      return;
+    if (!this.selectedFilename)
+      return;
+
+    this.selectedSource = this.parsedSources.find(s => s.source.name === this.selectedFilename)
   }
 
+  select(filename: string) {
+    this.router.navigate([],
+      {
+        relativeTo: this.activatedRoute,
+        queryParams: {
+          'selectedFile': filename
+        },
+        queryParamsHandling: "merge",
+        replaceUrl: true
+      },
+    );
+  }
+
+  compilationMessageClicked($event: CompilationMessage) {
+    if ($event.sourceName.startsWith('[')) {
+      // name in the format of:
+      // [demo.vyne/films-demo/0.1.0]/src/film/FilmService.taxi
+      const filename = ($event.sourceName.split(']')[1]).substring(1) // remove the preceding /
+      this.select(filename)
+    } else {
+      this.select($event.sourceName.substring(1)); // remove the preceding /
+    }
+
+  }
 }
 
 export type SidebarMode = 'Visible' | 'Hidden' | 'Auto';
+
+
+function isVersionedSource(source: ParsedSource | VersionedSource): source is VersionedSource {
+  if (!source) {
+    return false;
+  }
+  return !isParsedSource(source);
+}
+
+function isParsedSource(source: ParsedSource | VersionedSource): source is ParsedSource {
+  if (!source) {
+    return false;
+  }
+  return (source as ParsedSource).source !== undefined && (source as ParsedSource).errors !== undefined;
+}
+
+function parsedSource(input: ParsedSource | VersionedSource): ParsedSource {
+  if (isParsedSource(input))
+    return input;
+  return {
+    source: input,
+    errors: [],
+    isValid: true
+  }
+}
+
+function versionedSource(input: ParsedSource | VersionedSource): VersionedSource {
+  if (isVersionedSource(input)) {
+    return input;
+  } else {
+    return (input as ParsedSource).source;
+  }
+}
+
+function convertToParsedSources(input: ParsedSource[] | VersionedSource[]): ParsedSource[] {
+  return input.map((s: ParsedSource | VersionedSource) => parsedSource(s))
+}

@@ -1,13 +1,13 @@
 package com.orbitalhq.connectors.kafka.registry
 
 import com.google.common.io.Resources
-import com.winterbe.expekt.should
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.utils.withoutWhitespace
+import com.typesafe.config.ConfigFactory
+import com.winterbe.expekt.should
 import org.apache.commons.io.FileUtils
 import org.junit.Rule
 import org.junit.Test
-import org.junit.contrib.java.lang.system.EnvironmentVariables
 import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.net.URI
@@ -18,13 +18,6 @@ class KafkaRegistryTest {
    @Rule
    @JvmField
    val folder = TemporaryFolder()
-
-   @Rule
-   @JvmField
-   val environmentVars: EnvironmentVariables = EnvironmentVariables()
-
-
-
 
    @Test
    fun `can write kafka connection to new config file`() {
@@ -71,19 +64,30 @@ class KafkaRegistryTest {
    }
 
    @Test
-   fun `can remove kafka connection from config file registry`() {
-      environmentVars.set("TOPIC_NAME", "movies")
-      environmentVars.set("KAFKA_USERNAME", "user")
-      environmentVars.set("KAFKA_PASSWORD", "pass")
-      val configFile = configFileInTempFolder("config/simple-connections.conf")
-      val registry = KafkaConfigFileConnectorRegistry(configFile)
-      registry.listConnections().should.have.size(2)
-      registry.hasConnection("another-connection").should.be.`true`
+   fun `can resolve values with env variables`() {
+      val envVars = ConfigFactory.parseMap(mapOf(
+         "TOPIC_NAME" to "movies",
+         "KAFKA_USERNAME" to "user",
+         "KAFKA_PASSWORD" to "pass"
+      ))
+      val configFile = configFileInTempFolder("config/with-env-vars.conf")
+      val registry = KafkaConfigFileConnectorRegistry(configFile,envVars)
+      registry.listConnections().should.have.size(1)
+
       val connection = registry.getConnection("another-connection")
 
       connection.connectionParameters["topic"].should.equal("movies")
       connection.connectionParameters["sasl.jaas.config"].should.equal("org.apache.kafka.common.security.plain.PlainLoginModule required username=user password=pass;")
       connection.connectionParameters["incorrect_sasl.jaas.config"].should.equal("org.apache.kafka.common.security.plain.PlainLoginModule required username='\${KAFKA_USERNAME}' password='\${KAFKA_PASSWORD}';")
+
+   }
+   @Test
+   fun `can remove kafka connection from config file registry`() {
+      val configFile = configFileInTempFolder("config/simple-connections.conf")
+      val registry = KafkaConfigFileConnectorRegistry(configFile)
+      registry.listConnections().should.have.size(2)
+      registry.hasConnection("another-connection").should.be.`true`
+
       registry.removeConnectorConfig("another-connection")
       registry.listConnections().should.have.size(1)
       registry.hasConnection("another-connection").should.be.`false`

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { ParsedSource, PartialSchema } from '../services/schema';
+import {ParsedSource, PartialSchema, VersionedSource} from '../services/schema';
 import { map } from 'rxjs/operators';
 import { FileSystemPackageSpec, GitRepositoryConfig } from 'src/app/project-import/project-import.models';
 
@@ -69,6 +69,11 @@ export interface PackageWithDescription {
 export interface ParsedPackage {
   metadata: PackageMetadata;
   sources: ParsedSource[];
+
+  additionalSources: {[index: string]: VersionedSource[]}
+  isValid: boolean;
+  identifier: PackageIdentifier;
+  sourcesWithErrors: ParsedSource[];
 }
 
 export interface PackageMetadata {

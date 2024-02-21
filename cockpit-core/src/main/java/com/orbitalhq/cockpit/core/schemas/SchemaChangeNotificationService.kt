@@ -1,6 +1,9 @@
 package com.orbitalhq.cockpit.core.schemas
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.VersionedSource
+import com.orbitalhq.schema.api.SourceNameWithPackage
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemas.SchemaSetChangedEvent
 import com.orbitalhq.spring.http.websocket.WebSocketController
@@ -40,7 +43,8 @@ class SchemaChangeNotificationService(
          SchemaUpdatedNotification(
             event.newSchemaSet.id,
             event.newSchemaSet.generation,
-            event.newSchemaSet.sourcesWithErrors.size
+            event.newSchemaSet.sourcesWithErrors.size,
+            event.newSchemaSet.sourceNamesWithErrors
          )
       )
    }
@@ -69,5 +73,7 @@ class SchemaChangeNotificationService(
 data class SchemaUpdatedNotification(
    val newId: Int,
    val generation: Int,
-   val invalidSourceCount: Int
+   val invalidSourceCount: Int,
+   val sourceNamesWithErrors: List<SourceNameWithPackage>
 )
+
