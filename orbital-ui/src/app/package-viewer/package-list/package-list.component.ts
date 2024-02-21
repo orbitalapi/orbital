@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
-import {ProjectLoaderWithStatus, SourcePackageDescription} from '../packages.service';
+import {ProjectLoaderWithStatus, PublisherHealthStatus, SourcePackageDescription} from '../packages.service';
 import {TuiStatus} from "@taiga-ui/kit";
 
 @Component({
@@ -21,10 +21,10 @@ import {TuiStatus} from "@taiga-ui/kit";
         <h3 class="package-title">
           {{ sourcePackage.identifier.name }}
           <tui-badge [status]="getPackageBadgeState(sourcePackage)" size="s"
-                     [value]="sourcePackage.health.status"></tui-badge>
+                     [value]="getPackageStateBadgeMessage(sourcePackage)"></tui-badge>
         </h3>
-        <div *ngIf="sourcePackage.health.status === 'Unhealthy'" class="unhealthy-state">
-          {{ getPackageState(sourcePackage) }}
+        <div *ngIf="getPackageStateMessage(sourcePackage)" class="unhealthy-state">
+          {{ getPackageStateMessage(sourcePackage) }}
         </div>
         <div class="tag-table">
           <table>
@@ -90,16 +90,21 @@ export class PackageListComponent {
     }
   }
 
-  getPackageState(sourcePackage: SourcePackageDescription) {
+  getPackageStateBadgeMessage(sourcePackage: SourcePackageDescription): PublisherHealthStatus {
+    if (this.packagesWithCompilationErrors.includes(sourcePackage.identifier.id)) {
+      return "Unhealthy"
+    } else {
+      return sourcePackage.health.status
+    }
+  }
+
+  getPackageStateMessage(sourcePackage: SourcePackageDescription) {
+    if (this.getPackageStateBadgeMessage(sourcePackage) !== "Unhealthy") {
+      return null
+    }
     if (this.packagesWithCompilationErrors.includes(sourcePackage.identifier.id)) {
       return "Contains compilation errors"
-    } else {
-      if (sourcePackage.health.message) {
-        return `${sourcePackage.health.status} - ${sourcePackage.health.message}`
-      } else {
-        return sourcePackage.health.status
-      }
-    }
+    } else return sourcePackage.health.message
   }
 
   getPackageBadgeState(sourcePackage: SourcePackageDescription): TuiStatus {
