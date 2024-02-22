@@ -5,6 +5,8 @@
       icon="tuiIconHelpCircle"
       tuiLink
       class="help-link"
+      href="https://orbitalhq.com/docs"
+      target="_blank"
     >
       Help
     </a>
@@ -18,7 +20,7 @@
         [stepState]="(currentStepIndex$ | async) === 0 ? 'normal' : 'pass'"
         [disabled]="(currentStepIndex$ | async) > 0"
       >
-        Create Project
+        Add Project
       </button>
       <button
         routerLink="/onboarding/data-source"

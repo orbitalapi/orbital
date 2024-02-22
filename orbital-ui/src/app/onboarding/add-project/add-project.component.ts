@@ -8,7 +8,7 @@ import { ProjectListComponent } from './project-list/project-list.component';
 import { RouterLink } from '@angular/router';
 
 @Component({
-  selector: 'app-create-project',
+  selector: 'app-add-project',
   standalone: true,
   imports: [
     CommonModule,
@@ -20,13 +20,19 @@ import { RouterLink } from '@angular/router';
     ProjectSourceConfigModule,
     ProjectListComponent
   ],
-  templateUrl: './create-project.component.html',
-  styleUrls: ['./create-project.component.scss'],
+  templateUrl: './add-project.component.html',
+  styleUrls: ['./add-project.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class CreateProjectComponent {
+export class AddProjectComponent {
   readonly uiConfig = UiCustomisations;
 
-  step: 'options' | 'projectCreated' | 'gitRepo' | 'localDisk' | 'microService' = 'options';
-  hasCreatedProject: boolean;
+  step: 'options' | 'projectAdded' | 'gitRepo' | 'localDisk' | 'microService' = 'options';
+  hasAddedProject: boolean;
+  projectCount: number;
+  projectCountPluralMap = {
+    '=0': 'no projects',
+    '=1': '1 project',
+    'other': '# projects'
+  }
 }

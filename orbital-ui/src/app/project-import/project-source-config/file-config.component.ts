@@ -1,4 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { of } from 'rxjs';
+import { catchError, debounceTime, switchMap } from 'rxjs/operators';
 import { projectTypeToString } from 'src/app/project-import/project-source-config/git-config.component';
 import {
   FileSystemPackageSpec,
@@ -9,8 +12,6 @@ import {
 import { isNullOrUndefined } from 'src/app/utils/utils';
 import { Message } from 'src/app/services/schema';
 import { FileRepositoryTestResponse, SchemaImporterService } from 'src/app/project-import/schema-importer.service';
-import { catchError, debounceTime, switchMap } from 'rxjs/operators';
-import { of } from 'rxjs';
 
 @Component({
   selector: 'app-file-config',
@@ -74,9 +75,8 @@ import { of } from 'rxjs';
                     <div style='display: flex; margin-top: 0.5rem'>
                       <tui-loader [showLoader]='true' size='s'
                                   *ngIf='editable && !filePathTestResult && fileSystemPackageConfig.path'
-                                  [textContent]="'Checking for a taxi project file at ' + expectedTaxiConfLocation"></tui-loader>
-
-
+                                  [textContent]="'Checking for a taxi project file at ' + expectedTaxiConfLocation"
+                      ></tui-loader>
                       <tui-notification *ngIf='filePathTestResult?.exists' status='success'>
                         Great - we've found project {{ filePathTestResult.identifier.id}} there
                       </tui-notification>
@@ -191,32 +191,37 @@ export class FileConfigComponent {
         debounceTime(500),
         // distinctUntilChanged(),
         switchMap((path: string) => {
-            return schemaService.testFileConnection({ path }).pipe(
-              catchError(err => of({
-                exists: false,
-                path: '',
-                identifier: null,
-                errorMessage: 'An error occurred checking the path'
-              } as FileRepositoryTestResponse))
-            );
-          }
-        )).subscribe(result => {
-      this.filePathTestResult = result;
-      if (result.exists) {
-        this.creatingNewProject = false;
-        this.fileSystemPackageConfig.newProjectIdentifier = null;
-      }
-      this.changeDetector.markForCheck();
-    });
-
+          return schemaService.testFileConnection({ path }).pipe(
+            catchError((err: HttpErrorResponse) => of({
+              exists: false,
+              path: '',
+              identifier: null,
+              errorMessage: err.error.message ? err.error.message : 'An error occurred checking the path'
+            } as FileRepositoryTestResponse))
+          );
+        })
+      )
+      .subscribe(result => {
+        this.filePathTestResult = result;
+        if (result.exists) {
+          this.creatingNewProject = false;
+          this.fileSystemPackageConfig.newProjectIdentifier = null;
+        }
+        this.changeDetector.markForCheck();
+      });
   }
 
   get expectedTaxiConfLocation(): string | null {
     if (isNullOrUndefined(this.fileSystemPackageConfig.path)) {
       return null;
     } else {
-      const seperator = this.fileSystemPackageConfig.path.endsWith('/') ? '' : '/';
-      return this.fileSystemPackageConfig.path + seperator + 'taxi.conf';
+      let separator;
+      if (this.fileSystemPackageConfig.path.includes("/")) {
+        separator = this.fileSystemPackageConfig.path.endsWith('/') ? '' : '/';
+      } else {
+        separator = this.fileSystemPackageConfig.path.endsWith('\\') ? '' : '\\';
+      }
+      return this.fileSystemPackageConfig.path + separator + 'taxi.conf';
     }
   }
 

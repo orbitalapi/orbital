@@ -13,6 +13,19 @@ app-project-selector {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 1rem;
+
+  img {
+    height: 24px;
+    margin-right: 0.5rem;
+  }
+
+  button {
+    ::ng-deep.t-right {
+      margin-left: 1rem;
+      margin-top: -6px;
+      width: 20px;
+    }
+  }
 }
 
 .island {
