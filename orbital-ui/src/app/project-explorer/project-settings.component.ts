@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Input } from '@angular/core';
 import { SourcePackageDescription } from 'src/app/package-viewer/packages.service';
 import { SchemaImporterService } from 'src/app/project-import/schema-importer.service';
 import { Message } from 'src/app/services/schema';
-import { ActivatedRoute, Router } from '@angular/router';
 import { MatLegacySnackBar as MatSnackBar } from '@angular/material/legacy-snack-bar';
+import { TuiDialogService } from '@taiga-ui/core';
+import { TUI_PROMPT } from '@taiga-ui/kit';
 
 @Component({
   selector: 'app-project-settings',
@@ -16,8 +17,8 @@ import { MatLegacySnackBar as MatSnackBar } from '@angular/material/legacy-snack
     <ng-container *ngIf="canRemove">
       <hr>
       <h3>Danger zone</h3>
-      <button tuiButton appearance="secondary-destructive" [showLoader]="working" (click)="removeRepository()">
-        Remove this Project
+      <button tuiButton appearance="secondary-destructive" [showLoader]="working" (click)="confirmRemoval()">
+        Remove this Project...
       </button>
       <tui-notification [status]="deleteResultMessage.level.toLowerCase()" *ngIf="deleteResultMessage">
         {{ deleteResultMessage.message }}
@@ -35,15 +36,35 @@ export class ProjectSettingsComponent {
   working = false;
   deleteResultMessage: Message;
 
-  constructor(private changeDetector: ChangeDetectorRef, private service: SchemaImporterService,
-              private router: Router, private snackbar: MatSnackBar,
-              private activeRoute: ActivatedRoute
-    ,) {
+  constructor(
+    private changeDetector: ChangeDetectorRef,
+    private service: SchemaImporterService,
+    private snackbar: MatSnackBar,
+    @Inject(TuiDialogService) private readonly dialogService: TuiDialogService
+  ) {
   }
 
   get canRemove() {
     return !this.packageDescription.identifier.id.startsWith('io.vyne/core-types');
     // return this.packageDescription.publisherType !== 'Pushed';
+  }
+
+  confirmRemoval() {
+    this.dialogService
+      .open<boolean>(TUI_PROMPT, {
+        label: 'Are you sure?',
+        data: {
+          content: `When you remove a project, any data sources and data types within the project are also removed.` +
+            ` As a result, queries might stop working, and data may become unavailable.</br>` +
+            `The project is removed from your workspace, but isn't deleted from ${this.packageDescription.publisherType === 'GitRepo' ? 'git' : 'disk'},` +
+            ` so you can always add it again later.`,
+          yes: 'Remove',
+          no: 'Cancel',
+        },
+      })
+      .subscribe(response => {
+        if (response) this. removeRepository();
+      });
   }
 
   removeRepository() {
@@ -54,9 +75,6 @@ export class ProjectSettingsComponent {
             duration: 5000,
           });
           this.working = false;
-          this.router.navigate(['..'], {
-            relativeTo: this.activeRoute
-          });
         },
         error => {
           this.deleteResultMessage = {

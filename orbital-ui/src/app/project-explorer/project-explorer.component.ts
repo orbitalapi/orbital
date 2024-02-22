@@ -1,4 +1,5 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit} from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
 import {SchemaNotificationService} from '../services/schema-notification.service';
 import {
@@ -40,7 +41,7 @@ export class ProjectExplorerComponent implements OnInit {
 
   setActiveTab(index: integer) {
     const newRoute = this.tabs[index].route;
-    this.router.navigate(['..',newRoute], {relativeTo: this.activatedRoute})
+    this.router.navigate(['..',newRoute], {relativeTo: this.activatedRoute, replaceUrl: true})
   }
 
 
@@ -62,19 +63,19 @@ export class ProjectExplorerComponent implements OnInit {
               private changeDetector: ChangeDetectorRef,
               private changelogService: ChangelogService,
               private typeService: TypesService,
-              private router: Router
+              private router: Router,
+              private destroyRef: DestroyRef
   ) {
-    this.activatedRoute.paramMap.subscribe(
+    this.activatedRoute.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(
       paramMap => {
         const selectedTab = paramMap.get('selectedTab');
         if (!selectedTab) {
-          this.router.navigate([this.tabs[0].route], {relativeTo: this.activatedRoute})
+          this.router.navigate([this.tabs[0].route], {relativeTo: this.activatedRoute, replaceUrl: true})
         } else {
           this.activeTabIndex = this.tabs.findIndex(tab => tab.route === selectedTab);
-          const activeTab = this.tabs[this.activeTabIndex];
-          if (activeTab.route === 'source') {
-            console.log(paramMap);
-          }
+          this.changeDetector.markForCheck();
         }
       }
     )
@@ -82,9 +83,10 @@ export class ProjectExplorerComponent implements OnInit {
 
   ngOnInit() {
     this.typeService.getTypes()
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(schema => this.schema = schema);
-    this.loadPackages();
     this.schemaNotificationService.createSchemaNotificationsSubscription()
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.loadPackages();
       });
@@ -93,17 +95,20 @@ export class ProjectExplorerComponent implements OnInit {
   changelogEntries: Observable<ChangeLogEntry[]>
 
   private loadPackages() {
-    this.activatedRoute.paramMap.subscribe(paramMap => {
-      const packageName = paramMap.get('packageName')
-      this.packagesService.loadPackage(packageName)
-        .subscribe(packageWithDescription => {
+    const packageName = this.activatedRoute.snapshot.paramMap.get('packageName');
+    this.packagesService.loadPackage(packageName)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: packageWithDescription => {
           this.packageWithDescription = packageWithDescription;
           this.updateBadges();
           this.changeDetector.markForCheck();
-        });
-      this.partialSchema$ = this.packagesService.getPartialSchemaForPackage(packageName);
-      this.changelogEntries = this.changelogService.getChangelogForPackage(packageName);
-    })
+        },
+        // there's a good chance that project no longer exists, pull the ripcord and eject back to the /projects route
+        error: () => this.router.navigate(['/projects'])
+      });
+    this.partialSchema$ = this.packagesService.getPartialSchemaForPackage(packageName);
+    this.changelogEntries = this.changelogService.getChangelogForPackage(packageName);
   }
 
   private updateBadges() {
