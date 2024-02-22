@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { concatMap, Observable } from 'rxjs';
-import { shareReplay } from 'rxjs/operators';
+import { shareReplay, tap } from 'rxjs/operators';
 import { TuiAccordionModule } from '@taiga-ui/kit';
 import { PackagesService, SourcePackageDescription } from '../../../package-viewer/packages.service';
 import { TypesService } from '../../../services/types.service';
@@ -18,6 +18,8 @@ export class ProjectListComponent {
   packages$: Observable<SourcePackageDescription[]>
   @Input()
   isListOpen: boolean;
+  @Output()
+  projectCountUpdated: EventEmitter<number> = new EventEmitter<number>();
 
   constructor(private packagesService: PackagesService, private typesService: TypesService) {
     // NOTE: the getTypes observable emits when the Project has been added successfully,
@@ -25,6 +27,7 @@ export class ProjectListComponent {
     this.packages$ = this.typesService.getTypes()
       .pipe(
         concatMap(val => this.packagesService.listPackages()),
+        tap(value => this.projectCountUpdated.emit(value.length)),
         shareReplay()
       )
   }

@@ -5,10 +5,6 @@
 
 .intro-text {
   margin: 0;
-
-  & + p {
-    margin-bottom: 0;
-  }
 }
 
 :host ::ng-deep {

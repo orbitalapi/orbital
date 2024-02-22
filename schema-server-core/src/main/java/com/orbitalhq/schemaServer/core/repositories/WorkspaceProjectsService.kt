@@ -46,7 +46,7 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) : 
         return Mono.empty()
     }
 
-    @PostMapping("/api/repositories/file/test")
+    @PostMapping("/api/repositories/file", params = ["test"])
     override fun testFileProjectStore(@RequestBody request: FileProjectStoreTestRequest): Mono<FileProjectStoreTestResponse> {
         return try {
             val project = TaxiPackageLoader.forDirectoryContainingTaxiFile(Paths.get(request.path)).load()

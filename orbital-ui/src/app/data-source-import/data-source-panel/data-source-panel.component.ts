@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs/internal/Observable';
-import { TuiButtonModule } from '@taiga-ui/core';
+import { TuiButtonModule, TuiHintModule } from '@taiga-ui/core';
 import {
   TuiDataListWrapperModule,
   TuiFilterByInputPipeModule,
@@ -41,7 +41,8 @@ import { ConnectionFiltersModule } from '../../utils/connections.pipe';
     DatabaseTableConfigComponent,
     KafkaTopicConfigComponent,
     ProtobufConfigComponent,
-    ConnectionFiltersModule
+    ConnectionFiltersModule,
+    TuiHintModule
   ],
   template: `
     <div>
@@ -69,12 +70,15 @@ import { ConnectionFiltersModule } from '../../utils/connections.pipe';
       >
         <button
           *ngFor="let schemaT of schemaTypes"
-          [disabled]="!selectedPackage"
+          [disabled]="!selectedPackage || schemaT.isDisabled"
+          [tuiHint]="schemaT.isDisabled ? 'Coming soon!' : null"
           [appearance]="schemaType === schemaT ? 'whiteblock-active' : 'whiteblock'"
-          (click)="schemaType = schemaT"
-          tuiButton size="m"
-          iconRight="tuiIconPlus"
+          (click)="schemaT.externalLink ? openSite(schemaT.externalLink) : schemaType = schemaT"
+          [iconRight]="schemaT.externalLink ? '/assets/img/tabler/external-link.svg' : null"
+          tuiButton
+          size="l"
         >
+          <img *ngIf="schemaT.icon" [src]="schemaT.icon">
           {{ schemaT.label }}
         </button>
       </div>
@@ -123,12 +127,15 @@ export class DataSourcePanelComponent {
 
   schemaTypes: SchemaType[] = [
     // { 'label' : 'Taxi', id: 'taxi'},
-    { 'label': 'Swagger / OpenAPI', id: 'swagger' },
-    { 'label': 'JsonSchema', id: 'jsonSchema' },
-    { 'label': 'Database table', id: 'databaseTable' },
-    { 'label': 'Kafka topic', id: 'kafkaTopic' },
-    { 'label': 'Protobuf', id: 'protobuf' },
-
+    { label: 'Swagger / OpenAPI', id: 'swagger', icon: '/assets/img/data-source-icons/open-api-icon.svg' },
+    { label: 'Database table', id: 'databaseTable', icon: '/assets/img/tabler/database.svg' },
+    { label: 'Kafka topic', id: 'kafkaTopic', icon: '/assets/img/data-source-icons/kafka-icon.svg' },
+    { label: 'Protobuf', id: 'protobuf', icon: '/assets/img/data-source-icons/protobuf-icon.svg' },
+    { label: 'DynamoDb', id: 'dynamodb', icon: '/assets/img/data-source-icons/aws-icon.svg', externalLink: 'https://orbitalhq.com/docs/describing-data-sources/aws-services#dynamo-db' },
+    { label: 'Lambda', id: 'lambda', icon: '/assets/img/data-source-icons/aws-icon.svg', externalLink: 'https://orbitalhq.com/docs/describing-data-sources/aws-services#lambda' },
+    { label: 'S3', id: 's3', icon: '/assets/img/data-source-icons/aws-icon.svg', externalLink: 'https://orbitalhq.com/docs/describing-data-sources/aws-services#s3' },
+    { label: 'SQS', id: 'sqs', icon: '/assets/img/data-source-icons/aws-icon.svg', externalLink: 'https://orbitalhq.com/docs/describing-data-sources/aws-services#sqs' },
+    { label: 'JsonSchema', id: 'jsonSchema', icon: '/assets/img/data-source-icons/json-icon.svg', isDisabled: true },
     // { 'label' : 'XML Schema (xsd)', id: 'xsd'},
   ]
 
@@ -165,10 +172,17 @@ export class DataSourcePanelComponent {
   @Input()
   useIslandContainer: boolean;
 
+  openSite(siteUrl) {
+    window.open(siteUrl, '_blank');
+  }
+
 }
 
 
 export interface SchemaType {
   label: string;
   id: string;
+  icon?: string;
+  externalLink?: string
+  isDisabled?: boolean
 }

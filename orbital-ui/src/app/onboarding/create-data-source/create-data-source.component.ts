@@ -17,5 +17,4 @@ export class CreateDataSourceComponent {
   readonly uiConfig = UiCustomisations;
 
   step: 'options' | 'dataSourceCreated' | 'swagger' | 'json' | 'database' | 'kafka' | 'protobuf' = 'options';
-  hasCreatedDataSource: boolean;
 }
