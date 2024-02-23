@@ -37,14 +37,15 @@ class QueryOperationInvocationStrategy(
       target: Set<QuerySpecTypeNode>
    ): Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>> {
       return target.associateWith { querySpecTypeNode ->
-         lookForCandidateQueryOperations(context.schema, querySpecTypeNode)
+         lookForCandidateQueryOperations(context.schema, querySpecTypeNode, context)
       }
    }
 
    @VisibleForTesting
    internal fun lookForCandidateQueryOperations(
       schema: Schema,
-      target: QuerySpecTypeNode
+      target: QuerySpecTypeNode,
+      context: QueryContext
    ): Map<RemoteOperation, Map<Parameter, TypedInstance>> {
       val queryOperations = schema.services
          .flatMap {
@@ -69,7 +70,7 @@ class QueryOperationInvocationStrategy(
                target.copy(type = queryOperation.returnType)
             } else target
 
-            queryOperation to grammarBuilder.buildQuery(queryTarget, queryOperation, schema)
+            queryOperation to grammarBuilder.buildQuery(queryTarget, queryOperation, schema, context)
 
          }
          .toList().toMap()
