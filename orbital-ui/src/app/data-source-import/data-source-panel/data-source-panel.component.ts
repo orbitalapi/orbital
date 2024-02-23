@@ -60,7 +60,7 @@ import { ConnectionFiltersModule } from '../../utils/connections.pipe';
         Select a data source to add
         <tui-data-list-wrapper
           *tuiDataList
-          [items]="schemaTypes | tuiFilterByInputWith : stringify"
+          [items]="schemaTypeForList | tuiFilterByInputWith : stringify"
           [itemContent]="stringify | tuiStringifyContent"
         ></tui-data-list-wrapper>
       </tui-select>
@@ -138,6 +138,8 @@ export class DataSourcePanelComponent {
     { label: 'JsonSchema', id: 'jsonSchema', icon: '/assets/img/data-source-icons/json-icon.svg', isDisabled: true },
     // { 'label' : 'XML Schema (xsd)', id: 'xsd'},
   ]
+
+  schemaTypeForList = this.schemaTypes.filter(item => !item.externalLink)
 
   schemaType: SchemaType
 
