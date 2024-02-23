@@ -48,7 +48,6 @@ import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
     </div>
     <div class="configuration-step step" *ngIf="(wizardStep | async) === 'configureTypes'">
       <h2>Configure the Data source</h2>
-      <p>[Need some explanatory info here]</p>
       <app-schema-explorer-table [partialSchema]="schemaSubmissionResult"
                                  [schema]="schema"
                                  [working]="working"
