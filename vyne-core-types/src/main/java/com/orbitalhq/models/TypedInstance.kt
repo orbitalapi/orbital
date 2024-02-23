@@ -124,6 +124,11 @@ interface TypedInstance {
          return TypedObject(type, typedAttributes, source)
       }
 
+      fun from(taxiTypedValue: lang.taxi.types.TypedValue, schema: Schema, source: DataSource):TypedInstance {
+         val type = schema.type(taxiTypedValue.type)
+         return from(type, taxiTypedValue.value, schema, source = source)
+      }
+
       /**
        * Parses a TypedInstance
        *

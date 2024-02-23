@@ -41,15 +41,15 @@ class QueryOperationInvocationStrategyTest {
 
    @Test
    fun matchesQueryOperationForFindAll() {
-      val querySpecNode = getQuerySpecNode("find { Person[] }", schema)
-      val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
+      val (context,querySpecNode) = getQuerySpecNode("find { Person[] }", schema)
+      val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode, context)
       candidates.should.have.size(1)
    }
 
    @Test
    fun matchesQueryOperationFilteringEqualsAttributeName() {
-      val querySpecNode = getQuerySpecNode("find { Person[]( FirstName == 'Jimmy' ) }", schema)
-      val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
+      val (context,querySpecNode) = getQuerySpecNode("find { Person[]( FirstName == 'Jimmy' ) }", schema)
+      val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode, context)
       candidates.should.have.size(1)
    }
 
@@ -74,8 +74,8 @@ class QueryOperationInvocationStrategyTest {
          }
       """.trimIndent()
       )
-      val querySpecNode = getQuerySpecNode("find { Trade[]( TraderName == 'Jimmy' ) }", schema)
-      val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
+      val (context,querySpecNode) = getQuerySpecNode("find { Trade[]( TraderName == 'Jimmy' ) }", schema)
+      val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode, context)
       candidates.should.have.size(2)
    }
 
@@ -108,8 +108,8 @@ class QueryOperationInvocationStrategyTest {
          }
       """.trimIndent()
       )
-      val querySpecNode = getQuerySpecNode("find { Trade[]( TraderName == 'Jimmy' ) }", schema)
-      val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
+      val (context,querySpecNode) = getQuerySpecNode("find { Trade[]( TraderName == 'Jimmy' ) }", schema)
+      val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode, context)
       candidates.should.have.size(2)
    }
 
@@ -187,10 +187,10 @@ class QueryOperationInvocationStrategyTest {
 
 }
 
-fun getQuerySpecNode(taxiQl: String, schema: TaxiSchema): QuerySpecTypeNode {
+fun getQuerySpecNode(taxiQl: String, schema: TaxiSchema): Pair<QueryContext,QuerySpecTypeNode> {
    val (vyne, _) = testVyne(schema)
    val vyneQuery = Compiler(source = taxiQl, importSources = listOf(schema.document)).queries().first()
-   val (_, expression) = vyne.buildContextAndExpression(
+   val (context, expression) = vyne.buildContextAndExpression(
        vyneQuery,
        queryId = UUID.randomUUID().toString(),
        clientQueryId = null,
@@ -199,6 +199,6 @@ fun getQuerySpecNode(taxiQl: String, schema: TaxiSchema): QuerySpecTypeNode {
    )
    val queryParser = QueryParser(schema)
    val querySpecNodes = queryParser.parse(expression)
-   return querySpecNodes.first()
+   return context to querySpecNodes.first()
 
 }
