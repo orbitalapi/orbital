@@ -118,9 +118,7 @@ class TypedObjectFactory(
                val projection = xtimed("Project field $attributeName") {
                   projectField(
                      field,
-                     attributeName,
                      fieldValue,
-                     field.fieldProjection.projectionFunctionScope
                   )
                }
 //               logger.debug { "Projection to ${projection.type.name.shortDisplayName} took ${sw.elapsed().toMillis()}ms" }
@@ -141,9 +139,7 @@ class TypedObjectFactory(
     */
    private fun projectField(
       field: Field,
-      attributeName: AttributeName,
       fieldValue: TypedInstance,
-      projectionScope: ProjectionFunctionScope
    ): TypedInstance {
       if (fieldValue is TypedNull) {
          // Don't attempt to project nulls
@@ -183,12 +179,16 @@ class TypedObjectFactory(
       nullable: Boolean,
       allowContextQuerying: Boolean
    ): TypedInstance {
+      // MP: 26-Feb-24: We now support multiple scoped facts in the projection context.
+      // However, it's not obvious how to handle this here.
+      // Let's fail for now, then implement once the use-case is better understood.
+      require(projection.projectionFunctionScope.size <= 1) { "How to handle multiple scoped facts here?" }
       val projectedFieldValue = if (valueToProject is TypedCollection && targetType.isCollection) {
          // Project each member of the collection seperately
          valueToProject
             .parallelStream()
             .map { collectionMember ->
-               newFactory(targetType.collectionType!!, collectionMember, scope = projection.projectionFunctionScope)
+               newFactory(targetType.collectionType!!, collectionMember, scope = projection.projectionFunctionScope.firstOrNull())
                   .build()
             }.collect(Collectors.toList())
             .let { projectedCollection ->
@@ -196,7 +196,7 @@ class TypedObjectFactory(
                TypedCollection.arrayOf(targetType.collectionType!!, projectedCollection, source)
             }
       } else {
-         newFactory(targetType, valueToProject, scope = projection.projectionFunctionScope).build()
+         newFactory(targetType, valueToProject, scope = projection.projectionFunctionScope.firstOrNull()).build()
       }
       return projectedFieldValue
    }

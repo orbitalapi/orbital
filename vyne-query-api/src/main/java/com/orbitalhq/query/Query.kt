@@ -99,7 +99,7 @@ data class QueryAndMutateExpression(val query: QueryExpression, override val mut
 data class ProjectedExpression(val source: QueryExpression, val projection: Projection): QueryExpression
 
 // TODO : Can we replace / collapse with FieldProjection?
-data class Projection(val type: Type, val scope: ProjectionFunctionScope?)
+data class Projection(val type: Type, val scopedVars: List<ProjectionFunctionScope>)
 
 data class TypeNameListQueryExpression(val typeNames: List<String>) : QueryExpression
 

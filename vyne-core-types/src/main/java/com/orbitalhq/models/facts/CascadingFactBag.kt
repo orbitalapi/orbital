@@ -44,8 +44,7 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
    override val scopedFacts: List<ScopedFact> = (primary.scopedFacts + secondary.scopedFacts).distinct()
 
    override fun getScopedFact(scope: Argument): ScopedFact {
-      return getScopedFactOrNull(scope) ?:
-      error("No scope of ${scope.name} exists in this CascadingFactBag")
+      return getScopedFactOrNull(scope) ?: error("No scope of ${scope.name} exists in this CascadingFactBag")
    }
 
 //   val currentScopedFact:ScopedFact?
@@ -211,6 +210,10 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
 
    override fun hasFact(search: FactSearch): Boolean {
       return primary.hasFact(search) || secondary.hasFact(search)
+   }
+
+   override fun withAdditionalScopedFacts(otherFacts: List<ScopedFact>): CascadingFactBag {
+      return CascadingFactBag(primary.withAdditionalScopedFacts(otherFacts), secondary)
    }
 
    override val size: Int

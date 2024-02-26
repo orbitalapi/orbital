@@ -157,6 +157,52 @@ class ProjectionNamedScopeTest {
    }
 
    @Test
+   fun `can use expressions in projection scopes`() {
+
+   }
+   @Test
+   fun `expressions in projection scopes can trigger discovery`():Unit = runBlocking {
+      val (vyne,stub) = testVyne(
+         """
+            model Film {
+               id : FilmId inherits Int
+               title : Title inherits String
+            }
+            model Actor {
+               name : ActorName inherits String
+            }
+            model Cast {
+               actors : Actor[]
+            }
+            service Films {
+               operation getFilm():Film
+               operation getCast(FilmId):Cast
+            }
+         """.trimIndent()
+      )
+      stub.addResponse("getFilm", vyne.parseJson("Film", """{ "title" : "Star Wars", "id": 1}"""))
+      stub.addResponse("getCast", vyne.parseJson("Cast", """{ "actors" : [ { "name" : "Mark" }, {"name" : "Carrie" }]  }"""))
+
+      val resultWithoutExplicitScope = vyne.query("""
+         find { Film } as (first(Actor[])) -> { // note that film has been removed from the scope...
+            title : Title //... so we expect this isn't discoverable.
+            starring : ActorName
+         }
+      """.trimIndent())
+         .firstRawObject()
+      resultWithoutExplicitScope.shouldBe(mapOf("title" to null, "starring" to "Mark"))
+
+      val resultWithExplicitScope = vyne.query("""
+         find { Film } as (Film, first(Actor[])) -> { // Here, Film is in scope...
+            title : Title // .. so this is knowable
+            starring : ActorName
+         }
+      """.trimIndent())
+         .firstRawObject()
+      resultWithExplicitScope.shouldBe(mapOf("title" to "Star Wars", "starring" to "Mark"))
+   }
+
+   @Test
    @Ignore("Doesn't work - ORB-75")
    fun `can use a named scope to refine a service call`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(

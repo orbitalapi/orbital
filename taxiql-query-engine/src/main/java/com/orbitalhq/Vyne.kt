@@ -514,7 +514,7 @@ class CompositeSchemaBuilder(val aggregators: List<SchemaAggregator> = SchemaAgg
 
 fun QueryExpression.applyProjection(
    projectedType: lang.taxi.types.Type?,
-   projectionScope: ProjectionFunctionScope?,
+   projectionScope: List<ProjectionFunctionScope>,
    schema: Schema
 ): QueryExpression {
    if (projectedType == null) {
