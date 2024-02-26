@@ -256,6 +256,12 @@ open class CopyOnWriteFactBag(
       return getFactOrNull(search) != null
    }
 
+   override fun withAdditionalScopedFacts(otherFacts: List<ScopedFact>): FactBag {
+      return CopyOnWriteFactBag(
+         facts, schema, scopedFacts + otherFacts
+      )
+   }
+
 
 }
 

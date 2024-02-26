@@ -133,4 +133,10 @@ interface FactBag : Collection<TypedInstance> {
    fun hasFact(
       search: FactSearch
    ): Boolean
+
+   /**
+    * Returns a new factbag, with additional scoped facts.
+    * The current factbag is not affected
+    */
+   fun withAdditionalScopedFacts(otherFacts: List<ScopedFact>):FactBag
 }

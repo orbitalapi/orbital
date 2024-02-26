@@ -5,7 +5,10 @@ import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.types.ArrayType
 import lang.taxi.types.Arrays
 
-data class ScopedFact(val scope: ProjectionFunctionScope, val fact: TypedInstance)
+data class ScopedFact(val scope: ProjectionFunctionScope, val fact: TypedInstance) {
+   val type = fact.type
+   val typeName = fact.typeName
+}
 
 /**
  * Experiment:

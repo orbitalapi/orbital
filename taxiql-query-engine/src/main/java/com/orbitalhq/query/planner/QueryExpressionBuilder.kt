@@ -94,11 +94,11 @@ class QueryExpressionBuilder(private val queryPlanner: QueryPlanner) {
             val streamJoin = (queryExpressions.all { it is TypeQueryExpression && it.type.isStream })
             require(streamJoin) { "Multiple source types are only supported when joining streams" }
             StreamJoiningExpression(queryExpressions as List<TypeQueryExpression>)
-               .applyProjection(taxiQl.projectedType, taxiQl.projectionScope, schema)
+               .applyProjection(taxiQl.projectedType, taxiQl.projectionScopeVars, schema)
          }
 
          queryExpressions.size == 1 -> queryExpressions.first().let { expression ->
-            expression.applyProjection(taxiQl.projectedType, taxiQl.projectionScope, schema)
+            expression.applyProjection(taxiQl.projectedType, taxiQl.projectionScopeVars, schema)
          }
 
          else -> null

@@ -36,6 +36,7 @@ class EmptyFactBag(private val list: List<TypedInstance> = emptyList()) : FactBa
    override fun getFactOrNull(search: FactSearch): TypedInstance? = null
 
    override fun hasFact(search: FactSearch): Boolean = false
+   override fun withAdditionalScopedFacts(otherFacts: List<ScopedFact>): FactBag = notSupported()
 
    override fun merge(other: FactBag): FactBag {
       return if (other is EmptyFactBag) {
