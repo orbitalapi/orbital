@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.jdbc
 
+import com.orbitalhq.connectors.IConnectionParameter
 import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
@@ -25,6 +26,13 @@ data class NamedTemplateConnection(
       }
    }
 
+   override fun getConnectionParameter(parameter: IConnectionParameter): String {
+      error("Not supported on NamedTemplateConnection - use a real one instead")
+   }
+
+   override fun getConnectionParameterOrNull(parameter: IConnectionParameter): String? {
+      error("Not supported on NamedTemplateConnection - use a real one instead")
+   }
    override fun buildUrlAndCredentials(urlBuilder: JdbcUrlBuilder): JdbcUrlAndCredentials {
       return JdbcUrlAndCredentials(
           metadata.url,

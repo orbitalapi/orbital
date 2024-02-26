@@ -1,0 +1,9 @@
+<settings>
+   <servers>
+      <server>
+         <id>jooq-pro</id>
+         <username>${env.JOOQ_REPO_USERNAME}</username>
+         <password>${env.JOOQ_REPO_PASSWORD}</password>
+      </server>
+   </servers>
+</settings>

@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.jdbc.schema
 
+import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import com.orbitalhq.connectors.ConnectionSucceeded
 import com.orbitalhq.connectors.jdbc.DatabaseMetadataService
@@ -7,6 +8,7 @@ import com.orbitalhq.connectors.jdbc.JdbcColumn
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.jdbc.JdbcIndex
 import com.orbitalhq.connectors.jdbc.JdbcTable
+import com.orbitalhq.connectors.jdbc.NamedTemplateConnection
 import com.orbitalhq.utils.get
 import org.junit.Before
 import org.junit.Test
@@ -14,6 +16,7 @@ import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.test.context.junit4.SpringRunner
 
 @SpringBootTest(classes = [JdbcTaxiSchemaGeneratorTestConfig::class])
@@ -23,13 +26,18 @@ class DatabaseMetadataServiceTest {
    lateinit var movieRepository: MovieRepository
 
    @Autowired
-   lateinit var jdbcTemplate: JdbcTemplate
+   lateinit var jdbcTemplate: NamedParameterJdbcTemplate
 
    lateinit var connectionBuilder: DatabaseMetadataService
 
    @Before
    fun setup() {
-      connectionBuilder = DatabaseMetadataService(jdbcTemplate)
+      connectionBuilder = DatabaseMetadataService(
+         jdbcTemplate.jdbcTemplate, NamedTemplateConnection(
+            "TestConnection",
+            jdbcTemplate
+         )
+      )
    }
 
    @Test
@@ -43,24 +51,27 @@ class DatabaseMetadataServiceTest {
       //Compared to H2 1.4.x, in 2.0.x, listTables() includes tables from INFORMATION_SCHEMA as well
       val publicTables = tables.filter { it.schemaName == "PUBLIC" }
       publicTables.should.have.size(4)
-      val actorTable =  tables.first { it.tableName == "ACTOR" }
+      val actorTable = tables.first { it.tableName == "ACTOR" }
       actorTable.should.equal(
          JdbcTable(
             schemaName = "PUBLIC",
             tableName = "ACTOR",
             listOf(JdbcColumn("ACTOR_ID", "INTEGER", 32, 0, false)),
-            listOf(JdbcIndex(
-               tables.first { it.tableName == "ACTOR" }.indexes.first().name,
-               listOf(
-                  JdbcColumn(
-                     "ACTOR_ID",
-                     "INTEGER",
-                     32,
-                     0,
-                     false
+            listOf(
+               JdbcIndex(
+                  tables.first { it.tableName == "ACTOR" }.indexes.first().name,
+                  listOf(
+                     JdbcColumn(
+                        "ACTOR_ID",
+                        "INTEGER",
+                        32,
+                        0,
+                        false
+                     )
                   )
                )
-            )))
+            )
+         )
       )
 
       val cityTable = tables.first { it.tableName == "CITY" }
@@ -69,38 +80,42 @@ class DatabaseMetadataServiceTest {
             schemaName = "PUBLIC",
             tableName = "CITY",
             listOf(JdbcColumn("CITY_ID", "INTEGER", 32, 0, false)),
-            listOf(JdbcIndex(
-               tables.first { it.tableName == "CITY" }.indexes.first().name,
-               listOf(
-                  JdbcColumn(
-                     "CITY_ID",
-                     "INTEGER",
-                     32,
-                     0,
-                     false
+            listOf(
+               JdbcIndex(
+                  tables.first { it.tableName == "CITY" }.indexes.first().name,
+                  listOf(
+                     JdbcColumn(
+                        "CITY_ID",
+                        "INTEGER",
+                        32,
+                        0,
+                        false
+                     )
                   )
                )
-            )))
+            )
+         )
       )
 
-      val movieActorsTable =  tables.first { it.tableName == "MOVIE_ACTORS" }
+      val movieActorsTable = tables.first { it.tableName == "MOVIE_ACTORS" }
       movieActorsTable.should.equal(
          JdbcTable(
             schemaName = "PUBLIC",
             tableName = "MOVIE_ACTORS",
             emptyList(),
-            listOf(JdbcIndex(
-               tables.first { it.tableName == "MOVIE_ACTORS" }.indexes.first().name,
-               listOf(
-                  JdbcColumn(
-                     "ACTORS_ACTOR_ID",
-                     "INTEGER",
-                     32,
-                     0,
-                     false
+            listOf(
+               JdbcIndex(
+                  tables.first { it.tableName == "MOVIE_ACTORS" }.indexes.first().name,
+                  listOf(
+                     JdbcColumn(
+                        "ACTORS_ACTOR_ID",
+                        "INTEGER",
+                        32,
+                        0,
+                        false
+                     )
                   )
-               )
-            ),
+               ),
                JdbcIndex(
                   tables.first { it.tableName == "MOVIE_ACTORS" }.indexes.last().name,
                   listOf(
@@ -112,7 +127,8 @@ class DatabaseMetadataServiceTest {
                         false
                      )
                   )
-               ))
+               )
+            )
          )
       )
 
@@ -122,18 +138,20 @@ class DatabaseMetadataServiceTest {
             schemaName = "PUBLIC",
             tableName = "MOVIE",
             listOf(JdbcColumn("MOVIE_ID", "INTEGER", 32, 0, false)),
-            listOf(JdbcIndex(
-               tables.first { it.tableName == "MOVIE" }.indexes.first().name,
-               listOf(
-                  JdbcColumn(
-                     "MOVIE_ID",
-                     "INTEGER",
-                     32,
-                     0,
-                     false
+            listOf(
+               JdbcIndex(
+                  tables.first { it.tableName == "MOVIE" }.indexes.first().name,
+                  listOf(
+                     JdbcColumn(
+                        "MOVIE_ID",
+                        "INTEGER",
+                        32,
+                        0,
+                        false
+                     )
                   )
                )
-            ))
+            )
          )
       )
    }

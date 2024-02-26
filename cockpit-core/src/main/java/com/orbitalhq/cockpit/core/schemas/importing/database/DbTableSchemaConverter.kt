@@ -31,7 +31,7 @@ class DbTableSchemaConverter(
       return Mono.create { sink ->
          val connectionConfiguration = this.connectionRegistry.getConnection(options.connectionName)
          val template = SimpleJdbcConnectionFactory().jdbcTemplate(connectionConfiguration)
-         val generatedCode = DatabaseMetadataService(template.jdbcTemplate)
+         val generatedCode = DatabaseMetadataService(template.jdbcTemplate, connectionConfiguration)
             .generateTaxi(
                options.tables, schemaProvider.schema, options.connectionName
             )

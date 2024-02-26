@@ -5,6 +5,8 @@ import arrow.core.left
 import arrow.core.right
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.orbitalhq.connectors.ConnectionSucceeded
+import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
+import com.orbitalhq.connectors.jdbc.drivers.databaseSupport
 import com.orbitalhq.connectors.jdbc.schema.JdbcTaxiSchemaGenerator
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.QualifiedNameAsStringDeserializer
@@ -14,12 +16,15 @@ import lang.taxi.generators.GeneratedTaxiCode
 import mu.KotlinLogging
 import org.springframework.core.NestedRuntimeException
 import org.springframework.jdbc.core.JdbcTemplate
+import schemacrawler.inclusionrule.RegularExpressionInclusionRule
 import schemacrawler.schema.Catalog
+import schemacrawler.schemacrawler.LimitOptionsBuilder
 import schemacrawler.schemacrawler.LoadOptionsBuilder
 import schemacrawler.schemacrawler.SchemaCrawlerOptionsBuilder
 import schemacrawler.schemacrawler.SchemaInfoLevelBuilder
 import schemacrawler.tools.utility.SchemaCrawlerUtility
 import java.net.UnknownHostException
+import java.sql.Connection
 import java.util.*
 
 
@@ -30,7 +35,8 @@ import java.util.*
  * Primarily used in UI tooling to help users build connections
  */
 class DatabaseMetadataService(
-   val template: JdbcTemplate
+   val template: JdbcTemplate,
+   val connectionConfig: JdbcConnectionConfiguration
 ) {
    private val logger = KotlinLogging.logger {}
    fun testConnection(query: String): Either<String, ConnectionSucceeded> {
@@ -52,6 +58,21 @@ class DatabaseMetadataService(
          is NestedRuntimeException -> getUserFriendlyConnectionError(exception.mostSpecificCause)
          is UnknownHostException -> "Unknown host: ${exception.message}"
          else -> "Could not connect to the database: ${exception::class.simpleName} : ${exception.message?.orElse("")}"
+      }
+   }
+
+   fun tableExists(schemaName: String?, tableName: String): Boolean {
+      // Don't scan full catalog, as that can take ages
+      template.dataSource!!.connection.use { connection ->
+         val (dbSchemaName, dbTableName) = connection.toCorrectCasing(schemaName, tableName)
+         val catalogPattern: String? = null
+         try {
+            val rs = connection.metaData.getTables(catalogPattern, dbSchemaName, dbTableName, arrayOf("TABLE"))
+            // If this returns true, then the table exists
+            return rs.next()
+         } catch (e: Exception) {
+            return false
+         }
       }
    }
 
@@ -84,14 +105,18 @@ class DatabaseMetadataService(
       return tables
    }
 
+   private fun Connection.toCorrectCasing(schemaName: String?, tableName: String): Pair<String?, String> {
+      return if (this.metaData.storesUpperCaseIdentifiers()) {
+         schemaName?.uppercase(Locale.getDefault()) to tableName.uppercase(Locale.getDefault())
+      } else {
+         schemaName to tableName
+      }
+   }
+
    fun listColumns(schemaName: String, tableName: String): List<JdbcColumn> {
       template.dataSource!!.connection.use { safeConnection ->
          val catalogPattern = null
-         val (schemaPattern, tableNamePattern) = if (safeConnection.metaData.storesUpperCaseIdentifiers()) {
-            schemaName.uppercase(Locale.getDefault()) to tableName.uppercase(Locale.getDefault())
-         } else {
-            schemaName to tableName
-         }
+         val (schemaPattern, tableNamePattern) = safeConnection.toCorrectCasing(schemaName, tableName)
          val columnNamePattern = null
          val resultSet = safeConnection.metaData.getColumns(
             catalogPattern, schemaPattern, tableNamePattern, columnNamePattern
@@ -134,7 +159,16 @@ class DatabaseMetadataService(
             LoadOptionsBuilder.builder()
                .withSchemaInfoLevel(SchemaInfoLevelBuilder.standard())
                .toOptions()
-         )
+         ).let {options ->
+            val schemaName = connectionConfig.databaseSupport.schemaName(connectionConfig)
+            if (schemaName != null) {
+               options.withLimitOptions(
+                  LimitOptionsBuilder.builder()
+                     .includeSchemas(RegularExpressionInclusionRule(schemaName))
+                     .toOptions()
+               )
+            } else options
+         }
       return SchemaCrawlerUtility.getCatalog(
          com.orbitalhq.connectors.jdbc.schemacrawler.DataSourceConnectionSource(template.dataSource!!),
          options

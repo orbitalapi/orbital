@@ -1,4 +1,4 @@
-package com.orbitalhq.connectors.jdbc.builders
+package com.orbitalhq.connectors.jdbc.drivers.redshift
 
 import com.orbitalhq.connectors.ConnectionDriverParam
 import com.orbitalhq.connectors.ConnectionParameterName
@@ -8,6 +8,7 @@ import com.orbitalhq.connectors.SimpleDataType
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlBuilder
 import com.orbitalhq.connectors.connectionParams
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
+import com.orbitalhq.connectors.jdbc.drivers.postgres.remove
 import com.orbitalhq.utils.substitute
 
 class RedshiftJdbcUrlBuilder : JdbcUrlBuilder {
@@ -41,8 +42,4 @@ class RedshiftJdbcUrlBuilder : JdbcUrlBuilder {
          inputsWithDefaults["password"]?.toString()
       )
    }
-}
-
-private fun <K, V> Map<K, V>.remove(keysToExclude: List<K>): Map<K, V> {
-   return filterKeys { !keysToExclude.contains(it) }
 }

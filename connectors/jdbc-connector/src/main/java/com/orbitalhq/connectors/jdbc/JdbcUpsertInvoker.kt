@@ -1,6 +1,7 @@
 package com.orbitalhq.connectors.jdbc
 
 import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
+import com.orbitalhq.connectors.jdbc.drivers.databaseSupport
 import com.orbitalhq.connectors.jdbc.sql.ddl.TableGenerator
 import com.orbitalhq.connectors.jdbc.sql.dml.InsertStatementGenerator
 import com.orbitalhq.models.*
@@ -17,9 +18,27 @@ import mu.KotlinLogging
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.jooq.Result
+import org.jooq.ResultQuery
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.time.Duration
 import java.time.Instant
+
+enum class UpsertVerb {
+   Insert,
+   Update,
+   Upsert;
+
+   companion object {
+      fun forAnnotations(metadata: List<Metadata>): UpsertVerb? {
+         return when {
+            metadata.hasMetadata(JdbcConnectorTaxi.Annotations.UpsertOperationAnnotationName) -> Upsert
+            metadata.hasMetadata(JdbcConnectorTaxi.Annotations.InsertOperationAnnotationName) -> Insert
+            metadata.hasMetadata(JdbcConnectorTaxi.Annotations.UpdateOperationAnnotationName) -> Update
+            else -> null
+         }
+      }
+   }
+}
 
 class JdbcUpsertInvoker(
    connectionFactory: JdbcConnectionFactory,
@@ -36,8 +55,10 @@ class JdbcUpsertInvoker(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String
+      queryId: String,
+      verb: UpsertVerb?
    ): Flow<TypedInstance> {
+      require(verb != null)
       val schema = schemaProvider.schema
 
       require(operation.parameters.size == 1) { "Operations annotated with ${JdbcConnectorTaxi.Annotations.UpsertOperationAnnotationName} should accept exactly one type" }
@@ -52,29 +73,27 @@ class JdbcUpsertInvoker(
       val (connectionConfig, jdbcTemplate) = getConnectionConfigAndTemplate(service)
       val dsl = sqlDsl(tableAnnotation.connectionName)
       if (!tableCheckedAndExists) {
-         createTableIfNotPresent(operation, tableAnnotation, dsl, jdbcTemplate)
+         createTableIfNotPresent(operation, tableAnnotation, dsl, jdbcTemplate, connectionConfig)
          tableCheckedAndExists = true
       }
 
-      val inputAsList = when(input) {
+      val inputAsList = when (input) {
          is TypedCollection -> input
          is TypedObject -> listOf(input)
          else -> error("Expected either a TypedCollection or a TypedObject")
       }
-      val (insertStatement, statementReturnsGeneratedValues) = InsertStatementGenerator(schema).generateInsertAsSingleStatement(
-         inputAsList,
-         dsl,
-         useUpsertSemantics = true
+      val sqlOperation = InsertStatementGenerator(
+         schema,
+         connectionConfig.databaseSupport
+      ).generateInsertAsSingleStatement(
+         values = inputAsList,
+         sql = dsl,
+         verb = verb,
       )
       logger.info { "Writing INSERT to table ${tableAnnotation.tableName}" }
       val startTime = Instant.now()
       try {
-         val (affectedRecordCount, insertedRecords) = if (statementReturnsGeneratedValues) {
-            val result = insertStatement.fetch()
-            result.size to result
-         } else {
-            insertStatement.execute() to null
-         }
+         val (affectedRecordCount, insertedRecords) = sqlOperation.execute()
 
          if (inputAsList.size == affectedRecordCount) {
             logger.info { "Successfully inserted $affectedRecordCount record(s) into table ${tableAnnotation.tableName}" }
@@ -83,7 +102,7 @@ class JdbcUpsertInvoker(
          }
 
          val remoteCall =
-            buildRemoteCall(service, connectionConfig, operation, insertStatement.sql, startTime, errorMessage = null)
+            buildRemoteCall(service, connectionConfig, operation, sqlOperation.sql, startTime, errorMessage = null)
          val operationResult = OperationResult.fromTypedInstances(
             parameters.map { it.second },
             remoteCall
@@ -92,10 +111,10 @@ class JdbcUpsertInvoker(
             operationResult, queryId
          )
 
-         return if (statementReturnsGeneratedValues) {
+         return if (insertedRecords != null) {
             mergeUpdatedValuesToSource(
                inputAsList,
-               insertedRecords!!,
+               insertedRecords,
                inputType,
                schema,
                operationResult.asOperationReferenceDataSource()
@@ -109,7 +128,7 @@ class JdbcUpsertInvoker(
          logger.error(e) { errorMessage }
 
          val remoteCall =
-            buildRemoteCall(service, connectionConfig, operation, insertStatement.sql, startTime, errorMessage)
+            buildRemoteCall(service, connectionConfig, operation, sqlOperation.sql, startTime, errorMessage)
          eventDispatcher.reportRemoteOperationInvoked(
             OperationResult.fromTypedInstances(
                parameters.map { it.second },
@@ -132,7 +151,7 @@ class JdbcUpsertInvoker(
       schema: Schema,
       dataSource: OperationResultReference
    ): List<TypedInstance> {
-      require(source.size == persisted.size) { "Record count mismatch: Was passed ${source.size} records to write, but only ${persisted.size} were returned from the db write operation. Can't map results back to inputs."}
+      require(source.size == persisted.size) { "Record count mismatch: Was passed ${source.size} records to write, but only ${persisted.size} were returned from the db write operation. Can't map results back to inputs." }
       return source.mapIndexed { index, typedInstance ->
 
          val sourceMap = (typedInstance as TypedObject).toRawObject() as Map<String, Any>
@@ -175,19 +194,24 @@ class JdbcUpsertInvoker(
       operation: RemoteOperation,
       tableAnnotation: JdbcConnectorTaxi.Annotations.Table,
       dsl: DSLContext,
-      namedParameterJdbcTemplate: NamedParameterJdbcTemplate
+      namedParameterJdbcTemplate: NamedParameterJdbcTemplate,
+      connectionConfig: JdbcConnectionConfiguration
    ): String {
 
       val returnType = operation.returnType.collectionType ?: operation.returnType
-      val (tableName, ddlStatement, indexStatements) = TableGenerator(schemaProvider.schema).generate(
+      val (tableName, ddlStatement, indexStatements) = TableGenerator(
+         schemaProvider.schema,
+         connectionConfig.databaseSupport
+      ).generate(
          returnType,
          dsl,
-         null,
-         tableAnnotation.tableName
+         tableNameSuffix = null,
+         providedTableName = tableAnnotation.tableName
       )
 
-      val tableAlreadyExistsAtDatabase = DatabaseMetadataService(namedParameterJdbcTemplate.jdbcTemplate).listTables()
-         .any { it.tableName.equals(tableName, ignoreCase = true) }
+      val tableAlreadyExistsAtDatabase =
+         DatabaseMetadataService(namedParameterJdbcTemplate.jdbcTemplate, connectionConfig).tableExists(null, tableName)
+//         .any { it.tableName.equals(tabltableExistseName, ignoreCase = true) }
 
       if (tableAlreadyExistsAtDatabase) {
          // TODO : Validate the table is the same
@@ -199,8 +223,8 @@ class JdbcUpsertInvoker(
       logger.debug { ddlStatement.sql }
       ddlStatement.execute()
 
-      val tableFoundAtDatabase = DatabaseMetadataService(namedParameterJdbcTemplate.jdbcTemplate).listTables()
-         .any { it.tableName.equals(tableName, ignoreCase = true) }
+      val tableFoundAtDatabase =
+         DatabaseMetadataService(namedParameterJdbcTemplate.jdbcTemplate, connectionConfig).tableExists(null, tableName)
       if (tableFoundAtDatabase) {
          logger.info("${returnType.name.shortDisplayName} => Table $tableName created")
 

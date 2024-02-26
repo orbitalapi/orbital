@@ -55,7 +55,7 @@ class JdbcConnectorService(
    @GetMapping("/api/connections/jdbc/{connectionName}/tables")
    fun listConnectionTables(@PathVariable("connectionName") connectionName: String): Flux<MappedTable> {
       val template = connectionFactory.jdbcTemplate(connectionName)
-      val mappedTables = DatabaseMetadataService(template.jdbcTemplate).listTables().map { table ->
+      val mappedTables = DatabaseMetadataService(template.jdbcTemplate, connectionFactory.config(connectionName)).listTables().map { table ->
          val mappedType = findTypeForTable(connectionName, table.tableName, table.schemaName)
          MappedTable(table, mappedType?.qualifiedName)
       }
@@ -88,7 +88,7 @@ class JdbcConnectorService(
    ): Mono<TableMetadata> {
       val template = connectionFactory.jdbcTemplate(connectionName)
       val tableType = findTypeForTable(connectionName, tableName, schemaName)
-      val columns: List<ColumnMapping> = DatabaseMetadataService(template.jdbcTemplate)
+      val columns: List<ColumnMapping> = DatabaseMetadataService(template.jdbcTemplate, connectionFactory.config(connectionName))
          .listColumns(schemaName, tableName)
          .map { column -> buildColumnMapping(tableType, column) }
 

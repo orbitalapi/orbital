@@ -1,4 +1,4 @@
-package com.orbitalhq.connectors.jdbc.builders
+package com.orbitalhq.connectors.jdbc.drivers.postgres
 
 import com.orbitalhq.connectors.ConnectionDriverParam
 import com.orbitalhq.connectors.ConnectionParameterName
@@ -10,26 +10,24 @@ import com.orbitalhq.connectors.connectionParams
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.utils.substitute
 
-class SnowflakeJdbcUrlBuilder : JdbcUrlBuilder {
+class PostgresJdbcUrlBuilder : JdbcUrlBuilder {
    enum class Parameters(override val param: ConnectionDriverParam) : IConnectionParameter {
-      ACCOUNT(ConnectionDriverParam("account", SimpleDataType.STRING)),
-      DATABASE(ConnectionDriverParam("db", SimpleDataType.STRING)),
-      SCHEMA_NAME(ConnectionDriverParam("schema", SimpleDataType.STRING)),
-      WAREHOUSE_NAME(ConnectionDriverParam("warehouse", SimpleDataType.STRING)),
-      USERNAME(ConnectionDriverParam("username", SimpleDataType.STRING)),
-      PASSWORD(ConnectionDriverParam("password", SimpleDataType.STRING, sensitive = true)),
-      ROLE(ConnectionDriverParam("role", SimpleDataType.STRING))
+      HOST(ConnectionDriverParam("host", SimpleDataType.STRING)),
+      PORT(ConnectionDriverParam("port", SimpleDataType.NUMBER, defaultValue = 5432)),
+      DATABASE(ConnectionDriverParam("database", SimpleDataType.STRING)),
+      USERNAME(ConnectionDriverParam("username", SimpleDataType.STRING, required = false)),
+      PASSWORD(ConnectionDriverParam("password", SimpleDataType.STRING, required = false, sensitive = true))
    }
 
-   override val displayName: String = "Snowflake"
-   override val driverName: String = "net.snowflake.client.jdbc.SnowflakeDriver"
+   override val displayName: String = "Postgres"
+   override val driverName: String = "org.postgresql.Driver"
    override val parameters: List<ConnectionDriverParam> = Parameters.values().connectionParams()
 
    override fun build(inputs: Map<ConnectionParameterName, Any?>): JdbcUrlAndCredentials {
       val inputsWithDefaults = ConnectorUtils.assertAllParametersPresent(parameters, inputs)
 
-      val connectionString = "jdbc:snowflake://{account}.snowflakecomputing.com/".substitute(inputsWithDefaults)
-      val remainingInputs = inputsWithDefaults.remove(listOf("account", "host", "username", "password", "user"))
+      val connectionString = "jdbc:postgresql://{host}:{port}/{database}".substitute(inputsWithDefaults)
+      val remainingInputs = inputsWithDefaults.remove(listOf("host", "port", "database", "username", "password"))
          .entries.joinToString(separator = "&") { (key, value) -> "$key=$value" }
       val builtConnectionString = if (remainingInputs.isNullOrEmpty()) {
          connectionString
@@ -45,6 +43,7 @@ class SnowflakeJdbcUrlBuilder : JdbcUrlBuilder {
    }
 }
 
-private fun <K, V> Map<K, V>.remove(keysToExclude: List<K>): Map<K, V> {
+fun <K, V> Map<K, V>.remove(keysToExclude: List<K>): Map<K, V> {
    return filterKeys { !keysToExclude.contains(it) }
 }
+

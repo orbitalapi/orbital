@@ -1,9 +1,12 @@
-package com.orbitalhq.connectors.jdbc.sql.dml
+package com.orbitalhq.connectors.jdbc.sql.postgres.dml
 
 import com.winterbe.expekt.should
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
+import com.orbitalhq.connectors.jdbc.UpsertVerb
+import com.orbitalhq.connectors.jdbc.drivers.databaseSupport
+import com.orbitalhq.connectors.jdbc.sql.dml.InsertStatementGenerator
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.utils.withoutWhitespace
@@ -34,7 +37,7 @@ class InsertStatementGeneratorTest {
          """{ "firstName" : "Jimmy", "lastName" : "Schmitts", "age" : 28 }""",
          schema
       )
-      val insert = InsertStatementGenerator(schema).generateInsertWithoutConnecting(typedInstance, connectionDetails)
+      val insert = InsertStatementGenerator(schema, connectionDetails.databaseSupport).generateInsertWithoutConnecting(typedInstance, connectionDetails, UpsertVerb.Upsert)
       val sql = insert.toString()
       sql.withoutWhitespace().should.equal(
          """insert into "Person" (  "firstName",  "lastName",  "age",  "fullName" )
@@ -63,10 +66,10 @@ class InsertStatementGeneratorTest {
          """{ "personId" : 123, "firstName" : "Jimmy", "lastName" : "Schmitts", "age" : 28 }""",
          schema
       )
-      val insert = InsertStatementGenerator(schema).generateInsertWithoutConnecting(
+      val insert = InsertStatementGenerator(schema, connectionDetails.databaseSupport).generateInsertWithoutConnecting(
          typedInstance,
          connectionDetails,
-         useUpsertSemantics = true
+         UpsertVerb.Upsert
       )
       val sql = insert.toString()
       sql.withoutWhitespace().should.equal(

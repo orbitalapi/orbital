@@ -1,9 +1,11 @@
 package com.orbitalhq.connectors.jdbc.schema
 
+import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.connectors.jdbc.DatabaseMetadataService
 import com.orbitalhq.connectors.jdbc.JdbcConnectorTaxi
+import com.orbitalhq.connectors.jdbc.NamedTemplateConnection
 import com.orbitalhq.connectors.jdbc.TableTaxiGenerationRequest
 import com.orbitalhq.from
 import com.orbitalhq.query.VyneQlGrammar
@@ -23,6 +25,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.test.context.junit4.SpringRunner
 
 internal const val TEST_NAMESPACE = "com.orbitalhq.test"
@@ -41,12 +44,12 @@ val builtInSchema = TaxiSchema.from(
 class JdbcTaxiSchemaGeneratorTest {
 
    @Autowired
-   lateinit var jdbcTemplate: JdbcTemplate
+   lateinit var jdbcTemplate: NamedParameterJdbcTemplate
 
 
    @Test
    fun `can generate taxi definition of single table`() {
-      val metadataService = DatabaseMetadataService(jdbcTemplate)
+      val metadataService = DatabaseMetadataService(jdbcTemplate.jdbcTemplate, NamedTemplateConnection("Test", jdbcTemplate))
       val tables = metadataService.listTables()
       val actorTable = tables.single { it.tableName == "ACTOR" }
 
@@ -81,7 +84,7 @@ namespace com.orbitalhq.test {
 
    @Test
    fun `when field has same name as a table, the field type is assigned correctly`() {
-      val metadataService = DatabaseMetadataService(jdbcTemplate)
+      val metadataService = DatabaseMetadataService(jdbcTemplate.jdbcTemplate, NamedTemplateConnection("Test", jdbcTemplate))
       val tablesToGenerate = metadataService.listTables()
          .filter { it.tableName == "CITY" }
          .map { TableTaxiGenerationRequest(it) }
@@ -113,7 +116,7 @@ namespace com.orbitalhq.test {
 
    @Test
    fun `uses same type when foriegnKey is present`() {
-      val metadataService = DatabaseMetadataService(jdbcTemplate)
+      val metadataService = DatabaseMetadataService(jdbcTemplate.jdbcTemplate, NamedTemplateConnection("Test", jdbcTemplate))
       val tablesToGenerate = metadataService.listTables()
          .filter { setOf("ACTOR","MOVIE","MOVIE_ACTORS").contains(it.tableName) }
          .map { TableTaxiGenerationRequest(it) }

@@ -5,6 +5,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
 import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
+import com.orbitalhq.connectors.jdbc.drivers.DatabaseSupport
 import com.orbitalhq.connectors.jdbc.registry.JdbcConnectionRegistry
 import mu.KotlinLogging
 import org.jooq.DSLContext
@@ -27,7 +28,7 @@ interface JdbcConnectionFactory {
    fun config(connectionName: String): JdbcConnectionConfiguration
 
    fun dsl(connectionConfiguration: JdbcConnectionConfiguration): DSLContext {
-      connectionConfiguration.jdbcDriver
+      DatabaseSupport.forDriver(connectionConfiguration.jdbcDriver)
       val dialect = JDBCUtils.dialect(connectionConfiguration.buildUrlAndCredentials().url)
       val datasource = dataSource(connectionConfiguration)
       return DSL.using(

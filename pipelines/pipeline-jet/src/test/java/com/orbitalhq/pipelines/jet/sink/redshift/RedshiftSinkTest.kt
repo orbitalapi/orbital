@@ -3,7 +3,7 @@ package com.orbitalhq.pipelines.jet.sink.redshift
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.jdbc.buildUrlAndCredentials
-import com.orbitalhq.connectors.jdbc.builders.RedshiftJdbcUrlBuilder
+import com.orbitalhq.connectors.jdbc.drivers.redshift.RedshiftJdbcUrlBuilder
 import com.orbitalhq.pipelines.jet.BaseJetIntegrationTest
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.api.transport.redshift.RedshiftTransportOutputSpec

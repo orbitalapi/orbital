@@ -50,7 +50,7 @@ class ComplexTaxiSchemaGeneratorTest {
       )
       val template = SimpleJdbcConnectionFactory()
          .jdbcTemplate(connectionDetails)
-      val metadataService = DatabaseMetadataService(template.jdbcTemplate)
+      val metadataService = DatabaseMetadataService(template.jdbcTemplate, connectionDetails)
       val tablesToGenerate = metadataService.listTables().map {
          TableTaxiGenerationRequest(it)
       }

@@ -3,7 +3,7 @@ package com.orbitalhq.pipelines.jet.sink.jdbc
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.jdbc.buildUrlAndCredentials
-import com.orbitalhq.connectors.jdbc.builders.SnowflakeJdbcUrlBuilder
+import com.orbitalhq.connectors.jdbc.drivers.snowflake.SnowflakeJdbcUrlBuilder
 import com.orbitalhq.pipelines.jet.BaseJetIntegrationTest
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.api.transport.jdbc.JdbcTransportOutputSpec

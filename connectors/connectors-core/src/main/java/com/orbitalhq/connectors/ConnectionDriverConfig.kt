@@ -29,9 +29,13 @@ data class ConnectionDriverParam(
    val required: Boolean = true,
    val visible: Boolean = true,
    val templateParamName: ConnectionParameterName = displayName,
-   val allowedValues: List<Any> = emptyList()
+   val allowedValues: List<Any> = emptyList(),
 )
 
+/**
+ * Relates to the templateParamName in the templateParamName property of IConnectionParameter,
+ * and ConnectionDriverParam
+ */
 typealias ConnectionParameterName = String
 
 enum class SimpleDataType {
