@@ -294,7 +294,10 @@ class TypedObjectFactory(
    }
 
 
-   private fun readWithFormatSpecDeserializer(parammMetadata: Metadata, modelFormatSpec: ModelFormatSpec): TypedInstance {
+   private fun readWithFormatSpecDeserializer(
+      parammMetadata: Metadata,
+      modelFormatSpec: ModelFormatSpec
+   ): TypedInstance {
       val parsedValue = modelFormatSpec.deserializer.parse(value, type, parammMetadata, schema, source)
       // When parsing CSV, we may provide the type as T, and get back T[]
       val parsedType = if (parsedValue is Collection<*> && parsedValue.size > 1 && !type.isCollection) {
@@ -482,9 +485,13 @@ class TypedObjectFactory(
                      "No attribute with type ${requestedType.name.parameterizedName} is present on type ${type.name.parameterizedName} and attempts to discover a value from the query engine failed"
                   )
 
-                  resultsFromSearch.size == 1 -> resultsFromSearch.first()
-                  resultsFromSearch.size > 1 && requestedType.isCollection -> {
-                     TypedCollection.from(resultsFromSearch, MixedSources.singleSourceOrMixedSources(resultsFromSearch))
+                  resultsFromSearch.size == 1 && !requestedType.isCollection -> resultsFromSearch.first()
+                  resultsFromSearch.size >= 1 && requestedType.isCollection -> TypedCollection.from(resultsFromSearch, MixedSources.singleSourceOrMixedSources(resultsFromSearch))
+                  resultsFromSearch.size > 1 && !requestedType.isCollection -> {
+                     val errorMessage =
+                        "Search for ${requestedType.name.shortDisplayName} returned ${resultsFromSearch.size} results, which is invalid for non-array types. Returning null."
+                     logger.warn { errorMessage }
+                     createTypedNull(errorMessage)
                   }
 
                   else -> createTypedNull(
@@ -754,13 +761,19 @@ class TypedObjectFactory(
       fieldTypeName: QualifiedName
    ): TypedInstance {
       return if (inPlaceQueryEngine != null) {
-         val searchFailureBehaviour: QueryFailureBehaviour = if (field.nullable) QueryFailureBehaviour.SEND_TYPED_NULL else QueryFailureBehaviour.THROW
+         val searchFailureBehaviour: QueryFailureBehaviour =
+            if (field.nullable) QueryFailureBehaviour.SEND_TYPED_NULL else QueryFailureBehaviour.THROW
          val fieldInstanceValidPredicate = buildSpecProvider.provide(field)
          val (additionalFacts, additionalScope) = getFactsInScopeForSearch()
          val buildResult = runBlocking {
             logger.debug { "Initiating query to search for attribute $attributeName (${type.name.shortDisplayName})" }
             inPlaceQueryEngine.withAdditionalFacts(additionalFacts, additionalScope)
-               .findType(type, fieldInstanceValidPredicate, PermittedQueryStrategies.EXCLUDE_BUILDER_AND_MODEL_SCAN, searchFailureBehaviour)
+               .findType(
+                  type,
+                  fieldInstanceValidPredicate,
+                  PermittedQueryStrategies.EXCLUDE_BUILDER_AND_MODEL_SCAN,
+                  searchFailureBehaviour
+               )
                .toList()
          }
          when {
@@ -826,6 +839,7 @@ class TypedObjectFactory(
                   schema,
                   source
                )
+
                else -> attributeValue
             }
             when (parsed) {
