@@ -23,6 +23,9 @@ object JdbcConnectorTaxi {
       const val Column = "$namespace.Column"
 
       const val UpsertOperationAnnotationName = "UpsertOperation"
+      const val InsertOperationAnnotationName = "InsertOperation"
+      const val UpdateOperationAnnotationName = "UpdateOperation"
+
       const val GeneratedIdAnnotationName = "GeneratedId"
 
       data class DatabaseOperation(val connectionName: String) : AnnotationWrapper {

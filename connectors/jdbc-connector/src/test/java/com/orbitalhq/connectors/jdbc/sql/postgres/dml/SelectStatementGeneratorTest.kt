@@ -1,10 +1,12 @@
-package com.orbitalhq.connectors.jdbc.sql.dml
+package com.orbitalhq.connectors.jdbc.sql.postgres.dml
 
 import com.winterbe.expekt.should
 import io.kotest.core.spec.style.DescribeSpec
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
+import com.orbitalhq.connectors.jdbc.sql.dml.SelectStatementGenerator
+import com.orbitalhq.connectors.jdbc.sql.dml.SqlTemplateParameter
 import com.orbitalhq.connectors.jdbc.sqlBuilder
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import lang.taxi.Compiler
@@ -118,15 +120,15 @@ class SelectStatementGeneratorTest : DescribeSpec({
 })
 
 
-private fun Pair<String,List<SqlTemplateParameter>>.shouldBeQueryWithParams(sql: String, params: List<Any>) {
+fun Pair<String,List<SqlTemplateParameter>>.shouldBeQueryWithParams(sql: String, params: List<Any>) {
    this.first.should.equal(sql)
    this.second.map { it.value }.should.equal(params)
 }
-private fun String.query(taxi: TaxiDocument): TaxiQlQuery {
+fun String.query(taxi: TaxiDocument): TaxiQlQuery {
    return Compiler(this, importSources = listOf(taxi)).queries().first()
 }
 
-private fun String.compiled(): TaxiDocument {
+fun String.compiled(): TaxiDocument {
    val sourceWithImports = """
 
       $this

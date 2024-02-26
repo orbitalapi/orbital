@@ -2,6 +2,7 @@ package com.orbitalhq.connectors.jdbc.builders
 
 import com.winterbe.expekt.should
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
+import com.orbitalhq.connectors.jdbc.drivers.postgres.PostgresJdbcUrlBuilder
 import org.junit.Test
 
 class PostgresJdbcUrlBuilderTest {

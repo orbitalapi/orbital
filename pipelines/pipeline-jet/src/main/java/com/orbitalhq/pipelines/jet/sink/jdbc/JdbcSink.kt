@@ -10,6 +10,8 @@ import com.orbitalhq.VyneClientWithSchema
 import com.orbitalhq.connectors.jdbc.DatabaseMetadataService
 import com.orbitalhq.connectors.jdbc.JdbcConnectionFactory
 import com.orbitalhq.connectors.jdbc.SqlUtils
+import com.orbitalhq.connectors.jdbc.UpsertVerb
+import com.orbitalhq.connectors.jdbc.drivers.databaseSupport
 import com.orbitalhq.connectors.jdbc.registry.JdbcConnectionRegistry
 import com.orbitalhq.connectors.jdbc.sql.ddl.TableGenerator
 import com.orbitalhq.connectors.jdbc.sql.ddl.ViewGenerator
@@ -51,18 +53,22 @@ class JdbcSinkBuilder : WindowingPipelineSinkBuilder<JdbcTransportOutputSpec> {
    ): Sink<WindowResult<List<MessageContentProvider>>> {
       fun doCreateTable(context: JdbcSinkContext, targetType: Type) {
          val schema = context.schema()
-         val (tableName, ddlStatement, indexStatements) = TableGenerator(schema).generate(
-            targetType,
-            context.sqlDsl(),
-            context.tableNameSuffix,
-            pipelineTransportSpec.tableName
+         val (tableName, ddlStatement, indexStatements) = TableGenerator(
+            schema,
+            context.connectionConfig().databaseSupport
          )
+            .generate(
+               type = targetType,
+               dsl = context.sqlDsl(),
+               providedTableName = pipelineTransportSpec.tableName,
+               tableNameSuffix = context.tableNameSuffix
+            )
          context.logger.info("Executing CREATE IF NOT EXISTS for table to store type ${targetType.name.shortDisplayName} as table $tableName.")
 
          context.logger.fine(ddlStatement.sql)
          ddlStatement.execute()
-         val tableFoundAtDatabase = DatabaseMetadataService(context.jdbcTemplate()).listTables()
-            .any { it.tableName.equals(tableName, ignoreCase = true) }
+         val tableFoundAtDatabase =
+            DatabaseMetadataService(context.jdbcTemplate(), context.connectionConfig()).tableExists(null, tableName)
          if (tableFoundAtDatabase) {
             context.logger.info("${pipelineTransportSpec.targetTypeName} => Table $tableName created")
 
@@ -138,13 +144,16 @@ class JdbcSinkBuilder : WindowingPipelineSinkBuilder<JdbcTransportOutputSpec> {
                null
             }
          }
-         val (insertStatements) = InsertStatementGenerator(schema).generateInsertAsSingleStatement(
+         val insertStatements = InsertStatementGenerator(
+            schema,
+            context.connectionConfig().databaseSupport
+         ).generateInsertAsSingleStatement(
             typedInstances,
             context.sqlDsl(),
-            useUpsertSemantics = true,
+            verb = UpsertVerb.Upsert,
             tableNameSuffix = context.tableNameSuffix,
             tableName = pipelineTransportSpec.tableName
-         )
+         ).sql
          logger.info { "${pipelineTransportSpec.targetTypeName} => Executing INSERT batch with size: ${typedInstances.size}" }
          try {
             val insertedCount = context.sqlDsl().execute(insertStatements)
@@ -206,6 +215,8 @@ class JdbcSinkContext(
       val connectionConfig = connectionRegistry.getConnection(outputSpec.connection)
       return connectionFactory.dsl(connectionConfig)
    }
+
+   fun connectionConfig() = connectionRegistry.getConnection(outputSpec.connection)
 
    fun jdbcTemplate(): JdbcTemplate {
       val connectionConfig = connectionRegistry.getConnection(outputSpec.connection)

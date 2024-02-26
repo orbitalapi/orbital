@@ -35,6 +35,14 @@ data class DefaultJdbcConnectionConfiguration(
       }
    }
 
+   override fun getConnectionParameter(parameter: IConnectionParameter): String {
+      return connectionParameters[parameter.param.templateParamName] ?: error("No parameter ${parameter.param.templateParamName} defined")
+   }
+
+   override fun getConnectionParameterOrNull(parameter: IConnectionParameter): String? {
+      return connectionParameters[parameter.param.templateParamName]
+   }
+
    override fun buildUrlAndCredentials(urlBuilder: JdbcUrlBuilder): JdbcUrlAndCredentials {
       return urlBuilder.build(connectionParameters)
    }
@@ -54,6 +62,9 @@ interface JdbcConnectionConfiguration : ConnectorConfiguration {
       get() = jdbcDriver.name
    override val type: ConnectorType
       get() = ConnectorType.JDBC
+
+   fun getConnectionParameter(parameter: IConnectionParameter):String
+   fun getConnectionParameterOrNull(parameter: IConnectionParameter):String?
 }
 
 

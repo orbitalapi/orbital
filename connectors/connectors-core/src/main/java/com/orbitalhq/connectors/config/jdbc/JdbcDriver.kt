@@ -5,14 +5,25 @@ package com.orbitalhq.connectors.config.jdbc
  * Enum of supported Jdbc drivers.
  */
 enum class JdbcDriver(
-   val metadata: JdbcMetadataParams = JdbcMetadataParams()
+   val metadata: JdbcMetadataParams = JdbcMetadataParams(),
+   /**
+    * Indicates this is used internally within Orbital, and not
+    * surfaced on the UI
+    */
+   val internal: Boolean = false
 ) {
    H2(
       metadata = JdbcMetadataParams(
          tableListSchemaPattern = "PUBLIC"
-      )
+      ),
+      internal = true
    ),
    POSTGRES(
+      metadata = JdbcMetadataParams().copy(
+         tableTypesToListTables = arrayOf("TABLE")
+      )
+   ),
+   MSSQL(
       metadata = JdbcMetadataParams().copy(
          tableTypesToListTables = arrayOf("TABLE")
       )

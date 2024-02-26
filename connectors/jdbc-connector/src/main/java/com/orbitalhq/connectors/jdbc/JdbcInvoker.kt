@@ -50,21 +50,24 @@ class JdbcInvoker(
       queryOptions: QueryOptions
    ): Flow<TypedInstance> {
       return try {
+         val updateVerb = UpsertVerb.forAnnotations(operation.metadata)
          when {
             operation.operationType == OperationScope.READ_ONLY -> queryInvoker.invoke(
                service,
                operation,
                parameters,
                eventDispatcher,
-               queryId
+               queryId,
+               null
             )
 
-            operation.hasMetadata(JdbcConnectorTaxi.Annotations.UpsertOperationAnnotationName) -> upsertInvoker.invoke(
+            updateVerb != null -> upsertInvoker.invoke(
                service,
                operation,
                parameters,
                eventDispatcher,
-               queryId
+               queryId,
+               updateVerb
             )
 
             else -> error("Unhandled JDBC Operation type: ${operation.qualifiedName.parameterizedName}")

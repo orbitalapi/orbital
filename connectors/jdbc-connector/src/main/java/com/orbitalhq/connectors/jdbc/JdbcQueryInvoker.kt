@@ -27,7 +27,8 @@ class JdbcQueryInvoker(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String
+      queryId: String,
+      verb: UpsertVerb?
    ): Flow<TypedInstance> {
       val (connectionConfig, jdbcTemplate) = getConnectionConfigAndTemplate(service)
       val schema = schemaProvider.schema

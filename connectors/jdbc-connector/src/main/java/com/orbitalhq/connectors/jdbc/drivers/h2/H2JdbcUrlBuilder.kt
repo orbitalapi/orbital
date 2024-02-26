@@ -1,13 +1,16 @@
-package com.orbitalhq.connectors.jdbc.builders
+package com.orbitalhq.connectors.jdbc.drivers.h2
 
 import com.orbitalhq.connectors.ConnectionDriverParam
 import com.orbitalhq.connectors.ConnectionParameterName
 import com.orbitalhq.connectors.ConnectorUtils
 import com.orbitalhq.connectors.SimpleDataType
-import com.orbitalhq.connectors.config.jdbc.JdbcUrlBuilder
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
+import com.orbitalhq.connectors.config.jdbc.JdbcUrlBuilder
 import com.orbitalhq.utils.substitute
 
+/**
+ * Used for testing
+ */
 class H2JdbcUrlBuilder : JdbcUrlBuilder {
    override val displayName: String = "H2"
    override val driverName: String = "org.h2.Driver"
@@ -27,3 +30,4 @@ class H2JdbcUrlBuilder : JdbcUrlBuilder {
       )
    }
 }
+

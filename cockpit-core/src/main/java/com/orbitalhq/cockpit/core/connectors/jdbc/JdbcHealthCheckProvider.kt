@@ -30,7 +30,7 @@ class JdbcHealthCheckProvider : ConnectionHealthProvider {
          return Mono.create { sink ->
             val connectionProvider = SimpleJdbcConnectionFactory()
             val metadataService =
-               DatabaseMetadataService(connectionProvider.jdbcTemplate(connectionConfig).jdbcTemplate)
+               DatabaseMetadataService(connectionProvider.jdbcTemplate(connectionConfig).jdbcTemplate, connectionConfig)
             val status = metadataService.testConnection(connectionConfig.jdbcDriver.metadata.testQuery)
                .map { ConnectionStatus.ok() }
                .getOrElse { errorMessage -> ConnectionStatus.error(errorMessage) }

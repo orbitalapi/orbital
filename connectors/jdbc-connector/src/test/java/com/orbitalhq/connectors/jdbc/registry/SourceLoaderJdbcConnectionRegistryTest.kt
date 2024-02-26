@@ -7,7 +7,7 @@ import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
-import com.orbitalhq.connectors.jdbc.builders.PostgresJdbcUrlBuilder
+import com.orbitalhq.connectors.jdbc.drivers.postgres.PostgresJdbcUrlBuilder
 import org.apache.commons.io.FileUtils
 import org.junit.Rule
 import org.junit.Test

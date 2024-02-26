@@ -3,8 +3,10 @@ package com.orbitalhq.connectors.jdbc.sql.dml
 import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.JdbcConnectorTaxi
 import com.orbitalhq.connectors.jdbc.SqlUtils
+import com.orbitalhq.connectors.jdbc.UpsertVerb
+import com.orbitalhq.connectors.jdbc.drivers.DatabaseSupport
+import com.orbitalhq.connectors.jdbc.sql.ddl.TaxiTypeToJooqType
 import com.orbitalhq.connectors.jdbc.sqlBuilder
-import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.schemas.AttributeName
@@ -18,16 +20,19 @@ import org.jooq.impl.DSL.*
 
 typealias StatementReturnsGeneratedValues = Boolean
 
-class InsertStatementGenerator(private val schema: Schema) {
+class InsertStatementGenerator(private val schema: Schema, private val databaseSupport: DatabaseSupport) {
 
    private val logger = KotlinLogging.logger {}
 
+   @Deprecated("currently used only in tests")
    fun generateInsertWithoutConnecting(
       typedInstance: TypedInstance,
       connection: JdbcConnectionConfiguration,
-      useUpsertSemantics: Boolean = false
-   ) =
-      generateInsertWithoutConnecting(listOf(typedInstance), connection, useUpsertSemantics).first
+      verb: UpsertVerb
+   ): String {
+      val result = generateInsertWithoutConnecting(listOf(typedInstance), connection, verb)
+      return result.sql
+   }
 
    /**
     * Generates a single statement inserting many rows.
@@ -36,30 +41,60 @@ class InsertStatementGenerator(private val schema: Schema) {
    fun generateInsertAsSingleStatement(
       values: List<TypedInstance>,
       sql: DSLContext,
-      useUpsertSemantics: Boolean = false,
+      verb: UpsertVerb,
       tableNameSuffix: String? = null,
       tableName: String? = null
-   ): Pair<InsertResultStep<Record>, StatementReturnsGeneratedValues> {
+   ): SqlOperation {
       require(values.isNotEmpty()) { "No values provided to persist." }
       val recordType = assertAllValuesHaveSameType(values)
 
       val actualTableName = tableName ?: SqlUtils.tableNameOrTypeName(recordType.taxiType, tableNameSuffix)
-      val fields = findFieldsToInsert(recordType)
+      val fields = findFieldsToInsert(recordType, verb)
       val sqlFields = fields.map { it.second }
 
       val generatedFields =
          recordType.getAttributesWithAnnotation(JdbcConnectorTaxi.Annotations.GeneratedIdAnnotationName.fqn())
-            .map { DSL.field(DSL.name(it.key)) }
+            .map { (fieldName, field) ->
+               val taxiType = field.resolveType(schema).taxiType
+               val jooqType = TaxiTypeToJooqType.getSqlType(taxiType, field.nullable)
+               // We need to pass the type here as some dialects (eg: mssql)
+               // define inline tables within the insert to support upsert semantics
+               DSL.field(DSL.name(fieldName), jooqType)
+            }
 
-      val rows = values.map { typedInstance ->
-         val rowValues = fields.map { (fieldName, _) ->
-            require(typedInstance is TypedObject) { "Expected to receive a TypedObject, but got a ${typedInstance::class.simpleName}" }
-            typedInstance[fieldName].value
-         }
-         row(rowValues)
-      }
       val primaryKeyFields = getPrimaryKeyFields(recordType)
-      val statement = sql.insertInto(table(DSL.name(actualTableName)), *sqlFields.toTypedArray())
+      val valuesAsMaps: List<Map<AttributeName, Any?>> = values.map { typedInstance ->
+         fields.associate { (fieldName, _) ->
+            require(typedInstance is TypedObject) { "Expected to receive a TypedObject, but got a ${typedInstance::class.simpleName}" }
+            fieldName to typedInstance[fieldName].value
+         }
+      }
+      val rows = valuesAsMaps.map { rowMap ->
+         row(rowMap.values)
+      }
+
+      return databaseSupport.buildUpsertStatement(
+         sql,
+         actualTableName,
+         sqlFields,
+         rows,
+         valuesAsMaps,
+         verb,
+         primaryKeyFields,
+         generatedFields
+      )
+   }
+
+   private fun buildUpsertStatement(
+      sql: DSLContext,
+      actualTableName: String,
+      sqlFields: List<Field<Any>>,
+      rows: List<RowN>,
+      useUpsertSemantics: Boolean,
+      primaryKeyFields: List<Field<Any>>,
+      generatedFields: List<Field<Any>>
+   ): InsertResultStep<Record> {
+      val statement = sql.insertInto(table(name(actualTableName)), *sqlFields.toTypedArray())
          .valuesOfRows(*rows.toTypedArray())
          .let { insert ->
             if (useUpsertSemantics && primaryKeyFields.isNotEmpty()) {
@@ -68,128 +103,16 @@ class InsertStatementGenerator(private val schema: Schema) {
                   .returningResult(generatedFields)
             } else {
                insert.returningResult(generatedFields)
-//               insert.returning(*generatedFields.toTypedArray())
             }
          }
-      return statement to generatedFields.isNotEmpty()
+      return statement
    }
-
-   /**
-    * Generates an insert using the provided dsl context.
-    * If the context itself is connected to a db, the returned sql statement is executable
-    *
-    * Returns multiple Insert statements, intended to be executed in a batch.
-    * As a result, db-generated values are not returned.
-    *
-    * Where possible prefer using generateInsertAsSingleStatement.
-    * That approach
-    */
-//   fun generateInserts(
-//      values: List<TypedInstance>,
-//      sql: DSLContext,
-//      useUpsertSemantics: Boolean = false,
-//      tableNameSuffix: String? = null,
-//      tableName: String? = null
-//   ): List<InsertValuesStepN<Record>> {
-//      require(values.isNotEmpty()) { "No values provided to persist." }
-//      val recordType = assertAllValuesHaveSameType(values)
-//
-//      val actualTableName = tableName ?: SqlUtils.tableNameOrTypeName(recordType.taxiType, tableNameSuffix)
-//      val fields = findFieldsToInsert(recordType)
-//      val sqlFields = fields.map { it.second }
-//      val rowsToInsert = values.mapNotNull { typedInstance ->
-//         if (typedInstance is TypedCollection && typedInstance.isEmpty()) {
-//            // This can sneak through because of a failed transformation
-//            return@mapNotNull null
-//         }
-//
-//         require(typedInstance is TypedObject) { "Database operations are only supported on TypedObject - got ${typedInstance::class.simpleName}" }
-//         val rowValues = fields.map { (attributeName, _) ->
-//            attributeName to typedInstance[attributeName].value
-//         }
-//         rowValues
-//      }
-//
-//      // There are nicer syntaxes for inserting multiple rows (using Records)
-//      // in later versions, but locked to 3.13 because of old spring dependencies.
-//      val insertStatements = rowsToInsert.map { row: List<Pair<AttributeName, Any?>> ->
-//         var insert = sql.insertInto(table(actualTableName), *sqlFields.toTypedArray())
-//         val rowValues = row.map { it.second }
-//         insert = insert.values(rowValues)
-//         if (useUpsertSemantics) {
-//            insert.onConflict(getPrimaryKeyFields(recordType))
-//               .doUpdate().setAllToExcluded().returning()
-//         } else {
-//            insert.returning()
-//         }
-//      }
-//      return insertStatements
-//   }
 
    private fun getPrimaryKeyFields(recordType: Type): List<Field<Any>> {
       return recordType.getAttributesWithAnnotation("Id".fqn())
          .map { field(name(it.key)) }
    }
 
-   private fun getNonPrimaryKeyFields(recordType: Type): List<Field<Any>> {
-      return recordType.attributes
-         .filter { (name, field) -> !field.hasMetadata("Id".fqn()) }
-         .map { field(name(it.key)) }
-   }
-
-
-   private fun appendUpsert(
-      insertBuilder: InsertValuesStepN<Record>,
-      row: List<Pair<AttributeName, Any?>>,
-      recordType: Type,
-      generatedFields: List<Field<Any>>
-   ): InsertValuesStepN<Record> {
-      val primaryKeyFields = getPrimaryKeyFields(recordType)
-      if (primaryKeyFields.isEmpty()) {
-         logger.info { "Cannot use upsert semantics on type ${recordType.longDisplayName} as no @Id fields exist" }
-         return insertBuilder
-      }
-
-      val nonPrimaryKeyFields = getNonPrimaryKeyFields(recordType)
-      if (nonPrimaryKeyFields.isEmpty()) {
-         logger.info { "Nothing to upsert on type ${recordType.longDisplayName} as the only field is an @Id field" }
-         return insertBuilder
-      }
-
-//      insertBuilder.onConflict(primaryKeyFields)
-//         .doUpdate()
-//         .let { onDuplicateStep ->
-//            nonPrimaryKeyFields.fold(onDuplicateStep) { acc, field: Field<Any> ->
-//
-//               val excluded:Field<Any> = excluded(field)
-//               val f:Field<Any> = acc.set(field as Field<*>, excluded as Field<*>)
-//               TODO()
-//            }
-//         }
-
-//      val nonPrimaryKeyFields = row.filter { (attributeName, _) -> primaryKeyFields.none { it.name == attributeName } }
-//      if (nonPrimaryKeyFields.isEmpty()) {
-//         logger.info { "Nothing to upsert on type ${recordType.longDisplayName} as the only field is an @Id field" }
-//         return insertBuilder
-//      }
-
-      val a = generatedFields.map { select(it) }
-      val f = insertBuilder
-         .onConflict(primaryKeyFields).doUpdate().setAllToExcluded()
-         .returning()
-//         .let { onDuplicateStep ->
-//            onDuplicateStep.set(field(""), )
-//            nonPrimaryKeyFields
-//               .forEach { (fieldName, value) ->
-//                  if (value != null) {
-//                     onDuplicateStep.set(field(name(fieldName)), value)
-//                  } else {
-//                     onDuplicateStep.setNull(field(name(fieldName)))
-//                  }
-//               }
-//         }
-      return insertBuilder
-   }
 
    /**
     * Generates an insert statement using the dialect in the JDBC connection.
@@ -197,11 +120,12 @@ class InsertStatementGenerator(private val schema: Schema) {
     * executable.
     * Useful for testing.
     */
+   @Deprecated("currently used only in tests")
    private fun generateInsertWithoutConnecting(
       values: List<TypedInstance>,
       connection: JdbcConnectionConfiguration,
-      useUpsertSemantics: Boolean = false
-   ) = generateInsertAsSingleStatement(values, connection.sqlBuilder(), useUpsertSemantics)
+      verb: UpsertVerb
+   ) = generateInsertAsSingleStatement(values, connection.sqlBuilder(), verb)
 
    private fun assertAllValuesHaveSameType(values: List<TypedInstance>): Type {
       val types = values.map { it.type.collectionType ?: it.type }
@@ -218,15 +142,20 @@ class InsertStatementGenerator(private val schema: Schema) {
       return types.single()
    }
 
-   private fun findFieldsToInsert(type: Type): List<Pair<AttributeName, Field<Any>>> {
+   private fun findFieldsToInsert(type: Type, verb: UpsertVerb): List<Pair<AttributeName, Field<out Any>>> {
       return type.attributes
-         .filter { (name, field) ->
-            // Don't insert fields that are auto generated.
-            !field.hasMetadata(JdbcConnectorTaxi.Annotations.GeneratedIdAnnotationName.fqn())
+         .filter { (_, field) ->
+//             Don't insert fields that are auto generated.
+            when (verb) {
+               UpsertVerb.Insert,
+               UpsertVerb.Upsert -> !field.hasMetadata(JdbcConnectorTaxi.Annotations.GeneratedIdAnnotationName.fqn())
+               UpsertVerb.Update -> true
+            }
          }
          // TODO : Currently we persist everything. Does this make sense for evaluated fields?
          .map { (name, field) ->
-            name to field(DSL.name(name))
+            val taxiType = field.resolveType(schema).taxiType
+            name to field(DSL.name(name), TaxiTypeToJooqType.getSqlType(taxiType, nullable = field.nullable))
          }
    }
 }

@@ -5,7 +5,7 @@ import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.jdbc.SqlUtils
-import com.orbitalhq.connectors.jdbc.builders.PostgresJdbcUrlBuilder
+import com.orbitalhq.connectors.jdbc.drivers.postgres.PostgresJdbcUrlBuilder
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.asResource
 import com.orbitalhq.utils.toPath
