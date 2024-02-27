@@ -1,10 +1,9 @@
 package com.orbitalhq.query.runtime.executor
 
 import com.fasterxml.jackson.databind.MapperFeature
-import io.micrometer.core.instrument.MeterRegistry
 import com.orbitalhq.connectors.soap.SoapWsdlSourceConverter
-import com.orbitalhq.history.AnalyticsConfig
 import com.orbitalhq.formats.csv.CsvFormatSpec
+import com.orbitalhq.history.AnalyticsConfig
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.query.TaxiJacksonModule
 import com.orbitalhq.query.VyneJacksonModule
@@ -13,9 +12,14 @@ import com.orbitalhq.schemas.readers.SourceConverterRegistry
 import com.orbitalhq.schemas.readers.TaxiSourceConverter
 import com.orbitalhq.spring.EnableVyne
 import com.orbitalhq.spring.VyneSchemaConsumer
-import com.orbitalhq.spring.config.*
+import com.orbitalhq.spring.config.ConditionallyLoadBalancedExchangeFilterFunction
+import com.orbitalhq.spring.config.DiscoveryClientConfig
+import com.orbitalhq.spring.config.EnvVariablesConfig
+import com.orbitalhq.spring.config.VyneSpringCacheConfiguration
+import com.orbitalhq.spring.config.VyneSpringProjectionConfiguration
 import com.orbitalhq.spring.http.auth.HttpAuthConfig
 import com.orbitalhq.utils.log
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication

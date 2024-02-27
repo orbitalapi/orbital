@@ -1,5 +1,6 @@
 package com.orbitalhq.query.runtime.core
 
+import com.google.common.net.MediaType
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.format.FormatDetector
@@ -26,12 +27,12 @@ class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private va
    fun convertToSerializedContent(
       queryResponse: QueryResponse,
       resultMode: ResultMode,
-      contentType: String,
+      requestedContentType: String,
       queryOptions: QueryOptions
-   ): Flow<Any> {
+   ): Pair<String,Flow<Any>> {
       return when (queryResponse) {
-         is QueryResult -> this.convertToSerializedContentInternal(queryResponse, resultMode, contentType, queryOptions)
-         is FailedSearchResponse -> this.serialiseFailedResponse(queryResponse, contentType)
+         is QueryResult -> this.convertToSerializedContentInternal(queryResponse, resultMode, requestedContentType, queryOptions)
+         is FailedSearchResponse -> this.serialiseFailedResponse(queryResponse, requestedContentType)
          else -> error("Received unknown type of QueryResponse: ${this::class.simpleName}")
       }
    }
@@ -39,12 +40,12 @@ class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private va
    private fun serialiseFailedResponse(
       failedSearchResponse: FailedSearchResponse,
       contentType: String
-   ) : Flow<Any> {
+   ) : Pair<String,Flow<Any>> {
       return when (contentType) {
-         TEXT_CSV -> flowOf(failedSearchResponse.message)
+         TEXT_CSV -> contentType to flowOf(failedSearchResponse.message)
          // Assume everything else is JSON.  Return the entity, and let
          // Spring / Jackson take care of the serialization.
-         else -> flowOf(failedSearchResponse)
+         else -> "application/json" to flowOf(failedSearchResponse)
       }
    }
 
@@ -85,21 +86,21 @@ class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private va
          .filterNotNull()
    }
 
-   fun buildStreamingSerializer(resultMode: ResultMode, queryResponse: QueryResult, contentType: String?, queryOptions: QueryOptions): QueryResultSerializer {
+   fun buildStreamingSerializer(resultMode: ResultMode, queryResponse: QueryResult, contentType: String, queryOptions: QueryOptions): QueryResultSerializer {
       logger.info { "Building streaming serializer for Query Response Type ${queryResponse.responseType} " +
          "with Accept header value $contentType and result mode $this" }
       return tryGetModelFormatSerialiser(resultMode, queryResponse) ?: buildSerializer(resultMode, queryResponse, contentType, queryOptions)
    }
 
-   private fun buildSerializer(resultMode: ResultMode, queryResponse: QueryResult, contentType: String?, queryOptions: QueryOptions): QueryResultSerializer {
+   private fun buildSerializer(resultMode: ResultMode, queryResponse: QueryResult, requestedContentType: String, queryOptions: QueryOptions): QueryResultSerializer {
       logger.info {
          "Building serializer for Query Response Type ${queryResponse.responseType} " +
-            "with ContentSerializationFormat header value $contentType and result mode $resultMode"
+            "with ContentSerializationFormat header value $requestedContentType and result mode $resultMode"
       }
       return when (resultMode) {
          ResultMode.RAW -> RawResultsSerializer(queryOptions)
          ResultMode.SIMPLE, ResultMode.TYPED -> FirstEntryMetadataResultSerializer.forQueryResult(queryResponse, queryOptions)
-         ResultMode.VERBOSE -> SerializedTypedInstanceSerializer(contentType)
+         ResultMode.VERBOSE -> SerializedTypedInstanceSerializer(requestedContentType)
       }
    }
 
@@ -107,13 +108,7 @@ class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private va
    private fun tryGetModelFormatSerialiser(resultMode: ResultMode, queryResult: QueryResult): QueryResultSerializer? {
       return if (resultMode == ResultMode.RAW && queryResult.responseType != null) {
          // Check whether the result type has a model format spec.
-         val currentSchema = schemaProvider.schema
-         val responseTypeFqnm = queryResult.responseType!!
-         val responseType = when {
-            currentSchema.hasType(responseTypeFqnm) -> currentSchema.type(responseTypeFqnm)
-            queryResult.anonymousTypes.any { it.name.parameterizedName == queryResult.responseType } -> queryResult.anonymousTypes.first { it.name.parameterizedName == queryResult.responseType }
-            else -> null
-         }
+         val responseType =queryResult.responseType.collectionType ?: queryResult.responseType
          val modelSerializer = responseType?.let {
             this.formatDetector.getFormatType(responseType)?.let { (metadata, spec) ->
                ModelFormatSpecSerializer(spec, metadata)
@@ -125,18 +120,18 @@ class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private va
 
 
    private fun getNonModelFormatSerialiser(
-      contentType: String,
+      requestedContentType: String,
       queryResult: QueryResult,
       resultMode: ResultMode,
       queryOptions: QueryOptions
       ): QueryResultSerializer {
-      return if (contentType == TEXT_CSV)
-         buildSerializer(ResultMode.RAW, queryResult, contentType, queryOptions)
+      return if (requestedContentType == TEXT_CSV)
+         buildSerializer(ResultMode.RAW, queryResult, requestedContentType, queryOptions)
       else
          buildSerializer(
             resultMode,
             queryResult,
-            contentType,
+            requestedContentType,
             queryOptions
          )
    }
@@ -145,22 +140,22 @@ class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private va
    private fun convertToSerializedContentInternal(
       queryResult: QueryResult,
       resultMode: ResultMode,
-      contentType: String,
+      requestedContentType: String,
       queryOptions: QueryOptions
-   ): Flow<Any> {
+   ): Pair<String,Flow<Any>> {
 
-      val modelFormattedResult  =  tryGetModelFormatSerialiser(resultMode, queryResult)?.let {
-         serialise(queryResult.results, it, queryResult.schema)
+      val modelFormattedResult  =  tryGetModelFormatSerialiser(resultMode, queryResult)?.let {serializer ->
+         serializer.contentType to serialise(queryResult.results, serializer, queryResult.schema)
       }
 
       return if (modelFormattedResult != null) {
          modelFormattedResult
       } else {
-         val serializer = getNonModelFormatSerialiser(contentType, queryResult, resultMode, queryOptions)
-         when (contentType) {
-            TEXT_CSV -> toCsv(queryResult.results, serializer, queryResult.schema)
+         val serializer = getNonModelFormatSerialiser(requestedContentType, queryResult, resultMode, queryOptions)
+         when (requestedContentType) {
+            TEXT_CSV -> MediaType.CSV_UTF_8.toString() to toCsv(queryResult.results, serializer, queryResult.schema)
             // Default everything else to JSON
-            else -> serialise(queryResult.results, serializer, queryResult.schema)
+            else -> serializer.contentType to serialise(queryResult.results, serializer, queryResult.schema)
          }
       }
    }

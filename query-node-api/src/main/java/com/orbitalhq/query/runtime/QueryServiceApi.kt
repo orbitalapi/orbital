@@ -4,6 +4,7 @@ import com.orbitalhq.query.ResultMode
 import com.orbitalhq.security.VynePrivileges
 import kotlinx.coroutines.flow.Flow
 import lang.taxi.query.TaxiQLQueryString
+import org.reactivestreams.Publisher
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -12,6 +13,9 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
+import reactor.core.CorePublisher
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import java.util.*
 
 interface QueryServiceApi {
@@ -21,7 +25,7 @@ interface QueryServiceApi {
       consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
       produces = [MediaType.APPLICATION_JSON_VALUE]
    )
-   suspend fun submitVyneQlQuery(
+   fun submitVyneQlQuery(
       @RequestBody query: TaxiQLQueryString,
       @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode = ResultMode.RAW,
       @RequestHeader(
@@ -30,7 +34,7 @@ interface QueryServiceApi {
       ) contentType: String = MediaType.APPLICATION_JSON_VALUE,
       auth: Authentication? = null,
       @RequestParam("clientQueryId", required = false) clientQueryId: String? = null
-   ): ResponseEntity<Flow<Any>>
+   ): Mono<ResponseEntity<Publisher<Any>>>
 
    /**
     * Endpoint for submitting a TaxiQL query, and receiving an event stream back.
@@ -47,11 +51,11 @@ interface QueryServiceApi {
    )
    suspend fun submitVyneQlQueryStreamingResponse(
       @RequestBody query: TaxiQLQueryString,
-      @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
+      @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode = ResultMode.RAW,
       @RequestHeader(
          value = "ContentSerializationFormat",
          defaultValue = MediaType.APPLICATION_JSON_VALUE
-      ) contentType: String,
+      ) contentType: String  = MediaType.APPLICATION_JSON_VALUE,
       auth: Authentication? = null,
       @RequestParam("clientQueryId", required = false) clientQueryId: String? = null
    ): Flow<Any?>

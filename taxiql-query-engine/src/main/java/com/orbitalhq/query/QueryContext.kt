@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.merge
 import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.expressions.Expression
 import lang.taxi.policies.Instruction
+import lang.taxi.types.VoidType
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
@@ -101,8 +102,18 @@ data class QueryContext(
    var projectionScope: ProjectionFunctionScope? = null
       private set
 
-   var responseType: String? = null
+   var responseTypeName: String? = null
       private set
+
+   /**
+    * Returns the response type.
+    * It's very uncommon for an error to occur before the response type is set.
+    * In these scenarios, returns VOID, but should be considered a bug.
+    */
+   val responseType: Type
+      get() {
+         return responseTypeName?.let { schema.type(it) } ?: schema.type(VoidType.VOID)
+      }
 
    private val cancelEmitter = Sinks.many().multicast().onBackpressureBuffer<QueryCancellationRequest>()
    val cancelFlux: Flux<QueryCancellationRequest> = cancelEmitter.asFlux()
@@ -227,7 +238,8 @@ data class QueryContext(
                false,
                emptySet(),
                clientQueryId, queryId,
-               schema = schema
+               schema = schema,
+               responseType = responseType
             )
 
          }
@@ -244,7 +256,8 @@ data class QueryContext(
             false,
             emptySet(),
             clientQueryId, queryId,
-            schema = schema
+            schema = schema,
+            responseType = responseType
          )
       } else {
          val firstResult = mappingResult.first()
@@ -347,10 +360,12 @@ data class QueryContext(
    }
 
 
-   fun responseType(responseType: String?): QueryContext {
-      this.responseType = responseType
+   fun responseTypeName(responseTypeName: String?): QueryContext {
+      this.responseTypeName = responseTypeName
       return this
    }
+
+
 
 
    override suspend fun findType(type: Type, permittedStrategy: PermittedQueryStrategies, failureBehaviour: QueryFailureBehaviour): Flow<TypedInstance> {

@@ -43,7 +43,8 @@ class QueryResultSerializationTest {
          results = flow { emit(clientInstnace) },
          querySpec = QuerySpecTypeNode(clientType),
          isFullyResolved = true,
-         schema = vyne.schema
+         schema = vyne.schema,
+         responseType = clientInstnace.type
       )
 
       val expectedJson = """
@@ -58,6 +59,7 @@ class QueryResultSerializationTest {
                "longDisplayName" : "Client",
                "shortDisplayName" : "Client"
              },
+               "responseType" : "Client",
            "anonymousTypes" : [ ],
             "responseStatus" : "COMPLETED",
            "vyneCost" : 0,
@@ -90,7 +92,8 @@ class QueryResultSerializationTest {
          results = flow { emit(clientInstnace) },
          querySpec = QuerySpecTypeNode(clientType),
          isFullyResolved = true,
-         schema = vyne.schema
+         schema = vyne.schema,
+         responseType = clientInstnace.type
       )
 
       val expected = """
@@ -105,6 +108,7 @@ class QueryResultSerializationTest {
       "longDisplayName" : "Client",
       "shortDisplayName" : "Client"
     },
+      "responseType" : "Client",
    "responseStatus" : "COMPLETED",
   "anonymousTypes" : [ ],
   "remoteCalls" : [ ],

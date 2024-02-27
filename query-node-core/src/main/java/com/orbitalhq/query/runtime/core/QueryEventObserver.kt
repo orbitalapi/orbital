@@ -67,7 +67,7 @@ class QueryLifecycleEventObserver(
          QueryStartEvent(
             taxiQuery = null,
             query = query,
-            message = queryResult.responseType ?: "",
+            message = queryResult.responseTypeName ?: "",
             queryId = queryResult.queryId,
             clientQueryId = queryResult.clientQueryId ?: queryResult.queryId,
             timestamp = queryStartTime
@@ -144,7 +144,7 @@ class QueryLifecycleEventObserver(
          QueryStartEvent(
             taxiQuery = query,
             query = null,
-            message = queryResult.responseType ?: "",
+            message = queryResult.responseTypeName ?: "",
             queryId = queryResult.queryId,
             clientQueryId = queryResult.clientQueryId ?: queryResult.queryId,
             timestamp = queryStartTime

@@ -1,6 +1,5 @@
 package com.orbitalhq
 
-import arrow.core.fold
 import com.google.common.annotations.VisibleForTesting
 import com.orbitalhq.models.AccessorReader
 import com.orbitalhq.models.DefinedInSchema
@@ -24,7 +23,6 @@ import com.orbitalhq.utils.Ids
 import com.orbitalhq.utils.log
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.job
-import lang.taxi.accessors.Argument
 import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.query.FactValue
 import lang.taxi.query.Parameter
@@ -200,7 +198,7 @@ class Vyne(
          queryOptions = queryOptions,
          querySchema = amendedQuerySchema
       )
-         .responseType(deriveResponseType(taxiQl))
+         .responseTypeName(deriveResponseType(taxiQl))
 
 
       return ConstructedQueryContext(

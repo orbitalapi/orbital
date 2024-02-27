@@ -21,6 +21,8 @@ class RawResultsSerializer(queryOptions: QueryOptions) : QueryResultSerializer {
    // as we mutate it.  Is that expensive? Not sure.  But we can't have a shared instance.
    private val queryOptionsConverter: ObjectMapper? = queryOptions.newObjectMapperIfRequired()
 
+   override val contentType: String = MediaType.APPLICATION_JSON_VALUE
+
    private val converter = TypedInstanceConverter(RawObjectMapper)
    override fun serialize(item: TypedInstance, schema: Schema): Any? {
       val converted = converter.convert(item)
@@ -47,11 +49,12 @@ class ModelFormatSpecSerializer(
       } else {
          modelFormatSpec.serializer.write(item, metadata, schema)
       }
-
    }
+
+   override val contentType: String = modelFormatSpec.mediaType
 }
 
-class SerializedTypedInstanceSerializer(private val contentType: String?) : QueryResultSerializer {
+class SerializedTypedInstanceSerializer(override val contentType: String) : QueryResultSerializer {
    private val converter = TypedInstanceConverter(RawObjectMapper)
    override fun serialize(item: TypedInstance, schema: Schema): Any? {
       item.toSerializable()
@@ -76,6 +79,8 @@ class FirstEntryMetadataResultSerializer(
    QueryResultSerializer {
    private val converter = TypedInstanceConverter(RawObjectMapper)
    private val mapper = queryOptions.newObjectMapper()
+
+   override val contentType: String = MediaType.APPLICATION_JSON_VALUE
 
    private var metadataEmitted: Boolean = false
    override fun serialize(item: TypedInstance, schema: Schema): Any {

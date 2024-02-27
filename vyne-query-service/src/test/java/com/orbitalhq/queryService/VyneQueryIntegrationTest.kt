@@ -391,7 +391,7 @@ str2|2"""
       val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
 
       response.statusCodeValue.should.be.equal(200)
-      response.headers["Content-Type"].should.equal(listOf("text/csv;charset=UTF-8"))
+      response.headers["Content-Type"].should.equal(listOf("text/csv; charset=utf-8"))
       assertEquals(
          response.body!!.trimIndent(), """
          userId,userName
@@ -432,7 +432,7 @@ str2|2"""
       val entity = HttpEntity("find { ModelWithCsvFormat[] }", headers)
       val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
       response.statusCodeValue.should.be.equal(200)
-      response.headers["Content-Type"].should.equal(listOf("text/csv;charset=UTF-8"))
+      response.headers["Content-Type"].should.equal(listOf("text/csv; charset=utf-8"))
       assertEquals(
          """
          field1|field2

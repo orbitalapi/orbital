@@ -117,11 +117,11 @@ class QueryHistoryLineageTest {
          QueryResponseFormatter(listOf(CsvFormatSpec), schemaProvider)
       )
       runBlocking {
-         val results = queryService.submitVyneQlQuery(
+         val results = queryService.submitVyneQlQueryStreamingResponse(
             """given { email : EmailAddress = "jimmy@foo.com" } find {AccountBalance }""",
             ResultMode.TYPED,
             MediaType.APPLICATION_JSON_VALUE, clientQueryId = queryId
-         ).body.toList()
+         ).toList()
          val valueWithTypeName = results.first() as ValueWithTypeName
          // Wait for the persistence to finish
          val callable = ConditionCallable {

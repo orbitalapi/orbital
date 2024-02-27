@@ -7,6 +7,7 @@ import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 
 
 /**
@@ -32,7 +33,7 @@ class LocalQueryDispatcher(
       mediaType: String,
       resultMode: ResultMode,
       arguments: Map<String, Any?>
-   ): Flux<Any> {
+   ): Mono<Any> {
       // Note: This isn't actually a suspend function.
       // All the work happens in the returned Flux<> / Flow<>,
       // we just need to fix the underling signatures.
@@ -47,7 +48,10 @@ class LocalQueryDispatcher(
             arguments = arguments
          )
       }
-      return responseEntity.body!!
-         .asFlux()
+      return when (responseEntity.body) {
+         is Flux<*> -> (responseEntity.body as Flux<Any>).collectList() as Mono<Any>
+         is Mono<*> -> responseEntity.body!! as Mono<Any>
+         else -> error("Unhandled usecase: ${responseEntity.body::class.simpleName}")
+      }
    }
 }

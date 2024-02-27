@@ -95,7 +95,7 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
 
       runTest {
          val turbine =
-            queryService.submitVyneQlQuery("find { Order[] } as Report[]", clientQueryId = id).body.testIn(this)
+            queryService.submitVyneQlQueryStreamingResponse("find { Order[] } as Report[]", clientQueryId = id).testIn(this)
 
          val first = turbine.awaitItem()
          first.should.not.be.`null`
@@ -128,10 +128,8 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
       val id = UUID.randomUUID().toString()
 
       runBlocking {
-         val query = buildQuery("Order[]").copy(queryId = id)
-
          val turbine =
-            queryService.submitQuery(query, ResultMode.TYPED, MediaType.APPLICATION_JSON_VALUE).body.testIn(this)
+            queryService.submitVyneQlQueryStreamingResponse("""find { Order[] }""", ResultMode.TYPED, MediaType.APPLICATION_JSON_VALUE, clientQueryId = id).testIn(this)
          val next = turbine.awaitItem() as ValueWithTypeName
          next.typeName.should.equal("Order".fqn().parameterizedName)
          turbine.awaitComplete()
@@ -145,7 +143,7 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
       val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)!!
 
       historyRecord.should.not.be.`null`
-      historyRecord.queryJson.should.not.be.`null`
+      historyRecord.taxiQl.should.not.be.`null`
       historyRecord.endTime.should.not.be.`null`
       historyRecord.recordCount.should.equal(1)
 

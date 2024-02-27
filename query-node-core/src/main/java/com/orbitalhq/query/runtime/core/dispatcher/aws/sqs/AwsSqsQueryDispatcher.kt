@@ -46,23 +46,24 @@ class AwsSqsQueryDispatcher(
       mediaType: String,
       resultMode: ResultMode,
       arguments: Map<String, Any?>
-   ): Flux<Any> {
+   ): Mono<Any> {
 
-      return createTemporaryQueue(clientQueryId)
-         .map { tempQueue ->
-            QueryMessage(
-               query = query,
-               sourcePackages = schemaProvider.schema.packages,
-               connections = connectionsConfigProvider.load(),
-               authTokens = authTokenRepository.getAllTokens(),
-               services = servicesRepository.load(),
-               resultMode, mediaType, clientQueryId,
-               arguments,
-               replyTo = tempQueue
-            )
-         }
-         .flatMap { sendMessageToQueue(it) }
-         .flatMapMany { (queryMessage, sendMessageResponse) -> consumeResponses(queryMessage) }
+      TODO("Not maintained")
+//      return createTemporaryQueue(clientQueryId)
+//         .map { tempQueue ->
+//            QueryMessage(
+//               query = query,
+//               sourcePackages = schemaProvider.schema.packages,
+//               connections = connectionsConfigProvider.load(),
+//               authTokens = authTokenRepository.getAllTokens(),
+//               services = servicesRepository.load(),
+//               resultMode, mediaType, clientQueryId,
+//               arguments,
+//               replyTo = tempQueue
+//            )
+//         }
+//         .flatMap { sendMessageToQueue(it) }
+//         .flatMapMany { (queryMessage, sendMessageResponse) -> consumeResponses(queryMessage) }
    }
 
    private fun consumeResponses(queryMessage: QueryMessage): Flux<Any> {

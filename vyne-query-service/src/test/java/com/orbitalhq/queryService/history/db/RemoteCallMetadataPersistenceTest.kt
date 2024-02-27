@@ -77,7 +77,7 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
    lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
 
    @MockBean
-   lateinit var configLoader : WorkspaceConfigLoader
+   lateinit var configLoader: WorkspaceConfigLoader
 
    @MockBean
    lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
@@ -147,8 +147,9 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
       )
 
       val clientQueryId = Ids.id("query")
+      var queryId:String? = null
       runBlocking {
-         val result = queryService.submitVyneQlQuery(
+         val result = queryService.submitVyneQlQueryStreamingResponse(
             """
          find { Movie[] } as {
             id : MovieId
@@ -156,19 +157,22 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
             cast : Cast[]
          }[]
       """.trimIndent(), clientQueryId = clientQueryId
-         ).body.toList()
+         ).toList()
          result.shouldHaveSize(1)
       }
 
       Awaitility.await()
          .atMost(Duration.FIVE_SECONDS)
          .until<Boolean> {
-            // note: clientQueryId = queryId in this case.
-            remoteCallResponseRepository.findAllByQueryId(clientQueryId)
-               .isNotEmpty()
+            val responses = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
+               ?.let { historyRecord ->
+                  queryId = historyRecord.queryId
+                  remoteCallResponseRepository.findAllByQueryId(historyRecord.queryId)
+               } ?: emptyList()
+            responses.isNotEmpty()
          }
 
-      val calls = remoteCallResponseRepository.findAllByQueryId(clientQueryId)
+      val calls = remoteCallResponseRepository.findAllByQueryId(queryId!!)
       calls.shouldHaveSize(2)
       calls.forEach { it.response.shouldNotBeNull() }
    }
@@ -209,7 +213,7 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
       val clientQueryId = Ids.id("query")
       runBlocking {
          try {
-            val result = queryService.submitVyneQlQuery(
+            val result = queryService.submitVyneQlQueryStreamingResponse(
                """
          find { Movie[] } as {
             id : MovieId
@@ -217,7 +221,7 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
             cast : Cast[]
          }[]
       """.trimIndent(), clientQueryId = clientQueryId
-            ).body.toList()
+            ).toList()
             result.shouldHaveSize(1)
          } catch (e: Exception) {
          }
@@ -266,7 +270,7 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
       val clientQueryId = Ids.id("query")
       runBlocking {
          try {
-            val result = queryService.submitVyneQlQuery(
+            val result = queryService.submitVyneQlQueryStreamingResponse(
                """
          find { Movie[] } as {
             id : MovieId
@@ -274,7 +278,7 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
             cast : Cast[]
          }[]
       """.trimIndent(), clientQueryId = clientQueryId
-            ).body.toList()
+            ).toList()
          } catch (e: Exception) {
          }
       }

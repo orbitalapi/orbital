@@ -59,28 +59,30 @@ class RabbitMqQueueDispatcher(
       mediaType: String,
       resultMode: ResultMode,
       arguments: Map<String, Any?>
-   ): Flux<Any> {
+   ): Mono<Any> {
 
-      val replyQueueName = RabbitAdmin.replyQueueName(clientQueryId)
-      return Mono.just(replyQueueName)
-         .publishOn(Schedulers.boundedElastic())
-         .flatMap { createTemporaryQueue(replyQueueName, clientQueryId) }
-         .map { _ ->
-            QueryMessage(
-               query = query,
-               sourcePackages = schemaProvider.schema.packages,
-               connections = connectionsConfigProvider.load(),
-               authTokens = authTokenRepository.getAllTokens(),
-               services = servicesRepository.load(),
-               resultMode, mediaType, clientQueryId,
-               arguments,
-               replyTo = replyQueueName
-            )
-         }
-         .flatMap { sendMessageToQueue(it) }
-         .flatMapMany { queryMessage ->
-            consumeResponses(queryMessage)
-         }
+      TODO("Not maintained")
+
+//      val replyQueueName = RabbitAdmin.replyQueueName(clientQueryId)
+//      return Mono.just(replyQueueName)
+//         .publishOn(Schedulers.boundedElastic())
+//         .flatMap { createTemporaryQueue(replyQueueName, clientQueryId) }
+//         .map { _ ->
+//            QueryMessage(
+//               query = query,
+//               sourcePackages = schemaProvider.schema.packages,
+//               connections = connectionsConfigProvider.load(),
+//               authTokens = authTokenRepository.getAllTokens(),
+//               services = servicesRepository.load(),
+//               resultMode, mediaType, clientQueryId,
+//               arguments,
+//               replyTo = replyQueueName
+//            )
+//         }
+//         .flatMap { sendMessageToQueue(it) }
+//         .flatMapMany { queryMessage ->
+//            consumeResponses(queryMessage)
+//         }
    }
 
    private fun consumeResponses(queryMessage: QueryMessage): Flux<Any> {

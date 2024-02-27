@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -26,17 +27,17 @@ interface QueryMetricsReporter {
     * At present, we're
     */
    fun observeRequestResponse(
-      flux: Flux<Any>,
+      request: Mono<Any>,
       startTime: Instant,
       metricsTags: MetricTags,
-   ): Flux<Any> {
+   ): Mono<Any> {
       if (metricsTags == MetricTags.NONE) {
-         return flux
+         return request
       }
 
       val isFirst = AtomicBoolean(true)
       val counter = AtomicInteger(0)
-      return flux
+      return request
          .doOnSubscribe { invoked(metricsTags) }
          .doOnEach {
             val wasFirst = isFirst.getAndSet(false)
@@ -45,7 +46,7 @@ interface QueryMetricsReporter {
             }
             counter.incrementAndGet()
          }
-         .doOnComplete {
+         .doFinally {
             completed(Duration.between(startTime, Instant.now()), counter.get(), metricsTags)
          }
    }

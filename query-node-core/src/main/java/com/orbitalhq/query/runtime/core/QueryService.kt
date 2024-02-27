@@ -39,9 +39,15 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.reactor.asFlux
+import kotlinx.coroutines.reactor.flux
+import kotlinx.coroutines.reactor.mono
+import kotlinx.coroutines.runBlocking
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import mu.KotlinLogging
+import org.reactivestreams.Publisher
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -53,8 +59,11 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.reactive.function.server.ServerRequest.Headers
 import org.springframework.web.reactive.socket.CloseStatus
 import org.springframework.web.reactive.socket.WebSocketSession
+import reactor.core.CorePublisher
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
 import java.time.Instant
@@ -89,49 +98,46 @@ class QueryService(
 ) : QueryServiceApi, WebSocketController {
 
 
-   @Deprecated("Use taxiQL endpoints instead")
-   @PreAuthorize("hasAuthority('${VynePrivileges.RunQuery}')")
-   @PostMapping(
-      "/api/query",
-      consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
-      produces = [MediaType.APPLICATION_JSON_VALUE]
-   )
-   suspend fun submitQuery(
-      @RequestBody query: Query,
-      @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
-      @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
-      @RequestParam("clientQueryId", required = false) clientQueryId: String? = null
-   ): ResponseEntity<Flow<Any>> {
-
-      val queryResult = executeQuery(query, clientQueryId)
-      return queryResultToResponseEntity(queryResult, resultMode, contentType, QueryOptions())
-   }
-
    private fun queryResultToResponseEntity(
       queryResult: QueryResponse,
       resultMode: ResultMode,
       contentType: String,
       queryOptions: QueryOptions
-   ): ResponseEntity<Flow<Any>> {
+   ): ResponseEntity<Publisher<Any>> {
       val httpStatus = when (queryResult) {
          is QueryResult -> HttpStatus.OK
          is FailedSearchResponse -> HttpStatus.BAD_REQUEST
          else -> error("Unknown type of QueryResponse received:  ${queryResult::class.simpleName}")
       }
+      val (contentType, body) = convertToExpectedResult(queryResult, resultMode, contentType, queryOptions)
       return ResponseEntity.status(httpStatus)
          .header("x-vyne-query-id", queryResult.queryId)
          .header("x-vyne-client-query-id", queryResult.clientQueryId)
-         .body(convertToExpectedResult(queryResult, resultMode, contentType, queryOptions))
+         .header(HttpHeaders.CONTENT_TYPE, contentType)
+         .body(body)
    }
 
 
    private fun convertToExpectedResult(
       queryResult: QueryResponse,
       resultMode: ResultMode,
-      contentType: String,
+      requestedContentType: String,
       queryOptions: QueryOptions
-   ): Flow<Any> {
-      return queryResponseFormatter.convertToSerializedContent(queryResult, resultMode, contentType, queryOptions)
+   ): Pair<String, CorePublisher<Any>> {
+      val (contentType, flow) = queryResponseFormatter.convertToSerializedContent(
+         queryResult,
+         resultMode,
+         requestedContentType,
+         queryOptions
+      )
+      if (queryResult.responseType == null) {
+         TODO("How to handle this when responseType == null?")
+      }
+      return if (queryResult.responseType!!.isCollection) {
+         contentType to flow.asFlux()
+      } else {
+         contentType to flow.asFlux().single()
+      }
    }
 
    suspend fun <T> monitored(
@@ -151,6 +157,7 @@ class QueryService(
       consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
       produces = [TEXT_CSV]
    )
+   @Deprecated("Use model formats, which support CSV")
    suspend fun submitVyneQlQueryCSV(
       @RequestBody query: TaxiQLQueryString,
       @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
@@ -166,6 +173,7 @@ class QueryService(
          clientQueryId = clientQueryId,
          queryId = UUID.randomUUID().toString()
       )
+
       return queryResultToResponseEntity(
          response,
          resultMode,
@@ -175,13 +183,29 @@ class QueryService(
 
    }
 
+   /**
+    * The main query entry point when sending queries outside of the UI.
+    *
+    * Intentionally not a suspend function.
+    * We need to return a CorePublisher here, rather than Flow, to allow
+    * us to serialize either:
+    *  - Array responses for fluxes (where we return a list)
+    *  - Mono responses (as objects) for single item queries
+    *
+    *  Because of Spring Security limitations, must be a Mono<ResponseEntity<Publisher<>>>
+    *
+    *  This is because:
+    *    - Mono<   .... All Spring Security reactive functions must return either a reactive type or a Kotlin Flow
+    *    -      ResponseEntity<  .... We want to control the headers
+    *    -                     Publisher<>   ..... Could be either a Mono or a Flux
+    */
    @PreAuthorize("hasAuthority('${VynePrivileges.RunQuery}')")
    @PostMapping(
       value = ["/api/vyneql", "/api/taxiql"],
       consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
       produces = [MediaType.APPLICATION_JSON_VALUE]
    )
-   override suspend fun submitVyneQlQuery(
+   override fun submitVyneQlQuery(
       @RequestBody query: TaxiQLQueryString,
       @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
       @RequestHeader(
@@ -190,16 +214,25 @@ class QueryService(
       ) contentType: String,
       auth: Authentication?,
       @RequestParam("clientQueryId", required = false) clientQueryId: String?,
-   ): ResponseEntity<Flow<Any>> {
+   ): Mono<ResponseEntity<Publisher<Any>>> {
+      return Mono.fromCallable {
+         val user = auth?.toVyneUser()
 
-      val user = auth?.toVyneUser()
-      val (response, queryOptions) = vyneQLQuery(
-         query,
-         user,
-         clientQueryId = clientQueryId,
-         queryId = clientQueryId ?: UUID.randomUUID().toString()
-      )
-      return queryResultToResponseEntity(response, resultMode, contentType, queryOptions)
+         // Note: This isn't actually a blocking query (we just
+         // messed up by using suspend in the wrong place.
+         // The query doesn't actually start until we subscribe on the flow in the QueryResponse returned.
+         val (response, queryOptions) = runBlocking {
+            vyneQLQuery(
+               query,
+               user,
+               clientQueryId = clientQueryId,
+               queryId = clientQueryId ?: UUID.randomUUID().toString()
+            )
+         }
+         queryResultToResponseEntity(response, resultMode, contentType, queryOptions)
+      }
+
+
    }
 
    /**
@@ -207,24 +240,36 @@ class QueryService(
     * This is used when calling saved queries with @Http endpoints exposed.
     * Invoked by the LocalQueryDispatcher, when a remote dispatcher (eg.,
     * calling a Cloud Function) has not been provided.
+    *
+    * Intentionally not a suspend function.
+    * We need to return a CorePublisher here, rather than Flow, to allow
+    * us to serialize either:
+    *  - Array responses for fluxes (where we return a list)
+    *  - Mono responses (as objects) for single item queries
     */
-   suspend fun submitVyneQlQuery(
+   fun submitVyneQlQuery(
       query: TaxiQLQueryString,
       resultMode: ResultMode,
       contentType: String,
       auth: Authentication?,
       clientQueryId: String?,
       arguments: Map<String, Any?>
-   ): ResponseEntity<Flow<Any>> {
+   ): ResponseEntity<Publisher<Any>> {
 
       val user = auth?.toVyneUser()
-      val (response, queryOptions) = vyneQLQuery(
-         query,
-         user,
-         clientQueryId = clientQueryId,
-         queryId = clientQueryId ?: UUID.randomUUID().toString(),
-         arguments = arguments
-      )
+
+      // Note: This isn't actually a blocking query (we just
+      // messed up by using suspend in the wrong place.
+      // The query doesn't actually start until we subscribe on the flow in the QueryResponse returned.
+      val (response, queryOptions) = runBlocking {
+         vyneQLQuery(
+            query,
+            user,
+            clientQueryId = clientQueryId,
+            queryId = clientQueryId ?: UUID.randomUUID().toString(),
+            arguments = arguments
+         )
+      }
       return queryResultToResponseEntity(response, resultMode, contentType, queryOptions)
    }
 
@@ -243,7 +288,7 @@ class QueryService(
    )
    override suspend fun submitVyneQlQueryStreamingResponse(
       @RequestBody query: TaxiQLQueryString,
-      @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
+      @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode ,
       @RequestHeader(
          value = "ContentSerializationFormat",
          defaultValue = MediaType.APPLICATION_JSON_VALUE
@@ -398,11 +443,15 @@ class QueryService(
          .responseWithQueryHistoryListener("Adhoc query", queryResponse)
    }
 
-   private fun extractJwtClaimFactFromQueryParameters(schema: Schema, parameters: List<lang.taxi.query.Parameter>): String? {
+   private fun extractJwtClaimFactFromQueryParameters(
+      schema: Schema,
+      parameters: List<lang.taxi.query.Parameter>
+   ): String? {
       val jwtParameter = parameters.firstOrNull { it.type.inheritsFrom(schema.taxiType(JWTClaimType.JWTClaim)) }
       return jwtParameter?.type?.qualifiedName
 
    }
+
    private suspend fun vyneQLQuery(
       query: TaxiQLQueryString,
       vyneUser: VyneUser? = null,
@@ -468,7 +517,7 @@ class QueryService(
             FailedSearchResponse(e.message!!, null, queryId = queryId)
          }
          QueryLifecycleEventObserver(historyWriterEventConsumer, activeQueryMonitor)
-               .responseWithQueryHistoryListener(query, response) to queryOptions
+            .responseWithQueryHistoryListener(query, response) to queryOptions
       }
    }
 
@@ -497,7 +546,7 @@ class QueryService(
             QueryMode.BUILD -> queryContext.build(query.expression)
          }
       } catch (e: SearchFailedException) {
-         FailedSearchResponse(e.message!!, e.profilerOperation, query.queryId)
+         FailedSearchResponse(e.message!!, e.profilerOperation, query.queryId, responseType = null)
       }
 
 

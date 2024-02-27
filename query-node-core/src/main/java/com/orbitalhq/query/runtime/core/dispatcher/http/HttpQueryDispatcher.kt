@@ -50,36 +50,18 @@ class HttpQueryDispatcher(
       mediaType: String,
       resultMode: ResultMode,
       arguments: Map<String, Any?>
-   ): Flux<Any> {
+   ): Mono<Any> {
       val message = messageFactory.buildQueryMessage(query, clientQueryId, mediaType, resultMode, arguments)
 
-      // HACK: We can't currently support streaming messages,
-      // so we get back a Mono<T>, where T could either be a collection
-      // or a single item, depending on what the query was.
-      // If it's a collection, we don't want to return Flux<Collection<T>>,
-      // as that serializes as [ [ { ... } , { .. } ] ]
-      // (ie., a double-nested array).
-      // So, check the result, and handle iterables correctly.
       return dispatchQuery(message)
-         .flatMapIterable { value ->
-            if (value is Iterable<*>) {
-               value
-            } else {
-               listOf(value)
-            }
-         }
-//      return dispatchQuery(message)
-//         .toFlux()
+//         .flatMapIterable { value ->
+//            if (value is Iterable<*>) {
+//               value
+//            } else {
+//               listOf(value)
+//            }
+//         }
    }
-
-//   override fun handleRoutedQuery(query: RoutedQuery): Flux<Any> {
-//      return dispatchQuery(
-//         query.querySrc,
-//         Ids.fastUuid(),
-//         MediaType.APPLICATION_JSON_VALUE,
-//         arguments = query.argumentValues
-//      )
-//   }
 
    fun dispatchQuery(message: QueryMessage): Mono<Any> {
       val encodedWrapper = QueryMessageCborWrapper.from(message)
