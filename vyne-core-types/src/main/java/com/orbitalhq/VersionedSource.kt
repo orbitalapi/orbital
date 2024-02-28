@@ -1,10 +1,12 @@
 package com.orbitalhq
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.github.zafarkhaja.semver.Version
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.hash.Hashing
 import com.orbitalhq.utils.log
+import com.orbitalhq.utils.orElse
 import lang.taxi.CompilationError
 import lang.taxi.errors
 import lang.taxi.formatter.TaxiCodeFormatter
@@ -16,6 +18,7 @@ import mu.KotlinLogging
 import java.io.Serializable
 import java.net.URI
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Instant
 import kotlin.io.path.toPath
 
@@ -41,25 +44,29 @@ data class VersionedSource(
    val version: String,
    val content: String,
    val packageIdentifier: PackageIdentifier?,
-   val language: SourceCodeLanguage = SourceCodeLanguages.TAXI
+   val language: SourceCodeLanguage = SourceCodeLanguages.TAXI,
+   // Don't use java.nio.Path, as it's not serializable
+   val path: String? = null
 ) : Serializable {
    constructor(
-      name: String, version: String, content: String, language: SourceCodeLanguage = SourceCodeLanguages.TAXI
+      name: String, version: String, content: String, language: SourceCodeLanguage = SourceCodeLanguages.TAXI, path: String? = null
    ) : this(
       splitPackageIdentifier(name).second,
       version,
       content,
       splitPackageIdentifier(name).first,
-      language = language
+      language = language,
+      path = path
    )
 
    constructor(
-      name: PackageSourceName, content: String, language: SourceCodeLanguage = SourceCodeLanguages.TAXI
+      name: PackageSourceName, content: String, language: SourceCodeLanguage = SourceCodeLanguages.TAXI, path: String? = null
    ) : this(
       name.sourceName,
       name.packageIdentifier.version, content,
       name.packageIdentifier,
-      language = language
+      language = language,
+      path = path
    )
 
    val packageQualifiedName = prependPackageIdentifier(packageIdentifier, name)
@@ -67,6 +74,16 @@ data class VersionedSource(
    fun formattedContent():String {
       return TaxiCodeFormatter.format(content)
    }
+
+   /**
+    * Returns a path constructed from the defined path (if present),
+    * or the name otherwise.
+    */
+   @get:JsonIgnore
+   val pathOrName:Path
+      get() {
+         return this.path?.let { Paths.get(it) }.orElse(Paths.get(name))
+      }
 
    companion object {
       private val hashCharset = java.nio.charset.Charset.defaultCharset()
@@ -171,7 +188,7 @@ fun TaxiPackageSources.versionedSources(relativeTo: Path?): List<VersionedSource
 }
 
 fun SourceCode.asVersionedSource(version: String = VersionedSource.DEFAULT_VERSION.toString()): VersionedSource {
-   return VersionedSource(this.sourceName, version, this.content)
+   return VersionedSource(this.sourceName, version, this.content, path = this.path?.toString())
 }
 
 fun VersionedSource.asTaxiSource(): SourceCode {
