@@ -48,13 +48,17 @@ interface QueryGrammarQueryBuilder {
             constantValueToTypedInstance(outputConstraint, schema)
          }
          outputConstraint.propertyIdentifier is PropertyTypeIdentifier && outputConstraint.expectedValue is ArgumentExpression -> {
-            argumentExpressionToTypedInstance(outputConstraint.expectedValue as ArgumentExpression, schema)
+            argumentExpressionToTypedInstance(outputConstraint.expectedValue as ArgumentExpression, schema, context)
          }
          else -> TODO("Mapping on PropertyToParameterConstraint to TypedInstance is not supported for constraint ${this}")
       }
    }
 
-   fun argumentExpressionToTypedInstance(argumentExpression: ArgumentExpression, schema: Schema): TypedInstance {
+   fun argumentExpressionToTypedInstance(argumentExpression: ArgumentExpression, schema: Schema, context: QueryContext): TypedInstance {
+      val fromFactbag = context.facts.getScopedFactOrNull(argumentExpression.argument.scope)
+      if (fromFactbag != null) {
+         return fromFactbag.fact
+      }
       return when (val scope = argumentExpression.argument.scope) {
          is lang.taxi.query.Parameter -> {
             TypedInstance.from(scope.value.typedValue, schema, Provided)

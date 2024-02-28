@@ -10,9 +10,16 @@ import com.orbitalhq.query.QuerySpecTypeNode
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schemas.*
 import lang.taxi.services.operations.constraints.ArgumentExpression
+import lang.taxi.utils.quotedIfNecessary
 
-
-class VyneQlGrammarQueryBuilder : QueryGrammarQueryBuilder {
+/**
+ * Responsible for taking a QuerySpecNode and turning it into a TaxiQL query.
+ * Generally, this is used generating subqueries from the main query, to hand off
+ * to services that support querying, such as Databases.
+ *
+ * Later, this TaxiQL query gets turned into the actual query language (eg. SQL)
+ */
+class TaxiQlGrammarQueryBuilder : QueryGrammarQueryBuilder {
    override val supportedGrammars: List<String> = listOf(VyneQlGrammar.GRAMMAR_NAME)
    override fun buildQuery(
       spec: QuerySpecTypeNode,
@@ -25,7 +32,7 @@ class VyneQlGrammarQueryBuilder : QueryGrammarQueryBuilder {
          queryOperation.parameters.firstOrNull { it.type.name.fullyQualifiedName == VyneQlGrammar.QUERY_TYPE_NAME }
             ?: error("A vyneQl query service must accept a parameter of type ${VyneQlGrammar.QUERY_TYPE_NAME}")
       val constraintsAsTypedInstances = convertConstraintsToTypedInstances(spec.dataConstraints, schema, context)
-      val vyneQl = buildVyneQl(spec, constraintsAsTypedInstances)
+      val vyneQl = buildTaxiQl(spec, constraintsAsTypedInstances)
       return mapOf(
          parameter to TypedValue.from(
             type = parameter.type,
@@ -37,7 +44,7 @@ class VyneQlGrammarQueryBuilder : QueryGrammarQueryBuilder {
    }
 
    @VisibleForTesting
-   internal fun buildVyneQl(spec: QuerySpecTypeNode, constraintsAsTypedInstances: Map<OutputConstraint, TypedInstance>): String {
+   internal fun buildTaxiQl(spec: QuerySpecTypeNode, constraintsAsTypedInstances: Map<OutputConstraint, TypedInstance>): String {
       return """find { ${spec.type.name.parameterizedName}(
             |     ${constraintsAsTypedInstances.entries.joinToString(", \n") { (constraint, value) -> buildConstraint(constraint,value) }}
             |   )
@@ -57,7 +64,7 @@ class VyneQlGrammarQueryBuilder : QueryGrammarQueryBuilder {
          is ArgumentExpression -> {
             // Can't use .asTaxi() here, as the taxi contains a reference to a variable, which we need to substitute
             // Foo == 123
-            "${constraint.propertyIdentifier.taxi} ${constraint.operator.symbol} ${value.toRawObject() ?: "null"}"
+            "${constraint.propertyIdentifier.taxi} ${constraint.operator.symbol} ${value.toRawObject()?.quotedIfNecessary() ?: "null"}"
          }
 
          else -> constraint.asTaxi()

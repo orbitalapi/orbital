@@ -4,7 +4,7 @@ import com.google.common.annotations.VisibleForTesting
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
 import com.orbitalhq.query.queryBuilders.QueryGrammarQueryBuilder
-import com.orbitalhq.query.queryBuilders.VyneQlGrammarQueryBuilder
+import com.orbitalhq.query.queryBuilders.TaxiQlGrammarQueryBuilder
 import com.orbitalhq.schemas.OutputConstraint
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.PropertyToParameterConstraint
@@ -16,7 +16,7 @@ import com.orbitalhq.utils.log
 
 class QueryOperationInvocationStrategy(
    invocationService: OperationInvocationService,
-   private val queryBuilders: List<QueryGrammarQueryBuilder> = listOf(VyneQlGrammarQueryBuilder())
+   private val queryBuilders: List<QueryGrammarQueryBuilder> = listOf(TaxiQlGrammarQueryBuilder())
 ) : QueryStrategy, BaseOperationInvocationStrategy(invocationService) {
 
    override suspend fun invoke(
