@@ -42,6 +42,7 @@ import com.orbitalhq.spring.invokers.RestTemplateInvoker
 import com.orbitalhq.testVyne
 import com.orbitalhq.typedObjects
 import com.orbitalhq.utils.Benchmark
+import com.orbitalhq.utils.Ids
 import com.orbitalhq.utils.StrategyPerformanceProfiler
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.onEach
@@ -208,12 +209,9 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
    //@Ignore // FLakey
    fun `can read and write query results to db from restful query`() {
       setupTestService(historyDbWriter)
-      val query = buildQuery("Order[]")
-      val id = query.queryId
-
+      val clientId = Ids.id("query")
       runBlocking {
-         val response = queryService.submitQuery(query, ResultMode.TYPED, MediaType.APPLICATION_JSON_VALUE)
-            .body!!
+         val response = queryService.submitVyneQlQueryStreamingResponse("""find { Order[] }""", ResultMode.TYPED, MediaType.APPLICATION_JSON_VALUE, clientQueryId = clientId)
             .test {
                awaitItem()
                awaitComplete()
@@ -221,13 +219,15 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       }
 
       await().atMost(Duration.FIVE_SECONDS).until<Boolean> {
-         resultRowRepository.findAllByQueryId(id).isNotEmpty()
+         queryHistoryRecordRepository.findByClientQueryId(clientId) != null
       }
-      val results = resultRowRepository.findAllByQueryId(id)
+      val record = queryHistoryRecordRepository.findByClientQueryId(clientId)!!
+      resultRowRepository.findAllByQueryId(record.queryId).isNotEmpty()
+      val results = resultRowRepository.findAllByQueryId(record.queryId)
 
       results.shouldNotBeEmpty()
 
-      val queryHistory = queryHistoryRecordRepository.findByQueryId(id)
+      val queryHistory = queryHistoryRecordRepository.findByQueryId(record.queryId)
 
       queryHistoryRecordRepository.findById(queryHistory.id!!)
          .let { updatedHistoryRecord ->
@@ -244,7 +244,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
       runTest {
          val turbine =
-            queryService.submitVyneQlQuery("find { Order[] } as Report[]", clientQueryId = id).body.testIn(this)
+            queryService.submitVyneQlQueryStreamingResponse("find { Order[] } as Report[]", clientQueryId = id).testIn(this)
 
          val first = turbine.awaitItem()
          first.should.not.be.`null`
@@ -262,7 +262,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       historyRecord!!.taxiQl.should.equal("find { Order[] } as Report[]")
       historyRecord.endTime.should.not.be.`null`
 
-      val results = resultRowRepository.findAllByQueryId(id)
+      val results = resultRowRepository.findAllByQueryId(historyRecord.queryId)
 
       results.shouldNotBeEmpty()
 
@@ -328,7 +328,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       runTest {
 
          val turbine =
-            queryService.submitVyneQlQuery(query, clientQueryId = id, resultMode = ResultMode.TYPED).body.testIn(this)
+            queryService.submitVyneQlQueryStreamingResponse(query, clientQueryId = id, resultMode = ResultMode.TYPED).testIn(this)
          val first = turbine.awaitItem()
          firstResult = first as ValueWithTypeName
          first.should.not.be.`null`
@@ -419,11 +419,11 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
          withTurbineTimeout(10.seconds) {
             val turbine =
-               queryService.submitVyneQlQuery(
+               queryService.submitVyneQlQueryStreamingResponse(
                   query,
                   clientQueryId = id,
                   resultMode = ResultMode.TYPED
-               ).body.testIn(this)
+               ).testIn(this)
 
             // Capture 3 results.
             results.add(turbine.awaitItem() as ValueWithTypeName)
@@ -554,8 +554,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       """
             val clientQueryId = UUID.randomUUID().toString()
             val result =
-               queryService.submitVyneQlQuery(query, clientQueryId = clientQueryId, resultMode = ResultMode.TYPED)
-                  .body
+               queryService.submitVyneQlQueryStreamingResponse(query, clientQueryId = clientQueryId, resultMode = ResultMode.TYPED)
                   .toList()
             result.should.have.size(recordCount)
          }
@@ -662,8 +661,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
          val clientQueryId = UUID.randomUUID().toString()
 
          launch(Dispatchers.Default) {
-            queryService.submitVyneQlQuery(query, clientQueryId = clientQueryId, resultMode = ResultMode.TYPED)
-               .body
+            queryService.submitVyneQlQueryStreamingResponse(query, clientQueryId = clientQueryId, resultMode = ResultMode.TYPED)
                .onEach {
                   result.add(it as ValueWithTypeName)
                   if (!cancelSent) {

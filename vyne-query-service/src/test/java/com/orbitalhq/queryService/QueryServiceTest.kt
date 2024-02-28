@@ -34,38 +34,15 @@ class QueryServiceTest : BaseQueryServiceTest() {
    }
 
 
-   @Test
-   fun submitQueryJsonSimple() = runBlocking {
-
-      val query = buildQuery("Order[]")
-      queryService.submitQuery(query, ResultMode.TYPED, MediaType.APPLICATION_JSON_VALUE)
-         .body
-         .test {
-            val next = awaitItem() as ValueWithTypeName
-            next.typeName.should.equal("Order".fqn().parameterizedName)
-            (next.value as Map<String, Any>).should.equal(
-               mapOf(
-                  "orderId" to "orderId_0",
-                  "traderName" to "john",
-                  "instrumentId" to "Instrument_0"
-               )
-            )
-            awaitComplete()
-         }
-
-   }
-
 
    @Test
    fun `csv request produces expected results regardless of resultmode`() = runTest {
-      val query = buildQuery("Order[]")
       ResultMode.values().forEach { resultMode ->
-         val turbine = queryService.submitQuery(query, resultMode, TEXT_CSV).body.testIn(this)
+         val next = queryService.submitVyneQlQuery("""find { Order[] }""", resultMode, TEXT_CSV).block().body
+            .single()
          val expected = """orderId,traderName,instrumentId
 orderId_0,john,Instrument_0""".trimMargin().withoutWhitespace()
-         val next = turbine.awaitItem()
          assertEquals(expected, (next as String).withoutWhitespace())
-         turbine.awaitComplete()
       }
 
 
@@ -75,18 +52,17 @@ orderId_0,john,Instrument_0""".trimMargin().withoutWhitespace()
    fun `csv with projection returns expected results`() = runTest {
       ResultMode.values().forEach { resultMode ->
 
-         val turbine = queryService
+         val result = queryService
             .submitVyneQlQuery(
                """find { Order[] } as Report[]""".trimIndent(),
                resultMode,
                TEXT_CSV
-            ).body.testIn(this)
+            ).block().body.single()
          val expected = """orderId,tradeId,instrumentName,maturityDate,traderName
 orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
                """.withoutWhitespace()
-         val item = (turbine.awaitItem() as String).withoutWhitespace()
+         val item = (result as String).withoutWhitespace()
          item.should.equal(expected.withoutWhitespace())
-         turbine.awaitComplete()
       }
 
    }
@@ -99,9 +75,9 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
          """find { Order[] }""".trimIndent(),
          ResultMode.TYPED,
          MediaType.APPLICATION_JSON_VALUE
-      ).body.testIn(this)
+      ).block().body.toList()
 
-      val next = turbine.awaitItem() as ValueWithTypeName
+      val next = turbine.first() as ValueWithTypeName
       next.value.should.equal(
          mapOf(
             "orderId" to "orderId_0",
@@ -109,17 +85,16 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
             "instrumentId" to "Instrument_0"
          )
       )
-      turbine.awaitComplete()
    }
 
    @Test
    fun `taxiQl as raw json returns raw map`() = runTest {
 
-      val turbine = queryService.submitVyneQlQuery(
+      val turbine = queryService.submitVyneQlQueryStreamingResponse(
          """find { Order[] }""".trimIndent(),
          ResultMode.RAW,
          MediaType.APPLICATION_JSON_VALUE
-      ).body.testIn(this)
+      ).testIn(this)
       val next = turbine.awaitItem() as Map<String, Any?>
       next.should.equal(
          mapOf(
@@ -134,12 +109,12 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
    @Test
    fun `taxiQl as simple json with projection returns expected result`() = runTest {
 
-      val turbine = queryService.submitVyneQlQuery(
+      val turbine = queryService.submitVyneQlQueryStreamingResponse(
          """find { Order[] } as Report[]""".trimIndent(),
          ResultMode.TYPED,
          MediaType.APPLICATION_JSON_VALUE
       )
-         .body.testIn(this)
+         .testIn(this)
       val next = turbine.awaitItem() as ValueWithTypeName
       next.value.should.equal(
          mapOf(
@@ -156,12 +131,12 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
    @Test
    fun `taxiQl as raw json with projection returns expected result`() = runTest {
 
-      val turbine = queryService.submitVyneQlQuery(
+      val turbine = queryService.submitVyneQlQueryStreamingResponse(
          """find { Order[] } as Report[]""".trimIndent(),
          ResultMode.RAW,
          MediaType.APPLICATION_JSON_VALUE
       )
-         .body.testIn(this, timeout = Duration.INFINITE)
+         .testIn(this, timeout = Duration.INFINITE)
       val next = turbine.awaitItem() as Map<String, Any?>
       next.should.equal(
          mapOf(
@@ -198,7 +173,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
          ResultMode.TYPED,
          MediaType.APPLICATION_JSON_VALUE
       )
-         .body.toList()
+         .block().body.toList()
       TODO("Assert the contents of the list")
 //      val response = jacksonObjectMapper().readTree(responseStr)
 //      response["fullyResolved"].booleanValue().should.equal(false)
@@ -207,9 +182,8 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
 
    @Test
    fun submitQueryForNoResultsReturnsEmptyStream() = runTest {
-      val query = buildQuery("Empty[]")
       val turbine =
-         queryService.submitQuery(query, ResultMode.TYPED, MediaType.APPLICATION_JSON_VALUE).body.testIn(this)
+         queryService.submitVyneQlQueryStreamingResponse("""find { Empty[] }""", ResultMode.TYPED, MediaType.APPLICATION_JSON_VALUE).testIn(this)
 
       turbine.awaitError()
    }

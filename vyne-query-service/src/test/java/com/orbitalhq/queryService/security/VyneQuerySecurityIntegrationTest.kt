@@ -580,7 +580,7 @@ class VyneQuerySecurityIntegrationTest {
       val response = issueVyneQuery(headers, query)
       response.statusCode.is2xxSuccessful.shouldBeTrue()
       response.body.should.equal("""
-         [{"accountName":"accountFoo","accountId":"456"}]
+         {"accountName":"accountFoo","accountId":"456"}
       """.trimIndent())
    }
 

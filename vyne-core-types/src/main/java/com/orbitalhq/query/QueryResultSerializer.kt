@@ -5,4 +5,5 @@ import com.orbitalhq.schemas.Schema
 
 interface QueryResultSerializer {
    fun serialize(item: TypedInstance, schema: Schema): Any?
+   val contentType: String
 }

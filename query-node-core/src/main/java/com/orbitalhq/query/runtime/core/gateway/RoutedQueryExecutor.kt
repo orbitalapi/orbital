@@ -8,6 +8,7 @@ import mu.KotlinLogging
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 
 /**
  * Responsible for executing queries received from a saved query with an Http()
@@ -17,7 +18,10 @@ import reactor.core.publisher.Flux
  * or offloaded to a QueryFunctionNode by a QueryDispatcher
  */
 interface RoutedQueryExecutor {
-   fun handleRoutedQuery(query: RoutedQuery): Flux<Any>
+
+   // Routed queries don't currently support streaming.
+   // See notes on StreamingQueryDispatcher for considerations when implementing
+   fun handleRoutedQuery(query: RoutedQuery): Mono<Any>
 }
 
 
@@ -51,7 +55,7 @@ class RoutedQueryDispatcherAdaptor(
    }
 
 
-   override fun handleRoutedQuery(query: RoutedQuery): Flux<Any> {
+   override fun handleRoutedQuery(query: RoutedQuery): Mono<Any> {
       if (dispatcher == null) {
          error("Cannot dispatch a query without a configured streaming consumer.")
       }

@@ -1,6 +1,7 @@
 package com.orbitalhq.query
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.orbitalhq.schemas.Type
 import kotlinx.serialization.Serializable
 
 // Note : Also models failures, so is fairly generic
@@ -36,6 +37,7 @@ interface QueryResponse {
    val vyneCost: Long
       get() = profilerOperation?.vyneCost ?: 0L
 
-   val responseType: String?
+   val responseType: Type?
+   val responseTypeName: String?
 
 }

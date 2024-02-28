@@ -25,6 +25,7 @@ import com.orbitalhq.spring.config.TestDiscoveryClientConfig
 import com.orbitalhq.spring.http.auth.ConfigFileAuthTokenRepository
 import com.orbitalhq.spring.http.auth.VyneHttpAuthConfig
 import com.orbitalhq.withBuiltIns
+import io.mockk.core.ValueClassSupport.boxedValue
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
@@ -143,7 +144,8 @@ class OperationAuthenticationIntegrationTest : DatabaseTest() {
          )
       }
       val response = queryService.submitVyneQlQuery("""find { Person(PersonId == "123") }""")
-         .body!!.toList()
+         .block()
+         .body!!.single()
       response.should.not.be.`null`
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION).should.be.`null`
@@ -170,6 +172,7 @@ class OperationAuthenticationIntegrationTest : DatabaseTest() {
          )
       }
       val response = queryService.submitVyneQlQuery("""find { Person[] } """)
+         .block()
          .body!!.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION)
@@ -193,6 +196,7 @@ class OperationAuthenticationIntegrationTest : DatabaseTest() {
          )
       }
       val response = queryService.submitVyneQlQuery("""find { Person[] } """)
+         .block()
          .body!!.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION).should.be.`null`
@@ -218,6 +222,7 @@ class OperationAuthenticationIntegrationTest : DatabaseTest() {
       }
 
       val response = queryService.submitVyneQlQuery("""find { Person[] } """)
+         .block()
          .body!!.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.COOKIE)
@@ -233,6 +238,7 @@ class OperationAuthenticationIntegrationTest : DatabaseTest() {
          )
       }
       val response = queryService.submitVyneQlQuery("""find { Address[] } """)
+         .block()
          .body!!.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION)

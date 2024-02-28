@@ -147,7 +147,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
             name : String by concat(this.firstName, ' ', this.lastName)
          }[]""",
          clientQueryId = clientQueryId
-      ).body!!.toList()
+      ).block().body!!.toList()
       Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
          val historyRecord = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
          historyRecord!!.endTime != null
@@ -226,7 +226,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
             }
          }[]""",
          clientQueryId = clientQueryId
-      ).body!!.toList()
+      ).block().body!!.toList()
       Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
          val historyRecord = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
          historyRecord!!.endTime != null
@@ -281,7 +281,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
             find { Quote }
          """,
          clientQueryId = clientQueryId
-      ).body!!.toList()
+      ).block().body!!.single()
       Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
          val historyRecord = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
          historyRecord!!.endTime != null

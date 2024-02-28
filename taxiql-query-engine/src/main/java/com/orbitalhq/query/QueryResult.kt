@@ -2,6 +2,7 @@ package com.orbitalhq.query
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.RawObjectMapper
 import com.orbitalhq.models.TypeNamedInstanceMapper
@@ -35,7 +36,8 @@ data class QueryResult(
    val anonymousTypes: Set<Type> = setOf(),
    override val clientQueryId: String? = null,
    override val queryId: String,
-   override val responseType: String? = null,
+   @field:JsonIgnore
+   override val responseType: Type,
 
    @field:JsonIgnore
    private val onCancelRequestHandler: () -> Unit = {},
@@ -50,6 +52,10 @@ data class QueryResult(
 ) : QueryResponse {
    override val queryResponseId: String = queryId
    val duration = profilerOperation?.duration
+
+   @get:JsonProperty("responseType")
+   override val responseTypeName: String
+      get() = responseType.paramaterizedName
 
    @Deprecated(
       "Now that a query only reflects a single type, this does not make sense anymore",

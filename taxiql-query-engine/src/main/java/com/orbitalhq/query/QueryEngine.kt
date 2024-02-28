@@ -301,7 +301,7 @@ class StatefulQueryEngine(
             profilerOperation = context.profiler.root,
             anonymousTypes = targetType.anonymousTypes,
             queryId = context.queryId,
-            responseType = targetType.fullyQualifiedName,
+            responseType = querySpecTypeNode.type,
             onCancelRequestHandler = { context.requestCancel() },
             schema = schema
          )
@@ -314,7 +314,7 @@ class StatefulQueryEngine(
             queryId = context.queryId,
             clientQueryId = context.clientQueryId,
             anonymousTypes = targetType.anonymousTypes,
-            responseType = targetType.fullyQualifiedName,
+            responseType = querySpecTypeNode.type,
             onCancelRequestHandler = { context.requestCancel() },
             schema = schema
          )
@@ -357,7 +357,7 @@ class StatefulQueryEngine(
          profilerOperation = context.profiler.root,
          anonymousTypes = spec.anonymousTypes(),
          queryId = context.queryId,
-         responseType = spec.type.paramaterizedName,
+         responseType = spec.type,
          onCancelRequestHandler = { context.requestCancel() },
          schema = schema
       )
@@ -551,7 +551,7 @@ class StatefulQueryEngine(
          anonymousTypes = queryResult.anonymousTypes,
          queryId = context.queryId,
          clientQueryId = context.clientQueryId,
-         responseType = context.responseType,
+         responseType = queryResult.querySpec.type,
          onCancelRequestHandler = { context.requestCancel() },
          schema = schema
       )
@@ -769,7 +769,7 @@ class StatefulQueryEngine(
          queryId = context.queryId,
          clientQueryId = context.clientQueryId,
          anonymousTypes = anonymousTypes,
-         responseType = context.responseType,
+         responseType = querySpecTypeNode.type,
          onCancelRequestHandler = { context.requestCancel() },
          schema = schema
       )

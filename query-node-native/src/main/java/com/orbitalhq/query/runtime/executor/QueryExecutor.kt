@@ -15,6 +15,7 @@ import mu.KotlinLogging
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
@@ -50,8 +51,10 @@ class QueryExecutor(
     * incremental results out.
     *
     * As a result, large queries may result in OOM.
+    *
+    * Also, as queries cannot be streamed, all results are Mono<> (either Mono<List<T>> or Mono<T>)
     */
-   fun executeQuery(message: QueryMessage, context: CoroutineContext = EmptyCoroutineContext): Flux<Any> {
+   fun executeQuery(message: QueryMessage, context: CoroutineContext = EmptyCoroutineContext): Mono<Any> {
       val queryId = Ids.fastUuid()
       val (vyne, discoveryClient) = vyneFactory.buildVyne(message)
       val (eventBroker, eventConsumer) = buildEventBroker(vyne.schema, discoveryClient, queryId)
@@ -67,18 +70,24 @@ class QueryExecutor(
          val observedQuery = QueryLifecycleEventObserver(eventConsumer, null)
             .responseWithQueryHistoryListener(message.query, queryResult)
 
-         val flux = when (observedQuery) {
-            is QueryResult -> observedQuery.results.let { flow ->
-               (flow.map {
-                  it.toRawObject()
-               } as Flow<Any>).asFlux(context)
+         when (observedQuery) {
+            is QueryResult -> {
+               val resultsFlux = observedQuery.results
+                  .asFlux(context)
+                  .mapNotNull { it.toRawObject() }
+
+               // As above - we can't support streaming, so everything is either
+               // a Mono<List<T>>, or Mono<T>
+               if (observedQuery.responseType.isCollection) {
+                  resultsFlux.collectList()
+               } else {
+                  resultsFlux.single()
+               }
             }
 
-            is QueryResult -> observedQuery.rawResults.let { flow -> (flow as Flow<Any>).asFlux(context) }
-            is FailedQueryResponse -> Flux.error<Any>(QueryFailedException(observedQuery.message))
+            is FailedQueryResponse -> Mono.error<Any>(QueryFailedException(observedQuery.message))
             else -> error("Received unknown type of QueryResponse: ${observedQuery::class.simpleName}")
-         }
-         flux
+         } as Mono<Any>
       }
 
    }
