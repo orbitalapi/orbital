@@ -305,6 +305,10 @@ data class Service(
          ?: this.operations.first { it.name == name }
    }
 
+   fun hasRemoteOperation(name: String): Boolean {
+      return this.remoteOperations.any { it.name == name }
+   }
+
    fun hasOperation(name: String): Boolean {
       return this.operations.any { it.name == name }
    }

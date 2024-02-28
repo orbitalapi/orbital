@@ -156,7 +156,7 @@ export class DataCatalogSearchComponent implements OnInit {
 
   searchCategories: { label: string, value: SearchEntryType }[] = [
     { label: 'Dataset', value: 'TYPE' },
-    { label: 'Attribute', value: 'ATTRIBUTE' },
+    { label: 'Field', value: 'FIELD' },
     { label: 'Operation', value: 'OPERATION' },
     { label: 'Data source', value: 'SERVICE' }
   ];

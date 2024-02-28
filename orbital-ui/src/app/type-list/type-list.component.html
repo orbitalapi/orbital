@@ -8,7 +8,7 @@
             <div class="member-qualified-name">
               <div class="member-name">
                 {{ member.name.name}}
-                <span class="member-type-badge">{{ memberType(member) }}</span>
+                <span class="member-type-badge" [ngClass]="memberTypeForCSS(member)">{{ memberType(member) }}</span>
               </div>
               <div class="mono-badge small">{{ member.name.fullyQualifiedName}}</div>
             </div>

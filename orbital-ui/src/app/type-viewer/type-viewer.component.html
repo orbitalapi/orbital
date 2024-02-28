@@ -1,6 +1,14 @@
 <div class="documentation" *ngIf="type">
   <div class="type-name">
-    <h1>{{type?.name?.name}}<span class="badge">{{type.isScalar ? "Type" : "Model"}}</span></h1>
+    <h1>
+      {{type?.name?.name}}
+      <span
+        class="badge"
+        [ngClass]="{'type': type.isScalar, 'model': !type.isScalar}"
+      >
+        {{type.isScalar ? "Type" : "Model"}}
+      </span>
+    </h1>
 <!--    <p class="last-edited smaller"><a href="https://github.com">Last edited</a> by Michael Stone.</p>-->
     <div class="types-row">
       <span class="mono-badge">{{type?.name?.fullyQualifiedName}}</span>

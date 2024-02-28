@@ -240,6 +240,9 @@ interface Schema {
    fun serviceOrNull(serviceName: QualifiedName): Service? {
       return if (hasService(serviceName.fullyQualifiedName)) service(serviceName.fullyQualifiedName) else null
    }
+   fun remoteOperationOrNull(operationName: QualifiedName): RemoteOperation? {
+      return if (hasRemoteOperation(operationName)) remoteOperation(operationName).second else null
+   }
 
    fun typeOrNull(typeName: String): Type? {
       return if (hasType(typeName)) {
@@ -261,6 +264,14 @@ interface Schema {
 
       val service = service(serviceName)
       return service.hasOperation(operationName)
+   }
+
+   fun hasRemoteOperation(operationName: QualifiedName): Boolean {
+      val (serviceName, operationName) = OperationNames.serviceAndOperation(operationName)
+      if (!hasService(serviceName)) return false
+
+      val service = service(serviceName)
+      return service.hasRemoteOperation(operationName)
    }
 
 

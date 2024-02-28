@@ -1,4 +1,4 @@
-import {Metadata, QualifiedName, ServiceKind} from '../services/schema';
+import { Metadata, OperationKind, QualifiedName, ServiceKind, TypeKind } from '../services/schema';
 import {Inject, Injectable} from '@angular/core';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
@@ -14,9 +14,9 @@ export interface SearchResult {
   producers: QualifiedName[];
   metadata: Metadata[];
   matchedFieldName?: string;
-
-  serviceKind?:ServiceKind
-  typeKind?: 'Type' | 'Model';
+  typeKind?: TypeKind;
+  serviceKind?: ServiceKind
+  operationKind?: OperationKind;
   primitiveType?: QualifiedName;
 }
 
@@ -27,7 +27,7 @@ export interface ExpendableProducersConsumers {
 
 export type ExpandableSearchResult = SearchResult & ExpendableProducersConsumers;
 
-export type SearchEntryType = 'TYPE' | 'ATTRIBUTE' | 'POLICY' | 'SERVICE' | 'OPERATION' | 'UNKNOWN';
+export type SearchEntryType = 'TYPE' | 'FIELD' | 'POLICY' | 'SERVICE' | 'OPERATION' | 'ANNOTATION' | 'UNKNOWN';
 
 export interface SearchMatch {
   field: SearchField;

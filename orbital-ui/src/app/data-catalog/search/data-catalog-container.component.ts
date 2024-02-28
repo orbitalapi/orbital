@@ -2,10 +2,10 @@ import { Component, DestroyRef } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, NavigationSkipped, Router, Scroll } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { filter, map, tap } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ExpandableSearchResult, SearchResult, SearchService } from '../../search/search.service';
 import { TypesService } from 'src/app/services/types.service';
 import { Schema } from 'src/app/services/schema';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-data-catalog-container',
@@ -76,8 +76,6 @@ export class DataCatalogContainerComponent {
     this.schema$ = schemaService.getTypes();
   }
 
-
-
   search(searchTerm: string) {
     this.isLoading = true;
     this.lastSearchTerm = searchTerm;
@@ -90,17 +88,29 @@ export class DataCatalogContainerComponent {
       });
     this.searchResults = this.service.search(searchTerm)
       .pipe(
-        map((searchResults: SearchResult[]) => searchResults.map(searchResult => this.toExpandableSearch(searchResult))),
-        tap(_ => {
-          this.searchPerformed = true;
-          this.isLoading = false;
-        }, error => {
-          console.log('Search failed: ' + JSON.stringify(error));
-          this.isLoading = false;
-        }));
+        map((searchResults: SearchResult[]) =>
+          searchResults.reduce((accumulator: ExpandableSearchResult[], searchResult: SearchResult) => {
+            const expandableSearch = this.toExpandableSearch(searchResult);
+            if (expandableSearch.memberType !== 'ANNOTATION' && expandableSearch.memberType !== 'UNKNOWN') {
+              accumulator.push(expandableSearch);
+            }
+            return accumulator;
+          }, [])
+        ),
+        tap({
+          next: _ => {
+            this.searchPerformed = true;
+            this.isLoading = false;
+          },
+          error: (error) => {
+            console.log('Search failed: ' + JSON.stringify(error));
+            this.isLoading = false;
+          }
+        })
+      );
   }
 
-  private toExpandableSearch(searchResult: SearchResult) {
+  private toExpandableSearch(searchResult: SearchResult): ExpandableSearchResult {
     return {
       ...searchResult,
       consumersExpanded: false,

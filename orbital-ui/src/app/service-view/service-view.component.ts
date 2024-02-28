@@ -12,7 +12,7 @@ import { methodClassFromName } from 'src/app/service-view/service-view-class-uti
     <div class="page-content">
       <div class="documentation" *ngIf="service">
         <div class="page-heading">
-          <h1>{{service?.name?.name}}<span class="badge">{{service.serviceKind}}</span></h1>
+          <h1>{{service?.name?.name}}<span class="badge service">{{service.serviceKind}}</span></h1>
           <span class="mono-badge">{{service?.name?.fullyQualifiedName}}</span>
         </div>
 

@@ -1,9 +1,8 @@
 @use '@angular/material' as mat;
 
 @import "common";
-@import "node_modules/ag-grid-community/styles/ag-grid.css";
-@import "node_modules/ag-grid-community/styles/ag-theme-alpine.css";
-@import "t2-colors";
+@import "~node_modules/ag-grid-community/styles/ag-grid.css";
+@import "~node_modules/ag-grid-community/styles/ag-theme-alpine.css";
 
 // my other global styles
 :root {

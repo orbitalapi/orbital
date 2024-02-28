@@ -1,15 +1,16 @@
-import {Component, OnInit} from '@angular/core';
-import {TypesService} from '../services/types.service';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { TypesService } from '../services/types.service';
 import * as _ from 'lodash';
-import {Router} from '@angular/router';
-import {Schema, SchemaMember, Service, Type} from '../services/schema';
-import {SHOW_EVERYTHING, TypeFilter, TypeFilterParams} from './filter-types/filter-types.component';
-import {navigateToSchemaMember} from "./navigate-to-schema.member";
+import { Router } from '@angular/router';
+import { Schema, SchemaMember, Service, Type } from '../services/schema';
+import { SHOW_EVERYTHING, TypeFilter, TypeFilterParams } from './filter-types/filter-types.component';
+import { navigateToSchemaMember } from './navigate-to-schema.member';
 
 @Component({
   selector: 'app-type-list',
   templateUrl: './type-list.component.html',
   styleUrls: ['./type-list.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TypeListComponent implements OnInit {
 
@@ -42,8 +43,9 @@ export class TypeListComponent implements OnInit {
 
   private buildUnfilteredMembers(schema: Schema): SchemaMember[] {
     const typeMembers: SchemaMember[] = schema.types.map((t) => SchemaMember.fromType(t as Type));
-    let operationMembers: SchemaMember[] = [];
-    this.schema.services.forEach((service) => operationMembers = operationMembers.concat(SchemaMember.fromService(service as Service)));
+    const operationMembers: SchemaMember[] = this.schema.services
+      .map((service) => SchemaMember.fromService(service as Service))
+      .flat();
     return typeMembers.concat(operationMembers);
   }
 
@@ -59,16 +61,25 @@ export class TypeListComponent implements OnInit {
   }
 
   memberType(member: SchemaMember): string {
+    switch (member.kind) {
+      case 'OPERATION':
+        return (member.member as Service).operationKind;
+      case 'TYPE':
+        return (member.member as Type).isScalar ? "Type" : "Model";
+      case 'SERVICE':
+        return (member.member as Service).serviceKind;
+      default:
+        return '?';
+    }
+  }
+
+  memberTypeForCSS(member: SchemaMember): string {
     if (member.kind === 'OPERATION') {
-      return 'Operation';
+      return 'service';
+    } else if (member.kind === 'TYPE' && !(member.member as Type).isScalar) {
+      return 'model'
     }
-    if (member.kind === 'TYPE') {
-      return 'Type';
-    }
-    if (member.kind === 'SERVICE') {
-      return 'Service';
-    }
-    return '?';
+    return member.kind.toLowerCase();
   }
 
   startNewQuery(member: SchemaMember) {

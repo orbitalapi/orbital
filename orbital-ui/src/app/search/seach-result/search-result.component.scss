@@ -15,7 +15,11 @@
       font-weight: bold;
       color: darken($body, 30%);
     }
+  }
 
+  .badge {
+    @extend %type-badge;
+    font-size: 0.7rem;
   }
 
   .type-doc {

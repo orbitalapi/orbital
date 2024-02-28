@@ -73,6 +73,6 @@ h1 {
   display: flex;
 
   .badge {
-    @include type-badge();
+    @extend %type-badge;
   }
 }
