@@ -57,7 +57,7 @@ class QueryWithGivenTest {
       val operationParams = stub.calls["films_findManyFilm"].first()
       val taxiQLQuery = operationParams.single().toRawObject()!! as String
       taxiQLQuery.shouldBe("""find { lang.taxi.Array<Film>(
-     FilmId == 123
+     FilmId == "123"
    )
 }""")
       result.shouldBe(mapOf(
