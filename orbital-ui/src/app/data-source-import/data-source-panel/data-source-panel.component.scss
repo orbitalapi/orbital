@@ -9,18 +9,19 @@ app-project-selector {
   margin-bottom: 1rem;
 }
 
-.data-source-options-container {
-  display: inline-flex;
-  flex-wrap: wrap;
+.selectors {
+  display: grid;
+  grid-auto-columns: 1fr 260px;
+  grid-auto-flow: column;
   gap: 1rem;
+}
 
+.data-source-list {
   img {
     height: 24px;
     margin-right: 0.5rem;
-  }
 
-  button {
-    ::ng-deep.t-right {
+    &.external-link {
       margin-left: 1rem;
       margin-top: -6px;
       width: 20px;

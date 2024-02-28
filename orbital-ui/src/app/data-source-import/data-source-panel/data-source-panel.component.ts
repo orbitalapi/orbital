@@ -1,8 +1,8 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs/internal/Observable';
-import { TuiButtonModule, TuiHintModule } from '@taiga-ui/core';
+import { TuiButtonModule, TuiDataListModule, TuiDropdownModule, TuiHintModule } from '@taiga-ui/core';
 import {
   TuiDataListWrapperModule,
   TuiFilterByInputPipeModule,
@@ -21,11 +21,13 @@ import { DatabaseTableConfigComponent } from './config-panels/database-table-con
 import { KafkaTopicConfigComponent } from './config-panels/kafka-topic-config.component';
 import { ProtobufConfigComponent } from './config-panels/protobuf-config.component';
 import { ConnectionFiltersModule } from '../../utils/connections.pipe';
+import { TuiClickOutsideModule } from '@taiga-ui/cdk';
 
 @Component({
   selector: 'app-data-source-panel',
   styleUrls: ['./data-source-panel.component.scss'],
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     ProjectSelectorModule,
@@ -42,53 +44,51 @@ import { ConnectionFiltersModule } from '../../utils/connections.pipe';
     KafkaTopicConfigComponent,
     ProtobufConfigComponent,
     ConnectionFiltersModule,
-    TuiHintModule
+    TuiHintModule,
+    TuiDataListModule,
+    TuiDropdownModule,
+    TuiClickOutsideModule
   ],
   template: `
     <div>
-      <app-project-selector
-        prompt="Select a project to add the data source to"
-        [packages]="packages"
-        [(ngModel)]="selectedPackage"
-      ></app-project-selector>
-      <tui-select
-        *ngIf="dataSourceDisplayType === 'list'"
-        [stringify]="stringify"
-        [(ngModel)]="schemaType"
-        [disabled]="!selectedPackage"
-      >
-        Select a data source to add
-        <tui-data-list-wrapper
-          *tuiDataList
-          [items]="schemaTypeForList | tuiFilterByInputWith : stringify"
-          [itemContent]="stringify | tuiStringifyContent"
-        ></tui-data-list-wrapper>
-      </tui-select>
-      <div
-        *ngIf="dataSourceDisplayType === 'buttons'"
-        class="data-source-options-container"
-      >
-        <button
-          *ngFor="let schemaT of schemaTypes"
-          [disabled]="!selectedPackage || schemaT.isDisabled"
-          [tuiHint]="schemaT.isDisabled ? 'Coming soon!' : null"
-          [appearance]="schemaType === schemaT ? 'whiteblock-active' : 'whiteblock'"
-          (click)="schemaT.externalLink ? openSite(schemaT.externalLink) : schemaType = schemaT"
-          [iconRight]="schemaT.externalLink ? '/assets/img/tabler/external-link.svg' : null"
-          tuiButton
-          size="l"
+      <div class="selectors">
+        <app-project-selector
+          prompt="Select a project to add the data source to"
+          [packages]="packages"
+          [(ngModel)]="selectedPackage"
+          (ngModelChange)="isDataSourceSelectorOpen = true"
+        ></app-project-selector>
+        <tui-select
+          tuiTextfieldSize="l"
+          [(tuiDropdownOpen)]="isDataSourceSelectorOpen"
+          [stringify]="stringify"
+          [(ngModel)]="schemaType"
+          [disabled]="!selectedPackage"
         >
-          <img *ngIf="schemaT.icon" [src]="schemaT.icon">
-          {{ schemaT.label }}
-        </button>
+          {{!selectedPackage ? 'Select a project first' : 'Select a data source to add'}}
+          <tui-data-list *tuiDataList class="data-source-list">
+            <button
+              *ngFor="let item of schemaTypes"
+              tuiOption
+              [value]="item"
+              [disabled]="item.isDisabled"
+              [tuiHint]="item.isDisabled ? 'Coming soon!' : null"
+              (click)="item.externalLink ? openSite(item.externalLink) : null; isDataSourceSelectorOpen = null"
+            >
+              <img [src]="item.icon"/>
+              {{item.label}}
+              <img *ngIf="item.externalLink" src="/assets/img/tabler/external-link.svg" class="external-link"/>
+            </button>
+          </tui-data-list>
+        </tui-select>
       </div>
-      <ng-container *ngIf="useIslandContainer && schemaType?.id; else forms">
+      <ng-container *ngIf="useIslandContainer && schemaType?.id && !schemaType?.externalLink; else forms">
         <tui-island class="island">
           <ng-container *ngTemplateOutlet="forms"></ng-container>
         </tui-island>
       </ng-container>
       <ng-template #forms>
-        <div [ngSwitch]="schemaType?.id" class="config-container">
+        <div *ngIf="!schemaType?.externalLink" [ngSwitch]="schemaType?.id" class="config-container">
           <app-swagger-config *ngSwitchCase="'swagger'"
                               [packageIdentifier]="selectedPackage?.identifier"
                               (loadSchema)="convertSchema.emit($event)"
@@ -139,13 +139,11 @@ export class DataSourcePanelComponent {
     // { 'label' : 'XML Schema (xsd)', id: 'xsd'},
   ]
 
-  schemaTypeForList = this.schemaTypes.filter(item => !item.externalLink)
-
-  schemaType: SchemaType
-
   readonly stringify = (item: SchemaType) => item.label;
 
+  schemaType: SchemaType
   selectedPackage: SourcePackageDescription
+  isDataSourceSelectorOpen: boolean;
 
   @Input()
   packages: SourcePackageDescription[];
@@ -169,15 +167,11 @@ export class DataSourcePanelComponent {
   schema: Schema
 
   @Input()
-  dataSourceDisplayType: 'list' | 'buttons' = 'list';
-
-  @Input()
   useIslandContainer: boolean;
 
   openSite(siteUrl) {
     window.open(siteUrl, '_blank');
   }
-
 }
 
 

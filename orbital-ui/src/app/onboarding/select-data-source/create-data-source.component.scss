@@ -1,6 +1,7 @@
 :host {
   display: flex; // This is required to allow the Monaco editor to stretch vertically
   flex-direction: column;
+  max-width: 1000px;
 }
 
 .intro-text {

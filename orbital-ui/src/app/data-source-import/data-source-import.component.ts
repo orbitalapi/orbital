@@ -38,7 +38,6 @@ import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
           (convertSchema)="convertSchema($event)"
           [schema]="schema"
           [working]="working"
-          [dataSourceDisplayType]="dataSourceDisplayType"
           [useIslandContainer]="useIslandContainer"
         ></app-data-source-panel>
         <tui-notification (close)="schemaConversionError = ''" status="error" *ngIf="schemaConversionError"
@@ -75,8 +74,6 @@ export class DataSourceImportComponent {
 
   @Input()
   title = 'Add a new Data source';
-  @Input()
-  dataSourceDisplayType: 'list' | 'buttons' = 'list';
   @Input()
   useIslandContainer: boolean;
   @Input()
