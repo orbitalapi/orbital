@@ -9,7 +9,7 @@ import { isNullOrUndefined } from 'util';
   template: `
     <div class="row">
       <span class="matched-name">{{ shortDisplayName() }}</span>
-      <span class="badge">{{ memberType(searchResult.memberType) }}</span>
+      <span class="badge" [ngClass]="memberTypeForCSS(searchResult.memberType)">{{ memberType(searchResult.memberType) }}</span>
     </div>
     <div class="row">
       <span class="mono-badge small">{{ searchResult.qualifiedName.longDisplayName }}</span>
@@ -68,8 +68,17 @@ export class DataCatalogSearchResultCardComponent {
   }
 
   memberType(member: SearchEntryType): string {
-    if (member === 'ATTRIBUTE') {
+    if (member === 'FIELD') {
       return 'Field';
+    }
+    return member.toLowerCase();
+  }
+
+  memberTypeForCSS(member: SearchEntryType): string {
+    if (member === 'FIELD') {
+      return 'model';
+    } else if (member === 'OPERATION') {
+      return 'service';
     }
     return member.toLowerCase();
   }

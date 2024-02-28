@@ -26,4 +26,28 @@ export class BaseSearchResultComponent {
       return null;
     }
   }
+
+  memberType(result: SearchResult): string {
+    switch (result.memberType) {
+      case 'OPERATION':
+        return result.operationKind;
+      case 'TYPE':
+        return result.typeKind;
+      case 'FIELD':
+        return 'Field';
+      case 'SERVICE':
+        return result.serviceKind;
+      default:
+        return '?';
+    }
+  }
+
+  memberTypeForCSS(result: SearchResult): string {
+    if (result.memberType === 'OPERATION') {
+      return 'service';
+    } else if ((result.memberType === 'TYPE' && result.typeKind === 'Model') || result.memberType === 'FIELD') {
+      return 'model'
+    }
+    return result.memberType.toLowerCase();
+  }
 }

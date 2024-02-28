@@ -147,22 +147,23 @@ class SearchIndexRepository(
          }
 
          val matchedFieldName =
-            if (searchEntryType == SearchEntryType.ATTRIBUTE) doc.getField(SearchField.NAME.fieldName)
+            if (searchEntryType == SearchEntryType.FIELD) doc.getField(SearchField.NAME.fieldName)
                ?.stringValue() else null
 
-         val (typeKind: TypeKind?, serviceKind: ServiceKind?) = when (searchEntryType) {
-            SearchEntryType.TYPE -> schema.typeOrNull(searchResultFullyQualifiedName)?.taxiType?.typeKind to null
-            SearchEntryType.SERVICE -> null to schema.serviceOrNull(searchResultFullyQualifiedName)?.serviceKind
-            SearchEntryType.ATTRIBUTE -> {
+         val (typeKind: TypeKind?, serviceKind: ServiceKind?, operationKind: OperationKind?) = when (searchEntryType) {
+            SearchEntryType.TYPE -> Triple(schema.typeOrNull(searchResultFullyQualifiedName)?.taxiType?.typeKind, null, null)
+            SearchEntryType.SERVICE -> Triple(null, schema.serviceOrNull(searchResultFullyQualifiedName)?.serviceKind, null)
+            SearchEntryType.OPERATION -> Triple(null, null, schema.remoteOperationOrNull(searchResultFullyQualifiedName)?.operationKind)
+            SearchEntryType.FIELD -> {
                val typeKind = findAttributeType(searchResultFullyQualifiedName, matchedFieldName, schema)?.taxiType?.typeKind
-               typeKind to null
+               Triple(typeKind, null, null)
             }
-            else -> null to null
+            else -> Triple(null, null, null)
          }
 
          val primitiveType = when (searchEntryType) {
             SearchEntryType.TYPE -> schema.typeOrNull(searchResultFullyQualifiedName)?.basePrimitiveTypeName
-            SearchEntryType.ATTRIBUTE -> findAttributeType(searchResultFullyQualifiedName,matchedFieldName, schema)?.basePrimitiveTypeName
+            SearchEntryType.FIELD -> findAttributeType(searchResultFullyQualifiedName,matchedFieldName, schema)?.basePrimitiveTypeName
             else -> null
          }
 
@@ -179,7 +180,7 @@ class SearchIndexRepository(
             producers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Output && it.operationName != null }
                .map { it.operationName!! },
             metadata = metadata,
-            typeKind, serviceKind,
+            typeKind, serviceKind, operationKind,
             primitiveType
          )
       }
@@ -275,6 +276,7 @@ data class SearchResult(
    val metadata: List<com.orbitalhq.schemas.Metadata> = emptyList(),
    val typeKind: TypeKind? = null,
    val serviceKind: ServiceKind? = null,
+   val operationKind: OperationKind? = null,
    val primitiveType: QualifiedName? = null
 )
 

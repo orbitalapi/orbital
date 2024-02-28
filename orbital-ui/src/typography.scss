@@ -25,33 +25,27 @@ $font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system
     position: relative;
     display: inline-block;
     outline: none;
-    color: #404d5b;
+    color: $primary;
     vertical-align: bottom;
     text-decoration: none;
     white-space: nowrap;
+    border-bottom: 1px solid rgba($primary-light,0.4);
+    font-weight: 500;
 
     // This is to force the border-bottom to render closer to the text
     line-height: 0.4rem;
     padding: 0.6rem 0.1rem 0.3rem;
   }
 
-  a {
-    border-bottom: 1px solid rgba($slate-400,0.4);
-    font-weight: 500;
-    -webkit-transition: background-color 0.3s, border-color 0.3s;
-    transition: background-color 0.3s, border-color 0.3s;
-  }
-
   a:focus, a:hover {
-    border-color: rgba(52,73,94,0);
-    background-color: rgba($grey-3,0.1);
+    color: $primary-light;
+    border-color: $primary-light;
   }
 }
 
 @mixin badge($color) {
   font-weight: 300;
   color: $color;
-  border: 1px solid rgba($color,0.6);
   background-color: rgba($color, 0.1);
   border-radius: 4px;
   padding: 0.2rem 0.4rem;
@@ -60,15 +54,29 @@ $font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system
 
   @include links();
 }
-@mixin type-badge($color: $vyne-lilac) {
-  background-color: rgba($color, 0.1);
-  color: rgba($color, 0.8);
+%type-badge {
   font-weight: normal;
   padding: 2px 4px;
   font-size: 0.9rem;
   margin-left: 0.75rem;
   align-self: center;
   text-transform: capitalize;
+  border-radius: 4px;
+
+  &.model {
+    background-color: rgba($schema-model-colour, 0.1);
+    color: rgba($schema-model-colour, 0.8);
+  }
+
+  &.type {
+    background-color: rgba($schema-type-colour, 0.1);
+    color: rgba($schema-type-colour, 0.8);
+  }
+
+  &.service {
+    background-color: rgba($schema-service-colour, 0.1);
+    color: rgba($schema-service-colour, 0.8);
+  }
 }
 .mono-badge.small {
   font-size: 0.7rem !important;

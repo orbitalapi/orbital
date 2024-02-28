@@ -83,6 +83,7 @@ export interface Type extends Documented, Named {
   expression?: string;
   declaresFormat?: boolean;
   isAnonymous?: Boolean
+  typeKind?: TypeKind
 }
 
 export interface MetadataTarget {
@@ -662,6 +663,7 @@ export class SchemaMember {
 }
 
 export type SchemaMemberKind = 'SERVICE' | 'TYPE' | 'OPERATION';
+export type SchemaMemberKindWithModel = 'SERVICE' | 'TYPE' | 'MODEL' | 'OPERATION';
 
 export interface TypedInstance {
   type: Type;

@@ -6,7 +6,6 @@ import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemas.*
 import lang.taxi.CompilationException
-import lang.taxi.types.TypeKind
 import mu.KotlinLogging
 import org.apache.commons.lang3.StringUtils
 import org.apache.lucene.document.Document
@@ -172,7 +171,7 @@ class SearchIndexer(
          id = id,
          name = name,
          qualifiedName = declaringType.fullyQualifiedName,
-         searchEntryType = SearchEntryType.ATTRIBUTE,
+         searchEntryType = SearchEntryType.FIELD,
          typeDoc = field.typeDoc,
          fieldName = name
       )
@@ -200,7 +199,7 @@ enum class SearchField(val fieldName: String, val highlightMethod: HighlightMeth
 
 enum class SearchEntryType {
    TYPE,
-   ATTRIBUTE,
+   FIELD,
    POLICY,
    SERVICE,
    OPERATION,

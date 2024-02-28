@@ -89,7 +89,7 @@ app-filter-types {
     margin-bottom: 4px;
 
     .member-type-badge {
-      @include type-badge();
+      @extend %type-badge;
       font-size: 0.7rem;
     }
   }

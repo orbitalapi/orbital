@@ -1,9 +1,9 @@
-import { Component, DestroyRef, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
-import { Schema, SchemaMember, SchemaMemberKind } from '../../services/schema';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, DestroyRef, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { Location } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
+import { UntypedFormBuilder, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Schema, SchemaMember, SchemaMemberKindWithModel, Type } from '../../services/schema';
 
 export const SHOW_EVERYTHING: TypeFilterParams = {
   name: null,
@@ -14,7 +14,7 @@ export const SHOW_EVERYTHING: TypeFilterParams = {
 export interface TypeFilterParams {
   name: string | null;
   namespace: string | null;
-  memberType: SchemaMemberKind[];
+  memberType: SchemaMemberKindWithModel[];
 }
 
 export class TypeFilter {
@@ -41,7 +41,6 @@ export class TypeFilter {
   filter(members: SchemaMember[]): SchemaMember[] {
     return members
       .filter(v => !this.excludedNamespaces.some(namespace => v.name.fullyQualifiedName.startsWith(namespace)))
-
       .filter(v => this.typeFilter(v))
       .filter(v => this.nameFilter(v))
       .filter(v => this.namespaceFilter(v));
@@ -67,7 +66,8 @@ export class TypeFilter {
     if (!this.params.memberType || this.params.memberType.length === 0) {
       return true;
     } else {
-      return this.params.memberType.indexOf(value.kind) !== -1;
+      return this.params.memberType.indexOf(value.kind) !== -1 ||
+        (this.params.memberType.includes('MODEL') && value.kind === 'TYPE' && !(value.member as Type).isScalar);
     }
   }
 }
@@ -75,19 +75,17 @@ export class TypeFilter {
 @Component({
   selector: 'app-filter-types',
   templateUrl: './filter-types.component.html',
-  styleUrls: ['./filter-types.component.scss']
+  styleUrls: ['./filter-types.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 
 
 export class FilterTypesComponent implements OnInit {
   @Input()
   expanded: boolean;
-  filterTypesFormGroup: UntypedFormGroup;
   name = new UntypedFormControl();
   namespace = new UntypedFormControl();
-  filterType = new UntypedFormControl();
   schema: Schema;
-  isFiltered = false;
 
   filter: TypeFilterParams = {
     name: null,
@@ -110,6 +108,7 @@ export class FilterTypesComponent implements OnInit {
     this.formGroup = fb.group({
       filter: fb.control(''),
       showTypes: fb.control(true),
+      showModels: fb.control(true),
       showServices: fb.control(true),
       showOperations: fb.control(true)
     });
@@ -119,8 +118,9 @@ export class FilterTypesComponent implements OnInit {
     this.formGroup.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(result => {
-        const types: SchemaMemberKind[] = [];
+        const types: SchemaMemberKindWithModel[] = [];
         if (result['showTypes']) types.push('TYPE');
+        if (result['showModels']) types.push('MODEL');
         if (result['showServices']) types.push('SERVICE');
         if (result['showOperations']) types.push('OPERATION');
 
@@ -134,11 +134,12 @@ export class FilterTypesComponent implements OnInit {
     this.activatedRoute.queryParamMap
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(queryParams => {
-        const memberTypes = (queryParams.getAll('memberType') || []) as SchemaMemberKind[];
+        const memberTypes = (queryParams.getAll('memberType') || []) as SchemaMemberKindWithModel[];
         const memberTypesIsEmpty = memberTypes.length === 0;
         const formValue = {
           filter: queryParams.get('name'),
           showTypes: memberTypesIsEmpty || memberTypes.includes('TYPE'),
+          showModels: memberTypesIsEmpty || memberTypes.includes('MODEL'),
           showServices: memberTypesIsEmpty || memberTypes.includes('SERVICE'),
           showOperations: memberTypesIsEmpty || memberTypes.includes('OPERATION')
         };

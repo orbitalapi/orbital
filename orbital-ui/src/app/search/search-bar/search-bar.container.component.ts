@@ -1,9 +1,9 @@
-import {Component} from '@angular/core';
-import {SearchResult, SearchService} from '../search.service';
-import {Observable, of, Subject} from 'rxjs';
-import {Router} from '@angular/router';
-import {filter, startWith, switchMap} from "rxjs/operators";
-import {isNullOrUndefined} from "util";
+import { Component } from '@angular/core';
+import { SearchResult, SearchService } from '../search.service';
+import { Observable, of, Subject } from 'rxjs';
+import { Router } from '@angular/router';
+import { map, startWith, switchMap } from 'rxjs/operators';
+import { isNullOrUndefined } from "util";
 
 
 @Component({
@@ -64,7 +64,17 @@ export class SearchBarContainerComponent {
           return of([])
         } else {
           return this.service.search(search)
-            .pipe(startWith(null))
+            .pipe(
+              startWith(null),
+              map((searchResults: SearchResult[]) =>
+                searchResults?.reduce((accumulator: SearchResult[], searchResult: SearchResult) => {
+                  if (searchResult.memberType !== 'ANNOTATION' && searchResult.memberType !== 'UNKNOWN') {
+                    accumulator.push(searchResult);
+                  }
+                  return accumulator;
+                }, [])
+              ),
+            )
         }
       }),
       startWith([])
