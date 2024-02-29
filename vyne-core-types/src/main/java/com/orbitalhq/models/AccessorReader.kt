@@ -817,6 +817,13 @@ class AccessorReader(
             val castValue = TypedInstance.from(castType, uncastExpressionResult.value, schema, source = uncastExpressionResult.source)
             castValue
          }
+         is ArgumentSelector -> {
+            if (value is FactBag) {
+               value.getScopedFactOrNull(expression.scope)?.fact ?: error("Failed to resolve scope argument ${expression.scope.name}")
+            } else {
+               TODO("Unhandled scenario: ArgumentSelector being evaluated without a FactBag")
+            }
+         }
          else -> TODO("Support for expression type ${expression::class.toString()} is not yet implemented")
       }
    }

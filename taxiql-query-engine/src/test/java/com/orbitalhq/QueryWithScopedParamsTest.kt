@@ -83,4 +83,36 @@ class QueryWithScopedParamsTest {
          .firstRawValue()
          .shouldBe("hello")
    }
+
+   @Test
+   fun `can use a cast expression against a parameter in a given clause`(): Unit = runBlocking {
+      val (vyne) = testVyne("""
+         type PersonId inherits String
+         type HumanId inherits String
+      """.trimIndent())
+      vyne.query("""
+         query findPerson(personId : PersonId) {
+            given { humanId : HumanId = (HumanId) personId }
+            find { human : HumanId }
+         }
+      """.trimIndent(), arguments = mapOf("personId" to "123")
+      )
+         .firstRawObject()
+         .shouldBe(mapOf("human" to "123"))
+   }
+
+   @Test
+   fun `can use a cast expression in a given clause`():Unit = runBlocking {
+      val (vyne) = testVyne("""
+         type PersonId inherits String
+         type HumanId inherits String
+      """.trimIndent())
+      vyne.query("""
+            given { humanId : HumanId = (HumanId) "123" }
+            find { human : HumanId }
+      """.trimIndent()
+      )
+         .firstRawObject()
+         .shouldBe(mapOf("human" to "123"))
+   }
 }

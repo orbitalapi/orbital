@@ -16,6 +16,7 @@ import com.orbitalhq.query.HistoryEventConsumerProvider
 import com.orbitalhq.query.Query
 import com.orbitalhq.query.QueryCancelledException
 import com.orbitalhq.query.QueryContextEventBroker
+import com.orbitalhq.query.QueryFailedException
 import com.orbitalhq.query.QueryMode
 import com.orbitalhq.query.QueryResponse
 import com.orbitalhq.query.QueryResult
@@ -130,6 +131,10 @@ class QueryService(
          requestedContentType,
          queryOptions
       )
+      if (queryResult is FailedSearchResponse) {
+         // I don't think this Mono actually gets used, but we need to satisfy the API contract
+         return contentType to Mono.error(QueryFailedException(queryResult.message))
+      }
       if (queryResult.responseType == null) {
          TODO("How to handle this when responseType == null?")
       }
