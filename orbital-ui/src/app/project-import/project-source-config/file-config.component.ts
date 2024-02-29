@@ -152,7 +152,7 @@ import { FileRepositoryTestResponse, SchemaImporterService } from 'src/app/proje
         appearance="secondary"
         [size]="'m'"
         (click)="goBackOnboarding.emit()"
-      >Back
+      >Cancel
       </button>
       <button tuiButton [showLoader]='working' [size]="'m'" (click)='doCreate()' [disabled]='gitForm.invalid'>Create
       </button>

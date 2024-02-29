@@ -44,7 +44,7 @@ export class DescriptionEditorComponent implements OnInit, OnChanges {
 
 
   @Input()
-  documentationSource: Documented;
+  documentationSource: Documented = {typeDoc: ''};
 
   @Input()
   placeholder: string;
@@ -87,6 +87,7 @@ export class DescriptionEditorComponent implements OnInit, OnChanges {
 
   saveChanges() {
     this.save.emit(this.changes$.value);
+    this.documentationSource.typeDoc = this.changes$.value
     this.isEditModeOn = false;
   }
 

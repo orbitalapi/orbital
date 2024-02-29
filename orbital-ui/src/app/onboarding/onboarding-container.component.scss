@@ -6,22 +6,18 @@
   height: 100%;
 }
 
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-
-h3 {
-  margin-bottom: 0;
-}
-
 .page-title {
-  margin: 0;
+  text-align: center;
+}
+
+.help-link {
+  position: absolute;
+  top: 57px;
+  right: 4rem;
 }
 
 .page-container {
-  max-width: 1200px;
+  max-width: 1280px;
   display: flex;
   flex-direction: column;
   padding: 2rem;
@@ -30,27 +26,12 @@ h3 {
 
 .page-content {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
+  padding: 2rem 0 0 0;
+  align-items: center;
+  text-align: center;
 }
 
 .stepper {
-  flex: 1 0 auto;
-}
-
-// connection between stepper icons
-:host ::ng-deep {
-  tui-stepper {
-    button:not(:last-child) {
-      &:after {
-        position: absolute;
-        left: 16px;
-        top: 34px;
-        display: block;
-        height: 16px;
-        width: 1px;
-        background: rgba(0,0,0,.1);
-        content: "";
-      }
-    }
-  }
+  margin-bottom: 1rem;
 }

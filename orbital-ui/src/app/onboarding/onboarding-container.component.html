@@ -1,6 +1,6 @@
 <div class='page-container'>
   <header>
-    <h2 class="page-title">Welcome to {{ uiConfig.productName }}</h2>
+    <h2 class="page-title">Welcome to {{ uiConfig.productName }} onboarding</h2>
     <a
       icon="tuiIconHelpCircle"
       tuiLink
@@ -12,7 +12,7 @@
     </a>
   </header>
   <div class="page-content">
-    <tui-stepper class="stepper" orientation="vertical">
+    <tui-stepper class="stepper">
       <button
         routerLink="/onboarding/project"
         routerLinkActive
@@ -20,7 +20,7 @@
         [stepState]="(currentStepIndex$ | async) === 0 ? 'normal' : 'pass'"
         [disabled]="(currentStepIndex$ | async) > 0"
       >
-        Add Project
+        Add project
       </button>
       <button
         routerLink="/onboarding/data-source"
@@ -29,14 +29,23 @@
         [stepState]="(currentStepIndex$ | async) <= 1 ? 'normal' : 'pass'"
         [disabled]="(currentStepIndex$ | async) > 1"
       >
-        Create Data source
+        Select data source
+      </button>
+      <button
+        routerLink="/onboarding/configure"
+        routerLinkActive
+        tuiStep
+        [stepState]="(currentStepIndex$ | async) <= 2 ? 'normal' : 'pass'"
+        [disabled]="(currentStepIndex$ | async) > 2"
+      >
+        Configure
       </button>
       <button
         routerLink="/onboarding/explore"
         routerLinkActive
         tuiStep
       >
-        Explore tooling
+        Explore
       </button>
     </tui-stepper>
     <router-outlet></router-outlet>
