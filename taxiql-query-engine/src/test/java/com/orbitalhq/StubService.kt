@@ -239,6 +239,11 @@ class StubService(
       return this
    }
 
+   fun addResponseThrowing(stubOperationKey: String, error:Throwable) {
+      addResponse(stubOperationKey) { _,_ ->
+         throw error
+      }
+   }
    fun addResponseFlow(
       stubOperationKey: String,
       handler: OperationResponseFlowProvider

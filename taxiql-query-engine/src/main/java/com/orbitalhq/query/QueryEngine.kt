@@ -649,6 +649,14 @@ class StatefulQueryEngine(
             val message = "No data sources were found that can return ${target.description} $constraintsSuffix".trim()
             logger.debug { message }
 
+            suspend fun sendNull() {
+               send(
+                  TypedNull.create(
+                     target.type,
+                     source = FailedSearch(message, failedAttempts)
+                  )
+               )
+            }
 
             // I couldn't work out how to handle this.
             // When mapping, throwing an exception kills the other
@@ -658,13 +666,13 @@ class StatefulQueryEngine(
             // async channel flow, somewhere.
             // So, leaving it to callers.
             when (failureBehaviour) {
-               QueryFailureBehaviour.SEND_TYPED_NULL -> {
-                  send(
-                     TypedNull.create(
-                        target.type,
-                        source = FailedSearch(message, failedAttempts)
-                     )
-                  )
+               QueryFailureBehaviour.SEND_TYPED_NULL -> sendNull()
+               QueryFailureBehaviour.SEND_TYPED_NULL_OR_EMPTY_ARRAY -> {
+                  if (target.type.isCollection) {
+                     send(TypedCollection.empty(target.type))
+                  } else {
+                     sendNull()
+                  }
                }
 
                QueryFailureBehaviour.THROW -> {

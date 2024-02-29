@@ -739,6 +739,7 @@ class TypedObjectFactory(
       }
    }
 
+   // See also doFind() in QueryEngine, which provides more customizable behaviour for handling failures.
    private fun failWithTypedNull(
       fieldType: Type,
       attributeName: AttributeName,
@@ -761,8 +762,7 @@ class TypedObjectFactory(
       fieldTypeName: QualifiedName
    ): TypedInstance {
       return if (inPlaceQueryEngine != null) {
-         val searchFailureBehaviour: QueryFailureBehaviour =
-            if (field.nullable) QueryFailureBehaviour.SEND_TYPED_NULL else QueryFailureBehaviour.THROW
+         val searchFailureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.defaultBehaviour(field)
          val fieldInstanceValidPredicate = buildSpecProvider.provide(field)
          val (additionalFacts, additionalScope) = getFactsInScopeForSearch()
          val buildResult = runBlocking {
@@ -777,7 +777,16 @@ class TypedObjectFactory(
                .toList()
          }
          when {
-            type.isCollection -> TypedCollection.arrayOf(type.collectionType!!, buildResult)
+            type.isCollection -> {
+               if (isEmptyCollectionBuildResult(buildResult, searchFailureBehaviour)) {
+                  // Unwrap the array
+                  TypedCollection.empty(type)
+               } else if (isNullListBuildResult(buildResult, searchFailureBehaviour)) {
+                  failWithTypedNull(type, attributeName, fieldTypeName, "Searching for ${type.name.shortDisplayName} failed")
+               } else {
+                  TypedCollection.arrayOf(type.collectionType!!, buildResult.filter { it !is TypedNull })
+               }
+            }
             buildResult.isEmpty() -> failWithTypedNull(type, attributeName, fieldTypeName)
             buildResult.size == 1 -> buildResult.single()
             else -> {
@@ -789,6 +798,55 @@ class TypedObjectFactory(
          }
       } else {
          failWithTypedNull(type, attributeName, fieldTypeName)
+      }
+   }
+
+   /**
+    * When we build with SEND_TYPED_NULL_OR_EMPTY_ARRAY and the result can't be found,
+    * the internal builder returns an empty array.
+    *
+    * However, because this is inside a flow that has a .toList(), we end up with a nested list - ie: [[]]
+    *
+    * We check here to unwrap.
+    *
+    * However, this feels like a smell, and maybe there's a smarter way
+    *
+    */
+   private fun isEmptyCollectionBuildResult(
+      buildResult: List<TypedInstance>,
+      searchFailureBehaviour: QueryFailureBehaviour
+   ): Boolean {
+      return when {
+         searchFailureBehaviour != QueryFailureBehaviour.SEND_TYPED_NULL_OR_EMPTY_ARRAY -> false
+         buildResult.size != 1 -> false
+         else -> {
+            val singleResult = buildResult.single()
+            singleResult is TypedCollection && singleResult.isEmpty()
+         }
+      }
+   }
+   /**
+    * When we build with SEND_TYPED_NULL and the result can't be found,
+    * the internal builder returns a typed null.
+    *
+    * However, because this is inside a flow that has a .toList(), we end up with a nested list - ie: [null]
+    *
+    * We check here to unwrap.
+    *
+    * However, this feels like a smell, and maybe there's a smarter way
+    *
+    */
+   private fun isNullListBuildResult(
+      buildResult: List<TypedInstance>,
+      searchFailureBehaviour: QueryFailureBehaviour
+   ):Boolean {
+      return when {
+         searchFailureBehaviour != QueryFailureBehaviour.SEND_TYPED_NULL -> false
+         buildResult.size != 1 -> false
+         else -> {
+            val singleResult = buildResult.single()
+            singleResult is TypedNull
+         }
       }
    }
 
