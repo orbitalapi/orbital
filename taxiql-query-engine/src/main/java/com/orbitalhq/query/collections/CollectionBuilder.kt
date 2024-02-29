@@ -3,6 +3,7 @@ package com.orbitalhq.query.collections
 import com.orbitalhq.models.MixedSources
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.facts.FactDiscoveryStrategy
 import com.orbitalhq.models.facts.FactSearch
 import com.orbitalhq.models.facts.FilterPredicateStrategy
@@ -91,6 +92,16 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
          TypedCollection.empty(targetType)
       } else if (resultList.size == 1 && resultList[0] is TypedCollection) {
          resultList[0] as TypedCollection
+
+         // MP 29-Feb-24: If the search for a type only yielded a single null, it's probably a failed search.
+         // We return null, which is a typed null of T[]
+      } else if (resultList.size == 1 && resultList[0] is TypedNull && resultList[0].type.isCollection) {
+         resultList.single()
+      } else if (resultList.size > 1 && resultList.all { it is TypedNull && it.type.isCollection }) {
+         // TODO (MP - 29-Feb-24): How does this happen?
+         logger.warn { "Unexpected code branch - a collection of multiple typed nulls " }
+         // Not sure what to do here, a list of multiple nulls?!?
+         TypedCollection.from(resultList, MixedSources.singleSourceOrMixedSources(resultList))
       } else {
          TypedCollection.from(resultList, MixedSources.singleSourceOrMixedSources(resultList))
       }
@@ -161,14 +172,14 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
          val builtInstances: TypedCollection = idCollections
             .asFlow()
             .map { idValue ->
-                  withContext(Dispatchers.IO) {
-                     val built =
-                        queryContext.only(idValue).build(targetType.qualifiedName).results.toList().firstOrNull()
-                     built
-                  }
+               withContext(Dispatchers.IO) {
+                  val built =
+                     queryContext.only(idValue).build(targetType.qualifiedName).results.toList().firstOrNull()
+                  built
+               }
             }
             .filterNotNull()
-            .toList().let {  TypedCollection.from(it, MixedSources.singleSourceOrMixedSources(it)) }
+            .toList().let { TypedCollection.from(it, MixedSources.singleSourceOrMixedSources(it)) }
          return builtInstances
       } else {
          return null
