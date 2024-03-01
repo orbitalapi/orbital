@@ -38,6 +38,7 @@ import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
+import reactor.kotlin.core.publisher.switchIfEmpty
 import reactor.netty.http.client.HttpClient
 import reactor.netty.resources.ConnectionProvider
 import java.net.URI
@@ -251,6 +252,7 @@ class RestTemplateInvoker(
                   firstResultReceived = true
                }
                clientResponse.bodyToMono(String::class.java)
+                  .switchIfEmpty { Mono.just("") } // 204 responses (no content)
                   .flatMapMany { responseString ->
                      val remoteCall = remoteCall(responseBody = responseString)
                      handleSuccessfulHttpResponse(
@@ -326,7 +328,7 @@ class RestTemplateInvoker(
          requestBody = httpEntity.body,
          resultCode = -1,
          durationMs = 0,
-         response = null,
+         response = error.message,
          timestamp = Instant.now(),
          responseMessageType = ResponseMessageType.FULL,
          isFailed = true,
