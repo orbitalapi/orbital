@@ -1,6 +1,8 @@
 package com.orbitalhq.auth.authentication
 
 import com.orbitalhq.security.VyneGrantedAuthority
+import org.pac4j.saml.profile.SAML2Profile
+import org.pac4j.springframework.security.authentication.Pac4jAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
@@ -33,6 +35,7 @@ fun getPreferredUserDisplayName(claims: Map<String, Any>): String {
 fun Authentication.toVyneUser(): VyneUser {
    return when (this) {
       is JwtAuthenticationToken -> this.toVyneUser()
+      is Pac4jAuthenticationToken -> this.toVyneUser()
       else -> TODO("Unhandled authentication type: ${this::class.simpleName}")
    }
 }
@@ -58,14 +61,29 @@ fun vyneUserFromClaims(claims: Map<String, Any>, authorities: Collection<Granted
       profileUrl = claim(JwtStandardClaims.PictureUrl) ?: claim(PropelAuthJwtTokenClaims.PictureUrl),
       name = claim(JwtStandardClaims.Name),
       grantedAuthorities = VyneGrantedAuthority.from(authorities.map { it.authority }),
-      claims = claims
+      claims = claims,
+      authenticationType = claims[OrbitalClaims.AuthType] as? AuthenticationType ?: AuthenticationType.Oidc
    )
 }
 
 fun JwtAuthenticationToken.toVyneUser(): VyneUser {
    val claims = this.token.claims
    return vyneUserFromClaims(claims, this.authorities)
+}
 
+fun Pac4jAuthenticationToken.toVyneUser(): VyneUser {
+   val saml2Profile = profile as SAML2Profile
+   return VyneUser(
+      id = saml2Profile.id,
+      issuer = saml2Profile.issuerEntityID,
+      username = saml2Profile.username ?: saml2Profile.displayName ?: saml2Profile.email ?: saml2Profile.id,
+      email = saml2Profile.email ?: saml2Profile.id,
+      profileUrl = null,
+      name = saml2Profile.displayName,
+      grantedAuthorities = VyneGrantedAuthority.from(authorities.map { it.authority }),
+      claims = emptyMap(),
+      authenticationType = AuthenticationType.Saml
+   )
 }
 
 
@@ -125,4 +143,8 @@ object PropelAuthJwtTokenClaims {
 
 object AzureTokenClaims {
 
+}
+
+object OrbitalClaims {
+   const val AuthType = "orbital_auth_type"
 }

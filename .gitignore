@@ -215,3 +215,13 @@ fallback-license.json
 
 .trivycache/
 
+/orbital-saml.jks
+/saml-signing-cert.crt
+/saml-signing-cert.key
+/saml-signing-cert.pem
+/sp-metadata.xml
+/vyne-query-service/orbital-saml.jks
+/vyne-query-service/saml-signing-cert.crt
+/vyne-query-service/saml-signing-cert.key
+/vyne-query-service/saml-signing-cert.pem
+/vyne-query-service/sp-metadata.xml

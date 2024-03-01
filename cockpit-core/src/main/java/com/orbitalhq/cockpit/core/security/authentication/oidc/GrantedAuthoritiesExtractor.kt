@@ -1,10 +1,10 @@
-package com.orbitalhq.cockpit.core.security
+package com.orbitalhq.cockpit.core.security.authentication.oidc
 
-import com.orbitalhq.auth.authentication.PropelAuthJwtTokenClaims
 import com.orbitalhq.auth.authentication.getPreferredUserDisplayName
 import com.orbitalhq.auth.authorisation.*
+import com.orbitalhq.cockpit.core.security.UserAuthenticatedEvent
+import com.orbitalhq.cockpit.core.security.UserAuthenticatedEventSource
 import com.orbitalhq.cockpit.core.security.authorisation.JwtRolesExtractor
-import com.orbitalhq.cockpit.core.security.authorisation.PropelAuthClaimsExtractor
 import com.orbitalhq.utils.RetryFailOnSerializeEmitHandler
 import mu.KotlinLogging
 import org.springframework.core.convert.converter.Converter
@@ -37,6 +37,15 @@ class GrantedAuthoritiesExtractor(
    override val userAuthenticated: Flux<UserAuthenticatedEvent>
       get() = userObserved.asFlux()
 
+   override fun onUserAuthenticated(events: List<UserAuthenticatedEvent>) {
+      events.forEach { event ->
+         userObserved.emitNext(
+            event,
+            RetryFailOnSerializeEmitHandler
+         )
+      }
+   }
+
    companion object {
       private val logger = KotlinLogging.logger {}
    }
@@ -56,10 +65,9 @@ class GrantedAuthoritiesExtractor(
       val authorities =
          userGrantedAuthorities.map { grantedAuthority -> SimpleGrantedAuthority(grantedAuthority.constantValue) }
 
-      userObserved.emitNext(
-         UserAuthenticatedEvent(preferredUserName, jwt.claims, authorities),
-         RetryFailOnSerializeEmitHandler
-      )
+      onUserAuthenticated(listOf(
+         UserAuthenticatedEvent(preferredUserName, jwt.claims, authorities)
+      ))
       return authorities
    }
 

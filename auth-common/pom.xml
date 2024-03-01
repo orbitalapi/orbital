@@ -46,6 +46,18 @@
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
         </dependency>
+       <dependency>
+          <groupId>org.pac4j</groupId>
+          <artifactId>spring-security-pac4j</artifactId>
+       </dependency>
+       <dependency>
+          <groupId>org.pac4j</groupId>
+          <artifactId>pac4j-core</artifactId>
+       </dependency>
+       <dependency>
+          <groupId>org.pac4j</groupId>
+          <artifactId>pac4j-saml</artifactId>
+       </dependency>
 
     </dependencies>
 </project>

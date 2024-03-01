@@ -2,7 +2,7 @@ import {Inject, Injectable} from '@angular/core';
 import {AuthConfig, OAuthService} from 'angular-oauth2-oidc';
 import {Router} from '@angular/router';
 import {HttpBackend, HttpClient} from '@angular/common/http';
-import {BehaviorSubject, combineLatest, Observable, ReplaySubject} from 'rxjs';
+import {BehaviorSubject, combineLatest, lastValueFrom, Observable, ReplaySubject} from 'rxjs';
 import {filter, map} from 'rxjs/operators';
 import {UserInfoService} from '../services/user-info.service';
 import {ENVIRONMENT, Environment} from 'src/app/services/environment';
@@ -134,8 +134,13 @@ export class AuthService {
     }
   }
 
-  async logout(): Promise<void> {
+  async logoutOidc(): Promise<void> {
     await this.oauthService.revokeTokenAndLogout();
+  }
+
+  async samlLogout(): Promise<void> {
+    const source = this.http.get(`${this.environment.serverUrl}/api/saml/logout`);
+    await lastValueFrom(source);
   }
 
   private setupOpenIdpEventSubscriptions(): void {

@@ -10,4 +10,5 @@ import reactor.core.publisher.Flux
  */
 interface UserAuthenticatedEventSource {
    val userAuthenticated: Flux<UserAuthenticatedEvent>
+   fun onUserAuthenticated(events: List<UserAuthenticatedEvent>)
 }

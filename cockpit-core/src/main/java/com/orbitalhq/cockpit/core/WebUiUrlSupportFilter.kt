@@ -1,11 +1,13 @@
 package com.orbitalhq.cockpit.core
 
+import com.orbitalhq.cockpit.core.security.authentication.saml.SamlCallbackUrlProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.springframework.web.server.ServerWebExchange
 import org.springframework.web.server.WebFilter
 import org.springframework.web.server.WebFilterChain
 import reactor.core.publisher.Mono
+
 
 /**
  * Handles requests intended for our web app (ie., everything not at /api)
@@ -31,6 +33,11 @@ class WebUiUrlSupportFilter(
          }
 
          path.startsWith(actuatorPath) -> {
+            chain.filter(exchange)
+         }
+
+         path.startsWith(SamlCallbackUrlProvider.samlCallbackRelativeUrl) -> {
+            //Saml callback Url (SAML IDP calls Orbital once the user is logged in)
             chain.filter(exchange)
          }
 

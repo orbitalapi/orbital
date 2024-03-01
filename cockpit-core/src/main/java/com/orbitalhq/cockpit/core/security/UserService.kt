@@ -4,6 +4,7 @@ import com.orbitalhq.auth.authentication.VyneUser
 import com.orbitalhq.auth.authentication.toVyneUser
 import com.orbitalhq.auth.authorisation.VyneUserRoleDefinitionRepository
 import com.orbitalhq.cockpit.core.security.authorisation.VyneOpenIdpConnectConfig
+import com.orbitalhq.cockpit.core.security.authorisation.VyneSamlConfig
 import com.orbitalhq.security.VyneGrantedAuthority
 import mu.KotlinLogging
 import org.springframework.http.HttpHeaders
@@ -25,7 +26,8 @@ private val logger = KotlinLogging.logger {}
 class UserService(
    private val vyneUserRepository: VyneUserJpaRepository,
    private val vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository,
-   private val openIdpConfiguration: VyneOpenIdpConnectConfig
+   private val openIdpConfiguration: VyneOpenIdpConnectConfig,
+   private val vyneSamlConfig: VyneSamlConfig
 ) {
 
    companion object {
@@ -39,7 +41,7 @@ class UserService(
 
    @GetMapping("/api/user")
    fun currentUserInfo(@AuthenticationPrincipal auth: Mono<Authentication>): Mono<ResponseEntity<VyneUser>> {
-      return if (this.openIdpConfiguration.enabled) {
+      return if (this.openIdpConfiguration.enabled || this.vyneSamlConfig.enabled) {
          auth
             .switchIfEmpty {
                error("Not Authorized")
@@ -90,7 +92,7 @@ class UserService(
    private fun buildAuthCookie(auth: Authentication): ResponseCookie? {
       if (auth !is JwtAuthenticationToken) {
          logger.warn { "Generation of user cookie auth is not supported for auth type ${auth::class.simpleName}" }
-         null
+         return null
       }
       val jwtToken = auth as JwtAuthenticationToken
       val authToken = auth.token.tokenValue

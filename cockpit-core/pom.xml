@@ -214,6 +214,34 @@
          <artifactId>spring-security-oauth2-jose</artifactId>
       </dependency>
 
+      <dependency>
+         <groupId>org.pac4j</groupId>
+         <artifactId>spring-webflux-pac4j</artifactId>
+         <version>3.0.0</version>
+      </dependency>
+
+      <dependency>
+         <groupId>org.pac4j</groupId>
+         <artifactId>spring-security-pac4j</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>org.pac4j</groupId>
+         <artifactId>pac4j-core</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>org.pac4j</groupId>
+         <artifactId>pac4j-saml</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>org.pac4j</groupId>
+         <artifactId>pac4j-javaee</artifactId>
+         <version>6.0.1</version>
+      </dependency>
+
+
       <!-- Don't include the query-node-code here.  If an app needs to offer Admin tools AND
       query capability, it needs to explicilty wire them together -->
       <!--      <dependency>-->
