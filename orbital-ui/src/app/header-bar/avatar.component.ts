@@ -1,8 +1,6 @@
 import {Component, Inject, Input} from '@angular/core';
-import {VyneUser} from '../services/user-info.service';
+import {AuthenticationType, VyneUser} from '../services/user-info.service';
 import {AuthService} from '../auth/auth.service';
-import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
-import {ConfirmationDialogComponent} from 'src/app/confirmation-dialog/confirmation-dialog.component';
 import {TuiAlertService, TuiDialogService} from "@taiga-ui/core";
 import {TUI_PROMPT, TuiPromptData} from "@taiga-ui/kit";
 
@@ -57,7 +55,13 @@ export class AvatarComponent {
     })
       .subscribe(result => {
         if (result) {
-          this.authService.logout();
+          if (this.user.authenticationType === 'Oidc')  {
+            console.log('Performing OIDC logout');
+            this.authService.logoutOidc();
+          } else if (this.user.authenticationType === 'Saml') {
+            console.log('Performing Saml Logout');
+            this.authService.samlLogout();
+          }
         }
       });
   }

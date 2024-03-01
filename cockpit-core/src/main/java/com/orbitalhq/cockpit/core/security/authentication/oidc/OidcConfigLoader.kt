@@ -1,4 +1,4 @@
-package com.orbitalhq.cockpit.core.security.authentication
+package com.orbitalhq.cockpit.core.security.authentication.oidc
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper

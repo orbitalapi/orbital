@@ -1,10 +1,9 @@
-package com.orbitalhq.cockpit.core.security.authentication
+package com.orbitalhq.cockpit.core.security.authentication.oidc
 
 import com.orbitalhq.auth.CookieOrHeaderTokenConverter
 import com.orbitalhq.auth.authorisation.VyneUserRoleDefinitionRepository
 import com.orbitalhq.cockpit.core.lsp.LanguageServerConfig
 import com.orbitalhq.cockpit.core.security.FrontEndSecurityConfig
-import com.orbitalhq.cockpit.core.security.GrantedAuthoritiesExtractor
 import com.orbitalhq.cockpit.core.security.authorisation.JwtRolesExtractor
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty

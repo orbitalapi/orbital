@@ -5,13 +5,14 @@ import com.google.common.cache.CacheBuilder
 import com.orbitalhq.auth.authentication.vyneUserFromClaims
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Sinks
 import java.time.Duration
 
 @Component
-@ConditionalOnProperty("vyne.security.openIdp.enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnExpression("\${vyne.security.openIdp.enabled:false} == true or \${vyne.security.saml.enabled:false} == true")
 class UserDetailsPersistingService(
    eventSource: UserAuthenticatedEventSource,
    userRepository: VyneUserJpaRepository,

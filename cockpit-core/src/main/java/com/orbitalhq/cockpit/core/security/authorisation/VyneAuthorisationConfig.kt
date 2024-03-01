@@ -24,6 +24,49 @@ enum class IdentityTokenKind {
    Id
 }
 
+/**
+ * Configuration For SAML Authentication.
+ * @param enabled Enables the Saml Authentication flow in Orbital.
+ * @param keyStorePath Path of the key store file on Orbital host. If key store does not exist. Orbital will create on at the specified location.
+ * @param privateKeyPassword Password for the private key stored in the given key store.
+ * @param idpMetadataFilePath File Path for Idp metadata.
+ * @param serviceProviderMetadataResourcePath File Path to store the SP metadata that we will generate for Orbital.
+ * @param callbackBaseUrl after a successful login, the identity provider will redirect the user back to the application on the callback URL which is defined as callbackBaseUrl/callback
+ *  so, assume that orbital is accessible from okta as https://orbital.company.com
+ *  in this case callbackBaseUrl needs to be https://orbital.company.com and the callback url setting in okta needs to be https://orbital.company.com/callback
+ * @param serviceProviderEntityId By default, the entity ID of your application (the Service Provider) will be equals to the callback URL. But you can force your own entity ID with the serviceProviderEntityId parameter
+ * @param maximumAuthenticationLifetime  by default, the SAML client will accept assertions based on a previous authentication for one hour. If you want to change this behavior, set the maximumAuthenticationLifetime parameter
+ */
+@ConfigurationProperties(prefix = "vyne.security.saml")
+data class VyneSamlConfig(
+   val enabled: Boolean = false,
+   val keyStorePath: String = "./orbital-saml.jks",
+   val keyStorePassword: String? = null,
+   val privateKeyPassword: String? = null,
+   val idpMetadataFilePath: String? = null,
+   val serviceProviderMetadataResourcePath: String = "./sp-metadata.xml",
+   val callbackBaseUrl: String = "http://localhost:9022",
+   val serviceProviderEntityId: String? = null,
+   val maximumAuthenticationLifetime: Long = 3600
+) {
+   init {
+      val configErrors = mutableListOf<String>()
+
+      fun samlProp(key:String) = "vyne.security.saml.$key"
+      fun appendPrefixedError(message: String) = configErrors.add("When ${samlProp("enabled")} = true, $message")
+
+      if (enabled) {
+         if (serviceProviderEntityId == null) appendPrefixedError("${samlProp("serviceProviderEntityId")} must be set")
+         if (idpMetadataFilePath == null) appendPrefixedError("${samlProp("idpMetadataFilePath")} must be set")
+         if (keyStorePassword == null) appendPrefixedError("${samlProp("keyStorePassword")} must be set")
+         if (privateKeyPassword == null) appendPrefixedError("${samlProp("privatePassword")} must be set")
+         if (configErrors.isNotEmpty()) {
+            error(configErrors.joinToString("\n"))
+         }
+      }
+   }
+}
+
 
 // configuration class annotation need to use kebab-case, otherwise spring gives prefix must be in canonical form in Intellij
 @ConfigurationProperties(prefix = "vyne.security.open-idp")

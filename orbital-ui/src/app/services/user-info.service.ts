@@ -53,6 +53,7 @@ export class UserInfoService {
   }
 }
 
+export type AuthenticationType = 'Oidc' | 'Saml'
 export interface VyneUser {
   userId: string;
   username: string;
@@ -61,6 +62,7 @@ export interface VyneUser {
   name: string | null;
   grantedAuthorities: VynePrivileges[];
   isAuthenticated: boolean;
+  authenticationType: AuthenticationType | null;
 }
 
 export const EmptyVyneUser: VyneUser = {
@@ -70,7 +72,8 @@ export const EmptyVyneUser: VyneUser = {
   profileUrl: null,
   name: null,
   grantedAuthorities: [],
-  isAuthenticated: false
+  isAuthenticated: false,
+  authenticationType: null
 }
 
 export enum VynePrivileges {

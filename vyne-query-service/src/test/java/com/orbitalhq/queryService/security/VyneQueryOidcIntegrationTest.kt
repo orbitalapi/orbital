@@ -72,7 +72,7 @@ profile
       "vyne.telemetry.enabled=false",
    ]
 )
-class VyneQuerySecurityIntegrationTest {
+class VyneQueryOidcIntegrationTest {
 
    companion object {
       @Container

@@ -41,8 +41,14 @@ vyne:
          method: local
    analytics:
       mode: Inprocess
+
 orbital:
 
+pac4j:
+   callback:
+      path: /saml
+   logout:
+      path: /api/saml/logout
 
 logging:
    level:

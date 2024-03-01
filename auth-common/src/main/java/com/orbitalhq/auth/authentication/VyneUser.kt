@@ -30,6 +30,11 @@ typealias UserDisplayName = String
  */
 typealias UserFullDisplayName = String
 
+enum class AuthenticationType {
+   Oidc,
+   Saml
+}
+
 
 @Entity(name = "USERS")
 data class VyneUser(
@@ -67,7 +72,11 @@ data class VyneUser(
 
    // Not persisted.
    @Transient
-   val claims: Map<String, Any> = emptyMap()
+   val claims: Map<String, Any> = emptyMap(),
+
+   // Not Persisted, assigned at runtime.
+   @Transient
+   val authenticationType: AuthenticationType? = null
 ) {
    companion object {
       fun anonymousUser(grantedAuthorities: Set<VyneGrantedAuthority>) =
