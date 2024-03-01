@@ -8,6 +8,7 @@ import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.history.db.*
 import com.orbitalhq.history.rest.QueryHistoryService
 import com.orbitalhq.http.MockWebServerRule
+import com.orbitalhq.http.emptyResponse
 import com.orbitalhq.http.response
 import com.orbitalhq.query.HistoryEventConsumerProvider
 import com.orbitalhq.query.HttpExchange
@@ -239,6 +240,58 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
       val exchange = failedCall.exchange as HttpExchange
       exchange.responseCode.shouldBe(400)
    }
+
+   @Test
+   fun `http response with empty body is persisted to remote calls`() {
+      val vyne = testVyne(
+         """
+         model Movie {
+            id : MovieId inherits Int
+            title : MovieTitle inherits String
+         }
+         model Cast {
+            id : PersonId inherits String
+            name : PersonName inherits String
+         }
+         service Movies {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/movies")
+            operation listMovies():Movie[]
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/cast")
+            operation getCast(@PathVariable("id") id: MovieId):Cast[]
+         }
+      """, Invoker.RestTemplateWithCache
+      )
+      setupTestService(vyne, null, buildHistoryConsumer())
+      server.prepareResponse(
+         ConcurrentHashMap(),
+         "/movies" to emptyResponse(),
+      )
+
+      val clientQueryId = Ids.id("query")
+      runBlocking {
+         try {
+            val result = queryService.submitVyneQlQueryStreamingResponse(
+               """
+         find { Movie[] } as {
+            id : MovieId
+            title : MovieTitle
+            cast : Cast[]
+         }[]
+      """.trimIndent(), clientQueryId = clientQueryId
+            ).toList()
+         } catch (e: Exception) {
+         }
+      }
+      Awaitility.await().atMost(Duration.FIVE_SECONDS).until<Boolean> {
+         historyService.getQueryProfileDataFromClientId(clientQueryId)
+            .block() != null
+
+      }
+      val calls = historyService.getRemoteCallListByClientId(clientQueryId)
+         .block()
+      calls.shouldHaveSize(1)
+   }
+
 
    @Test
    fun `failed direct http calls made in query are persisted`() {
