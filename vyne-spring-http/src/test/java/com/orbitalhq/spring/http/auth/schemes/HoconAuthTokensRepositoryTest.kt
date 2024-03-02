@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.readText
 
 class HoconAuthTokensRepositoryTest {
@@ -162,6 +163,37 @@ authenticationTokens {
             scopes = listOf("profile", "image"),
             grantType = OAuth2.AuthorizationGrantType.AuthorizationCode,
             method = OAuth2.AuthenticationMethod.Post
+         )
+      )
+   }
+
+   @Test
+   fun `can read an mtls  config`() {
+      val keyStorePath =  folder!!.resolve("keystore.jks")
+      val trustStorePath =  folder!!.resolve("truststore.jks")
+      Files.write(keyStorePath,
+         """
+                eqwewqewqeqweqwe
+               """.trimIndent().encodeToByteArray())
+      Files.write(trustStorePath,
+              """
+                  eqwewqewqeqweqwe
+               """.trimIndent().encodeToByteArray())
+
+      configShouldMatch(
+         """
+            "com.foo.TestService" {
+               type: MutualTls
+               keystorePath: ${keyStorePath.absolutePathString()}
+               keystorePassword: orbital
+               truststorePath: ${trustStorePath.absolutePathString()}
+               truststorePassword: orbital
+            }
+      """.trimIndent(), MutualTls(
+            keystorePath = keyStorePath.absolutePathString(),
+            keystorePassword = "orbital",
+            truststorePath = trustStorePath.absolutePathString(),
+            truststorePassword = "orbital"
          )
       )
    }

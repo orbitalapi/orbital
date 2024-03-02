@@ -5,6 +5,7 @@ import com.orbitalhq.annotations.http.HttpRetryAnnotationSchema
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
 import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalOperationCacheProvider
 import com.orbitalhq.schema.api.SimpleSchemaProvider
+import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 
@@ -20,11 +21,7 @@ fun testVyne(schema: String, invoker: Invoker): Vyne {
       HttpRetryAnnotationSchema.schema, schemeWithRetryImport)
    return com.orbitalhq.testVyne(schemas) { taxi ->
       val restTemplateInvoker = RestTemplateInvoker(
-         webClient = WebClient.builder()
-            .exchangeStrategies(ExchangeStrategies.builder()
-               .codecs { config -> config.defaultCodecs().maxInMemorySize(2 * 1024 * 1024) }
-               .build()
-            ).build(),
+         webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
          schemaProvider = SimpleSchemaProvider(taxi)
       ).let {
          if (invoker == Invoker.RestTemplateWithCache) {

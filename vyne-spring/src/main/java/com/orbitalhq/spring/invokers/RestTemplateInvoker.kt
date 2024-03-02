@@ -1,6 +1,5 @@
 package com.orbitalhq.spring.invokers
 
-import io.netty.channel.ChannelOption
 import com.orbitalhq.http.HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT
 import com.orbitalhq.http.UriVariableProvider
 import com.orbitalhq.models.OperationResult
@@ -13,7 +12,15 @@ import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schema.api.SchemaProvider
-import com.orbitalhq.schemas.*
+import com.orbitalhq.schemas.OperationInvocationException
+import com.orbitalhq.schemas.Parameter
+import com.orbitalhq.schemas.QueryOptions
+import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.Service
+import com.orbitalhq.schemas.Type
+import com.orbitalhq.schemas.fqn
+import com.orbitalhq.schemas.httpOperationMetadata
+import com.orbitalhq.schemas.retrySpec
 import com.orbitalhq.spring.hasHttpMetadata
 import com.orbitalhq.spring.http.DefaultRequestFactory
 import com.orbitalhq.spring.http.HttpRequestFactory
@@ -26,31 +33,27 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.annotations.HttpService
 import mu.KotlinLogging
-import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
-import org.springframework.http.HttpStatusCode
 import org.springframework.http.MediaType
-import org.springframework.http.client.reactive.ReactorClientHttpConnector
-import org.springframework.web.reactive.function.client.*
+import org.springframework.web.reactive.function.client.ClientResponse
+import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.bodyToFlux
+import org.springframework.web.reactive.function.client.bodyToMono
 import org.springframework.web.util.DefaultUriBuilderFactory
 import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import reactor.kotlin.core.publisher.switchIfEmpty
-import reactor.netty.http.client.HttpClient
-import reactor.netty.resources.ConnectionProvider
 import java.net.URI
-import java.time.Duration
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.function.Predicate
 
 class RestTemplateInvoker(
    val schemaProvider: SchemaProvider,
-   val webClient: WebClient,
+   private val webClientFactory: WebClientFactory,
    private val requestFactory: HttpRequestFactory = DefaultRequestFactory(),
    val formats: FormatSpecRegistry = FormatSpecRegistry.default(),
 ) : OperationInvoker {
@@ -64,30 +67,7 @@ class RestTemplateInvoker(
    )
       : this(
       schemaProvider,
-      webClientBuilder
-         .exchangeStrategies(
-            ExchangeStrategies.builder().codecs { it.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) }.build()
-         )
-         .clientConnector(
-            ReactorClientHttpConnector(
-               HttpClient.create(
-
-                  ConnectionProvider.builder("RestTemplateInvoker-Connection-Pool")
-                     .maxConnections(500)
-                     .maxIdleTime(Duration.ofMillis(10000.toLong()))
-                     .maxLifeTime(Duration.ofMinutes(1.toLong()))
-                     .metrics(true)
-                     .fifo()
-                     .pendingAcquireTimeout(Duration.ofMillis(20.toLong()))
-                     .build()
-               )
-                  .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 100)
-                  .keepAlive(true)
-                  .compress(true) // support Gzipped responses
-            )
-         )
-         .filter(authRequestCustomizer.authFromServiceNameAttribute)
-         .build(),
+      WebClientFactory(webClientBuilder, authRequestCustomizer),
       requestFactory
    )
 
@@ -129,6 +109,8 @@ class RestTemplateInvoker(
 
       val contentType = getContentTypeFromResponseType(operation.returnType)
 
+      val webClient = webClientFactory.webClientFor(service)
+
       //TODO - On upgrade to Spring boot 2.4.X replace usage of exchange with exchangeToFlow LENS-473
       val request = webClient
          .method(httpMethod)
@@ -145,6 +127,7 @@ class RestTemplateInvoker(
       if (httpEntity.hasBody()) {
          request.bodyValue(httpEntity.body)
       }
+
 
       logger.info { "[$queryId] - Performing $httpMethod to ${expandedUri.toASCIIString()} with retry specification => ${retrySpec?.toLogString()}" }
 

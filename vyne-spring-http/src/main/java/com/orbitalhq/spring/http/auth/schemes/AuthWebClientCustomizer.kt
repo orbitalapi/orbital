@@ -6,13 +6,19 @@ import com.orbitalhq.auth.schemes.AuthTokens
 import com.orbitalhq.auth.schemes.BasicAuth
 import com.orbitalhq.auth.schemes.Cookie
 import com.orbitalhq.auth.schemes.HttpHeader
+import com.orbitalhq.auth.schemes.MutualTls
 import com.orbitalhq.auth.schemes.OAuth2
 import com.orbitalhq.auth.schemes.QueryParam
 import com.orbitalhq.auth.schemes.SimpleAuthSchemeProvider
 import com.orbitalhq.schemas.ServiceName
 import com.orbitalhq.spring.http.auth.OAuthRefreshTokenManager
 import com.orbitalhq.spring.http.auth.oauthAuthorizedClientManager
+import io.netty.channel.ChannelOption
+import io.netty.handler.ssl.SslContext
 import mu.KotlinLogging
+import nl.altindag.ssl.SSLFactory
+import nl.altindag.ssl.netty.util.NettySslUtils
+import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.security.oauth2.client.AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager
 import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientService
 import org.springframework.security.oauth2.client.web.reactive.function.client.ServerOAuth2AuthorizedClientExchangeFilterFunction
@@ -25,7 +31,12 @@ import org.springframework.web.reactive.function.client.ExchangeFunction
 import org.springframework.web.reactive.function.client.WebClient.RequestHeadersSpec
 import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Mono
+import reactor.netty.http.client.HttpClient
+import reactor.netty.resources.ConnectionProvider
+import java.nio.file.Paths
+import java.time.Duration
 import kotlin.jvm.optionals.getOrNull
+
 
 @Component
 class AuthWebClientCustomizer(
@@ -62,7 +73,7 @@ class AuthWebClientCustomizer(
          )
       }
 
-      val SERVICE_NAME_ATTRIBUTE = "serviceName"
+      const val SERVICE_NAME_ATTRIBUTE = "serviceName"
    }
 
    /**
@@ -86,6 +97,9 @@ class AuthWebClientCustomizer(
          return filterFunction.filter(request, next)
       }
    }
+   fun reactorClientHttpConnector(mutualTls: MutualTls) =  ReactorClientHttpConnector(httpClient(mtlsSslContext(mutualTls)))
+
+   fun mutualMtlsAuthScheme(serviceName: ServiceName): MutualTls? =  repository.getAuthScheme(serviceName) as? MutualTls
 
    private fun getFilterFunction(serviceName: ServiceName, authScheme: AuthScheme?): ExchangeFilterFunction? {
       return when (authScheme) {
@@ -99,8 +113,38 @@ class AuthWebClientCustomizer(
          is OAuth2 -> oauthFilterFunction(serviceName, authScheme)
          is QueryParam -> queryParamFilterFunction(authScheme)
          is HttpHeader -> httpHeaderFilterFunction(authScheme)
+         is MutualTls -> null
          else -> error("Support for auth schema ${authScheme::class.simpleName} is not implemented")
       }
+   }
+
+    fun httpClient(sslContext: SslContext?): HttpClient {
+      val httpClient =  HttpClient.create(
+         ConnectionProvider.builder("RestTemplateInvoker-Connection-Pool")
+            .maxConnections(500)
+            .maxIdleTime(Duration.ofMillis(10000.toLong()))
+            .maxLifeTime(Duration.ofMinutes(1.toLong()))
+            .metrics(true)
+            .fifo()
+            .pendingAcquireTimeout(Duration.ofMillis(20.toLong()))
+            .build()
+      )
+         .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 100)
+         .keepAlive(true)
+         .compress(true)
+
+      return sslContext?.let { context ->
+         httpClient.secure { sslSpec -> sslSpec.sslContext(context) }
+      } ?: httpClient
+   }
+
+   private fun mtlsSslContext(authScheme: MutualTls): SslContext {
+      val sslFactory = SSLFactory.builder()
+         .withIdentityMaterial(Paths.get(authScheme.keystorePath), authScheme.keystorePassword.toCharArray())
+         .withTrustMaterial(Paths.get(authScheme.truststorePath), authScheme.truststorePassword.toCharArray())
+         .build()
+
+      return NettySslUtils.forClient(sslFactory).build()
    }
 
    private fun cookieFilterFunction(authScheme: Cookie): ExchangeFilterFunction {

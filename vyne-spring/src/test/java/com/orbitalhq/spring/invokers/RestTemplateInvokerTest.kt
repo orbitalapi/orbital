@@ -21,6 +21,7 @@ import com.orbitalhq.schemas.OperationInvocationException
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.typedObjects
 import com.orbitalhq.utils.Benchmark
 import com.orbitalhq.utils.StrategyPerformanceProfiler
@@ -122,9 +123,6 @@ namespace vyne {
    @Test
    @OptIn(ExperimentalTime::class)
    fun `When invoked a service that returns a list property mapped to a taxi array`() {
-
-      val webClient = WebClient.builder().build()
-
       val json = """
             {
                "name" : "Notional",
@@ -158,7 +156,7 @@ namespace vyne {
 
       runTest {
          val turbine = RestTemplateInvoker(
-            webClient = webClient,
+            webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
             schemaProvider = SimpleSchemaProvider(schema)
          )
             .invoke(
@@ -389,10 +387,6 @@ namespace vyne {
    @Test
    @OptIn(ExperimentalTime::class)
    fun when_invokingService_then_itGetsInvokedCorrectly() {
-
-      val webClient = WebClient.builder()
-         .build()
-
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
             .setBody("""{ "stuff" : "Right back atcha, kid" }""")
@@ -405,7 +399,7 @@ namespace vyne {
 
       runTest {
          val turbine = RestTemplateInvoker(
-            webClient = webClient,
+            webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
             schemaProvider = SimpleSchemaProvider(schema)
          ).invoke(
             service, operation, listOf(
@@ -442,9 +436,6 @@ namespace vyne {
    @Test
    @OptIn(ExperimentalTime::class)
    fun `attributes returned from service not defined in type are ignored`() {
-
-      val webClient = WebClient.builder().build()
-
       val responseJson = """{
          |"id" : 100,
          |"name" : "Fluffy"
@@ -461,7 +452,7 @@ namespace vyne {
 
       runTest {
          val turbine = RestTemplateInvoker(
-            webClient = webClient,
+            webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
             schemaProvider = SimpleSchemaProvider(schema)
             //SchemaProvider.from(schema)
          ).invoke(
@@ -490,9 +481,6 @@ namespace vyne {
       // This test is a WIP, that's been modified to pass.
       // This test is intended as a jumpting off point for issue #49
       // https://gitlab.com/vyne/vyne/issues/49
-
-      val webClient = WebClient.builder().build()
-
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody("""{ "id" : 100 }""")
       }
@@ -503,7 +491,7 @@ namespace vyne {
 
       runTest {
          val turbine = RestTemplateInvoker(
-            webClient = webClient,
+            webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
             schemaProvider = SimpleSchemaProvider(schema)
          ).invoke(
             service, operation, listOf(
@@ -529,8 +517,6 @@ namespace vyne {
    @Test
    @OptIn(ExperimentalTime::class)
    fun `when invoking a service with preparsed content then accessors are not evaluated`() {
-
-      val webClient = WebClient.builder().build()
       val responseJson = """{
          "id" : 100,
          "name" : "Fluffy"
@@ -562,7 +548,7 @@ namespace vyne {
 
       runTest {
          val turbine = RestTemplateInvoker(
-            webClient = webClient,
+            webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
             schemaProvider = SimpleSchemaProvider(schema)
          )
             .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID", QueryOptions())
@@ -583,8 +569,6 @@ namespace vyne {
    @OptIn(ExperimentalTime::class)
    @Test
    fun `when invoking a service without preparsed content then accessors are not evaluated`() {
-
-      val webClient = WebClient.builder().build()
       val responseJson = """{
          "animalsId": 100,
          "animalName": "Fluffy"
@@ -617,7 +601,7 @@ namespace vyne {
 
       runTest {
          val turbine = RestTemplateInvoker(
-            webClient = webClient,
+            webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
             schemaProvider = SimpleSchemaProvider(schema)
          )
             .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID", QueryOptions())

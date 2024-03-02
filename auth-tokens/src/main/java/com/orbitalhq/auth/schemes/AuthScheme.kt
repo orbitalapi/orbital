@@ -13,6 +13,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.hocon.Hocon
 import kotlinx.serialization.hocon.encodeToConfig
 import mu.KotlinLogging
+import java.io.File
 
 @Serializable
 data class AuthTokens(
@@ -42,11 +43,10 @@ data class AuthTokens(
          val tokenConfigs = config.getObject(AuthTokens::authenticationTokens.name)
          val schemes = tokenConfigs.map { (serviceName, tokenConfig) ->
             require(tokenConfig is ConfigObject) { "Encoding error - expected a ConfigObject but was ${tokenConfig::class.simpleName}" }
-            val schemeType = tokenConfig.get("type")?.unwrapped() as String?
+            val schemeType = tokenConfig["type"]?.unwrapped() as String?
             val authScheme = if (schemeType == null) {
                logger.error { "Configured Auth for service $serviceName does not define a type property - it looks like this is using an old format" }
                val authScheme = tokenConfig.toConfig().extract<AuthToken>().upgradeToAuthScheme()
-               val newMapConfig = mapOf(serviceName to authScheme)
                val updatedConfig = authScheme.asHocon()
                logger.info { "Consider upgrading using the following config: \n${updatedConfig.getSafeConfigString()}" }
                authScheme
@@ -57,6 +57,7 @@ data class AuthTokens(
                   "QueryParam" -> tokenConfig.toConfig().extract<QueryParam>()
                   "OAuth2" -> tokenConfig.toConfig().extract<OAuth2>()
                   "Cookie" -> tokenConfig.toConfig().extract<Cookie>()
+                  "MutualTls" -> tokenConfig.toConfig().extract<MutualTls>()
                   else -> error("Unrecognized type of auth scheme: $schemeType")
                }
             }
@@ -85,13 +86,14 @@ typealias SanitizedAuthScheme = AuthScheme
    JsonSubTypes.Type(QueryParam::class, name = "QueryParam"),
    JsonSubTypes.Type(Cookie::class, name = "Cookie"),
    JsonSubTypes.Type(OAuth2::class, name = "OAuth2"),
+   JsonSubTypes.Type(MutualTls::class, name = "MutualTls")
 )
 sealed class AuthScheme(
 ) {
    abstract fun sanitized(): SanitizedAuthScheme
 
    companion object {
-      val MASKED_PASSWORD = "**************"
+      const val MASKED_PASSWORD = "**************"
    }
 }
 
@@ -176,6 +178,35 @@ data class OAuth2(
          clientSecret = MASKED_PASSWORD,
       )
    }
+}
 
+@SerialName("MutualTls")
+@Serializable
+data class MutualTls(
+   val keystorePath: String,
+   val keystorePassword: String,
+   val truststorePath: String,
+   val truststorePassword: String
+) : AuthScheme() {
+
+   init {
+      val configErrors = mutableListOf<String>()
+
+      fun mutualMtlsProp(key:String) = "MutualMtls.$key"
+      fun appendPrefixedError(message: String) = configErrors.add("When ${mutualMtlsProp("enabled")} = true, $message")
+
+      if (!File(keystorePath).exists()) {
+         appendPrefixedError("${mutualMtlsProp("keystorePath")} is invalid!")
+      }
+
+      if (!File(truststorePath).exists()) {
+         appendPrefixedError("${mutualMtlsProp("truststorePath")} is invalid!")
+      }
+
+      if (configErrors.isNotEmpty()) {
+         error(configErrors.joinToString("\n"))
+      }
+   }
+   override fun sanitized(): SanitizedAuthScheme = copy(keystorePassword = MASKED_PASSWORD, truststorePassword= MASKED_PASSWORD)
 }
 
