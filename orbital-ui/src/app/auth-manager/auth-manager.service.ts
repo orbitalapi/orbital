@@ -16,7 +16,7 @@ export interface NoCredentialsAuthToken {
   tokenType: AuthTokenType;
 }
 
-export type AuthSchemeKind = 'Basic' | 'HttpHeader' | 'QueryParam' | 'Cookie' | 'OAuth2';
+export type AuthSchemeKind = 'Basic' | 'HttpHeader' | 'QueryParam' | 'Cookie' | 'OAuth2' | 'MutualTls';
 
 export interface AuthScheme {
   type: AuthSchemeKind

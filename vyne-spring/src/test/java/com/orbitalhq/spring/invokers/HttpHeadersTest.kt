@@ -5,6 +5,7 @@ import com.orbitalhq.http.MockWebServerRule
 import com.orbitalhq.rawObjects
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.testVyne
 import io.kotest.common.runBlocking
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -243,7 +244,7 @@ fun vyneWithHttpInvoker(src: String): Vyne {
       listOf(
          RestTemplateInvoker(
             SimpleSchemaProvider(schema),
-            WebClient.create()
+            webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
          )
       )
    }
