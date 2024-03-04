@@ -155,7 +155,7 @@ type Client {
 """
 
       val schema = vyne.schema
-      val result = TypedInstance.from(schema.type("Client"), json, schema, source = Provided)
+      val result = TypedInstance.from(schema.type("Client[]"), json, schema, source = Provided)
 
       expect(result).instanceof(TypedCollection::class.java)
       val clients = result as TypedCollection

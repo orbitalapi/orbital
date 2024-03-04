@@ -142,7 +142,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          "test-aws-s3-sink",
          input = BatchItemsSourceSpec(
             items = listOf("""[{ "firstName" : "Jimmy", "lastName" : "Schmitt" }, { "firstName" : "Jimmy2", "lastName" : "Schmitt2" }]"""),
-            typeName = "Person".fqn()
+            typeName = "Person[]".fqn()
          ),
          outputs = listOf(
             AwsS3TransportOutputSpec(
@@ -200,7 +200,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          "test-aws-s3-sink",
          input = BatchItemsSourceSpec(
             items = listOf("""[{ "firstName" : "Jimmy", "lastName" : "Schmitt" }, { "firstName" : "Jimmy2", "lastName" : "Schmitt2" }]"""),
-            typeName = "Person".fqn()
+            typeName = "Person[]".fqn()
          ),
          outputs = listOf(
             AwsS3TransportOutputSpec(
