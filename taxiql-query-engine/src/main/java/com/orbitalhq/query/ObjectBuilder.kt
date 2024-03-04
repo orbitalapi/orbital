@@ -104,7 +104,12 @@ class ObjectBuilder(
                }
                if (!targetType.isPrimitive) {
                   // Don't bother logging if the user searched for a primitive type, as it's kinda pointless.
-                  logger.debug { "Found ${instance.size} instances of ${targetType.longDisplayName}." }
+                  if (targetType.isCollection) {
+                     logger.debug { "Search for ${targetType.name.shortDisplayName} returned a collection of ${instance.size} instances" }
+                  } else {
+                     logger.debug { "Found ${instance.size} instances of ${targetType.name.shortDisplayName}." }
+                  }
+
                   logger.trace {
                      "Found ${instance.size} instances of ${targetType.longDisplayName}. Values are ${
                         instance.map {

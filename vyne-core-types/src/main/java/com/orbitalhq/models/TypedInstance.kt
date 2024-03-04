@@ -56,6 +56,7 @@ interface TypedInstance {
    fun valueEquals(valueToCompare: TypedInstance): Boolean
 
    companion object {
+
       const val EXPIRY_METADATA = "expiredAt"
       fun fromNamedType(
          typeNamedInstance: TypeNamedInstance,
@@ -175,6 +176,11 @@ interface TypedInstance {
             }
 
             value is Collection<*> -> {
+               if (!type.isCollection) {
+                  val errorMessage = "Provided value is a collection, but the declared type ${type.name.parameterizedName} is not"
+                  log().warn(errorMessage)
+                  return TypedNull.create(type, source = FailedParsingSource(value, errorMessage))
+               }
                val collectionMemberType = getCollectionType(type)
                TypedCollection.arrayOf(
                   collectionMemberType,

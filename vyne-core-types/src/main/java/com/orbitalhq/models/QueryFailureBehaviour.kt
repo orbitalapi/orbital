@@ -1,6 +1,7 @@
 package com.orbitalhq.models
 
 import com.orbitalhq.schemas.Field
+import com.orbitalhq.schemas.Type
 import lang.taxi.types.Arrays
 
 enum class QueryFailureBehaviour {
@@ -37,6 +38,12 @@ enum class QueryFailureBehaviour {
             // See https://projects.notional.uk/youtrack/issue/ORB-236/
             !field.nullable && Arrays.isArray(field.type.parameterizedName) -> SEND_TYPED_NULL_OR_EMPTY_ARRAY
             field.nullable -> SEND_TYPED_NULL
+            else -> THROW
+         }
+      }
+      fun defaultBehaviour(type: Type):QueryFailureBehaviour {
+         return when {
+            Arrays.isArray(type.paramaterizedName) -> SEND_TYPED_NULL_OR_EMPTY_ARRAY
             else -> THROW
          }
       }

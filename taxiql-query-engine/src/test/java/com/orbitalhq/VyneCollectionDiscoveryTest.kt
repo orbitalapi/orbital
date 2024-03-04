@@ -40,7 +40,7 @@ class VyneCollectionDiscoveryTest {
       """.trimIndent())
       stub.addResponse("findAllFriends", vyne.parseJson("Friend[]", """[{ "id": 1, "name" : "Jimmy" }, {"id" : 2, "name": "Jack" }] """))
       stub.addResponse("findAllPeople", vyne.parseJson("PersonId[]", """[ 0 ]"""))
-      stub.addResponse("findPerson", vyne.parseJson("Person", """[{ "id" : 0, "name" : "Doug" }]"""))
+      stub.addResponse("findPerson", vyne.parseJson("Person[]", """[{ "id" : 0, "name" : "Doug" }]"""))
       val results = vyne.query(
          """find { PersonId[] } as { name : PersonName
          | friends : Friend[]
@@ -115,7 +115,7 @@ class VyneCollectionDiscoveryTest {
       """
          )
          val movies = TypedInstance.from(
-            vyne.type("Movie"), """
+            vyne.type("Movie[]"), """
          [ { "title" : "The ducks take Manhattan", "cast" : { "actors" : [1,2,3] } } ]
       """.trimIndent(), vyne.schema, source = Provided
          )
@@ -178,7 +178,7 @@ class VyneCollectionDiscoveryTest {
       """
          )
          val movies = TypedInstance.from(
-            vyne.type("Movie"), """
+            vyne.type("Movie[]"), """
          [ { "title" : "The ducks take Manhattan", "cast" : { "actors" : [1,2,3] } } ]
       """.trimIndent(), vyne.schema, source = Provided
          )
@@ -247,7 +247,7 @@ class VyneCollectionDiscoveryTest {
       """
          )
          val movies = TypedInstance.from(
-            vyne.type("Movie"), """
+            vyne.type("Movie[]"), """
          [
           { "title" : "The ducks take Manhattan", "cast" : { "actors" : [1,2,3] } } ,
           { "title" : "Scrooge is Dead", "cast" : { "actors" : [1,2] } }
@@ -325,7 +325,7 @@ class VyneCollectionDiscoveryTest {
       """
          )
          val movies = TypedInstance.from(
-            vyne.type("Movie"), """
+            vyne.type("Movie[]"), """
          [ { "title" : "The ducks take Manhattan", "cast" : { "actors" : [1,2,3] } } ]
       """.trimIndent(), vyne.schema, source = Provided
          )
@@ -569,8 +569,7 @@ class VyneCollectionDiscoveryTest {
          }
       """
          )
-         val movies = TypedInstance.from(
-            vyne.type("ImdbMovie"), """
+         val movies = vyne.parseJson("ImdbMovie[]", """
          [ {
          "title" : "The ducks take Manhattan",
          "cast" : [
@@ -578,8 +577,7 @@ class VyneCollectionDiscoveryTest {
             { "id" : "duck-2", "name" : "Uncle Scrooge" }
          ]
          } ]
-      """.trimIndent(), vyne.schema, source = Provided
-         )
+      """.trimIndent())
          stub.addResponse("findAllMovies", movies)
 
          val results = vyne.query("""find { ImdbMovie[] } as RottenTomatoesMovie[]""").typedObjects()

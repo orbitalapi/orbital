@@ -10,6 +10,8 @@ import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.models.json.JsonParsedStructure
 import com.orbitalhq.models.json.isJson
+import com.orbitalhq.query.AlwaysGoodSpec
+import com.orbitalhq.query.TypedInstanceValidPredicate
 import com.orbitalhq.schemas.*
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.timeBucket
@@ -188,7 +190,11 @@ class TypedObjectFactory(
          valueToProject
             .parallelStream()
             .map { collectionMember ->
-               newFactory(targetType.collectionType!!, collectionMember, scope = projection.projectionFunctionScope.firstOrNull())
+               newFactory(
+                  targetType.collectionType!!,
+                  collectionMember,
+                  scope = projection.projectionFunctionScope.firstOrNull()
+               )
                   .build()
             }.collect(Collectors.toList())
             .let { projectedCollection ->
@@ -362,10 +368,16 @@ class TypedObjectFactory(
          return evaluateExpressionType(type, null)
       }
 
-      // TODO : Naieve first pass.
-      // This approach won't work for nested objects.
-      // I think i need to build a hierarchy of object factories, and allow nested access
-      // via the get() method
+      // the value is FactBag line here is a bit of a hack..
+      // We want to build closed objects when deserializing a result.
+      // However we don't currently have an easy way to pass that flag in.
+      // It's unlikely we're serializing results using a FactBag.
+      if (type.isClosed && value is FactBag) {
+         logger.debug { "Not attempting to build ${type.name.shortDisplayName} as it is closed - triggering search" }
+         return queryForParentType()
+      }
+
+      // Attempt to build / discover each attribute
       val mappedAttributes = attributesToMap.map { (attributeName) ->
          // The value may have already been populated on-demand from a conditional
          // field set evaluation block, prior to the iterator hitting the field
@@ -374,6 +386,25 @@ class TypedObjectFactory(
 
       val decorated = xtimed("apply decorator") { decorator(mappedAttributes) }
       return TypedObject(type, decorated, source, metadata)
+   }
+
+   /**
+    * Called because the parent type is closed, so construction isn't possible
+    */
+   private fun queryForParentType(): TypedInstance {
+      if (inPlaceQueryEngine == null) {
+         return TypedNull.create(
+            type,
+            FailedSearch("Cannot search for type ${type.name.shortDisplayName} as no query engine is provided, and constructing is disallowed because the type is closed")
+         )
+      }
+      val searchFailureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.defaultBehaviour(type)
+      return runBlocking {
+         logger.debug { "Initiating query to search for closed type ${type.name.shortDisplayName}" }
+         queryForType(type, searchFailureBehaviour, AlwaysGoodSpec, attributeName = null)
+      }
+
+
    }
 
    private fun getOrBuild(attributeName: AttributeName, allowAccessorEvaluation: Boolean = true): TypedInstance {
@@ -486,7 +517,11 @@ class TypedObjectFactory(
                   )
 
                   resultsFromSearch.size == 1 && !requestedType.isCollection -> resultsFromSearch.first()
-                  resultsFromSearch.size >= 1 && requestedType.isCollection -> TypedCollection.from(resultsFromSearch, MixedSources.singleSourceOrMixedSources(resultsFromSearch))
+                  resultsFromSearch.size >= 1 && requestedType.isCollection -> TypedCollection.from(
+                     resultsFromSearch,
+                     MixedSources.singleSourceOrMixedSources(resultsFromSearch)
+                  )
+
                   resultsFromSearch.size > 1 && !requestedType.isCollection -> {
                      val errorMessage =
                         "Search for ${requestedType.name.shortDisplayName} returned ${resultsFromSearch.size} results, which is invalid for non-array types. Returning null."
@@ -684,7 +719,7 @@ class TypedObjectFactory(
                searchedValue != null -> searchedValue
                // Since we know that the value isn't present in the fact bag,
                // and that it's scalar, the only thing left to do is query.
-               fieldType.isScalar -> queryForResult(field, fieldType, attributeName, fieldTypeName)
+               fieldType.isScalar -> queryForFieldValue(field, fieldType, attributeName)
 
                fieldType.isCollection -> {
                   // TODO : I suspect this needs to be richer.
@@ -692,7 +727,7 @@ class TypedObjectFactory(
                   // from a query result onto a field.  (see
                   // VyneProjectionTest.will populate collection on inline projection)
                   // However, there's likely other nuanced cases we need to support.
-                  queryForResult(field, fieldType, attributeName, fieldTypeName)
+                  queryForFieldValue(field, fieldType, attributeName)
 
                }
 
@@ -701,12 +736,12 @@ class TypedObjectFactory(
                   // Otherwise, we're calling into TypedObjectFactory with a scalar type,
                   // which is incorrect (it's intended for Object types).
                   attemptToBuildFieldObject(field, fieldType, attributeName, fieldTypeName)
-                     ?: queryForResult(field, fieldType, attributeName, fieldTypeName)
+                     ?: queryForFieldValue(field, fieldType, attributeName)
                }
             }
          }
 
-         else -> queryForResult(field, fieldType, attributeName, fieldTypeName)
+         else -> queryForFieldValue(field, fieldType, attributeName)
       }
    }
 
@@ -743,61 +778,94 @@ class TypedObjectFactory(
    private fun failWithTypedNull(
       fieldType: Type,
       attributeName: AttributeName,
-      fieldTypeName: QualifiedName,
       message: String = "Can't populate attribute $attributeName on type ${type.name} as no attribute or expression was found on the supplied value of type ${value::class.simpleName}"
    ): TypedNull {
       return TypedNull.create(
          fieldType,
          ValueLookupReturnedNull(
             message,
-            fieldTypeName
+            type.name
          )
       )
    }
 
-   private fun queryForResult(
+   private fun queryForFieldValue(
       field: Field,
       type: Type,
       attributeName: AttributeName,
-      fieldTypeName: QualifiedName
    ): TypedInstance {
       return if (inPlaceQueryEngine != null) {
          val searchFailureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.defaultBehaviour(field)
          val fieldInstanceValidPredicate = buildSpecProvider.provide(field)
-         val (additionalFacts, additionalScope) = getFactsInScopeForSearch()
-         val buildResult = runBlocking {
-            logger.debug { "Initiating query to search for attribute $attributeName (${type.name.shortDisplayName})" }
-            inPlaceQueryEngine.withAdditionalFacts(additionalFacts, additionalScope)
-               .findType(
-                  type,
-                  fieldInstanceValidPredicate,
-                  PermittedQueryStrategies.EXCLUDE_BUILDER_AND_MODEL_SCAN,
-                  searchFailureBehaviour
-               )
-               .toList()
-         }
-         when {
-            type.isCollection -> {
-               if (isEmptyCollectionBuildResult(buildResult, searchFailureBehaviour)) {
-                  // Unwrap the array
-                  TypedCollection.empty(type)
-               } else if (isNullListBuildResult(buildResult, searchFailureBehaviour)) {
-                  failWithTypedNull(type, attributeName, fieldTypeName, "Searching for ${type.name.shortDisplayName} failed")
-               } else {
-                  TypedCollection.arrayOf(type.collectionType!!, buildResult.filter { it !is TypedNull })
-               }
-            }
-            buildResult.isEmpty() -> failWithTypedNull(type, attributeName, fieldTypeName)
-            buildResult.size == 1 -> buildResult.single()
-            else -> {
-               val message =
-                  "Querying to find type ${fieldTypeName.parameterizedName} returned ${buildResult.size} results, which is ambiguous.  Returning null"
-               logger.debug { message }
-               failWithTypedNull(type, attributeName, fieldTypeName, message = message)
-            }
-         }
+         queryForType(
+            type,
+            searchFailureBehaviour,
+            fieldInstanceValidPredicate,
+            attributeName
+         )
       } else {
-         failWithTypedNull(type, attributeName, fieldTypeName)
+         failWithTypedNull(type, attributeName)
+      }
+   }
+
+   private fun queryForType(
+      searchType: Type,
+      searchFailureBehaviour: QueryFailureBehaviour,
+      instanceValidPredicate: TypedInstanceValidPredicate,
+      attributeName: AttributeName?// null if searching for top-level type
+   ): TypedInstance {
+      require(inPlaceQueryEngine != null)
+      fun failWithTypedNull(failureMessage: String):TypedNull {
+         return if (attributeName != null) {
+            failWithTypedNull(
+               searchType,
+               attributeName,
+               failureMessage
+            )
+         } else {
+            TypedNull.create(searchType, ValueLookupReturnedNull(failureMessage, searchType.name))
+         }
+      }
+
+      val (additionalFacts, additionalScope) = getFactsInScopeForSearch()
+      val buildResult = runBlocking {
+         logger.debug { "Initiating query to search for attribute $attributeName (${searchType.name.shortDisplayName})" }
+         inPlaceQueryEngine.withAdditionalFacts(additionalFacts, additionalScope)
+            .findType(
+               searchType,
+               instanceValidPredicate,
+               PermittedQueryStrategies.EXCLUDE_BUILDER_AND_MODEL_SCAN,
+               searchFailureBehaviour
+            )
+            .toList()
+      }
+      val attributeNameErrorMessagePart = if (attributeName != null) {
+         " (attempting to build attribute $attributeName of ${this.type.name}"
+      } else ""
+      return when {
+         searchType.isCollection -> {
+            if (isEmptyCollectionBuildResult(buildResult, searchFailureBehaviour)) {
+               // Unwrap the array
+               TypedCollection.empty(searchType)
+            } else if (isNullListBuildResult(buildResult, searchFailureBehaviour)) {
+               val failureMessage = "Searching for ${searchType.name.shortDisplayName}${attributeNameErrorMessagePart} failed"
+               failWithTypedNull(failureMessage)
+
+            } else {
+               TypedCollection.arrayOf(searchType.collectionType!!, buildResult.filter { it !is TypedNull })
+            }
+         }
+         buildResult.isEmpty() -> {
+            val message = "Searching for ${searchType.name.shortDisplayName}${attributeNameErrorMessagePart} failed"
+            failWithTypedNull(message)
+         }
+         buildResult.size == 1 -> buildResult.single()
+         else -> {
+            val message =
+               "Querying to find type ${searchType.name.shortDisplayName}${attributeNameErrorMessagePart} returned ${buildResult.size} results, which is ambiguous.  Returning null"
+            logger.debug { message }
+            failWithTypedNull(message)
+         }
       }
    }
 
@@ -825,6 +893,7 @@ class TypedObjectFactory(
          }
       }
    }
+
    /**
     * When we build with SEND_TYPED_NULL and the result can't be found,
     * the internal builder returns a typed null.
@@ -839,7 +908,7 @@ class TypedObjectFactory(
    private fun isNullListBuildResult(
       buildResult: List<TypedInstance>,
       searchFailureBehaviour: QueryFailureBehaviour
-   ):Boolean {
+   ): Boolean {
       return when {
          searchFailureBehaviour != QueryFailureBehaviour.SEND_TYPED_NULL -> false
          buildResult.size != 1 -> false
