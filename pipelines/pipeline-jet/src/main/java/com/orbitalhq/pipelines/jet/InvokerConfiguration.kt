@@ -1,5 +1,6 @@
 package com.orbitalhq.pipelines.jet
 
+import com.orbitalhq.connectors.StreamErrorPublisher
 import com.orbitalhq.connectors.aws.core.registry.AwsConnectionRegistry
 import com.orbitalhq.connectors.aws.lambda.LambdaInvoker
 import com.orbitalhq.connectors.aws.s3.S3Invoker
@@ -87,15 +88,22 @@ class InvokerConfiguration {
    }
 
    @Bean
+   fun streamErrorPublisher() = StreamErrorPublisher()
+
+   @Bean
    fun kafkaInvoker(
       streamManager: KafkaStreamManager,
-      streamPublisher: KafkaStreamPublisher
+      streamPublisher: KafkaStreamPublisher,
+      streamErrorPublisher: StreamErrorPublisher
    ): KafkaInvoker {
       return KafkaInvoker(
          streamManager,
-         streamPublisher
+         streamPublisher,
+         streamErrorPublisher
       )
    }
+
+
 
    @Bean
    fun azureStoreInvoker(

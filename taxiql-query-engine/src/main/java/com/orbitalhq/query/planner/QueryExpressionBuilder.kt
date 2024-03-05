@@ -39,6 +39,7 @@ class QueryExpressionBuilder(private val queryPlanner: QueryPlanner) {
    fun build(taxiQl: TaxiQlQuery, schema: Schema): Triple<QueryExpression,TaxiQlQuery, Schema> {
       val constraintProvider = TaxiConstraintConverter(schema)
       val queryMetadata = queryPlanner.buildMetadata(taxiQl, schema)
+
       val queryExpressions = taxiQl.typesToFind.map { discoveryType ->
 
          val targetType = when {

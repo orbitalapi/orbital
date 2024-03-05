@@ -1,5 +1,8 @@
 package com.orbitalhq.connectors.kafka
 
+import arrow.core.Either
+import arrow.core.flatMap
+import com.orbitalhq.connectors.StreamErrorPublisher
 import com.orbitalhq.models.DataSourceUpdater
 import com.orbitalhq.models.OperationResultDataSourceWrapper
 import com.orbitalhq.models.TypedInstance
@@ -13,7 +16,7 @@ import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import lang.taxi.services.OperationScope
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
@@ -21,7 +24,8 @@ import mu.KotlinLogging
 
 class KafkaInvoker(
    private val streamManager: KafkaStreamManager,
-   private val streamWriter: KafkaStreamPublisher
+   private val streamWriter: KafkaStreamPublisher,
+   private val streamErrorPublisher: StreamErrorPublisher
 ) : OperationInvoker {
    companion object {
       init {
@@ -100,14 +104,23 @@ class KafkaInvoker(
             operation,
             streamSourceId = queryOptions.streamConsumerId
          )
-      ).map { instance ->
-         val dataSource = instance.source
-         require(dataSource is OperationResultDataSourceWrapper) { "Expected OperationResultDataSourceWrapper as the datasource, found ${dataSource::class.simpleName}" }
-         eventDispatcher.reportRemoteOperationInvoked(dataSource.operationResult, queryId)
+      ).mapNotNull { errorOrInstance ->
+         when (errorOrInstance) {
+            is Either.Right -> {
+               val instance = errorOrInstance.value
+               val dataSource = instance.source
+               require(dataSource is OperationResultDataSourceWrapper) { "Expected OperationResultDataSourceWrapper as the datasource, found ${dataSource::class.simpleName}" }
+               eventDispatcher.reportRemoteOperationInvoked(dataSource.operationResult, queryId)
 
-         DataSourceUpdater.update(instance, dataSource.operationResultReferenceSource)
+               DataSourceUpdater.update(instance, dataSource.operationResultReferenceSource)
+            }
+
+            is Either.Left -> {
+               streamErrorPublisher.onError(queryId, errorOrInstance.value)
+               null
+            }
+         }
       }
-
       return stream
    }
 
