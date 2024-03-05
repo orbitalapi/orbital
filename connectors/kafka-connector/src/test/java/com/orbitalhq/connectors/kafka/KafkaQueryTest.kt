@@ -25,6 +25,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Configuration
 import org.springframework.test.context.junit4.SpringRunner
+import reactor.test.StepVerifier
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit.SECONDS
@@ -280,10 +281,12 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
                ${KafkaConnectorTaxi.Annotations.imports}
                type MovieId inherits String
                type MovieTitle inherits String
+               type ReleaseDate inherits Instant
 
                model Movie {
                   id : MovieId
                   title : MovieTitle
+                  releaseDate: ReleaseDate?
                }
 
                @KafkaService( connectionName = "moviesConnection" )
@@ -317,6 +320,83 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
 
       val groupByQuery = mergedResults.groupBy { it.first }
       groupByQuery.keys.size.should.equal(2)
+   }
+
+   @Test
+   fun `subscription is not cancelled when there is a parsing exception`(): Unit = runBlocking {
+
+      val topic = "arrivals"
+      val (vyne, kafkaStreamManager, stub, streamErrors) = vyneWithKafkaInvoker("""
+               ${KafkaConnectorTaxi.Annotations.imports}
+                [[ Flight Number]]
+                type FlightNum inherits String
+               [[ Airport ]]
+               type Airport inherits String
+               [[ Terminal ]]
+               type Terminal inherits String
+               [[ Gate ]]
+               type Gate inherits String
+               [[ Arrival/Departure Time]]
+               type FlightDate inherits Date
+               [[ Arrival/Departure Time]]
+               @Format("yyyy-MM-dd HH:mm:ss")
+               type FlightTime inherits DateTime
+               [[ TraveTime in minutes]]
+               type TravelTime inherits Int
+               [[ Event Time]]
+               @Format("yyyy-MM-dd'T'HH:mm:ssXXX")
+               type EventTime inherits Instant
+
+               model Arrival {
+                event_time: EventTime
+                day: FlightDate
+                flight: FlightNum
+                airport: Airport
+                arrival_gate: Gate
+                arrival_time: FlightTime
+               }
+
+               @KafkaService( connectionName = "moviesConnection" )
+               service MovieService {
+                  @KafkaOperation( topic = "$topic", offset = "earliest" )
+                  stream streamMovieQuery:Stream<Arrival>
+               }
+
+            """.trimIndent())
+
+     val p =  DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
+         .parse("2024-03-04T16:57:06+00:00")
+
+      fun arrivalMessage(eventTime: String) = """
+         {
+           "event_time": "$eventTime",
+           "day": "2023-07-04",
+           "flight": "LH361",
+           "airport": "ATL",
+           "arrival_gate": "C90",
+           "arrival_time": "2023-07-04 11:23:00"
+         }
+      """.trimIndent()
+      // This will cause TypedInstance parse exception.
+      sendMessage(arrivalMessage( "2024-03-04T16:57:06.555+00:00"), topic)
+      // This is a valid message
+      sendMessage(arrivalMessage( "2024-03-04T16:57:06+00:00"), topic)
+
+      val result = vyne.query("""
+         stream { Arrival }"""
+         .trimIndent())
+
+         .results.take(1).toList() as List<TypedObject>
+
+      StepVerifier.create(streamErrors.errors.take(1))
+         .expectNextMatches { streamError ->
+            streamError.error.message == "Failed to parse value 2024-03-04T16:57:06.555+00:00 to type EventTime with formats yyyy-MM-dd'T'HH:mm:ssXXX - Text '2024-03-04T16:57:06.555+00:00' could not be parsed, unparsed text found at index 23"
+         }
+         .expectComplete()
+         .verify()
+      result.should.have.size(1)
+
+
    }
 
 

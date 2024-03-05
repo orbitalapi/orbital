@@ -2,6 +2,7 @@ package com.orbitalhq.connectors.kafka
 
 import com.orbitalhq.StubService
 import com.orbitalhq.Vyne
+import com.orbitalhq.connectors.StreamErrorPublisher
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.InMemoryKafkaConnectorRegistry
 import com.orbitalhq.models.TypedInstance
@@ -10,7 +11,6 @@ import com.orbitalhq.protobuf.ProtobufFormatSpec
 import com.orbitalhq.query.QueryResult
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
-import com.orbitalhq.testVyne
 import com.orbitalhq.testVyneWithStub
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.GlobalScope
@@ -35,8 +35,9 @@ import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import java.time.Instant
-import java.util.*
 import java.util.Collections.singleton
+import java.util.Properties
+import java.util.UUID
 import kotlin.random.Random
 
 @Testcontainers
@@ -111,7 +112,7 @@ abstract class BaseKafkaContainerTest {
       return sendMessage(message.toByteArray(), topic)
    }
 
-   fun vyneWithKafkaInvoker(taxi: String): Triple<Vyne, KafkaStreamManager, StubService> {
+   fun vyneWithKafkaInvoker(taxi: String): KafkaTestSetUp {
       val schema = TaxiSchema.fromStrings(
          listOf(
             KafkaConnectorTaxi.schema,
@@ -120,11 +121,12 @@ abstract class BaseKafkaContainerTest {
       )
       val kafkaStreamPublisher = KafkaStreamPublisher(connectionRegistry, formatRegistry = formatRegistry, meterRegistry = SimpleMeterRegistry())
       val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry, meterRegistry = SimpleMeterRegistry())
+      val streamErrorPublisher = StreamErrorPublisher()
       val invokers = listOf(
-         KafkaInvoker(kafkaStreamManager, kafkaStreamPublisher),
+         KafkaInvoker(kafkaStreamManager, kafkaStreamPublisher, streamErrorPublisher),
       )
-      val (vyne,stub) = testVyneWithStub(schema, invokers)
-      return Triple(vyne , kafkaStreamManager ,stub)
+      val (vyne, stub) = testVyneWithStub(schema, invokers)
+      return KafkaTestSetUp(vyne , kafkaStreamManager, stub, streamErrorPublisher)
    }
 
    fun collectQueryResults(query: QueryResult, resultsFromQuery1: MutableList<TypedInstance>) {
@@ -139,3 +141,5 @@ abstract class BaseKafkaContainerTest {
    }
 
 }
+
+data class KafkaTestSetUp(val vyne: Vyne, val kafkaStreamManager: KafkaStreamManager, val stubService: StubService, val streamErrorPublisher: StreamErrorPublisher)

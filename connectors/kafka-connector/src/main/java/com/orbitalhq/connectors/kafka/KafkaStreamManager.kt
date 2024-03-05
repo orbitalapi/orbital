@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.kafka
 
+import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
@@ -58,7 +59,7 @@ class KafkaStreamManager(
    private val logger = KotlinLogging.logger {}
 
    private val cache = CacheBuilder.newBuilder()
-      .build<KafkaConsumerRequest, SharedFlow<TypedInstance>>()
+      .build<KafkaConsumerRequest, SharedFlow<Either<Exception, TypedInstance>>>()
 
    private val messageCounter = ConcurrentHashMap<KafkaConsumerRequest, AtomicInteger>()
 
@@ -71,7 +72,7 @@ class KafkaStreamManager(
 
    fun getActiveRequests(): List<KafkaConsumerRequest> = cache.asMap().keys.toList()
 
-   fun getStream(request: KafkaConsumerRequest): Flow<TypedInstance> {
+   fun getStream(request: KafkaConsumerRequest): Flow<Either<Exception, TypedInstance>> {
       return cache.get(request) {
          getCounter(request) // Force creation
          buildSharedFlow(request)
@@ -91,7 +92,7 @@ class KafkaStreamManager(
       logger.info { "Evicted connection ${consumerRequest.connectionName} / ${consumerRequest.topicName}" }
    }
 
-   private fun buildSharedFlow(request: KafkaConsumerRequest): SharedFlow<TypedInstance> {
+   private fun buildSharedFlow(request: KafkaConsumerRequest): SharedFlow<Either<Exception, TypedInstance>> {
       logger.info { "Creating new kafka subscription for request $request" }
       val (connectionConfiguration, receiverOptions) = buildReceiverOptions(request)
       val messageType = schemaProvider.schema.type(request.messageType).let { type ->
@@ -129,13 +130,23 @@ class KafkaStreamManager(
                String(record.value())
             }
 
-            TypedInstance.from(
-               messageType,
-               messageValue,
-               schema,
-               formatSpecs = formatRegistry.formats,
-               source = dataSource
-            )
+            val typedInstanceOrError =  try {
+               Either.Right(
+               TypedInstance.from(
+                  messageType,
+                  messageValue,
+                  schema,
+                  formatSpecs = formatRegistry.formats,
+                  source = dataSource
+               ))
+            }  catch(e: Exception ) {
+
+               if (logger.isTraceEnabled) {
+                  logger.trace { "Failed to parse TypedInstance from kafka data for type => $messageType  value => $messageValue" }
+               }
+               Either.Left(e)
+            }
+            typedInstanceOrError
          }
          .asFlow()
          // SharingStarted.WhileSubscribed() means that we unsubscribe when all subscribers have gone away.

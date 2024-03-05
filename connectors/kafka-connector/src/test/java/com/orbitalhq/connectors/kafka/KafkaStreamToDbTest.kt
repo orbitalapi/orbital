@@ -2,6 +2,7 @@ package com.orbitalhq.connectors.kafka
 
 import com.jayway.awaitility.Awaitility
 import com.nhaarman.mockito_kotlin.mock
+import com.orbitalhq.connectors.StreamErrorPublisher
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
@@ -9,8 +10,6 @@ import com.orbitalhq.connectors.jdbc.HikariJdbcConnectionFactory
 import com.orbitalhq.connectors.jdbc.JdbcConnectionFactory
 import com.orbitalhq.connectors.jdbc.JdbcConnectorTaxi
 import com.orbitalhq.connectors.jdbc.JdbcInvoker
-import com.orbitalhq.connectors.jdbc.NamedTemplateConnection
-import com.orbitalhq.connectors.jdbc.SimpleJdbcConnectionFactory
 import com.orbitalhq.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.schema.api.SimpleSchemaProvider
@@ -24,15 +23,6 @@ import org.jooq.impl.DSL
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.context.annotation.Configuration
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories
-import org.springframework.jdbc.core.JdbcTemplate
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
-import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import java.util.concurrent.TimeUnit
@@ -130,7 +120,7 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
             KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry, meterRegistry = SimpleMeterRegistry())
          listOf(
             JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(schema)),
-            KafkaInvoker(kafkaStreamManager, mock { })
+            KafkaInvoker(kafkaStreamManager, mock { }, StreamErrorPublisher())
          )
       }
 
@@ -219,7 +209,7 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
             KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry, meterRegistry = SimpleMeterRegistry())
          listOf(
             JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(schema)),
-            KafkaInvoker(kafkaStreamManager, mock {})
+            KafkaInvoker(kafkaStreamManager, mock {}, StreamErrorPublisher())
          )
       }
 
