@@ -78,6 +78,7 @@ export class QueryEditorComponent implements OnInit {
   queryClientId: string | null = null;
   lastQueryResult: QueryResult | FailedSearchResponse;
   queryReturnedResults: boolean | null = null;
+  queryStartTime: Date = null;
 
   // queryResults: InstanceLike[];
 
@@ -184,6 +185,7 @@ export class QueryEditorComponent implements OnInit {
 
   private prepareToSubmitQuery() {
     this.currentState$.next('Running');
+    this.queryStartTime = new Date();
     this.lastQueryResult = null;
     this.lastErrorMessage = null;
     this.errorCount = 0;

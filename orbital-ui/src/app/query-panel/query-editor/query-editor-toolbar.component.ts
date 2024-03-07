@@ -204,7 +204,6 @@ export class QueryEditorToolbar {
     }
 
     runQuery() {
-        this.queryStarted = new Date();
         this.executeQuery.emit();
     }
 

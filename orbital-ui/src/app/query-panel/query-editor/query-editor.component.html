@@ -24,6 +24,7 @@
               <app-query-editor-toolbar
                 (executeQuery)='submitQuery()'
                 [currentState$]='currentState$'
+                [queryStarted]="queryStartTime"
                 [(queryLanguage)]='queryLanguage'
                 [runningQueryStatus]='queryMetadata$ | async'
                 (cancelQuery)='cancelQuery()'
