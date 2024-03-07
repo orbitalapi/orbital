@@ -61,6 +61,8 @@
 
         <app-tabbed-results-view [instances$]='results$'
                                  [profileData$]='queryProfileData$'
+                                 [errorMessages$]="errors$"
+                                 [errorCount]="errorCount"
                                  [type]='resultType'
                                  (loadProfileData)='loadProfileData()'
                                  [anonymousTypes]='anonymousTypes'

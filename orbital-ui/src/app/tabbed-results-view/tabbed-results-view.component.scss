@@ -7,8 +7,17 @@
 
 .tab-icon {
   margin-right: 0.6rem;
-  width: 1.2rem;
+  width: 24px;
   opacity: 0.5;
+}
+
+tui-badge.error-count-badge {
+  margin-left: 0.5rem;
+
+  background-color: $error-light;
+  font-weight: 800;
+  font-size: 0.7rem;
+  font-family: $headings-font; // nunito looks bad at this small size, use DM-Sans
 }
 
 .spacer {

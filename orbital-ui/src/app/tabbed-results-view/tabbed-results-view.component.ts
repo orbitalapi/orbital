@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, In
 import { BehaviorSubject, EMPTY, Observable, of, Subject } from 'rxjs';
 import { DisplayMode, DownloadClickedEvent } from '../object-view/object-view-container.component';
 import { InstanceLike, Type } from '../services/schema';
-import { QueryProfileData } from '../services/query.service';
+import {QueryProfileData, StreamErrorMessage, StreamQueryErrorEvent} from '../services/query.service';
 import { BaseQueryResultComponent } from '../query-panel/result-display/BaseQueryResultComponent';
 import { TypesService } from '../services/types.service';
 import { AppInfoService, AppConfig } from '../services/app-info.service';
@@ -54,6 +54,11 @@ import { map, scan, tap } from 'rxjs/operators';
             Profiler
           </button>
         </ng-container>
+        <button *tuiItem tuiTab>
+          <img src="assets/img/tabler/exclamation-circle.svg" class="tab-icon">
+          Problems
+          <tui-badge class="error-count-badge" *ngIf="errorCount > 0" [value]="errorCount" size="xs"></tui-badge>
+        </button>
       </tui-tabs-with-more>
       <ng-template #more>
         <tui-svg src="tuiIconMoreHorizontalLarge"></tui-svg>
@@ -85,6 +90,8 @@ import { map, scan, tap } from 'rxjs/operators';
     <app-call-explorer [queryProfileData$]="profileData$"
                        *ngIf="activeTabIndex === 3 && showResultsPanel && !isQueryRunning"></app-call-explorer>
 
+    <app-query-errors-list
+      *ngIf="activeTabIndex == 4" [errorMessages$]="errorMessages$"></app-query-errors-list>
     <ng-template #downloadIcon>
       <tui-svg
         src="tuiIconChevronDown"
@@ -126,7 +133,10 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   @Input()
   isQueryRunning: boolean
 
-  constructor(protected typeService: TypesService, protected appInfoService: AppInfoService, private dialogService: MatDialog, private changeDetector: ChangeDetectorRef) {
+  constructor(protected typeService: TypesService,
+              protected appInfoService: AppInfoService,
+              private dialogService: MatDialog,
+              private changeDetector: ChangeDetectorRef) {
     super(typeService);
     appInfoService.getConfig()
       .subscribe(next => this.config = next);
@@ -139,6 +149,9 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
 
   @Input()
   profilerEnabled: boolean = true;
+
+  @Input()
+  errorCount = 0
 
   @Output()
   loadProfileData = new EventEmitter();
@@ -162,6 +175,9 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
 
   private _instances$: Observable<InstanceLike>;
   PROFILER_TAB_INDEX = 3;
+
+  @Input()
+  errorMessages$: Observable<StreamQueryErrorEvent>
 
   @Input()
   get instances$(): Observable<InstanceLike> {
