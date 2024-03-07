@@ -6,10 +6,11 @@
 
 // my other global styles
 :root {
+  --tui-duration: 150ms;
 
-  --tui-radius-s: 0.3rem;
-  --tui-radius-m: 0.4rem;
-  --tui-radius-l: 0.5rem;
+  --tui-radius-s: 3px;
+  --tui-radius-m: 5px;
+  --tui-radius-l: 6px;
 
   --tui-primary-active: #{$primary-dark};
 
@@ -19,7 +20,20 @@
   --tui-text-font: var(--body-font);
   --tui-font-text: var(--body-font);
   --tui-font-heading-6: normal 1rem #{$headings-font};
+
+  [tuiWrapper][data-appearance='textfield']:hover:not(._no-hover) {
+  }
+  [tuiWrapper][data-appearance='textfield']:hover:not(._no-hover), [tuiWrapper][data-appearance='textfield'][data-state='hover'] {
+    box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.06);
+    outline: solid 1px #{$slate-300};
+
+  }
 }
+
+tui-root {
+  --tui-duration: 150ms !important;
+}
+
 
 tui-dialog {
   border-radius: 8px !important;
