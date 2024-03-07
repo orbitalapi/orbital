@@ -9,7 +9,7 @@ import {ExpandingPanelSetModule} from "../expanding-panelset/expanding-panel-set
 import {CodeViewerModule} from "../code-viewer/code-viewer.module";
 import {NgApexchartsModule} from "ng-apexcharts";
 import {FormsModule} from "@angular/forms";
-import {TuiDataListModule, TuiTextfieldControllerModule} from "@taiga-ui/core";
+import {TuiDataListModule, TuiNotificationModule, TuiTextfieldControllerModule} from "@taiga-ui/core";
 import { UiCustomisations } from '../../environments/ui-customisations';
 
 @NgModule({
@@ -42,6 +42,7 @@ import { UiCustomisations } from '../../environments/ui-customisations';
         TuiTextfieldControllerModule,
         TuiDataListModule,
         TuiCheckboxLabeledModule,
+        TuiNotificationModule,
     ]
 })
 export class EndpointManagerModule {
