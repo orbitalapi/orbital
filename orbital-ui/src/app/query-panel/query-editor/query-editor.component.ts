@@ -9,7 +9,7 @@ import {
   OnInit,
   Output
 } from '@angular/core';
-import {map, startWith, tap} from 'rxjs/operators';
+import {map, retry, startWith, tap} from 'rxjs/operators';
 
 import {editor, KeyCode, KeyMod} from 'monaco-editor';
 import {
@@ -19,7 +19,7 @@ import {
   QueryResult,
   QueryService,
   randomId,
-  ResultMode
+  ResultMode, StreamErrorMessage, StreamQueryErrorEvent
 } from '../../services/query.service';
 import {QueryHistoryStoreService} from '../../services/query-history-store.service';
 import {QueryLanguage, QueryState} from './query-editor-toolbar.component';
@@ -27,7 +27,7 @@ import {isQueryResult, QueryResultInstanceSelectedEvent} from '../result-display
 import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
 import {findType, InstanceLike, QualifiedName, Schema, Type, VersionedSource} from '../../services/schema';
 import {BehaviorSubject, Observable, ReplaySubject, Subject} from 'rxjs';
-import { isNullOrUndefined } from 'src/app/utils/utils';
+import {isNullOrUndefined} from 'src/app/utils/utils';
 import {ActiveQueriesNotificationService, RunningQueryStatus} from '../../services/active-queries-notification-service';
 import {TypesService} from '../../services/types.service';
 import {
@@ -78,6 +78,7 @@ export class QueryEditorComponent implements OnInit {
   queryClientId: string | null = null;
   lastQueryResult: QueryResult | FailedSearchResponse;
   queryReturnedResults: boolean | null = null;
+  queryStartTime: Date = null;
 
   // queryResults: InstanceLike[];
 
@@ -85,6 +86,7 @@ export class QueryEditorComponent implements OnInit {
   anonymousTypes: Type[] = [];
   private latestQueryStatus: RunningQueryStatus | null = null;
   results$: Subject<InstanceLike>;
+  errors$: Subject<StreamQueryErrorEvent>;
   queryProfileData$: Observable<QueryProfileData>;
   isProfileDataLoading$: Observable<boolean>;
   queryMetadata$: Observable<RunningQueryStatus>;
@@ -108,6 +110,8 @@ export class QueryEditorComponent implements OnInit {
   valuePanelVisible: boolean = false;
 
   queryParseResult: ChatParseResult;
+
+  errorCount = 0;
 
   @Output()
   queryResultUpdated = new EventEmitter<QueryResult | FailedSearchResponse>();
@@ -181,8 +185,10 @@ export class QueryEditorComponent implements OnInit {
 
   private prepareToSubmitQuery() {
     this.currentState$.next('Running');
+    this.queryStartTime = new Date();
     this.lastQueryResult = null;
     this.lastErrorMessage = null;
+    this.errorCount = 0;
     this.queryReturnedResults = false;
     this.loadingChanged.emit(true);
     this.queryClientId = randomId();
@@ -190,6 +196,8 @@ export class QueryEditorComponent implements OnInit {
     // Use a replay subject here, so that when people switch
     // between Query Results and Profiler tabs, the results are still made available
     this.results$ = new ReplaySubject(5000);
+    this.errors$ = new ReplaySubject(5000);
+
     this.latestQueryStatus = null;
     this.queryMetadata$ = null;
     this.queryProfileData$ = null;
@@ -238,6 +246,19 @@ export class QueryEditorComponent implements OnInit {
       queryMessageHandler,
       queryCompleteHandler,
       queryCompleteHandler);
+
+
+    // TODO : Handle unsubscribe
+    this.queryService.getQueryErrors(this.queryClientId)
+      .pipe(retry({
+        count: 3,
+        delay: 250
+      }))
+      .subscribe(message => {
+          this.errorCount++;
+          this.errors$.next(message)
+        }
+      )
   }
 
   private subscribeForQueryStatusUpdates(queryId: string) {
@@ -343,7 +364,7 @@ export class QueryEditorComponent implements OnInit {
       ).subscribe();
     } else {
       copyQueryAs(this.query, this.queryService.queryEndpoint, $event, this.clipboard);
-      this.alerts.open('Copied to clipboard', { status: TuiNotification.Success})
+      this.alerts.open('Copied to clipboard', {status: TuiNotification.Success})
         .subscribe()
     }
   }

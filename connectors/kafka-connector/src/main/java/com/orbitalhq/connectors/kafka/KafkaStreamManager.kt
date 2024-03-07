@@ -3,6 +3,8 @@ package com.orbitalhq.connectors.kafka
 import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
+import com.orbitalhq.connectors.StreamErrorMessage
+import com.orbitalhq.connectors.StreamQueryErrorEvent
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
 import com.orbitalhq.connectors.kafka.registry.brokers
@@ -59,7 +61,7 @@ class KafkaStreamManager(
    private val logger = KotlinLogging.logger {}
 
    private val cache = CacheBuilder.newBuilder()
-      .build<KafkaConsumerRequest, SharedFlow<Either<Exception, TypedInstance>>>()
+      .build<KafkaConsumerRequest, SharedFlow<Either<StreamErrorMessage, TypedInstance>>>()
 
    private val messageCounter = ConcurrentHashMap<KafkaConsumerRequest, AtomicInteger>()
 
@@ -72,13 +74,14 @@ class KafkaStreamManager(
 
    fun getActiveRequests(): List<KafkaConsumerRequest> = cache.asMap().keys.toList()
 
-   fun getStream(request: KafkaConsumerRequest): Flow<Either<Exception, TypedInstance>> {
+   fun getStream(request: KafkaConsumerRequest): Flow<Either<StreamErrorMessage, TypedInstance>> {
       return cache.get(request) {
          getCounter(request) // Force creation
          buildSharedFlow(request)
       }
    }
-   private fun getCounter(request:KafkaConsumerRequest):AtomicInteger {
+
+   private fun getCounter(request: KafkaConsumerRequest): AtomicInteger {
       return messageCounter.getOrPut(request) {
          logger.info { "Creating Kafka message counter for topic ${request.topicName}" }
          AtomicInteger(0)
@@ -92,7 +95,7 @@ class KafkaStreamManager(
       logger.info { "Evicted connection ${consumerRequest.connectionName} / ${consumerRequest.topicName}" }
    }
 
-   private fun buildSharedFlow(request: KafkaConsumerRequest): SharedFlow<Either<Exception, TypedInstance>> {
+   private fun buildSharedFlow(request: KafkaConsumerRequest): SharedFlow<Either<StreamErrorMessage, TypedInstance>> {
       logger.info { "Creating new kafka subscription for request $request" }
       val (connectionConfiguration, receiverOptions) = buildReceiverOptions(request)
       val messageType = schemaProvider.schema.type(request.messageType).let { type ->
@@ -120,7 +123,6 @@ class KafkaStreamManager(
                .increment()
          }
          .map { record ->
-
             getCounter(request).incrementAndGet()
 
             logger.trace { "Received message on topic ${record.topic()} with offset ${record.offset()}" }
@@ -130,21 +132,26 @@ class KafkaStreamManager(
                String(record.value())
             }
 
-            val typedInstanceOrError =  try {
+            val typedInstanceOrError = try {
                Either.Right(
-               TypedInstance.from(
-                  messageType,
-                  messageValue,
-                  schema,
-                  formatSpecs = formatRegistry.formats,
-                  source = dataSource
-               ))
-            }  catch(e: Exception ) {
-
-               if (logger.isTraceEnabled) {
-                  logger.trace { "Failed to parse TypedInstance from kafka data for type => $messageType  value => $messageValue" }
-               }
-               Either.Left(e)
+                  TypedInstance.from(
+                     messageType,
+                     messageValue,
+                     schema,
+                     formatSpecs = formatRegistry.formats,
+                     source = dataSource
+                  )
+               )
+            } catch (e: Exception) {
+               val errorMessage = StreamErrorMessage(
+                  timestamp = Instant.now(),
+                  exception = e,
+                  message = e.message ?: e::class.simpleName!!,
+                  typeName = messageType.paramaterizedName,
+                  payload = messageValue
+               )
+               logger.info { "Failed to parse TypedInstance from kafka data for type => $messageType  value => $messageValue" }
+               Either.Left(errorMessage)
             }
             typedInstanceOrError
          }

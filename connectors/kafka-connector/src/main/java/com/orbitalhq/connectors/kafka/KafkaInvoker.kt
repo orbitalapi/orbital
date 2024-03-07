@@ -29,9 +29,10 @@ class KafkaInvoker(
 ) : OperationInvoker {
    companion object {
       init {
-          KafkaConnectorTaxi.registerMetadataUsage()
+         KafkaConnectorTaxi.registerMetadataUsage()
       }
    }
+
    private val logger = KotlinLogging.logger {}
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.hasMetadata(KafkaConnectorTaxi.Annotations.KafkaService.NAME) && operation.hasMetadata(
@@ -75,7 +76,7 @@ class KafkaInvoker(
    ): Flow<TypedInstance> {
       require(parameters.size == 1) { "Expected a single parameter (the message to publish), but found ${parameters.size}" }
 
-      require(eventDispatcher is QueryContextSchemaProvider) { "EventDispatcher is not a QueryContext, Need a way to access the schema "}
+      require(eventDispatcher is QueryContextSchemaProvider) { "EventDispatcher is not a QueryContext, Need a way to access the schema " }
       val schema = eventDispatcher.schema
       // TODO: Get the key from the parameters.
       val key = TypedNull.create(schema.type(PrimitiveType.STRING))

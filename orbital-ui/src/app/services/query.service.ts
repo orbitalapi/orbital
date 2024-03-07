@@ -74,6 +74,11 @@ export class QueryService {
     return websocket;
   }
 
+  getQueryErrors(clientQueryId: string):Observable<StreamQueryErrorEvent> {
+    const websocket = this.websocketService.websocket(`/api/query/taxiql/${clientQueryId}/errors`);
+    return websocket
+  }
+
   /**
    * @deprecated use websocketQuery() instead
    *
@@ -515,4 +520,17 @@ export interface ParsedChatCondition {
   operator: any;
   left: any;
   right: any;
+}
+
+
+export interface StreamErrorMessage {
+  timestamp: Date
+  message: StreamErrorMessage;
+  typeName: string;
+  payload: any;
+}
+
+export interface StreamQueryErrorEvent {
+  queryId: string;
+  error: StreamErrorMessage
 }

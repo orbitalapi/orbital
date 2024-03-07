@@ -6,9 +6,10 @@ import {CallExplorerModule} from '../query-panel/taxi-viewer/call-explorer/call-
 import {CommonModule} from '@angular/common';
 import {LineageDisplayModule} from '../lineage-display/lineage-display.module';
 import {ExpandingPanelSetModule} from '../expanding-panelset/expanding-panel-set.module';
-import {TuiProgressModule, TuiTabsModule} from '@taiga-ui/kit';
+import {TuiBadgeModule, TuiProgressModule, TuiTabsModule} from '@taiga-ui/kit';
 import {TuiButtonModule, TuiDataListModule, TuiHostedDropdownModule, TuiSvgModule} from '@taiga-ui/core';
 import {JsonViewerModule} from 'src/app/json-viewer/json-viewer.module';
+import {QueryErrorsListComponent} from "../query-errors-list/query-errors-list.component";
 
 @NgModule({
   imports: [
@@ -24,7 +25,9 @@ import {JsonViewerModule} from 'src/app/json-viewer/json-viewer.module';
     TuiSvgModule,
     TuiDataListModule,
     JsonViewerModule,
-    TuiProgressModule
+    TuiProgressModule,
+    QueryErrorsListComponent,
+    TuiBadgeModule
 
   ],
   exports: [TabbedResultsViewComponent],
