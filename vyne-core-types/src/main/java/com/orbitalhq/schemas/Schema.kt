@@ -11,6 +11,7 @@ import lang.taxi.TaxiDocument
 import lang.taxi.packages.SourcesType
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
+import lang.taxi.services.OperationScope
 import lang.taxi.types.ArrayType
 import lang.taxi.types.ObjectType
 
@@ -108,10 +109,13 @@ interface Schema {
    }
 
    fun operationsWithReturnTypeContaining(
-      requiredType: Type
+      requiredType: Type,
+      scopes: Set<OperationScope> = setOf(OperationScope.READ_ONLY)
    ):Set<Pair<Service,RemoteOperation>> {
       return services.flatMap { service ->
-         service.remoteOperations.filter { operation ->
+         service.remoteOperations
+            .filter { operation -> scopes.contains(operation.operationType) }
+            .filter { operation ->
             val returnType = (operation.returnType.collectionType ?: operation.returnType).taxiType
             when {
                returnType.isAssignableTo(requiredType.taxiType) -> true

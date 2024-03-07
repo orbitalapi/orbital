@@ -2,7 +2,10 @@ package com.orbitalhq.query.planner
 
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
+import lang.taxi.compiled
 
 class QueryPlannerTest : DescribeSpec({
    describe("rewriting streaming queries") {
@@ -47,6 +50,30 @@ class QueryPlannerTest : DescribeSpec({
          )
          val (_, rewrittenQuery) = queryPlanner.buildQueryExpression(query, querySchema)
          rewrittenQuery.source.shouldStartWith("""stream { Tweet }""")
+      }
+
+      // ORB-250
+      it("should not modify streaming sources to discover inputs to mutations") {
+         val schema = TaxiSchema.from("""
+            model Tweet {
+               tweet : TweetText inherits String
+            }
+            parameter model PersistedTweet {
+               id : DbId inherits Int
+            }
+            service TweetService {
+               stream tweets : Stream<Tweet>
+               stream updatedTweets : Stream<PersistedTweet>
+
+               write operation saveTweet(PersistedTweet):PersistedTweet
+            }
+         """)
+         val (query, _, querySchema) = schema.parseQuery("""
+            stream { Tweet }
+            call  TweetService::saveTweet
+         """.trimIndent())
+         val (_, rewrittenQuery) = queryPlanner.buildQueryExpression(query, querySchema)
+         rewrittenQuery.typesToFind.single().type.toQualifiedName().parameterizedName.shouldBe("lang.taxi.Stream<Tweet>")
       }
 
       it("should not modify streaming sources where the query already specifies existing sources") {
