@@ -29,6 +29,11 @@ class ConnectorsConfig {
          projectManager = projectManager,
          filePattern = "connections.conf"
       )
+      val projectManagerEnvSourceLoader = ProjectManagerConfigSourceLoader(
+         schemaEventSource = schemaStore,
+         projectManager = projectManager,
+         filePattern = "env.conf"
+      )
       val builtinLoaders = listOf(
          FileConfigSourceLoader(
             envVariablesConfig.envVariablesPath,
@@ -41,7 +46,8 @@ class ConnectorsConfig {
             packageIdentifier = VyneConnectionsConfig.PACKAGE_IDENTIFIER,
             failIfNotFound = false
          ),
-         projectManagerConfigSourceLoader
+         projectManagerConfigSourceLoader,
+         projectManagerEnvSourceLoader
       )
 
       val totalLoaders = additionalLoaders?.plus(builtinLoaders) ?: builtinLoaders
