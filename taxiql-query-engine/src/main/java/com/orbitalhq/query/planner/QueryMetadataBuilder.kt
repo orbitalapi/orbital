@@ -37,7 +37,11 @@ class QueryMetadataBuilder(cacheSize: Int = 50) {
    }
 
    private fun doBuildMetadata(taxiQlQuery: TaxiQlQuery, schema: Schema): QueryPlanMetadata {
-      val referencedTypes = collectReferencedTypes(taxiQlQuery.unwrappedReturnType, schema) +
+      // here, we avoid using the return type of the search if possible, as if the
+      // query is a find-then-mutate, we want to build the query plan around the find phase, not the final mutation.
+      // However, if there is no projection or source type, then this query is only a mutation, and it's safe the build the plan for.
+      val searchType = taxiQlQuery.projectedType ?: taxiQlQuery.typesToFind.map { it.type }.singleOrNull() ?: taxiQlQuery.unwrappedReturnType
+      val referencedTypes = collectReferencedTypes(searchType, schema) +
          taxiQlQuery.typesToFind.map { TopLevelType(it.type.toVyneType(schema)) }
       val providedTypes = taxiQlQuery.facts.map { it.type }.toSet()
       val typesAndCandidateOperations = referencedTypes
