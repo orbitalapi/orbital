@@ -31,7 +31,6 @@ class QueryMetadataBuilder(cacheSize: Int = 50) {
     */
    fun buildMetadata(taxiQlQuery: TaxiQlQuery, schema: Schema): QueryPlanMetadata {
       val cacheKey = QueryPlanCacheKey(taxiQlQuery, schema)
-      return doBuildMetadata(taxiQlQuery, schema)
       return cache.get(cacheKey.hashCode()) {
          doBuildMetadata(taxiQlQuery, schema)
       }
