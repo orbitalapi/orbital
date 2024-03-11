@@ -1,12 +1,12 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
-import { QualifiedName, Schema, SchemaMember, Type, VersionedSource } from '../services/schema';
+import { NamedAndDocumented, QualifiedName, Schema, SchemaMember, Type, VersionedSource } from '../services/schema';
 import { Contents } from './toc-host.directive';
-import { environment } from '../../environments/environment';
 import { OperationQueryResult } from '../services/types.service';
 import { Router } from '@angular/router';
 import { isNullOrUndefined } from 'src/app/utils/utils';
 import { Observable } from 'rxjs';
 import { Inheritable } from 'src/app/inheritence-graph/build.inheritable';
+import { EditMemberDescriptionEvent, SchemaEditOperation } from '../project-import/schema-importer.service';
 
 /**
  * Whether changes should be saved immediately, or
@@ -46,7 +46,7 @@ export class TypeViewerComponent {
   private _editable = false;
 
   @Output()
-  typeUpdated: EventEmitter<Type> = new EventEmitter<Type>();
+  typeUpdated: EventEmitter<{schemaEditOperation: SchemaEditOperation, member: Type}> = new EventEmitter();
 
   @Output()
   newTypeCreated = new EventEmitter<Type>()
@@ -64,6 +64,9 @@ export class TypeViewerComponent {
       this.type = this._type;
     }
   }
+
+  @Input()
+  schemaMemberNavigable: boolean;
 
   // Set this if we're viewing a type where the
   // attributes might not exist in the schema ye.
@@ -121,10 +124,6 @@ export class TypeViewerComponent {
     return this._type;
   }
 
-  get requiredMembers(): string[] {
-    return [this.type.name.fullyQualifiedName];
-  }
-
   set type(value: Type) {
     this._type = value;
     if (this.type && this._editable) {
@@ -138,6 +137,10 @@ export class TypeViewerComponent {
         .join('\n');
     }
     this.changeDetector.markForCheck();
+  }
+
+  get requiredMembers(): string[] {
+    return [this.type.name.fullyQualifiedName];
   }
 
   contents: Contents;
@@ -158,6 +161,17 @@ export class TypeViewerComponent {
 
   navigateToType($event: QualifiedName) {
     this.router.navigate(['/catalog', getTypeNameToView($event).fullyQualifiedName])
+  }
+
+  onDescriptionChanged($event: NamedAndDocumented) {
+    const event: EditMemberDescriptionEvent = {
+      editKind: 'EditMemberDescription',
+      symbol: this.type.name,
+      memberKind: 'TYPE',
+      memberName: null,
+      typeDoc: $event.typeDoc,
+    }
+    this.typeUpdated.emit({schemaEditOperation: event, member: this.type})
   }
 }
 

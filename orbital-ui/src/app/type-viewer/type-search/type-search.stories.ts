@@ -46,7 +46,7 @@ storiesOf('Type search panel', module)
       <app-type-search
       [searchResults]="searchResults"
       [searchResultDocs]="searchResultsDocs"
-        [working]="true"
+        [loading]="true"
        (searchResultHighlighted)="onSearchResultHighlighted"></app-type-search>
       </div>
 `,

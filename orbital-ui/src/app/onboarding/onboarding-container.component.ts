@@ -43,7 +43,7 @@ export class OnboardingContainerComponent {
         return 0;
       case '/onboarding/data-source':
         return 1;
-      case '/onboarding/configure':
+      case '/onboarding/data-source/configure':
         return 2;
       case '/onboarding/explore':
         return 3;

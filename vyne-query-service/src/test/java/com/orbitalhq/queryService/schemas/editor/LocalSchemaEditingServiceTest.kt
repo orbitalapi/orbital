@@ -78,7 +78,7 @@ class LocalSchemaEditingServiceTest {
                      )
                   )
                ),
-               ChangeFieldType("com.films.Film".fqn(), "title", "com.films.FilmTitle".fqn())
+               ChangeFieldType("com.films.Film".fqn(), "title", "com.films.FilmTitle".fqn(), false)
             )
          )
       ).block()!!
@@ -145,7 +145,7 @@ class LocalSchemaEditingServiceTest {
                      )
                   )
                ),
-               ChangeFieldType("com.films.Film".fqn(), "title", "com.films.FilmTitle".fqn())
+               ChangeFieldType("com.films.Film".fqn(), "title", "com.films.FilmTitle".fqn(), false)
             )
          )
       ).block()!!

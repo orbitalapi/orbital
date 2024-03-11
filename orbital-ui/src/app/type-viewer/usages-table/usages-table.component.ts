@@ -7,11 +7,16 @@ import {OperationQueryResult, OperationQueryResultItem} from '../../services/typ
     <div class="column">
       <h4>Consumed by</h4>
       <div *ngFor="let input of typeAsInput">
-        <app-operation-badge *ngIf="input.operationName" [qualifiedName]="input.operationName"></app-operation-badge>
+        <app-operation-badge
+          *ngIf="input.operationName"
+          [qualifiedName]="input.operationName"
+          [schemaMemberNavigable]="schemaMemberNavigable"
+        ></app-operation-badge>
         <span *ngIf="!input.operationName" class="mono-badge">
-          <a [routerLink]="['/services',input.serviceName.fullyQualifiedName]">
-          {{input.serviceName.shortDisplayName }}
-            </a>
+          <ng-container *ngIf="!schemaMemberNavigable">{{ input.serviceName.shortDisplayName }}</ng-container>
+          <a *ngIf="schemaMemberNavigable" [routerLink]="['/services',input.serviceName.fullyQualifiedName]">
+            {{ input.serviceName.shortDisplayName }}
+          </a>
         </span>
       </div>
 
@@ -19,8 +24,11 @@ import {OperationQueryResult, OperationQueryResultItem} from '../../services/typ
     </div>
     <div class="column">
       <h4>Published by</h4>
-      <app-operation-badge *ngFor="let output of typeAsOutput"
-                           [qualifiedName]="output.operationName"></app-operation-badge>
+      <app-operation-badge
+        *ngFor="let output of typeAsOutput"
+        [qualifiedName]="output.operationName"
+        [schemaMemberNavigable]="schemaMemberNavigable"
+      ></app-operation-badge>
       <span class="subtle" *ngIf="!typeAsOutput || typeAsOutput.length === 0">Nothing</span>
     </div>
   `,
@@ -48,5 +56,7 @@ export class UsagesTableComponent {
     }
   }
 
+  @Input()
+  schemaMemberNavigable: boolean = true;
 
 }

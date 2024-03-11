@@ -1,30 +1,31 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Inject, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { Field, findType, QualifiedName, Schema, Type } from '../../services/schema';
 import { isNullOrUndefined } from 'src/app/utils/utils';
 import { TuiHandler } from '@taiga-ui/cdk';
 import { MatLegacyDialog as MatDialog, MatLegacyDialogRef as MatDialogRef } from '@angular/material/legacy-dialog';
 import { TypeSearchContainerComponent } from '../type-search/type-search-container.component';
 import { BaseDeferredEditComponent } from '../base-deferred-edit.component';
-import { TUI_TREE_LOADING, TuiTreeLoader, TuiTreeService } from '@taiga-ui/kit';
+import { TuiTreeLoader, TuiTreeService } from '@taiga-ui/kit';
 import { Observable, of } from 'rxjs';
 import { TypeSelectedEvent } from 'src/app/type-viewer/type-search/type-selected-event';
+import { ChangeFieldTypeEvent } from '../../project-import/schema-importer.service';
 
 
 export interface TypeMemberTreeNode {
   name: string;
   type: Type;
+  parentModel: Type;
   field: Field;
   isNew: boolean;
   children: TypeMemberTreeNode[];
   isRoot: boolean;
   isLastChild: boolean;
-  editingDescription: boolean;
 }
 
 @Component({
   selector: 'app-model-member',
   template: `
-    <div *ngIf="treeDataService">
+    <ng-container *ngIf="treeDataService">
       <tui-tree
         [tuiTreeController]="false"
         [value]="treeDataService.data$ | async"
@@ -35,18 +36,16 @@ export interface TypeMemberTreeNode {
       ></tui-tree>
       <ng-template #treeContent let-item>
         <div class="tree-node" [ngClass]="{child: !item.isRoot, isLastChild: item.isLastChild}">
-          <app-model-member-tree-node [treeNode]="item" [editable]="editable"
+          <app-model-member-tree-node [treeNode]="item"
+                                      [editable]="editable && item.isRoot"
+                                      [schemaMemberNavigable]="schemaMemberNavigable"
                                       [showFullTypeNames]="showFullTypeNames"
-                                      (nodeUpdated)="updateDeferred.emit(member)"
+                                      (nodeUpdated)="updateDeferred.emit({schemaEditOperation: $event, member})"
                                       (typeNameClicked)="onTypeNameClicked(item)"
           ></app-model-member-tree-node>
         </div>
-
       </ng-template>
-
-    </div>
-
-
+    </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./model-member.component.scss']
@@ -69,14 +68,17 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
   @Input()
   editable: boolean = false;
 
-  descriptionEditable = false;
+  @Input()
+  schemaMemberNavigable: boolean = false;
 
   @Output()
   typeNameClicked = new EventEmitter<QualifiedName>()
 
   @Input()
   new: boolean = false;
-  treeData: TypeMemberTreeNode;
+
+  @Input()
+  parentModel: Type;
 
   treeDataService: TuiTreeService<TypeMemberTreeNode>;
 
@@ -143,24 +145,16 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
     this.unloadedChildrenPlaceholder = {
       name: 'Loading...',
       children: [],
-      editingDescription: false,
       isNew: false,
       isRoot: false,
       field: treeData.field,
       type: treeData.type,
+      parentModel: this.parentModel,
       isLastChild: false
     }
     this.treeDataService = new TuiTreeService<TypeMemberTreeNode>(
       this.unloadedChildrenPlaceholder, treeData, new TreeLoader()
     )
-    this.treeData = treeData;
-
-  }
-
-  makeDescriptionEditable(item: TypeMemberTreeNode, editable: boolean) {
-    if (this.editable) {
-      item.editingDescription = editable;
-    }
   }
 
   private readonly loadedChildren = new Set<TypeMemberTreeNode>();
@@ -183,10 +177,10 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
         name: this.memberName,
         field: this.member,
         type: this.memberType,
+        parentModel: this.parentModel,
         children: this.buildTreeData(this.memberType),
         isRoot: true,
         isLastChild: !this.memberType.isScalar,
-        editingDescription: false,
         isNew: this.new
       }
     });
@@ -220,7 +214,6 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
         children: this.buildTreeData(fieldType),
         isRoot: false,
         isLastChild: false,
-        editingDescription: false,
         isNew: this.new
       } as TypeMemberTreeNode
     });
@@ -231,9 +224,10 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
   }
 
   onTypeNameClicked(item: TypeMemberTreeNode) {
-    if (this.editable) {
+    // Only allow root nodes to be editable for now
+    if (this.editable && item.isRoot) {
       this.editTypeRequested(item);
-    } else {
+    } else if (this.schemaMemberNavigable) {
       this.typeNameClicked.emit(item.type.name);
     }
   }
@@ -246,10 +240,19 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
     });
     dialog.afterClosed().subscribe(result => {
       if (!isNullOrUndefined(result)) {
+        const eventToEmit: ChangeFieldTypeEvent = {
+          editKind: 'ChangeFieldType',
+          symbol: this.parentModel.memberQualifiedName,
+          fieldName: this.memberName,
+          newReturnType: result.type.name,
+          nullable: false // TODO: what should this be? Do we default to required fields?
+        }
         const resultType = result.type;
         item.type = resultType;
         this.member.type = resultType.name;
-        this.emitUpdateIfRequired();
+        // Need this to force an Angular update, ideally we'd be passing in immutable data
+        this.member = JSON.parse(JSON.stringify(this.member));
+        this.emitUpdateIfRequired(eventToEmit);
         if (result.source === 'new') {
           this.newTypeCreated.emit(result.type);
         }
@@ -266,5 +269,4 @@ class TreeLoader implements TuiTreeLoader<TypeMemberTreeNode> {
   loadChildren(item: TypeMemberTreeNode): Observable<TypeMemberTreeNode[]> {
     return of(item.children)
   }
-
 }

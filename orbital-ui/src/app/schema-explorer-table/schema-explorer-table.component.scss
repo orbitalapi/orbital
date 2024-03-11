@@ -10,18 +10,21 @@
   flex-grow: 1;
   overflow: auto;
   display: flex;
+  flex-direction: column;
 }
 
-.radio-bar-container {
-  margin: 0 1rem 1rem;
-  // To stop it going full-width
-  max-width: 20em;
+.schema-source-tabs {
+  margin-bottom: 1rem;
+
+  img {
+    margin-right: 0.5rem;
+    opacity: 0.5;
+  }
 }
 
 .documentation-content-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
 .button-bar {
@@ -65,4 +68,8 @@ app-schema-entry-table {
       margin-top: 0;
     }
   }
+}
+
+.island {
+  background-color: $body-bg;
 }

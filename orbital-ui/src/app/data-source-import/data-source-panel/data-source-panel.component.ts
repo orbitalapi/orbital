@@ -50,77 +50,75 @@ import { TuiClickOutsideModule } from '@taiga-ui/cdk';
     TuiClickOutsideModule
   ],
   template: `
-    <div>
-      <div class="selectors">
-        <app-project-selector
-          prompt="Select a project to add the data source to"
-          [packages]="packages"
-          [(ngModel)]="selectedPackage"
-          (ngModelChange)="isDataSourceSelectorOpen = true"
-        ></app-project-selector>
-        <tui-select
-          tuiTextfieldSize="l"
-          [(tuiDropdownOpen)]="isDataSourceSelectorOpen"
-          [stringify]="stringify"
-          [(ngModel)]="schemaType"
-          [disabled]="!selectedPackage"
-        >
-          {{!selectedPackage ? 'Select a project first' : 'Select a data source to add'}}
-          <tui-data-list *tuiDataList class="data-source-list">
-            <button
-              *ngFor="let item of schemaTypes"
-              tuiOption
-              [value]="item"
-              [disabled]="item.isDisabled"
-              [tuiHint]="item.isDisabled ? 'Coming soon!' : null"
-              (click)="item.externalLink ? openSite(item.externalLink) : null; isDataSourceSelectorOpen = null"
-            >
-              <img [src]="item.icon"/>
-              {{item.label}}
-              <img *ngIf="item.externalLink" src="/assets/img/tabler/external-link.svg" class="external-link"/>
-            </button>
-          </tui-data-list>
-        </tui-select>
-      </div>
-      <ng-container *ngIf="useIslandContainer && schemaType?.id && !schemaType?.externalLink; else forms">
-        <tui-island class="island">
-          <ng-container *ngTemplateOutlet="forms"></ng-container>
-        </tui-island>
-      </ng-container>
-      <ng-template #forms>
-        <div *ngIf="!schemaType?.externalLink" [ngSwitch]="schemaType?.id" class="config-container">
-          <app-swagger-config *ngSwitchCase="'swagger'"
-                              [packageIdentifier]="selectedPackage?.identifier"
-                              (loadSchema)="convertSchema.emit($event)"
-                              [working]="working">
-          </app-swagger-config>
-          <app-jsonschema-config *ngSwitchCase="'jsonSchema'"
-                                 [packageIdentifier]="selectedPackage?.identifier"
-                                 [working]="working"
-                                 (loadSchema)="convertSchema.emit($event)">
-          </app-jsonschema-config>
-          <app-database-table-config [connections]="dbConnections | databases"
-                                     *ngSwitchCase="'databaseTable'"
-                                     [tables$]="tables$"
-                                     [packageIdentifier]="selectedPackage?.identifier"
-                                     (connectionChanged)="dbConnectionChanged.emit($event)"
-                                     (loadSchema)="convertSchema.emit($event)"
-                                     [working]="working"
-          ></app-database-table-config>
-          <app-kafka-topic-config [connections]="dbConnections | messageBrokers"
-                                  [schema]="schema"
-                                  [working]="working"
-                                  [packageIdentifier]="selectedPackage?.identifier"
-                                  (loadSchema)="convertSchema.emit($event)"
-                                  *ngSwitchCase="'kafkaTopic'"></app-kafka-topic-config>
-          <app-protobuf-config [working]="working"
-                               [packageIdentifier]="selectedPackage?.identifier"
-                               (loadSchema)="convertSchema.emit($event)"
-                               *ngSwitchCase="'protobuf'"
-          ></app-protobuf-config>
-        </div>
-      </ng-template>
+    <div class="selectors">
+      <app-project-selector
+        prompt="Select a project to add the data source to"
+        [packages]="packages"
+        [(ngModel)]="selectedPackage"
+        (ngModelChange)="isDataSourceSelectorOpen = true"
+      ></app-project-selector>
+      <tui-select
+        tuiTextfieldSize="l"
+        [(tuiDropdownOpen)]="isDataSourceSelectorOpen"
+        [stringify]="stringify"
+        [(ngModel)]="schemaType"
+        [disabled]="!selectedPackage"
+      >
+        {{!selectedPackage ? 'Select a project first' : 'Select a data source to add'}}
+        <tui-data-list *tuiDataList class="data-source-list">
+          <button
+            *ngFor="let item of schemaTypes"
+            tuiOption
+            [value]="item"
+            [disabled]="item.isDisabled"
+            [tuiHint]="item.isDisabled ? 'Coming soon!' : null"
+            (click)="item.externalLink ? openSite(item.externalLink) : null; isDataSourceSelectorOpen = null"
+          >
+            <img [src]="item.icon"/>
+            {{item.label}}
+            <img *ngIf="item.externalLink" src="/assets/img/tabler/external-link.svg" class="external-link"/>
+          </button>
+        </tui-data-list>
+      </tui-select>
     </div>
+    <ng-container *ngIf="useIslandContainer && schemaType?.id && !schemaType?.externalLink; else forms">
+      <tui-island class="island">
+        <ng-container *ngTemplateOutlet="forms"></ng-container>
+      </tui-island>
+    </ng-container>
+    <ng-template #forms>
+      <div *ngIf="!schemaType?.externalLink" [ngSwitch]="schemaType?.id" class="config-container">
+        <app-swagger-config *ngSwitchCase="'swagger'"
+                            [packageIdentifier]="selectedPackage?.identifier"
+                            (loadSchema)="convertSchema.emit($event)"
+                            [working]="working">
+        </app-swagger-config>
+        <app-jsonschema-config *ngSwitchCase="'jsonSchema'"
+                               [packageIdentifier]="selectedPackage?.identifier"
+                               [working]="working"
+                               (loadSchema)="convertSchema.emit($event)">
+        </app-jsonschema-config>
+        <app-database-table-config [connections]="dbConnections | databases"
+                                   *ngSwitchCase="'databaseTable'"
+                                   [tables$]="tables$"
+                                   [packageIdentifier]="selectedPackage?.identifier"
+                                   (connectionChanged)="dbConnectionChanged.emit($event)"
+                                   (loadSchema)="convertSchema.emit($event)"
+                                   [working]="working"
+        ></app-database-table-config>
+        <app-kafka-topic-config [connections]="dbConnections | messageBrokers"
+                                [schema]="schema"
+                                [working]="working"
+                                [packageIdentifier]="selectedPackage?.identifier"
+                                (loadSchema)="convertSchema.emit($event)"
+                                *ngSwitchCase="'kafkaTopic'"></app-kafka-topic-config>
+        <app-protobuf-config [working]="working"
+                             [packageIdentifier]="selectedPackage?.identifier"
+                             (loadSchema)="convertSchema.emit($event)"
+                             *ngSwitchCase="'protobuf'"
+        ></app-protobuf-config>
+      </div>
+    </ng-template>
   `
 })
 export class DataSourcePanelComponent {

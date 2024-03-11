@@ -25,6 +25,7 @@
       <button
         routerLink="/onboarding/data-source"
         routerLinkActive
+        [routerLinkActiveOptions]="{exact: true}"
         tuiStep
         [stepState]="(currentStepIndex$ | async) <= 1 ? 'normal' : 'pass'"
         [disabled]="(currentStepIndex$ | async) > 1"
@@ -32,7 +33,7 @@
         Select data source
       </button>
       <button
-        routerLink="/onboarding/configure"
+        routerLink="/onboarding/data-source/configure"
         routerLinkActive
         tuiStep
         [stepState]="(currentStepIndex$ | async) <= 2 ? 'normal' : 'pass'"

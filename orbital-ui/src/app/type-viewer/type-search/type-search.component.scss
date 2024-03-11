@@ -16,22 +16,18 @@
 }
 
 .results-panel {
-  display: flex;
-  width: 100%;
+  display: grid;
+  grid-template-columns: 0.75fr 1fr;
   overflow: auto;
-  flex-grow: 1;
+  gap: 1rem;
 
   .results-list {
-    width: 40rem;
     overflow: auto;
     border-right: 1px solid rgba($vyne-lilac, 0.3);
   }
 
   .documentation-panel {
-    flex-grow: 1;
     overflow: auto;
-    margin-left: 1rem;
-    height: 100%;
   }
 }
 
@@ -63,8 +59,12 @@ tui-input.working {
     width: 24px;
     height: 24px;
     position: absolute;
-    left: 10px;
     top: calc(50% - 12px);
+    right: 16px;
+
+    &.has-search-term {
+      right: 50px;
+    }
   }
 }
 

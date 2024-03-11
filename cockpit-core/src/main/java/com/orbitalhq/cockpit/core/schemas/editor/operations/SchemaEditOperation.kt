@@ -25,7 +25,11 @@ enum class EditKind(
 ) {
    CreateOrReplace(0),
    ChangeFieldType(10),
-   ChangeOperationParameterType(11)
+   ChangeOperationParameterType(11),
+   AddOrRemoveFieldAnnotation(12),
+   ChangeOperationReturnType(13),
+   EditMemberDescription(14),
+   ChangeInheritedType(15),
 }
 
 @JsonTypeInfo(
@@ -37,6 +41,10 @@ enum class EditKind(
    JsonSubTypes.Type(ChangeFieldType::class, name = "ChangeFieldType"),
    JsonSubTypes.Type(CreateOrReplaceSource::class, name = "CreateOrReplace"),
    JsonSubTypes.Type(ChangeOperationParameterType::class, name = "ChangeOperationParameterType"),
+   JsonSubTypes.Type(AddOrRemoveFieldAnnotation::class, name = "AddOrRemoveFieldAnnotation"),
+   JsonSubTypes.Type(ChangeOperationReturnType::class, name = "ChangeOperationReturnType"),
+   JsonSubTypes.Type(EditMemberDescription::class, name = "EditMemberDescription"),
+   JsonSubTypes.Type(ChangeInheritedType::class, name = "ChangeInheritedType"),
 )
 abstract class SchemaEditOperation {
    abstract fun applyTo(
@@ -110,6 +118,20 @@ fun ParserRuleContext.asCharacterPositionRange(): CharacterPositionRange {
    return CharacterPositionRange(this.start.startIndex, this.stop.stopIndex)
 }
 
+fun ParserRuleContext.asCharacterInsertionPoint(position: EditPosition): CharacterPositionRange {
+   return if (position == EditPosition.AfterPosition) {
+      return CharacterPositionRange(this.stop.stopIndex + 1, this.stop.stopIndex + 1)
+   } else {
+      return CharacterPositionRange(this.start.startIndex + position.delta, this.start.startIndex + position.delta)
+   }
+
+}
+
+enum class EditPosition(val delta: Int) {
+   AtPosition(0),
+   BeforePosition(-1),
+   AfterPosition(1)
+}
 
 sealed class EditRange(
    val splicesExistingText: Boolean
@@ -138,7 +160,8 @@ data class CharacterPositionRange(val startPosition: Int, val endPosition: Int) 
 
    override fun applyTo(newText: String, other: String): String {
       val contentBeforeReplacement = other.substring(0, startPosition)
-      val contentAfterReplacement = other.substring(endPosition + 1)
+
+      val contentAfterReplacement = if (endPosition == other.length) "" else other.substring(endPosition + 1)
 
       return contentBeforeReplacement + newText + contentAfterReplacement
    }

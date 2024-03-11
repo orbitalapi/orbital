@@ -8,6 +8,7 @@ import { ConvertSchemaEvent, SwaggerConverterOptions } from '../../data-source-i
 import { readSingleFile } from '../../../utils/files';
 import { PackageIdentifier } from '../../../package-viewer/packages.service';
 import { DataExplorerModule } from '../../../data-explorer/data-explorer.module';
+import { sanitiseNamespace } from '../../../utils/utils';
 
 @Component({
   selector: 'app-swagger-config',
@@ -115,6 +116,8 @@ export class SwaggerConfigComponent {
     readSingleFile($event)
       .subscribe((text: string) => {
         this.swaggerOptions.swagger = text;
-      });
+        const { organisation, name } = this.packageIdentifier;
+        this.swaggerOptions.defaultNamespace = sanitiseNamespace(`${organisation}.${name}`);
+      })
   }
 }

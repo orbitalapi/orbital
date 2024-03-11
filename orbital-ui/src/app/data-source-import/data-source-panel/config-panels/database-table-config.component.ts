@@ -20,6 +20,7 @@ import {
 import { PackageIdentifier } from '../../../package-viewer/packages.service';
 import { ConnectionFiltersModule } from '../../../utils/connections.pipe';
 import { DbConnectionEditorModule } from '../../../db-connection-editor/db-connection-editor.module';
+import { sanitiseNamespace } from '../../../utils/utils';
 
 @Component({
   selector: 'app-database-table-config',
@@ -99,7 +100,7 @@ import { DbConnectionEditorModule } from '../../../db-connection-editor/db-conne
             </div>
           </div>
           <div class="form-element">
-            <tui-input>
+            <tui-input [(ngModel)]="defaultNamespace">
               Default namespace
             </tui-input>
           </div>
@@ -160,6 +161,8 @@ export class DatabaseTableConfigComponent {
   readonly stringifyTableName = (item: MappedTable) => item.table.tableName;
 
   selectedConnectionChanged(selectedConnector: ConnectorSummary) {
+    const {organisation, name} = this.packageIdentifier;
+    this.defaultNamespace = sanitiseNamespace(`${organisation}.${name}.${selectedConnector.connectionName}`);
     this.connectionChanged.emit(selectedConnector);
   }
 

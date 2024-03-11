@@ -15,7 +15,7 @@
       <app-inherits-from [type]="type" [editable]="editable"
                          [commitMode]="commitMode"
                          (newTypeCreated)="newTypeCreated.emit($event)"
-                         (updateDeferred)="typeUpdated.emit(type)"
+                         (updateDeferred)="typeUpdated.emit($event)"
       ></app-inherits-from>
     </div>
 
@@ -23,8 +23,12 @@
 
 
   <section *ngIf="showDocumentation">
-    <app-description-editor-container [type]="type" [editable]="editable" [commitMode]="commitMode"
-                                      (updateDeferred)="typeUpdated.emit(type)"></app-description-editor-container>
+    <app-description-editor-container
+      [type]="type"
+      [editable]="editable"
+      [commitMode]="commitMode"
+      (updateDeferred)="onDescriptionChanged($event)"
+    ></app-description-editor-container>
   </section>
 <!--  <section class="no-h2" *ngIf="showTags">-->
 <!--    <app-tags-section [metadata]="type.metadata" [type]="type" [commitMode]="commitMode"-->
@@ -46,10 +50,11 @@
       [anonymousTypes]="anonymousTypes"
       [model]="type"
       [editable]="editable"
+      [schemaMemberNavigable]="schemaMemberNavigable"
       [commitMode]="commitMode"
       (typeNameClicked)="navigateToType($event)"
       (newTypeCreated)="newTypeCreated.emit($event)"
-      (updateDeferred)="typeUpdated.emit(type)"
+      (updateDeferred)="typeUpdated.emit({schemaEditOperation: $event.schemaEditOperation, member: type})"
     ></app-model-attribute-tree-list>
   </section>
   <section *ngIf="hasEnumValues && showDocumentation">
@@ -59,7 +64,7 @@
   <section *ngIf="showUsages">
     <h2>Usages</h2>
     <h3>Services</h3>
-    <app-usages-table [typeUsages]="typeUsages"></app-usages-table>
+    <app-usages-table [typeUsages]="typeUsages" [schemaMemberNavigable]="schemaMemberNavigable"></app-usages-table>
     <h3>Chart</h3>
 
     <tui-tabs [(activeItemIndex)]="chartDisplayTabIndex">

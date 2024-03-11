@@ -12,7 +12,8 @@ import lang.taxi.source
 data class ChangeFieldType(
    val symbol: QualifiedName,
    val fieldName: String,
-   val newReturnType: QualifiedName
+   val newReturnType: QualifiedName,
+   val nullable: Boolean
 ) : SchemaEditOperation() {
    override val loadExistingState: Boolean = true
 
@@ -40,7 +41,8 @@ data class ChangeFieldType(
       val mutation = SourcePackageEdit(
          fieldReturnTypeDefinition.source().sourceName,
          fieldReturnTypeDefinition.asCharacterPositionRange(),
-         newReturnType.parameterizedName
+         // TODO: we need a test for this
+         newReturnType.parameterizedName.let{ name -> if (nullable) "$name?" else name }
       )
       return applyEditAndCompile(listOf(mutation), sourcePackage, taxiDocument)
 

@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
 import { SearchResult, SearchService } from '../../search/search.service';
 import { zip } from 'rxjs';
-import { TypesService } from '../../services/types.service';
 import { map } from 'rxjs/operators';
+import { MatLegacyDialogRef as MatDialogRef } from '@angular/material/legacy-dialog';
+import { TypesService } from '../../services/types.service';
 import { SearchResultDocs } from './type-search.component';
 import { findType, Schema, Type } from '../../services/schema';
-import { MatLegacyDialogRef as MatDialogRef } from '@angular/material/legacy-dialog';
 import { buildInheritable } from 'src/app/inheritence-graph/build.inheritable';
 import { NewTypeSpec, qualifiedName } from 'src/app/type-editor/new-type-spec';
 import { TypeSelectedEvent } from 'src/app/type-viewer/type-search/type-selected-event';
@@ -13,7 +13,8 @@ import { TypeSelectedEvent } from 'src/app/type-viewer/type-search/type-selected
 @Component({
   selector: 'app-type-search-container',
   template: `
-    <tui-tabs [(activeItemIndex)]="selectedTab">
+    <!--// Just commenting the new type functionality out for now -->
+    <!--<tui-tabs [(activeItemIndex)]="selectedTab">
       <button tuiTab>
         <img src="assets/img/tabler/search.svg" class="icon">
         Search
@@ -22,47 +23,40 @@ import { TypeSelectedEvent } from 'src/app/type-viewer/type-search/type-selected
         <img src="assets/img/tabler/plus.svg" class="icon">
         Create new
       </button>
-    </tui-tabs>
+    </tui-tabs>-->
+    <h3>Select a replacement type</h3>
     <app-type-search
-      *ngIf="selectedTab === 0"
       (search)="triggerSearch($event)"
       [searchResults]="searchResults"
-      [working]="loading"
+      [loading]="loading"
       [schema]="schema"
       [searchResultDocs]="searchResultDocs"
       (searchResultHighlighted)="loadDocs($event)"
       (searchResultSelected)="onResultSelected($event)"
     ></app-type-search>
-    <app-type-editor
+    <!--<app-type-editor
       *ngIf="selectedTab === 1"
       [schema]="schema"
       (cancel)="close()"
       (create)="createNewType($event)"
     >
-
-    </app-type-editor>
+    </app-type-editor>-->
   `,
   styleUrls: ['./type-search-container.component.scss']
 })
 export class TypeSearchContainerComponent {
-
   searchResults: SearchResult[] | null = null;
   searchResultDocs: SearchResultDocs | null = null;
   schema: Schema;
   loading: boolean = false;
-
-  selectedTab: number = 0;
+  //selectedTab: number = 0;
 
   constructor(private dialogRef: MatDialogRef<TypeSearchContainerComponent>, private service: SearchService, private typeService: TypesService) {
     typeService.getTypes()
       .subscribe(schema => this.schema = schema);
   }
 
-
   triggerSearch($event: string) {
-    if ($event.length < 3) {
-      return;
-    }
     this.loading = true;
     this.service.search($event)
       .pipe(
@@ -93,8 +87,6 @@ export class TypeSearchContainerComponent {
       }, error => {
         console.log(JSON.stringify(error));
       })
-
-
   }
 
   close() {

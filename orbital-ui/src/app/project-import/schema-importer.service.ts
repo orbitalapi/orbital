@@ -6,7 +6,7 @@ import {ConvertSchemaEvent} from '../data-source-import/data-source-import.model
 import {environment} from '../../environments/environment';
 import {Observable} from 'rxjs/internal/Observable';
 import {SchemaSubmissionResult} from '../services/types.service';
-import {PartialSchema, VersionedSource} from '../services/schema';
+import { PartialSchema, QualifiedName, SchemaMemberKind, VersionedSource } from '../services/schema';
 import {PackageIdentifier, PackagesService, SourcePackageDescription} from '../package-viewer/packages.service';
 import {switchMap} from 'rxjs/operators';
 import {WorkspacesService} from "../services/workspaces.service";
@@ -83,13 +83,66 @@ export interface SchemaEdit {
   dryRun: boolean
 }
 
+export type EditKind =
+  'CreateOrReplace' |
+  'ChangeFieldType' |
+  'AddOrRemoveFieldAnnotation' |
+  'ChangeOperationReturnType' |
+  'ChangeOperationParameterType' |
+  'EditMemberDescription' |
+  'ChangeInheritedType'
+
 export interface SchemaEditOperation {
-  editKind: 'CreateOrReplace' | 'ChangeFieldType' | 'ChangeOperationParameterType';
+  editKind: EditKind
+  loadExistingState?: boolean
 }
 
 export interface CreateOrReplaceSource extends SchemaEditOperation {
   editKind: 'CreateOrReplace'
   sources: VersionedSource[]
+}
+
+export interface ChangeFieldTypeEvent extends SchemaEditOperation {
+  editKind: 'ChangeFieldType'
+  symbol: QualifiedName
+  fieldName: string
+  newReturnType: QualifiedName
+  nullable: boolean
+}
+
+export interface AddOrRemoveFieldAnnotationEvent extends SchemaEditOperation {
+  editKind: 'AddOrRemoveFieldAnnotation'
+  symbol: QualifiedName
+  fieldName: string,
+  annotationName: string,
+  operation: 'Add' | 'Remove'
+}
+
+export interface ChangeOperationReturnTypeEvent extends SchemaEditOperation {
+  editKind: 'ChangeOperationReturnType'
+  symbol: QualifiedName
+  newReturnType: QualifiedName
+}
+
+export interface ChangeOperationParameterTypeEvent extends SchemaEditOperation {
+  editKind: 'ChangeOperationParameterType'
+  symbol: QualifiedName
+  parameterName: string
+  newType: QualifiedName
+}
+
+export interface EditMemberDescriptionEvent extends SchemaEditOperation {
+  editKind: 'EditMemberDescription'
+  memberKind: SchemaMemberKind
+  memberName: string | null
+  symbol: QualifiedName
+  typeDoc: string
+}
+
+export interface ChangeInheritedTypeEvent extends SchemaEditOperation {
+  editKind: 'ChangeInheritedType'
+  symbol: QualifiedName
+  newBaseType: QualifiedName
 }
 
 export interface SchemaConversionRequest {
