@@ -4,6 +4,7 @@ import { openTypeSearch } from './model-attribute-tree-list/base-schema-member-d
 import { isNullOrUndefined } from 'src/app/utils/utils';
 import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 import { BaseDeferredEditComponent } from './base-deferred-edit.component';
+import { ChangeInheritedTypeEvent } from '../project-import/schema-importer.service';
 
 @Component({
   selector: 'app-inherits-from',
@@ -62,10 +63,15 @@ export class InheritsFromComponent extends BaseDeferredEditComponent<Type> {
     const dialog = openTypeSearch(this.dialog);
     dialog.afterClosed().subscribe((result) => {
       if (!isNullOrUndefined(result)) {
+        const event: ChangeInheritedTypeEvent = {
+          editKind: 'ChangeInheritedType',
+          symbol: this.type.name,
+          newBaseType: result.type.basePrimitiveTypeName
+        }
         const resultType = result.type;
         this.type.inheritsFrom = [resultType.name];
         this.type.basePrimitiveTypeName = resultType.basePrimitiveTypeName;
-        this.emitUpdateIfRequired();
+        this.emitUpdateIfRequired(event);
       }
     })
   }

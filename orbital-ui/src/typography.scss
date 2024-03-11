@@ -31,10 +31,11 @@ $font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system
     white-space: nowrap;
     border-bottom: 1px solid rgba($primary-light,0.4);
     font-weight: 500;
+    cursor: pointer;
 
     // This is to force the border-bottom to render closer to the text
     line-height: 0.4rem;
-    padding: 0.6rem 0.1rem 0.3rem;
+    padding: 0.4rem 0.1rem 0.3rem;
   }
 
   a:focus, a:hover {
@@ -46,7 +47,7 @@ $font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system
 @mixin badge($color) {
   font-weight: 300;
   color: $color;
-  background-color: rgba($color, 0.1);
+  background-color: rgba($color, 0.05);
   border-radius: 4px;
   padding: 0.2rem 0.4rem;
   display: inline-block;
@@ -93,7 +94,7 @@ $font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system
   // Adding important here, as font sizes are getting
   // overridden by search in the toolbar.
   font-size: 0.85rem !important;
-  @include badge( $vyne-lilac);
+  @include badge( $gray-700);
   //font-weight: 300;
   //color: $vyne-lilac;
   //border: 1px solid rgba($vyne-lilac,0.6);

@@ -13,7 +13,12 @@ import {
   MappedTable
 } from '../db-connection-editor/db-importer.service';
 import { ConvertSchemaEvent } from './data-source-import.models';
-import { SchemaEdit, SchemaEditOperation, SchemaImporterService } from '../project-import/schema-importer.service';
+import {
+  CreateOrReplaceSource,
+  SchemaEdit,
+  SchemaEditOperation,
+  SchemaImporterService
+} from '../project-import/schema-importer.service';
 import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
 import { PackagesService, SourcePackageDescription } from '../package-viewer/packages.service';
 import { DataSourcePanelComponent } from './data-source-panel/data-source-panel.component';
@@ -53,13 +58,15 @@ import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
                                  [saveResultMessage]="schemaSaveResultMessage"
                                  [editable]="true"
                                  [codeViewerFlexBoxMode]="codeViewerFlexBoxMode"
+                                 [useIslandContainer]="useIslandContainer"
                                  (save)="submitEdits($event)"
       ></app-schema-explorer-table>
     </div>
     <tui-notification
       [status]="schemaSaveResultMessage.level.toLowerCase()"
-      *ngIf="schemaSaveResultMessage && schemaSaveResultMessage.level === 'ERROR'"
+      *ngIf="schemaSaveResultMessage"
       class="notification-error"
+      (close)="schemaSaveResultMessage = null"
     >
       {{ schemaSaveResultMessage.message }}
     </tui-notification>
@@ -78,6 +85,8 @@ export class DataSourceImportComponent {
   useIslandContainer: boolean;
   @Input()
   codeViewerFlexBoxMode: CodeViewerFlexBoxMode = 'flex';
+  @Output()
+  dataSourceSelected: EventEmitter<void> = new EventEmitter()
   @Output()
   dataSourceAdded: EventEmitter<void> = new EventEmitter()
 
@@ -113,17 +122,21 @@ export class DataSourceImportComponent {
 
   convertSchema($event: ConvertSchemaEvent) {
     this.working = true;
-    this.schemaService.convertSchema($event).subscribe((result: SchemaSubmissionResult) => {
-      this.schemaSubmissionResult = result;
-      this.wizardStep.next('configureTypes');
-      console.log(JSON.stringify(result));
-      this.working = false;
-      this.changeDetector.markForCheck();
-    }, error => {
-      console.error(JSON.stringify(error));
-      this.schemaConversionError = error.error?.message || error.message || 'An error occurred';
-      this.working = false;
-      this.changeDetector.markForCheck();
+    this.schemaService.convertSchema($event).subscribe({
+      next: (result: SchemaSubmissionResult<CreateOrReplaceSource>) => {
+        this.schemaSubmissionResult = result;
+        this.wizardStep.next('configureTypes');
+        console.log(JSON.stringify(result, null, 2));
+        this.working = false;
+        this.dataSourceSelected.emit();
+        this.changeDetector.markForCheck();
+      },
+      error: (error) => {
+        console.error(JSON.stringify(error, null, 2));
+        this.schemaConversionError = error.error?.message || error.message || 'An error occurred';
+        this.working = false;
+        this.changeDetector.markForCheck();
+      }
     });
   }
 

@@ -22,6 +22,7 @@ import { buildInheritable, Inheritable } from 'src/app/inheritence-graph/build.i
                      [showAttributes]="showAttributes"
                      [showDocumentation]="showDocumentation"
                      [editable]="false"
+                     [schemaMemberNavigable]="true"
                      [showTags]="showTags"
                      [showTaxi]="showTaxi"
                      [showUsages]="showUsages"

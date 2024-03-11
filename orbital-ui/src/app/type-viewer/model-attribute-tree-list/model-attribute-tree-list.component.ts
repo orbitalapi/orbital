@@ -1,8 +1,7 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { QualifiedName, Type } from '../../services/schema';
-import { isNullOrUndefined } from 'src/app/utils/utils';
 import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
-import { BaseSchemaMemberDisplay, openTypeSearch } from './base-schema-member-display';
+import { BaseSchemaMemberDisplay } from './base-schema-member-display';
 
 @Component({
   selector: 'app-model-attribute-tree-list',
@@ -10,13 +9,15 @@ import { BaseSchemaMemberDisplay, openTypeSearch } from './base-schema-member-di
     <app-model-member *ngFor="let field of model.attributes | keyvalue"
                       [member]="field.value"
                       [memberName]="field.key"
+                      [parentModel]="model"
                       [editable]="editable"
+                      [schemaMemberNavigable]="schemaMemberNavigable"
                       [new]="true"
                       [showFullTypeNames]="showFullTypeNames"
                       [anonymousTypes]="anonymousTypes"
                       [commitMode]="commitMode"
-                      (newTypeCreated)="newTypeCreated.emit($event)"
-                      (updateDeferred)="this.updateDeferred.emit(type)"
+                      (newTypeCreated)="newTypeCreated.emit(type)"
+                      (updateDeferred)="this.updateDeferred.emit({schemaEditOperation: $event.schemaEditOperation, member: type})"
                       (typeNameClicked)="typeNameClicked.emit($event)"
                       [schema]="schema"></app-model-member>
   `,
@@ -55,20 +56,5 @@ export class ModelAttributeTreeListComponent extends BaseSchemaMemberDisplay {
 
   get isModel(): Boolean {
     return this._model && Object.keys(this._model.attributes).length > 0;
-  }
-
-
-  setInheritedType() {
-    const dialog = openTypeSearch(this.dialog);
-    dialog.afterClosed().subscribe((result) => {
-      if (!isNullOrUndefined(result)) {
-        const resultType = result.type as Type;
-        this._model.inheritsFrom = [resultType.name];
-        this._model.basePrimitiveTypeName = resultType.basePrimitiveTypeName;
-        if (result.source === 'new') {
-          this.newTypeCreated.emit(resultType);
-        }
-      }
-    })
   }
 }

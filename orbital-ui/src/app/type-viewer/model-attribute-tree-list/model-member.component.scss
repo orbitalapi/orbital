@@ -1,14 +1,16 @@
 @import "src/common";
+
 :host {
   border-bottom: 1px solid rgba($vyne-lilac, 0.3);
-  //border-radius: 8px;
   padding: 1rem 0;
-  //margin-bottom: 1rem;
-  width: 720px;
   display: flex;
   flex-direction: column;
+  max-width: 720px;
 }
 
+.tree-node {
+  flex-grow: 1;
+}
 
 .tree-node.child {
   margin: 0.5rem 0 2rem;
@@ -26,10 +28,7 @@
     width: 1rem;
     border-bottom: 1px solid var(--tui-base-04);
   }
-
-
 }
-
 
 .tree-node.child.isLastChild {
   &:after {
@@ -38,7 +37,6 @@
     border-left: 1px solid var(--tui-base-04);
   }
 }
-
 
 .tree-node.child:not(.isLastChild) {
   // Controls the tree borders on expanded nodes.

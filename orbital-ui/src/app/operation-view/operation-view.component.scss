@@ -71,3 +71,42 @@ h1 {
     @extend %type-badge;
   }
 }
+
+.returns-container {
+  display: flex;
+  align-items: center;
+  margin-left: 1px;
+
+  .type-name-container {
+    display: flex;
+    padding: 2px;
+    gap: 0.25rem;
+    cursor: pointer;
+    border-radius: 4px;
+
+    img {
+      opacity: 0.35;
+    }
+
+    &:hover {
+      outline: 1px solid $gray-400;
+
+      img {
+        opacity: 0.75;
+      }
+    }
+  }
+
+  .mono-badge {
+    margin-top: 0;
+    font-size: 0.8rem !important;
+  }
+}
+
+.param-name {
+  color: $body;
+  font-family: $mono;
+  font-size: 0.9rem;
+}
+
+

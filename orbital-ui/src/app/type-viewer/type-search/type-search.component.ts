@@ -1,9 +1,10 @@
 import {
   Component,
+  DestroyRef,
   EventEmitter,
   forwardRef,
   HostListener,
-  Input,
+  Input, OnInit,
   Output,
   QueryList,
   ViewChildren
@@ -15,6 +16,9 @@ import { ActiveDescendantKeyManager, ListKeyManager } from '@angular/cdk/a11y';
 import { TypeSearchResultComponent } from './type-search-result.component';
 import { DOWN_ARROW, ENTER, UP_ARROW } from '@angular/cdk/keycodes';
 import { Inheritable } from 'src/app/inheritence-graph/build.inheritable';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-type-search',
@@ -26,12 +30,18 @@ import { Inheritable } from 'src/app/inheritence-graph/build.inheritable';
         icon="tuiIconSearchLarge"
         iconAlign="left"
         [(ngModel)]="searchTerm"
-        (ngModelChange)="search.emit($event)"
+        (ngModelChange)="searchTermChanged.next($event)"
         [tuiTextfieldCleaner]="true"
-        [ngClass]="{ 'working' : working }"
+        [ngClass]="{ 'working' : loading }"
       >Search for a type
       </tui-input>
-      <mat-progress-spinner mode="indeterminate" *ngIf="working" [diameter]="24" [strokeWidth]="2"></mat-progress-spinner>
+      <mat-progress-spinner
+        mode="indeterminate"
+        *ngIf="loading"
+        [diameter]="24"
+        [strokeWidth]="2"
+        [class.has-search-term]="searchTerm"
+      ></mat-progress-spinner>
     </div>
     <div class="results-panel" *ngIf="searchResults">
       <div class="results-list">
@@ -60,14 +70,16 @@ import { Inheritable } from 'src/app/inheritence-graph/build.inheritable';
           [schema]="schema"
           [type]="searchResultDocs.type"
           [inheritanceView]="searchResultDocs.inheritanceView"
-          [typeUsages]="searchResultDocs.typeUsages"></app-type-viewer>
+          [typeUsages]="searchResultDocs.typeUsages"
+          [schemaMemberNavigable]="false"
+        ></app-type-viewer>
       </div>
     </div>
 
   `,
   styleUrls: ['./type-search.component.scss']
 })
-export class TypeSearchComponent {
+export class TypeSearchComponent implements OnInit {
   @ViewChildren(forwardRef(() => TypeSearchResultComponent))
   get items(): QueryList<TypeSearchResultComponent> {
     return this._items;
@@ -90,9 +102,10 @@ export class TypeSearchComponent {
   private keyboardEventsManager: ListKeyManager<TypeSearchResultComponent>;
 
   searchTerm: string;
+  searchTermChanged: Subject<string> = new Subject<string>();
 
   @Input()
-  working: boolean = false;
+  loading: boolean = false;
 
   @Input()
   searchResults: SearchResult[] | null = null;
@@ -111,6 +124,19 @@ export class TypeSearchComponent {
 
   @Output()
   searchResultSelected = new EventEmitter<SearchResult>();
+
+  constructor(private destroyRef: DestroyRef) {
+  }
+
+  ngOnInit(): void {
+    this.searchTermChanged
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        debounceTime(350),
+        distinctUntilChanged(),
+      )
+      .subscribe(value => this.search.emit(value));
+  }
 
   onMouseOver(searchResult: SearchResult, index: number) {
     if (this.keyboardEventsManager) {

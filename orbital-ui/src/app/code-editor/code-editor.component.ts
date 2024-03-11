@@ -158,7 +158,11 @@ export class CodeEditorComponent implements OnDestroy {
   }
 
   async ngOnDestroy() {
-    await this.languageClient.dispose()
+    try {
+      await this.languageClient.dispose();
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   private async createWebsocketAndTransport() {

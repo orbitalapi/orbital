@@ -434,10 +434,10 @@ export interface ContentWithSchemaParseResponse {
   types: Type[];
 }
 
-export interface SchemaSubmissionResult extends PartialSchema {
+export interface SchemaSubmissionResult<T = SchemaEditOperation> extends PartialSchema {
   messages: CompilationMessage[];
   sourcePackage: SourcePackage
-  pendingEdits: SchemaEditOperation[]
+  pendingEdits: T[]
 }
 
 export interface SourcePackage {

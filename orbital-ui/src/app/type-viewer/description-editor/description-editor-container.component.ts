@@ -1,21 +1,21 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {NamedAndDocumented, Type} from '../../services/schema';
-import {TypesService} from '../../services/types.service';
-import {MatLegacySnackBar as MatSnackBar} from '@angular/material/legacy-snack-bar';
-import {CommitMode} from '../type-viewer.component';
-import {debounceTime} from 'rxjs/operators';
-import { TypeEditorService } from 'src/app/services/type-editor.service';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { debounceTime } from 'rxjs/operators';
+import { MatLegacySnackBar as MatSnackBar } from '@angular/material/legacy-snack-bar';
+import { NamedAndDocumented } from '../../services/schema';
+import { CommitMode } from '../type-viewer.component';
 import { ChangesetService } from 'src/app/changeset-selector/changeset.service';
 
 @Component({
   selector: 'app-description-editor-container',
   template: `
-    <app-description-editor [documentationSource]="type"
-                            (save)="doSave($event)"
-                            [editable]="editable"
-                            [showControlBar]="commitMode === 'immediate'"
-                            (valueChanged)="typeDocChangeHandler.next($event)"
-                            [placeholder]="'Write something great that describes the type ' + type.name.name"></app-description-editor>
+    <app-description-editor
+      [descriptionSource]="type"
+      (save)="doSave($event)"
+      [editable]="editable"
+      [showControlBar]="commitMode === 'immediate'"
+      (valueChanged)="typeDocChangeHandler.next($event)"
+      [showHeader]="showHeader"
+    ></app-description-editor>
   `,
   styleUrls: ['./description-editor.component.scss']
 })
@@ -26,6 +26,9 @@ export class DescriptionEditorContainerComponent {
 
   @Input()
   editable = false;
+
+  @Input()
+  showHeader = true;
 
   @Input()
   commitMode: CommitMode = 'immediate';
@@ -61,7 +64,7 @@ export class DescriptionEditorContainerComponent {
           // If we're not writing automatically to the server, then update the typeDoc
           // on the type directly, to allow saving later.
           // The serialization is expensive, so do this periodically, rather than on every keystroke.
-          if (this.commitMode === 'explicit') {
+          if (this.commitMode === 'explicit' && value !== this.type.typeDoc) {
             this.type.typeDoc = value;
             this.updateDeferred.emit(this.type);
             console.log(`Typedoc on type ${this.type.name.fullyQualifiedName} updated`);
@@ -82,7 +85,6 @@ export class DescriptionEditorContainerComponent {
       this.type.typeDoc = newContent;
       this.updateDeferred.emit(this.type);
     }
-
   }
 
   private commitUpdatedDocs(newContent: string) {
@@ -97,11 +99,11 @@ export class DescriptionEditorContainerComponent {
     this.changesetService.addChangesToChangeset(this.type.name, 'TypeDoc', taxi)
       .subscribe(() => {
         this.loading = false;
-        this.snackBar.open('Draft saved', 'Dismiss', {duration: 3000});
+        this.snackBar.open('Draft saved', 'Dismiss', { duration: 3000 });
       }, error => {
         console.log(error);
         this.loading = false;
-        this.snackBar.open('Something went wrong.  Your changes have not been saved.', 'Dismiss', {duration: 3000});
+        this.snackBar.open('Something went wrong.  Your changes have not been saved.', 'Dismiss', { duration: 3000 });
       });
   }
 }

@@ -17,6 +17,7 @@ import { UiCustomisations } from '../../../../environments/ui-customisations';
 import { ConnectionFiltersModule } from '../../../utils/connections.pipe';
 import { TypeAutocompleteModule } from '../../../type-autocomplete/type-autocomplete.module';
 import { DbConnectionEditorModule } from '../../../db-connection-editor/db-connection-editor.module';
+import { sanitiseNamespace } from '../../../utils/utils';
 
 @Component({
   selector: 'app-kafka-topic-config',
@@ -48,7 +49,7 @@ import { DbConnectionEditorModule } from '../../../db-connection-editor/db-conne
             <tui-select
               [stringify]="stringifyConnection"
               [(ngModel)]="selectedConnection"
-              (ngModelChange)="kafkaTopicOptions.connectionName = $event.connectionName">
+              (ngModelChange)="onKafkaConnectionSelected($event)">
               Connection name
               <tui-data-list *tuiDataList>
                 <button
@@ -222,5 +223,11 @@ export class KafkaTopicConfigComponent {
     } else {
       this.kafkaTopicOptions.messageType = $event.name.parameterizedName
     }
+  }
+
+  onKafkaConnectionSelected($event: any) {
+    const { organisation, name } = this.packageIdentifier;
+    this.kafkaTopicOptions.targetNamespace = sanitiseNamespace(`${organisation}.${name}.${$event.connectionName}`);
+    this.kafkaTopicOptions.connectionName = $event.connectionName
   }
 }

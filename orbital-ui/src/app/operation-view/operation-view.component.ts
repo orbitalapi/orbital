@@ -1,53 +1,81 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {getDisplayName, InstanceLike, Operation, Parameter, QualifiedName, Schema, Type} from '../services/schema';
+import { Router } from '@angular/router';
+import {
+  getDisplayName,
+  InstanceLike,
+  NamedAndDocumented,
+  Operation,
+  Parameter,
+  QualifiedName,
+  Schema,
+  Type
+} from '../services/schema';
 import {Fact} from '../services/query.service';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {BaseDeferredEditComponent} from '../type-viewer/base-deferred-edit.component';
 import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
 import {openTypeSearch} from '../type-viewer/model-attribute-tree-list/base-schema-member-display';
-import {isNullOrUndefined} from 'util';
+import {isNullOrUndefined} from '../utils/utils';
 import {OperationSummary, toOperationSummary} from 'src/app/service-view/operation-summary';
 import {methodClassFromName} from 'src/app/service-view/service-view-class-utils';
+import {
+  ChangeOperationParameterTypeEvent, ChangeOperationReturnTypeEvent,
+  EditMemberDescriptionEvent,
+  SchemaEditOperation
+} from '../project-import/schema-importer.service';
 
 @Component({
   selector: 'app-operation-view',
   template: `
     <div class="documentation" *ngIf="operation">
       <div class="page-heading">
-        <h1>{{operation.name}}<span class="badge service">{{ operation.operationKind }}</span></h1>
+        <h1>{{ operation.name }}<span class="badge service">{{ operation.operationKind }}</span></h1>
         <div class="badges">
-            <span class="mono-badge">
-              <a [routerLink]="['/services',operationSummary?.serviceName]">{{operationSummary?.serviceName}}</a>
-            </span>
+          <span class="mono-badge">
+            <ng-container *ngIf="!schemaMemberNavigable">{{ operationSummary?.serviceName }}</ng-container>
+            <a *ngIf="schemaMemberNavigable" [routerLink]="['/services',operationSummary?.serviceName]">{{ operationSummary?.serviceName }}</a>
+          </span>
           <span class="separator-slash">/</span>
-          <span class="mono-badge">{{operationSummary?.name}}</span>
+          <span class="mono-badge">{{ operationSummary?.name }}</span>
         </div>
-
       </div>
       <section>
         <h4>Url</h4>
         <div class="http-box" [ngClass]="getMethodClass(operationSummary.method)" *ngIf="operationSummary.url">
           <span class="http-method"
                 [ngClass]="getMethodClass(operationSummary.method)">{{ operationSummary.method }}</span>
-          <span class="url">{{operationSummary.url}}</span>
+          <span class="url">{{ operationSummary.url }}</span>
         </div>
         <p class="subtle actionable" *ngIf="!operationSummary.url">No url provided</p>
       </section>
       <section>
-        <h4>Documentation</h4>
         <app-description-editor-container [type]="operation"
-                                          *ngIf="operation?.typeDoc"></app-description-editor-container>
-        <p class="subtle actionable" *ngIf="!operation?.typeDoc">No documentation provided</p>
+                                          commitMode="explicit"
+                                          [editable]="editable"
+                                          (updateDeferred)="onDescriptionChanged($event)"
+        ></app-description-editor-container>
       </section>
       <section>
         <h4>Returns</h4>
-        <button tuiLink [pseudo]="true" (click)="selectReturnType()"
-                *ngIf="editable">{{ displayName(operation.returnTypeName, showFullTypeNames) }}</button>
-        <span class="mono-badge" *ngIf="!editable"><a
-          [routerLink]="['/catalog', navigationTargetForType(operation.returnTypeName)]">{{operation.returnTypeName.shortDisplayName}}</a></span>
+        <div class="returns-container">
+          <span
+            [class.type-name-container]="editable"
+            (click)="selectReturnType()"
+            [attr.title]="editable ? 'Click to edit return type' : null"
+          >
+          <span class="mono-badge">
+            <ng-container *ngIf="editable">{{ displayName(operation.returnTypeName, showFullTypeNames) }}</ng-container>
+            <a *ngIf="!editable">{{ displayName(operation.returnTypeName, showFullTypeNames) }}</a>
+            <!--// TODO: ask Marty whether we should be showing the same info as we do in the Models view?-->
+            <!--<span class="scalar-base-type" *ngIf="treeNode.type.isScalar">
+              {{ '(' + (treeNode.type.basePrimitiveTypeName?.shortDisplayName || displayName(treeNode.type.aliasForType, showFullTypeNames)) + ')' }}
+            </span>-->
+          </span>
+          <img *ngIf="editable" src='assets/img/tabler/pencil.svg'>
+          </span>
+        </div>
       </section>
-
 
       <section *ngIf="operation">
         <h2>Parameters</h2>
@@ -70,16 +98,36 @@ import {methodClassFromName} from 'src/app/service-view/service-view-class-utils
             </thead>
             <tbody>
             <tr *ngFor="let param of operation.parameters">
-              <td>{{ param.name }}</td>
-              <td><span class="mono-badge" *ngIf="!editable">
-                  <a
-                    [routerLink]="['/catalog',param.typeName.fullyQualifiedName]">{{ displayName(param.typeName, showFullTypeNames) }}</a>
-                </span>
-                <button *ngIf="editable" tuiLink [pseudo]="true" (click)="selectParameterType(param)"
-                >{{ displayName(param.typeName, showFullTypeNames) }}</button>
-
+              <td class="param-name">{{ param.name }}</td>
+              <td>
+                <div class="returns-container">
+                  <span
+                    [class.type-name-container]="editable"
+                    (click)="selectParameterType(param)"
+                    [attr.title]="editable ? 'Click to edit ' + param.name + ' return type' : null"
+                  >
+                  <span class="mono-badge">
+                    <ng-container *ngIf="editable">{{ displayName(param.typeName, showFullTypeNames) }}</ng-container>
+                    <ng-container *ngIf="!editable && !schemaMemberNavigable">{{ displayName(param.typeName, showFullTypeNames) }}</ng-container>
+                    <a *ngIf="!editable && schemaMemberNavigable">{{ displayName(param.typeName, showFullTypeNames) }}</a>
+                    <!--// TODO: ask Marty whether we should be showing the same info as we do in the Models view?-->
+                    <!--<span class="scalar-base-type" *ngIf="treeNode.type.isScalar">
+                      {{ '(' + (treeNode.type.basePrimitiveTypeName?.shortDisplayName || displayName(treeNode.type.aliasForType, showFullTypeNames)) + ')' }}
+                    </span>-->
+                  </span>
+                  <img *ngIf="editable" src='assets/img/tabler/pencil.svg'>
+                  </span>
+                </div>
               </td>
-              <td><markdown [data]="param.typeDoc"></markdown></td>
+              <td>
+                <app-description-editor-container
+                  [type]="param"
+                  [editable]="editable"
+                  [showHeader]="false"
+                  commitMode="explicit"
+                  (updateDeferred)="onDescriptionChanged($event, param.name)"
+                ></app-description-editor-container>
+              </td>
               <td *ngIf="tryMode">
                 <input (change)="updateModel(param, $event)">
               </td>
@@ -88,12 +136,12 @@ import {methodClassFromName} from 'src/app/service-view/service-view-class-utils
             required</p>
         </div>
         <div class="button-row" *ngIf="allowTryItOut">
-          <button tuiButton size="m" appearance="outline" (click)="tryMode = true" *ngIf="!tryMode" [disabled]="!operationSummary.url">Try
-            it out
+          <button tuiButton size="m" appearance="outline" (click)="tryMode = true" *ngIf="!tryMode"
+                  [disabled]="!operationSummary.url">Try it out
           </button>
-          <button tuiButton  size="m" appearance="outline"  (click)="onCancel()" *ngIf="tryMode">Cancel</button>
+          <button tuiButton size="m" appearance="outline" (click)="onCancel()" *ngIf="tryMode">Cancel</button>
           <div class="spacer"></div>
-          <button tuiButton  size="m" appearance="secondary"  *ngIf="tryMode" (click)="doSubmit()">Submit</button>
+          <button tuiButton size="m" appearance="secondary" *ngIf="tryMode" (click)="doSubmit()">Submit</button>
         </div>
       </section>
 
@@ -111,7 +159,7 @@ import {methodClassFromName} from 'src/app/service-view/service-view-class-utils
 export class OperationViewComponent extends BaseDeferredEditComponent<Operation> {
 
 
-  constructor(private dialog: MatDialog) {
+  constructor(private dialog: MatDialog, private router: Router) {
     super();
   }
 
@@ -157,8 +205,14 @@ export class OperationViewComponent extends BaseDeferredEditComponent<Operation>
   @Output()
   cancel = new EventEmitter();
 
+  @Output()
+  operationUpdated: EventEmitter<{schemaEditOperation: SchemaEditOperation, member: Operation}> = new EventEmitter();
+
   @Input()
   editable: boolean = false;
+
+  @Input()
+  schemaMemberNavigable: boolean;
 
   @Input()
   allowTryItOut = true;
@@ -197,29 +251,59 @@ export class OperationViewComponent extends BaseDeferredEditComponent<Operation>
   }
 
   selectReturnType() {
-    const dialog = openTypeSearch(this.dialog);
-    dialog.afterClosed().subscribe((event) => {
-      if (!isNullOrUndefined(event)) {
-        this.operation.returnTypeName = event.type.name;
-        this.emitUpdateIfRequired();
-        if (event.source === 'new') {
-          this.newTypeCreated.next(event.type);
+    if (!this.editable) {
+      this.router.navigate(['/catalog', this.navigationTargetForType(this.operation.returnTypeName)])
+    } else {
+      const dialog = openTypeSearch(this.dialog);
+      dialog.afterClosed().subscribe((event) => {
+        if (!isNullOrUndefined(event)) {
+          const changeEvent: ChangeOperationReturnTypeEvent = {
+            editKind: 'ChangeOperationReturnType',
+            symbol: this.operation.qualifiedName,
+            newReturnType: event.type.name
+          }
+          this.operation.returnTypeName = event.type.name;
+          this.emitUpdateIfRequired(changeEvent);
+          if (event.source === 'new') {
+            this.newTypeCreated.next(event.type);
+          }
         }
-      }
-    })
+      })
+    }
   }
 
   selectParameterType(param: Parameter) {
+    if (!this.editable) {
+      this.router.navigate(['/catalog', param.typeName.fullyQualifiedName])
+    } else {
     const dialog = openTypeSearch(this.dialog);
     dialog.afterClosed().subscribe((event) => {
       if (!isNullOrUndefined(event)) {
+        const changeEvent: ChangeOperationParameterTypeEvent = {
+          editKind: 'ChangeOperationParameterType',
+          symbol: this.operation.qualifiedName,
+          parameterName: param.name,
+          newType: event.type.name
+        }
         param.typeName = event.type.name;
-        this.emitUpdateIfRequired();
+        this.emitUpdateIfRequired(changeEvent);
         if (event.source === 'new') {
           this.newTypeCreated.next(event.type);
         }
       }
     })
+      }
+  }
+
+  onDescriptionChanged($event: NamedAndDocumented, memberName?: string) {
+    const event: EditMemberDescriptionEvent = {
+      editKind: 'EditMemberDescription',
+      symbol: this.type.qualifiedName,
+      memberKind: 'OPERATION',
+      memberName,
+      typeDoc: $event.typeDoc,
+    }
+    this.updateDeferred.emit({schemaEditOperation: event, member: this.type})
   }
 }
 

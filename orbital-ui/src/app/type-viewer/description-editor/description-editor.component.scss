@@ -1,11 +1,22 @@
 @import "src/common";
 @import "src/utils";
 
+:host ::ng-deep {
+  tui-scrollbar {
+    border-top-width: 0.25rem !important;
+  }
+}
+
 .is-editable {
-  padding: 10px;
-  border:1px solid rgba($vyne-lilac, 0.1);
-  height: 100%;
+  cursor: pointer;
+  padding: 0.5rem;
+  border: 1px solid $gray-200;
   border-radius: 4px;
+  height: 100%;
+
+  &:hover {
+    border-color: $gray-400;
+  }
 }
 
 .no-description {
@@ -51,7 +62,6 @@
 }
 
 .title-row {
-  @extend .edit-on-hover;
   display: flex;
   align-items: center;
   margin-bottom: 0.5rem;

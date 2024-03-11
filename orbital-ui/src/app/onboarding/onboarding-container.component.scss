@@ -4,6 +4,7 @@
   align-items: center;
   background-color: var(--component-bg-color);
   height: 100%;
+  padding: 2rem 2rem 0 2rem;
 }
 
 .page-title {
@@ -13,23 +14,26 @@
 .help-link {
   position: absolute;
   top: 57px;
-  right: 4rem;
+  right: 2rem;
 }
 
 .page-container {
-  max-width: 1280px;
   display: flex;
   flex-direction: column;
-  padding: 2rem;
-  flex-grow: 1;
+  width: 100%;
+  align-items: center;
+
+  @media screen and (min-width: 80em) {
+    max-width: 980px;
+  }
 }
 
 .page-content {
   display: flex;
   flex-direction: column;
-  padding: 2rem 0 0 0;
+  width: 100%;
+  padding: 0;
   align-items: center;
-  text-align: center;
 }
 
 .stepper {

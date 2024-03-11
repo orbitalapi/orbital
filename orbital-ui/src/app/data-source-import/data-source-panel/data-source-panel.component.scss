@@ -1,9 +1,4 @@
 @import "src/common";
-@import "src/forms";
-
-:host {
-  @extend .form-container;
-}
 
 app-project-selector {
   margin-bottom: 1rem;
@@ -31,6 +26,7 @@ app-project-selector {
 
 .island {
   margin-top: 1rem;
+  background-color: $body-bg;
 
   .config-container {
     margin-top: 1rem;

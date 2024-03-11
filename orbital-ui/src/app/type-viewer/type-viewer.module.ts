@@ -17,22 +17,26 @@ import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {UsagesTableComponent} from './usages-table/usages-table.component';
 import {OperationBadgeModule} from '../operation-badge/operation-badge.module';
 import {MatIconModule} from '@angular/material/icon';
-// import {EditTagsPanelComponent} from './tags-section/edit-tags-panel.component';
 import {MatLegacyButtonModule as MatButtonModule} from '@angular/material/legacy-button';
 import {FormsModule} from '@angular/forms';
-// import {EditTagsPanelContainerComponent} from './tags-section/edit-tags-panel-container.component';
 import {LineageGraphModule} from './lineage-graph/lineage-graph.module';
 import {RouterModule} from '@angular/router';
 import {InheritsFromComponent} from './inherits-from.component';
-import {TuiButtonModule, TuiLabelModule, TuiLinkModule, TuiTextfieldControllerModule} from '@taiga-ui/core';
 import {
-  TuiCheckboxLabeledModule,
-  TuiInputModule,
-  TuiTabsModule,
-  TuiTagModule,
-  TuiTextAreaModule,
-  TuiToggleModule,
-  TuiTreeModule,
+    TuiButtonModule,
+    TuiLabelModule,
+    TuiLinkModule,
+    TuiSvgModule,
+    TuiTextfieldControllerModule
+} from '@taiga-ui/core';
+import {
+    TuiCheckboxLabeledModule,
+    TuiInputModule,
+    TuiTabsModule,
+    TuiTagModule,
+    TuiTextareaModule,
+    TuiToggleModule,
+    TuiTreeModule,
 } from '@taiga-ui/kit';
 import {TypeSearchComponent} from './type-search/type-search.component';
 import {TypeSearchContainerComponent} from './type-search/type-search-container.component';
@@ -44,6 +48,8 @@ import {MatLegacyProgressSpinnerModule as MatProgressSpinnerModule} from '@angul
 import {TypedEditorModule} from '../type-editor/type-editor.module';
 import {SchemaDiagramModule} from '../schema-diagram/schema-diagram.module';
 import {ChangesetSelectorModule} from '../changeset-selector/changeset-selector.module';
+import { TuiAutoFocusModule } from '@taiga-ui/cdk';
+import { MarkdownModule } from 'ngx-markdown';
 
 
 @NgModule({
@@ -69,7 +75,7 @@ import {ChangesetSelectorModule} from '../changeset-selector/changeset-selector.
         LineageGraphModule,
         RouterModule,
         TuiLinkModule,
-        TuiTextAreaModule,
+        TuiTextareaModule,
         TuiTreeModule,
         TuiCheckboxLabeledModule,
         TuiTagModule,
@@ -80,7 +86,10 @@ import {ChangesetSelectorModule} from '../changeset-selector/changeset-selector.
         TypedEditorModule,
         SchemaDiagramModule,
         TuiButtonModule,
-        ChangesetSelectorModule
+        ChangesetSelectorModule,
+        TuiAutoFocusModule,
+        MarkdownModule,
+        TuiSvgModule,
     ],
     declarations: [
         TocHostDirective,

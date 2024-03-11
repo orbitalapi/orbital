@@ -2,29 +2,38 @@
 :host {
   font-size: 0.9rem;
 }
+
 .field-row {
   display: flex;
   font-family: $mono;
   font-size: 0.8rem;
+  align-items: center;
+
   tui-checkbox-labeled {
     margin-right: 1.5rem;
   }
   margin-bottom: 0.5rem;
 }
+
 .field-name {
   color: $body;
-  font-weight: bold;
+  font-size: 0.9rem;
 }
+
 .scalar-base-type {
-  margin: 0 1rem;
+  color: $gray-400;
+
+  .schema-member-navigable {
+    cursor: pointer;
+  }
 }
 
 .field-spacer {
-  padding: 0 1rem;
+  padding: 0 0.5rem;
 }
 
-tui-tag {
-  margin-left: 1rem;
+.new-tag {
+  margin: 0 0.5rem;
 }
 
 .toggle-buttons-row {
@@ -33,16 +42,27 @@ tui-tag {
   margin: 0.5rem 0;
 }
 
-.editable-description {
+.mono-badge {
+  margin-top: 0;
+  font-size: 0.8rem !important;
+}
+
+.type-name-container {
+  display: flex;
+  padding: 2px;
+  gap: 0.25rem;
   cursor: pointer;
-}
+  border-radius: 4px;
 
-.no-description {
-  opacity: 0.5;
-  font-style: italic;
-}
+  img {
+    opacity: 0.35;
+  }
 
-.description-editor {
-  margin-top: 1rem;
-  width: 35em;
+  &:hover {
+    outline: 1px solid $gray-400;
+
+    img {
+      opacity: 0.75;
+    }
+  }
 }

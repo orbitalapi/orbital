@@ -1,6 +1,7 @@
-import {Directive, EventEmitter, Input, Output} from '@angular/core';
-import {Field, NamedAndDocumented, Operation, Type} from '../services/schema';
-import {CommitMode} from './type-viewer.component';
+import { Directive, EventEmitter, Input, Output } from '@angular/core';
+import { Field, NamedAndDocumented, Operation, Type } from '../services/schema';
+import { CommitMode } from './type-viewer.component';
+import { SchemaEditOperation } from '../project-import/schema-importer.service';
 
 /**
  * Several components in the TypeViewer follow a pattern that allow editing in two modes -
@@ -17,7 +18,7 @@ export abstract class BaseDeferredEditComponent<T extends NamedAndDocumented | F
    * (ie., when then commitMode = 'explicit')
    */
   @Output()
-  updateDeferred = new EventEmitter<T>();
+  updateDeferred = new EventEmitter<{schemaEditOperation: SchemaEditOperation, member: T}>();
 
   abstract get type():T
 
@@ -27,9 +28,9 @@ export abstract class BaseDeferredEditComponent<T extends NamedAndDocumented | F
   @Output()
   newTypeCreated = new EventEmitter<Type>()
 
-  protected emitUpdateIfRequired() {
+  protected emitUpdateIfRequired(schemaEditOperation: SchemaEditOperation) {
     if (this.commitMode === 'explicit') {
-      this.updateDeferred.emit(this.type);
+      this.updateDeferred.emit({schemaEditOperation, member: this.type});
     }
   }
 

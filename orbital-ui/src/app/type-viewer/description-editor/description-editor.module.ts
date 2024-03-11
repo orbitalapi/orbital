@@ -10,8 +10,9 @@ import { VyneServicesModule } from '../../services/vyne-services.module';
 import { RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ChangesetNameDialogComponent } from '../../changeset-name-dialog/changeset-name-dialog.component';
-import { TuiInputModule, TuiTextAreaModule } from '@taiga-ui/kit';
-import { TuiButtonModule } from '@taiga-ui/core';
+import { TuiInputModule, TuiTextareaModule } from '@taiga-ui/kit';
+import { TuiButtonModule, TuiTextfieldControllerModule } from '@taiga-ui/core';
+import { TuiAutoFocusModule } from '@taiga-ui/cdk';
 
 @NgModule({
   imports: [
@@ -24,9 +25,11 @@ import { TuiButtonModule } from '@taiga-ui/core';
     RouterModule,
     FormsModule,
     ReactiveFormsModule,
-    TuiTextAreaModule,
     TuiInputModule,
     TuiButtonModule,
+    TuiTextareaModule,
+    TuiTextfieldControllerModule,
+    TuiAutoFocusModule,
   ],
   exports: [DescriptionEditorContainerComponent, DescriptionEditorComponent, ChangesetNameDialogComponent],
   declarations: [DescriptionEditorComponent, DescriptionEditorContainerComponent, ChangesetNameDialogComponent],

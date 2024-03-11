@@ -52,8 +52,7 @@ export interface Named {
 export interface NamedAndDocumented extends Documented, Named {
 }
 
-export interface Type extends Documented, Named {
-  name: QualifiedName;
+export interface Type extends NamedAndDocumented {
   attributes: FieldMap;
   collectionType: Type | null;
   modifiers: Array<Modifier>;

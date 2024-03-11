@@ -1,58 +1,69 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
-import { getDisplayName, Metadata, QualifiedName } from '../../services/schema';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output
+} from '@angular/core';
+import { Field, getDisplayName, Metadata, QualifiedName } from '../../services/schema';
 import { TypeMemberTreeNode } from './model-member.component';
+import {
+  AddOrRemoveFieldAnnotationEvent,
+  ChangeFieldTypeEvent, EditMemberDescriptionEvent,
+  SchemaEditOperation
+} from '../../project-import/schema-importer.service';
 
 @Component({
   selector: 'app-model-member-tree-node',
   template: `
     <div class="field-row">
-      <span class="field-name">{{ treeNode.name }}</span>
-      <span class="field-spacer">•</span>
-      <button tuiLink [pseudo]="true"
-              (click)="typeNameClicked.emit()">{{ displayName(treeNode.type.name, showFullTypeNames) }}</button>
-      <!-- using string concat in the span since the intellij formatter keeps adding empty spaces -->
-      <!-- note - always show the short name for primitive types, as no-one wants to see lang.taxi everywhere -->
-      <span class="scalar-base-type"
-            *ngIf="treeNode.type.isScalar"> {{ '(' + (treeNode.type.basePrimitiveTypeName?.shortDisplayName || displayName(treeNode.type.aliasForType, showFullTypeNames)) + ')'}}
+      <span class="field-name">{{ treeNode.name }}: </span>
+      <span
+        [class.type-name-container]="editable"
+        (click)="typeNameClicked.emit()"
+        [attr.title]="editable ? 'Click to edit type association' : null"
+      >
+        <span class="mono-badge">
+          <ng-container *ngIf="editable">{{ displayName(treeNode.type.name, showFullTypeNames) }}</ng-container>
+          <ng-container *ngIf="!editable && !schemaMemberNavigable">{{ displayName(treeNode.type.name, showFullTypeNames) }}</ng-container>
+          <a *ngIf="!editable && schemaMemberNavigable">{{ displayName(treeNode.type.name, showFullTypeNames) }}</a>
+          <span class="scalar-base-type" [class.schema-member-navigable]="schemaMemberNavigable" *ngIf="treeNode.type.isScalar">
+            {{ '(' + (treeNode.type.basePrimitiveTypeName?.shortDisplayName || displayName(treeNode.type.aliasForType, showFullTypeNames)) + ')' }}
+          </span>
+        </span>
+        <img *ngIf="editable" src='assets/img/tabler/pencil.svg'>
       </span>
-      <tui-tag size="s" *ngIf="treeNode.isNew" value="New"></tui-tag>
-      <span class="field-spacer" *ngIf="treeNode.type.isScalar || treeNode.isNew">•</span>
+      <tui-tag class="new-tag" size="s" *ngIf="treeNode.isNew" value="New"></tui-tag>
+      <span class="field-spacer"></span>
       <tui-checkbox-labeled [size]="'m'"
                             [ngModel]="!treeNode.field.nullable"
+                            (ngModelChange)="onRequiredChanged(treeNode.field)"
                             [class._readonly]="!editable"
-                            (click)="(editable) ? treeNode.field.nullable = !treeNode.field.nullable : null;"
       >Required
       </tui-checkbox-labeled>
       <tui-checkbox-labeled [size]="'m'"
-                            [(ngModel)]="memberHasIdAnnotation"
+                            [ngModel]="memberHasIdAnnotation"
+                            (ngModelChange)="memberHasIdAnnotationChanged($event)"
                             [class._readonly]="!editable"
       >Id
       </tui-checkbox-labeled>
     </div>
     <div>
-      <div *ngIf="!treeNode.editingDescription" (click)="startEditingDescription()"
-           [ngClass]="{ 'editable-description' : editable}">
-        <p *ngIf="treeNode.field.typeDoc">{{ treeNode.field.typeDoc }}</p>
-        <span *ngIf="!treeNode.field.typeDoc" class="no-description">No documentation here yet.</span><span
-        class="no-description" *ngIf="editable && !treeNode.field.typeDoc">&nbsp; Click to add some.</span>
-      </div>
-
-      <tui-text-area *ngIf="treeNode.editingDescription"
-                     class="description-editor"
-                     [expandable]="true"
-                     [rows]="2"
-                     [(ngModel)]="treeNode.field.typeDoc"
-                     (ngModelChange)="onDescriptionEdited()"
-                     [tuiTextfieldCleaner]="true"
-                     (focusout)="treeNode.editingDescription = false"
-      >
-      </tui-text-area>
+      <app-description-editor-container
+        [type]="treeNode.field"
+        [editable]="editable"
+        [showHeader]="false"
+        commitMode="explicit"
+        (updateDeferred)="onDescriptionEdited()"
+      ></app-description-editor-container>
     </div>
   `,
   styleUrls: ['./model-member-tree-node.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ModelMemberTreeNodeComponent {
+export class ModelMemberTreeNodeComponent implements OnInit {
 
   @Input()
   treeNode: TypeMemberTreeNode;
@@ -60,55 +71,79 @@ export class ModelMemberTreeNodeComponent {
   @Input()
   editable: boolean;
 
+  @Input()
+  schemaMemberNavigable: boolean;
+
   @Output()
   typeNameClicked = new EventEmitter()
-
 
   @Input()
   showFullTypeNames = false;
 
   @Output()
-  nodeUpdated = new EventEmitter();
+  nodeUpdated = new EventEmitter<SchemaEditOperation>();
+
+  private currentDescription: string;
+
+  constructor(private changeDetector: ChangeDetectorRef) {
+  }
+
+  ngOnInit() {
+    this.currentDescription = this.treeNode.field.typeDoc;
+  }
 
   displayName(name: QualifiedName, showFullTypeNames: boolean): string {
     return getDisplayName(name, showFullTypeNames);
   }
 
-  startEditingDescription() {
-    if (!this.editable) {
-      return;
-    }
-    this.treeNode.editingDescription = true;
-  }
-
-
   get memberHasIdAnnotation(): boolean {
-    return false;
     return (this.treeNode.field.metadata || []).some((element: Metadata) => {
       return element.name.fullyQualifiedName === 'Id'
     });
   }
 
-  set memberHasIdAnnotation(value) {
-    if (!this.editable) {
-      return;
-    }
-    if (value === this.memberHasIdAnnotation) {
-      return;
+  memberHasIdAnnotationChanged(value: boolean) {
+    const event: AddOrRemoveFieldAnnotationEvent = {
+      editKind: 'AddOrRemoveFieldAnnotation',
+      symbol: this.treeNode.parentModel.memberQualifiedName,
+      fieldName: this.treeNode.name,
+      annotationName: 'Id',
+      operation: this.memberHasIdAnnotation ? 'Remove' : 'Add'
     }
     if (value) {
-      this.treeNode.type.metadata.push({
+      this.treeNode.field.metadata.push({
         name: QualifiedName.from('Id'),
         params: {}
       })
     } else {
-      const index = this.treeNode.type.metadata.findIndex(element => element.name.fullyQualifiedName === 'Id');
-      this.treeNode.type.metadata.splice(index, 1);
+      const index = this.treeNode.field.metadata.findIndex(element => element.name.fullyQualifiedName === 'Id');
+      this.treeNode.field.metadata.splice(index, 1);
     }
-    this.nodeUpdated.emit();
+    this.nodeUpdated.emit(event);
+  }
+
+  onRequiredChanged(field: Field) {
+    field.nullable = !field.nullable;
+    const event: ChangeFieldTypeEvent = {
+      editKind: 'ChangeFieldType',
+      symbol: this.treeNode.parentModel.memberQualifiedName,
+      fieldName: this.treeNode.name,
+      newReturnType: field.type,
+      nullable: field.nullable
+    };
+    this.nodeUpdated.emit(event);
   }
 
   onDescriptionEdited() {
-    this.nodeUpdated.emit();
+    if (this.currentDescription === this.treeNode.field.typeDoc) return;
+    this.currentDescription = this.treeNode.field.typeDoc;
+    const event: EditMemberDescriptionEvent = {
+      editKind: 'EditMemberDescription',
+      symbol: this.treeNode.parentModel.name,
+      memberKind: 'TYPE',
+      memberName: this.treeNode.name,
+      typeDoc: this.treeNode.field.typeDoc,
+    }
+    this.nodeUpdated.emit(event);
   }
 }

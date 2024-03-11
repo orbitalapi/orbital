@@ -10,7 +10,6 @@ import { TypeSelectedEvent } from 'src/app/type-viewer/type-search/type-selected
 @Directive()
 export abstract class BaseSchemaMemberDisplay extends BaseDeferredEditComponent<Type> {
 
-
   constructor(protected dialog: MatDialog) {
     super();
   }
@@ -19,19 +18,13 @@ export abstract class BaseSchemaMemberDisplay extends BaseDeferredEditComponent<
   editable: boolean = false;
 
   @Input()
+  schemaMemberNavigable: boolean = false;
+
+  @Input()
   schema: Schema;
 
   @Input()
   anonymousTypes: Type[] = [];
-
-  editingDescription: boolean = false;
-
-  startEditingDescription() {
-    if (!this.editable) {
-      return;
-    }
-    this.editingDescription = true;
-  }
 }
 
 export function openTypeSearch(dialog: MatDialog): MatDialogRef<TypeSearchContainerComponent, TypeSelectedEvent> {

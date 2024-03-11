@@ -15,6 +15,10 @@ interface PartialSchema {
    fun type(name: QualifiedName): PartialType {
       return types.single { it.name == name }
    }
+
+   fun service(name: QualifiedName): PartialService {
+      return services.single { it.name == name }
+   }
 }
 
 data class DefaultPartialSchema(
