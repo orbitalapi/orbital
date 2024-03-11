@@ -22,7 +22,7 @@ data class ChangeInheritedType(
    override fun applyTo(
       sourcePackage: SourcePackage,
       taxiDocument: TaxiDocument
-   ): Either<CompilationException, Pair<SourcePackage, TaxiDocument>> {
+   ): Either<CompilationException, SourceEditResult> {
       val compiler = buildCompiler(sourcePackage, taxiDocument)
       val (_, token) = compiler.tokens.unparsedTypes[symbol.fullyQualifiedName]
          ?: error("Could not find type ${symbol.fullyQualifiedName} in this source")
@@ -36,7 +36,7 @@ data class ChangeInheritedType(
       ) { "Updating inheritance only supported on types with 1 or fewer types" }
 
 
-      val edit: SourcePackageEdit = when {
+      val edit: SourceEdit = when {
          typeDeclarationContext.listOfInheritedTypes() == null -> addNewInheritedType(typeDeclarationContext)
          typeDeclarationContext.listOfInheritedTypes().typeReference().isNullOrEmpty() -> addNewInheritedType(typeDeclarationContext)
 
@@ -49,8 +49,8 @@ data class ChangeInheritedType(
       return applyEditAndCompile(listOf(edit), sourcePackage, taxiDocument)
    }
 
-   private fun replaceInheritedType(typeDeclarationContext: TypeDeclarationContext): SourcePackageEdit {
-      return SourcePackageEdit(
+   private fun replaceInheritedType(typeDeclarationContext: TypeDeclarationContext): SourceEdit {
+      return SourceEdit(
          sourceName = typeDeclarationContext.source().sourceName,
          range = typeDeclarationContext.listOfInheritedTypes().typeReference().single()
             .asCharacterPositionRange(),
@@ -58,8 +58,8 @@ data class ChangeInheritedType(
       )
    }
 
-   private fun addNewInheritedType(typeDeclarationContext: TypeDeclarationContext): SourcePackageEdit {
-      return SourcePackageEdit(
+   private fun addNewInheritedType(typeDeclarationContext: TypeDeclarationContext): SourceEdit {
+      return SourceEdit(
          sourceName = typeDeclarationContext.source().sourceName,
          range = typeDeclarationContext.identifier().asCharacterInsertionPoint(EditPosition.AfterPosition),
          newText = " inherits ${newBaseType.parameterizedName}"

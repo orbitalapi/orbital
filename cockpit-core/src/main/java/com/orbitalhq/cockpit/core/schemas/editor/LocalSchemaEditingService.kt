@@ -10,6 +10,7 @@ import com.orbitalhq.VersionedSource
 import com.orbitalhq.cockpit.core.schemas.BuiltInTypesProvider
 import com.orbitalhq.cockpit.core.schemas.editor.generator.VyneSchemaToTaxiGenerator
 import com.orbitalhq.cockpit.core.schemas.editor.operations.SchemaEdit
+import com.orbitalhq.cockpit.core.schemas.editor.operations.SourceEditResult
 import com.orbitalhq.cockpit.core.schemas.editor.splitter.SingleTypePerFileSplitter
 import com.orbitalhq.cockpit.core.schemas.editor.splitter.SourceSplitter
 import com.orbitalhq.schema.consumer.SchemaStore
@@ -95,18 +96,21 @@ class LocalSchemaEditingService(
 //               // If we're not loading the sources, start with an empty source package.
 //               SourcePackage(packageWithDescription.parsedPackage.metadata, emptyList(), emptyMap())
 //            }
-            val initial: Either<CompilationException, Pair<SourcePackage, TaxiDocument>> =
-               (currentSourcePackage to schema.asTaxiSchema().taxi).right()
+            val initial: Either<CompilationException,SourceEditResult> =
+               SourceEditResult(currentSourcePackage, schema.asTaxiSchema().taxi, emptySet()).right()
 
             // Apply all the edits, incrementally.
             val editResult = edit.edits
                .fold(initial) { acc, editOperation ->
-                  acc.flatMap { (currentSource, currentTaxi) ->
+                  acc.flatMap { (currentSource, currentTaxi, accumulatedEdits) ->
                      editOperation.applyTo(currentSource, currentTaxi)
+                        .map { editResult ->
+                           editResult.copy(touchedFileNames = editResult.touchedFileNames + accumulatedEdits)
+                        }
                   }
                }
 
-            val (updatedSourcePackage, updatedTaxi) = editResult.getOrElse { throw it }
+            val (updatedSourcePackage, updatedTaxi, touchedFilenames) = editResult.getOrElse { throw it }
             val (compilationMessages, updatedTaxiSchema) = TaxiSchema.compiled(
                listOf(updatedSourcePackage),
                imports = listOf(schema.asTaxiSchema())
@@ -141,7 +145,9 @@ class LocalSchemaEditingService(
             if (edit.dryRun) {
                Mono.just(submissionResult)
             } else {
-               submitEdits(updatedSourcePackage).map { submissionResult }
+               val modifiedSources = updatedSourcePackage.sources
+                  .filter { touchedFilenames.contains(it.name) }
+               submitEdits(modifiedSources, updatedSourcePackage.identifier).map { submissionResult }
             }
          }
    }
