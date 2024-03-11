@@ -50,7 +50,7 @@ abstract class SchemaEditOperation {
    abstract fun applyTo(
       sourcePackage: SourcePackage,
       taxiDocument: TaxiDocument
-   ): Either<CompilationException, Pair<SourcePackage, TaxiDocument>>
+   ): Either<CompilationException, SourceEditResult>
 
    abstract val editKind: EditKind
 
@@ -72,10 +72,10 @@ abstract class SchemaEditOperation {
 
 
    protected fun applyEditAndCompile(
-      edits: List<SourcePackageEdit>,
+      edits: List<SourceEdit>,
       sourcePackage: SourcePackage,
       taxiDocument: TaxiDocument
-   ): Either<CompilationException, Pair<SourcePackage, TaxiDocument>> {
+   ): Either<CompilationException, SourceEditResult> {
       val updatedSources = edits.fold(sourcePackage) { acc, edit -> applyEdit(edit, acc) }
       val (compilerMessages, updatedCompiled) = buildCompiler(updatedSources, taxiDocument)
          .compileWithMessages()
@@ -83,11 +83,15 @@ abstract class SchemaEditOperation {
       return if (compilerMessages.errors().isNotEmpty()) {
          CompilationException(compilerMessages.errors()).left()
       } else {
-         (updatedSources to updatedCompiled).right()
+         SourceEditResult(
+            updatedSources,
+            updatedCompiled,
+            edits.map { it.sourceName }.toSet()
+         ).right()
       }
    }
 
-   private fun applyEdit(edit: SourcePackageEdit, sourcePackage: SourcePackage): SourcePackage {
+   private fun applyEdit(edit: SourceEdit, sourcePackage: SourcePackage): SourcePackage {
       val expectSource = edit.range.splicesExistingText
 
       val versionedSource = sourcePackage.sources.firstOrNull { it.name == edit.sourceName }
@@ -167,8 +171,17 @@ data class CharacterPositionRange(val startPosition: Int, val endPosition: Int) 
    }
 }
 
-data class SourcePackageEdit(
+data class SourceEdit(
    val sourceName: String,
    val range: EditRange,
    val newText: String
+)
+
+/**
+ * Returned after a SourceEdit has been applied
+ */
+data class SourceEditResult(
+   val sourcePackage: SourcePackage,
+   val taxiDocument: TaxiDocument,
+   val touchedFileNames: Set<String>
 )

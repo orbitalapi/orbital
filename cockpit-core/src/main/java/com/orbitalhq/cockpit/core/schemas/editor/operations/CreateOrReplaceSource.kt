@@ -31,9 +31,9 @@ data class CreateOrReplaceSource(
    override fun applyTo(
       sourcePackage: SourcePackage,
       taxiDocument: TaxiDocument
-   ): Either<CompilationException, Pair<SourcePackage, TaxiDocument>> {
+   ): Either<CompilationException, SourceEditResult> {
 
-      val edits = sources.map { SourcePackageEdit(it.name, Replace, it.content) }
+      val edits = sources.map { SourceEdit(it.name, Replace, it.content) }
       return applyEditAndCompile(
          edits,
          sourcePackage, taxiDocument

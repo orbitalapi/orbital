@@ -31,7 +31,7 @@ data class EditMemberDescription(
    override fun applyTo(
       sourcePackage: SourcePackage,
       taxiDocument: TaxiDocument
-   ): Either<CompilationException, Pair<SourcePackage, TaxiDocument>> {
+   ): Either<CompilationException,SourceEditResult> {
       val compiler = buildCompiler(sourcePackage, taxiDocument)
 
       val (editRange, sourceCode) = when (memberKind) {
@@ -41,7 +41,7 @@ data class EditMemberDescription(
          else -> TODO()
       }
       val typeDocText = "\n[[ $typeDoc ]]\n"
-      val edit = SourcePackageEdit(
+      val edit = SourceEdit(
          sourceCode.sourceName,
          editRange,
          typeDocText
