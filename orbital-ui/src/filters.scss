@@ -31,3 +31,15 @@
 .filter-black-ish {
   filter: invert(11%) sepia(3%) saturate(2699%) hue-rotate(160deg) brightness(96%) contrast(86%);
 }
+
+.filter-schema-model-color {
+  filter: invert(38%) sepia(12%) saturate(5425%) hue-rotate(52deg) brightness(97%) contrast(88%);
+}
+
+.filter-schema-type-color {
+  filter: invert(42%) sepia(55%) saturate(4834%) hue-rotate(248deg) brightness(102%) contrast(94%);
+}
+
+.filter-schema-service-color {
+  filter: invert(35%) sepia(63%) saturate(2692%) hue-rotate(178deg) brightness(90%) contrast(98%);
+}

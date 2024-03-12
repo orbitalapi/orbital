@@ -8,7 +8,7 @@
   &::ng-deep {
     tui-expand {
       margin-top: 0.3rem;
-      margin-left: 1rem !important;
+      margin-left: 2.5rem !important;
     }
   }
 }
@@ -45,7 +45,28 @@
 
   // styling this to avoid the horizontal scrollbar in the tree always being visible
   ::ng-deep tui-tree-item-content {
-    padding: 2px 2px 2px 44px !important;
+    padding: 2px 2px 2px 4px !important;
+
+    // The rest of this is the styling for the hierarchy decoration of the nodes
+    position: relative;
+
+    &:before,
+    &:after {
+      content: '';
+      position: absolute;
+      left: -0.85rem;
+    }
+
+    &:before {
+      width: 0.8rem;
+      border-bottom: 1px solid $gray-300;
+    }
+
+    &:after {
+      top: -1rem;
+      bottom: 0.9rem;
+      border-left: 1px solid $gray-300;
+    }
   }
 
   &:hover {
@@ -61,4 +82,8 @@
     font-weight: bold;
     cursor: default;
   }
+}
+
+.schema-member-icon {
+  margin-right: 0.2rem;
 }
