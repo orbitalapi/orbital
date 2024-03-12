@@ -64,8 +64,8 @@ object AwsConnection {
 data class AwsConnectionConfiguration(
    override val connectionName: String,
    val region: String,
-   val accessKey: String,
-   val secretKey: String,
+   val accessKey: String?,
+   val secretKey: String?,
    val endPointOverride: String? = null
 ) : ConnectorConfiguration, Serializable {
    override val type: ConnectorType = ConnectorType.AWS
