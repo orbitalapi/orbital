@@ -43,9 +43,9 @@ storiesOf('Schema importer', module)
       template: `
       <tui-root>
       <div style="padding: 40px">
-      <app-schema-explorer-table
+      <app-schema-member-type-explorer
         [schema]="schema"
-      [partialSchema]="importedSchema"></app-schema-explorer-table>
+      [partialSchema]="importedSchema"></app-schema-member-type-explorer>
       </div>
 
       `,

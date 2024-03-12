@@ -1,4 +1,7 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Observable, ReplaySubject } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import {
   Message,
   Operation,
@@ -8,14 +11,12 @@ import {
   Type,
   VersionedSource
 } from 'src/app/services/schema';
-import { Observable, ReplaySubject } from 'rxjs';
-import { tap } from 'rxjs/operators';
 import { SchemaSubmissionResult } from '../services/types.service';
 import { SchemaEditOperation } from '../project-import/schema-importer.service';
 import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
 
 @Component({
-  selector: 'app-schema-explorer-table',
+  selector: 'app-schema-member-type-explorer',
   template: `
     <ng-container *ngIf="useIslandContainer; else forms">
       <tui-island class="island">
@@ -35,11 +36,12 @@ import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
           </button>
         </tui-tabs>
         <as-split direction="horizontal" unit="pixel" *ngIf="activeTabIndex === 0">
-          <as-split-area size="250">
-            <app-schema-entry-table [partialSchema$]="partialSchema$" #schemaEntryTable
+          <as-split-area size="260">
+            <app-schema-member-tree [partialSchema$]="partialSchema$" #schemaEntryTable
                                     (modelSelected)="onModelSelected($event)"
                                     (operationSelected)="onOperationSelected($event)"
-            ></app-schema-entry-table>
+                                    (resetSelection)="onResetMemberSelection()"
+            ></app-schema-member-tree>
           </as-split-area>
           <as-split-area size="*">
             <div class="documentation-content-container">
@@ -88,9 +90,9 @@ import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
       </div>
     </ng-template>
   `,
-  styleUrls: ['./schema-explorer-table.component.scss'],
+  styleUrls: ['./schema-member-type-explorer.component.scss'],
 })
-export class SchemaExplorerTableComponent {
+export class SchemaMemberTypeExplorerComponent {
 
   activeTabIndex: number = 0;
 
@@ -130,7 +132,11 @@ export class SchemaExplorerTableComponent {
 
   private _partialSchema$: Observable<PartialSchema> = new ReplaySubject<PartialSchema>(1)
 
-  constructor(private changeDetection: ChangeDetectorRef) {
+  constructor(
+    private changeDetection: ChangeDetectorRef,
+    private router: Router,
+    private activatedRoute: ActivatedRoute
+  ) {
   }
 
   get hasCodeView(): boolean {
@@ -178,11 +184,34 @@ export class SchemaExplorerTableComponent {
   onModelSelected($event: Type) {
     this.selectedModel = $event;
     this.selectedOperation = null;
+    this.router.navigate([],
+      {
+        relativeTo: this.activatedRoute,
+        queryParams: {
+          'selectedMember': this.selectedModel.fullyQualifiedName
+        },
+        queryParamsHandling: "merge",
+      },
+    );
   }
 
   onOperationSelected($event: ServiceMember) {
     this.selectedModel = null;
     this.selectedOperation = $event;
+    this.router.navigate([],
+      {
+        relativeTo: this.activatedRoute,
+        queryParams: {
+          'selectedMember': this.selectedOperation.memberQualifiedName.fullyQualifiedName
+        },
+        queryParamsHandling: "merge",
+      },
+    );
+  }
+
+  onResetMemberSelection() {
+    this.selectedModel = null;
+    this.selectedOperation = null;
   }
 
   // the schemaEditOperation is sent to the server, the updatedType and originalType are used to maintain state in the UI

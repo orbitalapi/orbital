@@ -1,15 +1,9 @@
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {SchemaExplorerTableComponent} from 'src/app/schema-explorer-table/schema-explorer-table.component';
+import {SchemaMemberTypeExplorerComponent} from 'src/app/schema-member-type-explorer/schema-member-type-explorer.component';
 import {AngularSplitModule} from 'angular-split';
-import {SchemaEntryTableComponent} from 'src/app/schema-explorer-table/schema-entry-table.component';
-import {
-    TuiAccordionModule,
-    TuiBadgeModule,
-    TuiIslandModule,
-    TuiTabsModule,
-    TuiTreeModule
-} from '@taiga-ui/kit';
+import {SchemaMemberTreeComponent} from 'src/app/schema-member-type-explorer/schema-member-tree.component';
+import {TuiBadgeModule, TuiIslandModule, TuiTabsModule, TuiTreeModule} from '@taiga-ui/kit';
 import {TuiButtonModule, TuiGroupModule, TuiNotificationModule} from '@taiga-ui/core';
 import {TypeViewerModule} from 'src/app/type-viewer/type-viewer.module';
 import {OperationViewModule} from 'src/app/operation-view/operation-view.module';
@@ -20,16 +14,15 @@ import {CodeViewerModule} from "../code-viewer/code-viewer.module";
 
 @NgModule({
   exports: [
-    SchemaExplorerTableComponent
+    SchemaMemberTypeExplorerComponent
   ],
   declarations: [
-    SchemaExplorerTableComponent,
-    SchemaEntryTableComponent
+    SchemaMemberTypeExplorerComponent,
+    SchemaMemberTreeComponent
   ],
     imports: [
         CommonModule,
         AngularSplitModule,
-        TuiAccordionModule,
         TuiBadgeModule,
         TuiTreeModule,
         TuiButtonModule,
@@ -44,5 +37,5 @@ import {CodeViewerModule} from "../code-viewer/code-viewer.module";
         TuiTabsModule
     ]
 })
-export class SchemaExplorerTableModule {
+export class SchemaMemberTypeExplorerModule {
 }

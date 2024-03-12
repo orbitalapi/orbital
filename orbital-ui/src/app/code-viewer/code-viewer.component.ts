@@ -1,6 +1,7 @@
-import {Component, HostBinding, Input} from '@angular/core';
-import {CompilationMessage, ParsedSource, VersionedSource} from '../services/schema';
+import { Component, DestroyRef, HostBinding, Input } from '@angular/core';
 import {ActivatedRoute, Router} from "@angular/router";
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {CompilationMessage, ParsedSource, VersionedSource} from '../services/schema';
 import {FilenameWithDecorators} from "./file-tree.component";
 
 declare const require: any;
@@ -54,7 +55,7 @@ export class CodeViewerComponent {
   flexboxMode: CodeViewerFlexBoxMode = 'flex';
 
   @Input()
-  useRouter: boolean = true;
+  useRouter: boolean = false;
 
   @HostBinding('class.flex-grid') get className() {
     return this.flexboxMode === 'grid'
@@ -64,14 +65,17 @@ export class CodeViewerComponent {
   selectedFilename: string;
 
   constructor(private activatedRoute: ActivatedRoute,
-              private router: Router) {
-    activatedRoute.queryParams.subscribe(params => {
-      const selectedFile = params['selectedFile']
-      if (selectedFile) {
-        this.selectedFilename = selectedFile;
-        this.activateSelectedSource()
-      }
-    });
+              private router: Router,
+              private destroyRef: DestroyRef
+  ) {
+    activatedRoute.queryParams
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        this.selectedFilename = params['selectedFile']
+        if (this.selectedFilename) {
+          this.activateSelectedSource()
+        }
+      });
   }
 
 
@@ -104,16 +108,21 @@ export class CodeViewerComponent {
   }
 
   select(filename: string) {
-    this.router.navigate([],
-      {
-        relativeTo: this.activatedRoute,
-        queryParams: {
-          'selectedFile': filename
+    if (this.useRouter) {
+      this.router.navigate([],
+        {
+          relativeTo: this.activatedRoute,
+          queryParams: {
+            'selectedFile': filename
+          },
+          queryParamsHandling: "merge",
+          replaceUrl: true
         },
-        queryParamsHandling: "merge",
-        replaceUrl: true
-      },
-    );
+      );
+    } else {
+      this.selectedFilename = filename;
+      this.activateSelectedSource();
+    }
   }
 
   compilationMessageClicked($event: CompilationMessage) {
