@@ -23,7 +23,7 @@ export interface TreeEntry {
   template: `
     <ng-container [tuiTreeController]="true" *ngIf="schemaReceived">
       <tui-tree-item class="root-tree-item">
-        <span class="schema-member-kind-badge model">M</span>
+        <img src="assets/img/tabler/category-filled.svg" class="schema-member-icon filter-schema-model-color">
         <span class="schema-member-kind-label" [attr.data-kind]="models.length">Models</span>
         <tui-tree-item
           *ngFor="let entry of models"
@@ -31,11 +31,11 @@ export interface TreeEntry {
           [class.active]="entry.member.fullyQualifiedName === selectedMember"
           (click)="onModelSelected(entry)"
         >
-          {{ entry.label }}
+          <img src="assets/img/tabler/file-description.svg">{{ entry.label }}
         </tui-tree-item>
       </tui-tree-item>
       <tui-tree-item class="root-tree-item">
-        <span class="schema-member-kind-badge type">T</span>
+        <img src="assets/img/tabler/category-filled.svg" class="schema-member-icon filter-schema-type-color">
         <span class="schema-member-kind-label" [attr.data-kind]="types.length">Types</span>
         <tui-tree-item
           *ngFor="let entry of types"
@@ -43,11 +43,11 @@ export interface TreeEntry {
           [class.active]="entry.member.fullyQualifiedName === selectedMember"
           (click)="onModelSelected(entry)"
         >
-          {{ entry.label }}
+          <img src="assets/img/tabler/file-description.svg">{{ entry.label }}
         </tui-tree-item>
       </tui-tree-item>
       <tui-tree-item class="root-tree-item">
-        <span class="schema-member-kind-badge service">S</span>
+        <img src="assets/img/tabler/category-filled.svg" class="schema-member-icon filter-schema-service-color">
         <span class="schema-member-kind-label" [attr.data-kind]="services.length">Services</span>
         <tui-tree-item *ngFor="let service of services" class="root-tree-item">{{ service.label }}
           <tui-tree-item
@@ -56,7 +56,7 @@ export interface TreeEntry {
             [class.active]="operation.memberQualifiedName.fullyQualifiedName === selectedMember"
             (click)="onOperationSelected(operation)"
           >
-            {{ operation.qualifiedName.shortDisplayName }}
+            <img src="assets/img/tabler/file-description.svg">{{ operation.qualifiedName.shortDisplayName }}
           </tui-tree-item>
         </tui-tree-item>
       </tui-tree-item>
