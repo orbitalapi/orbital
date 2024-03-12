@@ -41,7 +41,7 @@ export class ProjectExplorerComponent implements OnInit {
 
   setActiveTab(index: integer) {
     const newRoute = this.tabs[index].route;
-    this.router.navigate(['..',newRoute], {relativeTo: this.activatedRoute, replaceUrl: true})
+    this.router.navigate(['..',newRoute], {relativeTo: this.activatedRoute})
   }
 
 

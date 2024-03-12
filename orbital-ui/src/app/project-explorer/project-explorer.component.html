@@ -15,15 +15,18 @@
     </button>
   </tui-tabs>
 </div>
-<app-schema-explorer-table
+<app-schema-member-type-explorer
   *ngIf="activeTabIndex == 0"
   [editable]="false"
   [partialSchema$]="partialSchema$"
   [schema]="schema"
   [allowTryItOut]="true"
-></app-schema-explorer-table>
+></app-schema-member-type-explorer>
 <app-changelog-list *ngIf="activeTabIndex == 1" [changeLogEntries]="changelogEntries | async"></app-changelog-list>
-<app-code-viewer [sources]="parsedPackage?.sources" sidebarMode="Visible"
-                 [useRouter]="true"
-                 *ngIf="activeTabIndex == 2 && parsedPackage?.sources?.length>0"></app-code-viewer>
+<app-code-viewer
+  *ngIf="activeTabIndex == 2 && parsedPackage?.sources?.length>0"
+  [useRouter]="true"
+  [sources]="parsedPackage?.sources"
+  sidebarMode="Visible"
+></app-code-viewer>
 <app-project-settings *ngIf="activeTabIndex === 3" [packageDescription]="packageDescription"></app-project-settings>

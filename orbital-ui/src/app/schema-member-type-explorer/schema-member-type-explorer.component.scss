@@ -37,16 +37,8 @@
   }
 }
 
-app-schema-entry-table {
+app-schema-member-tree {
   display: block;
-  margin-right: 1rem; // To give space from the as-split divider
-  margin-bottom: 1rem; // To give space to the bottom divider where the save button is
-
-  // It looks shit if this is allowed to scroll
-  // forver.  Ideally, this would be "expand full
-  // height but don't scroll".
-  // I can't work that out though
-  max-height: 500px;
   overflow: auto;
 }
 

@@ -1,0 +1,64 @@
+@import "src/common";
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  &::ng-deep {
+    tui-expand {
+      margin-top: 0.3rem;
+      margin-left: 1rem !important;
+    }
+  }
+}
+
+.schema-member-kind-badge {
+  @extend %type-badge;
+  font-size: 1rem;
+  margin-left: 0;
+  margin-right: 0.4rem;
+}
+
+.schema-member-kind-label {
+  &:after {
+    content: ' ('attr(data-kind)')';
+    font-size: 0.7rem;
+    opacity: 0.7;
+  }
+}
+
+.root-tree-item {
+  margin-bottom: 0.5rem;
+
+  // For the case where there's no members, keep the left margin
+  &:not(:has(tui-expand)) {
+    margin-left: 2rem;
+    margin-bottom: 1rem;
+  }
+}
+
+.tree-item-leaf-node {
+  border-radius: 4px;
+  width: 100%;
+  font-size: 0.9rem;
+
+  // styling this to avoid the horizontal scrollbar in the tree always being visible
+  ::ng-deep tui-tree-item-content {
+    padding: 2px 2px 2px 44px !important;
+  }
+
+  &:hover {
+    background-color: $gray-100;
+    color: $sky-700;
+    cursor: pointer;
+  }
+
+  &.active,
+  &.active:hover {
+    background-color: $gray-200;
+    color: $sky-800;
+    font-weight: bold;
+    cursor: default;
+  }
+}

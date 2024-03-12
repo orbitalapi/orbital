@@ -22,14 +22,14 @@ import {
 import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
 import { PackagesService, SourcePackageDescription } from '../package-viewer/packages.service';
 import { DataSourcePanelComponent } from './data-source-panel/data-source-panel.component';
-import { SchemaExplorerTableModule } from '../schema-explorer-table/schema-explorer-table.module';
+import { SchemaMemberTypeExplorerModule } from '../schema-member-type-explorer/schema-member-type-explorer.module';
 import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
 
 @Component({
   selector: 'app-data-source-import',
   styleUrls: ['./data-source-import.component.scss'],
   standalone: true,
-  imports: [CommonModule, DataSourcePanelComponent, TuiNotificationModule, SchemaExplorerTableModule],
+  imports: [CommonModule, DataSourcePanelComponent, TuiNotificationModule, SchemaMemberTypeExplorerModule],
   template: `
     <div class="importer-step step" *ngIf="(wizardStep | async) === 'importSchema'">
       <h2 *ngIf="title">{{ title }}</h2>
@@ -52,7 +52,7 @@ import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
     </div>
     <div class="configuration-step step" *ngIf="(wizardStep | async) === 'configureTypes'">
       <h2>Configure the Data source</h2>
-      <app-schema-explorer-table [partialSchema]="schemaSubmissionResult"
+      <app-schema-member-type-explorer [partialSchema]="schemaSubmissionResult"
                                  [schema]="schema"
                                  [working]="working"
                                  [saveResultMessage]="schemaSaveResultMessage"
@@ -60,7 +60,7 @@ import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
                                  [codeViewerFlexBoxMode]="codeViewerFlexBoxMode"
                                  [useIslandContainer]="useIslandContainer"
                                  (save)="submitEdits($event)"
-      ></app-schema-explorer-table>
+      ></app-schema-member-type-explorer>
     </div>
     <tui-notification
       [status]="schemaSaveResultMessage.level.toLowerCase()"
