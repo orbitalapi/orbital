@@ -179,9 +179,9 @@ export interface ConnectorSummary {
 }
 
 export interface ConnectionStatus {
-  status: 'OK' | 'ERROR' | 'UNKNOWN';
+  status: 'OK' | 'ERROR' | 'UNKNOWN' | 'CONNECTING';
   timestamp: Date;
-  errorMessage: string | null;
+  message: string;
 }
 
 export interface ConnectorConfigDetail {

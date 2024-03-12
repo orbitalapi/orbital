@@ -37,6 +37,7 @@ import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalance
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.scheduling.annotation.EnableScheduling
 import java.nio.file.Files
 import java.time.Clock
@@ -47,6 +48,7 @@ import java.time.Clock
 @EnableVyne
 @EnableDiscoveryClient
 @EnableScheduling
+@EnableJpaRepositories
 @EnableConfigurationProperties(
    VyneSpringCacheConfiguration::class,
    PipelineConfig::class,

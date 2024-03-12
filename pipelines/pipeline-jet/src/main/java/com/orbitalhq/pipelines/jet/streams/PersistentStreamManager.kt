@@ -1,5 +1,6 @@
 package com.orbitalhq.pipelines.jet.streams
 
+import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.Maps
 import com.orbitalhq.pipelines.jet.api.RunningPipelineSummary
 import com.orbitalhq.pipelines.jet.api.transport.query.StreamingQueryInputSpec
@@ -24,7 +25,9 @@ import java.util.concurrent.ConcurrentHashMap
 @Component
 class PersistentStreamManager(
    private val schemaStore: SchemaChangedEventProvider,
-   private val pipelineManager: PipelineManager
+   private val pipelineManager: PipelineManager,
+   @VisibleForTesting
+   internal val streamStateManager: StreamStateManager
 ) {
    private val managedStreams = ConcurrentHashMap<QualifiedName, ManagedStream>()
 
@@ -65,19 +68,27 @@ class PersistentStreamManager(
       handleStreamsAdded(addedStreams.mapValues { entry -> updatedStreamState[entry.key]!! })
 
       val removedStreams = difference.entriesOnlyOnRight()
-      handleStreamsRemoved(removedStreams.keys, currentManagedStreams)
+      handleStreamsRemoved(removedStreams.keys, currentManagedStreams, removeCurrentState = true)
 
       val updatedStreams = difference.entriesDiffering()
-      handleStreamsUpdated(updatedStreams.mapValues { entry -> updatedStreamState[entry.key]!! })
+      handleStreamsUpdated(updatedStreams.mapValues { entry -> updatedStreamState[entry.key]!! }, currentManagedStreams)
 
    }
 
-   private fun handleStreamsUpdated(updatedStreams: Map<QualifiedName, TaxiQlQuery>) {
+   private fun handleStreamsUpdated(
+      updatedStreams: Map<QualifiedName, TaxiQlQuery>,
+      currentManagedStreams: List<RunningPipelineSummary>
+   ) {
+      if (updatedStreams.isEmpty()) return
+      logger.info { "${updatedStreams.size} streams modified, will stop and restart them" }
+      handleStreamsRemoved(updatedStreams.keys, currentManagedStreams, removeCurrentState = false)
+      handleStreamsAdded(updatedStreams)
    }
 
    private fun handleStreamsRemoved(
-      removedStreams: MutableSet<QualifiedName>,
-      currentManagedStreams: List<RunningPipelineSummary>
+      removedStreams: Set<QualifiedName>,
+      currentManagedStreams: List<RunningPipelineSummary>,
+      removeCurrentState: Boolean
    ) {
       removedStreams.map { removedStreamName ->
          currentManagedStreams.single {
@@ -86,6 +97,9 @@ class PersistentStreamManager(
          .forEach { runningPipelineSummary ->
             logger.info { "Managed stream ${runningPipelineSummary.pipeline!!.name} has been removed from the schema, so terminating associated stream" }
             pipelineManager.terminatePipeline(runningPipelineSummary.pipeline!!.pipelineSpecId)
+            if (removeCurrentState) {
+               streamStateManager.removeStreamState(runningPipelineSummary.pipeline!!.name)
+            }
          }
 
    }
@@ -94,14 +108,9 @@ class PersistentStreamManager(
       addedStreams
          .forEach {
             logger.info { "Creating a persistent stream for ${it.key}" }
-            createAndSubmitStream(it.value)
+            streamStateManager.submitStream(ManagedStream.from(it.value))
          }
    }
-
-   private fun createAndSubmitStream(query: TaxiQlQuery) {
-      pipelineManager.startPipeline(ManagedStream.from(query))
-   }
-
 
    private fun getStreams(schema: Schema): Map<QualifiedName, TaxiQlQuery> {
       return schema.taxi.queries

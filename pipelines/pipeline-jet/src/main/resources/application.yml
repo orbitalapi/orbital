@@ -6,11 +6,24 @@ spring:
       banner-mode: off
    codec:
       max-in-memory-size: 100MB
-   autoconfigure:
-      exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
+#      Why were these turned off?
+#   autoconfigure:
+#      exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
    cloud:
       config:
          enabled: false
+   rsocket:
+      server:
+         port: 7755
+         mapping-path: /api
+         transport: tcp
+#   jpa:
+#      show-sql: true
+   datasource:
+      url: jdbc:postgresql://${vyne.db.host}:${vyne.db.port:5432}/${vyne.db.database:orbital}
+      username: ${vyne.db.username}
+      password: ${vyne.db.password}
+      driver-class-name: org.postgresql.Driver
 
 server:
    port: 9615
@@ -62,7 +75,7 @@ logging:
    level:
       io.vyne: DEBUG
       #       Enable this to get graph debug schemas:
-      io.vyne.query.GraphSearcher: TRACE
+#      io.vyne.query.GraphSearcher: TRACE
       us.fatehi.utility.scheduler: WARN
       schemacrawler.crawl: WARN
       schemacrawler.loader.attributes: WARN

@@ -1,13 +1,12 @@
 package com.orbitalhq.cockpit.core.connectors
 
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
-import com.orbitalhq.connectors.registry.ConnectionStatus
+import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.core.publisher.Sinks
 import reactor.core.scheduler.Schedulers
 import java.time.Duration
 

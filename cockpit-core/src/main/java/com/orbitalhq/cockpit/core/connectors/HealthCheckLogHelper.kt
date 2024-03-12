@@ -1,8 +1,7 @@
 package com.orbitalhq.cockpit.core.connectors
 
-import com.orbitalhq.cockpit.core.connectors.kafka.KafkaHealthCheckProvider
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
-import com.orbitalhq.connectors.registry.ConnectionStatus
+import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
@@ -41,9 +40,9 @@ class HealthCheckLogHelper(
 
 
    private fun logIfPastThreshold(
-      config: KafkaConnectionConfiguration,
-      result: ConnectionStatus,
-      mostRecentUnhealthyLogTime: Instant?
+       config: KafkaConnectionConfiguration,
+       result: ConnectionStatus,
+       mostRecentUnhealthyLogTime: Instant?
    ) {
       val lastLogged = mostRecentUnhealthyLogTime ?: Instant.ofEpochSecond(0)
       if (Duration.between(lastLogged, Instant.now()) >= logBufferDuration) {

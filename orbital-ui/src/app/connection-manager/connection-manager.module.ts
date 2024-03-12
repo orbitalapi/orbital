@@ -16,7 +16,7 @@ import {HeaderComponentLayoutModule} from 'src/app/header-component-layout/heade
 import {ConnectionDetailViewComponent} from './connection-detail-view.component';
 import {ConnectionStatusComponent} from "./connection-status.component";
 import {MomentModule} from "ngx-moment";
-import { UiCustomisations } from '../../environments/ui-customisations';
+import {UiCustomisations} from '../../environments/ui-customisations';
 
 @NgModule({
   imports: [
@@ -64,10 +64,11 @@ import { UiCustomisations } from '../../environments/ui-customisations';
     ]),
     HeaderComponentLayoutModule,
     TuiHintModule,
-    MomentModule
+    MomentModule,
+    ConnectionStatusComponent
   ],
   exports: [ConnectionManagerComponent, ConnectionListComponent],
-  declarations: [ConnectionManagerComponent, ConnectionListComponent, ConnectionDetailViewComponent, ConnectionStatusComponent],
+  declarations: [ConnectionManagerComponent, ConnectionListComponent, ConnectionDetailViewComponent],
   providers: [],
 })
 export class ConnectionManagerModule {

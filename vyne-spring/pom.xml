@@ -119,6 +119,18 @@
          <artifactId>protobuf-utils</artifactId>
          <version>${project.version}</version>
       </dependency>
+      <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-messaging</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.rsocket</groupId>
+         <artifactId>rsocket-core</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.rsocket</groupId>
+         <artifactId>rsocket-transport-netty</artifactId>
+      </dependency>
 
       <dependency>
          <groupId>com.squareup.okhttp3</groupId>

@@ -75,8 +75,7 @@ export class QueryService {
   }
 
   getQueryErrors(clientQueryId: string):Observable<StreamQueryErrorEvent> {
-    const websocket = this.websocketService.websocket(`/api/query/taxiql/${clientQueryId}/errors`);
-    return websocket
+    return this.websocketService.websocket(`/api/query/taxiql/${clientQueryId}/errors`)
   }
 
   /**

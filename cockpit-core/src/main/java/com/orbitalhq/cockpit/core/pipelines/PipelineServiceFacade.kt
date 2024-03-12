@@ -5,6 +5,8 @@ import com.orbitalhq.pipelines.jet.api.PipelineApi
 import com.orbitalhq.pipelines.jet.api.PipelineStatus
 import com.orbitalhq.pipelines.jet.api.RunningPipelineSummary
 import com.orbitalhq.pipelines.jet.api.SubmittedPipeline
+import com.orbitalhq.pipelines.jet.api.streams.StreamStatus
+import com.orbitalhq.pipelines.jet.api.streams.StreamStatusUpdateRequest
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.handleFeignErrors
@@ -50,6 +52,28 @@ class PipelineServiceFacade(private val pipelineApi: PipelineApi) {
          logger.info { "Deleting pipeline $pipelineSpecId" }
          pipelineApi.deletePipeline(pipelineSpecId)
       }
+
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditPipelines}')")
+   @PostMapping("/api/streams/{streamName}/status")
+   fun updateStreamStatus(
+      @PathVariable("streamName") streamName: String,
+      @RequestBody request: StreamStatusUpdateRequest
+   ): Mono<StreamStatus> {
+      return handleFeignErrors {
+         logger.info { "Updating stream status of $streamName to ${request.state}" }
+         pipelineApi.updateStreamStatus(streamName, request)
+      }
+   }
+
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewPipelines}')")
+   @GetMapping("/api/streams/{streamName}/status")
+   fun getStreamStatus(
+      @PathVariable("streamName") streamName: String,
+   ): Mono<StreamStatus> {
+      return handleFeignErrors {
+         pipelineApi.getStreamStatus(streamName)
+      }
+   }
 }
 
 

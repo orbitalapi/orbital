@@ -11,6 +11,9 @@
   &.UNKNOWN {
     background-color: $bg-status-unknown;
   }
+  &.CONNECTING {
+    background-color: $bg-warn;
+  }
   &.ERROR {
     background-color: $bg-error-no-text;
   }

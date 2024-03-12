@@ -5,7 +5,7 @@ import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConnection
 import com.orbitalhq.connectors.hazelcast.HazelcastInstanceProvider
 import com.orbitalhq.connectors.hazelcast.doHealthCheck
-import com.orbitalhq.connectors.registry.ConnectionStatus
+import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
 import com.orbitalhq.connectors.registry.ConnectorType
 import org.springframework.stereotype.Component
@@ -22,7 +22,7 @@ class HazelcastHealthCheckProvider(private val hazelcastInstanceProvider: Hazelc
       return Mono.create { sink ->
          val result = try {
             hazelcastInstanceProvider.provide(config).doHealthCheck()
-            ConnectionStatus.ok()
+            ConnectionStatus.healthy()
          } catch (e:Exception) {
             ConnectionStatus.error(e.message ?: e::class.simpleName!!)
          }
