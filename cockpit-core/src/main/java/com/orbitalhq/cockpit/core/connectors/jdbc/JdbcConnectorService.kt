@@ -5,11 +5,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.cockpit.core.schemas.editor.LocalSchemaEditingService
-import com.orbitalhq.config.ConfigSourceWriterProvider
 import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.*
 import com.orbitalhq.connectors.jdbc.registry.JdbcConnectionRegistry
-import com.orbitalhq.connectors.registry.ConnectionStatus
+import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.connectors.registry.ConnectorConfigurationSummary
 import com.orbitalhq.connectors.registry.MutableConnectionRegistry
 import com.orbitalhq.schema.api.SchemaProvider

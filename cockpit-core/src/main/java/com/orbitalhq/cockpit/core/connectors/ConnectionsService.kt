@@ -4,11 +4,10 @@ import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.connections.ConnectionUsageMetadataRegistry
 import com.orbitalhq.connectors.ConnectionDriverOptions
 import com.orbitalhq.connectors.config.aws.AwsConnection
-import com.orbitalhq.connectors.azure.blob.registry.AzureStorageConnection
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.connectors.jdbc.JdbcDriverOptions
 import com.orbitalhq.connectors.config.kafka.KafkaConnection
-import com.orbitalhq.connectors.registry.ConnectionStatus
+import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.connectors.registry.ConnectorConfigDetail
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
 import com.orbitalhq.connectors.registry.ConnectorConfigurationSummary

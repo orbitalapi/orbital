@@ -1,17 +1,13 @@
 package com.orbitalhq.cockpit.core.connectors.kafka
 
 import arrow.core.getOrElse
-import arrow.core.getOrHandle
 import com.orbitalhq.PackageIdentifier
-import com.orbitalhq.cockpit.core.connectors.ConnectionTestedSuccessfully
-import com.orbitalhq.cockpit.core.connectors.jdbc.BadConnectionException
 import com.orbitalhq.connectors.ConnectorUtils
-import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.kafka.KafkaConnection
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
 import com.orbitalhq.connectors.kafka.registry.test
-import com.orbitalhq.connectors.registry.ConnectionStatus
+import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.connectors.registry.ConnectorConfigurationSummary
 import com.orbitalhq.connectors.registry.MutableConnectionRegistry
 import org.springframework.web.bind.annotation.PathVariable
@@ -31,7 +27,7 @@ class KafkaConnectorService(
          KafkaConnection.parameters, connectionConfig.connectionParameters
       )
       return KafkaConnection.test(connectionConfig)
-         .map { ConnectionStatus.ok() }
+         .map { ConnectionStatus.healthy() }
          .getOrElse { ConnectionStatus.error(it) }
    }
 

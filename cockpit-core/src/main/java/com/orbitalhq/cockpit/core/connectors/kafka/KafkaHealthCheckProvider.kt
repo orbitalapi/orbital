@@ -6,7 +6,7 @@ import com.orbitalhq.cockpit.core.connectors.HealthCheckLogHelper
 import com.orbitalhq.connectors.config.kafka.KafkaConnection
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.test
-import com.orbitalhq.connectors.registry.ConnectionStatus
+import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
 import com.orbitalhq.connectors.registry.ConnectorType
 import org.springframework.stereotype.Component
@@ -29,7 +29,7 @@ class KafkaHealthCheckProvider(
       return Mono.create { sink ->
          val result = try {
             KafkaConnection.test(config)
-               .map { ConnectionStatus.ok() }
+               .map { ConnectionStatus.healthy() }
                .getOrElse { ConnectionStatus.error(it) }
          } catch (e:Exception) {
             ConnectionStatus.error(e.message ?: e::class.simpleName!!)

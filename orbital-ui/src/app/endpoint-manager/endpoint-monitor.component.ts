@@ -1,17 +1,8 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject} from '@angular/core';
 import {ActivatedRoute} from "@angular/router";
 import {TypesService} from "../services/types.service";
-import {
-  BehaviorSubject,
-  combineLatestAll,
-  combineLatestWith,
-  filter,
-  interval,
-  Observable,
-  of,
-  ReplaySubject
-} from "rxjs";
-import {combineLatest, map, mergeMap, startWith} from "rxjs/operators";
+import {BehaviorSubject, combineLatestWith, filter, interval, Observable, of, single} from "rxjs";
+import {map, mergeMap, startWith} from "rxjs/operators";
 import {SavedQuery} from "../services/type-editor.service";
 import {DataSeries, MetricsPeriod, MetricsService, StreamMetricsData} from "../services/metrics.service";
 import {
@@ -23,8 +14,9 @@ import {
   ApexXAxis,
   ApexYAxis
 } from "ng-apexcharts";
-import {tuiIsNumber} from "@taiga-ui/cdk";
-import {WorkspaceMembershipDto} from "../services/workspaces.service";
+import {PipelineService, StreamRunningState, StreamStatus} from "../pipelines/pipelines.service";
+import {TUI_PROMPT, TuiPromptData, TuiStatus} from "@taiga-ui/kit";
+import {TuiDialogService} from "@taiga-ui/core";
 
 @Component({
   selector: 'app-endpoint-monitor',
@@ -37,6 +29,11 @@ import {WorkspaceMembershipDto} from "../services/workspaces.service";
         <div *ngIf="query.httpEndpoint" class="url-parts">
           <span class="method">{{ query.httpEndpoint.method }}</span>
           <span class="url">{{ query.httpEndpoint.url }}</span>
+        </div>
+        <div *ngIf="query.queryKind === 'Stream'" class="row">
+          <tui-toggle [ngModel]="streamIsRunning" (click)="handleToggleClick($event)" size="l"></tui-toggle>
+          <tui-badge size="l" [value]="streamStatusBadge.label | titlecase"
+                     [status]="streamStatusBadge.status"></tui-badge>
         </div>
       </ng-container>
 
@@ -64,8 +61,11 @@ import {WorkspaceMembershipDto} from "../services/workspaces.service";
             </tui-select>
             <tui-checkbox-labeled size="m" [(ngModel)]="refreshEnabled">Auto refresh</tui-checkbox-labeled>
           </app-panel-header>
-          <tui-notification status="error" class="error-notification">
+          <tui-notification status="error" class="error-notification" *ngIf="chartLoadingError">
             {{ chartLoadingError }}
+          </tui-notification>
+          <tui-notification status="error" class="error-notification" *ngIf="streamLoadingError">
+            {{ streamLoadingError }}
           </tui-notification>
           <div *ngFor="let chartConfig of chartConfigs" class="chart-row">
             <div class="label-box">
@@ -98,6 +98,7 @@ export class EndpointMonitorComponent {
   query$: Observable<SavedQuery>
   refreshEnabled = true;
 
+  streamLoadingError: string | null = null;
   chartLoadingError: string | null = null;
 
   readonly periods: MetricsPeriodToDescription[] = [
@@ -120,6 +121,69 @@ export class EndpointMonitorComponent {
         return "assets/img/tabler/arrows-right.svg";
 
     }
+  }
+
+  get streamStatusBadge() {
+    return {
+      label: this.streamStatus?.state,
+      status: this.streamIsRunning ? 'success' : 'warning' as TuiStatus
+    }
+  }
+
+  private streamStatus: StreamStatus
+  get streamIsRunning(): boolean {
+    return this.streamStatus?.state === "RUNNING";
+  }
+
+  handleToggleClick($event: Event) {
+    const desiredState :StreamRunningState = (this.streamIsRunning) ? 'PAUSED' : 'RUNNING';
+    this.updateStreamRunningState(desiredState);
+    $event.preventDefault()
+    $event.stopImmediatePropagation();
+    $event.stopPropagation();
+  }
+
+  updateStreamRunningState(targetState: StreamRunningState) {
+    let promptData: TuiPromptData;
+    this.query$.pipe(
+      mergeMap(savedQuery => {
+        let dialogLabel: string;
+        if (targetState === "RUNNING") {
+          promptData = {
+            content: 'This will enable the data stream, allowing it to start processing any queued data.',
+            yes: `Enable ${savedQuery.name.shortDisplayName}`,
+            no: 'Cancel'
+          }
+          dialogLabel = `Enable ${savedQuery.name.shortDisplayName}?`
+        } else {
+          promptData = {
+            content: 'This will disable the data stream, stopping all processing.<br /><br />Depending on how your data sources are configured, messages may be lost.',
+            yes: `Disable ${savedQuery.name.shortDisplayName}`,
+            no: 'Cancel'
+          }
+          dialogLabel = `Disable ${savedQuery.name.shortDisplayName}?`
+        }
+        return this.dialogs.open<boolean>(TUI_PROMPT, {
+          label: dialogLabel,
+          size: 's',
+          data: promptData,
+          closeable: false,
+          dismissible: false,
+        }).pipe(map(confirmed => {
+          return {savedQuery, confirmed}
+        }))
+      }),
+      mergeMap(({savedQuery, confirmed}) => {
+        if (confirmed) {
+          return this.pipelineService.updateStreamStatus(savedQuery.name.parameterizedName, targetState)
+        } else {
+          return of(this.streamStatus)
+        }
+      })
+    ).subscribe(next => {
+        this.streamStatus = next;
+        this.changeDetector.markForCheck();
+    })
   }
 
   dataLabels: ApexDataLabels = {
@@ -147,7 +211,9 @@ export class EndpointMonitorComponent {
     private activatedRoute: ActivatedRoute,
     private typeService: TypesService,
     private metricsService: MetricsService,
-    private changeDetector: ChangeDetectorRef
+    private changeDetector: ChangeDetectorRef,
+    private pipelineService: PipelineService,
+    @Inject(TuiDialogService) private readonly dialogs: TuiDialogService,
   ) {
 
     const ticks$ = interval(15000)
@@ -167,6 +233,20 @@ export class EndpointMonitorComponent {
     )
 
     endpointName$.pipe(
+      mergeMap(streamName => pipelineService.getStreamStatus(streamName))
+    ).subscribe({
+      next: value => {
+        this.streamStatus = value;
+        this.changeDetector.markForCheck();
+      },
+      error: err => {
+        console.log(err)
+        this.streamLoadingError = `Failed to load data stream details: ${err.error.message}`;
+        this.changeDetector.markForCheck();
+      }
+    })
+
+    endpointName$.pipe(
       combineLatestWith(this.selectedPeriod$, ticks$),
       mergeMap(value => {
         const [endpoint, period] = value;
@@ -175,10 +255,13 @@ export class EndpointMonitorComponent {
     ).subscribe({
       next: (metricsData) => {
         this.updateChartConfig(metricsData);
+        this.chartLoadingError = null;
+        this.changeDetector.markForCheck();
       },
       error: error => {
         console.log(error)
         this.chartLoadingError = 'There was a problem loading the chart data';
+        this.changeDetector.markForCheck();
       }
     })
   }

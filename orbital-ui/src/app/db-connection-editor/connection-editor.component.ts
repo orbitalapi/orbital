@@ -165,7 +165,7 @@ export class ConnectionEditorComponent {
         this.working = false;
         this.testResult = {
           status: 'ERROR',
-          errorMessage: error.error.message,
+          message: error.error.message,
           timestamp: new Date()
         };
       });
@@ -197,7 +197,7 @@ export class ConnectionEditorComponent {
         this.working = false;
         this.testResult = {
           status: 'ERROR',
-          errorMessage: error.error.message,
+          message: error.error.message,
           timestamp: new Date()
         };
       });

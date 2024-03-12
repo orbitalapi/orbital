@@ -59,7 +59,8 @@ class PipelineServiceTest {
       val pipelineService = PipelineService(
          pipelineManager,
          repository,
-         schemaStore
+         schemaStore,
+         mock {  }
       )
 
       pipelineService.loadAndSubmitExistingPipelines()
