@@ -2,7 +2,7 @@
 @import "src/typography";
 
 .list-container {
-  width: 400px;
+  width: 350px;
   height: 100%;
   overflow-y: scroll;
   background-color: $slate-100;
@@ -10,9 +10,9 @@
 }
 
 .source-package-card {
-  padding: 2rem;
+  padding: 1.5rem 1rem;
   border: 1px solid transparent;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
 
   &.selected-list-item {
     background: $white;
@@ -28,7 +28,6 @@
   }
 
   &.error-state {
-    padding: 1rem 1rem 1rem 2rem;
     display: flex;
     align-items: start;
     gap: 1rem;
@@ -53,11 +52,11 @@
 }
 
 .package-title {
-  margin-bottom: 0.5rem;
-
-  tui-badge {
-    margin-left: 0.5rem;
-  }
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .tag-table {
@@ -65,10 +64,8 @@
     opacity: 0.8;
   }
 
-  td {
-    padding-right: 3rem;
-    // removed after updating taiga 2->3
-    //padding-bottom: 0.4rem;
+  td:not(:last-child) {
+    padding-right: 2rem;
   }
 }
 
