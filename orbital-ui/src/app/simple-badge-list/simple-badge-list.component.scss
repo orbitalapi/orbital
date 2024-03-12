@@ -1,17 +1,19 @@
 :host {
   display: flex;
   align-items: center;
+  column-gap: 2rem;
+  row-gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .icon-badge {
   img {
-    margin-right: 0.5rem;
+    margin-right: 0.35rem;
   }
   display: flex;
   align-items: center;
-  margin-right: 3rem;
 
   .label {
-    margin-right: 1rem;
+    margin-right: 0.5rem;
   }
 }
