@@ -6,6 +6,7 @@ import com.orbitalhq.http.ServicesConfig.Companion.STREAM_SERVER_NAME
 import com.orbitalhq.pipelines.jet.api.streams.StreamServerStatusEvent
 import com.orbitalhq.spring.http.websocket.WebSocketController
 import com.orbitalhq.spring.rsocket.RSocketConnectionFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.reactive.socket.WebSocketSession
@@ -14,6 +15,7 @@ import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
 
 @RestController
+@ConditionalOnProperty("vyne.stream-server.enabled", havingValue = "true", matchIfMissing = false)
 class StreamServerStatusService(
    private val discoveryClient: DiscoveryClient,
    private val rSocketConnectionFactory: RSocketConnectionFactory,

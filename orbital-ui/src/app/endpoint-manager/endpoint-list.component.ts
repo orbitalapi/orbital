@@ -18,6 +18,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
                                  description="Queries, Streams and Pipelines defined in your schema">
       <ng-container ngProjectAs="header-components">
         <app-connection-status [status]="(streamServerConnectionStatus$ | async)"></app-connection-status>
+        <tui-notification *ngIf="websocketConnectionError && hasStreamingQueries" status="error">{{websocketConnectionError}}</tui-notification>
       </ng-container>
       <div *ngIf="queries$ | async as queries">
         <table class="query-list">
@@ -57,8 +58,10 @@ export class EndpointListComponent {
 
   queries$: Observable<SavedQuery[]>;
 
+  hasStreamingQueries = false;
   readonly streamServerConnectionStatus$: Observable<ConnectionStatus>
   private streamServerState: StreamServerStatusEvent = null;
+  websocketConnectionError: string | null = null;
 
   constructor(typeService: TypesService,
               private router: Router,
@@ -66,6 +69,11 @@ export class EndpointListComponent {
               private pipelineService: PipelineService,
               private changeDetector: ChangeDetectorRef) {
     this.queries$ = typeService.getQueries()
+      .pipe(
+        tap(next => {
+          this.hasStreamingQueries = next.some(query => query.queryKind === "Stream")
+        })
+      )
     const streamServerStatusMessages = pipelineService.streamsStatus()
       .pipe(
         takeUntilDestroyed()
@@ -80,10 +88,18 @@ export class EndpointListComponent {
       })
     )
 
-    streamServerStatusMessages.subscribe(next => {
-      this.streamServerState = next.streamServerState;
-      changeDetector.markForCheck();
-    });
+    streamServerStatusMessages.subscribe(
+      {
+        next: next => {
+          this.streamServerState = next.streamServerState;
+          changeDetector.markForCheck();
+        },
+        error: err => {
+          console.log(err)
+          this.websocketConnectionError = 'Stream server not enabled'
+          changeDetector.markForCheck();
+        }
+      });
 
   }
 
