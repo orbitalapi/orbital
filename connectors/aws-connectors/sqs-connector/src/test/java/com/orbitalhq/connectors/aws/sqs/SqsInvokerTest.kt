@@ -101,8 +101,8 @@ class SqsInvokerTest {
    fun `can consume from  sqs`(): Unit = runBlocking {
       val (vyne, _) = vyneWithSqsInvoker()
 
-      val message1 = "{\"id\": \"1234\",\"title\": \"Title 1\"}"
-      val message2 = "{\"id\": \"5678\",\"title\": \"Title 2\"}"
+      val message1 = """{"id": "1234","title": "Title 1"}"""
+      val message2 = """{"id": "5678","title": "Title 2"}"""
 
       populateSqs(message1)
       populateSqs(message2)
@@ -111,9 +111,24 @@ class SqsInvokerTest {
          .results.take(2).toList() as List<TypedObject>
 
       result.should.have.size(2)
-
    }
 
+
+   @Test
+   fun `can consume filtered stream from  sqs`(): Unit = runBlocking {
+      val (vyne, _) = vyneWithSqsInvoker()
+
+      val message1 = """{"id": "1234","title": "Star Wars"}"""
+      val message2 = """{"id": "5678","title": "Jaws"}"""
+
+      populateSqs(message1)
+      populateSqs(message2)
+
+      val result = vyne.query("""stream { Movie.filterEach( (MovieTitle) -> MovieTitle == "Jaws" ) }""")
+         .results.take(1).toList() as List<TypedObject>
+
+      result.should.have.size(1)
+   }
 
    private fun vyneWithSqsInvoker(taxi: String = defaultSchema(sqsQueueUrl)): Pair<Vyne, SqsStreamManager> {
       val schema = TaxiSchema.fromStrings(

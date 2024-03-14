@@ -9,6 +9,7 @@ import com.orbitalhq.models.json.parseJson
 import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.shareIn
@@ -16,6 +17,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
 import org.junit.Test
+import kotlin.time.Duration
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class VyneStreamTest {
@@ -183,7 +185,7 @@ class VyneStreamTest {
    }
 
    @Test
-   fun `can call mutation for each member of a stream`():Unit = runBlocking {
+   fun `can call mutation for each member of a stream`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """
 
@@ -217,7 +219,7 @@ class VyneStreamTest {
          ).map { vyne.parseJson("UserUpdateMessage", it) }
             .asFlow()
       }
-      stub.addResponse("getUser") {_,params ->
+      stub.addResponse("getUser") { _, params ->
          val userId = params[0].second.value!!
          val username = when (userId) {
             "aaa" -> "Jimmy"
@@ -227,14 +229,17 @@ class VyneStreamTest {
          val user = vyne.parseJson("User", """{ "id" : "$userId", "name" : "$username" } """)
          listOf(user)
       }
-      stub.addResponse("storeUpdate") { _, params -> params.map { it.second }
+      stub.addResponse("storeUpdate") { _, params ->
+         params.map { it.second }
       }
 
 
-      val queryResult = vyne.query("""
+      val queryResult = vyne.query(
+         """
          stream { UserUpdateMessage }
          call UserService::storeUpdate
-      """.trimIndent()).rawObjects()
+      """.trimIndent()
+      ).rawObjects()
       queryResult.shouldHaveSize(2)
 
    }

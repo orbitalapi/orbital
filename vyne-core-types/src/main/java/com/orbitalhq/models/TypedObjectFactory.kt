@@ -504,6 +504,9 @@ class TypedObjectFactory(
             // However, in future, we need to mkae the TypedObjectFactory
             // async up the chain.
             runBlocking {
+               if (requestedType.isStream) {
+                  error("Cannot perform an inner search for a stream")
+               }
                val resultsFromSearch = try {
                   inPlaceQueryEngine.findType(requestedType)
                      .toList()

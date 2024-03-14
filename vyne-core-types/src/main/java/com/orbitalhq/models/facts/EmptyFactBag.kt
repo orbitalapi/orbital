@@ -3,6 +3,7 @@ package com.orbitalhq.models.facts
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
 import com.orbitalhq.query.TypedInstanceValidPredicate
+import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 
 class EmptyFactBag(private val list: List<TypedInstance> = emptyList()) : FactBag, Collection<TypedInstance> by list {
@@ -37,6 +38,7 @@ class EmptyFactBag(private val list: List<TypedInstance> = emptyList()) : FactBa
 
    override fun hasFact(search: FactSearch): Boolean = false
    override fun withAdditionalScopedFacts(otherFacts: List<ScopedFact>): FactBag = notSupported()
+   override fun withAdditionalFacts(otherFacts: List<TypedInstance>, schema: Schema): FactBag = notSupported()
 
    override fun merge(other: FactBag): FactBag {
       return if (other is EmptyFactBag) {

@@ -6,7 +6,6 @@ import com.orbitalhq.query.TypedInstanceValidPredicate
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import lang.taxi.accessors.Argument
-import lang.taxi.accessors.ProjectionFunctionScope
 
 /**
  * A FactBag is a collection of Facts (ie., TypedInstances) for search purposes.
@@ -139,4 +138,11 @@ interface FactBag : Collection<TypedInstance> {
     * The current factbag is not affected
     */
    fun withAdditionalScopedFacts(otherFacts: List<ScopedFact>):FactBag
+
+   /**
+    * Returns a new factback, with additional facts.
+    * The current factbag is not affected
+    */
+   fun withAdditionalFacts(otherFacts: List<TypedInstance>, schema: Schema):FactBag
+
 }

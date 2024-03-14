@@ -262,6 +262,11 @@ open class CopyOnWriteFactBag(
       )
    }
 
+   override fun withAdditionalFacts(otherFacts: List<TypedInstance>, schema: Schema): FactBag {
+      return CopyOnWriteFactBag(
+         facts + otherFacts, schema, scopedFacts
+      )
+   }
 
 }
 
