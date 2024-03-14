@@ -216,6 +216,10 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
       return CascadingFactBag(primary.withAdditionalScopedFacts(otherFacts), secondary)
    }
 
+   override fun withAdditionalFacts(otherFacts: List<TypedInstance>, schema: Schema): FactBag {
+      return CascadingFactBag(CopyOnWriteFactBag(otherFacts, schema), this)
+   }
+
    override val size: Int
       get() = primary.size + secondary.size
 

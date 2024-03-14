@@ -8,6 +8,7 @@ import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.fqn
 import lang.taxi.accessors.ProjectionFunctionScope
+import lang.taxi.expressions.Expression
 import lang.taxi.mutations.Mutation
 import mu.KotlinLogging
 import java.util.*
@@ -49,7 +50,10 @@ data class Query(
 //@JsonDeserialize(using = QueryExpressionDeserializer::class)
 //@JsonSerialize(using = QueryExpressionSerializer::class)
 // For now, all UI calls send a type TypeNameListQueryExpression.
-@JsonDeserialize(`as` = TypeNameListQueryExpression::class)
+//@JsonDeserialize(`as` = TypeNameListQueryExpression::class)
+// Removed the deserialization here, as I don't think it's used
+// (all queries are now sent as TaxiQL).
+// Will see what breaks.
 interface QueryExpression
 
 data class StreamJoiningExpression(val streamExpressions: List<TypeQueryExpression>) : QueryExpression
@@ -78,6 +82,22 @@ data class ConstrainedTypeNameQueryExpression(
    val constraint: List<OutputConstraint>
 ) : QueryExpression
 
+data class ExpressionQuery(val expression: Expression, val legacyExpression: QueryExpression?): QueryExpression {
+
+   /**
+    * Provides backwards compatibility to constraints - which are vyne specific variations of the
+    * taxi Constraint concept.
+    * In time, we should replace this, and just use the taxi constraints.
+    */
+   val constraints: List<OutputConstraint>
+      get() {
+         return when {
+            legacyExpression is ConstrainedTypeNameQueryExpression -> legacyExpression.constraint
+            else -> emptyList()
+         }
+      }
+}
+
 data class TypeQueryExpression(val type: Type) : QueryExpression
 
 data class TypeNameQueryExpression(val typeName: String) : QueryExpression {
@@ -100,12 +120,6 @@ data class ProjectedExpression(val source: QueryExpression, val projection: Proj
 
 // TODO : Can we replace / collapse with FieldProjection?
 data class Projection(val type: Type, val scopedVars: List<ProjectionFunctionScope>)
-
-data class TypeNameListQueryExpression(val typeNames: List<String>) : QueryExpression
-
-// Note - this doesn't exist yet, but I'm leaving it here so I remember why I chose
-// this object type over a simple string.
-data class GraphQlQueryExpression(val shape: Map<String, Any>) : QueryExpression
 
 
 enum class QueryMode {

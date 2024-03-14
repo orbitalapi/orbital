@@ -7,6 +7,7 @@ import lang.taxi.TaxiDocument
 import lang.taxi.types.ArrayType
 import lang.taxi.types.EnumValueQualifiedName
 import lang.taxi.types.ObjectType
+import lang.taxi.types.StreamType
 import java.util.concurrent.CopyOnWriteArrayList
 
 abstract class BaseTypeCache : TypeCache {
@@ -94,11 +95,12 @@ abstract class BaseTypeCache : TypeCache {
          // but not Array<Foo> directly.
          // It's still valid, so we'll construct the type
          val baseType = type(name.fullyQualifiedName)
-         val taxiType = if(ArrayType.isArrayTypeName(baseType.fullyQualifiedName)) {
-            ArrayType.of(type(name.parameters[0]).taxiType)
-         } else {
-            // Not sure what to do here.
-            baseType.taxiType
+         val taxiType = when {
+             ArrayType.isArrayTypeName(baseType.fullyQualifiedName) -> ArrayType.of(type(name.parameters[0]).taxiType)
+             StreamType.isStream(baseType.fullyQualifiedName) -> StreamType.of(type(name.parameters[0]).taxiType)
+             else ->
+                // Not sure what to do here.
+                baseType.taxiType
          }
          val parameterisedType = baseType.copy(name = name, typeParametersTypeNames = name.parameters, taxiType = taxiType)
          add(parameterisedType)

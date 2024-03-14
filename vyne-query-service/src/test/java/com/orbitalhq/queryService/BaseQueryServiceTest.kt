@@ -9,16 +9,12 @@ import com.orbitalhq.VyneProvider
 import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.history.db.QueryHistoryDbWriter
 import com.orbitalhq.metrics.NoOpMetricsReporter
-import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseJsonModel
 import com.orbitalhq.models.json.parseKeyValuePair
 import com.orbitalhq.query.HistoryEventConsumerProvider
-import com.orbitalhq.query.Query
 import com.orbitalhq.query.QueryEventConsumer
-import com.orbitalhq.query.QueryMode
-import com.orbitalhq.query.TypeNameListQueryExpression
 import com.orbitalhq.query.runtime.core.QueryLifecycleEventObserver
 import com.orbitalhq.query.runtime.core.QueryResponseFormatter
 import com.orbitalhq.query.runtime.core.QueryService
@@ -31,7 +27,6 @@ import com.orbitalhq.testVyne
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.junit.jupiter.api.BeforeAll
 import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
@@ -194,13 +189,6 @@ abstract class BaseQueryServiceTest {
          ), modifyDataSource = true
       )
    }
-
-
-   protected fun buildQuery(type: String) = Query(
-      TypeNameListQueryExpression(listOf(type)),
-      emptyMap(),
-      queryMode = QueryMode.GATHER
-   )
 }
 
 fun ResponseEntity<StreamingResponseBody>.contentString(): String {

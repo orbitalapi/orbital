@@ -21,7 +21,7 @@ private val logger = KotlinLogging.logger {  }
 class VyneStreamMergingTest : DescribeSpec({
    // These tests constantly break on the build server.
    // Commenting out until we can make them reliable ORB-195
-   xdescribe("Querying joining mulitple streams") {
+   describe("Querying joining mulitple streams") {
       val (vyne, stub) = testVyne(
          """
         model Tweet {

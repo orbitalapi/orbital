@@ -223,7 +223,7 @@ class ParameterFactory {
             // construct a request for the operation to discover a parameter needed to construct a request for the operation.
             val excludedOperations = excludeOperationFromSearch(operation)
             val queryResult = try {
-               context.find(QuerySpecTypeNode(attributeType), excludedOperations)
+               context.find(QuerySpecTypeNode(attributeType, expression = null), excludedOperations)
                   .results.firstOrNull()
             } catch (e: UnresolvedTypeInQueryException) {
                null

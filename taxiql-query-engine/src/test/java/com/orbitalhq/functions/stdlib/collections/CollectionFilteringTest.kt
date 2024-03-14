@@ -41,7 +41,7 @@ class CollectionFilteringTest {
       val results = vyne.query("""find { Movie[] } as {
          | cast : Person[]
          | // Filtering directly on a field on this type.
-         | aListers : filterAll(this.cast, (Person) -> containsString(PersonName, 'a') )
+         | aListers : filter(this.cast, (Person) -> containsString(PersonName, 'a') )
          |}[]
       """.trimMargin())
          .typedObjects()

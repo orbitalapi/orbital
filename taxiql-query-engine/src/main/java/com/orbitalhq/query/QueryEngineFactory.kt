@@ -90,6 +90,7 @@ interface QueryEngineFactory {
 
          return DefaultQueryEngineFactory(
             strategies = listOf(
+               ExpressionEvaluatingQueryStrategy(),
 //               CalculatedFieldScanStrategy(CalculatorRegistry()),
                ModelsScanStrategy(),
 //               ProjectionHeuristicsQueryStrategy(opInvocationEvaluator, vyneCacheConfiguration.vyneGraphBuilderCache),

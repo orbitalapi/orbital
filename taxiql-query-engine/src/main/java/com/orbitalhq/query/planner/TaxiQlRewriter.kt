@@ -4,6 +4,7 @@ import lang.taxi.CompilerTokenCache
 import lang.taxi.TaxiParser
 import lang.taxi.query.TaxiQLQueryString
 import org.antlr.v4.runtime.CharStreams
+import org.antlr.v4.runtime.ParserRuleContext
 
 /**
  * Modifies a TaxiQL Query
@@ -17,9 +18,10 @@ class TaxiQlRewriter {
       val query = parseQuery(original)
       val queryDirective = query.queryBody().queryOrMutation().queryDirective().text
       require(queryDirective == "stream") { "Expected a stream query, but was $queryDirective"}
-      val typeList = query.queryBody()?.queryOrMutation()?.queryTypeList()
+      val queryExpression = query.queryBody()?.queryOrMutation()?.expressionGroup()
          ?: error("Invalid TaxiQL: No Type list is present.")
-      val lastType = typeList.fieldTypeDeclaration().last()
+      val lastType = queryExpression.children.last()
+      require (lastType is ParserRuleContext) { "Error rewriting TaxiQL to append stream source - expected a parser rule but found ${lastType::class.simpleName}" }
       val charIndexAtEndOfLastType = lastType.stop.stopIndex
 
       val amended = StringBuilder(original).insert(charIndexAtEndOfLastType + 1, " | $streamSource")

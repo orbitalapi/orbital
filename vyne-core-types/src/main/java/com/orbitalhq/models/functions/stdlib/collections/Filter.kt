@@ -13,8 +13,8 @@ import lang.taxi.functions.FunctionAccessor
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.QualifiedName
 
-object FilterAll : NamedFunctionInvoker, CollectionFilteringFunction() {
-   override val functionName: QualifiedName = lang.taxi.functions.stdlib.FilterAll.name
+object Filter : NamedFunctionInvoker, CollectionFilteringFunction() {
+   override val functionName: QualifiedName = lang.taxi.functions.stdlib.Filter.name
    override fun invoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
@@ -37,3 +37,4 @@ object FilterAll : NamedFunctionInvoker, CollectionFilteringFunction() {
          .getOrHandle { it }
    }
 }
+

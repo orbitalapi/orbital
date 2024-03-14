@@ -42,7 +42,7 @@ class QueryMetadataBuilder(cacheSize: Int = 50) {
       // However, if there is no projection or source type, then this query is only a mutation, and it's safe the build the plan for.
       val searchType = taxiQlQuery.projectedType ?: taxiQlQuery.typesToFind.map { it.type }.singleOrNull() ?: taxiQlQuery.unwrappedReturnType
       val referencedTypes = collectReferencedTypes(searchType, schema) +
-         taxiQlQuery.typesToFind.map { TopLevelType(it.type.toVyneType(schema)) }
+         taxiQlQuery.typesToFind.map { TopLevelType(it.expression.returnType.toVyneType(schema)) }
       val providedTypes = taxiQlQuery.facts.map { it.type }.toSet()
       val typesAndCandidateOperations = referencedTypes
          .filter { !providedTypes.contains(it.type.taxiType) }
