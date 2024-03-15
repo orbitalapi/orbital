@@ -439,3 +439,12 @@ scan-pipeline:
    extends: .container_scanning
    variables:
       imageName: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/orbitalhq/stream-server:next
+
+
+trigger-connect-build:
+   stage: deploy
+   only:
+      - develop
+   trigger:
+      project: vyne/hazelcast-orbital
+      branch: develop
