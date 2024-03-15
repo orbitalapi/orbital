@@ -2,16 +2,6 @@
 
 :host {
   background: $whiteish;
-
-  &:hover:not(.selected-history-list-item) {
-    background: rgba($light-grey-1, 0.5);
-    outline: 1px solid rgba($gray-500, 0.5);
-  }
-
-  &.selected-history-list-item {
-    background: $white;
-    outline: 1px solid $gray-500;
-  }
 }
 
 .history-item {
@@ -19,10 +9,11 @@
   cursor: pointer;
   padding: 10px 20px;
   background: inherit;
-  border-bottom: 1px solid $light-purple-grey-300;
   outline: inherit;
   display: flex;
   flex-direction: column;
+
+
 
   code {
     flex-grow: 1;

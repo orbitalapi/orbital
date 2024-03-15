@@ -5,4 +5,25 @@
   height: 100%;
   overflow-y: scroll;
   border-right: 1px solid $light-purple-grey-300;
+
+  background-color: $list-background;
+}
+
+app-query-history-card {
+  &:hover:not(.selected-history-list-item) {
+    background: $list-hover-background;
+  }
+  &.selected-history-list-item {
+    background: $list-selected-background;
+    border: 1px solid $list-selected-border;
+
+  }
+
+  border: 1px solid transparent;
+  border-bottom: 1px solid $list-border;
+}
+
+.inner-list-container {
+  display: flex;
+  flex-direction: column;
 }

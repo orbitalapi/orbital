@@ -11,6 +11,7 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedInstanceConverter
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.query.HttpExchange
+import com.orbitalhq.query.HttpHeaders
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
@@ -99,7 +100,8 @@ class StubService(
             verb = "GET",
             requestBody = "Fake request body",
             responseCode = 200,
-            responseSize = 1000
+            responseSize = 1000,
+            headers = HttpHeaders.empty()
          )
       )
       val dataSource = OperationResultDataSourceWrapper(OperationResult.from(params, remoteCall))
@@ -189,7 +191,8 @@ class StubService(
                   verb = "GET",
                   requestBody = """{ "stub" : "Not captured" }""",
                   responseCode = 200,
-                  responseSize = 1000
+                  responseSize = 1000,
+                  headers = HttpHeaders.empty()
                )
             )
             OperationResult.from(parameters, remoteCall)

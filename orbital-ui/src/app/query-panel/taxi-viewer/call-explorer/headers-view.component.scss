@@ -1,0 +1,13 @@
+@import "src/tables";
+
+table {
+  @include vyne-table();
+  font-size: 0.8rem;
+}
+
+
+td.header-key {
+  // Use a fixed width in this column, so that both tables look consistently laid out
+  // across the two accordions
+  width: 15rem;
+}

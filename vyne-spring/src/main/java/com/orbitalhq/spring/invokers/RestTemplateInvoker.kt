@@ -1,6 +1,6 @@
 package com.orbitalhq.spring.invokers
 
-import com.orbitalhq.http.HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT
+import com.orbitalhq.http.HttpHeaderNames.STREAM_ESTIMATED_RECORD_COUNT
 import com.orbitalhq.http.UriVariableProvider
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.TypedCollection
@@ -32,8 +32,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.annotations.HttpService
+import lang.taxi.utils.log
 import mu.KotlinLogging
 import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.client.ClientResponse
@@ -187,6 +189,10 @@ class RestTemplateInvoker(
                      // Strictly, this isn't the size in bytes,
                      // but it's close enough until someone complains.
                      responseSize = responseBody.length,
+                     headers = com.orbitalhq.query.HttpHeaders(
+                        responseHeaders = clientResponse.headers().asHttpHeaders().asVyneHeadersMap(),
+                        requestHeaders = clientResponse.requestHeaders()
+                     )
                   )
                )
             }
@@ -320,7 +326,8 @@ class RestTemplateInvoker(
             verb = httpMethod.name(),
             requestBody = httpEntity.body?.toString(),
             responseCode = -1,
-            responseSize = 0
+            responseSize = 0,
+            headers = com.orbitalhq.query.HttpHeaders.empty()
          )
       )
       eventDispatcher.reportRemoteOperationInvoked(OperationResult.from(parameters, remoteCall), queryId)
@@ -367,7 +374,7 @@ class RestTemplateInvoker(
 
       val itemExpiredAt = HttpCacheControl.parse(headers.asHttpHeaders())?.expiredAt()
       val isPreparsed = headers
-         .header(com.orbitalhq.http.HttpHeaders.CONTENT_PREPARSED).let { headerValues ->
+         .header(com.orbitalhq.http.HttpHeaderNames.CONTENT_PREPARSED).let { headerValues ->
              headerValues.isNotEmpty() && headerValues.first() == true.toString()
          }
       // If the content has been pre-parsed upstream, we don't evaluate accessors
@@ -412,3 +419,18 @@ class RestRetryException(
    message: String,
    val httpStatus: Int
 ) : RuntimeException(message)
+
+
+fun HttpHeaders.asVyneHeadersMap():Map<String,List<String>> {
+   return this.toMutableMap().toMap()
+}
+
+fun ClientResponse.requestHeaders():Map<String,List<String>> {
+   return when (this) {
+      is ResponseWithRequestHeaders -> this.requestHeaders.asVyneHeadersMap()
+      else -> {
+         log().debug("Called ClientResponse.requestHeaders(), but the request headers weren't captured - got instance of ${this::class.simpleName}")
+         emptyMap()
+      }
+   }
+}

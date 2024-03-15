@@ -40,7 +40,7 @@ app-service-stats {
 
 .operation-list-container {
   //padding: 20px 0;
-  //background-color: rgba(black,0.1);
+  background-color: $list-background;
   height: 100%;
   overflow: auto;
   display: flex;
@@ -81,8 +81,14 @@ app-service-stats {
   cursor: pointer;
 
   &:hover {
-    background-color: rgba($dark-grey-2, 0.1);
+    background-color: $list-hover-background;
   }
+  &.active {
+    border: 1px solid $list-selected-border;
+    background-color: $list-selected-background;
+    border-radius: 4px;
+  }
+  border: 1px solid transparent;
 
   display: flex;
   align-items: center;
