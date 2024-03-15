@@ -136,7 +136,7 @@ class HazelcastOperationCacheProvider(
       )
 
       // Do we always get ConstructedQueryDataSource here? If so below check is redundant. QueryProfileChartBuilder
-      val isConstructedQueryDataSource = parameters[0].second.let { it.source is ConstructedQueryDataSource }
+      val isConstructedQueryDataSource = parameters.isNotEmpty() && parameters[0].second.let { it.source is ConstructedQueryDataSource }
       val operationResult =  if (isConstructedQueryDataSource) {
          val constructedQueryDataSource = parameters[0].second.let { it.source as ConstructedQueryDataSource }
          OperationResult.fromTypedInstances(
