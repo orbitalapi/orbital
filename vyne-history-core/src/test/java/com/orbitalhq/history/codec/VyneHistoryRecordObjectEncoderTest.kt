@@ -3,6 +3,7 @@ package com.orbitalhq.history.codec
 import com.winterbe.expekt.should
 import io.netty.buffer.PooledByteBufAllocator
 import com.orbitalhq.query.HttpExchange
+import com.orbitalhq.query.HttpHeaders
 import com.orbitalhq.query.QueryResponse
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.history.FlowChartData
@@ -101,7 +102,8 @@ class VyneHistoryRecordObjectEncoderTest {
             "GET",
             "{ foo }",
             200,
-            20000
+            20000,
+            HttpHeaders.empty()
          ),
          operation = "foo.bar.Bz".fqn(),
          success = true,

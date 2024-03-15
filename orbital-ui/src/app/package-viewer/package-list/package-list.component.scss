@@ -12,17 +12,17 @@
 .source-package-card {
   padding: 1.5rem 1rem;
   border: 1px solid transparent;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid $list-border;
 
   &.selected-list-item {
-    background: $white;
-    border: 1px solid $vyne-lilac;
-    border-radius: 4px;
+    background: $list-selected-background;
+    border: 1px solid $list-selected-border;
+    border-radius: $list-border-radius;
   }
 
   &:hover {
     &:not(.selected-list-item) {
-      background-color: $slate-200;
+      background-color: $list-hover-background;
       cursor: pointer;
     }
   }

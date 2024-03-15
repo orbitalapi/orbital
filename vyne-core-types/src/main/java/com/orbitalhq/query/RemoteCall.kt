@@ -114,6 +114,15 @@ sealed class RemoteCallExchangeMetadata {
    abstract val requestBody: String?
 }
 
+@Serializable
+data class HttpHeaders(
+   val requestHeaders: Map<String,List<String>>,
+   val responseHeaders: Map<String,List<String>>
+) {
+   companion object {
+      fun empty() = HttpHeaders(emptyMap(), emptyMap())
+   }
+}
 
 @Serializable
 data class HttpExchange(
@@ -122,7 +131,8 @@ data class HttpExchange(
    override val requestBody: String?,
 
    val responseCode: Int,
-   val responseSize: Int
+   val responseSize: Int,
+   val headers: com.orbitalhq.query.HttpHeaders
 ) : RemoteCallExchangeMetadata()
 
 @Serializable

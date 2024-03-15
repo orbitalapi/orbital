@@ -24,7 +24,7 @@ import {HttpRequestState} from 'ngx-http-request-state';
           *ngIf='historyRecords.isLoading'
         ></progress>
         <!-- Show the data if state is loaded -->
-        <div *ngIf="historyRecords.value?.length !== 0">
+        <div *ngIf="historyRecords.value?.length !== 0" class="inner-list-container">
           <app-query-history-card
             *ngFor="let historyRecord of historyRecords.value"
             [routerLink]="'/query-history/' + historyRecord.queryId"

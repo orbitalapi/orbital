@@ -1,6 +1,6 @@
 package com.orbitalhq.http
 
-object HttpHeaders  {
+object HttpHeaderNames  {
    /**
     * Indicates that content has already preprocessed against the schema,
     * and that the returned results match the typed object schema, without requiring

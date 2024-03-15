@@ -2,18 +2,20 @@ package com.orbitalhq.spring.invokers
 
 import app.cash.turbine.testIn
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.nhaarman.mockito_kotlin.argumentCaptor
+import com.nhaarman.mockito_kotlin.doAnswer
 import com.nhaarman.mockito_kotlin.mock
-import com.winterbe.expekt.expect
-import com.winterbe.expekt.should
 import com.orbitalhq.expectTypedObject
 import com.orbitalhq.http.MockWebServerRule
 import com.orbitalhq.http.respondWith
 import com.orbitalhq.http.response
+import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedInstance.Companion.EXPIRY_METADATA
+import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.rawObjects
 import com.orbitalhq.schema.api.SimpleSchemaProvider
@@ -26,7 +28,13 @@ import com.orbitalhq.typedObjects
 import com.orbitalhq.utils.Benchmark
 import com.orbitalhq.utils.StrategyPerformanceProfiler
 import com.orbitalhq.withBuiltIns
+import com.winterbe.expekt.expect
+import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
+import io.kotest.matchers.types.shouldNotBeInstanceOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -396,7 +404,7 @@ namespace vyne {
       val service = schema.service("vyne.CreditCostService")
       val operation = service.operation("calculateCreditCosts")
 
-
+      val (context, events) = eventCapturingQueryContext()
       runTest {
          val turbine = RestTemplateInvoker(
             webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
@@ -405,7 +413,7 @@ namespace vyne {
             service, operation, listOf(
                paramAndType("vyne.ClientId", "myClientId", schema),
                paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
-            ), mock { }, "testQuery", QueryOptions()
+            ), context, "testQuery", QueryOptions()
          ).testIn(this)
 
          val typedInstance = turbine.expectTypedObject()
@@ -419,6 +427,14 @@ namespace vyne {
             assertEquals(HttpMethod.POST.name(), request.method)
             assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
          }
+
+         events.shouldHaveSize(1)
+         val event = events.single()
+         val headers = event.remoteCall.exchange
+            .shouldBeInstanceOf<HttpExchange>()
+            .headers
+         headers.requestHeaders.shouldHaveSize(2)
+         headers.responseHeaders.shouldHaveSize(2)
       }
 
    }
@@ -474,6 +490,44 @@ namespace vyne {
       }
    }
 
+   @Test
+   @OptIn(ExperimentalTime::class)
+   fun `headers are captured on error result`() {
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setResponseCode(404)
+      }
+
+      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}")).withBuiltIns()
+      val service = schema.service("vyne.CreditCostService")
+      val operation = service.operation("calculateCreditCosts")
+
+      val (context, events) = eventCapturingQueryContext()
+      runTest {
+         val turbine = RestTemplateInvoker(
+            webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
+            schemaProvider = SimpleSchemaProvider(schema)
+         ).invoke(
+            service, operation, listOf(
+               paramAndType("vyne.ClientId", "myClientId", schema),
+               paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
+            ), context, "testQuery", QueryOptions()
+         ).testIn(this)
+         val typedInstance = turbine.awaitError()
+
+         expectRequestCount(1)
+         events.shouldHaveSize(1)
+         val event = events.single()
+         val headers = event.remoteCall.exchange
+            .shouldBeInstanceOf<HttpExchange>()
+            .headers
+         headers.requestHeaders.shouldHaveSize(2)
+         headers.responseHeaders.shouldHaveSize(2)
+      }
+
+   }
+
+
 
    @Test
    @OptIn(ExperimentalTime::class)
@@ -525,7 +579,7 @@ namespace vyne {
 
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
-            .setHeader(com.orbitalhq.http.HttpHeaders.CONTENT_PREPARSED, true.toString())
+            .setHeader(com.orbitalhq.http.HttpHeaderNames.CONTENT_PREPARSED, true.toString())
             .setBody(responseJson)
       }
 
@@ -836,6 +890,7 @@ namespace vyne {
       server.requestCount.shouldBe(1)
    }
 
+   @Test
    fun `can use fixed retry policy`(): Unit = runBlocking {
       val vyne = testVyne(
          """
@@ -967,5 +1022,18 @@ namespace vyne {
          )
             .rawObjects()
       }
+   }
+
+   fun eventCapturingQueryContext():Pair<QueryContext, MutableList<OperationResult>> {
+      val operationResults = mutableListOf<OperationResult>()
+      val context = mock<QueryContext> {
+         val capture = argumentCaptor<OperationResult>()
+         on { reportRemoteOperationInvoked(capture.capture(), com.nhaarman.mockito_kotlin.any()) } doAnswer {
+            operationResults.add(capture.lastValue)
+            Unit
+
+         }
+      }
+      return context to operationResults
    }
 }

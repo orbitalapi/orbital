@@ -348,16 +348,22 @@ export type ResponseMessageType = 'FULL' | 'EVENT';
 
 export interface RemoteCallExchangeMetadata {
   requestBody: string | null;
+  headers?: HttpExchangeHeaders | null;
 }
 
+export interface HttpExchangeHeaders {
+  requestHeaders: {[index: string]:string[]}
+  responseHeaders: {[index: string]:string[]}
+}
 export interface HttpExchange extends RemoteCallExchangeMetadata {
   uri: string;
   verb: string;
   requestBody: string;
   responseCode: number;
   responseSize: number;
-
+  headers: HttpExchangeHeaders
   type: 'Http';
+
 }
 
 export interface SqlExchange extends RemoteCallExchangeMetadata {

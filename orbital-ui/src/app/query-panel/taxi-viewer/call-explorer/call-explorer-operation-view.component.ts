@@ -40,28 +40,47 @@ import { OperationName, splitOperationQualifiedName } from 'src/app/services/sch
     </div>
     <app-error-message *ngIf="errorMessage" [message]="errorMessage"></app-error-message>
 
-    <as-split direction="vertical" unit="percent" class="request-response-container flex-split">
-      <as-split-area *ngIf="operation.exchange.requestBody" size="50">
-        <div class="panel">
-          <app-json-viewer [json]="operation.exchange.requestBody" title="Request"></app-json-viewer>
-        </div>
-      </as-split-area>
-      <as-split-area *ngIf="operationResponseContent" size="50">
-        <div class="panel">
+    <tui-tabs [(activeItemIndex)]="tabIndex">
+      <button tuiTab [disabled]="!operation.exchange.requestBody">Request</button>
+      <button tuiTab [disabled]="!operationResponseContent">Response</button>
+      <button tuiTab [disabled]="!operation.exchange.headers">Headers</button>
+    </tui-tabs>
 
-          <app-json-viewer [json]="operationResponseContent" title="Response"></app-json-viewer>
-        </div>
-
-      </as-split-area>
-    </as-split>
+    <div class="panel" *ngIf="tabIndex === 0">
+      <app-json-viewer [json]="operation.exchange.requestBody" title="Request"></app-json-viewer>
+    </div>
+    <div class="panel" *ngIf="tabIndex === 1">
+      <app-json-viewer [json]="operationResponseContent" title="Response"></app-json-viewer>
+    </div>
+    <div class="panel" *ngIf="tabIndex === 2">
+      <app-headers-view [headers]="operation.exchange.headers"></app-headers-view>
+    </div>
   `,
   styleUrls: ['./call-explorer-operation-view.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  // changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CallExplorerOperationViewComponent {
   constructor(private changeRef: ChangeDetectorRef) {
   }
   operationName: OperationName;
+
+  tabIndex: number = 0
+  get activeTabId(): string {
+    return this.tabs[this.tabIndex].id
+  }
+  get tabs():{label: string, id: string}[] {
+    const tabs = [];
+    if (this.operation.exchange.requestBody) {
+      tabs.push({label: 'Request', id: 'request'})
+    }
+    if (this.operationResponseContent) {
+      tabs.push({label: 'Response', id: 'response'})
+    }
+    if (this.operation.exchange.headers) {
+      tabs.push({label: 'Headers', id: 'headers'})
+    }
+    return tabs;
+  }
 
   private _operation: RemoteCallResponse;
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.should
 import com.orbitalhq.query.EmptyExchangeData
 import com.orbitalhq.query.HttpExchange
+import com.orbitalhq.query.HttpHeaders
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseCodeGroup
 import com.orbitalhq.query.ResponseMessageType
@@ -105,7 +106,8 @@ class RemoteCallAnalyzerTest {
                verb = "GET",
                requestBody = null,
                responseCode = resultCode,
-               responseSize = 0
+               responseSize = 0,
+               HttpHeaders.empty()
             ),
             null
          ),

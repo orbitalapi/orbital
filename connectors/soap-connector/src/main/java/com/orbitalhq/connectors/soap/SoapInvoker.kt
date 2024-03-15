@@ -7,6 +7,7 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.query.HttpExchange
+import com.orbitalhq.query.HttpHeaders
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
@@ -150,7 +151,8 @@ class SoapInvoker(
                verb = "",
                requestBody = null,
                responseCode = responseCode,
-               responseSize = 0
+               responseSize = 0,
+               headers = HttpHeaders.empty()
             ),
             response = message,
             isFailed = true
@@ -204,7 +206,8 @@ class SoapInvoker(
             outboundMessage.method,
             outboundMessage.payload,
             inboundMessage.resultCode,
-            inboundMessage.payload.length
+            inboundMessage.payload.length,
+            HttpHeaders.empty()
          ),
          response = inboundMessage.payload,
          isFailed = failed
