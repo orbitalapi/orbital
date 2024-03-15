@@ -56,6 +56,8 @@ class ChatQueryParser(
          OpenAiChatMessage(OpenAiChatMessage.Role.system, systemPrompt),
          OpenAiChatMessage(OpenAiChatMessage.Role.user, userPrompt)
       )
+
+      logger.debug { "OpenAI Prompts:\n${prompts.joinToString("\n")}" }
       return prompts
    }
 
