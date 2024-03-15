@@ -225,7 +225,7 @@ class LocalProjectionProvider : ProjectionProvider {
                // find { MovieSchedule } as ( Movie[], SomethingElse) -> { .... }[]
                // We need to use Movie[] as the value to iterate, so we promote SomethingElse etc., to the globalFacts
                val otherFacts = scopedFacts.drop(1)
-               globalFacts.withAdditionalScopedFacts(otherFacts)
+               globalFacts.withAdditionalScopedFacts(otherFacts, context.schema)
             } else globalFacts
 
             doMappingProjection(
@@ -257,6 +257,9 @@ class LocalProjectionProvider : ProjectionProvider {
       projectionType: Type,
       startTime: Instant
    ): Flow<TypedInstanceWithMetadata> {
+      if (scopedFact.fact is TypedNull){
+         return emptyFlow()
+      }
       val collection = scopedFact!!.fact as TypedCollection
       val memberFlows = collection.map { member ->
          val memberFact = ScopedFact(scopedFact.scope.asIteratingScope(), member)
@@ -289,9 +292,9 @@ class LocalProjectionProvider : ProjectionProvider {
       // Note: In time, we should probably refactor so that there's ALWAYS a root
       // scope, with a name of "this" if not otherwise specified.
       val projectionContext = if (scopedFacts.isEmpty()) {
-         context.only(globalFacts.rootFacts() + emittedResult.value)
+         context.only(globalFacts.rootFacts() + emittedResult.value, scopedFacts = context.scopedFacts)
       } else {
-         context.only(globalFacts.rootFacts(), scopedFacts = scopedFacts)
+         context.only(globalFacts.rootFacts(), scopedFacts = scopedFacts + context.scopedFacts)
       }
       val buildResult = projectionContext.build(TypeQueryExpression(projectionType))
       return buildResult.results.map {

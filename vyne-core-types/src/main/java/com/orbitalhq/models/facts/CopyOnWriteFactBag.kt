@@ -256,7 +256,7 @@ open class CopyOnWriteFactBag(
       return getFactOrNull(search) != null
    }
 
-   override fun withAdditionalScopedFacts(otherFacts: List<ScopedFact>): FactBag {
+   override fun withAdditionalScopedFacts(otherFacts: List<ScopedFact>, schema: Schema): FactBag {
       return CopyOnWriteFactBag(
          facts, schema, scopedFacts + otherFacts
       )

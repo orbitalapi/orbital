@@ -37,8 +37,12 @@ class EmptyFactBag(private val list: List<TypedInstance> = emptyList()) : FactBa
    override fun getFactOrNull(search: FactSearch): TypedInstance? = null
 
    override fun hasFact(search: FactSearch): Boolean = false
-   override fun withAdditionalScopedFacts(otherFacts: List<ScopedFact>): FactBag = notSupported()
-   override fun withAdditionalFacts(otherFacts: List<TypedInstance>, schema: Schema): FactBag = notSupported()
+   override fun withAdditionalScopedFacts(otherFacts: List<ScopedFact>, schema: Schema): FactBag {
+      return CopyOnWriteFactBag(emptyList(), schema, otherFacts)
+   }
+   override fun withAdditionalFacts(otherFacts: List<TypedInstance>, schema: Schema): FactBag {
+      return CopyOnWriteFactBag(otherFacts, schema)
+   }
 
    override fun merge(other: FactBag): FactBag {
       return if (other is EmptyFactBag) {

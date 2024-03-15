@@ -432,6 +432,15 @@ class TypedObjectFactory(
       }
    }
 
+   override fun getScopedFactOrNull(scope: Argument): TypedInstance? {
+      return if (value is FactBag) {
+         return value.getScopedFactOrNull(scope)?.fact
+      } else {
+         null
+      }
+   }
+
+
    /**
     * Returns a value looked up by it's type
     */

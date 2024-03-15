@@ -212,8 +212,8 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
       return primary.hasFact(search) || secondary.hasFact(search)
    }
 
-   override fun withAdditionalScopedFacts(otherFacts: List<ScopedFact>): CascadingFactBag {
-      return CascadingFactBag(primary.withAdditionalScopedFacts(otherFacts), secondary)
+   override fun withAdditionalScopedFacts(otherFacts: List<ScopedFact>, schema: Schema): CascadingFactBag {
+      return CascadingFactBag(primary.withAdditionalScopedFacts(otherFacts, schema), secondary)
    }
 
    override fun withAdditionalFacts(otherFacts: List<TypedInstance>, schema: Schema): FactBag {
