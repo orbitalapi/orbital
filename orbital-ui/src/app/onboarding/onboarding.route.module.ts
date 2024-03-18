@@ -9,6 +9,7 @@ import { UiCustomisations } from '../../environments/ui-customisations';
 @NgModule({
   imports: [
     RouterModule.forChild([
+      { path: '', redirectTo: 'project', pathMatch: 'full' },
       {
         path: '', component: OnboardingContainerComponent, children: [
           {

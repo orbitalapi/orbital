@@ -21,20 +21,20 @@
     position: absolute;
     left: -0.75rem;
     z-index: -1;
-    top: 1rem;
+    top: 1.3rem;
   }
 
   &:before {
     width: 1rem;
-    border-bottom: 1px solid var(--tui-base-04);
+    border-bottom: 1px solid $gray-400;
   }
 }
 
 .tree-node.child.isLastChild {
   &:after {
     top: -1rem;
-    bottom: 4.0rem; // Magic variable, calculated by fiddling about.
-    border-left: 1px solid var(--tui-base-04);
+    bottom: 4.4rem; // Magic variable, calculated by fiddling about.
+    border-left: 1px solid $gray-300;
   }
 }
 
@@ -42,9 +42,8 @@
   // Controls the tree borders on expanded nodes.
   // These values are all magic, calculated by fiddling about.
   &:after {
-    // Top and bottom should be the same.
-    top: -0.5rem;
-    bottom: 0.5rem;
-    border-left: 1px solid var(--tui-base-04);
+    top: -1rem;
+    bottom: -1rem;
+    border-left: 1px solid $gray-300;
   }
 }

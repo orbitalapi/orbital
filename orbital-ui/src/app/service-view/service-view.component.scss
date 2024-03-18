@@ -13,6 +13,7 @@ app-service-lineage-graph-container {
 
 h1 {
   display: flex;
+  margin-top: 0;
 
   .badge {
     @extend %type-badge;

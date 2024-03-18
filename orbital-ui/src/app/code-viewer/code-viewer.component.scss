@@ -6,7 +6,8 @@
   grid-template-columns: 38% 62%;
 
   &.flex-grid {
-    display: grid; // flex doesn't allow the Monaco editor to size correctly horizontally, so using grid instead
+    //display: grid; // flex doesn't allow the Monaco editor to size correctly horizontally, so using grid instead
+    min-height: 0;
   }
 }
 

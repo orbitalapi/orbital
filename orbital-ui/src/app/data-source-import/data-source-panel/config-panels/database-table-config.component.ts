@@ -109,7 +109,7 @@ import { sanitiseNamespace } from '../../../utils/utils';
     </div>
 
     <div class="form-button-bar">
-      <button tuiButton [showLoader]="working" (click)="doCreate()" [size]="'m'">Next
+      <button tuiButton [showLoader]="working" (click)="doCreate()" [size]="'m'">Configure
       </button>
     </div>
   `,

@@ -1,8 +1,8 @@
-import { Component } from '@angular/core';
-import { SearchResult, SearchService } from '../../search/search.service';
-import { zip } from 'rxjs';
+import { Component, Inject } from '@angular/core';
+import { PartialSearchResult, SearchResult, SearchService } from '../../search/search.service';
+import { Observable, zip } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { MatLegacyDialogRef as MatDialogRef } from '@angular/material/legacy-dialog';
+import { MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef as MatDialogRef } from '@angular/material/legacy-dialog';
 import { TypesService } from '../../services/types.service';
 import { SearchResultDocs } from './type-search.component';
 import { findType, Schema, Type } from '../../services/schema';
@@ -29,6 +29,7 @@ import { TypeSelectedEvent } from 'src/app/type-viewer/type-search/type-selected
       (search)="triggerSearch($event)"
       [searchResults]="searchResults"
       [loading]="loading"
+      [schema$]="schema$"
       [schema]="schema"
       [searchResultDocs]="searchResultDocs"
       (searchResultHighlighted)="loadDocs($event)"
@@ -47,13 +48,18 @@ import { TypeSelectedEvent } from 'src/app/type-viewer/type-search/type-selected
 export class TypeSearchContainerComponent {
   searchResults: SearchResult[] | null = null;
   searchResultDocs: SearchResultDocs | null = null;
+  schema$: Observable<Schema>;
   schema: Schema;
   loading: boolean = false;
   //selectedTab: number = 0;
 
-  constructor(private dialogRef: MatDialogRef<TypeSearchContainerComponent>, private service: SearchService, private typeService: TypesService) {
-    typeService.getTypes()
-      .subscribe(schema => this.schema = schema);
+  constructor(
+    private dialogRef: MatDialogRef<TypeSearchContainerComponent>,
+    private service: SearchService,
+    private typeService: TypesService,
+    @Inject(MAT_LEGACY_DIALOG_DATA) public data: {partialSchema: Schema, parentModel: Type}
+  ) {
+    this.schema$ = typeService.getTypes().pipe(map(schema => this.schema = schema));
   }
 
   triggerSearch($event: string) {
@@ -63,12 +69,22 @@ export class TypeSearchContainerComponent {
         map(searchResults => searchResults.filter(entry => entry.memberType === 'TYPE')),
       )
       .subscribe(results => {
-        this.searchResults = results;
+        if (this.data?.partialSchema) {
+          // we have a partialSchema to query on
+          this.searchResults = results.concat(this.filterPartialSchema($event.toLowerCase()))
+        } else {
+          this.searchResults = results;
+        }
         this.loading = false;
       })
   }
 
-  loadDocs(searchResult: SearchResult) {
+  loadDocs(searchResult: SearchResult | PartialSearchResult) {
+    if ("isLocal" in searchResult) {
+      // we don't do anything for now for schema's that haven't been committed
+      this.searchResultDocs = null;
+      return;
+    }
     this.searchResultDocs = null;
     const type$ = this.typeService.getType(searchResult.qualifiedName.parameterizedName);
     const usages$ = this.typeService.getTypeUsages(searchResult.qualifiedName.parameterizedName);
@@ -93,12 +109,44 @@ export class TypeSearchContainerComponent {
     this.dialogRef.close();
   }
 
-  onResultSelected($event: SearchResult) {
-    const type = findType(this.schema, $event.qualifiedName.parameterizedName);
+  onResultSelected($event: SearchResult | PartialSearchResult) {
+    let type;
+    if ("isLocal" in $event) {
+      type = this.data.partialSchema.types.find(type => type.memberQualifiedName.fullyQualifiedName === $event.qualifiedName.fullyQualifiedName)
+    } else {
+      type = findType(this.schema, $event.qualifiedName.parameterizedName);
+    }
     this.dialogRef.close({
       type,
       source: 'schema'
     } as TypeSelectedEvent);
+  }
+
+  // Need a better solution than doing this on the client
+  //  - Perhaps the new HTTP Query could be useful here, parsing the partialSchema
+  //    up to the server with the search call and allowing the server to calculate
+  //    the correct results with all the information available
+  filterPartialSchema(term: string): PartialSearchResult[] {
+    return this.data.partialSchema.types
+      .filter(type => type.name.shortDisplayName.toLowerCase().includes(term) || type.typeDoc.toLowerCase().includes(term))
+      .filter(type => {
+        return type.memberQualifiedName.fullyQualifiedName !== this.data.parentModel?.memberQualifiedName.fullyQualifiedName
+      })
+      .map(filteredType => ({
+        qualifiedName: filteredType.memberQualifiedName,
+        typeDoc: filteredType.typeDoc,
+        matches: [], // TODO
+        memberType: 'TYPE',
+        consumers: [], // TODO
+        producers: [], // TODO
+        metadata: filteredType.metadata,
+        //matchedFieldName?: string,
+        typeKind: filteredType.isScalar ? 'Model' : 'TYPE',
+        //serviceKind?: ServiceKind,
+        //operationKind?: OperationKind,
+        primitiveType: filteredType.basePrimitiveTypeName,
+        isLocal: true
+      } as PartialSearchResult))
   }
 
   createNewType($event: NewTypeSpec) {

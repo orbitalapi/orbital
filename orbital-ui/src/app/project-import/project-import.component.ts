@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TuiTabsModule } from '@taiga-ui/kit';
+import { TuiStepperModule, TuiTabsModule } from '@taiga-ui/kit';
 import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
 import { ProjectSourceConfigModule } from './project-source-config/project-source-config.module';
 import { DataSourceImportComponent } from '../data-source-import/data-source-import.component';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 
 @Component({
   selector: 'app-project-import',
@@ -13,17 +14,20 @@ import { DataSourceImportComponent } from '../data-source-import/data-source-imp
     HeaderComponentLayoutModule,
     TuiTabsModule,
     ProjectSourceConfigModule,
-    DataSourceImportComponent
+    DataSourceImportComponent,
+    RouterLink,
+    RouterLinkActive,
+    TuiStepperModule
   ],
   template: `
-    <app-header-component-layout title="Add a Project" [padBottom]="false" [fullWidth]="activeTabIndex===3">
+    <app-header-component-layout title="Add a Project" [padBottom]="false" [fullWidth]="overRideFullWidth">
       <ng-container ngProjectAs="header-components">
         <tui-tabs [(activeItemIndex)]="activeTabIndex">
           <!--          <button tuiTab>Push from application</button>-->
           <!--          <button tuiTab>CI Pipeline</button>-->
-          <button tuiTab>Git Repository</button>
-          <button tuiTab>Local disk</button>
-          <button tuiTab>Add Data source</button>
+          <button tuiTab routerLink="/project-import/git-repository" routerLinkActive>Git Repository</button>
+          <button tuiTab routerLink="/project-import/local-disk" routerLinkActive>Local disk</button>
+          <button tuiTab routerLink="/project-import/data-source" routerLinkActive>Add Data source</button>
         </tui-tabs>
       </ng-container>
 
@@ -32,7 +36,7 @@ import { DataSourceImportComponent } from '../data-source-import/data-source-imp
       <!--      ></app-push-schema-config-panel>-->
       <app-git-config *ngIf="activeTabIndex===0"></app-git-config>
       <app-file-config *ngIf="activeTabIndex===1"></app-file-config>
-      <app-data-source-import title="" *ngIf="activeTabIndex===2"></app-data-source-import>
+      <app-data-source-import title="" *ngIf="activeTabIndex===2" (onConfigureStep)="overRideFullWidth = $event"></app-data-source-import>
 
     </app-header-component-layout>
   `,
@@ -40,4 +44,5 @@ import { DataSourceImportComponent } from '../data-source-import/data-source-imp
 })
 export class ProjectImportComponent {
   activeTabIndex: number = 0;
+  overRideFullWidth: boolean;
 }

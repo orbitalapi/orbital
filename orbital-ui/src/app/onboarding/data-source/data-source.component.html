@@ -1,8 +1,6 @@
 <ng-container [ngSwitch]="step">
   <ng-container *ngSwitchCase="'dataSourceSelected'">
-    <div class="data-source-created">
-      [[Some text about the configuration step...]]
-    </div>
+    <!-- // Intentionally blank -->
   </ng-container>
   <ng-container *ngSwitchCase="'dataSourceConfigured'">
     <div class="data-source-created">
@@ -14,8 +12,8 @@
     </div>
   </ng-container>
   <ng-container *ngSwitchDefault>
-    <h3 class="intro-text">Data sources are the database tables, APIs and Kafka topics that fuel Orbital.</h3>
-    <p>Add one to bring its data into Orbital's catalog for querying.</p>
+    <h3 class="intro-text">Data sources are the database tables, APIs and Kafka topics that fuel {{ uiConfig.productName }}.</h3>
+    <p>Add one to bring its data into {{ uiConfig.productName }}'s catalog for querying.</p>
   </ng-container>
 </ng-container>
 

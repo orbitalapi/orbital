@@ -30,6 +30,7 @@
 
 .root-tree-item {
   margin-bottom: 0.5rem;
+  display: grid; // allows the width to stretch when the content overflows horizontally
 
   // For the case where there's no members, keep the left margin
   &:not(:has(tui-expand)) {
@@ -43,7 +44,11 @@
   width: 100%;
   font-size: 0.9rem;
 
-  // styling this to avoid the horizontal scrollbar in the tree always being visible
+  img {
+    padding-right: 2px;
+    opacity: 0.8;
+  }
+
   ::ng-deep tui-tree-item-content {
     padding: 2px 2px 2px 4px !important;
 
@@ -59,7 +64,7 @@
 
     &:before {
       width: 0.8rem;
-      border-bottom: 1px solid $gray-300;
+      border-bottom: 1px solid $gray-400;
     }
 
     &:after {

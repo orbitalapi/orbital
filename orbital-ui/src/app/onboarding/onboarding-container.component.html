@@ -1,6 +1,6 @@
-<div class='page-container'>
+<div class="page-container">
   <header>
-    <h2 class="page-title">Welcome to {{ uiConfig.productName }} onboarding</h2>
+    <h2>Welcome to {{ uiConfig.productName }}</h2>
     <a
       icon="tuiIconHelpCircle"
       tuiLink
@@ -10,12 +10,8 @@
     >
       Help
     </a>
-  </header>
-  <div class="page-content">
-    <tui-stepper class="stepper">
+    <tui-stepper class="stepper" [activeItemIndex]="currentStepIndex$ | async">
       <button
-        routerLink="/onboarding/project"
-        routerLinkActive
         tuiStep
         [stepState]="(currentStepIndex$ | async) === 0 ? 'normal' : 'pass'"
         [disabled]="(currentStepIndex$ | async) > 0"
@@ -23,32 +19,29 @@
         Add project
       </button>
       <button
-        routerLink="/onboarding/data-source"
-        routerLinkActive
-        [routerLinkActiveOptions]="{exact: true}"
         tuiStep
         [stepState]="(currentStepIndex$ | async) <= 1 ? 'normal' : 'pass'"
-        [disabled]="(currentStepIndex$ | async) > 1"
+        [disabled]="(currentStepIndex$ | async) !== 1"
       >
         Select data source
       </button>
       <button
-        routerLink="/onboarding/data-source/configure"
-        routerLinkActive
         tuiStep
         [stepState]="(currentStepIndex$ | async) <= 2 ? 'normal' : 'pass'"
-        [disabled]="(currentStepIndex$ | async) > 2"
+        [disabled]="(currentStepIndex$ | async) !== 2"
       >
         Configure
       </button>
       <button
-        routerLink="/onboarding/explore"
-        routerLinkActive
         tuiStep
+        [disabled]="(currentStepIndex$ | async) !== 3"
       >
         Explore
       </button>
     </tui-stepper>
+  </header>
+  <div class="content" [class.full-width]="(currentStepIndex$ | async) === 2">
+    currentStepIndex$: {{currentStepIndex$ | async}}
     <router-outlet></router-outlet>
   </div>
 </div>

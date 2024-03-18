@@ -66,6 +66,7 @@ section {
 
 h1 {
   display: flex;
+  margin-top: 0;
 
   .badge {
     @extend %type-badge;

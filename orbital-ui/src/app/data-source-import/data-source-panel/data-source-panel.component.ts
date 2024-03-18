@@ -90,31 +90,31 @@ import { TuiClickOutsideModule } from '@taiga-ui/cdk';
       <div *ngIf="!schemaType?.externalLink" [ngSwitch]="schemaType?.id" class="config-container">
         <app-swagger-config *ngSwitchCase="'swagger'"
                             [packageIdentifier]="selectedPackage?.identifier"
-                            (loadSchema)="convertSchema.emit($event)"
+                            (loadSchema)="convertSchema.emit({convertSchemaEvent: $event, dataSourceType: 'Swagger'})"
                             [working]="working">
         </app-swagger-config>
         <app-jsonschema-config *ngSwitchCase="'jsonSchema'"
                                [packageIdentifier]="selectedPackage?.identifier"
                                [working]="working"
-                               (loadSchema)="convertSchema.emit($event)">
+                               (loadSchema)="convertSchema.emit({convertSchemaEvent: $event, dataSourceType: 'JSON'})">
         </app-jsonschema-config>
         <app-database-table-config [connections]="dbConnections | databases"
                                    *ngSwitchCase="'databaseTable'"
                                    [tables$]="tables$"
                                    [packageIdentifier]="selectedPackage?.identifier"
                                    (connectionChanged)="dbConnectionChanged.emit($event)"
-                                   (loadSchema)="convertSchema.emit($event)"
+                                   (loadSchema)="convertSchema.emit({convertSchemaEvent: $event, dataSourceType: 'Database'})"
                                    [working]="working"
         ></app-database-table-config>
         <app-kafka-topic-config [connections]="dbConnections | messageBrokers"
                                 [schema]="schema"
                                 [working]="working"
                                 [packageIdentifier]="selectedPackage?.identifier"
-                                (loadSchema)="convertSchema.emit($event)"
+                                (loadSchema)="convertSchema.emit({convertSchemaEvent: $event, dataSourceType: 'Kafka'})"
                                 *ngSwitchCase="'kafkaTopic'"></app-kafka-topic-config>
         <app-protobuf-config [working]="working"
                              [packageIdentifier]="selectedPackage?.identifier"
-                             (loadSchema)="convertSchema.emit($event)"
+                             (loadSchema)="convertSchema.emit({convertSchemaEvent: $event, dataSourceType: 'Protobuf'})"
                              *ngSwitchCase="'protobuf'"
         ></app-protobuf-config>
       </div>
@@ -159,7 +159,7 @@ export class DataSourcePanelComponent {
   dbConnectionChanged = new EventEmitter<ConnectorSummary>();
 
   @Output()
-  convertSchema = new EventEmitter<ConvertSchemaEvent>();
+  convertSchema = new EventEmitter<{convertSchemaEvent: ConvertSchemaEvent, dataSourceType: DataSourceType}>();
 
   @Input()
   schema: Schema
@@ -180,3 +180,5 @@ export interface SchemaType {
   externalLink?: string
   isDisabled?: boolean
 }
+
+export type DataSourceType = 'Swagger' | 'Database' | 'Kafka' | 'Protobuf' | 'JSON';

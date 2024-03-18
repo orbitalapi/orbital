@@ -15,6 +15,7 @@
 
 .schema-source-tabs {
   margin-bottom: 1rem;
+  border-bottom: 1px solid $slate-300;
 
   img {
     margin-right: 0.5rem;
@@ -25,14 +26,15 @@
 .documentation-content-container {
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .button-bar {
   display: flex;
   padding-top: 1rem;
-  justify-content: right;
+  justify-content: space-between;
 
-  button {
+  button:not(:first-child) {
     margin-left: 1rem;
   }
 }
@@ -42,14 +44,16 @@ app-schema-member-tree {
   overflow: auto;
 }
 
+app-schema-diagram {
+  height: 100%;
+}
+
 .code-editor {
   flex-grow: 1;
-  margin-left: 1rem;
 }
 
 .documentation-content {
   flex-grow: 1;
-  max-width: 1200px;
   overflow: auto;
   margin-left: 1rem; // To give space from the as-split divider
 
@@ -64,4 +68,8 @@ app-schema-member-tree {
 
 .island {
   background-color: $body-bg;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow: auto;
 }

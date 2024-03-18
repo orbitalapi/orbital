@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Node, Position } from 'reactflow';
 import { Operation, QueryOperation, Service, StreamOperation, TableOperation } from '../../../services/schema';
 import { SchemaNodeContainer } from './schema-node-container';
-import { collectLinks, Links, MemberWithLinks, ServiceLinks } from '../schema-chart-builder';
+import { Links, MemberWithLinks, ServiceLinks } from '../schema-chart-builder';
 import { LinkHandle } from './link-handle';
 
 type OperationLike = Operation | QueryOperation | StreamOperation | TableOperation;
@@ -33,11 +33,14 @@ function ApiNode(node: Node<MemberWithLinks>) {
         <td colSpan={2} className="">
           <div className={'handle-container'}>
             <LinkHandle node={node} links={operationLinks.inputs} position={Position.Left}></LinkHandle>
-            <a href='#' onClick={(event) => operationClickHandler(event, operation)}>{operation.qualifiedName.shortDisplayName}</a>
-          </div>
+            {node.data.isNavigable ?
+              <a href="#" onClick={(event) => operationClickHandler(event, operation)}>{operation.qualifiedName.shortDisplayName}</a> :
+              <>{operation.qualifiedName.shortDisplayName}</>
+            }
+        </div>
 
-        </td>
-        <td>
+      </td>
+      <td>
           <div className={'handle-container'}>
             {operation.returnTypeName.shortDisplayName}
             <LinkHandle node={node} links={operationLinks.outputs} position={Position.Right}></LinkHandle>
@@ -52,7 +55,11 @@ function ApiNode(node: Node<MemberWithLinks>) {
     return (<>
       <tr>
         <td colSpan={3} className="operation-name">
-          <a href='#' onClick={(event) => operationClickHandler(event, operation)}>{operation.qualifiedName.shortDisplayName}</a>
+          {node.data.isNavigable ?
+            <a href="#"
+               onClick={(event) => operationClickHandler(event, operation)}>{operation.qualifiedName.shortDisplayName}</a> :
+            <>{operation.qualifiedName.shortDisplayName}</>
+          }
         </td>
       </tr>
       <tr>
@@ -155,7 +162,10 @@ function ApiNode(node: Node<MemberWithLinks>) {
             <div className={'handle-container'}>
               {/*For services, there's really only inbound links when we're mapping lineage*/}
               <LinkHandle node={node} links={node.data.links.inputs} position={Position.Left} allowConnectionToFloat></LinkHandle>
-              <a href='#' onClick={(event) => clickHandler(event)}>{node.data.member.name.shortDisplayName}</a>
+              {node.data.isNavigable ?
+                <a href='#' onClick={(event) => clickHandler(event)}>{node.data.member.name.shortDisplayName}</a> :
+                <>{node.data.member.name.shortDisplayName}</>
+              }
               <LinkHandle node={node} links={node.data.links.inputs} position={Position.Right}  allowConnectionToFloat></LinkHandle>
             </div>
           </th>

@@ -1,5 +1,13 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
-import { NamedAndDocumented, QualifiedName, Schema, SchemaMember, Type, VersionedSource } from '../services/schema';
+import {
+  NamedAndDocumented,
+  PartialSchema,
+  QualifiedName,
+  Schema,
+  SchemaMember,
+  Type,
+  VersionedSource
+} from '../services/schema';
 import { Contents } from './toc-host.directive';
 import { OperationQueryResult } from '../services/types.service';
 import { Router } from '@angular/router';
@@ -36,6 +44,9 @@ export class TypeViewerComponent {
 
   @Input()
   schema$: Observable<Schema>;
+
+  @Input()
+  partialSchema: PartialSchema;
 
   @Input()
   showFullTypeNames = false;

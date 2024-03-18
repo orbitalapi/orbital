@@ -49,8 +49,11 @@ function SimpleFloatingEdge({
               labelY={labelY}
               path={edgePath}
               label={data.label}
-              markerEnd={markerEnd}
+              labelStyle={{opacity: style.opacity, transition: 'opacity 150ms ease-in-out'}}
+              labelBgStyle={{opacity: 0.9}}
               style={style}
+              markerEnd={markerEnd}
+              interactionWidth={15}
               />
   );
 }

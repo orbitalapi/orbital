@@ -23,7 +23,7 @@ import { Component, HostBinding, Input } from '@angular/core';
         <ng-content select="header-components"></ng-content>
       </div>
     </div>
-    <div class="body-container" *ngIf='displayBody'>
+    <div class="body-container" *ngIf="displayBody">
       <div class="body" [ngClass]="{'full-width' : fullWidth}">
         <ng-content></ng-content>
       </div>
