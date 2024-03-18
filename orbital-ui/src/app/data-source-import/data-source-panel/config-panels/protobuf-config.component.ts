@@ -59,7 +59,7 @@ import { DataExplorerModule } from '../../../data-explorer/data-explorer.module'
     </div>
 
     <div class="form-button-bar">
-      <button tuiButton [showLoader]="working" [size]="'m'" (click)="doCreate()">Next
+      <button tuiButton [showLoader]="working" [size]="'m'" (click)="doCreate()">Configure
       </button>
     </div>`
 })

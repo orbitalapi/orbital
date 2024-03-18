@@ -1,9 +1,12 @@
 import { Metadata, OperationKind, QualifiedName, ServiceKind, TypeKind } from '../services/schema';
-import {Inject, Injectable} from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import {ENVIRONMENT, Environment} from "../services/environment";
+import { ENVIRONMENT, Environment } from "../services/environment";
 
+export interface PartialSearchResult extends SearchResult {
+  isLocal: boolean;
+}
 
 export interface SearchResult {
   qualifiedName: QualifiedName;

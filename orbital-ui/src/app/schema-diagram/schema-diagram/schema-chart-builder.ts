@@ -1,6 +1,7 @@
 import {
   arrayMemberTypeNameOrTypeNameFromName,
   collectAllServiceOperations,
+  FieldMap,
   findType,
   QualifiedName,
   Schema,
@@ -107,6 +108,21 @@ export function collectionOperations(schema: Schema): ServiceMember[] {
       .concat(service.tableOperations as ServiceMember[])
       .concat(service.streamOperations as ServiceMember[]);
   });
+}
+
+export function buildLinksForModelWithAttributes(model: QualifiedName, attributes: FieldMap, schema: Schema, operations: ServiceMember[], returnKind: SchemaMemberKind = 'OPERATION'): Links {
+  const links = Object.keys(attributes)
+    .map(key => {
+      return buildLinksForType(
+        attributes[key].type,
+        schema,
+        operations,
+        { name: model, nodeId: attributes[key].type.fullyQualifiedName, field: key }
+      )
+    })
+  const inputs = links.flatMap(link => link.inputs).filter(link => link.sourceMemberType === returnKind)
+  const outputs = links.flatMap(link => link.outputs).filter(link => link.targetMemberType === returnKind);
+  return {inputs, outputs}
 }
 
 export function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: ServiceMember[], parent: { name: QualifiedName, nodeId: string, field: string } | null): Links {
@@ -417,7 +433,7 @@ export function getNodeId(schemaMemberType: SchemaMemberKind, name: QualifiedNam
 export function buildSchemaNode(schema: Schema, member: SchemaMember, operations: ServiceMember[], appendLinksHandler: AppendLinksHandler, clickHandler: SchemaMemberClickHandler, position: XYPosition = {
   x: 100,
   y: 100
-}): Node<MemberWithLinks> {
+}, isNavigable: boolean): Node<MemberWithLinks> {
   const links = buildLinks(member, schema, operations);
   return {
     id: getNodeId(member.kind, member.name),
@@ -428,7 +444,8 @@ export function buildSchemaNode(schema: Schema, member: SchemaMember, operations
       member,
       links,
       appendNodesHandler: appendLinksHandler,
-      clickHandler: clickHandler
+      clickHandler: clickHandler,
+      isNavigable
     },
     type: getNodeKind(member),
     position
@@ -439,9 +456,9 @@ export function buildSchemaNode(schema: Schema, member: SchemaMember, operations
 export interface MemberWithLinks {
   member: SchemaMember;
   links: Links;
-
   appendNodesHandler: AppendLinksHandler;
   clickHandler: SchemaMemberClickHandler;
+  isNavigable: boolean;
 }
 
 

@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core';
+import { Observable } from 'rxjs';
 import { QualifiedName, Schema, Service } from '../services/schema';
 import { TypesService } from '../services/types.service';
 import { getCatalogType } from 'src/app/operation-view/operation-view.component';
@@ -20,7 +21,7 @@ import { methodClassFromName } from 'src/app/service-view/service-view-class-uti
           <app-description-editor-container [type]="service"></app-description-editor-container>
         </section>
         <section *ngIf="service">
-          <app-schema-diagram [schema]="schema" [displayedMembers]="[service.name.parameterizedName]"></app-schema-diagram>
+          <app-schema-diagram [schema$]="schema$" [displayedMembers]="[service.name.parameterizedName]"></app-schema-diagram>
         </section>
 
         <section *ngIf="service">
@@ -64,12 +65,11 @@ import { methodClassFromName } from 'src/app/service-view/service-view-class-uti
 export class ServiceViewComponent {
 
   private _service: Service;
-
   operationSummaries: OperationSummary[];
+  schema$: Observable<Schema>;
 
-  schema: Schema;
   constructor(typeService:TypesService) {
-    typeService.getTypes().subscribe(s => this.schema = s)
+    this.schema$ = typeService.getTypes()
   }
 
   navigationTargetForType(name: QualifiedName): string {

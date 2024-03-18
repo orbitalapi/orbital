@@ -9,7 +9,7 @@
     <h3 class="intro-text">Great! Now that you've added a project, continue on to create a data source for it</h3>
     <p class="next-step">
       (or feel free to hang around and create another project, now that you're a pro at that)
-      <button tuiButton size="m" [routerLink]="['/onboarding/data-source' ]">Next step</button>
+      <button tuiButton size="m" [routerLink]="['/onboarding/data-source']">Next step</button>
     </p>
   </div>
 </ng-template>
@@ -28,7 +28,7 @@
       ></tui-avatar>
       <h3 class="tui-island__title">Git Repository</h3>
       <p class="tui-island__paragraph">
-        Connect Orbital to a Git repository to add individual OpenAPI schemas, or entire Taxi projects
+        Connect {{ uiConfig.productName }} to a Git repository to add individual OpenAPI schemas, or entire Taxi projects
       </p>
     </div>
     <p class="tui-island__paragraph tui-island__paragraph_button">
@@ -51,7 +51,7 @@
       <button tuiButton appearance="whiteblock" size="m" iconRight="tuiIconPlus" (click)="step = 'localDisk'">Add</button>
     </p>
   </tui-island>
-  <tui-island>
+  <!--<tui-island>
     <div>
       <tui-avatar
         avatarUrl="assets/img/tabler/topology-star-3.svg"
@@ -66,7 +66,7 @@
     <p class="tui-island__paragraph tui-island__paragraph_button">
       <button tuiButton appearance="whiteblock" size="m" iconRight="tuiIconPlus" (click)="step = 'microService'">Add</button>
     </p>
-  </tui-island>
+  </tui-island>-->
 </div>
 
 <!--Git Repo-->

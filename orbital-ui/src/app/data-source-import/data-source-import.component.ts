@@ -1,5 +1,14 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  EventEmitter,
+  Input,
+  OnDestroy, OnInit,
+  Output
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { Observable } from 'rxjs/internal/Observable';
 import { shareReplay } from 'rxjs/operators';
@@ -21,7 +30,7 @@ import {
 } from '../project-import/schema-importer.service';
 import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
 import { PackagesService, SourcePackageDescription } from '../package-viewer/packages.service';
-import { DataSourcePanelComponent } from './data-source-panel/data-source-panel.component';
+import { DataSourcePanelComponent, DataSourceType } from './data-source-panel/data-source-panel.component';
 import { SchemaMemberTypeExplorerModule } from '../schema-member-type-explorer/schema-member-type-explorer.module';
 import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
 
@@ -51,15 +60,17 @@ import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
       </div>
     </div>
     <div class="configuration-step step" *ngIf="(wizardStep | async) === 'configureTypes'">
-      <h2>Configure the Data source</h2>
+      <h3>Link your data & services
+        <p>Here's the {{dataSourceType}} data source we just imported. Take a moment to build links to other data sources, by updating your types to existing, shared types.</p>
+      </h3>
       <app-schema-member-type-explorer [partialSchema]="schemaSubmissionResult"
                                  [schema]="schema"
                                  [working]="working"
                                  [saveResultMessage]="schemaSaveResultMessage"
                                  [editable]="true"
                                  [codeViewerFlexBoxMode]="codeViewerFlexBoxMode"
-                                 [useIslandContainer]="useIslandContainer"
                                  (save)="submitEdits($event)"
+                                 (cancelConfig)="onCancelConfig()"
       ></app-schema-member-type-explorer>
     </div>
     <tui-notification
@@ -74,7 +85,7 @@ import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
   host: {'class': appInstanceType.appType},
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DataSourceImportComponent {
+export class DataSourceImportComponent implements OnInit, OnDestroy {
   wizardStep: BehaviorSubject<'importSchema' | 'configureTypes'> = new BehaviorSubject('importSchema');
 
   packages$: Observable<SourcePackageDescription[]>
@@ -89,6 +100,7 @@ export class DataSourceImportComponent {
   dataSourceSelected: EventEmitter<void> = new EventEmitter()
   @Output()
   dataSourceAdded: EventEmitter<void> = new EventEmitter()
+  @Output() onConfigureStep = new EventEmitter<boolean>();
 
   connections: ConnectionsListResponse;
   mappedTables$: Observable<MappedTable[]>;
@@ -98,12 +110,15 @@ export class DataSourceImportComponent {
   schemaSubmissionResult: SchemaSubmissionResult; // = testImportForUI as any;
   schema: Schema;
   schemaSaveResultMessage: Message;
+  dataSourceType: DataSourceType;
 
   constructor(private dbService: DbConnectionService,
               private schemaService: SchemaImporterService,
               private typeService: TypesService,
               private packagesService: PackagesService,
-              private changeDetector: ChangeDetectorRef
+              private changeDetector: ChangeDetectorRef,
+              private router: Router,
+              private activatedRoute: ActivatedRoute
   ) {
     this.packages$ = packagesService.listPackages();
     dbService.getConnections()
@@ -114,18 +129,30 @@ export class DataSourceImportComponent {
     typeService.getTypes().subscribe(schema => this.schema = schema);
   }
 
+  ngOnInit() {
+    // ensures we don't start on the /data-source/configure route
+    this.resetToBaseRoute();
+  }
+
+  ngOnDestroy(): void {
+    this.onConfigureStep.emit(false);
+  }
+
   onDbConnectionChanged(selectedConnection: ConnectorSummary) {
     this.mappedTables$ = this.dbService.getMappedTablesForConnection(selectedConnection.connectionName)
       .pipe(shareReplay(1));
   }
 
 
-  convertSchema($event: ConvertSchemaEvent) {
+  convertSchema(event: {convertSchemaEvent: ConvertSchemaEvent, dataSourceType: DataSourceType}) {
     this.working = true;
-    this.schemaService.convertSchema($event).subscribe({
+    this.schemaService.convertSchema(event.convertSchemaEvent).subscribe({
       next: (result: SchemaSubmissionResult<CreateOrReplaceSource>) => {
         this.schemaSubmissionResult = result;
+        this.dataSourceType = event.dataSourceType
         this.wizardStep.next('configureTypes');
+        this.onConfigureStep.emit(true);
+        this.router.navigate(['configure'], { relativeTo: this.activatedRoute });
         console.log(JSON.stringify(result, null, 2));
         this.working = false;
         this.dataSourceSelected.emit();
@@ -157,6 +184,7 @@ export class DataSourceImportComponent {
           };
           this.wizardStep.next('importSchema');
           this.dataSourceAdded.emit();
+          this.resetToBaseRoute();
           this.changeDetector.markForCheck();
         },
         error => {
@@ -169,6 +197,22 @@ export class DataSourceImportComponent {
           this.changeDetector.markForCheck();
         },
       );
+  }
+
+  onCancelConfig() {
+    this.onConfigureStep.emit(false);
+    this.wizardStep.next('importSchema');
+    this.resetToBaseRoute();
+  }
+
+  private resetToBaseRoute() {
+    this.router.navigate(
+      ['../data-source'],
+      {
+        replaceUrl: true,
+        relativeTo: this.activatedRoute,
+      }
+    );
   }
 
   //

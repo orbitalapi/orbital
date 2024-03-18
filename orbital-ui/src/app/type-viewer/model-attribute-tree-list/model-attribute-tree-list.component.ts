@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
-import { QualifiedName, Type } from '../../services/schema';
+import { PartialSchema, QualifiedName, Type } from '../../services/schema';
 import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 import { BaseSchemaMemberDisplay } from './base-schema-member-display';
 
 @Component({
   selector: 'app-model-attribute-tree-list',
   template: `
-    <app-model-member *ngFor="let field of model.attributes | keyvalue"
+    <app-model-member *ngFor="let field of model.attributes | keyvalue: unsorted"
                       [member]="field.value"
                       [memberName]="field.key"
                       [parentModel]="model"
@@ -19,7 +19,9 @@ import { BaseSchemaMemberDisplay } from './base-schema-member-display';
                       (newTypeCreated)="newTypeCreated.emit(type)"
                       (updateDeferred)="this.updateDeferred.emit({schemaEditOperation: $event.schemaEditOperation, member: type})"
                       (typeNameClicked)="typeNameClicked.emit($event)"
-                      [schema]="schema"></app-model-member>
+                      [schema]="schema"
+                      [partialSchema]="partialSchema"
+    ></app-model-member>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./model-attribute-tree-list.scss']
@@ -46,9 +48,12 @@ export class ModelAttributeTreeListComponent extends BaseSchemaMemberDisplay {
     this._model = value;
   }
 
+  @Input()
+  partialSchema: PartialSchema;
 
   @Output()
   newTypeCreated = new EventEmitter<Type>()
+
 
   get type(): Type {
     return this._model;
@@ -57,4 +62,6 @@ export class ModelAttributeTreeListComponent extends BaseSchemaMemberDisplay {
   get isModel(): Boolean {
     return this._model && Object.keys(this._model.attributes).length > 0;
   }
+
+  unsorted(a: any, b: any): number { return 0; }
 }

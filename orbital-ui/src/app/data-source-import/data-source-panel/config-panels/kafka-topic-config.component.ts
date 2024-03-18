@@ -11,13 +11,12 @@ import {
   ConnectionEditorContext,
   DbConnectionEditorDialogComponent
 } from '../../../db-connection-editor/db-connection-editor-dialog.component';
-import { isNullOrUndefined } from 'util';
 import { PackageIdentifier } from '../../../package-viewer/packages.service';
 import { UiCustomisations } from '../../../../environments/ui-customisations';
 import { ConnectionFiltersModule } from '../../../utils/connections.pipe';
 import { TypeAutocompleteModule } from '../../../type-autocomplete/type-autocomplete.module';
 import { DbConnectionEditorModule } from '../../../db-connection-editor/db-connection-editor.module';
-import { sanitiseNamespace } from '../../../utils/utils';
+import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
 
 @Component({
   selector: 'app-kafka-topic-config',
@@ -163,7 +162,7 @@ import { sanitiseNamespace } from '../../../utils/utils';
     </div>
 
     <div class="form-button-bar">
-      <button tuiButton [showLoader]="working" (click)="doCreate()" [size]="'m'">Next
+      <button tuiButton [showLoader]="working" (click)="doCreate()" [size]="'m'">Configure
       </button>
     </div>
   `,

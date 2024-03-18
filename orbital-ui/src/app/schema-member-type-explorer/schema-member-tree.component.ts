@@ -4,8 +4,9 @@ import {
   Component,
   DestroyRef,
   EventEmitter,
-  Input, OnInit,
-  Output
+  Input,
+  OnInit,
+  Output,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';

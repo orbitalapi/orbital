@@ -7,7 +7,20 @@ import { ProjectImportComponent } from './project-import.component';
   imports: [
     RouterModule.forChild([
       {
-        path: '', component: ProjectImportComponent, title: `${UiCustomisations.productName}: Projects`
+        path: '', component: ProjectImportComponent, title: `${UiCustomisations.productName}: Add a Project`
+      },
+      {
+        path: 'git-repository', component: ProjectImportComponent, title: `${UiCustomisations.productName}: Add project from Git repository`
+      },
+      {
+        path: 'local-disk', component: ProjectImportComponent, title: `${UiCustomisations.productName}: Add project from local disk`
+      },
+      {
+        path: 'data-source', component: ProjectImportComponent, title: `${UiCustomisations.productName}: Add a Data source`, children: [{
+          path: 'configure',
+          component: ProjectImportComponent,
+          title: `${UiCustomisations.productName}: Configure a Data source`
+        }]
       }
     ])
   ],

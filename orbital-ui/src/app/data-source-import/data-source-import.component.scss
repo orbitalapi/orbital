@@ -22,8 +22,17 @@
   display: flex;
   flex-direction: column;
   flex-grow: 1;
+  height: 10px; // this makes the layout fit the available height in the flexbox (don't ask me how)
 }
 
 .notification-error {
   margin-top: 1rem;
+}
+
+h3 {
+  margin: 0;
+
+  p {
+    font-size: 0.9rem;
+  }
 }

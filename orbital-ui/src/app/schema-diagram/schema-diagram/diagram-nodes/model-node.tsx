@@ -18,10 +18,11 @@ function ModelNode(node: Node<MemberWithLinks>) {
     event.stopPropagation();
   }
   const heading = type.isScalar ? 'Type' : 'Model';
+  const typeClass = type.isScalar ? 'type' : '';
 
   return (
     <SchemaNodeContainer>
-      <table>
+      <table className={typeClass}>
         <thead>
         <tr className={'small-heading'}>
           <th colSpan={2}>{heading}</th>
@@ -30,7 +31,10 @@ function ModelNode(node: Node<MemberWithLinks>) {
           <th colSpan={2}>
             <div className={'handle-container'}>
               <LinkHandle node={node} links={modelLinks} position={Position.Left} allowConnectionToFloat></LinkHandle>
-              <a href='#' onClick={(event) => clickHandler(event)}>{node.data.member.name.shortDisplayName}</a>
+              {node.data.isNavigable ?
+                <a href='#' onClick={(event) => clickHandler(event)}>{node.data.member.name.shortDisplayName}</a> :
+                <>{node.data.member.name.shortDisplayName}</>
+              }
               <LinkHandle node={node} links={modelLinks} position={Position.Right}  allowConnectionToFloat></LinkHandle>
             </div>
           </th>

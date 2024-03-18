@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
-import { Field, findType, QualifiedName, Schema, Type } from '../../services/schema';
+import { Field, findType, PartialSchema, QualifiedName, Schema, Type } from '../../services/schema';
 import { isNullOrUndefined } from 'src/app/utils/utils';
 import { TuiHandler } from '@taiga-ui/cdk';
 import { MatLegacyDialog as MatDialog, MatLegacyDialogRef as MatDialogRef } from '@angular/material/legacy-dialog';
@@ -114,6 +114,9 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
     this.setMemberType();
   }
 
+  @Input()
+  partialSchema: PartialSchema;
+
   private _anonymousTypes: Type[];
 
   @Input()
@@ -141,7 +144,9 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
     }
     this.memberType = findType(this.schema, this.member.type.parameterizedName, this.anonymousTypes);
     this.new = this.anonymousTypes.includes(this.memberType);
+    //console.time("buildTreeRootNode");
     const treeData = this.buildTreeRootNode();
+    //console.timeEnd("buildTreeRootNode");
     this.unloadedChildrenPlaceholder = {
       name: 'Loading...',
       children: [],
@@ -172,26 +177,16 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
   };
 
   private buildTreeRootNode(): TypeMemberTreeNode {
-    return this.logDuration('buildTreeRootNode', () => {
-      return {
-        name: this.memberName,
-        field: this.member,
-        type: this.memberType,
-        parentModel: this.parentModel,
-        children: this.buildTreeData(this.memberType),
-        isRoot: true,
-        isLastChild: !this.memberType.isScalar,
-        isNew: this.new
-      }
-    });
-  }
-
-  private logDuration<T>(name: string, callback: () => T): T {
-    const startTime = new Date().getTime();
-    const response = callback();
-    const endTime = new Date().getTime();
-    console.log(`${name} completed in ${endTime - startTime}ms`);
-    return response;
+    return {
+      name: this.memberName,
+      field: this.member,
+      type: this.memberType,
+      parentModel: this.parentModel,
+      children: this.buildTreeData(this.memberType),
+      isRoot: true,
+      isLastChild: !this.memberType.isScalar,
+      isNew: this.new
+    }
   }
 
   private buildTreeData(memberType: Type): TypeMemberTreeNode[] {
@@ -236,7 +231,11 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
     const dialog: MatDialogRef<TypeSearchContainerComponent, TypeSelectedEvent> = this.dialog.open(TypeSearchContainerComponent, {
       height: '80vh',
       width: '1600px',
-      maxWidth: '80vw'
+      maxWidth: '80vw',
+      data: {
+        partialSchema: this.partialSchema,
+        parentModel: this.parentModel
+      }
     });
     dialog.afterClosed().subscribe(result => {
       if (!isNullOrUndefined(result)) {

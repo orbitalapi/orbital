@@ -67,7 +67,6 @@ export class DescriptionEditorContainerComponent {
           if (this.commitMode === 'explicit' && value !== this.type.typeDoc) {
             this.type.typeDoc = value;
             this.updateDeferred.emit(this.type);
-            console.log(`Typedoc on type ${this.type.name.fullyQualifiedName} updated`);
           }
         }
       );

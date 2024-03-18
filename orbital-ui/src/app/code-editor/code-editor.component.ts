@@ -158,6 +158,7 @@ export class CodeEditorComponent implements OnDestroy {
   }
 
   async ngOnDestroy() {
+    if (this.readOnly) return;
     try {
       await this.languageClient.dispose();
     } catch (error) {

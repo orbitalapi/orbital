@@ -10,6 +10,7 @@ import {OperationViewModule} from 'src/app/operation-view/operation-view.module'
 import {FormsModule} from "@angular/forms";
 import {CodeEditorModule} from "../code-editor/code-editor.module";
 import {CodeViewerModule} from "../code-viewer/code-viewer.module";
+import { SchemaDiagramModule } from '../schema-diagram/schema-diagram.module';
 
 
 @NgModule({
@@ -34,7 +35,8 @@ import {CodeViewerModule} from "../code-viewer/code-viewer.module";
         CodeEditorModule,
         CodeViewerModule,
         TuiIslandModule,
-        TuiTabsModule
+        TuiTabsModule,
+        SchemaDiagramModule
     ]
 })
 export class SchemaMemberTypeExplorerModule {

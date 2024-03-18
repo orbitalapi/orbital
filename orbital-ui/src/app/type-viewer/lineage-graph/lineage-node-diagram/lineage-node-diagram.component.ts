@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, ViewChild } from '@angular/core';
 import { findSchemaMember, Schema, Service } from 'src/app/services/schema';
 import { Observable } from 'rxjs/internal/Observable';
 import { SchemaDiagramComponent } from 'src/app/schema-diagram/schema-diagram/schema-diagram.component';
@@ -15,6 +15,9 @@ import { LinkKind } from 'src/app/schema-diagram/schema-diagram/schema-chart-bui
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LineageNodeDiagramComponent {
+  constructor(private detectorRef: ChangeDetectorRef) {
+  }
+
   linkKinds:LinkKind[] = ['lineage','entity']
 
   private _initialServices: string[]
@@ -82,6 +85,7 @@ export class LineageNodeDiagramComponent {
       }).concat(this._initialServices)
 
       this.displayedServices = servicesWithDependencies;
+      this.detectorRef.markForCheck();
     })
   }
 }
