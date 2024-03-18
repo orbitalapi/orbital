@@ -74,6 +74,10 @@ class FactBagValueSupplier(
       return thisScopeValueSupplier.getScopedFact(scope)
    }
 
+   override fun getScopedFactOrNull(scope: Argument): TypedInstance? {
+      return thisScopeValueSupplier.getScopedFactOrNull(scope)
+   }
+
    override fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance {
       // This method shouldn't be called.
       error("readAccessor is not supported by this class")

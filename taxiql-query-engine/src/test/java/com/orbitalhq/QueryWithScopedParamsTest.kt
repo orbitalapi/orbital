@@ -3,6 +3,8 @@ package com.orbitalhq
 import io.kotest.common.runBlocking
 import io.kotest.matchers.shouldBe
 import com.orbitalhq.models.json.parseJson
+import io.kotest.matchers.nulls.shouldNotBeNull
+import lang.taxi.compiledWithQuery
 import org.junit.Test
 import kotlin.test.assertFailsWith
 
@@ -114,5 +116,77 @@ class QueryWithScopedParamsTest {
       )
          .firstRawObject()
          .shouldBe(mapOf("human" to "123"))
+   }
+
+   @Test
+   fun `can use a variable from a saved query in projection type expression`():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+            model Film {
+               title : Title inherits String
+               cast : Actor[]
+            }
+            model Actor {
+               name : PersonName inherits String
+            }
+            service Films {
+               operation getFilms():Film[]
+            }
+""")
+      val film = vyne.parseJson(
+         "Film[]",
+         """[{ "title" :"Star Wars" , "cast" : [ {"name" : "Mark"}, {"name" : "Carrie"}, {"name": "Harrison"} ] }]"""
+      )
+      stub.addResponse("getFilms", film)
+         val queryResult = vyne.query("""
+               query FindSomeFilms( starring : PersonName ) {
+      find { Film[] } as (filter(Actor[], (PersonName) -> PersonName == starring)) -> {
+         name: PersonName
+      }[]
+   }
+         """.trimIndent(), arguments = mapOf("starring" to "Mark")
+         )
+            .firstRawObject()
+      // Note - the value we projected was the filtered actors, not the film.
+      queryResult.shouldBe(mapOf("name" to "Mark"))
+   }
+   @Test
+   fun `can use a variable from a saved query in a field projection`():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+            model Film {
+               title : Title inherits String
+               cast : Actor[]
+            }
+            model Actor {
+               name : PersonName inherits String
+            }
+            service Films {
+               operation getFilms():Film[]
+            }
+""")
+      val film = vyne.parseJson(
+         "Film[]",
+         """[{ "title" :"Star Wars" , "cast" : [ {"name" : "Mark"}, {"name" : "Carrie"}, {"name": "Harrison"} ] }]"""
+      )
+      stub.addResponse("getFilms", film)
+      val queryResult = vyne.query("""
+      query FindSomeFilms( starring : PersonName ) {
+      find { Film[] } as  {
+         title: Title
+         starring: filter(Actor[], (PersonName) -> PersonName == starring) as {
+           name : PersonName
+        }[]
+      }[]
+   }
+         """.trimIndent(), arguments = mapOf("starring" to "Mark")
+      )
+         .firstRawObject()
+      queryResult.shouldBe(mapOf(
+         "title" to "Star Wars",
+         "starring" to
+            listOf(
+               mapOf("name" to "Mark")
+            )
+
+         ))
    }
 }

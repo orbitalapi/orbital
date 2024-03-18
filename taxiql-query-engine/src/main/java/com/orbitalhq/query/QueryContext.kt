@@ -507,7 +507,7 @@ data class QueryContext(
    fun evaluate(expression: Expression, facts: FactBag = FactBag.empty()): TypedInstance {
       return TypedObjectFactory(
          schema.type(expression.returnType),
-         facts,
+         facts.withAdditionalScopedFacts(this.scopedFacts, schema),
          schema,
          source = Provided, // TODO
          inPlaceQueryEngine = this,

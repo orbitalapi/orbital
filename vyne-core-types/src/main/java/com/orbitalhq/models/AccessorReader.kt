@@ -832,7 +832,7 @@ class AccessorReader(
             if (value is FactBag) {
                value.getScopedFactOrNull(expression.scope)?.fact ?: error("Failed to resolve scope argument ${expression.scope.name}")
             } else {
-               TODO("Unhandled scenario: ArgumentSelector being evaluated without a FactBag")
+               objectFactory.getScopedFactOrNull(expression.scope) ?: error("Failed to resolve scope argument ${expression.scope.name}")
             }
          }
          else -> TODO("Support for expression type ${expression::class.toString()} is not yet implemented")

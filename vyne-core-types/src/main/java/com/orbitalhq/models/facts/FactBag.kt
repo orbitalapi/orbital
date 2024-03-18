@@ -137,7 +137,7 @@ interface FactBag : Collection<TypedInstance> {
     * Returns a new factbag, with additional scoped facts.
     * The current factbag is not affected
     */
-   fun withAdditionalScopedFacts(otherFacts: List<ScopedFact>):FactBag
+   fun withAdditionalScopedFacts(otherFacts: List<ScopedFact>, schema: Schema):FactBag
 
    /**
     * Returns a new factback, with additional facts.
