@@ -37,16 +37,20 @@ export interface ResultTreeMember {
   selector: 'app-object-view',
   styleUrls: ['./object-view.component.scss'],
   template: `
-    <tui-pagination
-      *ngIf="treeDataPages.length > 1"
-      [length]="treeDataPages.length"
-      [(index)]="treeDataCurrentPage"
-    ></tui-pagination>
     <tui-tree
       [value]="treeDataPages[treeDataCurrentPage]"
       [tuiTreeController]="true"
       [content]="treeContent"
-      [childrenHandler]="treeChildrenHandler"></tui-tree>
+      [childrenHandler]="treeChildrenHandler"
+    ></tui-tree>
+    <tui-pagination
+      *ngIf="treeDataPages.length > 1"
+      [length]="treeDataPages.length"
+      [(index)]="treeDataCurrentPage"
+      [activePadding]="2"
+      [ngClass]="{'has-dots': treeDataPages.length >= 10}"
+      size="m"
+    ></tui-pagination>
     <ng-template #treeContent let-item>
       <div class="tree-node">
         <div *ngIf="treeNode(item)?.fieldName" class="field-name">{{treeNode(item)?.fieldName}}</div>
