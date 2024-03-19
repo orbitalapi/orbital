@@ -41,7 +41,6 @@
     </tui-stepper>
   </header>
   <div class="content" [class.full-width]="(currentStepIndex$ | async) === 2">
-    currentStepIndex$: {{currentStepIndex$ | async}}
     <router-outlet></router-outlet>
   </div>
 </div>
