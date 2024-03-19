@@ -5,8 +5,20 @@
   flex-direction: column;
   height: 100%;
 }
-.viewport {
-  flex-grow: 1;
+
+tui-tree {
+  overflow: auto;
+  flex: 1
+}
+
+tui-pagination {
+  padding: 0.5rem 0;
+  background: $gray-100;
+  border-top: 1px solid $gray-200;
+
+  &.has-dots {
+    padding: 0.5rem 0 0 0; // to avoid the "..." making the padding-bottom incorrect
+  }
 }
 
 .tree-node {

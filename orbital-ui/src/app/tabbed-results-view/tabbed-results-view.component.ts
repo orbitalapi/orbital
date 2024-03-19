@@ -31,7 +31,7 @@ import { map, scan, tap } from 'rxjs/operators';
     ></progress>
     <div class="alert" *ngIf="responseIsLarge$ | async">The response is really big. Some features have been disabled.
     </div>
-    <app-panel-header title="Results" alignItems="left">
+    <app-panel-header class="panel-header" title="Results" alignItems="left">
       <tui-tabs-with-more [(activeItemIndex)]="activeTabIndex" *ngIf="showResultsPanel"
                           (activeItemIndexChange)="onTabIndexChanged()"
                           [moreContent]='more'
