@@ -17,7 +17,7 @@ import { TypeSearchResultComponent } from './type-search-result.component';
 import { DOWN_ARROW, ENTER, UP_ARROW } from '@angular/cdk/keycodes';
 import { Inheritable } from 'src/app/inheritence-graph/build.inheritable';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { Observable, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
@@ -66,7 +66,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
         <app-type-viewer
           *ngIf="searchResultDocs"
           [showContentsList]="false"
-          [schema$]="schema$"
           [schema]="schema"
           [type]="searchResultDocs.type"
           [inheritanceView]="searchResultDocs.inheritanceView"
@@ -112,9 +111,6 @@ export class TypeSearchComponent implements OnInit {
 
   @Input()
   searchResultDocs: SearchResultDocs
-
-  @Input()
-  schema$: Observable<Schema>;
 
   @Input()
   schema: Schema;

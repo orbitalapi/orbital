@@ -1,6 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import { PartialSearchResult, SearchResult, SearchService } from '../../search/search.service';
-import { Observable, zip } from 'rxjs';
+import { zip } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef as MatDialogRef } from '@angular/material/legacy-dialog';
 import { TypesService } from '../../services/types.service';
@@ -29,7 +29,6 @@ import { TypeSelectedEvent } from 'src/app/type-viewer/type-search/type-selected
       (search)="triggerSearch($event)"
       [searchResults]="searchResults"
       [loading]="loading"
-      [schema$]="schema$"
       [schema]="schema"
       [searchResultDocs]="searchResultDocs"
       (searchResultHighlighted)="loadDocs($event)"
@@ -48,7 +47,6 @@ import { TypeSelectedEvent } from 'src/app/type-viewer/type-search/type-selected
 export class TypeSearchContainerComponent {
   searchResults: SearchResult[] | null = null;
   searchResultDocs: SearchResultDocs | null = null;
-  schema$: Observable<Schema>;
   schema: Schema;
   loading: boolean = false;
   //selectedTab: number = 0;
@@ -59,7 +57,7 @@ export class TypeSearchContainerComponent {
     private typeService: TypesService,
     @Inject(MAT_LEGACY_DIALOG_DATA) public data: {partialSchema: Schema, parentModel: Type}
   ) {
-    this.schema$ = typeService.getTypes().pipe(map(schema => this.schema = schema));
+    typeService.getTypes().subscribe(schema => this.schema = schema);
   }
 
   triggerSearch($event: string) {
