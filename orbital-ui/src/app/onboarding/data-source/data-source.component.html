@@ -23,4 +23,5 @@
   codeViewerFlexBoxMode="grid"
   (dataSourceSelected)="step = 'dataSourceSelected'; onDataSourceSelected()"
   (dataSourceAdded)="step = 'dataSourceConfigured'"
+  (onConfigureStep)="step = $event === false ? '' : step = step"
 ></app-data-source-import>
