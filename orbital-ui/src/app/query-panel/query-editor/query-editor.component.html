@@ -47,7 +47,10 @@
               <app-code-editor
                 class='code-editor'
                 [actions]='customActions'
-                [(content)]='query' #editor></app-code-editor>
+                [(content)]='query'
+                (contentChange)="onQueryChanged($event)"
+                #editor
+              ></app-code-editor>
             </div>
             <tui-text-area class='flat query-input' [(ngModel)]='chatQuery' *ngIf='queryLanguage === "Text"'>Write a
               query

@@ -7,7 +7,6 @@ import {
   Inject,
   Injector,
   Input,
-  OnDestroy,
   OnInit,
   Output
 } from '@angular/core';
@@ -65,7 +64,7 @@ declare const monaco: any; // monaco
   styleUrls: ['./query-editor.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class QueryEditorComponent implements OnInit, OnDestroy {
+export class QueryEditorComponent implements OnInit {
 
   @Input()
   initialQuery: QueryHistorySummary;
@@ -172,10 +171,6 @@ export class QueryEditorComponent implements OnInit, OnDestroy {
         .subscribe()
     }
     this.query = this.initialQuery?.taxiQl ?? persistedQuery ?? '';
-  }
-
-  ngOnDestroy(): void {
-    localStorage.setItem(this.PERSISTED_QUERY_LOCAL_STORAGE_KEY, this.query);
   }
 
   submitQuery() {
@@ -476,6 +471,10 @@ export class QueryEditorComponent implements OnInit, OnDestroy {
     this.savedQuery = selectedQuery;
     this.query = selectedQuery.sources[0].content;
     this.changeDetector.markForCheck();
+  }
+
+  onQueryChanged(query: string) {
+    localStorage.setItem(this.PERSISTED_QUERY_LOCAL_STORAGE_KEY, this.query);
   }
 
   private formatErrorMessage(val: string): string {
