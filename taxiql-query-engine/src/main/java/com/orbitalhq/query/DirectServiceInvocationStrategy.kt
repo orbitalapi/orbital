@@ -204,11 +204,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
          return true to emptyMap()
       }
       require(remoteOperation is Operation) { "Expected to find an Operation, but was type ${remoteOperation::class.simpleName}" }
-      val unevaluatableConstraints = target.dataConstraints.filter { it !is PropertyToParameterConstraint }
-      if (unevaluatableConstraints.isNotEmpty()) {
-         log().warn("Operation ${remoteOperation.name} has constraints that we haven't built support for.  Will not be evaluated")
-         return false to emptyMap()
-      }
+      val targetDataConstraints = target.dataConstraints.filterIsInstance<PropertyToParameterConstraint>()
       // This approach is a first pass, and far from ideal.  It's far too concrete and tightly coupled
       // to survive the long-term.
       // Look to see if the service has declared a contract, then
@@ -218,7 +214,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
       // Then capture the values from the constraint passed and return them to use
       // in the invocation of the operation.
 
-      val operationConstraintParameterValues: Map<Parameter, TypedInstance> = target.dataConstraints
+      val operationConstraintParameterValues: Map<Parameter, TypedInstance> = targetDataConstraints
          .filterIsInstance<PropertyToParameterConstraint>() // everything by this stage
          .flatMap { requiredConstraint ->
             remoteOperation.contract.constraints
@@ -240,7 +236,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
                   parameter to typedInstance
                }
          }.toMap()
-      val allOperationConstraintsSatisfied = operationConstraintParameterValues.size == target.dataConstraints.size
+      val allOperationConstraintsSatisfied = operationConstraintParameterValues.size == targetDataConstraints.size
       return allOperationConstraintsSatisfied to operationConstraintParameterValues
    }
 }

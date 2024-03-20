@@ -55,7 +55,10 @@ class ExtensionFunctionTest {
             }
          """.trimIndent()
       )
-      val moviesFlow = MutableSharedFlow<TypedInstance>()
+      val moviesFlow = MutableSharedFlow<TypedInstance>(2)
+      val starWars = vyne.parseJson("Movie", """{ "title" : "Star Wars"}""")
+      moviesFlow.emit(starWars)
+      moviesFlow.emit(vyne.parseJson("Movie", """{ "title" : "Jaws"}"""))
       stub.addResponseFlow("streamMovies") { _, _ -> moviesFlow }
 
       val results = vyne.query("""
@@ -63,9 +66,6 @@ class ExtensionFunctionTest {
       """).results
 
       results.test(timeout = Duration.parse("15s")) {
-         val starWars = vyne.parseJson("Movie", """{ "title" : "Star Wars"}""")
-         moviesFlow.emit(starWars)
-         moviesFlow.emit(vyne.parseJson("Movie", """{ "title" : "Jaws"}"""))
          val next = expectTypedObject()
             .toRawObject()
          next.shouldBe(mapOf("title" to "Jaws"))

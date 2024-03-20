@@ -20,6 +20,7 @@
       <module>connectors-calcite</module>
        <module>soap-connector</module>
       <module>hazelcast-connector</module>
+       <module>nosql-connectors</module>
    </modules>
 
 </project>

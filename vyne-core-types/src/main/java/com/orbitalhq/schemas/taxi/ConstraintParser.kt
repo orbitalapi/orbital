@@ -1,7 +1,9 @@
 package com.orbitalhq.schemas.taxi
 
 import com.orbitalhq.schemas.*
-import lang.taxi.query.convertToPropertyConstraint
+import lang.taxi.expressions.OperatorExpression
+import lang.taxi.query.convertToConstraint
+import lang.taxi.services.operations.constraints.ExpressionConstraint
 import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
 import lang.taxi.services.operations.constraints.ReturnValueDerivedFromParameterConstraint
 
@@ -77,9 +79,15 @@ class ExpressionConstraintProvider : ContractConstraintProvider {
 
    override fun build(constrainedType: Type, constraint: TaxiConstraint, schema: Schema): List<OutputConstraint> {
       val taxiConstraint = (constraint as lang.taxi.services.operations.constraints.ExpressionConstraint)
-      val propertyConstraints = taxiConstraint.convertToPropertyConstraint()
-      return propertyConstraints.flatMap { propertyConstraint ->
-         constraintProvider.build(constrainedType, propertyConstraint, schema)
+      require(taxiConstraint.expression is OperatorExpression)
+      val constraints = taxiConstraint.convertToConstraint()
+      return constraints.map { c ->
+          when  {
+            c is PropertyToParameterConstraint -> constraintProvider.build(constrainedType, c, schema).first()
+            c is ExpressionConstraint && c.expression is OperatorExpression -> OperatorExpressionConstraint((c.expression as OperatorExpression).operator)
+            else -> error("unexpected constrait expecting either ${PropertyToParameterConstraint::class.java} or ${ExpressionConstraint::class.java}")
+         }
+
       }
    }
 }

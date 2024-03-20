@@ -17,6 +17,9 @@ import com.orbitalhq.connectors.jdbc.registry.SourceLoaderJdbcConnectionRegistry
 import com.orbitalhq.connectors.kafka.registry.KafkaConfigFileConnectorRegistry
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
 import com.orbitalhq.connectors.kafka.registry.SourceLoaderKafkaConnectionRegistry
+import com.orbitalhq.connectors.nosql.mongodb.MongoConnectionFactory
+import com.orbitalhq.connectors.nosql.mongodb.registry.MongoConnectionRegistry
+import com.orbitalhq.connectors.nosql.mongodb.registry.SourceLoaderMongoConnectionRegistry
 import com.orbitalhq.schema.consumer.SchemaConfigSourceLoader
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.spring.config.EnvVariablesConfig
@@ -64,6 +67,12 @@ class ConnectionsConfiguration {
    }
 
    @Bean
+   fun mongoConnectionRegistry(sourceLoaderConnectorsRegistry: SourceLoaderConnectorsRegistry): MongoConnectionRegistry {
+      return SourceLoaderMongoConnectionRegistry(sourceLoaderConnectorsRegistry)
+
+   }
+
+   @Bean
    fun hikariConfig(): HikariConfig {
       return HikariConfig()
    }
@@ -80,6 +89,11 @@ class ConnectionsConfiguration {
    @Bean
    fun azureStoreConnectionRegistry(config: VyneConnectionsConfig): AzureStoreConnectionFileRegistry {
       return AzureStoreConnectionFileRegistry(config.configFile)
+   }
+
+   @Bean
+   fun mongoConnectionFactory(mongoConnectionRegistry: MongoConnectionRegistry): MongoConnectionFactory {
+      return MongoConnectionFactory(mongoConnectionRegistry)
    }
 
 }
