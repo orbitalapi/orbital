@@ -79,7 +79,7 @@ class JdbcQueryTest {
       """
          )
       ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
-      val result = vyne.query("""find { Movie[]( MovieTitle == "A New Hope" ) } """)
+      val result = vyne.query("""find { Movie[]( MovieTitle == "A New Hope" || MovieTitle == "Foo Bar" ) } """)
          .typedObjects()
       result.should.have.size(1)
       result.first().toRawObject()

@@ -5,6 +5,7 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
 import com.orbitalhq.query.queryBuilders.QueryGrammarQueryBuilder
 import com.orbitalhq.query.queryBuilders.TaxiQlGrammarQueryBuilder
+import com.orbitalhq.schemas.OperatorExpressionConstraint
 import com.orbitalhq.schemas.OutputConstraint
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.PropertyToParameterConstraint
@@ -114,6 +115,8 @@ class QueryOperationInvocationStrategy(
             } else {
                queryOperation.supportedFilterOperations.contains(constraint.operator)
             }
+
+            is OperatorExpressionConstraint -> true
 
             else -> {
                // TODO : Implement support for the other constraints if/when they become

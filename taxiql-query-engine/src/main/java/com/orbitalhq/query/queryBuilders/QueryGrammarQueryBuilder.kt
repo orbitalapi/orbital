@@ -2,6 +2,7 @@ package com.orbitalhq.query.queryBuilders
 
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.UndefinedSource
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.QuerySpecTypeNode
 import com.orbitalhq.schemas.*
@@ -10,6 +11,7 @@ import com.orbitalhq.utils.asA
 import lang.taxi.services.operations.constraints.ArgumentExpression
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
+import lang.taxi.types.PrimitiveType
 
 interface QueryGrammarQueryBuilder {
    val supportedGrammars: List<String>
@@ -32,6 +34,10 @@ interface QueryGrammarQueryBuilder {
       return dataConstraints.associateWith { outputConstraint ->
          val typedInstance = when (outputConstraint) {
             is PropertyToParameterConstraint -> convertPropertyToParameterConstraint(outputConstraint, schema, context)
+            is OperatorExpressionConstraint -> {
+               val formulaSymbol = outputConstraint.operator.symbol
+               TypedInstance.from(lang.taxi.types.TypedValue(PrimitiveType.STRING, formulaSymbol), schema, UndefinedSource)
+            }
             else -> TODO("Mapping of constraint type ${outputConstraint::class.simpleName} to TypedInstance not yet implemented")
          }
          typedInstance

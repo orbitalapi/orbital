@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import lang.taxi.Operator
 import lang.taxi.services.FilterCapability
 import lang.taxi.services.OperationScope

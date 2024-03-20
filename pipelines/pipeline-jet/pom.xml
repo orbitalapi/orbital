@@ -137,6 +137,11 @@
       </dependency>
       <dependency>
          <groupId>com.orbitalhq</groupId>
+         <artifactId>mongodb-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>taxiql-query-engine</artifactId>
          <version>${project.version}</version>
          <type>test-jar</type>

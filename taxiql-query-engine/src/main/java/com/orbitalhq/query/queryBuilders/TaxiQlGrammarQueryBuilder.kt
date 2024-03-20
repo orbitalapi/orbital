@@ -46,15 +46,16 @@ class TaxiQlGrammarQueryBuilder : QueryGrammarQueryBuilder {
    @VisibleForTesting
    internal fun buildTaxiQl(spec: QuerySpecTypeNode, constraintsAsTypedInstances: Map<OutputConstraint, TypedInstance>): String {
       return """find { ${spec.type.name.parameterizedName}(
-            |     ${constraintsAsTypedInstances.entries.joinToString(", \n") { (constraint, value) -> buildConstraint(constraint,value) }}
-            |   )
-            |}
-         """.trimMargin()
+            ^     ${constraintsAsTypedInstances.entries.joinToString(" \n") { (constraint, value) -> buildConstraint(constraint,value) }}
+            ^   )
+            ^}
+         """.trimMargin("^")
    }
 
    private fun buildConstraint(constraint: OutputConstraint, value: TypedInstance): String {
       return when (constraint) {
          is PropertyToParameterConstraint -> buildPropertyConstraint(constraint, value)
+         is OperatorExpressionConstraint -> " ${value.value} "
          else -> error("Support for constraint type ${constraint::class.simpleName} not implemented yet")
       }
    }

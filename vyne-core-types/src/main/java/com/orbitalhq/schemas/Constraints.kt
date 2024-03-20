@@ -6,8 +6,10 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.TypedValue
 import lang.taxi.Operator
+import lang.taxi.expressions.OperatorExpression
 import lang.taxi.services.operations.constraints.*
 import lang.taxi.types.AttributePath
+import lang.taxi.types.FormulaOperator
 
 typealias TaxiConstraint = lang.taxi.services.operations.constraints.Constraint
 
@@ -187,4 +189,6 @@ class PropertyToParameterConstraint(propertyIdentifier: PropertyIdentifier,
    }
 
 }
+
+class OperatorExpressionConstraint(val operator: FormulaOperator): OutputConstraint
 

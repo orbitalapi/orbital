@@ -95,7 +95,8 @@ enum class ConnectorType {
    AWS,
    AWS_S3,
    AZURE_STORAGE,
-   CACHE
+   CACHE,
+   NO_SQL
 }
 
 /**
@@ -120,8 +121,15 @@ data class ConnectorConfigurationSummary(
    val packageIdentifier: PackageIdentifier,
    val connectionStatus: ConnectionStatus
 ) {
-   constructor(packageIdentifier: PackageIdentifier, config: ConnectorConfiguration, connectionStatus: ConnectionStatus = ConnectionStatus.unknown()) : this(
-      config.connectionName, config.type, config.driverName, config.getUiDisplayProperties(), packageIdentifier, connectionStatus
+   constructor(
+      packageIdentifier: PackageIdentifier,
+      config: ConnectorConfiguration,
+      connectionStatus: ConnectionStatus = ConnectionStatus.unknown(),
+      connectionUIDisplayProvider: ConnectionUIDisplayProvider? = null
+   ) : this(
+      config.connectionName, config.type, config.driverName,
+      connectionUIDisplayProvider?.uiProps(config) ?: config.getUiDisplayProperties(),
+      packageIdentifier, connectionStatus
    )
 }
 

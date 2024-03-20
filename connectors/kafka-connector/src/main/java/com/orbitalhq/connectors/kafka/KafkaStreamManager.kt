@@ -105,7 +105,12 @@ class KafkaStreamManager(
       val encoding = MessageEncodingType.forType(messageType)
       val schema = schemaProvider.schema
       val dataSource = buildDataSource(request, connectionConfiguration)
-      val flow = KafkaReceiver.create(receiverOptions)
+      val flow = KafkaReceiver.create(
+         // Commits are performed when either the interval or batch size is reached.
+         receiverOptions
+            .commitInterval(Duration.ofSeconds(2L))
+            .commitBatchSize(20)
+      )
          .receive()
          .doOnSubscribe {
             logger.info { "Subscriber detected for Kafka consumer on ${request.connectionName} / ${request.topicName}" }
@@ -152,6 +157,9 @@ class KafkaStreamManager(
                )
                logger.info { "Failed to parse TypedInstance from kafka data for type => $messageType  value => $messageValue" }
                Either.Left(errorMessage)
+            } finally {
+               // Only offsets explicitly acknowledged using ReceiverOffset#acknowledge() are committed.
+                record.receiverOffset().acknowledge()
             }
             typedInstanceOrError
          }

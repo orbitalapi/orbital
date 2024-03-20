@@ -4,6 +4,7 @@ import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
+import com.orbitalhq.connectors.config.mongodb.MongoConnectionConfiguration
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
 import kotlinx.serialization.Serializable
 
@@ -23,10 +24,11 @@ data class ConnectionsConfig(
    val jdbc: Map<String, DefaultJdbcConnectionConfiguration> = emptyMap(),
    val kafka: Map<String, KafkaConnectionConfiguration> = emptyMap(),
    val aws: Map<String, AwsConnectionConfiguration> = emptyMap(),
-   val hazelcast: Map<String,HazelcastConfiguration> = emptyMap()
+   val hazelcast: Map<String,HazelcastConfiguration> = emptyMap(),
+   val mongo: Map<String, MongoConnectionConfiguration> = emptyMap()
 ) {
    fun listAll(): List<ConnectorConfiguration> {
-      return jdbc.values + kafka.values + aws.values + hazelcast.values
+      return jdbc.values + kafka.values + aws.values + hazelcast.values + mongo.values
    }
 
    val jdbcConnectionsHash = jdbc.hashCode()
