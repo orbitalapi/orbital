@@ -405,8 +405,7 @@ export function prepareSchema(schema: Schema): Schema {
   schema.members = _.sortBy(schemaMembers, [(schemaMember: SchemaMember) => {
     return schemaMember.name.fullyQualifiedName;
   }]);
-  // TODO: this doesn't appear to be required...?
-  //schema.operations = schema.services.flatMap(service => collectAllServiceOperations(service) as Operation[]);
+  schema.operations = schema.services.flatMap(service => collectAllServiceOperations(service) as Operation[]);
   return schema;
 }
 
