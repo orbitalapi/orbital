@@ -153,8 +153,8 @@ export class SchemaDiagramComponent implements OnInit {
               this.router.navigate(['catalog',name]);
               break;
             case 'OPERATION':
-              const operationName = splitOperationQualifiedName(name);
-              this.router.navigate(['services',operationName.serviceName, operationName.operationName])
+              const {serviceName, operationName} = splitOperationQualifiedName(name);
+              this.router.navigate(['services', serviceName, operationName])
               break;
             case 'SERVICE':
               this.router.navigate(['services',name])

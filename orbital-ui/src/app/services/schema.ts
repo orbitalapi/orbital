@@ -35,6 +35,15 @@ export class QualifiedName {
     qualifiedName.shortDisplayName = name;
     return qualifiedName;
   }
+
+  static fromWithArray(parameter: QualifiedName): QualifiedName {
+    const qualifiedName = QualifiedName.from('lang.taxi.Array')
+    qualifiedName.parameterizedName = `lang.taxi.Array<${parameter.fullyQualifiedName}>`;
+    qualifiedName.parameters = [parameter];
+    qualifiedName.shortDisplayName = parameter.shortDisplayName + '[]';
+    qualifiedName.longDisplayName = parameter.longDisplayName + '[]'
+    return qualifiedName;
+  }
 }
 
 export interface FieldMap {

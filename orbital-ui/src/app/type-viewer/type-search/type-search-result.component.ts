@@ -10,8 +10,11 @@ import {Highlightable} from '@angular/cdk/a11y';
     role: 'list-item',
   },
   template: `
-    <div class="search-result" [ngClass]="{ active: isActive } ">
-      <div class="type-name" [innerHtml]="name"></div>
+    <div class="search-result" [ngClass]="{ active: isActive } " title="click to select this as replacement type">
+      <div>
+        <span class="type-name" [innerHtml]="name"></span>
+        <span class="badge" [ngClass]="memberTypeForCSS(result)">{{ memberType(result) }}</span>
+      </div>
       <div><span class="mono-badge extra-small fully-qualified-name" [innerHtml]="qualifiedName"></span></div>
       <p class="type-doc" [innerHtml]="typeDoc"></p>
     </div>

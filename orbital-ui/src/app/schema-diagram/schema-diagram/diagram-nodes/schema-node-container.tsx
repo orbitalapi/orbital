@@ -9,6 +9,8 @@ export const lineageDependencyColor = colors.yellow['500'];
 
 export const SchemaNodeContainer = styled.div`
   box-shadow: rgb(0 0 0 / 10%) 0 2px 5px 0;
+  border-radius: 4px;
+  transition: box-shadow 150ms ease-in-out;
 
   :hover {
     box-shadow: rgb(0 0 0 / 25%) 0 2px 5px 0;

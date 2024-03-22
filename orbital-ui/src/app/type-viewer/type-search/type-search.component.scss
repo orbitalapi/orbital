@@ -29,6 +29,7 @@
 
   .documentation-panel {
     overflow: auto;
+    position: relative;
   }
 }
 
@@ -59,4 +60,18 @@ tui-input.working {
 
 .no-results {
   margin-left: 1rem;
+}
+
+.text-search-loader,
+.docs-loader {
+  position: absolute;
+  width: 100%
+}
+
+.text-search-loader {
+  bottom: 0;
+}
+
+.docs-loader {
+  top: 0
 }

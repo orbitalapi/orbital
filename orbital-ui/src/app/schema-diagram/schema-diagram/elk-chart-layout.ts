@@ -27,6 +27,11 @@ export function applyElkLayout(nodes: Node[], edges: Edge[]): Promise<Node[]> {
     layoutOptions: {
       // https://eclipse.dev/elk/reference/algorithms/org-eclipse-elk-layered.html
       'elk.algorithm': 'layered',
+      //'elk.direction': 'DOWN',
+      'cycleBreaking.strategy': 'INTERACTIVE',
+      'layering.strategy': 'INTERACTIVE',
+      'crossingMinimization.semiInteractive': 'true',
+      'separateConnectedComponents': 'false',
       // 'elk.direction': width > height ? 'RIGHT' : 'UP',
       // 'layered.edgeRouting.splines.mode': 'CONSERVATIVE',
       'spacing.nodeNode': '40',

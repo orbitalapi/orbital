@@ -1,22 +1,11 @@
+import * as React from 'react';
 import { useCallback } from 'react';
-import { useStore, getBezierPath, getSmoothStepPath } from 'reactflow';
+import { BaseEdge, useStore, getBezierPath } from 'reactflow';
 
 import { getEdgeCoords } from './edge-utils';
-import * as React from 'react';
-import { EdgeParams } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
-import { BaseEdge } from 'reactflow';
 
 // Taken from : https://reactflow.dev/docs/examples/edges/simple-floating-edges/
-function SimpleFloatingEdge({
-                              id, source, target, markerEnd, style, data, sourceX,
-                              sourceY,
-                              targetX,
-                              targetY,
-                              sourcePosition,
-                              sourceHandleId,
-                              targetPosition,
-                              targetHandleId
-                            }) {
+function SimpleFloatingEdge({ source, target, markerEnd, style, data, sourceHandleId, targetHandleId }) {
   const sourceNode = useStore(useCallback((store) => store.nodeInternals.get(source), [source]));
   const targetNode = useStore(useCallback((store) => store.nodeInternals.get(target), [target]));
 
@@ -33,7 +22,6 @@ function SimpleFloatingEdge({
     targetPos
   } = getEdgeCoords(sourceNode, sourceHandleId, data.sourceCanFloat, targetNode, targetHandleId, data.targetCanFloat);
 
-
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX: sx,
     sourceY: sy,
@@ -45,16 +33,17 @@ function SimpleFloatingEdge({
   const labelXNumb = labelX as any as number;
 
   return (
-    <BaseEdge labelX={labelXNumb}
-              labelY={labelY}
-              path={edgePath}
-              label={data.label}
-              labelStyle={{opacity: style.opacity, transition: 'opacity 150ms ease-in-out'}}
-              labelBgStyle={{opacity: 0.9}}
-              style={style}
-              markerEnd={markerEnd}
-              interactionWidth={15}
-              />
+    <BaseEdge
+      labelX={labelXNumb}
+      labelY={labelY}
+      path={edgePath}
+      label={data.label}
+      labelStyle={{opacity: style.opacity, transition: 'opacity 150ms ease-in-out'}}
+      labelBgStyle={{opacity: 0.9}}
+      style={style}
+      markerEnd={markerEnd}
+      interactionWidth={15}
+    />
   );
 }
 

@@ -59,7 +59,7 @@ export interface SchemaAndRequiredMembersProps {
   memberNames: string[];
 }
 
-const fitViewOptions: FitViewOptions = { padding: 0.25, includeHiddenNodes: true };
+const fitViewOptions: FitViewOptions = { padding: 0.15, includeHiddenNodes: true, duration: 1500 };
 let previousDimensions: {width?: number, height?: number};
 
 function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
@@ -71,7 +71,7 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   const instance = useReactFlow();
 
   const [awaitingLayout, setAwaitingLayout] = useState(false);
-  const [awaitingRefit, setAwaitingRefit] = useState(false);
+  const [awaitingRefit, setAwaitingRefit] = useState<'immediate' | 'delayed'>();
 
   const [schema, setSchema] = useState<Schema>(emptySchema);
   const [requiredMembers, setRequiredMembers] = useState<string[]>([]);
@@ -107,14 +107,22 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
 
       applyElkLayout(nodes, edges)
         .then(result => {
+          if (result.length === 1) {
+            const node = result[0];
+            instance.fitBounds({x: node.position.x, y: node.position.y, width: node.width, height: node.height}, {padding: fitViewOptions.padding})
+            setAwaitingRefit(null);
+          } else {
+            setAwaitingRefit('delayed');
+          }
           setAwaitingLayout(false);
           setNodes(result);
-          setAwaitingRefit(true);
         });
     }
     if (awaitingRefit) {
-      instance.fitView(fitViewOptions);
-      setAwaitingRefit(false);
+      setTimeout(() => {
+        instance.fitView({...fitViewOptions, duration: awaitingRefit === 'immediate' ? 0 : fitViewOptions.duration});
+      }, 30)
+      setAwaitingRefit(null);
     }
   }, );
 
@@ -150,8 +158,6 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
       filter: (node) => {
         // we don't want to add the minimap and the controls to the image
         return !node?.classList?.contains('toolbar');
-
-
       }
     }).then((dataUrl) => {
       const a = document.createElement('a');
@@ -169,7 +175,7 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   };
   if (previousDimensions?.width !== props.width || previousDimensions?.height !== props.height) {
     if (previousDimensions && !isFullScreen) {
-      setAwaitingRefit(true);
+      setAwaitingRefit('immediate');
     }
   }
   previousDimensions = styleProps;
@@ -305,8 +311,6 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
       onNodeMouseLeave={onEdgeOrNodeMouseLeave}
       onEdgeMouseEnter={onEdgeMouseEnter}
       onEdgeMouseLeave={onEdgeOrNodeMouseLeave}
-      fitView
-      fitViewOptions={fitViewOptions}
     >
       <Controls
         showInteractive={false}
@@ -316,7 +320,7 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
         </ControlButton>
         <ControlButton title={!isFullScreen ? 'maximise view' : 'minimise view'} onClick={() => {
           setFullScreen(!isFullScreen)
-          setAwaitingRefit(true);
+          setAwaitingRefit('immediate');
         }}>
           {ToggleFullScreenButton}
         </ControlButton>
