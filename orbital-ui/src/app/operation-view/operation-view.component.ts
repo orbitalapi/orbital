@@ -257,12 +257,17 @@ export class OperationViewComponent extends BaseDeferredEditComponent<Operation>
       const dialog = openTypeSearch(this.dialog);
       dialog.afterClosed().subscribe((event) => {
         if (!isNullOrUndefined(event)) {
+          // if it's an array, make sure it stays that way...
+          if (this.operation.returnTypeName.parameters.length === 1) {
+            this.operation.returnTypeName = QualifiedName.fromWithArray(event.type.name);
+          } else {
+            this.operation.returnTypeName = event.type.name;
+          }
           const changeEvent: ChangeOperationReturnTypeEvent = {
             editKind: 'ChangeOperationReturnType',
             symbol: this.operation.qualifiedName,
-            newReturnType: event.type.name
+            newReturnType: this.operation.returnTypeName
           }
-          this.operation.returnTypeName = event.type.name;
           this.emitUpdateIfRequired(changeEvent);
           if (event.source === 'new') {
             this.newTypeCreated.next(event.type);

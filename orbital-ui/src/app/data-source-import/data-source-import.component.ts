@@ -182,6 +182,7 @@ export class DataSourceImportComponent implements OnInit, OnDestroy {
             message: 'The schema was updated successfully',
             level: 'SUCCESS',
           };
+          this.onConfigureStep.emit(false);
           this.wizardStep.next('importSchema');
           this.dataSourceAdded.emit();
           this.resetToBaseRoute();

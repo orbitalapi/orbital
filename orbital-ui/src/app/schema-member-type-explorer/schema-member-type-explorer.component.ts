@@ -15,8 +15,10 @@ import { combineAndCloneWithPartialSchema, SchemaSubmissionResult } from '../ser
 import { SchemaEditOperation } from '../project-import/schema-importer.service';
 import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
 import {
+  Links,
   buildLinksForModelWithAttributes,
-  buildLinksForType
+  buildLinksForType,
+  buildOperationLinks, findServiceAssociatedWithOperation
 } from '../schema-diagram/schema-diagram/schema-chart-builder';
 
 @Component({
@@ -62,7 +64,6 @@ import {
                   <app-operation-view *ngIf="selectedOperation"
                                       [operation]="selectedOperation"
                                       [schema]="schema"
-                                      [partialSchema]="partialSchema"
                                       [allowTryItOut]="allowTryItOut"
                                       [editable]="editable"
                                       [schemaMemberNavigable]="!editable"
@@ -76,11 +77,10 @@ import {
                 </div>
               </div>
             </as-split-area>
-            <as-split-area *ngIf="selectedModel" size="50">
+            <as-split-area *ngIf="selectedModel || selectedOperation" size="50">
               <app-schema-diagram
-                *ngIf="selectedModel"
                 [schema$]="combinedSchema$"
-                [displayedMembers]="editable ? availableMemberLinks : [selectedModel.name.fullyQualifiedName]"
+                [displayedMembers]="editable ? availableMemberLinks : [selectedModel ? selectedModel.name.fullyQualifiedName : selectedOperation.memberQualifiedName.fullyQualifiedName]"
                 [memberNameNavigable]="!editable"
               ></app-schema-diagram>
             </as-split-area>
@@ -98,7 +98,9 @@ import {
       {{ saveResultMessage.message }}
     </div>
     <div class="button-bar" *ngIf="editable">
-      <button tuiButton appearance="secondary" size="m" (click)="cancelConfig.emit()" [showLoader]="working">Cancel</button>
+      <button tuiButton appearance="secondary" size="m" (click)="cancelConfig.emit()" [showLoader]="working">
+        Cancel
+      </button>
       <button tuiButton size="m" (click)="savePendingEdits()" [showLoader]="working">Save</button>
     </div>
   `,
@@ -118,6 +120,7 @@ export class SchemaMemberTypeExplorerComponent implements OnDestroy {
   saveResultMessage: Message;
 
   readonly schema$ = new BehaviorSubject<Schema>(null);
+
   @Input() set schema(value: Schema) {
     this.schema$.next(value);
   }
@@ -153,7 +156,10 @@ export class SchemaMemberTypeExplorerComponent implements OnDestroy {
     private router: Router,
     private activatedRoute: ActivatedRoute
   ) {
-    this.combinedSchema$ = combineLatest([this.schema$, this.partialSchema$.pipe(startWith({types: [], services: []} as PartialSchema))]).pipe(
+    this.combinedSchema$ = combineLatest([
+      this.schema$,
+      this.partialSchema$.pipe(startWith({ types: [], services: [] } as PartialSchema))
+    ]).pipe(
       filter(([schema, partialSchema]) => {
         return !this.editable || (this.editable && !!partialSchema.types.length && !!partialSchema.services.length)
       }),
@@ -225,7 +231,6 @@ export class SchemaMemberTypeExplorerComponent implements OnDestroy {
     this.selectedModel = $event;
     this.selectedOperation = null;
     if (this.editable) {
-      console.log("coming from selectedModel update")
       this.availableMemberLinks = this.getAvailableMemberLinks();
     }
     this.router.navigate([],
@@ -242,6 +247,9 @@ export class SchemaMemberTypeExplorerComponent implements OnDestroy {
   onOperationSelected($event: ServiceMember) {
     this.selectedModel = null;
     this.selectedOperation = $event;
+    if (this.editable) {
+      this.availableMemberLinks = this.getAvailableMemberLinks();
+    }
     this.router.navigate([],
       {
         relativeTo: this.activatedRoute,
@@ -289,16 +297,24 @@ export class SchemaMemberTypeExplorerComponent implements OnDestroy {
 
   private getAvailableMemberLinks() {
     if (!this.combinedSchema) return;
-    // TODO: need to get this working for selectedOperation
-    const targetType = this.selectedModel ?? this.selectedOperation;
-    const links = !this.selectedModel.isScalar ?
-      buildLinksForModelWithAttributes(targetType.memberQualifiedName, (targetType as Type).attributes, this.combinedSchema, this.combinedSchema.operations) :
-      buildLinksForType(targetType.memberQualifiedName, this.combinedSchema, this.combinedSchema.operations, null);
+
+    let selectedTypeName: string;
+    let links: Links;
+    if (this.selectedModel) {
+      selectedTypeName = this.selectedModel.fullyQualifiedName;
+      links = this.selectedModel.isScalar ?
+        buildLinksForModelWithAttributes(this.selectedModel.memberQualifiedName, this.selectedModel.attributes, this.combinedSchema, this.combinedSchema.operations) :
+        buildLinksForType(this.selectedModel.memberQualifiedName, this.combinedSchema, this.combinedSchema.operations, null);
+    } else if (this.selectedOperation) {
+      selectedTypeName = this.selectedOperation.memberQualifiedName.fullyQualifiedName;
+      const serviceAssociatedWithOperation = findServiceAssociatedWithOperation(this.combinedSchema.services, this.selectedOperation);
+      links = buildOperationLinks(this.selectedOperation, serviceAssociatedWithOperation, this.combinedSchema);
+    }
     // Use a set here to make the array unique
     const availableMemberLinks = [...new Set(
-      [this.selectedModel.fullyQualifiedName]
-        .concat(links.inputs.map(input => input.sourceNodeName.fullyQualifiedName))
-        .concat(links.outputs.map(output => output.targetNodeName.fullyQualifiedName)))
+      [selectedTypeName]
+      .concat(links.inputs.map(input => input.sourceNodeName.fullyQualifiedName))
+      .concat(links.outputs.map(output => output.targetNodeName.fullyQualifiedName)))
     ]
     console.log("availableLinkages", availableMemberLinks);
     return availableMemberLinks;

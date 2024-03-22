@@ -29,6 +29,7 @@ import { TypeSelectedEvent } from 'src/app/type-viewer/type-search/type-selected
       (search)="triggerSearch($event)"
       [searchResults]="searchResults"
       [loading]="loading"
+      [loadingDocs]="loadingDocs"
       [schema]="schema"
       [searchResultDocs]="searchResultDocs"
       (searchResultHighlighted)="loadDocs($event)"
@@ -49,6 +50,7 @@ export class TypeSearchContainerComponent {
   searchResultDocs: SearchResultDocs | null = null;
   schema: Schema;
   loading: boolean = false;
+  loadingDocs: boolean = false;
   //selectedTab: number = 0;
 
   constructor(
@@ -79,13 +81,18 @@ export class TypeSearchContainerComponent {
 
   loadDocs(searchResult: SearchResult | PartialSearchResult) {
     if ("isLocal" in searchResult) {
-      // we don't do anything for now for schema's that haven't been committed
-      this.searchResultDocs = null;
+      const type = this.data.partialSchema.types.find((t) => t.name.fullyQualifiedName === searchResult.qualifiedName.fullyQualifiedName);
+      this.searchResultDocs = {
+        type,
+        inheritanceView: buildInheritable(type, this.schema),
+        typeUsages: null // ignore this for now
+      }
       return;
     }
     this.searchResultDocs = null;
     const type$ = this.typeService.getType(searchResult.qualifiedName.parameterizedName);
     const usages$ = this.typeService.getTypeUsages(searchResult.qualifiedName.parameterizedName);
+    this.loadingDocs = true;
     zip(type$, usages$)
       .pipe(
         map(([type, usages]) => {
@@ -96,10 +103,15 @@ export class TypeSearchContainerComponent {
           } as SearchResultDocs
         })
       )
-      .subscribe((docs) => {
-        this.searchResultDocs = docs;
-      }, error => {
-        console.log(JSON.stringify(error));
+      .subscribe({
+        next: (docs) => {
+          this.searchResultDocs = docs;
+          this.loadingDocs = false
+        },
+        error: (error) => {
+          console.log(JSON.stringify(error));
+          this.loadingDocs = false;
+        }
       })
   }
 

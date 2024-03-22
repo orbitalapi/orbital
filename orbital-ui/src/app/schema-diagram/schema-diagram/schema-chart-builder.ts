@@ -299,8 +299,14 @@ export class ServiceLinks implements HasChildLinks {
   collectAllChildLinks(): Link[] {
     return Object.values(this.operationLinks).flatMap(links => collectLinks(links));
   }
+}
 
-
+export function findServiceAssociatedWithOperation(services: Service[], operation: ServiceMember): Service {
+  return services.find(service => {
+    return collectAllServiceOperations(service).find(_operation => {
+      return _operation.memberQualifiedName.fullyQualifiedName === operation.memberQualifiedName.fullyQualifiedName
+    })
+  });
 }
 
 function buildServiceLinks(service: Service, schema: Schema, operations: ServiceMember[]): ServiceLinks {
@@ -351,7 +357,7 @@ export interface Link {
   linkKind: LinkKind;
 }
 
-function buildOperationLinks(operation: ServiceMember, service: Service, schema: Schema): Links {
+export function buildOperationLinks(operation: ServiceMember, service: Service, schema: Schema): Links {
   const serviceNodeId = getNodeId('SERVICE', service.name);
   const nameParts = splitOperationQualifiedName(operation.qualifiedName.fullyQualifiedName);
   const inputs: Link[] = operation.parameters.map(param => {
@@ -448,7 +454,8 @@ export function buildSchemaNode(schema: Schema, member: SchemaMember, operations
       isNavigable
     },
     type: getNodeKind(member),
-    position
+    position,
+    style: {transition: 'transform 400ms ease-in-out'}
   } as Node<MemberWithLinks>;
 }
 

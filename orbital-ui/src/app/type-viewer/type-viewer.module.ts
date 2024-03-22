@@ -32,6 +32,7 @@ import {
 import {
     TuiCheckboxLabeledModule,
     TuiInputModule,
+    TuiProgressModule,
     TuiTabsModule,
     TuiTagModule,
     TuiTextareaModule,
@@ -91,6 +92,7 @@ import { MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef } from '@angular/material/le
         TuiAutoFocusModule,
         MarkdownModule,
         TuiSvgModule,
+        TuiProgressModule,
     ],
     declarations: [
         TocHostDirective,
