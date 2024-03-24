@@ -9,7 +9,6 @@ import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
-import com.orbitalhq.utils.withQueryId
 import kotlinx.coroutines.flow.Flow
 import mu.KotlinLogging
 
@@ -39,11 +38,11 @@ class JdbcQueryInvoker(
       val (sql, paramList) = SelectStatementGenerator(taxiSchema).toSql(query, connectionConfig.sqlBuilder())
       val paramMap = paramList.associate { param -> param.nameUsedInTemplate to param.value }
 
-      logger.withQueryId(queryId).debug { "Starting JDBC Query $sql" }
+      logger.debug { "$queryId: Starting JDBC Query $sql" }
       val stopwatch = Stopwatch.createStarted()
       val resultList = jdbcTemplate.queryForList(sql, paramMap)
       val elapsed = stopwatch.elapsed()
-      logger.withQueryId(queryId).debug { "JDBC Query completed in $elapsed" }
+      logger.debug { "$queryId: JDBC Query completed in $elapsed" }
       val operationResult = buildOperationResult(
          service,
          operation,
