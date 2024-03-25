@@ -455,7 +455,6 @@ export function buildSchemaNode(schema: Schema, member: SchemaMember, operations
     },
     type: getNodeKind(member),
     position,
-    style: {transition: 'transform 400ms ease-in-out'}
   } as Node<MemberWithLinks>;
 }
 
