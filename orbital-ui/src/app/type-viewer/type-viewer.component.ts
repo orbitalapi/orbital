@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { UiCustomisations } from '../../environments/ui-customisations';
 import {
   NamedAndDocumented,
   PartialSchema,
@@ -184,6 +185,8 @@ export class TypeViewerComponent {
     }
     this.typeUpdated.emit({schemaEditOperation: event, member: this.type})
   }
+
+  protected readonly UiCustomisations = UiCustomisations;
 }
 
 export function getTypeNameToView(name: QualifiedName): QualifiedName {

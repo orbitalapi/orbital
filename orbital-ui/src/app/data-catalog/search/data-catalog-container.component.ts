@@ -3,6 +3,7 @@ import { ActivatedRoute, NavigationEnd, NavigationSkipped, Router, Scroll } from
 import { Observable, of } from 'rxjs';
 import { filter, map, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { UiCustomisations } from '../../../environments/ui-customisations';
 import { ExpandableSearchResult, SearchResult, SearchService } from '../../search/search.service';
 import { TypesService } from 'src/app/services/types.service';
 import { Schema } from 'src/app/services/schema';
@@ -11,8 +12,9 @@ import { Schema } from 'src/app/services/schema';
   selector: 'app-data-catalog-container',
   template: `
     <app-header-component-layout title='Catalog'
-                                 description='The data catalog contains all models, attributes, services and operations published to Orbital. You can search by
-          name, or search for tags using # (eg: #MyTag)' [padBottom]='false' [displayBody]='false'>
+                                 [description]="'The data catalog contains all models, attributes, services and operations published to '
+                                  + UiCustomisations.productName + '. You can search by name, or search for tags using # (eg: #MyTag)'"
+                                 [padBottom]='false' [displayBody]='false'>
       <ng-container ngProjectAs='header-components'>
         <tui-tabs>
           <!--          <button tuiTab>Push from application</button>-->
@@ -126,4 +128,6 @@ export class DataCatalogContainerComponent {
         return 1;
     }
   }
+
+  protected readonly UiCustomisations = UiCustomisations;
 }

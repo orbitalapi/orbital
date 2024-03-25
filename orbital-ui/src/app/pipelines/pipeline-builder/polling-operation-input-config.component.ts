@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Output } from '@angular/core';
+import { UiCustomisations } from '../../../environments/ui-customisations';
 import { Operation, Parameter, QualifiedName, Schema, SchemaMember } from '../../services/schema';
 import { AbstractControl, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import { PipelineTransportSpec } from '../pipelines.service';
@@ -88,4 +89,6 @@ export class PollingOperationInputConfigComponent extends BaseTransportConfigEdi
 
     this.selectedOperationParameterInputs = selectedOperationParameterInputs;
   }
+
+  protected readonly UiCustomisations = UiCustomisations;
 }

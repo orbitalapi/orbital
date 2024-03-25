@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { OpenApiPackageLoaderSpec } from 'src/app/project-import/project-import.models';
 import { NgControl, NgModel } from '@angular/forms';
+import { UiCustomisations } from '../../../environments/ui-customisations';
 
 @Component({
   selector: 'app-open-api-package-config',
@@ -22,7 +23,7 @@ import { NgControl, NgModel } from '@angular/forms';
       <div class="form-item-description-container">
         <h3>Package identifier</h3>
         <div class="help-text">
-          All schemas in Orbital need a Package Identifier - similar to npm or maven
+          All schemas in {{UiCustomisations.productName}} need a Package Identifier - similar to npm or maven
           co-ordinates
         </div>
       </div>
@@ -75,7 +76,7 @@ import { NgControl, NgModel } from '@angular/forms';
       <div class="form-item-description-container">
         <h3>Default namespace</h3>
         <div class="help-text">
-          When Orbital imports the OpenAPI spec, it will generate services within this namespace
+          When {{UiCustomisations.productName}} imports the OpenAPI spec, it will generate services within this namespace
         </div>
       </div>
       <div class="form-element">
@@ -117,4 +118,6 @@ export class OpenApiPackageConfigComponent {
     const name = this.openApiPackageSpec.identifier?.name || null;
     this.openApiPackageSpec.defaultNamespace = [org, name].filter(d => d !== null).join('.');
   }
+
+  protected readonly UiCustomisations = UiCustomisations;
 }
