@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { concatMap, Observable } from 'rxjs';
 import { shareReplay, tap } from 'rxjs/operators';
 import { TuiAccordionModule } from '@taiga-ui/kit';
+import { UiCustomisations } from '../../../../environments/ui-customisations';
 import { PackagesService, SourcePackageDescription } from '../../../package-viewer/packages.service';
 import { TypesService } from '../../../services/types.service';
 
@@ -38,7 +39,7 @@ export class ProjectListComponent {
       case 'GitRepo':
         return 'Git repo';
       case 'Pushed':
-        return 'Pushed to Orbital';
+        return `Pushed to ${UiCustomisations.productName}`;
     }
   }
   getSourceIcon(sourcePackage: SourcePackageDescription) {

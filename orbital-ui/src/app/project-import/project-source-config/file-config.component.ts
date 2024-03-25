@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { of } from 'rxjs';
 import { catchError, debounceTime, switchMap } from 'rxjs/operators';
 import { projectTypeToString } from 'src/app/project-import/project-source-config/git-config.component';
+import { UiCustomisations } from '../../../environments/ui-customisations';
 import {
   FileSystemPackageSpec,
   LoadablePackageType,
@@ -106,7 +107,7 @@ import { FileRepositoryTestResponse, SchemaImporterService } from 'src/app/proje
               <div class='form-item-description-container'>
                 <h3>Package identifier</h3>
                 <div class='help-text'>
-                  All schemas in Orbital need a Package Identifier - similar to npm or maven
+                  All schemas in {{UiCustomisations.productName}} need a Package Identifier - similar to npm or maven
                   co-ordinates
                 </div>
               </div>
@@ -132,7 +133,7 @@ import { FileRepositoryTestResponse, SchemaImporterService } from 'src/app/proje
                 <h3>Enable edits</h3>
                 <div class='help-text'>
                   <p>
-                    If enabled, edits can be made through the Orbital UI
+                    If enabled, edits can be made through the {{UiCustomisations.productName}} UI
                   </p>
                 </div>
               </div>
@@ -294,4 +295,6 @@ export class FileConfigComponent {
     };
     this.changeDetector.markForCheck();
   }
+
+  protected readonly UiCustomisations = UiCustomisations;
 }

@@ -1,5 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {MatLegacyDialogRef as MatDialogRef} from '@angular/material/legacy-dialog';
+import { UiCustomisations } from '../../environments/ui-customisations';
 
 @Component({
   selector: 'app-config-disabled-form',
@@ -8,7 +9,7 @@ import {MatLegacyDialogRef as MatDialogRef} from '@angular/material/legacy-dialo
       Downloading test specs is disabled
     </h2>
     <p>
-      To create test cases, Orbital needs to store the responses from services it interacts with. Currently this is
+      To create test cases, {{UiCustomisations.productName}} needs to store the responses from services it interacts with. Currently this is
       disabled.
     </p>
     <p>
@@ -16,7 +17,7 @@ import {MatLegacyDialogRef as MatDialogRef} from '@angular/material/legacy-dialo
       <code>vyne.analytics.persistRemoteCallResponses</code> setting in your server config, setting to true.
       <code>vyne.analytics.persistResults</code> setting in your server config, setting to true.
     </p>
-    <p>Once this is done, you'll need to re-start Orbital and re-run your query.</p>
+    <p>Once this is done, you'll need to re-start {{UiCustomisations.productName}} and re-run your query.</p>
     <div class="button-row">
       <div class="spacer"></div>
       <button mat-raised-button color="primary" (click)="this.dialogRef.close()">Close</button>
@@ -32,4 +33,5 @@ export class ConfigDisabledFormComponent implements OnInit {
   ngOnInit() {
   }
 
+  protected readonly UiCustomisations = UiCustomisations;
 }

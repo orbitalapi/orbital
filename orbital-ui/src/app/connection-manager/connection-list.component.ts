@@ -2,6 +2,7 @@ import { Component, Inject, Injector, Input } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { TuiDialogService } from '@taiga-ui/core';
+import { UiCustomisations } from '../../environments/ui-customisations';
 import {
   ConnectionsListResponse,
   ConnectorSummary,
@@ -13,7 +14,7 @@ import {
   template: `
     <app-header-component-layout
       title="Connections"
-      [description]="'Create connections to register databases and message brokers to Orbital. '"
+      [description]="'Create connections to register databases and message brokers to ' + UiCustomisations.productName"
     >
       <ng-container ngProjectAs="buttons">
         <button tuiButton size="m" (click)="createNewConnection()" appearance="primary">Add connection</button>
@@ -79,4 +80,6 @@ export class ConnectionListComponent {
       connection.connectionName
     ], { relativeTo: this.activeRoute })
   }
+
+  protected readonly UiCustomisations = UiCustomisations;
 }
