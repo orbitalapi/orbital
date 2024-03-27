@@ -6,10 +6,10 @@ import {SchemaMemberTreeComponent} from 'src/app/schema-member-type-explorer/sch
 import {TuiBadgeModule, TuiIslandModule, TuiTabsModule, TuiTreeModule} from '@taiga-ui/kit';
 import {TuiButtonModule, TuiGroupModule, TuiNotificationModule} from '@taiga-ui/core';
 import {TypeViewerModule} from 'src/app/type-viewer/type-viewer.module';
-import {OperationViewModule} from 'src/app/operation-view/operation-view.module';
 import {FormsModule} from "@angular/forms";
 import {CodeEditorModule} from "../code-editor/code-editor.module";
 import {CodeViewerModule} from "../code-viewer/code-viewer.module";
+import { OperationViewComponent } from '../operation-view/operation-view.component';
 import { SchemaDiagramModule } from '../schema-diagram/schema-diagram.module';
 
 
@@ -21,23 +21,23 @@ import { SchemaDiagramModule } from '../schema-diagram/schema-diagram.module';
     SchemaMemberTypeExplorerComponent,
     SchemaMemberTreeComponent
   ],
-    imports: [
-        CommonModule,
-        AngularSplitModule,
-        TuiBadgeModule,
-        TuiTreeModule,
-        TuiButtonModule,
-        TypeViewerModule,
-        OperationViewModule,
-        TuiNotificationModule,
-        TuiGroupModule,
-        FormsModule,
-        CodeEditorModule,
-        CodeViewerModule,
-        TuiIslandModule,
-        TuiTabsModule,
-        SchemaDiagramModule
-    ]
+  imports: [
+    CommonModule,
+    AngularSplitModule,
+    TuiBadgeModule,
+    TuiTreeModule,
+    TuiButtonModule,
+    TypeViewerModule,
+    TuiNotificationModule,
+    TuiGroupModule,
+    FormsModule,
+    CodeEditorModule,
+    CodeViewerModule,
+    TuiIslandModule,
+    TuiTabsModule,
+    SchemaDiagramModule,
+    OperationViewComponent
+  ]
 })
 export class SchemaMemberTypeExplorerModule {
 }

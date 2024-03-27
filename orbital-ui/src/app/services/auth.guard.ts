@@ -28,6 +28,11 @@ export class AuthGuard  {
       // authorised so return true
       return true;
     }
+    if (route.data['requiredAllAuthorities'] && Array.isArray(route.data['requiredAllAuthorities']) &&
+      route.data['requiredAllAuthorities'].every(v => vyneUser.grantedAuthorities.includes(v))) {
+      // authorised so return true
+      return true;
+    }
     // role not authorised so redirect to home page
     this.router.navigate(['/']);
     return false;

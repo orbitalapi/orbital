@@ -4,6 +4,7 @@
 
 :host(.vyne) {
   background-color: $body-bg;
+  min-height: 0;
 }
 
 :host {
@@ -27,6 +28,7 @@
 
 .notification-error {
   margin-top: 1rem;
+  white-space: pre;
 }
 
 h3 {

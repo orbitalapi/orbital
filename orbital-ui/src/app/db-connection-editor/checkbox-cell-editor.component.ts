@@ -1,14 +1,22 @@
-import {Component, OnInit} from '@angular/core';
+import {Component} from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import {ICellEditorAngularComp, ICellRendererAngularComp} from 'ag-grid-angular';
 import {ICellEditorParams, ICellRendererParams} from 'ag-grid-community';
-import {MatLegacyCheckboxChange as MatCheckboxChange} from '@angular/material/legacy-checkbox';
+import {
+  MatLegacyCheckboxModule
+} from '@angular/material/legacy-checkbox';
 
 @Component({
   selector: 'app-checkbox-cell-editor',
   template: `
     <mat-checkbox [(ngModel)]="checked" [disabled]="!editable"></mat-checkbox>
   `,
-  styleUrls: ['./checkbox-cell-editor.component.scss']
+  styleUrls: ['./checkbox-cell-editor.component.scss'],
+  imports: [
+    MatLegacyCheckboxModule,
+    FormsModule
+  ],
+  standalone: true
 })
 export class CheckboxCellEditorComponent implements ICellRendererAngularComp, ICellEditorAngularComp {
   checked: boolean;

@@ -11,7 +11,14 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
-import { Operation, PartialSchema, Service, ServiceMember, Type } from 'src/app/services/schema';
+import {
+  collectAllServiceOperations,
+  Operation,
+  PartialSchema,
+  Service,
+  ServiceMember,
+  Type
+} from 'src/app/services/schema';
 
 export interface TreeEntry {
   label: string;
@@ -52,7 +59,7 @@ export interface TreeEntry {
         <span class="schema-member-kind-label" [attr.data-kind]="services.length">Services</span>
         <tui-tree-item *ngFor="let service of services" class="root-tree-item">{{ service.label }}
           <tui-tree-item
-            *ngFor="let operation of collectOperations(service.member)"
+            *ngFor="let operation of collectAllServiceOperations(service.member)"
             class="tree-item-leaf-node"
             [class.active]="operation.memberQualifiedName.fullyQualifiedName === selectedMember"
             (click)="onOperationSelected(operation)"
@@ -85,10 +92,6 @@ export class SchemaMemberTreeComponent implements OnInit {
           this.activateSelectedMember();
         }
       )
-  }
-
-  collectOperations(service: Service): ServiceMember[] {
-    return [...service.operations, ...service.queryOperations, ...service.tableOperations, ...service.streamOperations];
   }
 
   private _importedSchema: Observable<PartialSchema>;
@@ -173,7 +176,7 @@ export class SchemaMemberTreeComponent implements OnInit {
     if (typeOrModelSelected !== undefined) {
       this.onModelSelected(typeOrModelSelected)
     }
-    const operationSelected = this.services.flatMap(item => this.collectOperations(item.member as Service))
+    const operationSelected = this.services.flatMap(item => collectAllServiceOperations(item.member as Service))
       .find(item => item.memberQualifiedName.fullyQualifiedName === this.selectedMember);
     if (operationSelected !== undefined) {
       this.onOperationSelected(operationSelected)
@@ -191,4 +194,6 @@ export class SchemaMemberTreeComponent implements OnInit {
   onOperationSelected(operation: ServiceMember) {
     this.operationSelected.emit(operation)
   }
+
+  protected readonly collectAllServiceOperations = collectAllServiceOperations;
 }

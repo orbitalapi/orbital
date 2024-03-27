@@ -1,0 +1,18 @@
+@import "src/common";
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  ::ng-deep app-header-component-layout {
+    .body-container {
+      min-height: 0;
+      overflow: auto;
+    }
+  }
+}
+
+app-header-component-layout {
+  height: 100%;
+}

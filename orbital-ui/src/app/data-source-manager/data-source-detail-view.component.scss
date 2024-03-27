@@ -1,13 +1,25 @@
 @import "src/common";
 @import "src/tables";
-@import "./status-colors";
+
+:host {
+  display: block;
+  margin-left: 2rem;
+}
 
 .connection-properties {
   @include orbital-table();
   @include links()
 }
 
-.connection-health {
+.header-text {
   display: flex;
   align-items: center;
+
+  h2 {
+    margin: 0.5rem 0 1rem 0;
+  }
+}
+
+.error-notification {
+  margin: 0 0 1rem 0;
 }

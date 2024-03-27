@@ -18,6 +18,7 @@ import com.orbitalhq.spring.http.NotFoundException
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -51,13 +52,18 @@ class ConnectionsService(
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections")
-   fun listConnections(): Mono<ConnectionsListResponse> {
+   fun listConnections(@RequestParam("withUsages", required = false, defaultValue = "false") withUsages: Boolean = false): Mono<ConnectionsListResponse> {
       val connections = this.connectorsRegistry.configSources
          .filter { !it.hasError }
          .flatMap { configSource ->
             configSource.typedConfig!!.listAll().map { connectorConfiguration ->
                val status = configStatuses.getOrDefault(connectorConfiguration, ConnectionStatus.unknown())
-               ConnectorConfigurationSummary(configSource.packageIdentifier, connectorConfiguration, status)
+               if (withUsages) {
+                  val usages = ConnectionUsageMetadataRegistry.findConnectionUsages(schemaProvider.schema, connectorConfiguration.connectionName)
+                  ConnectorConfigurationSummary(configSource.packageIdentifier, connectorConfiguration, status, null, usages)
+               } else {
+                  ConnectorConfigurationSummary(configSource.packageIdentifier, connectorConfiguration, status)
+               }
             }
          }
       val errors = this.connectorsRegistry.configSources.filter { it.hasError }

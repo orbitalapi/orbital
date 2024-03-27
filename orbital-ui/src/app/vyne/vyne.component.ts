@@ -54,9 +54,9 @@ export class VyneComponent implements OnInit {
       requiredAuthority: VynePrivileges.ViewQueryHistory
     },
     {
-      title: 'Connections',
+      title: 'Data sources',
       icon: 'assets/img/tabler/plug.svg',
-      route: 'connection-manager',
+      route: 'data-source-manager',
       requiredAuthority: VynePrivileges.ViewConnections
     },
     {
