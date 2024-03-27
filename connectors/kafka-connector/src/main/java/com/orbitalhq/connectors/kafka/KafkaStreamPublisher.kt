@@ -1,6 +1,9 @@
 package com.orbitalhq.connectors.kafka
 
+import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.cache.CacheBuilder
+import com.orbitalhq.connectors.StreamErrorMessage
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
 import com.orbitalhq.connectors.kafka.registry.toSenderOptions
@@ -13,12 +16,14 @@ import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Service
 import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
 import reactor.core.publisher.Mono
 import reactor.kafka.sender.KafkaSender
 import reactor.kafka.sender.SenderOptions
 import reactor.kafka.sender.SenderRecord
+import java.util.concurrent.TimeUnit
 
 class KafkaStreamPublisher(
    private val connectionRegistry: KafkaConnectionRegistry,
@@ -26,6 +31,11 @@ class KafkaStreamPublisher(
    private val formatRegistry: FormatRegistry,
    private val meterRegistry: MeterRegistry
 ) {
+
+   private val cache = CacheBuilder
+      .newBuilder()
+      .expireAfterAccess(5, TimeUnit.MINUTES)
+      .build<String, KafkaSender<Any, Any>>()
    companion object {
       private val logger = KotlinLogging.logger {}
    }
@@ -41,16 +51,17 @@ class KafkaStreamPublisher(
       schema: Schema
    ): Flow<TypedInstance> {
       val topic = kafkaOperation.topic
-      val (connectionConfiguration, senderOptions) = buildSenderOptions(connectionName)
-
+      val sender = cache.get(connectionName) {
+         val (connectionConfiguration, senderOptions) = buildSenderOptions(connectionName)
+         KafkaSender.create(senderOptions)
+      }
       val senderRecord = buildSenderRecord(payload, schema, topic, messageKey)
-      val sender = KafkaSender.create(senderOptions)
 
       return sender.send(Mono.just(senderRecord))
          .doOnEach { _ -> meterRegistry.counter("orbital.connections.kafka.${connectionName}.topic.${topic}.messagesPublished").increment() }
-         .doOnError { e->  logger.warn { "Failed to send message to Kafka connection ${connectionConfiguration.connectionName} on topic $topic: ${e::class.simpleName} - ${e.message}" } }
+         .doOnError { e->  logger.warn { "Failed to send message to Kafka connection $connectionName on topic $topic: ${e::class.simpleName} - ${e.message}" } }
          .map { senderResult ->
-            logger.info { "Message published to Kafka connection  ${connectionConfiguration.connectionName} on topic $topic with offset ${senderResult.recordMetadata()?.offset()}" }
+            logger.info { "Message published to Kafka connection  $connectionName on topic $topic with offset ${senderResult.recordMetadata()?.offset()}" }
             payload
          }
          .asFlow()
