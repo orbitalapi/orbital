@@ -1,4 +1,7 @@
 import {NgModule} from '@angular/core';
+import { ProjectImportComponent } from '../project-import/project-import.component';
+import { AuthGuard } from '../services/auth.guard';
+import { VynePrivileges } from '../services/user-info.service';
 import {ProjectExplorerComponent} from './project-explorer.component';
 import {SearchModule} from '../search/search.module';
 import {MatToolbarModule} from '@angular/material/toolbar';
@@ -60,6 +63,12 @@ import {HeaderComponentLayoutModule} from "../header-component-layout/header-com
     TuiButtonModule,
     ProjectSourceConfigModule,
     RouterModule.forChild([
+      {
+        path: 'project-import',
+        component: ProjectImportComponent,
+        canActivate: [AuthGuard],
+        data: {requiredAuthority: VynePrivileges.EditSchema}
+      },
       {
         path: '',
         component: ProjectExplorerContainerComponent,

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TuiAvatarModule, TuiIslandModule, TuiStepperModule } from '@taiga-ui/kit';
 import { TuiButtonModule } from '@taiga-ui/core';
@@ -25,6 +25,9 @@ import { RouterLink } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AddProjectComponent {
+  @Input()
+  displayOnboardingText = true
+
   readonly uiConfig = UiCustomisations;
 
   step: 'options' | 'projectAdded' | 'gitRepo' | 'localDisk' | 'microService' = 'options';

@@ -1,17 +1,17 @@
-import {Component, OnInit} from '@angular/core';
-import {BreakpointObserver} from '@angular/cdk/layout';
-import {BehaviorSubject, combineLatest, Observable} from 'rxjs';
-import {filter, map} from 'rxjs/operators';
-import {AppInfo, AppInfoService} from '../services/app-info.service';
-import {NavigationEnd, RouteConfigLoadEnd, RouteConfigLoadStart, Router} from '@angular/router';
-import {SchemaNotificationService, SourceNameWithPackage} from '../services/schema-notification.service';
-import {MatLegacySnackBar as MatSnackBar} from '@angular/material/legacy-snack-bar';
-import {SystemAlert} from '../system-alert/system-alert.component';
-import {TypesService} from '../services/types.service';
-import {UserInfoService, VynePrivileges, VyneUser} from '../services/user-info.service';
-import {DatePipe} from '@angular/common';
-import {UiCustomisations} from "../../environments/ui-customisations";
-import {PackageIdentifier, PackagesService} from "../package-viewer/packages.service";
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { DatePipe } from '@angular/common';
+import { Component, Inject, OnInit } from '@angular/core';
+import { NavigationEnd, RouteConfigLoadEnd, RouteConfigLoadStart, Router } from '@angular/router';
+import { TuiAlertService } from '@taiga-ui/core';
+import { BehaviorSubject, combineLatest, Observable } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
+import { UiCustomisations } from '../../environments/ui-customisations';
+import { PackagesService } from '../package-viewer/packages.service';
+import { AppInfo, AppInfoService } from '../services/app-info.service';
+import { SchemaNotificationService, SourceNameWithPackage } from '../services/schema-notification.service';
+import { TypesService } from '../services/types.service';
+import { UserInfoService, VynePrivileges, VyneUser } from '../services/user-info.service';
+import { SystemAlert } from '../system-alert/system-alert.component';
 
 @Component({
   selector: 'vyne-app',
@@ -121,10 +121,10 @@ export class VyneComponent implements OnInit {
               private router: Router,
               private schemaNotificationService: SchemaNotificationService,
               private typeService: TypesService,
-              private snackbar: MatSnackBar,
               private userInfoService: UserInfoService,
               private datePipe: DatePipe,
               private packagesService: PackagesService,
+              @Inject(TuiAlertService) private readonly alertService: TuiAlertService,
   ) {
     appInfoService
       .getConfig()
@@ -169,11 +169,8 @@ export class VyneComponent implements OnInit {
           }
         }
         if (!isFirstSchemaUpdate) {
-          this.snackbar.open(
-            message, 'Dismiss', {
-              duration: 5000,
-            }
-          );
+          this.alertService.open(message, {status: this.alerts.length ? 'warning': 'success', autoClose: 5000 })
+            .subscribe()
         }
         isFirstSchemaUpdate = false;
 

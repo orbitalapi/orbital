@@ -60,12 +60,6 @@ export const VYNE_ROUTES = RouterModule.forRoot(
       redirectTo: 'projects'
     },
     {
-      path: 'project-import',
-      loadChildren: () => import('./project-import/project-import.route.module').then(m => m.ProjectImportRouteModule),
-      canActivate: [AuthGuard],
-      data: {requiredAuthority: VynePrivileges.EditSchema}
-    },
-    {
       path: 'schema-importer',
       redirectTo: 'project-import'
     },

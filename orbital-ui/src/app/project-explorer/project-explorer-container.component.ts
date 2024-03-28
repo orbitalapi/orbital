@@ -60,9 +60,15 @@ export class BaseProjectExplorerContainer {
   template: `
     <app-panel-header title="Projects">
       <div class="spacer"></div>
-      <button tuiButton size="s" appearance="outline" class='button-small menu-bar-button'
-              [routerLink]="['/project-import']">Add a new project
-
+      <button
+        tuiButton
+        size="s"
+        appearance="primary"
+        icon="tuiIconPlus"
+        class='button-small menu-bar-button'
+        [routerLink]="['project-import']"
+      >
+        Add project
       </button>
     </app-panel-header>
     <div class="container">
