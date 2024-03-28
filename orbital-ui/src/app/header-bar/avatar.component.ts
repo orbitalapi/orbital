@@ -8,26 +8,29 @@ import {TUI_PROMPT, TuiPromptData} from "@taiga-ui/kit";
   selector: 'app-avatar',
   styleUrls: ['./avatar.component.scss'],
   template: `
-      <tui-hosted-dropdown [content]="userMenu">
-          <tui-avatar [text]="user.username" [rounded]="true" [autoColor]="true" [avatarUrl]="user.profileUrl"
-                      size="s"></tui-avatar>
-      </tui-hosted-dropdown>
-      <ng-template #userMenu>
-          <tui-data-list>
-              <tui-opt-group [label]="user.username">
-                  <ng-container *ngIf="user?.isAuthenticated">
-                      <a tuiOption type="button"  target="_blank" [href]="authService.securityConfig.accountManagementUrl"
-                         *ngIf="authService.securityConfig.accountManagementUrl">Account settings</a>
-                    <a tuiOption type="button" target="_blank" [href]="authService.securityConfig.orgManagementUrl"
-                       *ngIf="authService.securityConfig.orgManagementUrl">Organisation settings</a>
-                      <button tuiOption (click)="logout()" *ngIf="user?.isAuthenticated">
-                          Logout
-                      </button>
-                  </ng-container>
-
-              </tui-opt-group>
-          </tui-data-list>
-      </ng-template>
+    <tui-hosted-dropdown [content]="userMenu">
+      <div class="user-container">
+        <tui-avatar [text]="user.username" [rounded]="true" [autoColor]="true" [avatarUrl]="user.profileUrl"
+                    size="s"></tui-avatar>
+        <div>{{ user.name }}</div>
+      </div>
+    </tui-hosted-dropdown>
+    <ng-template #userMenu>
+      <tui-data-list>
+        <tui-opt-group [label]="user.username">
+          <ng-container *ngIf="user?.isAuthenticated">
+            <a tuiOption type="button" target="_blank" [href]="authService.securityConfig.accountManagementUrl"
+               *ngIf="authService.securityConfig.accountManagementUrl">Account settings</a>
+            <a tuiOption type="button" target="_blank" [href]="authService.securityConfig.orgManagementUrl"
+               *ngIf="authService.securityConfig.orgManagementUrl">Organisation settings</a>
+            <button tuiOption (click)="logout()" *ngIf="user?.isAuthenticated">
+              <img class="logout-icon filter-black-ish" src="assets/img/tabler/logout.svg">
+              Logout
+            </button>
+          </ng-container>
+        </tui-opt-group>
+      </tui-data-list>
+    </ng-template>
   `,
 
 })
