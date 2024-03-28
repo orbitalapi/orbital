@@ -2,8 +2,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Input } 
 import { SourcePackageDescription } from 'src/app/package-viewer/packages.service';
 import { SchemaImporterService } from 'src/app/project-import/schema-importer.service';
 import { Message } from 'src/app/services/schema';
-import { MatLegacySnackBar as MatSnackBar } from '@angular/material/legacy-snack-bar';
-import { TuiDialogService } from '@taiga-ui/core';
+import { TuiAlertService, TuiDialogService } from '@taiga-ui/core';
 import { TUI_PROMPT } from '@taiga-ui/kit';
 
 @Component({
@@ -39,8 +38,8 @@ export class ProjectSettingsComponent {
   constructor(
     private changeDetector: ChangeDetectorRef,
     private service: SchemaImporterService,
-    private snackbar: MatSnackBar,
-    @Inject(TuiDialogService) private readonly dialogService: TuiDialogService
+    @Inject(TuiDialogService) private readonly dialogService: TuiDialogService,
+    @Inject(TuiAlertService) private readonly alertService: TuiAlertService
   ) {
   }
 
@@ -70,20 +69,21 @@ export class ProjectSettingsComponent {
   removeRepository() {
     this.working = true;
     this.service.removeRepository(this.packageDescription)
-      .subscribe(result => {
-          this.snackbar.open('Project was successfully removed', 'Dismiss', {
-            duration: 5000,
-          });
+      .subscribe({
+        next: result => {
+          this.alertService.open('Project was successfully removed', {status: 'success', autoClose: 5000 })
+            .subscribe()
           this.working = false;
         },
-        error => {
+        error: () => {
           this.deleteResultMessage = {
             message: 'A problem occurred removing the Project',
             level: 'ERROR',
           }
           this.working = false;
           this.changeDetector.markForCheck();
-        })
+        }
+      })
     this.changeDetector.markForCheck();
   }
 
