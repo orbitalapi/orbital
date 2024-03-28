@@ -1,4 +1,15 @@
+import { CommonModule } from '@angular/common';
 import {Component, EventEmitter, Input, Output} from '@angular/core';
+import { TuiButtonModule, TuiErrorModule } from '@taiga-ui/core';
+import {
+  TuiComboBoxModule,
+  TuiDataListWrapperModule,
+  TuiFieldErrorPipeModule,
+  TuiFilterByInputPipeModule,
+  TuiInputModule, TuiProgressModule, TuiStringifyContentPipeModule
+} from '@taiga-ui/kit';
+import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
+import { ProjectSelectorModule } from '../project-selector/project-selector.module';
 import {
   ConnectionDriverConfigOptions,
   ConnectionStatus,
@@ -7,9 +18,14 @@ import {
   DbConnectionService,
   JdbcConnectionConfiguration
 } from './db-importer.service';
-import {DynamicFormComponentSpec, InputType} from './dynamic-form-component.component';
-import {FormGroup, UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
-// import {TuiInputModeT, TuiInputTypeT} from '@taiga-ui/cdk';
+import { DynamicFormComponentComponent, DynamicFormComponentSpec, InputType } from './dynamic-form-component.component';
+import {
+  FormsModule,
+  ReactiveFormsModule,
+  UntypedFormControl,
+  UntypedFormGroup,
+  Validators
+} from '@angular/forms';
 import {isNullOrUndefined} from 'util';
 import {SourcePackageDescription} from "../package-viewer/packages.service";
 import {Observable} from "rxjs";
@@ -19,7 +35,25 @@ export type ConnectionEditorMode = 'create' | 'edit';
 @Component({
   selector: 'app-connection-editor',
   templateUrl: './connection-editor.component.html',
-  styleUrls: ['./connection-editor.component.scss']
+  styleUrls: ['./connection-editor.component.scss'],
+  imports: [
+    CommonModule,
+    HeaderComponentLayoutModule,
+    ProjectSelectorModule,
+    ReactiveFormsModule,
+    TuiInputModule,
+    TuiErrorModule,
+    TuiComboBoxModule,
+    TuiDataListWrapperModule,
+    TuiFieldErrorPipeModule,
+    TuiFilterByInputPipeModule,
+    DynamicFormComponentComponent,
+    TuiButtonModule,
+    TuiProgressModule,
+    TuiStringifyContentPipeModule,
+    FormsModule
+  ],
+  standalone: true
 })
 export class ConnectionEditorComponent {
   selectedDriver: ConnectionDriverConfigOptions;

@@ -1,4 +1,7 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import { MatMenuModule } from '@angular/material/menu';
+import { RouterLink } from '@angular/router';
 import {MappedTable} from './db-importer.service';
 
 @Component({
@@ -27,7 +30,8 @@ import {MappedTable} from './db-importer.service';
             <button mat-stroked-button [mat-menu-trigger-for]="mappingTypeMenu">Add mapping</button>
             <mat-menu #mappingTypeMenu="matMenu">
               <button mat-menu-item (click)="createMappingToExistingType(table)">To existing model...</button>
-              <button [routerLink]="[table.table.schemaName, table.table.tableName]"  mat-menu-item>To new model...</button>
+              <button [routerLink]="[table.table.schemaName, table.table.tableName]" mat-menu-item>To new model...
+              </button>
             </mat-menu>
           </div>
         </td>
@@ -35,6 +39,12 @@ import {MappedTable} from './db-importer.service';
       </tbody>
     </table>
   `,
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterLink,
+    MatMenuModule
+  ],
   styleUrls: ['./table-selector.component.scss']
 })
 export class TableSelectorComponent {

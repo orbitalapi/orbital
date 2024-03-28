@@ -1,4 +1,8 @@
+import { CommonModule } from '@angular/common';
 import {Component, EventEmitter, Input, Output} from '@angular/core';
+import { MatLegacyFormFieldModule } from '@angular/material/legacy-form-field';
+import { MatLegacyProgressBarModule } from '@angular/material/legacy-progress-bar';
+import { AgGridModule } from 'ag-grid-angular';
 import {ColumnMapping, JdbcTable, TableMetadata, TableModelMapping} from './db-importer.service';
 import {ColDef, ValueFormatterParams, ValueGetterParams, ValueSetterParams} from 'ag-grid-community';
 import {Schema, Type} from '../services/schema';
@@ -7,7 +11,7 @@ import {CheckboxCellEditorComponent} from './checkbox-cell-editor.component';
 import {Observable} from 'rxjs/internal/Observable';
 import {Subscription} from 'rxjs';
 import {GridApi} from 'ag-grid-community/dist/lib/gridApi';
-import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
+import { ReactiveFormsModule, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import {validNamespace, validTypeName} from '../services/validators';
 import {
   ConfirmationAction,
@@ -22,7 +26,7 @@ import { NewTypeSpec } from 'src/app/type-editor/new-type-spec';
 @Component({
   selector: 'app-table-importer',
   template: `
-    <h2>Create a model for table {{table?.tableName}}</h2>
+    <h2>Create a model for table {{ table?.tableName }}</h2>
     <div class="form-container">
       <div class="form-body" [formGroup]="tableSpecFormGroup">
         <div class="form-row">
@@ -119,19 +123,28 @@ import { NewTypeSpec } from 'src/app/type-editor/new-type-spec';
     </div>
 
     <div class="error-message-box" *ngIf="errorMessage">
-      {{errorMessage}}
+      {{ errorMessage }}
     </div>
     <div class="toolbar">
       <button *ngIf="tableMetadata && tableMetadata.mappedType " mat-flat-button color="warn"
               [disabled]="saveSchemaWorking"
-              (click)="doRemoveMapping()">Remove mapping to {{ tableMetadata.mappedType.shortDisplayName }}</button>
+              (click)="doRemoveMapping()">Remove mapping to {{ tableMetadata.mappedType.shortDisplayName }}
+      </button>
       <button mat-flat-button color="primary" (click)="doSave()"
               [disabled]="tableSpecFormGroup.invalid || saveSchemaWorking">Save
       </button>
       <mat-progress-bar mode="indeterminate" *ngIf="saveSchemaWorking"></mat-progress-bar>
     </div>
   `,
-  styleUrls: ['./table-importer.component.scss']
+  styleUrls: ['./table-importer.component.scss'],
+  imports: [
+    CommonModule,
+    MatLegacyProgressBarModule,
+    AgGridModule,
+    MatLegacyFormFieldModule,
+    ReactiveFormsModule
+  ],
+  standalone: true
 })
 export class TableImporterComponent {
 

@@ -1,6 +1,5 @@
 import {moduleMetadata, storiesOf} from '@storybook/angular';
 import {RouterTestingModule} from '@angular/router/testing';
-import {ConnectionManagerModule} from './connection-manager.module';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {HttpClientTestingModule} from '@angular/common/http/testing';
@@ -8,7 +7,7 @@ import {HttpClientTestingModule} from '@angular/common/http/testing';
 storiesOf('Connection manager', module)
   .addDecorator(
     moduleMetadata({
-      imports: [ConnectionManagerModule, BrowserModule, BrowserAnimationsModule, HttpClientTestingModule, RouterTestingModule]
+      imports: [BrowserModule, BrowserAnimationsModule, HttpClientTestingModule, RouterTestingModule]
       ,
     })
   )
@@ -16,7 +15,7 @@ storiesOf('Connection manager', module)
     return {
       template: `
         <div style="margin: 20px">
-          <app-connection-manager></app-connection-manager>
+          <app-data-source-manager></app-data-source-manager>
         </div>
       `
     };

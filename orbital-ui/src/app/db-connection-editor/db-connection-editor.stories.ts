@@ -1,5 +1,4 @@
 import {moduleMetadata, storiesOf} from '@storybook/angular';
-import {DbConnectionEditorModule} from './db-connection-editor.module';
 import {DbConnectionService, ConnectionDriverConfigOptions, MappedTable, TableMetadata} from './db-importer.service';
 import {QualifiedName} from '../services/schema';
 import {testSchema} from '../object-view/test-schema';
@@ -100,7 +99,7 @@ storiesOf('Db Connection Editor', module)
   .addDecorator(
     moduleMetadata({
       declarations: [],
-      imports: [DbConnectionEditorModule, HttpClientTestingModule, RouterTestingModule, TuiRootModule],
+      imports: [HttpClientTestingModule, RouterTestingModule, TuiRootModule],
       providers: [DbConnectionService]
     })
   ).add('Connection editor', () => ({

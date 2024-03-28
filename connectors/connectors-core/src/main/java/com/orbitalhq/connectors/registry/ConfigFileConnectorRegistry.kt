@@ -119,17 +119,19 @@ data class ConnectorConfigurationSummary(
    val driverName: String,
    val properties: Map<String, Any>,
    val packageIdentifier: PackageIdentifier,
-   val connectionStatus: ConnectionStatus
+   val connectionStatus: ConnectionStatus,
+   val usages: List<SchemaMemberReference>?
 ) {
    constructor(
       packageIdentifier: PackageIdentifier,
       config: ConnectorConfiguration,
       connectionStatus: ConnectionStatus = ConnectionStatus.unknown(),
-      connectionUIDisplayProvider: ConnectionUIDisplayProvider? = null
+      connectionUIDisplayProvider: ConnectionUIDisplayProvider? = null,
+      usages: List<SchemaMemberReference>? = null
    ) : this(
       config.connectionName, config.type, config.driverName,
       connectionUIDisplayProvider?.uiProps(config) ?: config.getUiDisplayProperties(),
-      packageIdentifier, connectionStatus
+      packageIdentifier, connectionStatus, usages
    )
 }
 

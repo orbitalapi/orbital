@@ -17,7 +17,7 @@ import {NgApexchartsModule} from "ng-apexcharts";
 import {FormsModule} from "@angular/forms";
 import {TuiDataListModule, TuiNotificationModule, TuiTextfieldControllerModule} from "@taiga-ui/core";
 import {UiCustomisations} from '../../environments/ui-customisations';
-import {ConnectionStatusComponent} from "../connection-manager/connection-status.component";
+import {ConnectionStatusComponent} from "../data-source-manager/connection-status/connection-status.component";
 
 @NgModule({
   declarations: [

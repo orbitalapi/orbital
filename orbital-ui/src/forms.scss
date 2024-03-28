@@ -5,8 +5,8 @@
   // screen - max-width, in a flex with margin:auto
   // seems to work better.
   //width: 50vw;
-  max-width: 1200px;
-
+  // JL 27/3/24 Unsetting this, be on the lookout for forms that now aren't constrained by the parent they live within
+  //max-width: 1200px;
 }
 
 .form-body {

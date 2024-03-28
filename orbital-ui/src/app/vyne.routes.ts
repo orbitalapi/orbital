@@ -26,7 +26,7 @@ export const VYNE_ROUTES = RouterModule.forRoot(
     },
     {
       path: 'services',
-      loadChildren: () => import('./service-view/service-view.module').then(m => m.ServiceViewModule),
+      loadChildren: () => import('./service-view/service-view.routes').then(m => m.serviceViewRoutes),
       canActivate: [AuthGuard],
       data: {requiredAuthority: VynePrivileges.BrowseCatalog},
       title: `${UiCustomisations.productName}: Services`
@@ -71,7 +71,11 @@ export const VYNE_ROUTES = RouterModule.forRoot(
     },
     {
       path: 'connection-manager',
-      loadChildren: () => import('./connection-manager/connection-manager.module').then(m => m.ConnectionManagerModule),
+      redirectTo: 'data-source-manager'
+    },
+    {
+      path: 'data-source-manager',
+      loadChildren: () => import('./data-source-manager/data-source-manager.routes').then(m => m.dataSourceManagerRoutes),
       canActivate: [AuthGuard],
       data: {requiredAuthority: VynePrivileges.ViewConnections}
     },

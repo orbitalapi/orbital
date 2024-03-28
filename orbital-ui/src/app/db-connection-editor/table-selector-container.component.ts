@@ -1,15 +1,22 @@
-import {Component, OnInit} from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import {Component} from '@angular/core';
 import {DbConnectionService, MappedTable} from './db-importer.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {mergeMap} from 'rxjs/operators';
 import {Observable} from 'rxjs/index';
+import { TableSelectorComponent } from './table-selector.component';
 
 @Component({
   selector: 'app-table-selector-container',
   template: `
     <app-table-selector [tables]="tables | async" (mapToNewModel)="importNewTable($event)"></app-table-selector>
   `,
-  styleUrls: ['./table-selector-container.component.scss']
+  styleUrls: ['./table-selector-container.component.scss'],
+  imports: [
+    AsyncPipe,
+    TableSelectorComponent
+  ],
+  standalone: true
 })
 export class TableSelectorContainerComponent {
 

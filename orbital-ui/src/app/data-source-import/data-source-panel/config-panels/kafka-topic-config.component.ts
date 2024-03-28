@@ -15,7 +15,6 @@ import { PackageIdentifier } from '../../../package-viewer/packages.service';
 import { UiCustomisations } from '../../../../environments/ui-customisations';
 import { ConnectionFiltersModule } from '../../../utils/connections.pipe';
 import { TypeAutocompleteModule } from '../../../type-autocomplete/type-autocomplete.module';
-import { DbConnectionEditorModule } from '../../../db-connection-editor/db-connection-editor.module';
 import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
 
 @Component({
@@ -32,7 +31,6 @@ import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
     TuiSvgModule,
     ConnectionFiltersModule,
     TypeAutocompleteModule,
-    DbConnectionEditorModule
   ],
   template: `
     <div class="form-container">

@@ -1,20 +1,20 @@
-import {Component, OnInit} from '@angular/core';
+import {Component} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {
-  ColumnMapping,
   DbConnectionService,
   JdbcTable, NewOrExistingTypeName,
   TableMetadata, TableModelMapping,
-  TableModelSubmissionRequest, TableTaxiGenerationRequest
+  TableModelSubmissionRequest
 } from './db-importer.service';
-import {flatMap, map, mergeMap} from 'rxjs/operators';
+import {map, mergeMap} from 'rxjs/operators';
 import {Observable, of, Subject} from 'rxjs';
 import {SchemaSubmissionResult, TypesService} from '../services/types.service';
-import {findType, Schema, Type, VersionedSource} from '../services/schema';
+import {Schema, Type, VersionedSource} from '../services/schema';
 import {isNullOrUndefined} from 'util';
 import {HttpErrorResponse} from '@angular/common/http';
 import {MatLegacySnackBar as MatSnackBar} from '@angular/material/legacy-snack-bar';
 import { NewTypeSpec, qualifiedName } from 'src/app/type-editor/new-type-spec';
+import { TableImporterComponent } from './table-importer.component';
 
 @Component({
   selector: 'app-table-importer-container',
@@ -31,7 +31,11 @@ import { NewTypeSpec, qualifiedName } from 'src/app/type-editor/new-type-spec';
       [saveSchemaWorking]="saveSchemaWorking"
       [tableMetadata$]="tableMetadata$"></app-table-importer>
   `,
-  styleUrls: ['./table-importer-container.component.scss']
+  styleUrls: ['./table-importer-container.component.scss'],
+  imports: [
+    TableImporterComponent
+  ],
+  standalone: true
 })
 export class TableImporterContainerComponent {
   tableMetadata$ = new Subject<TableMetadata>();

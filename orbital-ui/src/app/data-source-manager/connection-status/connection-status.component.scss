@@ -1,0 +1,16 @@
+@import "src/common";
+
+.status {
+  display: flex;
+  align-items: center;
+}
+
+tui-badge {
+  margin: 0 0.15rem 0 0.5rem;
+}
+
+.timestamp {
+  font-size: 0.75rem;
+  color: $slate-500;
+  margin-left: 0.25rem;
+}

@@ -91,8 +91,8 @@ export class DbConnectionService {
     return this.http.get<ConnectorConfigDetail>(`${environment.serverUrl}/api/connections/${packageUri}/${name}`);
   }
 
-  getConnections(): Observable<ConnectionsListResponse> {
-    return this.http.get<ConnectionsListResponse>(`${environment.serverUrl}/api/connections`);
+  getConnections(withUsages?: boolean): Observable<ConnectionsListResponse> {
+    return this.http.get<ConnectionsListResponse>(`${environment.serverUrl}/api/connections?withUsages=${withUsages ? 'true' : 'false'}`);
   }
 
   testConnection(packageIdentifier: PackageIdentifier, connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration | AwsConnectionConfiguration): Observable<ConnectionStatus> {
@@ -176,6 +176,7 @@ export interface ConnectorSummary {
   properties: { [index: string]: string }
   packageIdentifier: PackageIdentifier;
   connectionStatus: ConnectionStatus;
+  usages?: SchemaMemberReference[]
 }
 
 export interface ConnectionStatus {
