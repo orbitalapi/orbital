@@ -1,3 +1,13 @@
-tui-avatar {
+@import "src/common";
+
+.user-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   cursor: pointer;
+}
+
+.logout-icon {
+  width: 24px;
+  margin-right: 0.5rem;
 }
