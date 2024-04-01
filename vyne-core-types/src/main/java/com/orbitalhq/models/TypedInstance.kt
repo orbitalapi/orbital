@@ -174,7 +174,24 @@ interface TypedInstance {
                   metadata
                )
             }
-
+            value is Array<*> -> {
+               val list = (value as Array<Any>).toList()
+               from(
+                  type,
+                  list,
+                  schema,
+                  performTypeConversions,
+                  nullValues,
+                  source,
+                  evaluateAccessors,
+                  functionRegistry,
+                  formatSpecs,
+                  inPlaceQueryEngine,
+                  parsingErrorBehaviour,
+                  format,
+                  metadata
+               )
+            }
             value is Collection<*> -> {
                if (!type.isCollection) {
                   val errorMessage = "Provided value is a collection, but the declared type ${type.name.parameterizedName} is not"
@@ -182,7 +199,7 @@ interface TypedInstance {
                   return TypedNull.create(type, source = FailedParsingSource(value, errorMessage))
                }
                val collectionMemberType = getCollectionType(type)
-               TypedCollection.arrayOf(
+               val collectionValue = TypedCollection.arrayOf(
                   collectionMemberType,
                   value.filterNotNull().map {
                      from(
@@ -202,6 +219,7 @@ interface TypedInstance {
                   },
                   source
                )
+               collectionValue
             }
 
             type.isEnum -> {
@@ -283,4 +301,8 @@ interface TypedInstance {
          return instance?.value == null || instance.value is TypedNull
       }
    }
+}
+
+fun TypedInstance.containsMetadata(name: String): Boolean {
+   return this.metadata.containsKey(name)
 }

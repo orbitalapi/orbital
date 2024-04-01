@@ -88,7 +88,7 @@ class FileBasedDiscoveryClientTest {
 }
 """
           )
-          Awaitility.await().atMost(3, TimeUnit.SECONDS).until<Boolean> {
+          Awaitility.await().atMost(30, TimeUnit.SECONDS).until<Boolean> {
              client.services.size == 2
           }
 

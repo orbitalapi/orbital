@@ -133,7 +133,7 @@ fun testVyneWithStub(
    schemas: List<String>,
    invokerProvider: (TaxiSchema) -> List<OperationInvoker>
 ): Pair<Vyne, StubService> {
-   val schema = TaxiSchema.fromStrings(schemas).withBuiltIns()
+   val schema = TaxiSchema.fromStrings(schemas, onErrorBehaviour = TaxiSchema.Companion.TaxiSchemaErrorBehaviour.THROW_EXCEPTION).withBuiltIns()
    val invokers = invokerProvider(schema)
    return testVyneWithStub(schema, invokers)
 }

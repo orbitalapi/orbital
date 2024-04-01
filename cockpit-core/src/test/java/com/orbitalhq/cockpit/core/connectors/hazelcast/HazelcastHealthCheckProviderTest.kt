@@ -2,6 +2,9 @@ package com.orbitalhq.cockpit.core.connectors.hazelcast
 
 import com.hazelcast.client.test.TestHazelcastFactory
 import com.hazelcast.core.HazelcastInstance
+import com.nhaarman.mockito_kotlin.any
+import com.nhaarman.mockito_kotlin.doReturn
+import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
 import com.orbitalhq.connectors.hazelcast.HazelcastInstanceProvider
 import com.orbitalhq.connections.ConnectionStatus
@@ -22,11 +25,11 @@ class HazelcastHealthCheckProviderTest: DescribeSpec({
          addresses = listOf("$host:$port"))
 
       it("should check health") {
-         val hazelcastHealthCheckProvider = HazelcastHealthCheckProvider(object : HazelcastInstanceProvider {
-            override fun provide(config: HazelcastConfiguration): HazelcastInstance {
-               return hazelcastInstanceFactory.newHazelcastClient()
-            }
-         })
+
+         val instanceProvider = mock<HazelcastInstanceProvider> {
+            on { provide(any()) } doReturn hazelcastInstanceFactory.newHazelcastClient()
+         }
+         val hazelcastHealthCheckProvider = HazelcastHealthCheckProvider(instanceProvider)
          hazelcastHealthCheckProvider.canProvideFor(hazelcastConfiguration).shouldBeTrue()
          StepVerifier.create(
             hazelcastHealthCheckProvider
