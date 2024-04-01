@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
@@ -34,7 +35,9 @@ import org.springframework.context.annotation.Import
 import java.util.concurrent.TimeUnit
 
 @SpringBootApplication(
-   scanBasePackageClasses = [OrbitalStationApp::class, VersionedSourceLoader::class]
+   scanBasePackageClasses = [OrbitalStationApp::class, VersionedSourceLoader::class],
+   exclude = [MongoReactiveAutoConfiguration::class]
+
 )
 @EnableConfigurationProperties(
    VyneSpringCacheConfiguration::class,
