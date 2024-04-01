@@ -1,6 +1,7 @@
 package com.orbitalhq.connectors.jdbc
 
 import com.google.common.base.Stopwatch
+import com.orbitalhq.connectors.getTaxiQlQuery
 import com.orbitalhq.connectors.jdbc.sql.dml.SelectStatementGenerator
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.ConstructedQueryDataSource
@@ -32,7 +33,7 @@ class JdbcQueryInvoker(
       val (connectionConfig, jdbcTemplate) = getConnectionConfigAndTemplate(service)
       val schema = schemaProvider.schema
       val taxiSchema = schema.taxi
-      val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
+      val (taxiQuery, constructedQueryDataSource) = parameters.getTaxiQlQuery()
       val (query, _) = schema.parseQuery(taxiQuery)
 //      val query = Compiler(taxiQuery, importSources = listOf(taxiSchema)).queries().first()
       val (sql, paramList) = SelectStatementGenerator(taxiSchema).toSql(query, connectionConfig.sqlBuilder())

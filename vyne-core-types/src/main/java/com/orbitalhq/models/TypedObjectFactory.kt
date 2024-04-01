@@ -84,12 +84,6 @@ class TypedObjectFactory(
       }
    }
 
-   init {
-      if (type.isCollection) {
-//         logger.warn { "TypedObjectFactory constructed for scalar type ${type.qualifiedName.shortDisplayName} - TypedObjectFactory is intended for object types - this probably indicates an upstream bug" }
-      }
-   }
-
    /**
     * Even if evaluateAccessors is globally true, we sometimes want to
     * disable accessor evaluation temporarily.
