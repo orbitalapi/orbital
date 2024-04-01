@@ -3,29 +3,6 @@ package com.orbitalhq.schemaServer.repositories
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schemaServer.packages.PackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
-import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import reactivefeign.spring.config.ReactiveFeignClient
-import reactor.core.publisher.Mono
-
-@ReactiveFeignClient("\${vyne.schema-server-repositories.name:schema-server}", qualifier = "repositoryFeignClient")
-interface WorkspaceServiceApi {
-
-   @PostMapping("/api/repositories/file")
-   fun createFileRepository(@RequestBody request: CreateFileProjectStoreRequest): Mono<Unit>
-
-   @PostMapping("/api/repositories/file/test")
-   fun testFileProjectStore(@RequestBody request: FileProjectStoreTestRequest): Mono<FileProjectStoreTestResponse>
-
-
-   @PostMapping("/api/repositories/git")
-   fun createGitProjectStore(@RequestBody request: GitProjectStoreChangeRequest): Mono<Unit>
-
-   @PostMapping("/api/repositories/git/test")
-   fun testGitConnection(@RequestBody request: GitConnectionTestRequest): Mono<GitConnectionTestResult>
-
-}
 
 data class FileProjectStoreTestRequest(
    val path: String

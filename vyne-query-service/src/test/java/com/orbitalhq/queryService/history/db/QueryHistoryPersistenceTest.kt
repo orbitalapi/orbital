@@ -33,6 +33,8 @@ import com.orbitalhq.query.runtime.core.monitor.ActiveQueryController
 import com.orbitalhq.queryService.BaseQueryServiceTest
 import com.orbitalhq.queryService.TestSpringConfig
 import com.orbitalhq.schema.api.SimpleSchemaProvider
+import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
+import com.orbitalhq.schemaServer.core.packages.PackageService
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
@@ -140,6 +142,12 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
    @Autowired
    lateinit var activeQueryController: ActiveQueryController
+
+   @MockBean
+   lateinit var packagesService: PackageService
+
+   @MockBean
+   lateinit var schemaEditorService: SchemaEditorService
 
    @Rule
    @JvmField

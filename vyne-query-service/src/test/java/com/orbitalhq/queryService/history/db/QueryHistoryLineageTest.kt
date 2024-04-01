@@ -17,6 +17,8 @@ import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
 import com.orbitalhq.queryService.TestSpringConfig
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.api.SimpleSchemaProvider
+import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
+import com.orbitalhq.schemaServer.core.packages.PackageService
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
@@ -75,6 +77,12 @@ class QueryHistoryLineageTest {
 
    @MockBean
    lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
+
+   @MockBean
+   lateinit var packagesService: PackageService
+
+   @MockBean
+   lateinit var schemaEditorService: SchemaEditorService
 
    @MockBean
    lateinit var configLoader : WorkspaceConfigLoader

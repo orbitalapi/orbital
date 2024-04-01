@@ -1,7 +1,6 @@
 package com.orbitalhq.schemaServer.core.codegen
 
 import com.orbitalhq.schema.consumer.SchemaStore
-import com.orbitalhq.schemaServer.codegen.CodeGenApi
 import lang.taxi.generators.TaxiProjectEnvironment
 import lang.taxi.generators.typescript.TypeScriptGenerator
 import lang.taxi.packages.TaxiPackageProject
@@ -15,13 +14,13 @@ import java.nio.file.Path
 @RestController
 class CodeGenService(
    private val schemaStore: SchemaStore
-) : CodeGenApi {
+)  {
    companion object {
       private val logger = KotlinLogging.logger {}
    }
 
    @GetMapping("/api/taxonomy/typescript")
-   override fun getTypeScriptTaxonomy(): Mono<String> {
+   fun getTypeScriptTaxonomy(): Mono<String> {
       return Mono.create { sink ->
          val taxonomy = TypeScriptGenerator().generate(schemaStore.schemaSet.schema.taxi, emptyList(), MockEnvironment)
 

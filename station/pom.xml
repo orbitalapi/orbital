@@ -36,6 +36,10 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+      </dependency>
+      <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>query-node-core</artifactId>
          <version>${project.version}</version>

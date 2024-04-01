@@ -5,7 +5,6 @@ import com.orbitalhq.schemas.SchemaSetChangedEvent
 import mu.KotlinLogging
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 

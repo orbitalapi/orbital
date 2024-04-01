@@ -16,6 +16,8 @@ import com.orbitalhq.query.runtime.core.QueryService
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schema.spring.SimpleTaxiSchemaProvider
+import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
+import com.orbitalhq.schemaServer.core.packages.PackageService
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
@@ -64,6 +66,11 @@ class OperationAuthenticationIntegrationTest : DatabaseTest() {
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
+   @MockBean
+   lateinit var packagesService: PackageService
+
+   @MockBean
+   lateinit var schemaEditorService: SchemaEditorService
 
    @MockBean
    lateinit var queryMetricsReporter: QueryMetricsReporter

@@ -15,6 +15,8 @@ import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseJsonModel
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
+import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
+import com.orbitalhq.schemaServer.core.packages.PackageService
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
@@ -61,6 +63,11 @@ class VyneQueryIntegrationTest : DatabaseTest() {
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
+   @MockBean
+   lateinit var packagesService: PackageService
+
+   @MockBean
+   lateinit var schemaEditorService: SchemaEditorService
 
    @MockBean
    lateinit var queryMetricsReporter: QueryMetricsReporter

@@ -5,7 +5,6 @@ import com.orbitalhq.schema.spring.config.SchemaConfigProperties.Companion.SCHEM
 import com.orbitalhq.schema.spring.config.SchemaTransportConfigProperties
 import com.orbitalhq.schema.spring.config.consumer.SchemaConsumerConfigProperties.Companion.CONSUMER_CONFIG
 import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.boot.context.properties.ConstructorBinding
 
 //@ConstructorBinding
 @ConfigurationProperties(prefix = CONSUMER_CONFIG)

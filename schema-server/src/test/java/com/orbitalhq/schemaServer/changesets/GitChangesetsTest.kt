@@ -7,6 +7,7 @@ import com.winterbe.expekt.expect
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.schema.consumer.SchemaStore
+import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
 import com.orbitalhq.schemaServer.core.file.FileChangeDetectionMethod
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoaderFactory
@@ -68,7 +69,7 @@ const val descriptionUpdate = """namespace film.types {
 @SpringBootTest(properties = ["spring.main.allow-bean-definition-overriding=true"])
 class GitChangesetsTest {
    @Autowired
-   private lateinit var schemaEditorApi: SchemaEditorApi
+   private lateinit var schemaEditorApi: SchemaEditorService
 
    @Autowired
    private lateinit var gitLoaderFactory: GitSchemaPackageLoaderFactory

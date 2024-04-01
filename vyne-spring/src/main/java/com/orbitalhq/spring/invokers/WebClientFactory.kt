@@ -16,26 +16,28 @@ import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
 
-class WebClientFactory(private val webClientBuilder: WebClient.Builder,
-                       private val authRequestCustomizer: AuthWebClientCustomizer) {
+class WebClientFactory(
+   private val webClientBuilder: WebClient.Builder,
+   private val authRequestCustomizer: AuthWebClientCustomizer
+) {
    // Map of WebClient per SSL Context.
    private val sslWebClientCache = CacheBuilder.newBuilder()
       .maximumSize(50)
-      .removalListener<MutualTls, WebClient> {  removeNotification ->
+      .removalListener<MutualTls, WebClient> { removeNotification ->
          logger.info { "WebClient for mTls context ${removeNotification.key} removed from cache." }
-      }.build(object: CacheLoader<MutualTls, WebClient>() {
+      }.build(object : CacheLoader<MutualTls, WebClient>() {
          override fun load(mutualTls: MutualTls): WebClient {
-           return  webClientBuilder.exchangeStrategies(exchangeStrategies)
+            return webClientBuilder.exchangeStrategies(exchangeStrategies)
                .clientConnector(authRequestCustomizer.reactorClientHttpConnector(mutualTls))
                .filter(authRequestCustomizer.authFromServiceNameAttribute)
-              .filter(HeaderCapturingExchangeFunction)
+               .filter(HeaderCapturingExchangeFunction)
                .build()
          }
       })
 
-   private val exchangeStrategies =  ExchangeStrategies
+   private val exchangeStrategies = ExchangeStrategies
       .builder()
       .codecs { it.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) }.build()
 
@@ -52,11 +54,11 @@ class WebClientFactory(private val webClientBuilder: WebClient.Builder,
       .build()
 
    fun webClientFor(service: Service): WebClient {
-      val sslWebClient =  authRequestCustomizer
+      val sslWebClient = authRequestCustomizer
          .mutualMtlsAuthScheme(service.fullyQualifiedName)?.let { mutualTls ->
-          sslWebClientCache.get(mutualTls)
-      }
-      return  sslWebClient ?: nonSslContextWebClient
+            sslWebClientCache.get(mutualTls)
+         }
+      return sslWebClient ?: nonSslContextWebClient
    }
 }
 
@@ -70,4 +72,5 @@ object HeaderCapturingExchangeFunction : ExchangeFilterFunction {
 
 }
 
-data class ResponseWithRequestHeaders(val requestHeaders: HttpHeaders, private val response: ClientResponse) : ClientResponse by response
+data class ResponseWithRequestHeaders(val requestHeaders: HttpHeaders, private val response: ClientResponse) :
+   ClientResponse by response

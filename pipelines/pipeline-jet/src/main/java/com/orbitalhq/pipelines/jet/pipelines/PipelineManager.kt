@@ -6,7 +6,11 @@ import com.hazelcast.jet.Util
 import com.hazelcast.jet.core.JobNotFoundException
 import com.hazelcast.map.IMap
 import com.hazelcast.query.Predicates
-import com.orbitalhq.pipelines.jet.api.*
+import com.orbitalhq.pipelines.jet.api.JobStatus
+import com.orbitalhq.pipelines.jet.api.PipelineMetrics
+import com.orbitalhq.pipelines.jet.api.PipelineStatus
+import com.orbitalhq.pipelines.jet.api.RunningPipelineSummary
+import com.orbitalhq.pipelines.jet.api.SubmittedPipeline
 import com.orbitalhq.pipelines.jet.api.transport.PipelineKind
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportSpec
@@ -15,15 +19,15 @@ import com.orbitalhq.pipelines.jet.api.transport.log.LogLevel
 import com.orbitalhq.pipelines.jet.api.transport.log.LoggingOutputSpec
 import com.orbitalhq.pipelines.jet.api.transport.query.StreamingQueryInputSpec
 import com.orbitalhq.pipelines.jet.badRequest
-import com.orbitalhq.pipelines.jet.source.next
 import com.orbitalhq.pipelines.jet.streams.ManagedStream
 import com.orbitalhq.schemas.QualifiedName
 import mu.KotlinLogging
 import org.springframework.scheduling.annotation.Scheduled
-import org.springframework.scheduling.support.CronSequenceGenerator
+import org.springframework.scheduling.support.CronExpression
 import org.springframework.stereotype.Component
 import java.io.Serializable
 import java.time.Instant
+import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
 
 
@@ -136,8 +140,8 @@ class PipelineManager(
       pipelineDotRepresentation: String,
       jobId: Long? = null
    ): SubmittedPipeline {
-      val schedule = CronSequenceGenerator(pipelineSpec.input.pollSchedule)
-      val nextScheduledRunTime = schedule.next(Instant.now())
+      val schedule = CronExpression.parse(pipelineSpec.input.pollSchedule)
+      val nextScheduledRunTime = schedule.next(ZonedDateTime.now())!!.toInstant()
       logger.info("The pipeline \"${pipelineSpec.name}\" is next scheduled to run at ${nextScheduledRunTime}.")
       val submittedPipeline = SubmittedPipeline(
          pipelineSpec.name,

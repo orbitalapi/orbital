@@ -12,6 +12,8 @@ import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.queryService.TestSchemaProvider
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
+import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
+import com.orbitalhq.schemaServer.core.packages.PackageService
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
@@ -221,6 +223,12 @@ class VyneQuerySamlIntegrationTest {
 
    @MockBean
    lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
+
+   @MockBean
+   lateinit var packagesService: PackageService
+
+   @MockBean
+   lateinit var schemaEditorService: SchemaEditorService
 
    /**
     * see "authorisation/user-role-mappings.conf" in resources.
