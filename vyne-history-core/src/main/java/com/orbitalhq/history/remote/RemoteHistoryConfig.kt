@@ -1,7 +1,6 @@
 package com.orbitalhq.history.remote
 
 import com.orbitalhq.history.QueryAnalyticsConfig
-import com.orbitalhq.history.api.QueryHistoryServiceRestApi
 import com.orbitalhq.history.codec.VyneHistoryRecordDecoder
 import com.orbitalhq.history.codec.VyneHistoryRecordObjectEncoder
 import com.orbitalhq.query.HistoryEventConsumerProvider
@@ -12,14 +11,12 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.messaging.rsocket.RSocketStrategies
 import org.springframework.web.util.pattern.PathPatternRouteMatcher
-import reactivefeign.spring.config.EnableReactiveFeignClients
 
 /**
  * Activated when Query history is pushed to a remote server for persistence.
  */
 @ConditionalOnProperty(prefix = "vyne.analytics", name = ["mode"], havingValue = "Remote", matchIfMissing = false)
 @Configuration
-@EnableReactiveFeignClients(clients = [QueryHistoryServiceRestApi::class])
 class RemoteHistoryConfig {
 
    companion object {

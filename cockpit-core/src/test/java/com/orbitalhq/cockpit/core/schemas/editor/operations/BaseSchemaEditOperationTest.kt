@@ -15,9 +15,9 @@ import com.orbitalhq.cockpit.core.schemas.editor.LocalSchemaEditingService
 import com.orbitalhq.cockpit.core.schemas.editor.SchemaSubmissionResult
 import com.orbitalhq.schema.publisher.PublisherHealth
 import com.orbitalhq.schema.publisher.PublisherType
-import com.orbitalhq.schemaServer.editor.SchemaEditorApi
+import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
+import com.orbitalhq.schemaServer.core.packages.PackageService
 import com.orbitalhq.schemaServer.packages.PackageWithDescription
-import com.orbitalhq.schemaServer.packages.PackagesServiceApi
 import com.orbitalhq.schemaServer.packages.SourcePackageDescription
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import org.junit.jupiter.api.BeforeEach
@@ -27,8 +27,8 @@ abstract class BaseSchemaEditOperationTest {
    protected lateinit var editorService: LocalSchemaEditingService
    lateinit var schemaStore: LocalValidatingSchemaStoreClient
 
-   protected val schemaEditorApi = mock<SchemaEditorApi> { }
-   protected val packagesServiceApi = mock<PackagesServiceApi> { }
+   protected val schemaEditorApi = mock<SchemaEditorService> { }
+   protected val packagesServiceApi = mock<PackageService> { }
    protected val objectMapper = jacksonObjectMapper()
 
    @BeforeEach

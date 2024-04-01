@@ -12,7 +12,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
-import reactivefeign.spring.config.EnableReactiveFeignClients
 
 
 @Configuration
@@ -33,14 +32,3 @@ class PipelineConfig {
    fun pipelineModule(): PipelineJacksonModule = PipelineJacksonModule()
 }
 
-@Configuration
-@EnableReactiveFeignClients(
-   clients = [
-      PipelineApi::class,
-//      SchemaEditorApi::class,
-//      PackagesServiceApi::class,
-//      RepositoryServiceApi::class,
-//      ChangelogApi::class
-   ]
-)
-class FeignConfig

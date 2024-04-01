@@ -17,8 +17,8 @@
     <dependencies>
         <dependency>
             <groupId>io.hypersistence</groupId>
-            <artifactId>hypersistence-utils-hibernate-60</artifactId>
-            <version>3.5.0</version>
+            <artifactId>hypersistence-utils-hibernate-63</artifactId>
+            <version>3.7.3</version>
         </dependency>
         <dependency>
             <groupId>org.hibernate</groupId>

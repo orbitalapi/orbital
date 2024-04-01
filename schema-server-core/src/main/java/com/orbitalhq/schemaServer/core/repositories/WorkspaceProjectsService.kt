@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono
 import java.nio.file.Paths
 
 @RestController
-class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) : WorkspaceServiceApi {
+class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader)  {
     companion object {
         private val logger = KotlinLogging.logger {}
     }
@@ -36,7 +36,7 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) : 
     }
 
     @PostMapping("/api/repositories/file")
-    override fun createFileRepository(@RequestBody request: CreateFileProjectStoreRequest): Mono<Unit> {
+    fun createFileRepository(@RequestBody request: CreateFileProjectStoreRequest): Mono<Unit> {
         val fileSpec = request.toRepositorySpec()
         try {
             configRepo.addFileSpec(fileSpec)
@@ -47,7 +47,7 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) : 
     }
 
     @PostMapping("/api/repositories/file", params = ["test"])
-    override fun testFileProjectStore(@RequestBody request: FileProjectStoreTestRequest): Mono<FileProjectStoreTestResponse> {
+    fun testFileProjectStore(@RequestBody request: FileProjectStoreTestRequest): Mono<FileProjectStoreTestResponse> {
         return try {
             val project = TaxiPackageLoader.forDirectoryContainingTaxiFile(Paths.get(request.path)).load()
             Mono.just(FileProjectStoreTestResponse(request.path, true, project.identifier.toVynePackageIdentifier()))
@@ -59,7 +59,7 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) : 
 
 
     @PostMapping("/api/repositories/git")
-    override fun createGitProjectStore(request: GitProjectStoreChangeRequest): Mono<Unit> {
+    fun createGitProjectStore(request: GitProjectStoreChangeRequest): Mono<Unit> {
         val config = request.toRepositorySpec()
         try {
             configRepo.addGitSpec(config)
@@ -70,7 +70,7 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) : 
     }
 
     @PostMapping("/api/repositories/git", params = ["test"])
-    override fun testGitConnection(request: GitConnectionTestRequest): Mono<GitConnectionTestResult> {
+    fun testGitConnection(request: GitConnectionTestRequest): Mono<GitConnectionTestResult> {
         return Mono.just(GitUtils.testConnection(request.uri))
             .map { testResult ->
                 GitConnectionTestResult(

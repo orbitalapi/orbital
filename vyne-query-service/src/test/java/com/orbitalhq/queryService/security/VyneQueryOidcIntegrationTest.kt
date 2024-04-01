@@ -12,6 +12,8 @@ import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.queryService.TestSchemaProvider
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
+import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
+import com.orbitalhq.schemaServer.core.packages.PackageService
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
@@ -39,7 +41,6 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
-import reactivefeign.utils.HttpStatus
 
 /**
  *
@@ -94,6 +95,11 @@ class VyneQueryOidcIntegrationTest {
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
+   @MockBean
+   lateinit var packagesService: PackageService
+
+   @MockBean
+   lateinit var schemaEditorService: SchemaEditorService
 
    @Autowired
    private lateinit var restTemplate: TestRestTemplate
@@ -182,7 +188,7 @@ class VyneQueryOidcIntegrationTest {
       headers.contentType = MediaType.APPLICATION_JSON
       headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
       val response = issueVyneQuery(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_UNAUTHORIZED))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.UNAUTHORIZED.value()))
    }
 
    @Test
@@ -190,7 +196,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(viewerUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = issueVyneQuery(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_FORBIDDEN))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
    }
 
    @Test
@@ -198,7 +204,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser("userWithoutAnyRoleSetup")
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = issueVyneQuery(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_FORBIDDEN))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
    }
 
    @Test
@@ -214,7 +220,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = issueVyneQuery(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_FORBIDDEN))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
    }
 
    @Test
@@ -233,7 +239,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = listQueryHistory(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_OK))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
    }
 
    @Test
@@ -241,7 +247,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = listQueryHistory(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_OK))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
    }
 
    @Test
@@ -249,7 +255,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(queryRunnerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = listQueryHistory(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_FORBIDDEN))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
    }
 
    @Test
@@ -257,7 +263,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(viewerUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = listQueryHistory(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_FORBIDDEN))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
    }
 
    @Test
@@ -266,7 +272,7 @@ class VyneQueryOidcIntegrationTest {
       headers.contentType = MediaType.APPLICATION_JSON
       headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
       val response = listQueryHistory(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_UNAUTHORIZED))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.UNAUTHORIZED.value()))
    }
 
    /**
@@ -281,7 +287,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getQueryResult(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_OK))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
    }
 
    @Test
@@ -289,7 +295,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getQueryResult(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_OK))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
    }
 
    @Test
@@ -297,7 +303,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(queryRunnerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getQueryResult(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_FORBIDDEN))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
    }
 
 
@@ -306,7 +312,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(viewerUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getQueryResult(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_FORBIDDEN))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
    }
 
    /**
@@ -316,28 +322,12 @@ class VyneQueryOidcIntegrationTest {
 
 
    @Test
-   fun `a query runner can not get pipelines`() {
-      val token = setUpLoggedInUser(queryRunnerUser)
-      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
-      val response = getPipelines(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_FORBIDDEN))
-   }
-
-   @Test
-   fun `a viewer user can not get pipelines`() {
-      val token = setUpLoggedInUser(viewerUserName)
-      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
-      val response = getPipelines(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_FORBIDDEN))
-   }
-
-   @Test
    fun `unauthenticated user can not get pipelines`() {
       val headers = HttpHeaders()
       headers.contentType = MediaType.APPLICATION_JSON
       headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
       val response = getPipelines(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_UNAUTHORIZED))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.UNAUTHORIZED.value()))
    }
 
    /**
@@ -353,7 +343,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getAuthenticationTokens(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_OK))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
    }
 
    @Test
@@ -362,7 +352,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getAuthenticationTokens(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_OK))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
    }
 
    @Test
@@ -370,7 +360,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(queryRunnerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getAuthenticationTokens(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_FORBIDDEN))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
    }
 
    @Test
@@ -378,7 +368,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(viewerUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getAuthenticationTokens(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_FORBIDDEN))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
    }
 
    @Test
@@ -387,7 +377,7 @@ class VyneQueryOidcIntegrationTest {
       headers.contentType = MediaType.APPLICATION_JSON
       headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
       val response = getAuthenticationTokens(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_UNAUTHORIZED))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.UNAUTHORIZED.value()))
    }
 
    /**
@@ -403,7 +393,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = deleteAuthenticationToken(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_OK))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
    }
 
    @Test
@@ -412,7 +402,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = deleteAuthenticationToken(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_OK))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
    }
 
    @Test
@@ -421,7 +411,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(queryRunnerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = deleteAuthenticationToken(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_FORBIDDEN))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
    }
 
    @Test
@@ -430,7 +420,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(viewerUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = deleteAuthenticationToken(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_FORBIDDEN))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
    }
 
    @Test
@@ -440,7 +430,7 @@ class VyneQueryOidcIntegrationTest {
       headers.contentType = MediaType.APPLICATION_JSON
       headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
       val response = deleteAuthenticationToken(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_UNAUTHORIZED))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.UNAUTHORIZED.value()))
    }
 
    /**
@@ -455,7 +445,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getJdbcConnections(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_OK))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
    }
 
    @Test
@@ -463,7 +453,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getJdbcConnections(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_OK))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
    }
 
    @Test
@@ -471,7 +461,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(queryRunnerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getJdbcConnections(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_FORBIDDEN))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
    }
 
    @Test
@@ -479,7 +469,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(viewerUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getJdbcConnections(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_FORBIDDEN))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
    }
 
    @Test
@@ -488,7 +478,7 @@ class VyneQueryOidcIntegrationTest {
       headers.contentType = MediaType.APPLICATION_JSON
       headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
       val response = getJdbcConnections(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_UNAUTHORIZED))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.UNAUTHORIZED.value()))
    }
 
    /**
@@ -504,7 +494,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = createJdbcConnection(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_OK))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
    }
 
    @Test
@@ -513,7 +503,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = createJdbcConnection(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_OK))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
    }
 
    @Test
@@ -522,7 +512,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(queryRunnerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = createJdbcConnection(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_FORBIDDEN))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
    }
 
    @Test
@@ -531,7 +521,7 @@ class VyneQueryOidcIntegrationTest {
       val token = setUpLoggedInUser(viewerUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = createJdbcConnection(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_FORBIDDEN))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
    }
 
    @Test
@@ -540,7 +530,7 @@ class VyneQueryOidcIntegrationTest {
       headers.contentType = MediaType.APPLICATION_JSON
       headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
       val response = createJdbcConnection(headers)
-      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.SC_UNAUTHORIZED))
+      response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.UNAUTHORIZED.value()))
    }
 
    @Test

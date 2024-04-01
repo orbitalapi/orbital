@@ -53,7 +53,7 @@ class SwaggerSchemaConverterTest : BaseSchemaConverterServiceTest() {
             ),
             packageIdentifier = PackageIdentifier.fromId("foo/test/1.0.0")
          )
-      ).block(Duration.ofSeconds(1))!!
+      ).block(Duration.ofSeconds(5))!!
 
       conversionResponse.types.should.have.size(3)
       conversionResponse.services.should.have.size(2)

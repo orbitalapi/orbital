@@ -4,7 +4,6 @@ import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.UriSafePackageIdentifier
 import com.orbitalhq.schema.publisher.SchemaUpdatedMessage
 import com.orbitalhq.schemaServer.changelog.ChangeLogEntry
-import com.orbitalhq.schemaServer.changelog.ChangelogApi
 import com.orbitalhq.schemaServer.core.config.SchemaUpdateNotifier
 import mu.KotlinLogging
 import org.springframework.web.bind.annotation.GetMapping
@@ -17,7 +16,7 @@ import java.time.Instant
 class ChangeLogService(
    private val updateNotifier: SchemaUpdateNotifier,
    private val diffFactory: ChangeLogDiffFactory = ChangeLogDiffFactory()
-) : ChangelogApi {
+)  {
 
    // TODO : This needs to be persisted
    private val changeLogEntries: MutableList<ChangeLogEntry> = mutableListOf()
@@ -33,12 +32,12 @@ class ChangeLogService(
    }
 
    @GetMapping("/api/changelog")
-   override fun getChangelog(): Mono<List<ChangeLogEntry>> {
+   fun getChangelog(): Mono<List<ChangeLogEntry>> {
       return Mono.just(changeLog.reversed())
    }
 
    @GetMapping("/api/changelog/{packageName}")
-   override fun getChangelog(@PathVariable("packageName") packageName: UriSafePackageIdentifier): Mono<List<ChangeLogEntry>> {
+   fun getChangelog(@PathVariable("packageName") packageName: UriSafePackageIdentifier): Mono<List<ChangeLogEntry>> {
       val unversionedIdentifier = PackageIdentifier.uriSafeIdToUnversionedIdentifier(packageName)
       val entries = changeLog
          .filter { it.affectedPackages.any { affectedPackage -> affectedPackage == unversionedIdentifier } }

@@ -15,6 +15,12 @@ package com.orbitalhq.queryService.schemas.importing
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.io.Resources
+import com.nhaarman.mockito_kotlin.any
+import com.nhaarman.mockito_kotlin.argumentCaptor
+import com.nhaarman.mockito_kotlin.doAnswer
+import com.nhaarman.mockito_kotlin.doReturn
+import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.whenever
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.UriSafePackageIdentifier
 import com.orbitalhq.cockpit.core.schemas.editor.LocalSchemaEditingService
@@ -25,9 +31,9 @@ import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schema.consumer.SimpleSchemaStore
 import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
+import com.orbitalhq.schemaServer.core.packages.PackageService
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.schemaServer.packages.PackageWithDescription
-import com.orbitalhq.schemaServer.packages.PackagesServiceApi
 import com.orbitalhq.schemaServer.packages.SourcePackageDescription
 import com.orbitalhq.schemas.PartialSchema
 import org.apache.commons.io.FileUtils
@@ -64,31 +70,18 @@ abstract class BaseSchemaConverterServiceTest {
          ),
          schemaStore
       )
-      val editingService = LocalSchemaEditingService(
-         object : PackagesServiceApi {
-            override fun listPackages(): Mono<List<SourcePackageDescription>> {
-               return Mono.just(listOf())
-            }
-
-            override fun loadPackage(packageUri: String): Mono<PackageWithDescription> {
-               return Mono.just(
-                  PackageWithDescription.empty(
-                     PackageIdentifier.fromUriSafeId(
-                        packageUri
-                     )
-                  )
+      val mockPackageService = mock<PackageService> {
+         on { listPackages() } doReturn Mono.just(listOf())
+         on { loadPackage(any()) } doAnswer { invocation ->
+            Mono.just(
+               PackageWithDescription.empty(
+                  PackageIdentifier.fromUriSafeId(invocation.arguments[0] as String)
                )
-            }
-
-            override fun getPartialSchemaForPackage(packageUri: UriSafePackageIdentifier): Mono<PartialSchema> {
-               TODO("Not yet implemented")
-            }
-
-            override fun removePackage(packageUri: UriSafePackageIdentifier): Mono<Unit> {
-               TODO("Not yet implemented")
-            }
-
-         },
+            )
+         }
+      }
+      val editingService = LocalSchemaEditingService(
+         mockPackageService,
          schemaEditorService,
          schemaStore
       )

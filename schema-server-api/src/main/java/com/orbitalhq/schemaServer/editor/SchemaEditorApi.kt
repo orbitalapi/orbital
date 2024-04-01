@@ -3,72 +3,9 @@ package com.orbitalhq.schemaServer.editor
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.PackageSourceName
 import com.orbitalhq.VersionedSource
-import com.orbitalhq.schema.publisher.loaders.*
+import com.orbitalhq.schema.publisher.loaders.Changeset
 import com.orbitalhq.schemas.Metadata
-import com.orbitalhq.schemas.SavedQuery
 import lang.taxi.CompilationMessage
-import org.springframework.web.bind.annotation.*
-import reactivefeign.spring.config.ReactiveFeignClient
-import reactor.core.publisher.Mono
-
-@ReactiveFeignClient("\${vyne.schema-server.name:schema-server}", qualifier = "schemaEditorFeignClient")
-interface SchemaEditorApi {
-
-   @PostMapping("/api/repository/changeset/create")
-   fun createChangeset(
-      @RequestBody request: StartChangesetRequest
-   ): Mono<CreateChangesetResponse>
-
-   @PostMapping("/api/repository/changeset/add")
-   fun addChangesToChangeset(
-      @RequestBody request: AddChangesToChangesetRequest
-   ): Mono<AddChangesToChangesetResponse>
-
-   @PostMapping("/api/repository/changeset/finalize")
-   fun finalizeChangeset(
-      @RequestBody request: FinalizeChangesetRequest
-   ): Mono<FinalizeChangesetResponse>
-
-   @PutMapping("/api/repository/changeset/update")
-   fun updateChangeset(
-      @RequestBody request: UpdateChangesetRequest
-   ): Mono<UpdateChangesetResponse>
-
-   // TODO Should be a GET request but as the package identifier is an object this was quicker..
-   @PostMapping("/api/repository/changesets")
-   fun getAvailableChangesets(
-      @RequestBody request: GetAvailableChangesetsRequest
-   ): Mono<AvailableChangesetsResponse>
-
-   @PostMapping("/api/repository/changesets/active")
-   fun setActiveChangeset(
-      @RequestBody request: SetActiveChangesetRequest
-   ): Mono<SetActiveChangesetResponse>
-
-   @PostMapping("/api/repository/editable/sources")
-   fun submitEdits(
-      @RequestBody request: SchemaEditRequest
-   ): Mono<SchemaEditResponse>
-
-   @PostMapping(path = ["/api/repository/types/{typeName}/annotations"])
-   fun updateAnnotationsOnType(
-      @PathVariable typeName: String,
-      @RequestBody request: UpdateTypeAnnotationRequest
-   ): Mono<AddChangesToChangesetResponse>
-
-   // As per below - shouldn't be part of the Schema editing API
-   @PostMapping(path = ["/api/repository/types/{typeName}/owner"])
-   fun updateDataOwnerOnType(
-      @PathVariable typeName: String,
-      @RequestBody request: UpdateDataOwnerRequest
-   ): Mono<AddChangesToChangesetResponse>
-
-   @GetMapping("/api/repository/editable")
-   fun getEditorConfig(): Mono<EditableRepositoryConfig>
-
-   @PostMapping("/api/repository/queries")
-   fun saveQuery(@RequestBody request: SaveQueryRequest): Mono<SavedQuery>
-}
 
 
 /**

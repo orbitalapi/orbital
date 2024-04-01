@@ -15,7 +15,6 @@ import com.orbitalhq.pipelines.jet.api.transport.PipelineVariableKeys
 import com.orbitalhq.pipelines.jet.api.transport.TypedInstanceContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.http.PollingTaxiOperationInputSpec
 import com.orbitalhq.pipelines.jet.source.PipelineSourceBuilder
-import com.orbitalhq.pipelines.jet.source.next
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
@@ -24,11 +23,12 @@ import jakarta.annotation.PostConstruct
 import jakarta.annotation.Resource
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import org.springframework.scheduling.support.CronSequenceGenerator
+import org.springframework.scheduling.support.CronExpression
 import org.springframework.stereotype.Component
 import java.io.Serializable
 import java.time.Clock
 import java.time.Instant
+import java.time.ZoneId
 
 @Component
 class PollingTaxiOperationSourceBuilder : PipelineSourceBuilder<PollingTaxiOperationInputSpec> {
@@ -47,15 +47,17 @@ class PollingTaxiOperationSourceBuilder : PipelineSourceBuilder<PollingTaxiOpera
          PollingTaxiOperationSourceContext(context.logger(), pipelineSpec)
       }
          .fillBufferFn { context: PollingTaxiOperationSourceContext, buffer: SourceBuilder.TimestampedSourceBuffer<MessageContentProvider> ->
-            val schedule = CronSequenceGenerator(context.inputSpec.pollSchedule)
-            val nextScheduledRunTime = schedule.next(context.lastRunTime)
+            val schedule = CronExpression.parse(context.inputSpec.pollSchedule)
+            val nextScheduledRunTime = schedule.next(context.lastRunTime.atZone(ZoneId.systemDefault()))!!
+               .toInstant()
             Metrics.metric(NEXT_SCHEDULED_TIME_KEY).set(nextScheduledRunTime.toEpochMilli())
             if (nextScheduledRunTime.isAfter(context.clock.instant())) {
                // Not scheduled to do any work yet, so bail.
                return@fillBufferFn
             }
             context.lastRunTime = context.clock.instant()
-            context.logger.info("Updating lastRunTime.  Next scheduled to run at ${schedule.next(context.lastRunTime)}")
+            val nextRunTime = schedule.next(context.lastRunTime.atZone(ZoneId.systemDefault()))
+            context.logger.info("Updating lastRunTime.  Next scheduled to run at $nextRunTime")
             PollingTaxiOperationSource(context, buffer).doWork()
          }
          .build()

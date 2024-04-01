@@ -32,11 +32,11 @@ private val logger = KotlinLogging.logger {}
 //@ConditionalOnBean(ApiEditorRepository::class)
 class SchemaEditorService(
     private val repositoryManager: ReactiveProjectStoreManager, private val schemaProvider: SchemaStore
-) : SchemaEditorApi {
+)  {
 
 
    @GetMapping("/api/repository/editable")
-   override fun getEditorConfig(): Mono<EditableRepositoryConfig> {
+   fun getEditorConfig(): Mono<EditableRepositoryConfig> {
 
       val sourcePackages: List<Mono<SourcePackage>> = repositoryManager.editableLoaders.map { it.loadNow() }
       return Flux.concat(sourcePackages).collectList().map { packages ->
@@ -46,7 +46,7 @@ class SchemaEditorService(
    }
 
    @PostMapping("/api/repository/changeset/create")
-   override fun createChangeset(
+   fun createChangeset(
       @RequestBody request: StartChangesetRequest
    ): Mono<CreateChangesetResponse> {
       return Mono.just(request)
@@ -59,7 +59,7 @@ class SchemaEditorService(
    }
 
    @PostMapping("/api/repository/queries")
-   override fun saveQuery(request: SaveQueryRequest): Mono<SavedQuery> {
+   fun saveQuery(request: SaveQueryRequest): Mono<SavedQuery> {
       return Mono.just(request)
          .subscribeOn(Schedulers.boundedElastic())
          .map { request ->
@@ -95,7 +95,7 @@ class SchemaEditorService(
    }
 
    @PostMapping("/api/repository/changeset/add")
-   override fun addChangesToChangeset(
+   fun addChangesToChangeset(
       @RequestBody request: AddChangesToChangesetRequest
    ): Mono<AddChangesToChangesetResponse> {
       logger.info {
@@ -108,7 +108,7 @@ class SchemaEditorService(
    }
 
    @PostMapping("/api/repository/changeset/finalize")
-   override fun finalizeChangeset(
+   fun finalizeChangeset(
       @RequestBody request: FinalizeChangesetRequest
    ): Mono<FinalizeChangesetResponse> {
       logger.info { "Received request to finalize the changeset with name ${request.changesetName}" }
@@ -118,7 +118,7 @@ class SchemaEditorService(
 
 
    @PutMapping("/api/repository/changeset/update")
-   override fun updateChangeset(
+   fun updateChangeset(
       @RequestBody request: UpdateChangesetRequest
    ): Mono<UpdateChangesetResponse> {
       logger.info { "Received request to update the changeset with name ${request.changesetName}" }
@@ -127,7 +127,7 @@ class SchemaEditorService(
    }
 
    @PostMapping("/api/repository/changesets")
-   override fun getAvailableChangesets(
+   fun getAvailableChangesets(
       @RequestBody request: GetAvailableChangesetsRequest
    ): Mono<AvailableChangesetsResponse> {
       val loader = repositoryManager.getLoader(request.packageIdentifier)
@@ -135,7 +135,7 @@ class SchemaEditorService(
    }
 
    @PostMapping("/api/repository/changesets/active")
-   override fun setActiveChangeset(
+   fun setActiveChangeset(
       @RequestBody request: SetActiveChangesetRequest
    ): Mono<SetActiveChangesetResponse> {
       val loader = repositoryManager.getLoader(request.packageIdentifier)
@@ -144,7 +144,7 @@ class SchemaEditorService(
 
    // TODO What to do about this method
    @PostMapping("/api/repository/editable/sources")
-   override fun submitEdits(
+   fun submitEdits(
       @RequestBody request: SchemaEditRequest
    ): Mono<SchemaEditResponse> {
       logger.info {
@@ -160,7 +160,7 @@ class SchemaEditorService(
       }
    }
 
-   override fun updateAnnotationsOnType(
+   fun updateAnnotationsOnType(
       typeName: String, request: UpdateTypeAnnotationRequest
    ): Mono<AddChangesToChangesetResponse> {
       // This is a very naieve demo-ready implementation.
@@ -171,7 +171,7 @@ class SchemaEditorService(
       return generateAnnotationExtension(request.changeset, name, annotations, FileContentType.Annotations)
    }
 
-   override fun updateDataOwnerOnType(
+   fun updateDataOwnerOnType(
       typeName: String, request: UpdateDataOwnerRequest
    ): Mono<AddChangesToChangesetResponse> {
       val name = QualifiedName.from(typeName)

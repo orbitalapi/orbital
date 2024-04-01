@@ -12,7 +12,6 @@ import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.UnhealthyLoaderWithStatus
 import com.orbitalhq.schemaServer.packages.PackageWithDescription
-import com.orbitalhq.schemaServer.packages.PackagesServiceApi
 import com.orbitalhq.schemaServer.packages.SourcePackageDescription
 import com.orbitalhq.schemas.DefaultPartialSchema
 import com.orbitalhq.schemas.PartialSchema
@@ -31,14 +30,14 @@ class PackageService(
    private val schemaStore: SchemaStore,
    private val repositoryManager: ReactiveProjectStoreManager,
    private val configRepo: WorkspaceConfigLoader
-) : PackagesServiceApi {
+)  {
 
    companion object {
       private val logger = KotlinLogging.logger {}
    }
 
    @GetMapping("/api/packages/{packageUri}")
-   override fun loadPackage(@PathVariable("packageUri") packageUri: UriSafePackageIdentifier): Mono<PackageWithDescription> {
+   fun loadPackage(@PathVariable("packageUri") packageUri: UriSafePackageIdentifier): Mono<PackageWithDescription> {
       val packageIdentifier = PackageIdentifier.fromUriSafeId(packageUri)
       val sourcePackage = schemaStore.schemaSet.parsedPackages.firstOrNull { it.identifier == packageIdentifier }
          ?: throw NotFoundException("Package $packageIdentifier was not found on this server")
@@ -53,7 +52,7 @@ class PackageService(
    }
 
    @DeleteMapping("/api/packages/{packageUri}")
-   override fun removePackage(@PathVariable("packageUri") packageUri: UriSafePackageIdentifier): Mono<Unit> {
+   fun removePackage(@PathVariable("packageUri") packageUri: UriSafePackageIdentifier): Mono<Unit> {
       logger.info { "Received request to delete source package $packageUri" }
       return loadPackage(packageUri)
          .map { packageWithDescription ->
@@ -94,7 +93,7 @@ class PackageService(
       return this.repositoryManager.unhealthyLoaders
    }
    @GetMapping("/api/packages")
-   override fun listPackages(): Mono<List<SourcePackageDescription>> {
+   fun listPackages(): Mono<List<SourcePackageDescription>> {
       val packages = schemaStore.schemaSet.parsedPackages.map { parsedPackage ->
          buildPackageDescription(parsedPackage)
       }
@@ -126,7 +125,7 @@ class PackageService(
    }
 
    @GetMapping("/api/packages/{packageUri}/schema")
-   override fun getPartialSchemaForPackage(@PathVariable("packageUri") packageUri: UriSafePackageIdentifier): Mono<PartialSchema> {
+   fun getPartialSchemaForPackage(@PathVariable("packageUri") packageUri: UriSafePackageIdentifier): Mono<PartialSchema> {
       val packageIdentifier = PackageIdentifier.fromUriSafeId(packageUri)
 
       // This is a brute-force approach, since we don't currently store a reference of schema members to the

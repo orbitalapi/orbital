@@ -26,15 +26,6 @@ class PipelineService(
    private val logger = KotlinLogging.logger {}
 
    init {
-//      Flux.from(schemaStore.schemaChanged).subscribe { schemaChangedEvent ->
-//         val pipelines = pipelineRepository.loadPipelines()
-//         val schema = schemaChangedEvent.newSchemaSet.schema.asTaxiSchema()
-//         checkReceivedTypesForPipelinesAndStartAppropriateOnes(
-//            pipelines,
-//            schema
-//         )
-//      }
-//
       pipelineRepository.configUpdated.subscribe {
          logger.info { "Pipeline sources have changed, resubmitting pipelines" }
          loadAndSubmitPipelines()
