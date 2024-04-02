@@ -272,6 +272,9 @@ abstract class BaseHazelcastReadInvoker {
             is QueryResultCollection<*> -> {
                value.flatMap { readValue(it) }
             }
+            is List<*> -> {
+               value.flatMap { readValue(it) }
+            }
             else -> error("No way to deserialize read value from Hazelcast map with type ${value::class.simpleName}")
          }
       }
