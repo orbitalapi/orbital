@@ -366,7 +366,7 @@ class TypedObjectFactory(
       // We want to build closed objects when deserializing a result.
       // However we don't currently have an easy way to pass that flag in.
       // It's unlikely we're serializing results using a FactBag.
-      if (type.isClosed && value is FactBag) {
+      if (type.isClosed && !type.isParameterType && value is FactBag) {
          logger.debug { "Not attempting to build ${type.name.shortDisplayName} as it is closed - triggering search" }
          return queryForParentType()
       }

@@ -2,6 +2,7 @@ package com.orbitalhq.schemas
 
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotContain
@@ -57,6 +58,18 @@ class ServiceFilteredSchemaTest {
 
       querySchema.tableOperations.shouldHaveSize(0)
       querySchema.streamOperations.shouldHaveSize(0)
+   }
+
+   @Test
+   fun `can exclude a table operation`() {
+      val (_,_,querySchema) = schema.parseQuery("""find { Film[] } excluding { FilmsService::films }""")
+      querySchema.service("FilmsService")
+         .tableOperations.shouldBeEmpty()
+      querySchema.service("FilmsService")
+         .queryOperations.shouldBeEmpty()
+
+
+      querySchema.tableOperations.shouldHaveSize(2)
    }
 
    @Test

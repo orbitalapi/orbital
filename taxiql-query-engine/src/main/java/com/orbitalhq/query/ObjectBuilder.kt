@@ -268,7 +268,7 @@ class ObjectBuilder(
       val result = searchForType(targetType, spec, facts)
       val searchFailed = result == null || result is TypedNull && result.source is FailedSearch
       return if (searchFailed) {
-         if (!targetType.isClosed) {
+         if (!targetType.isClosed && !targetType.isParameterType) {
             logger.debug { "Search for object ${targetType.qualifiedName.shortDisplayName} failed, so initiating building one" }
             val result = buildObjectInstance(targetType, spec, facts)
             logger.debug { "Successfully built instance of ${targetType.qualifiedName.shortDisplayName}" }

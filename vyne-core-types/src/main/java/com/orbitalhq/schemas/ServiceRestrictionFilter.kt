@@ -88,7 +88,7 @@ class ServiceFilteredSchema(private val schema: Schema, private val restrictions
    private fun filterIncluded(service: Service): Service? {
       val serviceRestriction = restrictions.inclusionFor(service.name.toTaxiQualifiedName())
          ?: return null
-      return if (serviceRestriction.operations.isNotEmpty()) {
+      return if (serviceRestriction.members.isNotEmpty()) {
          Service(
             service.name,
             service.operations.filter { serviceRestriction.hasOperation(it.name) },
@@ -109,7 +109,7 @@ class ServiceFilteredSchema(private val schema: Schema, private val restrictions
    private fun filterExcluded(service: Service): Service? {
       val serviceRestriction = restrictions.exclusionFor(service.name.toTaxiQualifiedName())
          ?: return service
-      return if (serviceRestriction.operations.isNotEmpty()) {
+      return if (serviceRestriction.members.isNotEmpty()) {
          Service(
             service.name,
             service.operations.filterNot { serviceRestriction.hasOperation(it.name) },
@@ -131,5 +131,5 @@ class ServiceFilteredSchema(private val schema: Schema, private val restrictions
 }
 
 fun ServiceRestriction.hasOperation(operationName: String): Boolean {
-   return this.operations.any { it.name == operationName }
+   return this.members.any { it.name == operationName }
 }

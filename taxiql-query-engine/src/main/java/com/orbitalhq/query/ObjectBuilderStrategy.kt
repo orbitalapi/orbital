@@ -75,7 +75,7 @@ class ObjectBuilderStrategy(val formatSpecs: List<ModelFormatSpec> = emptyList()
       }
 
       // Don't try to build objects that are closed
-      if (target.any { it.type.isClosed }) {
+      if (target.any { it.type.isClosed && !it.type.isParameterType }) {
          return QueryStrategyResult.searchFailed()
       }
 

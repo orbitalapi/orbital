@@ -231,7 +231,7 @@ abstract class BaseHazelcastReadInvoker {
       unwrappedReturnType: Type,
       schema: Schema,
    ): Flow<TypedInstance> {
-      val (rawResultsFlow, resultSize) = buildFlowOfFullMap(map, operation, taxiQlQueryString, )
+      val (rawResultsFlow, resultSize) = buildFlowOfFullMap(map, operation, taxiQlQueryString)
       val result = buildOperationResult(
          service,
          operation,
@@ -263,19 +263,30 @@ abstract class BaseHazelcastReadInvoker {
       schema: Schema,
       dataSource: DataSource
    ): Flow<TypedInstance> {
-      fun readValue(value:Any?):List<TypedInstance> {
+      fun readValue(value: Any?): List<TypedInstance> {
          return when (value) {
-            null -> listOf( TypedNull.create(schema.type(memberType), dataSource))
-            is DeserializedGenericRecord -> listOf(GenericRecordReader.toTypedInstance(value, memberType, schema, dataSource))
+            null -> listOf(TypedNull.create(schema.type(memberType), dataSource))
+            is DeserializedGenericRecord -> listOf(
+               GenericRecordReader.toTypedInstance(
+                  value,
+                  memberType,
+                  schema,
+                  dataSource
+               )
+            )
+
             is QueryResultCollection<*> -> {
                value.flatMap { readValue(it) }
             }
+
             is List<*> -> {
                value.flatMap { readValue(it) }
             }
+
             else -> error("No way to deserialize read value from Hazelcast map with type ${value::class.simpleName}")
          }
       }
+
       val typedInstances = values.flatMapConcat { value ->
          readValue(value).asFlow()
       }
@@ -327,7 +338,7 @@ abstract class BaseHazelcastReadInvoker {
       return typeConstraintExpression
    }
 
-   fun buildOperationResult(
+   private fun buildOperationResult(
       service: Service,
       operation: RemoteOperation,
       parameters: List<TypedInstance>,
