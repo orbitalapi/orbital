@@ -4,7 +4,6 @@ import com.google.common.base.Stopwatch
 import com.orbitalhq.connectors.getTaxiQlQuery
 import com.orbitalhq.connectors.jdbc.sql.dml.SelectStatementGenerator
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.query.ConstructedQueryDataSource
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter

@@ -13,7 +13,7 @@ import lang.taxi.query.TaxiQlQuery
 @Deprecated("This class fails to handle type extensions correctly.  Use TaxiSchema.fromNamedSources().first(), which will correctly order, compose and compile the sources")
 class CompositeSchema(private val schemas: List<Schema>) : Schema {
    private val queryCompiler = DefaultQueryCompiler(this, 100)
-   override fun parseQuery(vyneQlQuery: TaxiQLQueryString, useCache: Boolean): Triple<TaxiQlQuery, QueryOptions, TaxiSchema> {
+   override fun parseQuery(vyneQlQuery: TaxiQLQueryString, useCache: Boolean): Triple<TaxiQlQuery, QueryOptions, Schema> {
       return queryCompiler.compile(vyneQlQuery, useCache)
    }
 
