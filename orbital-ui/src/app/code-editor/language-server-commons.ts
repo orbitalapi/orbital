@@ -21,7 +21,6 @@ import {nanoid} from "nanoid";
 
 export const createLanguageClient = (transports: MessageTransports): MonacoLanguageClient => {
   return new MonacoLanguageClient({
-    id: nanoid(8), // TODO: will this help with anything?
     name: 'Taxi Language',
     clientOptions: {
       // use a language id as a document selector
@@ -29,10 +28,7 @@ export const createLanguageClient = (transports: MessageTransports): MonacoLangu
       // disable the default error handler
       errorHandler: {
         error: () => ({action: ErrorAction.Continue}),
-        closed: () => ({action: CloseAction.Restart})
-      },
-      connectionOptions: {
-        maxRestartCount: 5
+        closed: () => ({action: CloseAction.DoNotRestart})
       }
     },
 
