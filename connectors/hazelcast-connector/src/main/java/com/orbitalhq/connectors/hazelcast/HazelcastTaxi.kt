@@ -9,6 +9,8 @@ object HazelcastTaxi {
       val CompactObject = "${namespace}.CompactObject".fqn()
       val JsonObject = "${namespace}.JsonObject".fqn()
       val HazelcastMap = "${namespace}.HazelcastMap".fqn()
+      val UpsertOperation = "${namespace}.UpsertOperation".fqn()
+      val DeleteOperation = "${namespace}.DeleteOperation".fqn()
    }
    val schema = """
 namespace ${Annotations.namespace} {
@@ -19,8 +21,9 @@ namespace ${Annotations.namespace} {
       name : HazelcastMapName inherits String
    }
    annotation UpsertOperation {}
-   annotation InsertOperation {}
-   annotation UpdateOperation {}
+   annotation DeleteOperation {
+      mapName : String
+   }
 
    annotation JsonObject
    annotation CompactObject

@@ -10,16 +10,7 @@ import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyneWithStub
 
 abstract class BaseHazelcastInvokerTest {
-   fun vyneWithHazelcast():Triple<HazelcastInstance, Vyne, StubService> {
-      val hazelcastInstance = TestHazelcastInstanceFactory(1).newHazelcastInstance()
-      val hazelcastProvider = TestHazelcastProvider(hazelcastInstance)
-      val hazelcastInvoker = HazelcastInvoker(hazelcastProvider)
-      val (vyne, stub) = testVyneWithStub(
-         TaxiSchema.fromStrings(
-            listOf(
-               VyneQlGrammar.QUERY_TYPE_TAXI,
-               HazelcastTaxi.schema,
-               """
+   val DEFAULT_SCHEMA = """
          import com.orbitalhq.hazelcast.HazelcastService
          import com.orbitalhq.hazelcast.HazelcastMap
          import com.orbitalhq.hazelcast.UpsertOperation
@@ -48,7 +39,17 @@ abstract class BaseHazelcastInvokerTest {
 
             stream films : Stream<Film>
          }
-         """,
+         """
+   fun vyneWithHazelcast(schema: String = DEFAULT_SCHEMA):Triple<HazelcastInstance, Vyne, StubService> {
+      val hazelcastInstance = TestHazelcastInstanceFactory(1).newHazelcastInstance()
+      val hazelcastProvider = TestHazelcastProvider(hazelcastInstance)
+      val hazelcastInvoker = HazelcastInvoker(hazelcastProvider)
+      val (vyne, stub) = testVyneWithStub(
+         TaxiSchema.fromStrings(
+            listOf(
+               VyneQlGrammar.QUERY_TYPE_TAXI,
+               HazelcastTaxi.schema,
+               schema,
             )
          ), listOf(hazelcastInvoker)
       )

@@ -180,7 +180,8 @@ class ParameterFactory {
          context.facts,
          context.schema,
          source = UndefinedSource,
-         inPlaceQueryEngine = queryContextWithOperationExclusion
+         inPlaceQueryEngine = queryContextWithOperationExclusion,
+         constructClosedParameterTypes = true
       ).build()
       if (hasValue(built)) {
          return built

@@ -11,18 +11,5 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 class HazelcastOperationCacheConfig {
 
-   @Bean
-   fun hazelcastConnectionsManager(connectors: SourceLoaderConnectorsRegistry): HazelcastConnectionsManager {
-      return HazelcastConnectionsManager(connectors)
 
-   }
-   @Bean
-   fun hazelcastOperationCacheProviderBuilder(hazelcastConnectionsManager: HazelcastConnectionsManager, schemaStore: SchemaStore): HazelcastOperationCacheBuilder {
-      return HazelcastOperationCacheBuilder(hazelcastConnectionsManager, schemaStore)
-   }
-
-   @Bean
-   fun hazelcastStateStoreProvider(hazelcastConnectionsManager: HazelcastConnectionsManager): HazelcastStateStoreProvider {
-      return HazelcastStateStoreProvider(hazelcastConnectionsManager)
-   }
 }

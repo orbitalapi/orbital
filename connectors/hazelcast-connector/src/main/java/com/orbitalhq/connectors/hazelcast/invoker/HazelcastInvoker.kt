@@ -77,6 +77,7 @@ class HazelcastInvoker(
                service,
                operation,
                parameters,
+               config,
                eventDispatcher,
                queryId,
                queryOptions,

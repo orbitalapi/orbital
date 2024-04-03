@@ -7,10 +7,8 @@ import com.orbitalhq.query.MutatingQueryExpression
 import com.orbitalhq.query.ProjectionAnonymousTypeProvider
 import com.orbitalhq.query.QueryExpression
 import com.orbitalhq.query.QuerySpecTypeNode
-import com.orbitalhq.query.StreamJoiningExpression
 import com.orbitalhq.query.TypeQueryExpression
 import com.orbitalhq.schemas.Schema
-import com.orbitalhq.schemas.taxi.TaxiConstraintConverter
 import com.orbitalhq.schemas.toVyneQualifiedName
 import lang.taxi.query.DiscoveryType
 import lang.taxi.query.TaxiQLQueryString

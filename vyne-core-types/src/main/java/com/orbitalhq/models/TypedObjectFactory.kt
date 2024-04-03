@@ -50,7 +50,15 @@ class TypedObjectFactory(
    private val parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
    private val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf(),
    private val projectionScope: ProjectionFunctionScope? = null,
-   private val metadata: Map<String, Any> = emptyMap()
+   private val metadata: Map<String, Any> = emptyMap(),
+   /**
+    * Normally, we don't allow construction of closed types.
+    * However, if a type is both closed AND a parameter type,
+    * then we optionally want to allow construction of these types.
+    * Generally, set this to false, unless attempting to construct a
+    * parameter to a call
+    */
+   private val constructClosedParameterTypes: Boolean = false
 ) : EvaluationValueSupplier, ValueProjector {
 
    companion object {
@@ -366,7 +374,12 @@ class TypedObjectFactory(
       // We want to build closed objects when deserializing a result.
       // However we don't currently have an easy way to pass that flag in.
       // It's unlikely we're serializing results using a FactBag.
-      if (type.isClosed && value is FactBag) {
+      val typeIsConstructable = when {
+         type.isClosed && !type.isParameterType -> false
+         type.isClosed && type.isParameterType && constructClosedParameterTypes -> true
+         else -> true
+      }
+      if (!typeIsConstructable && value is FactBag) {
          logger.debug { "Not attempting to build ${type.name.shortDisplayName} as it is closed - triggering search" }
          return queryForParentType()
       }

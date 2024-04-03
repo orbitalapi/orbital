@@ -103,7 +103,7 @@ class Vyne(
    }
 
 
-   fun parseQuery(vyneQlQuery: TaxiQLQueryString): Triple<TaxiQlQuery, QueryOptions, TaxiSchema> {
+   fun parseQuery(vyneQlQuery: TaxiQLQueryString): Triple<TaxiQlQuery, QueryOptions, Schema> {
       return this.schema.parseQuery(vyneQlQuery)
    }
 

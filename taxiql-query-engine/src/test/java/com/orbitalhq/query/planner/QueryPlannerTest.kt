@@ -2,10 +2,8 @@ package com.orbitalhq.query.planner
 
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import io.kotest.core.spec.style.DescribeSpec
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
-import lang.taxi.compiled
 
 class QueryPlannerTest : DescribeSpec({
    describe("rewriting streaming queries") {

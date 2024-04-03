@@ -8,6 +8,7 @@ import com.orbitalhq.connectors.aws.lambda.LambdaConnectorTaxi
 import com.orbitalhq.connectors.aws.s3.S3ConnectorTaxi
 import com.orbitalhq.connectors.aws.sqs.SqsConnectorTaxi
 import com.orbitalhq.connectors.azure.blob.AzureStoreConnectionTaxi
+import com.orbitalhq.connectors.hazelcast.HazelcastTaxi
 import com.orbitalhq.connectors.jdbc.JdbcConnectorTaxi
 import com.orbitalhq.connectors.kafka.KafkaConnectorTaxi
 import com.orbitalhq.connectors.nosql.mongodb.MongoConnector
@@ -94,6 +95,11 @@ object BuiltInTypesProvider {
             "HttpRetryAnnotationSchema",
             "0.1.0",
             HttpRetryAnnotationSchema.schema
+         ),
+         VersionedSource(
+            "HazelcastConnectors",
+            "0.1.0",
+            HazelcastTaxi.schema
          ),
          VersionedSource(
             "MongoDbConnector",
