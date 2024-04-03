@@ -1,6 +1,8 @@
 import {Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {debounceTime} from "rxjs/operators";
 import {editor, MarkerSeverity} from 'monaco-editor';
+import { Disposable } from 'vscode';
 import {createLanguageClient, createTaxiEditor, createTaxiEditorModel} from "./language-server-commons";
 import {ITextFileEditorModel} from "@codingame/monaco-vscode-api/monaco";
 import {DidOpenTextDocumentNotification} from "vscode-languageclient";
@@ -31,6 +33,7 @@ export class CodeEditorComponent implements OnDestroy {
   private languageClient: MonacoLanguageClient;
   private monacoEditor: IStandaloneCodeEditor;
   private monacoModel: ITextFileEditorModel;
+  private modelSubscription: Disposable;
   private webSocket: WebSocket;
 
   private _codeEditorContainer: ElementRef;
@@ -148,6 +151,7 @@ export class CodeEditorComponent implements OnDestroy {
       })
     this.modelChanged$.pipe(
       debounceTime(250),
+      takeUntilDestroyed()
     ).subscribe(e => {
       this.updateContent(this.monacoModel.textEditorModel.getValue());
       if (this.webSocket.readyState != this.webSocket.OPEN && this.languageServerEnabled) {
@@ -160,6 +164,7 @@ export class CodeEditorComponent implements OnDestroy {
   async ngOnDestroy() {
     if (this.readOnly) return;
     try {
+      this.modelSubscription.dispose();
       await this.languageClient.dispose();
     } catch (error) {
       console.error(error)
@@ -211,7 +216,7 @@ export class CodeEditorComponent implements OnDestroy {
   private async createNewMonacoModel() {
     const modelRef = await createTaxiEditorModel(this.content);
     const model: ITextFileEditorModel = modelRef.object;
-    model.onDidChangeContent((e: editor.IModelContentChangedEvent) => this.modelChanged$.next(e))
+    this.modelSubscription = model.onDidChangeContent(() => this.modelChanged$.emit())
     this.monacoModel = model;
     return {modelRef, model};
   }
