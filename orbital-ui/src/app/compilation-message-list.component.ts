@@ -5,7 +5,7 @@ import {isNullOrUndefined} from "./utils/utils";
 @Component({
     selector: 'app-compilation-message-list',
     template: `
-      <app-panel-header [title]="title"></app-panel-header>
+      <app-panel-header [title]="title" [isSecondary]="true"></app-panel-header>
       <div *ngIf="!hasErrors" class="grow no-errors subtle">
         <span>There are no problems detected.</span>
       </div>

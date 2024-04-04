@@ -32,9 +32,11 @@
 }
 
 h3 {
-  margin: 0;
+  margin: 1rem 0;
+  font-weight: 500;
+}
 
-  p {
-    font-size: 0.9rem;
-  }
+.instructions {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
 }

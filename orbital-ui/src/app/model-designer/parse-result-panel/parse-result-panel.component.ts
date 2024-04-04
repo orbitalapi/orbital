@@ -18,7 +18,7 @@ import {SourceWithTypeHints} from "../../json-viewer/json-results-view.component
 @Component({
   selector: 'app-designer-parse-result-panel',
   template: `
-        <app-panel-header title="Parse Result">
+        <app-panel-header title="Parse Result" [isSecondary]="true">
             <div class="spacer"></div>
             <progress tuiProgressBar size="s" *ngIf="working"></progress>
         </app-panel-header>
