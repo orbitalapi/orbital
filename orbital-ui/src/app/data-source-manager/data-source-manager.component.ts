@@ -28,6 +28,7 @@ import { DataSourceTreeComponent } from './data-source-tree/data-source-tree.com
       </as-split-area>
       <as-split-area>
         <router-outlet></router-outlet>
+        <div class="no-route-selected">Click on a connection, service or operation on the left to view it's details here</div>
       </as-split-area>
     </as-split>
   `,

@@ -11,3 +11,12 @@
   border-radius: 6px;
 }
 
+.no-route-selected {
+  display: none;
+}
+
+router-outlet + .no-route-selected {
+  display: block;
+  margin: 1rem 2rem;
+}
+
