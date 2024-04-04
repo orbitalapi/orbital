@@ -45,7 +45,7 @@ interface TreeEntry {
           >
             <img class="tree-icon" src="assets/img/tabler/plug.svg">
             <span class="connection-name">{{connection.connectorSummary.connectionName}}</span>
-            <app-connection-status [status]="connection.connectorSummary.connectionStatus"></app-connection-status>
+            <app-connection-status [status]="connection.connectorSummary.connectionStatus" [hideTimestamp]="true"></app-connection-status>
           </span>
           <tui-tree-item *ngFor="let service of connection.services">
             <span
@@ -108,7 +108,6 @@ export class DataSourceTreeComponent implements OnInit {
           }])
         }, new Map<string, TreeEntry[]>());
 
-        console.log(map)
         this.treeData$.next(map)
       })
   }
@@ -118,7 +117,7 @@ export class DataSourceTreeComponent implements OnInit {
       case 'Database' :
         return 'assets/img/chart-icons/database-icon.svg'
       case 'Kafka' :
-        return 'assets/img/chart-icons/kafka-icon.svg'
+        return 'assets/img/data-source-icons/kafka-icon.svg'
       case 'API' :
         return 'assets/img/chart-icons/api-icon.svg'
       default :

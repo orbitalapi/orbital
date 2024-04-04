@@ -9,7 +9,7 @@ import { MomentModule } from "ngx-moment";
   template: `
     <div *ngIf="status" class="status">
       <tui-badge [status]="getBadgeState()" size="s" [value]="getBadgeLabel()"></tui-badge>
-      <span class="timestamp">({{ status.timestamp | amTimeAgo }})</span>
+      <span *ngIf="!hideTimestamp" class="timestamp">({{ status.timestamp | amTimeAgo }})</span>
     </div>
   `,
   styleUrls: ['./connection-status.component.scss'],
@@ -23,6 +23,9 @@ export class ConnectionStatusComponent {
 
   @Input()
   status: ConnectionStatus
+
+  @Input()
+  hideTimestamp: boolean;
 
   getBadgeLabel(): string {
     switch(this.status.status) {
