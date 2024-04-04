@@ -1,5 +1,5 @@
-import {AppConfig} from "../app/services/app-info.service";
-import {SidebarElement} from "../app/vyne/vyne.component";
+import { AppConfig } from "../app/services/app-info.service";
+import { SidebarElement } from '../app/sidenav/sidenav.component';
 
 export const UiCustomisations = {
   landingPageWelcomeText: 'Welcome to Orbital',
