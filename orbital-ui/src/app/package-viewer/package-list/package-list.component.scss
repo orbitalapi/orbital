@@ -5,7 +5,7 @@
   width: 350px;
   height: 100%;
   overflow-y: auto;
-  background-color: $slate-100;
+  background-color: $list-background;
   border-right: 1px solid $slate-300;
 }
 
@@ -17,7 +17,6 @@
   &.selected-list-item {
     background: $list-selected-background;
     border: 1px solid $list-selected-border;
-    border-radius: $list-border-radius;
   }
 
   &:hover {

@@ -41,7 +41,7 @@ import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
   imports: [CommonModule, DataSourcePanelComponent, TuiNotificationModule, SchemaMemberTypeExplorerModule],
   template: `
     <div class="importer-step step" *ngIf="(wizardStep | async) === 'importSchema'">
-      <h2 *ngIf="title">{{ title }}</h2>
+      <h3 *ngIf="title">{{ title }}</h3>
       <div class="form-container">
         <app-data-source-panel
           *ngIf="(packages$ | async) && connections"
@@ -60,9 +60,8 @@ import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
       </div>
     </div>
     <div class="configuration-step step" *ngIf="(wizardStep | async) === 'configureTypes'">
-      <h3>Link your data & services
-        <p>Here's the {{dataSourceType}} data source we just imported. Take a moment to build links to other data sources, by updating your types to existing, shared types.</p>
-      </h3>
+      <h3>Link your data & services</h3>
+      <div class="instructions">Here's the {{dataSourceType}} data source we just imported. Take a moment to build links to other data sources, by updating your types to existing, shared types.</div>
       <app-schema-member-type-explorer [partialSchema]="schemaSubmissionResult"
                                  [schema]="schema"
                                  [working]="working"

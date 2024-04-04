@@ -5,14 +5,22 @@
   align-items: center;
   padding: 0.5rem 1rem;
   min-height: 2rem;
-
-  border-bottom: 1px solid $slate-200;
+  background-color: $slate-100;
+  border-bottom: 1px solid $slate-300;
   gap: 1rem;
+
+  &.is-secondary {
+    background-color: $gray-50;
+  }
 }
 .spacer {
   flex-grow: 1;
 }
 
-.caption-small {
-  margin-right: 2rem;
+h3, h4 {
+  margin: 0.25rem 2rem 0.25rem 0;
+}
+
+h3 {
+  font-weight: 500;
 }

@@ -20,7 +20,7 @@ import IModelContentChangedEvent = editor.IModelContentChangedEvent;
 @Component({
     selector: 'app-designer-source-input-panel',
     template: `
-    <app-panel-header title="Source content">
+    <app-panel-header title="Source content" [isSecondary]="true">
       <div class="spacer"></div>
       <button tuiButton size="s" appearance="outline" *ngIf="editorVisible" (click)="clearContent()">Clear</button>
     </app-panel-header>

@@ -4,7 +4,7 @@ import {CompilationMessage, Schema, SchemaMember, Type} from "../../services/sch
 @Component({
     selector: 'app-designer-code-editor-panel',
     template: `
-        <app-panel-header title="Taxi model editor">
+        <app-panel-header title="Taxi model editor" [isSecondary]="true">
             <div class="spacer"></div>
 
             <app-type-autocomplete-tui

@@ -1,9 +1,10 @@
-import { Component, HostBinding, Input, OnInit } from '@angular/core';
+import { Component, HostBinding, Input } from '@angular/core';
 
 @Component({
   selector: 'app-panel-header',
   template: `
-    <span class="caption-small" *ngIf="title">{{title}}</span>
+    <h3 *ngIf="title && !isSecondary">{{title}}</h3>
+    <h4 *ngIf="title && isSecondary">{{title}}</h4>
     <ng-content></ng-content>
   `,
   styleUrls: ['./panel-header.component.scss']
@@ -19,4 +20,8 @@ export class PanelHeaderComponent {
 
   @Input()
   icon: string
+
+  @Input()
+  @HostBinding('class.is-secondary')
+  isSecondary: boolean
 }

@@ -91,10 +91,10 @@ $light-purple-grey-300: #dee3ef;
 $light-purple-grey-100: #f5f6fa;
 
 $list-border-radius: 4px;
-$list-background: $slate-100;
+$list-background: $slate-50;
 $list-border: $slate-200;
-$list-hover-background: $slate-200;
-$list-selected-background: white;
+$list-hover-background: $slate-100;
+$list-selected-background: $white;
 $list-selected-border: $vyne-lilac;
 
 // From material, which is *mostly* phased out now, but
