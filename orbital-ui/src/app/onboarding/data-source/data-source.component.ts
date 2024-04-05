@@ -22,6 +22,6 @@ export class DataSourceComponent {
   }
 
   onDataSourceSelected() {
-    this.router.navigate(['configure'], { relativeTo: this.activatedRoute });
+    this.router.navigate(['configure'], { relativeTo: this.activatedRoute, replaceUrl: true });
   }
 }

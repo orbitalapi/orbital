@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BehaviorSubject, combineLatest, Observable, of, ReplaySubject } from 'rxjs';
 import { filter, map, startWith, tap } from 'rxjs/operators';
@@ -106,7 +106,7 @@ import {
   `,
   styleUrls: ['./schema-member-type-explorer.component.scss'],
 })
-export class SchemaMemberTypeExplorerComponent implements OnDestroy {
+export class SchemaMemberTypeExplorerComponent {
 
   activeTabIndex: number = 0;
 
@@ -175,10 +175,6 @@ export class SchemaMemberTypeExplorerComponent implements OnDestroy {
     )
     if (this.editable)
       this.clearQueryParams();
-  }
-
-  ngOnDestroy(): void {
-    this.clearQueryParams();
   }
 
   get hasCodeView(): boolean {

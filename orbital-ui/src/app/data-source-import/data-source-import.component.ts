@@ -151,7 +151,7 @@ export class DataSourceImportComponent implements OnInit, OnDestroy {
         this.dataSourceType = event.dataSourceType
         this.wizardStep.next('configureTypes');
         this.onConfigureStep.emit(true);
-        this.router.navigate(['configure'], { relativeTo: this.activatedRoute });
+        this.router.navigate(['configure'], { relativeTo: this.activatedRoute, replaceUrl: true });
         console.log(JSON.stringify(result, null, 2));
         this.working = false;
         this.dataSourceSelected.emit();
