@@ -15,7 +15,7 @@
   display: none;
 }
 
-router-outlet ~ .no-route-selected {
+router-outlet + .no-route-selected {
   display: block;
   margin: 1rem 2rem;
 }
