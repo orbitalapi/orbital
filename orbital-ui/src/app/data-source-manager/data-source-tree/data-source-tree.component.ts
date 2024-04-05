@@ -36,7 +36,7 @@ interface TreeEntry {
       <tui-tree-item class="root-tree-item" *ngFor="let entry of (treeData$ | async) | keyvalue">
         <img class="tree-icon" src="assets/img/tabler/folder-code.svg">
         {{entry.key}}
-        <tui-tree-item *ngFor="let connection of entry.value" >
+        <tui-tree-item *ngFor="let connection of entry.value" class="show-tree-decoration">
           <!--// NOTE: these spans are here so we can use routerLink and to prevent the mouse event bubbling up through the tree-->
           <span
             class="is-navigable"
@@ -47,7 +47,7 @@ interface TreeEntry {
             <span class="connection-name">{{connection.connectorSummary.connectionName}}</span>
             <app-connection-status [status]="connection.connectorSummary.connectionStatus" [hideTimestamp]="true"></app-connection-status>
           </span>
-          <tui-tree-item *ngFor="let service of connection.services">
+          <tui-tree-item *ngFor="let service of connection.services" class="show-tree-decoration">
             <span
               class="is-navigable"
               [routerLink]="'services/'+service.memberQualifiedName.fullyQualifiedName"
@@ -56,7 +56,7 @@ interface TreeEntry {
             >
               <img class="tree-icon" [src]=serviceIcon(service.serviceKind)>{{ service.memberQualifiedName.shortDisplayName }}
             </span>
-            <tui-tree-item *ngFor="let operation of collectAllServiceOperations(service)">
+            <tui-tree-item *ngFor="let operation of collectAllServiceOperations(service)" class="show-tree-decoration leaf-node">
               <span
                 class="is-navigable"
                 [routerLink]="'services/'+service.memberQualifiedName.fullyQualifiedName+'/'+operation.memberQualifiedName.shortDisplayName"
