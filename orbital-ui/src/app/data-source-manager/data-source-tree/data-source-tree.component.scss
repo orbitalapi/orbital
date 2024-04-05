@@ -17,6 +17,42 @@ tui-tree-item {
   padding-top: 0.25rem;
   font-size: 0.9rem;
   white-space: nowrap;
+
+  &.show-tree-decoration {
+    // The rest of this is the styling for the hierarchy decoration of the nodes
+    position: relative;
+
+    &:before,
+    &:after {
+      content: '';
+      position: absolute;
+      left: -0.76rem;
+    }
+
+    &:before {
+      width: 0.8rem;
+      height: 0;
+      top: 1.15rem;
+      border-bottom: 1px solid $gray-300;
+    }
+
+    &.leaf-node {
+      &:before {
+        width: 2rem;
+      }
+    }
+
+    &:after {
+      top: -0.3rem;
+      height: 100%;
+      width: 0;
+      border-left: 1px solid $gray-300;
+    }
+
+    &:last-child::after {
+      height: 1.45rem;
+    }
+  }
 }
 
 .is-navigable {
