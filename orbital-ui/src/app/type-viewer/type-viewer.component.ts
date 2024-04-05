@@ -1,5 +1,14 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
-import { NamedAndDocumented, QualifiedName, Schema, SchemaMember, Type, VersionedSource } from '../services/schema';
+import { UiCustomisations } from '../../environments/ui-customisations';
+import {
+  NamedAndDocumented,
+  PartialSchema,
+  QualifiedName,
+  Schema,
+  SchemaMember,
+  Type,
+  VersionedSource
+} from '../services/schema';
 import { Contents } from './toc-host.directive';
 import { OperationQueryResult } from '../services/types.service';
 import { Router } from '@angular/router';
@@ -36,6 +45,9 @@ export class TypeViewerComponent {
 
   @Input()
   schema$: Observable<Schema>;
+
+  @Input()
+  partialSchema: PartialSchema;
 
   @Input()
   showFullTypeNames = false;
@@ -173,6 +185,8 @@ export class TypeViewerComponent {
     }
     this.typeUpdated.emit({schemaEditOperation: event, member: this.type})
   }
+
+  protected readonly UiCustomisations = UiCustomisations;
 }
 
 export function getTypeNameToView(name: QualifiedName): QualifiedName {

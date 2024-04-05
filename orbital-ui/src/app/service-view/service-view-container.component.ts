@@ -3,13 +3,18 @@ import {Service} from '../services/schema';
 import {TypesService} from '../services/types.service';
 import {ActivatedRoute, ParamMap, Router} from '@angular/router';
 import {flatMap, map} from 'rxjs/operators';
+import { ServiceViewComponent } from './service-view.component';
 
 @Component({
   selector: 'app-service-view-container',
   template: `
     <app-service-view [service]="service"></app-service-view>
   `,
-  styleUrls: ['./service-view-container.component.scss']
+  styleUrls: ['./service-view-container.component.scss'],
+  imports: [
+    ServiceViewComponent
+  ],
+  standalone: true
 })
 export class ServiceViewContainerComponent implements OnInit {
 

@@ -1,4 +1,7 @@
 import {NgModule} from '@angular/core';
+import { ProjectImportComponent } from '../project-import/project-import.component';
+import { AuthGuard } from '../services/auth.guard';
+import { VynePrivileges } from '../services/user-info.service';
 import {ProjectExplorerComponent} from './project-explorer.component';
 import {SearchModule} from '../search/search.module';
 import {MatToolbarModule} from '@angular/material/toolbar';
@@ -24,7 +27,7 @@ import {ProjectSummaryViewComponent} from './project-summary-view.component';
 import {SimpleBadgeListModule} from '../simple-badge-list/simple-badge-list.module';
 import {TuiButtonModule, TuiNotificationModule} from '@taiga-ui/core';
 import {TuiTabsModule} from '@taiga-ui/kit';
-import {SchemaExplorerTableModule} from 'src/app/schema-explorer-table/schema-explorer-table.module';
+import {SchemaMemberTypeExplorerModule} from 'src/app/schema-member-type-explorer/schema-member-type-explorer.module';
 import {ChangesetSelectorModule} from '../changeset-selector/changeset-selector.module';
 import {ProjectSettingsComponent} from './project-settings.component';
 import {ProjectSourceConfigModule} from 'src/app/project-import/project-source-config/project-source-config.module';
@@ -55,11 +58,17 @@ import {HeaderComponentLayoutModule} from "../header-component-layout/header-com
     RouterModule,
     PackageViewerModule,
     ChangelogModule,
-    SchemaExplorerTableModule,
+    SchemaMemberTypeExplorerModule,
     SimpleBadgeListModule,
     TuiButtonModule,
     ProjectSourceConfigModule,
     RouterModule.forChild([
+      {
+        path: 'project-import',
+        component: ProjectImportComponent,
+        canActivate: [AuthGuard],
+        data: {requiredAuthority: VynePrivileges.EditSchema}
+      },
       {
         path: '',
         component: ProjectExplorerContainerComponent,

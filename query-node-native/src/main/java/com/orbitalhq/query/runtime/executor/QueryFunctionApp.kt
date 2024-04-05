@@ -27,7 +27,6 @@ import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ImportRuntimeHints
 import org.springframework.web.reactive.function.client.WebClient
-import reactivefeign.spring.config.ReactiveFeignAutoConfiguration
 
 private val logger = KotlinLogging.logger {}
 
@@ -35,7 +34,6 @@ private val logger = KotlinLogging.logger {}
    exclude = [JdbcRepositoriesAutoConfiguration::class,
       JdbcTemplateAutoConfiguration::class,
       DataSourceAutoConfiguration::class,
-      ReactiveFeignAutoConfiguration::class
    ]
 )
 @EnableConfigurationProperties(

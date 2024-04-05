@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
 import { TypesService } from '../services/types.service';
-import { Schema } from '../services/schema';
 import { ChangeLogEntry } from '../changelog/changelog.service';
-import { Observable } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-landing-page-container',
@@ -13,11 +13,20 @@ import { Observable } from 'rxjs';
 })
 export class LandingPageContainerComponent {
 
-  schema$: Observable<Schema>;
   changelogEntries: ChangeLogEntry[] = [];
 
-  constructor(typeService: TypesService) {
-    this.schema$ = typeService.getTypes();
+  constructor(typeService: TypesService, router: Router) {
+    typeService.getTypes()
+      .pipe(takeUntilDestroyed())
+      .subscribe(type => {
+        if (type.services.length === 0) {
+          router.navigate(
+            ['/onboarding'],
+            {
+              replaceUrl: true,
+            }
+          );
+        }
+      });
   }
-
 }

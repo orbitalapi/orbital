@@ -103,7 +103,7 @@ class Vyne(
    }
 
 
-   fun parseQuery(vyneQlQuery: TaxiQLQueryString): Triple<TaxiQlQuery, QueryOptions, TaxiSchema> {
+   fun parseQuery(vyneQlQuery: TaxiQLQueryString): Triple<TaxiQlQuery, QueryOptions, Schema> {
       return this.schema.parseQuery(vyneQlQuery)
    }
 
@@ -277,7 +277,7 @@ class Vyne(
     */
    private fun findInlineTypesInQuery(taxiQl: TaxiQlQuery, schema: Schema): List<Type> {
       val inlineDiscoveryTypes: List<lang.taxi.types.Type> = taxiQl.typesToFind.flatMap { discoveryType ->
-         schema.findUnknownTypes(discoveryType.type)
+         schema.findUnknownTypes(discoveryType.expression.returnType)
       }
       val inlineProjectionType: List<lang.taxi.types.Type> =
          taxiQl.projectedType?.let { schema.findUnknownTypes(it) } ?: emptyList()

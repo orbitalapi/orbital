@@ -35,18 +35,18 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
         [ngClass]="{ 'working' : loading }"
       >Search for a type
       </tui-input>
-      <mat-progress-spinner
-        mode="indeterminate"
-        *ngIf="loading"
-        [diameter]="24"
-        [strokeWidth]="2"
-        [class.has-search-term]="searchTerm"
-      ></mat-progress-spinner>
+      <progress
+        *ngIf='loading'
+        max="100"
+        tuiProgressBar
+        size='xs'
+        new
+        class="text-search-loader"
+      ></progress>
     </div>
     <div class="results-panel" *ngIf="searchResults">
       <div class="results-list">
         <section>
-          <div class="section-header">Matches</div>
           <ng-container *ngIf="searchResults.length > 0">
             <div *ngFor="let searchResult of searchResults; let idx = index">
               <app-type-search-result [result]="searchResult"
@@ -64,6 +64,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
         <!--        </section>-->
       </div>
       <div class="documentation-panel">
+        <progress
+          *ngIf='loadingDocs'
+          max="100"
+          tuiProgressBar
+          size='xs'
+          new
+          class="docs-loader"
+        ></progress>
         <app-type-viewer
           *ngIf="searchResultDocs"
           [showContentsList]="false"
@@ -91,6 +99,10 @@ export class TypeSearchComponent implements OnInit {
       this.keyboardEventsManager = new ActiveDescendantKeyManager(this.items)
         .withWrap();
       this.keyboardEventsManager.change
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          debounceTime(250)
+        )
         .subscribe(activeIndex => {
           this.searchResultHighlighted.emit(this.keyboardEventsManager.activeItem.result);
         });
@@ -106,6 +118,9 @@ export class TypeSearchComponent implements OnInit {
 
   @Input()
   loading: boolean = false;
+
+  @Input()
+  loadingDocs: boolean = false;
 
   @Input()
   searchResults: SearchResult[] | null = null;

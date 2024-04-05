@@ -16,11 +16,9 @@ class QueryParser(val schema: Schema) {
       // In reality, this can be simplified as we now only support queries via TaxiQL.
 
       return when (query) {
-         is TypeQueryExpression -> setOf(QuerySpecTypeNode(query.type))
+         is ExpressionQuery -> setOf( QuerySpecTypeNode(schema.type(query.expression.returnType), query.expression, dataConstraints = query.constraints))
+         is TypeQueryExpression -> setOf(QuerySpecTypeNode(query.type, expression = null))
          is TypeNameQueryExpression -> parseSingleType(query)
-         is TypeNameListQueryExpression -> parseQueryList(query)
-         // Don't get excited... we never implemented GraphQL...
-         is GraphQlQueryExpression -> parseQueryObject(query)
          is ConstrainedTypeNameQueryExpression -> parseQueryObject(query)
          is MutationOnlyExpression -> parseMutation(query)
          // TODO :  How do we support the mutation phase?
@@ -29,29 +27,30 @@ class QueryParser(val schema: Schema) {
             parse(query.source).map { it.copy(projection = query.projection) }.toSet()
          }
          is StreamJoiningExpression -> {
-            val streamNodes = query.streamExpressions.flatMap { parse(it) }
-            val projections = streamNodes.mapNotNull { it.projection }.distinct()
-            if (projections.size > 1) { error("Found multiple projections in a stream joining query - this is an error") }
-            val mergedStreamType = MergedStream.buildMergedStreamType(streamNodes.map { it.type })
-
-            val mutations = streamNodes.mapNotNull { it.mutation }.distinct()
-            if (projections.size > 1) { error("Found multiple mutations in a stream joining query - this is an error") }
-
-            setOf(QuerySpecTypeNode(
-               type = mergedStreamType,
-               // Remove the mutation and the projection, as we want to operate those on the MERGED stream,
-               // not the individual ones.
-               children = streamNodes.map { it.copy(mutation = null, projection = null) }.toSet(),
-               projection = projections.singleOrNull(),
-               mutation = mutations.singleOrNull()
-            ))
+            TODO()
+//            val streamNodes = query.streamExpressions.flatMap { parse(it) }
+//            val projections = streamNodes.mapNotNull { it.projection }.distinct()
+//            if (projections.size > 1) { error("Found multiple projections in a stream joining query - this is an error") }
+//            val mergedStreamType = MergedStream.buildMergedStreamType(streamNodes.map { it.type })
+//
+//            val mutations = streamNodes.mapNotNull { it.mutation }.distinct()
+//            if (projections.size > 1) { error("Found multiple mutations in a stream joining query - this is an error") }
+//
+//            setOf(QuerySpecTypeNode(
+//               type = mergedStreamType,
+//               // Remove the mutation and the projection, as we want to operate those on the MERGED stream,
+//               // not the individual ones.
+//               children = streamNodes.map { it.copy(mutation = null, projection = null) }.toSet(),
+//               projection = projections.singleOrNull(),
+//               mutation = mutations.singleOrNull()
+//            ))
          }
          else -> throw IllegalArgumentException("The query passed was neither a Json object, nor a recognized type.  Unable to proceed:  $query")
       }
    }
 
    private fun parseMutation(query: MutationOnlyExpression): Set<QuerySpecTypeNode> {
-      return setOf(QuerySpecTypeNode(schema.type(query.mutation.operation.returnType), mutation = query.mutation))
+      return setOf(QuerySpecTypeNode(schema.type(query.mutation.operation.returnType), expression = null, mutation = query.mutation))
    }
 
    private fun parseQueryObject(query: ConstrainedTypeNameQueryExpression): Set<QuerySpecTypeNode> {
@@ -63,14 +62,6 @@ class QueryParser(val schema: Schema) {
    }
 
    private fun getQueryNode(typeName: String): QuerySpecTypeNode {
-      return QuerySpecTypeNode(schema.type(typeName))
-   }
-
-   private fun parseQueryList(expression: TypeNameListQueryExpression): Set<QuerySpecTypeNode> {
-      return expression.typeNames.map { getQueryNode(it) }.toSet()
-   }
-
-   private fun parseQueryObject(query: GraphQlQueryExpression): Set<QuerySpecTypeNode> {
-      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+      return QuerySpecTypeNode(schema.type(typeName), expression = null)
    }
 }

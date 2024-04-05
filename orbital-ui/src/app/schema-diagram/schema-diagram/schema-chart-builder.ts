@@ -1,6 +1,7 @@
 import {
   arrayMemberTypeNameOrTypeNameFromName,
   collectAllServiceOperations,
+  FieldMap,
   findType,
   QualifiedName,
   Schema,
@@ -107,6 +108,21 @@ export function collectionOperations(schema: Schema): ServiceMember[] {
       .concat(service.tableOperations as ServiceMember[])
       .concat(service.streamOperations as ServiceMember[]);
   });
+}
+
+export function buildLinksForModelWithAttributes(model: QualifiedName, attributes: FieldMap, schema: Schema, operations: ServiceMember[], returnKind: SchemaMemberKind = 'OPERATION'): Links {
+  const links = Object.keys(attributes)
+    .map(key => {
+      return buildLinksForType(
+        attributes[key].type,
+        schema,
+        operations,
+        { name: model, nodeId: attributes[key].type.fullyQualifiedName, field: key }
+      )
+    })
+  const inputs = links.flatMap(link => link.inputs).filter(link => link.sourceMemberType === returnKind)
+  const outputs = links.flatMap(link => link.outputs).filter(link => link.targetMemberType === returnKind);
+  return {inputs, outputs}
 }
 
 export function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: ServiceMember[], parent: { name: QualifiedName, nodeId: string, field: string } | null): Links {
@@ -283,8 +299,14 @@ export class ServiceLinks implements HasChildLinks {
   collectAllChildLinks(): Link[] {
     return Object.values(this.operationLinks).flatMap(links => collectLinks(links));
   }
+}
 
-
+export function findServiceAssociatedWithOperation(services: Service[], operation: ServiceMember): Service {
+  return services.find(service => {
+    return collectAllServiceOperations(service).find(_operation => {
+      return _operation.memberQualifiedName.fullyQualifiedName === operation.memberQualifiedName.fullyQualifiedName
+    })
+  });
 }
 
 function buildServiceLinks(service: Service, schema: Schema, operations: ServiceMember[]): ServiceLinks {
@@ -335,7 +357,7 @@ export interface Link {
   linkKind: LinkKind;
 }
 
-function buildOperationLinks(operation: ServiceMember, service: Service, schema: Schema): Links {
+export function buildOperationLinks(operation: ServiceMember, service: Service, schema: Schema): Links {
   const serviceNodeId = getNodeId('SERVICE', service.name);
   const nameParts = splitOperationQualifiedName(operation.qualifiedName.fullyQualifiedName);
   const inputs: Link[] = operation.parameters.map(param => {
@@ -417,7 +439,7 @@ export function getNodeId(schemaMemberType: SchemaMemberKind, name: QualifiedNam
 export function buildSchemaNode(schema: Schema, member: SchemaMember, operations: ServiceMember[], appendLinksHandler: AppendLinksHandler, clickHandler: SchemaMemberClickHandler, position: XYPosition = {
   x: 100,
   y: 100
-}): Node<MemberWithLinks> {
+}, isNavigable: boolean): Node<MemberWithLinks> {
   const links = buildLinks(member, schema, operations);
   return {
     id: getNodeId(member.kind, member.name),
@@ -428,10 +450,11 @@ export function buildSchemaNode(schema: Schema, member: SchemaMember, operations
       member,
       links,
       appendNodesHandler: appendLinksHandler,
-      clickHandler: clickHandler
+      clickHandler: clickHandler,
+      isNavigable
     },
     type: getNodeKind(member),
-    position
+    position,
   } as Node<MemberWithLinks>;
 }
 
@@ -439,9 +462,9 @@ export function buildSchemaNode(schema: Schema, member: SchemaMember, operations
 export interface MemberWithLinks {
   member: SchemaMember;
   links: Links;
-
   appendNodesHandler: AppendLinksHandler;
   clickHandler: SchemaMemberClickHandler;
+  isNavigable: boolean;
 }
 
 

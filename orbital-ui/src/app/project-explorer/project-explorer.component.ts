@@ -41,7 +41,7 @@ export class ProjectExplorerComponent implements OnInit {
 
   setActiveTab(index: integer) {
     const newRoute = this.tabs[index].route;
-    this.router.navigate(['..',newRoute], {relativeTo: this.activatedRoute, replaceUrl: true})
+    this.router.navigate(['..',newRoute], {relativeTo: this.activatedRoute})
   }
 
 
@@ -72,7 +72,10 @@ export class ProjectExplorerComponent implements OnInit {
       paramMap => {
         const selectedTab = paramMap.get('selectedTab');
         if (!selectedTab) {
-          this.router.navigate([this.tabs[0].route], {relativeTo: this.activatedRoute, replaceUrl: true})
+          this.router.navigate(
+            [this.tabs[0].route],
+            { relativeTo: this.activatedRoute, onSameUrlNavigation: "reload", skipLocationChange: true }
+          )
         } else {
           this.activeTabIndex = this.tabs.findIndex(tab => tab.route === selectedTab);
           this.changeDetector.markForCheck();

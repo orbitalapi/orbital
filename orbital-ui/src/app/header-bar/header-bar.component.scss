@@ -2,20 +2,8 @@
 
 :host {
   display: flex;
-  background-color: var(--component-bg-color);
+  background-color: $whiteish;
   padding: 0.25rem 0.5rem 0.25rem 1rem;
-  border-bottom: 1px solid $slate-200;
+  border-bottom: 2px solid $slate-200;
   align-items: center;
 }
-.wordmark {
-  height: 3rem;
-  margin-right: 3rem;
-}
-.integrator {
-  height: 3rem;
-
-}
-app-avatar {
-  margin-left: 1rem;
-}
-

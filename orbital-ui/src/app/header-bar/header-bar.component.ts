@@ -9,7 +9,6 @@ import {Observable} from "rxjs";
       <app-workspace-selector *ngIf="(appConfig$ | async)?.featureToggles.workspacesEnabled"></app-workspace-selector>
       <div class="spacer"></div>
       <app-search-bar-container></app-search-bar-container>
-      <app-avatar *ngIf="vyneUser" [user]="vyneUser"></app-avatar>
   `,
   styleUrls: ['./header-bar.component.scss']
 })

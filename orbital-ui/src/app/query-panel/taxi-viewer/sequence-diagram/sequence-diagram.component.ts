@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core';
+import { UiCustomisations } from '../../../../environments/ui-customisations';
 import { QueryProfileData } from '../../../services/query.service';
 import { Observable } from 'rxjs/index';
 
@@ -47,8 +48,8 @@ export class SequenceDiagramComponent {
           const resultMessage = (wasSuccessful) ? `${remoteCall.responseTypeDisplayName} (${remoteCall.durationMs}ms)`
             : `${remoteCall.resultCode} (${remoteCall.durationMs}ms)`
           const indent = '    ';
-          const lines = [indent + `Orbital ->> ${remoteCall.serviceDisplayName}: ${remoteCall.operationName} (${remoteCall.method})`,
-            indent + `${remoteCall.serviceDisplayName} ->> Orbital: ${resultMessage}`
+          const lines = [indent + `${UiCustomisations.productName} ->> ${remoteCall.serviceDisplayName}: ${remoteCall.operationName} (${remoteCall.method})`,
+            indent + `${remoteCall.serviceDisplayName} ->> ${UiCustomisations.productName}: ${resultMessage}`
           ].join('\n');
           return lines;
 

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Inject, Injector, Input, Output } from '@angular/core';
 import { Observable } from 'rxjs/internal/Observable';
+import { UiCustomisations } from '../../environments/ui-customisations';
 import { AuthScheme, AuthTokenMap, NoCredentialsAuthToken } from './auth-manager.service';
 import { of } from 'rxjs';
 import { TuiDialogService } from '@taiga-ui/core';
@@ -13,7 +14,7 @@ import { map } from 'rxjs/operators';
     <app-header-component-layout
 
       title="Authentication Tokens"
-      description="These tokens will be used to authenticate Orbital to services.">
+      description="These tokens will be used to authenticate {{UiCustomisations.productName}} to services.">
       <ng-container ngProjectAs="buttons">
         <button tuiButton size="m" appearance="primary" (click)="showCreateTokenPopup()">
           Add a token
@@ -147,4 +148,6 @@ export class TokenListComponent {
     //     return key !== 'type';
     //   })
   }
+
+  protected readonly UiCustomisations = UiCustomisations;
 }

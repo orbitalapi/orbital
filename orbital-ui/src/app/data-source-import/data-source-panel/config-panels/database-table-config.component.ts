@@ -19,7 +19,6 @@ import {
 } from '../../../db-connection-editor/db-connection-editor-dialog.component';
 import { PackageIdentifier } from '../../../package-viewer/packages.service';
 import { ConnectionFiltersModule } from '../../../utils/connections.pipe';
-import { DbConnectionEditorModule } from '../../../db-connection-editor/db-connection-editor.module';
 import { sanitiseNamespace } from '../../../utils/utils';
 
 @Component({
@@ -37,7 +36,6 @@ import { sanitiseNamespace } from '../../../utils/utils';
     TuiFilterByInputPipeModule,
     TuiButtonModule,
     TuiInputModule,
-    DbConnectionEditorModule
   ],
   template: `
     <div class="form-container">
@@ -109,7 +107,7 @@ import { sanitiseNamespace } from '../../../utils/utils';
     </div>
 
     <div class="form-button-bar">
-      <button tuiButton [showLoader]="working" (click)="doCreate()" [size]="'m'">Next
+      <button tuiButton [showLoader]="working" (click)="doCreate()" [size]="'m'">Configure
       </button>
     </div>
   `,

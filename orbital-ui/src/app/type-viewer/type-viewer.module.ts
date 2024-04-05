@@ -32,6 +32,7 @@ import {
 import {
     TuiCheckboxLabeledModule,
     TuiInputModule,
+    TuiProgressModule,
     TuiTabsModule,
     TuiTagModule,
     TuiTextareaModule,
@@ -50,6 +51,7 @@ import {SchemaDiagramModule} from '../schema-diagram/schema-diagram.module';
 import {ChangesetSelectorModule} from '../changeset-selector/changeset-selector.module';
 import { TuiAutoFocusModule } from '@taiga-ui/cdk';
 import { MarkdownModule } from 'ngx-markdown';
+import { MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef } from '@angular/material/legacy-dialog';
 
 
 @NgModule({
@@ -90,6 +92,7 @@ import { MarkdownModule } from 'ngx-markdown';
         TuiAutoFocusModule,
         MarkdownModule,
         TuiSvgModule,
+        TuiProgressModule,
     ],
     declarations: [
         TocHostDirective,
@@ -121,6 +124,10 @@ import { MarkdownModule } from 'ngx-markdown';
         TypeSearchContainerComponent,
         TypeSearchComponent,
         ModelAttributeTreeListComponent,
+    ],
+    providers: [
+      { provide: MAT_LEGACY_DIALOG_DATA, useValue: {} },
+      { provide: MatLegacyDialogRef, useValue: {} }
     ]
 })
 export class TypeViewerModule {

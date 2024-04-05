@@ -23,7 +23,7 @@ data class ChangeFieldType(
    override fun applyTo(
       sourcePackage: SourcePackage,
       taxiDocument: TaxiDocument
-   ): Either<CompilationException, Pair<SourcePackage, TaxiDocument>> {
+   ): Either<CompilationException, SourceEditResult> {
 
 
       val compiler = buildCompiler(sourcePackage, taxiDocument)
@@ -35,10 +35,10 @@ data class ChangeFieldType(
          ?: error("Can not find a field named $fieldName in the definition of type ${symbol.fullyQualifiedName}")
 
       val fieldReturnTypeDefinition =
-         fieldDefinition.fieldDeclaration()?.fieldTypeDeclaration()?.nullableTypeReference()?.typeReference()
+         fieldDefinition.fieldDeclaration()?.fieldTypeDeclaration()?.typeExpression()?.nullableTypeReference()?.typeReference()
             ?: error("Field $fieldName does not define a type")
 
-      val mutation = SourcePackageEdit(
+      val mutation = SourceEdit(
          fieldReturnTypeDefinition.source().sourceName,
          fieldReturnTypeDefinition.asCharacterPositionRange(),
          // TODO: we need a test for this

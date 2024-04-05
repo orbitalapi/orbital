@@ -16,6 +16,8 @@ import com.orbitalhq.connectors.kafka.KafkaInvoker
 import com.orbitalhq.connectors.kafka.KafkaStreamManager
 import com.orbitalhq.connectors.kafka.KafkaStreamPublisher
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
+import com.orbitalhq.connectors.nosql.mongodb.MongoConnectionFactory
+import com.orbitalhq.connectors.nosql.mongodb.MongoDbInvoker
 import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.schema.api.SchemaProvider
 import io.micrometer.core.instrument.MeterRegistry
@@ -112,4 +114,7 @@ class InvokerConfiguration {
    ): StoreInvoker {
       return StoreInvoker(AzureStreamProvider(), azureConnectionRegistry, schemaProvider)
    }
+
+   @Bean
+   fun mongoDbInvoker(mongoConnectionFactory: MongoConnectionFactory, schemaProvider: SchemaProvider) = MongoDbInvoker(mongoConnectionFactory, schemaProvider)
 }

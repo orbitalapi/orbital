@@ -1,11 +1,13 @@
 package com.orbitalhq.models.functions.stdlib.collections
 
 import arrow.core.Either
+import arrow.core.getOrElse
 import arrow.core.left
 import arrow.core.right
 import com.orbitalhq.models.*
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
+import com.orbitalhq.utils.get
 import lang.taxi.functions.FunctionAccessor
 import lang.taxi.types.PrimitiveType
 
@@ -73,38 +75,59 @@ open class CollectionFilteringFunction {
       val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
 
       val filtered = collection.filter { collectionMember ->
-         val factBag = FactBagValueSupplier.of(listOf(collectionMember), schema, thisScopeValueSupplier = objectFactory)
-         val evaluated = deferredInstance.evaluate(collectionMember, dataSource, factBag)
-//         val reader = AccessorReader(factBag, schema.functionRegistry, schema)
-//         val evaluated = reader.evaluate(
-//            collectionMember,
-//            expressionReturnType,
-//            deferredInstance.expression,
-//            dataSource = dataSource,
-//            format = null
-//         )
+         val filtered = applyFilterToMember(collectionMember, schema, objectFactory, deferredInstance, dataSource, returnType, function, inputValues)
+         when (filtered) {
+            // If the evaluation returned a typedNull, it indicates it failed, so
+            // bail out of the evaluation, returning at the top level
+            is Either.Left -> return filtered.value.left()
+            // Otherwise, return the filter result
+            is Either.Right -> return@filter filtered.value
+         }
 
-         if (evaluated.type.basePrimitiveTypeName?.parameterizedName != PrimitiveType.BOOLEAN.qualifiedName) {
-            return failed(
-               returnType,
-               function,
-               inputValues,
-               "After evaluating the predicate (${deferredInstance.expression.asTaxi()}), expected a return type of boolean, but the returned instance had type ${evaluated.type.qualifiedName.parameterizedName}",
-               evaluated
-            ).left()
-         }
-         if (evaluated is TypedNull) {
-            return failed(
-               returnType,
-               function,
-               inputValues,
-               "When evaluating the predicate  (${deferredInstance.expression.asTaxi()}), a null value was returned, which cannot be cast to boolean",
-               evaluated,
-               evaluated.source
-            ).left()
-         }
-         evaluated.value as Boolean
       }
       return filtered.right()
+   }
+
+   protected fun applyFilterToMember(
+      collectionMember: TypedInstance,
+      schema: Schema,
+      objectFactory: EvaluationValueSupplier,
+      deferredInstance: DeferredExpression,
+      dataSource: EvaluatedExpression,
+      returnType: Type,
+      function: FunctionAccessor,
+      inputValues: List<TypedInstance>
+   ): Either<TypedNull,Boolean> {
+      val factBag = FactBagValueSupplier.of(listOf(collectionMember), schema, thisScopeValueSupplier = objectFactory)
+      val evaluated = deferredInstance.evaluate(collectionMember, dataSource, factBag)
+      //         val reader = AccessorReader(factBag, schema.functionRegistry, schema)
+      //         val evaluated = reader.evaluate(
+      //            collectionMember,
+      //            expressionReturnType,
+      //            deferredInstance.expression,
+      //            dataSource = dataSource,
+      //            format = null
+      //         )
+
+      if (evaluated.type.basePrimitiveTypeName?.parameterizedName != PrimitiveType.BOOLEAN.qualifiedName) {
+         return failed(
+            returnType,
+            function,
+            inputValues,
+            "After evaluating the predicate (${deferredInstance.expression.asTaxi()}), expected a return type of boolean, but the returned instance had type ${evaluated.type.qualifiedName.parameterizedName}",
+            evaluated
+         ).left()
+      }
+      if (evaluated is TypedNull) {
+         return failed(
+            returnType,
+            function,
+            inputValues,
+            "When evaluating the predicate  (${deferredInstance.expression.asTaxi()}), a null value was returned, which cannot be cast to boolean",
+            evaluated,
+            evaluated.source
+         ).left()
+      }
+      return (evaluated.value as Boolean).right()
    }
 }

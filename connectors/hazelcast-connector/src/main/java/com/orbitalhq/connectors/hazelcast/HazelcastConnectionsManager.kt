@@ -12,7 +12,7 @@ object HazelcastConnections {
 class HazelcastConnectionsManager(private val connectors: SourceLoaderConnectorsRegistry) : HazelcastInstanceProvider {
    private val hazelcastConnections = ConcurrentHashMap<HazelcastConfiguration, HazelcastInstance>()
 
-   fun hazelcastConnection(connectionName: String?): Pair<HazelcastInstance, HazelcastConfiguration> {
+   override fun hazelcastConnection(connectionName: String?): Pair<HazelcastInstance, HazelcastConfiguration> {
       return if (connectionName == null) {
          val defaultHazelcastConnection = connectors.defaultHazelcastConfiguration()
          require(defaultHazelcastConnection != null)
@@ -33,7 +33,7 @@ class HazelcastConnectionsManager(private val connectors: SourceLoaderConnectors
       }
    }
 
-   fun canProvideHazelcastInstance(connectionName: String?): Boolean {
+   override fun canProvideHazelcastInstance(connectionName: String?): Boolean {
       return (connectionName == null && connectors.defaultHazelcastConfiguration() != null) ||
          connectionName != null && connectors.hazelcastConfigurationForConnectionName(connectionName) != null
 

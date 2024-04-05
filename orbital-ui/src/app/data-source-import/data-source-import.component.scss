@@ -4,6 +4,7 @@
 
 :host(.vyne) {
   background-color: $body-bg;
+  min-height: 0;
 }
 
 :host {
@@ -22,8 +23,20 @@
   display: flex;
   flex-direction: column;
   flex-grow: 1;
+  height: 10px; // this makes the layout fit the available height in the flexbox (don't ask me how)
 }
 
 .notification-error {
   margin-top: 1rem;
+  white-space: pre;
+}
+
+h3 {
+  margin: 1rem 0;
+  font-weight: 500;
+}
+
+.instructions {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
 }

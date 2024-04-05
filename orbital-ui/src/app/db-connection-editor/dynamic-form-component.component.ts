@@ -1,7 +1,20 @@
+import { AsyncPipe, CommonModule, NgSwitch } from '@angular/common';
 import {Component, forwardRef, Input} from '@angular/core';
-import {ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormControl, UntypedFormGroup} from '@angular/forms';
-import {tuiInputNumberOptionsProvider} from "@taiga-ui/kit";
-import {TUI_NUMBER_FORMAT} from "@taiga-ui/core";
+import {
+  ControlValueAccessor,
+  NG_VALUE_ACCESSOR,
+  ReactiveFormsModule,
+  UntypedFormControl,
+  UntypedFormGroup
+} from '@angular/forms';
+import {
+  TuiCheckboxLabeledModule,
+  TuiFieldErrorPipeModule,
+  TuiInputModule,
+  TuiInputNumberModule,
+  TuiInputPasswordModule
+} from '@taiga-ui/kit';
+import { TUI_NUMBER_FORMAT, TuiErrorModule } from '@taiga-ui/core';
 
 export class DynamicFormComponentSpec {
   constructor(readonly key: string,
@@ -20,7 +33,7 @@ export type InputType = 'text' | 'password' | 'number' | 'checkbox';
   // We have to disable the thousand seperator, otherwise things like "port" get
   // formatted as 5,442
   providers: [
-    {provide: TUI_NUMBER_FORMAT, useValue: {thousandSeparator: ''}},
+    { provide: TUI_NUMBER_FORMAT, useValue: { thousandSeparator: '' } },
     {
       provide: NG_VALUE_ACCESSOR,
       useExisting: forwardRef(() => DynamicFormComponentComponent),
@@ -46,7 +59,19 @@ export type InputType = 'text' | 'password' | 'number' | 'checkbox';
       ></tui-error>
     </div>
   `,
-  styleUrls: ['./dynamic-form-component.component.scss']
+  styleUrls: ['./dynamic-form-component.component.scss'],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    TuiInputModule,
+    TuiInputPasswordModule,
+    TuiInputNumberModule,
+    TuiCheckboxLabeledModule,
+    TuiErrorModule,
+    TuiFieldErrorPipeModule,
+    AsyncPipe
+  ],
+  standalone: true
 })
 export class DynamicFormComponentComponent implements ControlValueAccessor {
   _onTouched: any;

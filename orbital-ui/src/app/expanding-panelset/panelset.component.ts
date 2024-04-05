@@ -13,7 +13,7 @@ import {active} from "d3-transition";
       </div>
     </div>
     <div class="body" *ngIf="activePanel">
-      <app-panel-header [title]="activePanel.title"></app-panel-header>
+      <app-panel-header [title]="activePanel.title" [isSecondary]="true"></app-panel-header>
       <ng-template [cdkPortalOutlet]="activePanel.contentPortal"></ng-template>
     </div>
   `,

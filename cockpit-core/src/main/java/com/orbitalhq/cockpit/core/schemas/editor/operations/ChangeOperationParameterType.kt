@@ -18,7 +18,7 @@ data class ChangeOperationParameterType(
    override fun applyTo(
       sourcePackage: SourcePackage,
       taxiDocument: TaxiDocument
-   ): Either<CompilationException, Pair<SourcePackage, TaxiDocument>> {
+   ): Either<CompilationException, SourceEditResult> {
       val compiler = buildCompiler(sourcePackage, taxiDocument)
       val (serviceName, operationName) = OperationNames.serviceAndOperation(symbol.fullyQualifiedName)
       val (_, serviceDefinition) = compiler.tokens.unparsedServices[serviceName]
@@ -33,7 +33,7 @@ data class ChangeOperationParameterType(
          ?.firstOrNull { it.parameterName().identifier().text == parameterName }
          ?: error("No parameter named $parameterName is present on operation $operationName")
 
-      val mutation = SourcePackageEdit(
+      val mutation = SourceEdit(
          operation.source().sourceName,
          parameter.nullableTypeReference().asCharacterPositionRange(),
          newType.parameterizedName

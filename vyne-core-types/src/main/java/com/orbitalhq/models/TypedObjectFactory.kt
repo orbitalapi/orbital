@@ -50,7 +50,15 @@ class TypedObjectFactory(
    private val parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
    private val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf(),
    private val projectionScope: ProjectionFunctionScope? = null,
-   private val metadata: Map<String, Any> = emptyMap()
+   private val metadata: Map<String, Any> = emptyMap(),
+   /**
+    * Normally, we don't allow construction of closed types.
+    * However, if a type is both closed AND a parameter type,
+    * then we optionally want to allow construction of these types.
+    * Generally, set this to false, unless attempting to construct a
+    * parameter to a call
+    */
+   private val constructClosedParameterTypes: Boolean = false
 ) : EvaluationValueSupplier, ValueProjector {
 
    companion object {
@@ -81,12 +89,6 @@ class TypedObjectFactory(
             .isNotEmpty() -> FactBag.of(value.filterIsInstance<TypedInstance>(), schema)
 
          else -> FactBag.empty()
-      }
-   }
-
-   init {
-      if (type.isCollection) {
-//         logger.warn { "TypedObjectFactory constructed for scalar type ${type.qualifiedName.shortDisplayName} - TypedObjectFactory is intended for object types - this probably indicates an upstream bug" }
       }
    }
 
@@ -372,7 +374,12 @@ class TypedObjectFactory(
       // We want to build closed objects when deserializing a result.
       // However we don't currently have an easy way to pass that flag in.
       // It's unlikely we're serializing results using a FactBag.
-      if (type.isClosed && value is FactBag) {
+      val typeIsConstructable = when {
+         type.isClosed && !type.isParameterType -> false
+         type.isClosed && type.isParameterType && constructClosedParameterTypes -> true
+         else -> true
+      }
+      if (!typeIsConstructable && value is FactBag) {
          logger.debug { "Not attempting to build ${type.name.shortDisplayName} as it is closed - triggering search" }
          return queryForParentType()
       }
@@ -431,6 +438,15 @@ class TypedObjectFactory(
          error("No scope of ${scope.name} exists on the provided value. (Was passed a value of type ${value::class.simpleName})")
       }
    }
+
+   override fun getScopedFactOrNull(scope: Argument): TypedInstance? {
+      return if (value is FactBag) {
+         return value.getScopedFactOrNull(scope)?.fact
+      } else {
+         null
+      }
+   }
+
 
    /**
     * Returns a value looked up by it's type
@@ -504,6 +520,9 @@ class TypedObjectFactory(
             // However, in future, we need to mkae the TypedObjectFactory
             // async up the chain.
             runBlocking {
+               if (requestedType.isStream) {
+                  error("Cannot perform an inner search for a stream")
+               }
                val resultsFromSearch = try {
                   inPlaceQueryEngine.findType(requestedType)
                      .toList()

@@ -7,6 +7,7 @@ import {HttpClient} from '@angular/common/http';
 import {concatAll, map, shareReplay} from 'rxjs/operators';
 import {Policy} from '../policy-manager/policies';
 import {
+  collectAllServiceOperations,
   CompilationMessage,
   Message,
   Operation,
@@ -404,7 +405,18 @@ export function prepareSchema(schema: Schema): Schema {
   schema.members = _.sortBy(schemaMembers, [(schemaMember: SchemaMember) => {
     return schemaMember.name.fullyQualifiedName;
   }]);
+  schema.operations = schema.services.flatMap(service => collectAllServiceOperations(service) as Operation[]);
   return schema;
+}
+
+
+export function combineAndCloneWithPartialSchema(schemaToClone: Schema, partialSchema: PartialSchema): Schema {
+  let clonedSchema: Schema = JSON.parse(JSON.stringify(schemaToClone));
+  clonedSchema.types = [...clonedSchema.types, ...partialSchema.types];
+  clonedSchema.services = [...clonedSchema.services, ...partialSchema.services];
+  clonedSchema.hash = clonedSchema.hash ?? new Date().getTime();
+  clonedSchema = prepareSchema(clonedSchema);
+  return clonedSchema;
 }
 
 export class XmlIngestionParameters {

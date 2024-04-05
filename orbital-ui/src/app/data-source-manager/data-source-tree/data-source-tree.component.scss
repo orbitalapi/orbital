@@ -1,0 +1,47 @@
+@import "src/common";
+
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.tree-icon {
+  width: 24px;
+  margin-right: 2px;
+  opacity: 0.8;
+}
+
+tui-tree-item {
+  padding-top: 0.25rem;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.is-navigable {
+  border-radius: 4px;
+  width: 100%;
+  padding: 2px 2px 2px 2px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+
+  &:hover {
+    background-color: $gray-100;
+    color: $sky-700;
+    cursor: pointer;
+  }
+
+  &.active,
+  &.active:hover {
+    background-color: $gray-200;
+    color: $sky-800;
+    font-weight: bold;
+    cursor: default;
+  }
+}
+
+.connection-name {
+  font-size: 1rem;
+}

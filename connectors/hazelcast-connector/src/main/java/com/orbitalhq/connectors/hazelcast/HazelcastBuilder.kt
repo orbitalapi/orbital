@@ -55,6 +55,20 @@ object HazelcastBuilder {
 
 interface HazelcastInstanceProvider {
    fun provide(config: HazelcastConfiguration): HazelcastInstance
+
+   /**
+    * Returns the hazelcast connection for the provided name.
+    * If the name is null, and a default connection has been configured, then
+    * the default is returned - otherwise an exception is thrown
+    */
+   fun hazelcastConnection(connectionName: String?): Pair<HazelcastInstance, HazelcastConfiguration>
+
+   /**
+    * Indicates if the provider has an instance for the specified name.
+    * If no name is provided, indicates if a default connection has been
+    * specified
+    */
+   fun canProvideHazelcastInstance(connectionName: String?): Boolean
 }
 
 fun HazelcastInstance.doHealthCheck() {

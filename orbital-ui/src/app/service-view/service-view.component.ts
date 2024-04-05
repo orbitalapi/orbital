@@ -1,9 +1,15 @@
+import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { Observable } from 'rxjs';
+import { SchemaDiagramModule } from '../schema-diagram/schema-diagram.module';
 import { QualifiedName, Schema, Service } from '../services/schema';
 import { TypesService } from '../services/types.service';
 import { getCatalogType } from 'src/app/operation-view/operation-view.component';
 import { OperationSummary, toOperationSummary } from 'src/app/service-view/operation-summary';
 import { methodClassFromName } from 'src/app/service-view/service-view-class-utils';
+import { DescriptionEditorModule } from '../type-viewer/description-editor/description-editor.module';
+import { LineageGraphModule } from '../type-viewer/lineage-graph/lineage-graph.module';
 
 
 @Component({
@@ -12,15 +18,16 @@ import { methodClassFromName } from 'src/app/service-view/service-view-class-uti
     <div class="page-content">
       <div class="documentation" *ngIf="service">
         <div class="page-heading">
-          <h1>{{service?.name?.name}}<span class="badge service">{{service.serviceKind}}</span></h1>
-          <span class="mono-badge">{{service?.name?.fullyQualifiedName}}</span>
+          <h1>{{ service?.name?.name }}<span class="badge service">{{ service.serviceKind }}</span></h1>
+          <span class="mono-badge">{{ service?.name?.fullyQualifiedName }}</span>
         </div>
 
         <section>
           <app-description-editor-container [type]="service"></app-description-editor-container>
         </section>
         <section *ngIf="service">
-          <app-schema-diagram [schema]="schema" [displayedMembers]="[service.name.parameterizedName]"></app-schema-diagram>
+          <app-schema-diagram [schema$]="schema$"
+                              [displayedMembers]="[service.name.parameterizedName]"></app-schema-diagram>
         </section>
 
         <section *ngIf="service">
@@ -42,7 +49,9 @@ import { methodClassFromName } from 'src/app/service-view/service-view-class-uti
                 </td>
                 <td><a [routerLink]="[operation.name]" data-e2e-id="operation-name">{{ operation.name }}</a></td>
                 <td>{{ operation.typeDoc }}</td>
-                <td><span class="mono-badge"><a [routerLink]="['/catalog',navigationTargetForType(operation.returnType)]">{{ operation.returnType.shortDisplayName }}</a></span></td>
+                <td><span class="mono-badge"><a
+                  [routerLink]="['/catalog',navigationTargetForType(operation.returnType)]">{{ operation.returnType.shortDisplayName }}</a></span>
+                </td>
                 <td><span class="url">{{ operation.url }}</span></td>
               </tr>
             </table>
@@ -57,19 +66,25 @@ import { methodClassFromName } from 'src/app/service-view/service-view-class-uti
         </section>
       </div>
     </div>
-
   `,
-  styleUrls: ['./service-view.component.scss']
+  styleUrls: ['./service-view.component.scss'],
+  imports: [
+    CommonModule,
+    DescriptionEditorModule,
+    SchemaDiagramModule,
+    RouterLink,
+    LineageGraphModule
+  ],
+  standalone: true
 })
 export class ServiceViewComponent {
 
   private _service: Service;
-
   operationSummaries: OperationSummary[];
+  schema$: Observable<Schema>;
 
-  schema: Schema;
   constructor(typeService:TypesService) {
-    typeService.getTypes().subscribe(s => this.schema = s)
+    this.schema$ = typeService.getTypes()
   }
 
   navigationTargetForType(name: QualifiedName): string {

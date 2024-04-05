@@ -6,7 +6,11 @@ import com.hazelcast.jet.Util
 import com.hazelcast.jet.core.JobNotFoundException
 import com.hazelcast.map.IMap
 import com.hazelcast.query.Predicates
-import com.orbitalhq.pipelines.jet.api.*
+import com.orbitalhq.pipelines.jet.api.JobStatus
+import com.orbitalhq.pipelines.jet.api.PipelineMetrics
+import com.orbitalhq.pipelines.jet.api.PipelineStatus
+import com.orbitalhq.pipelines.jet.api.RunningPipelineSummary
+import com.orbitalhq.pipelines.jet.api.SubmittedPipeline
 import com.orbitalhq.pipelines.jet.api.transport.PipelineKind
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportSpec
@@ -15,15 +19,15 @@ import com.orbitalhq.pipelines.jet.api.transport.log.LogLevel
 import com.orbitalhq.pipelines.jet.api.transport.log.LoggingOutputSpec
 import com.orbitalhq.pipelines.jet.api.transport.query.StreamingQueryInputSpec
 import com.orbitalhq.pipelines.jet.badRequest
-import com.orbitalhq.pipelines.jet.source.next
 import com.orbitalhq.pipelines.jet.streams.ManagedStream
-import lang.taxi.query.TaxiQlQuery
+import com.orbitalhq.schemas.QualifiedName
 import mu.KotlinLogging
 import org.springframework.scheduling.annotation.Scheduled
-import org.springframework.scheduling.support.CronSequenceGenerator
+import org.springframework.scheduling.support.CronExpression
 import org.springframework.stereotype.Component
 import java.io.Serializable
 import java.time.Instant
+import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
 
 
@@ -44,16 +48,32 @@ class PipelineManager(
       Serializable
 
    private val logger = KotlinLogging.logger {}
-   private val submittedPipelines: IMap<JetJobId, SubmittedPipeline> =
-      hazelcastInstance.getMap("submittedPipelines")
 
-   private val scheduledPipelines: IMap<String, ScheduledPipeline> =
-      hazelcastInstance.getMap("scheduledPipelines")
+   /**
+    * These are pipelines that were submitted, but had a state of PAUSED, so haven't been
+    * passed through to Jet yet.
+    */
+   private val pendingPipelines: IMap<String, PipelineSpec<*, *>> = hazelcastInstance.getMap("pendingPipelines")
+   private val enabledPipelines: IMap<JetJobId, SubmittedPipeline> = hazelcastInstance.getMap("enabledPipelines")
+   private val scheduledPipelines: IMap<String, ScheduledPipeline> = hazelcastInstance.getMap("scheduledPipelines")
+
+   private fun getPendingOrRunningPipelineSpecByName(name: QualifiedName): PipelineSpec<*, *> {
+      val pipelineName = name.parameterizedName
+      val pendingPipeline = pendingPipelines[pipelineName]
+      if (pendingPipeline != null) return pendingPipeline
+
+      return getEnabledPipelineByName(name).spec
+   }
+   fun startPipelineByName(name: QualifiedName): Pair<SubmittedPipeline, Job?> {
+      val spec = getPendingOrRunningPipelineSpecByName(name)
+      return startPipeline(spec)
+   }
 
    fun startPipeline(pipelineSpec: PipelineSpec<*, *>): Pair<SubmittedPipeline, Job?> {
       cancelPipelineIfActive(pipelineSpec)
       val pipeline = pipelineFactory.createJetPipeline(pipelineSpec)
       logger.info { "Initializing pipeline \"${pipelineSpec.name}\"." }
+      pendingPipelines.remove(pipelineSpec.name)
       return if (pipelineSpec.input is ScheduledPipelineTransportSpec) {
          scheduleJobToBeExecuted(
             pipelineSpec as PipelineSpec<ScheduledPipelineTransportSpec, *>,
@@ -61,7 +81,6 @@ class PipelineManager(
          ) to null
       } else {
          val job = hazelcastInstance.jet.newJob(pipeline)
-
          val submittedPipeline = SubmittedPipeline(
             pipelineSpec.name,
             job.idString,
@@ -121,8 +140,8 @@ class PipelineManager(
       pipelineDotRepresentation: String,
       jobId: Long? = null
    ): SubmittedPipeline {
-      val schedule = CronSequenceGenerator(pipelineSpec.input.pollSchedule)
-      val nextScheduledRunTime = schedule.next(Instant.now())
+      val schedule = CronExpression.parse(pipelineSpec.input.pollSchedule)
+      val nextScheduledRunTime = schedule.next(ZonedDateTime.now())!!.toInstant()
       logger.info("The pipeline \"${pipelineSpec.name}\" is next scheduled to run at ${nextScheduledRunTime}.")
       val submittedPipeline = SubmittedPipeline(
          pipelineSpec.name,
@@ -197,7 +216,7 @@ class PipelineManager(
    }
 
    private fun storeSubmittedPipeline(jobId: String, submittedPipeline: SubmittedPipeline) {
-      submittedPipelines.put(jobId, submittedPipeline)
+      enabledPipelines.put(jobId, submittedPipeline)
    }
 
    fun getManagedStreams(includeCancelled: Boolean = false): List<RunningPipelineSummary> {
@@ -210,8 +229,9 @@ class PipelineManager(
             }
          }
    }
+
    fun getPipelines(kind: PipelineKind = PipelineKind.Pipeline): List<RunningPipelineSummary> {
-      val runningPipelines = submittedPipelines.entries
+      val runningPipelines = enabledPipelines.entries
          .filter { it.value.spec.kind == kind }
          .map { (key, submittedPipeline) ->
             val job = hazelcastInstance.jet.jobs
@@ -271,7 +291,7 @@ class PipelineManager(
          val job = getPipelineJob(submittedPipeline)
          job.cancel()
          if (deletePipelineRecord) {
-            submittedPipelines.remove(job.idString)
+            enabledPipelines.remove(job.idString)
          } else {
             val cancelledJob = submittedPipeline.copy(cancelled = true)
             storeSubmittedPipeline(job.idString, cancelledJob)
@@ -280,13 +300,21 @@ class PipelineManager(
       }
    }
 
+   private fun getEnabledPipelineByName(name: QualifiedName): SubmittedPipeline {
+      val matchingPipelines = enabledPipelines.values(Predicates.sql("pipelineSpecName = '${name.parameterizedName}'"))
+      return when {
+         matchingPipelines.isEmpty() -> badRequest("No pipeline with name ${name.parameterizedName}")
+         matchingPipelines.size == 1 -> matchingPipelines.single()
+         else -> error("Found ${matchingPipelines.size} pipeline jobs with name ${name.parameterizedName}")
+      }
+   }
    private fun hasPipeline(pipelineId: String): Boolean {
-      val matchingPipelines = submittedPipelines.values(Predicates.sql("pipelineSpecId = '$pipelineId'"))
+      val matchingPipelines = enabledPipelines.values(Predicates.sql("pipelineSpecId = '$pipelineId'"))
       return matchingPipelines.isNotEmpty()
    }
 
    private fun getSubmittedPipeline(pipelineId: String): SubmittedPipeline {
-      val matchingPipelines = submittedPipelines.values(Predicates.sql("pipelineSpecId = '$pipelineId'"))
+      val matchingPipelines = enabledPipelines.values(Predicates.sql("pipelineSpecId = '$pipelineId'"))
       return when {
          matchingPipelines.isEmpty() -> badRequest("No pipeline with id $pipelineId")
          matchingPipelines.size == 1 -> matchingPipelines.single()
@@ -333,21 +361,28 @@ class PipelineManager(
          ?: error("Pipeline ${submittedPipeline.pipelineSpecId} exists, but it's associated job ${submittedPipeline.jobId} has gone away")
    }
 
-   fun startPipeline(
+   fun submitStream(
       managedStream: ManagedStream,
       sinkSpec: PipelineTransportSpec = LoggingOutputSpec(
          LogLevel.INFO,
          managedStream.name.longDisplayName
       )
-   ): Pair<SubmittedPipeline, Job?> {
+   ): PipelineSpec<StreamingQueryInputSpec, PipelineTransportSpec> {
       val spec = PipelineSpec(
-         managedStream.name.longDisplayName,
-         StreamingQueryInputSpec(managedStream.query.source),
-         null,
-         listOf(sinkSpec),
+         name = managedStream.name.longDisplayName,
+         input = StreamingQueryInputSpec(managedStream.query.source),
+         transformation = null,
+         outputs = listOf(sinkSpec),
          kind = PipelineKind.Stream
       )
-      return startPipeline(spec)
+      pendingPipelines.put(managedStream.name.parameterizedName, spec)
+      return spec
+   }
+
+   fun suspendPipelineByName(name: QualifiedName) {
+      val pipeline = getPendingOrRunningPipelineSpecByName(name)
+      pendingPipelines.put(name.parameterizedName, pipeline)
+      terminatePipeline(pipeline.id, true)
    }
 
 }

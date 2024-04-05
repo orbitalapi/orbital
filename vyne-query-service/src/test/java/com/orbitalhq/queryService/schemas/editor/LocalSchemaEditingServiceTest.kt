@@ -2,8 +2,6 @@ package com.orbitalhq.queryService.schemas.editor
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.nhaarman.mockito_kotlin.*
-import com.winterbe.expekt.should
-import io.kotest.matchers.shouldBe
 import com.orbitalhq.*
 import com.orbitalhq.cockpit.core.schemas.BuiltInTypesProvider
 import com.orbitalhq.cockpit.core.schemas.editor.*
@@ -11,20 +9,19 @@ import com.orbitalhq.cockpit.core.schemas.editor.operations.ChangeFieldType
 import com.orbitalhq.cockpit.core.schemas.editor.operations.ChangeOperationParameterType
 import com.orbitalhq.cockpit.core.schemas.editor.operations.CreateOrReplaceSource
 import com.orbitalhq.cockpit.core.schemas.editor.operations.SchemaEdit
-import com.orbitalhq.queryService.schemas.SubmitEditJson
 import com.orbitalhq.schema.publisher.PublisherHealth
 import com.orbitalhq.schema.publisher.PublisherType
-import com.orbitalhq.schemaServer.editor.SchemaEditRequest
-import com.orbitalhq.schemaServer.editor.SchemaEditResponse
-import com.orbitalhq.schemaServer.editor.SchemaEditorApi
+import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
+import com.orbitalhq.schemaServer.core.packages.PackageService
 import com.orbitalhq.schemaServer.packages.PackageWithDescription
-import com.orbitalhq.schemaServer.packages.PackagesServiceApi
 import com.orbitalhq.schemaServer.packages.SourcePackageDescription
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.schemas.OperationNames
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.spring.http.BadRequestException
 import com.orbitalhq.utils.withoutWhitespace
+import com.winterbe.expekt.should
+import io.kotest.matchers.shouldBe
 import org.junit.Before
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
@@ -35,8 +32,8 @@ class LocalSchemaEditingServiceTest {
 
    lateinit var schemaStore: LocalValidatingSchemaStoreClient
 
-   private val schemaEditorApi = mock<SchemaEditorApi> { }
-   private val packagesServiceApi = mock<PackagesServiceApi> { }
+   private val schemaEditorApi = mock<SchemaEditorService> { }
+   private val packagesServiceApi = mock<PackageService> { }
    private val objectMapper = jacksonObjectMapper()
 
    @Before

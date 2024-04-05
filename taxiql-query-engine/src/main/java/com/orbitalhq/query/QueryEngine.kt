@@ -241,11 +241,6 @@ class StatefulQueryEngine(
             context.schema.type(query.typeName)
          }
 
-         is TypeNameListQueryExpression -> {
-            require(query.typeNames.size == 1) { "Currently, build only supports TypeNameQueryExpression, or a list of a single type" }
-            context.schema.type(query.typeNames.first())
-         }
-
          is TypeQueryExpression -> query.type
          else -> error("Currently, build only supports TypeNameQueryExpression")
 
@@ -262,7 +257,7 @@ class StatefulQueryEngine(
       val isProjectingCollection =
          context.facts.isNotEmpty() && context.facts.stream().allMatch { it is TypedCollection }
 
-      val querySpecTypeNode = QuerySpecTypeNode(targetType, emptySet(), QueryMode.DISCOVER)
+      val querySpecTypeNode = QuerySpecTypeNode(targetType, expression = null, emptySet(), QueryMode.DISCOVER)
       val result: TypedInstance? = when {
          //isCollectionToCollectionTransformation -> {
          //   mapCollectionToCollection(targetType, context)
@@ -734,7 +729,7 @@ class StatefulQueryEngine(
       }
 
       val querySpecTypeNode = if (target.projection != null) {
-         QuerySpecTypeNode(target.projection.type, emptySet(), QueryMode.DISCOVER)
+         QuerySpecTypeNode(target.projection.type, expression = null, emptySet(), QueryMode.DISCOVER)
       } else {
          target
       }
@@ -768,7 +763,6 @@ class StatefulQueryEngine(
       } else {
          target.anonymousTypes()
       }
-      target.anonymousTypes()
       return QueryResult(
          querySpecTypeNode,
          results = metricsCapturedResultStream,

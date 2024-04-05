@@ -1,20 +1,26 @@
+@import "src/common";
+
 :host {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-height: 100%;
+}
+
+header {
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
   background-color: var(--component-bg-color);
-  height: 100%;
-  padding: 2rem 2rem 0 2rem;
-}
+  border-bottom: 1px solid $slate-300;
+  padding-top: 1rem;
 
-.page-title {
-  text-align: center;
-}
-
-.help-link {
-  position: absolute;
-  top: 57px;
-  right: 2rem;
+  .help-link {
+    position: absolute;
+    top: 95px;
+    right: 2rem;
+  }
 }
 
 .page-container {
@@ -22,20 +28,34 @@
   flex-direction: column;
   width: 100%;
   align-items: center;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  margin: 2rem 0 1rem 0;
 
   @media screen and (min-width: 80em) {
     max-width: 980px;
   }
-}
 
-.page-content {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  padding: 0;
-  align-items: center;
+  &.full-width {
+    max-width: 100%;
+    width: -webkit-fill-available;
+    width: -moz-fill-available;
+  }
 }
 
 .stepper {
-  margin-bottom: 1rem;
+  padding: 1rem 0 2rem 0;
+
+  button {
+    color: $gray-800;
+
+    &.disabled {
+      color: $gray-600;
+    }
+  }
 }

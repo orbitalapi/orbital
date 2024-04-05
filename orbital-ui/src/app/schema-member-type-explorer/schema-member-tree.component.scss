@@ -1,0 +1,94 @@
+@import "src/common";
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  &::ng-deep {
+    tui-expand {
+      margin-top: 0.3rem;
+      margin-left: 2.5rem !important;
+    }
+  }
+}
+
+.schema-member-kind-badge {
+  @extend %type-badge;
+  font-size: 1rem;
+  margin-left: 0;
+  margin-right: 0.4rem;
+}
+
+.schema-member-kind-label {
+  &:after {
+    content: ' ('attr(data-kind)')';
+    font-size: 0.7rem;
+    opacity: 0.7;
+  }
+}
+
+.root-tree-item {
+  margin-bottom: 0.5rem;
+  display: grid; // allows the width to stretch when the content overflows horizontally
+
+  // For the case where there's no members, keep the left margin
+  &:not(:has(tui-expand)) {
+    margin-left: 2rem;
+    margin-bottom: 1rem;
+  }
+}
+
+.tree-item-leaf-node {
+  border-radius: 4px;
+  width: 100%;
+  font-size: 0.9rem;
+
+  img {
+    padding-right: 2px;
+    opacity: 0.8;
+  }
+
+  ::ng-deep tui-tree-item-content {
+    padding: 2px 2px 2px 4px !important;
+
+    // The rest of this is the styling for the hierarchy decoration of the nodes
+    position: relative;
+
+    &:before,
+    &:after {
+      content: '';
+      position: absolute;
+      left: -0.85rem;
+    }
+
+    &:before {
+      width: 0.8rem;
+      border-bottom: 1px solid $gray-400;
+    }
+
+    &:after {
+      top: -1rem;
+      bottom: 0.9rem;
+      border-left: 1px solid $gray-300;
+    }
+  }
+
+  &:hover {
+    background-color: $gray-100;
+    color: $sky-700;
+    cursor: pointer;
+  }
+
+  &.active,
+  &.active:hover {
+    background-color: $gray-200;
+    color: $sky-800;
+    font-weight: bold;
+    cursor: default;
+  }
+}
+
+.schema-member-icon {
+  margin-right: 0.2rem;
+}

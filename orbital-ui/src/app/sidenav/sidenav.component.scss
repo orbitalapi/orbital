@@ -1,0 +1,135 @@
+@import "src/common";
+
+:host {
+  position: relative;
+  background-color: var(--navbar-bg-color);
+  box-shadow: 2px 0 6px 3px $gray-300;
+  z-index: 1;
+}
+
+.side-nav-container {
+  width: $sidenav-width;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  transition: width 250ms ease-in-out;
+
+  &.is-collapsed {
+    width: $sidenav-width-collapsed;
+
+    .label {
+      opacity: 0;
+    }
+
+    .logo {
+      width: 135px;
+    }
+  }
+}
+
+.navbar-item {
+  font-family: $headings-font;
+  font-size: 1rem;
+  font-weight: 300;
+  text-align: center;
+  white-space: nowrap;
+
+  a {
+    text-decoration: none;
+    text-align: center;
+    padding: 0.6rem;
+    margin: 0.5rem;
+    display: flex;
+    align-items: center;
+
+    color: var(--navbar-text-color);
+
+    &:hover, &.active {
+      color: var(--navbar-text-color-active);
+      background-color: var(--navbar-bg-color-active);
+    }
+
+    .icon {
+      margin-right: 1rem;
+    }
+
+    .label {
+      flex-grow: 1;
+      text-align: left;
+      transition: opacity 250ms ease-out;
+    }
+  }
+
+  // If there's ever more than 15 nav-items, this number will need to be increased
+  @for $i from 1 through 15 {
+    &:nth-child(#{$i}n) {
+      a .label {
+        transition-delay: #{$i * 0.023}s;
+      }
+    }
+  }
+}
+
+// TODO: this needs to work for the HZ logo as well!
+
+.logo-container {
+  padding: 2rem 1rem 1rem 1rem;
+  height: 62px;
+}
+
+.logo {
+  width: 180px;
+  transition: width 250ms ease-in-out;
+}
+
+.app-info {
+  font-family: $headings-font;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 1rem 0 1rem 1.3rem;
+  white-space: nowrap;
+  position: relative;
+  width: 100%;
+
+  // gives a little gradient fade to the version info
+  &.is-collapsed:after {
+    position: absolute;
+    content: "";
+    background: linear-gradient(90deg, rgba(12, 24, 38, 0) 0%, rgb(12, 24, 38) 100%);
+    width: 25px;
+    height: 20px;
+    right: 20px;
+  }
+}
+
+.collapse-icon {
+  position: absolute;
+  top: 90px;
+  right: -8px;
+  height: 24px;
+  width: 24px;
+  border-radius: 100%;
+  background: var(--navbar-bg-color);
+  cursor: pointer;
+  transition: transform 250ms ease-in 150ms, outline 150ms ease-in-out;
+
+  img {
+    @extend .filter-white;
+    opacity: 0.75;
+    transition: opacity 150ms ease-in-out;
+  }
+
+  &:hover {
+    outline: 2px solid $slate-500;
+
+    img {
+      opacity: 1;
+    }
+  }
+
+  &.is-collapsed {
+    transform: rotate(180deg);
+  }
+}

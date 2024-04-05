@@ -86,6 +86,7 @@ data class SubmittedPipeline(
    val query: TaxiQlQuery? = null
 ) : Serializable {
    val pipelineSpecId: String = spec.id
+   val pipelineSpecName: String = spec.name
 }
 
 data class PipelineStatus(

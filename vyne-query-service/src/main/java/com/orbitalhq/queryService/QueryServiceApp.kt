@@ -2,7 +2,6 @@ package com.orbitalhq.queryService
 
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.orbital.station.OrbitalStationConfig
 import com.orbitalhq.cockpit.core.CockpitCoreConfig
 import com.orbitalhq.cockpit.core.CustomSettings
 import com.orbitalhq.cockpit.core.FeatureTogglesConfig
@@ -12,37 +11,37 @@ import com.orbitalhq.cockpit.core.pipelines.PipelineConfig
 import com.orbitalhq.cockpit.core.schemas.BuiltInTypesSubmitter
 import com.orbitalhq.cockpit.core.security.VyneUserConfig
 import com.orbitalhq.cockpit.core.telemetry.TelemetryConfig
+import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.history.db.InProcessHistoryConfiguration
 import com.orbitalhq.history.noop.NoopQueryEventConsumerConfiguration
 import com.orbitalhq.history.remote.RemoteHistoryConfig
 import com.orbitalhq.history.rest.QueryHistoryRestConfig
 import com.orbitalhq.licensing.LicenseConfig
-import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.monitoring.EnableCloudMetrics
-import com.orbitalhq.pipelines.jet.api.PipelineApi
 import com.orbitalhq.pipelines.jet.api.transport.PipelineJacksonModule
 import com.orbitalhq.query.TaxiJacksonModule
 import com.orbitalhq.query.VyneJacksonModule
 import com.orbitalhq.query.chat.ChatQueryParser
 import com.orbitalhq.query.runtime.core.EnableVyneQueryNode
 import com.orbitalhq.schema.publisher.SchemaPublisherService
-import com.orbitalhq.schemaServer.changelog.ChangelogApi
-import com.orbitalhq.schemaServer.codegen.CodeGenApi
-import com.orbitalhq.schemaServer.editor.SchemaEditorApi
-import com.orbitalhq.schemaServer.packages.PackagesServiceApi
-import com.orbitalhq.schemaServer.repositories.WorkspaceServiceApi
 import com.orbitalhq.search.embedded.EnableVyneEmbeddedSearch
 import com.orbitalhq.spring.EnableVyne
 import com.orbitalhq.spring.VyneSchemaConsumer
 import com.orbitalhq.spring.VyneSchemaPublisher
-import com.orbitalhq.spring.config.*
+import com.orbitalhq.spring.config.ConditionallyLoadBalancedExchangeFilterFunction
+import com.orbitalhq.spring.config.DiscoveryClientConfig
+import com.orbitalhq.spring.config.EnvVariablesConfig
+import com.orbitalhq.spring.config.VyneSpringCacheConfiguration
+import com.orbitalhq.spring.config.VyneSpringHazelcastConfiguration
+import com.orbitalhq.spring.config.VyneSpringProjectionConfiguration
 import com.orbitalhq.spring.http.auth.HttpAuthConfig
 import com.orbitalhq.spring.projection.ApplicationContextProvider
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
 import com.orbitalhq.spring.utils.versionOrDev
 import com.orbitalhq.utils.log
+import io.orbital.station.OrbitalStationConfig
 import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -67,7 +66,6 @@ import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.http.codec.json.KotlinSerializationJsonEncoder
 import org.springframework.web.reactive.config.WebFluxConfigurer
-import reactivefeign.spring.config.EnableReactiveFeignClients
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -130,24 +128,10 @@ class QueryServiceApp {
       }
    }
 
+
    @Bean
    fun formatSpecRegistry(): FormatSpecRegistry = FormatSpecRegistry.default()
 
-   @Bean
-   fun webClientCustomizer(
-      loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction,
-      discoveryClient: DiscoveryClient
-
-   ): WebClientCustomizer {
-      return WebClientCustomizer { webClientBuilder ->
-         webClientBuilder.filter(
-            ConditionallyLoadBalancedExchangeFilterFunction.onlyKnownHosts(
-               discoveryClient.services,
-               loadBalancingFilterFunction
-            )
-         )
-      }
-   }
 
    @Autowired
    fun logInfo(@Autowired(required = false) buildInfo: BuildProperties? = null) {
@@ -182,19 +166,6 @@ class PipelineConfig {
    @Bean
    fun pipelineModule(): PipelineJacksonModule = PipelineJacksonModule()
 }
-
-@Configuration
-@EnableReactiveFeignClients(
-   clients = [
-      PipelineApi::class,
-      SchemaEditorApi::class,
-      PackagesServiceApi::class,
-      WorkspaceServiceApi::class,
-      ChangelogApi::class,
-      CodeGenApi::class
-   ]
-)
-class FeignConfig
 
 @Configuration
 class WebFluxWebConfig(private val objectMapper: ObjectMapper) : WebFluxConfigurer {

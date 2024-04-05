@@ -1,18 +1,13 @@
 package com.orbitalhq.cockpit.core.connectors.jdbc
 
 import arrow.core.getOrElse
-import arrow.core.getOrHandle
 import com.orbitalhq.cockpit.core.connectors.ConnectionHealthProvider
-import com.orbitalhq.cockpit.core.connectors.ConnectionTestedSuccessfully
-import com.orbitalhq.cockpit.core.connectors.kafka.KafkaConnectionConfig
-import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.DatabaseMetadataService
 import com.orbitalhq.connectors.jdbc.SimpleJdbcConnectionFactory
-import com.orbitalhq.connectors.registry.ConnectionStatus
+import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
 import com.orbitalhq.connectors.registry.ConnectorType
-import com.orbitalhq.utils.orElse
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 
@@ -32,7 +27,7 @@ class JdbcHealthCheckProvider : ConnectionHealthProvider {
             val metadataService =
                DatabaseMetadataService(connectionProvider.jdbcTemplate(connectionConfig).jdbcTemplate, connectionConfig)
             val status = metadataService.testConnection(connectionConfig.jdbcDriver.metadata.testQuery)
-               .map { ConnectionStatus.ok() }
+               .map { ConnectionStatus.healthy() }
                .getOrElse { errorMessage -> ConnectionStatus.error(errorMessage) }
             sink.success(status)
          }

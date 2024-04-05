@@ -3,9 +3,13 @@ package com.orbitalhq.pipelines.jet.pipelines
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.UriSafePackageIdentifier
 import com.orbitalhq.pipelines.jet.api.*
+import com.orbitalhq.pipelines.jet.api.streams.StreamStatus
+import com.orbitalhq.pipelines.jet.api.streams.StreamStatusUpdateRequest
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
+import com.orbitalhq.pipelines.jet.streams.StreamStateManager
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.spring.http.NotFoundException
 import jakarta.annotation.PostConstruct
 import mu.KotlinLogging
 import org.springframework.web.bind.annotation.*
@@ -16,20 +20,12 @@ class PipelineService(
    private val pipelineManager: PipelineManager,
    private val pipelineRepository: PipelineConfigRepository,
    private val schemaStore: SchemaStore,
+   private val stateManager: StreamStateManager
 ) : PipelineApi {
 
    private val logger = KotlinLogging.logger {}
 
    init {
-//      Flux.from(schemaStore.schemaChanged).subscribe { schemaChangedEvent ->
-//         val pipelines = pipelineRepository.loadPipelines()
-//         val schema = schemaChangedEvent.newSchemaSet.schema.asTaxiSchema()
-//         checkReceivedTypesForPipelinesAndStartAppropriateOnes(
-//            pipelines,
-//            schema
-//         )
-//      }
-//
       pipelineRepository.configUpdated.subscribe {
          logger.info { "Pipeline sources have changed, resubmitting pipelines" }
          loadAndSubmitPipelines()
@@ -144,6 +140,26 @@ class PipelineService(
 //         pipelineRepository.deletePipeline(pipeline.pipeline!!.spec)
 //      }
 //      return Mono.just(status)
+   }
+
+
+   @PostMapping("/api/streams/{streamName}/status")
+   override fun updateStreamStatus(
+      @PathVariable("streamName") streamName: String,
+      @RequestBody request: StreamStatusUpdateRequest
+   ): Mono<StreamStatus> {
+      return Mono.fromCallable {
+         stateManager.setStreamState(streamName, request.state)
+      }
+   }
+
+   @GetMapping("/api/streams/{streamName}/status")
+   override fun getStreamStatus(
+      @PathVariable("streamName") streamName: String,
+   ): Mono<StreamStatus> {
+      val status = stateManager.getStreamStatusIfExists(streamName)
+         ?: throw NotFoundException("No stream named $streamName was found")
+      return Mono.just(status)
    }
 
 }

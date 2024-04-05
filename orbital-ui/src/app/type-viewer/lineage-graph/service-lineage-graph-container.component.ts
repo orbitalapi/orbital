@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, ViewChild } from '@angular/core';
 import { TypesService } from '../../services/types.service';
 import {
   arrayMemberTypeNameOrTypeNameFromName,
@@ -36,7 +36,7 @@ export class ServiceLineageGraphContainerComponent {
 
   displayedMembers: string[] = [];
 
-  constructor(private typeService: TypesService) {
+  constructor(private typeService: TypesService, private detectorRef: ChangeDetectorRef) {
     this.schema$ = typeService.getTypes()
       .pipe(
         tap(schema => {
@@ -98,6 +98,7 @@ export class ServiceLineageGraphContainerComponent {
     })
     const uniqueRelatedNames = Array.from(new Set(allRelatedNames));
     this.displayedMembers = [this.type.name.fullyQualifiedName].concat(uniqueRelatedNames.map(name => name.fullyQualifiedName));
+    this.detectorRef.markForCheck();
   }
 
 

@@ -11,18 +11,28 @@ import com.orbitalhq.schemas.toVyneQualifiedName
 import lang.taxi.TaxiParser.ArrayMarkerContext
 import lang.taxi.TaxiParser.FactDeclarationContext
 import lang.taxi.TaxiParser.FactListContext
-import lang.taxi.TaxiParser.FieldTypeDeclarationContext
+import lang.taxi.TaxiParser.FunctionCallContext
 import lang.taxi.TaxiParser.GivenBlockContext
+import lang.taxi.TaxiParser.IdentifierContext
 import lang.taxi.TaxiParser.NullableTypeReferenceContext
 import lang.taxi.TaxiParser.ParameterConstraintContext
+import lang.taxi.TaxiParser.QualifiedNameContext
 import lang.taxi.TaxiParser.QueryDirectiveContext
-import lang.taxi.TaxiParser.QueryTypeListContext
+import lang.taxi.TaxiParser.QueryOrMutationContext
 import lang.taxi.TaxiParser.SingleNamespaceDocumentContext
 import lang.taxi.TaxiParser.TypeProjectionContext
 import lang.taxi.TaxiParser.TypeReferenceContext
 import lang.taxi.TaxiParser.VariableNameContext
 import lang.taxi.lsp.CompilationResult
-import lang.taxi.lsp.completion.*
+import lang.taxi.lsp.completion.CompletionDecorator
+import lang.taxi.lsp.completion.CompletionProvider
+import lang.taxi.lsp.completion.EditorCompletionService
+import lang.taxi.lsp.completion.ImportCompletionDecorator
+import lang.taxi.lsp.completion.TypeCompletionBuilder
+import lang.taxi.lsp.completion.TypeRepository
+import lang.taxi.lsp.completion.completed
+import lang.taxi.lsp.completion.locationIsAfterOrEqualTo
+import lang.taxi.lsp.completion.locationIsBeforeOrEqualTo
 import lang.taxi.query.QueryMode
 import lang.taxi.searchUpForRule
 import lang.taxi.types.ImportableToken
@@ -41,7 +51,10 @@ import java.util.concurrent.CompletableFuture
 /**
  * Completion provider focussed on delivering hints when writing queries
  */
-class QueryCodeCompletionProvider(private val typeCompletionBuilder: TypeCompletionBuilder, private val schema: Schema) :
+class QueryCodeCompletionProvider(
+   private val typeCompletionBuilder: TypeCompletionBuilder,
+   private val schema: Schema
+) :
    CompletionProvider {
 
    companion object {
@@ -64,6 +77,16 @@ class QueryCodeCompletionProvider(private val typeCompletionBuilder: TypeComplet
             additionalTextEdits = emptyList()
          }
       }
+
+   /**
+    * Looking for scenario like:
+    *find { Studio( <-- cursor is here )}
+    */
+   private fun isDefiningConstraint(contextAtCursor: IdentifierContext): Boolean {
+      return contextAtCursor is IdentifierContext // Studio
+         && contextAtCursor.parent?.parent is FunctionCallContext // Studio( )
+         && contextAtCursor.searchUpForRule<QueryOrMutationContext>() != null // find { Studio ( ) }
+   }
 
    override fun getCompletionsForContext(
       compilationResult: CompilationResult,
@@ -96,29 +119,32 @@ class QueryCodeCompletionProvider(private val typeCompletionBuilder: TypeComplet
 
       val decorators = listOf(importDecorator)
 
-      val completions = when (contextAtCursor) {
-         is TypeProjectionContext -> {
-            if (contextAtCursor.stop.text == "as") {
-               val queryTypeListContext =
-                  contextAtCursor.searchUpForRule(QueryTypeListContext::class.java) as? ParserRuleContext?
-               val children = queryTypeListContext?.children ?: emptyList()
-               // If the source type is a collection...
-               val sourceTypeIsCollection =
-                  children.isNotEmpty() && children.filterIsInstance<FieldTypeDeclarationContext>().any {
-                     it.nullableTypeReference()?.typeReference()?.arrayMarker() != null
-                  }
-               if (children.isNotEmpty()) {
-                  buildAsCompletion(params, sourceTypeIsCollection)
-               } else {
-                  emptyList()
-               }
-            } else {
-               emptyList()
-            }
-         }
 
-         is SingleNamespaceDocumentContext -> topLevelQueryCompletionItems
-         is QueryDirectiveContext -> {
+      val completions = when {
+         contextAtCursor is IdentifierContext && isDefiningConstraint(contextAtCursor) -> {
+            suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
+         }
+//         contextAtCursor is TypeProjectionContext -> {
+//            if (contextAtCursor.stop.text == "as") {
+//                              val queryTypeListContext =
+//                                 contextAtCursor.searchUpForRule(QueryTypeListContext::class.java) as? ParserRuleContext?
+//                              val children = queryTypeListContext?.children ?: emptyList()
+//                              // If the source type is a collection...
+//                              val sourceTypeIsCollection =
+//                                 children.isNotEmpty() && children.filterIsInstance<FieldTypeDeclarationContext>().any {
+//                                    it.nullableTypeReference()?.typeReference()?.arrayMarker() != null
+//                                 }
+//                              if (children.isNotEmpty()) {
+//                                 buildAsCompletion(params, sourceTypeIsCollection)
+//                              } else {
+//                                 emptyList()
+//                              }
+//            } else {
+//               emptyList()
+//            }
+//         }
+         contextAtCursor is SingleNamespaceDocumentContext -> topLevelQueryCompletionItems
+         contextAtCursor is QueryDirectiveContext -> {
             // This is a find { ... }, possibly with a given { .. }.
             // It's not a projection (yet).
             val typesInGivenClause = findTypesInGivenClause(contextAtCursor, compilationResult)
@@ -134,15 +160,12 @@ class QueryCodeCompletionProvider(private val typeCompletionBuilder: TypeComplet
                   findModelsReturnableFromQueryOperations(importDecorator, queryMode)
             }
          }
-
-
-         is ParameterConstraintContext -> {
+         contextAtCursor is IdentifierContext || contextAtCursor is ParameterConstraintContext -> {
             suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
          }
-
-         is VariableNameContext -> suggestTypesAsInputs(schemaTypeRepository, importDecorator)
+         contextAtCursor is VariableNameContext -> suggestTypesAsInputs(schemaTypeRepository, importDecorator)
          // Filter operations - eg: find { Film( <-- here
-         is ArrayMarkerContext -> suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
+         contextAtCursor is ArrayMarkerContext -> suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
          else -> emptyList()
       }
       val distinctCompletions =
@@ -151,7 +174,6 @@ class QueryCodeCompletionProvider(private val typeCompletionBuilder: TypeComplet
          }
       return completed(distinctCompletions)
    }
-
 
 
    private fun buildAsCompletion(params: CompletionParams, sourceTypeIsCollection: Boolean): List<CompletionItem> {
@@ -170,12 +192,8 @@ class QueryCodeCompletionProvider(private val typeCompletionBuilder: TypeComplet
       importDecorator: ImportCompletionDecorator,
       compilationResult: CompilationResult
    ): List<CompletionItem> {
-      val typeToFilterToken = contextAtCursor.searchUpForRule<NullableTypeReferenceContext>()
-         ?: // Hmm... this shouldn't happen.
-         return emptyList()
-      val typeReferenceToken = typeToFilterToken.typeReference()
-      val typeToFilter = compilationResult.compiler.lookupTypeByName(typeReferenceToken)
-         .toVyneQualifiedName()
+      val typeToFilter = findFilterTargetType(contextAtCursor, compilationResult)
+         ?: return emptyList()
       val isExposedByQueryOperations = schema.queryOperations
          .any { it.returnTypeName == typeToFilter }
       val queryOperationAttributes = if (isExposedByQueryOperations) {
@@ -195,6 +213,20 @@ class QueryCodeCompletionProvider(private val typeCompletionBuilder: TypeComplet
             }
          }
       return queryOperationAttributes + operationsReturningType
+   }
+
+   private fun findFilterTargetType(contextAtCursor: ParserRuleContext, compilationResult: CompilationResult):com.orbitalhq.schemas.QualifiedName? {
+      contextAtCursor.searchUpForRule<NullableTypeReferenceContext>()?.let { typeToFilterToken ->
+         val typeReferenceToken = typeToFilterToken.typeReference()
+         return compilationResult.compiler.lookupTypeByName(typeReferenceToken)
+            .toVyneQualifiedName()
+      }
+      contextAtCursor.searchUpForRule<QualifiedNameContext>()?.let { qualifiedNameContext ->
+         return qualifiedNameContext.text.fqn()
+      }
+
+      // couldn't find it
+      return null
    }
 
    private fun findQueryMode(contextAtCursor: ParserRuleContext): QueryMode? {
@@ -259,23 +291,6 @@ class QueryCodeCompletionProvider(private val typeCompletionBuilder: TypeComplet
       return completionItems.distinctBy { it.label }
    }
 
-   private fun findTypesDeclaredInQuery(
-      contextAtCursor: ParserRuleContext,
-      compilationResult: CompilationResult
-   ): List<QualifiedName> {
-      val queryTypes = contextAtCursor.searchUpForRule(listOf(QueryTypeListContext::class.java))?.let { it ->
-         val queryTypeList = it as QueryTypeListContext
-         queryTypeList.fieldTypeDeclaration()
-            .map { fieldTypeContext ->
-               compilationResult.compiler.lookupTypeByName(
-                  fieldTypeContext.nullableTypeReference().typeReference()
-               )
-            }
-      } ?: emptyList()
-      val factTypes = findTypesInGivenClause(contextAtCursor, compilationResult)
-      return canonicalizeTypeNames(queryTypes + factTypes)
-   }
-
    /**
     * Take a list of QualifiedNames which may not be full type names, and resovles
     * them against the schema.
@@ -327,7 +342,10 @@ class QueryCodeCompletionProvider(private val typeCompletionBuilder: TypeComplet
          )
       )
 
-   private fun suggestTypesAsInputs(typeRepository: TypeRepository, importDecorator: ImportCompletionDecorator): List<CompletionItem> {
+   private fun suggestTypesAsInputs(
+      typeRepository: TypeRepository,
+      importDecorator: ImportCompletionDecorator
+   ): List<CompletionItem> {
       return typeCompletionBuilder.getTypes(typeRepository, listOf(importDecorator))
    }
 

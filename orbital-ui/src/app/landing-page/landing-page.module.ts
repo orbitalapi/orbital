@@ -9,16 +9,18 @@ import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {SearchModule} from '../search/search.module';
 import {SchemaDiagramModule} from '../schema-diagram/schema-diagram.module';
 import {LandingPageContainerComponent} from './landing-page-container.component';
+import { OnboardingContainerComponent } from '../onboarding/onboarding-container.component';
 
 
 @NgModule({
-  imports: [CommonModule,
-    TuiButtonModule,
-    RouterModule,
-    HeaderBarModule,
-    SearchModule,
-    SchemaDiagramModule,
-  ],
+    imports: [
+        CommonModule,
+        TuiButtonModule,
+        RouterModule,
+        HeaderBarModule,
+        SearchModule,
+        SchemaDiagramModule, OnboardingContainerComponent,
+    ],
   exports: [LandingPageComponent, LandingCardComponent],
   declarations: [LandingPageComponent, LandingCardComponent, LandingPageContainerComponent],
   providers: [],

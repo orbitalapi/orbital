@@ -1,11 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import {
   ActivatedRoute,
   NavigationEnd,
   Router,
-  RouterLink,
-  RouterLinkActive,
   RouterOutlet,
   Scroll
 } from '@angular/router';
@@ -18,17 +16,20 @@ import { filter, map } from 'rxjs/operators';
 @Component({
   selector: 'app-onboarding-container',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, TuiStepperModule, TuiLinkModule],
+  imports: [CommonModule, RouterOutlet, TuiStepperModule, TuiLinkModule],
   templateUrl: './onboarding-container.component.html',
   styleUrls: ['./onboarding-container.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class OnboardingContainerComponent {
+export class OnboardingContainerComponent implements OnInit {
   readonly uiConfig = UiCustomisations;
 
-  readonly currentStepIndex$: Observable<number>;
+  currentStepIndex$: Observable<number>;
 
   constructor(private router: Router, private activatedRoute: ActivatedRoute) {
+  }
+
+  ngOnInit() {
     this.currentStepIndex$ = this.router.events.pipe(
       // NOTE: The Scroll event occurs here when the page first loads, not the NavigationEnd one
       filter((event) => event instanceof NavigationEnd || (event instanceof Scroll && event.routerEvent instanceof NavigationEnd)),
@@ -47,6 +48,8 @@ export class OnboardingContainerComponent {
         return 2;
       case '/onboarding/explore':
         return 3;
+      default:
+        return 0;
     }
   }
 

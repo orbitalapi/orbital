@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  DestroyRef,
   EventEmitter,
   Inject,
   Injector,
@@ -53,6 +54,7 @@ import {MatLegacySnackBar as MatSnackBar} from "@angular/material/legacy-snack-b
 import {HttpEndpointPanelComponent} from "./http-endpoint-panel.component";
 import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 declare const monaco: any; // monaco
 @Component({
@@ -125,6 +127,8 @@ export class QueryEditorComponent implements OnInit {
 
   savedQuery: SavedQuery = null;
 
+  private readonly PERSISTED_QUERY_LOCAL_STORAGE_KEY: string = 'persistedQuery'
+
   constructor(private queryService: QueryService,
               private queryHistoryStoreService: QueryHistoryStoreService,
               private fileService: ResultsDownloadService,
@@ -138,7 +142,8 @@ export class QueryEditorComponent implements OnInit {
               @Inject(Injector) private readonly injector: Injector,
               @Inject(TuiAlertService) private readonly alerts: TuiAlertService,
               private editorService: TypeEditorService,
-              private snackbarService: MatSnackBar
+              private snackbarService: MatSnackBar,
+              private destroyRef: DestroyRef
   ) {
 
     this.initialQuery = this.router.lastSuccessfulNavigation?.extras?.state?.query;
@@ -159,7 +164,13 @@ export class QueryEditorComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.query = this.initialQuery ? this.initialQuery.taxiQl : '';
+    const persistedQuery = localStorage.getItem(this.PERSISTED_QUERY_LOCAL_STORAGE_KEY) ?? '';
+    if (persistedQuery !== '') {
+      this.alerts.open('Previous query restored', {status: TuiNotification.Success})
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe()
+    }
+    this.query = this.initialQuery?.taxiQl ?? persistedQuery ?? '';
   }
 
   submitQuery() {
@@ -248,12 +259,15 @@ export class QueryEditorComponent implements OnInit {
       queryCompleteHandler);
 
 
-    // TODO : Handle unsubscribe
     this.queryService.getQueryErrors(this.queryClientId)
-      .pipe(retry({
-        count: 3,
-        delay: 250
-      }))
+      .pipe(
+        retry({
+          count: 3,
+          delay: 250
+          }
+        ),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe(message => {
           this.errorCount++;
           this.errors$.next(message)
@@ -365,6 +379,7 @@ export class QueryEditorComponent implements OnInit {
     } else {
       copyQueryAs(this.query, this.queryService.queryEndpoint, $event, this.clipboard);
       this.alerts.open('Copied to clipboard', {status: TuiNotification.Success})
+        .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe()
     }
   }
@@ -456,6 +471,10 @@ export class QueryEditorComponent implements OnInit {
     this.savedQuery = selectedQuery;
     this.query = selectedQuery.sources[0].content;
     this.changeDetector.markForCheck();
+  }
+
+  onQueryChanged(query: string) {
+    localStorage.setItem(this.PERSISTED_QUERY_LOCAL_STORAGE_KEY, this.query);
   }
 
   private formatErrorMessage(val: string): string {

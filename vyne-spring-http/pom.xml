@@ -5,7 +5,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>com.orbitalhq</groupId>
-      <version>0.30.0</version>
+      <version>0.31.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -60,10 +60,12 @@
          <artifactId>sslcontext-kickstart-for-netty</artifactId>
          <version>8.3.2</version>
       </dependency>
+      <!-- https://github.com/wiremock/wiremock/issues/2395
+      Have to use wiremock-standalone with spring boot 12 -->
       <dependency>
          <groupId>org.wiremock</groupId>
-         <artifactId>wiremock</artifactId>
-         <version>3.3.1</version>
+         <artifactId>wiremock-standalone</artifactId>
+         <version>3.4.2</version>
          <scope>test</scope>
       </dependency>
    </dependencies>

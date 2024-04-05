@@ -1,4 +1,5 @@
 import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
+import { UiCustomisations } from '../../../environments/ui-customisations';
 import {ProjectLoaderWithStatus, PublisherHealthStatus, SourcePackageDescription} from '../packages.service';
 import {TuiStatus} from "@taiga-ui/kit";
 
@@ -75,7 +76,7 @@ export class PackageListComponent {
       case 'GitRepo':
         return 'Git repo';
       case 'Pushed':
-        return 'Pushed to Orbital';
+        return `Pushed to ${UiCustomisations.productName}`;
     }
   }
 

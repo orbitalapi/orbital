@@ -1,7 +1,6 @@
 package com.orbitalhq.spring
 
 import com.orbitalhq.schema.spring.config.consumer.SchemaConsumerConfig
-import com.orbitalhq.schema.spring.config.consumer.VyneHttpSchemaStoreConfig
 import com.orbitalhq.schema.spring.config.consumer.VyneRSocketSchemaStoreConfig
 import org.springframework.context.annotation.Import
 
@@ -9,7 +8,6 @@ import org.springframework.context.annotation.Import
 @Retention(AnnotationRetention.RUNTIME)
 @Import(
    SchemaConsumerConfig::class,
-   VyneHttpSchemaStoreConfig::class,
    VyneRSocketSchemaStoreConfig::class
 )
 annotation class VyneSchemaConsumer

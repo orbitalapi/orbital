@@ -26,12 +26,17 @@ interface EvaluationValueSupplier : ScopedValueProvider {
 
 interface ScopedValueProvider {
    fun getScopedFact(scope: Argument): TypedInstance
+   fun getScopedFactOrNull(scope: Argument): TypedInstance?
    fun getValue(attributeName: AttributeName): TypedInstance
 }
 
 class FactBagScopeValueProvider(private val factBag: FactBag):ScopedValueProvider {
    override fun getScopedFact(scope: Argument): TypedInstance {
       return factBag.getScopedFact(scope).fact
+   }
+
+   override fun getScopedFactOrNull(scope: Argument): TypedInstance? {
+      return factBag.getScopedFactOrNull(scope)?.fact
    }
 
    override fun getValue(attributeName: AttributeName): TypedInstance {

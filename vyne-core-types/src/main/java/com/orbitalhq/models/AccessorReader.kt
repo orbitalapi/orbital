@@ -788,6 +788,17 @@ class AccessorReader(
             resultCache,
             format
          )
+         is ExtensionFunctionExpression -> evaluateExtensionFunctionExpression(
+            value,
+            returnType,
+            expression,
+            schema,
+            nullValues,
+            dataSource,
+            resultCache,
+            format
+         )
+
 
          is LiteralExpression -> TypedInstance.from(returnType, expression.literal.value, schema, source = dataSource)
          is LambdaExpression -> evaluateLambdaExpression(
@@ -821,11 +832,26 @@ class AccessorReader(
             if (value is FactBag) {
                value.getScopedFactOrNull(expression.scope)?.fact ?: error("Failed to resolve scope argument ${expression.scope.name}")
             } else {
-               TODO("Unhandled scenario: ArgumentSelector being evaluated without a FactBag")
+               objectFactory.getScopedFactOrNull(expression.scope) ?: error("Failed to resolve scope argument ${expression.scope.name}")
             }
          }
          else -> TODO("Support for expression type ${expression::class.toString()} is not yet implemented")
       }
+   }
+
+   private fun evaluateExtensionFunctionExpression(
+      value: Any,
+      returnType: Type,
+      expression: ExtensionFunctionExpression,
+      schema: Schema,
+      nullValues: Set<String>,
+      dataSource: DataSource,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>,
+      format: FormatsAndZoneOffset?
+   ): TypedInstance {
+      val receiverExpression = expression.receiverValue
+      val receiverValue = evaluate(value, schema.type(receiverExpression.returnType), receiverExpression, schema, nullValues, dataSource, format, resultCache)
+      TODO("Not yet implemented")
    }
 
    private fun evaluateLambdaExpression(

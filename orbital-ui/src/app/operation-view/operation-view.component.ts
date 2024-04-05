@@ -1,5 +1,10 @@
+import { CommonModule } from '@angular/common';
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { MatLegacyProgressSpinnerModule } from '@angular/material/legacy-progress-spinner';
+import { Router, RouterLink } from '@angular/router';
+import { TuiToggleModule } from '@taiga-ui/kit';
+import { ObjectViewModule } from '../object-view/object-view.module';
 import {
   getDisplayName,
   InstanceLike,
@@ -15,6 +20,7 @@ import {HttpErrorResponse} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {BaseDeferredEditComponent} from '../type-viewer/base-deferred-edit.component';
 import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
+import { DescriptionEditorModule } from '../type-viewer/description-editor/description-editor.module';
 import {openTypeSearch} from '../type-viewer/model-attribute-tree-list/base-schema-member-display';
 import {isNullOrUndefined} from '../utils/utils';
 import {OperationSummary, toOperationSummary} from 'src/app/service-view/operation-summary';
@@ -24,6 +30,7 @@ import {
   EditMemberDescriptionEvent,
   SchemaEditOperation
 } from '../project-import/schema-importer.service';
+import { OperationErrorComponent } from './operation-error.component';
 
 @Component({
   selector: 'app-operation-view',
@@ -34,7 +41,8 @@ import {
         <div class="badges">
           <span class="mono-badge">
             <ng-container *ngIf="!schemaMemberNavigable">{{ operationSummary?.serviceName }}</ng-container>
-            <a *ngIf="schemaMemberNavigable" [routerLink]="['/services',operationSummary?.serviceName]">{{ operationSummary?.serviceName }}</a>
+            <a *ngIf="schemaMemberNavigable"
+               [routerLink]="['/services',operationSummary?.serviceName]">{{ operationSummary?.serviceName }}</a>
           </span>
           <span class="separator-slash">/</span>
           <span class="mono-badge">{{ operationSummary?.name }}</span>
@@ -108,8 +116,10 @@ import {
                   >
                   <span class="mono-badge">
                     <ng-container *ngIf="editable">{{ displayName(param.typeName, showFullTypeNames) }}</ng-container>
-                    <ng-container *ngIf="!editable && !schemaMemberNavigable">{{ displayName(param.typeName, showFullTypeNames) }}</ng-container>
-                    <a *ngIf="!editable && schemaMemberNavigable">{{ displayName(param.typeName, showFullTypeNames) }}</a>
+                    <ng-container
+                      *ngIf="!editable && !schemaMemberNavigable">{{ displayName(param.typeName, showFullTypeNames) }}</ng-container>
+                    <a
+                      *ngIf="!editable && schemaMemberNavigable">{{ displayName(param.typeName, showFullTypeNames) }}</a>
                     <!--// TODO: ask Marty whether we should be showing the same info as we do in the Models view?-->
                     <!--<span class="scalar-base-type" *ngIf="treeNode.type.isScalar">
                       {{ '(' + (treeNode.type.basePrimitiveTypeName?.shortDisplayName || displayName(treeNode.type.aliasForType, showFullTypeNames)) + ')' }}
@@ -153,8 +163,20 @@ import {
                                  [type]="operationResultType">
       </app-object-view-container>
     </div>
+    <app-operation-error [operationError]="operationFetchError" *ngIf="operationFetchError"></app-operation-error>
   `,
-  styleUrls: ['./operation-view.component.scss']
+  styleUrls: ['./operation-view.component.scss'],
+  imports: [
+    CommonModule,
+    DescriptionEditorModule,
+    TuiToggleModule,
+    MatLegacyProgressSpinnerModule,
+    OperationErrorComponent,
+    ObjectViewModule,
+    FormsModule,
+    RouterLink
+  ],
+  standalone: true
 })
 export class OperationViewComponent extends BaseDeferredEditComponent<Operation> {
 
@@ -168,6 +190,9 @@ export class OperationViewComponent extends BaseDeferredEditComponent<Operation>
   get operation(): Operation {
     return this._operation;
   }
+
+  @Input()
+  operationFetchError: HttpErrorResponse;
 
   get type(): Operation {
     return this.operation;
@@ -257,12 +282,17 @@ export class OperationViewComponent extends BaseDeferredEditComponent<Operation>
       const dialog = openTypeSearch(this.dialog);
       dialog.afterClosed().subscribe((event) => {
         if (!isNullOrUndefined(event)) {
+          // if it's an array, make sure it stays that way...
+          if (this.operation.returnTypeName.parameters.length === 1) {
+            this.operation.returnTypeName = QualifiedName.fromWithArray(event.type.name);
+          } else {
+            this.operation.returnTypeName = event.type.name;
+          }
           const changeEvent: ChangeOperationReturnTypeEvent = {
             editKind: 'ChangeOperationReturnType',
             symbol: this.operation.qualifiedName,
-            newReturnType: event.type.name
+            newReturnType: this.operation.returnTypeName
           }
-          this.operation.returnTypeName = event.type.name;
           this.emitUpdateIfRequired(changeEvent);
           if (event.source === 'new') {
             this.newTypeCreated.next(event.type);

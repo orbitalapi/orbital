@@ -1,17 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { TypesService } from '../services/types.service';
 import { ActivatedRoute, ParamMap } from '@angular/router';
-import { flatMap, map } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { findType, InstanceLike, Operation, Schema, Type } from '../services/schema';
 import { Fact, QueryService } from '../services/query.service';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ReplaySubject, Subject } from 'rxjs';
+import { of, ReplaySubject, Subject } from 'rxjs';
 import { toOperationSummary } from 'src/app/service-view/operation-summary';
+import { OperationViewComponent } from './operation-view.component';
 
 @Component({
   selector: 'app-operation-view-container',
   template: `
     <app-operation-view [operation]="operation"
+                        [operationFetchError]="operationFetchError"
                         (submit)="invokeOperation($event)"
                         [instances$]="operationResult$"
                         [operationResultType]="operationResultType"
@@ -22,7 +24,11 @@ import { toOperationSummary } from 'src/app/service-view/operation-summary';
                         class="page-content"
     ></app-operation-view>
   `,
-  styleUrls: ['./operation-view-container.component.scss']
+  styleUrls: ['./operation-view-container.component.scss'],
+  imports: [
+    OperationViewComponent
+  ],
+  standalone: true
 })
 export class OperationViewContainerComponent implements OnInit {
 
@@ -33,6 +39,7 @@ export class OperationViewContainerComponent implements OnInit {
 
   schema: Schema;
   operation: Operation;
+  operationFetchError: HttpErrorResponse;
   operationError: HttpErrorResponse;
   loading = false;
   operationResult$: Subject<InstanceLike>;
@@ -41,6 +48,7 @@ export class OperationViewContainerComponent implements OnInit {
   ngOnInit() {
     this.typeService.getTypes()
       .subscribe(schema => this.schema = schema);
+
     this.activeRoute.paramMap.pipe(
       map((params: ParamMap) => {
         return {
@@ -48,11 +56,19 @@ export class OperationViewContainerComponent implements OnInit {
           operationName: params.get('operationName')
         };
       }),
-      flatMap(params => {
-        return this.typeService.getOperation(params.serviceName, params.operationName);
+      switchMap(params => {
+        return this.typeService.getOperation(params.serviceName, params.operationName)
+          .pipe(
+            catchError(err => {
+              this.operationFetchError = err
+              this.operation = null
+              return of()
+            })
+          );
       })
     ).subscribe((operation: Operation) => {
       this.operation = operation;
+      this.operationFetchError = null;
     });
   }
 

@@ -1,6 +1,6 @@
 @import "src/common";
 
-::ng-deep {
+:host::ng-deep {
   .t-children {
     margin-left: 0.75rem !important;
   }
@@ -15,19 +15,19 @@ tui-badge {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  width: 100%;
 
-  &.active {
+  &.active,
+  &.active:hover {
     color: $sky-800;
     background-color: $slate-50;
     font-weight: bold;
-    width: -webkit-fill-available;
-    width:  -moz-available;
+    cursor: default;
 
     button {
       font-weight: bold;
     }
   }
-
 
   &:hover {
     background-color: $slate-200;

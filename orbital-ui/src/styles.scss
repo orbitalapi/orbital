@@ -160,4 +160,10 @@ tui-dropdown-box {
 
 .as-split-gutter {
   z-index: 1000;
+  outline: 2px solid $slate-50;
+  transition: outline 150ms ease-in;
+
+  &:hover {
+    outline-color: $primary;
+  }
 }

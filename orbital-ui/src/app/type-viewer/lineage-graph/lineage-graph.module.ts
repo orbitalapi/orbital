@@ -6,20 +6,17 @@ import { CommonModule } from '@angular/common';
 import { ServiceLineageGraphContainerComponent } from './service-lineage-graph-container.component';
 import { RouterModule } from '@angular/router';
 import { LineageNodeDiagramComponent } from './lineage-node-diagram/lineage-node-diagram.component';
-import { AngularResizeEventModule } from 'angular-resize-event';
 import { SchemaDiagramModule } from 'src/app/schema-diagram/schema-diagram.module';
 
 @NgModule({
     imports: [
         NgxGraphModule,
         CommonModule,
-        AngularResizeEventModule,
         RouterModule,
         SchemaDiagramModule
     ],
   exports: [ServiceLineageGraphComponent, ServiceLineageGraphContainerComponent, LineageNodeDiagramComponent],
   declarations: [ServiceLineageGraphComponent, ServiceLineageGraphContainerComponent, LineageNodeDiagramComponent],
-  providers: [],
 })
 export class LineageGraphModule {
 }

@@ -6,7 +6,7 @@
    <parent>
       <groupId>com.orbitalhq</groupId>
       <artifactId>platform</artifactId>
-      <version>0.30.0</version>
+      <version>0.31.0-SNAPSHOT</version>
    </parent>
 
    <artifactId>history-persistence</artifactId>
@@ -21,6 +21,24 @@
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-data-jpa</artifactId>
+         <!--
+         https://github.com/spring-projects/spring-data-jpa/issues/2989#issuecomment-1997398619
+         Spring Boot 3.2 came with a new Sql Parser built in - jsqlparser which is used
+         to parse native queries.
+         However, it's incomplete, and can't handle things like Postgres UPSERT statements with
+         multiple ON CONFLICT params, which is what we use.
+         https://github.com/JSQLParser/JSqlParser/issues/1820
+
+         There's also reports of high CPU as the query gets parsed repeatedly.
+         Excluding the dependency as reported on Github, since we don't seem to get any actual
+         value from it.
+         -->
+<!--         <exclusions>-->
+<!--            <exclusion>-->
+<!--               <groupId>com.github.jsqlparser</groupId>-->
+<!--               <artifactId>jsqlparser</artifactId>-->
+<!--            </exclusion>-->
+<!--         </exclusions>-->
       </dependency>
 
 

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { UiCustomisations } from '../../../environments/ui-customisations';
 import {
   GitPullRequestConfig,
   GitRepositoryConfig,
@@ -26,7 +27,7 @@ export const projectTypeToString = (item: LoadablePackageType) => {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="form-header-text">
-      <p>Connect Orbital to a Git repository to add individual OpenAPI schemas, or entire Taxi projects</p>
+      <p>Connect {{UiCustomisations.productName}} to a Git repository to add individual OpenAPI schemas, or entire Taxi projects</p>
     </div>
 
     <form #gitForm="ngForm">
@@ -163,7 +164,7 @@ export const projectTypeToString = (item: LoadablePackageType) => {
                 <h3>Enable edits and pull requests</h3>
                 <div class="help-text">
                   <p>
-                    If enabled, edits can be made through the Orbital UI, which
+                    If enabled, edits can be made through the {{UiCustomisations.productName}} UI, which
                     will result in Pull requests being opened
                   </p>
                 </div>
@@ -327,4 +328,6 @@ export class GitConfigComponent {
       this.changeDetector.markForCheck();
     })
   }
+
+  protected readonly UiCustomisations = UiCustomisations;
 }

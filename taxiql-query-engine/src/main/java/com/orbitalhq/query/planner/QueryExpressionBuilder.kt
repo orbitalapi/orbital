@@ -2,13 +2,13 @@ package com.orbitalhq.query.planner
 
 import com.orbitalhq.applyProjection
 import com.orbitalhq.query.ConstrainedTypeNameQueryExpression
+import com.orbitalhq.query.ExpressionQuery
 import com.orbitalhq.query.MutatingQueryExpression
 import com.orbitalhq.query.ProjectionAnonymousTypeProvider
 import com.orbitalhq.query.QueryExpression
-import com.orbitalhq.query.StreamJoiningExpression
+import com.orbitalhq.query.QuerySpecTypeNode
 import com.orbitalhq.query.TypeQueryExpression
 import com.orbitalhq.schemas.Schema
-import com.orbitalhq.schemas.taxi.TaxiConstraintConverter
 import com.orbitalhq.schemas.toVyneQualifiedName
 import lang.taxi.query.DiscoveryType
 import lang.taxi.query.TaxiQLQueryString
@@ -37,21 +37,20 @@ class QueryExpressionBuilder(private val queryPlanner: QueryPlanner) {
     * (If the query wasn't rewritten, returns the original query and schema)
     */
    fun build(taxiQl: TaxiQlQuery, schema: Schema): Triple<QueryExpression,TaxiQlQuery, Schema> {
-      val constraintProvider = TaxiConstraintConverter(schema)
       val queryMetadata = queryPlanner.buildMetadata(taxiQl, schema)
 
-      val queryExpressions = taxiQl.typesToFind.map { discoveryType ->
+      val queryExpression = taxiQl.discoveryType?.let { discoveryType ->
 
          val targetType = when {
-            discoveryType.anonymousType != null -> ProjectionAnonymousTypeProvider.toVyneAnonymousType(
-               discoveryType.anonymousType!!,
+            discoveryType.type.anonymous -> ProjectionAnonymousTypeProvider.toVyneAnonymousType(
+               discoveryType.type,
                schema
             )
 
             // The user has requested a union steam type.
             // eg: stream { A | B } as { ... }
             // This was the original way of joining streams.
-            StreamType.isStreamTypeName(discoveryType.typeName) && UnionType.isUnionType(discoveryType.type.typeParameters()[0]) -> {
+            StreamType.isStreamTypeName(discoveryType.typeName) && UnionType.isUnionType(discoveryType.expression.returnType.typeParameters()[0]) -> {
                val unionType = ProjectionAnonymousTypeProvider.toVyneStreamOfAnonymousType(discoveryType.type, schema)
                unionType
             }
@@ -77,32 +76,18 @@ class QueryExpressionBuilder(private val queryPlanner: QueryPlanner) {
 
             else -> schema.type(discoveryType.typeName.toVyneQualifiedName())
          }
-         val expression = when {
+         val legacyExpression = when {
             discoveryType.constraints.isNotEmpty() -> {
-               val constraints = constraintProvider.buildOutputConstraints(targetType, discoveryType.constraints)
+               val constraints = QuerySpecTypeNode.buildConstraints(targetType, schema, discoveryType.constraints)
                ConstrainedTypeNameQueryExpression(targetType.name.parameterizedName, constraints)
             }
 
             else -> TypeQueryExpression(targetType)
          }
-
-         expression
-      }
-
-      val expression: QueryExpression = when {
-         queryExpressions.size > 1 -> {
-            error("Is this code ever hit?")
-            val streamJoin = (queryExpressions.all { it is TypeQueryExpression && it.type.isStream })
-            require(streamJoin) { "Multiple source types are only supported when joining streams" }
-            StreamJoiningExpression(queryExpressions as List<TypeQueryExpression>)
-               .applyProjection(taxiQl.projectedType, taxiQl.projectionScopeVars, schema)
-         }
-
-         queryExpressions.size == 1 -> queryExpressions.first().let { expression ->
-            expression.applyProjection(taxiQl.projectedType, taxiQl.projectionScopeVars, schema)
-         }
-
-         else -> null
+         ExpressionQuery(discoveryType.expression, legacyExpression)
+      }?.let { expressionQuery ->
+         // Handle projections
+         expressionQuery.applyProjection(taxiQl.projectedType, taxiQl.projectionScopeVars, schema)
       }.let { possibleQueryExpression ->
          // At this point we have either:
          // Mutation -only query.
@@ -111,7 +96,7 @@ class QueryExpressionBuilder(private val queryPlanner: QueryPlanner) {
          // Decorate encapsulates those and returns the correct expression
          MutatingQueryExpression.decorate(possibleQueryExpression, taxiQl.mutation)
       }
-      return Triple(expression, taxiQl, schema)
+      return Triple(queryExpression, taxiQl, schema)
    }
 
    /**

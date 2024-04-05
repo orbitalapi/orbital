@@ -420,7 +420,7 @@ terraform-deploy-prod-voyager:
       # Prints full report
       - time trivy image --scanners vuln --exit-code 0 --cache-dir .trivycache/ --no-progress "$FULL_IMAGE_NAME"
       # Fail on critical vulnerabilities
-      - time trivy image --scanners vuln --exit-code 1 --cache-dir .trivycache/ --severity CRITICAL --no-progress "$FULL_IMAGE_NAME"
+      - time trivy image --scanners vuln --exit-code 1 --cache-dir .trivycache/ --severity HIGH,CRITICAL --no-progress "$FULL_IMAGE_NAME"
    cache:
       paths:
          - .trivycache/
@@ -439,3 +439,12 @@ scan-pipeline:
    extends: .container_scanning
    variables:
       imageName: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/orbitalhq/stream-server:next
+
+
+trigger-connect-build:
+   stage: deploy
+   only:
+      - develop
+   trigger:
+      project: vyne/hazelcast-orbital
+      branch: develop

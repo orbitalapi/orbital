@@ -1,0 +1,75 @@
+@import "src/common";
+:host {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  flex-grow: 1;
+}
+
+.main-content {
+  flex-grow: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.schema-source-tabs {
+  margin-bottom: 1rem;
+  border-bottom: 1px solid $slate-300;
+
+  img {
+    margin-right: 0.5rem;
+    opacity: 0.5;
+  }
+}
+
+.documentation-content-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.button-bar {
+  display: flex;
+  padding-top: 1rem;
+  justify-content: space-between;
+
+  button:not(:first-child) {
+    margin-left: 1rem;
+  }
+}
+
+app-schema-member-tree {
+  display: block;
+  overflow: auto;
+}
+
+app-schema-diagram {
+  height: 100%;
+}
+
+.code-editor {
+  flex-grow: 1;
+}
+
+.documentation-content {
+  flex-grow: 1;
+  overflow: auto;
+  margin-left: 1rem; // To give space from the as-split divider
+
+  app-type-viewer, app-operation-view {
+    width: 100%;
+
+    ::ng-deep h1 {
+      margin-top: 0;
+    }
+  }
+}
+
+.island {
+  background-color: $body-bg;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow: auto;
+}

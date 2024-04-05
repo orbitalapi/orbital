@@ -1,4 +1,5 @@
 import {Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {debounceTime} from "rxjs/operators";
 import {editor, MarkerSeverity} from 'monaco-editor';
 import {createLanguageClient, createTaxiEditor, createTaxiEditorModel} from "./language-server-commons";
@@ -148,27 +149,41 @@ export class CodeEditorComponent implements OnDestroy {
       })
     this.modelChanged$.pipe(
       debounceTime(250),
-    ).subscribe(e => {
+      takeUntilDestroyed()
+    ).subscribe(async(e) => {
       this.updateContent(this.monacoModel.textEditorModel.getValue());
       if (this.webSocket.readyState != this.webSocket.OPEN && this.languageServerEnabled) {
         console.log("Refresh websocket connection for language server");
-        this.createWebsocketAndTransport();
+        await this.createWebsocketAndTransport();
+        await this.sendOpenNotifcation();
       }
     })
   }
 
   async ngOnDestroy() {
+    if (this.readOnly) return;
+    console.info('Closing Language Service and disposing of model');
     try {
+      this.monacoModel.dispose()
+      this.monacoEditor.dispose();
       await this.languageClient.dispose();
     } catch (error) {
-      console.error(error)
+      // Best as I can tell, the error that's occurring here is innocuous
+      // and the languageClient has finished shutting down correctly
+      //console.error(error)
     }
   }
 
   private async createWebsocketAndTransport() {
     const [websocket, wsTransport] = await this.languageServerService.createLanguageServerWebsocketTransport()
     this.webSocket = websocket;
-    return wsTransport;
+    this.languageClient = createLanguageClient(wsTransport);
+
+    /*// For testing websocket reconnection
+    // @ts-ignore
+    window.killWebsocket = () => {
+      this.webSocket.close()
+    }*/
   }
 
 
@@ -179,11 +194,11 @@ export class CodeEditorComponent implements OnDestroy {
 
     // create the web socket
     if (this.languageServerEnabled) {
-      const wsTransport = await this.createWebsocketAndTransport()
-      this.languageClient = createLanguageClient(wsTransport);
+      await this.createWebsocketAndTransport()
     }
 
     const {modelRef, model} = await this.createNewMonacoModel();
+    this.monacoModel = model;
 
     this.monacoEditor = await createTaxiEditor(this.codeEditorContainer.nativeElement, modelRef)
     this.monacoEditor.updateOptions({readOnly: this.readOnly});
@@ -192,26 +207,29 @@ export class CodeEditorComponent implements OnDestroy {
       this.updateManualCompilationMessages();
     }
 
+    await this.sendOpenNotifcation();
+
+    this.updateActionsOnEditor()
+    // this.createWebsocket();
+  }
+
+  private async sendOpenNotifcation() {
     if (this.languageServerEnabled) {
       await this.languageClient.sendNotification(DidOpenTextDocumentNotification.type, {
         textDocument: {
-          uri: model.resource.toString(),
+          uri: this.monacoModel.resource.toString(),
           languageId: 'taxi',
           version: 0,
           text: this.content,
         }
       })
     }
-
-    this.updateActionsOnEditor()
-    // this.createWebsocket();
   }
 
   private async createNewMonacoModel() {
     const modelRef = await createTaxiEditorModel(this.content);
     const model: ITextFileEditorModel = modelRef.object;
-    model.onDidChangeContent((e: editor.IModelContentChangedEvent) => this.modelChanged$.next(e))
-    this.monacoModel = model;
+    model.onDidChangeContent(() => this.modelChanged$.emit())
     return {modelRef, model};
   }
 

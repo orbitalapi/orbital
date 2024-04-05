@@ -25,7 +25,7 @@ import ITextModel = editor.ITextModel;
 @Component({
   selector: 'app-json-viewer',
   template: `
-    <app-panel-header *ngIf="showHeader" [title]="title">
+    <app-panel-header *ngIf="showHeader" [title]="title" [isSecondary]="true">
        <tui-checkbox-labeled [(ngModel)]="showTypeHints" *ngIf="hasTypes">
         Show types
     </tui-checkbox-labeled>

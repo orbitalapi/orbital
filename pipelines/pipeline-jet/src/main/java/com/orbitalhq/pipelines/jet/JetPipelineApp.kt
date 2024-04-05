@@ -29,6 +29,7 @@ import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.reactive.function.client.WebClientCustomizer
 import org.springframework.cloud.client.discovery.DiscoveryClient
@@ -37,16 +38,18 @@ import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalance
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.scheduling.annotation.EnableScheduling
 import java.nio.file.Files
 import java.time.Clock
 
 
-@SpringBootApplication
+@SpringBootApplication( exclude = [MongoReactiveAutoConfiguration::class])
 @VyneSchemaConsumer
 @EnableVyne
 @EnableDiscoveryClient
 @EnableScheduling
+@EnableJpaRepositories
 @EnableConfigurationProperties(
    VyneSpringCacheConfiguration::class,
    PipelineConfig::class,

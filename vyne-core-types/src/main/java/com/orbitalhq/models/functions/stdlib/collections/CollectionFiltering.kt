@@ -6,7 +6,8 @@ object CollectionFiltering {
    val functions: List<NamedFunctionInvoker> = listOf(
       Single,
       SingleBy,
-      FilterAll,
+      Filter,
+      FilterEach,
       First,
       Last,
       GetAtIndex

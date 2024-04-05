@@ -56,6 +56,8 @@ class ChatQueryParser(
          OpenAiChatMessage(OpenAiChatMessage.Role.system, systemPrompt),
          OpenAiChatMessage(OpenAiChatMessage.Role.user, userPrompt)
       )
+
+      logger.debug { "OpenAI Prompts:\n${prompts.joinToString("\n")}" }
       return prompts
    }
 
@@ -359,11 +361,12 @@ data class TypeAndDescription(val typeName: String, val baseType: String?, val d
 
 data class OpenAiChatRequest(
    val messages: List<OpenAiChatMessage>,
-   val model: String = OpenAiModel.GPT_4,
+   val model: String = OpenAiModel.GPT_4_TURBO_PREVIEW,
 )
 
 object OpenAiModel {
    const val GPT_4 = "gpt-4"
+   const val GPT_4_TURBO_PREVIEW = "gpt-4-turbo-preview"
    const val GPT_3_5_TURBO_1106 = "gpt-3.5-turbo-1106"
 }
 

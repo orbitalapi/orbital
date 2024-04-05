@@ -5,7 +5,7 @@ import { TuiDialogContext } from '@taiga-ui/core';
 import { POLYMORPHEUS_CONTEXT } from '@tinkoff/ng-polymorpheus';
 import { ConnectorSummary, ConnectorType } from './db-importer.service';
 import { PackageIdentifier, PackagesService, SourcePackageDescription } from '../package-viewer/packages.service';
-import { ConnectionEditorMode } from './connection-editor.component';
+import { ConnectionEditorComponent, ConnectionEditorMode } from './connection-editor.component';
 
 
 export class ConnectionEditorContext {
@@ -28,7 +28,11 @@ export class ConnectionEditorContext {
                            [selectedPackage]="selectedPackage"
                            [selectedDriverId]="context.data?.selectedDriverName"></app-connection-editor>
   `,
-  styleUrls: ['./db-connection-editor-dialog.component.scss']
+  styleUrls: ['./db-connection-editor-dialog.component.scss'],
+  imports: [
+    ConnectionEditorComponent
+  ],
+  standalone: true
 })
 export class DbConnectionEditorDialogComponent {
   packages$: Observable<SourcePackageDescription[]>;

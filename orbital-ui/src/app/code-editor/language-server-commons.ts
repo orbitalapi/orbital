@@ -21,7 +21,7 @@ import {nanoid} from "nanoid";
 
 export const createLanguageClient = (transports: MessageTransports): MonacoLanguageClient => {
   return new MonacoLanguageClient({
-    name: 'Taxi Language Client',
+    name: 'Taxi Language',
     clientOptions: {
       // use a language id as a document selector
       documentSelector: [TAXI_LANGUAGE_ID],
@@ -29,7 +29,7 @@ export const createLanguageClient = (transports: MessageTransports): MonacoLangu
       errorHandler: {
         error: () => ({action: ErrorAction.Continue}),
         closed: () => ({action: CloseAction.DoNotRestart})
-      },
+      }
     },
 
     // create a language client connection from the JSON RPC connection on demand

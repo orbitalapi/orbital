@@ -37,6 +37,7 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
             </div>
             <div class='operation-list'>
               <div class='operation' *ngFor='let remoteCall of remoteCalls$ | async'
+                   [ngClass]="{'active': remoteCall === selectedOperation}"
                    (click)='selectOperation(remoteCall)'>
                 <div class='pill verb'>{{ remoteCall.method }}</div>
                 <div class='pill result'

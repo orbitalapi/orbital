@@ -33,13 +33,13 @@ class KafkaWriterTest  : BaseKafkaContainerTest() {
             operation getPerson():Person
          }
           @KafkaService( connectionName = "moviesConnection" )
-               service PersonKafkaService {
-                  @KafkaOperation( topic = "people", offset = "earliest" )
-                  stream streamMovieQuery:Stream<Person>
+          service PersonKafkaService {
+             @KafkaOperation( topic = "people", offset = "earliest" )
+             stream streamMovieQuery:Stream<Person>
 
-                  @KafkaOperation( topic = "people", offset = "earliest" )
-                  write operation publishMessage(Person):Person
-               }
+             @KafkaOperation( topic = "people", offset = "earliest" )
+             write operation publishMessage(Person):Person
+          }
 
       """.trimIndent()
       val (vyne, _, stub) = vyneWithKafkaInvoker(schema)

@@ -1,25 +1,21 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SchemaDiagramComponent } from './schema-diagram/schema-diagram.component';
-import { AngularResizeEventModule } from 'angular-resize-event';
 import { FullscreenToggleModule } from '../fullscreen-toggle/fullscreen-toggle.module';
 import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
 import { DomSanitizer } from '@angular/platform-browser';
 import { MatLegacyButtonModule as MatButtonModule } from '@angular/material/legacy-button';
 
-
-
 @NgModule({
   declarations: [
     SchemaDiagramComponent
   ],
-    imports: [
-        CommonModule,
-        AngularResizeEventModule,
-        FullscreenToggleModule,
-        MatIconModule,
-        MatButtonModule,
-    ],
+  imports: [
+    CommonModule,
+    FullscreenToggleModule,
+    MatIconModule,
+    MatButtonModule
+  ],
   exports: [
     SchemaDiagramComponent
   ]

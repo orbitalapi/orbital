@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input} from '@angular/core';
 import {HttpErrorResponse} from '@angular/common/http';
 
 @Component({
@@ -8,7 +8,8 @@ import {HttpErrorResponse} from '@angular/common/http';
       <span>{{operationError.message}}</span>
     </div>
   `,
-  styleUrls: ['./operation-error.component.scss']
+  styleUrls: ['./operation-error.component.scss'],
+  standalone: true
 })
 export class OperationErrorComponent {
   @Input()

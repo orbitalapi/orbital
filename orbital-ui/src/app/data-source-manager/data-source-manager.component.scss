@@ -1,0 +1,22 @@
+@import "src/common";
+
+:host {
+  height: 100%;
+}
+
+.errors-panel {
+  margin: 1rem 0;
+  background-color: $warning-light;
+  padding: 1rem;
+  border-radius: 6px;
+}
+
+.no-route-selected {
+  display: none;
+}
+
+router-outlet + .no-route-selected {
+  display: block;
+  margin: 1rem 2rem;
+}
+

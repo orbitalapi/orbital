@@ -3,7 +3,7 @@ import {ActivatedRoute} from '@angular/router';
 import {ConnectionDriverConfigOptions, ConnectorSummary, DbConnectionService} from './db-importer.service';
 import {Observable} from 'rxjs';
 import {filter, mergeMap} from 'rxjs/operators';
-import {ConnectionEditorMode} from './connection-editor.component';
+import { ConnectionEditorComponent, ConnectionEditorMode } from './connection-editor.component';
 import {PackagesService, SourcePackageDescription} from "../package-viewer/packages.service";
 
 export type WizardStage = 'select-connection-type' | 'create-connection' | 'create-type';
@@ -18,7 +18,11 @@ export type WizardStage = 'select-connection-type' | 'create-connection' | 'crea
     ></app-connection-editor>
 
   `,
-  styleUrls: ['./db-connection-wizard.component.scss']
+  styleUrls: ['./db-connection-wizard.component.scss'],
+  imports: [
+    ConnectionEditorComponent
+  ],
+  standalone: true
 })
 export class DbConnectionWizardComponent {
   drivers: ConnectionDriverConfigOptions[];

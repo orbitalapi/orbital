@@ -10,7 +10,7 @@ export function applyElkLayout(nodes: Node[], edges: Edge[]): Promise<Node[]> {
     nodeMap[node.id] = node;
     const elkNode = {
       id: node.id,
-      height: node.height + 80 || 100, // We add to the height, as some nodes have icons that exceed their y:0 boundaries, meaning measured height can be wrong
+      height: node.height + 20 || 100, // We add to the height, as some nodes have icons that exceed their y:0 boundaries, meaning measured height can be wrong
       width: node.width || 100
     } as ElkNode;
     return elkNode;
@@ -25,13 +25,22 @@ export function applyElkLayout(nodes: Node[], edges: Edge[]): Promise<Node[]> {
   const graph: ElkNode = {
     id: 'root',
     layoutOptions: {
+      // https://eclipse.dev/elk/reference/algorithms/org-eclipse-elk-layered.html
       'elk.algorithm': 'layered',
-      // https://rtsys.informatik.uni-kiel.de/elklive/examples.html?e=general%2Fspacing%2Fcomponents
-      'spacing.componentComponent': '150',
-      'spacing.nodeNodeBetweenLayers': '150'
+      //'elk.direction': 'DOWN',
+      'cycleBreaking.strategy': 'INTERACTIVE',
+      'layering.strategy': 'INTERACTIVE',
+      'crossingMinimization.semiInteractive': 'true',
+      'separateConnectedComponents': 'false',
+      // 'elk.direction': width > height ? 'RIGHT' : 'UP',
+      // 'layered.edgeRouting.splines.mode': 'CONSERVATIVE',
+      'spacing.nodeNode': '40',
+      'spacing.componentComponent': '80',
+      'spacing.nodeNodeBetweenLayers': '100',
+      // EXAMPLES >>> https://rtsys.informatik.uni-kiel.de/elklive/examples.html?e=general%2Fspacing%2Fcomponents
     },
     children: elkNodes,
-    edges: elkEdges
+    edges: elkEdges,
   }
   const elk = new ELK()
   // const elk = new ELK({

@@ -24,7 +24,7 @@ data class AddOrRemoveFieldAnnotation (
    override fun applyTo(
       sourcePackage: SourcePackage,
       taxiDocument: TaxiDocument
-   ): Either<CompilationException, Pair<SourcePackage, TaxiDocument>> {
+   ): Either<CompilationException, SourceEditResult> {
 
       val compiler = buildCompiler(sourcePackage, taxiDocument)
       val (_, typeDefinition) = compiler.tokens.unparsedTypes[symbol.fullyQualifiedName]
@@ -41,21 +41,21 @@ data class AddOrRemoveFieldAnnotation (
       return applyEditAndCompile(listOf(edit), sourcePackage, taxiDocument)
    }
 
-   private fun removeAnnotationFromField(fieldDefinition: TaxiParser.TypeMemberDeclarationContext): SourcePackageEdit {
+   private fun removeAnnotationFromField(fieldDefinition: TaxiParser.TypeMemberDeclarationContext): SourceEdit {
       val matchingAnnotation = fieldDefinition.annotation()
          .filter { it.qualifiedName().text == annotationName }
       require (matchingAnnotation.size == 1) { "Expected a single annotation with name '$annotationName', but found ${matchingAnnotation.size}"}
       val annotation = matchingAnnotation.single()
-      return SourcePackageEdit(
+      return SourceEdit(
          sourceName = fieldDefinition.source().sourceName,
          range = annotation.asCharacterPositionRange(),
          newText = ""
       )
    }
 
-   private fun addAnnotationToField(fieldDefinition: TaxiParser.TypeMemberDeclarationContext): SourcePackageEdit {
+   private fun addAnnotationToField(fieldDefinition: TaxiParser.TypeMemberDeclarationContext): SourceEdit {
       val insertionPoint = fieldDefinition.asCharacterInsertionPoint(EditPosition.BeforePosition)
-      return SourcePackageEdit(
+      return SourceEdit(
          fieldDefinition.source().sourceName,
          insertionPoint,
          "@$annotationName \n"

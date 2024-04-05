@@ -217,7 +217,7 @@ class TaxiSchema(
       )
    }
 
-   override fun parseQuery(vyneQlQuery: TaxiQLQueryString, useCache: Boolean): Triple<TaxiQlQuery, QueryOptions, TaxiSchema> {
+   override fun parseQuery(vyneQlQuery: TaxiQLQueryString, useCache: Boolean): Triple<TaxiQlQuery, QueryOptions, Schema> {
       return queryCompiler.compile(vyneQlQuery, useCache)
    }
 

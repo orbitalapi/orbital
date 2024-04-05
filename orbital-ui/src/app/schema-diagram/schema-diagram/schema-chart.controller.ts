@@ -1,4 +1,4 @@
-import { findSchemaMember, Schema, SchemaMemberKind, ServiceMember } from '../../services/schema';
+import { findSchemaMember, Schema, SchemaMemberKind, ServiceMember, Type } from '../../services/schema';
 import { Edge, EdgeMarkerType, MarkerType, Node, XYPosition } from 'reactflow';
 import {
   buildSchemaNode, collectAllLinks,
@@ -8,18 +8,18 @@ import {
   getNodeId,
   Link, edgeSourceAndTargetExist,
   MemberWithLinks,
-  ModelLinks,
-  ServiceLinks, LinkKind
+  LinkKind
 } from './schema-chart-builder';
 import { colors } from 'src/app/schema-diagram/schema-diagram/tailwind.colors';
 import { CSSProperties } from 'react';
 import {
-  lineageDependencyColor,
-  modelNodeBorderColor,
-  serviceNodeBorderColor
+  typeColor,
+  modelColor,
+  serviceColor,
+  lineageDependencyColor
 } from 'src/app/schema-diagram/schema-diagram/diagram-nodes/schema-node-container';
 import { AppendLinksHandler, SchemaMemberClickHandler } from 'src/app/schema-diagram/schema-diagram/schema-flow.react';
-import {isNullOrUndefined} from "../../utils/utils";
+import { isNullOrUndefined } from "../../utils/utils";
 
 export const HORIZONTAL_GAP = 50;
 
@@ -41,8 +41,12 @@ export class SchemaChartController {
   private readonly operations: ServiceMember[];
   private readonly currentNodesById: ReadonlyMap<string, Node<MemberWithLinks>>
 
-
-  constructor(private readonly schema: Schema, private readonly currentNodes: ReadonlyArray<Node<MemberWithLinks>> = [], private readonly currentEdges: Edge[] = [], private readonly requiredMembers: string[] = []) {
+  constructor(
+    private readonly schema: Schema,
+    private readonly currentNodes: ReadonlyArray<Node<MemberWithLinks>> = [],
+    private readonly currentEdges: Edge[] = [],
+    private readonly requiredMembers: string[] = []
+  ) {
     this.operations = collectionOperations(schema);
     const map = new Map<string, Node<MemberWithLinks>>();
     currentNodes.forEach(node => map.set(node.id, node));
@@ -53,7 +57,8 @@ export class SchemaChartController {
     autoAppendLinks: boolean,
     layoutAlgo: 'full' | 'incremental',
     appendLinksHandler: AppendLinksHandler,
-    clickHandler: SchemaMemberClickHandler
+    clickHandler: SchemaMemberClickHandler,
+    isNavigable: boolean,
   }): ChartBuildResult {
     const builtNodesById = new Map<string, Node<MemberWithLinks>>();
 
@@ -61,7 +66,15 @@ export class SchemaChartController {
       const schemaMember = findSchemaMember(this.schema, member);
       const nodeId = getNodeId(schemaMember.kind, schemaMember.name);
       const existingPosition = this.currentNodesById.get(nodeId)?.position;
-      return buildSchemaNode(this.schema, schemaMember, this.operations, buildOptions.appendLinksHandler, buildOptions.clickHandler, existingPosition);
+      return buildSchemaNode(
+        this.schema,
+        schemaMember,
+        this.operations,
+        buildOptions.appendLinksHandler,
+        buildOptions.clickHandler,
+        existingPosition,
+        buildOptions.isNavigable,
+      );
     }).forEach(node => builtNodesById.set(node.id, node));
 
     const builtEdgedById = new Map<string, Edge>();
@@ -94,6 +107,7 @@ export class SchemaChartController {
       const previousNodeLinks = new Set(collectLinks(this.currentNodesById.get(node.id).data.links).map(link => linkId(link)))
       const thisNodeLinks = new Set(collectLinks(node.data.links).map(link => linkId(link)));
 
+      // TODO: this has potential to go pear, should check the actual array contents as well!
       if (previousNodeLinks.size !== thisNodeLinks.size) {
         return true; // Nodes have a different number of links, so needs to be updated
       }
@@ -162,25 +176,26 @@ export class SchemaChartController {
         type: MarkerType.Arrow,
         width: 30,
         height: 30,
-        color: serviceNodeBorderColor
+        color: serviceColor
       };
-      lineColor = serviceNodeBorderColor;
+      lineColor = serviceColor;
     } else if (sourceSchemaKind === 'TYPE' && targetSchemaKind === 'OPERATION') {
       label = 'Is input'
       markerEnd = {
         type: MarkerType.Arrow,
         width: 30,
         height: 30,
-        color: modelNodeBorderColor
+        color: (sourceNode.data.member.member as Type).isScalar ? typeColor : modelColor
       };
-      lineColor = modelNodeBorderColor;
+      lineColor = (sourceNode.data.member.member as Type).isScalar ? typeColor : modelColor;
     }
     const style: CSSProperties = {};
     if (sourceSchemaKind === 'TYPE' && targetSchemaKind === 'TYPE') {
-      lineColor = colors.lime['500'];
+      lineColor = (sourceNode.data.member.member as Type).isScalar ? typeColor : modelColor;
       style.strokeDasharray = '5,5';
     }
     style.stroke = lineColor;
+    style.transition = "opacity 150ms ease-in-out"
     const edgeParams: EdgeParams = {
       sourceCanFloat: sourceSchemaKind === 'TYPE',
       targetCanFloat: targetSchemaKind === 'TYPE' ,
@@ -215,17 +230,21 @@ export class SchemaChartController {
     const createdEdges = new Map<string, Edge>();
     Array.from(nodes.values()).forEach(node => {
       const nodeLinks = collectAllLinks(node.data);
+      // NOTE: buildLinksForModelWithAttributes was created as the logic below doesn't account for
+      //       all of the attribute links which aren't currently nominated to be rendered
       nodeLinks.filter(link => {
         return nodes.has(link.sourceNodeId) && nodes.has(link.targetNodeId)
       }).forEach(link => {
-        const edge = this.buildEdge(nodes.get(link.sourceNodeId),
+        const edge = this.buildEdge(
+          nodes.get(link.sourceNodeId),
           link.sourceHandleId,
           link.sourceMemberType,
           nodes.get(link.targetNodeId),
           link.targetHandleId,
           link.targetMemberType,
           link.linkKind,
-          link.linkId)
+          link.linkId
+        )
         createdEdges.set(edge.id, edge);
       });
     })

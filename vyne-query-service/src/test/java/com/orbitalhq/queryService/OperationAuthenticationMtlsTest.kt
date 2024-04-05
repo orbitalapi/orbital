@@ -11,6 +11,8 @@ import com.orbitalhq.queryService.JavaKeyStore.Companion.createCertificates
 import com.orbitalhq.queryService.JavaKeyStore.Companion.createPrivateKey
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
+import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
+import com.orbitalhq.schemaServer.core.packages.PackageService
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
@@ -150,7 +152,11 @@ class OperationAuthenticationMtlsTest : DatabaseTest() {
    @MockBean
    lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
+   @MockBean
+   lateinit var packagesService: PackageService
 
+   @MockBean
+   lateinit var schemaEditorService: SchemaEditorService
 
    @Bean
    fun schemaStore(): SchemaStore = LocalValidatingSchemaStoreClient()

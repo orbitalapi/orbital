@@ -46,6 +46,7 @@
     </div>
     <app-model-attribute-tree-list
       [schema]="schema"
+      [partialSchema]="partialSchema"
       [showFullTypeNames]="showFullTypeNames"
       [anonymousTypes]="anonymousTypes"
       [model]="type"
@@ -72,19 +73,19 @@
       <button tuiTab>Lineage</button>
     </tui-tabs>
     <div class="chart-container" *ngIf="chartDisplayTabIndex === 0">
-      <p class="help-text">This chart shows how {{type.name.shortDisplayName}} data flows between data sources and
-        systems.</p>
-      <p class='help-text'>{{type.name.shortDisplayName}} flows between these services outside of Orbital.</p>
-      <app-service-lineage-graph-container [type]="type"></app-service-lineage-graph-container>
-    </div>
-    <div class="chart-container" *ngIf="chartDisplayTabIndex === 1">
       <p class="help-text">This chart shows how {{type.name.shortDisplayName}} links between data sources to make
         other data available.</p>
-      <p class="help-text">The data shown here is discoverable by Vyne using a query, and knowing the value of
+      <p class="help-text">The data shown here is discoverable by {{UiCustomisations.productName}} using a query, and knowing the value of
         a {{type.name.shortDisplayName}}. </p>
-      <app-schema-diagram [displayedMembers]="requiredMembers" [schema$]="schema$"></app-schema-diagram>
+      <app-schema-diagram [schema$]="schema$" [displayedMembers]="requiredMembers" [memberNameNavigable]="editable"></app-schema-diagram>
       <!--      <app-type-link-graph-container [member]="schemaMember"-->
       <!--                                     *ngIf="chartDisplayMode === 'links'"></app-type-link-graph-container>-->
+    </div>
+    <div class="chart-container" *ngIf="chartDisplayTabIndex === 1">
+      <p class="help-text">This chart shows how {{type.name.shortDisplayName}} data flows between data sources and
+        systems.</p>
+      <p class='help-text'>{{type.name.shortDisplayName}} flows between these services outside of {{UiCustomisations.productName}}.</p>
+      <app-service-lineage-graph-container [type]="type"></app-service-lineage-graph-container>
     </div>
   </section>
 

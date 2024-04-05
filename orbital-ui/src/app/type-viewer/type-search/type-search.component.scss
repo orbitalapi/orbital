@@ -13,6 +13,7 @@
   height: 10px;
   overflow: auto;
   flex-grow: 1;
+  gap: 1rem
 }
 
 .results-panel {
@@ -28,20 +29,9 @@
 
   .documentation-panel {
     overflow: auto;
+    position: relative;
   }
 }
-
-.section-header {
-  background-color: rgba($vyne-lilac, 0.1);
-  border-top: none; // The bottom border of the element above is ok
-  border-bottom: 1px solid rgba($vyne-lilac, 0.3);
-
-  text-transform: uppercase;
-  font-size: 0.8rem;
-  font-weight: bold;
-  padding: 0.5rem;
-}
-
 
 tui-input.working {
   // Hide the search icon in the left of the text bar when searching, as we replace it with a spinner
@@ -69,5 +59,19 @@ tui-input.working {
 }
 
 .no-results {
-  margin-top: 1rem;
+  margin-left: 1rem;
+}
+
+.text-search-loader,
+.docs-loader {
+  position: absolute;
+  width: 100%
+}
+
+.text-search-loader {
+  bottom: 0;
+}
+
+.docs-loader {
+  top: 0
 }

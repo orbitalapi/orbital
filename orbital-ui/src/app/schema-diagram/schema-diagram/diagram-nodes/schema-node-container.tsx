@@ -2,22 +2,42 @@ import styled from 'styled-components';
 import { colors } from '../tailwind.colors';
 
 const tableInnerBorderColor = colors.slate['300'];
-export const modelNodeBorderColor = colors.lime['500'];
-export const serviceNodeBorderColor = colors.sky['400'];
+export const modelColor = colors.lime['500'];
+export const typeColor = colors.purple['500'];
+export const serviceColor = colors.sky['400'];
 export const lineageDependencyColor = colors.yellow['500'];
 
 export const SchemaNodeContainer = styled.div`
   box-shadow: rgb(0 0 0 / 10%) 0 2px 5px 0;
+  border-radius: 4px;
+  transition: box-shadow 150ms ease-in-out;
+
+  :hover {
+    box-shadow: rgb(0 0 0 / 25%) 0 2px 5px 0;
+  }
 
   .handle-container {
     position: relative;
 
     .react-flow__handle-left {
-      left: calc(-1rem + 4px); //1rem to offset the padding, 3px is the width of the connector node, 1px border
+      left: calc(-1rem + 2px);
     }
 
     .react-flow__handle-right {
-      right: calc(-1rem + 4px); //1rem to offset the padding, 3px is the width of the connector node, 1px border
+      right: calc(-1rem + 2px);
+    }
+
+    .react-flow__handle {
+      width: 8px;
+      height: 8px;
+      outline: 1px solid ${colors.gray['500']};
+      background: ${colors.white};
+      transition: 150ms ease-in-out background, 150ms ease-in-out outline;
+
+      &:hover {
+        outline: 2.5px solid ${colors.sky['600']};
+        background: ${colors.sky['200']};
+      }
     }
   }
 
@@ -34,24 +54,23 @@ export const SchemaNodeContainer = styled.div`
     position: relative;;
     .node-icon-container {
       position: absolute;
-      top: -26px;
-      left: -26px;
+      top: -16px;
+      left: -16px;
 
-      border: 2px solid ${serviceNodeBorderColor};
+      border: 2px solid ${serviceColor};
       background-color: white;
       border-radius: 50%;
-      padding: 6px;
+      padding: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
 
       img {
-        width: 36px;
-        height: 36px;
+        width: 24px;
+        height: 24px;
       }
     }
   }
-
 
   .small-heading {
     font-size: 0.7rem;
@@ -69,15 +88,19 @@ export const SchemaNodeContainer = styled.div`
 
   table {
     border-spacing: 0;
-    &.service {
-      border-color: ${serviceNodeBorderColor};
-    }
     font-size: 0.8rem;
     border-collapse: separate;
     border-radius: 4px;
-    border: 2px solid ${modelNodeBorderColor};
+    border: 2px solid ${modelColor};
     background-color: white;
 
+    &.service {
+      border-color: ${serviceColor};
+    }
+
+    &.type {
+      border-color: ${typeColor};
+    }
 
     td, th {
       padding: 0 0.5rem;
@@ -115,7 +138,6 @@ export const SchemaNodeContainer = styled.div`
         }
       }
     }
-
 
     tbody {
       tr:first-of-type {

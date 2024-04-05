@@ -9,7 +9,7 @@
   // LR padding is to prevent rubbing up the side of smaller containers
   padding: 2rem 2rem 0;
   background-color: $slate-100;
-
+  border-bottom: 1px solid $slate-300;
   display: flex;
 
   &.pad-bottom {
@@ -46,7 +46,6 @@
 .body-container {
   background-color: $body-bg;
   flex-grow: 1;
-  height: 100%;
   display: flex;
 
   .body {

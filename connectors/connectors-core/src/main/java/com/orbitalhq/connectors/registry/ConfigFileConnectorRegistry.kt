@@ -1,18 +1,16 @@
 package com.orbitalhq.connectors.registry
 
 import com.orbitalhq.PackageIdentifier
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import com.orbitalhq.config.BaseHoconConfigFileRepository
 import com.orbitalhq.config.toHocon
-import com.orbitalhq.schemas.QualifiedName
-import com.orbitalhq.schemas.SchemaMemberKind
+import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.schemas.SchemaMemberReference
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 import mu.KotlinLogging
 import org.http4k.quoted
 import java.nio.file.Files
 import java.nio.file.Path
-import java.time.Instant
 
 // Marker interface, to help make this stuff easier to follow
 interface ConnectionConfigMap
@@ -97,7 +95,8 @@ enum class ConnectorType {
    AWS,
    AWS_S3,
    AZURE_STORAGE,
-   CACHE
+   CACHE,
+   NO_SQL
 }
 
 /**
@@ -120,22 +119,19 @@ data class ConnectorConfigurationSummary(
    val driverName: String,
    val properties: Map<String, Any>,
    val packageIdentifier: PackageIdentifier,
-   val connectionStatus: ConnectionStatus
+   val connectionStatus: ConnectionStatus,
+   val usages: List<SchemaMemberReference>?
 ) {
-   constructor(packageIdentifier: PackageIdentifier, config: ConnectorConfiguration, connectionStatus: ConnectionStatus = ConnectionStatus.unknown()) : this(
-      config.connectionName, config.type, config.driverName, config.getUiDisplayProperties(), packageIdentifier, connectionStatus
+   constructor(
+      packageIdentifier: PackageIdentifier,
+      config: ConnectorConfiguration,
+      connectionStatus: ConnectionStatus = ConnectionStatus.unknown(),
+      connectionUIDisplayProvider: ConnectionUIDisplayProvider? = null,
+      usages: List<SchemaMemberReference>? = null
+   ) : this(
+      config.connectionName, config.type, config.driverName,
+      connectionUIDisplayProvider?.uiProps(config) ?: config.getUiDisplayProperties(),
+      packageIdentifier, connectionStatus, usages
    )
 }
 
-data class ConnectionStatus(val status: Status, val timestamp: Instant, val errorMessage: String? = null) {
-   companion object {
-      fun unknown() = ConnectionStatus(Status.UNKNOWN, Instant.now())
-      fun ok() = ConnectionStatus(Status.OK, Instant.now())
-      fun error(message:String) = ConnectionStatus(Status.ERROR, Instant.now(), message)
-   }
-   enum class Status {
-      OK,
-      ERROR,
-      UNKNOWN
-   }
-}

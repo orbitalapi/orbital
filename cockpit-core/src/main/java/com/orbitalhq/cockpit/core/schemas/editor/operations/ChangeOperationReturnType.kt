@@ -24,7 +24,7 @@ data class ChangeOperationReturnType(
    override fun applyTo(
       sourcePackage: SourcePackage,
       taxiDocument: TaxiDocument
-   ): Either<CompilationException, Pair<SourcePackage, TaxiDocument>> {
+   ): Either<CompilationException, SourceEditResult> {
       val compiler = buildCompiler(sourcePackage, taxiDocument)
       val (serviceName, operationName) = OperationNames.serviceAndOperation(symbol)
       val (_, serviceDefinition) = compiler.tokens.unparsedServices[serviceName]
@@ -44,24 +44,24 @@ data class ChangeOperationReturnType(
       return applyEditAndCompile(listOf(edit), sourcePackage, taxiDocument)
    }
 
-   private fun applyToStreamOperation(streamDeclaration: TaxiParser.StreamDeclarationContext): SourcePackageEdit {
-      return SourcePackageEdit(
+   private fun applyToStreamOperation(streamDeclaration: TaxiParser.StreamDeclarationContext): SourceEdit {
+      return SourceEdit(
          streamDeclaration.source().sourceName,
          streamDeclaration.typeReference().asCharacterPositionRange(),
          newReturnType.parameterizedName
       )
    }
 
-   private fun applyToTableOperation(tableDeclaration: TaxiParser.TableDeclarationContext): SourcePackageEdit {
-      return SourcePackageEdit(
+   private fun applyToTableOperation(tableDeclaration: TaxiParser.TableDeclarationContext): SourceEdit {
+      return SourceEdit(
          tableDeclaration.source().sourceName,
          tableDeclaration.typeReference().asCharacterPositionRange(),
          newReturnType.parameterizedName
       )
    }
 
-   private fun applyToApiOperation(serviceOperationDeclaration: TaxiParser.ServiceOperationDeclarationContext): SourcePackageEdit {
-      return SourcePackageEdit(
+   private fun applyToApiOperation(serviceOperationDeclaration: TaxiParser.ServiceOperationDeclarationContext): SourceEdit {
+      return SourceEdit(
          serviceOperationDeclaration.source().sourceName,
          serviceOperationDeclaration.operationSignature().operationReturnType().typeReference().asCharacterPositionRange(),
          newReturnType.parameterizedName

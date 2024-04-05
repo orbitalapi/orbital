@@ -4,9 +4,11 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow: hidden; // prevents the resize handler in the schema-diagram looping
 
   app-data-catalog-search {
     flex-grow: 1;
+    overflow: auto;
   }
 }
 

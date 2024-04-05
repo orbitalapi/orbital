@@ -1,9 +1,11 @@
-import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { VyneServicesModule } from '../services/vyne-services.module';
-import { environment } from '../../environments/environment';
-import { Observable } from 'rxjs/internal/Observable';
-import { map } from 'rxjs/operators';
+import {HttpClient} from '@angular/common/http';
+import {Injectable} from '@angular/core';
+import {VyneServicesModule} from '../services/vyne-services.module';
+import {environment} from '../../environments/environment';
+import {Observable} from 'rxjs/internal/Observable';
+import {map} from 'rxjs/operators';
+import {WebsocketService} from "../services/websocket.service";
+import {ConnectionStatus} from "../db-connection-editor/db-importer.service";
 
 // TODO Make the UI support multiple pipeline outputs
 
@@ -22,7 +24,20 @@ function addOutputs(pipelineSpec: PipelineSpec): PipelineSpec {
   providedIn: VyneServicesModule
 })
 export class PipelineService {
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient,
+              private websocketService: WebsocketService) {
+  }
+
+  streamsStatus(): Observable<StreamServerStatusWithConnectionMessage> {
+    return this.websocketService.websocket(`/api/streams/status`)
+  }
+
+  getStreamStatus(streamName: string): Observable<StreamStatus> {
+    return this.http.get<StreamStatus>(`${environment.serverUrl}/api/streams/${streamName}/status`);
+  }
+
+  updateStreamStatus(streamName: string, newState: StreamRunningState): Observable<StreamStatus> {
+    return this.http.post<StreamStatus>(`${environment.serverUrl}/api/streams/${streamName}/status`, {state: newState});
   }
 
   listPipelines(): Observable<RunningPipelineSummary[]> {
@@ -253,3 +268,24 @@ export interface DagGraphLink {
   target: string;
   label: string;
 }
+
+
+export interface StreamServerStatusWithConnectionMessage {
+  connectionStatus: ConnectionStatus
+  streamServerState: StreamServerStatusEvent
+}
+
+export interface StreamServerStatusEvent {
+  clusterSize: number;
+  streams: StreamStatus[]
+}
+
+export interface StreamStatus {
+  streamName: string;
+  state: StreamRunningState;
+  timestamp: Date;
+  username: string | null;
+
+}
+
+export type StreamRunningState = 'RUNNING' | 'PAUSED'
