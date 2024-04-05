@@ -1,0 +1,51 @@
+<div class="collapse-icon" (click)="isCollapsed = !isCollapsed" [class.is-collapsed]="isCollapsed">
+  <img src="/assets/img/tabler/chevrons-left.svg">
+</div>
+<div class="side-nav-container" [class.is-collapsed]="isCollapsed">
+  <div class="sidenav-top">
+    <div class="logo-container">
+      <a routerLink="/">
+        <img class="logo" src="/logo.png">
+      </a>
+    </div>
+    <div *ngFor="let element of sidebarElements$ | async" class="navbar-item" [routerLink]="element.route"
+         routerLinkActive="active">
+      <a [routerLink]="element.route" routerLinkActive="active" #rla="routerLinkActive"
+         [attr.data-e2e-id]="element.testId" *ngIf="element.route"
+         [tuiHintShowDelay]="100" [tuiHintHideDelay]="50" [tuiHint]="isCollapsed && tooltip" tuiHintAppearance="onDark">
+        <tui-svg [src]="element.icon" class="icon"></tui-svg>
+        <span class="label">{{ element.title }}</span>
+      </a>
+      <a [href]="element.externalUrl" target="_blank"
+         [attr.data-e2e-id]="element.testId" *ngIf="element.externalUrl"
+         [tuiHintShowDelay]="100" [tuiHintHideDelay]="50" [tuiHint]="isCollapsed && tooltip" tuiHintAppearance="onDark">
+        <tui-svg [src]="element.icon" class="icon"></tui-svg>
+        <span class="label">{{ element.title }}</span>
+      </a>
+      <ng-template #tooltip>
+        <div>{{ element.title }}</div>
+      </ng-template>
+    </div>
+  </div>
+  <div class="sidenav-bottom">
+    <ng-container *ngIf="(userInfo$ | async) as userInfo">
+      <div *ngIf="userInfo.username && userInfo.username !== 'Anonymous'" class="navbar-item">
+        <a>
+          <app-avatar [user]="userInfo"></app-avatar>
+        </a>
+      </div>
+    </ng-container>
+    <div class="app-info" *ngIf="appInfo" [class.is-collapsed]="isCollapsed"
+         [tuiHintShowDelay]="100" [tuiHintHideDelay]="50" [tuiHint]="isCollapsed && appInfoHint" tuiHintAppearance="onDark">
+      <ng-container *ngTemplateOutlet="appInfoHint"></ng-container>
+      <ng-template #appInfoHint>
+        v{{
+          appInfo?.build?.baseVersion && appInfo?.build?.buildNumber !== '0' && appInfo?.build?.version?.includes('SNAPSHOT') ?
+            appInfo.build.baseVersion + "-BETA-" + appInfo.build.buildNumber :
+            appInfo?.build?.version
+        }}
+        ({{ appInfo?.git?.commit?.id }})
+      </ng-template>
+    </div>
+  </div>
+</div>

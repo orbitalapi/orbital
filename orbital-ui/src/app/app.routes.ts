@@ -5,7 +5,7 @@ import { LandingPageContainerComponent } from 'src/app/landing-page/landing-page
 import { FeatureFlagGuard } from './services/feature-flag.guard';
 import { UiCustomisations } from '../environments/ui-customisations';
 
-export const VYNE_ROUTES = RouterModule.forRoot(
+export const APP_ROUTES = RouterModule.forRoot(
   [
     {
       path: '',

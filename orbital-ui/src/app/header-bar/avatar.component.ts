@@ -23,7 +23,7 @@ import {TUI_PROMPT, TuiPromptData} from "@taiga-ui/kit";
                *ngIf="authService.securityConfig.accountManagementUrl">Account settings</a>
             <a tuiOption type="button" target="_blank" [href]="authService.securityConfig.orgManagementUrl"
                *ngIf="authService.securityConfig.orgManagementUrl">Organisation settings</a>
-            <button tuiOption (click)="logout()" *ngIf="user?.isAuthenticated">
+            <button tuiOption (click)="logout()" *ngIf="user?.isAuthenticated" class="logout-button">
               <img class="logout-icon filter-black-ish" src="assets/img/tabler/logout.svg">
               Logout
             </button>
@@ -32,7 +32,6 @@ import {TUI_PROMPT, TuiPromptData} from "@taiga-ui/kit";
       </tui-data-list>
     </ng-template>
   `,
-
 })
 export class AvatarComponent {
 
