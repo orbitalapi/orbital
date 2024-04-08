@@ -2,12 +2,18 @@ import { Component, EventEmitter, Inject, Injector, Input, Output } from '@angul
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs/internal/Observable';
-import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
-import { TuiButtonModule, TuiDataListModule, TuiDialogService, TuiSvgModule } from '@taiga-ui/core';
+import {
+  TuiButtonModule,
+  TuiDataListModule,
+  TuiDialogService,
+  TuiSvgModule,
+  TuiTextfieldControllerModule
+} from '@taiga-ui/core';
 import {
   TuiDataListWrapperModule,
-  TuiFilterByInputPipeModule, TuiInputModule,
-  TuiSelectModule,
+  TuiFilterByInputPipeModule,
+  TuiInputModule,
+  TuiMultiSelectModule, TuiSelectModule,
   TuiStringifyContentPipeModule
 } from '@taiga-ui/kit';
 import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
@@ -26,7 +32,6 @@ import { sanitiseNamespace } from '../../../utils/utils';
   standalone: true,
   imports: [
     CommonModule,
-    TuiSelectModule,
     FormsModule,
     TuiDataListModule,
     TuiSvgModule,
@@ -36,6 +41,9 @@ import { sanitiseNamespace } from '../../../utils/utils';
     TuiFilterByInputPipeModule,
     TuiButtonModule,
     TuiInputModule,
+    TuiSelectModule,
+    TuiMultiSelectModule,
+    TuiTextfieldControllerModule,
   ],
   template: `
     <div class="form-container">
@@ -71,23 +79,26 @@ import { sanitiseNamespace } from '../../../utils/utils';
         </div>
         <div class="form-row">
           <div class="form-item-description-container">
-            <h3>Table</h3>
+            <h3>Table(s)</h3>
             <div class="help-text">
-              Select the table you wish to import
+              Select the table(s) you wish to import
             </div>
           </div>
           <div class="form-element">
-            <tui-select [(ngModel)]="selectedTable"
-                        [stringify]="stringifyTableName"
-                        [disabled]="selectedConnection == null"
+            <tui-multi-select
+              [(ngModel)]="selectedTables"
+              [stringify]="stringifyTableName"
+              [tuiTextfieldCleaner]="true"
+              [disabled]="selectedConnection == null"
             >
-              Table name
+              Table name(s)
               <tui-data-list-wrapper
                 *tuiDataList
+                tuiMultiSelectGroup
                 [itemContent]="stringifyTableName | tuiStringifyContent"
                 [items]="tables$  | async | tuiFilterByInputWith : stringifyTableName"
               ></tui-data-list-wrapper>
-            </tui-select>
+            </tui-multi-select>
           </div>
         </div>
         <div class="form-row">
@@ -115,12 +126,13 @@ import { sanitiseNamespace } from '../../../utils/utils';
 })
 export class DatabaseTableConfigComponent {
 
-  constructor(private dialog: MatDialog,
-              @Inject(Injector) private readonly injector: Injector,
-              @Inject(TuiDialogService) private readonly dialogService: TuiDialogService) {
+  constructor(
+    @Inject(Injector) private readonly injector: Injector,
+    @Inject(TuiDialogService) private readonly dialogService: TuiDialogService
+  ) {
   }
 
-  selectedTable: MappedTable;
+  selectedTables: MappedTable[];
   selectedConnection: ConnectorSummary = null;
 
   @Input()
@@ -145,12 +157,14 @@ export class DatabaseTableConfigComponent {
 
   doCreate() {
     const tableSchemaConverterOptions = new TableSchemaConverterOptions();
-    tableSchemaConverterOptions.tables = [
-      {
-        table: this.selectedTable.table,
-        defaultNamespace: this.defaultNamespace
-      }
-    ];
+    tableSchemaConverterOptions.tables = this.selectedTables.map(table => {
+      return (
+        {
+          table: table.table,
+          defaultNamespace: this.defaultNamespace
+        }
+      )
+    })
     tableSchemaConverterOptions.connectionName = this.selectedConnection.connectionName;
     this.loadSchema.next(new ConvertSchemaEvent('databaseTable', tableSchemaConverterOptions, this.packageIdentifier));
   }
