@@ -165,34 +165,70 @@ class XmlFormatDeserializerTest : DescribeSpec({
          ) as TypedObject
          fooWithIsin["identifierValue"].value.should.equal("ISIN-138443")
       }
-
+       /**
+        * <row id='36471808' xml:space='preserve'>
+        * <c1>12707077</c1>
+        * <c2>3115</c2>
+        * <c3>AT1-36471808</c3>
+        * <c5>SH-36471808</c5>
+        * <c7>TR</c7>
+        * <c8>GBP</c8>
+        * <c9>1</c9>
+        * <c10>4315.02</c10>
+        * <c11>827</c11>
+        * <c20 m='31'>GB34MYMB23058036471808</c20>
+        * <c20 m='161'>NA</c20>
+        * <c20 m='174'>
+        * </row>
+        */
       it("is possible to embed xml within json") {
          val schema = TaxiSchema.from(
             """
-model MyMessage {
-    messageId : MessageId inherits String
-    xmlRecord : Person
+type TableId inherits String
+type AccountId inherits String
+type CustomerId inherits String
+type AccountName inherits String
+type CustomerName inherits String
+
+model CustomerMessage {
+   table: TableId
+   XMLRecord: Customer
 }
 
 @com.orbitalhq.formats.Xml
-model Person {
-    id : PersonId inherits String
-    name : PersonName inherits String
-}"""
+model Customer {
+    id : CustomerId
+    c0 : CustomerName?
+}
+
+model AccountMessage {
+    table : TableId
+    XMLRecord : Account
+}
+
+@com.orbitalhq.formats.Xml
+model Account {
+    id : AccountId
+    c0 : AccountName?
+}
+
+
+"""
          )
+
          val src = """{
-    "messageId" : "123",
-    "xmlRecord" : "<person id=\"jj\"><name>Jimmy</name></person>"
+    "table" : "123",
+    "XMLRecord" : "<row id=\"12707077\" xml:space=\"preserve\"><c0>123456</c0></row>"
 }"""
          val typedInstance = TypedInstance.from(
-            schema.type("MyMessage"), src, schema,
+            schema.type("AccountMessage"), src, schema,
             source = Provided,
             formatSpecs = listOf(XmlFormatSpec)
             )
          typedInstance.toRawObject().shouldBe(
             mapOf(
-               "messageId" to "123",
-               "xmlRecord" to mapOf("name" to "Jimmy", "id" to "jj")
+               "table" to "123",
+               "XMLRecord" to mapOf("id" to "12707077", "c0" to "123456")
             ),
 
          )

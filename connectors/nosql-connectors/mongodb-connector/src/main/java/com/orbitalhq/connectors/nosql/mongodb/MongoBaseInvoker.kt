@@ -1,6 +1,5 @@
 package com.orbitalhq.connectors.nosql.mongodb
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.connectors.collectionTypeOrType
 import com.orbitalhq.connectors.config.mongodb.MongoConnectionConfiguration
 import com.orbitalhq.connectors.resultType
@@ -17,7 +16,6 @@ import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.Type
-import com.orbitalhq.schemas.fqn
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.query.TaxiQlQuery
@@ -38,8 +36,10 @@ abstract class MongoBaseInvoker(
       return mongoConnectionConfig to connectionFactory.reactiveMongoTemplate(mongoConnectionConfig)
    }
 
-   protected fun idField(vyneType: Type): AttributeName? {
-      val idFields = vyneType.getAttributesWithAnnotation("Id".fqn())
+
+
+   private fun objectIdField(vyneType: Type): AttributeName? {
+      val idFields = vyneType.getAttributesWithAnnotation(MongoConnector.Annotations.ObjectIdAnnotationName)
       require(idFields.isEmpty() || idFields.size == 1)
       return if (idFields.isEmpty()) {
          null
@@ -103,7 +103,7 @@ abstract class MongoBaseInvoker(
       val resultTypeName = query.resultType()
       val resultTaxiType = collectionTypeOrType(schema.taxi.type(resultTypeName))
       val vyneType = schema.type(resultTaxiType)
-      val mapTransform: (Map<*, *>) -> Map<*, *> = idFieldTransform(vyneType)
+      val mapTransform: (Map<*, *>) -> Map<*, *> = objectIdFieldTransform(vyneType)
 
       val typedInstances = resultList
          .map { mapValue ->
@@ -117,7 +117,7 @@ abstract class MongoBaseInvoker(
       schema: Schema,
       datasource: DataSource,
       mapTransform: MongoIdTransformFunc? = null): TypedInstance {
-      val idFieldTransform = mapTransform ?: idFieldTransform(vyneType)
+      val idFieldTransform = mapTransform ?: objectIdFieldTransform(vyneType)
       return TypedInstance.from(
          vyneType,
          idFieldTransform(mapValue),
@@ -127,8 +127,8 @@ abstract class MongoBaseInvoker(
       )
    }
 
-   private fun idFieldTransform(vyneType: Type): MongoIdTransformFunc {
-      val idField = idField(vyneType)
+   private fun objectIdFieldTransform(vyneType: Type): MongoIdTransformFunc {
+      val idField = objectIdField(vyneType)
       val mapTransform: (Map<*, *>) -> Map<*, *> = if (idField != null) {
          fun(mongoMap: Map<*, *>): Map<*, *> {
             val hashMap = mongoMap as HashMap<String, Any?>
@@ -147,7 +147,7 @@ abstract class MongoBaseInvoker(
 
    protected fun typedInstanceToMap( recordToWrite: TypedInstance, idFieldCheck: Boolean = true): Map<String, Any?> {
       require(recordToWrite is TypedObject) { "Writes not supported on instances of type ${recordToWrite::class.simpleName}" }
-      val idField = if (idFieldCheck) idField(recordToWrite.type) else null
+      val idField = if (idFieldCheck) objectIdField(recordToWrite.type) else null
       return recordToWrite.type.attributes.map { (name, field) ->
          val fieldValue = recordToWrite[name]
          val value =  if (fieldValue is TypedObject) {
@@ -156,7 +156,7 @@ abstract class MongoBaseInvoker(
             fieldValue.value
          }
          val mongoFieldName = if (idField == name) MongoIdField else name
-         val mongoValue = if (mongoFieldName == MongoIdField) {
+         val mongoValue = if (mongoFieldName == MongoIdField)  {
            value?.let { ObjectId(it.toString()) }
          } else value
          mongoFieldName to mongoValue

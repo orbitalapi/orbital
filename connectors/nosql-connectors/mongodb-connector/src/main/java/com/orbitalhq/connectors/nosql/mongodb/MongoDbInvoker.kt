@@ -32,7 +32,7 @@ class MongoDbInvoker(connectionFactory: MongoConnectionFactory,
      return when {
          operation.operationType == OperationScope.READ_ONLY -> readOnlyInvoker.invoke(service, operation, parameters, eventDispatcher, queryId, queryOptions)
 
-        operation.operationType == OperationScope.MUTATION && operation.hasMetadata("UpsertOperation") -> upsertInvoker.invoke(
+        operation.operationType == OperationScope.MUTATION && operation.hasMetadata(MongoConnector.Annotations.UpsertOperationAnnotationName.parameterizedName) -> upsertInvoker.invoke(
             service,
             operation,
             parameters,

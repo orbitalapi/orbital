@@ -12,7 +12,6 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.time.Instant
 
 class MongoMutatingQueryInvokerTest: MongoDbTestcontainer() {
    private lateinit var connectionRegistry: InMemoryMongoConnectionRegistry
@@ -87,7 +86,7 @@ class MongoMutatingQueryInvokerTest: MongoDbTestcontainer() {
 
       // Insert a Brand New Flight Into flightInfo, note we pass 'null' objectId so that Mongo will perform 'insert'
       val insertResult = vyne.query("""
-                given { movie : FlightInfoWithObjectId = { objectId : null , code : "TK 1989", departure: "IST", arrival: "LHR", airline: { code: "TK", name: "Turkish Airlines", starAlliance: true} } }
+                given { movie : FlightInfoWithObjectId = { objectId : "1" , code : "TK 1989", departure: "IST", arrival: "LHR", airline: { code: "TK", name: "Turkish Airlines", starAlliance: true} } }
                call FlightsDb::upsertFlightWithObjectId
                """.trimIndent())
                 .typedObjects()
@@ -111,6 +110,24 @@ class MongoMutatingQueryInvokerTest: MongoDbTestcontainer() {
 
       // verify the updated field.
       updateResult.first()["code"].value.should.equal("TK 1990")
+
+       //re query
+       val result = vyne.query("""find { FlightInfoWithObjectId[]( MongoObjectId == "1" ) } """)
+           .typedObjects()
+
+       result.should.have.size(1)
+         result.first().toRawObject()
+           .should.equal(mapOf(
+               "objectId" to "1",
+               "code" to "TK 1990",
+               "departure" to "IST",
+               "arrival" to "LHR",
+               "airline" to mapOf<String, Any>(
+                   "code" to "TK",
+                   "name" to "Turkish Airlines",
+                   "starAlliance" to true
+               )
+           ))
 
    }
 }
