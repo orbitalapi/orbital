@@ -40,8 +40,15 @@ class MongoMutatingQueryInvoker(
 
       val (connectionConfig, reactiveMongoTemplate) = getConnectionConfigAndTemplate(service)
       val recordToWrite = parameters[0].second
-      return reactiveMongoTemplate
-         .save( typedInstanceToMap(recordToWrite), collectionName)
+      val documentMap = typedInstanceToMap(recordToWrite)
+      val upsertDefinition =  MongoCriteriaGenerator.upsertFor(recordToWrite, documentMap)
+
+     val upsertMono = if (upsertDefinition == null) {
+         reactiveMongoTemplate.save(documentMap, collectionName)
+      } else {
+         reactiveMongoTemplate.upsert(upsertDefinition.first, upsertDefinition.second, collectionName).map { documentMap}
+      }
+      return upsertMono
          .elapsed()
          .map { durationAndData ->
             val duration = durationAndData.t1
@@ -56,7 +63,6 @@ class MongoMutatingQueryInvoker(
                java.time.Duration.ofMillis(duration),
                recordCount = 1
             )
-
             eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
             val resultTypedInstance =  mapToTypedInstance(data,inputType, schema,  operationResult.asOperationReferenceDataSource())
             DataSourceUpdater.update(resultTypedInstance, operationResult.asOperationReferenceDataSource())

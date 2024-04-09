@@ -1,8 +1,7 @@
 package com.orbitalhq.connectors.nosql.mongodb
 
 import com.orbitalhq.annotations.AnnotationWrapper
-import com.orbitalhq.schemas.Metadata
-import com.orbitalhq.schemas.hasMetadata
+import com.orbitalhq.schemas.fqn
 import lang.taxi.TaxiDocument
 import lang.taxi.types.Annotation
 import lang.taxi.types.QualifiedName
@@ -10,10 +9,8 @@ import lang.taxi.types.QualifiedName
 object MongoConnector {
    object Annotations {
       internal const val namespace = "com.orbitalhq.mongo"
-      const val UpsertOperationAnnotationName = "UpsertOperation"
-      const val InsertOperationAnnotationName = "InsertOperation"
-      const val UpdateOperationAnnotationName = "UpdateOperation"
-
+      val UpsertOperationAnnotationName = "${namespace}.UpsertOperation".fqn()
+      val ObjectIdAnnotationName = "${namespace}.ObjectId".fqn()
       data class MongoOperation(val connectionName: String) : AnnotationWrapper {
          companion object {
             const val NAME = "$namespace.MongoService"
@@ -65,7 +62,7 @@ object MongoConnector {
       val mongoOperationName = QualifiedName.from(MongoOperation.NAME)
       val collectionName = QualifiedName.from(Collection.NAME)
 
-      val imports: String = listOf(MongoOperation.NAME, Collection.NAME).joinToString("\n") { "import $it" }
+      val imports: String = listOf(MongoOperation.NAME, Collection.NAME, ObjectIdAnnotationName).joinToString("\n") { "import $it" }
    }
 
    val schema = """
@@ -74,7 +71,10 @@ namespace ${Annotations.namespace} {
    annotation ${Annotations.mongoOperationName.typeName} {
       connection : ConnectionName
    }
-
+   
+   annotation UpsertOperation {}
+   annotation ObjectId {}
+  
    annotation ${Annotations.collectionName.typeName} {
       connection : ConnectionName
       collection : CollectionName inherits String
