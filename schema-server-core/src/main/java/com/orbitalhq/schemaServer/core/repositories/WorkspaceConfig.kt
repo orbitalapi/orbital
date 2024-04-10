@@ -7,6 +7,7 @@ import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
 import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaRepositoryConfig
 import reactor.core.publisher.Flux
+import java.nio.file.Path
 
 /**
  * Class representing the workspace.conf file that defines
@@ -38,7 +39,8 @@ interface WorkspaceConfigLoader {
 
    fun addGitSpec(gitSpec: GitProjectStoreSpec)
    fun removeGitRepository(repositoryName: String, packageIdentifier: PackageIdentifier): List<PackageIdentifier>
-   fun removeFileRepository(packageIdentifier: PackageIdentifier): List<PackageIdentifier>
+   fun removeFileRepository(repositoryPath: Path, packageIdentifier: PackageIdentifier): List<PackageIdentifier>
+   fun removePushedRepository(identifier: PackageIdentifier): List<PackageIdentifier>
 
    val loaderStatus: Flux<LoaderStatus>
 

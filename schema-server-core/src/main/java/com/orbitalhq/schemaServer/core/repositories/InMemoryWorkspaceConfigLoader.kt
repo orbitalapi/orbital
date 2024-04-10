@@ -11,6 +11,7 @@ import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecyc
 import com.orbitalhq.utils.concat
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
+import java.nio.file.Path
 
 class InMemoryWorkspaceConfigLoader(
    private var config: WorkspaceConfig, private val eventDispatcher: ProjectSpecLifecycleEventDispatcher
@@ -71,10 +72,31 @@ class InMemoryWorkspaceConfigLoader(
       repositoryName: String,
       packageIdentifier: PackageIdentifier
    ): List<PackageIdentifier> {
-      TODO("Not yet implemented")
+
+      config = config.copy(
+         git = config.gitConfigOrDefault.copy(
+            repositories = config.gitConfigOrDefault.repositories.filterNot { it.name == repositoryName }
+         )
+      )
+      eventDispatcher.schemaSourceRemoved(listOf(packageIdentifier))
+      return listOf(packageIdentifier)
    }
 
-   override fun removeFileRepository(packageIdentifier: PackageIdentifier): List<PackageIdentifier> {
-      TODO("Not yet implemented")
+   override fun removeFileRepository(repositoryPath: Path, packageIdentifier: PackageIdentifier): List<PackageIdentifier> {
+      config = config.copy(
+         file = config.fileConfigOrDefault.copy(
+            projects = config.fileConfigOrDefault.projects.filterNot {
+               it.path == repositoryPath
+            }
+         )
+      )
+      eventDispatcher.schemaSourceRemoved(listOf(packageIdentifier))
+      return listOf(packageIdentifier)
+
+   }
+   override fun removePushedRepository(identifier: PackageIdentifier): List<PackageIdentifier> {
+      val identifiers = listOf(identifier)
+      eventDispatcher.schemaSourceRemoved(identifiers)
+      return identifiers
    }
 }

@@ -7,6 +7,7 @@ import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schema.publisher.ExpiringSourcesStore
 import com.orbitalhq.schema.publisher.PublisherType
 import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
+import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
@@ -64,11 +65,12 @@ class PackageService(
                }
 
                PublisherType.FileSystem -> {
-                  configRepo.removeFileRepository(packageDescription.identifier)
+                  val repoPath = (packageDescription.packageConfig as FileSystemPackageSpec).path
+                  configRepo.removeFileRepository(repoPath, packageDescription.identifier)
                }
 
                else -> {
-                  error("Removing packages is not supported for publisher type ${packageDescription.publisherType}")
+                  configRepo.removePushedRepository(packageWithDescription.parsedPackage.identifier)
                }
             }
          }
