@@ -328,7 +328,7 @@ class FileRepositoryIntegrationTest {
       createFourRepositories(schemaRepository)
       schemaRepository.shouldHaveRepositories(fileRepoCount = 2, gitRepoCount = 2)
 
-      schemaRepository.removeFileRepository(PackageIdentifier.fromId("com/foo/1.0.0"))
+      schemaRepository.removeFileRepository(configFile.toPath(), PackageIdentifier.fromId("com/foo/1.0.0"))
 
       schemaRepository.shouldHaveRepositories(fileRepoCount = 1, gitRepoCount = 2)
 
@@ -346,7 +346,7 @@ class FileRepositoryIntegrationTest {
       createFourRepositories(schemaRepository)
       schemaRepository.shouldHaveRepositories(fileRepoCount = 2, gitRepoCount = 2)
       assertFailsWith<Exception> {
-         schemaRepository.removeFileRepository(PackageIdentifier.fromId("com/bad/1.0.0"))
+         schemaRepository.removeFileRepository(configFile.toPath(), PackageIdentifier.fromId("com/bad/1.0.0"))
       }
       schemaRepository.shouldHaveRepositories(fileRepoCount = 2, gitRepoCount = 2)
 

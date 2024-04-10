@@ -260,7 +260,7 @@ class FileWorkspaceConfigLoader(
       return affectedPackages
    }
 
-   override fun removeFileRepository(packageIdentifier: PackageIdentifier): List<PackageIdentifier> {
+   override fun removeFileRepository(repositoryPath: Path, packageIdentifier: PackageIdentifier): List<PackageIdentifier> {
       val original = this.load()
       val matchedProjects =
          original.file?.projects?.filter { it.packageIdentifier?.uriSafeId == packageIdentifier.uriSafeId }
@@ -276,6 +276,12 @@ class FileWorkspaceConfigLoader(
       val removedPackages = listOf(packageIdentifier)
       eventDispatcher.schemaSourceRemoved(removedPackages)
       return removedPackages
+   }
+
+   override fun removePushedRepository(identifier: PackageIdentifier): List<PackageIdentifier> {
+      val identifiers = listOf(identifier)
+      eventDispatcher.schemaSourceRemoved(identifiers)
+      return identifiers
    }
 
 

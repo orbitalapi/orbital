@@ -14,6 +14,7 @@ import com.typesafe.config.ConfigFactory
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import java.nio.file.Path
 
 class GitWorkspaceConfigLoader(
    private val gitSettings: WorkspaceGitSettings,
@@ -117,7 +118,11 @@ class GitWorkspaceConfigLoader(
       error("Git workspaces are read only")
    }
 
-   override fun removeFileRepository(packageIdentifier: PackageIdentifier): List<PackageIdentifier> {
+   override fun removeFileRepository(repositoryPath: Path, packageIdentifier: PackageIdentifier): List<PackageIdentifier> {
+      error("Git workspaces are read only")
+   }
+
+   override fun removePushedRepository(identifier: PackageIdentifier): List<PackageIdentifier> {
       error("Git workspaces are read only")
    }
 }
