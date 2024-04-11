@@ -56,7 +56,7 @@ interface TreeEntry {
             >
               <img class="tree-icon" [src]=serviceIcon(service.serviceKind)>{{ service.memberQualifiedName.shortDisplayName }}
             </span>
-            <tui-tree-item *ngFor="let operation of collectAllServiceOperations(service)" class="show-tree-decoration leaf-node">
+            <tui-tree-item *ngFor="let operation of collectAllServiceOperations(service)" class="show-tree-decoration">
               <span
                 class="is-navigable"
                 [routerLink]="'services/'+service.memberQualifiedName.fullyQualifiedName+'/'+operation.memberQualifiedName.shortDisplayName"

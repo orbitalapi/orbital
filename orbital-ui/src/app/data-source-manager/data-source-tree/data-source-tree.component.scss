@@ -36,7 +36,7 @@ tui-tree-item {
       border-bottom: 1px solid $gray-300;
     }
 
-    &.leaf-node {
+    &:not(._expandable){
       &:before {
         width: 2rem;
       }
