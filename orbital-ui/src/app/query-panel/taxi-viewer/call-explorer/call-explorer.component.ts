@@ -35,18 +35,20 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
               <div class='table-header'>Calls</div>
               <div class='table-subheader'>(Click to explore)</div>
             </div>
-            <div class='operation-list'>
-              <div class='operation' *ngFor='let remoteCall of remoteCalls$ | async'
-                   [ngClass]="{'active': remoteCall === selectedOperation}"
-                   (click)='selectOperation(remoteCall)'>
-                <div class='pill verb'>{{ remoteCall.method }}</div>
-                <div class='pill result'
-                     [ngClass]='statusTextClassForRemoteCall(remoteCall)'>{{ remoteCall.resultCode }}</div>
-                <div class='pill duration'>{{ remoteCall.durationMs }}ms</div>
-                <div class='address'
-                     [matTooltip]='getPathOnly(remoteCall.address)'>{{ remoteCall.displayName }}</div>
-              </div>
-            </div>
+              <cdk-virtual-scroll-viewport class="cdk-viewport-list" itemSize="46.5">
+                <div *cdkVirtualFor="let remoteCall of remoteCalls$ | async"
+                     class="operation"
+                     [ngClass]="{'active': remoteCall === selectedOperation}"
+                     (click)='selectOperation(remoteCall)'
+                >
+                  <div class='pill verb'>{{ remoteCall.method }}</div>
+                  <div class='pill result'
+                       [ngClass]='statusTextClassForRemoteCall(remoteCall)'>{{ remoteCall.resultCode }}</div>
+                  <div class='pill duration'>{{ remoteCall.durationMs }}ms</div>
+                  <div class='address'
+                       [matTooltip]='getPathOnly(remoteCall.address)'>{{ remoteCall.displayName }}</div>
+                </div>
+              </cdk-virtual-scroll-viewport>
           </div>
         </as-split-area>
         <as-split-area size='*'>

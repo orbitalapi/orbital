@@ -1,4 +1,5 @@
 import {NgModule} from '@angular/core';
+import { CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import {CallExplorerComponent} from './call-explorer.component';
 import {CallExplorerOperationViewComponent} from './call-explorer-operation-view.component';
 import {SequenceDiagramModule} from '../sequence-diagram/sequence-diagram.module';
@@ -22,27 +23,30 @@ import {TuiTabsModule} from "@taiga-ui/kit";
 import {HeadersViewComponent} from "./headers-view.component";
 
 @NgModule({
-  imports: [
-    SequenceDiagramModule,
-    MatButtonToggleModule,
-    MatIconModule,
-    ServiceGraphModule,
-    CommonModule,
-    SimpleCodeViewerModule,
-    MatTooltipModule,
-    MatButtonModule,
-    ErrorBarModule,
-    RouterModule,
-    FormsModule,
-    ServiceStatsModule,
-    LineageDisplayModule,
-    JsonViewerModule,
-    ExpandingPanelSetModule,
-    AngularSplitModule,
-    FileSizePipeModule,
-    TuiTabsModule,
-    HeadersViewComponent
-  ],
+    imports: [
+        SequenceDiagramModule,
+        MatButtonToggleModule,
+        MatIconModule,
+        ServiceGraphModule,
+        CommonModule,
+        SimpleCodeViewerModule,
+        MatTooltipModule,
+        MatButtonModule,
+        ErrorBarModule,
+        RouterModule,
+        FormsModule,
+        ServiceStatsModule,
+        LineageDisplayModule,
+        JsonViewerModule,
+        ExpandingPanelSetModule,
+        AngularSplitModule,
+        FileSizePipeModule,
+        TuiTabsModule,
+        HeadersViewComponent,
+        CdkFixedSizeVirtualScroll,
+        CdkVirtualForOf,
+        CdkVirtualScrollViewport
+    ],
   exports: [CallExplorerComponent, CallExplorerOperationViewComponent],
   declarations: [CallExplorerComponent, CallExplorerOperationViewComponent],
   providers: [],

@@ -62,9 +62,8 @@ app-service-stats {
     }
   }
 
-  .operation-list {
-    height: 100%;
-    overflow-y: scroll;
+  .cdk-viewport-list {
+    flex-grow: 1;
   }
 }
 
@@ -79,6 +78,10 @@ app-service-stats {
   color: $body;
   padding: 10px 20px;
   cursor: pointer;
+  border: 1px solid transparent;
+  display: flex;
+  overflow: hidden;
+  align-items: flex-start;
 
   &:hover {
     background-color: $list-hover-background;
@@ -88,12 +91,6 @@ app-service-stats {
     background-color: $list-selected-background;
     border-radius: 4px;
   }
-  border: 1px solid transparent;
-
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  align-items: flex-start;
 }
 
 .verb {
