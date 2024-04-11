@@ -7,8 +7,10 @@ import com.orbitalhq.utils.obfuscateKeys
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class MongoConnectionConfiguration( override val connectionName: String,
-                                    val connectionParameters: Map<ConnectionParameterName, String>):
+data class MongoConnectionConfiguration(
+   override val connectionName: String,
+   val connectionParameters: Map<ConnectionParameterName, String>
+) :
    ConnectorConfiguration {
    override val type: ConnectorType = ConnectorType.NO_SQL
    override fun getUiDisplayProperties(): Map<String, Any> {
@@ -16,4 +18,4 @@ data class MongoConnectionConfiguration( override val connectionName: String,
    }
 
    override val driverName: String = MongoConnection.DRIVER_NAME
-   }
+}

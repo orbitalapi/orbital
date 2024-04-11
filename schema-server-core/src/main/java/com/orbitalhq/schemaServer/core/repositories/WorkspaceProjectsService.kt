@@ -59,7 +59,7 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader)  {
 
 
     @PostMapping("/api/repositories/git")
-    fun createGitProjectStore(request: GitProjectStoreChangeRequest): Mono<Unit> {
+    fun createGitProjectStore(@RequestBody request: GitProjectStoreChangeRequest): Mono<Unit> {
         val config = request.toRepositorySpec()
         try {
             configRepo.addGitSpec(config)
@@ -70,7 +70,7 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader)  {
     }
 
     @PostMapping("/api/repositories/git", params = ["test"])
-    fun testGitConnection(request: GitConnectionTestRequest): Mono<GitConnectionTestResult> {
+    fun testGitConnection(@RequestBody request: GitConnectionTestRequest): Mono<GitConnectionTestResult> {
         return Mono.just(GitUtils.testConnection(request.uri))
             .map { testResult ->
                 GitConnectionTestResult(
