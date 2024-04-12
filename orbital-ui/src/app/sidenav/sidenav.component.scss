@@ -16,6 +16,31 @@
   overflow: hidden;
   transition: width 250ms ease-in-out;
 
+  .logo-container {
+    padding: 2rem 1rem 1rem 1rem;
+    height: 62px;
+
+    > a {
+      position: relative;
+    }
+  }
+
+  .logo,
+  .logo-icon-only {
+    position: absolute;
+  }
+
+  .logo {
+    width: 180px;
+    transition: opacity 250ms ease-in-out;
+  }
+
+  .logo-icon-only {
+    width: 52px;
+    transition: opacity 250ms ease-in-out, width 250ms ease-in-out, transform 250ms ease-in-out;
+    opacity: 0;
+  }
+
   &.is-collapsed {
     width: $sidenav-width-collapsed;
 
@@ -24,7 +49,13 @@
     }
 
     .logo {
-      width: 135px;
+      opacity: 0;
+    }
+
+    .logo-icon-only {
+      opacity: 1;
+      width: 32px;
+      transform: rotate(180deg);
     }
   }
 }
@@ -70,18 +101,6 @@
       }
     }
   }
-}
-
-// TODO: this needs to work for the HZ logo as well!
-
-.logo-container {
-  padding: 2rem 1rem 1rem 1rem;
-  height: 62px;
-}
-
-.logo {
-  width: 180px;
-  transition: width 250ms ease-in-out;
 }
 
 .app-info {
