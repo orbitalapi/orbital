@@ -92,8 +92,7 @@ export const projectTypeToString = (item: LoadablePackageType) => {
             <div class="form-element">
               <div style="flex-grow: 1">
                 <tui-combo-box
-                  [disabled]="availableBranches === null"
-                  [readOnly]="!editable"
+                  [readOnly]="!editable || availableBranches === null"
                   [(ngModel)]="gitConfig.branch" name="branch" required>
                   Branch
                   <tui-data-list *tuiDataList>

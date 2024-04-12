@@ -8,7 +8,8 @@ import {Schema, SchemaMember, Type} from "../services/schema";
     <tui-combo-box
       class="type-input"
       [stringify]="stringifyTypeName"
-      tuiTextfieldSize="s"
+      [tuiTextfieldSize]="size"
+      [tuiTextfieldLabelOutside]="true"
       [valueContent]="value"
       [(ngModel)]="selectedType"
       (ngModelChange)="handleSelectedTypeChanged($event)">
@@ -50,8 +51,11 @@ export class TypeAutocompleteTuiComponent {
   @Input()
   additionalTypes: Type[] = [];
 
-
+  @Input()
   selectedType: Type;
+
+  @Input()
+  size: 's' | 'm' | 'l' = 's'
 
 
   @Output()

@@ -1,4 +1,4 @@
-import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, ElementRef, EventEmitter, Input, Output, ViewChild} from '@angular/core';
 import {NgxFileDropEntry} from 'ngx-file-drop';
 
 @Component({
@@ -13,9 +13,6 @@ import {NgxFileDropEntry} from 'ngx-file-drop';
                      (onFileOver)="fileOver($event)"
                      (onFileLeave)="fileLeave($event)"
                      [multiple]="false"
-                     browseBtnClassName="hidden-browse-button"
-                     browseBtnLabel=""
-                     [showBrowseBtn]="true"
                      dropZoneClassName="drop-container"
                      contentClassName="drop-container-content">
             <ng-template ngx-file-drop-content-tmp let-openFileSelector="openFileSelector">
@@ -27,7 +24,7 @@ import {NgxFileDropEntry} from 'ngx-file-drop';
                 <img src="assets/img/tabler/file.svg">
                 <span>{{ mostRecentFile.fileEntry.name }}</span>
               </div>
-              <button mat-stroked-button (click)="openFileSelector()">Browse</button>
+              <button tuiButton appearance="whiteblock" size="m" (click)="openFileSelector()">Browse</button>
             </ng-template>
 
           </ngx-file-drop>
@@ -62,9 +59,5 @@ export class DataSourceUploadComponent {
 
   fileLeave($event: any) {
 
-  }
-
-  browseClicked() {
-    this.tref.nativeElement.querySelector('.hidden-browse-button').click();
   }
 }

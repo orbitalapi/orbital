@@ -1,4 +1,5 @@
 import { NgModule } from '@angular/core';
+import { TuiButtonModule } from '@taiga-ui/core';
 import { TypeAutocompleteModule } from '../type-autocomplete/type-autocomplete.module';
 import { NgxFileDropModule } from 'ngx-file-drop';
 import { DataSourceToolbarComponent } from './data-source-toolbar.component';
@@ -86,7 +87,8 @@ import { ResultsDownloadModule } from 'src/app/results-download/results-download
         MatIconModule,
         NgxFileDropModule,
         AngularSplitModule,
-        ResultsDownloadModule
+        ResultsDownloadModule,
+        TuiButtonModule
     ],
     declarations: [
         DataSourceToolbarComponent,

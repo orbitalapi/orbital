@@ -5,6 +5,7 @@ import { TuiButtonModule, TuiDataListModule, TuiDialogService, TuiSvgModule } fr
 import { TuiDataListWrapperModule, TuiInputModule, TuiSelectModule } from '@taiga-ui/kit';
 import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
 import { ConnectorSummary } from '../../../db-connection-editor/db-importer.service';
+import { TypeAutocompleteTuiModule } from '../../../type-autocomplete-tui/type-autocomplete-tui.module';
 import { ConvertSchemaEvent, KafkaOffset, KafkaTopicConverterOptions } from '../../data-source-import.models';
 import { Schema, Type } from '../../../services/schema';
 import {
@@ -14,7 +15,6 @@ import {
 import { PackageIdentifier } from '../../../package-viewer/packages.service';
 import { UiCustomisations } from '../../../../environments/ui-customisations';
 import { ConnectionFiltersModule } from '../../../utils/connections.pipe';
-import { TypeAutocompleteModule } from '../../../type-autocomplete/type-autocomplete.module';
 import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
 
 @Component({
@@ -30,11 +30,11 @@ import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
     TuiDataListModule,
     TuiSvgModule,
     ConnectionFiltersModule,
-    TypeAutocompleteModule,
+    TypeAutocompleteTuiModule,
   ],
   template: `
     <div class="form-container">
-      <div class="form-body">
+      <form class="form-body" #kafkaForm="ngForm">
         <div class="form-row">
           <div class="form-item-description-container">
             <h3>Connection</h3>
@@ -46,7 +46,10 @@ import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
             <tui-select
               [stringify]="stringifyConnection"
               [(ngModel)]="selectedConnection"
-              (ngModelChange)="onKafkaConnectionSelected($event)">
+              (ngModelChange)="onKafkaConnectionSelected($event)"
+              name="connection"
+              required
+            >
               Connection name
               <tui-data-list *tuiDataList>
                 <button
@@ -72,7 +75,7 @@ import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
             </div>
           </div>
           <div class="form-element">
-            <tui-input [(ngModel)]="kafkaTopicOptions.topicName">
+            <tui-input [(ngModel)]="kafkaTopicOptions.topicName" name="topic" required>
               Kafka topic
             </tui-input>
           </div>
@@ -87,7 +90,7 @@ import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
             </div>
           </div>
           <div class="form-element">
-            <tui-select [(ngModel)]="kafkaTopicOptions.offset">
+            <tui-select [(ngModel)]="kafkaTopicOptions.offset" name="topicOffset" required>
               Topic offset
               <tui-data-list-wrapper
                 *tuiDataList
@@ -104,7 +107,7 @@ import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
             </div>
           </div>
           <div class="form-element">
-            <tui-input [(ngModel)]="kafkaTopicOptions.targetNamespace">
+            <tui-input [(ngModel)]="kafkaTopicOptions.targetNamespace" name="namespace" required>
               Default namespace
             </tui-input>
           </div>
@@ -117,12 +120,14 @@ import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
             </div>
           </div>
           <div class="form-element">
-            <app-type-autocomplete [schema]="schema"
-                                   label="Message type"
-                                   [(selectedType)]="modelType"
-                                   (selectedTypeChange)="onPayloadTypeSelected($event)"
-            ></app-type-autocomplete>
-
+            <app-type-autocomplete-tui
+              class="type-input"
+              label="Message type"
+              size="l"
+              [schema]="schema"
+              (selectedTypeChanged)="onPayloadTypeSelected($event.member)"
+            >
+            </app-type-autocomplete-tui>
           </div>
         </div>
         <div class="form-row">
@@ -134,12 +139,13 @@ import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
             </div>
           </div>
           <div class="form-element">
-            <div tuiGroup class="group">
+            <div tuiGroup class="horizontal-group">
               <div>
                 <tui-input
                   [(ngModel)]="kafkaTopicOptions.serviceName"
                   tuiTextfieldExampleText="Service name"
                   class="tui-group__inherit-item"
+                  name="serviceName"
                 >
                   Service name
                 </tui-input>
@@ -149,6 +155,7 @@ import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
                   [(ngModel)]="kafkaTopicOptions.operationName"
                   tuiTextfieldExampleText="Operation name"
                   class="tui-group__inherit-item"
+                  name="operationName"
                 >
                   Operation name
                 </tui-input>
@@ -156,11 +163,12 @@ import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
             </div>
           </div>
         </div>
-      </div>
+        <input hidden [ngModel]="kafkaTopicOptions.messageType ? 1 : ''" required name="hiddenField"/>
+      </form>
     </div>
 
     <div class="form-button-bar">
-      <button tuiButton [showLoader]="working" (click)="doCreate()" [size]="'m'">Configure
+      <button tuiButton [showLoader]="working" (click)="doCreate()" [size]="'m'" [disabled]="kafkaForm.invalid">Configure
       </button>
     </div>
   `,

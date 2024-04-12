@@ -23,7 +23,7 @@ import { sanitiseNamespace } from '../../../utils/utils';
   ],
   template: `
     <div class="form-container">
-      <div class="form-body">
+      <form class="form-body" #swaggerForm="ngForm">
         <div class="form-row">
           <div class="form-item-description-container">
             <h3>OpenAPI spec source</h3>
@@ -48,7 +48,7 @@ import { sanitiseNamespace } from '../../../utils/utils';
                                         (fileSelected)="handleSchemaFileDropped($event)"></app-data-source-upload>
               </div>
               <div *ngSwitchCase="1" class="tab-panel">
-                <tui-input [(ngModel)]="swaggerOptions.url" (ngModelChange)="swaggerOptions.swagger = null;">
+                <tui-input [(ngModel)]="swaggerOptions.url" (ngModelChange)="swaggerOptions.swagger = null;" name="url" required>
                   Swagger / OpenAPI URL
                 </tui-input>
               </div>
@@ -63,29 +63,30 @@ import { sanitiseNamespace } from '../../../utils/utils';
             </div>
           </div>
           <div class="form-element">
-            <tui-input [(ngModel)]="swaggerOptions.defaultNamespace">
+            <tui-input [(ngModel)]="swaggerOptions.defaultNamespace" name="defaultNamespace" required>
               Default namespace
             </tui-input>
           </div>
         </div>
-      </div>
-      <div class="form-row">
-        <div class="form-item-description-container">
-          <h3>Base Url</h3>
-          <div class="help-text">
-            Define a base url, which services are relative to. Only required if the OpenAPI spec doesn't define this
-            itself
+        <div class="form-row">
+          <div class="form-item-description-container">
+            <h3>Base Url</h3>
+            <div class="help-text">
+              Define a base url, which services are relative to. Only required if the OpenAPI spec doesn't define this
+              itself
+            </div>
+          </div>
+          <div class="form-element">
+            <tui-input [(ngModel)]="swaggerOptions.serviceBasePath">
+              Base Url
+            </tui-input>
           </div>
         </div>
-        <div class="form-element">
-          <tui-input [(ngModel)]="swaggerOptions.serviceBasePath">
-            Base Url
-          </tui-input>
-        </div>
-      </div>
+        <input hidden [ngModel]="(swaggerOptions.swagger || swaggerOptions.url) ? 1 : ''" required name="hiddenField"/>
+      </form>
     </div>
     <div class="form-button-bar">
-      <button tuiButton [showLoader]="working" [size]="'m'" (click)="doCreate()">Configure
+      <button tuiButton [showLoader]="working" [size]="'m'" (click)="doCreate()" [disabled]="swaggerForm.invalid">Configure
       </button>
     </div>
   `,
