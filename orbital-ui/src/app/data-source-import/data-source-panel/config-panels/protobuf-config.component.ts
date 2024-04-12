@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { TuiButtonModule } from '@taiga-ui/core';
 import { TuiInputModule, TuiTabsModule } from '@taiga-ui/kit';
 import { NgxFileDropEntry } from 'ngx-file-drop';
+import { readSingleFile } from '../../../utils/files';
 import { ConvertSchemaEvent, ProtobufSchemaConverterOptions } from '../../data-source-import.models';
 import { PackageIdentifier } from '../../../package-viewer/packages.service';
 import { DataExplorerModule } from '../../../data-explorer/data-explorer.module';
@@ -22,7 +23,7 @@ import { DataExplorerModule } from '../../../data-explorer/data-explorer.module'
   ],
   template: `
     <div class="form-container">
-      <div class="form-body">
+      <form class="form-body" #protobufForm="ngForm">
         <div class="form-row">
           <div class="form-item-description-container">
             <h3>Protobuf source</h3>
@@ -48,18 +49,22 @@ import { DataExplorerModule } from '../../../data-explorer/data-explorer.module'
               </div>
               <div *ngSwitchCase="1" class="tab-panel">
                 <tui-input [(ngModel)]="protobufSchemaConverterOptions.url"
-                           (ngModelChange)="handleUrlUpdated($event)">
+                           (ngModelChange)="handleUrlUpdated($event)"
+                           name="url"
+                           required
+                >
                   Protobuf Url
                 </tui-input>
               </div>
             </div>
           </div>
         </div>
-      </div>
+        <input hidden [ngModel]="(protobufSchemaConverterOptions.url || protobufSchemaConverterOptions.protobuf) ? 1 : ''" required name="hiddenField"/>
+      </form>
     </div>
 
     <div class="form-button-bar">
-      <button tuiButton [showLoader]="working" [size]="'m'" (click)="doCreate()">Configure
+      <button tuiButton [showLoader]="working" [size]="'m'" (click)="doCreate()" [disabled]="protobufForm.invalid">Configure
       </button>
     </div>`
 })
@@ -79,6 +84,10 @@ export class ProtobufConfigComponent {
 
   handleSchemaFileDropped($event: NgxFileDropEntry) {
     this.protobufSchemaConverterOptions.url = null;
+    readSingleFile($event)
+      .subscribe((text: string) => {
+        this.protobufSchemaConverterOptions.protobuf = text;
+      });
   }
 
   handleUrlUpdated($event: any) {

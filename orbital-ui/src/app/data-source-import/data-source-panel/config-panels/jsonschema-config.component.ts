@@ -6,6 +6,7 @@ import {
   TuiInputModule,
   TuiSelectModule,
   TuiStringifyContentPipeModule,
+  TuiStringifyPipeModule,
   TuiTabsModule
 } from '@taiga-ui/kit';
 import { TuiButtonModule } from '@taiga-ui/core';
@@ -28,11 +29,12 @@ import { DataExplorerModule } from '../../../data-explorer/data-explorer.module'
     TuiButtonModule,
     TuiInputModule,
     TuiTabsModule,
-    DataExplorerModule
+    DataExplorerModule,
+    TuiStringifyPipeModule
   ],
   template: `
     <div class="form-container">
-      <div class="form-body">
+      <form class="form-body" #jsonSchemaForm="ngForm">
         <div class="form-row">
           <div class="form-item-description-container">
             <h3>JsonSchema source</h3>
@@ -57,8 +59,12 @@ import { DataExplorerModule } from '../../../data-explorer/data-explorer.module'
                                         (fileSelected)="handleSchemaFileDropped($event)"></app-data-source-upload>
               </div>
               <div *ngSwitchCase="1" class="tab-panel">
-                <tui-input [(ngModel)]="jsonSchemaConverterOptions.url"
-                           (ngModelChange)="handleUrlUpdated($event)">
+                <tui-input
+                  [(ngModel)]="jsonSchemaConverterOptions.url"
+                  (ngModelChange)="handleUrlUpdated($event)"
+                  name="url"
+                  required
+                >
                   JsonSchema Url
                 </tui-input>
               </div>
@@ -73,50 +79,56 @@ import { DataExplorerModule } from '../../../data-explorer/data-explorer.module'
             </div>
           </div>
           <div class="form-element">
-            <tui-input [(ngModel)]="jsonSchemaConverterOptions.defaultNamespace">
+            <tui-input [(ngModel)]="jsonSchemaConverterOptions.defaultNamespace" name="defaultNamespace" required>
               Default namespace
             </tui-input>
           </div>
         </div>
-      </div>
-      <div class="form-row" *ngIf="jsonSchemaConverterOptions.url">
-        <div class="form-item-description-container">
-          <h3>Base Url</h3>
-          <div class="help-text">
-            If the JsonSchema contains relative links for models, then specify the url that links should be resolved
-            against.
+        <div class="form-row" *ngIf="jsonSchemaConverterOptions.url">
+          <div class="form-item-description-container">
+            <h3>Base Url</h3>
+            <div class="help-text">
+              If the JsonSchema contains relative links for models, then specify the url that links should be resolved
+              against.
+            </div>
+          </div>
+          <div class="form-element">
+            <tui-input [(ngModel)]="jsonSchemaConverterOptions.resolveUrlsRelativeToUrl" required>
+              Base Url
+            </tui-input>
           </div>
         </div>
-        <div class="form-element">
-          <tui-input [(ngModel)]="jsonSchemaConverterOptions.resolveUrlsRelativeToUrl">
-            Base Url
-          </tui-input>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-item-description-container">
-          <h3>JsonSchema version</h3>
-          <div class="help-text">
-            Set the version of the JsonSchema spec that this schema uses. If you're not sure, it's ok to leave this as
-            INFERRED.
+        <div class="form-row">
+          <div class="form-item-description-container">
+            <h3>JsonSchema version</h3>
+            <div class="help-text">
+              Set the version of the JsonSchema spec that this schema uses. If you're not sure, it's ok to leave this as
+              INFERRED.
+            </div>
+          </div>
+          <div class="form-element">
+            <tui-select [(ngModel)]="jsonSchemaConverterOptions.schemaVersion"
+                        (ngModelChange)="handleSchemaVersionChanged($event)"
+                        [stringify]="stringSchemaVersionLabel"
+                        name="schemaVersion"
+                        required
+            >
+              Select the JsonSchema version
+              <tui-data-list-wrapper
+                *tuiDataList
+                [items]="jsonSchemaVersions"
+                [itemContent]="'label' | tuiStringify | tuiStringifyContent"
+              ></tui-data-list-wrapper>
+            </tui-select>
           </div>
         </div>
-        <div class="form-element">
-          <tui-select [(ngModel)]="jsonSchemaConverterOptions.schemaVersion"
-                      [stringify]="stringify">
-            Select the JsonSchema version
-            <tui-data-list-wrapper
-              *tuiDataList
-              [items]="jsonSchemaVersions"
-              [itemContent]="stringify | tuiStringifyContent"
-            ></tui-data-list-wrapper>
-          </tui-select>
-        </div>
-      </div>
+        <input hidden [ngModel]="(jsonSchemaConverterOptions.jsonSchema || jsonSchemaConverterOptions.url) ? 1 : ''" required name="hiddenField"/>
+      </form>
     </div>
 
     <div class="form-button-bar">
-      <button tuiButton [showLoader]="working" [size]="'m'" (click)="doCreate()">Configure
+      <button tuiButton [showLoader]="working" [size]="'m'" (click)="doCreate()" [disabled]="jsonSchemaForm.invalid">
+        Configure
       </button>
     </div>
   `,
@@ -150,19 +162,26 @@ export class JsonSchemaConfigComponent {
 
   handleSchemaFileDropped($event: NgxFileDropEntry) {
     this.jsonSchemaConverterOptions.url = null;
+    this.jsonSchemaConverterOptions.resolveUrlsRelativeToUrl = null;
     readSingleFile($event)
       .subscribe((text: string) => {
         this.jsonSchemaConverterOptions.jsonSchema = text;
       });
   }
 
-  readonly stringify = (item: JsonSchemaVersionOption) => item.label;
+  readonly stringSchemaVersionLabel = (value: string) => {
+    return this.jsonSchemaVersions.find(item => value === item.value).label;
+  }
 
   handleUrlUpdated($event: any) {
     this.jsonSchemaConverterOptions.jsonSchema = null;
     if (isNullOrUndefined(this.jsonSchemaConverterOptions.resolveUrlsRelativeToUrl)) {
       this.jsonSchemaConverterOptions.resolveUrlsRelativeToUrl = this.deriveBaseUrl(this.jsonSchemaConverterOptions.url);
     }
+  }
+
+  handleSchemaVersionChanged($event: JsonSchemaVersionOption) {
+    this.jsonSchemaConverterOptions.schemaVersion = $event.value;
   }
 
   private deriveBaseUrl(url: string): string {

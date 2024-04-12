@@ -24,7 +24,7 @@ import { FileRepositoryTestResponse, SchemaImporterService } from 'src/app/proje
         however you should consider storing your project in a git repository in production
       </tui-notification>
     </div>
-    <form #gitForm='ngForm'>
+    <form #fileForm='ngForm'>
       <div class='form-container'>
         <div class='form-body'>
           <div class='form-row'>
@@ -155,7 +155,7 @@ import { FileRepositoryTestResponse, SchemaImporterService } from 'src/app/proje
         (click)="goBackOnboarding.emit()"
       >Cancel
       </button>
-      <button tuiButton [showLoader]='working' [size]="'m'" (click)='doCreate()' [disabled]='gitForm.invalid'>Create
+      <button tuiButton [showLoader]='working' [size]="'m'" (click)='doCreate()' [disabled]='fileForm.invalid'>Create
       </button>
     </div>
     <tui-notification [status]='saveResultMessage.level.toLowerCase()' *ngIf='saveResultMessage'>

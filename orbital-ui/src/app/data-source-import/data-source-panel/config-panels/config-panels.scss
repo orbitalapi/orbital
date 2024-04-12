@@ -30,3 +30,13 @@
 .form-element > .row > button {
   margin-left: 1rem;
 }
+
+.horizontal-group {
+  flex-direction: row;
+  display: flex;
+  gap: 1rem;
+
+  > div {
+    flex: 1;
+  }
+}

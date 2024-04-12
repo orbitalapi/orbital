@@ -47,7 +47,7 @@ import { sanitiseNamespace } from '../../../utils/utils';
   ],
   template: `
     <div class="form-container">
-      <div class="form-body">
+      <form class="form-body" #databaseForm="ngForm">
         <div class="form-row">
           <div class="form-item-description-container">
             <h3>Connection</h3>
@@ -59,7 +59,10 @@ import { sanitiseNamespace } from '../../../utils/utils';
             <tui-select
               [stringify]="stringifyConnection"
               [(ngModel)]="selectedConnection"
-              (ngModelChange)="selectedConnectionChanged($event)">
+              (ngModelChange)="selectedConnectionChanged($event)"
+              name="connection"
+              required
+            >
               Connection name
               <tui-data-list *tuiDataList>
                 <button
@@ -85,11 +88,14 @@ import { sanitiseNamespace } from '../../../utils/utils';
             </div>
           </div>
           <div class="form-element">
+            selectedConnection: {{selectedConnection}}
             <tui-multi-select
               [(ngModel)]="selectedTables"
               [stringify]="stringifyTableName"
               [tuiTextfieldCleaner]="true"
               [disabled]="selectedConnection == null"
+              name="selectedTable"
+              required
             >
               Table name(s)
               <tui-data-list-wrapper
@@ -109,16 +115,16 @@ import { sanitiseNamespace } from '../../../utils/utils';
             </div>
           </div>
           <div class="form-element">
-            <tui-input [(ngModel)]="defaultNamespace">
+            <tui-input [(ngModel)]="defaultNamespace" name="defaultNamespace" required>
               Default namespace
             </tui-input>
           </div>
         </div>
-      </div>
+      </form>
     </div>
 
     <div class="form-button-bar">
-      <button tuiButton [showLoader]="working" (click)="doCreate()" [size]="'m'">Configure
+      <button tuiButton [showLoader]="working" (click)="doCreate()" [size]="'m'" [disabled]="databaseForm.invalid">Configure
       </button>
     </div>
   `,
