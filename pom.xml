@@ -90,6 +90,9 @@
       <!--  CVE-2024-1597, Fixed in 42.7.2
        https://avd.aquasec.com/nvd/cve-2024-1597 -->
       <postgresql.version>42.7.2</postgresql.version>
+
+      <aws.s3.sdk.version>1.12.701</aws.s3.sdk.version>
+      <aws.dynamo.sdk.version>1.12.701</aws.dynamo.sdk.version>
    </properties>
 
    <modules>

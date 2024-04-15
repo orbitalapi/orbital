@@ -77,7 +77,7 @@
       <dependency>
          <groupId>com.amazonaws</groupId>
          <artifactId>aws-java-sdk-s3</artifactId>
-         <version>1.12.411</version>
+         <version>${aws.s3.sdk.version}</version>
       </dependency>
       <dependency>
          <groupId>com.orbitalhq</groupId>
@@ -304,7 +304,7 @@
       <dependency>
          <groupId>com.amazonaws</groupId>
          <artifactId>aws-java-sdk-s3</artifactId>
-         <version>1.12.411</version>
+         <version>${aws.s3.sdk.version}</version>
       </dependency>
 
       <dependency>
