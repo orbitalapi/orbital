@@ -8,17 +8,30 @@ import com.google.common.cache.LoadingCache
 import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.query.*
+import com.orbitalhq.query.InvocationConstraints
+import com.orbitalhq.query.QueryContext
+import com.orbitalhq.query.QuerySpecTypeNode
+import com.orbitalhq.query.QueryStrategy
+import com.orbitalhq.query.QueryStrategyResult
+import com.orbitalhq.query.SearchGraphExclusion
 import com.orbitalhq.query.graph.edges.EvaluatableEdge
 import com.orbitalhq.query.graph.edges.EvaluatedEdge
 import com.orbitalhq.query.graph.edges.PathEvaluation
 import com.orbitalhq.query.graph.edges.StartingEdge
-import com.orbitalhq.schemas.*
+import com.orbitalhq.schemas.Link
+import com.orbitalhq.schemas.Path
+import com.orbitalhq.schemas.Relationship
+import com.orbitalhq.schemas.Schema
+import com.orbitalhq.schemas.Type
+import com.orbitalhq.schemas.describe
 import com.orbitalhq.utils.ImmutableEquality
 import es.usc.citius.hipster.algorithm.Algorithm
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.mapNotNull
@@ -119,6 +132,8 @@ class HipsterDiscoverGraphQueryStrategy(
 
    private val invocationCache: LoadingCache<StrategyInvocationCacheKey, Deferred<QueryStrategyResult>> = CacheBuilder
       .newBuilder()
+      .maximumSize(vyneCacheConfigration.vyneDiscoverGraphQuery.invocationCacheSize)
+      .weakKeys()
       .build(searchExecutingCacheLoader)
 
    override suspend fun invoke(
