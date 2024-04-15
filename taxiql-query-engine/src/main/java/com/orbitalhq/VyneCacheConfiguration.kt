@@ -27,5 +27,6 @@ data class VyneGraphBuilderCacheSettings(
 
 data class HipsterDiscoverGraphQueryStrategyCacheConfiguration(
    val schemaGraphCacheSize: Long = 5L,
-   val searchPathExclusionsCacheSize: Int = 300000
+   val searchPathExclusionsCacheSize: Int = 300000,
+   val invocationCacheSize: Long = 5L
 )
