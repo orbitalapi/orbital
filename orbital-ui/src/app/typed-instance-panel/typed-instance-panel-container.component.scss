@@ -4,11 +4,9 @@
   position: relative;
 }
 
-:host ::ng-deep {
-  app-panel-header {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-  }
+app-typed-instance-panel {
+  display: block;
+  margin: 0 1rem 1rem 1rem;
 }
 
 progress {

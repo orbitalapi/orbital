@@ -29,7 +29,9 @@ import {HttpRequestState} from 'ngx-http-request-state';
             *ngFor="let historyRecord of historyRecords.value"
             [routerLink]="'/query-history/' + historyRecord.queryId"
             routerLinkActive="selected-history-list-item"
-            [historyRecord]="historyRecord">
+            [historyRecord]="historyRecord"
+            (click)="recordSelected.emit(historyRecord)"
+          >
           </app-query-history-card>
         </div>
         <tui-notification *ngIf='historyRecords.value?.length === 0'>

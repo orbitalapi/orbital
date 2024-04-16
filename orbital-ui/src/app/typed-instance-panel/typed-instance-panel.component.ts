@@ -8,16 +8,27 @@ import { Inheritable } from 'src/app/inheritence-graph/build.inheritable';
   template: `
     <div class="container" *ngIf="type">
       <div class="type-name">
-        <h2>{{type?.name?.name}}</h2>
+        <h2>
+          {{type?.name?.name}}
+          <span
+            class="badge"
+            [ngClass]="{'type': type.isScalar, 'model': !type.isScalar}"
+          >
+            {{type.isScalar ? "Type" : "Model"}}
+          </span>
+        </h2>
+        <span class="mono-badge">{{type?.name?.fullyQualifiedName}}</span>
+      </div>
+      <div class="value-container">
+        <h4>Value</h4>
         <tui-line-clamp
           [content]="instanceValue"
           [lineHeight]="36"
           [linesLimit]="3"
         ></tui-line-clamp>
         <ng-template #instanceValue>
-          <h3>{{instance?.value}}</h3>
+          {{instance?.value}}
         </ng-template>
-        <span class="mono-badge">{{type?.name?.fullyQualifiedName}}</span>
       </div>
       <section>
         <app-description-editor-container [type]="type"></app-description-editor-container>

@@ -122,7 +122,6 @@ export class QueryEditorComponent implements OnInit {
 
   // Use a replay subject, as sometimes the UI hasn't rendered at the time
   // when the event is emitted, but will subscribe shortly after
-  @Output()
   instanceSelected$ = new ReplaySubject<QueryResultInstanceSelectedEvent>(1);
 
   savedQuery: SavedQuery = null;

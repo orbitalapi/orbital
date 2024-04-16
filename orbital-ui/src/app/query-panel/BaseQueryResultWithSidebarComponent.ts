@@ -1,4 +1,5 @@
 import {ChangeDetectorRef, Directive} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {QueryResultInstanceSelectedEvent} from './result-display/BaseQueryResultComponent';
 import {
   asNearestTypedInstance,
@@ -46,6 +47,7 @@ export abstract class BaseQueryResultWithSidebarComponent extends ComponentWithS
   protected constructor(protected queryService: QueryService, protected typeService: TypesService, protected changeDetector: ChangeDetectorRef) {
     super();
     typeService.getTypes()
+      .pipe(takeUntilDestroyed())
       .subscribe(schema => this.schema = schema);
   }
 
