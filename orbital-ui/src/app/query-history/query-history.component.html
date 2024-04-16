@@ -2,9 +2,10 @@
 <div class="container">
   <app-query-list [historyRecords]="history$ | async"
                   [activeQueries]="activeQueries"
-                  (cancelActiveQuery)="cancelActiveQuery($event)"
-                  (recordSelected)="setActiveRecord($event); sidePanelVisible = false;"></app-query-list>
-  <as-split direction="horizontal" unit="pixel">
+                  (cancelActiveQuery)="cancelActiveQuery($event); sidePanelVisible = false;"
+                  (recordSelected)="sidePanelVisible = false;"
+  ></app-query-list>
+  <as-split direction="horizontal" unit="percent">
     <as-split-area>
       <progress
         max="100"
@@ -18,9 +19,9 @@
                                [instances$]="activeRecordResults$"
                                [type]="activeRecordResultType"
                                (downloadClicked)="downloadQueryHistory($event)"
-                               (instanceSelected)="instanceSelected$.next($event); sidePanelVisible = true;"></app-tabbed-results-view>
+                               (instanceSelected)="sidePanelVisible = true; instanceSelected$.next($event)"></app-tabbed-results-view>
     </as-split-area>
-    <as-split-area *ngIf="sidePanelVisible" size="250">
+    <as-split-area *ngIf="sidePanelVisible" size="25">
       <app-typed-instance-panel-container
         (close)="sidePanelVisible = false;"
         [queryResultSelectedEvent$]="instanceSelected$"

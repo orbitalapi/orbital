@@ -151,10 +151,6 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
     return this.selectedQueryId;
   }
 
-  setActiveRecord($event: QueryHistorySummary) {
-    this.router.navigate(['/query-history', $event.queryId]);
-  }
-
   private handleActiveQueryUpdate(next: RunningQueryStatus) {
     if (next.running) {
       this.updateRunningQueryStatus(next);

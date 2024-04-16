@@ -17,7 +17,7 @@ import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/Ba
       new
       *ngIf='isLoading'
     ></progress>
-    <app-panel-header [title]="panelTitle" *ngIf="showPanelHeader">
+    <app-panel-header [title]="panelTitle" *ngIf="showPanelHeader" [isSecondary]="true">
       <div class="spacer"></div>
       <button
         (click)="close.emit()"
