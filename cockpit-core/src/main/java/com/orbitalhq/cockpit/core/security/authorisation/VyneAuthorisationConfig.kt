@@ -1,5 +1,6 @@
 package com.orbitalhq.cockpit.core.security.authorisation
 
+import com.orbitalhq.utils.log
 import org.springframework.boot.context.properties.ConfigurationProperties
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -102,6 +103,7 @@ data class VyneOpenIdpConnectConfig(
       fun appendPrefixedError(message: String) = configErrors.add("When ${idpProperty("enabled")} = true, $message")
 
       if (enabled) {
+         log().info("Open IDP is enabled, using settings: $this")
          if (clientId == null) appendPrefixedError("${idpProperty("client-id")} must be set")
          if (issuerUrl == null && oidcDiscoveryUrl == null) appendPrefixedError("either ${idpProperty("oidc-discovery-url")} or ${idpProperty("issuer-url")} must be set")
          if (configErrors.isNotEmpty()) {
