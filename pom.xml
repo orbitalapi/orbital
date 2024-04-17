@@ -82,6 +82,9 @@
       -->
       <snakeyaml.version>2.0</snakeyaml.version>
 
+      <!--  CVE-2024-22262  URL Parsing with Host Validation in 6.1.5, fixed in 6.1.6, Should be released in Spring Boot > 3.2.4 -->
+      <spring-framework.version>6.1.6</spring-framework.version>
+
       <kafka.version>3.6.1</kafka.version>
 
       <!-- CVE-2023-6378 , Fixed in 1.4.12 -->
