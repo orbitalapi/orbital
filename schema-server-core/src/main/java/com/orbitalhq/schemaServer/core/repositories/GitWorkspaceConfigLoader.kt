@@ -1,5 +1,6 @@
 package com.orbitalhq.schemaServer.core.repositories
 
+import com.google.common.base.Throwables
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
 import com.orbitalhq.schemaServer.core.config.WorkspaceGitSettings
@@ -66,7 +67,7 @@ class GitWorkspaceConfigLoader(
                   logger.info { "Workspace from ${syncStatus.repository.redactedUrl} is now on ${syncStatus.currentRef} - refreshing workspace" }
                   fileConfigLoader.emitCurrentState()
                } catch (e: Exception) {
-                  logger.info { "Failed to read workspace config: ${e.message}" }
+                  logger.info { "Failed to read workspace config: ${Throwables.getRootCause(e).message}" }
                }
 
             }
