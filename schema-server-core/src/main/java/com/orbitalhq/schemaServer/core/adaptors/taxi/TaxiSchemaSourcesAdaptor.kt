@@ -27,7 +27,10 @@ class TaxiSchemaSourcesAdaptor : SchemaSourcesAdaptor {
          // People tend to mix 'n' match passing the path to taxi.conf vs passing the directory
          // Just support either.
          val expectedTaxiConfPath = when {
-            rootPath.isRegularFile() && rootPath.fileName.toString() == "taxi.conf" -> rootPath
+            // Note: Don't do a isRegularFile() check here,
+            // as that returns false if the file doesn't exist, which leads
+            // to us double-appending taxi.conf to a path
+            rootPath.fileName?.toString() == "taxi.conf" -> rootPath
             else -> transport.root.toPath().resolve(transport.config.pathToTaxiConf)
          }
          if (!expectedTaxiConfPath.exists()) {
