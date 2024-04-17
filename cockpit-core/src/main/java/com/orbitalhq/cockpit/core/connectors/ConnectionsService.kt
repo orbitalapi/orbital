@@ -8,6 +8,7 @@ import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.connectors.jdbc.JdbcDriverOptions
 import com.orbitalhq.connectors.config.kafka.KafkaConnection
 import com.orbitalhq.connections.ConnectionStatus
+import com.orbitalhq.connectors.config.mongodb.MongoConnection
 import com.orbitalhq.connectors.registry.ConnectorConfigDetail
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
 import com.orbitalhq.connectors.registry.ConnectorConfigurationSummary
@@ -46,7 +47,8 @@ class ConnectionsService(
    fun listAvailableDrivers(): Flux<ConnectionDriverOptions> {
       return Flux.fromIterable(JdbcDriverOptions.driverOptions +
          KafkaConnection.driverOptions +
-         AwsConnection.driverOptions
+         AwsConnection.driverOptions +
+         MongoConnection.driverOptions
          /*+ AzureStorageConnection.driverOptions */)
    }
 

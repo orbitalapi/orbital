@@ -14,8 +14,31 @@ data class MongoConnectionConfiguration(
    ConnectorConfiguration {
    override val type: ConnectorType = ConnectorType.NO_SQL
    override fun getUiDisplayProperties(): Map<String, Any> {
-      return emptyMap()
+      return connectionParameters.obfuscateKeys(listOf("connectionString")) { _, value ->
+            obfuscatePassword(value)
+         }
    }
 
    override val driverName: String = MongoConnection.DRIVER_NAME
+
+   constructor(
+      connectionName: String,
+      connectionString: String,
+      dbName: String,
+      connectionParameters: Map<ConnectionParameterName, String> = emptyMap()
+   ) : this(
+      connectionName,
+         connectionParameters +
+         mapOf(
+            MongoConnection.Parameters.DB_NAME.templateParamName to dbName,
+            MongoConnection.Parameters.CONNECTION_STRING.templateParamName to connectionString,
+         )
+   )
+
+   // connectionString=mongodb+srv://orbital:PASSWORD@orbital.xxxx.mongodb.net/?retryWrites=true&w=majority&appName=Orbital
+   // So, we need replace a subsection of the string
+   fun obfuscatePassword(connectionString: String): String {
+      val passwordPattern = "(?<=:)([^/@]+)(?=@)".toRegex()
+      return connectionString.replace(passwordPattern, "******")
+   }
 }

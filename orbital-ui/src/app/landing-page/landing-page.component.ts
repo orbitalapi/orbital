@@ -26,7 +26,7 @@ export interface LandingPageCardConfig {
         <app-landing-card [cardConfig]='recentQueryCardConfig' [isEmpty]='recentQueries.length === 0' layout='vertical'
                           (emptyActionClicked)="router.navigate(['query','editor'])"></app-landing-card>
         <app-landing-card [cardConfig]='dataSourcesCardConfig' [isEmpty]='dataSources.length === 0' layout='vertical'
-                          (emptyActionClicked)="router.navigate(['project-import'])"></app-landing-card>
+                          (emptyActionClicked)="router.navigate(['data-source-manager/add'])"></app-landing-card>
       </div>
     </div>
   `
