@@ -125,14 +125,15 @@
 
 .collapse-icon {
   position: absolute;
-  top: 90px;
-  right: -8px;
+  bottom: 13px;
+  right: -12px;
   height: 24px;
   width: 24px;
   border-radius: 100%;
   background: var(--navbar-bg-color);
   cursor: pointer;
   transition: transform 250ms ease-in 150ms, outline 150ms ease-in-out;
+  z-index: 2;
 
   img {
     @extend .filter-white;
