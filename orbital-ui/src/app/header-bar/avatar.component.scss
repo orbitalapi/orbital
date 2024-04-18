@@ -1,10 +1,25 @@
 @import "src/common";
 
+:host {
+  width: 100%;
+
+  ::ng-deep tui-hosted-dropdown {
+    display: block;
+  }
+}
+
 .user-container {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
+
+  .username {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+  }
 }
 
 .logout-button {

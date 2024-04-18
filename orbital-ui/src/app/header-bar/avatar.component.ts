@@ -12,7 +12,7 @@ import {TUI_PROMPT, TuiPromptData} from "@taiga-ui/kit";
       <div class="user-container">
         <tui-avatar [text]="user.username" [rounded]="true" [autoColor]="true" [avatarUrl]="user.profileUrl"
                     size="s"></tui-avatar>
-        <div>{{ user.name || user.username }}</div>
+        <div class="username">{{ user.name || user.username }}</div>
       </div>
     </tui-hosted-dropdown>
     <ng-template #userMenu>
