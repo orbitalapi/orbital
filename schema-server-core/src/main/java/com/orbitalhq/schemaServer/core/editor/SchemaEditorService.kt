@@ -59,7 +59,7 @@ class SchemaEditorService(
    }
 
    @PostMapping("/api/repository/queries")
-   fun saveQuery(request: SaveQueryRequest): Mono<SavedQuery> {
+   fun saveQuery(@RequestBody request: SaveQueryRequest): Mono<SavedQuery> {
       return Mono.just(request)
          .subscribeOn(Schedulers.boundedElastic())
          .map { request ->
