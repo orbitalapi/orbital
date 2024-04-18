@@ -13,13 +13,10 @@ import {appInstanceType} from 'src/app/app-config/app-instance.vyne';
   selector: 'app-project-summary-view',
   template: `
     <div class="container">
-      <div>
-        <h1>Changelog</h1>
-        <p>This is the changelog of all the data sources connected to Vyne.</p>
-        <p>Click on a package on the left to view the schema for that package</p>
-        <app-changelog-list [changeLogEntries]="changeLogEntries | async"></app-changelog-list>
-      </div>
-
+      <h1>Changelog</h1>
+      <p>This is the changelog of all the data sources connected to Vyne.</p>
+      <p>Click on a package on the left to view the schema for that package</p>
+      <app-changelog-list [changeLogEntries]="changeLogEntries | async"></app-changelog-list>
     </div>
   `,
   styleUrls: ['./project-summary-view.component.scss'],

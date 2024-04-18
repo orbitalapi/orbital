@@ -8,3 +8,7 @@ simplified.
   this.
 * `./src/app`: The original UI, built and deplyoed as part of Vyne. 
 
+### Orbital app feature flags
+To enable feature flags, you need to add some switches to  the VM section of the `OrbitalStationApp` run config. 
+
+For example to add the UI feature flag of `onboardingEnabled` add `--vyne.toggles.onboarding-enabled=true` to the VM options.
