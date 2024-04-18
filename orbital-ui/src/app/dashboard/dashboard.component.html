@@ -1,0 +1,21 @@
+<app-header-component-layout
+  title="Your dashboard"
+  description="View your connections health status, endpoint stats, your current usage and recent changes made to schemas"
+>
+  <ng-container ngProjectAs="buttons">
+    <button
+      tuiButton
+      size="m"
+      icon="tuiIconEdit2"
+      appearance="primary"
+      routerLink="/query/editor"
+    >
+      Create a query
+    </button>
+  </ng-container>
+  <tui-notification (close)="onHideNotification()" status="info" *ngIf="!hideLiveReloadNotification">
+    <strong>Live reload</strong>
+    <div>The developer environment of {{ uiConfig.productName }} is configured with live reload, so any changes you make
+      in your taxi project are automatically picked up and detected inside of {{ uiConfig.productName }}</div>
+  </tui-notification>
+</app-header-component-layout>

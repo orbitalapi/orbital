@@ -19,6 +19,12 @@ export const APP_ROUTES = RouterModule.forRoot(
       data: {requiredFeatureFlag: 'onboardingEnabled'}
     },
     {
+      path: 'dashboard',
+      loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent),
+      canActivate: [FeatureFlagGuard],
+      data: {requiredFeatureFlag: 'dashboardEnabled'}
+    },
+    {
       path: 'catalog',
       loadChildren: () => import('./data-catalog/data-catalog.module').then(m => m.DataCatalogModule),
       canActivate: [AuthGuard],
