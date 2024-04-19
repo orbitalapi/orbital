@@ -1,0 +1,43 @@
+@import "src/common";
+
+:host {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid $gray-200;
+  border-radius: 8px;
+  background-color: $white;
+}
+
+.header {
+  display: flex;
+  flex-direction: row;
+  padding: 1rem 1rem 1rem 0.5rem;
+
+  h3 {
+    margin: 0 0 0.5rem 0;
+  }
+
+  .icon {
+    width: 24px;
+    height: 24px;
+    margin: -0.2rem 0.25rem 0 0;
+    padding: 0.2rem 0;
+    background: $slate-100;
+    border-radius: 5px;
+
+    img {
+      opacity: 0.5;
+    }
+  }
+
+  .title-with-description {
+    flex: auto;
+  }
+
+  .header-controls {
+  }
+}
+
+.content {
+  padding: 0 1rem 1rem 2.1rem;
+}

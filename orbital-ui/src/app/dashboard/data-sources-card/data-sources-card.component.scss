@@ -1,0 +1,26 @@
+@import "src/common";
+
+:host ::ng-deep {
+  progress {
+    color: $green;
+    background: $red-light;
+    height: 1rem;
+    margin-bottom: 1rem;
+  }
+}
+
+.connection-error {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+
+  app-connection-status {
+    margin-right: 0.25rem;
+  }
+
+  .error-message {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
