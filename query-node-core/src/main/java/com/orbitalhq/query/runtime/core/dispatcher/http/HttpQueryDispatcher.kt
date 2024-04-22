@@ -10,6 +10,7 @@ import com.orbitalhq.query.runtime.QueryMessageCborWrapper
 import com.orbitalhq.query.runtime.core.dispatcher.StreamingQueryDispatcher
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.utils.formatAsFileSize
+import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -61,6 +62,10 @@ class HttpQueryDispatcher(
 //               listOf(value)
 //            }
 //         }
+   }
+
+   override fun publishResultStream(name: QualifiedName): Flux<Any> {
+      error("Result streaming is not yet supported on the HTTP Query dispatcher")
    }
 
    fun dispatchQuery(message: QueryMessage): Mono<Any> {

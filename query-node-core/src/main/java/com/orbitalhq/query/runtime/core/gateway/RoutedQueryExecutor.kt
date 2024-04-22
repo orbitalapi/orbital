@@ -3,8 +3,11 @@ package com.orbitalhq.query.runtime.core.gateway
 import com.orbitalhq.query.runtime.core.QueryService
 import com.orbitalhq.query.runtime.core.dispatcher.StreamingQueryDispatcher
 import com.orbitalhq.query.runtime.core.dispatcher.local.LocalQueryDispatcher
+import com.orbitalhq.query.runtime.core.dispatcher.local.StreamResultSubscriptionManager
 import com.orbitalhq.utils.Ids
+import lang.taxi.query.QueryMode
 import mu.KotlinLogging
+import org.reactivestreams.Publisher
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
@@ -21,7 +24,7 @@ interface RoutedQueryExecutor {
 
    // Routed queries don't currently support streaming.
    // See notes on StreamingQueryDispatcher for considerations when implementing
-   fun handleRoutedQuery(query: RoutedQuery): Mono<Any>
+   fun handleRoutedQuery(query: RoutedQuery): Publisher<Any>
 }
 
 
@@ -40,7 +43,8 @@ class RoutedQueryDispatcherAdaptor(
    // We can't use conditional wiring in Graal native images.
    // So, this needs to be nullable, and we need to handle the scenario that it wasn't wired.
    configuredDispatcher: StreamingQueryDispatcher?,
-   val queryService: QueryService
+   val queryService: QueryService,
+   val streamResultSubscriptionManager: StreamResultSubscriptionManager
 ) : RoutedQueryExecutor {
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -51,22 +55,29 @@ class RoutedQueryDispatcherAdaptor(
       configuredDispatcher
    } else {
       logger.info { "RoutedQueryExecutor created without a dispatcher.  Queries will be executed locally." }
-      LocalQueryDispatcher(queryService)
+      LocalQueryDispatcher(queryService, streamResultSubscriptionManager)
    }
 
 
-   override fun handleRoutedQuery(query: RoutedQuery): Mono<Any> {
+   override fun handleRoutedQuery(query: RoutedQuery): Publisher<Any> {
       if (dispatcher == null) {
          error("Cannot dispatch a query without a configured streaming consumer.")
       }
       val clientQueryId = Ids.id("routed-query-")
       logger.info { "Received invocation of query ${query.query.name} to route.  Will be routed with queryId $clientQueryId to dispatcher ${dispatcher!!::class.simpleName}" }
-      return dispatcher!!.dispatchQuery(
-         query.querySrc,
-         clientQueryId,
-         MediaType.APPLICATION_JSON_VALUE,
-         arguments = query.argumentValues
-      )
+      return if (query.query.queryMode == QueryMode.STREAM) {
+         dispatcher.publishResultStream(
+              query.query.name
+         )
+      } else {
+         dispatcher!!.dispatchQuery(
+              query.querySrc,
+              clientQueryId,
+              MediaType.APPLICATION_JSON_VALUE,
+              arguments = query.argumentValues
+         )
+      }
+
    }
 
 }

@@ -18,6 +18,10 @@
          <version>${taxi.version}</version>
       </dependency>
       <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-commons</artifactId>
+      </dependency>
+      <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>chatgpt</artifactId>
          <version>${project.version}</version>
@@ -49,7 +53,11 @@
          <artifactId>junit-jupiter</artifactId>
          <scope>test</scope>
       </dependency>
-
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>vyne-spring</artifactId>
+         <version>${project.version}</version>
+      </dependency>
       <dependency>
          <groupId>io.projectreactor.rabbitmq</groupId>
          <artifactId>reactor-rabbitmq</artifactId>

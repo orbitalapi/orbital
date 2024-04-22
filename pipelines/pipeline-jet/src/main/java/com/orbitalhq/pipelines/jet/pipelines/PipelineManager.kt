@@ -15,6 +15,7 @@ import com.orbitalhq.pipelines.jet.api.transport.PipelineKind
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportSpec
 import com.orbitalhq.pipelines.jet.api.transport.ScheduledPipelineTransportSpec
+import com.orbitalhq.pipelines.jet.api.transport.hazelcast.HazelcastTopicSinkSpec
 import com.orbitalhq.pipelines.jet.api.transport.log.LogLevel
 import com.orbitalhq.pipelines.jet.api.transport.log.LoggingOutputSpec
 import com.orbitalhq.pipelines.jet.api.transport.query.StreamingQueryInputSpec
@@ -64,6 +65,7 @@ class PipelineManager(
 
       return getEnabledPipelineByName(name).spec
    }
+
    fun startPipelineByName(name: QualifiedName): Pair<SubmittedPipeline, Job?> {
       val spec = getPendingOrRunningPipelineSpecByName(name)
       return startPipeline(spec)
@@ -308,6 +310,7 @@ class PipelineManager(
          else -> error("Found ${matchingPipelines.size} pipeline jobs with name ${name.parameterizedName}")
       }
    }
+
    private fun hasPipeline(pipelineId: String): Boolean {
       val matchingPipelines = enabledPipelines.values(Predicates.sql("pipelineSpecId = '$pipelineId'"))
       return matchingPipelines.isNotEmpty()
@@ -363,10 +366,7 @@ class PipelineManager(
 
    fun submitStream(
       managedStream: ManagedStream,
-      sinkSpec: PipelineTransportSpec = LoggingOutputSpec(
-         LogLevel.INFO,
-         managedStream.name.longDisplayName
-      )
+      sinkSpec: PipelineTransportSpec = HazelcastTopicSinkSpec.forStream(managedStream.name)
    ): PipelineSpec<StreamingQueryInputSpec, PipelineTransportSpec> {
       val spec = PipelineSpec(
          name = managedStream.name.longDisplayName,

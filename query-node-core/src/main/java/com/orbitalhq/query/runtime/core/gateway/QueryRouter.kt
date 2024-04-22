@@ -1,6 +1,7 @@
 package com.orbitalhq.query.runtime.core.gateway
 
 import lang.taxi.annotations.HttpOperation
+import lang.taxi.annotations.WebsocketOperation
 import lang.taxi.query.QueryMode
 import lang.taxi.query.TaxiQlQuery
 import org.springframework.http.HttpMethod
@@ -29,8 +30,6 @@ class QueryRouter private constructor(val routes: List<RoutableQuery>) {
        */
       fun build(queries: Iterable<TaxiQlQuery>): QueryRouter {
          val routes = queries
-
-            .filter { query -> query.queryMode != QueryMode.STREAM }
             .mapNotNull { query ->
             val httpAnnotation = HttpOperation.fromQuery(query)
             if (httpAnnotation != null) {
@@ -47,6 +46,17 @@ class QueryRouter private constructor(val routes: List<RoutableQuery>) {
             RoutableQuery(query, predicate, httpOperation)
          }
          return QueryRouter(routes)
+      }
+
+      fun forWebsocketQueries(queries: Iterable<TaxiQlQuery>): Map<String, TaxiQlQuery> {
+         return queries
+            .mapNotNull { query ->
+               val httpAnnotation = WebsocketOperation.fromQuery(query)
+               if (httpAnnotation != null) {
+                  httpAnnotation.path to query
+               } else null
+            }
+            .toMap()
       }
 
       private fun getHttpMethod(method: String): HttpMethod = HttpMethod.valueOf(method)
@@ -66,5 +76,6 @@ data class RoutableQuery(
    val annotation: HttpOperation
 ) {
    override fun toString(): String = "${annotation.method} ${annotation.url} -> ${query.name}"
+   val queryMode: QueryMode = query.queryMode
 }
 

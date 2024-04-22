@@ -5,7 +5,9 @@ import com.orbitalhq.query.runtime.core.QueryService
 import com.orbitalhq.query.runtime.core.dispatcher.StreamingQueryDispatcher
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
+import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
+import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
@@ -20,7 +22,8 @@ import reactor.core.publisher.Mono
  * Useful for quick-start projects, but not as scalable as query offloading.
  */
 class LocalQueryDispatcher(
-   private val queryService: QueryService
+   private val queryService: QueryService,
+   private val streamResultSubscriptionManager: StreamResultSubscriptionManager
 ) : StreamingQueryDispatcher {
 
    companion object {
@@ -33,7 +36,7 @@ class LocalQueryDispatcher(
       mediaType: String,
       resultMode: ResultMode,
       arguments: Map<String, Any?>
-   ): Mono<Any> {
+   ): Publisher<Any> {
       // Note: This isn't actually a suspend function.
       // All the work happens in the returned Flux<> / Flow<>,
       // we just need to fix the underling signatures.
@@ -49,9 +52,13 @@ class LocalQueryDispatcher(
          )
       }
       return when (responseEntity.body) {
-         is Flux<*> -> (responseEntity.body as Flux<Any>).collectList() as Mono<Any>
+         is Flux<*> -> responseEntity.body!! as Flux<Any>
          is Mono<*> -> responseEntity.body!! as Mono<Any>
          else -> error("Unhandled usecase: ${responseEntity.body::class.simpleName}")
       }
+   }
+
+   override fun publishResultStream(name: QualifiedName): Flux<Any> {
+      return streamResultSubscriptionManager.getResultStream(name.parameterizedName)
    }
 }
