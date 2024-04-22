@@ -1,0 +1,37 @@
+<app-card
+  title="Data sources"
+  titleLink="/data-source-manager"
+  [description]="description$ | async"
+  icon="/assets/img/tabler/plug.svg"
+>
+  <ng-container ngProjectAs="header-controls">
+    <button
+      tuiButton
+      size="s"
+      icon="tuiIconPlus"
+      appearance="whiteblock"
+      routerLink="/data-source-manager/add"
+    >
+      Add data source
+    </button>
+  </ng-container>
+  <ng-container *ngIf="(percentHealthy$ | async) as percentHealthy; else connectionLoading">
+    <progress tuiProgressBar [value]="percentHealthy" max="100"></progress>
+  </ng-container>
+  <ng-template #connectionLoading>
+    <progress tuiProgressBar max="100"></progress>
+  </ng-template>
+  <ng-container *ngIf="unhealthyConnections$ | async as unhealthyConnections">
+    <h4 *ngIf="unhealthyConnections.length">Unhealthy connections:</h4>
+    <div *ngFor="let conn of unhealthyConnections" class="connection-error">
+      <strong>{{conn.connectionName}}</strong>
+      <app-connection-status [status]="conn.connectionStatus" [hideTimestamp]="true"></app-connection-status>
+      <a
+        class="error-message"
+        [routerLink]="'/data-source-manager/' + conn.packageIdentifier.uriSafeId + '/' + conn.connectionName"
+      >
+        {{conn.connectionStatus.message}}
+      </a>
+    </div>
+  </ng-container>
+</app-card>

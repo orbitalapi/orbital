@@ -4,13 +4,15 @@ import { RouterLink, RouterOutlet } from '@angular/router';
 import { TuiButtonModule, TuiNotificationModule } from '@taiga-ui/core';
 import { UiCustomisations } from '../../environments/ui-customisations';
 import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
+import { CardComponent } from './card/card.component';
+import { DataSourcesCardComponent } from './data-sources-card/data-sources-card.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [
     CommonModule, HeaderComponentLayoutModule, RouterOutlet, TuiButtonModule, RouterLink,
-    TuiNotificationModule
+    TuiNotificationModule, DataSourcesCardComponent, CardComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],

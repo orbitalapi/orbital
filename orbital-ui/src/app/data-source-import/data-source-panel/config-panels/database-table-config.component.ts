@@ -88,7 +88,6 @@ import { sanitiseNamespace } from '../../../utils/utils';
             </div>
           </div>
           <div class="form-element">
-            selectedConnection: {{selectedConnection}}
             <tui-multi-select
               [(ngModel)]="selectedTables"
               [stringify]="stringifyTableName"
