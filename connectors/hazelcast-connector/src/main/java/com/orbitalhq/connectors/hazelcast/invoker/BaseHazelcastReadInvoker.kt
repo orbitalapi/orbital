@@ -1,6 +1,7 @@
 package com.orbitalhq.connectors.hazelcast.invoker
 
 import com.hazelcast.core.HazelcastInstance
+import com.hazelcast.core.HazelcastJsonValue
 import com.hazelcast.internal.serialization.impl.compact.DeserializedGenericRecord
 import com.hazelcast.map.IMap
 import com.hazelcast.map.impl.query.QueryResultCollection
@@ -274,6 +275,7 @@ abstract class BaseHazelcastReadInvoker {
                   dataSource
                )
             )
+            is HazelcastJsonValue -> listOf(HazelcastJsonValueReader.toTypedInstance(value, memberType, schema, dataSource))
 
             is QueryResultCollection<*> -> {
                value.flatMap { readValue(it) }

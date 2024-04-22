@@ -10,7 +10,7 @@ import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyneWithStub
 
 abstract class BaseHazelcastInvokerTest {
-   val DEFAULT_SCHEMA = """
+   open fun defaultSchema(): String = """
          import com.orbitalhq.hazelcast.HazelcastService
          import com.orbitalhq.hazelcast.HazelcastMap
          import com.orbitalhq.hazelcast.UpsertOperation
@@ -40,7 +40,7 @@ abstract class BaseHazelcastInvokerTest {
             stream films : Stream<Film>
          }
          """
-   fun vyneWithHazelcast(schema: String = DEFAULT_SCHEMA):Triple<HazelcastInstance, Vyne, StubService> {
+   fun vyneWithHazelcast(schema: String = defaultSchema()):Triple<HazelcastInstance, Vyne, StubService> {
       val hazelcastInstance = TestHazelcastInstanceFactory(1).newHazelcastInstance()
       val hazelcastProvider = TestHazelcastProvider(hazelcastInstance)
       val hazelcastInvoker = HazelcastInvoker(hazelcastProvider)

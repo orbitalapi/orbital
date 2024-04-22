@@ -43,7 +43,7 @@ class HazelcastMutatingInvoker {
       val (key, serializedValue) = if (valueToSave.type.hasMetadata(HazelcastTaxi.Annotations.CompactObject)) {
          GenericRecordWriter.getGenericRecordAndKey(valueToSave, schema)
       } else {
-         TODO("Hazelcast persistence only supported for CompactObject currently - Support for JsonObject required")
+         HazelcastJsonValueWriter.getJsonValueAndKey(valueToSave,schema)
       }
       val mapName = getMapName(valueToSave.type)
 

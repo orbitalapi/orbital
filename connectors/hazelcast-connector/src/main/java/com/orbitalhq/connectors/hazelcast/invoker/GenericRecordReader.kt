@@ -10,7 +10,12 @@ import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 
 object GenericRecordReader {
-   fun toTypedInstance(genericRecord: GenericRecord, type: ObjectType, schema: Schema, dataSource: DataSource): TypedInstance {
+   fun toTypedInstance(
+      genericRecord: GenericRecord,
+      type: ObjectType,
+      schema: Schema,
+      dataSource: DataSource
+   ): TypedInstance {
       val map = readAsMap(genericRecord, type, schema)
       val fromMap = TypedInstance.from(schema.type(type), map, schema, source = dataSource)
       return fromMap
