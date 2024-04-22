@@ -1,20 +1,23 @@
 package com.orbitalhq.query.runtime.core.gateway
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.MetricTags
-import com.orbitalhq.query.MetricsTagBuilder
-import com.orbitalhq.query.runtime.FailedSearchResponse
 import com.orbitalhq.query.tagsOf
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.consumer.SchemaStore
+import lang.taxi.query.QueryMode
 import lang.taxi.query.TaxiQlQuery
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.http.codec.ServerSentEvent
 import org.springframework.stereotype.Component
+import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.server.*
 import org.springframework.web.reactive.function.server.ServerResponse.status
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
 import reactor.kotlin.core.publisher.toFlux
 import java.time.Instant
 
@@ -30,8 +33,8 @@ import java.time.Instant
 class QueryRouteService(
    private val schemaStore: SchemaStore,
    private val executor: RoutedQueryExecutor?,
-   private val queryPrefix:String = "/api/q/",
-   private val metricsReporter: QueryMetricsReporter
+   private val queryPrefix: String = "/api/q/",
+   private val metricsReporter: QueryMetricsReporter,
 ) : HandlerFunction<ServerResponse> {
 
    private var queryRouter: QueryRouter = QueryRouter.build(emptyList())
@@ -83,9 +86,31 @@ class QueryRouteService(
          return ServerResponse.notFound().build()
       }
       logger.info { "Received query invocation on ${request.path()} - matches with query ${query.query.name}" }
-      val queryResultFlux = executor.handleRoutedQuery(query)
-         .let { metricsReporter.observeRequestResponse(it, Instant.now(), getMetricsTags(query)) }
-      return ServerResponse.ok().body(queryResultFlux)
+      val logDurationsOfIndividualMessages = query.query.queryMode == QueryMode.STREAM
+      val queryResultPublisher = executor.handleRoutedQuery(query)
+         .let {
+            metricsReporter.observeQueryResult(
+               it,
+               Instant.now(),
+               getMetricsTags(query),
+               logDurationsOfIndividualMessages
+            )
+         }
+
+      val returnServerSentEvents = request.headers().accept().contains(MediaType.TEXT_EVENT_STREAM)
+
+      return if (returnServerSentEvents && queryResultPublisher is Flux<*>) {
+         val serverSentEvents = queryResultPublisher.map { message ->
+            ServerSentEvent.builder<Any>()
+               .data(message)
+               .build()
+         }
+         ServerResponse.ok()
+            .contentType(MediaType.TEXT_EVENT_STREAM)
+            .body(BodyInserters.fromServerSentEvents(serverSentEvents))
+      } else {
+         ServerResponse.ok().body(queryResultPublisher)
+      }
 
       // I have tried and tried and tried.
       // Somewhere in here is the "correct" way to get Spring to return a 4xx instead of a

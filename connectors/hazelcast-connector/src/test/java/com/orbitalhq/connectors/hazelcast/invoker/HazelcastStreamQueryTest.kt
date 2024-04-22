@@ -82,7 +82,7 @@ class HazelcastStreamQueryTest : BaseHazelcastInvokerTest() {
       val (hazelcastInstance, vyne, stub) = vyneWithHazelcast()
       vyne.query("""stream { Film.filterEach( (FilmId) -> FilmId < 300  ) }""")
          .results
-         .test(timeout = Duration.parse("50s")) {
+         .test(timeout = Duration.parse("10s")) {
             write(vyne, valuesToInsert[0])
             expectTypedObject()
             write(vyne, valuesToInsert[1])

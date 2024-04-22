@@ -18,6 +18,7 @@ import com.orbitalhq.query.runtime.core.dispatcher.rabbitmq.RabbitAdmin.QUERY_EX
 import com.orbitalhq.query.runtime.core.dispatcher.rabbitmq.RabbitAdmin.RESPONSES_EXCHANGE_NAME
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.utils.withQueryId
+import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -83,6 +84,10 @@ class RabbitMqQueueDispatcher(
 //         .flatMapMany { queryMessage ->
 //            consumeResponses(queryMessage)
 //         }
+   }
+
+   override fun publishResultStream(name: QualifiedName): Flux<Any> {
+      TODO("Not yet implemented")
    }
 
    private fun consumeResponses(queryMessage: QueryMessage): Flux<Any> {

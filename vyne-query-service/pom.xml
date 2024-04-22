@@ -16,9 +16,29 @@
       <app.distribution.directory>${project.build.directory}/distributions/app</app.distribution.directory>
       <!-- see the plugin below for why we're disabling this -->
       <spring-boot.repackage.skip>true</spring-boot.repackage.skip>
+
+      <ktor.version>2.3.10</ktor.version>
    </properties>
 
    <dependencies>
+      <dependency>
+         <groupId>io.ktor</groupId>
+         <artifactId>ktor-client-cio-jvm</artifactId>
+         <version>${ktor.version}</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.ktor</groupId>
+         <artifactId>ktor-client-core-jvm</artifactId>
+         <version>${ktor.version}</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.ktor</groupId>
+         <artifactId>ktor-client-websockets-jvm</artifactId>
+         <version>${ktor.version}</version>
+         <scope>test</scope>
+      </dependency>
       <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>spring-utils</artifactId>
@@ -69,7 +89,7 @@
       <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>compiler</artifactId>
-<type>test-jar</type>
+         <type>test-jar</type>
          <version>${taxi.version}</version>
          <scope>test</scope>
       </dependency>
@@ -135,11 +155,11 @@
          <artifactId>vyne-search</artifactId>
          <version>${project.version}</version>
       </dependency>
-<!--      <dependency>-->
-<!--         <groupId>com.orbitalhq</groupId>-->
-<!--         <artifactId>cask-api</artifactId>-->
-<!--         <version>${project.version}</version>-->
-<!--      </dependency>-->
+      <!--      <dependency>-->
+      <!--         <groupId>com.orbitalhq</groupId>-->
+      <!--         <artifactId>cask-api</artifactId>-->
+      <!--         <version>${project.version}</version>-->
+      <!--      </dependency>-->
       <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-query-api</artifactId>
@@ -364,37 +384,6 @@
          <groupId>org.flywaydb</groupId>
          <artifactId>flyway-core</artifactId>
       </dependency>
-
-      <!--      <dependency>-->
-      <!--         <groupId>io.micrometer</groupId>-->
-      <!--         <artifactId>micrometer-registry-influx</artifactId>-->
-      <!--      </dependency>-->
-
-      <!--      <dependency>-->
-      <!--         <groupId>io.micrometer</groupId>-->
-      <!--         <artifactId>micrometer-registry-elastic</artifactId>-->
-      <!--      </dependency>-->
-
-      <!--      <dependency>-->
-      <!--         <groupId>io.micrometer</groupId>-->
-      <!--         <artifactId>micrometer-registry-jmx</artifactId>-->
-      <!--      </dependency>-->
-
-      <!--      <dependency>-->
-      <!--         <groupId>io.micrometer</groupId>-->
-      <!--         <artifactId>micrometer-registry-graphite</artifactId>-->
-      <!--      </dependency>-->
-
-      <!--      <dependency>-->
-      <!--         <groupId>io.micrometer</groupId>-->
-      <!--         <artifactId>micrometer-registry-datadog</artifactId>-->
-      <!--      </dependency>-->
-
-      <!--      <dependency>-->
-      <!--         <groupId>io.micrometer</groupId>-->
-      <!--         <artifactId>micrometer-registry-dynatrace</artifactId>-->
-      <!--      </dependency>-->
-
       <dependency>
          <groupId>com.squareup.okhttp3</groupId>
          <artifactId>mockwebserver</artifactId>
@@ -445,12 +434,12 @@
          <version>2.70.0</version>
          <scope>test</scope>
       </dependency>
-       <dependency>
-           <groupId>javax.xml.bind</groupId>
-           <artifactId>jaxb-api</artifactId>
-           <version>2.3.1</version>
-           <scope>test</scope>
-       </dependency>
+      <dependency>
+         <groupId>javax.xml.bind</groupId>
+         <artifactId>jaxb-api</artifactId>
+         <version>2.3.1</version>
+         <scope>test</scope>
+      </dependency>
    </dependencies>
 
    <build>
@@ -582,10 +571,10 @@
                </execution>
             </executions>
          </plugin>
-<!--         <plugin>-->
-<!--            <groupId>org.owasp</groupId>-->
-<!--            <artifactId>dependency-check-maven</artifactId>-->
-<!--         </plugin>-->
+         <!--         <plugin>-->
+         <!--            <groupId>org.owasp</groupId>-->
+         <!--            <artifactId>dependency-check-maven</artifactId>-->
+         <!--         </plugin>-->
          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-site-plugin</artifactId>

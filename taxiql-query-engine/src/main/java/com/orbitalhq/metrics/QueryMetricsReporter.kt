@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
+import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.Duration
@@ -20,8 +21,20 @@ interface QueryMetricsReporter {
    fun resultEmitted(tags: MetricTags)
    fun firstResult(duration: Duration, tags: MetricTags)
    fun completed(duration: Duration, finalCount: Int, tags: MetricTags)
-   fun failed(duration:Duration, tags: MetricTags)
+   fun failed(duration: Duration, tags: MetricTags)
 
+   fun observeQueryResult(
+      request: Publisher<Any>,
+      startTime: Instant,
+      metricsTags: MetricTags,
+      logDurationsOfIndividualMessages: Boolean
+   ):Publisher<Any> {
+      return when (request) {
+         is Mono<*> -> observeRequestResponse(request as Mono<Any>,startTime,metricsTags)
+         is Flux<*> -> observeResultFlux(request as Flux<Any>, startTime, metricsTags, logDurationsOfIndividualMessages)
+         else -> error("Unexpected publisher type: ${request::class.simpleName}")
+      }
+   }
    /**
     * Records metrics on queries routed through the query router (ie., saved queries).
     * At present, we're
@@ -50,6 +63,7 @@ interface QueryMetricsReporter {
             completed(Duration.between(startTime, Instant.now()), counter.get(), metricsTags)
          }
    }
+
    /**
     * Captures metrics for the result stream,
     * Unless the metrics tags provided are MetricsTags.NONE, in which case we don't bother.
@@ -60,7 +74,7 @@ interface QueryMetricsReporter {
       startTime: Instant,
       metricsTags: MetricTags,
       logDurationsOfIndividualMessages: Boolean
-   ):Flow<TypedInstance> {
+   ): Flow<TypedInstance> {
       if (metricsTags == MetricTags.NONE) {
          return resultsWithMetadata.map { it.instance }
       }
@@ -84,6 +98,53 @@ interface QueryMetricsReporter {
          }
          .map { it.instance }
    }
+
+   fun observeResultFlux(
+      resultsWithMetadata: Flux<Any>,
+      startTime: Instant,
+      metricsTags: MetricTags,
+      logDurationsOfIndividualMessages: Boolean
+   ): Flux<Any> {
+
+      // We could be passed:
+      // - A Flux<TypedInstance>
+      // - A Flux<TypedInstanceWithMetadata> (for streaming queries)
+      // - A raw value
+      // We always want to return the raw value
+      fun getRawResultFromFluxEvent(message:Any):Any? {
+         return when (message) {
+            is TypedInstanceWithMetadata -> message.instance.toRawObject()
+            is TypedInstance -> message.toRawObject()
+            else -> message
+         }
+      }
+      if (metricsTags == MetricTags.NONE) {
+         return resultsWithMetadata.mapNotNull { getRawResultFromFluxEvent(it) }
+      }
+
+      val isFirst = AtomicBoolean(true)
+      val counter = AtomicInteger(0)
+      return resultsWithMetadata
+         .doOnSubscribe { invoked(metricsTags) }
+         .doOnNext {
+            val instanceStartTime = when {
+               it is TypedInstanceWithMetadata -> it.processingStart
+               else -> startTime
+            }
+            val wasFirst = isFirst.getAndSet(false)
+            if (wasFirst) {
+               firstResult(Duration.between(instanceStartTime, Instant.now()), metricsTags)
+            }
+            if (logDurationsOfIndividualMessages) {
+               completed(Duration.between(instanceStartTime, Instant.now()), counter.get(), metricsTags)
+            }
+            resultEmitted(metricsTags)
+            counter.incrementAndGet()
+         }.doFinally {
+            completed(Duration.between(startTime, Instant.now()), counter.get(), metricsTags)
+         }
+         .mapNotNull { getRawResultFromFluxEvent(it) }
+   }
 }
 
 object NoOpMetricsReporter : QueryMetricsReporter {
@@ -101,6 +162,6 @@ object NoOpMetricsReporter : QueryMetricsReporter {
 
    override fun failed(duration: Duration, tags: MetricTags) {
    }
-
-
 }
+
+

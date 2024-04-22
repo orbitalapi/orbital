@@ -14,6 +14,7 @@ import com.orbitalhq.query.runtime.QueryMessageCborWrapper
 import com.orbitalhq.query.runtime.core.dispatcher.StreamingQueryDispatcher
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.utils.Ids
+import lang.taxi.types.QualifiedName
 import reactor.core.publisher.Mono
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
@@ -64,6 +65,10 @@ class AwsSqsQueryDispatcher(
 //         }
 //         .flatMap { sendMessageToQueue(it) }
 //         .flatMapMany { (queryMessage, sendMessageResponse) -> consumeResponses(queryMessage) }
+   }
+
+   override fun publishResultStream(name: QualifiedName): Flux<Any> {
+      TODO("Not yet implemented")
    }
 
    private fun consumeResponses(queryMessage: QueryMessage): Flux<Any> {

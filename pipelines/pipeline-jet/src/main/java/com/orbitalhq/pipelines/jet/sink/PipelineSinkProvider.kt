@@ -45,6 +45,7 @@ class PipelineSinkProvider(
                JdbcSinkBuilder(),
                AwsS3SinkBuilder(awsConnectionRegistry),
                LoggingSinkBuilder()
+
             )
          )
       }
