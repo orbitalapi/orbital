@@ -4,6 +4,8 @@ server:
       include-message: always
 
 spring:
+   codec:
+      max-in-memory-size: 10MB
    main:
       web-application-type: reactive
    cloud:
