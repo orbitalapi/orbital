@@ -35,8 +35,13 @@ import com.orbitalhq.schemas.Schema
 
 
 interface QueryEngineFactory {
-   fun queryEngine(schema: Schema, models: FactSetMap, metricsTags: Map<String,String> = emptyMap()): StatefulQueryEngine
-   fun queryEngine(schema: Schema, metricsTags: Map<String,String> = emptyMap()): QueryEngine
+   fun queryEngine(
+      schema: Schema,
+      models: FactSetMap,
+      metricsTags: Map<String, String> = emptyMap()
+   ): StatefulQueryEngine
+
+   fun queryEngine(schema: Schema, metricsTags: Map<String, String> = emptyMap()): QueryEngine
 
 //   val pathResolver: SchemaPathResolver
 
@@ -47,7 +52,8 @@ interface QueryEngineFactory {
             VyneCacheConfiguration.default(),
             emptyList(),
             emptyList(),
-            LocalProjectionProvider())
+            LocalProjectionProvider()
+         )
       }
 
       // Useful for testing.
@@ -58,7 +64,8 @@ interface QueryEngineFactory {
             VyneCacheConfiguration.default(),
             emptyList(),
             emptyList(),
-            LocalProjectionProvider())
+            LocalProjectionProvider()
+         )
       }
 
 //      fun jhipster(operationInvokers: List<OperationInvoker> = DefaultInvokers.invokers): JHipsterQueryEngineFactory {
@@ -70,19 +77,25 @@ interface QueryEngineFactory {
       // which is sure to collect all strategies
       fun withOperationInvokers(
          vyneCacheConfiguration: VyneCacheConfiguration,
-         formatSpecs:List<ModelFormatSpec> = emptyList(),
-         vararg invokers: OperationInvoker): QueryEngineFactory {
-         return withOperationInvokers(vyneCacheConfiguration, invokers.toList(), formatSpecs, projectionProvider = LocalProjectionProvider())
+         formatSpecs: List<ModelFormatSpec> = emptyList(),
+         vararg invokers: OperationInvoker
+      ): QueryEngineFactory {
+         return withOperationInvokers(
+            vyneCacheConfiguration,
+            invokers.toList(),
+            formatSpecs,
+            projectionProvider = LocalProjectionProvider()
+         )
       }
 
       fun withOperationInvokers(
          vyneCacheConfiguration: VyneCacheConfiguration,
          invokers: List<OperationInvoker>,
-         formatSpecs:List<ModelFormatSpec> = emptyList(),
+         formatSpecs: List<ModelFormatSpec> = emptyList(),
          projectionProvider: ProjectionProvider = LocalProjectionProvider(),
          queryMetricsReporter: QueryMetricsReporter = NoOpMetricsReporter,
          stateStoreProvider: StateStoreProvider? = null
-         ): QueryEngineFactory {
+      ): QueryEngineFactory {
          val invocationService = operationInvocationService(invokers)
          val opInvocationEvaluator = OperationInvocationEvaluator(invocationService)
          val edgeEvaluator = EdgeNavigator(edgeEvaluators(opInvocationEvaluator))
@@ -131,9 +144,11 @@ interface QueryEngineFactory {
       }
 
       private fun operationInvocationService(invokers: List<OperationInvoker>): OperationInvocationService {
-         return DatasourceAwareOperationInvocationServiceDecorator(PolicyAwareOperationInvocationServiceDecorator(
-            DefaultOperationInvocationService(invokers)
-         ))
+         return DatasourceAwareOperationInvocationServiceDecorator(
+            PolicyAwareOperationInvocationServiceDecorator(
+               DefaultOperationInvocationService(invokers)
+            )
+         )
       }
    }
 }
@@ -142,7 +157,7 @@ class DefaultQueryEngineFactory(
    private val strategies: List<QueryStrategy>,
    private val projectionProvider: ProjectionProvider,
    private val operationInvocationService: OperationInvocationService,
-   private val formatSpecs:List<ModelFormatSpec> = emptyList(),
+   private val formatSpecs: List<ModelFormatSpec> = emptyList(),
    private val metricsReporter: QueryMetricsReporter = NoOpMetricsReporter
 ) : QueryEngineFactory {
 
@@ -150,8 +165,15 @@ class DefaultQueryEngineFactory(
       return queryEngine(schema, FactSetMap.create())
    }
 
-   override fun queryEngine(schema: Schema, models: FactSetMap, metricsTags: Map<String,String>): StatefulQueryEngine {
-      return StatefulQueryEngine(models, schema, strategies,projectionProvider = projectionProvider, operationInvocationService = operationInvocationService, formatSpecs = formatSpecs,
-         metricsReporter = metricsReporter)
+   override fun queryEngine(schema: Schema, models: FactSetMap, metricsTags: Map<String, String>): StatefulQueryEngine {
+      return StatefulQueryEngine(
+         models,
+         schema,
+         strategies,
+         projectionProvider = projectionProvider,
+         operationInvocationService = operationInvocationService,
+         formatSpecs = formatSpecs,
+         metricsReporter = metricsReporter
+      )
    }
 }

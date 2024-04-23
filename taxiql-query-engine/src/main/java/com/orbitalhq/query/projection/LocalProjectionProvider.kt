@@ -94,66 +94,14 @@ class LocalProjectionProvider : ProjectionProvider {
       projection: Projection,
       emittedResult: IndexedValue<TypedInstance>,
       context: QueryContext
-   ):List<ScopedFact> = projection.scopedVars.map { scope ->
-      val emittedType = emittedResult.value.type
-      // Adding this guard clause.
-      // We're getting the incorrect type passed in.
-      // It's an upstream problem, but if we let it flow any further, we spend huge CPU cycles
-      // trying to project the wrong source type.
-      // TODO : Investigate the cause - I suspect it's coming from the Graph search strategy, when service invocation fails.
-      val isAssignable = when (scope.type) {
-         is ArrayType -> emittedType.taxiType.isAssignableTo((scope.type as ArrayType).memberType)
-         is StreamType -> emittedType.taxiType.isAssignableTo((scope.type as StreamType).type)
-         else -> emittedType.taxiType.isAssignableTo(scope.type)
-      }
-
-      val schema = context.schema
-      if (!isAssignable) {
-         val scopeType = schema.type(scope.type)
-         val selectedFact = try {
-            // If the scope has an expression, evaluate it
-            if (scope.expression != null) {
-               context.only(emittedResult.value, context.scopedFacts)
-                  .evaluate(scope.expression!!)
-            } else {
-               // Otherwise, try and get the fact.
-               // First, search the fact bag
-               val fact = FactBag.of(emittedResult.value, schema)
-                  .getFactOrNull(scopeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
-               // If that didn't work, do a proper search
-               fact ?: runBlocking {
-                  queryContextForFact(context, emittedResult, scopeType)
-               }
-            }
-
-         } catch (e: Exception) {
-            TypedNull.create(
-               scopeType, source = ValueLookupReturnedNull(
-                  "Projection scope requested type ${scopeType.qualifiedName.shortDisplayName}, which was not found on the type of ${emittedResult.value.typeName}",
-                  scopeType.name
-               )
-            )
-         }
-         ScopedFact(scope, selectedFact)
-      } else {
-         ScopedFact(scope, emittedResult.value)
-      }
-
+   ):List<ScopedFact> {
+      return ProjectionFunctionScopeEvaluator.build(
+         projection.scopedVars,
+         listOf(emittedResult.value),
+         context
+      )
    }
 
-   private suspend fun queryContextForFact(
-      context: QueryContext,
-      emittedResult: IndexedValue<TypedInstance>,
-      scopeType: Type
-   ): TypedInstance {
-      val fromSearch = context.only(emittedResult.value, context.scopedFacts)
-         // Don't do a model scan, since we've already done one in the fact bag search
-         .find(scopeType.paramaterizedName, permittedStrategy = PermittedQueryStrategies.EXCLUDE_BUILDER_AND_MODEL_SCAN)
-         .results
-         .toList()
-
-      TODO()
-   }
 
    /**
     * Will either directly project the provided value to the target type,

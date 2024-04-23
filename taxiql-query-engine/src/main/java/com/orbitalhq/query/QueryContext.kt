@@ -23,7 +23,6 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.merge
 import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.expressions.Expression
-import lang.taxi.policies.Instruction
 import lang.taxi.types.VoidType
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
@@ -94,7 +93,6 @@ data class QueryContext(
 
    private val logger = KotlinLogging.logger {}
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
-   private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
    var isProjecting = false
 //   var projectResultsTo: Type? = null
 //      private set
@@ -378,11 +376,6 @@ data class QueryContext(
    }
 
 
-   fun addAppliedInstruction(policy: Policy, instruction: Instruction) {
-      policyInstructionCounts.compute(policy.name to instruction) { _, atomicInteger -> if (atomicInteger != null) atomicInteger + 1 else 1 }
-   }
-
-
    data class FactCacheKey(val fqn: String, val discoveryStrategy: FactDiscoveryStrategy)
    data class ServiceInvocationCacheKey(
       private val operationName: String, // Use String, rather than QualifiedName to prevent too much object creation
@@ -508,6 +501,16 @@ data class QueryContext(
       return TypedObjectFactory(
          schema.type(expression.returnType),
          facts.withAdditionalScopedFacts(this.scopedFacts, schema),
+         schema,
+         source = Provided, // TODO
+         inPlaceQueryEngine = this,
+         functionResultCache = this.functionResultCache,
+      ).evaluateExpression(expression)
+   }
+   fun evaluate(expression: Expression, value:TypedInstance): TypedInstance {
+      return TypedObjectFactory(
+         schema.type(expression.returnType),
+         value,
          schema,
          source = Provided, // TODO
          inPlaceQueryEngine = this,

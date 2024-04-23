@@ -1,31 +1,13 @@
 package com.orbitalhq.query.policyManager
 
-import lang.taxi.policies.PolicyScope
-import lang.taxi.policies.RuleSet
+import lang.taxi.policies.PolicyRule
 
-class RuleSetSelector() {
-   fun select(executionScope: ExecutionScope, ruleSets: List<RuleSet>): RuleSet {
-      require(ruleSets.isNotEmpty()) { "RuleSets must not be empty" }
-      val (_, ruleSet) = ruleSets.map { ruleSet ->
-         score(executionScope, ruleSet) to ruleSet
-      }.sortedBy { it.first }
-         .last()
-      return ruleSet
+object RuleSetSelector {
+   // This used to be more complex, involving scoring.
+   // Have simplified it, unless there's a use-case.
+   // Check the history before this comment for the old implementation
+   fun select(executionScope: ExecutionScope, ruleSets: List<PolicyRule>): PolicyRule? {
+      return ruleSets.firstOrNull { executionScope.matches(it) }
    }
 
-   private fun score(executionScope: ExecutionScope, ruleSet: RuleSet): Int {
-      val ruleSetScope = ruleSet.scope
-      val operationTypeScore = when {
-
-         ruleSetScope.operationType == PolicyScope.WILDCARD_OPERATION_TYPE -> 1
-         ruleSetScope.operationType == executionScope.operationType.token -> 1
-         ruleSetScope.operationType == executionScope.operationType.name -> 1
-         else -> 0
-      }
-      val scopeScore = when {
-         ruleSetScope.policyOperationScope == executionScope.policyOperationScope -> 1
-         else -> 0
-      }
-      return operationTypeScore + scopeScore
-   }
 }

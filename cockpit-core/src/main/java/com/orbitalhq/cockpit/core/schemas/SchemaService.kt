@@ -1,15 +1,20 @@
 package com.orbitalhq.cockpit.core.schemas
 
-import com.orbitalhq.ParsedSource
 import com.orbitalhq.VersionedSource
-import com.orbitalhq.cockpit.core.policies.PolicyDto
 import com.orbitalhq.models.format.FormatDetector
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.schema.api.ParsedSourceProvider
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
-import com.orbitalhq.schemas.*
+import com.orbitalhq.schemas.QualifiedName
+import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.SavedQuery
+import com.orbitalhq.schemas.Schema
+import com.orbitalhq.schemas.Service
+import com.orbitalhq.schemas.Type
+import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.toVyneSources
+import com.orbitalhq.schemas.toVyneQualifiedName
 import com.orbitalhq.spring.http.NotFoundException
 import lang.taxi.annotations.HttpOperation
 import lang.taxi.generators.SourceFormatter
@@ -105,17 +110,6 @@ class SchemaService(
       return schemaProvider.schema
    }
 
-
-   @GetMapping(path = ["/api/types/{typeName}/policies"])
-   fun getPolicies(@PathVariable("typeName") typeName: String): List<PolicyDto> {
-      val schema = schemaProvider.schema
-      if (!schema.hasType(typeName)) {
-         throw NotFoundException("Type $typeName was not found in this schema")
-      }
-      val type = schema.type(typeName)
-      val policy = schema.policy(type)
-      return listOfNotNull(policy).map { PolicyDto.from(it) }
-   }
 
    /**
     * Returns a schema comprised of types, and the types they reference.

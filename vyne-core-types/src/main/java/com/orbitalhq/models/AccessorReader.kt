@@ -179,7 +179,12 @@ class AccessorReader(
             // Note: We upcast the type (an attempt to upgrade from Any) if possible.
             // Sometimes literals are declared as Any, and we have richer type information in the value,
             // so we use that.
-            return TypedInstance.from(TypeUtils.upcastIfPossible(schema.type(accessor.returnType),targetType), accessor.value, schema, source = dataSource)
+            return TypedInstance.from(
+               TypeUtils.upcastIfPossible(schema.type(accessor.returnType), targetType),
+               accessor.value,
+               schema,
+               source = dataSource
+            )
          }
 
          is FunctionExpressionAccessor -> evaluateFunctionExpressionAccessor(
@@ -253,7 +258,28 @@ class AccessorReader(
 
          is ArgumentSelector -> readScopedReferenceSelector(accessor)
          is ProjectingExpression -> {
-            val valueToProject = read(
+            evaluateProjectingExpression(
+               value,
+               targetType,
+               accessor,
+               schema,
+               nullValues,
+               source,
+               format,
+               nullable,
+               allowContextQuerying,
+               valueProjector
+            )
+         }
+
+         is WhenExpression -> {
+            WhenBlockEvaluator(
+               this.objectFactory, schema, this
+            ).evaluate(value, accessor, source, targetType, format)
+         }
+
+         is CastExpression -> {
+            val evaluatedExpression = read(
                value,
                targetType,
                accessor.expression,
@@ -264,33 +290,77 @@ class AccessorReader(
                nullable,
                allowContextQuerying
             )
-            if (valueProjector == null) {
-               error("Cannot project, as no ValueProjector has been supplied. Understand this use-case")
-            }
-            // TODO PERF: When we have projecting statements within an
-            // expression (vs on a field or as a top-level concern), then they're not currently converted to Vyne types.
-            // So, we have to convert them here.
-            // We should find a way to convert them earlier.
-            val projectionType = schema.typeCreateIfRequired(accessor.projection.projectedType)
-            if (valueToProject is DeferredTypedInstance) {
-               DeferredProjection(valueToProject, accessor.projection, valueProjector, projectionType, schema, nullValues, source, format, nullable, allowContextQuerying)
-            } else {
-               valueProjector.project(valueToProject, accessor.projection, projectionType, schema, nullValues, source, format, nullable, allowContextQuerying)
-            }
-         }
-         is WhenExpression -> {
-            WhenBlockEvaluator(
-               this.objectFactory, schema, this
-            ).evaluate(value, accessor, source, targetType, format)
-         }
-         is CastExpression -> {
-            val evaluatedExpression = read(value, targetType, accessor.expression, schema, nullValues, source, format, nullable, allowContextQuerying)
             val castType = schema.type(accessor.type)
-            TypedInstance.from(castType,evaluatedExpression.value, schema,source = EvaluatedExpression(expressionTaxi = accessor.asTaxi(), listOf(evaluatedExpression)))
+            TypedInstance.from(
+               castType,
+               evaluatedExpression.value,
+               schema,
+               source = EvaluatedExpression(expressionTaxi = accessor.asTaxi(), listOf(evaluatedExpression))
+            )
          }
+
          else -> {
             TODO("Support for accessor not implemented with type $accessor")
          }
+      }
+   }
+
+   private fun evaluateProjectingExpression(
+      value: Any,
+      targetType: Type,
+      accessor: ProjectingExpression,
+      schema: Schema,
+      nullValues: Set<String>,
+      source: DataSource,
+      format: FormatsAndZoneOffset?,
+      nullable: Boolean,
+      allowContextQuerying: Boolean,
+      valueProjector: ValueProjector?
+   ): TypedInstance {
+      val valueToProject = read(
+         value,
+         targetType,
+         accessor.expression,
+         schema,
+         nullValues,
+         source,
+         format,
+         nullable,
+         allowContextQuerying
+      )
+      if (valueProjector == null) {
+         error("Cannot project, as no ValueProjector has been supplied. Understand this use-case")
+      }
+      // TODO PERF: When we have projecting statements within an
+      // expression (vs on a field or as a top-level concern), then they're not currently converted to Vyne types.
+      // So, we have to convert them here.
+      // We should find a way to convert them earlier.
+      val projectionType = schema.typeCreateIfRequired(accessor.projection.projectedType)
+      return if (valueToProject is DeferredTypedInstance) {
+         DeferredProjection(
+            valueToProject,
+            accessor.projection,
+            valueProjector,
+            projectionType,
+            schema,
+            nullValues,
+            source,
+            format,
+            nullable,
+            allowContextQuerying
+         )
+      } else {
+         valueProjector.project(
+            valueToProject,
+            accessor.projection,
+            projectionType,
+            schema,
+            nullValues,
+            source,
+            format,
+            nullable,
+            allowContextQuerying
+         )
       }
    }
 
@@ -701,7 +771,16 @@ class AccessorReader(
       // TODO : We should really support parsing from a stream, to avoid having to load large sets in memory
       return when (value) {
          is String -> xmlParser.parse(value, targetType, accessor, schema, source, nullable, format)
-         is XmlParsedStructure -> xmlParser.parse(value.document, targetType, accessor, schema, source, nullable, format)
+         is XmlParsedStructure -> xmlParser.parse(
+            value.document,
+            targetType,
+            accessor,
+            schema,
+            source,
+            nullable,
+            format
+         )
+
          is Document -> xmlParser.parse(value, targetType, accessor, schema, source, nullable, format)
          else -> TODO("Value=${value} targetType=${targetType} accessor={$accessor} not supported!")
       }
@@ -788,6 +867,7 @@ class AccessorReader(
             resultCache,
             format
          )
+
          is ExtensionFunctionExpression -> evaluateExtensionFunctionExpression(
             value,
             returnType,
@@ -822,19 +902,48 @@ class AccessorReader(
          }
 
          is CastExpression -> {
-            val uncastExpressionResult = evaluate(value, returnType, expression.expression, schema, nullValues, dataSource, format, resultCache)
+            val uncastExpressionResult =
+               evaluate(value, returnType, expression.expression, schema, nullValues, dataSource, format, resultCache)
             val castType = schema.type(expression.type)
 
-            val castValue = TypedInstance.from(castType, uncastExpressionResult.value, schema, source = uncastExpressionResult.source)
+            val castValue = TypedInstance.from(
+               castType,
+               uncastExpressionResult.value,
+               schema,
+               source = uncastExpressionResult.source
+            )
             castValue
          }
+
          is ArgumentSelector -> {
             if (value is FactBag) {
-               value.getScopedFactOrNull(expression.scope)?.fact ?: error("Failed to resolve scope argument ${expression.scope.name}")
+               value.getScopedFactOrNull(expression.scope)?.fact
+                  ?: error("Failed to resolve scope argument ${expression.scope.name}")
             } else {
-               objectFactory.getScopedFactOrNull(expression.scope) ?: error("Failed to resolve scope argument ${expression.scope.name}")
+               objectFactory.getScopedFactOrNull(expression.scope)
+                  ?: error("Failed to resolve scope argument ${expression.scope.name}")
             }
          }
+
+         is ProjectingExpression -> {
+            evaluateProjectingExpression(
+               value = value,
+               targetType = returnType,
+               accessor = expression,
+               schema = schema,
+               nullValues = nullValues,
+               source = dataSource,
+               format = format,
+               nullable = true,
+               allowContextQuerying = true,
+               valueProjector = valueProjector
+            )
+         }
+         is WhenExpression -> {
+            WhenBlockEvaluator(this.objectFactory, schema, this)
+               .evaluate(value, expression, dataSource, returnType, format)
+         }
+
          else -> TODO("Support for expression type ${expression::class.toString()} is not yet implemented")
       }
    }
@@ -849,9 +958,16 @@ class AccessorReader(
       resultCache: MutableMap<FunctionResultCacheKey, Any>,
       format: FormatsAndZoneOffset?
    ): TypedInstance {
-      val receiverExpression = expression.receiverValue
-      val receiverValue = evaluate(value, schema.type(receiverExpression.returnType), receiverExpression, schema, nullValues, dataSource, format, resultCache)
-      TODO("Not yet implemented")
+      return evaluateFunctionAccessor(
+         value,
+         returnType,
+         schema,
+         expression.functionExpression.function,
+         nullValues,
+         dataSource,
+         resultCache,
+         format
+      )
    }
 
    private fun evaluateLambdaExpression(

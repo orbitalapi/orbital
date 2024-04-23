@@ -2,38 +2,55 @@ package com.orbitalhq.query.policyManager
 
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.query.QueryContext
-import com.orbitalhq.schemas.Policy
+import com.orbitalhq.query.projection.ProjectionFunctionScopeEvaluator
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
-import com.orbitalhq.utils.log
-import lang.taxi.policies.Instruction
-import lang.taxi.policies.PermitInstruction
+import lang.taxi.policies.Policy
 import lang.taxi.policies.PolicyOperationScope
+import lang.taxi.policies.PolicyRule
 import lang.taxi.services.OperationScope
+import mu.KotlinLogging
 
 /**
  * Similar to a policy scope, exception the operationType may not have been defined.
  * Current thinking is that operationScope should always be inferrable, as the engine
  * knows if we're doing an internal or external call.
  */
-data class ExecutionScope(val operationType: OperationScope, val policyOperationScope: PolicyOperationScope)
+data class ExecutionScope(val operationScope: OperationScope, val policyOperationScope: PolicyOperationScope) {
+   fun matches(ruleSet: PolicyRule):Boolean {
+      val operationScopeMatches = when {
+         ruleSet.operationScope == null -> true
+         else -> ruleSet.operationScope == operationScope
+      }
+      val policyScopeMatches = when {
+         ruleSet.policyScope == null -> true
+         else -> ruleSet.policyScope == policyOperationScope
+      }
+      return operationScopeMatches && policyScopeMatches
+   }
+}
 
-class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator = PolicyStatementEvaluator(), private val defaultInstruction: Instruction = PermitInstruction) {
+class PolicyEvaluator() {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
 
-   fun evaluate(instance: TypedInstance, context: QueryContext, operationScope: ExecutionScope): Instruction {
+   fun evaluate(instance: TypedInstance, context: QueryContext, operationScope: ExecutionScope): TypedInstance {
       val schema = context.schema
       val policyType = getPolicyType(instance, context)
       val policies = findPolicies(schema, policyType)
-      val instructions = policies.map { evaluate(it, instance, context, operationScope) }
       return when {
-         instructions.isEmpty() -> defaultInstruction
-         instructions.size == 1 -> instructions.first()
+         policies.isEmpty() -> instance
+         policies.size == 1 -> {
+            evaluate(policies.single(), instance, context, operationScope)
+         }
          else -> TODO("Multiple resulting instructions not yet supported")
       }
    }
 
-   // This is kindda a hack
+   // This is kinda a hack
    // When a TypedCollection is passed in, it reports it's type as Foo, rather than Foo[].
    // This works well in other situations, but we want to find policies for the collection type,
    // not type member type.
@@ -44,29 +61,21 @@ class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator =
       }
    }
 
-   private fun evaluate(policy: Policy, instance: TypedInstance, context: QueryContext, executionScope: ExecutionScope): Instruction {
-      log().debug("Evaluating policy ${policy.name.fullyQualifiedName} for executionScope $executionScope")
-      val ruleSets = policy.ruleSets
-         //.filter { policy -> policy.scope.appliesTo(executionScope.operationType, executionScope.operationScope) }
-      if (ruleSets.isEmpty()) {
-         log().debug("No ruleset found for policy ${policy.name.fullyQualifiedName} with executionScope of $executionScope, so using default instruction of $defaultInstruction")
-         return defaultInstruction
-      }
-      val ruleSet = RuleSetSelector().select(executionScope, ruleSets)
-      //return context.startChild(this, "Evaluate policy ${policy.name} ruleSet ${ruleSet.scope}", OperationType.POLICY_EVALUATION) {
+   private fun evaluate(policy: Policy, instance: TypedInstance, context: QueryContext, executionScope: ExecutionScope): TypedInstance {
+      val ruleSet = RuleSetSelector.select(executionScope, policy.rules)
+         ?: return instance
+      logger.debug { "Evaluating policy ${policy.qualifiedName} for executionScope $executionScope" }
 
-         val statementInstruction = statementEvaluator.evaluate(ruleSet, instance, context)
-         return if (statementInstruction == null) {
-            log().debug("Finished evaluating policy ${policy.name.fullyQualifiedName} for executionScope of $executionScope - no instruction matched, so using default instruction of $defaultInstruction")
-            context.addAppliedInstruction(policy, defaultInstruction)
-            defaultInstruction
-         } else {
-            log().debug("Finished evaluating policy ${policy.name.fullyQualifiedName} for executionScope of $executionScope - matched to instruction of $statementInstruction")
-            context.addAppliedInstruction(policy, statementInstruction)
-            statementInstruction
-         }
-
-      //}
+      val inputs = ProjectionFunctionScopeEvaluator.build(
+         policy.inputs,
+         context.facts.rootAndScopedFacts(),
+         context
+      )
+      val facts = FactBag.of(instance, context.schema)
+         .withAdditionalScopedFacts(inputs, context.schema)
+      val evaluationResult = context
+         .evaluate(ruleSet.expression, facts)
+      return evaluationResult
    }
 
 
@@ -81,7 +90,4 @@ class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator =
    }
 }
 
-data class PolicyEvaluationResult(
-   val instruction: Instruction
-)
 

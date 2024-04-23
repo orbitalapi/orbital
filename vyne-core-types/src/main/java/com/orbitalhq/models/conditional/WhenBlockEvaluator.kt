@@ -63,11 +63,15 @@ class WhenBlockEvaluator(
             val valueToCompare = try {
                evaluateExpression(caseBlock.matchExpression, selectorValue.type, value, format)
             } catch (e: Exception) {
-               if (selectorValue.type.taxiType.basePrimitive == PrimitiveType.BOOLEAN) {
-                  TypedInstance.from(type = selectorValue.type, value = false, schema = schema)
-               } else {
-                  TypedNull.create(selectorValue.type)
-               }
+               throw e
+               // MP 10-Apr-24: Why were we treating all exceptions as false?
+               // This was masking a scope error ("java.lang.IllegalStateException: Failed to resolve scope argument xx")
+               // Once we understand the scneario here, let's make the catch more specific.
+//               if (selectorValue.type.taxiType.basePrimitive == PrimitiveType.BOOLEAN) {
+//                  TypedInstance.from(type = selectorValue.type, value = false, schema = schema)
+//               } else {
+//                  TypedNull.create(selectorValue.type)
+//               }
             }
             selectorValue.valueEquals(valueToCompare)
          }

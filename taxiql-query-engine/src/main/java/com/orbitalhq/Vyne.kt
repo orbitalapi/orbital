@@ -24,6 +24,7 @@ import com.orbitalhq.utils.log
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.job
 import lang.taxi.accessors.ProjectionFunctionScope
+import lang.taxi.policies.Policy
 import lang.taxi.query.FactValue
 import lang.taxi.query.Parameter
 import lang.taxi.query.TaxiQLQueryString
@@ -396,6 +397,11 @@ class Vyne(
       log().debug("Added model instance to factSet $factSetId: ${model.type.fullyQualifiedName}")
       this.factSets[factSetId].add(model)
 //      invalidateGraph()
+      return this
+   }
+
+   fun removeModel(model: TypedInstance, factSetId: FactSetId = FactSets.DEFAULT):Vyne {
+      this.factSets[factSetId].remove(model)
       return this
    }
 

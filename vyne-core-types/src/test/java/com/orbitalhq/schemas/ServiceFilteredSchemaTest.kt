@@ -6,8 +6,6 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotContain
-import lang.taxi.query.TaxiQlQuery
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class ServiceFilteredSchemaTest {
