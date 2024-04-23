@@ -4,6 +4,7 @@ import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import lang.taxi.TaxiDocument
+import lang.taxi.policies.Policy
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 

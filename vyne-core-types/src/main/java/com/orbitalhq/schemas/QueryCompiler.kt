@@ -5,7 +5,6 @@ import com.google.common.cache.CacheBuilder
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.utils.log
 import lang.taxi.Compiler
-import lang.taxi.query.ServiceRestrictions
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 

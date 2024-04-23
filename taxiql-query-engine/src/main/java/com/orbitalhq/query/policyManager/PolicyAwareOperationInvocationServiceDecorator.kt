@@ -15,7 +15,7 @@ class PolicyAwareOperationInvocationServiceDecorator(private val operationServic
       // For now, treating everything as external.
       // Need to update the query manager to differentiate between external
       // TODO: Get these from the operation (operationType) and query engine (scope)
-      val executionScope = ExecutionScope(operationType = operation.operationType, policyOperationScope = PolicyOperationScope.EXTERNAL)
+      val executionScope = ExecutionScope(operationScope = operation.operationType, policyOperationScope = PolicyOperationScope.EXTERNAL)
 
 
       // We invoke the operation regardless, as current thinking is that we're
@@ -43,28 +43,11 @@ class PolicyAwareOperationInvocationServiceDecorator(private val operationServic
    }
 
 
-   /*
-   private suspend fun processCollection(collection: TypedCollection, context: QueryContext, executionScope: ExecutionScope): Flow<TypedInstance> {
-      val processedValues = collection.map { process(it, context, executionScope) }
-         .filter { it !is TypedNull }
-      return TypedCollection(collection.type, processedValues)
-   }
-
-   private suspend fun processTypedObject(typedObject: TypedObject, context: QueryContext, executionScope: ExecutionScope): Flow<TypedInstance> {
-      val processedAttributes = typedObject.value.map { (propertyName, value) ->
-         propertyName to process(value, context, executionScope)
-      }.toMap()
-      return TypedObject(typedObject.type, processedAttributes, typedObject.source)
-   }
-*/
    private fun applyPolicyInstruction(
       value: TypedInstance,
       context: QueryContext,
       executionScope: ExecutionScope
    ): TypedInstance {
-      val instruction = evaluator.evaluate(value, context, executionScope)
-      val processed = InstructionExecutors.get(instruction).execute(instruction, value)
-      return processed
+      return evaluator.evaluate(value, context, executionScope)
    }
-
 }

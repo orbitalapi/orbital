@@ -11,6 +11,7 @@ import lang.taxi.*
 import lang.taxi.annotations.HttpOperation
 import lang.taxi.messages.Severity
 import lang.taxi.packages.TaxiSourcesLoader
+import lang.taxi.policies.Policy
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.sources.SourceCodeLanguages
@@ -80,7 +81,7 @@ class TaxiSchema(
          this.typeCache = typeCache
          this.types = types
          this.services = parseServices(document)
-         this.policies = parsePolicies(document)
+         this.policies = document.policies
       } catch (e: Exception) {
          logger.error(e) { "Exception occurred initializing the Taxi Schema" }
          throw e
@@ -93,16 +94,6 @@ class TaxiSchema(
 
    @get:JsonIgnore
    override val taxi = document
-
-   private fun parsePolicies(document: TaxiDocument): Set<Policy> {
-      return document.policies.map { taxiPolicy ->
-         Policy(
-            QualifiedName.from(taxiPolicy.qualifiedName),
-            this.type(taxiPolicy.targetType.toVyneQualifiedName()),
-            taxiPolicy.ruleSets
-         )
-      }.toSet()
-   }
 
    private fun parseServices(document: TaxiDocument): Set<Service> {
       return document.services.map { taxiService ->

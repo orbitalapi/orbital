@@ -145,6 +145,7 @@
       <module>auth-tokens</module>
       <module>query-node-native</module>
       <module>formats-common</module>
+      <module>policy-evaluator</module>
    </modules>
    <scm>
       <developerConnection>scm:git:git@gitlab.com:vyne/vyne.git</developerConnection>

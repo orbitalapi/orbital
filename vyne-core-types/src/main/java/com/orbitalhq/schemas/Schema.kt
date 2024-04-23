@@ -9,6 +9,7 @@ import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.assertingThat
 import lang.taxi.TaxiDocument
 import lang.taxi.packages.SourcesType
+import lang.taxi.policies.Policy
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.services.OperationScope
@@ -258,8 +259,9 @@ interface Schema {
       return typeOrNull(typeName.fullyQualifiedName)
    }
 
+   // CAHCE THIS!
    fun policy(type: Type): Policy? {
-      return this.policies.firstOrNull { it.targetType.fullyQualifiedName == type.fullyQualifiedName }
+      return this.policies.firstOrNull { it.targetType.toVyneQualifiedName() == type.qualifiedName }
    }
 
    fun hasOperation(operationName: QualifiedName): Boolean {

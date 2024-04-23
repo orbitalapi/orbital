@@ -7,6 +7,7 @@ import com.orbitalhq.VersionedSource
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import lang.taxi.TaxiDocument
 import lang.taxi.packages.SourcesType
+import lang.taxi.policies.Policy
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 
@@ -70,7 +71,7 @@ class CompositeSchema(private val schemas: List<Schema>) : Schema {
 
    @JsonIgnore
    override val policies: Set<Policy> =
-      schemas.flatMap { it.policies }.distinctBy { it.name.fullyQualifiedName }.toSet()
+      schemas.flatMap { it.policies }.distinctBy { it.qualifiedName }.toSet()
 
    override val typeCache: TypeCache = DefaultTypeCache(this.types)
 
