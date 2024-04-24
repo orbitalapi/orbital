@@ -92,6 +92,10 @@ body {
   font-family: $font-sans;
 }
 
+a:visited {
+  color: $sky-500;
+}
+
 $custom-typography: mat.define-legacy-typography-config(
   $font-family: $font-sans,
   $headline: mat.define-typography-level(32px, 48px, 700),

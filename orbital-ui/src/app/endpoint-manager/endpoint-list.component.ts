@@ -1,24 +1,32 @@
+import { AsyncPipe, CommonModule, TitleCasePipe } from '@angular/common';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component} from '@angular/core';
+import { TuiNotificationModule } from '@taiga-ui/core';
+import { TuiBadgeModule } from '@taiga-ui/kit';
 import {Observable} from 'rxjs';
+import { ConnectionStatusComponent } from '../data-source-manager/connection-status/connection-status.component';
+import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
 import {TypesService} from "../services/types.service";
 import {SavedQuery} from "../services/type-editor.service";
 import {ActivatedRoute, Router} from "@angular/router";
 import {
   PipelineService, StreamServerStatusEvent,
 } from "../pipelines/pipelines.service";
-import {filter, map, tap} from "rxjs/operators";
+import {map, tap} from "rxjs/operators";
 import {ConnectionStatus} from "../db-connection-editor/db-importer.service";
 import {TuiStatus} from "@taiga-ui/kit/types";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 
 @Component({
   selector: 'app-endpoint-list',
+  standalone: true,
   template: `
     <app-header-component-layout title="Query Endpoints"
                                  description="Queries, Streams and Pipelines defined in your schema">
       <ng-container ngProjectAs="header-components">
         <app-connection-status [status]="(streamServerConnectionStatus$ | async)"></app-connection-status>
-        <tui-notification *ngIf="websocketConnectionError && hasStreamingQueries" status="error">{{websocketConnectionError}}</tui-notification>
+        <tui-notification *ngIf="websocketConnectionError && hasStreamingQueries"
+                          status="error">{{ websocketConnectionError }}
+        </tui-notification>
       </ng-container>
       <div *ngIf="queries$ | async as queries">
         <table class="query-list">
@@ -52,6 +60,15 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
     </app-header-component-layout>
   `,
   styleUrls: ['./endpoint-list.component.scss'],
+  imports: [
+    CommonModule,
+    HeaderComponentLayoutModule,
+    ConnectionStatusComponent,
+    AsyncPipe,
+    TuiNotificationModule,
+    TitleCasePipe,
+    TuiBadgeModule
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EndpointListComponent {
@@ -116,9 +133,9 @@ export class EndpointListComponent {
 
   queryState(query: SavedQuery) {
     if (query.queryKind === "Query") return "RUNNING"; // Can't suspend queries at the moment
-    if (!this.streamServerState) return 'UNKNONW';
+    if (!this.streamServerState) return 'UNKNOWN';
     const streamStatus = this.streamServerState.streams.find(s => s.streamName === query.name.parameterizedName)
-    if (!streamStatus) return 'UNKNONW';
+    if (!streamStatus) return 'UNKNOWN';
     return streamStatus.state;
   }
 

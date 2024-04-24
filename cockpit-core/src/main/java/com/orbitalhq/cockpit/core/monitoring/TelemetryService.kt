@@ -35,20 +35,33 @@ class TelemetryService(
         webClientBuilder.clone().filter(LoadBalancerFilterFunction(discoveryClient))
             .build()
 
+   private val aggregateMetricSpecs = listOf(
+      AggregateMetricSpecs.messagesReceived,
+      AggregateMetricSpecs.averageQueryDuration,
+      AggregateMetricSpecs.maxQueryDuration,
+      //AggregateMetricSpecs.failures
+   )
+
     private val streamDataMetricSpecs = listOf(
         DataMetricSpecs.messagesReceived,
         DataMetricSpecs.averageQueryDuration,
         DataMetricSpecs.maxQueryDuration,
-        DataMetricSpecs.failures
+        //DataMetricSpecs.failures
     )
-
 
     private val queryDataMetricSpecs = listOf(
         DataMetricSpecs.queryInvocations,
         DataMetricSpecs.averageQueryDuration,
         DataMetricSpecs.maxQueryDuration,
-        DataMetricSpecs.failures
+        //DataMetricSpecs.failures
     )
+
+   @GetMapping("/api/metrics/stream")
+   fun getAggregateForAllStreams(
+      @RequestParam(name = "period", required = false, defaultValue = "Last4Hours") period: MetricsWindow
+   ): Mono<StreamMetricsData> {
+      return buildStreamMetrics(period, aggregateMetricSpecs)
+   }
 
 
     @GetMapping("/api/metrics/stream/{name}")
@@ -89,6 +102,28 @@ class TelemetryService(
                 StreamMetricsData(tags, dataSeries)
             }
     }
+
+   private fun buildStreamMetrics(window: MetricsWindow, metricsSpecs: List<AggregateMetricSpec>): Mono<StreamMetricsData> {
+      val endTime = Instant.now()
+      val startTime = endTime.minus(window.duration)
+      val stepSize = "30s"
+      val httpRequests: List<Mono<Pair<AggregateMetricSpec, RawSeriesData>>> = metricsSpecs.map { spec ->
+         loadDataSeries(startTime, endTime, spec.promQlQuery(stepSize), stepSize)
+            .map { spec to it }
+      }
+      return Flux.merge(httpRequests)
+         .collectList()
+         .map { specsAndResults: List<Pair<AggregateMetricSpec, RawSeriesData>> ->
+
+            // Sorting is important so that the charts appear in a consistent order on the UI
+            val dataSeries = specsAndResults.sortedBy { (spec, _) -> aggregateMetricSpecs.indexOf(spec) }
+               .map { (spec, data) ->
+                  DataSeries(spec.title, spec.unitLabel, spec.yAxisUnit, data.series)
+               }
+            val tags = specsAndResults.firstOrNull()?.second?.tags ?: emptyMap()
+            StreamMetricsData(tags, dataSeries)
+         }
+   }
 
     private fun loadDataSeries(
         startTime: Instant,

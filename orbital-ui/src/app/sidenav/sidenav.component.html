@@ -1,4 +1,4 @@
-<div class="collapse-icon" (click)="isCollapsed = !isCollapsed" [class.is-collapsed]="isCollapsed">
+<div class="collapse-icon" (click)="isCollapsed = !isCollapsed" [class.is-collapsed]="isCollapsed" [title]="isCollapsed ? 'expand sidenav' : 'collapse sidenav'">
   <img src="/assets/img/tabler/chevrons-left.svg">
 </div>
 <div class="side-nav-container" [class.is-collapsed]="isCollapsed">
