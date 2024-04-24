@@ -1,339 +1,34 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject} from '@angular/core';
-import {ActivatedRoute} from "@angular/router";
-import {TypesService} from "../services/types.service";
-import {BehaviorSubject, combineLatestWith, filter, interval, Observable, of, single} from "rxjs";
-import {map, mergeMap, startWith} from "rxjs/operators";
-import {SavedQuery} from "../services/type-editor.service";
-import {DataSeries, MetricsPeriod, MetricsService, StreamMetricsData} from "../services/metrics.service";
+import { CommonModule, DecimalPipe, TitleCasePipe } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, Input, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
+import { TuiDataListModule, TuiNotificationModule, TuiTextfieldControllerModule } from '@taiga-ui/core';
+import {
+  TuiBadgeModule,
+  TuiCheckboxLabeledModule,
+  TuiProgressModule,
+  TuiSelectModule,
+  TuiToggleModule
+} from '@taiga-ui/kit';
 import {
   ApexAxisChartSeries,
   ApexChart,
   ApexDataLabels,
   ApexFill,
   ApexStroke,
+  ApexTooltip,
   ApexXAxis,
-  ApexYAxis
-} from "ng-apexcharts";
-import {PipelineService, StreamRunningState, StreamStatus} from "../pipelines/pipelines.service";
-import {TUI_PROMPT, TuiPromptData, TuiStatus} from "@taiga-ui/kit";
-import {TuiDialogService} from "@taiga-ui/core";
-
-@Component({
-  selector: 'app-endpoint-monitor',
-  template: `
-    <app-header-component-layout *ngIf="query$ | async as query" [title]="query?.name.name"
-                                 [subtitle]="query.queryKind"
-                                 [iconUrl]="getIconUrl(query.queryKind)"
-    >
-      <ng-container ngProjectAs="header-components">
-        <div *ngIf="query.httpEndpoint" class="url-parts">
-          <span class="method">{{ query.httpEndpoint.method }}</span>
-          <span class="url">{{ query.httpEndpoint.url }}</span>
-        </div>
-        <div *ngIf="query.queryKind === 'Stream'" class="row">
-          <tui-toggle [ngModel]="streamIsRunning" (click)="handleToggleClick($event)" size="l"></tui-toggle>
-          <tui-badge size="l" [value]="streamStatusBadge.label | titlecase"
-                     [status]="streamStatusBadge.status"></tui-badge>
-        </div>
-      </ng-container>
-
-      <div>
-        <div class="">
-          <app-panel-header title="Metrics">
-            <span class="spacer"></span>
-
-            <tui-select class="period-select"
-                        tuiTextfieldSize="s"
-                        [stringify]="stringifyPeriod"
-                        [ngModel]="selectedPeriod$ | async"
-                        (ngModelChange)="selectedPeriod$.next($event)"
-            >
-              Period
-              <input
-                placeholder="Period"
-                tuiTextfield
-              />
-              <tui-data-list *tuiDataList>
-                <button class="small" *ngFor="let period of periods" tuiOption
-                        [value]="period">{{ period.label }}
-                </button>
-              </tui-data-list>
-            </tui-select>
-            <tui-checkbox-labeled size="m" [(ngModel)]="refreshEnabled">Auto refresh</tui-checkbox-labeled>
-          </app-panel-header>
-          <tui-notification status="error" class="error-notification" *ngIf="chartLoadingError">
-            {{ chartLoadingError }}
-          </tui-notification>
-          <tui-notification status="error" class="error-notification" *ngIf="streamLoadingError">
-            {{ streamLoadingError }}
-          </tui-notification>
-          <div *ngFor="let chartConfig of chartConfigs" class="chart-row">
-            <div class="label-box">
-              <h4 class="label">{{ chartConfig.title }}</h4>
-              <div class="hero-datapoint">
-                <span>{{ chartConfig.heroDataPoint.value | number: '1.0-1' }}{{ chartConfig.chartSpec.unitLabel }}</span>
-              </div>
-            </div>
-            <apx-chart [chart]="chartConfig.chartConfig" [series]="chartConfig.series"
-                       [stroke]="stroke"
-                       [fill]="fill"
-                       [yaxis]="chartConfig.yAxis"
-                       [dataLabels]="dataLabels"
-                       [xaxis]="chartConfig.xAxis"></apx-chart>
-
-          </div>
-        </div>
-        <div class="">
-          <app-panel-header title="Source"></app-panel-header>
-          <app-code-viewer [sources]="query.sources"></app-code-viewer>
-        </div>
-      </div>
-    </app-header-component-layout>
-  `,
-  styleUrls: ['./endpoint-monitor.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
-})
-export class EndpointMonitorComponent {
-
-  query$: Observable<SavedQuery>
-  refreshEnabled = true;
-
-  streamLoadingError: string | null = null;
-  chartLoadingError: string | null = null;
-
-  readonly periods: MetricsPeriodToDescription[] = [
-    {period: "Last5Minutes", label: 'Last 5 minutes', autoRefreshEnabled: true},
-    {period: "LastHour", label: 'Last hour', autoRefreshEnabled: true},
-    {period: "Last4Hours", label: 'Last 4 hours', autoRefreshEnabled: true},
-    {period: "LastDay", label: 'Last day', autoRefreshEnabled: false},
-    {period: "Last7Days", label: 'Last 7 days', autoRefreshEnabled: false},
-    {period: "Last30Days", label: 'Last 30 days', autoRefreshEnabled: false},
-  ]
-  readonly stringifyPeriod = (item: MetricsPeriodToDescription) => item.label;
-
-  selectedPeriod$: BehaviorSubject<MetricsPeriodToDescription> = new BehaviorSubject(this.periods[1])
-
-  getIconUrl(queryKind: 'Stream' | 'Query') {
-    switch (queryKind) {
-      case "Query":
-        return "assets/img/tabler/arrows-right-left.svg";
-      case "Stream":
-        return "assets/img/tabler/arrows-right.svg";
-
-    }
-  }
-
-  get streamStatusBadge() {
-    return {
-      label: this.streamStatus?.state,
-      status: this.streamIsRunning ? 'success' : 'warning' as TuiStatus
-    }
-  }
-
-  private streamStatus: StreamStatus
-  get streamIsRunning(): boolean {
-    return this.streamStatus?.state === "RUNNING";
-  }
-
-  handleToggleClick($event: Event) {
-    const desiredState :StreamRunningState = (this.streamIsRunning) ? 'PAUSED' : 'RUNNING';
-    this.updateStreamRunningState(desiredState);
-    $event.preventDefault()
-    $event.stopImmediatePropagation();
-    $event.stopPropagation();
-  }
-
-  updateStreamRunningState(targetState: StreamRunningState) {
-    let promptData: TuiPromptData;
-    this.query$.pipe(
-      mergeMap(savedQuery => {
-        let dialogLabel: string;
-        if (targetState === "RUNNING") {
-          promptData = {
-            content: 'This will enable the data stream, allowing it to start processing any queued data.',
-            yes: `Enable ${savedQuery.name.shortDisplayName}`,
-            no: 'Cancel'
-          }
-          dialogLabel = `Enable ${savedQuery.name.shortDisplayName}?`
-        } else {
-          promptData = {
-            content: 'This will disable the data stream, stopping all processing.<br /><br />Depending on how your data sources are configured, messages may be lost.',
-            yes: `Disable ${savedQuery.name.shortDisplayName}`,
-            no: 'Cancel'
-          }
-          dialogLabel = `Disable ${savedQuery.name.shortDisplayName}?`
-        }
-        return this.dialogs.open<boolean>(TUI_PROMPT, {
-          label: dialogLabel,
-          size: 's',
-          data: promptData,
-          closeable: false,
-          dismissible: false,
-        }).pipe(map(confirmed => {
-          return {savedQuery, confirmed}
-        }))
-      }),
-      mergeMap(({savedQuery, confirmed}) => {
-        if (confirmed) {
-          return this.pipelineService.updateStreamStatus(savedQuery.name.parameterizedName, targetState)
-        } else {
-          return of(this.streamStatus)
-        }
-      })
-    ).subscribe(next => {
-        this.streamStatus = next;
-        this.changeDetector.markForCheck();
-    })
-  }
-
-  dataLabels: ApexDataLabels = {
-    enabled: false
-  }
-
-  stroke: ApexStroke = {
-    width: 2,
-    curve: "straight"
-  }
-
-  fill: ApexFill = {
-    type: "gradient",
-    gradient: {
-      shadeIntensity: 1,
-      opacityFrom: 0.7,
-      opacityTo: 0.9,
-      stops: [0, 90, 100]
-    }
-  }
-  chartConfigs: ChartConfig[] = [];
-
-
-  constructor(
-    private activatedRoute: ActivatedRoute,
-    private typeService: TypesService,
-    private metricsService: MetricsService,
-    private changeDetector: ChangeDetectorRef,
-    private pipelineService: PipelineService,
-    @Inject(TuiDialogService) private readonly dialogs: TuiDialogService,
-  ) {
-
-    const ticks$ = interval(15000)
-      .pipe(
-        startWith(0),
-        filter(() => this.refreshEnabled))
-
-    const endpointName$ = activatedRoute.paramMap.pipe(
-      map(paramMap => {
-        const endpoint = paramMap.get('endpointName');
-        return endpoint
-      }))
-    this.query$ = endpointName$.pipe(
-      mergeMap(endpoint => {
-        return typeService.getQuery(endpoint)
-      })
-    )
-
-    endpointName$.pipe(
-      mergeMap(streamName => pipelineService.getStreamStatus(streamName))
-    ).subscribe({
-      next: value => {
-        this.streamStatus = value;
-        this.changeDetector.markForCheck();
-      },
-      error: err => {
-        console.log(err)
-        this.streamLoadingError = `Failed to load data stream details: ${err.error.message}`;
-        this.changeDetector.markForCheck();
-      }
-    })
-
-    endpointName$.pipe(
-      combineLatestWith(this.selectedPeriod$, ticks$),
-      mergeMap(value => {
-        const [endpoint, period] = value;
-        return metricsService.getMetricsForStream(endpoint, period.period)
-      })
-    ).subscribe({
-      next: (metricsData) => {
-        this.updateChartConfig(metricsData);
-        this.chartLoadingError = null;
-        this.changeDetector.markForCheck();
-      },
-      error: error => {
-        console.log(error)
-        this.chartLoadingError = 'There was a problem loading the chart data';
-        this.changeDetector.markForCheck();
-      }
-    })
-  }
-
-
-  private updateChartConfig(metricsData: StreamMetricsData) {
-    this.chartConfigs = metricsData.series.map(dataSeries => {
-      const dataPoints: [number, number][] = dataSeries.series.map(dataPoint => {
-          let value: number = isNumeric(dataPoint.value.toString()) ? dataPoint.value * 1 : 0;
-          if (dataSeries.unit === "DurationInSecondsConvertToMillis") {
-            value = value * 1000
-          }
-          return [dataPoint.epochSeconds * 1000, value]
-        }
-      )
-      let heroDataPoint;
-      if (dataPoints.length > 0) {
-        heroDataPoint = dataPoints[dataPoints.length - 1][1]
-      } else {
-        heroDataPoint = ""
-      }
-      return {
-        title: dataSeries.title,
-        heroDataPoint: {
-          value: heroDataPoint,
-          label: dataSeries.unitLabel
-        },
-        series: [{
-          name: dataSeries.title,
-          data: dataPoints,
-        }],
-        chartSpec: dataSeries,
-        chartConfig: {
-          type: 'area',
-          animations: {
-            enabled: false
-          },
-          height: 150,
-          id: `chart-${dataSeries.title}`,
-          group: 'metrics',
-
-          zoom: {
-            type: "x",
-            enabled: true,
-            autoScaleYaxis: true
-          },
-          toolbar: {
-            autoSelected: "zoom"
-          }
-        },
-        xAxis: {
-          type: "datetime"
-        },
-        yAxis: {
-          labels: {
-            minWidth: 40, // must be set for a group of syncronized charts
-            formatter: val => {
-              return val.toFixed(0)
-            }
-          }
-        }
-      }
-    });
-
-    this.changeDetector.markForCheck();
-  }
-}
-
-function isNumeric(str: any): boolean {
-  if (typeof str != "string") return false // we only process strings!
-  return !isNaN(parseFloat(str))
-}
+  ApexYAxis,
+  NgApexchartsModule
+} from 'ng-apexcharts';
+import { BehaviorSubject, combineLatestWith, filter, interval, Observable, of } from 'rxjs';
+import { catchError, mergeMap, startWith, tap } from 'rxjs/operators';
+import { CodeViewerModule } from '../code-viewer/code-viewer.module';
+import { ExpandingPanelSetModule } from '../expanding-panelset/expanding-panel-set.module';
+import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
+import { PipelineService } from '../pipelines/pipelines.service';
+import { DataSeries, MetricsPeriod, MetricsService, StreamMetricsData } from '../services/metrics.service';
+import { SavedQuery } from '../services/type-editor.service';
 
 type ChartConfig = {
   title: string;
@@ -346,10 +41,288 @@ type ChartConfig = {
   series: ApexAxisChartSeries
   yAxis: ApexYAxis;
   xAxis: ApexXAxis;
+  tooltip: ApexTooltip;
 }
 
 type MetricsPeriodToDescription = {
   period: MetricsPeriod
   label: string,
   autoRefreshEnabled: boolean
+}
+
+@Component({
+  selector: 'app-endpoint-monitor',
+  standalone: true,
+  template: `
+    <app-panel-header title="Metrics" [class.no-header]="onlyShowControlsInHeader">
+      <ng-content select="header-controls">
+      </ng-content>
+      <span class="spacer"></span>
+      <tui-select class="period-select"
+                  tuiTextfieldSize="s"
+                  [tuiTextfieldLabelOutside]="true"
+                  [stringify]="stringifyPeriod"
+                  [ngModel]="selectedPeriod$ | async"
+                  (ngModelChange)="selectedPeriod$.next($event)"
+      >
+        Period
+        <input
+          placeholder="Period"
+          tuiTextfield
+        />
+        <tui-data-list *tuiDataList>
+          <button *ngFor="let period of periods"
+                  tuiOption
+                  [value]="period">
+            {{ period.label }}
+          </button>
+        </tui-data-list>
+      </tui-select>
+      <tui-checkbox-labeled size="m" [(ngModel)]="refreshEnabled">Auto refresh</tui-checkbox-labeled>
+    </app-panel-header>
+    <progress
+      max="100"
+      tuiProgressBar
+      size="xs"
+      new
+      *ngIf="isChartLoading"
+    ></progress>
+    <tui-notification status="error" class="error-notification" *ngIf="chartLoadingError">
+      {{ chartLoadingError }}
+    </tui-notification>
+    <tui-notification status="error" class="error-notification" *ngIf="streamLoadingError">
+      {{ streamLoadingError }}
+    </tui-notification>
+    <div *ngFor="let chartConfig of chartConfigs; trackBy: chartConfigTitle" class="chart-row" [class.is-loading]="isChartLoading">
+      <div class="label-box">
+        <h4 class="label">{{ chartConfig.title }}</h4>
+        <div class="hero-datapoint">
+          <span>{{ chartConfig.heroDataPoint.value | number: chartConfig.title.toLowerCase().includes('duration') ? '1.0-0' : '1.0-1' }}{{ chartConfig.chartSpec.unitLabel }}</span>
+        </div>
+      </div>
+      <apx-chart [chart]="chartConfig.chartConfig"
+                 [series]="chartConfig.series"
+                 [stroke]="stroke"
+                 [fill]="fill"
+                 [yaxis]="chartConfig.yAxis"
+                 [dataLabels]="dataLabels"
+                 [tooltip]="chartConfig.tooltip"
+                 [xaxis]="chartConfig.xAxis"></apx-chart>
+    </div>
+    <ng-container *ngIf="(query$ | async) as query">
+      <app-panel-header title="Source"></app-panel-header>
+      <app-code-viewer [sources]="query.sources"></app-code-viewer>
+    </ng-container>
+  `,
+  styleUrls: ['./endpoint-monitor.component.scss'],
+  imports: [
+    CommonModule,
+    HeaderComponentLayoutModule,
+    TuiToggleModule,
+    TuiBadgeModule,
+    ExpandingPanelSetModule,
+    TuiSelectModule,
+    FormsModule,
+    TuiDataListModule,
+    TuiCheckboxLabeledModule,
+    TuiNotificationModule,
+    NgApexchartsModule,
+    CodeViewerModule,
+    TitleCasePipe,
+    DecimalPipe,
+    TuiTextfieldControllerModule,
+    TuiProgressModule
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class EndpointMonitorComponent implements OnInit {
+  @Input()
+  query$: Observable<SavedQuery>
+
+  @Input()
+  endpointName$: Observable<string>
+
+  @Input()
+  streamLoadingError: string
+
+  @Input()
+  onlyShowControlsInHeader: boolean;
+
+  @Input()
+  isChartLoading: boolean;
+
+  refreshEnabled = true;
+
+  previousPeriodSelected: string;
+  previousEndpointSelected: string;
+
+  chartLoadingError: string | null = null;
+
+  readonly periods: MetricsPeriodToDescription[] = [
+    { period: 'Last5Minutes', label: 'Last 5 minutes', autoRefreshEnabled: true },
+    { period: 'LastHour', label: 'Last hour', autoRefreshEnabled: true },
+    { period: 'Last4Hours', label: 'Last 4 hours', autoRefreshEnabled: true },
+    { period: 'LastDay', label: 'Last day', autoRefreshEnabled: false },
+    { period: 'Last7Days', label: 'Last 7 days', autoRefreshEnabled: false },
+    /*{ period: 'Last30Days', label: 'Last 30 days', autoRefreshEnabled: false },*/
+  ]
+  readonly selectedPeriod$: BehaviorSubject<MetricsPeriodToDescription> = new BehaviorSubject(this.periods[1])
+  dataLabels: ApexDataLabels = {
+    enabled: false
+  }
+  stroke: ApexStroke = {
+    width: 2,
+    curve: 'straight'
+  }
+  fill: ApexFill = {
+    type: 'gradient',
+    gradient: {
+      shadeIntensity: 1,
+      opacityFrom: 0.7,
+      opacityTo: 0.9,
+      stops: [0, 90, 100]
+    }
+  }
+  chartConfigs: ChartConfig[] = [];
+
+  readonly chartConfigTitle = (index: number, item: ChartConfig): string => item.title;
+
+  readonly stringifyPeriod = (item: MetricsPeriodToDescription) => item.label;
+
+  constructor(
+    private metricsService: MetricsService,
+    private pipelineService: PipelineService,
+    private changeDetector: ChangeDetectorRef,
+    private destroyRef: DestroyRef
+  ) {
+  }
+
+  ngOnInit(): void {
+    const ticks$ = interval(15000)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        startWith(0),
+        filter(() => this.refreshEnabled)
+      )
+
+    this.endpointName$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        combineLatestWith(this.selectedPeriod$, ticks$),
+        tap(([endpoint, {period}]) => {
+          if (this.previousPeriodSelected !== period || this.previousEndpointSelected !== endpoint) {
+            this.isChartLoading = true;
+            this.previousPeriodSelected = period;
+            this.previousEndpointSelected = endpoint;
+            this.changeDetector.markForCheck();
+          }
+        }),
+        mergeMap(([endpoint, period]) => {
+          return this.metricsService.getMetricsForStream(endpoint, period.period).pipe(
+            catchError(error => {
+              console.log(error);
+              this.chartLoadingError = 'There was a problem loading the chart data';
+              this.isChartLoading = false;
+              this.changeDetector.markForCheck();
+              // Return an observable to prevent the stream from completing
+              return of(null);
+            })
+          );
+        })
+      )
+      .subscribe( metricsData => {
+        this.updateChartConfig(metricsData);
+        this.chartLoadingError = null;
+        this.isChartLoading = false;
+        this.changeDetector.markForCheck();
+      })
+  }
+
+  private updateChartConfig(metricsData: StreamMetricsData) {
+    this.chartConfigs = metricsData.series.map(dataSeries => {
+      const dataPoints: [number, number][] = dataSeries.series.map(dataPoint => {
+          let value: number = isNumeric(dataPoint.value.toString()) ? dataPoint.value * 1 : 0;
+          if (dataSeries.unit === 'DurationInSecondsConvertToMillis') {
+            value = value * 1000
+          }
+          return [dataPoint.epochSeconds * 1000, value]
+        }
+      )
+      let heroDataPoint;
+      if (dataPoints.length > 0) {
+        heroDataPoint = averageOfNonZero(dataPoints);
+      } else {
+        heroDataPoint = ''
+      }
+      return {
+        title: dataSeries.title,
+        heroDataPoint: {
+          value: heroDataPoint,
+          label: dataSeries.unitLabel,
+        },
+        series: [
+          {
+            name: dataSeries.title,
+            data: dataPoints,
+          }
+        ],
+        chartSpec: dataSeries,
+        chartConfig: {
+          type: 'area',
+          animations: {
+            enabled: false
+          },
+          height: 150,
+          id: `chart-${dataSeries.title}`,
+          group: 'metrics',
+          zoom: {
+            type: 'x',
+            enabled: true,
+            autoScaleYaxis: true
+          },
+          toolbar: {
+            autoSelected: 'zoom'
+          }
+        },
+        xAxis: {
+          type: 'datetime',
+          tooltip: {
+            enabled: false
+          }
+        },
+        yAxis: {
+          labels: {
+            minWidth: 40, // must be set for a group of syncronized charts
+            formatter: val => {
+              return val.toFixed(dataSeries.title.toLowerCase().includes('duration') ? 0 : 1)
+            }
+          }
+        },
+        tooltip: {
+          x: {
+            format: 'dd/MM/yyyy HH:mm:ss',
+          },
+          y: {
+            formatter: (val: number) => `${val.toFixed(dataSeries.title.toLowerCase().includes('duration') ? 0 : 1)}${dataSeries.unitLabel}`
+          }
+        }
+      }
+    });
+
+    this.changeDetector.markForCheck();
+  }
+}
+
+function isNumeric(str: any): boolean {
+  if (typeof str != 'string') return false // we only process strings!
+  return !isNaN(parseFloat(str))
+}
+
+function averageOfNonZero(data: [number, number][]): number {
+  const nonZeroValues = data.filter(([_, value]) => value !== 0);
+  const sum = nonZeroValues.reduce((acc, [, value]) => acc + value, 0);
+  const count = nonZeroValues.length;
+
+  // Handle case where all data points are zero
+  return count === 0 ? 0 : sum/count;
 }

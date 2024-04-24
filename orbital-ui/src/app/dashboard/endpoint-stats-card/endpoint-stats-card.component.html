@@ -1,0 +1,33 @@
+<app-card
+  title="Endpoints"
+  titleLink="/endpoints"
+  description="Select an endpoint and time range"
+  icon="/assets/img/tabler/traffic-lights.svg"
+>
+  <app-endpoint-monitor
+    *ngIf="queries$ | async as queries"
+    [onlyShowControlsInHeader]="true"
+    [endpointName$]="selectedEndpoint$"
+  >
+    <ng-container ngProjectAs="header-controls">
+      <tui-select class="query-select"
+                  tuiTextfieldSize="s"
+                  [tuiTextfieldLabelOutside]="true"
+                  [stringify]="stringifyQuery"
+                  [ngModel]="selectedQuery$ | async"
+                  (ngModelChange)="selectedQuery$.next($event)"
+      >
+        Queries
+        <input
+          placeholder="Queries"
+          tuiTextfield
+        />
+        <tui-data-list *tuiDataList>
+          <button class="small" *ngFor="let query of queries" tuiOption
+                  [value]="query">{{ query.label }}
+          </button>
+        </tui-data-list>
+      </tui-select>
+    </ng-container>
+  </app-endpoint-monitor>
+</app-card>

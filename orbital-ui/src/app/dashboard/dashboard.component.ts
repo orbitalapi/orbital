@@ -6,13 +6,14 @@ import { UiCustomisations } from '../../environments/ui-customisations';
 import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
 import { CardComponent } from './card/card.component';
 import { DataSourcesCardComponent } from './data-sources-card/data-sources-card.component';
+import { EndpointStatsCardComponent } from './endpoint-stats-card/endpoint-stats-card.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [
     CommonModule, HeaderComponentLayoutModule, RouterOutlet, TuiButtonModule, RouterLink,
-    TuiNotificationModule, DataSourcesCardComponent, CardComponent
+    TuiNotificationModule, DataSourcesCardComponent, CardComponent, EndpointStatsCardComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],

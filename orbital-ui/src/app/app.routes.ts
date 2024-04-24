@@ -92,7 +92,7 @@ export const APP_ROUTES = RouterModule.forRoot(
     },
     {
       path: 'endpoints',
-      loadChildren: () => import('./endpoint-manager/endpoint-manager.module').then(m => m.EndpointManagerModule)
+      loadChildren: () => import('./endpoint-manager/endpoint-manager.routes').then(m => m.endpointManagerRoutes)
     },
 
 

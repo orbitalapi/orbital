@@ -1,5 +1,15 @@
 @import "src/common";
 @import "./endpoint-list.component";
+
+:host {
+  position: relative;
+}
+
+progress {
+  position: absolute;
+  top: -3px;
+}
+
 .axes {
   height: 12.5rem;
   width: 25rem;
@@ -33,30 +43,24 @@ app-code-viewer {
   apx-chart {
     flex-grow: 1;
   }
-}
 
-app-panel-header {
-  tui-select {
-    width: 10rem;
+  &.is-loading {
+    opacity: 0.5;
   }
 }
 
-button.small {
-  font-size: 0.8rem;
-}
+app-panel-header {
+  padding: 0.5rem;
 
-app-header-component-layout {
-  tui-toggle {
-    // Adjust the color of the toggle, as it's shown
-    // inside the
-    ::ng-deep {
-      [tuiWrapper][data-appearance='secondary'] {
-        background-color: $slate-300;
-        &:hover {
-          background-color: $slate-400;
-        }
-      }
+  .period-select {
+    width: 10rem;
+  }
+
+  &.no-header {
+    background: none;
+
+    ::ng-deep h3 {
+      display: none;
     }
-    margin-right: 1rem;
   }
 }

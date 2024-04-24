@@ -1,0 +1,18 @@
+@import "src/common";
+
+:host app-header-component-layout {
+  tui-toggle {
+    margin-right: 1rem;
+
+    // Adjust the color of the toggle, as it's shown
+    // inside the
+    ::ng-deep {
+      [tuiWrapper][data-appearance='secondary'] {
+        background-color: $slate-300;
+        &:hover {
+          background-color: $slate-400;
+        }
+      }
+    }
+  }
+}
