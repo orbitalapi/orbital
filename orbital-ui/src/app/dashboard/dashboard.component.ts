@@ -4,7 +4,7 @@ import { RouterLink, RouterOutlet } from '@angular/router';
 import { TuiButtonModule, TuiNotificationModule } from '@taiga-ui/core';
 import { UiCustomisations } from '../../environments/ui-customisations';
 import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
-import { CardComponent } from './card/card.component';
+import { ChangelogCardComponent } from './changelog-card/changelog-card.component';
 import { DataSourcesCardComponent } from './data-sources-card/data-sources-card.component';
 import { EndpointStatsCardComponent } from './endpoint-stats-card/endpoint-stats-card.component';
 
@@ -13,7 +13,7 @@ import { EndpointStatsCardComponent } from './endpoint-stats-card/endpoint-stats
   standalone: true,
   imports: [
     CommonModule, HeaderComponentLayoutModule, RouterOutlet, TuiButtonModule, RouterLink,
-    TuiNotificationModule, DataSourcesCardComponent, CardComponent, EndpointStatsCardComponent
+    TuiNotificationModule, DataSourcesCardComponent, EndpointStatsCardComponent, ChangelogCardComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
