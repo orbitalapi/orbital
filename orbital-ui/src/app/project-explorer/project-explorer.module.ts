@@ -107,7 +107,7 @@ import {HeaderComponentLayoutModule} from "../header-component-layout/header-com
     ExpandingPanelSetModule,
     HeaderComponentLayoutModule,
   ],
-  exports: [ProjectExplorerComponent],
+    exports: [ProjectExplorerComponent, ProjectSummaryViewComponent],
   declarations: [ProjectExplorerComponent, ProjectExplorerContainerComponent, ProjectSummaryViewComponent, ProjectSettingsComponent, ProjectErrorListComponent],
   providers: [],
 })

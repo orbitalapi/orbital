@@ -1,21 +1,19 @@
-<div>
-  <div class="header">
-    <div class="icon">
-      <img [ngSrc]="icon" width="24" height="24"/>
-    </div>
-    <div class="title-with-description">
-      <h3>
-        <a *ngIf="titleLink" [routerLink]="titleLink">{{title}}</a>
-        <ng-container *ngIf="!titleLink">{{title}}</ng-container>
-      </h3>
-      <div>{{description}}</div>
-    </div>
-    <div class="header-controls">
-      <ng-content select="header-controls">
-      </ng-content>
-    </div>
+<div class="header">
+  <div class="icon">
+    <img [ngSrc]="icon" width="24" height="24"/>
   </div>
-  <div class="content">
-    <ng-content></ng-content>
+  <div class="title-with-description">
+    <h3>
+      <a *ngIf="titleLink" [routerLink]="titleLink">{{title}}</a>
+      <ng-container *ngIf="!titleLink">{{title}}</ng-container>
+    </h3>
+    <div>{{description}}</div>
   </div>
+  <div class="header-controls">
+    <ng-content select="header-controls">
+    </ng-content>
+  </div>
+</div>
+<div class="content">
+  <ng-content></ng-content>
 </div>
