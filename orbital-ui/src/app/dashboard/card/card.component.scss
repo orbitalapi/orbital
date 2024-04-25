@@ -11,7 +11,7 @@
 .header {
   display: flex;
   flex-direction: row;
-  padding: 1rem 1rem 1rem 0.5rem;
+  padding: 1rem;
 
   h3 {
     margin: 0 0 0.5rem 0;
@@ -22,7 +22,6 @@
     height: 24px;
     margin: -0.2rem 0.25rem 0 0;
     padding: 0.2rem 0;
-    background: $slate-100;
     border-radius: 5px;
 
     img {

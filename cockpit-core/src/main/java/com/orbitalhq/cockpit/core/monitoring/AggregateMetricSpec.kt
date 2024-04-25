@@ -9,7 +9,7 @@ data class AggregateMetricSpec(
 
 object AggregateMetricSpecs {
     val messagesReceived = AggregateMetricSpec(
-        "Agg Messages Received",
+        "Messages Received",
         "msgs / sec",
         YAxisUnit.Count,
     ) { stepSize -> """sum by (queryStream) (
@@ -18,7 +18,7 @@ object AggregateMetricSpecs {
 )""" }
 
     val averageQueryDuration = AggregateMetricSpec(
-        "Agg Average Duration",
+        "Average Duration",
         "ms",
         YAxisUnit.DurationInSecondsConvertToMillis
     )
@@ -27,12 +27,12 @@ object AggregateMetricSpecs {
     }
 
     val maxQueryDuration =
-       AggregateMetricSpec("Agg Max Duration", "ms", YAxisUnit.DurationInSecondsConvertToMillis) { stepSize ->
+       AggregateMetricSpec("Max Duration", "ms", YAxisUnit.DurationInSecondsConvertToMillis) { stepSize ->
             """max_over_time(orbital_query_duration_seconds_max{queryStream=~".*"}[$stepSize])"""
         }
 
     val failures = AggregateMetricSpec(
-        "Agg Failures",
+        "Failures",
         "Count",
         YAxisUnit.Count
     ) { stepSize -> """rate(orbital_query_failures_total{queryStream=~".*"}[$stepSize])""" }

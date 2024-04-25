@@ -250,7 +250,7 @@ export class EndpointMonitorComponent implements OnInit {
       )
       let heroDataPoint;
       if (dataPoints.length > 0) {
-        heroDataPoint = averageOfNonZero(dataPoints);
+        heroDataPoint = dataPoints[dataPoints.length - 1][1]
       } else {
         heroDataPoint = ''
       }
@@ -316,13 +316,4 @@ export class EndpointMonitorComponent implements OnInit {
 function isNumeric(str: any): boolean {
   if (typeof str != 'string') return false // we only process strings!
   return !isNaN(parseFloat(str))
-}
-
-function averageOfNonZero(data: [number, number][]): number {
-  const nonZeroValues = data.filter(([_, value]) => value !== 0);
-  const sum = nonZeroValues.reduce((acc, [, value]) => acc + value, 0);
-  const count = nonZeroValues.length;
-
-  // Handle case where all data points are zero
-  return count === 0 ? 0 : sum/count;
 }
