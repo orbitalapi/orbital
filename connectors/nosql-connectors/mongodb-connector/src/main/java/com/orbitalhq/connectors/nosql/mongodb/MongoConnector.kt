@@ -1,6 +1,8 @@
 package com.orbitalhq.connectors.nosql.mongodb
 
 import com.orbitalhq.annotations.AnnotationWrapper
+import com.orbitalhq.connectors.nosql.mongodb.MongoConnector.Annotations.BatchDurationAttribute
+import com.orbitalhq.connectors.nosql.mongodb.MongoConnector.Annotations.BatchSizeAttribute
 import com.orbitalhq.schemas.fqn
 import lang.taxi.TaxiDocument
 import lang.taxi.types.Annotation
@@ -10,6 +12,10 @@ object MongoConnector {
    object Annotations {
       internal const val namespace = "com.orbitalhq.mongo"
       val UpsertOperationAnnotationName = "${namespace}.UpsertOperation".fqn()
+      const val BatchSizeAttribute = "BatchSize"
+      const val BatchDurationAttribute = "BatchDuration"
+      const val BatchSizeAttributeName = "batchSize"
+      const val batchDurationAttributeName = "batchDuration"
       val ObjectIdAnnotationName = "${namespace}.ObjectId".fqn()
       data class MongoOperation(val connectionName: String) : AnnotationWrapper {
          companion object {
@@ -63,16 +69,23 @@ object MongoConnector {
       val collectionName = QualifiedName.from(Collection.NAME)
 
       val imports: String = listOf(MongoOperation.NAME, Collection.NAME, ObjectIdAnnotationName).joinToString("\n") { "import $it" }
+
+      data class BatchAttribute(val batchSize: Int, val batchDurationInMillis: Long)
    }
 
    val schema = """
 namespace ${Annotations.namespace} {
    type ConnectionName inherits String
+   type $BatchSizeAttribute inherits Int
+   type $BatchDurationAttribute inherits Int
    annotation ${Annotations.mongoOperationName.typeName} {
       connection : ConnectionName
    }
    
-   annotation UpsertOperation {}
+   annotation UpsertOperation {
+        batchSize: $BatchSizeAttribute?
+        batchDuration: $BatchDurationAttribute?
+   }
    annotation ObjectId {}
   
    annotation ${Annotations.collectionName.typeName} {
@@ -82,4 +95,6 @@ namespace ${Annotations.namespace} {
 }
    """
 }
+
+
 
