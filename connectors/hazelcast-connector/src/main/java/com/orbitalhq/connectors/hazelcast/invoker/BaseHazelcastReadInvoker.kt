@@ -17,6 +17,7 @@ import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.SqlExchange
 import com.orbitalhq.schemas.Field
+import com.orbitalhq.schemas.OperationInvocationException
 import com.orbitalhq.schemas.OperationKind
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
@@ -145,6 +146,7 @@ abstract class BaseHazelcastReadInvoker {
          map,
          predicate,
       )
+      val isSuccessful = resultSize > 0
       val operationResult = buildOperationResult(
          service,
          operation,
@@ -153,7 +155,8 @@ abstract class BaseHazelcastReadInvoker {
          predicate.toString(),
          elapsed = Duration.between(startTime, Instant.now()),
          resultSize,
-         "SELECT"
+         "SELECT",
+         isSuccessful
       )
       eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
       return flowOfResult(
@@ -196,6 +199,7 @@ abstract class BaseHazelcastReadInvoker {
       logger.debug { "Query of $taxiQlQueryString converted to Id lookup against map $mapName with key $idLookupValue" }
       val (rawResultFlow, recordCount) = buildFlowById(taxiQlQueryString, idLookupValue, map, operation)
 
+      val isSuccess = recordCount > 0
       val result = buildOperationResult(
          service,
          operation,
@@ -204,18 +208,27 @@ abstract class BaseHazelcastReadInvoker {
          idLookupValue.toString(),
          elapsed = Duration.between(startTime, Instant.now()),
          recordCount,
-         "LOOKUP"
+         "LOOKUP",
+         isSuccess
       )
-      if (recordCount == 0) {
-         logger.debug { "Lookup using key $idLookupValue against map $mapName returned null" }
-      }
       eventDispatcher.reportRemoteOperationInvoked(result, queryId)
-      return flowOfResult(
-         rawResultFlow,
-         unwrappedReturnType.taxiType as ObjectType,
-         schema,
-         result.asOperationReferenceDataSource()
-      )
+      val errorMessage = "Lookup using key $idLookupValue against map $mapName returned null"
+      if (false) {
+         logger.debug { errorMessage }
+         throw OperationInvocationException(
+            errorMessage,
+            404,
+            result.remoteCall,
+            parameters
+         )
+      } else {
+         return flowOfResult(
+            rawResultFlow,
+            unwrappedReturnType.taxiType as ObjectType,
+            schema,
+            result.asOperationReferenceDataSource()
+         )
+      }
    }
 
    private fun findAll(
@@ -241,7 +254,8 @@ abstract class BaseHazelcastReadInvoker {
          "find *",
          elapsed = Duration.between(startTime, Instant.now()),
          resultSize,
-         "FIND_ALL"
+         "FIND_ALL",
+         true
       )
       eventDispatcher.reportRemoteOperationInvoked(result, queryId)
       return flowOfResult(
@@ -275,7 +289,15 @@ abstract class BaseHazelcastReadInvoker {
                   dataSource
                )
             )
-            is HazelcastJsonValue -> listOf(HazelcastJsonValueReader.toTypedInstance(value, memberType, schema, dataSource))
+
+            is HazelcastJsonValue -> listOf(
+               HazelcastJsonValueReader.toTypedInstance(
+                  value,
+                  memberType,
+                  schema,
+                  dataSource
+               )
+            )
 
             is QueryResultCollection<*> -> {
                value.flatMap { readValue(it) }
@@ -348,10 +370,20 @@ abstract class BaseHazelcastReadInvoker {
       sql: String,
       elapsed: Duration,
       recordCount: Int,
-      verb: String = "SELECT"
+      verb: String = "SELECT",
+      success: Boolean
    ): OperationResult {
       val remoteCall =
-         buildRemoteCall(service, connectionConfig.addresses.joinToString(), operation, sql, elapsed, recordCount, verb)
+         buildRemoteCall(
+            service,
+            connectionConfig.addresses.joinToString(),
+            operation,
+            sql,
+            elapsed,
+            recordCount,
+            verb,
+            success
+         )
       return OperationResult.fromTypedInstances(
          parameters,
          remoteCall
@@ -365,7 +397,8 @@ abstract class BaseHazelcastReadInvoker {
       sql: String,
       elapsed: Duration,
       recordCount: Int,
-      verb: String
+      verb: String,
+      success: Boolean
    ) = RemoteCall(
       service = service.name,
       address = jdbcUrl,
@@ -374,7 +407,6 @@ abstract class BaseHazelcastReadInvoker {
       requestBody = sql,
       durationMs = elapsed.toMillis(),
       timestamp = Instant.now(),
-      // If we implement streaming database queries, this will change
       responseMessageType = ResponseMessageType.FULL,
       // Feels like capturing the results are a bad idea.  Can revisit if there's a use-case
       response = null,
@@ -383,7 +415,7 @@ abstract class BaseHazelcastReadInvoker {
          recordCount = recordCount,
          verb = verb
       ),
-
-      )
+      isFailed = !success
+   )
 
 }

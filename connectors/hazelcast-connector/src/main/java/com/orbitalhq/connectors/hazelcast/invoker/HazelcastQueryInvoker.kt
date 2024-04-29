@@ -5,6 +5,7 @@ import com.hazelcast.query.Predicate
 import com.orbitalhq.schemas.RemoteOperation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import lang.taxi.query.TaxiQLQueryString
 import mu.KotlinLogging
@@ -33,7 +34,11 @@ class HazelcastQueryInvoker : BaseHazelcastReadInvoker() {
    ): Pair<Flow<Any?>, Int> {
       val lookupValue = map[idLookupValue]
       val recordCount = if (lookupValue == null) 0 else 1
-      return flowOf(lookupValue) to recordCount
+      return if (recordCount > 0) {
+         flowOf(lookupValue) to recordCount
+      } else {
+         flow<Any> { error("Map ${map.name} does not contain a record with key $idLookupValue") } to 0
+      }
    }
 
    override fun buildFlowOfFullMap(
@@ -44,6 +49,7 @@ class HazelcastQueryInvoker : BaseHazelcastReadInvoker() {
       logger.debug { "Query of $taxiQlQueryString converted to full map fetch against map ${map.name}" }
       return flowOf(map.values) to map.size
    }
-
-
 }
+
+class MapEntryNotPresentException(val mapName: String, val key: Any) :
+   RuntimeException("Failed to read from Hazelcast map $mapName - no entry with $key exists")
