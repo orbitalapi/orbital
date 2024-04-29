@@ -26,6 +26,10 @@
 
    <dependencies>
       <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-mustache</artifactId>
+      </dependency>
+      <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>schema-server-core</artifactId>
          <version>${project.version}</version>

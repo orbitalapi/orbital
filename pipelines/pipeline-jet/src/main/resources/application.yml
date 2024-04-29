@@ -28,6 +28,8 @@ spring:
 server:
    port: 9615
    error:
+      whitelabel:
+         enabled: false
       include-message: always
 
 feign:
