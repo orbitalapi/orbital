@@ -4,10 +4,20 @@ import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.schema.publisher.PublisherType
-import com.orbitalhq.schema.publisher.loaders.*
+import com.orbitalhq.schema.publisher.loaders.AddChangesToChangesetResponse
+import com.orbitalhq.schema.publisher.loaders.AvailableChangesetsResponse
+import com.orbitalhq.schema.publisher.loaders.Changeset
+import com.orbitalhq.schema.publisher.loaders.CreateChangesetResponse
+import com.orbitalhq.schema.publisher.loaders.FinalizeChangesetResponse
+import com.orbitalhq.schema.publisher.loaders.LoaderStatus
+import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
+import com.orbitalhq.schema.publisher.loaders.SchemaSourcesAdaptor
+import com.orbitalhq.schema.publisher.loaders.SetActiveChangesetResponse
+import com.orbitalhq.schema.publisher.loaders.UpdateChangesetResponse
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoader
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageWriter
+import com.orbitalhq.utils.RetryFailOnSerializeEmitHandler
 import com.orbitalhq.utils.files.ReactiveFileSystemMonitor
 import com.orbitalhq.utils.files.ReactiveWatchingFileSystemMonitor
 import kotlinx.coroutines.reactor.mono
@@ -70,7 +80,7 @@ class GitSchemaPackageLoader(
    }
 
    override fun loadNow(): Mono<SourcePackage> {
-      syncNow()
+     // syncNow()
       return filePackageLoader.loadNow()
    }
 
@@ -109,12 +119,12 @@ class GitSchemaPackageLoader(
 
    private fun updateLoaderStatus(syncStatus: GitSyncStatus) {
       if (syncStatus.successful) {
-         gitStatusSink.emitNext(LoaderStatus.OK, Sinks.EmitFailureHandler.FAIL_FAST)
+         gitStatusSink.emitNext(LoaderStatus.OK, RetryFailOnSerializeEmitHandler)
       } else {
          gitStatusSink.emitNext(
             LoaderStatus.error(
                syncStatus.errorMessage ?: "An unknown error occurred whilst pulling the git repository"
-            ), Sinks.EmitFailureHandler.FAIL_FAST
+            ), RetryFailOnSerializeEmitHandler
          )
       }
    }

@@ -2,12 +2,12 @@ package com.orbitalhq.config
 
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
+import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.SourcePackage
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigParseOptions
 import com.typesafe.config.ConfigResolveOptions
-import com.orbitalhq.PackageIdentifier
-import com.orbitalhq.SourcePackage
 import com.typesafe.config.ConfigResolver
 import com.typesafe.config.ConfigValue
 import mu.KotlinLogging
@@ -28,7 +28,8 @@ data class ConfigSource<T : Any>(
     * values may not have been loaded yet.
     */
    val typedConfig: T?,
-   val error: String?
+   val error: String?,
+   val configSourceName: String? = null
 ) {
    val hasError = error != null
 }
@@ -98,7 +99,6 @@ abstract class MergingHoconConfigRepository<T : Any>(
                _configSources = loadedSources.map { sourcePackage: SourcePackage ->
                   val hoconSource = readRawHoconSource(sourcePackage)
                   try {
-
                      val configWithFakeResolverValues = readConfig(hoconSource, fallback)
                         .resolve(ConfigResolveOptions.defaults().appendResolver(FakeResolver))
                      val typedConfig = extract(configWithFakeResolverValues)
@@ -106,17 +106,26 @@ abstract class MergingHoconConfigRepository<T : Any>(
                      ConfigSource(sourcePackage.identifier, config, typedConfig, null)
                   } catch (e: Exception) {
                      logger.error(e) { "($loaderTypeName) - Parsing the config from source package ${sourcePackage.packageMetadata.identifier.id} failed: ${e.message}" }
-                     ConfigSource<T>(sourcePackage.identifier, null, null, e.message)
+                     val errorMessage = e.message ?: e.cause?.message
+                     val sourceName = if (sourcePackage.sources.size == 1) sourcePackage.sources.first().name else null
+                     ConfigSource<T>(sourcePackage.identifier, null, null, errorMessage, sourceName)
                   }
                }
-               val mergedConfig = _configSources
+               val healthConfig = _configSources
                   .filter { !it.hasError }
-                  .map { it.unresolvedConfig!! }
-                  .reduce { acc, config ->
+                  .map {
+                     it.unresolvedConfig!!
+                  }
+
+               if (healthConfig.isEmpty()) {
+                  emptyConfig()
+               } else {
+                  val mergedHealthyConfig = healthConfig.reduce { acc, config ->
                      // when merging, "config" values beat "acc" values.
                      config.withFallback(acc)
                   }.resolve()
-               extract(mergedConfig)
+                  extract(mergedHealthyConfig)
+               }
             }
          }
       })

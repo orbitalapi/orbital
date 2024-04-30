@@ -70,7 +70,7 @@ class ConnectionsService(
          }
       val errors = this.connectorsRegistry.configSources.filter { it.hasError }
          .map { configSource ->
-            PackageWithError(configSource.packageIdentifier, configSource.error!!)
+            PackageWithError(configSource.packageIdentifier, configSource.error!!, configSource.configSourceName)
          }
       return Mono.just(ConnectionsListResponse(errors, connections))
    }
@@ -125,5 +125,6 @@ data class ConnectionsListResponse(
 
 data class PackageWithError(
    val identifier: PackageIdentifier,
-   val error: String
+   val error: String,
+   val configFileName: String?
 )

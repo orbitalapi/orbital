@@ -5,6 +5,7 @@ import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
 import com.orbitalhq.schemaServer.core.file.SourcesChangedMessage
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoader
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoader
+import com.orbitalhq.utils.RetryFailOnSerializeEmitHandler
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.time.Duration
@@ -46,7 +47,7 @@ class ProjectStoreLifecycleManager(
                .subscribe { sourcePackage ->
                   sourcesChangedSink.emitNext(
                      SourcesChangedMessage(listOf(sourcePackage)),
-                     emitFailureHandler
+                     RetryFailOnSerializeEmitHandler
                   )
                }
          }

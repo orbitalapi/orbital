@@ -1,9 +1,5 @@
 package com.orbitalhq.schemaServer.core.repositories
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import io.github.config4k.extract
-import io.github.config4k.registerCustomType
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.config.BaseHoconConfigFileRepository
 import com.orbitalhq.config.toHocon
@@ -23,6 +19,10 @@ import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
 import com.orbitalhq.toPackageMetadata
 import com.orbitalhq.toVynePackageIdentifier
 import com.orbitalhq.utils.concat
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import io.github.config4k.extract
+import io.github.config4k.registerCustomType
 import lang.taxi.packages.ProjectName
 import lang.taxi.packages.TaxiPackageLoader
 import lang.taxi.packages.TaxiPackageProject
@@ -32,7 +32,11 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.io.path.*
+import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
+import kotlin.io.path.isDirectory
+import kotlin.io.path.isRegularFile
+import kotlin.io.path.writeText
 
 class FileWorkspaceConfigLoader(
    private val configFilePath: Path,
@@ -55,18 +59,20 @@ class FileWorkspaceConfigLoader(
       registerCustomType(PackageLoaderSpecHoconSupport)
       registerCustomType(UriHoconSupport)
       registerCustomType(InstantHoconSupport)
+      stateSink.emitNext(LoaderStatus.STARTING, Sinks.EmitFailureHandler.FAIL_FAST)
 
       if (emitStateOnInit) {
          emitCurrentState()
       }
 
-      stateSink.emitNext(LoaderStatus.STARTING, Sinks.EmitFailureHandler.FAIL_FAST)
+
    }
 
    override val isReadOnly: Boolean = false
 
 
    fun emitCurrentState() {
+      try {
       val initialConfig = load()
       logger.info { "Repository config at $configFilePath loaded with ${initialConfig.repoCountDescription()}" }
       initialConfig.file?.let { fileConfig ->
@@ -75,6 +81,12 @@ class FileWorkspaceConfigLoader(
       }
       initialConfig.git?.let { gitConfig ->
          gitConfig.repositories.forEach { eventDispatcher.gitRepositorySpecAdded(GitSpecAddedEvent(it, gitConfig)) }
+      }
+      } catch (e: Exception) {
+         // load() handles the errors in case there is an error in workspace.config and reports these errors back to UI.
+         // However, it re-throws the caught error, we re-catch it over here so that Orbital doesn't fall over during
+         // start-up
+         logger.error(e) { "error in emitting workspace specs"  }
       }
    }
 
