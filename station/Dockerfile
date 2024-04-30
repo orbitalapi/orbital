@@ -41,7 +41,7 @@ COPY target/orbital.zip /opt/service/
 COPY target/classes/static /opt/service/webapp
 
 RUN cd /opt/service && unzip orbital.zip
-
+RUN rm -rf orbital.zip
 
 WORKDIR /opt/service/
 
