@@ -168,6 +168,7 @@ export interface ConnectionsListResponse {
 export interface PackageWithError {
   identifier: PackageIdentifier;
   error: string;
+  configFileName?: string;
 }
 export interface ConnectorSummary {
   connectionName: string;

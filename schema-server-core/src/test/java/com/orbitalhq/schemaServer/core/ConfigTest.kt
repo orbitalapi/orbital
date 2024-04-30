@@ -2,9 +2,8 @@ package com.orbitalhq.schemaServer.core
 
 import com.google.common.io.Resources
 import com.nhaarman.mockito_kotlin.mock
-import com.winterbe.expekt.should
-import io.kotest.matchers.shouldBe
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.schema.publisher.loaders.LoaderStatus
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
 import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
@@ -13,10 +12,13 @@ import com.orbitalhq.schemaServer.core.repositories.FileWorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfig
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.SoapPackageLoaderSpec
+import com.winterbe.expekt.should
+import io.kotest.matchers.shouldBe
 import org.apache.commons.io.IOUtils
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import reactor.test.StepVerifier
 import java.nio.file.Paths
 
 class ConfigTest {
@@ -104,4 +106,21 @@ class ConfigTest {
       configRepo.save(config)
    }
 
+   @Test
+   fun `syntax errors reported for an invalid workspace conf`() {
+      val configFile = Resources.getResource("config-files/workspace-syntax-error.conf")
+         .toURI()
+      val targetConfigFile = folder.newFile("workspace-syntax-error.conf")
+      IOUtils.copy(configFile.toURL().openStream(), targetConfigFile.outputStream())
+
+      val configRepo = FileWorkspaceConfigLoader(targetConfigFile.toPath(),
+         eventDispatcher = mock { })
+
+      StepVerifier.create(configRepo.loaderStatus.take(1))
+         .expectNextMatches {
+            it.state == LoaderStatus.LoaderState.ERROR && it.message.contains("String: 1: Key 'this is an invalid workspace.conf' may not be followed by token: end of file")
+         }
+         .verifyComplete()
+
+   }
 }

@@ -69,7 +69,7 @@ open class GitPollOperations(
    fun fetchLatest(): GitSyncStatus {
       return try {
          if (existsLocally()) {
-            logger.debug { "Pulling latest git from ${config.redactedUrl} on branch ${config.branch} to ${workingDir.absolutePath}" }
+            logger.info { "Pulling latest git from ${config.redactedUrl} on branch ${config.branch} to ${workingDir.absolutePath}" }
             val checkoutRef = checkout()
             val pullResult = pull()
             logger.debug { "Pull for ${config.redactedUrl} completed" }
@@ -90,7 +90,7 @@ open class GitPollOperations(
             logger.info { "Cloning git repo from ${config.redactedUrl} on branch ${config.branch} to ${workingDir.absolutePath}" }
             clone()
             val ref = checkout()
-            logger.info { "Clone for ${config.redactedUrl} completed" }
+            logger.info { "Clone for ${config.redactedUrl} on branch ${config.branch} to ${workingDir.absolutePath} completed" }
             GitSyncStatus(
                successful = true,
                pulledChanges = true,

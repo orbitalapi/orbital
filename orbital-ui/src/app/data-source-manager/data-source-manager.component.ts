@@ -19,6 +19,7 @@ import { DataSourceTreeComponent } from './data-source-tree/data-source-tree.com
             <h3>Some configuration files have errors:</h3>
             <ul>
               <li *ngFor="let error of connectionList.definitionsWithErrors">
+                <h4>{{ error.configFileName}}</h4>
                 <span>{{ error.identifier.id }}: {{ error.error }}</span>
               </li>
             </ul>

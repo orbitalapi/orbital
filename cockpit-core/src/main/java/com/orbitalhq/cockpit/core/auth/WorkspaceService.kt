@@ -37,7 +37,9 @@ class WorkspaceService(
    init {
       // Only null in tests
       workspaceLoader?.loaderStatus
-         ?.subscribe { this._currentWorkspaceStatus = it }
+         ?.subscribe {
+            this._currentWorkspaceStatus = it
+         }
    }
 
 
