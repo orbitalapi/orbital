@@ -62,18 +62,6 @@ export const APP_ROUTES = RouterModule.forRoot(
       data: {requiredAuthority: VynePrivileges.BrowseSchema},
     },
     {
-      path: 'schemas',
-      redirectTo: 'projects'
-    },
-    {
-      path: 'schema-importer',
-      redirectTo: 'project-import'
-    },
-    {
-      path: 'connection-manager',
-      redirectTo: 'data-source-manager'
-    },
-    {
       path: 'data-source-manager',
       loadChildren: () => import('./data-source-manager/data-source-manager.routes').then(m => m.dataSourceManagerRoutes),
       canActivate: [AuthGuard],
@@ -85,7 +73,6 @@ export const APP_ROUTES = RouterModule.forRoot(
       canActivate: [AuthGuard],
       data: {requiredAuthority: VynePrivileges.ViewAuthenticationTokens}
     },
-
     {
       path: 'workspace',
       loadChildren: () => import('./workspace-manager/workspace-manager.module').then(m => m.WorkspaceManagerModule)
@@ -93,6 +80,24 @@ export const APP_ROUTES = RouterModule.forRoot(
     {
       path: 'endpoints',
       loadChildren: () => import('./endpoint-manager/endpoint-manager.routes').then(m => m.endpointManagerRoutes)
+    },
+    // Redirects for deprecated routes, should be able to remove these over time
+    {
+      path: 'schemas',
+      redirectTo: 'projects'
+    },
+    {
+      path: 'schema-importer',
+      redirectTo: 'project-import'
+    },
+    {
+      path: 'connection-manager',
+      redirectTo: 'data-source-manager'
+    },
+    // Note: This HAS to be last in the list, and acts as a catch all
+    {
+      path: '**',
+      redirectTo: '',
     },
 
 

@@ -13,6 +13,10 @@
 
    <dependencies>
       <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-mustache</artifactId>
+      </dependency>
+      <dependency>
          <groupId>io.projectreactor.kotlin</groupId>
          <artifactId>reactor-kotlin-extensions</artifactId>
       </dependency>
