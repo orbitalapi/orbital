@@ -3,7 +3,6 @@ package com.orbitalhq.connectors.jdbc
 import com.orbitalhq.annotations.AnnotationWrapper
 import com.orbitalhq.connections.ConnectionUsageMetadataRegistry
 import com.orbitalhq.connections.ConnectionUsageRegistration
-import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.fqn
 import lang.taxi.TaxiDocument
 import lang.taxi.types.Annotation
@@ -22,9 +21,9 @@ object JdbcConnectorTaxi {
       internal const val namespace = "com.orbitalhq.jdbc"
       const val Column = "$namespace.Column"
 
-      const val UpsertOperationAnnotationName = "UpsertOperation"
-      const val InsertOperationAnnotationName = "InsertOperation"
-      const val UpdateOperationAnnotationName = "UpdateOperation"
+      val UpsertOperationAnnotationName = "$namespace.UpsertOperation".fqn()
+      val InsertOperationAnnotationName = "$namespace.InsertOperation".fqn()
+      val UpdateOperationAnnotationName = "$namespace.UpdateOperation".fqn()
 
       const val GeneratedIdAnnotationName = "GeneratedId"
 
@@ -81,7 +80,11 @@ object JdbcConnectorTaxi {
       val tableName = QualifiedName.from(Table.NAME)
       val columnName = QualifiedName.from(Column)
 
-      val imports: String = listOf(DatabaseOperation.NAME, Table.NAME).joinToString("\n") { "import $it" }
+      val imports: String = listOf(DatabaseOperation.NAME, Table.NAME,
+         UpsertOperationAnnotationName.parameterizedName,
+         InsertOperationAnnotationName.parameterizedName,
+         UpdateOperationAnnotationName.parameterizedName
+         ).joinToString("\n") { "import $it" }
 
       fun databaseOperation(connectionName: String): DatabaseOperation {
          return DatabaseOperation(connectionName)
@@ -95,6 +98,9 @@ object JdbcConnectorTaxi {
    val schema = """
 namespace ${Annotations.namespace} {
    type ConnectionName inherits String
+   annotation UpsertOperation {}
+   annotation InsertOperation {}
+   annotation UpdateOperation {}
    annotation ${Annotations.databaseOperationName.typeName} {
       connection : ConnectionName
    }

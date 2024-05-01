@@ -4,13 +4,26 @@ import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.drivers.databaseSupport
 import com.orbitalhq.connectors.jdbc.sql.ddl.TableGenerator
 import com.orbitalhq.connectors.jdbc.sql.dml.InsertStatementGenerator
-import com.orbitalhq.models.*
+import com.orbitalhq.models.DataSourceUpdater
+import com.orbitalhq.models.OperationResult
+import com.orbitalhq.models.OperationResultReference
+import com.orbitalhq.models.TypedCollection
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedObject
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.SqlExchange
 import com.orbitalhq.schema.api.SchemaProvider
-import com.orbitalhq.schemas.*
+import com.orbitalhq.schemas.Metadata
+import com.orbitalhq.schemas.OperationInvocationException
+import com.orbitalhq.schemas.Parameter
+import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.Schema
+import com.orbitalhq.schemas.Service
+import com.orbitalhq.schemas.Type
+import com.orbitalhq.schemas.fqn
+import com.orbitalhq.schemas.hasMetadata
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import lang.taxi.types.annotation
@@ -18,7 +31,6 @@ import mu.KotlinLogging
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.jooq.Result
-import org.jooq.ResultQuery
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.time.Duration
 import java.time.Instant
@@ -31,9 +43,9 @@ enum class UpsertVerb {
    companion object {
       fun forAnnotations(metadata: List<Metadata>): UpsertVerb? {
          return when {
-            metadata.hasMetadata(JdbcConnectorTaxi.Annotations.UpsertOperationAnnotationName) -> Upsert
-            metadata.hasMetadata(JdbcConnectorTaxi.Annotations.InsertOperationAnnotationName) -> Insert
-            metadata.hasMetadata(JdbcConnectorTaxi.Annotations.UpdateOperationAnnotationName) -> Update
+            metadata.hasMetadata(JdbcConnectorTaxi.Annotations.UpsertOperationAnnotationName.parameterizedName) -> Upsert
+            metadata.hasMetadata(JdbcConnectorTaxi.Annotations.InsertOperationAnnotationName.parameterizedName) -> Insert
+            metadata.hasMetadata(JdbcConnectorTaxi.Annotations.UpdateOperationAnnotationName.parameterizedName) -> Update
             else -> null
          }
       }
