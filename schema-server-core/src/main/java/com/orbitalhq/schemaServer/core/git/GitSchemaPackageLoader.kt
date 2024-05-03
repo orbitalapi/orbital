@@ -71,7 +71,6 @@ class GitSchemaPackageLoader(
          transportDecorator = this
       )
       gitStatusSink.emitNext(LoaderStatus.STARTING, Sinks.EmitFailureHandler.FAIL_FAST)
-
       val gitStatusMessages = gitStatusSink.asFlux()
          .distinctUntilChanged()
       val fileStatusMessages = filePackageLoader.loaderStatus
@@ -88,7 +87,7 @@ class GitSchemaPackageLoader(
    override fun start(): Flux<SourcePackage> {
       logger.info { "Starting with workingDir => $workingDir" }
       return GitRepoSync(workingDir, config, gitPollFrequency)
-         .start()
+         .start(true, {fileMonitor.suspend() }, { fileMonitor.resume()})
          .doOnNext {
             updateLoaderStatus(it)
          }
