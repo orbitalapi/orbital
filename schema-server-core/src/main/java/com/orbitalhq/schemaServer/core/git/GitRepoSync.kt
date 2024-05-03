@@ -46,7 +46,7 @@ class GitRepoSync(
       return syncNow(workingDir, config)
    }
 
-   fun start(syncImmediately: Boolean = true): Flux<GitSyncStatus> {
+   fun start(syncImmediately: Boolean = true, beforeGitOp: () -> Unit = {}, afterGitOp: () -> Unit = {}): Flux<GitSyncStatus> {
       logger.info { "Starting sync poll for ${config.description} with frequency $gitPollFrequency" }
       // A ticker which emits immediately, then on the gitPollFrequency thereafter
       val ticker = if (syncImmediately) {
@@ -58,13 +58,18 @@ class GitRepoSync(
 
       return ticker.map { tick ->
          logger.debug { "tick => git sync internal for ${config.description}, tick => $tick" }
-         syncNowInternal(workingDir, config)
+         syncNowInternal(workingDir, config, beforeGitOp, afterGitOp)
       }
    }
 
-   private fun syncNowInternal(workingDir: Path, config: GitRepositoryConnectionConfig): GitSyncStatus {
+   private fun syncNowInternal(
+      workingDir: Path,
+      config: GitRepositoryConnectionConfig,
+      beforeGitOp: () -> Unit,
+      afterGitOp: () -> Unit): GitSyncStatus {
       logger.debug { "Starting a git sync internal for ${config.description}" }
       val result = try {
+         beforeGitOp()
          GitPollOperations(workingDir.normalize().toFile(), config).fetchLatest()
       } catch (e: Exception) {
          GitSyncStatus(
@@ -75,6 +80,8 @@ class GitRepoSync(
             checkoutRoot = workingDir,
             errorMessage = e.message
          )
+      } finally {
+          afterGitOp()
       }
       if (result.successful) {
          logger.debug { result.description }

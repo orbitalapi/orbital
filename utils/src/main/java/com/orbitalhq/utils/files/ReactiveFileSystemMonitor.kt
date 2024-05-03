@@ -6,6 +6,8 @@ import java.nio.file.Path
 interface ReactiveFileSystemMonitor {
    fun startWatching(): Flux<List<FileSystemChangeEvent>>
    // Don't need to stop, just stop when all the subscribers to start() have gone away.
+   fun suspend()
+   fun resume()
 }
 
 data class FileSystemChangeEvent(

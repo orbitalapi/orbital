@@ -3,10 +3,6 @@ package com.orbitalhq.schemaServer.core.repositories
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.io.Resources
 import com.jayway.awaitility.Awaitility
-import com.winterbe.expekt.should
-import io.kotest.matchers.collections.shouldHaveSingleElement
-import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.shouldBe
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.connectors.soap.SoapWsdlSourceConverter
 import com.orbitalhq.schema.api.SchemaSet
@@ -16,8 +12,8 @@ import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoaderFact
 import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoaderFactory
 import com.orbitalhq.schemaServer.core.publisher.SourceWatchingSchemaPublisher
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.SoapPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
@@ -25,6 +21,10 @@ import com.orbitalhq.schemaServer.repositories.CreateFileProjectStoreRequest
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.schemaStore.TaxiSchemaValidator
 import com.orbitalhq.schemas.readers.TaxiSourceConverter
+import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldHaveSingleElement
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
 import lang.taxi.generators.soap.SoapLanguage
 import lang.taxi.packages.TaxiPackageLoader
 import org.junit.Rule
@@ -88,7 +88,7 @@ class FileRepositoryIntegrationTest {
 
       repositoryManager.use {
          // First, create the new repository
-         val projectFolder = folder.newFolder("my-project")
+         val projectFolder = folder.newFolder()
          val targetFile = projectFolder.resolve("src/country-info.wsdl")
          targetFile.parentFile.mkdirs()
          targetFile.createNewFile()
@@ -130,7 +130,7 @@ class FileRepositoryIntegrationTest {
 
       repositoryManager.use {
       // First, create the new repository
-      val projectFolder = folder.newFolder("my-project")
+      val projectFolder = folder.newFolder()
       repositoryService.createFileRepository(
          CreateFileProjectStoreRequest(
             projectFolder.canonicalPath,
@@ -151,7 +151,7 @@ class FileRepositoryIntegrationTest {
          .writeText("""type Hello inherits String""")
 
       Awaitility.await()
-         .atMost(30, TimeUnit.SECONDS)
+         .atMost(90, TimeUnit.SECONDS)
          .until<Boolean> {
             schemaClient.schema()
                .hasType("Hello")

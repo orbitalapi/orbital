@@ -3,7 +3,12 @@ package com.orbitalhq.utils.files
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
-import java.nio.file.*
+import java.nio.file.ClosedWatchServiceException
+import java.nio.file.FileSystems
+import java.nio.file.Path
+import java.nio.file.StandardWatchEventKinds
+import java.nio.file.WatchKey
+import java.nio.file.WatchService
 import java.util.concurrent.atomic.AtomicReference
 
 class ReactiveWatchingFileSystemMonitor(
@@ -18,13 +23,23 @@ class ReactiveWatchingFileSystemMonitor(
    private val watchServiceRef = AtomicReference<WatchService>()
 
    private val sink = Sinks.many().replay().latest<List<FileSystemChangeEvent>>()
-
+   private val suspendedEvents = SuspendableEventPublisher.forFileSystemChangeEvents(sink)
    override fun startWatching(): Flux<List<FileSystemChangeEvent>> {
       this.watcherThread = watch()
       return sink.asFlux().doOnCancel {
          logger.info { "Cancelling subscription" }
          this.stop()
       }
+   }
+
+   override fun suspend() {
+      logger.debug { "Suspending event publication for  ${path.toFile().canonicalPath}" }
+      suspendedEvents.suspend()
+   }
+
+   override fun resume() {
+      logger.debug { "Resuming event publication for  ${path.toFile().canonicalPath}" }
+     suspendedEvents.resume()
    }
 
    fun stop() {
@@ -105,10 +120,7 @@ class ReactiveWatchingFileSystemMonitor(
                   key.reset()
                   continue
                }
-               sink.emitNext(events) { signalType, emitResult ->
-                  logger.warn { "A file change was detected at ${path.toFile().canonicalPath}, but emitting the change signal failed: $signalType $emitResult" }
-                  false
-               }
+               suspendedEvents.publish(events)
                key.reset()
             }
          } catch (e: ClosedWatchServiceException) {

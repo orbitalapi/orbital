@@ -8,10 +8,11 @@ import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.schema.publisher.ProjectLoaderManager
 import com.orbitalhq.schema.publisher.loaders.LoaderExposingTaxiProject
 import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
-import com.orbitalhq.utils.toPath
 import lang.taxi.packages.SourcesType
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -41,7 +42,11 @@ class ProjectManagerConfigSourceLoader(
          .subscribe { _ ->
             loadNow()
          }
-      loadNow()
+
+      Mono.from<Unit> {
+         loadNow()
+      }.subscribeOn(Schedulers.single()).subscribe()
+
    }
 
    private fun loadNow() {

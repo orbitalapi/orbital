@@ -16,10 +16,11 @@ import java.time.Duration
 
 class ReactivePollingFileSystemMonitor(
    private val rootPath: Path,
-   private val pollFrequency: Duration
+   pollFrequency: Duration
 ) : ReactiveFileSystemMonitor {
 
    private val sink = Sinks.many().replay().latest<List<FileSystemChangeEvent>>()
+   private val suspendedEvents = SuspendableEventPublisher.forFileSystemChangeEvents(sink)
 
    private val logger = KotlinLogging.logger {}
 
@@ -70,7 +71,7 @@ class ReactivePollingFileSystemMonitor(
             }
 
             override fun onStop(observer: FileAlterationObserver) {
-               logger.debug("File poll completed")
+               logger.debug("File poll completed for path => ${rootPath.toFile().canonicalPath}")
             }
 
          })
@@ -81,15 +82,22 @@ class ReactivePollingFileSystemMonitor(
 
    private fun emitChangeEvent(file: File, type: FileSystemChangeEventType) {
       logger.info { "File changed: $type at ${file.canonicalPath}" }
-      sink.emitNext(listOf(FileSystemChangeEvent(file.toPath(), type))) { signalType, emitResult ->
-         logger.warn { "Failed to emit FileSystemChangeEvent: $signalType $emitResult" }
-         false
-      }
+      suspendedEvents.publish(listOf(FileSystemChangeEvent(file.toPath(), type)))
    }
 
    override fun startWatching(): Flux<List<FileSystemChangeEvent>> {
       monitor.start()
       return sink.asFlux()
+   }
+
+   override fun suspend() {
+      logger.debug { "Suspending event publication for  ${rootPath.toFile().canonicalPath}" }
+      suspendedEvents.suspend()
+   }
+
+   override fun resume() {
+      logger.debug { "Resuming event publication for  ${rootPath.toFile().canonicalPath}" }
+      suspendedEvents.resume()
    }
 
    fun pollNow() {
