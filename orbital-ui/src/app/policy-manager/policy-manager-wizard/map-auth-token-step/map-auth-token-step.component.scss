@@ -1,0 +1,49 @@
+@import "src/common";
+
+h4 {
+  text-transform: none;
+  color: $body;
+  font-size: 1.3rem;
+  font-weight: 400;
+}
+
+p {
+  margin-top: 0;
+}
+
+.checkbox-container {
+  column-count: 2;
+  column-gap: 0.5rem;
+  margin-top: 1rem;
+
+  &.is-readonly {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .checkbox {
+    display: block;
+    break-inside: avoid;
+    margin-bottom: 0.5rem;
+
+    .key {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .value {
+      font-size: 0.8rem;
+      color: $gray-800;
+    }
+  }
+}
+
+.form-button-bar {
+  margin: 1rem 0;
+  text-align: right;
+}
+
+.notification-error {
+  margin-top: 1rem;
+  white-space: pre;
+}

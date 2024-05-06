@@ -151,12 +151,16 @@ class LocalSchemaEditingService(
                   }
                }
 
+            val sourcePackageWithOnlyTouchedFiles = updatedSourcePackage.copy(
+               sources = updatedSourcePackage.sources.filter { touchedFilenames.contains(it.name) }
+            )
+
             val submissionResult = SchemaSubmissionResult(
                editedTypes.toSet(),
                editedServices.toSet(),
                compilationMessages,
                edit.dryRun,
-               updatedSourcePackage,
+               sourcePackageWithOnlyTouchedFiles,
                pendingUpdates
             )
 

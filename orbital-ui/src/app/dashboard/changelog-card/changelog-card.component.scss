@@ -1,5 +1,13 @@
-:host ::ng-deep app-card {
-  .content {
-    display: flex;
+:host ::ng-deep {
+  app-card {
+    .content {
+      display: flex;
+    }
+  }
+
+  app-project-summary-view {
+    .container {
+      margin-left: 0.5rem;
+    }
   }
 }

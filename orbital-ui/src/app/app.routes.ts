@@ -81,6 +81,12 @@ export const APP_ROUTES = RouterModule.forRoot(
       path: 'endpoints',
       loadChildren: () => import('./endpoint-manager/endpoint-manager.routes').then(m => m.endpointManagerRoutes)
     },
+    {
+      path: 'policies',
+      canActivate: [FeatureFlagGuard],
+      loadChildren: () => import('./policy-manager/policy-manager.routes').then(m => m.policyManagerRoutes),
+      data: {requiredFeatureFlag: 'policiesEnabled'}
+    },
     // Redirects for deprecated routes, should be able to remove these over time
     {
       path: 'schemas',

@@ -2,6 +2,7 @@ package com.orbitalhq.queryService.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.orbitalhq.JWTClaimType
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.winterbe.expekt.should
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -149,7 +150,7 @@ class VyneQueryOidcIntegrationTest {
            type ContactId inherits String
 
            [[ Custom JwtClaim model which inherits from Orbital's JwtClaim base ]]
-           model CompanyXJwtClaim inherits JwtClaim {
+           model CompanyXJwtClaim inherits ${JWTClaimType.AuthClaims.fullyQualifiedName} {
               contactId: ContactId
               accountId: AccountId
             }

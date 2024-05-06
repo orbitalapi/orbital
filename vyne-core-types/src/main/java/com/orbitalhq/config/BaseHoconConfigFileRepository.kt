@@ -2,7 +2,11 @@ package com.orbitalhq.config
 
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
-import com.typesafe.config.*
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigParseOptions
+import com.typesafe.config.ConfigRenderOptions
+import com.typesafe.config.ConfigResolveOptions
 import io.github.config4k.registerCustomType
 import io.github.config4k.toConfig
 import mu.KotlinLogging
@@ -113,6 +117,11 @@ abstract class BaseHoconConfigFileRepository<T : Any>(
 
    protected open fun saveConfig(config: Config) {
       val configWithPlaceholderQuotesRemoved = getSafeConfigString(config)
+      if (!Files.exists(path)) {
+         logger.info { "Config file at $path does not exist - creating it to save updates" }
+         path.toFile().parentFile.mkdirs()
+         path.toFile().createNewFile()
+      }
       path.toFile().writeText(configWithPlaceholderQuotesRemoved)
       configCache.invalidateAll()
    }

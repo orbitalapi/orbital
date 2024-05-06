@@ -16,7 +16,7 @@ import {ControlValueAccessor, NG_VALUE_ACCESSOR} from "@angular/forms";
       [stringify]="stringify"
       [ngModel]="selectedPackage"
       (ngModelChange)="setValue($event)"
-
+      [tuiDropdownOpen]="startOpened"
     >
       {{ prompt }}
       <input
@@ -50,6 +50,8 @@ export class ProjectSelectorComponent implements ControlValueAccessor {
   prompt: string
   @Input()
   selectedPackage: SourcePackageDescription | null;
+  @Input()
+  startOpened: boolean;
 
   @Input()
   showErrorIfNoEditable: boolean = false;

@@ -1,58 +1,47 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {Policy} from './policies';
-import {Schema, Type} from '../services/schema';
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { UiCustomisations } from '../../environments/ui-customisations';
+import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
+import { RouterLink } from '@angular/router';
+import { TuiButtonModule } from '@taiga-ui/core';
+import { PoliciesService, PolicySetupReadiness } from '../services/policies.service';
 
 @Component({
   selector: 'app-policy-manager',
-  styleUrls: ['./policy-manager.component.scss'],
+  standalone: true,
+  imports: [CommonModule, HeaderComponentLayoutModule, TuiButtonModule, RouterLink],
   template: `
-    <div class="content">
-      <mat-progress-bar mode="indeterminate" color="accent" *ngIf="loading"></mat-progress-bar>
-      <div><p>Policies let you define rules that control who can access data through Vyne</p></div>
-      <div class="empty-state" *ngIf="!policy">
-        <div>There's no policy defined against {{ targetType?.name?.name }} yet.&nbsp;
-          <a href="javascript:void" (click)="createNewPolicy.emit()">Create a new policy</a> now to get started.
-        </div>
-        <div class="button-container">
-          <button mat-raised-button color="primary" (click)="createNewPolicy.emit()">Add new</button>
-        </div>
-      </div>
-      <div class="policy-editor-container">
-        <app-policy-editor [policy]="policy" [policyType]="targetType" *ngIf="policy" (save)="doSave()"
-                           (cancel)="cancel()"
-                           [schema]="schema"></app-policy-editor>
-      </div>
-    </div>
-  `
+    <app-header-component-layout
+      title="Policies"
+      [description]="'Policies define data access controls for the data that is served by ' + UiCustomisations.productName"
+    >
+      <ng-container ngProjectAs="buttons" *ngIf="!setupReadiness?.authTokenTypes.length">
+        <button
+          tuiButton
+          size="m"
+          [routerLink]="'get-started'"
+        >
+          <img src="assets/img/tabler/lock-cog.svg" class="lock-icon filter-white">
+          Get started
+        </button>
+      </ng-container>
+    </app-header-component-layout>
+  `,
+  styleUrls: ['./policy-manager.component.scss']
 })
 export class PolicyManagerComponent {
+  setupReadiness: PolicySetupReadiness | null;
 
-  @Input()
-  schema: Schema;
+  protected readonly UiCustomisations = UiCustomisations;
 
-  @Input()
-  policy: Policy;
-
-  @Input()
-  loading = false;
-
-  @Output()
-  save: EventEmitter<Policy> = new EventEmitter<Policy>();
-
-  @Output()
-  createNewPolicy: EventEmitter<void> = new EventEmitter<void>();
-
-  @Input()
-  targetType: Type;
-
-  @Output()
-  reset: EventEmitter<void> = new EventEmitter<void>();
-
-  doSave() {
-    this.save.emit(this.policy);
-  }
-
-  cancel() {
-    this.reset.emit();
+  constructor(
+    private policiesService: PoliciesService,
+  ) {
+    policiesService.getPolicySetupReadiness().pipe(
+      takeUntilDestroyed()
+    ).subscribe(value => {
+      this.setupReadiness = value;
+    })
   }
 }

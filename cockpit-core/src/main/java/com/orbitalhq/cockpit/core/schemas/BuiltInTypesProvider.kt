@@ -33,7 +33,7 @@ object BuiltInTypesProvider {
          VersionedSource(
             "JwtTypes",
             "0.1.0",
-            JWTClaimType.JWTClaimTypeDefinition
+            JWTClaimType.AuthClaimsTypeDefinition
          ),
          ErrorType.queryErrorVersionedSource,
          VersionedSource(

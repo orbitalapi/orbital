@@ -54,6 +54,7 @@ import { TuiClickOutsideModule } from '@taiga-ui/cdk';
       <app-project-selector
         prompt="Select a project to add the data source to"
         [packages]="packages"
+        [startOpened]="true"
         [(ngModel)]="selectedPackage"
         (ngModelChange)="isDataSourceSelectorOpen = true"
       ></app-project-selector>
