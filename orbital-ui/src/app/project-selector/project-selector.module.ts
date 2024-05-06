@@ -10,7 +10,7 @@ import {
 import {FormsModule} from "@angular/forms";
 import {DisableControlModule} from "../disable-control/disable-control.module";
 import {RouterModule} from "@angular/router";
-import {TuiNotificationModule} from "@taiga-ui/core";
+import {TuiDropdownModule, TuiNotificationModule} from '@taiga-ui/core';
 
 
 @NgModule({
@@ -29,7 +29,8 @@ import {TuiNotificationModule} from "@taiga-ui/core";
         TuiFilterByInputPipeModule,
         TuiStringifyContentPipeModule,
         RouterModule,
-        TuiNotificationModule
+        TuiNotificationModule,
+        TuiDropdownModule
     ]
 })
 export class ProjectSelectorModule {

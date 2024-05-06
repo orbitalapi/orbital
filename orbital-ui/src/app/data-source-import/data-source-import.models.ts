@@ -38,8 +38,9 @@ export type SchemaConverterOptions =
   | JsonSchemaConverterOptions
   | TableSchemaConverterOptions
   | KafkaTopicConverterOptions
-  | ProtobufSchemaConverterOptions;
-export type SchemaType = 'jsonSchema' | 'swagger' | 'databaseTable' | 'kafkaTopic' | 'protobuf';
+  | ProtobufSchemaConverterOptions
+  | MapConverterOptions;
+export type SchemaType = 'jsonSchema' | 'swagger' | 'databaseTable' | 'kafkaTopic' | 'protobuf' | 'map';
 
 export type KafkaOffset = 'EARLIEST' | 'LATEST' | 'NONE';
 
@@ -51,4 +52,11 @@ export class KafkaTopicConverterOptions {
   public targetNamespace?: string;
   public serviceName?: string;
   public operationName?: string;
+}
+
+export interface MapConverterOptions {
+  map: {[index: string]: any};
+  createdTypeName: string;
+  inheritedTypeName: string | null;
+  fieldsToInclude: string[]
 }

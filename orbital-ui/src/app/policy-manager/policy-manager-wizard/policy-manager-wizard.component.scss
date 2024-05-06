@@ -1,0 +1,25 @@
+@import "src/common";
+
+:host {
+  ::ng-deep app-header-component-layout {
+    height: 100%;
+
+    .body-container {
+      min-height: 0;
+      overflow: auto;
+    }
+  }
+}
+
+tui-stepper {
+  padding: 1rem 0 0 0;
+
+  button {
+    color: $gray-800;
+    pointer-events: none;
+
+    &.disabled {
+      color: $gray-600;
+    }
+  }
+}

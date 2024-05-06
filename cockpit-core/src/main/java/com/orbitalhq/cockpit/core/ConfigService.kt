@@ -65,7 +65,8 @@ data class FeatureTogglesConfig(
    val chatGptEnabled: Boolean = false,
    val workspacesEnabled: Boolean = false,
    val onboardingEnabled: Boolean = false,
-   val dashboardEnabled: Boolean = false
+   val dashboardEnabled: Boolean = false,
+   val policiesEnabled: Boolean = false
 )
 
 data class LicenseStatus(

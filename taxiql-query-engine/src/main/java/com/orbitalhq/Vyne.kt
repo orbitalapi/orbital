@@ -15,7 +15,6 @@ import com.orbitalhq.query.*
 import com.orbitalhq.query.graph.Algorithms
 import com.orbitalhq.query.planner.QueryPlanner
 import com.orbitalhq.schemas.*
-import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.schemas.taxi.TaxiSchemaAggregator
 import com.orbitalhq.schemas.taxi.compileExpression
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
@@ -269,7 +268,7 @@ class Vyne(
    }
 
    private fun userPrincipalFact(fact: FactValue): Boolean {
-      return fact.type.inheritsFrom(this.type(JWTClaimType.JWTClaim.fullyQualifiedName).taxiType)
+      return fact.type.inheritsFrom(this.type(JWTClaimType.AuthClaims.fullyQualifiedName).taxiType)
    }
 
    /**

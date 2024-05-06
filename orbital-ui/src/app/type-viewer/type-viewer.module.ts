@@ -9,7 +9,6 @@ import {TypeViewerComponent} from './type-viewer.component';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {SearchModule} from '../search/search.module';
 import {CodeViewerModule} from '../code-viewer/code-viewer.module';
-import {PolicyManagerModule} from '../policy-manager/policy-manager.module';
 import {TocHostDirective} from './toc-host.directive';
 import {TypeViewerContainerComponent} from './type-viewer-container.component';
 import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.module';
@@ -67,7 +66,6 @@ import { MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef } from '@angular/material/le
         EnumTableModule,
         TypeLinkGraphModule,
         CodeViewerModule,
-        PolicyManagerModule,
         InheritanceGraphModule,
         HeaderBarModule,
         OperationBadgeModule,

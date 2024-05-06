@@ -16,6 +16,17 @@
     padding-bottom: 2rem;
   }
 
+  .back-link {
+    width: 24px;
+    height: 24px;
+    margin-left: -2.25rem;
+    padding: 0.16rem 1rem 0 0;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
   .header {
     max-width: 1280px;
     width: 100%;
@@ -37,11 +48,12 @@
       flex-shrink: 0;
       margin-left: 2rem;
     }
+
+    .row {
+      display: flex;
+    }
   }
 
-  .row {
-    display: flex;
-  }
 }
 
 .body-container {

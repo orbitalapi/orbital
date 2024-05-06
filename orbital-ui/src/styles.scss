@@ -20,6 +20,7 @@
   --tui-text-font: var(--body-font);
   --tui-font-text: var(--body-font);
   --tui-font-heading-6: normal 1rem #{$headings-font};
+  --tui-font-heading: #{$headings-font};
 
   [tuiWrapper][data-appearance='textfield']:hover:not(._no-hover) {
   }

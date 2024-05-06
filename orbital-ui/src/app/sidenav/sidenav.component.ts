@@ -2,11 +2,11 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TuiHintModule, TuiSvgModule } from '@taiga-ui/core';
-import { BehaviorSubject, combineLatestWith } from 'rxjs';
+import {BehaviorSubject, combineLatestWith, concat, merge, mergeAll} from 'rxjs';
 import { Observable } from 'rxjs/internal/Observable';
 import { filter, map, tap } from 'rxjs/operators';
 import { HeaderBarModule } from '../header-bar/header-bar.module';
-import { AppInfo } from '../services/app-info.service';
+import {AppInfo, AppInfoService} from '../services/app-info.service';
 import { UserInfoService, VynePrivileges, VyneUser } from '../services/user-info.service';
 
 export interface SidebarElement {
@@ -17,6 +17,7 @@ export interface SidebarElement {
   requiredAuthority?: VynePrivileges;
   externalUrl?: string;
   testId?: string
+  featureToggle?: string | null;
 }
 
 @Component({
@@ -89,13 +90,14 @@ export class SidenavComponent implements OnInit {
       testId: 'endpoints',
       requiredAuthority: VynePrivileges.BrowseSchema
     },
-    // {
-    //   title: 'Pipeline manager',
-    //   icon: 'assets/img/pipeline.svg',
-    //   route: 'pipeline-manager',
-    //   testId: 'pipeline-sidebar',
-    //   requiredAuthority: VynePrivileges.ViewPipelines
-    // },
+    {
+      title: 'Policies',
+      icon: 'assets/img/tabler/lock-code.svg',
+      route: 'policies',
+      testId: 'policies',
+      requiredAuthority: VynePrivileges.BrowseSchema,
+      featureToggle: 'policiesEnabled'
+    },
   // TODO: check with Marty about the iconActive, and whether that's now not a thing (which it appears not to be)
   ].map(value => {
     return {
@@ -104,7 +106,8 @@ export class SidenavComponent implements OnInit {
       iconActive: value.icon,
       route: value.route,
       testId: value.testId,
-      requiredAuthority: value.requiredAuthority
+      requiredAuthority: value.requiredAuthority,
+      featureToggle: value.featureToggle
     };
   });
 
@@ -128,7 +131,8 @@ export class SidenavComponent implements OnInit {
   private readonly IS_COLLAPSED_LOCAL_STORAGE_KEY: string = 'isSidebarCollapsed';
   private defaultSidebarElements$: BehaviorSubject<SidebarElement[]> = new BehaviorSubject<SidebarElement[]>(this.sidebarElements)
 
-  constructor(private userInfoService: UserInfoService) {
+  constructor(private userInfoService: UserInfoService, private appInfoService: AppInfoService) {
+
     this.userInfoService
       .userInfo$
       .pipe(
@@ -136,7 +140,18 @@ export class SidenavComponent implements OnInit {
         tap(userInfo => this.userInfo$.next(userInfo)),
         map(userInfo => this.sidebarElements
           .filter(sideBarElement => userInfo.grantedAuthorities.includes(sideBarElement.requiredAuthority))
-        )
+        ),
+        combineLatestWith(appInfoService.getConfig()),
+        map(([sidebarElements,config]) => {
+          const featureToggledFilteredElements = sidebarElements.filter(sidebarElement => {
+            if (!sidebarElement.featureToggle) {
+              return true
+            } else {
+              return config.featureToggles[sidebarElement.featureToggle]
+            }
+          })
+          return featureToggledFilteredElements;
+        })
       ).subscribe(filteredSideBarElements => this.defaultSidebarElements$.next(filteredSideBarElements));
   }
 

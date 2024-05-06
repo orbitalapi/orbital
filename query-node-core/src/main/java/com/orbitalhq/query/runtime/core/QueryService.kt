@@ -448,7 +448,7 @@ class QueryService(
       schema: Schema,
       parameters: List<lang.taxi.query.Parameter>
    ): String? {
-      val jwtParameter = parameters.firstOrNull { it.type.inheritsFrom(schema.taxiType(JWTClaimType.JWTClaim)) }
+      val jwtParameter = parameters.firstOrNull { it.type.inheritsFrom(schema.taxiType(JWTClaimType.AuthClaims)) }
       return jwtParameter?.type?.qualifiedName
 
    }

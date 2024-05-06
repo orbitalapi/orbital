@@ -1,4 +1,4 @@
-import { Component, HostBinding, Input } from '@angular/core';
+import { Component, HostBinding, Input, TemplateRef } from '@angular/core';
 
 @Component({
   selector: 'app-header-component-layout',
@@ -7,12 +7,15 @@ import { Component, HostBinding, Input } from '@angular/core';
     <div class="header-container" [ngClass]="{'pad-bottom' : padBottom}">
       <div class="header">
         <div class="row">
+          <a *ngIf="backLink" class="back-link filter-link-color" [routerLink]="backLink"><img src="assets/img/tabler/arrow-left.svg"></a>
           <img class="icon" *ngIf="iconUrl" [attr.src]="iconUrl">
           <div class="header-text">
             <h4 *ngIf="subtitle">{{ subtitle}}</h4>
-            <h2>{{ title }}</h2>
+            <h2>
+              <ng-container *ngIf="isString; else template">{{ title }}</ng-container>
+              <ng-template #template><ng-container *ngTemplateOutlet="title"></ng-container></ng-template>
+            </h2>
             <p class="description">{{ description }}</p>
-
           </div>
           <div class="spacer"></div>
           <div class="buttons">
@@ -33,7 +36,7 @@ import { Component, HostBinding, Input } from '@angular/core';
 export class HeaderComponentLayoutComponent {
 
   @Input()
-  showBack: boolean = false;
+  backLink: string;
 
   @Input()
   subtitle: string = null;
@@ -42,7 +45,7 @@ export class HeaderComponentLayoutComponent {
   iconUrl: string;
 
   @Input()
-  title: string;
+  title: string | TemplateRef<any>;
   // Prevents tooltip displaying in browser
   @HostBinding('attr.title') get getTitle(): null {
     return null;
@@ -73,4 +76,8 @@ export class HeaderComponentLayoutComponent {
    */
   @Input()
   fullWidth: boolean = false;
+
+  get isString(): boolean {
+    return typeof this.title === 'string';
+  }
 }

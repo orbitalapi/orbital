@@ -29,7 +29,7 @@ class PolicyEvaluationSpec : DescribeSpec({
          }
       """.trimIndent()
       it("is possible to suppress a field using a policy") {
-         val (vyne, stub) = testVyne(JWTClaimType.JWTClaimTypeDefinition,
+         val (vyne, stub) = testVyne(JWTClaimType.AuthClaimsTypeDefinition,
             """
          $baseSchema
 
@@ -47,7 +47,7 @@ class PolicyEvaluationSpec : DescribeSpec({
 
       it("is possible to suppress a field based on a user property") {
          val (vyne, stub) = testVyne(
-            JWTClaimType.JWTClaimTypeDefinition,
+            JWTClaimType.AuthClaimsTypeDefinition,
             """
          $baseSchema
 
