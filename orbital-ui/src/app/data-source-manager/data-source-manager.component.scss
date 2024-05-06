@@ -5,12 +5,30 @@
 }
 
 .errors-panel {
-  margin: 1rem 0;
-  background-color: $warning-light;
   padding: 1rem;
-  border-radius: 6px;
-}
+  margin-bottom: 1rem;
 
+  display: flex;
+  align-items: start;
+  gap: 1rem;
+
+  h3 {
+    margin: 0;
+  }
+
+  font-size: 0.9rem;
+  background-color: $red-50;
+  border-radius: 4px;
+  border: 2px solid $red-400;
+
+  &:hover {
+    cursor: pointer;
+    background-color: $red-100;
+    // don't let the other hover state override
+    border-color: $red-400;
+    border-width: 2px;
+  }
+}
 .no-route-selected {
   display: none;
 }
