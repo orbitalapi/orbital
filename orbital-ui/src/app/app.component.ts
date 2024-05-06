@@ -10,6 +10,7 @@ import { AppInfo, AppInfoService } from './services/app-info.service';
 import { SchemaNotificationService, SourceNameWithPackage } from './services/schema-notification.service';
 import { SidebarElement } from './sidenav/sidenav.component';
 import { SystemAlert } from './system-alert/system-alert.component';
+import {DbConnectionService} from "./db-connection-editor/db-importer.service";
 
 @Component({
   selector: 'app-root',
@@ -51,6 +52,7 @@ export class AppComponent implements OnInit {
               private schemaNotificationService: SchemaNotificationService,
               private datePipe: DatePipe,
               private packagesService: PackagesService,
+              private dbService: DbConnectionService,
               @Inject(TuiAlertService) private readonly alertService: TuiAlertService,
   ) {
     appInfoService
@@ -132,6 +134,21 @@ export class AppComponent implements OnInit {
           })
         }
       })
+
+    this.dbService.getConnections(false)
+        .subscribe(connectionListResponse => {
+          if (connectionListResponse.definitionsWithErrors.length > 0) {
+            this.alerts.push({
+              id: 'connection-config-errors',
+              severity: "Error",
+              message: `Your data sources cannot be loaded`,
+              actionLabel: 'See details',
+              handler: () => {
+                this.router.navigate(["data-source-manager", "problems"]);
+              }
+            })
+          }
+        })
   }
 
   private getCompilationErrorsAlertIndex() {

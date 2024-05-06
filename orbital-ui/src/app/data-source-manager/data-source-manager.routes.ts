@@ -7,6 +7,9 @@ import { VynePrivileges } from '../services/user-info.service';
 import { DataSourceDetailViewComponent } from './data-source-detail-view.component';
 import { DataSourceManagerHeaderComponent }from './data-source-manager-header.component';
 import { DataSourceManagerComponent } from './data-source-manager.component';
+import {ProjectErrorListComponent} from "../project-explorer/project-error-list.component";
+import {UiCustomisations} from "../../environments/ui-customisations";
+import {DataSourceErrorListComponent} from "./data-source-error-list.component";
 
 export const dataSourceManagerRoutes: Route[] = [
   // NOTE: the ordering of the 'add' route being before the '' route matters
@@ -59,6 +62,11 @@ export const dataSourceManagerRoutes: Route[] = [
         ]
       },
     ],
+  },
+  {
+    path: 'problems',
+    component: DataSourceErrorListComponent,
+    title: `${UiCustomisations.productName}: Projects`
   },
   {
     path: 'data-source', // routing from the data-source-import component

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import {ActivatedRoute, Router, RouterOutlet} from '@angular/router';
 import { AngularSplitModule } from 'angular-split';
 import { Observable } from 'rxjs';
 import { UiCustomisations } from '../../environments/ui-customisations';
@@ -15,14 +15,14 @@ import { DataSourceTreeComponent } from './data-source-tree/data-source-tree.com
     <as-split direction="horizontal" unit="pixel">
       <as-split-area size="360">
         <ng-container *ngIf="(connections$ | async) as connectionList">
-          <div *ngIf="connectionList.definitionsWithErrors.length > 0" class="errors-panel">
-            <h3>Some configuration files have errors:</h3>
-            <ul>
-              <li *ngFor="let error of connectionList.definitionsWithErrors">
-                <h4>{{ error.configFileName}}</h4>
-                <span>{{ error.identifier.id }}: {{ error.error }}</span>
-              </li>
-            </ul>
+          <div *ngIf="connectionList.definitionsWithErrors.length > 0" class="errors-panel" (click)="showProblemsPanel()">
+            <h3>{{ connectionList.definitionsWithErrors.length }} configuration files have errors</h3>
+<!--            <ul>-->
+<!--              <li *ngFor="let error of connectionList.definitionsWithErrors">-->
+<!--                <h4>{{ error.configFileName}}</h4>-->
+<!--                <span>{{ error.identifier.id }}: {{ error.error }}</span>-->
+<!--              </li>-->
+<!--            </ul>-->
           </div>
         </ng-container>
         <app-data-source-tree [schema$]="schema$" [connections$]="connections$"></app-data-source-tree>
@@ -48,11 +48,18 @@ export class DataSourceManagerComponent {
 
   constructor(
     private typeService: TypesService,
-    private dbService: DbConnectionService
+    private dbService: DbConnectionService,
+    private router: Router,
+    private activatedRoute: ActivatedRoute,
   ) {
     this.schema$ = this.typeService.getTypes();
     this.connections$ = this.dbService.getConnections(true);
   }
+
+  showProblemsPanel() {
+    this.router.navigate(['problems'], { relativeTo: this.activatedRoute })
+  }
+
 
   protected readonly UiCustomisations = UiCustomisations;
 }
