@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
 import {Service} from '../services/schema';
 import {TypesService} from '../services/types.service';
 import {ActivatedRoute, ParamMap, Router} from '@angular/router';
@@ -21,7 +21,9 @@ export class ServiceViewContainerComponent implements OnInit {
   @Input()
   service: Service;
 
-  constructor(private typeService: TypesService, private activeRoute: ActivatedRoute) {
+  constructor(private typeService: TypesService,
+              private activeRoute: ActivatedRoute,
+              private changeDetectorRef: ChangeDetectorRef) {
   }
 
   ngOnInit(): void {
@@ -30,6 +32,11 @@ export class ServiceViewContainerComponent implements OnInit {
       flatMap(serviceName => this.typeService.getService(serviceName))
     ).subscribe((service: Service) => {
       this.service = service;
+      // Note: Strictly this shouldn't be required.
+      // (As this view is not ViewDetection: OnPush)
+      // But, in the data sources view, for some reason without this
+      // we're not updating the view without this.
+      this.changeDetectorRef.markForCheck();
     });
   }
 }
