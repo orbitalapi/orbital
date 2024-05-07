@@ -116,8 +116,8 @@ sealed class RemoteCallExchangeMetadata {
 
 @Serializable
 data class HttpHeaders(
-   val requestHeaders: Map<String,List<String>>,
-   val responseHeaders: Map<String,List<String>>
+   val requestHeaders: Map<String, List<String>>,
+   val responseHeaders: Map<String, List<String>>
 ) {
    companion object {
       fun empty() = HttpHeaders(emptyMap(), emptyMap())
@@ -148,9 +148,39 @@ data class SqlExchange(
 data class CacheExchange(
    val connectionName: String,
    val cacheName: String,
-   val cacheKey: String
+   /**
+    * When a simple key lookup, provide the key.
+    * If querying, provide the query statement
+    */
+   val cacheKeyOrStatement: String,
+   val verb: CacheOperationVerb,
+   val cacheType: CacheType,
+   val recordCount: Int,
 ) : RemoteCallExchangeMetadata() {
    override val requestBody: String? = null
+
+   enum class CacheOperationVerb {
+      /**
+       * Find a specific value by key
+       */
+      LOOKUP,
+
+      /**
+       * Execute a query against the cache
+       */
+      QUERY,
+
+      /**
+       * Return the full cache
+       */
+      FIND_ALL;
+   }
+
+   enum class CacheType {
+      Hazelcast,
+      Redis,
+      Unknown
+   }
 }
 
 

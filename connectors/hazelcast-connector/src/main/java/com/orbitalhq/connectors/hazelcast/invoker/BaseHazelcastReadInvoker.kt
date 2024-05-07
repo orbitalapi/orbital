@@ -12,6 +12,8 @@ import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
+import com.orbitalhq.query.CacheExchange
+import com.orbitalhq.query.CacheExchange.CacheOperationVerb
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
@@ -146,16 +148,19 @@ abstract class BaseHazelcastReadInvoker {
          map,
          predicate,
       )
+      val (taxiQuery, constructedQueryDataSource) = parameters.getTaxiQlQuery()
+
       val isSuccessful = resultSize > 0
       val operationResult = buildOperationResult(
          service,
          operation,
-         parameters.map { it.second },
+         constructedQueryDataSource.inputs,
          hazelcastConnectionConfig,
+         mapName,
          predicate.toString(),
          elapsed = Duration.between(startTime, Instant.now()),
          resultSize,
-         "SELECT",
+         CacheOperationVerb.QUERY,
          isSuccessful
       )
       eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
@@ -199,16 +204,19 @@ abstract class BaseHazelcastReadInvoker {
       logger.debug { "Query of $taxiQlQueryString converted to Id lookup against map $mapName with key $idLookupValue" }
       val (rawResultFlow, recordCount) = buildFlowById(taxiQlQueryString, idLookupValue, map, operation)
 
+      val (taxiQuery, constructedQueryDataSource) = parameters.getTaxiQlQuery()
+
       val isSuccess = recordCount > 0
       val result = buildOperationResult(
          service,
          operation,
-         parameters.map { it.second },
+         constructedQueryDataSource.inputs,
          hazelcastConnectionConfig,
+         mapName,
          idLookupValue.toString(),
          elapsed = Duration.between(startTime, Instant.now()),
          recordCount,
-         "LOOKUP",
+         CacheOperationVerb.LOOKUP,
          isSuccess
       )
       eventDispatcher.reportRemoteOperationInvoked(result, queryId)
@@ -246,15 +254,30 @@ abstract class BaseHazelcastReadInvoker {
       schema: Schema,
    ): Flow<TypedInstance> {
       val (rawResultsFlow, resultSize) = buildFlowOfFullMap(map, operation, taxiQlQueryString)
+
+      // Note - generally for a findAll(), there are no parameters, so an empty list
+      // is the appropriate value.
+      // If, for some reason, there are params, it should be a TaxiQL query, so we
+      // need to extract the inputs from that.
+      val operationParams = if (parameters.isEmpty()) {
+         emptyList()
+      } else {
+         val (taxiQuery, constructedQueryDataSource) = parameters.getTaxiQlQuery()
+         constructedQueryDataSource.inputs
+      }
+
+
+
       val result = buildOperationResult(
          service,
          operation,
-         parameters.map { it.second },
+         operationParams,
          hazelcastConnectionConfig,
+         mapName,
          "find *",
          elapsed = Duration.between(startTime, Instant.now()),
          resultSize,
-         "FIND_ALL",
+         CacheOperationVerb.FIND_ALL,
          true
       )
       eventDispatcher.reportRemoteOperationInvoked(result, queryId)
@@ -367,10 +390,11 @@ abstract class BaseHazelcastReadInvoker {
       operation: RemoteOperation,
       parameters: List<TypedInstance>,
       connectionConfig: HazelcastConfiguration,
+      cacheName: String,
       sql: String,
       elapsed: Duration,
       recordCount: Int,
-      verb: String = "SELECT",
+      verb: CacheOperationVerb,
       success: Boolean
    ): OperationResult {
       val remoteCall =
@@ -378,6 +402,8 @@ abstract class BaseHazelcastReadInvoker {
             service,
             connectionConfig.addresses.joinToString(),
             operation,
+            cacheName,
+            connectionConfig.connectionName,
             sql,
             elapsed,
             recordCount,
@@ -394,10 +420,12 @@ abstract class BaseHazelcastReadInvoker {
       service: Service,
       jdbcUrl: String,
       operation: RemoteOperation,
+      cacheName: String,
+      connectionName: String,
       sql: String,
       elapsed: Duration,
       recordCount: Int,
-      verb: String,
+      verb: CacheOperationVerb,
       success: Boolean
    ) = RemoteCall(
       service = service.name,
@@ -410,10 +438,13 @@ abstract class BaseHazelcastReadInvoker {
       responseMessageType = ResponseMessageType.FULL,
       // Feels like capturing the results are a bad idea.  Can revisit if there's a use-case
       response = null,
-      exchange = SqlExchange(
-         sql = sql,
+      exchange = CacheExchange(
+         cacheKeyOrStatement = sql,
          recordCount = recordCount,
-         verb = verb
+         verb = verb,
+         connectionName = connectionName,
+         cacheName = cacheName,
+         cacheType = CacheExchange.CacheType.Hazelcast
       ),
       isFailed = !success
    )

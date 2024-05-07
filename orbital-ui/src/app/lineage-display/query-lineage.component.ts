@@ -3,8 +3,9 @@ import {BaseGraphComponent} from '../inheritence-graph/base-graph-component';
 import {QuerySankeyChartRow, SankeyNodeType, SankeyOperationNodeDetails} from '../services/query.service';
 import {SchemaGraph, SchemaGraphLink, SchemaGraphNode, SchemaGraphNodeType, SchemaNodeSet} from '../services/schema';
 import {ClusterNode} from '@swimlane/ngx-graph';
-import {isNullOrUndefined} from 'util';
 import {Subject} from 'rxjs';
+import {isNullOrUndefined} from "../utils/utils";
+import {capitalizeFirstLetter} from "../utils/strings";
 
 @Component({
   selector: 'app-query-lineage',
@@ -101,13 +102,11 @@ export class QueryLineageComponent extends BaseGraphComponent {
   }
 
   nodeIcon(node: SchemaGraphNode) {
-    // if (node.subHeader.includes('getStreaming')) {
-    //   debugger;
-    // }
     if (node.type !== 'OPERATION') {
       return node.type
     } else {
-      return this.nodeDetails(node.data)?.operationType;
+      const nodeDetails = this.nodeDetails(node.data)
+      return nodeDetails?.systemProductName || nodeDetails?.operationType;
     }
 
   }
@@ -199,8 +198,9 @@ export class QueryLineageComponent extends BaseGraphComponent {
             const httpSubheader = operationData.operationName.name.replace('@@', ' / ');
             return [httpHeader, httpSubheader]
           case "Cache":
-            const cacheHeader = 'Cache connection: ' + operationData.connectionName
-            const cacheSubheader = 'Read ' + operationData.cacheName
+            const cacheHeader = 'Cache: ' + operationData.connectionName
+            const verb = capitalizeFirstLetter(operationData.verb.toLowerCase().replace("_", " "))
+            const cacheSubheader = `${verb} ${operationData.cacheName}`
             return [cacheHeader, cacheSubheader];
         }
       }
