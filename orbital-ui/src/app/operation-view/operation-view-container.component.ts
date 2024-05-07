@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
 import { TypesService } from '../services/types.service';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { catchError, map, switchMap } from 'rxjs/operators';
@@ -34,7 +34,8 @@ export class OperationViewContainerComponent implements OnInit {
 
   constructor(private typeService: TypesService,
               private activeRoute: ActivatedRoute,
-              private queryService: QueryService) {
+              private queryService: QueryService,
+              private changeDetectorRef: ChangeDetectorRef) {
   }
 
   schema: Schema;
@@ -69,6 +70,12 @@ export class OperationViewContainerComponent implements OnInit {
     ).subscribe((operation: Operation) => {
       this.operation = operation;
       this.operationFetchError = null;
+      // Note: Strictly this shouldn't be required.
+      // (As this view is not ViewDetection: OnPush)
+      // But, in the data sources view, for some reason without this
+      // we're not updating the view without this.
+
+      this.changeDetectorRef.markForCheck();
     });
   }
 
