@@ -34,7 +34,7 @@ abstract class BaseCachingConfigLoader(
     * Populates the cache.
     * Be sure to pass the correct "additionalSources" entry, not the schema's actual source
     */
-   protected fun buildConfigSourcesCache(sources: List<SourcePackage>) {
+   protected fun buildConfigSourcesCache(sources: List<SourcePackage>):List<SourcePackage> {
       // This is a hack, and should find a tidier way.
       // Need to support passing a filename - eg: auth.conf,
       // which should match /a/b/c/auth.conf and auth.conf
@@ -50,7 +50,7 @@ abstract class BaseCachingConfigLoader(
          Paths.get(filePattern).fileSystem.getPathMatcher(pathGlob)
       } catch (e: InvalidPathException) {
          logger.error { "Cannot setup config loader ${this::class.simpleName} as the provided path $filePattern is invalid" }
-         return
+         return emptyList()
       }
       val hoconSources = sources.map { sourcePackage ->
          val requestedSources = sourcePackage.sources
@@ -61,6 +61,7 @@ abstract class BaseCachingConfigLoader(
       }
       contentCache[CacheKey] = hoconSources
       sink.emitNext(this::class.java, Sinks.EmitFailureHandler.FAIL_FAST)
+      return hoconSources
    }
 
    override fun load(): List<SourcePackage> {
