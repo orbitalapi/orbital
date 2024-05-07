@@ -485,6 +485,7 @@ export interface DatabaseNode {
   connectionName: string;
   tableNames: string[];
   operationType: 'Database';
+  systemProductName: string | null;
 }
 
 export interface HttpOperationNode {
@@ -492,12 +493,14 @@ export interface HttpOperationNode {
   verb: string;
   path: string;
   operationType: 'Http';
+  systemProductName: string | null;
 }
 
 export interface KafkaOperationNode {
   connectionName: string;
   topic: string;
   operationType: 'KafkaTopic';
+  systemProductName: string | null;
 }
 
 export interface CacheNode {
@@ -505,6 +508,8 @@ export interface CacheNode {
   cacheName: string;
   cacheKey: string;
   operationType: 'Cache';
+  verb: 'LOOKUP' | 'QUERY' | 'FIND_ALL';
+  systemProductName: string | null;
 }
 
 export interface ChatParseResult {

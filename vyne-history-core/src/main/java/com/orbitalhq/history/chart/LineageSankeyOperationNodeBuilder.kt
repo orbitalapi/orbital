@@ -2,7 +2,6 @@ package com.orbitalhq.history.chart
 
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.query.CacheExchange
-import com.orbitalhq.query.connectors.CacheConnectionName
 import com.orbitalhq.query.connectors.CacheNames
 import com.orbitalhq.query.history.CacheNode
 import com.orbitalhq.query.history.DatabaseNode
@@ -30,6 +29,7 @@ class LineageSankeyOperationNodeBuilder(private val schema: Schema) {
          isHttpApi(service, operation) -> buildHttpApi(service, operation, operationResult)
          isKafkaTopic(service, operation) -> buildKafkaTopicNode(service, operation, operationResult)
          isDatabaseQuery(service, operation) -> buildDatabaseNode(service, operation, operationResult)
+         isHazelcastOperation(service, operation) -> buildCacheHit(operationResult)
          else -> {
             logger.debug { "No SankeyOperationNodeDetails building strategy found for Service ${service.name.shortDisplayName}. Consider adding one" }
             null
@@ -42,7 +42,9 @@ class LineageSankeyOperationNodeBuilder(private val schema: Schema) {
       return CacheNode(
          connectionName = exchange.connectionName,
          cacheName = exchange.cacheName,
-         cacheKey = exchange.cacheKey,
+         cacheKey = exchange.cacheKeyOrStatement,
+         verb = exchange.verb,
+         systemProductName = exchange.cacheType.name
       )
    }
 
@@ -81,6 +83,9 @@ class LineageSankeyOperationNodeBuilder(private val schema: Schema) {
       // Note: Not using static constants here, as don't want a compile time dependency between the JDBC Connector
       // and History Core.
       return service.hasMetadata("com.orbitalhq.jdbc.DatabaseService") && operation is QueryOperation
+   }
+   private fun isHazelcastOperation(service: Service, operation: RemoteOperation):Boolean {
+      return service.hasMetadata("com.orbitalhq.hazelcast.HazelcastService")
    }
 
    private fun buildKafkaTopicNode(

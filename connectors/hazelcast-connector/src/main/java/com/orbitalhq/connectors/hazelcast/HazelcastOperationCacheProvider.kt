@@ -127,7 +127,10 @@ class HazelcastOperationCacheProvider(
          exchange = CacheExchange(
             connectionName,
             message.operation.name,
-            listName
+            listName,
+            CacheExchange.CacheOperationVerb.LOOKUP,
+            CacheExchange.CacheType.Hazelcast,
+            list.size
          ),
          timestamp = startTime,
          response = null, // Do we want to persist the response again?
@@ -136,8 +139,9 @@ class HazelcastOperationCacheProvider(
       )
 
       // Do we always get ConstructedQueryDataSource here? If so below check is redundant. QueryProfileChartBuilder
-      val isConstructedQueryDataSource = parameters.isNotEmpty() && parameters[0].second.let { it.source is ConstructedQueryDataSource }
-      val operationResult =  if (isConstructedQueryDataSource) {
+      val isConstructedQueryDataSource =
+         parameters.isNotEmpty() && parameters[0].second.let { it.source is ConstructedQueryDataSource }
+      val operationResult = if (isConstructedQueryDataSource) {
          val constructedQueryDataSource = parameters[0].second.let { it.source as ConstructedQueryDataSource }
          OperationResult.fromTypedInstances(
             constructedQueryDataSource.inputs,

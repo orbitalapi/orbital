@@ -1,18 +1,14 @@
 package com.orbitalhq.connectors.hazelcast.invoker
 
 import com.hazelcast.core.HazelcastInstance
-import com.hazelcast.test.TestHazelcastInstanceFactory
+import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.whenever
 import com.orbitalhq.Vyne
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
 import com.orbitalhq.connectors.hazelcast.HazelcastInstanceProvider
-import com.orbitalhq.connectors.hazelcast.HazelcastTaxi
 import com.orbitalhq.firstRawObject
-import com.orbitalhq.models.json.parseJson
-import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.rawObjects
-import com.orbitalhq.testVyneWithStub
-import com.orbitalhq.typedObjects
 import io.kotest.common.runBlocking
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -114,7 +110,9 @@ class TestHazelcastProvider(private val instance: HazelcastInstance) : Hazelcast
    }
 
    override fun hazelcastConnection(connectionName: String?): Pair<HazelcastInstance, HazelcastConfiguration> {
-      return instance to mock {  }
+      val hazelcastConfiguration:HazelcastConfiguration = mock {  }
+      whenever(hazelcastConfiguration.connectionName).doReturn(connectionName ?: "Mock Connection")
+      return instance to hazelcastConfiguration
    }
 
    override fun canProvideHazelcastInstance(connectionName: String?): Boolean {

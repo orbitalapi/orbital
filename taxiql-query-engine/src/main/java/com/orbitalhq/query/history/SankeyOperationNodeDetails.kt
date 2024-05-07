@@ -1,5 +1,6 @@
 package com.orbitalhq.query.history
 
+import com.orbitalhq.query.CacheExchange
 import com.orbitalhq.schemas.QualifiedName
 import jakarta.persistence.Converter
 import kotlinx.serialization.Serializable
@@ -16,7 +17,17 @@ import mu.KotlinLogging
 @Serializable
 sealed class SankeyOperationNodeDetails(
    val operationType: OperationNodeType,
-)
+) {
+   /**
+    * Returns a name that indicates the actual brand name of the system we're talking to.
+    * Eg., for a database, might contain "Postgres", or "Oracle".
+    * For a message broker, might contain "RabbitMQ" or "Kafka", etc.
+    */
+   open val systemProductName:String?
+      get() {
+         return null
+      }
+}
 
 @Serializable
 data class KafkaOperationNode(
@@ -41,8 +52,12 @@ data class DatabaseNode(
 data class CacheNode(
    val connectionName: String,
    val cacheName: String,
-   val cacheKey: String
-) : SankeyOperationNodeDetails(OperationNodeType.Cache)
+   val cacheKey: String,
+   val verb: CacheExchange.CacheOperationVerb,
+   override val systemProductName: String?
+) : SankeyOperationNodeDetails(OperationNodeType.Cache) {
+
+}
 
 enum class OperationNodeType {
    KafkaTopic,

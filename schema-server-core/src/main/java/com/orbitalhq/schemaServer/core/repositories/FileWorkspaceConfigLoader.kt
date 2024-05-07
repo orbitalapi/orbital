@@ -1,5 +1,6 @@
 package com.orbitalhq.schemaServer.core.repositories
 
+import com.google.common.base.Throwables
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.config.BaseHoconConfigFileRepository
 import com.orbitalhq.config.toHocon
@@ -73,20 +74,21 @@ class FileWorkspaceConfigLoader(
 
    fun emitCurrentState() {
       try {
-      val initialConfig = load()
-      logger.info { "Repository config at $configFilePath loaded with ${initialConfig.repoCountDescription()}" }
-      initialConfig.file?.let { fileConfig ->
-         fileConfig.projects
-            .forEach { eventDispatcher.fileRepositorySpecAdded(FileSpecAddedEvent(it, fileConfig)) }
-      }
-      initialConfig.git?.let { gitConfig ->
-         gitConfig.repositories.forEach { eventDispatcher.gitRepositorySpecAdded(GitSpecAddedEvent(it, gitConfig)) }
-      }
+         val initialConfig = load()
+         logger.info { "Repository config at $configFilePath loaded with ${initialConfig.repoCountDescription()}" }
+         initialConfig.file?.let { fileConfig ->
+            fileConfig.projects
+               .forEach { eventDispatcher.fileRepositorySpecAdded(FileSpecAddedEvent(it, fileConfig)) }
+         }
+         initialConfig.git?.let { gitConfig ->
+            gitConfig.repositories.forEach { eventDispatcher.gitRepositorySpecAdded(GitSpecAddedEvent(it, gitConfig)) }
+         }
       } catch (e: Exception) {
          // load() handles the errors in case there is an error in workspace.config and reports these errors back to UI.
          // However, it re-throws the caught error, we re-catch it over here so that Orbital doesn't fall over during
          // start-up
-         logger.error(e) { "error in emitting workspace specs"  }
+         val rootCause = Throwables.getRootCause(e)
+         logger.error(rootCause) { "error in emitting workspace specs" }
       }
    }
 
@@ -108,8 +110,9 @@ class FileWorkspaceConfigLoader(
          stateSink.emitNext(LoaderStatus.OK, Sinks.EmitFailureHandler.FAIL_FAST)
          return config
       } catch (e: Exception) {
+         val rootCause = Throwables.getRootCause(e)
          val message =
-            "Error when loading workspace config file at $configFilePath: ${e.message ?: e::class.simpleName}"
+            "Error when loading workspace config file at $configFilePath: ${rootCause.message ?: rootCause::class.simpleName}"
          logger.warn { message }
          stateSink.emitNext(LoaderStatus.error(message), Sinks.EmitFailureHandler.FAIL_FAST)
          throw e
@@ -141,7 +144,8 @@ class FileWorkspaceConfigLoader(
                      }
                      TaxiPackageLoader(pathToLoad).load()?.toPackageMetadata()
                   } catch (e: Exception) {
-                     logger.warn(e) { "Failed to read package metadata for project at $relativePath  ${e.message ?: e.cause?.message}" }
+                     val rootCause = Throwables.getRootCause(e)
+                     logger.warn(e) { "Failed to read package metadata for project at $relativePath  ${rootCause.message}" }
                      null
                   }
                   packageSpec.copy(path = relativePath, packageIdentifier = packageMetadata?.identifier)
@@ -272,7 +276,10 @@ class FileWorkspaceConfigLoader(
       return affectedPackages
    }
 
-   override fun removeFileRepository(repositoryPath: Path, packageIdentifier: PackageIdentifier): List<PackageIdentifier> {
+   override fun removeFileRepository(
+      repositoryPath: Path,
+      packageIdentifier: PackageIdentifier
+   ): List<PackageIdentifier> {
       val original = this.load()
       val matchedProjects =
          original.file?.projects?.filter { it.packageIdentifier?.uriSafeId == packageIdentifier.uriSafeId }
