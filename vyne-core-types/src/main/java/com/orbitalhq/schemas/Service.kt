@@ -300,9 +300,11 @@ data class Service(
 
    fun remoteOperation(name: String): RemoteOperation {
       return this.queryOperations.firstOrNull { it.name == name }
+         ?: this.tableOperations.firstOrNull { it.name == name }
          ?: this.tableOperations.flatMap { it.queryOperations }.firstOrNull { it.name == name }
          ?: this.streamOperations.firstOrNull { it.name == name }
-         ?: this.operations.first { it.name == name }
+         ?: this.operations.firstOrNull { it.name == name }
+         ?: error("No operation named $name found on service ${this.name.longDisplayName}")
    }
 
    fun hasRemoteOperation(name: String): Boolean {
