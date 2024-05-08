@@ -62,7 +62,7 @@ class ProjectManagerConfigSourceLoader(
       val listOfObservables: List<Mono<SourcePackage>> = projectManager.loaders.map { packageTransport ->
          loadAdditionalSources(packageTransport)
       }
-      logger.info { "Found ${listOfObservables.size} source packages to load from ${loaders.size} source loaders" }
+      logger.info { "Found ${listOfObservables.size} source packages to load from ${loaders.size} source loaders (filePattern: $filePattern, sourcesType: $sourceType)" }
 
       return Flux.fromIterable(listOfObservables)
          .flatMap { it }
@@ -78,12 +78,15 @@ class ProjectManagerConfigSourceLoader(
     * configured via the provided sourceType
     */
    private fun loadAdditionalSources(packageTransport: SchemaPackageTransport): Mono<SourcePackage> {
-      logger.info { "loading additional sources for $packageTransport" }
+      logger.info { "loading additional sources for $packageTransport (filePattern: $filePattern, sourcesType: $sourceType)" }
       return packageTransport.loadNow().map { sourcePackage ->
          SourcePackage(
             sourcePackage.packageMetadata,
             sources = sourcePackage.additionalSources[sourceType] ?: emptyList()
          )
+      }.onErrorResume {
+         logger.error(it) { "loading additional sources for $packageTransport (filePattern: $filePattern, sourcesType: $sourceType)"   }
+         Mono.empty()
       }
    }
 
