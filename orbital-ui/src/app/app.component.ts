@@ -102,23 +102,10 @@ export class AppComponent implements OnInit {
             .subscribe()
         }
         isFirstSchemaUpdate = false;
-
+        this.updateProjectsWithErrorsNotifications();
       });
 
-    this.packagesService.loadProjectLoadersWithErrors()
-      .subscribe(projectsWithErrors => {
-        if (projectsWithErrors.length > 0) {
-          this.alerts.push({
-            id: 'project-config-errors',
-            severity: "Error",
-            message: `${projectsWithErrors.length} of your projects has a configuration problem`,
-            actionLabel: 'See details',
-            handler: () => {
-              this.router.navigate(['projects', 'problems'])
-            }
-          })
-        }
-      })
+    this.updateProjectsWithErrorsNotifications();
 
     this.packagesService.loadWorkspaceConfigStatus()
       .subscribe(status => {
@@ -149,6 +136,38 @@ export class AppComponent implements OnInit {
             })
           }
         })
+  }
+
+  private updateProjectsWithErrorsNotifications() {
+    this.packagesService.loadProjectLoadersWithErrors()
+      .subscribe(projectsWithErrors => {
+        if (projectsWithErrors.length > 0) {
+          this.addAlertIfNotPresent({
+            id: 'project-config-errors',
+            severity: "Error",
+            message: `${projectsWithErrors.length} of your projects has a configuration problem`,
+            actionLabel: 'See details',
+            handler: () => {
+              this.router.navigate(['projects', 'problems'])
+            }
+          })
+        } else {
+          this.removeAlertById('project-config-errors')
+        }
+      })
+  }
+
+  private addAlertIfNotPresent(alert:SystemAlert) {
+    if (this.alerts.some(existingAlert => existingAlert.id === alert.id)) {
+      return
+    }
+    this.alerts.push(alert);
+  }
+  private removeAlertById(id: string) {
+    const alertIdx = this.alerts.findIndex(alert => alert.id === id)
+    if (alertIdx !== -1) {
+      this.alerts.splice(alertIdx, 1)
+    }
   }
 
   private getCompilationErrorsAlertIndex() {

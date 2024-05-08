@@ -1,8 +1,11 @@
 package com.orbitalhq.schemaServer.core.repositories
 
+import com.google.common.annotations.VisibleForTesting
 import com.google.common.base.Throwables
+import com.google.common.collect.Lists
+import com.google.common.collect.Sets
 import com.orbitalhq.PackageIdentifier
-import com.orbitalhq.config.BaseHoconConfigFileRepository
+import com.orbitalhq.config.ChangeWatchingConfigFileRepository
 import com.orbitalhq.config.toHocon
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
 import com.orbitalhq.schemaServer.core.adaptors.InstantHoconSupport
@@ -13,7 +16,9 @@ import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
 import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaRepositoryConfig
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecAddedEvent
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecRemovedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.GitSpecAddedEvent
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.GitSpecRemovedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
@@ -45,11 +50,12 @@ class FileWorkspaceConfigLoader(
    private val eventDispatcher: ProjectSpecLifecycleEventDispatcher,
    emitStateOnInit: Boolean = true
 ) :
-   BaseHoconConfigFileRepository<WorkspaceConfig>(
+   ChangeWatchingConfigFileRepository<WorkspaceConfig>(
       configFilePath, fallback
    ), WorkspaceConfigLoader {
    private val logger = KotlinLogging.logger {}
 
+   private var lastConfig: WorkspaceConfig? = null
    private val stateSink = Sinks.many().replay().latest<LoaderStatus>()
    override val loaderStatus: Flux<LoaderStatus> = stateSink.asFlux()
 //      .distinctUntilChanged()
@@ -63,32 +69,64 @@ class FileWorkspaceConfigLoader(
       stateSink.emitNext(LoaderStatus.STARTING, Sinks.EmitFailureHandler.FAIL_FAST)
 
       if (emitStateOnInit) {
-         emitCurrentState()
+         readCurrentStateAndEmit()
       }
-
-
+      watchForChanges()
    }
 
    override val isReadOnly: Boolean = false
 
+   override fun filePathChanged(changedPath: Path) {
+      super.filePathChanged(changedPath)
+      readCurrentStateAndEmit()
 
-   fun emitCurrentState() {
+   }
+
+   /**
+    * Reads the current state of the workspace config from disk, and emits
+    * the relevant updates
+    */
+   fun readCurrentStateAndEmit(): WorkspaceConfig? {
+      val oldConfig = lastConfig
       try {
-         val initialConfig = load()
-         logger.info { "Repository config at $configFilePath loaded with ${initialConfig.repoCountDescription()}" }
-         initialConfig.file?.let { fileConfig ->
-            fileConfig.projects
-               .forEach { eventDispatcher.fileRepositorySpecAdded(FileSpecAddedEvent(it, fileConfig)) }
-         }
-         initialConfig.git?.let { gitConfig ->
-            gitConfig.repositories.forEach { eventDispatcher.gitRepositorySpecAdded(GitSpecAddedEvent(it, gitConfig)) }
-         }
+         val workspaceConfig = load()
+         logger.info { "Repository config at $configFilePath loaded with ${workspaceConfig.repoCountDescription()}" }
+         emitUpdateEvents(oldConfig, workspaceConfig)
+         lastConfig = workspaceConfig
       } catch (e: Exception) {
          // load() handles the errors in case there is an error in workspace.config and reports these errors back to UI.
          // However, it re-throws the caught error, we re-catch it over here so that Orbital doesn't fall over during
          // start-up
          val rootCause = Throwables.getRootCause(e)
          logger.error(rootCause) { "error in emitting workspace specs" }
+         lastConfig = null
+      }
+
+      return lastConfig
+   }
+
+   private fun emitUpdateEvents(oldConfig: WorkspaceConfig?, workspaceConfig: WorkspaceConfig) {
+      val oldFileSpecs = oldConfig?.fileConfigOrDefault?.projects?.toSet() ?: emptySet()
+      val newFileSpecs = workspaceConfig.fileConfigOrDefault.projects.toSet()
+      val fileSpecsRemoved = Sets.difference(oldFileSpecs, newFileSpecs)
+      fileSpecsRemoved.forEach { removedFileSpec ->
+         eventDispatcher.fileRepositorySpecRemoved(FileSpecRemovedEvent(removedFileSpec))
+      }
+      val fileSpecsAdded = Sets.difference(newFileSpecs, oldFileSpecs)
+      fileSpecsAdded.forEach { addedFileSpec ->
+         eventDispatcher.fileRepositorySpecAdded(FileSpecAddedEvent(addedFileSpec, workspaceConfig.fileConfigOrDefault))
+      }
+
+      val oldGitSpecs = oldConfig?.gitConfigOrDefault?.repositories?.toSet() ?: emptySet()
+      val newGitSpecs = workspaceConfig.gitConfigOrDefault.repositories.toSet()
+      val gitSpecsRemoved = Sets.difference(oldGitSpecs, newGitSpecs)
+      gitSpecsRemoved.forEach { removedGitSpec ->
+         eventDispatcher.gitRepositorySpecRemoved(GitSpecRemovedEvent(removedGitSpec))
+      }
+
+      val addedGitSpecs = Sets.difference(newGitSpecs, oldGitSpecs)
+      addedGitSpecs.forEach { addedGitSpec ->
+         eventDispatcher.gitRepositorySpecAdded(GitSpecAddedEvent(addedGitSpec, workspaceConfig.gitConfigOrDefault))
       }
    }
 
@@ -303,9 +341,9 @@ class FileWorkspaceConfigLoader(
       return identifiers
    }
 
-
-   fun save(schemaRepoConfig: WorkspaceConfig) {
-      val newConfig = schemaRepoConfig.toHocon()
+   @VisibleForTesting
+   internal fun getSavableHocon(workspaceConfig: WorkspaceConfig): Config {
+      val newConfig = workspaceConfig.toHocon()
 
       // Use the existing unresolvedConfig to ensure that when we're
       // writing back out, that tokens that have been resolved
@@ -316,6 +354,16 @@ class FileWorkspaceConfigLoader(
          .withFallback(newConfig)
          .withFallback(existingValues)
 
-      saveConfig(updated)
+      return updated
+   }
+
+   @VisibleForTesting
+   internal fun getHoconString(workspaceConfig: WorkspaceConfig): String {
+      return getSafeConfigString(getSavableHocon(workspaceConfig))
+   }
+
+   fun save(workspaceConfig: WorkspaceConfig) {
+      val saveable = getSavableHocon(workspaceConfig)
+      saveConfig(saveable)
    }
 }

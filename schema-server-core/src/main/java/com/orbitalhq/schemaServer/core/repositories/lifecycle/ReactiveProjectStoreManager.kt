@@ -105,11 +105,13 @@ class ReactiveProjectStoreManager(
       }
 
    private val fileSpecAddedEventsSubscription: Disposable
+   private val fileSpecRemovedEventsSubscription: Disposable
    private val gitSpecAddedEventSubscription: Disposable
    private val repoRemovedEventSSubscription: Disposable
 
    init {
       fileSpecAddedEventsSubscription = consumeFileSpecAddedEvents()
+      fileSpecRemovedEventsSubscription = consumeFileSpecRemovedEvents()
       gitSpecAddedEventSubscription = consumeGitSpecAddedEvents()
       repoRemovedEventSSubscription = consumeRepoRemovedEvents()
    }
@@ -126,6 +128,7 @@ class ReactiveProjectStoreManager(
 
    private fun removeLoader(loader: SchemaPackageTransport) {
       this._loaders.remove(loader)?.dispose()
+      this._unhealthyLoaders.remove(loader)
    }
 
    private fun consumeRepoRemovedEvents(): Disposable {
@@ -168,6 +171,22 @@ class ReactiveProjectStoreManager(
       }
 
       //specEventSource.fileSpecAdded
+   }
+
+   /**
+    * These are events when the file spec is removed by manually editing the
+    * workspace.conf file
+    */
+   private fun consumeFileSpecRemovedEvents(): Disposable {
+      return specEventSource.fileSpecRemoved.subscribe { event ->
+         logger.info { "Received event that file spec at ${event.spec.path} (with package of ${event.spec.packageIdentifier?.id} has been removed. Removing any loaders" }
+         // Don't use fileLoaders, as that excludes invalid configs
+         _loaders.keys.filterIsInstance<FileSystemPackageLoader>()
+            .filter { loader ->
+            // can't use packageIdentifier here, as it's not required that one has been defined
+            loader.config.path == event.spec.path
+         }.forEach { loader -> removeLoader(loader) }
+      }
    }
 
    override val editableLoaders: List<FileSystemPackageLoader>
