@@ -1,4 +1,5 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
+import { AppConfig, AppInfoService } from '../services/app-info.service';
 import {
   InstanceLike,
   isTypedInstance,
@@ -18,7 +19,7 @@ import {Observable} from 'rxjs';
 import {Subscription} from 'rxjs';
 import {ValueWithTypeName} from '../services/models';
 import * as moment from 'moment';
-import {bufferTime} from 'rxjs/operators';
+import { bufferTime, map } from 'rxjs/operators';
 import {isScalar} from "../object-view/object-view.component";
 
 @Component({
@@ -31,6 +32,8 @@ import {isScalar} from "../object-view/object-view.component";
       [enableCellTextSelection]="true"
       [rowData]="rowData"
       [columnDefs]="columnDefs"
+      [pagination]="true"
+      [paginationPageSize]="paginationPageSize"
       (gridReady)="onGridReady($event)"
       (firstDataRendered)="onFirstDataRendered($event)"
       (cellClicked)="onCellClicked($event)"
@@ -41,16 +44,23 @@ import {isScalar} from "../object-view/object-view.component";
 })
 export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
-  constructor(private changeDetector: ChangeDetectorRef) {
+  constructor(
+    private appInfoService: AppInfoService,
+    private changeDetector: ChangeDetectorRef
+  ) {
     super();
+    appInfoService.getConfig()
+      .subscribe(next => this.config = next);
   }
 
+  config: AppConfig;
   private gridApi: GridApi;
 
   private _instances$: Observable<InstanceLike>;
   private _instanceSubscription: Subscription;
 
   columnDefs = [];
+  paginationPageSize = 100;
 
   @Output()
   instanceClicked = new EventEmitter<InstanceSelectedEvent>();
@@ -66,6 +76,9 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   // to be done by calling a method.
   @Input()
   rowData: ReadonlyArray<InstanceLike> = [];
+
+  @Input()
+  isStreamingQuery: boolean;
 
   remeasure() {
     if (this.gridApi) {
@@ -112,22 +125,26 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     }
     this.unsubscribeAllNow();
     this.unsubscribeOnClose(this.instances$
+      // TODO: might need this approach in the other components as well...
       .pipe(
-        bufferTime(500)
+        bufferTime(500),
+        map(buffer => this.isStreamingQuery ? buffer.reverse() : buffer)
       )
       .subscribe((next) => {
         if (this.columnDefs.length === 0) {
           if (next.length > 0) {
             this.rebuildGridData(next[0]);
           }
-
         }
 
         if (this.gridApi) {
-
-          this.gridApi.applyTransaction({
-            add: next
+          this.gridApi.applyTransactionAsync({
+            add: next,
+            addIndex: this.isStreamingQuery ? 0 : null
           });
+          if (this.gridApi.paginationGetRowCount() > this.config.maxQueryRecordCount) {
+            this.removeRows(this.gridApi.paginationGetRowCount() - this.config.maxQueryRecordCount)
+          }
         } else {
           console.error('Received an instance before the grid was ready - this record batch will get dropped!');
         }
@@ -244,6 +261,17 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       this.columnDefs = [];
       this.gridApi.setColumnDefs([]);
       this.gridApi.setRowData([]);
+    }
+  }
+
+  private removeRows(rowCount: number) {
+    if (this.gridApi) {
+      const rowsTotal = this.config.maxQueryRecordCount;
+      const rowsToCull = []
+      for (let i = rowCount + rowsTotal - 1; i >= rowsTotal; i--) {
+        rowsToCull.push(this.gridApi.getModel().getRow(i).data)
+      }
+      this.gridApi.applyTransactionAsync({ remove: rowsToCull });
     }
   }
 }

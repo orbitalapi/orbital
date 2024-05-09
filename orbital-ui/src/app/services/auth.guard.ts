@@ -28,8 +28,8 @@ export class AuthGuard  {
       // authorised so return true
       return true;
     }
-    if (route.data['requiredAllAuthorities'] && Array.isArray(route.data['requiredAllAuthorities']) &&
-      route.data['requiredAllAuthorities'].every(v => vyneUser.grantedAuthorities.includes(v))) {
+    if (route.data['requireAllAuthorities'] && Array.isArray(route.data['requireAllAuthorities']) &&
+      route.data['requireAllAuthorities'].every(v => vyneUser.grantedAuthorities.includes(v))) {
       // authorised so return true
       return true;
     }

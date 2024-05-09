@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core';
+import { AppConfig, AppInfoService } from '../services/app-info.service';
 import { BaseTypedInstanceViewer } from './BaseTypedInstanceViewer';
 import { isNullOrUndefined } from 'src/app/utils/utils';
 import {
@@ -53,19 +54,20 @@ export interface ResultTreeMember {
     ></tui-pagination>
     <ng-template #treeContent let-item>
       <div class="tree-node">
-        <div *ngIf="treeNode(item)?.fieldName" class="field-name">{{treeNode(item)?.fieldName}}</div>
+        <div *ngIf="treeNode(item)?.fieldName" class="field-name">{{ treeNode(item)?.fieldName }}</div>
         <div class="field-value" [class.selectable]="selectable"
-             (click)="onAttributeClicked(item)">{{treeNode(item)?.value}}</div>
+             (click)="onAttributeClicked(item)">{{ treeNode(item)?.value }}
+        </div>
       </div>
     </ng-template>
   `
 })
 export class ObjectViewComponent extends BaseTypedInstanceViewer {
 
-    // This type doesn't render TypeNamedInstances.
-    // Those aren't typically returned from query responses,
-    // but are returned when using the Desginer.
-    // Instead, use a TypeNamedInstanceTree for that.
+  // This type doesn't render TypeNamedInstances.
+  // Those aren't typically returned from query responses,
+  // but are returned when using the Desginer.
+  // Instead, use a TypeNamedInstanceTree for that.
 
   NOT_PROVIDED = 'Value not provided';
 
@@ -94,6 +96,24 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
     this.checkIfReady();
   }
 
+  @Input()
+  isStreamingQuery: boolean;
+
+  treeDataItems: ResultTreeMember[] = [];
+  treeDataPages: ResultTreeMember[][] = [];
+  treeDataCurrentPage: number = 0;
+
+  treeChildrenHandler: TuiHandler<ResultTreeMember, ResultTreeMember[]> = item => Array.isArray(item) ? item : item?.children;
+  private appConfig: AppConfig;
+  private resultCounter: number;
+
+  constructor(
+    private appInfoService: AppInfoService,
+  ) {
+    super();
+    appInfoService.getConfig()
+      .subscribe(next => this.appConfig = next);
+  }
 
   onAttributeClicked(member: ResultTreeMember) {
     /**
@@ -139,6 +159,7 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
   private subscribeForUpdates(source: Observable<InstanceLike>) {
     this.treeDataPages = [];
     this.treeDataCurrentPage = 0;
+    this.resultCounter = 0;
 
     // Set the protected member, to avoid triggering another
     // checkIfReady() loop - chances are we're already inside of one.
@@ -146,13 +167,22 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
     const pageSize = 20;
     this.unsubscribeAllNow();
     this.unsubscribeOnClose(source.subscribe(instance => {
-      const instanceArray = this.instance as InstanceLike[];
-      const newLength = instanceArray.push(instance)
-      const pageNumber = Math.floor(newLength / pageSize)
-      const label = newLength.toString();// Use the index as the label
-      const thisInstanceAsResultTree = this.buildTreeData(instance, label, '', instance as ValueWithTypeName)
-      if (!this.treeDataPages[pageNumber]) this.treeDataPages[pageNumber] = [];
-      this.treeDataPages[pageNumber].push(thisInstanceAsResultTree);
+      this.resultCounter++;
+      const newLength = this.isStreamingQuery ?
+        (this.instance as InstanceLike[]).unshift(instance) :
+        (this.instance as InstanceLike[]).push(instance);
+      if (newLength > this.appConfig.maxQueryRecordCount) {
+        (this.instance as InstanceLike[]).splice(this.appConfig.maxQueryRecordCount, newLength - this.appConfig.maxQueryRecordCount);
+      }
+      const label = this.resultCounter.toString();// Use the index as the label
+      const treeData = this.buildTreeData(instance, label, '', instance as ValueWithTypeName);
+      this.isStreamingQuery ?
+        this.treeDataItems.unshift(treeData) :
+        this.treeDataItems.push(treeData);
+      if (this.treeDataItems.length > this.appConfig.maxQueryRecordCount) {
+        this.treeDataItems.splice(this.appConfig.maxQueryRecordCount, this.treeDataItems.length - this.appConfig.maxQueryRecordCount);
+      }
+      this.treeDataPages = this.distributeIntoPages(this.treeDataItems, pageSize);
     }));
   }
 
@@ -161,11 +191,6 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
       this.subscribeForUpdates(this.instances$);
     }
   }
-
-  treeDataPages: ResultTreeMember[][] = [];
-  treeDataCurrentPage: number = 0;
-
-  treeChildrenHandler: TuiHandler<ResultTreeMember, ResultTreeMember[]> = item => Array.isArray(item) ? item : item?.children;
 
   private buildTreeData(instance: InstanceLikeOrCollection, fieldName: string = null, path: string = '', rootResultInstance: ValueWithTypeName | null = null): ResultTreeMember {
     if (Array.isArray(instance)) {
@@ -242,6 +267,15 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
       }
       return member;
     }
+  }
+
+  private distributeIntoPages(array: any[], pageSize: number): any[][] {
+    const pages: any[][] = [];
+    for (let i = 0; i < array.length; i += pageSize) {
+      const page = array.slice(i, i + pageSize);
+      pages.push(page);
+    }
+    return pages;
   }
 
   // Just a typing hack

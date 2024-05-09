@@ -10,9 +10,20 @@ import {
   OnInit,
   Output
 } from '@angular/core';
-import {map, retry, startWith, tap} from 'rxjs/operators';
+import {
+  bufferToggle,
+  distinctUntilChanged,
+  filter,
+  map,
+  mergeMap,
+  retry,
+  startWith,
+  tap,
+  windowToggle,
+} from 'rxjs/operators';
 
 import {editor, KeyCode, KeyMod} from 'monaco-editor';
+import { AppConfig, AppInfoService } from '../../services/app-info.service';
 import {
   ChatParseResult,
   QueryHistorySummary,
@@ -27,9 +38,12 @@ import {QueryLanguage, QueryState} from './query-editor-toolbar.component';
 import {isQueryResult, QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
 import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
 import {findType, InstanceLike, QualifiedName, Schema, Type, VersionedSource} from '../../services/schema';
-import {BehaviorSubject, Observable, ReplaySubject, Subject} from 'rxjs';
+import { BehaviorSubject, EMPTY, interval, merge, Observable, ReplaySubject, Subject } from 'rxjs';
 import {isNullOrUndefined} from 'src/app/utils/utils';
-import {ActiveQueriesNotificationService, RunningQueryStatus} from '../../services/active-queries-notification-service';
+import {
+  ActiveQueriesNotificationService,
+  RunningQueryStatus
+} from '../../services/active-queries-notification-service';
 import {TypesService} from '../../services/types.service';
 import {
   FailedSearchResponse,
@@ -86,14 +100,17 @@ export class QueryEditorComponent implements OnInit {
 
   resultType: Type | null = null;
   anonymousTypes: Type[] = [];
-  private latestQueryStatus: RunningQueryStatus | null = null;
-  results$: Subject<InstanceLike>;
-  errors$: Subject<StreamQueryErrorEvent>;
+  latestQueryStatus: RunningQueryStatus | null = null;
+  private results$: ReplaySubject<InstanceLike>;
+  potentiallyPausedResults$: Observable<InstanceLike>;
+  errors$: ReplaySubject<StreamQueryErrorEvent>;
   queryProfileData$: Observable<QueryProfileData>;
   isProfileDataLoading$: Observable<boolean>;
   queryMetadata$: Observable<RunningQueryStatus>;
 
   customActions: editor.IActionDescriptor[];
+  private isErrorMessageSubscriptionSetup: boolean;
+  private readonly MAX_QUERY_RECORD_COUNT_DEFAULT: number = 5000;
 
 
   get lastQueryResultAsSuccess(): QueryResult | null {
@@ -125,6 +142,15 @@ export class QueryEditorComponent implements OnInit {
   instanceSelected$ = new ReplaySubject<QueryResultInstanceSelectedEvent>(1);
 
   savedQuery: SavedQuery = null;
+  config: AppConfig;
+
+  // Pause stream related stuff
+  private pauseSubj$ = new BehaviorSubject(false);
+  private pause$ = this.pauseSubj$.pipe(
+    distinctUntilChanged(),
+  );
+  private on$ = this.pause$.pipe(filter(v=>!v));
+  private off$ = this.pause$.pipe(filter(v=>!!v));
 
   private readonly PERSISTED_QUERY_LOCAL_STORAGE_KEY: string = 'persistedQuery'
 
@@ -134,6 +160,7 @@ export class QueryEditorComponent implements OnInit {
               private dialogService: MatDialog,
               private activeQueryNotificationService: ActiveQueriesNotificationService,
               private typeService: TypesService,
+              private appInfoService: AppInfoService,
               private router: Router,
               private changeDetector: ChangeDetectorRef,
               private clipboard: Clipboard,
@@ -144,7 +171,8 @@ export class QueryEditorComponent implements OnInit {
               private snackbarService: MatSnackBar,
               private destroyRef: DestroyRef
   ) {
-
+    appInfoService.getConfig()
+      .subscribe(next => this.config = next);
     this.initialQuery = this.router.lastSuccessfulNavigation?.extras?.state?.query;
     this.typeService.getTypes()
       .subscribe(schema => this.schema = schema);
@@ -182,7 +210,6 @@ export class QueryEditorComponent implements OnInit {
         this.submitTaxiQlQuery();
         break;
     }
-
   }
 
   saveQuery() {
@@ -205,9 +232,29 @@ export class QueryEditorComponent implements OnInit {
     this.resultType = null;
     // Use a replay subject here, so that when people switch
     // between Query Results and Profiler tabs, the results are still made available
-    this.results$ = new ReplaySubject(5000);
-    this.errors$ = new ReplaySubject(5000);
+    // Note: using the MAX_QUERY_RECORD_COUNT_DEFAULT in case the server doesn't return a maxQueryRecordCount prop
+    this.results$ = new ReplaySubject(this.config.maxQueryRecordCount || this.MAX_QUERY_RECORD_COUNT_DEFAULT);
 
+    this.potentiallyPausedResults$ = merge(
+      this.results$.pipe(
+        bufferToggle(
+          this.off$,
+          () => this.on$
+        ),
+        mergeMap(x => x)
+      ),
+      this.results$.pipe(
+        windowToggle(
+          this.on$,
+          () => this.off$
+        ),
+        mergeMap(x=> x)
+      )
+    );
+
+    this.toggleStreamPauseState(false);
+
+    this.errors$ = new ReplaySubject(this.config.maxQueryRecordCount || this.MAX_QUERY_RECORD_COUNT_DEFAULT);
     this.latestQueryStatus = null;
     this.queryMetadata$ = null;
     this.queryProfileData$ = null;
@@ -221,6 +268,7 @@ export class QueryEditorComponent implements OnInit {
 
     const queryErrorHandler = (error: FailedSearchResponse) => {
       this.lastQueryResult = error;
+      this.isErrorMessageSubscriptionSetup = false;
       console.error('Search failed: ' + JSON.stringify(error));
       this.queryResultUpdated.emit(this.lastQueryResult);
       this.loadingChanged.emit(false);
@@ -232,46 +280,32 @@ export class QueryEditorComponent implements OnInit {
       if (isFailedSearchResponse(message)) {
         queryErrorHandler(message);
       } else if (isValueWithTypeName(message)) {
+        if (this.queryMetadata$ === null) {
+          this.subscribeForQueryStatusUpdates(message.queryId);
+        }
         this.queryReturnedResults = true;
         if (!isNullOrUndefined(message.typeName)) {
           this.anonymousTypes = message.anonymousTypes;
           this.resultType = findType(this.schema, message.typeName, message.anonymousTypes);
         }
         this.results$.next(message);
-        if (this.queryMetadata$ === null) {
-          this.subscribeForQueryStatusUpdates(message.queryId);
-        }
       } else {
         console.error('Received an unexpected type of message from a query event stream: ' + JSON.stringify(message));
       }
 
     };
 
-
     const queryCompleteHandler = () => {
       this.handleQueryFinished();
     };
 
-    this.queryService.websocketQuery(this.query, this.queryClientId, ResultMode.SIMPLE).subscribe(
-      queryMessageHandler,
-      queryCompleteHandler,
-      queryCompleteHandler);
-
-
-    this.queryService.getQueryErrors(this.queryClientId)
-      .pipe(
-        retry({
-          count: 3,
-          delay: 250
-          }
-        ),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe(message => {
-          this.errorCount++;
-          this.errors$.next(message)
-        }
-      )
+    this.queryService.websocketQuery(this.query, this.queryClientId, ResultMode.SIMPLE)
+      .pipe(tap(_ => !this.isErrorMessageSubscriptionSetup ? this.setupErrorMessageSubscription() : null))
+      .subscribe({
+        next: queryMessageHandler,
+        error: queryErrorHandler,
+        complete: queryCompleteHandler
+      });
   }
 
   private subscribeForQueryStatusUpdates(queryId: string) {
@@ -316,6 +350,7 @@ export class QueryEditorComponent implements OnInit {
         this.lastErrorMessage = 'No results matched your query';
       }
     }
+    this.isErrorMessageSubscriptionSetup = false;
     this.queryProfileData$ = null;
     this.loadProfileData();
     this.queryHistoryStoreService.getHistory();
@@ -478,5 +513,27 @@ export class QueryEditorComponent implements OnInit {
 
   private formatErrorMessage(val: string): string {
     return val?.replace("[Error]", "\n[Error]");
+  }
+
+  private setupErrorMessageSubscription() {
+    this.isErrorMessageSubscriptionSetup = true;
+    this.queryService.getQueryErrors(this.queryClientId)
+      .pipe(
+        retry({
+            count: 3,
+            delay: 250
+          }
+        ),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(message => {
+          this.errorCount++;
+          this.errors$.next(message)
+        }
+      )
+  }
+
+  toggleStreamPauseState($event: boolean) {
+    this.pauseSubj$.next($event);
   }
 }

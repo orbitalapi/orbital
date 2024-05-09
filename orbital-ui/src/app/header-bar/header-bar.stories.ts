@@ -12,7 +12,8 @@ const userWithImage: VyneUser = {
   userId: 'jimmy',
   profileUrl: 'https://randomuser.me/api/portraits/women/68.jpg',
   grantedAuthorities: [],
-  isAuthenticated: true
+  isAuthenticated: true,
+  authenticationType: null
 };
 const userWithoutImage: VyneUser = {
   ...userWithImage,

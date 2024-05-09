@@ -121,6 +121,12 @@ app-tabbed-results-view {
   flex-direction: column;
   // Normally don't use height 100% with display flex, but without it, ag-grid doesn't render properly
   height: 100%;
+  position: relative;
+
+  &.is-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
 }
 
 .partial-results-panel {

@@ -17,7 +17,7 @@ export const dataSourceManagerRoutes: Route[] = [
     path: 'add',
     component: DataSourceManagerHeaderComponent,
     canActivate: [AuthGuard],
-    data: {requiredAllAuthorities: [VynePrivileges.EditConnections, VynePrivileges.EditSchema]},
+    data: {requireAllAuthorities: [VynePrivileges.EditConnections, VynePrivileges.EditSchema]},
     children: [
       {
         path: '',

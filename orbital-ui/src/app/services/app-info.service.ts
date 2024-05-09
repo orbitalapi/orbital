@@ -49,6 +49,7 @@ export interface AppConfig {
   actuatorPath: string;
   pipelineConfig: PipelineConfig;
   featureToggles: FeatureToggles;
+  maxQueryRecordCount: number;
   custom: {[index:string]:any}
 }
 

@@ -1,34 +1,49 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input} from '@angular/core';
-import {Observable, Subscription} from 'rxjs';
-import {findType, InstanceLike, Schema, Type} from 'src/app/services/schema';
-import {ValueWithTypeName} from "../services/models";
-import {JSONPathFinder} from "./JsonPathFinder";
-import {Position, TypePosition} from "../model-designer/taxi-parser.service";
-import {isNullOrUndefined} from "../utils/utils";
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input } from '@angular/core';
+import { Observable, Subscription } from 'rxjs';
+import { findType, InstanceLike, Schema, Type } from 'src/app/services/schema';
+import { Position, TypePosition } from '../model-designer/taxi-parser.service';
+import { AppConfig, AppInfoService } from '../services/app-info.service';
+import { ValueWithTypeName } from '../services/models';
+import { isNullOrUndefined } from '../utils/utils';
+import { JSONPathFinder } from './JsonPathFinder';
 
 
-export interface SourceWithTypeHints {
+export type SourceWithTypeHints = {
   source: string;
   typeHints: TypePosition[]
+}
+
+export function isSourceWithTypeHints(obj: any): obj is SourceWithTypeHints {
+  return typeof obj.source === 'string' && Array.isArray(obj.typeHints)
 }
 
 @Component({
   selector: 'app-json-results-view',
   template: `
-    <app-json-viewer [json]="jsonOrSource" style="height: 100%; width: 100%" [readOnly]="true"></app-json-viewer>
+    <app-json-viewer
+      [json]="jsonOrSource"
+      [readOnly]="true"
+      [showResultsSizeWarning]="instanceJson.length > 5000"
+      [isResponseLarge]="isResponseLarge"
+    ></app-json-viewer>
   `,
   styleUrls: ['./json-results-view.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class JsonResultsViewComponent {
 
-
   instanceJson: string[];
   allInstancesJson: string = '';
   private instancesToJson = new Map<ValueWithTypeName, string>();
   private _instanceSubscription: Subscription;
+  private appConfig: AppConfig;
 
-  constructor(private changeDetector: ChangeDetectorRef) {
+  constructor(
+    private changeDetector: ChangeDetectorRef,
+    private appInfoService: AppInfoService,
+  ) {
+    appInfoService.getConfig()
+      .subscribe(next => this.appConfig = next);
   }
 
   private emptySrcWithTypeHints(): SourceWithTypeHints {
@@ -61,7 +76,14 @@ export class JsonResultsViewComponent {
 
   }
 
+  @Input()
+  isStreamingQuery: boolean;
+
+  @Input()
+  isResponseLarge: boolean;
+
   private _instances$: Observable<InstanceLike>;
+
   @Input()
   get instances$(): Observable<InstanceLike> {
     return this._instances$;
@@ -84,18 +106,24 @@ export class JsonResultsViewComponent {
 
     this._instanceSubscription = this._instances$.subscribe(nextResult => {
       let json = JSON.stringify(nextResult.value, null, 3);
-      this.instanceJson.push(json)
+      this.isStreamingQuery ? this.instanceJson.unshift(json) : this.instanceJson.push(json);
       const concatenatedJson = (this.allInstancesJson.length > 0) ?
-        this.allInstancesJson + '\n\n' + json :
+        this.isStreamingQuery ?
+          json + '\n\n' + this.allInstancesJson:
+          this.allInstancesJson + '\n\n' + json :
         json;
       this.allInstancesJson = concatenatedJson;
       this.instancesToJson.set(nextResult as ValueWithTypeName, json)
+      // try to ensure no more than 5000 records (or whatever's set in the appConfig)
+      if (this.instanceJson.length > this.appConfig.maxQueryRecordCount) {
+        this.instanceJson.splice(this.appConfig.maxQueryRecordCount, this.instanceJson.length - this.appConfig.maxQueryRecordCount)
+        const lastJsonRowIndex = this.allInstancesJson.lastIndexOf('\n\n')
+        this.allInstancesJson = this.allInstancesJson.substring(0, lastJsonRowIndex).trim();
+        // Houston, we have a problem - no easy way to remove the "oldest" items in the Map, so leaving for now...
+      }
       this.updateInlineHints()
-
-
       this.changeDetector.markForCheck();
     });
-
   }
 
   private updateInlineHints() {

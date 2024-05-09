@@ -19,6 +19,11 @@ tui-pagination {
   &.has-dots {
     padding: 0.5rem 0 0 0; // to avoid the "..." making the padding-bottom incorrect
   }
+
+  ::ng-deep button {
+    width: unset !important;
+    min-width: var(--tui-height-xs);
+  }
 }
 
 .tree-node {

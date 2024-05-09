@@ -23,7 +23,7 @@ export class VyneqlRecordComponent {
 }
 
 export function trimPreludeFromQuery(query: string): string {
-  return trimLinesStartingWith(query, ['import', '@', 'query']);
+  return query ? trimLinesStartingWith(query, ['import', '@', 'query']) : '';
 }
 
 

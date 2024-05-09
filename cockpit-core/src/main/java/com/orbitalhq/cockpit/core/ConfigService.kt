@@ -32,6 +32,7 @@ class ConfigService(
          LicenseStatus.from(license),
          actuatorPath,
          featureToggles,
+         maxQueryRecordCount = 5000,
          customSettings.custom
 
       )
@@ -49,6 +50,7 @@ data class ConfigSummary(
    val licenseStatus: LicenseStatus,
    val actuatorPath: String,
    val featureToggles: FeatureTogglesConfig,
+   val maxQueryRecordCount: Int,
    val custom: Map<String,Any>
 )
 

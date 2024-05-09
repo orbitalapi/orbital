@@ -101,13 +101,13 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
                     *ngIf="runningQueryStatus.queryMode !== 'STREAM' && runningQueryStatus.estimatedProjectionCount !== 0"
                     class="record-count"
                   >
-                    ({{ runningQueryStatus.completedProjections }} of {{ runningQueryStatus.estimatedProjectionCount }} records)
+                    ({{ runningQueryStatus.completedProjections | number }} of {{ runningQueryStatus.estimatedProjectionCount | number }} records)
                   </span>
                   <span
                     *ngIf="runningQueryStatus.queryMode === 'STREAM' || runningQueryStatus.queryMode === 'FIND_ALL'"
                     class="record-count"
                   >
-                    ({{ runningQueryStatus.completedProjections }} records)
+                    ({{ runningQueryStatus.completedProjections | number }} records)
                   </span>
                 </ng-container>
               </span>

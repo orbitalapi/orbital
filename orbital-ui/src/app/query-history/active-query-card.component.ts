@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { RunningQueryStatus } from '../services/active-queries-notification-service';
-import { Timespan } from '../query-panel/query-editor/counter-timer.component';
 import { isNullOrUndefined } from 'util';
+import { Timespan } from '../query-panel/query-editor/counter-timer.component';
+import { RunningQueryStatus } from '../services/active-queries-notification-service';
 
 @Component({
   selector: 'app-active-query-card',
@@ -20,15 +20,15 @@ import { isNullOrUndefined } from 'util';
       <div class="record-stats">
         <div class="record-stat">
           <img [src]="progressMode === 'indeterminate' ? 'assets/img/tabler/rss.svg' : 'assets/img/tabler/clock.svg'">
-          <span>{{ duration() }}</span>
+          <span>{{ duration }}</span>
         </div>
 
         <div class="record-stat" *ngIf="progressMode === 'indeterminate' || queryStatus.estimatedProjectionCount === 0">
-          <span>{{ queryStatus.completedProjections }} records</span>
+          <span>{{ queryStatus.completedProjections | number }} records</span>
         </div>
 
         <div class="record-stat" *ngIf="progressMode !== 'indeterminate'">
-          <span>{{ queryStatus.completedProjections }} of {{ queryStatus.estimatedProjectionCount }} records</span>
+          <span>{{ queryStatus.completedProjections | number }} of {{ queryStatus.estimatedProjectionCount | number }} records</span>
         </div>
 
         <span class="spacer"></span>
@@ -62,7 +62,7 @@ export class ActiveQueryCardComponent {
     }
   }
 
-  duration(): string {
+  get duration(): string {
     return Timespan.since(this.queryStatus.startTime).duration;
   }
 

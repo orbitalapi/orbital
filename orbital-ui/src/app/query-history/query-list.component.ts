@@ -7,13 +7,15 @@ import {HttpRequestState} from 'ngx-http-request-state';
   selector: 'app-query-list',
   template: `
     <div class="list-container">
-      <app-active-query-card
-        *ngFor="let record of activeQueries | keyvalue; trackBy: queryId"
-        [queryStatus]="record.value"
-        [routerLink]="'/query-history/' + record.key"
-        routerLinkActive="selected-history-list-item"
-        (cancel)="cancelActiveQuery.emit(record.value)"
-      ></app-active-query-card>
+      <div *ngIf="activeQueries.entries()" class="inner-list-container">
+        <app-active-query-card
+          *ngFor="let record of activeQueries | keyvalue; trackBy: queryId"
+          [queryStatus]="record.value"
+          [routerLink]="'/query-history/' + record.key"
+          routerLinkActive="selected-history-list-item"
+          (cancel)="cancelActiveQuery.emit(record.value)"
+        ></app-active-query-card>
+      </div>
       <ng-container *ngIf="historyRecords">
         <!-- Show a spinner if state is loading -->
         <progress
@@ -26,7 +28,7 @@ import {HttpRequestState} from 'ngx-http-request-state';
         <!-- Show the data if state is loaded -->
         <div *ngIf="historyRecords.value?.length !== 0" class="inner-list-container">
           <app-query-history-card
-            *ngFor="let historyRecord of historyRecords.value"
+            *ngFor="let historyRecord of historyRecords.value; trackBy: queryId"
             [routerLink]="'/query-history/' + historyRecord.queryId"
             routerLinkActive="selected-history-list-item"
             [historyRecord]="historyRecord"
