@@ -4,6 +4,7 @@ import {Observable} from 'rxjs/internal/Observable';
 import {CopyQueryFormat} from 'src/app/query-panel/query-editor/QueryFormatter';
 import {AppInfoService, AppConfig} from 'src/app/services/app-info.service';
 import { isNullOrUndefined } from 'src/app/utils/utils';
+import { Type } from '../../services/schema';
 
 
 @Component({
@@ -47,8 +48,8 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
             <tui-data-list>
                 <button tuiOption (click)="copyQuery.emit('query')">Query only</button>
                 <button tuiOption (click)="copyQuery.emit('curl')">As cURL statement</button>
-                <button tuiOption (click)="copyQuery.emit('snippet')" tuiHint='Available once query has completed'>As
-                    code
+                <button tuiOption (click)="copyQuery.emit('snippet')" tuiHint='Available once query has completed' [disabled]="!resultType">
+                  As code
                 </button>
             </tui-data-list>
         </ng-template>
@@ -192,6 +193,9 @@ export class QueryEditorToolbar {
 
     @Input()
     runningQueryStatus: RunningQueryStatus | null;
+
+    @Input()
+    resultType: Type | null
 
     get percentComplete(): number | null {
         if (!this.runningQueryStatus) {

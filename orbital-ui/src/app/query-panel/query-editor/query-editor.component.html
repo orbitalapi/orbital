@@ -27,6 +27,7 @@
                 [queryStarted]="queryStartTime"
                 [(queryLanguage)]='queryLanguage'
                 [runningQueryStatus]='queryMetadata$ | async'
+                [resultType]="resultType"
                 (cancelQuery)='cancelQuery()'
                 (copyQuery)='copyQuery($event)'
                 (saveClicked)="saveQuery()"
