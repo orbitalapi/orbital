@@ -5,11 +5,14 @@
   height: 100%;
   overflow-y: scroll;
   border-right: 1px solid $light-purple-grey-300;
-
   background-color: $list-background;
 }
 
-app-query-history-card {
+app-query-history-card,
+app-active-query-card {
+  border: 1px solid transparent;
+  border-bottom: 1px solid $list-border;
+
   &:hover:not(.selected-history-list-item) {
     background: $list-hover-background;
   }
@@ -18,9 +21,6 @@ app-query-history-card {
     border: 1px solid $list-selected-border;
 
   }
-
-  border: 1px solid transparent;
-  border-bottom: 1px solid $list-border;
 }
 
 .inner-list-container {

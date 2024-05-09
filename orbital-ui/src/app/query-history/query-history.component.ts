@@ -1,13 +1,16 @@
-import {ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import {QueryHistorySummary, QueryProfileData, QueryService} from '../services/query.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {DownloadClickedEvent} from '../object-view/object-view-container.component';
 import {TypesService} from '../services/types.service';
 import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDisplayComponent';
-import {combineLatest, Observable, ReplaySubject} from 'rxjs';
+import { combineLatest, Observable, of, ReplaySubject } from 'rxjs';
 import {InstanceLike, tryFindType, Type} from '../services/schema';
 import {map, startWith, take, tap} from 'rxjs/operators';
-import {ActiveQueriesNotificationService, RunningQueryStatus} from '../services/active-queries-notification-service';
+import {
+  ActiveQueriesNotificationService,
+  RunningQueryStatus
+} from '../services/active-queries-notification-service';
 import {ValueWithTypeName} from '../services/models';
 import {Subscription} from 'rxjs';
 import {AppInfoService, AppConfig} from '../services/app-info.service';
@@ -180,5 +183,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
         console.log(`Query ${$event.queryId} cancelled`);
       });
   }
+
+  protected readonly of = of;
 }
 

@@ -8,9 +8,10 @@ import {
   Output,
   ViewChild
 } from '@angular/core';
+import { RunningQueryStatus } from '../services/active-queries-notification-service';
 import { BaseTypedInstanceViewer } from './BaseTypedInstanceViewer';
 import { InstanceLike, Type } from '../services/schema';
-import { Observable, Subscription } from 'rxjs';
+import { Observable } from 'rxjs';
 import { ResultsTableComponent } from '../results-table/results-table.component';
 import { AppInfoService, AppConfig } from '../services/app-info.service';
 import { TypesService } from '../services/types.service';
@@ -21,8 +22,9 @@ import { ExportFormat } from 'src/app/results-download/results-download.service'
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-object-view-container',
   template: `
-    <ng-container *ngIf="ready">
+    <ng-container *ngIf="ready && latestQueryStatus">
       <app-results-table *ngIf="displayMode==='table'"
+                         [isStreamingQuery]="latestQueryStatus.queryMode === 'STREAM'"
                          [instances$]="instances$"
                          [rowData]="instances"
                          [schema]="schema"
@@ -32,6 +34,7 @@ import { ExportFormat } from 'src/app/results-download/results-download.service'
                          (instanceClicked)="instanceClicked.emit($event)">
       </app-results-table>
       <app-object-view *ngIf="displayMode==='tree'"
+                       [isStreamingQuery]="latestQueryStatus.queryMode === 'STREAM'"
                        [instances$]="instances$"
                        [schema]="schema"
                        [selectable]="selectable"
@@ -40,10 +43,11 @@ import { ExportFormat } from 'src/app/results-download/results-download.service'
                        (instanceClicked)="instanceClicked.emit($event)">
       </app-object-view>
       <app-json-results-view *ngIf="displayMode === 'json'"
+                             [isStreamingQuery]="latestQueryStatus.queryMode === 'STREAM'"
                              [instances$]="instances$"
                              [schema]="schema"
+                             [isResponseLarge]="isResponseLarge"
                              >
-
       </app-json-results-view>
     </ng-container>
   `,
@@ -91,6 +95,9 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
   @Input()
   anonymousTypes: Type[];
 
+  @Input()
+  latestQueryStatus: RunningQueryStatus;
+
   private instancesChanged$: EventEmitter<void> = new EventEmitter<void>();
 
   get ready() {
@@ -121,6 +128,9 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
 
   @Input()
   downloadSupported = false;
+
+  @Input()
+  isResponseLarge: boolean;
 
   downloadRegressionPack: any;
 

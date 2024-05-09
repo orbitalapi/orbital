@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
-import { BehaviorSubject, EMPTY, Observable, of, Subject } from 'rxjs';
+import { BehaviorSubject, EMPTY, filter, Observable, of, Subject } from 'rxjs';
 import { DisplayMode, DownloadClickedEvent } from '../object-view/object-view-container.component';
+import { RunningQueryStatus } from '../services/active-queries-notification-service';
 import { InstanceLike, Type } from '../services/schema';
-import {QueryProfileData, StreamErrorMessage, StreamQueryErrorEvent} from '../services/query.service';
+import {QueryProfileData, StreamQueryErrorEvent} from '../services/query.service';
 import { BaseQueryResultComponent } from '../query-panel/result-display/BaseQueryResultComponent';
 import { TypesService } from '../services/types.service';
 import { AppInfoService, AppConfig } from '../services/app-info.service';
@@ -29,64 +30,77 @@ import { map, scan, tap } from 'rxjs/operators';
       new
       *ngIf='isQueryRunning'
     ></progress>
-    <div class="alert" *ngIf="responseIsLarge$ | async">The response is really big. Some features have been disabled.
-    </div>
-    <app-panel-header class="panel-header" title="Results" [isSecondary]="true">
-      <tui-tabs-with-more [(activeItemIndex)]="activeTabIndex" *ngIf="showResultsPanel"
-                          (activeItemIndexChange)="onTabIndexChanged()"
-                          [moreContent]='more'
-      >
-        <button *tuiItem tuiTab [disabled]="responseIsLarge$ | async">
-          <img src="assets/img/tabler/table.svg" class="tab-icon">
-          Table
-        </button>
-        <button *tuiItem tuiTab [disabled]="responseIsLarge$ | async">
-          <img src="assets/img/tree-list.svg" class="tab-icon">
-          Tree
-        </button>
-        <button *tuiItem tuiTab>
-          <img src="assets/img/tabler/code-dots.svg" class="tab-icon">
-          Raw
-        </button>
-        <ng-container *ngIf='profilerEnabled'>
-          <button *tuiItem tuiTab>
-            <img src="assets/img/tabler/gauge.svg" class="tab-icon">
-            Profiler
+    <ng-container *ngIf="{obs: responseIsLarge$ | async} as responseIsLarge">
+      <app-panel-header class="panel-header" title="Results" [isSecondary]="true">
+        <tui-tabs-with-more [(activeItemIndex)]="activeTabIndex" *ngIf="showResultsPanel"
+                            (activeItemIndexChange)="onTabIndexChanged()"
+                            [moreContent]='more'
+        >
+          <button *tuiItem tuiTab [disabled]="responseIsLarge.obs">
+            <img src="assets/img/tabler/table.svg" class="tab-icon">
+            Table
           </button>
-        </ng-container>
-        <button *tuiItem tuiTab>
-          <img src="assets/img/tabler/exclamation-circle.svg" class="tab-icon">
-          Problems
-          <tui-badge class="error-count-badge" *ngIf="errorCount > 0" [value]="errorCount" size="xs"></tui-badge>
-        </button>
-      </tui-tabs-with-more>
-      <ng-template #more>
-        <tui-svg src="tuiIconMoreHorizontalLarge"></tui-svg>
-      </ng-template>
-      <tui-hosted-dropdown
-        *ngIf="showResultsPanel && downloadSupported"
-        tuiDropdownAlign="left"
-        [content]="downloadDropdown"
-        [(open)]="downloadMenuOpen"
-      >
-        <button tuiButton type="button" appearance="outline" [iconRight]="downloadIcon" size="s"
-                class="button-small menu-bar-button">
-          Download
-        </button>
-      </tui-hosted-dropdown>
-
-    </app-panel-header>
-    <app-object-view-container
-      *ngIf="activeTabIndex < 3 && showResultsPanel"
-      [instances$]="_instances$"
-      [schema]="schema"
-      [displayMode]="displayMode"
-      [selectable]="true"
-      [downloadSupported]="downloadSupported"
-      (downloadClicked)="this.downloadClicked.emit($event)"
-      [type]="type"
-      [anonymousTypes]="anonymousTypes"
-      (instanceClicked)="instanceClicked($event,type.name)"></app-object-view-container>
+          <button *tuiItem tuiTab [disabled]="responseIsLarge.obs">
+            <img src="assets/img/tree-list.svg" class="tab-icon">
+            Tree
+          </button>
+          <button *tuiItem tuiTab>
+            <img src="assets/img/tabler/code-dots.svg" class="tab-icon">
+            Raw
+          </button>
+          <ng-container *ngIf='profilerEnabled'>
+            <button *tuiItem tuiTab>
+              <img src="assets/img/tabler/gauge.svg" class="tab-icon">
+              Profiler
+            </button>
+          </ng-container>
+          <button *tuiItem tuiTab>
+            <img src="assets/img/tabler/exclamation-circle.svg" class="tab-icon">
+            Problems
+            <tui-badge class="error-count-badge" *ngIf="errorCount > 0" [value]="errorCount" size="xs"></tui-badge>
+          </button>
+        </tui-tabs-with-more>
+        <ng-template #more>
+          <tui-svg src="tuiIconMoreHorizontalLarge"></tui-svg>
+        </ng-template>
+        <div class="rightside-controls-container">
+          <tui-checkbox-labeled
+            *ngIf="(latestQueryStatus?.queryMode === 'STREAM') && isQueryRunning"
+            tuiHint="Pause the stream on the UI"
+            class="pause-stream-checkbox"
+            [ngModel]="isStreamPaused"
+            (ngModelChange)="pauseStreamToggled.emit($event)"
+          >
+            Pause stream
+          </tui-checkbox-labeled>
+          <tui-hosted-dropdown
+            *ngIf="showResultsPanel && downloadSupported"
+            tuiDropdownAlign="left"
+            [content]="downloadDropdown"
+            [(open)]="downloadMenuOpen"
+          >
+            <button tuiButton type="button" appearance="outline" [iconRight]="downloadIcon" size="s"
+                    class="button-small menu-bar-button">
+              Download
+            </button>
+          </tui-hosted-dropdown>
+        </div>
+      </app-panel-header>
+      <app-object-view-container
+        *ngIf="activeTabIndex < 3 && showResultsPanel"
+        [instances$]="_instances$"
+        [schema]="schema"
+        [displayMode]="displayMode"
+        [selectable]="true"
+        [downloadSupported]="downloadSupported"
+        [type]="type"
+        [anonymousTypes]="anonymousTypes"
+        [isResponseLarge]="responseIsLarge.obs"
+        [latestQueryStatus]="latestQueryStatus"
+        (downloadClicked)="this.downloadClicked.emit($event)"
+        (instanceClicked)="instanceClicked($event,type.name)"
+      ></app-object-view-container>
+    </ng-container>
     <app-call-explorer [queryProfileData$]="profileData$"
                        *ngIf="activeTabIndex === 3 && showResultsPanel && !isQueryRunning"></app-call-explorer>
 
@@ -130,8 +144,17 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
 // workaround for lack of enum support in templates
   downloadFileType = ExportFormat;
 
+  private _isQueryRunning: boolean
+
+  get isQueryRunning(): boolean {
+    return this._isQueryRunning;
+  }
+
   @Input()
-  isQueryRunning: boolean
+  set isQueryRunning(value: boolean) {
+    this._isQueryRunning = value;
+    this.isStreamPaused = false;
+  }
 
   constructor(protected typeService: TypesService,
               protected appInfoService: AppInfoService,
@@ -144,6 +167,7 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
 
   LARGE_RESPONSE_LIMIT = 1_048_576; // 1MB
   activeTabIndex: number = 0;
+
   @Input()
   downloadSupported = true;
 
@@ -158,8 +182,10 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
 
   downloadMenuOpen = false;
 
+  isStreamPaused: boolean = false;
+
   hasModelFormatSpecs: Subject<boolean> = new BehaviorSubject(true);
-  jsonInstances$: Observable<string> = of();
+  private jsonInstances$: Observable<string> = of();
   responseIsLarge$: Observable<boolean> = of(false);
 
   get displayMode(): DisplayMode {
@@ -173,7 +199,7 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
     }
   }
 
-  private _instances$: Observable<InstanceLike>;
+  protected _instances$: Observable<InstanceLike>;
   PROFILER_TAB_INDEX = 3;
 
   @Input()
@@ -198,6 +224,7 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
     }
 
     this.jsonInstances$ = this.instances$.pipe(
+      filter(result => this.activeTabIndex === 2),
       map((result) => JSON.stringify(result.value))
     );
 
@@ -208,7 +235,7 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
           return responseSize > this.LARGE_RESPONSE_LIMIT;
         }),
         tap((isLargeResponse) => {
-          if (isLargeResponse) {
+          if (this.activeTabIndex < 2 && isLargeResponse) {
             // Only show JSON in large responses.
             this.activeTabIndex = 2;
           }
@@ -249,12 +276,17 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   @Output()
   downloadClicked = new EventEmitter<DownloadClickedEvent>();
 
+  @Output()
+  pauseStreamToggled = new EventEmitter<boolean>();
+
   @Input()
   profileData$: Observable<QueryProfileData>;
 
+  @Input()
+  latestQueryStatus: RunningQueryStatus | 'NOT_USED';
+
   protected updateDataSources() {
   }
-
   onDownloadClicked(format: ExportFormat) {
     if (this.config.analytics.persistResults) {
       this.downloadClicked.emit(new DownloadClickedEvent(format));
@@ -281,4 +313,8 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
       this.loadProfileData.emit();
     }
   }
+
+  protected readonly isNullOrUndefined = isNullOrUndefined;
+
+
 }

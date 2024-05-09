@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RestController
+import reactor.core.publisher.Mono
 
 @RestController
 class ActiveQueryController(private val monitor: ActiveQueryMonitor) {
@@ -19,20 +20,22 @@ class ActiveQueryController(private val monitor: ActiveQueryMonitor) {
    @PreAuthorize("hasAuthority('${VynePrivileges.CancelQuery}')")
    fun cancelQuery(
       @PathVariable("id") queryId: String
-   ) {
+   ) : Mono<Void> {
       if (!monitor.cancelQuery(queryId)) {
          throw NotFoundException("No query with id $queryId was found")
       }
+      return Mono.empty()
    }
 
    @DeleteMapping("/api/query/active/clientId/{id}")
    @PreAuthorize("hasAuthority('${VynePrivileges.CancelQuery}')")
    fun cancelQueryByClientQueryId(
       @PathVariable("id") clientQueryId: String
-   ) {
+   ) : Mono<Void> {
       if (!monitor.cancelQueryByClientQueryId(clientQueryId)) {
          throw NotFoundException("No query with clientQueryID $clientQueryId was found")
       }
+      return Mono.empty()
    }
 
 }

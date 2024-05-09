@@ -41,7 +41,7 @@ export const APP_ROUTES = RouterModule.forRoot(
       path: 'query',
       loadChildren: () => import('./query-panel/query-panel.route.module').then(m => m.QueryPanelRouteModule),
       canActivate: [AuthGuard],
-      data: {requiredAuthority: VynePrivileges.RunQuery}
+      data: {requireAllAuthorities: [VynePrivileges.RunQuery, VynePrivileges.CancelQuery]}
     },
     {
       path: 'query-history',

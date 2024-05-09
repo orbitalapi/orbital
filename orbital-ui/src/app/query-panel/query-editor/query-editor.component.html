@@ -58,23 +58,24 @@
           </div>
         </div>
       </as-split-area>
-      <as-split-area size='50'>
+      <as-split-area size='50' [title]="!queryStartTime ? 'Run a query first' : ''">
         <app-error-panel *ngIf='lastQueryResultAsSuccess?.unmatchedNodes?.length > 0'
                          [queryResult]='lastQueryResultAsSuccess'>
         </app-error-panel>
-
-        <app-tabbed-results-view [instances$]='results$'
+        <app-tabbed-results-view [instances$]='potentiallyPausedResults$'
                                  [profileData$]='queryProfileData$'
                                  [errorMessages$]="errors$"
                                  [errorCount]="errorCount"
                                  [type]='resultType'
-                                 (loadProfileData)='loadProfileData()'
                                  [anonymousTypes]='anonymousTypes'
+                                 [isQueryRunning]='(currentState$ | async) === "Running" || (isProfileDataLoading$ | async)'
+                                 [latestQueryStatus]="latestQueryStatus"
+                                 [class.is-disabled]="!queryStartTime"
                                  (instanceSelected)='valuePanelVisible = true; instanceSelected$.next($event)'
                                  (downloadClicked)='downloadQueryHistory($event.format)'
-                                 [isQueryRunning]='(currentState$ | async) === "Running" || (isProfileDataLoading$ | async)'
+                                 (loadProfileData)='loadProfileData()'
+                                 (pauseStreamToggled)="toggleStreamPauseState($event)"
         ></app-tabbed-results-view>
-
       </as-split-area>
     </as-split>
   </as-split-area>

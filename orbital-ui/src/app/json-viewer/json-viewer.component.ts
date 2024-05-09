@@ -3,6 +3,7 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  HostBinding,
   Input,
   OnDestroy,
   ViewChild
@@ -17,7 +18,7 @@ import {JSONPathFinder} from 'src/app/json-viewer/JsonPathFinder';
 import {Clipboard} from '@angular/cdk/clipboard';
 import {JsonTypeInlayHintProvider} from "./JsonTypeInlayHintProvider";
 import {isNullOrUndefined} from "../utils/utils";
-import {SourceWithTypeHints} from "./json-results-view.component";
+import { isSourceWithTypeHints, SourceWithTypeHints } from './json-results-view.component';
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 import ITextModel = editor.ITextModel;
 
@@ -26,13 +27,18 @@ import ITextModel = editor.ITextModel;
   selector: 'app-json-viewer',
   template: `
     <app-panel-header *ngIf="showHeader" [title]="title" [isSecondary]="true">
-       <tui-checkbox-labeled [(ngModel)]="showTypeHints" *ngIf="hasTypes">
+      <tui-checkbox-labeled [(ngModel)]="showTypeHints" *ngIf="hasTypes">
         Show types
-    </tui-checkbox-labeled>
-      <div class="spacer"></div>
+      </tui-checkbox-labeled>
+      <tui-notification *ngIf="showResultsSizeWarning || isResponseLarge" status="warning" class="alert">
+        The response is really big.
+        <ng-container *ngIf="isResponseLarge">Some features have been disabled. </ng-container>
+        <ng-container *ngIf="showResultsSizeWarning">Only showing [x] number of results. </ng-container>
+      </tui-notification>
+      <div *ngIf="!showResultsSizeWarning && !isResponseLarge" class="spacer"></div>
       <button (click)="applyFormat()" tuiButton size="s" appearance="outline">Format</button>
       <button (click)="copyToClipboard()" tuiButton size="s" appearance="outline">{{ copyButtonText }}</button>
-    </app-panel-header>
+      </app-panel-header>
     <div #codeEditorContainer class="code-editor"></div>`,
   styleUrls: ['./json-viewer.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -44,8 +50,18 @@ export class JsonViewerComponent implements OnDestroy {
   copyButtonText = 'Copy'
   @Input()
   title: string;
+  // Prevents tooltip displaying in browser
+  @HostBinding('attr.title') get getTitle(): null {
+    return null;
+  }
   @Input()
   showHeader = true;
+
+  @Input()
+  showResultsSizeWarning: boolean;
+
+  @Input()
+  isResponseLarge: boolean;
 
   private hintProvider: JsonTypeInlayHintProvider = new JsonTypeInlayHintProvider();
 
@@ -95,12 +111,12 @@ export class JsonViewerComponent implements OnDestroy {
   }
 
   set json(value: string | SourceWithTypeHints) {
-    if (value === this._json) {
+    if (value === this._json || value === "") {
       return;
     }
     this._json = value;
     try {
-      this.pathFinder = new JSONPathFinder(this.jsonString)
+      this.pathFinder = isSourceWithTypeHints(value) ? new JSONPathFinder(this.jsonString) : null;
     } catch (e) {
       console.error(`Failed to build JSON Path finder: ${e}`)
       this.pathFinder = null;

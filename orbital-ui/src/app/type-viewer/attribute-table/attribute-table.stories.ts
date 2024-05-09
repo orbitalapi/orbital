@@ -5,7 +5,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 import { findType } from '../../services/schema';
 import { testSchema } from '../../object-view/test-schema';
-import { schemaWithNestedTypes } from '../../project-import/data-source-importer.data';
+import { schemaWithNestedTypes } from '../../data-source-import/data-source-import.data';
 
 const type = findType(testSchema as any, 'demo.Customer')
 const nestedType = findType(schemaWithNestedTypes, 'io.vyne.demo.Person' )

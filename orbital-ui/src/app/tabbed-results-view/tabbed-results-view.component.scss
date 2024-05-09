@@ -7,6 +7,7 @@
 
 .panel-header {
   padding: 0.2rem 1rem;
+  gap: 0;
 }
 
 .tab-icon {
@@ -63,12 +64,19 @@ tui-tabs-with-more {
 }
 
 .alert {
-  padding: 0.5rem 1rem;
   margin: 0.5rem 1rem 0;
-  border: 1px solid rgba($vyne-lilac, 0.4);
-  border-radius: 4px;
 }
 
 progress {
   position: absolute;
+}
+
+.rightside-controls-container {
+  display: flex;
+
+  .pause-stream-checkbox {
+    white-space: nowrap;
+    margin-right: 1rem;
+    align-content: center;
+  }
 }
