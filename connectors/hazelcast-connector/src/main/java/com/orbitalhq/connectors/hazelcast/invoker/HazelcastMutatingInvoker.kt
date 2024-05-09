@@ -10,10 +10,10 @@ import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedObject
+import com.orbitalhq.query.CacheExchange
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
-import com.orbitalhq.query.SqlExchange
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
@@ -36,9 +36,9 @@ class HazelcastMutatingInvoker {
       hazelcastInstance: HazelcastInstance,
       parameters: List<Pair<Parameter, TypedInstance>>,
       schema: Schema,
-      reportResult: (String, Int, String) -> DataSource
+      reportResult: (String, String, Int, CacheExchange.CacheOperationVerb) -> DataSource
    ): Flow<TypedInstance> {
-      val (param, valueToSave) = parameters[0]
+      val (_, valueToSave) = parameters[0]
       require(valueToSave is TypedObject) { "Only TypedObjects are supported - Need to add support for ${valueToSave::class.simpleName}" }
       val (key, serializedValue) = if (valueToSave.type.hasMetadata(HazelcastTaxi.Annotations.CompactObject)) {
          GenericRecordWriter.getGenericRecordAndKey(valueToSave, schema)
@@ -50,7 +50,7 @@ class HazelcastMutatingInvoker {
       logger.debug { "Setting value on map $mapName with key $key to ${serializedValue::class.simpleName}" }
       val map: IMap<Any, Any> = hazelcastInstance.getMap(mapName)
       map[key] = serializedValue
-      val dataSource = reportResult("UPDATE * where key = $key", 1, "UPDATE")
+      val dataSource = reportResult("UPDATE * where key = $key", mapName,  1, CacheExchange.CacheOperationVerb.UPDATE)
       val updatedValue = DataSourceUpdater.update(valueToSave, dataSource)
       return flowOf(updatedValue)
    }
@@ -60,10 +60,10 @@ class HazelcastMutatingInvoker {
       parameters: List<Pair<Parameter, TypedInstance>>,
       schema: Schema,
       operation: RemoteOperation,
-      reportAndGenerateDataSource: (String, Int, String) -> DataSource
+      reportAndGenerateDataSource: (String, String, Int, CacheExchange.CacheOperationVerb) -> DataSource
    ): Flow<TypedInstance> {
       val deleteAnnotation = operation.firstMetadata(HazelcastTaxi.Annotations.DeleteOperation.parameterizedName)
-      val mapName = deleteAnnotation.params.get("mapName") as String?
+      val mapName = deleteAnnotation.params["mapName"] as String?
          ?: error("Operation ${operation.qualifiedName.parameterizedName} does not declare a mapName")
 
       val map = hazelcastInstance.getMap<Any, Any>(mapName)
@@ -73,14 +73,13 @@ class HazelcastMutatingInvoker {
       } else {
          deleteByKey(deleteKey, mapName, map, reportAndGenerateDataSource, schema, operation)
       }
-      TODO("Not yet implemented")
    }
 
    private fun deleteByKey(
       deleteKey: TypedInstance,
       mapName: String,
       map: IMap<Any, Any>,
-      reportAndGenerateDataSource: (String, Int, String) -> DataSource,
+      reportAndGenerateDataSource: (String, String, Int, CacheExchange.CacheOperationVerb) -> DataSource,
       schema: Schema,
       operation: RemoteOperation
    ): Flow<TypedInstance> {
@@ -90,8 +89,9 @@ class HazelcastMutatingInvoker {
       val recordCount = if (removedValue != null) 1 else 0
       val dataSource = reportAndGenerateDataSource(
          "DELETE * where KEY = $deleteKey",
+         mapName,
          recordCount,
-         "DELETE",
+         CacheExchange.CacheOperationVerb.DELETE,
       )
       val result = TypedInstance.from(operation.returnType, removedValue, schema, source = dataSource)
       return flowOf(result)
@@ -100,13 +100,13 @@ class HazelcastMutatingInvoker {
    private fun deleteAll(
       mapName: String,
       map: IMap<Any, Any>,
-      reportAndGenerateDataSource: (String, Int, String) -> DataSource,
+      reportAndGenerateDataSource: (String, String, Int, CacheExchange.CacheOperationVerb) -> DataSource,
       schema: Schema
    ): Flow<TypedNull> {
       logger.info { "Performing deleteAll on map $mapName" }
       val sizeBeforeDelete = map.size
       map.clear()
-      val dataSource = reportAndGenerateDataSource("DELETE *", sizeBeforeDelete, "DELETE")
+      val dataSource = reportAndGenerateDataSource("DELETE *", mapName, sizeBeforeDelete, CacheExchange.CacheOperationVerb.DELETE)
       // Not really sure on what we should be returning here.
       return flowOf(TypedNull.create(schema.type(PrimitiveType.VOID), source = dataSource))
    }
@@ -124,10 +124,11 @@ class HazelcastMutatingInvoker {
       schema: Schema
    ): Flow<TypedInstance> {
       val startTime = Instant.now()
-      fun reportResult(sql: String, resultSize: Int, verb: String): DataSource {
+      fun reportResult(sql: String, mapName: String, resultSize: Int, verb: CacheExchange.CacheOperationVerb): DataSource {
          val result = buildOperationResult(
             service,
             operation,
+            mapName,
             parameters.map { it.second },
             hazelcastConnectionConfig,
             sql,
@@ -163,32 +164,57 @@ class HazelcastMutatingInvoker {
    private fun buildOperationResult(
       service: Service,
       operation: RemoteOperation,
+      mapName:  String,
       parameters: List<TypedInstance>,
       connectionConfig: HazelcastConfiguration,
       sql: String,
       elapsed: Duration,
       recordCount: Int,
-      verb: String = "SELECT"
+      verb: CacheExchange.CacheOperationVerb
    ): OperationResult {
       val remoteCall =
-         buildRemoteCall(service, connectionConfig.addresses.joinToString(), operation, sql, elapsed, recordCount, verb)
+         buildRemoteCall(
+            mapName,
+            service,
+            connectionConfig.addresses.joinToString(),
+            operation,
+            sql,
+            elapsed,
+            recordCount,
+            verb)
       return OperationResult.fromTypedInstances(
          parameters,
          remoteCall
       )
    }
 
+   /**
+    * data class CacheExchange(
+    *    val connectionName: String,
+    *    val cacheName: String,
+    *    /**
+    *     * When a simple key lookup, provide the key.
+    *     * If querying, provide the query statement
+    *     */
+    *    val cacheKeyOrStatement: String,
+    *    val verb: CacheOperationVerb,
+    *    val cacheType: CacheType,
+    *    val recordCount: Int,
+    * )
+    */
+
    private fun buildRemoteCall(
+      mapName: String,
       service: Service,
-      jdbcUrl: String,
+      hazelcastAddresses: String,
       operation: RemoteOperation,
       sql: String,
       elapsed: Duration,
       recordCount: Int,
-      verb: String
+      verb: CacheExchange.CacheOperationVerb
    ) = RemoteCall(
       service = service.name,
-      address = jdbcUrl,
+      address = hazelcastAddresses,
       operation = operation.name,
       responseTypeName = operation.returnType.name,
       requestBody = sql,
@@ -198,8 +224,11 @@ class HazelcastMutatingInvoker {
       responseMessageType = ResponseMessageType.FULL,
       // Feels like capturing the results are a bad idea.  Can revisit if there's a use-case
       response = null,
-      exchange = SqlExchange(
-         sql = sql,
+      exchange = CacheExchange(
+         connectionName = hazelcastAddresses,
+         cacheName = mapName,
+         cacheKeyOrStatement = sql,
+         cacheType = CacheExchange.CacheType.Hazelcast,
          recordCount = recordCount,
          verb = verb
       ),

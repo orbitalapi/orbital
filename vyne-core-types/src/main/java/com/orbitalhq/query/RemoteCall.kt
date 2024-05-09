@@ -12,7 +12,7 @@ import com.orbitalhq.schemas.QualifiedNameAsStringDeserializer
 import com.orbitalhq.schemas.QualifiedNameAsStringSerializer
 import kotlinx.serialization.Serializable
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 
 /**
  * A remote call models the response from a remote operation.
@@ -173,7 +173,11 @@ data class CacheExchange(
       /**
        * Return the full cache
        */
-      FIND_ALL;
+      FIND_ALL,
+
+      UPDATE,
+
+      DELETE
    }
 
    enum class CacheType {
