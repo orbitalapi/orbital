@@ -1,15 +1,14 @@
 package com.orbitalhq.connectors.hazelcast.invoker
 
 import com.hazelcast.internal.serialization.impl.compact.DeserializedGenericRecord
-import com.hazelcast.test.TestHazelcastInstanceFactory
-import com.orbitalhq.connectors.hazelcast.HazelcastTaxi
-import com.orbitalhq.firstRawObject
+import com.orbitalhq.firstTypedObject
+import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.UndefinedSource
 import com.orbitalhq.models.json.parseJson
-import com.orbitalhq.query.VyneQlGrammar
+import com.orbitalhq.query.CacheExchange
+import com.orbitalhq.query.QueryContextEventBroker
+import com.orbitalhq.query.RemoteCallOperationResultHandler
 import com.orbitalhq.rawObjects
-import com.orbitalhq.schemas.taxi.TaxiSchema
-import com.orbitalhq.testVyneWithStub
 import io.kotest.common.runBlocking
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -22,18 +21,32 @@ class HazelcastMutatingInvokerTest : BaseHazelcastInvokerTest() {
    @Test
    fun `can write portable object`():Unit = runBlocking {
       val (hazelcastInstance, vyne, stub) = vyneWithHazelcast()
-      vyne.query("""given { film:Film = {
+       val operationResults = mutableListOf<OperationResult>()
+       val remoteCallOperationResultHandler = object: RemoteCallOperationResultHandler {
+       override fun recordResult(operation: OperationResult, queryId: String) {
+           operationResults.add(operation)
+       }
+   }
+       val queryEventBroker = QueryContextEventBroker()
+       queryEventBroker.addHandler(remoteCallOperationResultHandler)
+
+      val upsertedInstance = vyne.query(
+          vyneQlQuery =  """given { film:Film = {
          |  filmId : 100,
          |  title : "Star Wars",
          |  languages : ["English" , "American" ],
          |  director : { name : "George" },
          |  cast : [ {name : "Mark" }, {name: "Carrie" } ]
          |} }
-         |call HazelcastService::upsert""".trimMargin())
-         .firstRawObject()
+         |call HazelcastService::upsert""".trimMargin(),
+          eventBroker = queryEventBroker)
+         .firstTypedObject()
+
+       val operationResult = operationResults.first()
+       operationResult.remoteCall.exchange.shouldBeInstanceOf<CacheExchange>()
       val filmMap = hazelcastInstance.getMap<Int,Any>("films")
       filmMap.shouldNotBeNull()
-      val film = filmMap.get(100)
+      val film = filmMap[100]
       film.shouldNotBeNull()
       film.shouldBeInstanceOf<DeserializedGenericRecord>()
 
