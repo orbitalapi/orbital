@@ -157,6 +157,7 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
   }
 
   private subscribeForUpdates(source: Observable<InstanceLike>) {
+    this.treeDataItems = []
     this.treeDataPages = [];
     this.treeDataCurrentPage = 0;
     this.resultCounter = 0;
