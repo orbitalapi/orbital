@@ -70,7 +70,8 @@ class QueryLifecycleEventObserver(
             message = queryResult.responseTypeName ?: "",
             queryId = queryResult.queryId,
             clientQueryId = queryResult.clientQueryId ?: queryResult.queryId,
-            timestamp = queryStartTime
+            timestamp = queryStartTime,
+            anonymousTypes = queryResult.anonymousTypes
          )
       )
 
@@ -147,7 +148,8 @@ class QueryLifecycleEventObserver(
             message = queryResult.responseTypeName ?: "",
             queryId = queryResult.queryId,
             clientQueryId = queryResult.clientQueryId ?: queryResult.queryId,
-            timestamp = queryStartTime
+            timestamp = queryStartTime,
+            anonymousTypes = queryResult.anonymousTypes
          )
       )
 

@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { MatLegacyDialogRef as MatDialogRef } from '@angular/material/legacy-dialog';
+import {UiCustomisations} from "../../environments/ui-customisations";
 
 @Component({
   selector: 'app-test-spec-form',
@@ -8,7 +9,7 @@ import { MatLegacyDialogRef as MatDialogRef } from '@angular/material/legacy-dia
       Download a test spec
     </h2>
     <p>
-      This lets you download the output of your parsed content as a test case than can by run automatically using Vynes
+      This lets you download the output of your parsed content as a test case than can by run automatically using {{ UiCustomisations.productName }}'s
       testing tools.
     </p>
     <mat-form-field appearance="outline">
@@ -25,6 +26,7 @@ import { MatLegacyDialogRef as MatDialogRef } from '@angular/material/legacy-dia
   styleUrls: ['./test-spec-form.component.scss']
 })
 export class TestSpecFormComponent {
+  protected readonly UiCustomisations = UiCustomisations;
 
   constructor(public dialogRef: MatDialogRef<TestSpecFormComponent>) {
   }

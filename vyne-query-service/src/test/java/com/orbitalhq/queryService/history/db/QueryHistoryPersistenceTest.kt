@@ -46,6 +46,7 @@ import com.orbitalhq.typedObjects
 import com.orbitalhq.utils.Benchmark
 import com.orbitalhq.utils.Ids
 import com.orbitalhq.utils.StrategyPerformanceProfiler
+import io.kotest.matchers.string.shouldNotBeEmpty
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
@@ -281,6 +282,36 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 //      }
 //      val historyProfileData = historyService.getQueryProfileDataFromClientId(id)
 //      historyProfileData.block().remoteCalls.should.have.size(5)
+   }
+
+   @Test
+   fun `can read and write query results from taxiQl query with anonymous type projection`() {
+      setupTestService(historyDbWriter)
+      val id = UUID.randomUUID().toString()
+
+      runTest {
+         val turbine =
+            queryService.submitVyneQlQueryStreamingResponse("""find { Order[] } as {
+               | id: OrderId
+               | traderDetails : {
+               |    name : TraderName
+               | }
+               |}[]""".trimMargin(), clientQueryId = id).testIn(this)
+
+         val first = turbine.awaitItem()
+         first.should.not.be.`null`
+         turbine.awaitComplete()
+      }
+
+      await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
+         val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)
+         historyRecord?.endTime != null
+      }
+
+      val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)
+
+      historyRecord.should.not.be.`null`
+      historyRecord!!.anonymousTypesJson!!.shouldNotBeEmpty()
    }
 
    @Test

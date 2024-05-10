@@ -71,10 +71,6 @@ open class QuerySummaryPersister(private val queryHistoryDao: QueryHistoryDao, p
 
       logger.info { "Recording that query ${event.queryId} has completed" }
 
-      createQuerySummaryRecord(event.queryId) {
-          QueryResultEventMapper.toQuerySummary(event)
-      }
-
       queryHistoryDao.setQueryEnded(
          event.queryId,
          event.timestamp,
@@ -86,9 +82,9 @@ open class QuerySummaryPersister(private val queryHistoryDao: QueryHistoryDao, p
    }
 
    fun persistEvent(event: RestfulQueryExceptionEvent) {
-      createQuerySummaryRecord(event.queryId) {
-          QueryResultEventMapper.toQuerySummary(event)
-      }
+//      createQuerySummaryRecord(event.queryId) {
+//          QueryResultEventMapper.toQuerySummary(event)
+//      }
       queryHistoryDao.setQueryEnded(
          event.queryId,
          event.timestamp,
@@ -100,9 +96,6 @@ open class QuerySummaryPersister(private val queryHistoryDao: QueryHistoryDao, p
    }
 
    fun persistEvent(event: TaxiQlQueryExceptionEvent) {
-      createQuerySummaryRecord(event.queryId) {
-          QueryResultEventMapper.toQuerySummary(event)
-      }
       queryHistoryDao.setQueryEnded(
          event.queryId,
          event.timestamp,
@@ -113,7 +106,6 @@ open class QuerySummaryPersister(private val queryHistoryDao: QueryHistoryDao, p
    }
 
    fun processStreamingQueryCancelledEvent(event: StreamingQueryCancelledEvent) {
-      createQuerySummaryRecord(event.queryId) { QueryResultEventMapper.toQuerySummary(event) }
       queryHistoryDao.setQueryEnded(
          event.queryId,
          event.timestamp,
@@ -130,19 +122,6 @@ open class QuerySummaryPersister(private val queryHistoryDao: QueryHistoryDao, p
           QueryResponse.ResponseStatus.ERROR,
          0,
          event.failure.message
-      )
-   }
-
-   fun persistEvent(event: StreamingQueryCancelledEvent) {
-      createQuerySummaryRecord(event.queryId) {
-          QueryResultEventMapper.toQuerySummary(event)
-      }
-      queryHistoryDao.setQueryEnded(
-         event.queryId,
-         event.timestamp,
-          QueryResponse.ResponseStatus.CANCELLED,
-         event.recordCount,
-         event.message
       )
    }
 
