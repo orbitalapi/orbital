@@ -104,26 +104,33 @@ class GitWorkspaceConfigLoader(
       return fileConfigLoader.safeConfigJson()
    }
 
-   override fun addFileSpec(fileSpec: FileSystemPackageSpec) {
-      error("Git workspaces are read only")
+   override fun addFileSpec(fileSpec: FileSystemPackageSpec): ModifyWorkspaceResponse {
+      return fileConfigLoader.addFileSpec(fileSpec)
    }
 
-   override fun addGitSpec(gitSpec: GitProjectStoreSpec) {
-      error("Git workspaces are read only")
+   override fun addGitSpec(gitSpec: GitProjectStoreSpec): ModifyWorkspaceResponse {
+     return try {
+         fileConfigLoader.addGitSpec(gitSpec)
+      } catch (e: Exception) {
+         logger.error(e) { "Error in Adding GitSpec => $gitSpec"  }
+         ModifyWorkspaceResponse(ModifyProjectResponseStatus.Failed, e.message)
+      }
    }
 
    override fun removeGitRepository(
       repositoryName: String,
       packageIdentifier: PackageIdentifier
    ): List<PackageIdentifier> {
-      error("Git workspaces are read only")
+      return fileConfigLoader.removeGitRepository(repositoryName, packageIdentifier)
    }
 
    override fun removeFileRepository(repositoryPath: Path, packageIdentifier: PackageIdentifier): List<PackageIdentifier> {
-      error("Git workspaces are read only")
+      return fileConfigLoader.removeFileRepository(repositoryPath, packageIdentifier)
    }
 
    override fun removePushedRepository(identifier: PackageIdentifier): List<PackageIdentifier> {
-      error("Git workspaces are read only")
+      return fileConfigLoader.removePushedRepository(identifier)
    }
 }
+
+

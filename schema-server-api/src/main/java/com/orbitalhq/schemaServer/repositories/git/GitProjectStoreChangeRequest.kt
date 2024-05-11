@@ -8,7 +8,7 @@ data class GitProjectStoreChangeRequest(
    val uri: String,
    val branch: String,
 
-   val projectRootPath: String = "/",
+   val path: String = "/",
    val pullRequestConfig: GitUpdateFlowConfig? = null,
    val isEditable: Boolean = pullRequestConfig != null,
    val loader: PackageLoaderSpec = TaxiPackageLoaderSpec

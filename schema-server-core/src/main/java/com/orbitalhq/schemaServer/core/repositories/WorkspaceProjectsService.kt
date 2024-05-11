@@ -1,14 +1,13 @@
 package com.orbitalhq.schemaServer.core.repositories
 
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
-import com.orbitalhq.schemaServer.core.git.GitUtils
 import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
+import com.orbitalhq.schemaServer.core.git.GitUtils
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.PackageType
 import com.orbitalhq.schemaServer.packages.SoapPackageLoaderSpec
 import com.orbitalhq.schemaServer.repositories.*
 import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
-import com.orbitalhq.spring.http.BadRequestException
 import com.orbitalhq.toVynePackageIdentifier
 import lang.taxi.packages.TaxiPackageLoader
 import mu.KotlinLogging
@@ -36,14 +35,14 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader)  {
     }
 
     @PostMapping("/api/repositories/file")
-    fun createFileRepository(@RequestBody request: CreateFileProjectStoreRequest): Mono<Unit> {
+    fun createFileRepository(@RequestBody request: CreateFileProjectStoreRequest): Mono<ModifyWorkspaceResponse> {
         val fileSpec = request.toRepositorySpec()
-        try {
-            configRepo.addFileSpec(fileSpec)
-        } catch (e: IllegalArgumentException) {
-            throw BadRequestException(e.message!!)
+        return try {
+           Mono.just(configRepo.addFileSpec(fileSpec))
+        } catch (e: Exception) {
+            logger.error(e) { "Error in creating file repository => ${request}"  }
+            Mono.empty()
         }
-        return Mono.empty()
     }
 
     @PostMapping("/api/repositories/file", params = ["test"])
@@ -59,14 +58,13 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader)  {
 
 
     @PostMapping("/api/repositories/git")
-    fun createGitProjectStore(@RequestBody request: GitProjectStoreChangeRequest): Mono<Unit> {
+    fun createGitProjectStore(@RequestBody request: GitProjectStoreChangeRequest): Mono<ModifyWorkspaceResponse> {
         val config = request.toRepositorySpec()
-        try {
-            configRepo.addGitSpec(config)
-        } catch (e: IllegalStateException) {
-            throw BadRequestException(e.message!!)
+        return try {
+             Mono.just(configRepo.addGitSpec(config))
+        } catch (e: Exception) {
+           Mono.just(ModifyWorkspaceResponse(ModifyProjectResponseStatus.Failed, e.message))
         }
-        return Mono.empty()
     }
 
     @PostMapping("/api/repositories/git", params = ["test"])
@@ -88,7 +86,7 @@ fun GitProjectStoreChangeRequest.toRepositorySpec(): GitProjectStoreSpec {
         this.name,
         this.uri,
         this.branch,
-        path = Paths.get(this.projectRootPath)
+        path = Paths.get(this.path)
     )
 }
 
