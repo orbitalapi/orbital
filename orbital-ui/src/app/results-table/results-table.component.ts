@@ -78,7 +78,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   rowData: ReadonlyArray<InstanceLike> = [];
 
   @Input()
-  isStreamingQuery: boolean;
+  isStreamingQuery: boolean = false;
 
   remeasure() {
     if (this.gridApi) {
