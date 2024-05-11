@@ -65,7 +65,7 @@ class GitWorkspaceConfigLoader(
                gitStatusSink.emitNext(LoaderStatus.OK, Sinks.EmitFailureHandler.FAIL_FAST)
                try {
                   logger.info { "Workspace from ${syncStatus.repository.redactedUrl} is now on ${syncStatus.currentRef} - refreshing workspace" }
-                  fileConfigLoader.emitCurrentState()
+                  fileConfigLoader.readCurrentStateAndEmit()
                } catch (e: Exception) {
                   logger.info { "Failed to read workspace config: ${Throwables.getRootCause(e).message}" }
                }

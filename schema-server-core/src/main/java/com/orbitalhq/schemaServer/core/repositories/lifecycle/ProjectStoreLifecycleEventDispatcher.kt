@@ -1,6 +1,8 @@
 package com.orbitalhq.schemaServer.core.repositories.lifecycle
 
+import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoader
+import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoader
 
 /**
@@ -10,5 +12,4 @@ import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoader
 interface ProjectStoreLifecycleEventDispatcher {
    fun fileProjectStoreAdded(repository: FileSystemPackageLoader)
    fun gitProjectStoreAdded(repository: GitSchemaPackageLoader)
-
 }
