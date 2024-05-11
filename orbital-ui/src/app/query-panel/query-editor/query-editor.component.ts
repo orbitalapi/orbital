@@ -250,6 +250,8 @@ export class QueryEditorComponent implements OnInit {
         ),
         mergeMap(x=> x)
       )
+    ).pipe(
+      tap(event => console.log(event))
     );
 
     this.toggleStreamPauseState(false);
@@ -266,7 +268,16 @@ export class QueryEditorComponent implements OnInit {
 
     this.prepareToSubmitQuery();
 
+    const queryCompleteHandler = () => {
+      this.handleQueryFinished();
+    };
+
     const queryErrorHandler = (error: FailedSearchResponse) => {
+      if (error instanceof CloseEvent) {
+        queryCompleteHandler();
+        return;
+      }
+
       this.lastQueryResult = error;
       this.isErrorMessageSubscriptionSetup = false;
       console.error('Search failed: ' + JSON.stringify(error));
@@ -295,9 +306,7 @@ export class QueryEditorComponent implements OnInit {
 
     };
 
-    const queryCompleteHandler = () => {
-      this.handleQueryFinished();
-    };
+
 
     this.queryService.websocketQuery(this.query, this.queryClientId, ResultMode.SIMPLE)
       .pipe(tap(_ => !this.isErrorMessageSubscriptionSetup ? this.setupErrorMessageSubscription() : null))

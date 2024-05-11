@@ -22,9 +22,8 @@ import { ExportFormat } from 'src/app/results-download/results-download.service'
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-object-view-container',
   template: `
-    <ng-container *ngIf="ready && latestQueryStatus">
+    <ng-container *ngIf="ready">
       <app-results-table *ngIf="displayMode==='table'"
-                         [isStreamingQuery]="latestQueryStatus.queryMode === 'STREAM'"
                          [instances$]="instances$"
                          [rowData]="instances"
                          [schema]="schema"
@@ -34,7 +33,6 @@ import { ExportFormat } from 'src/app/results-download/results-download.service'
                          (instanceClicked)="instanceClicked.emit($event)">
       </app-results-table>
       <app-object-view *ngIf="displayMode==='tree'"
-                       [isStreamingQuery]="latestQueryStatus.queryMode === 'STREAM'"
                        [instances$]="instances$"
                        [schema]="schema"
                        [selectable]="selectable"
@@ -43,7 +41,6 @@ import { ExportFormat } from 'src/app/results-download/results-download.service'
                        (instanceClicked)="instanceClicked.emit($event)">
       </app-object-view>
       <app-json-results-view *ngIf="displayMode === 'json'"
-                             [isStreamingQuery]="latestQueryStatus.queryMode === 'STREAM'"
                              [instances$]="instances$"
                              [schema]="schema"
                              [isResponseLarge]="isResponseLarge"
