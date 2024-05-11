@@ -27,6 +27,15 @@ data class WorkspaceConfig(
    val fileConfigOrDefault:FileSystemSchemaRepositoryConfig = file ?: FileSystemSchemaRepositoryConfig()
 }
 
+enum class ModifyProjectResponseStatus {
+   Ok,
+   Warning,
+   Failed
+}
+data class ModifyWorkspaceResponse(
+   val status: ModifyProjectResponseStatus,
+   val message: String? = null
+)
 /**
  * Responsible for reading a workspace.conf file from somewhere.
  *
@@ -35,9 +44,9 @@ data class WorkspaceConfig(
 interface WorkspaceConfigLoader {
    fun load(createDefaultIfAbsent: Boolean = true): WorkspaceConfig
    fun safeConfigJson(): String
-   fun addFileSpec(fileSpec: FileSystemPackageSpec)
+   fun addFileSpec(fileSpec: FileSystemPackageSpec): ModifyWorkspaceResponse
 
-   fun addGitSpec(gitSpec: GitProjectStoreSpec)
+   fun addGitSpec(gitSpec: GitProjectStoreSpec): ModifyWorkspaceResponse
    fun removeGitRepository(repositoryName: String, packageIdentifier: PackageIdentifier): List<PackageIdentifier>
    fun removeFileRepository(repositoryPath: Path, packageIdentifier: PackageIdentifier): List<PackageIdentifier>
    fun removePushedRepository(identifier: PackageIdentifier): List<PackageIdentifier>

@@ -2,7 +2,6 @@ package com.orbitalhq.schemaServer.core.config
 
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
-import com.orbitalhq.schemaServer.core.git.GitRepositoryConnectionConfig
 import com.orbitalhq.schemaServer.core.git.SimpleGitRepositoryConnectionConfig
 import com.orbitalhq.schemaServer.core.repositories.FileWorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.GitWorkspaceConfigLoader
@@ -109,7 +108,8 @@ class WorkspaceLoaderConfig {
          }
 
          else -> {
-            logger.info { "Using workspace config file at ${workspaceConfig.configFile}" }
+            val absolutePath = workspaceConfig.configFile.toAbsolutePath()
+            logger.info { "Using workspace config file at ${workspaceConfig.configFile}, absolute path => $absolutePath" }
             FileWorkspaceConfigLoader(workspaceConfig.configFile, eventDispatcher = eventDispatcher)
          }
       }

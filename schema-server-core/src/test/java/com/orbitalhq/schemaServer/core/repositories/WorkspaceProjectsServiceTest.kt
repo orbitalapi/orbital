@@ -1,17 +1,16 @@
 package com.orbitalhq.schemaServer.core.repositories
 
-import com.winterbe.expekt.should
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
 import com.orbitalhq.schemaServer.repositories.CreateFileProjectStoreRequest
 import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
-import com.orbitalhq.spring.http.BadRequestException
+import com.winterbe.expekt.should
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import kotlin.test.assertFailsWith
+import reactor.test.StepVerifier
 
 
 class WorkspaceProjectsServiceTest {
@@ -36,13 +35,15 @@ class WorkspaceProjectsServiceTest {
 
       val folder = folder.newFolder("project")
 
+      StepVerifier.create(
       workspaceProjectsService.createFileRepository(
          CreateFileProjectStoreRequest(
             folder.canonicalPath, true,
             loader = TaxiPackageLoaderSpec,
             newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
          )
-      )
+      )).expectNextMatches { it.status == ModifyProjectResponseStatus.Ok }
+         .verifyComplete()
 
       val repositoryConfig = workspaceProjectsService.listRepositories()
       repositoryConfig
@@ -63,12 +64,14 @@ class WorkspaceProjectsServiceTest {
          loader = TaxiPackageLoaderSpec,
          newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
       )
-      workspaceProjectsService.createFileRepository(request)
 
-      assertFailsWith<BadRequestException> {
-         workspaceProjectsService.createFileRepository(request)
-      }
+      StepVerifier.create(workspaceProjectsService.createFileRepository(request))
+         .expectNextMatches { it.status == ModifyProjectResponseStatus.Ok }
+         .verifyComplete()
 
+      StepVerifier.create(workspaceProjectsService.createFileRepository(request))
+         .expectNextMatches { it.status == ModifyProjectResponseStatus.Failed }
+         .verifyComplete()
    }
 
    @Test
@@ -80,11 +83,19 @@ class WorkspaceProjectsServiceTest {
          loader = TaxiPackageLoaderSpec,
          newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
       )
-      workspaceProjectsService.createFileRepository(request)
 
-      assertFailsWith<BadRequestException> {
-         workspaceProjectsService.createFileRepository(request.copy(isEditable = false))
-      }
+     StepVerifier
+        .create(workspaceProjectsService.createFileRepository(request))
+        .expectNextMatches {
+           it.status == ModifyProjectResponseStatus.Ok
+        }.verifyComplete()
+
+
+      StepVerifier
+         .create(workspaceProjectsService.createFileRepository(request))
+         .expectNextMatches {
+            it.status == ModifyProjectResponseStatus.Failed
+         }.verifyComplete()
    }
 
    @Test
@@ -97,7 +108,10 @@ class WorkspaceProjectsServiceTest {
          loader = TaxiPackageLoaderSpec,
          newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
       )
-      workspaceProjectsService.createFileRepository(request)
+
+      StepVerifier.create(workspaceProjectsService.createFileRepository(request))
+         .expectNextMatches { it.status == ModifyProjectResponseStatus.Ok }
+         .verifyComplete()
 
       folder.exists().should.be.`true`
       val taxiConfFile = folder.resolve("taxi.conf")
@@ -114,13 +128,16 @@ class WorkspaceProjectsServiceTest {
       workspaceProjectsService.listRepositories()
          .git?.repositories?.should?.be?.empty
 
+      StepVerifier.create(
       workspaceProjectsService.createGitProjectStore(
          GitProjectStoreChangeRequest(
             "test-repo",
             "https://github.com/test/repo",
             "master",
          )
-      )
+      ))
+         .expectNextMatches { it.status == ModifyProjectResponseStatus.Ok }
+         .verifyComplete()
 
       workspaceProjectsService.listRepositories().git!!.repositories.should.have.size(1)
       val gitRepo = workspaceProjectsService.listRepositories().git!!.repositories.single()

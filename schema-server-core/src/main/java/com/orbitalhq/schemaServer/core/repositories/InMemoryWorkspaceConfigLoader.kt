@@ -50,22 +50,24 @@ class InMemoryWorkspaceConfigLoader(
       return jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(config)
    }
 
-   override fun addFileSpec(fileSpec: FileSystemPackageSpec) {
+   override fun addFileSpec(fileSpec: FileSystemPackageSpec): ModifyWorkspaceResponse {
       config = config.copy(
          file = config.file!!.copy(
             projects = config.file!!.projects.concat(fileSpec)
          )
       )
       eventDispatcher.fileRepositorySpecAdded(FileSpecAddedEvent(fileSpec, config.file!!))
+      return ModifyWorkspaceResponse(ModifyProjectResponseStatus.Ok)
    }
 
-   override fun addGitSpec(gitSpec: GitProjectStoreSpec) {
+   override fun addGitSpec(gitSpec: GitProjectStoreSpec): ModifyWorkspaceResponse {
       config = config.copy(
          git = config.gitConfigOrDefault.copy(
             repositories = config.gitConfigOrDefault.repositories.concat(gitSpec)
          )
       )
       eventDispatcher.gitRepositorySpecAdded(GitSpecAddedEvent(gitSpec, config.git!!))
+      return ModifyWorkspaceResponse(ModifyProjectResponseStatus.Ok)
    }
 
    override fun removeGitRepository(

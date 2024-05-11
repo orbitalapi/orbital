@@ -160,11 +160,14 @@ class FileWorkspaceConfigLoader(
       return original.copy(file = updatedFileConfig)
    }
 
-   override fun addFileSpec(fileSpec: FileSystemPackageSpec) {
+   override fun addFileSpec(fileSpec: FileSystemPackageSpec): ModifyWorkspaceResponse {
       val current = this.typedConfig() // Don't call load, as we want the original, not the one we resolve paths with
       val currentFileConfig = current.file ?: FileSystemSchemaRepositoryConfig()
 
-      require(currentFileConfig.projects.none { it.path == fileSpec.path }) { "${fileSpec.path} already exists" }
+      if (currentFileConfig.projects.any { it.path == fileSpec.path }) {
+         return ModifyWorkspaceResponse(ModifyProjectResponseStatus.Failed, "${fileSpec.path} already exists")
+      }
+
       val packageIdentifier = if (fileSpec.packageIdentifier != null) {
          createProjectIfNotExists(fileSpec)
       } else {
@@ -183,6 +186,7 @@ class FileWorkspaceConfigLoader(
       )
       save(updated)
       eventDispatcher.fileRepositorySpecAdded(FileSpecAddedEvent(fileSpec, updated.file!!))
+      return ModifyWorkspaceResponse(ModifyProjectResponseStatus.Ok)
    }
 
    private fun verifyProjectExists(fileSpec: FileSystemPackageSpec): PackageIdentifier {
@@ -241,12 +245,16 @@ class FileWorkspaceConfigLoader(
 
    }
 
-   override fun addGitSpec(gitSpec: GitProjectStoreSpec) {
+   override fun addGitSpec(gitSpec: GitProjectStoreSpec): ModifyWorkspaceResponse {
       val current = this.typedConfig() // Don't call load, as we want the original, not the one we resolve paths with
       val currentGitConfig = current.git ?: GitSchemaRepositoryConfig()
+      if (currentGitConfig.repositories.any { it.name == gitSpec.name }) {
+         return ModifyWorkspaceResponse( ModifyProjectResponseStatus.Failed, "A git repository with the name ${gitSpec.name} already exists")
+      }
 
-      require(currentGitConfig.repositories.none { it.name == gitSpec.name }) { "A git repository with the name ${gitSpec.name} already exists" }
-      require(currentGitConfig.repositories.none { it.uri == gitSpec.uri }) { "A git repository already exists for ${gitSpec.uri}" }
+      if (currentGitConfig.repositories.any { it.uri == gitSpec.uri }) {
+         return ModifyWorkspaceResponse( ModifyProjectResponseStatus.Failed, "A git repository already exists for ${gitSpec.uri}")
+      }
 
       val updated = current.copy(
          git = currentGitConfig.copy(
@@ -255,6 +263,7 @@ class FileWorkspaceConfigLoader(
       )
       save(updated)
       eventDispatcher.gitRepositorySpecAdded(GitSpecAddedEvent(gitSpec, updated.git!!))
+      return ModifyWorkspaceResponse( ModifyProjectResponseStatus.Ok, "${gitSpec.name} added as a new project, you need to commit and push  your workspace.conf")
    }
 
    override fun removeGitRepository(
