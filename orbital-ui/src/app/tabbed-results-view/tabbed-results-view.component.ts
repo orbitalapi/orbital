@@ -65,7 +65,7 @@ import { map, scan, tap } from 'rxjs/operators';
         </ng-template>
         <div class="rightside-controls-container">
           <tui-checkbox-labeled
-            *ngIf="(latestQueryStatus?.queryMode === 'STREAM') && isQueryRunning"
+            *ngIf="isStreamingQuery && isQueryRunning"
             tuiHint="Pause the stream on the UI"
             class="pause-stream-checkbox"
             [ngModel]="isStreamPaused"
@@ -96,7 +96,7 @@ import { map, scan, tap } from 'rxjs/operators';
         [type]="type"
         [anonymousTypes]="anonymousTypes"
         [isResponseLarge]="responseIsLarge.obs"
-        [latestQueryStatus]="latestQueryStatus"
+        [isStreamingQuery]="isStreamingQuery"
         (downloadClicked)="this.downloadClicked.emit($event)"
         (instanceClicked)="instanceClicked($event,type.name)"
       ></app-object-view-container>
@@ -283,7 +283,7 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   profileData$: Observable<QueryProfileData>;
 
   @Input()
-  latestQueryStatus: RunningQueryStatus | 'NOT_USED';
+  isStreamingQuery: boolean;
 
   protected updateDataSources() {
   }

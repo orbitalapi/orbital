@@ -8,7 +8,6 @@ import {
   Output,
   ViewChild
 } from '@angular/core';
-import { RunningQueryStatus } from '../services/active-queries-notification-service';
 import { BaseTypedInstanceViewer } from './BaseTypedInstanceViewer';
 import { InstanceLike, Type } from '../services/schema';
 import { Observable } from 'rxjs';
@@ -30,6 +29,7 @@ import { ExportFormat } from 'src/app/results-download/results-download.service'
                          [selectable]="selectable"
                          [type]="type"
                          [anonymousTypes]="anonymousTypes"
+                         [isStreamingQuery]="isStreamingQuery"
                          (instanceClicked)="instanceClicked.emit($event)">
       </app-results-table>
       <app-object-view *ngIf="displayMode==='tree'"
@@ -38,12 +38,14 @@ import { ExportFormat } from 'src/app/results-download/results-download.service'
                        [selectable]="selectable"
                        [type]="type"
                        [anonymousTypes]="anonymousTypes"
+                       [isStreamingQuery]="isStreamingQuery"
                        (instanceClicked)="instanceClicked.emit($event)">
       </app-object-view>
       <app-json-results-view *ngIf="displayMode === 'json'"
                              [instances$]="instances$"
                              [schema]="schema"
                              [isResponseLarge]="isResponseLarge"
+                             [isStreamingQuery]="isStreamingQuery"
                              >
       </app-json-results-view>
     </ng-container>
@@ -93,7 +95,7 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
   anonymousTypes: Type[];
 
   @Input()
-  latestQueryStatus: RunningQueryStatus;
+  isStreamingQuery: boolean;
 
   private instancesChanged$: EventEmitter<void> = new EventEmitter<void>();
 
