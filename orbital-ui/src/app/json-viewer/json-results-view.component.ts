@@ -77,7 +77,7 @@ export class JsonResultsViewComponent {
   }
 
   @Input()
-  isStreamingQuery: boolean = false;
+  isStreamingQuery: boolean;
 
   @Input()
   isResponseLarge: boolean;

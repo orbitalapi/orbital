@@ -97,7 +97,7 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
   }
 
   @Input()
-  isStreamingQuery: boolean = false;
+  isStreamingQuery: boolean;
 
   treeDataItems: ResultTreeMember[] = [];
   treeDataPages: ResultTreeMember[][] = [];

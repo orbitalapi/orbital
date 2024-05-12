@@ -250,9 +250,7 @@ export class QueryEditorComponent implements OnInit {
         ),
         mergeMap(x=> x)
       )
-    ).pipe(
-      tap(event => console.log(event))
-    );
+    )
 
     this.toggleStreamPauseState(false);
 
@@ -544,5 +542,9 @@ export class QueryEditorComponent implements OnInit {
 
   toggleStreamPauseState($event: boolean) {
     this.pauseSubj$.next($event);
+  }
+
+  get isStreamingQuery(): boolean {
+    return this.query.includes("stream {")
   }
 }

@@ -70,7 +70,7 @@
                                  [type]='resultType'
                                  [anonymousTypes]='anonymousTypes'
                                  [isQueryRunning]='(currentState$ | async) === "Running" || (isProfileDataLoading$ | async)'
-                                 [latestQueryStatus]="latestQueryStatus"
+                                 [isStreamingQuery]="isStreamingQuery"
                                  [class.is-disabled]="!queryStartTime"
                                  (instanceSelected)='valuePanelVisible = true; instanceSelected$.next($event)'
                                  (downloadClicked)='downloadQueryHistory($event.format)'
