@@ -38,6 +38,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.Duration
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
@@ -145,7 +146,8 @@ class FileWorkspaceConfigLoader(
          }
          val original = typedConfig()
          val config = resolveRelativePaths(original)
-         stateSink.emitNext(LoaderStatus.OK, Sinks.EmitFailureHandler.FAIL_FAST)
+         // Use busy loop here, otherwise we get errors about non-serialized event emmission
+         stateSink.emitNext(LoaderStatus.OK, Sinks.EmitFailureHandler.busyLooping(Duration.ofSeconds(2L)))
          return config
       } catch (e: Exception) {
          val rootCause = Throwables.getRootCause(e)
