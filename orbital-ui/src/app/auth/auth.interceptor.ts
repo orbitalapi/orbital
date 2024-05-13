@@ -29,7 +29,7 @@ export class DefaultOAuthInterceptor implements HttpInterceptor {
     if (!this.moduleConfig.resourceServer) return next.handle(req);
     if (!this.moduleConfig.resourceServer.allowedUrls) return next.handle(req);
     if (!this.checkUrl(url)) return next.handle(req);
-
+    if (this.authService.securityConfig.enabled === false) return next.handle(req);
     // Allow the server to define which type of token we should pass in the authorization header.
     // The default our auth library uses is "access". However, for some OIDC providers, the information
     // we need is actually in the Id token.
