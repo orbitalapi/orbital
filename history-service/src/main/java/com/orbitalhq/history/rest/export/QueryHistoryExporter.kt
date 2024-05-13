@@ -39,12 +39,12 @@ import reactor.kotlin.core.publisher.toFlux
 @FlowPreview
 @Component
 class QueryHistoryExporter(
-    injectedMapper: ObjectMapper,
-    private val resultRepository: QueryResultRowRepository,
-    private val queryHistoryRecordRepository: QueryHistoryRecordRepository,
-    private val schemaProvider: SchemaProvider,
-    private val exceptionProvider: ExceptionProvider,
-    modelFormatSpecs: List<ModelFormatSpec>
+   injectedMapper: ObjectMapper,
+   private val resultRepository: QueryResultRowRepository,
+   private val queryHistoryRecordRepository: QueryHistoryRecordRepository,
+   private val schemaProvider: SchemaProvider,
+   private val exceptionProvider: ExceptionProvider,
+   modelFormatSpecs: List<ModelFormatSpec>
 ) {
    private val formatDetector = FormatDetector(modelFormatSpecs)
    private val objectMapper = injectedMapper
@@ -54,7 +54,7 @@ class QueryHistoryExporter(
    fun export(queryId: String, exportFormat: ExportFormat): Flow<CharSequence> {
       val querySummary = assertQueryIdIsValid(queryId)
       val results = querySummary.map {
-          if (it.anonymousTypesJson == null) emptySet() else objectMapper.readValue(it.anonymousTypesJson!!, vyneSetType)
+         if (it.anonymousTypesJson == null) emptySet() else objectMapper.readValue(it.anonymousTypesJson!!, vyneSetType)
       }.flatMapMany { anonymousTypes ->
          resultRepository
             .findAllByQueryId(queryId)
@@ -78,6 +78,7 @@ class QueryHistoryExporter(
                }.asFlux(),
                Flux.fromIterable(listOf("]"))
             ).asFlow()
+
          ExportFormat.CUSTOM -> toCustomFormat(results)
 
       }
@@ -96,7 +97,8 @@ class QueryHistoryExporter(
    private fun toModelFormattedString(
       schema: Schema,
       index: Int,
-      typedNamedInstancePersistedAnonymousTypePair: Pair<TypeNamedInstance, Set<PersistedAnonymousType>>): String? {
+      typedNamedInstancePersistedAnonymousTypePair: Pair<TypeNamedInstance, Set<PersistedAnonymousType>>
+   ): String? {
       val typeNamedInstance = typedNamedInstancePersistedAnonymousTypePair.first
       val anonymousTypeDefinitions = typedNamedInstancePersistedAnonymousTypePair.second
       val includeHeaders = index == 0
@@ -107,10 +109,11 @@ class QueryHistoryExporter(
                typeNamedInstance,
                responseType,
                metadata,
-               if (includeHeaders) FirstTypedInstanceInfo else EmptyTypedInstanceInfo)?.toString()
+               if (includeHeaders) FirstTypedInstanceInfo else EmptyTypedInstanceInfo
+            )?.toString()
          }
       } else {
-         anonymousTypeDefinitions.firstOrNull { it.name.fullyQualifiedName ==  typeNamedInstance.typeName}
+         anonymousTypeDefinitions.firstOrNull { it.name.fullyQualifiedName == typeNamedInstance.typeName }
             ?.let { persistedAnonymousType ->
                this.formatDetector.getFormatType(persistedAnonymousType.metadata)?.let { (metadata, spec) ->
                   spec.serializer.write(

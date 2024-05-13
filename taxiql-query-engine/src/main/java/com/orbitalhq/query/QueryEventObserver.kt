@@ -92,6 +92,7 @@ data class QueryStartEvent(
    val taxiQuery: TaxiQLQueryString?,
    val query: Query?,
    val clientQueryId: String,
-   val message: String
+   val message: String,
+   val anonymousTypes: Set<Type>
 ) : QueryEvent()
 

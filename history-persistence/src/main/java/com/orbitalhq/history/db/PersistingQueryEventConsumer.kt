@@ -86,22 +86,11 @@ class PersistingQueryEventConsumer(
    }
 
    private fun persistEvent(event: RestfulQueryResultEvent) {
-      createQuerySummaryRecord(event.queryId) {
-         QueryResultEventMapper.toQuerySummary(event)
-      }
-
       resultRowPersistenceStrategy.persistResultRowAndLineage(event)
       appendToSankeyChart(event.typedInstance, this.sankeyViewBuilder)
    }
 
    private fun persistEvent(event: TaxiQlQueryResultEvent) {
-      createQuerySummaryRecord(event.queryId) {
-         try {
-            QueryResultEventMapper.toQuerySummary(event)
-         } catch (e: Exception) {
-            throw e
-         }
-      }
       resultRowPersistenceStrategy.persistResultRowAndLineage(event)
       appendToSankeyChart(event.typedInstance, this.sankeyViewBuilder)
    }

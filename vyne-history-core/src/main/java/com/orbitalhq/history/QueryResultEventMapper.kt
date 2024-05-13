@@ -30,16 +30,6 @@ object QueryResultEventMapper {
    }
 
    fun toQuerySummary(event: TaxiQlQueryResultEvent): QuerySummary {
-      val anonymousTypes = if (event.typedInstance.type.taxiType.anonymous && event.typedInstance is TypedObject) {
-         val anonymousTypeForQuery =  event.anonymousTypes.firstOrNull { it.taxiType.qualifiedName ==  event.typedInstance.typeName}
-         if (anonymousTypeForQuery == null) {
-            emptySet<Type>()
-         } else {
-            setOf(anonymousTypeForQuery)
-         }
-      } else {
-         emptySet<Type>()
-      }
      return  QuerySummary(
          queryId = event.queryId,
          clientQueryId = event.clientQueryId ?: UUID.randomUUID().toString(),
@@ -47,7 +37,6 @@ object QueryResultEventMapper {
          queryJson = null,
          startTime = event.queryStartTime,
          responseStatus = QueryResponse.ResponseStatus.INCOMPLETE,
-         anonymousTypesJson = objectMapper.writeValueAsString(anonymousTypes)
       )
    }
 
@@ -104,7 +93,8 @@ object QueryResultEventMapper {
          queryJson = event.query?.let { objectMapper.writeValueAsString(event.query)  } ,
          responseStatus = QueryResponse.ResponseStatus.RUNNING,
          startTime = event.timestamp,
-         responseType = event.message
+         responseType = event.message,
+        anonymousTypesJson = objectMapper.writeValueAsString(event.anonymousTypes)
       )
    }
 }

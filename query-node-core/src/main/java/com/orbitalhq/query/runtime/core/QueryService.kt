@@ -496,7 +496,8 @@ class QueryService(
                   taxiQuery = query,
                   query = null,
                   clientQueryId = clientQueryId ?: "",
-                  message = ""
+                  message = "",
+                  anonymousTypes = emptySet()
                )
             )
             val failedSearchResponse = FailedSearchResponse(
