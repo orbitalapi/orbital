@@ -18,7 +18,7 @@ import {JSONPathFinder} from 'src/app/json-viewer/JsonPathFinder';
 import {Clipboard} from '@angular/cdk/clipboard';
 import {JsonTypeInlayHintProvider} from "./JsonTypeInlayHintProvider";
 import {isNullOrUndefined} from "../utils/utils";
-import { isSourceWithTypeHints, SourceWithTypeHints } from './json-results-view.component';
+import {isSourceWithTypeHints, SourceWithTypeHints} from './json-results-view.component';
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 import ITextModel = editor.ITextModel;
 
@@ -32,13 +32,13 @@ import ITextModel = editor.ITextModel;
       </tui-checkbox-labeled>
       <tui-notification *ngIf="showResultsSizeWarning || isResponseLarge" status="warning" class="alert">
         The response is really big.
-        <ng-container *ngIf="isResponseLarge">Some features have been disabled. </ng-container>
-        <ng-container *ngIf="showResultsSizeWarning">Only showing [x] number of results. </ng-container>
+        <ng-container *ngIf="isResponseLarge">Some features have been disabled.</ng-container>
+        <ng-container *ngIf="showResultsSizeWarning">Only showing [x] number of results.</ng-container>
       </tui-notification>
       <div *ngIf="!showResultsSizeWarning && !isResponseLarge" class="spacer"></div>
       <button (click)="applyFormat()" tuiButton size="s" appearance="outline">Format</button>
       <button (click)="copyToClipboard()" tuiButton size="s" appearance="outline">{{ copyButtonText }}</button>
-      </app-panel-header>
+    </app-panel-header>
     <div #codeEditorContainer class="code-editor"></div>`,
   styleUrls: ['./json-viewer.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -50,10 +50,12 @@ export class JsonViewerComponent implements OnDestroy {
   copyButtonText = 'Copy'
   @Input()
   title: string;
+
   // Prevents tooltip displaying in browser
   @HostBinding('attr.title') get getTitle(): null {
     return null;
   }
+
   @Input()
   showHeader = true;
 
@@ -77,6 +79,7 @@ export class JsonViewerComponent implements OnDestroy {
   get showTypeHints(): Boolean {
     return this._showTypeHints;
   }
+
   set showTypeHints(value) {
     this._showTypeHints = value;
     this.updateHintsIfPossible()
@@ -152,8 +155,17 @@ export class JsonViewerComponent implements OnDestroy {
   }
 
   copyToClipboard() {
-    this.monacoEditor.getAction('editor.action.clipboardCopyAction')
-      .run()
+    const selection = this.monacoEditor.getSelection()
+    let copyPromise: Promise<void>;
+    if (selection.isEmpty()) {
+      this.clipboard.copy(this.jsonString)
+      copyPromise = Promise.resolve();
+      // copy the entire output to the clipboard
+    } else {
+      copyPromise = this.monacoEditor.getAction('editor.action.clipboardCopyAction')
+        .run()
+    }
+    copyPromise
       .then(() => {
         this.copyButtonText = 'Copied';
         this.changeDetector.markForCheck();
@@ -163,6 +175,7 @@ export class JsonViewerComponent implements OnDestroy {
         }, 2000);
       });
   }
+
 
   modelUri: monaco.Uri = null;
 
