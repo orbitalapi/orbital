@@ -1,16 +1,22 @@
 @import "src/common";
 
+:host {
+  flex: auto;
+  min-height: 0;
+}
+
 .text-path {
   fill: $dark-grey-1 !important;
 }
 
 .chart-outer-container {
-  border: 1px solid rgba($vyne-lilac, 0.1);
+  border: 1px solid $gray-300;
   background-color: $light-purple-grey-100;
 }
 .chart-outer-container:not(.fullscreen) {
-  height: 500px;
-  width: 100%;
+  height: calc(100% - 1rem);
+  margin: 0 1rem;
+  position: relative;
 }
 
 .node {
@@ -23,9 +29,12 @@
 }
 
 .toolbar {
-  margin: 0.5rem 1rem;
+  padding: 0.5rem 1rem;
   display: flex;
   flex-direction: row;
+  position: absolute;
+  left: 0;
+  right: 0;
 
   .spacer {
     flex-grow: 1;
