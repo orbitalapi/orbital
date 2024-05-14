@@ -1,4 +1,4 @@
-import {Component, Inject, Input, LOCALE_ID} from '@angular/core';
+import {ChangeDetectionStrategy, Component, Inject, Input, LOCALE_ID} from '@angular/core';
 import {RemoteOperationPerformanceStats, ResponseCodeCountMap, ResponseCodeGroup} from '../services/query.service';
 import {isNullOrUndefined} from 'util';
 import {formatNumber} from '@angular/common';
@@ -21,23 +21,23 @@ import {formatNumber} from '@angular/common';
         <td>
           <div class="badges">
               <span class="mono-badge">
-              <a [routerLink]="['/services',statRow.serviceName]">{{statRow.serviceName}}</a>
+              <a [routerLink]="['/services',statRow.serviceName]">{{ statRow.serviceName }}</a>
               </span>
             <span class="separator-slash">/</span>
             <span class="mono-badge">
 <a
-  [routerLink]="['/services',statRow.serviceName, statRow.operationName]">{{statRow.operationName}}</a>
+  [routerLink]="['/services',statRow.serviceName, statRow.operationName]">{{ statRow.operationName }}</a>
 </span>
           </div>
         </td>
         <td>{{ statRow.callsInitiated }}</td>
         <td>{{ statRow.averageTimeToFirstResponse | number: '1.0-0' }}ms</td>
-        <td>{{ totalWaitTime(statRow)  }}</td>
+        <td>{{ totalWaitTime(statRow) }}</td>
         <td>
           <div class="pill" *ngFor="let responseCode of filterResponseCodes(statRow.responseCodes) | keyvalue"
                [ngClass]="responseCode.value.cssClass">
-            <span class="key">{{ responseCode.key }}</span>
-            <span class="value">{{responseCode.value.data}}</span>
+            <span class="key">{{ responseCode.key | titlecase }}</span>
+            <span class="value">{{ responseCode.value.data }}</span>
           </div>
         </td>
       </tr>
@@ -55,7 +55,8 @@ import {formatNumber} from '@angular/common';
       </tr>
       </tfoot>
     </table>`,
-  styleUrls: ['./service-stats.component.scss']
+  styleUrls: ['./service-stats.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ServiceStatsComponent {
 
@@ -79,12 +80,14 @@ export class ServiceStatsComponent {
     this.calculateSummary();
   }
 
-  private pillClasses = {
-    [ResponseCodeGroup.HTTP_2XX]: 'code_2xx',
-    [ResponseCodeGroup.HTTP_3XX]: 'code_3xx',
-    [ResponseCodeGroup.HTTP_4XX]: 'code_4xx',
-    [ResponseCodeGroup.HTTP_5XX]: 'code_5xx'
-  };
+  private pillClasses: Map<ResponseCodeGroup, string> = new Map<ResponseCodeGroup, string>([
+    ["HTTP_2XX", 'code_2xx'],
+    ["HTTP_3XX", 'code_3xx'],
+    ["HTTP_4XX", 'code_4xx'],
+    ["HTTP_5XX", 'code_5xx'],
+    ["SUCCESS", 'code_2xx'],
+    ["FAIL", 'code_4xx']
+  ])
 
   totalWaitTime(statRow: RemoteOperationPerformanceStats) {
     if (isNullOrUndefined(statRow.totalWaitTime)) {
@@ -98,9 +101,9 @@ export class ServiceStatsComponent {
     const result = {};
     Object.keys(responseCodeMap).forEach(responseCode => {
       if (responseCodeMap[responseCode] > 0) {
-        result[this.responseCodeLabel(responseCode)] = {
+        result[responseCode] = {
           data: responseCodeMap[responseCode],
-          cssClass: this.pillClasses[responseCode]
+          cssClass: this.pillClasses.get(responseCode as ResponseCodeGroup)
         };
       }
     });
@@ -108,20 +111,7 @@ export class ServiceStatsComponent {
   }
 
 
-  responseCodeLabel(key: ResponseCodeGroup | string) {
-    switch (key) {
-      case ResponseCodeGroup.HTTP_2XX:
-        return `2xx`;
-      case ResponseCodeGroup.HTTP_3XX:
-        return `3xx`;
-      case ResponseCodeGroup.HTTP_4XX:
-        return `4xx`;
-      case ResponseCodeGroup.HTTP_5XX:
-        return `5xx`;
-    }
-  }
-
-  private calculateSummary() {
+  calculateSummary() {
     let totalWaitTime = 0;
     let totalCalls = 0;
     this.operationStats.forEach(row => {

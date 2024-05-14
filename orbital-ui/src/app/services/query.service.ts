@@ -415,13 +415,7 @@ export type ResponseCodeCountMap = {
   [key in ResponseCodeGroup]: number;
 };
 
-export enum ResponseCodeGroup {
-  'HTTP_2XX' = 'HTTP_2XX',
-  'HTTP_3XX' = 'HTTP_3XX',
-  'HTTP_4XX' = 'HTTP_4XX',
-  'HTTP_5XX' = 'HTTP_5XX',
-  'UNKNOWN' = 'UNKNOWN'
-}
+export type ResponseCodeGroup = 'HTTP_2XX' | 'HTTP_3XX' | 'HTTP_4XX' | 'HTTP_5XX' | 'SUCCESS' | 'FAIL' | 'UNKNOWN';
 
 export interface ProfilerOperationResult {
   startTime: number;
