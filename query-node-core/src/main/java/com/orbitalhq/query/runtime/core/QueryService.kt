@@ -397,12 +397,14 @@ class QueryService(
                      } else {
                         sink.emitError(error, Sinks.EmitFailureHandler.FAIL_FAST)
                      }
+                     session.close(CloseStatus.NORMAL)
+                        .subscribe()
                   }
                      .collect { emittedResult ->
                         val json = objectMapper.writeValueAsString(emittedResult)
                         sink.emitNext(json, Sinks.EmitFailureHandler.FAIL_FAST)
                      }
-                  session.close(CloseStatus.NORMAL)
+
                } catch (e: Exception) {
                   // Compilation exceptions hit here, before the flow exists.
                   val errorMessage = FailedSearchResponse(
@@ -415,6 +417,7 @@ class QueryService(
 
                   sink.emitError(e, Sinks.EmitFailureHandler.FAIL_FAST)
                   session.close(CloseStatus.BAD_DATA)
+                     .subscribe()
                }
 
             }
