@@ -33,21 +33,6 @@ export interface SaveQueryPanelProps {
 
 
         </app-project-selector>
-        <!--              <tui-select-->
-        <!--                      [stringify]="stringify"-->
-        <!--                      formControlName="schemaPackage"-->
-
-        <!--              >-->
-        <!--                  Select a project to save the query to-->
-        <!--                  <input-->
-        <!--                          tuiTextfield [disableControl]="!hasEditablePackages"-->
-        <!--                  />-->
-        <!--                  <tui-data-list-wrapper-->
-        <!--                          *tuiDataList-->
-        <!--                          [items]="editablePackages | tuiFilterByInputWith : stringify"-->
-        <!--                          [itemContent]="stringify | tuiStringifyContent"-->
-        <!--                  ></tui-data-list-wrapper>-->
-        <!--              </tui-select>-->
         <tui-error
           formControlName="schemaPackage"
           [error]="[] | tuiFieldError | async"
@@ -169,7 +154,7 @@ export class SaveQueryPanelComponent {
       }, error => {
         console.error(error);
         this.working = false;
-        this.errorMessage = error.message;
+        this.errorMessage = error.error?.message || error.message;
         this.changeRef.markForCheck();
       })
   }

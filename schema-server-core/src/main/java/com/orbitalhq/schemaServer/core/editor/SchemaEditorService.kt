@@ -74,7 +74,7 @@ class SchemaEditorService(
                schemaProvider.schema().asTaxiSchema()
             )
             if (messages.errors().isNotEmpty()) {
-               throw BadRequestException(messages.errors().toMessage())
+               throw BadRequestException("The query has compilation errors, so cannot be saved: ${messages.errors().toMessage()}")
             }
             val queryDifferences = Sets.difference(taxiDoc.queries, currentQueries)
             require(queryDifferences.size == 1) { "Expected a single new query, but found ${queryDifferences.size}" }
