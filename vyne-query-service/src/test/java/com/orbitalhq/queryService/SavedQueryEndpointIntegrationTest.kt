@@ -1,6 +1,7 @@
 package com.orbitalhq.queryService
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.whenever
@@ -244,11 +245,6 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
          install(WebSockets)
       }
 
-      fun frameAsMap(frame: Frame): Map<String, Any> {
-         val textFrame = frame.shouldBeInstanceOf<Frame.Text>()
-         val map = objectMapper.readValue<Map<String, Any>>(textFrame.readText())
-         return map
-      }
       runBlocking {
          client.webSocket("ws://localhost:$randomServerPort/api/s/newReleases") {
             incoming.receiveAsFlow()
@@ -327,3 +323,9 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
 }
 
 private fun Map<*, *>.hasTitle(title: String): Boolean = this["title"] == title
+
+fun frameAsMap(frame: Frame, objectMapper: ObjectMapper = jacksonObjectMapper()): Map<String, Any> {
+   val textFrame = frame.shouldBeInstanceOf<Frame.Text>()
+   val map = objectMapper.readValue<Map<String, Any>>(textFrame.readText())
+   return map
+}
