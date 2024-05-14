@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import app.cash.turbine.testIn
 import app.cash.turbine.withTurbineTimeout
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.jayway.awaitility.Awaitility
 import com.jayway.awaitility.Awaitility.await
 import com.jayway.awaitility.Duration
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
@@ -101,6 +102,8 @@ private val logger = KotlinLogging.logger {}
       "vyne.search.directory=./search/\${random.int}",
       "vyne.analytics.persistResults=true",
       "vyne.telemetry.enabled=false",
+      "vyne.analytics.writerMaxBatchSize=1",
+      "vyne.analytics.writerMaxDuration=100ms",
    ]
 )
 class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
@@ -232,9 +235,9 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       }
       val record = queryHistoryRecordRepository.findByClientQueryId(clientId)!!
       resultRowRepository.findAllByQueryId(record.queryId).isNotEmpty()
-      val results = resultRowRepository.findAllByQueryId(record.queryId)
-
-      results.shouldNotBeEmpty()
+      await().atMost(Duration.FIVE_SECONDS).until<Boolean> {
+         resultRowRepository.findAllByQueryId(record.queryId).isNotEmpty()
+      }
 
       val queryHistory = queryHistoryRecordRepository.findByQueryId(record.queryId)
 

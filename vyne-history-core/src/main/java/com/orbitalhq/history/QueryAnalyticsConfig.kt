@@ -4,6 +4,7 @@ import mu.KotlinLogging
 import org.springframework.boot.context.properties.ConfigurationProperties
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.Duration
 
 @ConfigurationProperties(prefix = "vyne.analytics")
 data class QueryAnalyticsConfig(
@@ -27,7 +28,11 @@ data class QueryAnalyticsConfig(
    // Mutable for testing
    var analyticsServerApplicationName: String = "analytics-server",
    // Mutable for testing
-   var mode: AnalyticsMode = AnalyticsMode.Inprocess
+   var mode: AnalyticsMode = AnalyticsMode.Inprocess,
+
+   // Mutable for testing
+   var writerMaxBatchSize:Int = 2000,
+   var writerMaxDuration:Duration = Duration.ofSeconds(1)
 ) {
    companion object {
       private val logger = KotlinLogging.logger {}

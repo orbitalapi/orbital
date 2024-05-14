@@ -49,6 +49,9 @@ import javax.sql.DataSource
       "vyne.analytics.persistRemoteCallMetadata=true",
       "vyne.analytics.persistRemoteCallResponses=false",
       "vyne.telemetry.enabled=false",
+      "vyne.analytics.writerMaxBatchSize=1",
+      "vyne.analytics.writerMaxDuration=100ms",
+
    ]
 )
 @Testcontainers
