@@ -1,6 +1,7 @@
 package com.orbitalhq.spring.config
 
 import com.orbitalhq.HipsterDiscoverGraphQueryStrategyCacheConfiguration
+import com.orbitalhq.LocalOperationCacheConfiguration
 import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.VyneGraphBuilderCacheSettings
 import org.springframework.boot.context.properties.ConfigurationProperties
@@ -13,5 +14,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 @ConfigurationProperties(prefix = "vyne.graph")
 data class VyneSpringCacheConfiguration(
    override val vyneGraphBuilderCache: VyneGraphBuilderCacheSettings = VyneGraphBuilderCacheSettings(),
-   override val vyneDiscoverGraphQuery: HipsterDiscoverGraphQueryStrategyCacheConfiguration = HipsterDiscoverGraphQueryStrategyCacheConfiguration()
+   override val vyneDiscoverGraphQuery: HipsterDiscoverGraphQueryStrategyCacheConfiguration = HipsterDiscoverGraphQueryStrategyCacheConfiguration(),
+   override val operationCache:LocalOperationCacheConfiguration = LocalOperationCacheConfiguration()
+
 ) : VyneCacheConfiguration

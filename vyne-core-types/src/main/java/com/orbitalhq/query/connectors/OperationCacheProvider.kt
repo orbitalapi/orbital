@@ -3,6 +3,7 @@ package com.orbitalhq.query.connectors
 import com.orbitalhq.schemas.CachingStrategy
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.ServiceName
+import java.time.Duration
 
 typealias CacheConnectionName = String
 typealias CacheName = String
@@ -30,7 +31,7 @@ interface OperationCacheProvider {
 interface OperationCacheProviderBuilder {
    fun canBuild(strategy: CachingStrategy): Boolean
 
-   fun buildOperationCache(strategy: CachingStrategy, maxSize: Int): OperationCacheProvider
+   fun buildOperationCache(strategy: CachingStrategy, maxCachedOperations: Int, cachedOperationTtl: Duration): OperationCacheProvider
 }
 
 

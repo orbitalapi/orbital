@@ -1,9 +1,11 @@
 package com.orbitalhq.query.graph.operationInvocation.cache
 
+import com.orbitalhq.LocalOperationCacheConfiguration
 import com.orbitalhq.query.connectors.OperationCacheProvider
 import com.orbitalhq.query.connectors.OperationCacheProviderBuilder
 import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCacheProviderBuilder
 import com.orbitalhq.schemas.CachingStrategy
+import java.time.Duration
 
 
 /**
@@ -12,7 +14,8 @@ import com.orbitalhq.schemas.CachingStrategy
  * advanced caching facilities (like using Hazelcast)
  */
 class OperationCacheFactory(
-   val maxResultRecordCount: Int = 10,
+   private val maxCachedOperations: Int = LocalOperationCacheConfiguration.DEFAULT_MAX_CACHED_OPERATIONS,
+   private val cachedOperationTtl: Duration = LocalOperationCacheConfiguration.DEFAULT_MAX_DURATION,
    private val providers: List<OperationCacheProviderBuilder>
 ) {
 
@@ -25,7 +28,7 @@ class OperationCacheFactory(
    fun getOperationCache(strategy: CachingStrategy): OperationCacheProvider {
       val provider = providers.firstOrNull { it.canBuild(strategy) }
          ?: error("Unable to build an OperationCacheProvider for strategy ${strategy::class.simpleName}")
-      return provider.buildOperationCache(strategy, maxResultRecordCount)
+      return provider.buildOperationCache(strategy, maxCachedOperations, cachedOperationTtl)
    }
 
 }

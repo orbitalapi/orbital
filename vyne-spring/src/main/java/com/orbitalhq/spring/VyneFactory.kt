@@ -80,7 +80,7 @@ class VyneFactory(
             vyneCacheConfiguration,
             CacheAwareOperationInvocationDecorator.decorateAll(
                operationInvokers,
-               operationCacheFactory.maxResultRecordCount,
+               vyneCacheConfiguration.operationCache.maxCachedOperations,
                operationCacheFactory.getOperationCache(queryOptions.cachingStrategy)
             ),
             projectionProvider = projectionProvider,
