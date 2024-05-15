@@ -44,8 +44,20 @@ class SchemaPathFindingGraph(connections: HashMap<Element, Set<GraphEdge<Element
       override fun equals(other: Any?): Boolean {
          if (this === other) return true
          if (other !is SearchCacheKey) return false
+         if (this.cachedHashCode != other.cachedHashCode) return false
 
-         return other.cachedHashCode == this.cachedHashCode
+         return startFact == other.startFact &&
+            targetFact == other.targetFact
+
+         // MP 15-May-24:
+         // evaluatedEdges is a complex object, and equality checks take a long time.
+         // A cacheKey is probably equal (for map lookup purposes) if startFact + targetFact are the same.
+         // We can revisit if this causes problems, but be aware that this slows down lookups in maps, which
+         // are run a lot - so profile heavily when changing this.
+         // Specifically, the hot path is GraphSearcher.findPath() -> SchemaPathFindingGraph.findPath -> searchCache.get(SearchCacheKey)
+         // which uses equality checks for hash map lookups.
+         //
+         // && evaluatedEdges == other.evaluatedEdges
       }
 
       override fun hashCode(): Int {
@@ -53,7 +65,7 @@ class SchemaPathFindingGraph(connections: HashMap<Element, Set<GraphEdge<Element
       }
    }
 
-   private fun doSearch(key:SearchCacheKey): WeightedNode<Relationship, Element, Double>? {
+   private fun doSearch(key: SearchCacheKey): WeightedNode<Relationship, Element, Double>? {
       // Construct a specialised search problem, which allows us to supply a custom cost function.
       // The cost function applies a higher 'cost' to the nodes transitions that have previously been attempted.
       // (In earlier versions, we simply remvoed edges after failed attempts)
@@ -68,7 +80,12 @@ class SchemaPathFindingGraph(connections: HashMap<Element, Set<GraphEdge<Element
             }
          }
          .useCostFunction { transition ->
-            key.evaluatedEdges.calculateTransitionCost(transition.fromState, transition.action, transition.state, key.facts)
+            key.evaluatedEdges.calculateTransitionCost(
+               transition.fromState,
+               transition.action,
+               transition.state,
+               key.facts
+            )
          }
          .build()
 
@@ -86,7 +103,7 @@ class SchemaPathFindingGraph(connections: HashMap<Element, Set<GraphEdge<Element
       }
    }
    private val searchCache = cached { key: SearchCacheKey ->
-     doSearch(key)
+      doSearch(key)
    }
 
    fun findPath(
@@ -124,10 +141,10 @@ open class VyneHashBasedHipsterDirectedGraph<V, E>(
    override fun add(v: V): Boolean {
       //add a new entry to the hash map if it does not exist
       var retValue = false
-      connected.computeIfAbsent(v, {
+      connected.computeIfAbsent(v) {
          retValue = true
          HashSet()
-      })
+      }
       return retValue
    }
 
@@ -154,8 +171,8 @@ open class VyneHashBasedHipsterDirectedGraph<V, E>(
       // by allocating sizing up-front, and replacing thread-safety
       // with up-front building.
       // Do not attempt to modify this graph once it's been built
-      fun  createCachingGraph(connections: List<HipsterGraphBuilder.Connection<Element, Relationship>>): SchemaPathFindingGraph {
-         val maps = HashMap<Element, Set<GraphEdge<Element,Relationship>>>(connections.size * 2)
+      fun createCachingGraph(connections: List<HipsterGraphBuilder.Connection<Element, Relationship>>): SchemaPathFindingGraph {
+         val maps = HashMap<Element, Set<GraphEdge<Element, Relationship>>>(connections.size * 2)
          connections.forEach {
             maps[it.vertex1] = mutableSetOf()
             maps[it.vertex2] = mutableSetOf()

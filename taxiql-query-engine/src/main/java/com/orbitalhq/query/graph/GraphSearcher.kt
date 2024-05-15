@@ -62,7 +62,7 @@ class GraphSearcher(
    }
 
    suspend fun search(
-       knownFacts: Collection<TypedInstance>,
+       knownFacts: List<TypedInstance>,
        excludedServices: Set<SearchGraphExclusion<QualifiedName>>,
        excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
        queryId: String,
@@ -254,7 +254,7 @@ class GraphSearcher(
    }
 
    private fun findPath(
-      facts: Collection<TypedInstance>,
+      facts: List<TypedInstance>,
       excludedOperations: Set<QualifiedName>,
       excludedEdges: List<EvaluatableEdge>,
       excludedServices: Set<QualifiedName>,
@@ -279,18 +279,6 @@ class GraphSearcher(
    ): WeightedNode<Relationship, Element, Double>? {
       return graph.findPath(startFact, targetFact, evaluatedEdges, facts)
    }
-
-   private fun <R> logTimeTo(timeCollection: MutableList<Long>, operation: () -> R): R {
-      val stopwatch = Stopwatch.createStarted()
-      val result = operation()
-      timeCollection.add(stopwatch.elapsed(TimeUnit.MILLISECONDS))
-      return result
-   }
-
-}
-
-private fun List<PathEvaluation>.lastEvaluatedEdge(): EvaluatedEdge? {
-   return this.last() as? EvaluatedEdge
 }
 typealias PathEvaluator = suspend (WeightedNode<Relationship, Element, Double>) -> List<PathEvaluation>
 

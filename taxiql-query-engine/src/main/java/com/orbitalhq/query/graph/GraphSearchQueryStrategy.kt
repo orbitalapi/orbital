@@ -178,10 +178,12 @@ class GraphSearchQueryStrategy(
       invocationConstraints: InvocationConstraints
    ): QueryStrategyResult {
       val failedAttempts = mutableListOf<DataSource>()
-      val returnValue = context.rootAndScopedFacts()
+      val rootScopedFacts = context.rootAndScopedFacts()
+      val returnValue = rootScopedFacts
          .asFlow()
          .mapNotNull { fact ->
-            val startFact = providedInstance(fact)
+            val factIndex = rootScopedFacts.indexOf(fact)
+            val startFact = providedStartFact(fact.type, factIndex)
             val targetType = targetElement.instanceValue as? Type? ?: context.schema.type(targetElement.value as String)
             // Excluding paths is done by the type, not the fact.
             // Graph searches work based off of links from types, therefore
@@ -211,7 +213,7 @@ class GraphSearchQueryStrategy(
             )
             { pathToEvaluate ->
                searchProvidedAtLeastOnePath = true
-               val evaluations = evaluatePath(pathToEvaluate, context, startFact)
+               val evaluations = evaluatePath(pathToEvaluate, context, startFact, fact)
                evaluatedPathTempMap.addAll(evaluations)
                evaluations
             }
@@ -268,12 +270,13 @@ class GraphSearchQueryStrategy(
    private suspend fun evaluatePath(
       searchResult: WeightedNode<Relationship, Element, Double>,
       queryContext: QueryContext,
-      startFact: Element
+      startFact: Element,
+      startFactValue: TypedInstance
    ): List<PathEvaluation> {
       // The actual result of this isn't directly used.  But the queryContext is updated with
       // nodes as they're discovered (eg., through service invocation)
       val evaluatedEdges = mutableListOf<PathEvaluation>(
-         getStartingEdge(startFact)
+         getStartingEdge(startFact, startFactValue)
       )
 
       val path = searchResult.path()
@@ -319,9 +322,10 @@ class GraphSearchQueryStrategy(
    }
 
    private fun getStartingEdge(
-      startFact: Element
+      startFact: Element,
+      startFactValue: TypedInstance
    ): StartingEdge {
-      return StartingEdge(startFact.instanceValue as TypedInstance, startFact)
+      return StartingEdge(startFactValue, startFact)
    }
 }
 

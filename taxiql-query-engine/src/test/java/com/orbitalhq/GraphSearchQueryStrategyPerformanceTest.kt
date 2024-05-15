@@ -1,13 +1,13 @@
 package com.orbitalhq
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.orbitalhq.models.json.parseJson
-import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.utils.Benchmark
-import com.orbitalhq.utils.asA
+import com.orbitalhq.utils.StrategyPerformanceProfiler
 import io.kotest.common.runBlocking
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import lang.taxi.types.ObjectType
+import lang.taxi.utils.log
 import org.junit.Test
 
 class GraphSearchQueryStrategyPerformanceTest {
@@ -48,6 +48,7 @@ class GraphSearchQueryStrategyPerformanceTest {
       stub.addResponse("getIds" , vyne.parseJson("IdResolution", """{ "filmId" : 1, "squashedTomatoesId" : 100 }"""))
       stub.addResponse("getStreamingProvider" , vyne.parseJson("StreamingServiceProvider", """{ "name" : "Netflix", "price" : 2.99 }"""))
 
+      StrategyPerformanceProfiler.summarizeAndReset()
       val result =       vyne.query("""find { Film[] } as {
          |  id : FilmId
          |  title : FilmTitle
@@ -62,6 +63,11 @@ class GraphSearchQueryStrategyPerformanceTest {
          mapOf("id" to 2, "title" to "Empire Strikes Back", "score" to 4, "price" to 2.99.toBigDecimal()),
          mapOf("id" to 3, "title" to "Return of the Jedi", "score" to 4, "price" to 2.99.toBigDecimal()),
       ))
+
+      val perfStats = StrategyPerformanceProfiler.summarizeAndReset()
+      val json = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(perfStats)
+      log().info("Perf stats:\n$json")
+
 
 
       Benchmark.benchmark("graph query", warmup = 500, iterations = 500) {

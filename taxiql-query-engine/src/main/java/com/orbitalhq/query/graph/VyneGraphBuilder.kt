@@ -10,12 +10,10 @@ import com.orbitalhq.query.SearchGraphExclusion
 import com.orbitalhq.query.excludedValues
 import com.orbitalhq.query.graph.edges.EvaluatableEdge
 import com.orbitalhq.schemas.*
-import com.orbitalhq.utils.ImmutableEquality
 import com.orbitalhq.utils.StrategyPerformanceProfiler
 import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import lang.taxi.services.OperationScope
-import lang.taxi.types.ObjectType
 import mu.KotlinLogging
 import java.util.*
 import kotlin.time.ExperimentalTime
@@ -65,17 +63,33 @@ data class Element(val value: Any, val elementType: ElementType, val instanceVal
    private val cachedHashCode: Int = run {
       var result = value.hashCode()
       result = 31 * result + elementType.hashCode()
-      result = 31 * result + instanceValue.hashCode()
+
+      // We only allow TypedInstances as the start fact, which
+      // have a special evaluation strategy for passing in the value.
+      // Therefore, we don't want to include the instanceValue in calculating the hashcode
+      // Otherwise, graphs which are the same for everything except the start node don't compare as
+      // equal, and we end up building an entirely new graph (which is expensive).
+      if (instanceValue !is TypedInstance) {
+         result = 31 * result + instanceValue.hashCode()
+      }
+
       result
    }
 
    override fun equals(other: Any?): Boolean {
       if (this === other) return true
       if (other !is Element) return false
+      if (this.cachedHashCode != other.cachedHashCode) return false
 
-      return value == other.value &&
-         elementType == other.elementType &&
-         instanceValue == other.instanceValue
+      if (value != other.value) return false
+      if (elementType != other.elementType) return false
+
+      // Only compare the value for specific element types
+      return if (instanceValue is TypedInstance) {
+         this.instanceValue == other.instanceValue
+      } else {
+         true
+      }
    }
 
    override fun hashCode(): Int {
@@ -133,10 +147,33 @@ fun operation(service: Service, operation: RemoteOperation): Element {
 fun operation(name: String, operation: RemoteOperation?) =
    Element(name, ElementType.OPERATION, instanceValue = operation)
 
+
 fun providedInstance(typedInstance: TypedInstance): Element {
    val instanceHash = typedInstance.value?.hashCode() ?: -1
    val nodeId = typedInstance.typeName + "@$instanceHash"
    return providedInstance(nodeId, typedInstance)
+}
+
+/**
+ * Similar to providedInstance(), but optimized for start facts.
+ * Start facts change frequently, whereas the rest of the graph remains
+ * static until the schema changes.
+ *
+ * We want to reduce the number of times that we trigger a graphBuild(),
+ * and part of that is looking for graphs that are equivalent.
+ *
+ * Therefore, we don't add start fact values into the actual graph,
+ * we just add an indexed pointer to it.
+ *
+ * The actual value is provided in the GraphSearchQueryStrategy.
+ *
+ * This reduces the number of graphs that are hash-code different
+ * simply because the start fact has a different value, and therefore
+ * reduces the number of calls to buildGraph().
+ */
+fun providedStartFact(type: Type, index: Int): Element {
+   val nodeId = type.paramaterizedName + "@$index"
+   return providedInstance(nodeId, null)
 }
 
 fun providedInstance(name: String, value: Any? = null) = Element(name, ElementType.TYPE_INSTANCE, value)
@@ -176,7 +213,7 @@ class VyneGraphBuilder(
       .build<Int, List<GraphConnection>>()
 
    fun build(
-      facts: Collection<TypedInstance>,
+      facts: List<TypedInstance>,
       excludedOperations: Set<QualifiedName> = emptySet(),
       excludedEdges: List<EvaluatableEdge>,
       excludedServices: Set<QualifiedName>
@@ -228,7 +265,8 @@ class VyneGraphBuilder(
          }
       }
 
-      return graphCache.get(cacheKeyForFacts(filteredFacts)) {
+      val cacheKeyForFacts = cacheKeyForFacts(filteredFacts)
+      return graphCache.get(cacheKeyForFacts) {
          StrategyPerformanceProfiler.profiled("buildGraph") {
             val timedValue = measureTimedValue {
                val graph = createCachingGraph(filteredFacts)
@@ -584,27 +622,24 @@ class VyneGraphBuilder(
    }
 
    private fun createdInstances(
-      instances: Collection<TypedInstance>,
+      instances: List<TypedInstance>,
       schema: Schema
    ): List<GraphConnection> {
-      return instances.map { typedInstance ->
-         createProvidedInstances(typedInstance.typeName, schema, value = typedInstance)
+      return instances.mapIndexed { index, typedInstance ->
+         createProvidedInstances(typedInstance.type, index, schema, value = typedInstance)
       }.flatten()
    }
 
    private fun createProvidedInstances(
-      instanceFqn: String,
+      type: Type,
+      index: Int,
       schema: Schema,
       provider: Element? = null,
       value: TypedInstance? = null
    ): MutableList<HipsterGraphBuilder.Connection<Element, Relationship>> {
+      val instanceFqn = type.paramaterizedName
       val createdConnections = mutableListOf<HipsterGraphBuilder.Connection<Element, Relationship>>()
-      val providedInstance = if (value != null) {
-         providedInstance(value)
-      } else {
-         // TODO : Not sure if this is still value -- ie., not provided a typedInstance here
-         providedInstance(instanceFqn)
-      }
+      val providedInstance = providedStartFact(type, index)
       if (provider != null) {
          createdConnections.add(HipsterGraphBuilder.Connection(provider, providedInstance, Relationship.PROVIDES))
          // builder.connect(provider).to(providedInstance).withEdge(Relationship.PROVIDES)
