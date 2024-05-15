@@ -173,60 +173,7 @@ object Algorithms {
          operation.returnType.collectionType ?: operation.returnType
       }.toSet()
 
-   /**
-    * This function first finds all service operations without any arguments.
-    * Next, for each such function it explores all paths starting from function return argument type to return types of other
-    * service operations.
-    *
-    * Example:
-    *  model Order {
-    *    puid: Puid
-    *  }
-    *
-    *  service MockCaskService {
-    *     operation findSingleByPuid( id : Puid ) : Product
-    *  }
-    *
-    *
-    *  service OrderService {
-    *   operation `findAll`( ) : Order[]
-    *  }
-    *
-    * This function:
-    *
-    * Step 1. Extract All zero argument operations from the schema -> operation `findAll`( ) : Order[]
-    * Step 2: the match 'findAll' has the collection type of 'Order'
-    * Step 3: Determine all other operations in the schema -> operation findSingleByPuid( id : Puid ) : Product
-    * Step 4: Determine the path from Order to Product, if there is one return it.
-    */
-   fun immediateDataSourcePaths(schema: Schema): List<Dataset> {
-      val typesAccessibleViaNoArgServiceCalls = getImmediatelyDiscoverableTypes(schema)
 
-      val targetTypes = returnTypesOfAllNonZeroArgOperations(schema)
-
-      val graphBuilder = VyneGraphBuilder(schema, VyneGraphBuilderCacheSettings())
-      val discoverablePaths = typesAccessibleViaNoArgServiceCalls.map { startingType ->
-         pathsForTargets(startingType, schema, targetTypes, graphBuilder)
-      }.filter { it.second.isNotEmpty() }
-      return discoverablePaths.flatMap { result ->
-         result.second.map {
-            Dataset(result.first.qualifiedName, it.first.qualifiedName, it.second)
-         }
-      }
-   }
-
-   fun immediateDataSourcePathsFor(schema: Schema, fqn: String): List<Dataset> {
-      val startingType = schema.type(fqn)
-
-      val targetTypes = returnTypesOfAllNonZeroArgOperations(schema)
-
-      val graphBuilder = VyneGraphBuilder(schema, VyneGraphBuilderCacheSettings())
-      val solution = pathsForTargets(startingType, schema, targetTypes, graphBuilder)
-      return solution.second.map {
-         Dataset(solution.first.qualifiedName, it.first.qualifiedName, it.second)
-      }
-
-   }
 
    private fun returnTypesOfAllNonZeroArgOperations(schema: Schema): Set<Type> {
       val noArgsOperations = schema.operationsWithNoArgument()
