@@ -138,14 +138,27 @@ data class Operation(
    val sources: List<VersionedSource>,
    override val typeDoc: String? = null
 ) : MetadataTarget, SchemaMember, RemoteOperation, PartialOperation {
-   private val equality =
-      ImmutableEquality(this, Operation::qualifiedName, Operation::returnType, Operation::parameters, Operation::metadata)
-
-   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
-   override fun hashCode(): Int {
-      return equality.hash()
+   private val cachedHashCode: Int = run {
+      var result = qualifiedName.hashCode()
+      result = 31 * result + returnType.hashCode()
+      result = 31 * result + parameters.hashCode()
+      result = 31 * result + metadata.hashCode()
+      result
    }
 
+   override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (other !is Operation) return false
+
+      return qualifiedName == other.qualifiedName &&
+         returnType == other.returnType &&
+         parameters == other.parameters &&
+         metadata == other.metadata
+   }
+
+   override fun hashCode(): Int {
+      return cachedHashCode
+   }
    override val operationKind: OperationKind = OperationKind.ApiCall
    override val schemaMemberKind: SchemaMemberKind = SchemaMemberKind.OPERATION
 
@@ -267,24 +280,31 @@ data class Service(
    ),
 ) : MetadataTarget, SchemaMember, PartialService {
 
-   private val equality = ImmutableEquality(
-      this,
-      Service::name,
-      // 11-Aug-22: Added attributes and docs as needed for diffing.
-      // However, if this trashes performance, we can revert,and we'll find another way.
-      Service::operations,
-      Service::queryOperations,
-      Service::tableOperations,
-      Service::streamOperations,
-      Service::typeDoc,
-      Service::metadata
-   )
-
    override val schemaMemberKind: SchemaMemberKind = SchemaMemberKind.SERVICE
 
-   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
-   override fun hashCode(): Int = equality.hash()
+   override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (other !is Service) return false
 
+      return name == other.name &&
+         operations == other.operations &&
+         queryOperations == other.queryOperations &&
+         tableOperations == other.tableOperations &&
+         streamOperations == other.streamOperations &&
+         typeDoc == other.typeDoc &&
+         metadata == other.metadata
+   }
+
+   override fun hashCode(): Int {
+      var result = name.hashCode()
+      result = 31 * result + operations.hashCode()
+      result = 31 * result + queryOperations.hashCode()
+      result = 31 * result + tableOperations.hashCode()
+      result = 31 * result + streamOperations.hashCode()
+      result = 31 * result + typeDoc.hashCode()
+      result = 31 * result + metadata.hashCode()
+      return result
+   }
 
    fun queryOperation(name: String): QueryOperation {
       return this.queryOperations.first { it.name == name }

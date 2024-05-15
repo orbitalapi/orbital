@@ -62,9 +62,25 @@ data class GraphBuildResult(
 typealias GraphConnection = HipsterGraphBuilder.Connection<Element, Relationship>
 
 data class Element(val value: Any, val elementType: ElementType, val instanceValue: Any? = null) {
-   val equality = ImmutableEquality(this, Element::value, Element::elementType, Element::instanceValue)
-   override fun hashCode(): Int = equality.hash()
-   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
+   private val cachedHashCode: Int = run {
+      var result = value.hashCode()
+      result = 31 * result + elementType.hashCode()
+      result = 31 * result + instanceValue.hashCode()
+      result
+   }
+
+   override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (other !is Element) return false
+
+      return value == other.value &&
+         elementType == other.elementType &&
+         instanceValue == other.instanceValue
+   }
+
+   override fun hashCode(): Int {
+      return cachedHashCode
+   }
    fun graphNode(): Element {
 //      return if (this.elementType == ElementType.INSTANCE) {
 //         val typeName = (value as TypedInstance).type.name.fullyQualifiedName

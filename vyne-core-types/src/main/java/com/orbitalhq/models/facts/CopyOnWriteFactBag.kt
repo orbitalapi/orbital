@@ -160,17 +160,17 @@ open class CopyOnWriteFactBag(
    private data class GetFactOrNullCacheKey(
       val search: FactSearch
    ) {
-      private val equality = ImmutableEquality(
-         this,
-         GetFactOrNullCacheKey::search,
-      )
+      private val cachedHashCode: Int = search.hashCode()
 
       override fun equals(other: Any?): Boolean {
-         return equality.isEqualTo(other)
+         if (this === other) return true
+         if (other !is GetFactOrNullCacheKey) return false
+
+         return search == other.search
       }
 
       override fun hashCode(): Int {
-         return equality.hash()
+         return cachedHashCode
       }
    }
 

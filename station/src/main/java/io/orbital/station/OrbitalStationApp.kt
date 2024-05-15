@@ -20,6 +20,7 @@ import com.orbitalhq.spring.metrics.MicrometerMetricsReporter
 import com.orbitalhq.spring.projection.ApplicationContextProvider
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
 import io.micrometer.core.instrument.MeterRegistry
+import kotlinx.coroutines.DEBUG_PROPERTY_NAME
 import mu.KotlinLogging
 import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Autowired

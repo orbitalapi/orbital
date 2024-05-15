@@ -11,10 +11,18 @@ import lang.taxi.utils.log
 // Created during perf optimisation that found c. 5% of operations were on hashCode / creation
 // of typed null
 private data class TypedNullWrapper(val type: Type) {
-   private val equality = ImmutableEquality(this, TypedNullWrapper::type)
-   private val hash by lazy { this.equality.hash() }
-   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
-   override fun hashCode(): Int = hash
+   private val cachedHashCode: Int = type.hashCode()
+
+   override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (other !is TypedNullWrapper) return false
+
+      return type == other.type
+   }
+
+   override fun hashCode(): Int {
+      return cachedHashCode
+   }
 }
 
 data class TypedNull private constructor(private val wrapper: TypedNullWrapper,

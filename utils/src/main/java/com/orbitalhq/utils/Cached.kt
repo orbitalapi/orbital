@@ -1,5 +1,7 @@
 package com.orbitalhq.utils
 
+import org.eclipse.collections.impl.map.mutable.UnifiedMap
+
 class Cached<T>(private val factory: () -> T) {
    companion object {
       private const val KEY = "KEY"
@@ -19,7 +21,7 @@ class Cached<T>(private val factory: () -> T) {
 fun <T> cached(factory: () -> T): Cached<T> = Cached(factory)
 
 class KeyCached<K, V>(private val factory: (K) -> V) {
-   private val store = mutableMapOf<K, V>()
+   private val store = UnifiedMap<K,V>()
 
    fun invalidate() {
       store.clear()
@@ -27,20 +29,6 @@ class KeyCached<K, V>(private val factory: (K) -> V) {
 
    fun get(key: K): V {
       return store.getOrPut(key) { factory(key) }
-   }
-
-   fun removeValues(predicate: (K, V) -> Boolean) {
-      synchronized(this.store) {
-         val keysToRemove = this.store.mapNotNull { (key, value) ->
-            val shouldRemove = predicate(key, value)
-            if (shouldRemove) {
-               key
-            } else {
-               null
-            }
-         }
-         keysToRemove.forEach { this.store.remove(it) }
-      }
    }
 }
 

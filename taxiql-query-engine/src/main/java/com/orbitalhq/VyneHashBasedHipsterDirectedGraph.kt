@@ -32,15 +32,24 @@ class SchemaPathFindingGraph(connections: HashMap<Element, Set<GraphEdge<Element
       val evaluatedEdges: EvaluatedPathSet,
       val facts: FactBag
    ) {
-      val equality =
-         ImmutableEquality(this, SearchCacheKey::startFact, SearchCacheKey::targetFact, SearchCacheKey::evaluatedEdges)
+      // Don't use ImmutableEquality here, as it's the hot path, and we want to avoid reflection
+
+      private val cachedHashCode: Int = run {
+         var result = startFact.hashCode()
+         result = 31 * result + targetFact.hashCode()
+         result = 31 * result + evaluatedEdges.hashCode()
+         result
+      }
 
       override fun equals(other: Any?): Boolean {
-         return equality.isEqualTo(other)
+         if (this === other) return true
+         if (other !is SearchCacheKey) return false
+
+         return other.cachedHashCode == this.cachedHashCode
       }
 
       override fun hashCode(): Int {
-         return equality.hash()
+         return cachedHashCode
       }
    }
 
@@ -64,9 +73,6 @@ class SchemaPathFindingGraph(connections: HashMap<Element, Set<GraphEdge<Element
          .build()
 
 
-      /*val executionPath = Hipster
-            .createDijkstra(problem)
-            .search(key.targetFact).goalNode*/
       val executionPath = VyneGraphSearchAlgorithm
          .create(problem, key.evaluatedEdges)
          .search(key.targetFact).goalNode

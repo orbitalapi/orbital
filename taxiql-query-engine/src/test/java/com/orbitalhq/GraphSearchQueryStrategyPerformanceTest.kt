@@ -64,7 +64,7 @@ class GraphSearchQueryStrategyPerformanceTest {
       ))
 
 
-      Benchmark.benchmark("graph query", iterations = 500) {
+      Benchmark.benchmark("graph query", warmup = 500, iterations = 500) {
          runBlocking {
             vyne.query("""find { Film[] } as {
          |  id : FilmId

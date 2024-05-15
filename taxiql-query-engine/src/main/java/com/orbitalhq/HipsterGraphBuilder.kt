@@ -58,15 +58,24 @@ class HipsterGraphBuilder<V, E> private constructor(
    fun copy(): HipsterGraphBuilder<V, E> = create(this.existingConnections, this.connections)
 
    data class Connection<V, E>(private val vertex1: V, private val vertex2: V, val edge: E) : GraphEdge<V, E> {
-      val equality =
-         ImmutableEquality(this, Connection<*, *>::vertex1, Connection<*, *>::vertex2, Connection<*, *>::edge)
+      private val cachedHashCode: Int = run {
+         var result = vertex1.hashCode()
+         result = 31 * result + vertex2.hashCode()
+         result = 31 * result + edge.hashCode()
+         result
+      }
 
       override fun equals(other: Any?): Boolean {
-         return equality.isEqualTo(other)
+         if (this === other) return true
+         if (other !is Connection<*, *>) return false
+
+         return vertex1 == other.vertex1 &&
+            vertex2 == other.vertex2 &&
+            edge == other.edge
       }
 
       override fun hashCode(): Int {
-         return equality.hash()
+         return cachedHashCode
       }
 
       override fun getVertex2(): V = vertex2

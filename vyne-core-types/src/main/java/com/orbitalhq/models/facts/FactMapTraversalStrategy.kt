@@ -43,17 +43,15 @@ object FullScan : TreeNavigationInstruction()
  * interrogate an object any further
  */
 data class FactMapTraversalStrategy(val name: String, val predicate: (TypedInstance) -> TreeNavigationInstruction) {
-   private val equality = ImmutableEquality(
-      this,
-      FactMapTraversalStrategy::name
-   )
+   override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (other !is FactMapTraversalStrategy) return false
 
-   override fun hashCode(): Int {
-      return equality.hash()
+      return name == other.name
    }
 
-   override fun equals(other: Any?): Boolean {
-      return equality.isEqualTo(other)
+   override fun hashCode(): Int {
+      return name.hashCode()
    }
 
 

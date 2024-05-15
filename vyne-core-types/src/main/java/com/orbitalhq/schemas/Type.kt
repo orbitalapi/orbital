@@ -141,19 +141,20 @@ data class Type(
    }
 
 
-   // Intentionally excluded from equality:
-   // taxiType - the antlr classes make equailty hard, and not meaningful in this context
-   // typeCache - screws with equality, and not meaningful
-   private val equality = ImmutableEquality(
-      this,
-      Type::paramaterizedName,
-      // Below tanked performance.  Call isDefinedSameAs() instead
-      // 11-Aug-22: Added attributes and docs as needed for diffing.
-      // However, if this trashes performance, we can revert,and we'll find another way.
-//      Type::attributes,
-//      Type::typeDoc
-   )
+   private val cachedHashCode: Int = run {
+      paramaterizedName.hashCode()
+   }
 
+   override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (other !is Type) return false
+
+      return paramaterizedName == other.paramaterizedName
+   }
+
+   override fun hashCode(): Int {
+      return cachedHashCode
+   }
    /**
     * Returns the anonymous types present on the attributes of this type, including
     * any nested anoymous types present on fields
@@ -186,19 +187,6 @@ data class Type(
    override fun isDefinedSameAs(other: Type): Boolean {
       return this.name == other.name && this.attributes == other.attributes && this.typeDoc == other.typeDoc
    }
-
-   override fun equals(other: Any?): Boolean {
-      // Don't call equality.equals() here, as it's too slow.
-      // We need a fast, non-reflection based implementation.
-      // Bascially, two types are equal if their parameterizedName (which has been interned)
-      // are the same
-      if (this === other) return true
-      if (other == null) return false
-      if (this.javaClass !== other.javaClass) return false
-      return this.paramaterizedName === (other as Type).paramaterizedName
-   }
-
-   override fun hashCode(): Int = equality.hash()
 
    private val resolvedAlias: Type
 
