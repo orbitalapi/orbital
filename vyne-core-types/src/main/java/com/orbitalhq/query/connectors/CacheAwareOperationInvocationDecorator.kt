@@ -35,6 +35,13 @@ private val logger = KotlinLogging.logger {}
 class CacheAwareOperationInvocationDecorator(
    private val invoker: OperationInvoker,
    private val cacheProvider: OperationCacheProvider,
+   /**
+    * Defines the max size (in result rows) of a result that can be cached.
+    * For example - a database query that returns more rows than this will not
+    * be cached (and will have it's existing cache records evicted)
+    *
+    * Is not related to the max number of invocations to cache.
+    */
    private val evictWhenResultSizeExceeds: Int = 10
 ) :
    OperationInvoker {
@@ -58,20 +65,6 @@ class CacheAwareOperationInvocationDecorator(
       val (key, params) = getCacheKeyAndParamMessage(service, operation, parameters, eventDispatcher, queryId, queryOptions)
 
       val cachingInvoker = cacheProvider.getCachingInvoker(key, invoker)
-//      val actor = actorCache.get(key) {
-//         buildActor(key, evictWhenResultSizeExceeds)
-//      }
-
-      // Optimisation:
-      // If we definitely already have a result, we can skip the actor
-      // phase, and just return the result.  This should be safe of race conditions, as
-      // the value only ever goes from null -> !null (never back).
-      // This dropped the mean time in this class significantly
-//      actor.result?.let {
-//         params.recordElapsed(true)
-//         return it.asFlow()
-//      }
-
       var emittedRecords = 0
       var evictedFromCache = false
 
@@ -90,22 +83,6 @@ class CacheAwareOperationInvocationDecorator(
          }
 
       return flux.asFlow()
-//      try {
-//         var emittedRecords = 0
-//         var evictedFromCache = false
-//         return params.deferred.await()
-//            .onEach {
-//               emittedRecords++
-//               if (!evictedFromCache && emittedRecords > evictWhenResultSizeExceeds) {
-//                  // Some cache keys can be huge
-//                  logger.info { "Response from ${key.abbreviate()} has exceeded max cachable records ($evictWhenResultSizeExceeds) so is being removed from the cache.  Subsequent calls will hit the original service, not the cache" }
-//                  cacheProvider.evict(key)
-//                  evictedFromCache = true
-//               }
-//            }
-//      } catch (e: Exception) {
-//         throw e
-//      }
    }
 
    private fun isCacheable(operation: RemoteOperation, service: Service, invoker: OperationInvoker): Boolean {
@@ -173,7 +150,6 @@ class CachingOperatorInvoker(
    private val cacheKey: OperationCacheKey,
 //   private val backingMap: ConcurrentMap<OperationCacheKey, Flux<TypedInstance>>,
    private val invoker: OperationInvoker,
-   private val maxSize: Int,
    private val cacheFetcher: CacheFetcher
 ) {
    suspend fun invoke(message: OperationInvocationParamMessage): Flux<TypedInstance> {
@@ -181,10 +157,6 @@ class CachingOperatorInvoker(
          logger.debug { "${cacheKey.abbreviate()} cache miss, loading from Operation Invoker" }
          invokeUnderlyingService(message)
       }
-//      return backingMap.getOrPut(cacheKey) {
-//
-//         invokeUnderlyingService(message)
-//      }
    }
 
    /**

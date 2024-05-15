@@ -56,6 +56,8 @@ import java.util.concurrent.ConcurrentHashMap
       "vyne.search.directory=./search/\${random.int}",
       "vyne.analytics.persistRemoteCallMetadata=true",
       "vyne.analytics.persistRemoteCallResponses=false",
+      "vyne.analytics.writerMaxBatchSize=1",
+      "vyne.analytics.writerMaxDuration=100ms",
       "vyne.telemetry.enabled=false"
    ]
 )
@@ -292,6 +294,11 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
       Awaitility.await().atMost(Duration.FIVE_SECONDS).until<Boolean> {
          historyService.getQueryProfileDataFromClientId(clientQueryId)
             .block() != null
+
+      }
+      Awaitility.await().atMost(Duration.FIVE_SECONDS).until<Boolean> {
+         historyService.getRemoteCallListByClientId(clientQueryId)
+            .block().isNotEmpty()
 
       }
       val calls = historyService.getRemoteCallListByClientId(clientQueryId)

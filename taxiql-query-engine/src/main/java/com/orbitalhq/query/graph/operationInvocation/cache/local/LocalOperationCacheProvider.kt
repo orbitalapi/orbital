@@ -2,6 +2,7 @@ package com.orbitalhq.query.graph.operationInvocation.cache.local
 
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
+import com.orbitalhq.LocalOperationCacheConfiguration
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.connectors.CacheFetcher
 import com.orbitalhq.query.connectors.CachingOperatorInvoker
@@ -18,6 +19,7 @@ import com.orbitalhq.schemas.QueryScopedCache
 import com.orbitalhq.utils.abbreviate
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
+import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -26,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class LocalOperationCacheProvider(
    private val actorCache: Cache<OperationCacheKey, CachingOperatorInvoker>,
-   private val maxSize: Int
 ) :
    OperationCacheProvider {
    companion object {
@@ -38,7 +39,12 @@ class LocalOperationCacheProvider(
        * returned from parsing the query
        */
       fun default(): LocalOperationCacheProvider {
-         return LocalOperationCacheProvider(LocalCacheProviderBuilder.newCache(), 10)
+         return LocalOperationCacheProvider(
+            LocalCacheProviderBuilder.newCache(
+               LocalOperationCacheConfiguration.DEFAULT_MAX_CACHED_OPERATIONS,
+               LocalOperationCacheConfiguration.DEFAULT_MAX_DURATION
+            )
+         )
       }
    }
 
@@ -52,7 +58,7 @@ class LocalOperationCacheProvider(
       invoker: OperationInvoker
    ): CachingOperatorInvoker {
       return actorCache.get(operationKey) {
-         CachingOperatorInvoker(operationKey, invoker, maxSize, LocalCacheFetcher())
+         CachingOperatorInvoker(operationKey, invoker, LocalCacheFetcher())
       }
    }
 
@@ -62,14 +68,14 @@ class LocalOperationCacheProvider(
    }
 }
 
-class LocalCacheFetcher: CacheFetcher {
+class LocalCacheFetcher : CacheFetcher {
    private val cachedFlux = ConcurrentHashMap<String, Flux<TypedInstance>>()
    override fun invoke(
       key: OperationCacheKey,
       invocationParams: OperationInvocationParamMessage,
       invoker: () -> Flux<TypedInstance>
    ): Flux<TypedInstance> {
-     return cachedFlux.getOrPut(key) {
+      return cachedFlux.getOrPut(key) {
          invoker().cache()
       }
    }
@@ -79,8 +85,10 @@ class LocalCacheProviderBuilder : OperationCacheProviderBuilder {
    companion object {
       private val logger = KotlinLogging.logger {}
 
-      fun newCache(): Cache<OperationCacheName, CachingOperatorInvoker> {
+      fun newCache(maxSize: Int, maxDuration: Duration): Cache<OperationCacheName, CachingOperatorInvoker> {
          return CacheBuilder.newBuilder()
+            .expireAfterAccess(maxDuration)
+            .maximumSize(maxSize.toLong())
             .removalListener<String, CachingOperatorInvoker> { notification ->
                logger.info { "Caching operation invoker removing entry for ${notification.key?.abbreviate()} for reason ${notification.cause}" }
             }
@@ -99,17 +107,22 @@ class LocalCacheProviderBuilder : OperationCacheProviderBuilder {
       else -> false
    }
 
-   override fun buildOperationCache(strategy: CachingStrategy, maxSize: Int): OperationCacheProvider {
+   override fun buildOperationCache(
+      strategy: CachingStrategy,
+      maxCachedOperations: Int,
+      cachedOperationTtl: Duration
+   ): OperationCacheProvider {
       val cache = when (strategy) {
-         is QueryScopedCache -> newCache()
-         is GlobalSharedCache -> caches.getOrPut(globalCacheName) { newCache() }
+         is QueryScopedCache -> newCache(maxCachedOperations, cachedOperationTtl)
+         is GlobalSharedCache -> caches.getOrPut(globalCacheName) { newCache(maxCachedOperations, cachedOperationTtl) }
          is NamedCache -> caches.getOrPut(strategy.name) {
             logger.info { "Creating new cache ${strategy.name}" }
-            newCache()
+            newCache(maxCachedOperations, cachedOperationTtl)
          }
+
          else -> error("${strategy::class.simpleName} is not suppoerted by this builder")
       }
-      return LocalOperationCacheProvider(cache, maxSize)
+      return LocalOperationCacheProvider(cache)
    }
 
 

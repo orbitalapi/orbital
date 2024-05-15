@@ -67,7 +67,7 @@ class HazelcastOperationCacheProvider(
    ): CachingOperatorInvoker {
 
       return CachingOperatorInvoker(
-         operationKey, invoker, maxSize, this::load
+         operationKey, invoker, this::load
       )
    }
 
@@ -234,7 +234,6 @@ class HazelcastOperationCacheProvider(
 class HazelcastOperationCacheBuilder(
    private val hazelcastConnectionsManager: HazelcastConnectionsManager,
    private val schemaStore: SchemaStore,
-   private val maxSize: Int = 10,
 ) :
    OperationCacheProviderBuilder {
    override fun canBuild(strategy: CachingStrategy): Boolean {
@@ -242,13 +241,13 @@ class HazelcastOperationCacheBuilder(
       return hazelcastConnectionsManager.canProvideHazelcastInstance(strategy.connectionName)
    }
 
-   override fun buildOperationCache(strategy: CachingStrategy, maxSize: Int): OperationCacheProvider {
+   override fun buildOperationCache(strategy: CachingStrategy,  maxCachedOperations: Int, cachedOperationTtl: Duration): OperationCacheProvider {
       require(strategy is RemoteCache)
       val (client, config) = hazelcastConnectionsManager.hazelcastConnection(strategy.connectionName)
       return HazelcastOperationCacheProvider(
          client,
          schemaStore,
-         maxSize,
+         maxCachedOperations,
          config.connectionName,
          config.addresses.joinToString(",")
       )
