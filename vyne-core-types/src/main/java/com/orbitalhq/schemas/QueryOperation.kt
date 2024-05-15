@@ -29,19 +29,30 @@ data class QueryOperation(
 
    override val returnTypeName: QualifiedName = returnType.name
 
-   private val equality = ImmutableEquality(
-      this,
-      QueryOperation::name,
-      // 11-Aug-22: Added attributes and docs as needed for diffing.
-      // However, if this trashes performance, we can revert,and we'll find another way.
-      QueryOperation::parameters,
-      QueryOperation::metadata,
-      QueryOperation::returnType,
-      QueryOperation::typeDoc
-   )
+   private val cachedHashCode: Int = run {
+      var result = name.hashCode()
+      result = 31 * result + parameters.hashCode()
+      result = 31 * result + metadata.hashCode()
+      result = 31 * result + returnType.hashCode()
+      result = 31 * result + typeDoc.hashCode()
+      result
+   }
 
-   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
-   override fun hashCode(): Int = equality.hash()
+   override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (other !is QueryOperation) return false
+
+      return name == other.name &&
+         parameters == other.parameters &&
+         metadata == other.metadata &&
+         returnType == other.returnType &&
+         typeDoc == other.typeDoc
+   }
+
+   override fun hashCode(): Int {
+      return cachedHashCode
+   }
+
    override val schemaMemberKind: SchemaMemberKind = SchemaMemberKind.OPERATION
    override val operationKind: OperationKind = OperationKind.Query
 }

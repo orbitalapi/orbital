@@ -9,6 +9,7 @@ import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.Ids
+import com.orbitalhq.utils.mergeToUnifiedMap
 import lang.taxi.ImmutableEquality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
@@ -24,21 +25,14 @@ data class TypedObject(
    override val metadata: Map<String, Any> = emptyMap()
 ) : TypedInstance, Map<String, TypedInstance> {
 
-   private val combinedValues: Map<String, TypedInstance> = type.defaultValues?.plus(suppliedValue) ?: suppliedValue
+   private val combinedValues: Map<String, TypedInstance> = type.defaultValues?.mergeToUnifiedMap(suppliedValue) ?: suppliedValue
 
-   private val stringifiedValueValueMap by lazy {
-      suppliedValue.map { (k, v) -> "$k-${v.type.paramaterizedName}-${v}" }
-         .joinToString(" - ")
-         .hashCode()
-   }
    override val nodeId: String = Ids.fastUuid()
 
    override val value: Map<String, TypedInstance>
       get() = combinedValues
 
 
-   private val equality = ImmutableEquality(this, TypedObject::type, TypedObject::value)
-   private val hash: Int by lazy { equality.hash() }
 
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -114,22 +108,27 @@ data class TypedObject(
       return "TypedObject(type=${type.qualifiedName.longDisplayName}, value=$suppliedValue)"
    }
 
-   override fun equals(other: Any?): Boolean {
-      // Don't call equality.equals() here, as it's too slow.
-      // We need a fast, non-reflection based implementation.
-      // Bascially, two types are equal if their parameterizedName (which has been interned)
-      // are the same
-      if (this === other) return true
-      if (other == null) return false
-      if (this.javaClass !== other.javaClass) return false
-      val otherObject = other as TypedObject
-      if (this.type != other.type) return false
-      if (this.hashCode() != other.hashCode()) return false
-      return this.stringifiedValueValueMap == other.stringifiedValueValueMap
-//      return  this.value == otherObject.value
+   private val cachedHashCode: Int = run {
+      var result = type.hashCode()
+      result = 31 * result + value.hashCode()
+      result
    }
 
-   override fun hashCode(): Int = hash
+   override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (other !is TypedObject) return false
+
+      if (other.cachedHashCode != this.cachedHashCode) return false
+      if (this.type.qualifiedName != other.type.qualifiedName) return false
+      return this.combinedValues == other.combinedValues
+//      return this.stringifiedValueValueMap == other.stringifiedValueValueMap
+   }
+
+   override fun hashCode(): Int {
+      return cachedHashCode
+   }
+
+
 
    fun hasAttribute(name: String): Boolean {
       return this.combinedValues.containsKey(name)
