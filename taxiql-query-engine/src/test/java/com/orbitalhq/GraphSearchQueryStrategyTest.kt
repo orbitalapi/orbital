@@ -22,7 +22,7 @@ import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
 @ExperimentalCoroutinesApi
-class HipsterDiscoverGraphQueryStrategyTest {
+class GraphSearchQueryStrategyTest {
    @Test
    fun `Discover required type from a service returning child type of required type`() = runBlocking {
       val schema = """
@@ -72,17 +72,9 @@ class HipsterDiscoverGraphQueryStrategyTest {
       )
 
       val result = vyne.query(
-         """
-            find {
-                Input[]
-              } as Output[]
-            """.trimIndent()
-      )
-
-      result.rawResults.test {
-         expectRawMap().should.equal(mapOf("notionalValue" to BigDecimal("100")))
-         awaitComplete()
-      }
+         """find { Input[] } as Output[]""".trimIndent()
+      ).firstRawObject()
+      result.shouldBe(mapOf("notionalValue" to BigDecimal("100")))
    }
 
    @Test

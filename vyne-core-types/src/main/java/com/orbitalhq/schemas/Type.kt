@@ -10,6 +10,7 @@ import com.orbitalhq.models.*
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.ImmutableEquality
+import com.orbitalhq.utils.cached
 import lang.taxi.expressions.Expression
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
@@ -120,6 +121,24 @@ data class Type(
 
    // Interned, so that can be used for equality checks
    val paramaterizedName: String = internedParameterizedNames.intern(name.parameterizedName)
+
+   /**
+    * Returns a set of all types that have been referenced by this type (including this type itself)
+    */
+   @get:JsonIgnore
+   val allReferencedTypes: Set<Type> by lazy(LazyThreadSafetyMode.PUBLICATION) {
+      val set = mutableSetOf<Type>()
+      appendAllReferencedTypes(set)
+      set
+   }
+   private fun appendAllReferencedTypes(set:MutableSet<Type>) {
+      if (set.contains(this)) return
+      set.add(this)
+      set.addAll(this.inheritanceGraph.filter { !it.isPrimitive })
+      this.attributes.values.map {
+         this.typeCache.type(it.type).appendAllReferencedTypes(set)
+      }
+   }
 
 
    // Intentionally excluded from equality:

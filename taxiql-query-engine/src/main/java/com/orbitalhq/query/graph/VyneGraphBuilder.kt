@@ -15,6 +15,7 @@ import com.orbitalhq.utils.StrategyPerformanceProfiler
 import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import lang.taxi.services.OperationScope
+import lang.taxi.types.ObjectType
 import mu.KotlinLogging
 import java.util.*
 import kotlin.time.ExperimentalTime
@@ -135,19 +136,6 @@ fun instanceOfType(type: Type): Element {
 } // Element(value.type.fullyQualifiedName, ElementType.TYPE_INSTANCE, value)
 //fun instance(value: TypedInstance) = providedInstance(value.type.fullyQualifiedName, value) // Element(value.type.fullyQualifiedName, ElementType.TYPE_INSTANCE, value)
 
-typealias TypeElement = Element
-typealias MemberElement = Element
-
-private data class GraphWithFactTypesCacheKey(
-   val facts: Set<Type>,
-   val graphBuilder: HipsterGraphBuilder<Element, Relationship>
-)
-
-private data class GraphWithFactInstancesCacheKey(
-   val facts: Collection<TypedInstance>,
-   val excludedEdges: List<EvaluatableEdge>,
-   val baseGraph: VyneHashBasedHipsterDirectedGraph<Element, Relationship>
-)
 
 /**
  * For readability.

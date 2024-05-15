@@ -1189,8 +1189,8 @@ service Broker1Service {
       val (vyne, _) = testVyne(
          """
          model Input {
-            str: String
-            value : Decimal?
+            str: StringPriceType inherits String
+            value : Price? inherits Decimal
          }
 
          enum PriceType {
@@ -1199,11 +1199,11 @@ service Broker1Service {
          }
 
          model SampleType {
-            price: Decimal?
-            tempPriceType: String?
+            price: Price?
+            tempPriceType: StringPriceType?
             priceType: PriceType? by when {
                 this.price == null -> null
-                this.price != null -> this.tempPriceType
+                this.price != null -> (PriceType) this.tempPriceType
             }
          }
       """.trimIndent()
