@@ -8,7 +8,7 @@ import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.query.caching.StateStoreProvider
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.graph.EdgeNavigator
-import com.orbitalhq.query.graph.HipsterDiscoverGraphQueryStrategy
+import com.orbitalhq.query.graph.GraphSearchQueryStrategy
 import com.orbitalhq.query.graph.edges.ArrayMappingAttributeEvaluator
 import com.orbitalhq.query.graph.edges.AttributeOfEdgeEvaluator
 import com.orbitalhq.query.graph.edges.CanPopulateEdgeEvaluator
@@ -99,7 +99,7 @@ interface QueryEngineFactory {
          val invocationService = operationInvocationService(invokers)
          val opInvocationEvaluator = OperationInvocationEvaluator(invocationService)
          val edgeEvaluator = EdgeNavigator(edgeEvaluators(opInvocationEvaluator))
-         val graphQueryStrategy = HipsterDiscoverGraphQueryStrategy(edgeEvaluator, vyneCacheConfiguration)
+         val graphQueryStrategy = GraphSearchQueryStrategy(edgeEvaluator, vyneCacheConfiguration)
 
          return DefaultQueryEngineFactory(
             strategies = listOf(

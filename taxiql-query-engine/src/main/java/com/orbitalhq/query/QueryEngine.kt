@@ -13,6 +13,7 @@ import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
 import com.orbitalhq.query.graph.operationInvocation.SearchRuntimeException
 import com.orbitalhq.query.projection.ProjectionProvider
 import com.orbitalhq.schemas.*
+import com.orbitalhq.utils.NoStackException
 import com.orbitalhq.utils.StrategyPerformanceProfiler
 import com.orbitalhq.utils.TimeBucketed
 import com.orbitalhq.utils.timeBucketAsync
@@ -31,7 +32,7 @@ open class SearchFailedException(
    val evaluatedPath: List<EvaluatedEdge>,
    val profilerOperation: ProfilerOperation,
    val failedAttempts: List<DataSource>
-) : RuntimeException(message)
+) : NoStackException(message)
 
 class UnresolvedTypeInQueryException(
    message: String,

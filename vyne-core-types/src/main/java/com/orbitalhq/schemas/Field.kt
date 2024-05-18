@@ -44,17 +44,28 @@ data class Field(
       return this.metadata.any { it.name == name }
    }
 
-   private val equality = ImmutableEquality(
-      this,
-      Field::type,
-      Field::modifiers,
-      Field::typeDoc,
-      Field::metadata
-   )
+   private val cachedHashCode: Int = run {
+      var result = type.hashCode()
+      result = 31 * result + modifiers.hashCode()
+      result = 31 * result + typeDoc.hashCode()
+      result = 31 * result + metadata.hashCode()
+      result
+   }
 
-   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
-   override fun hashCode(): Int = equality.hash()
+   override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (other !is Field) return false
+      if (other.cachedHashCode !== this.cachedHashCode) return false
 
+      return type == other.type &&
+         modifiers == other.modifiers &&
+         typeDoc == other.typeDoc &&
+         metadata == other.metadata
+   }
+
+   override fun hashCode(): Int {
+      return cachedHashCode
+   }
 
    fun getMetadata(name: QualifiedName): Metadata {
       return this.metadata.firstOrNull { it.name == name }

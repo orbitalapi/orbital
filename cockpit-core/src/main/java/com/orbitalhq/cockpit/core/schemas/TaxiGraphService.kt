@@ -99,18 +99,6 @@ class TaxiGraphService(
    fun getImmediateDataSources() =
       Algorithms.getImmediatelyDiscoverableTypes(schemaProvider.schema).map { it.fullyQualifiedName }
 
-   @RequestMapping(value = ["/api/paths/datasources"])
-   fun getImmediatePathsFromDataSources(): List<Dataset> {
-      val schema: Schema = schemaProvider.schema
-      return Algorithms.immediateDataSourcePaths(schema)
-   }
-
-   @RequestMapping(value = ["/api/datasources/{typeName}"])
-   fun getImmediatePathsFromDataSourcesForType(@PathVariable("typeName") typeName: String): List<Dataset> {
-      val schema: Schema = schemaProvider.schema
-      return Algorithms.immediateDataSourcePathsFor(schema, typeName)
-   }
-
    @RequestMapping(value = ["/api/types/annotation/{annotation}"])
    fun getTypesWithAnnotation(@PathVariable("annotation") annotation: String): List<String> {
       val schema: Schema = schemaProvider.schema

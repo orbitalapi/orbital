@@ -62,23 +62,28 @@ data class FactSearch(
    private val targetTypeName = targetType.name.parameterizedName
    private val filterPredicateId = filterPredicate.id
    private val refiningPredicateId = refiningPredicate.id
-   private val equality = ImmutableEquality(
-      this,
-      // Name is for display purposes only - not part of the hash, to ensure duplciate definitions get the sam hashcode
-//      FactSearch::name,
-      FactSearch::targetTypeName,
-      FactSearch::strategy,
-      FactSearch::filterPredicateId,
-      FactSearch::refiningPredicateId
-   )
+   private val cachedHashCode: Int = run {
+      var result = targetTypeName.hashCode()
+      result = 31 * result + strategy.hashCode()
+      result = 31 * result + filterPredicateId.hashCode()
+      result = 31 * result + refiningPredicateId.hashCode()
+      result
+   }
 
    override fun equals(other: Any?): Boolean {
-      return equality.isEqualTo(other)
+      if (this === other) return true
+      if (other !is FactSearch) return false
+
+      return targetTypeName == other.targetTypeName &&
+         strategy == other.strategy &&
+         filterPredicateId == other.filterPredicateId &&
+         refiningPredicateId == other.refiningPredicateId
    }
 
    override fun hashCode(): Int {
-      return equality.hash()
+      return cachedHashCode
    }
+
 
    companion object {
       fun defaultTypeMatcher(

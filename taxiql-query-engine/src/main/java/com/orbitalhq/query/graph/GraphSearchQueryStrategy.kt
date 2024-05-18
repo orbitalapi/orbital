@@ -4,7 +4,6 @@ package com.orbitalhq.query.graph
 
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
-import com.google.common.cache.LoadingCache
 import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.TypedInstance
@@ -31,7 +30,6 @@ import es.usc.citius.hipster.model.impl.WeightedNode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.mapNotNull
@@ -70,7 +68,7 @@ private data class StrategyInvocationCacheKey(
    }
 }
 
-class HipsterDiscoverGraphQueryStrategy(
+class GraphSearchQueryStrategy(
    private val edgeEvaluator: EdgeNavigator,
    vyneCacheConfigration: VyneCacheConfiguration
 ) : QueryStrategy {
@@ -94,7 +92,7 @@ class HipsterDiscoverGraphQueryStrategy(
       .build<SearchPathExclusionKey, SearchPathExclusionKey>()
       .asMap()
 
-   private val searchExecutingCacheLoader =
+   private val searchExecutingCacheLoaderx =
       object : CacheLoader<StrategyInvocationCacheKey, Deferred<QueryStrategyResult>>() {
          override fun load(key: StrategyInvocationCacheKey): Deferred<QueryStrategyResult> {
 
@@ -106,16 +104,6 @@ class HipsterDiscoverGraphQueryStrategy(
                   logger.warn { "Attempting a graph search for type ${key.target.type.name.shortDisplayName} however an instance was already present in the provided facts." }
                }
 
-               // MP: 23-Sep-22: We have removed the concept of findOne / findAll, and now only support find.
-               // Having made that change, EsgTest started failing, as the below wasn't being invoked.
-               // Not sure why we didn't use GraphSearch when doing DISCOVER (which related to findOne).
-               //
-               // Have excluded this, as I suspect the check is legacy.
-               // All tests passed after I did that, but...well... I'm worried.
-               // If stuff starts breaking, this could be the cause.
-//      if (firstTarget.mode != QueryMode.DISCOVER) {
-//         return QueryStrategyResult.searchFailed()
-//      }
                val context = key.context
                if (context.facts.isEmpty()) {
                   logger.debug { "[${context.queryId}] Cannot perform a graph search, as no facts provided to serve as starting point. " }
@@ -130,11 +118,11 @@ class HipsterDiscoverGraphQueryStrategy(
          }
       }
 
-   private val invocationCache: LoadingCache<StrategyInvocationCacheKey, Deferred<QueryStrategyResult>> = CacheBuilder
-      .newBuilder()
-      .maximumSize(vyneCacheConfigration.vyneDiscoverGraphQuery.invocationCacheSize)
-      .weakKeys()
-      .build(searchExecutingCacheLoader)
+//   private val invocationCache: LoadingCache<StrategyInvocationCacheKey, Deferred<QueryStrategyResult>> = CacheBuilder
+//      .newBuilder()
+//      .maximumSize(vyneCacheConfigration.vyneDiscoverGraphQuery.invocationCacheSize)
+//      .weakKeys()
+//      .build(searchExecutingCacheLoader)
 
    override suspend fun invoke(
       target: Set<QuerySpecTypeNode>,
@@ -144,25 +132,43 @@ class HipsterDiscoverGraphQueryStrategy(
       if (target.size != 1) TODO("Support for target sets not yet built")
       val firstTarget = target.first()
 
-      val cacheKey = StrategyInvocationCacheKey(
-         context = context,
-         target = firstTarget,
-         invocationConstraints,
-         CoroutineScope(currentCoroutineContext())
-      )
+      // MP: 14-May-23: This used to call to an invocationCache with the below cache key.
+      // However, this resulted in a cache miss every time, so removing to try to simplify the call flow here,
+      // which is on the hot path and has high CPU issues.
+//      val cacheKey = StrategyInvocationCacheKey(
+//         context = context,
+//         target = firstTarget,
+//         invocationConstraints,
+//         CoroutineScope(currentCoroutineContext())
+//      )
+      val facts = context.rootAndScopedFacts()
+      logger.debug { "Invoking search for type ${firstTarget.type.qualifiedName.shortDisplayName} with ${facts.size} provided facts: ${facts.joinToString { it.type.qualifiedName.shortDisplayName }}" }
 
-      return invocationCache.get(cacheKey).await()
-      /*
-      if (context.rootAndScopedFacts().isEmpty()) {
+      val existingFacts = facts.filter { it.type == firstTarget.type }
+      if (existingFacts.isNotEmpty()) {
+         logger.warn { "Attempting a graph search for type ${firstTarget.type.name.shortDisplayName} however an instance was already present in the provided facts." }
+      }
+
+      if (context.facts.isEmpty()) {
          logger.debug { "[${context.queryId}] Cannot perform a graph search, as no facts provided to serve as starting point. " }
          return QueryStrategyResult.searchFailed()
       }
 
       val targetElement = type(firstTarget.type)
 
+      // Don't bother searching for a type, if the type isn't resolvable from a service.
+      // This is specifically intended to prevent searching for projection types.
+      // If we skip the search for the projection type, we'll then move into the individual fields, which
+      // are discoverable.
+      val allTypesFindableFromServices = context.schema.services.flatMap { it.remoteOperations }
+         .flatMap { it.returnType.allReferencedTypes }
+         .toSet()
+      if (!allTypesFindableFromServices.contains(firstTarget.type)) {
+         return QueryStrategyResult.searchFailed()
+      }
+
       // search from every fact in the context
       return find(targetElement, context, invocationConstraints)
-       */
    }
 
 
@@ -172,12 +178,12 @@ class HipsterDiscoverGraphQueryStrategy(
       invocationConstraints: InvocationConstraints
    ): QueryStrategyResult {
       val failedAttempts = mutableListOf<DataSource>()
-      val returnValue = context.rootAndScopedFacts()
+      val rootScopedFacts = context.rootAndScopedFacts()
+      val returnValue = rootScopedFacts
          .asFlow()
-
-         //    .filter { it is TypedObject }
          .mapNotNull { fact ->
-            val startFact = providedInstance(fact)
+            val factIndex = rootScopedFacts.indexOf(fact)
+            val startFact = providedStartFact(fact.type, factIndex)
             val targetType = targetElement.instanceValue as? Type? ?: context.schema.type(targetElement.value as String)
             // Excluding paths is done by the type, not the fact.
             // Graph searches work based off of links from types, therefore
@@ -201,16 +207,13 @@ class HipsterDiscoverGraphQueryStrategy(
                context.rootAndScopedFacts(),
                context.excludedServices.toSet(),
                invocationConstraints.excludedOperations.plus(context.excludedOperations.map {
-                  SearchGraphExclusion(
-                     "@Id",
-                     it
-                  )
+                  SearchGraphExclusion("@Id", it)
                }),
                context.queryId
             )
             { pathToEvaluate ->
                searchProvidedAtLeastOnePath = true
-               val evaluations = evaluatePath(pathToEvaluate, context, startFact)
+               val evaluations = evaluatePath(pathToEvaluate, context, startFact, fact)
                evaluatedPathTempMap.addAll(evaluations)
                evaluations
             }
@@ -267,12 +270,13 @@ class HipsterDiscoverGraphQueryStrategy(
    private suspend fun evaluatePath(
       searchResult: WeightedNode<Relationship, Element, Double>,
       queryContext: QueryContext,
-      startFact: Element
+      startFact: Element,
+      startFactValue: TypedInstance
    ): List<PathEvaluation> {
       // The actual result of this isn't directly used.  But the queryContext is updated with
       // nodes as they're discovered (eg., through service invocation)
       val evaluatedEdges = mutableListOf<PathEvaluation>(
-         getStartingEdge(startFact)
+         getStartingEdge(startFact, startFactValue)
       )
 
       val path = searchResult.path()
@@ -318,9 +322,10 @@ class HipsterDiscoverGraphQueryStrategy(
    }
 
    private fun getStartingEdge(
-      startFact: Element
+      startFact: Element,
+      startFactValue: TypedInstance
    ): StartingEdge {
-      return StartingEdge(startFact.instanceValue as TypedInstance, startFact)
+      return StartingEdge(startFactValue, startFact)
    }
 }
 

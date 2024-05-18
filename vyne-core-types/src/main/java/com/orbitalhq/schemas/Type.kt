@@ -10,6 +10,7 @@ import com.orbitalhq.models.*
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.ImmutableEquality
+import com.orbitalhq.utils.cached
 import lang.taxi.expressions.Expression
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
@@ -121,20 +122,39 @@ data class Type(
    // Interned, so that can be used for equality checks
    val paramaterizedName: String = internedParameterizedNames.intern(name.parameterizedName)
 
+   /**
+    * Returns a set of all types that have been referenced by this type (including this type itself)
+    */
+   @get:JsonIgnore
+   val allReferencedTypes: Set<Type> by lazy(LazyThreadSafetyMode.PUBLICATION) {
+      val set = mutableSetOf<Type>()
+      appendAllReferencedTypes(set)
+      set
+   }
+   private fun appendAllReferencedTypes(set:MutableSet<Type>) {
+      if (set.contains(this)) return
+      set.add(this)
+      set.addAll(this.inheritanceGraph.filter { !it.isPrimitive })
+      this.attributes.values.map {
+         this.typeCache.type(it.type).appendAllReferencedTypes(set)
+      }
+   }
 
-   // Intentionally excluded from equality:
-   // taxiType - the antlr classes make equailty hard, and not meaningful in this context
-   // typeCache - screws with equality, and not meaningful
-   private val equality = ImmutableEquality(
-      this,
-      Type::paramaterizedName,
-      // Below tanked performance.  Call isDefinedSameAs() instead
-      // 11-Aug-22: Added attributes and docs as needed for diffing.
-      // However, if this trashes performance, we can revert,and we'll find another way.
-//      Type::attributes,
-//      Type::typeDoc
-   )
 
+   private val cachedHashCode: Int = run {
+      paramaterizedName.hashCode()
+   }
+
+   override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (other !is Type) return false
+
+      return paramaterizedName == other.paramaterizedName
+   }
+
+   override fun hashCode(): Int {
+      return cachedHashCode
+   }
    /**
     * Returns the anonymous types present on the attributes of this type, including
     * any nested anoymous types present on fields
@@ -167,19 +187,6 @@ data class Type(
    override fun isDefinedSameAs(other: Type): Boolean {
       return this.name == other.name && this.attributes == other.attributes && this.typeDoc == other.typeDoc
    }
-
-   override fun equals(other: Any?): Boolean {
-      // Don't call equality.equals() here, as it's too slow.
-      // We need a fast, non-reflection based implementation.
-      // Bascially, two types are equal if their parameterizedName (which has been interned)
-      // are the same
-      if (this === other) return true
-      if (other == null) return false
-      if (this.javaClass !== other.javaClass) return false
-      return this.paramaterizedName === (other as Type).paramaterizedName
-   }
-
-   override fun hashCode(): Int = equality.hash()
 
    private val resolvedAlias: Type
 
