@@ -49,8 +49,7 @@ tui-badge {
     height: 1.2rem;
   }
 
-  border-bottom: 1px solid $slate-300;
-  padding: 0.5rem 0.5rem 0.5rem 2rem;
+  padding: 0.2rem 0.5rem;
 
   &:hover {
     background-color: $slate-100;
@@ -63,6 +62,10 @@ tui-badge {
     overflow: hidden;
     text-overflow: ellipsis;
     margin: 0 1rem;
+  }
+  .message-position {
+    text-wrap: nowrap;
+    opacity: 0.6;
   }
 }
 

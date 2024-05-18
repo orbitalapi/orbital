@@ -21,7 +21,7 @@ import {isNullOrUndefined} from "./utils/utils";
               <div class="error-row" *ngFor="let compilationMessage of messageGroup.messages" (click)="messageClicked.emit(compilationMessage)">
                 <img [attr.src]="getSeverityIcon(compilationMessage.severity)" class="filter-error-light">
                 <div class="message-line">{{ compilationMessage.detailMessage }}</div>
-                <div>[Ln {{ compilationMessage.line }}, Col {{ compilationMessage.char }}]</div>
+                <div class="message-position">[Ln {{ compilationMessage.line }}, Col {{ compilationMessage.char }}]</div>
               </div>
             </div>
           </tui-accordion-item>

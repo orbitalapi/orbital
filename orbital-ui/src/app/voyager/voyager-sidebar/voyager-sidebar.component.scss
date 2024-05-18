@@ -1,0 +1,49 @@
+@import "src/common";
+
+$border-width: 3px;
+:host {
+  background-color: $slate-800;
+  //height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+a {
+  padding: 0 0.5rem;
+}
+
+mat-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0.25rem;
+}
+
+.icon-toggle-button {
+  background-color: transparent;
+  border: none;
+  margin: 0;
+  padding: 2px 0.5rem;
+  cursor: pointer;
+  display: flex;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  border-left: $border-width solid transparent;
+  &.active {
+    border-left: $border-width solid $sky-500;
+  }
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+.left {
+}
+
+mat-icon {
+  color: white;
+}
+

@@ -565,7 +565,7 @@ class StatefulQueryEngine(
    ): QueryResult {
       val queryStartTime = Instant.now()
       val isStreamingQuery = target.type.isStream
-      if (target.type.isPrimitive) {
+      if (target.type.isPrimitive && target.expression != null) {
          logger.warn { "A search was started for a primitive type (${target.type.qualifiedName.shortDisplayName} - this is almost certainly a bug" }
       }
       logger.debug { "Initiating find for ${target.description}" }

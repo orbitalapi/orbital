@@ -1,0 +1,12 @@
+import {StubQueryMessageWithSlug} from "../../app/services/query.service";
+
+export const simpleQuery:StubQueryMessageWithSlug = {
+  title: 'Hello, world query',
+  slug: 'hello-world-query',
+  query: {
+    schema: '',
+    query: 'find { 1 + 2 }',
+    stubs: [],
+    parameters: {}
+  }
+}

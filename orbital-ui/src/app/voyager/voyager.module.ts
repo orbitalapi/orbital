@@ -1,6 +1,6 @@
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {VoyagerToolbarComponent} from 'src/app/voyager/toolbar/voyager-toolbar.component';
+import {PlaygroundToolbarComponent} from 'src/app/voyager/toolbar/playground-toolbar.component';
 import {MatIconModule, MatIconRegistry} from '@angular/material/icon';
 import {DomSanitizer} from '@angular/platform-browser';
 import {MatLegacyButtonModule as MatButtonModule} from '@angular/material/legacy-button';
@@ -16,39 +16,42 @@ import {
 import {
   TuiButtonModule,
   TuiDialogModule,
-  TuiHintModule,
+  TuiHintModule, TuiHostedDropdownModule,
   TuiLinkModule,
   TuiTextfieldControllerModule
 } from '@taiga-ui/core';
 import {ShareDialogComponent} from './share-dialog/share-dialog.component';
+import {RouterLink} from "@angular/router";
 
 
 @NgModule({
     declarations: [
-        VoyagerToolbarComponent,
+        PlaygroundToolbarComponent,
         SubscribeDialogComponent,
         ShareDialogComponent
     ],
     exports: [
-        VoyagerToolbarComponent
+        PlaygroundToolbarComponent
     ],
-    imports: [
-        CommonModule,
-        MatIconModule,
-        MatButtonModule,
-        TuiDialogModule,
-        TuiInputModule,
-        ReactiveFormsModule,
-        TuiSelectModule,
-        TuiButtonModule,
-        TuiTextfieldControllerModule,
-        TuiDataListWrapperModule,
-        TuiCheckboxLabeledModule,
-        TuiHintModule,
-        TuiLinkModule,
-        FormsModule,
-        TuiInputCopyModule
-    ]
+  imports: [
+    CommonModule,
+    MatIconModule,
+    MatButtonModule,
+    TuiDialogModule,
+    TuiInputModule,
+    ReactiveFormsModule,
+    TuiSelectModule,
+    TuiButtonModule,
+    TuiTextfieldControllerModule,
+    TuiDataListWrapperModule,
+    TuiCheckboxLabeledModule,
+    TuiHintModule,
+    TuiLinkModule,
+    FormsModule,
+    TuiInputCopyModule,
+    TuiHostedDropdownModule,
+    RouterLink,
+  ]
 })
 export class VoyagerModule {
 
@@ -62,16 +65,24 @@ export class VoyagerModule {
       this.domSanitizer.bypassSecurityTrustResourceUrl(`../../assets/img/slack.svg`)
     );
     this.matIconRegistry.addSvgIcon(
-      `vyneDots`,
-      this.domSanitizer.bypassSecurityTrustResourceUrl(`../../assets/img/vyne-logo-dots.svg`)
-    );
-    this.matIconRegistry.addSvgIcon(
       `orbital`,
       this.domSanitizer.bypassSecurityTrustResourceUrl(`../../assets/img/orbital_logo_white.svg`)
     );
     this.matIconRegistry.addSvgIcon(
       `share`,
       this.domSanitizer.bypassSecurityTrustResourceUrl(`../../assets/img/tabler/share.svg`)
+    );
+    this.matIconRegistry.addSvgIcon(
+      `route-square-2`,
+      this.domSanitizer.bypassSecurityTrustResourceUrl(`../../assets/img/tabler/route-square-2.svg`)
+    );
+    this.matIconRegistry.addSvgIcon(
+      `file-search`,
+      this.domSanitizer.bypassSecurityTrustResourceUrl(`../../assets/img/tabler/file-search.svg`)
+    );
+    this.matIconRegistry.addSvgIcon(
+      `trash`,
+      this.domSanitizer.bypassSecurityTrustResourceUrl(`../../assets/img/tabler/trash.svg`)
     );
   }
 }

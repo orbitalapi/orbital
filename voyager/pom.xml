@@ -44,6 +44,11 @@
          <groupId>software.amazon.awssdk</groupId>
          <artifactId>regions</artifactId>
       </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>taxi-playground-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
 
       <dependency>
          <groupId>org.taxilang</groupId>
@@ -58,6 +63,11 @@
       <dependency>
          <groupId>org.postgresql</groupId>
          <artifactId>postgresql</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>taxi-playground-core</artifactId>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>org.flywaydb</groupId>

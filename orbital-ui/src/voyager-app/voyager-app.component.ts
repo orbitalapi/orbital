@@ -1,38 +1,64 @@
-import {ChangeDetectionStrategy, Component, Inject, Injector} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Injector} from '@angular/core';
 import {ParsedSchema, VoyagerService} from 'src/voyager-app/voyager.service';
-import {debounceTime, filter, map, mergeMap, shareReplay, switchMap, take} from 'rxjs/operators';
+import {catchError, debounceTime, filter, map, mergeMap, shareReplay, switchMap, take, tap} from 'rxjs/operators';
 import {emptySchema, Schema} from 'src/app/services/schema';
 import {Observable, of, ReplaySubject} from 'rxjs';
-import {CodeSample, CodeSamples} from 'src/voyager-app/code-examples';
-import {TuiDialogService} from '@taiga-ui/core';
+import {ExampleGroups, StubExamples} from 'src/voyager-app/code-examples';
+import {TuiAlertService, TuiDialogService} from '@taiga-ui/core';
 import {ShareDialogComponent} from 'src/app/voyager/share-dialog/share-dialog.component';
 import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
 import {ActivatedRoute, Params} from '@angular/router';
+import {StubQueryMessage, StubQueryMessageWithSlug} from "../app/services/query.service";
+import {isNullOrUndefined} from "../app/utils/utils";
 
 @Component({
   selector: 'voyager-app',
   template: `
     <div class="app-container">
-      <playground-toolbar (selectedExampleChange)="setCodeFromExample($event)"
-                          (generateShareUrl)="showShareDialog()"></playground-toolbar>
+      <playground-toolbar (selectedExampleChange)="setCodeFromExample($event.query)"
+                          (generateShareUrl)="showShareDialog()"
+                          (clear)="clear()"
+      ></playground-toolbar>
       <div class="container">
-        <as-split direction="horizontal" unit="percent">
-          <as-split-area [size]="35">
-            <app-code-editor
-              [content]="content"
-              wordWrap="on"
-              (contentChange)="codeUpdated$.next($event)">
-            </app-code-editor>
+        <app-voyager-sidebar [(showDiagram)]="showDiagram" [(showQueryPanel)]="showQueryPanel"/>
+        <as-split direction="horizontal" unit="percent" gutterSize="1">
+          <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
+            <div class="thin-splitter-gutter-icon"></div>
+          </div>
+          <as-split-area [size]="35" [order]="0">
+            <div class="panel-with-header">
+              <app-panel-header title="Schema"></app-panel-header>
+              <as-split direction="vertical" unit="pixel">
+                <as-split-area size="*">
+                  <app-code-editor
+                    class="flex-grow"
+                    [content]="content"
+                    wordWrap="on"
+                    (contentChange)="codeUpdated$.next($event)">
+                  </app-code-editor>
+                </as-split-area>
+                <as-split-area [size]="200" *ngIf="(parsedSchema$ | async)?.hasErrors">
+                  <app-compilation-message-list [compilationMessages]="(parsedSchema$ | async).messages"></app-compilation-message-list>
+                </as-split-area>
+              </as-split>
+            </div>
           </as-split-area>
-          <as-split-area>
-            <app-schema-diagram
-              [class.mat-elevation-z8]="fullscreen"
-              [class.fullscreen]="fullscreen"
-              [schema$]="schema$"
-              displayedMembers="everything"
-              (fullscreenChange)="onFullscreenChange()">
-
-            </app-schema-diagram>
+          <as-split-area *ngIf="showQueryPanel" [order]="1">
+            <app-playground-query-panel [schema]="schema$ | async" [schemaSrc]="content"
+                                        [query]="queryMessage"></app-playground-query-panel>
+          </as-split-area>
+          <as-split-area *ngIf="showDiagram" [order]="2">
+            <div class="panel-with-header">
+              <app-panel-header title="Diagram"></app-panel-header>
+              <app-schema-diagram
+                class="flex-grow"
+                [class.mat-elevation-z8]="fullscreen"
+                [class.fullscreen]="fullscreen"
+                [schema$]="schema$"
+                displayedMembers="everything"
+                (fullscreenChange)="onFullscreenChange()">
+              </app-schema-diagram>
+            </div>
           </as-split-area>
         </as-split>
       </div>
@@ -43,9 +69,15 @@ import {ActivatedRoute, Params} from '@angular/router';
 })
 export class VoyagerAppComponent {
 
+  showDiagram: boolean = true;
+  showQueryPanel: boolean = true;
+
+  queryMessage: StubQueryMessage;
+
   codeUpdated$ = new ReplaySubject<string>(1)
 
   schema$: Observable<Schema>;
+  parsedSchema$: Observable<ParsedSchema>
 
   fullscreen = false;
 
@@ -54,14 +86,35 @@ export class VoyagerAppComponent {
   constructor(private service: VoyagerService,
               @Inject(TuiDialogService) private readonly dialogService: TuiDialogService,
               @Inject(Injector) private readonly injector: Injector,
-              private readonly activatedRoute: ActivatedRoute
+              private readonly activatedRoute: ActivatedRoute,
+              private readonly changeDetectorRef: ChangeDetectorRef,
+              private readonly alertsService: TuiAlertService
   ) {
-    this.schema$ = this.codeUpdated$
+    this.parsedSchema$ = this.codeUpdated$
       .pipe(
         debounceTime(250),
+        tap(value => {
+          this.content = value;
+          this.changeDetectorRef.markForCheck();
+        }),
         switchMap((source: string) => {
           if (source && source.length > 0) {
             return this.service.parse(source)
+              .pipe(
+                catchError((error) => {
+                  console.error('Error parsing source: ', error);
+                  this.alertsService.open('The compiler threw an exception compiling your source - this shouldn\'t happen)',
+                    {
+                      status: "error",
+                      label: 'Something went wrong'
+                    }).subscribe()
+                  return of({
+                    hasErrors: true,
+                    messages: [error],
+                    schema: emptySchema()
+                  })
+                })
+              )
           } else {
             return of({
               hasErrors: false,
@@ -69,30 +122,44 @@ export class VoyagerAppComponent {
               schema: emptySchema()
             } as ParsedSchema)
           }
-
         }),
+        // Sharing is caring.  If we don't do this, then we end up with
+        // a service call for every subscriber. :(
+        shareReplay(1)
+      );
+
+    this.schema$ = this.parsedSchema$
+      .pipe(
         filter(parseResult => {
           return !parseResult.hasErrors;
         }),
         map(parseResult => {
           return parseResult.schema;
         }),
-        // Sharing is caring.  If we don't do this, then we end up with
-        // a service call for every subscriber. :(
-        shareReplay(1)
       );
-    this.setCodeFromExample(CodeSamples[0]);
+    this.setCodeFromExample(StubExamples[0].query);
 
     this.activatedRoute.params
       .pipe(
-        filter(params => params['shareSlug'] !== undefined),
+        filter(params => params['shareSlug'] !== undefined || params['exampleSlug'] !== undefined),
         mergeMap((params: Params) => {
-          return this.service.loadSharedSchema(params['shareSlug'])
+          const shareSlug = params['shareSlug'];
+          const exampleSlug = params['exampleSlug'];
+
+          if (shareSlug) {
+            return this.service.loadSharedSchema(params['shareSlug'])
+          } else {
+            const query = ExampleGroups.flatMap(group => group.snippets)
+              .find(example => example.slug === exampleSlug)
+              .query
+            return of(query);
+          }
+
         })
       )
-      .subscribe(code => {
-        this.setCode(code)
-      })
+      .subscribe(stubQueryMessage => {
+        this.setCodeFromExample(stubQueryMessage)
+      });
   }
 
 
@@ -100,8 +167,19 @@ export class VoyagerAppComponent {
     this.fullscreen = !this.fullscreen;
   }
 
-  setCodeFromExample(codeSample: CodeSample) {
-    this.setCode(codeSample.code)
+  setCodeFromExample(queryMessage: StubQueryMessage) {
+    this.queryMessage = queryMessage;
+    this.setCode(queryMessage.schema)
+    this.showQueryPanel = !isNullOrUndefined(queryMessage.query) && queryMessage.query.length > 0;
+  }
+
+  clear() {
+    this.setCodeFromExample({
+      schema: '',
+      query: '',
+      parameters: {},
+      stubs: []
+    })
   }
 
   setCode(code: string) {

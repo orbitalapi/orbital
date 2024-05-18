@@ -32,7 +32,7 @@ export class CodeEditorComponent implements OnDestroy {
   private languageClient: MonacoLanguageClient;
   private monacoEditor: IStandaloneCodeEditor;
   private monacoModel: ITextFileEditorModel;
-  private webSocket: WebSocket;
+  // private webSocket: WebSocket;
 
   private _codeEditorContainer: ElementRef;
   @ViewChild('codeEditorContainer')
@@ -152,11 +152,11 @@ export class CodeEditorComponent implements OnDestroy {
       takeUntilDestroyed()
     ).subscribe(async(e) => {
       this.updateContent(this.monacoModel.textEditorModel.getValue());
-      if (this.webSocket.readyState != this.webSocket.OPEN && this.languageServerEnabled) {
+      // if (this.webSocket.readyState != this.webSocket.OPEN && this.languageServerEnabled) {
         console.log("Refresh websocket connection for language server");
-        await this.createWebsocketAndTransport();
+        // await this.createWebsocketAndTransport();
         await this.sendOpenNotifcation();
-      }
+      // }
     })
   }
 
@@ -166,7 +166,7 @@ export class CodeEditorComponent implements OnDestroy {
     try {
       this.monacoModel.dispose()
       this.monacoEditor.dispose();
-      await this.languageClient.dispose();
+      // await this.languageClient.dispose();
     } catch (error) {
       // Best as I can tell, the error that's occurring here is innocuous
       // and the languageClient has finished shutting down correctly
@@ -175,9 +175,9 @@ export class CodeEditorComponent implements OnDestroy {
   }
 
   private async createWebsocketAndTransport() {
-    const [websocket, wsTransport] = await this.languageServerService.createLanguageServerWebsocketTransport()
-    this.webSocket = websocket;
-    this.languageClient = createLanguageClient(wsTransport);
+    // const [websocket, wsTransport] = await this.languageServerService.createLanguageServerWebsocketTransport()
+    // this.webSocket = websocket;
+    this.languageClient = await this.languageServerService.getLanguageClient();
 
     /*// For testing websocket reconnection
     // @ts-ignore

@@ -1,0 +1,17 @@
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+.code-editor {
+  width: 70vw;
+  height: 50vh;
+  margin: 1rem 0;
+}
+.row {
+  display: flex;
+  .spacer {
+    flex-grow: 1;
+  }
+}
+

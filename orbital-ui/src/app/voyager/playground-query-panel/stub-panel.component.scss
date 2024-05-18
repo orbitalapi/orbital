@@ -1,0 +1,64 @@
+@import "src/common";
+
+:host {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 0;
+  gap: 1rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+table {
+  th, td {
+   &.no-rhs-border {
+     border-right: none;
+   }
+  }
+  // taiga seems to be setting border-collapse: seperate
+  // on the dom. not sure why.
+  border-collapse: collapse !important;
+
+  td {
+    &:hover {
+      background-color: $slate-100;
+    }
+  }
+
+  margin-bottom: 1rem;
+  .response-cell {
+    transition: background-color ease-in-out 150ms;
+    font-family: $mono;
+    font-size: 0.8rem;
+    color: $slate-500;
+
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 200px;
+    white-space: nowrap;
+
+    &:hover {
+      cursor: pointer;
+    }
+  }
+  .button-cell {
+    width: 1rem;
+    &:hover {
+      background-color: transparent;
+    }
+    button.t-wrapper {
+      opacity: 0.7;
+      &:hover {
+        opacity: 0.9;
+      }
+    }
+  }
+}

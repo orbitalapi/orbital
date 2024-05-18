@@ -1,0 +1,55 @@
+<a [routerLink]="['/']" class="title">
+  Taxi Playground
+</a>
+
+<tui-hosted-dropdown
+  [content]="dropdown"
+  [(open)]="examplesOpen"
+  tuiDropdownAlign="left"
+>
+  <button
+    class="dropdown-host"
+    tuiButton
+    type="button"
+    size="s"
+    appearance="flat"
+    [iconRight]="arrow"
+  >
+    <span class="label">Examples</span>
+  </button>
+</tui-hosted-dropdown>
+<button class="header-icon-button header-icon-spacer "
+        (click)="generateShareUrl.emit()">
+  <mat-icon svgIcon="share"></mat-icon>
+</button>
+
+<div class="divider"></div>
+
+<button class="header-icon-button header-icon-spacer "
+        (click)="showClearConfirmation()">
+  <mat-icon svgIcon="trash"></mat-icon>
+</button>
+
+<ng-template #dropdown>
+  <div class="examples-wrapper">
+    <div *ngFor="let group of examples" class="group">
+      <h3>{{ group.title }}</h3>
+      <div class="examples-list">
+        <ul>
+          <li *ngFor="let snippet of group.snippets">
+            <a class="" [routerLink]="['/examples', snippet.slug]" (click)="examplesOpen = false">{{ snippet.title }}</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</ng-template>
+<div class="spacer"></div>
+
+<a class="built-by-orbital" tuiLink (click)="openNewSite($event, 'https://orbitalhq.com')" href="https://orbitalhq.com">
+  <div class="wrapper">
+    <span>Built by</span>
+    <mat-icon svgIcon="orbital"></mat-icon>
+  </div>
+</a>

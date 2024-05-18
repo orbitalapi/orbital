@@ -1,6 +1,6 @@
 import {Inject, Injectable} from "@angular/core";
 import {LANGUAGE_SERVER_WS_ADDRESS_TOKEN} from "./language-server.tokens";
-import {initServices} from "monaco-languageclient";
+import {initServices, MonacoLanguageClient} from "monaco-languageclient";
 import {defer, Observable} from "rxjs";
 import {map, shareReplay} from "rxjs/operators";
 import {Uri, languages} from "monaco-editor";
@@ -9,28 +9,50 @@ import getKeybindingsServiceOverride from '@codingame/monaco-vscode-keybindings-
 import getThemeServiceOverride from '@codingame/monaco-vscode-theme-service-override';
 import getTextmateServiceOverride from '@codingame/monaco-vscode-textmate-service-override';
 import {TAXI_LANGUAGE_ID, taxiLanguageConfiguration, taxiLanguageTokenProvider} from "../code-viewer/taxi-lang.monaco";
-import {createWebsocketConnection, performInit, WsTransport} from "./language-server-commons";
+import {createLanguageClient, createWebsocketConnection, performInit, WsTransport} from "./language-server-commons";
 
 @Injectable({
-    providedIn: 'root',
+  providedIn: 'root',
 })
 export class MonacoLanguageServerService {
 
-    readonly languageServicesInit$: Observable<void>
+  readonly languageServicesInit$: Observable<void>
 
-    //
-    constructor(@Inject(LANGUAGE_SERVER_WS_ADDRESS_TOKEN) private languageServerWsAddress: string,) {
+  private languageClient: MonacoLanguageClient;
+  private webSocket: WebSocket;
 
-        this.languageServicesInit$ = defer(() => {
-            // Copied from https://github.com/TypeFox/monaco-languageclient-ng-example/blob/main/src/app/app.component.ts
-            console.info('Initializing Monaco language client')
-            return performInit(true);
-        }).pipe(
-            shareReplay(1)
-        );
+  //
+  constructor(@Inject(LANGUAGE_SERVER_WS_ADDRESS_TOKEN) private languageServerWsAddress: string,) {
+
+    this.languageServicesInit$ = defer(() => {
+      // Copied from https://github.com/TypeFox/monaco-languageclient-ng-example/blob/main/src/app/app.component.ts
+      console.info('Initializing Monaco language client')
+      return performInit(true);
+    }).pipe(
+      shareReplay(1)
+    );
+  }
+
+  private connection: Promise<[WebSocket, WsTransport]> | null = null;
+
+  async createLanguageServerWebsocketTransport(): Promise<[WebSocket, WsTransport]> {
+    // Re-use the connection. This is important as if there's multiple
+    // editors in the page, they all need to be part of the same session.
+    // In future, we may want to make this an observable that cleans up when
+    // all subscribers have gone away, and handles reconnects.
+    if (!this.connection) {
+      this.connection = createWebsocketConnection(this.languageServerWsAddress);
     }
+    return this.connection;
+  }
 
-    async createLanguageServerWebsocketTransport(): Promise<[WebSocket,WsTransport]> {
-        return createWebsocketConnection(this.languageServerWsAddress)
+  async getLanguageClient(): Promise<MonacoLanguageClient> {
+    if (!this.languageClient) {
+      console.log('Creating new language client')
+      const [websocket, wsTransport] = await this.createLanguageServerWebsocketTransport()
+      this.webSocket = websocket;
+      this.languageClient = createLanguageClient(wsTransport);
     }
+    return this.languageClient;
+  }
 }

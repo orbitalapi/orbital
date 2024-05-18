@@ -1,0 +1,47 @@
+@import "src/common";
+@import "src/as-split";
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+app-code-editor {
+  height: 100%;
+}
+.result-panel {
+  height: 100%;
+}
+app-query-config-panel {
+  transition: height 150ms ease-in-out;
+  &.expanded {
+    height: 250px;
+  }
+  height: 49px;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.result-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  app-json-viewer {
+    flex-grow: 1;
+    height: 100%;
+  }
+  .empty-results {
+    height: 100%;
+    flex-grow: 1;
+    // For consistency, set to the colour of the editor background
+    background-color: $vscode-theme-code-background;
+  }
+}
+
+@include thin-splitter();
+
+.empty-results {
+  background-color: $slate-200;
+  padding: 1rem;
+}

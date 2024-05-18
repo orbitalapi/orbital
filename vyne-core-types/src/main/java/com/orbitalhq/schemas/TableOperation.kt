@@ -28,7 +28,6 @@ data class TableOperation private constructor(
    // around query operations.
    // To keep interoperability simple, we unwrap the table operation
    // to multiple query operations
-   @get:JsonIgnore
    val queryOperations: List<QueryOperation>
 ) : PartialOperation, MetadataTarget, SchemaMember, RemoteOperation {
    override val parameters: List<Parameter> = emptyList()

@@ -43,7 +43,7 @@ class DefaultOperationInvocationService(
       providedParamValues: List<Pair<Parameter, TypedInstance>>
    ): Flow<TypedInstance> {
       val invoker = invokers.firstOrNull { it.canSupport(service, operation) }
-         ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
+         ?: throw NoInvokersFoundException("No invokers found for Operation ${operation.name}")
 
       val paramStart = Instant.now()
       val parameters = try {
@@ -313,3 +313,4 @@ class UnresolvedOperationParametersException(
 ) : SearchFailedException(message, evaluatedPath, operation, failedAttempts)
 
 
+class NoInvokersFoundException(message: String) : RuntimeException(message)

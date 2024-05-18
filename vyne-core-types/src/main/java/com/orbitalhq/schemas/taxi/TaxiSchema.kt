@@ -89,7 +89,7 @@ class TaxiSchema(
       logger.debug { "Parsing TaxiSchema took ${stopwatch.elapsed().toMillis()}ms" }
    }
 
-   val hash = (services + types).hashCode()
+   val hash = (document.services + document.types).hashCode()
 
 
    @get:JsonIgnore

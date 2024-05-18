@@ -1,4 +1,4 @@
-import { findSchemaMember, Schema, SchemaMemberKind, ServiceMember, Type } from '../../services/schema';
+import {findSchemaMember, Schema, SchemaMember, SchemaMemberKind, ServiceMember, Type} from '../../services/schema';
 import { Edge, EdgeMarkerType, MarkerType, Node, XYPosition } from 'reactflow';
 import {
   buildSchemaNode, collectAllLinks,
@@ -63,7 +63,17 @@ export class SchemaChartController {
     const builtNodesById = new Map<string, Node<MemberWithLinks>>();
 
     this.requiredMembers.map(member => {
-      const schemaMember = findSchemaMember(this.schema, member);
+      let schemaMember:SchemaMember;
+      try {
+        schemaMember = findSchemaMember(this.schema, member);
+      } catch (e) {
+        // Catch errors that can occur when we get an update event, but the schema isn't up to date.
+        // Don't throw it - this lets the loop continue, and we'll get an up-to-date schema eventually
+        console.log(`Cannot build chart, as requested type ${member} is not present in the schema`);
+        // Filter these out below
+        return null;
+      }
+
       const nodeId = getNodeId(schemaMember.kind, schemaMember.name);
       const existingPosition = this.currentNodesById.get(nodeId)?.position;
       return buildSchemaNode(
@@ -75,7 +85,9 @@ export class SchemaChartController {
         existingPosition,
         buildOptions.isNavigable,
       );
-    }).forEach(node => builtNodesById.set(node.id, node));
+    })
+      .filter(node => node !== null)
+      .forEach(node => builtNodesById.set(node.id, node));
 
     const builtEdgedById = new Map<string, Edge>();
     this.currentEdges
