@@ -43,11 +43,6 @@ enum class ElementType {
 
    // Only used for constructing display graphs
    SERVICE;
-
-   override fun toString(): String {
-      return super.toString().lowercase(Locale.getDefault())
-         .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-   }
 }
 
 @Deprecated("Do we still need this?")

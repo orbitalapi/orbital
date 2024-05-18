@@ -1,5 +1,6 @@
 package com.orbitalhq.utils
 
+import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap
 import org.eclipse.collections.impl.map.mutable.UnifiedMap
 
 class Cached<T>(private val factory: () -> T) {
@@ -21,7 +22,7 @@ class Cached<T>(private val factory: () -> T) {
 fun <T> cached(factory: () -> T): Cached<T> = Cached(factory)
 
 class KeyCached<K, V>(private val factory: (K) -> V) {
-   private val store = UnifiedMap<K,V>()
+   private val store = ConcurrentHashMap<K,V>()
 
    fun invalidate() {
       store.clear()

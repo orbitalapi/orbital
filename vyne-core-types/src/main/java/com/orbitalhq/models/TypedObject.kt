@@ -10,12 +10,13 @@ import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.Ids
 import com.orbitalhq.utils.mergeToUnifiedMap
-import lang.taxi.ImmutableEquality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.AttributePath
 import mu.KotlinLogging
+import org.eclipse.collections.impl.map.immutable.ImmutableUnifiedMap
+import org.eclipse.collections.impl.map.mutable.UnifiedMap
 
 
 data class TypedObject(
@@ -25,7 +26,12 @@ data class TypedObject(
    override val metadata: Map<String, Any> = emptyMap()
 ) : TypedInstance, Map<String, TypedInstance> {
 
-   private val combinedValues: Map<String, TypedInstance> = type.defaultValues?.mergeToUnifiedMap(suppliedValue) ?: suppliedValue
+   // Note: I tried using Eclipse Collections for this backing map to optimize read time.
+   // However after experimenting with both UnifiedMap and ImmutableUnifiedMap
+   // some tests started failing with properties being emitted in the wrong order.
+   // This is probably solvable, but after profiling, the performance benefits weren't
+   // signficant, so have reverted to a plain old LinkedHashMap.
+   private val combinedValues: Map<String, TypedInstance> = type.defaultValues?.plus(suppliedValue) ?: suppliedValue
 
    override val nodeId: String = Ids.fastUuid()
 
@@ -185,16 +191,30 @@ data class TypedObject(
       }
    }
 
+   /**
+    * Accepts a path of properties (eg a.b.c) and traverses it.
+    * If you know that the path you're providing is a single field on this object,
+    * it's more performant to call getDirectProperty()
+    */
    operator fun get(path: AttributePath): TypedInstance {
       return get(path.path)
+   }
+
+   /**
+    * Reads a property from the provided map.
+    * Does not support path navigation (eg., a.b.c), but
+    * is more performant than get()
+    */
+   fun getDirectAttribute(key:String):TypedInstance {
+      return this.value[key]
+         ?: error("No attribute named $key found on this type (${type.name})")
    }
 
    // TODO : Needs a test
    override operator fun get(key: String): TypedInstance {
       val parts = key.split(".").toMutableList()
       val thisFieldName = parts.removeAt(0)
-      val attributeValue = this.value[thisFieldName]
-         ?: error("No attribute named $thisFieldName found on this type (${type.name})")
+      val attributeValue = getDirectAttribute(thisFieldName)
 
       return if (parts.isEmpty()) {
          attributeValue

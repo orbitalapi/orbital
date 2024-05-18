@@ -57,7 +57,31 @@ data class FactSearch(
     * Alternatively, return null, which indicates that the search has failed.
     */
    val refiningPredicate: RefiningPredicate = NO_REFINING_PERMITTED,
+
+   val searchAlgorithm: SearchAlgorithm = SearchAlgorithm.AttributeNavigation
 ) {
+   enum class SearchAlgorithm {
+
+      /**
+       * Performs a breadth-first tree search against the facts in the fact map.
+       * Is slower than AttributeNavigation, but allows providing a custom predicate.
+       *
+       * Only use this where the search can't be derived ahead of time through schema introspection.
+       *
+       */
+      TreeSearch,
+
+      /**
+       * A fast, general-purpose search algorithm that works by pre-building paths from
+       * one type to another, then walking these paths at search time.
+       * Is very fast, and generally the best choice in most situations.
+       *
+       * Note - this is newer, and toggled off by default.
+       * If callers request AttributeNavigation, but the implementation is disabled at runtime,
+       * will fall back to TreeSearch
+       */
+      AttributeNavigation
+   }
 
    private val targetTypeName = targetType.name.parameterizedName
    private val filterPredicateId = filterPredicate.id
@@ -164,6 +188,10 @@ enum class FactDiscoveryStrategy {
       ): TypedInstance? {
          return facts.firstOrNull { search.filterPredicate.predicate(it) }
       }
+
+      override fun applyToResults(matches: List<TypedInstance>, search: FactSearch): TypedInstance? {
+         return matches.singleOrNull()
+      }
    },
 
    /**
@@ -181,6 +209,11 @@ enum class FactDiscoveryStrategy {
                FactMapTraversalStrategy.enterIfHasFieldOfType(search.targetType)
             ) { search.filterPredicate.predicate(it) }
             .toList()
+         return applyToResults(matches, search)
+
+      }
+
+      override fun applyToResults(matches: List<TypedInstance>, search: FactSearch): TypedInstance? {
          return when {
             matches.isEmpty() -> null
             matches.size == 1 -> matches.first()
@@ -211,6 +244,10 @@ enum class FactDiscoveryStrategy {
             ) { search.filterPredicate.predicate(it) }
             .distinct()
             .toList()
+         return applyToResults(matches, search)
+      }
+
+      override fun applyToResults(matches: List<TypedInstance>, search: FactSearch): TypedInstance? {
          return when {
             matches.isEmpty() -> null
             matches.size == 1 -> toCollectionIfRequested(matches.first(), search.targetType)
@@ -251,6 +288,11 @@ enum class FactDiscoveryStrategy {
             ) { search.filterPredicate.predicate(it) }
             .distinct()
             .toList()
+         return applyToResults(matches, search)
+
+      }
+
+      override fun applyToResults(matches: List<TypedInstance>, search: FactSearch): TypedCollection? {
          return when {
             matches.isEmpty() -> null
             else -> TypedCollection.flatten(matches, MixedSources.singleSourceOrMixedSources(matches))
@@ -264,6 +306,8 @@ enum class FactDiscoveryStrategy {
       search: FactSearch
    ): TypedInstance?
 
+   abstract fun applyToResults(matches: List<TypedInstance>, search: FactSearch): TypedInstance?
+
 
 }
 
@@ -273,7 +317,7 @@ enum class FactDiscoveryStrategy {
  *
  * Otherwise, returns the instance as-is.
  */
-private fun toCollectionIfRequested(singleInstance: TypedInstance, targetType: Type): TypedInstance {
+fun toCollectionIfRequested(singleInstance: TypedInstance, targetType: Type): TypedInstance {
    return if (targetType.isCollection) {
       if (singleInstance is TypedCollection) {
          return singleInstance

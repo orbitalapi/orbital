@@ -7,6 +7,7 @@ import lang.taxi.TaxiDocument
 import lang.taxi.policies.Policy
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
+import kotlin.random.Random
 
 class SimpleSchema(override val types: Set<Type>, override val services: Set<Service>, override val typeCache: TypeCache) : Schema {
    companion object {
@@ -17,6 +18,8 @@ class SimpleSchema(override val types: Set<Type>, override val services: Set<Ser
    override fun parseQuery(vyneQlQuery: TaxiQLQueryString, useCache: Boolean): Triple<TaxiQlQuery, QueryOptions, Schema> {
       return queryCompiler.compile(vyneQlQuery)
    }
+
+   override val hash: Int = hashCode()
 
    override val taxi: TaxiDocument
       get() = TODO("Not yet implemented")

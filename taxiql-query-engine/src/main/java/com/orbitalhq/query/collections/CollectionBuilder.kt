@@ -123,7 +123,13 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
                   "Collection types that inherit from ${baseType.qualifiedName.shortDisplayName}",
                   queryEngine.schema.type(PrimitiveType.ANY),
                   FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY,
-                  filterPredicateStrategy
+                  filterPredicateStrategy,
+
+                  // currently, the AttributeNavigation doesn't consider collection
+                  // inheritence.
+                  // This is a fairly niche edge case.
+                  // If it becomes more popular, we should optimize this path
+                  searchAlgorithm = FactSearch.SearchAlgorithm.TreeSearch
                )
             )
             collectionOfFactsWithCommonBaseType
@@ -202,7 +208,15 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
             // also, not sure if this should be a collection or not.
             queryEngine.schema.type(PrimitiveType.ANY),
             FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY,
-            filterPredicate
+            filterPredicate,
+
+            // We don't currently support AttributeNavigation searches
+            // based on metadata such as @Id annotations.
+            // Therefore, fall back to the older TreeSearch implementation, which
+            // does support this.
+            // Note - this is a relatively obscure use-case, but if this becomes
+            // more popular, we should optimize this code path to use AttributeNavigation
+            searchAlgorithm = FactSearch.SearchAlgorithm.TreeSearch
          )
       )
       return collectionOfIds

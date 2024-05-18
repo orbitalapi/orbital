@@ -477,18 +477,18 @@ class VyneTest {
                    model Product {
                      name : String
                   }
-                  enum ProductType {
+                  enum NumericalProductType {
                      SPOT(919),
                      FORWARD(920)
                   }
                   service ProductTaxonomyService {
                      @StubResponse("mockProduct")
-                     operation getProduct(ProductType):Product
+                     operation getProduct(NumericalProductType):Product
                   }
                 }
                 namespace vendorA {
-                   enum ProductType {
-                      FX_SPOT("Spot") synonym of companyX.ProductType.SPOT
+                   enum LabelledProductType {
+                      FX_SPOT("Spot") synonym of companyX.NumericalProductType.SPOT
                    }
                 }
 
@@ -508,7 +508,7 @@ class VyneTest {
          parameters.first().second.value.should.be.equal(919)
          listOf(product)
       }
-      val instance = TypedInstance.from(vyne.schema.type("vendorA.ProductType"), "Spot", vyne.schema, source = Provided)
+      val instance = TypedInstance.from(vyne.schema.type("vendorA.LabelledProductType"), "Spot", vyne.schema, source = Provided)
       vyne.addModel(instance)
       runBlocking {
          val queryResult = vyne.query().find("companyX.Product")

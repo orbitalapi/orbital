@@ -1,5 +1,6 @@
 package com.orbitalhq.models.facts
 
+import arrow.core.continuations.getAndUpdate
 import com.diffplug.common.base.TreeDef
 import com.diffplug.common.base.TreeStream
 import com.google.common.annotations.VisibleForTesting
@@ -16,14 +17,15 @@ import com.orbitalhq.query.AlwaysGoodSpec
 import com.orbitalhq.query.TypedInstanceValidPredicate
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
-import com.orbitalhq.utils.ImmutableEquality
 import com.orbitalhq.utils.timeBucket
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicReference
 import java.util.stream.Collectors
+import java.util.stream.Stream
 
 
 open class CopyOnWriteFactBag(
@@ -31,6 +33,11 @@ open class CopyOnWriteFactBag(
    override val scopedFacts: List<ScopedFact>,
    private val schema: Schema
 ) : FactBag {
+   companion object {
+      internal val useExperimentalFactSearch: Boolean = false // System.getProperty("ORBITAL_FAST_SEARCH_ENABLED") == "true"
+      private val factSearcher: PathTraversingFactSearcher = PathTraversingFactSearcher(GlobalSchemaFactSearchCache)
+   }
+
    private val logger = KotlinLogging.logger {}
 
    constructor(facts: Collection<TypedInstance>, schema: Schema, scopedFacts: List<ScopedFact> = emptyList()) : this(
@@ -76,6 +83,7 @@ open class CopyOnWriteFactBag(
    override fun addFact(fact: TypedInstance): CopyOnWriteFactBag {
       this.facts.add(fact)
       this.modelTreeCache.invalidateAll()
+      this.cachedRootAndScopedFacts.set(null)
       // Now that we have a new fact, invalidate queries where we had asked for a fact
       // previously, and had returned null.
       // This allows new queries to discover new values.
@@ -99,6 +107,13 @@ open class CopyOnWriteFactBag(
    override fun addFacts(facts: Collection<TypedInstance>): CopyOnWriteFactBag {
       facts.forEach { this.addFact(it) }
       return this
+   }
+
+   private val cachedRootAndScopedFacts = AtomicReference<List<TypedInstance>?>(null)
+   override fun rootAndScopedFacts(): List<TypedInstance> {
+      return cachedRootAndScopedFacts.updateAndGet { value ->
+         value ?: (rootFacts() + scopedFacts.map { it.fact })
+      }!!
    }
 
    private val anyArrayType by lazy { schema.type(PrimitiveType.ANY) }
@@ -150,11 +165,6 @@ open class CopyOnWriteFactBag(
    private fun modelTree(shouldGoDeeperPredicate: FactMapTraversalStrategy): List<TypedInstance> {
       val modelTree = modelTreeCache.get(shouldGoDeeperPredicate)
       return modelTree
-
-      // TODO : MP - Investigating the performance implications of caching the tree.
-      // If this turns out to be faster, we should refactor the api to be List<TypedInstance>, since
-      // the stream indicates deferred evaluation, and it's not anymore.
-//      return modelTree.get()
    }
 
    private data class GetFactOrNullCacheKey(
@@ -180,8 +190,23 @@ open class CopyOnWriteFactBag(
       strategy: FactDiscoveryStrategy,
       spec: TypedInstanceValidPredicate
    ): Boolean {
-      // This could be optimized, as we're searching twice for everything, and not caching anything
       return getFactOrNull(type, strategy, spec) != null
+   }
+
+   /**
+    * Experimental method that uses new searching algorithim.
+    * Intent is to replace the existing getFactOrNull with this approach.
+    * However, for the time being, this sits behind a feature toggle
+    */
+   // Working title.
+   // This should replace getFact if I can prove it's faster
+   fun getFactFast(
+      type: Type,
+      strategy: FactDiscoveryStrategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY,
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+   ): TypedInstance {
+      return getFactOrNullFast(type, strategy, spec)
+         ?: error("Failed to resolve type ${type.name.shortDisplayName} using strategy $strategy")
    }
 
    override fun getFact(
@@ -189,9 +214,12 @@ open class CopyOnWriteFactBag(
       strategy: FactDiscoveryStrategy,
       spec: TypedInstanceValidPredicate
    ): TypedInstance {
-      // This could be optimized, as we're searching twice for everything, and not caching anything
-      return getFactOrNull(type, strategy, spec)
-         ?: error("Failed to resolve type ${type.name.shortDisplayName} using strategy $strategy")
+      return if (useExperimentalFactSearch) {
+         getFactFast(type, strategy, spec)
+      } else {
+         getFactOrNull(type, strategy, spec)
+            ?: error("Failed to resolve type ${type.name.shortDisplayName} using strategy $strategy")
+      }
    }
 
 
@@ -221,10 +249,30 @@ open class CopyOnWriteFactBag(
       strategy: FactDiscoveryStrategy,
       spec: TypedInstanceValidPredicate
    ): TypedInstance? {
-      val search = FactSearch.findType(type, strategy, spec)
-      val searchCacheKey = getFactOrNullCacheKey(search)
-      val result = fromFactCache(searchCacheKey)
-      return result
+      logger.info { "Searching for type ${type.name.shortDisplayName}" }
+      val f =  if (useExperimentalFactSearch) {
+         getFactOrNullFast(type, strategy, spec)
+      } else {
+         val search = FactSearch.findType(type, strategy, spec)
+         val searchCacheKey = getFactOrNullCacheKey(search)
+         val result = fromFactCache(searchCacheKey)
+         result
+      }
+      logger.info { "Search for type returned ${f?.type?.name?.shortDisplayName}" }
+      return f
+   }
+
+   /**
+    * Experimental method that uses new searching algorithim.
+    * Intent is to replace the existing getFactOrNull with this approach.
+    * However, for the time being, this sits behind a feature toggle
+    */
+   fun getFactOrNullFast(
+      type: Type,
+      strategy: FactDiscoveryStrategy,
+      spec: TypedInstanceValidPredicate
+   ): TypedInstance? {
+      return factSearcher.getFact(this.rootAndScopedFacts(), type, this.schema, strategy, spec)
    }
 
    private fun getFactOrNullCacheKey(
@@ -247,7 +295,23 @@ open class CopyOnWriteFactBag(
    override fun getFactOrNull(
       search: FactSearch,
    ): TypedInstance? {
-      return fromFactCache(GetFactOrNullCacheKey(search))
+      logger.info { "Search: $search" }
+      val f = when (search.searchAlgorithm) {
+         // This is the preferred approach, but is newer so toggled-off
+         // by default.
+         FactSearch.SearchAlgorithm.AttributeNavigation -> {
+            return if (useExperimentalFactSearch) {
+               factSearcher.getFact(search, this.rootAndScopedFacts(), schema)
+            } else {
+               fromFactCache(GetFactOrNullCacheKey(search))
+            }
+         }
+         FactSearch.SearchAlgorithm.TreeSearch -> {
+            fromFactCache(GetFactOrNullCacheKey(search))
+         }
+      }
+      logger.info { "Search returned ${f?.type?.name?.shortDisplayName}" }
+      return f
    }
 
    override fun hasFact(

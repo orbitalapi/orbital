@@ -7,6 +7,7 @@ import com.orbitalhq.schemas.OperationNames
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.fqn
+import com.orbitalhq.utils.Ids
 import com.orbitalhq.utils.orElse
 import mu.KotlinLogging
 import java.util.*
@@ -311,7 +312,7 @@ data class FailedEvaluatedExpression(
 data class ValueLookupReturnedNull(
    val message: String,
    val requestedTypeName: QualifiedName,
-   override val id: String = UUID.randomUUID().toString(),
+   override val id: String = Ids.fastUuid(),
    override val failedAttempts: List<DataSource> = emptyList()
 ) : DataSource {
    override val name: String = "Failed lookup"
@@ -319,5 +320,5 @@ data class ValueLookupReturnedNull(
 
 data class FailedSearch(val message: String, override val failedAttempts: List<DataSource> = emptyList()) : DataSource {
    override val name: String = "FailedSearch"
-   override val id: String = UUID.randomUUID().toString()
+   override val id: String = Ids.fastUuid()
 }
