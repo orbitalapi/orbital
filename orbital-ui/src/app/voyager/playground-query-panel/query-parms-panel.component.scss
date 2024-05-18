@@ -1,0 +1,12 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 0;
+  gap: 1rem;
+}
+
+table {
+  // taiga seems to be setting border-collapse: seperate
+  // on the dom. not sure why.
+  border-collapse: collapse !important;
+}

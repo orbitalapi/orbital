@@ -1,10 +1,15 @@
+import {StubQueryMessageWithSlug} from "../app/services/query.service";
+import {simpleQuery} from "./code-examples/simple-query";
+
 export interface CodeSample {
   title: string;
+  slug: string;
   code: string;
 }
 
 const HelloWorld: CodeSample = {
   title: 'Hello, universe',
+  slug: 'hello-universe',
   code: `/**
 Welcome to Voyager - a microservices diagramming tool.
 
@@ -45,11 +50,14 @@ model FilmReview {
 service Reviews {
   operation getReview(FilmId): FilmReview
 }
+
+find { Film[] }
   `
 }
 
 const DatabaseWithTables: CodeSample = {
   title: 'Database with tables',
+  slug: 'database-with-tables',
   code: `/**
 This diagram shows a database, with two tables (and their associated models) exposed.
 
@@ -76,6 +84,7 @@ service FilmsDatabase {
 
 const ModelWithApis: CodeSample = {
   title: 'Two APIs with related data',
+  slug: 'two-apis-with-related-data',
   code: `/*
 This shows the basics of a couple of domain models,
 two seperate microservices, and how data between them is related.
@@ -117,6 +126,7 @@ service ReviewsApi {
 
 const MessageQueueAndDatabase: CodeSample = {
   title: 'Message queue and database',
+  slug: 'message-queue-and-database',
   code: `/**
 This shows a message queue which contains streams of messages (eg., A Kafka instance).
 
@@ -150,3 +160,41 @@ export const CodeSamples: CodeSample[] = [
   DatabaseWithTables,
   MessageQueueAndDatabase
 ];
+
+export const StubExamples = codeSamplesToStubExamples(CodeSamples);
+export const ExampleGroups = [
+  {
+    title: 'Modelling',
+    snippets: StubExamples
+  },
+  {
+    title: 'Querying & Streaming',
+    snippets: [
+      simpleQuery
+    ]
+  },
+  {
+    title: 'Mutations',
+    snippets: StubExamples
+  },
+  {
+    title: 'Data Manipulation',
+    snippets: StubExamples
+  },
+]
+
+function codeSamplesToStubExamples(codeSample: CodeSample[]): StubQueryMessageWithSlug[] {
+  return codeSample.map(m => codeSampleToQueryMessage(m));
+}
+function codeSampleToQueryMessage(codeSample: CodeSample): StubQueryMessageWithSlug {
+  return {
+    title : codeSample.title,
+    slug: codeSample.slug,
+    query: {
+      schema: codeSample.code,
+      stubs: [],
+      query: '',
+      parameters: {}
+    }
+  }
+}

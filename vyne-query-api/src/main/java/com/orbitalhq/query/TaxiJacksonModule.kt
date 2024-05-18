@@ -1,5 +1,6 @@
 package com.orbitalhq.query
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.module.SimpleModule
@@ -8,13 +9,29 @@ import com.orbitalhq.schemas.asVyneTypeReference
 import com.orbitalhq.utils.log
 import lang.taxi.TaxiDocument
 import lang.taxi.TaxiParser
+import lang.taxi.query.FactValue
 import lang.taxi.types.Type
+import lang.taxi.types.TypedValue
 
 class TaxiJacksonModule : SimpleModule("Taxi") {
    init {
       addSerializer(TaxiTypeAsVyneQualifiedNameSerializer())
       addSerializer(TaxiDocumentNoopSerializer())
       addSerializer(TaxiDocumentContextNoopSerializer())
+   }
+
+   override fun setupModule(context: SetupContext) {
+      super.setupModule(context)
+      context.setMixInAnnotations(FactValue::class.java, FactValueMixin::class.java)
+   }
+   companion object {
+      abstract class FactValueMixin {
+         @get:JsonIgnore
+         abstract val typedValue: TypedValue
+
+         @get:JsonIgnore
+         abstract val variableName: String
+      }
    }
 }
 class TaxiDocumentContextNoopSerializer : StdSerializer<TaxiParser.DocumentContext>(TaxiParser.DocumentContext::class.java) {

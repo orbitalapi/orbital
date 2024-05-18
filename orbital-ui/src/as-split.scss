@@ -1,0 +1,42 @@
+@import "src/common";
+
+// Custom as-splitter style
+// Because of ng-deep rules, I couldn't find a way to
+// declare this within a component that was actually picked up.
+// You, dear reader, may have better luck.
+@mixin thin-splitter {
+  .thin-splitter {
+    width: 100%;
+    height: 100%;
+    background-color: rgba($slate-500, 0.2);
+    position: relative;
+  }
+
+  .thin-splitter-gutter-icon {
+    height: 100%;
+    width: 100%;
+    background-color: $sky-600;
+    transition: opacity 0.3s;
+    opacity: 0;
+    position: absolute;
+
+    .dragged &,
+    &:hover {
+      opacity: 0.5;
+    }
+
+    $shadeSize: 4px;
+
+    .as-horizontal & {
+      width: 1 + ($shadeSize * 2);
+      left: -$shadeSize;
+      right: $shadeSize;
+    }
+
+    .as-vertical & {
+      height: 1 + ($shadeSize * 2);
+      top: -$shadeSize;
+      bottom: $shadeSize;
+    }
+  }
+}

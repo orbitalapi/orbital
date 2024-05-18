@@ -109,7 +109,7 @@ object BuiltInTypesProvider {
       ),
       emptyMap()
    )
-   private val builtInTypesSource = builtInSources.sources.joinToString("\n") { it.content }
+   val source = builtInSources.sources.joinToString("\n") { it.content }
    val sourcePackage = builtInSources
 
 

@@ -145,6 +145,7 @@
       <module>auth-tokens</module>
       <module>query-node-native</module>
       <module>formats-common</module>
+      <module>taxi-playground-core</module>
       <module>policy-evaluator</module>
    </modules>
    <scm>

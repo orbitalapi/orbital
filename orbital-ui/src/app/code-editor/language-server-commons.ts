@@ -25,10 +25,9 @@ export const createLanguageClient = (transports: MessageTransports): MonacoLangu
     clientOptions: {
       // use a language id as a document selector
       documentSelector: [TAXI_LANGUAGE_ID],
-      // disable the default error handler
       errorHandler: {
         error: () => ({action: ErrorAction.Continue}),
-        closed: () => ({action: CloseAction.DoNotRestart})
+        closed: () => ({action: CloseAction.Restart})
       }
     },
 

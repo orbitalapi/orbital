@@ -24,6 +24,11 @@ a:visited {
   color: unset;
 }
 
+.divider {
+  border-left: 1px solid rgba($white, 0.2);
+  height: 100%;
+}
+
 .nav-link {
   --tui-link: white;
   --tui-link-hover: white;
@@ -46,6 +51,8 @@ tui-select {
 .title {
   font-family: $headings-font;
   margin-right: 5rem;
+
+  text-decoration: none;
 }
 
 button {
@@ -75,8 +82,6 @@ button.secondary {
 mat-icon {
   fill: white;
   color: white;
-
-  margin-right: 1rem;
 }
 
 .built-by-orbital {
@@ -85,12 +90,12 @@ mat-icon {
     align-items: center;
   }
 
-  margin-left: 2rem;
-
-  font-size: 0.7rem;
+  margin: 0;
+  font-size: 1rem;
 
   mat-icon {
     width: unset;
+    height: 40px;
     margin-top: -3px;
   }
 }
@@ -99,8 +104,12 @@ mat-icon {
   display: flex;
   align-items: center;
 
+  padding: 4px;
+  border-radius: 4px;
+
   &:hover {
     cursor: pointer;
+    background-color: rgba(white, 0.2);
   }
 
   color: white;
@@ -112,6 +121,64 @@ mat-icon {
   }
 }
 
-.header-icon-spacer {
+.header-icon-spacer, .divider {
+  margin-right: 1rem;
+}
+
+tui-hosted-dropdown {
   margin-right: 3rem;
 }
+
+button.dropdown-host {
+  .label {
+    // add some space before the chevron
+    margin-right: 0.5rem;
+  }
+
+  ::ng-deep {
+    .t-wrapper {
+      background-color: transparent;
+      color: white;
+      font-weight: bold;
+
+      &:hover {
+        background-color: $slate-600;
+      }
+    }
+  }
+}
+
+.examples-wrapper {
+  padding: 1rem 2rem 2rem 2rem;
+  display: flex;
+  gap: 2rem;
+
+  h3 {
+    font-weight: 400;
+    font-size: 1rem;
+    color: $sky-600;
+  }
+
+  .examples-list {
+    line-height: 2.5;
+  }
+
+  ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+
+    a {
+      text-decoration: none;
+      font-weight: bold;
+      padding: 0.5rem;
+      border-radius: 8px;
+
+      &:hover {
+        background-color: $slate-100;
+      }
+    }
+  }
+
+}
+

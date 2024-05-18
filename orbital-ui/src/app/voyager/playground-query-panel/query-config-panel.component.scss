@@ -1,0 +1,30 @@
+@import "src/common";
+
+:host {
+  tui-tabs::ng-deep {
+    button {
+      font-family: $headings-font;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+
+  }
+}
+
+.config-panels {
+  display: flex;
+  flex-direction: column;
+  padding: 0 1rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+}
+
+tui-tabs {
+  width: 100%;
+  tui-badge {
+    margin-left: 1rem;
+  }
+}

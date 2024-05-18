@@ -287,6 +287,10 @@ export interface PartialSchema {
 export interface Schema extends TypeCollection, PartialSchema {
 
   operations: Array<Operation>;
+  queryOperations?: QueryOperation[];
+  tableOperations?: TableOperation[];
+  streamOperations?: StreamOperation[];
+
 
   hash?: number
 
@@ -366,6 +370,7 @@ export interface TableOperation extends SchemaMemberNamed, RemoteOperation {
   // sources: VersionedSource[];
   typeDoc?: string;
   parameters: Parameter[];
+  queryOperations: QueryOperation[];
 }
 
 export interface StreamOperation extends SchemaMemberNamed, RemoteOperation {
@@ -411,6 +416,12 @@ export function collectAllServiceOperations(service: Service): ServiceMember[] {
     .concat(service.tableOperations)
 }
 
+export function collectionAllOperations(schema: Schema):ServiceMember[] {
+  return (schema.operations as ServiceMember[])
+    .concat(schema.streamOperations || [])
+    .concat(schema.tableOperations?.flatMap(t => t.queryOperations) || [])
+    .concat(schema.queryOperations || [])
+}
 
 export interface QueryOperation extends RemoteOperation{
   name: string;

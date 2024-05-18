@@ -544,3 +544,20 @@ export interface StreamQueryErrorEvent {
   queryId: string;
   error: StreamErrorMessage
 }
+
+export interface StubQueryMessageWithSlug {
+  title: string;
+  slug: string;
+  query: StubQueryMessage;
+}
+export interface StubQueryMessage {
+  schema: string;
+  query?: string;
+  parameters?: {[index: string]: any};
+  stubs?: OperationStub[];
+  expectedJson?: string | null;
+}
+export interface OperationStub {
+  operationName: string;
+  response: string;
+}

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <parent>
+      <groupId>com.orbitalhq</groupId>
+      <artifactId>platform</artifactId>
+      <version>0.32.0-SNAPSHOT</version>
+   </parent>
+
+   <artifactId>taxi-playground-core</artifactId>
+
+
+   <dependencies>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>compiler</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>taxiql-query-engine</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <!-- adding the test dependency, as it contains the stub infra for calling vyne with stubbed services -->
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>taxiql-query-engine</artifactId>
+         <version>${project.version}</version>
+         <type>test-jar</type>
+      </dependency>
+      <dependency>
+         <groupId>io.projectreactor</groupId>
+         <artifactId>reactor-test</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>vyne-csv-utils</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+   </dependencies>
+</project>

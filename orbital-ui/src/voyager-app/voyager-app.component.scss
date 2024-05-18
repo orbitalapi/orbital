@@ -1,3 +1,5 @@
+@import "src/as-split";
+
 .app-container {
   display: flex;
   flex-direction: column;
@@ -6,7 +8,23 @@
 
 .container {
   flex-grow: 1;
+  display: flex;
+  height: 10px;
+  //flex-direction: column;
 }
+
+.panel-with-header {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  height: 100%;
+
+  .flex-grow {
+    flex-grow: 1;
+    height: 100%;
+  }
+}
+
 
 app-schema-diagram {
   flex-grow: 1;
@@ -22,3 +40,5 @@ app-schema-diagram {
   z-index: 2000;
   background-color: white;
 }
+
+@include thin-splitter();

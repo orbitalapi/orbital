@@ -1,5 +1,6 @@
 package org.taxilang.playground
 
+import com.orbitalhq.playground.StubQueryService
 import io.micrometer.cloudwatch2.CloudWatchConfig
 import io.micrometer.cloudwatch2.CloudWatchMeterRegistry
 import io.micrometer.core.instrument.Clock
@@ -8,6 +9,8 @@ import com.orbitalhq.query.TaxiJacksonModule
 import mu.KotlinLogging
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -22,7 +25,7 @@ import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import java.time.Duration
 
 
-@SpringBootApplication
+@SpringBootApplication()
 class VoyagerApp {
    companion object {
       @JvmStatic
@@ -36,6 +39,9 @@ class VoyagerApp {
 
    @Bean
    fun restTemplate(): RestTemplate = RestTemplateBuilder().build()
+
+   @Bean
+   fun stubQueryService() = StubQueryService()
 }
 
 @Configuration

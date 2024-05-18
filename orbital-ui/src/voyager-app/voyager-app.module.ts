@@ -18,31 +18,40 @@ import {VoyagerContainerAppComponent} from 'src/voyager-app/voyager-container-ap
 import {VoyagerAppComponent} from "./voyager-app.component";
 import {VoyagerModule} from "src/app/voyager/voyager.module";
 import {LANGUAGE_SERVER_WS_ADDRESS_TOKEN} from "../app/code-editor/language-server.tokens";
+import {PlaygroundQueryPanelComponent} from "../app/voyager/playground-query-panel/playground-query-panel.component";
+import {VoyagerSidebarComponent} from "../app/voyager/voyager-sidebar/voyager-sidebar.component";
+import {ExpandingPanelSetModule} from "../app/expanding-panelset/expanding-panel-set.module";
+import {CompilationMessageListModule} from "../app/compilation-message-list/compilation-message-list.module";
 
 @NgModule({
-  imports: [
-    BrowserModule,
-    BrowserAnimationsModule,
-    CommonModule,
-    AngularSplitModule,
+    imports: [
+        BrowserModule,
+        BrowserAnimationsModule,
+        CommonModule,
+        AngularSplitModule,
 
-    VoyagerModule,
-    CodeEditorModule,
-    SchemaDiagramModule,
+        VoyagerModule,
+        CodeEditorModule,
+        SchemaDiagramModule,
 
-    HttpClientModule,
-    TuiRootModule,
-    TuiDialogModule,
-    AuthModule.forRoot({
-      domain: 'orbitalhq.eu.auth0.com',
-      clientId: 'ZaDGRQWEfgTFtlWVR9AXWg9vOiBxgVPv'
-    }),
-    RouterModule.forRoot([
-      {path: 's/:shareSlug', component: VoyagerAppComponent},
-      {path: '', component: VoyagerAppComponent},
-      {path: '**', redirectTo: ''}
-    ])
-  ],
+        HttpClientModule,
+        TuiRootModule,
+        TuiDialogModule,
+        AuthModule.forRoot({
+            domain: 'orbitalhq.eu.auth0.com',
+            clientId: 'ZaDGRQWEfgTFtlWVR9AXWg9vOiBxgVPv'
+        }),
+        RouterModule.forRoot([
+            {path: 'examples/:exampleSlug', component: VoyagerAppComponent},
+            {path: 's/:shareSlug', component: VoyagerAppComponent},
+            {path: '', component: VoyagerAppComponent},
+            {path: '**', redirectTo: ''}
+        ]),
+        PlaygroundQueryPanelComponent,
+        VoyagerSidebarComponent,
+        ExpandingPanelSetModule,
+        CompilationMessageListModule,
+    ],
   declarations: [VoyagerContainerAppComponent, VoyagerAppComponent],
   exports: [VoyagerContainerAppComponent, VoyagerAppComponent],
   providers: [
