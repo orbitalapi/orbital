@@ -39,7 +39,9 @@ docker run -p 9022:9022 orbitalhq/orbital
 Then visit http://localhost:9022 in your browser.
 
 ## What is Orbital?
-Orbital is a data gateway that automates the integration, transformation and discovery of data from data sources (API’s, databases, message brokers) across your enterprise.
+Orbital is a data gateway that automates the orchestration, integration and transformation of data and services (API’s, databases, message brokers) across your enterprise.
+Powered by your API specs enriched with Semantic Metadata, Orbital removes the need for glue code,
+and self adapts as your services evolve.
 
 Think of it as data federation (a single API for all your sources), without having to shift to GraphQL.
 
