@@ -1,7 +1,11 @@
 package com.orbitalhq.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.orbitalhq.*
+import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.PathGlob
+import com.orbitalhq.SourcePackage
+import com.orbitalhq.VersionedSource
+import com.orbitalhq.VersionedTypeReference
 import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.schemas.TaxiTypeMapper.fromTaxiType
 import com.orbitalhq.schemas.taxi.TaxiSchema
@@ -23,6 +27,8 @@ import lang.taxi.types.ObjectType
  * are used heavily in caching.
  */
 interface Schema {
+   val hash: Int
+
    // I've pretty much given up on avoiding the Taxi vs Schema abstraction at this point..
    @get:JsonIgnore
    val taxi: TaxiDocument

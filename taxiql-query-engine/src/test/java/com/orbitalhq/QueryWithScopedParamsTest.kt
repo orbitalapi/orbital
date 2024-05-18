@@ -170,13 +170,13 @@ class QueryWithScopedParamsTest {
       stub.addResponse("getFilms", film)
       val queryResult = vyne.query("""
       query FindSomeFilms( starring : PersonName ) {
-      find { Film[] } as  {
-         title: Title
-         starring: filter(Actor[], (PersonName) -> PersonName == starring) as {
-           name : PersonName
-        }[]
-      }[]
-   }
+         find { Film[] } as  {
+            title: Title
+            starring: filter(Actor[], (PersonName) -> PersonName == starring) as {
+              name : PersonName
+           }[]
+         }[]
+      }
          """.trimIndent(), arguments = mapOf("starring" to "Mark")
       )
          .firstRawObject()

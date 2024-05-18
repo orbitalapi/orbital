@@ -89,11 +89,10 @@ class TaxiSchema(
       logger.debug { "Parsing TaxiSchema took ${stopwatch.elapsed().toMillis()}ms" }
    }
 
-   val hash = (document.services + document.types).hashCode()
-
-
    @get:JsonIgnore
    override val taxi = document
+
+   override val hash: Int = (taxi.services + taxi.types).hashCode()
 
    private fun parseServices(document: TaxiDocument): Set<Service> {
       return document.services.map { taxiService ->

@@ -4,12 +4,15 @@ import com.winterbe.expekt.should
 import io.kotest.matchers.nulls.shouldNotBeNull
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedNull
 import com.orbitalhq.schemas.taxi.TaxiSchema
-import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
+import io.kotest.matchers.types.shouldNotBeInstanceOf
 import org.junit.Test
 
-class CopyOnWriteFactBagTest {
+class PathTraversingFactSearcherTest {
    val schema = TaxiSchema.from(
 
       """
@@ -38,7 +41,7 @@ class CopyOnWriteFactBagTest {
       val person = TypedInstance.from(schema.type("Person"), """ { "name" : "Jimmy", "id" : 1 }""", schema)
       val factBag = CopyOnWriteFactBag(listOf(person), schema)
       val value =
-         factBag.getFact(schema.type("FirstName"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
+         factBag.getFactFast(schema.type("FirstName"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
       value.toRawObject().should.equal("Jimmy")
    }
 
@@ -49,31 +52,58 @@ class CopyOnWriteFactBagTest {
       val factBag = CopyOnWriteFactBag(listOf(person, actor), schema)
 
       val collection =
-         factBag.getFact(schema.type("Person"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
+         factBag.getFactFast(schema.type("Person"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
       collection.should.have.size(2)
    }
 
+   // Note: I'm not sure this is the correct behaviour, but at the time of
+   // of porting from the old search mecahnism, it's what's required to maintain
+   // the existing behaviour.
+   // We may wish to revisit this
    @Test
-   fun `search for missing type returns null`() {
-      val person = TypedInstance.from(schema.type("Person"), """ { "name" : "Jimmy" }""", schema)
-      val actor = TypedInstance.from(schema.type("Actor"), """ { "name" : "Jack" }""", schema)
-      val factBag = CopyOnWriteFactBag(listOf(person, actor), schema)
+   fun `request for an array of type will match a single type`() {
+      val schema = TaxiSchema.from(
+         """
+         type Name inherits String
+      """
+      )
+      val name = TypedInstance.from(schema.type("Name"), "Jimmy", schema)
 
-      val result =
-         factBag.getFactOrNull(schema.type("ImdbScore"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)
-      result.shouldBeNull()
+      val factBag = CopyOnWriteFactBag(name, schema)
+      val fact =
+         factBag.getFactFast(schema.type("Name[]"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedInstance
+      fact.shouldNotBeInstanceOf<TypedNull>()
+      val typedCollection = fact.shouldBeInstanceOf<TypedCollection>()
+      typedCollection.shouldHaveSize(1)
+      typedCollection.single().value.shouldBe("Jimmy")
+
    }
 
    @Test
-   fun `does not return invalid type`() {
-      val schema = TaxiSchema.from("""
-         type Age inherits Int
-         type Id inherits Int
+   fun `can search for root type present`() {
+      val catalog = TypedInstance.from(
+         schema.type("Catalog"), """
+            {
+               "films" : [
+                  { "cast" : [
+                     { "name" : "Mark" , "agentName" : "Jenny" },
+                     { "name" : "Carrie" , "agentName" : "Amanda" }
+                    ]
+                  },
+                  { "cast" : [
+                     { "name" : "George" , "agentName" : "Sophie" },
+                     { "name" : "Hamish" , "agentName" : "Leslie" }
+                    ]
+                  }
+               ]
+            }
+         """.trimIndent(), schema
+      )
+      val factBag = CopyOnWriteFactBag(catalog, schema)
+      val fact =
+         factBag.getFactFast(schema.type("Catalog"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE) as TypedInstance
+      fact.shouldNotBeInstanceOf<TypedNull>()
 
-         model Person {
-            id : Id
-         }
-      """.trimIndent())
    }
 
 
@@ -99,23 +129,9 @@ class CopyOnWriteFactBagTest {
       )
       val factBag = CopyOnWriteFactBag(catalog, schema)
       val collection =
-         factBag.getFact(schema.type("AgentName"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
+         factBag.getFactFast(schema.type("AgentName"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
       collection.should.have.size(4)
 
-   }
-
-   @Test
-   fun `two searches are considered equal`() {
-      // This test doesn't make sense / work under the new approach
-      if (CopyOnWriteFactBag.useExperimentalFactSearch) {
-         return
-      }
-      val person = TypedInstance.from(schema.type("Person"), """ { "name" : "Jimmy" }""", schema)
-      val actor = TypedInstance.from(schema.type("Actor"), """ { "name" : "Jack" }""", schema)
-      val factBag = CopyOnWriteFactBag(listOf(person, actor), schema)
-
-      factBag.getFact(schema.type("Person"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
-      factBag.searchIsCached(schema.type("Person"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY).should.be.`true`
    }
 
    @Test
@@ -130,7 +146,7 @@ class CopyOnWriteFactBagTest {
       val factBag = CopyOnWriteFactBag(listOf(film), schema)
 
       val collection =
-         factBag.getFact(schema.type("Person"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
+         factBag.getFactFast(schema.type("Person"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
       // Result should be flattened - i.e.,
       // Expect a single collection with all elements, not a collection of two collections, with two elements each
       collection.should.have.size(4)
@@ -147,7 +163,7 @@ class CopyOnWriteFactBagTest {
       )
       val factBag = CopyOnWriteFactBag(listOf(film), schema)
       val facts =
-         factBag.getFact(schema.type("ImdbScore[]"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
+         factBag.getFactFast(schema.type("ImdbScore[]"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
       facts.toRawObject().should.equal(listOf(5.5))
    }
 
@@ -171,7 +187,7 @@ class CopyOnWriteFactBagTest {
       )
       val factBag = CopyOnWriteFactBag(listOf(film), schema)
       val facts =
-         factBag.getFact(schema.type("ImdbScore[]"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
+         factBag.getFactFast(schema.type("ImdbScore[]"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
       facts.toRawObject().should.equal(listOf(5.5, 2.5))
    }
 
@@ -194,13 +210,15 @@ class CopyOnWriteFactBagTest {
          }""", schema
       )
       val factBag = CopyOnWriteFactBag(listOf(film), schema)
-      val facts = factBag.getFact(schema.type("Film[]"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE) as TypedCollection
+      val facts =
+         factBag.getFactFast(schema.type("Film[]"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE) as TypedCollection
       facts.should.have.size(2)
    }
 
    @Test
    fun `can fetch an enum synonym from a factbag`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          enum TwoLetterCountryCode {
             NZ,
             UK
@@ -212,10 +230,12 @@ class CopyOnWriteFactBagTest {
          model Person {
             country: TwoLetterCountryCode
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       val person = TypedInstance.from(schema.type("Person"), """{ "country": "NZ" }""", schema)
       val factBag = CopyOnWriteFactBag(person, schema)
-      val result = factBag.getFact(schema.type("ThreeLetterCountryCode"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
+      val result =
+         factBag.getFactFast(schema.type("ThreeLetterCountryCode"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
       result.shouldNotBeNull()
       result.typeName.shouldBe("ThreeLetterCountryCode")
       result.toRawObject().shouldBe("NZL")

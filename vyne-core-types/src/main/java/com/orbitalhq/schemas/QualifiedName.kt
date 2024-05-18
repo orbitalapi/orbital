@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.collect.MapMaker
 import lang.taxi.types.ArrayType
 import lang.taxi.types.QualifiedNameParser
+import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap
 import java.io.Serializable
 
 @kotlinx.serialization.Serializable
@@ -14,7 +15,7 @@ data class QualifiedName @Deprecated("call QualifiedName.from() instead, as it u
    Serializable {
 
    companion object {
-      private val POOL = MapMaker().makeMap<String, QualifiedName>()
+      private val POOL = ConcurrentHashMap<String,QualifiedName>()
       fun from(namespace: String, name: String, parmeters: List<QualifiedName> = emptyList()): QualifiedName {
          return if (namespace.isNotBlank()) {
             from("$namespace.$name", parmeters)
