@@ -1,6 +1,5 @@
 package com.orbitalhq.models.facts
 
-import arrow.core.continuations.getAndUpdate
 import com.diffplug.common.base.TreeDef
 import com.diffplug.common.base.TreeStream
 import com.google.common.annotations.VisibleForTesting
@@ -20,14 +19,13 @@ import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.timeBucket
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
-import java.util.*
+import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicReference
 import java.util.stream.Collectors
-import java.util.stream.Stream
 
-
+private val logger = KotlinLogging.logger {}
 open class CopyOnWriteFactBag(
    private val facts: CopyOnWriteArrayList<TypedInstance>,
    override val scopedFacts: List<ScopedFact>,
@@ -38,7 +36,7 @@ open class CopyOnWriteFactBag(
       private val factSearcher: PathTraversingFactSearcher = PathTraversingFactSearcher(GlobalSchemaFactSearchCache)
    }
 
-   private val logger = KotlinLogging.logger {}
+
 
    constructor(facts: Collection<TypedInstance>, schema: Schema, scopedFacts: List<ScopedFact> = emptyList()) : this(
       CopyOnWriteArrayList(facts),
@@ -249,7 +247,7 @@ open class CopyOnWriteFactBag(
       strategy: FactDiscoveryStrategy,
       spec: TypedInstanceValidPredicate
    ): TypedInstance? {
-      logger.info { "Searching for type ${type.name.shortDisplayName}" }
+      logger.trace { "Searching for type ${type.name.shortDisplayName}" }
       val f =  if (useExperimentalFactSearch) {
          getFactOrNullFast(type, strategy, spec)
       } else {
@@ -258,7 +256,7 @@ open class CopyOnWriteFactBag(
          val result = fromFactCache(searchCacheKey)
          result
       }
-      logger.info { "Search for type returned ${f?.type?.name?.shortDisplayName}" }
+      logger.trace { "Search for type returned ${f?.type?.name?.shortDisplayName}" }
       return f
    }
 
@@ -295,7 +293,7 @@ open class CopyOnWriteFactBag(
    override fun getFactOrNull(
       search: FactSearch,
    ): TypedInstance? {
-      logger.info { "Search: $search" }
+      logger.trace { "Search: $search" }
       val f = when (search.searchAlgorithm) {
          // This is the preferred approach, but is newer so toggled-off
          // by default.
@@ -310,7 +308,7 @@ open class CopyOnWriteFactBag(
             fromFactCache(GetFactOrNullCacheKey(search))
          }
       }
-      logger.info { "Search returned ${f?.type?.name?.shortDisplayName}" }
+      logger.trace { "Search returned ${f?.type?.name?.shortDisplayName}" }
       return f
    }
 
@@ -350,8 +348,6 @@ private class TreeNavigator(val shouldGoDeeperPredicate: (TypedInstance) -> Tree
 
 
 private object TypedInstanceTree {
-   private val logger = KotlinLogging.logger {}
-
    /**
     * Function which defines how to convert a TypedInstance into a tree, for traversal
     */

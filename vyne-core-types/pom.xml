@@ -39,6 +39,10 @@
          <artifactId>kotlinx-serialization-json</artifactId>
       </dependency>
       <dependency>
+         <groupId>org.jetbrains.kotlin</groupId>
+         <artifactId>kotlin-reflect</artifactId>
+      </dependency>
+      <dependency>
          <groupId>com.fasterxml.jackson.core</groupId>
          <artifactId>jackson-annotations</artifactId>
       </dependency>
