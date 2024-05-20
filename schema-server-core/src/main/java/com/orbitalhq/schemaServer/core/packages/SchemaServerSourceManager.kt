@@ -154,10 +154,6 @@ class SchemaServerSourceManager(
          .publishOn(Schedulers.boundedElastic())
          .map {
             val result = submitKeepAlivePackage(submission).asSourceSubmissionResponse()
-            val json = jacksonObjectMapper()
-               .findAndRegisterModules()
-               .writerWithDefaultPrettyPrinter()
-               .writeValueAsString(result)
             result
          }
    }

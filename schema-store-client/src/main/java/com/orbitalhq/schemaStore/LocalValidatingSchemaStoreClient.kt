@@ -121,18 +121,22 @@ abstract class ValidatingSchemaStoreClient(
    protected val schemaSetHolder: ConcurrentMap<SchemaSetCacheKey, SchemaSet>,
    protected val packagesById: ConcurrentMap<UnversionedPackageIdentifier, ParsedPackage>
 ) : SchemaSetChangedEventRepository(), SchemaStore, SchemaPublisherTransport {
+   companion object {
+      private const val LOCK_KEY = "ValidatingSchemaStoreClientLockKey"
+   }
+
    override val schemaSet: SchemaSet
       get() {
          return schemaSetHolder[SchemaSetCacheKey] ?: SchemaSet.EMPTY
       }
 
-    private val packages: List<ParsedPackage>
+   private val packages: List<ParsedPackage>
       get() {
          return packagesById.values.toList()
       }
 
    var lastSubmissionResult: Either<CompilationException, Schema> = TaxiSchema.empty().right()
-        private set
+      private set
 
    private val sources: List<ParsedSource>
       get() {
@@ -144,14 +148,19 @@ abstract class ValidatingSchemaStoreClient(
 
 
    fun submitUpdates(message: PackagesUpdatedMessage): Either<CompilationException, Schema> {
-      val submissionResults = message.deltas.mapNotNull { delta ->
-         when (delta) {
-            is PackageAdded -> submitPackage(delta.newState)
-            is PackageUpdated -> submitPackage(delta.newState)
-            is PackageRemoved -> removeSchemas(listOf(delta.oldStateId))
-            is PublisherHealthUpdated -> null
+      // We need to syncronize here - when the server starts we will get many publication requests concurrently.
+      // They need to be processed incrementally, or the result becomes last-in-wins
+      val submissionResults = synchronized(LOCK_KEY) {
+         message.deltas.mapNotNull { delta ->
+            when (delta) {
+               is PackageAdded -> submitPackage(delta.newState)
+               is PackageUpdated -> submitPackage(delta.newState)
+               is PackageRemoved -> removeSchemas(listOf(delta.oldStateId))
+               is PublisherHealthUpdated -> null
+            }
          }
       }
+
       return if (submissionResults.isEmpty()) {
          schemaSet.schema.right()
       } else {
@@ -203,9 +212,9 @@ abstract class ValidatingSchemaStoreClient(
          val packageWithUnversionedId = packagesById[schemaIdToRemove.unversionedId]
          // Not sure if not removing is the right play here.
          when {
-             packageWithUnversionedId == null -> logger.warn { "Failed to remove source with schemaId $schemaIdToRemove as it was not found in the collection of sources" }
-             packageWithUnversionedId.identifier != schemaIdToRemove -> logger.warn { "Conflict in schema version to remove for package ${schemaIdToRemove.unversionedId}.  Was asked to remove version ${schemaIdToRemove.version}, but version ${packageWithUnversionedId.identifier.version} is currently stored.  Not removing." }
-             else -> packagesById.remove(schemaIdToRemove.unversionedId)
+            packageWithUnversionedId == null -> logger.warn { "Failed to remove source with schemaId $schemaIdToRemove as it was not found in the collection of sources" }
+            packageWithUnversionedId.identifier != schemaIdToRemove -> logger.warn { "Conflict in schema version to remove for package ${schemaIdToRemove.unversionedId}.  Was asked to remove version ${schemaIdToRemove.version}, but version ${packageWithUnversionedId.identifier.version} is currently stored.  Not removing." }
+            else -> packagesById.remove(schemaIdToRemove.unversionedId)
          }
       }
 
