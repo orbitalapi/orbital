@@ -4,17 +4,9 @@ import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schemas.SchemaSetChangedEvent
 import mu.KotlinLogging
 import org.reactivestreams.Publisher
-import reactor.core.publisher.SignalType
 import reactor.core.publisher.Sinks
+import java.time.Duration
 
-
-/**
- * A emitting failure handler that continues if the failure reason
- * relates to threading (non serialized)
- */
-val ContinueIfNonSerialHandler = Sinks.EmitFailureHandler { _: SignalType?, emitResult: Sinks.EmitResult ->
-   (emitResult == Sinks.EmitResult.FAIL_NON_SERIALIZED)
-}
 
 abstract class SchemaSetChangedEventRepository : SchemaChangedEventProvider, SchemaStore {
    private val schemaSetSink = Sinks.many().replay().latest<SchemaSetChangedEvent>()
@@ -46,7 +38,10 @@ abstract class SchemaSetChangedEventRepository : SchemaChangedEventProvider, Sch
       return SchemaSetChangedEvent.generateFor(lastSchemaSet, newSchemaSet)?.let { event ->
          logger.info("SchemaSet has been updated / created: $newSchemaSet - dispatching event.")
          lastSchemaSet = newSchemaSet
-         schemaSetSink.emitNext(event, ContinueIfNonSerialHandler)
+
+         // If there are concurrency issues, just retry.
+         // We can't drop this event, as it indicates a changed schema
+         schemaSetSink.emitNext(event, Sinks.EmitFailureHandler.busyLooping(Duration.ofSeconds(10)))
          event
       }
    }
