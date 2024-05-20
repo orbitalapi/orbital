@@ -4,7 +4,6 @@ import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
 import com.orbitalhq.connectors.StreamErrorMessage
-import com.orbitalhq.connectors.StreamQueryErrorEvent
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
 import com.orbitalhq.connectors.kafka.registry.brokers
@@ -30,14 +29,19 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
+import reactor.core.publisher.Mono
+import reactor.core.scheduler.Scheduler
+import reactor.core.scheduler.Schedulers
 import reactor.kafka.receiver.KafkaReceiver
 import reactor.kafka.receiver.ReceiverOptions
+import reactor.util.retry.Retry
 import java.time.Duration
 import java.time.Instant
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
+private val logger = KotlinLogging.logger {}
 data class KafkaConsumerRequest(
    val connectionName: String,
    val topicName: String,
@@ -58,8 +62,7 @@ class KafkaStreamManager(
    private val meterRegistry: MeterRegistry
 ) {
 
-   private val logger = KotlinLogging.logger {}
-
+   private val elasticScheduler: Scheduler = Schedulers.newBoundedElastic(20, Integer.MAX_VALUE, "orbital-kafka-stream")
    private val cache = CacheBuilder.newBuilder()
       .build<KafkaConsumerRequest, SharedFlow<Either<StreamErrorMessage, TypedInstance>>>()
 
@@ -112,9 +115,16 @@ class KafkaStreamManager(
             .commitBatchSize(20)
       )
          .receive()
+         .publishOn(elasticScheduler) // Cannot block the receiver thread
          .doOnSubscribe {
             logger.info { "Subscriber detected for Kafka consumer on ${request.connectionName} / ${request.topicName}" }
+         }.doOnError {
+            logger.error (it){ "Error in kafka subscriber"  }
+         }.retryWhen(Retry.backoff(3, Duration.ofSeconds(2)).transientErrors(true))
+         .onErrorResume { e ->
+            Mono.empty();
          }
+         .repeat()
          .doOnComplete {
             logger.info { "Flow Complete detected for Kafka consumer on ${request.connectionName} / ${request.topicName}" }
             evictConnection(request)
@@ -159,7 +169,7 @@ class KafkaStreamManager(
                Either.Left(errorMessage)
             } finally {
                // Only offsets explicitly acknowledged using ReceiverOffset#acknowledge() are committed.
-                record.receiverOffset().acknowledge()
+               record.receiverOffset().acknowledge()
             }
             typedInstanceOrError
          }
