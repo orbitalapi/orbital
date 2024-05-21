@@ -24,6 +24,7 @@ import { appendToQuery } from './query-code-generator';
 import { SaveQueryPanelComponent, SaveQueryPanelProps } from './save-query-panel.component';
 import { SavedQuery, SaveQueryRequest, TypeEditorService } from '../../services/type-editor.service';
 import { HttpEndpointPanelComponent } from './http-endpoint-panel.component';
+import {isNullOrUndefined} from "../../utils/utils";
 
 @Component({
   // eslint-disable-next-line @angular-eslint/component-selector
@@ -142,7 +143,7 @@ export class QueryEditorComponent {
   }
 
   saveQuery() {
-    if (this.state.savedQuery() === null) {
+    if (isNullOrUndefined(this.state.savedQuery())) {
       this.saveNewQuery();
     } else {
       this.saveExistingQuery();
@@ -166,7 +167,7 @@ export class QueryEditorComponent {
       }
     });
   }
-f
+
   private saveExistingQuery() {
     const updatedSource: VersionedSource = {
       ...this.state.savedQuery().sources[0],
