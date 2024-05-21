@@ -1,8 +1,44 @@
-<!--<nav mat-tab-nav-bar>-->
-<!--  <a mat-tab-link *ngFor="let link of links"-->
-<!--     [routerLink]="link.link"-->
-<!--     routerLinkActive #rla="routerLinkActive"-->
-<!--     [active]="rla.isActive"-->
-<!--  > {{link.label}} </a>-->
-<!--</nav>-->
-<router-outlet></router-outlet>
+<div class="tabs-container">
+  <button tuiIconButton
+          type="button"
+          size="s"
+          appearance="icon"
+          icon="tuiIconPlus"
+          class="tab-plus-button"
+          (click)="queryPanelStore.addTab()"
+          [tuiHint]="'New tab'"
+  ></button>
+  <tui-tabs-with-more [activeItemIndex]="queryPanelStore.activeTabIndex()"
+                      (activeItemIndexChange)="queryPanelStore.onTabIndexChanged($event)"
+                      [moreContent]='more'
+  >
+    <ng-container *ngFor="let query of queryPanelStore.queries(); index as i; trackBy: queryPanelStore.getTabId">
+      <button *tuiItem tuiTab class="tab-button">
+        {{query.tabName}}
+        <tui-svg
+          *ngIf="queryPanelStore.queries().length !== 1"
+          src="tuiIconClose"
+          class="close-tab-button"
+          [class.show-close]="queryPanelStore.activeTabIndex() === i"
+          (click.stop)="queryPanelStore.closeTab(i)"
+        ></tui-svg>
+      </button>
+    </ng-container>
+  </tui-tabs-with-more>
+
+  <ng-template #more>
+    <tui-svg src="tuiIconMoreHorizontalLarge"></tui-svg>
+  </ng-template>
+</div>
+<app-query-editor
+  [state]="editorStore.activeQueryEditorState().payload"
+  (queryChanged)="queryPanelStore.updateQuery($event.query, $event.chatQuery)"
+  (queryLanguageChanged)="queryPanelStore.updateQueryLanguage($event)"
+  (submitQuery)="editorStore.submitQuery()"
+  (cancelQuery)="editorStore.cancelQuery()"
+  (pauseQuery)="editorStore.pauseQuery($event)"
+  (loadProfileData)="editorStore.loadProfileData()"
+  (onQuerySaved)="queryPanelStore.onQuerySaved($event)"
+  (onSavedQuerySelected)="queryPanelStore.onSavedQuerySelected($event)"
+  (onCopyQuery)="editorStore.copyQuery($event)"
+></app-query-editor>

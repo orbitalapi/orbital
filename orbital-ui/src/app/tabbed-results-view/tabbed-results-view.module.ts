@@ -7,7 +7,7 @@ import {CallExplorerModule} from '../query-panel/taxi-viewer/call-explorer/call-
 import {CommonModule} from '@angular/common';
 import {LineageDisplayModule} from '../lineage-display/lineage-display.module';
 import {ExpandingPanelSetModule} from '../expanding-panelset/expanding-panel-set.module';
-import { TuiBadgeModule, TuiCheckboxLabeledModule, TuiProgressModule, TuiTabsModule } from '@taiga-ui/kit';
+import { TuiBadgeModule, TuiProgressModule, TuiTabsModule } from '@taiga-ui/kit';
 import {
   TuiButtonModule,
   TuiDataListModule,
@@ -36,7 +36,6 @@ import {QueryErrorsListComponent} from "../query-errors-list/query-errors-list.c
     TuiProgressModule,
     QueryErrorsListComponent,
     TuiBadgeModule,
-    TuiCheckboxLabeledModule,
     TuiHintModule
 
   ],

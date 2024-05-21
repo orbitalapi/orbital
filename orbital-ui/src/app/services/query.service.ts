@@ -66,7 +66,7 @@ export class QueryService {
   }
 
   websocketQuery(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<ValueWithTypeName> {
-    const websocket = this.websocketService.websocket('/api/query/taxiql');
+    const websocket = this.websocketService.websocket('/api/query/taxiql', true);
     websocket.next({
       clientQueryId: clientQueryId,
       query: query
@@ -75,7 +75,7 @@ export class QueryService {
   }
 
   getQueryErrors(clientQueryId: string):Observable<StreamQueryErrorEvent> {
-    return this.websocketService.websocket(`/api/query/taxiql/${clientQueryId}/errors`)
+    return this.websocketService.websocket(`/api/query/taxiql/${clientQueryId}/errors`, true)
   }
 
   /**
