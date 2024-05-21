@@ -23,29 +23,28 @@ import { ExportFormat } from 'src/app/results-download/results-download.service'
   template: `
     <ng-container *ngIf="ready">
       <app-results-table *ngIf="displayMode==='table'"
+                         [isStreamingQuery]="isStreamingQuery"
                          [instances$]="instances$"
-                         [rowData]="instances"
                          [schema]="schema"
                          [selectable]="selectable"
                          [type]="type"
                          [anonymousTypes]="anonymousTypes"
-                         [isStreamingQuery]="isStreamingQuery"
                          (instanceClicked)="instanceClicked.emit($event)">
       </app-results-table>
       <app-object-view *ngIf="displayMode==='tree'"
+                       [isStreamingQuery]="isStreamingQuery"
                        [instances$]="instances$"
                        [schema]="schema"
                        [selectable]="selectable"
                        [type]="type"
                        [anonymousTypes]="anonymousTypes"
-                       [isStreamingQuery]="isStreamingQuery"
                        (instanceClicked)="instanceClicked.emit($event)">
       </app-object-view>
       <app-json-results-view *ngIf="displayMode === 'json'"
-                             [instances$]="instances$"
-                             [schema]="schema"
-                             [isResponseLarge]="isResponseLarge"
                              [isStreamingQuery]="isStreamingQuery"
+                             [instances$]="instances$"
+                             [isResponseLarge]="isResponseLarge"
+                             [schema]="schema"
                              >
       </app-json-results-view>
     </ng-container>
@@ -84,7 +83,6 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
     this._displayMode = value;
   }
 
-  instances: InstanceLike[];
   private _displayMode: DisplayMode = 'table';
   private _instances$: Observable<InstanceLike>;
   @Input()
@@ -114,9 +112,7 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
     }
 
     this._instances$ = value;
-    this.instances = [];
     this.unsubscribeOnClose(this._instances$.subscribe(next => {
-      this.instances.push(next);
       this.instancesChanged$.emit();
     }));
 

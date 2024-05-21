@@ -29,7 +29,7 @@ tui-badge.error-count-badge {
   flex-grow: 1;
 }
 tui-tabs-with-more {
-  width: 100%;
+  flex: auto;
 
   button {
     font-family: $headings-font;
@@ -74,9 +74,23 @@ progress {
 .rightside-controls-container {
   display: flex;
 
-  .pause-stream-checkbox {
-    white-space: nowrap;
-    margin-right: 1rem;
-    align-content: center;
+  .pause-stream-button {
+    &.is-query-paused {
+      animation: pulse 1s infinite ease-in-out;
+
+      @keyframes pulse {
+        0% {
+          background: rgba($warning-dark, 0.25);
+        }
+
+        50% {
+          background: rgba($warning-dark, 1);
+        }
+
+        100% {
+          background: rgba($warning-dark, 0.25);
+        }
+      }
+    }
   }
 }

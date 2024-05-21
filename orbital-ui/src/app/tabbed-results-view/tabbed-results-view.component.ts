@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { tuiIconPause, tuiIconPlay } from '@taiga-ui/icons';
 import { BehaviorSubject, EMPTY, filter, Observable, of, Subject } from 'rxjs';
 import { DisplayMode, DownloadClickedEvent } from '../object-view/object-view-container.component';
-import { RunningQueryStatus } from '../services/active-queries-notification-service';
 import { InstanceLike, Type } from '../services/schema';
 import {QueryProfileData, StreamQueryErrorEvent} from '../services/query.service';
 import { BaseQueryResultComponent } from '../query-panel/result-display/BaseQueryResultComponent';
@@ -32,8 +32,9 @@ import { map, scan, tap } from 'rxjs/operators';
     ></progress>
     <ng-container *ngIf="{obs: responseIsLarge$ | async} as responseIsLarge">
       <app-panel-header class="panel-header" title="Results" [isSecondary]="true">
-        <tui-tabs-with-more [(activeItemIndex)]="activeTabIndex" *ngIf="showResultsPanel"
-                            (activeItemIndexChange)="onTabIndexChanged()"
+        <tui-tabs-with-more *ngIf="showResultsPanel"
+                            [(activeItemIndex)]="activeTabIndex"
+                            (activeItemIndexChange)="onTabIndexChanged($event)"
                             [moreContent]='more'
         >
           <button *tuiItem tuiTab [disabled]="responseIsLarge.obs">
@@ -64,15 +65,17 @@ import { map, scan, tap } from 'rxjs/operators';
           <tui-svg src="tuiIconMoreHorizontalLarge"></tui-svg>
         </ng-template>
         <div class="rightside-controls-container">
-          <tui-checkbox-labeled
+          <button
             *ngIf="isStreamingQuery && isQueryRunning"
-            tuiHint="Pause the stream on the UI"
-            class="pause-stream-checkbox"
-            [ngModel]="isStreamPaused"
-            (ngModelChange)="pauseStreamToggled.emit($event)"
+            tuiButton type="button" appearance="outline" size="s"
+            [icon]="isQueryPaused ? tuiIconPlay : tuiIconPause"
+            [tuiHint]="isQueryPaused ? 'Resume the stream on the UI' : 'Pause the stream on the UI'"
+            (click)="pauseStreamToggled.emit(!isQueryPaused)"
+            class="button-small menu-bar-button pause-stream-button"
+            [class.is-query-paused]="isQueryPaused"
           >
-            Pause stream
-          </tui-checkbox-labeled>
+            {{isQueryPaused ? 'Resume stream' : 'Pause stream'}}
+          </button>
           <tui-hosted-dropdown
             *ngIf="showResultsPanel && downloadSupported"
             tuiDropdownAlign="left"
@@ -101,9 +104,9 @@ import { map, scan, tap } from 'rxjs/operators';
         (instanceClicked)="instanceClicked($event,type.name)"
       ></app-object-view-container>
     </ng-container>
-    <app-call-explorer [queryProfileData$]="profileData$"
-                       *ngIf="activeTabIndex === 3 && showResultsPanel && !isQueryRunning"></app-call-explorer>
-
+    <app-call-explorer *ngIf="activeTabIndex === 3 && profileData$ && showResultsPanel && !isQueryRunning"
+                       [queryProfileData$]="profileData$"
+    ></app-call-explorer>
     <app-query-errors-list
       *ngIf="activeTabIndex == 4" [errorMessages$]="errorMessages$"></app-query-errors-list>
     <ng-template #downloadIcon>
@@ -153,7 +156,8 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   @Input()
   set isQueryRunning(value: boolean) {
     this._isQueryRunning = value;
-    this.isStreamPaused = false;
+    this.isQueryPaused = false;
+    if (value && this.activeTabIndex === 3) this.activeTabIndex = 0;
   }
 
   constructor(protected typeService: TypesService,
@@ -166,6 +170,7 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   }
 
   LARGE_RESPONSE_LIMIT = 1_048_576; // 1MB
+  @Input()
   activeTabIndex: number = 0;
 
   @Input()
@@ -181,8 +186,6 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   loadProfileData = new EventEmitter();
 
   downloadMenuOpen = false;
-
-  isStreamPaused: boolean = false;
 
   hasModelFormatSpecs: Subject<boolean> = new BehaviorSubject(true);
   private jsonInstances$: Observable<string> = of();
@@ -285,6 +288,9 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   @Input()
   isStreamingQuery: boolean;
 
+  @Input()
+  isQueryPaused: boolean;
+
   protected updateDataSources() {
   }
   onDownloadClicked(format: ExportFormat) {
@@ -308,13 +314,14 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   }
 
 
-  onTabIndexChanged() {
+  onTabIndexChanged($event: number) {
+    this.activeTabIndex = $event
     if (this.activeTabIndex === this.PROFILER_TAB_INDEX) {
       this.loadProfileData.emit();
     }
+    this.changeDetector.detectChanges();
   }
 
-  protected readonly isNullOrUndefined = isNullOrUndefined;
-
-
+  protected readonly tuiIconPlay = tuiIconPlay;
+  protected readonly tuiIconPause = tuiIconPause;
 }

@@ -40,7 +40,9 @@ as-split.query-panel-split {
   width: 100%;
   height: 100%;
 
-  app-catalog-explorer-panel, app-query-history-panel, app-saved-queries-panel {
+  app-catalog-explorer-panel,
+  app-query-history-panel,
+  app-saved-queries-panel {
     width: 400px;
     overflow: auto;
   }

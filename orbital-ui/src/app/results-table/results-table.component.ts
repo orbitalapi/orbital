@@ -19,7 +19,7 @@ import {Observable} from 'rxjs';
 import {Subscription} from 'rxjs';
 import {ValueWithTypeName} from '../services/models';
 import * as moment from 'moment';
-import { bufferTime, map } from 'rxjs/operators';
+import { bufferTime, filter, map } from 'rxjs/operators';
 import {isScalar} from "../object-view/object-view.component";
 
 @Component({
@@ -30,7 +30,6 @@ import {isScalar} from "../object-view/object-view.component";
     <ag-grid-angular
       class="ag-theme-alpine"
       [enableCellTextSelection]="true"
-      [rowData]="rowData"
       [columnDefs]="columnDefs"
       [pagination]="true"
       [paginationPageSize]="paginationPageSize"
@@ -74,6 +73,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   // It's maintained by the parent container.  This component doesn't modify it.
   // We need the subscription as ag grid expects changes made after rowDAta is set
   // to be done by calling a method.
+  // TODO: don't think we need this anymore...? Double check with Marty, I must be missing something!!??
   @Input()
   rowData: ReadonlyArray<InstanceLike> = [];
 
@@ -128,6 +128,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       // TODO: might need this approach in the other components as well...
       .pipe(
         bufferTime(500),
+        filter(arr => arr.length > 0),
         map(buffer => this.isStreamingQuery ? buffer.reverse() : buffer)
       )
       .subscribe((next) => {

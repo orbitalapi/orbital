@@ -99,7 +99,7 @@ export class SaveQueryPanelComponent {
   working: boolean = false;
 
   constructor(private packagesService: PackagesService,
-              private editorService: TypeEditorService,
+              private typeEditorService: TypeEditorService,
               @Inject(TuiDialogService) private readonly dialogs: TuiDialogService,
               @Inject(POLYMORPHEUS_CONTEXT)
               private readonly context: TuiDialogContext<SavedQuery, SaveQueryPanelProps>,
@@ -139,7 +139,7 @@ export class SaveQueryPanelComponent {
     const formData = this.formGroup.getRawValue() as { schemaPackage: SourcePackageDescription, queryName: string }
     this.working = true;
     this.changeRef.markForCheck();
-    this.editorService.saveQuery({
+    this.typeEditorService.saveQuery({
       source: {
         name: formData.queryName + '.taxi',
         packageIdentifier: formData.schemaPackage.identifier,

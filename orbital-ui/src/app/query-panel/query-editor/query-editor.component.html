@@ -14,76 +14,82 @@
             </app-panel>
             <app-panel icon="assets/img/tabler/device-floppy.svg" title="Saved queries">
               <app-saved-queries-panel
-                (savedQueryClicked)="onSavedQuerySelected($event)"
+                (savedQueryClicked)="onSavedQuerySelected.emit($event)"
               ></app-saved-queries-panel>
             </app-panel>
-
           </app-panelset>
           <div class='code-editor-section'>
             <app-panel-header title="Query editor">
               <app-query-editor-toolbar
-                (executeQuery)='submitQuery()'
-                [currentState$]='currentState$'
-                [queryStarted]="queryStartTime"
-                [(queryLanguage)]='queryLanguage'
-                [runningQueryStatus]='queryMetadata$ | async'
-                [resultType]="resultType"
-                (cancelQuery)='cancelQuery()'
-                (copyQuery)='copyQuery($event)'
+                (executeQuery)='submitQuery.emit()'
+                [currentState]='state.currentState'
+                [queryStarted]="state.queryStartTime()"
+                [queryLanguage]='state.queryLanguage()'
+                (queryLanguageChange)="queryLanguageChanged.emit($event)"
+                [runningQueryStatus]='state.queryMetadata() | async'
+                [resultType]="state.resultType()"
+                (cancelQuery)='cancelQuery.emit()'
+                (copyQuery)='onCopyQuery.emit($event)'
                 (saveClicked)="saveQuery()"
                 (publishAsHttpEndpoint)="createHttpEndpoint()"
-                [publishAsHttpEndpointEnabled]="savedQuery !== null"
+                [publishAsHttpEndpointEnabled]="state.savedQuery() !== null"
               >
               </app-query-editor-toolbar>
             </app-panel-header>
             <tui-notification
               size="s"
               status="error"
-              *ngIf='lastErrorMessage'
+              *ngIf="state.lastErrorMessage()"
               class='error-notification'
             >
-              <div class='error-message'>{{ lastErrorMessage }}</div>
+              <div class='error-message'>{{ state.lastErrorMessage() }}</div>
             </tui-notification>
-            <div class='code-viewer-container' *ngIf='queryLanguage === "TaxiQL"'>
+            <div class='code-viewer-container' *ngIf='state.queryLanguage() === "TaxiQL"'>
               <app-code-editor
                 class='code-editor'
                 [actions]='customActions'
-                [(content)]='query'
+                [content]="state.query()"
                 (contentChange)="onQueryChanged($event)"
                 #editor
               ></app-code-editor>
             </div>
-            <tui-text-area class='flat query-input' [(ngModel)]='chatQuery' *ngIf='queryLanguage === "Text"'>Write a
+            <tui-text-area
+              *ngIf='state.queryLanguage() === "Text"'
+              class='flat query-input'
+              [ngModel]='state.chatQuery()'
+              (ngModelChange)="onChatQueryChanged($event)"
+            >Write a
               query
             </tui-text-area>
           </div>
         </div>
       </as-split-area>
-      <as-split-area size='50' [title]="!queryStartTime ? 'Run a query first' : ''">
+      <as-split-area size='50' [title]="!state.queryStartTime() ? 'Run a query first' : ''">
         <app-error-panel *ngIf='lastQueryResultAsSuccess?.unmatchedNodes?.length > 0'
                          [queryResult]='lastQueryResultAsSuccess'>
         </app-error-panel>
-        <app-tabbed-results-view [instances$]='potentiallyPausedResults$'
-                                 [profileData$]='queryProfileData$'
-                                 [errorMessages$]="errors$"
-                                 [errorCount]="errorCount"
-                                 [type]='resultType'
-                                 [anonymousTypes]='anonymousTypes'
-                                 [isQueryRunning]='(currentState$ | async) === "Running" || (isProfileDataLoading$ | async)'
+        <app-tabbed-results-view [instances$]='state.potentiallyPausedResults()'
+                                 [profileData$]='state.queryProfileData()'
+                                 [errorMessages$]="state.errors()"
+                                 [errorCount]="state.errorCount()"
+                                 [type]="state.resultType()"
+                                 [anonymousTypes]="state.anonymousTypes()"
+                                 [isQueryRunning]='state.currentState() === "Running"'
                                  [isStreamingQuery]="isStreamingQuery"
-                                 [class.is-disabled]="!queryStartTime"
-                                 (instanceSelected)='valuePanelVisible = true; instanceSelected$.next($event)'
+                                 [isQueryPaused]="state.isQueryPaused()"
+                                 [class.is-disabled]="!state.queryStartTime()"
+                                 (instanceSelected)='state.valuePanelVisible.set(true); state.instanceSelected().next($event)'
                                  (downloadClicked)='downloadQueryHistory($event.format)'
-                                 (loadProfileData)='loadProfileData()'
-                                 (pauseStreamToggled)="toggleStreamPauseState($event)"
+                                 (loadProfileData)='loadProfileData.emit()'
+                                 (pauseStreamToggled)="pauseQuery.emit($event)"
         ></app-tabbed-results-view>
       </as-split-area>
     </as-split>
   </as-split-area>
-  <as-split-area *ngIf='valuePanelVisible' size='25'>
+  <as-split-area *ngIf="state.valuePanelVisible()" size="25">
     <app-typed-instance-panel-container
-      [queryResultSelectedEvent$]='instanceSelected$'
-      (close)='valuePanelVisible = false'
+      [queryResultSelectedEvent$]="state.instanceSelected()"
+      (close)="state.valuePanelVisible.set(false)"
     ></app-typed-instance-panel-container>
   </as-split-area>
 </as-split>

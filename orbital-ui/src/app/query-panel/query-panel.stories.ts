@@ -17,7 +17,7 @@ storiesOf('Query panel', module)
   ).add('Query editor', () => {
   return {
     template: `<div style="padding: 40px; width: 100%; height: 250px" >
-    <query-editor></query-editor>
+    <app-query-editor></app-query-editor>
     </div>`,
     props: {}
   };

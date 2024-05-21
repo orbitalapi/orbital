@@ -15,3 +15,41 @@
   margin: 2rem 3rem;
   width: 40vw;
 }
+
+.tabs-container {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-left: 0.8rem;
+
+  tui-tabs-with-more {
+    flex: auto;
+
+    .tab-button {
+      padding: 0 0.25rem 0 0.5rem;
+      --tui-tab-margin: 0.5rem !important;
+    }
+  }
+
+  .tab-button {
+    &:hover {
+      .close-tab-button {
+        opacity: 0.5;
+      }
+    }
+  }
+
+  .close-tab-button {
+    margin-left: 0.25rem;
+    opacity: 0;
+    transition: opacity 150ms ease-in-out;
+
+    &.show-close {
+      opacity: 0.8 !important;
+    }
+
+    &:hover {
+      opacity: 1 !important;
+    }
+  }
+}

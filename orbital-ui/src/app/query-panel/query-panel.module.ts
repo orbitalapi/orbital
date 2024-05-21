@@ -1,5 +1,7 @@
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
+import { QueryEditorStoreService } from '../services/query-editor-store.service';
+import { QueryPanelStoreService } from '../services/query-panel-store.service';
 import {QueryPanelComponent} from './query-panel.component';
 import {SearchModule} from '../search/search.module';
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
@@ -40,7 +42,7 @@ import {
   TuiButtonModule, TuiDataListModule, TuiDropdownModule,
   TuiErrorModule,
   TuiHintModule, TuiHostedDropdownModule,
-  TuiNotificationModule,
+  TuiNotificationModule, TuiSvgModule,
   TuiTextfieldControllerModule
 } from '@taiga-ui/core';
 import {ResultsDownloadModule} from 'src/app/results-download/results-download.module';
@@ -127,7 +129,7 @@ import {TuiActiveZoneModule} from "@taiga-ui/cdk";
     TuiActiveZoneModule,
     TuiHostedDropdownModule,
     TuiDataListModule,
-
+    TuiSvgModule,
   ],
   exports: [QueryPanelComponent,
     QueryEditorComponent,
@@ -142,7 +144,7 @@ import {TuiActiveZoneModule} from "@taiga-ui/cdk";
     SaveQueryPanelComponent
 
   ],
-  providers: [],
+  providers: [QueryPanelStoreService, QueryEditorStoreService]
 })
 export class QueryPanelModule {
 }

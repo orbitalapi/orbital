@@ -7,487 +7,146 @@ import {
   Inject,
   Injector,
   Input,
-  OnInit,
-  Output
+  Output,
 } from '@angular/core';
-import {
-  bufferToggle,
-  distinctUntilChanged,
-  filter,
-  map,
-  mergeMap,
-  retry,
-  startWith,
-  tap,
-  windowToggle,
-} from 'rxjs/operators';
-
-import {editor, KeyCode, KeyMod} from 'monaco-editor';
-import { AppConfig, AppInfoService } from '../../services/app-info.service';
-import {
-  ChatParseResult,
-  QueryHistorySummary,
-  QueryProfileData,
-  QueryResult,
-  QueryService,
-  randomId,
-  ResultMode, StreamErrorMessage, StreamQueryErrorEvent
-} from '../../services/query.service';
-import {QueryHistoryStoreService} from '../../services/query-history-store.service';
-import {QueryLanguage, QueryState} from './query-editor-toolbar.component';
-import {isQueryResult, QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
-import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
-import {findType, InstanceLike, QualifiedName, Schema, Type, VersionedSource} from '../../services/schema';
-import { BehaviorSubject, EMPTY, interval, merge, Observable, ReplaySubject, Subject } from 'rxjs';
-import {isNullOrUndefined} from 'src/app/utils/utils';
-import {
-  ActiveQueriesNotificationService,
-  RunningQueryStatus
-} from '../../services/active-queries-notification-service';
-import {TypesService} from '../../services/types.service';
-import {
-  FailedSearchResponse,
-  isFailedSearchResponse,
-  isValueWithTypeName,
-  StreamingQueryMessage
-} from '../../services/models';
-import {Router} from '@angular/router';
-import {ExportFormat, ResultsDownloadService} from 'src/app/results-download/results-download.service';
-import {copyQueryAs, CopyQueryFormat} from 'src/app/query-panel/query-editor/QueryFormatter';
-import {Clipboard} from '@angular/cdk/clipboard';
-import {
-  CodeGenRequest,
-  QuerySnippetContainerComponent
-} from 'src/app/query-snippet-panel/query-snippet-container.component';
-import {TuiAlertService, TuiDialogService, TuiNotification} from '@taiga-ui/core';
-import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
-import {appendToQuery} from "./query-code-generator";
-import {SaveQueryPanelComponent, SaveQueryPanelProps} from "./save-query-panel.component";
-import {SavedQuery, SaveQueryRequest, TypeEditorService} from "../../services/type-editor.service";
-import {MatLegacySnackBar as MatSnackBar} from "@angular/material/legacy-snack-bar";
-import {HttpEndpointPanelComponent} from "./http-endpoint-panel.component";
-import ITextModel = editor.ITextModel;
-import ICodeEditor = editor.ICodeEditor;
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { TuiAlertService, TuiDialogService, TuiNotification } from '@taiga-ui/core';
+import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
+import { editor, KeyCode, KeyMod } from 'monaco-editor';
+import { QueryEditorPayload } from '../../services/query-editor.state';
+import { QueryHistorySummary, QueryResult, QueryService } from '../../services/query.service';
+import { QueryLanguage } from './query-editor-toolbar.component';
+import { isQueryResult } from '../result-display/BaseQueryResultComponent';
+import { QualifiedName, VersionedSource } from '../../services/schema';
+import { ExportFormat, ResultsDownloadService } from 'src/app/results-download/results-download.service';
+import { CopyQueryFormat } from 'src/app/query-panel/query-editor/QueryFormatter';
+import { appendToQuery } from './query-code-generator';
+import { SaveQueryPanelComponent, SaveQueryPanelProps } from './save-query-panel.component';
+import { SavedQuery, SaveQueryRequest, TypeEditorService } from '../../services/type-editor.service';
+import { HttpEndpointPanelComponent } from './http-endpoint-panel.component';
 
-declare const monaco: any; // monaco
 @Component({
   // eslint-disable-next-line @angular-eslint/component-selector
-  selector: 'query-editor',
+  selector: 'app-query-editor',
   templateUrl: './query-editor.component.html',
   styleUrls: ['./query-editor.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class QueryEditorComponent implements OnInit {
-
+export class QueryEditorComponent {
+  // TODO: still think sending the actual store in here is better, despite it allowing access to
+  //       addQueryEditorState and removeQueryEditorState. Would remove the need for the Outputs
+  //       and wouldn't need to pass the schema in separately either. Essentially the signature of
+  //       the component would be reliant completely on the store...
+  //       Will also facilitate computed values far more easily, they can sit at the Store level
+  //       instead of on the QueryEditorState where they're hard to access
   @Input()
-  initialQuery: QueryHistorySummary;
+  state: QueryEditorPayload;
 
-  queryLanguage: QueryLanguage = 'TaxiQL';
+  @Output()
+  queryChanged = new EventEmitter<{query: string, chatQuery: string}>();
 
-  codeEditorTabIndex: number = 0;
+  @Output()
+  queryLanguageChanged = new EventEmitter<QueryLanguage>();
 
-  monacoEditor: ICodeEditor;
-  monacoModel: ITextModel;
-  chatQuery: string;
-  query: string;
-  queryClientId: string | null = null;
-  lastQueryResult: QueryResult | FailedSearchResponse;
-  queryReturnedResults: boolean | null = null;
-  queryStartTime: Date = null;
+  @Output()
+  submitQuery = new EventEmitter<void>();
 
-  // queryResults: InstanceLike[];
+  @Output()
+  cancelQuery = new EventEmitter<void>();
 
-  resultType: Type | null = null;
-  anonymousTypes: Type[] = [];
-  latestQueryStatus: RunningQueryStatus | null = null;
-  private results$: ReplaySubject<InstanceLike>;
-  potentiallyPausedResults$: Observable<InstanceLike>;
-  errors$: ReplaySubject<StreamQueryErrorEvent>;
-  queryProfileData$: Observable<QueryProfileData>;
-  isProfileDataLoading$: Observable<boolean>;
-  queryMetadata$: Observable<RunningQueryStatus>;
+  @Output()
+  pauseQuery = new EventEmitter<boolean>();
 
-  customActions: editor.IActionDescriptor[];
-  private isErrorMessageSubscriptionSetup: boolean;
-  private readonly MAX_QUERY_RECORD_COUNT_DEFAULT: number = 5000;
+  @Output()
+  loadProfileData = new EventEmitter<void>();
 
+  @Output()
+  onQuerySaved = new EventEmitter<SavedQuery>();
 
+  @Output()
+  onSavedQuerySelected = new EventEmitter<SavedQuery>();
+
+  @Output()
+  onCopyQuery = new EventEmitter<CopyQueryFormat>();
+
+  readonly customActions: editor.IActionDescriptor[] = [
+    {
+      id: 'run-query',
+      run: () => this.submitQuery.emit(),
+      label: 'Execute query',
+      keybindings: [
+        KeyMod.CtrlCmd | KeyCode.Enter
+      ],
+      contextMenuGroupId: 'navigation',
+      contextMenuOrder: 1.5
+    }
+  ];
+
+  constructor(private queryService: QueryService,
+              private fileService: ResultsDownloadService,
+              private changeDetector: ChangeDetectorRef,
+              @Inject(TuiDialogService) private readonly tuiDialogService: TuiDialogService,
+              @Inject(Injector) private readonly injector: Injector,
+              @Inject(TuiAlertService) private readonly alerts: TuiAlertService,
+              private typeEditorService: TypeEditorService,
+              private destroyRef: DestroyRef
+  ) {
+  }
+
+  public downloadQueryHistory(fileType: ExportFormat) {
+    if (fileType === ExportFormat.TEST_CASE) {
+      this.queryService.getHistorySummaryFromClientId(this.state.queryClientId())
+        .subscribe(result => {
+          this.fileService.promptToDownloadTestCase(result.queryId);
+        });
+    } else {
+      this.fileService.downloadQueryHistoryFromClientQueryId(this.state.queryClientId(), fileType);
+    }
+  }
+
+  // TODO Would like to make this computed, but this isn't easily
+  //      achieved with the state prop, so wait to see how things pan
+  //      out with moving the props/output fully into the store.
   get lastQueryResultAsSuccess(): QueryResult | null {
-    if (isQueryResult(this.lastQueryResult)) {
-      return this.lastQueryResult;
+    if (isQueryResult(this.state.lastQueryResult())) {
+      return this.state.lastQueryResult() as QueryResult;
     } else {
       return null;
     }
   }
 
-  lastErrorMessage: string | null;
-
-  schema: Schema;
-  currentState$: BehaviorSubject<QueryState> = new BehaviorSubject<QueryState>('Editing');
-
-  valuePanelVisible: boolean = false;
-
-  queryParseResult: ChatParseResult;
-
-  errorCount = 0;
-
-  @Output()
-  queryResultUpdated = new EventEmitter<QueryResult | FailedSearchResponse>();
-  @Output()
-  loadingChanged = new EventEmitter<boolean>();
-
-  // Use a replay subject, as sometimes the UI hasn't rendered at the time
-  // when the event is emitted, but will subscribe shortly after
-  instanceSelected$ = new ReplaySubject<QueryResultInstanceSelectedEvent>(1);
-
-  savedQuery: SavedQuery = null;
-  config: AppConfig;
-
-  // Pause stream related stuff
-  private pauseSubj$ = new BehaviorSubject(false);
-  private pause$ = this.pauseSubj$.pipe(
-    distinctUntilChanged(),
-  );
-  private on$ = this.pause$.pipe(filter(v=>!v));
-  private off$ = this.pause$.pipe(filter(v=>!!v));
-
-  private readonly PERSISTED_QUERY_LOCAL_STORAGE_KEY: string = 'persistedQuery'
-
-  constructor(private queryService: QueryService,
-              private queryHistoryStoreService: QueryHistoryStoreService,
-              private fileService: ResultsDownloadService,
-              private dialogService: MatDialog,
-              private activeQueryNotificationService: ActiveQueriesNotificationService,
-              private typeService: TypesService,
-              private appInfoService: AppInfoService,
-              private router: Router,
-              private changeDetector: ChangeDetectorRef,
-              private clipboard: Clipboard,
-              @Inject(TuiDialogService) private readonly tuiDialogService: TuiDialogService,
-              @Inject(Injector) private readonly injector: Injector,
-              @Inject(TuiAlertService) private readonly alerts: TuiAlertService,
-              private editorService: TypeEditorService,
-              private snackbarService: MatSnackBar,
-              private destroyRef: DestroyRef
-  ) {
-    appInfoService.getConfig()
-      .subscribe(next => this.config = next);
-    this.initialQuery = this.router.lastSuccessfulNavigation?.extras?.state?.query;
-    this.typeService.getTypes()
-      .subscribe(schema => this.schema = schema);
-    this.customActions = [
-      {
-        id: 'run-query',
-        run: () => this.submitQuery(),
-        label: 'Execute query',
-        keybindings: [
-          KeyMod.CtrlCmd | KeyCode.Enter
-        ],
-        contextMenuGroupId: 'navigation',
-        contextMenuOrder: 1.5
-      }
-    ];
-  }
-
-  ngOnInit(): void {
-    const persistedQuery = localStorage.getItem(this.PERSISTED_QUERY_LOCAL_STORAGE_KEY) ?? '';
-    if (persistedQuery !== '') {
-      this.alerts.open('Previous query restored', {status: TuiNotification.Success})
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe()
-    }
-    this.query = this.initialQuery?.taxiQl ?? persistedQuery ?? '';
-  }
-
-  submitQuery() {
-    this.valuePanelVisible = false;
-    switch (this.queryLanguage) {
-      case 'Text':
-        this.submitTextQuery();
-        break;
-      case 'TaxiQL':
-        this.submitTaxiQlQuery();
-        break;
-    }
-  }
-
-  saveQuery() {
-    if (this.savedQuery == null) {
-      this.saveNewQuery();
-    } else {
-      this.saveExistingQuery();
-    }
-  }
-
-  private prepareToSubmitQuery() {
-    this.currentState$.next('Running');
-    this.queryStartTime = new Date();
-    this.lastQueryResult = null;
-    this.lastErrorMessage = null;
-    this.errorCount = 0;
-    this.queryReturnedResults = false;
-    this.loadingChanged.emit(true);
-    this.queryClientId = randomId();
-    this.resultType = null;
-    // Use a replay subject here, so that when people switch
-    // between Query Results and Profiler tabs, the results are still made available
-    // Note: using the MAX_QUERY_RECORD_COUNT_DEFAULT in case the server doesn't return a maxQueryRecordCount prop
-    this.results$ = new ReplaySubject(this.config.maxQueryRecordCount || this.MAX_QUERY_RECORD_COUNT_DEFAULT);
-
-    this.potentiallyPausedResults$ = merge(
-      this.results$.pipe(
-        bufferToggle(
-          this.off$,
-          () => this.on$
-        ),
-        mergeMap(x => x)
-      ),
-      this.results$.pipe(
-        windowToggle(
-          this.on$,
-          () => this.off$
-        ),
-        mergeMap(x=> x)
-      )
-    )
-
-    this.toggleStreamPauseState(false);
-
-    this.errors$ = new ReplaySubject(this.config.maxQueryRecordCount || this.MAX_QUERY_RECORD_COUNT_DEFAULT);
-    this.latestQueryStatus = null;
-    this.queryMetadata$ = null;
-    this.queryProfileData$ = null;
-
-    this.changeDetector.markForCheck();
-  }
-
-  private submitTaxiQlQuery() {
-
-    this.prepareToSubmitQuery();
-
-    const queryCompleteHandler = () => {
-      this.handleQueryFinished();
-    };
-
-    const queryErrorHandler = (error: FailedSearchResponse) => {
-      if (error instanceof CloseEvent) {
-        queryCompleteHandler();
-        return;
-      }
-
-      this.lastQueryResult = error;
-      this.isErrorMessageSubscriptionSetup = false;
-      console.error('Search failed: ' + JSON.stringify(error));
-      this.queryResultUpdated.emit(this.lastQueryResult);
-      this.loadingChanged.emit(false);
-      this.currentState$.next('Error');
-      this.lastErrorMessage = this.formatErrorMessage(this.lastQueryResult.message);
-    };
-
-    const queryMessageHandler = (message: StreamingQueryMessage) => {
-      if (isFailedSearchResponse(message)) {
-        queryErrorHandler(message);
-      } else if (isValueWithTypeName(message)) {
-        if (this.queryMetadata$ === null) {
-          this.subscribeForQueryStatusUpdates(message.queryId);
-        }
-        this.queryReturnedResults = true;
-        if (!isNullOrUndefined(message.typeName)) {
-          this.anonymousTypes = message.anonymousTypes;
-          this.resultType = findType(this.schema, message.typeName, message.anonymousTypes);
-        }
-        this.results$.next(message);
-      } else {
-        console.error('Received an unexpected type of message from a query event stream: ' + JSON.stringify(message));
-      }
-
-    };
-
-
-
-    this.queryService.websocketQuery(this.query, this.queryClientId, ResultMode.SIMPLE)
-      .pipe(tap(_ => !this.isErrorMessageSubscriptionSetup ? this.setupErrorMessageSubscription() : null))
-      .subscribe({
-        next: queryMessageHandler,
-        error: queryErrorHandler,
-        complete: queryCompleteHandler
-      });
-  }
-
-  private subscribeForQueryStatusUpdates(queryId: string) {
-    this.queryMetadata$ = this.activeQueryNotificationService.getQueryStatusStreamForQueryId(
-      queryId
-    ).pipe(
-      tap(message => {
-        if (isNullOrUndefined(this.latestQueryStatus)) {
-          this.latestQueryStatus = message;
-        } else if (this.latestQueryStatus.completedProjections < message.completedProjections || !message.running) {
-          // We can receive messages out-of-order, because of how everything
-          // executes in parallel.  Therefore, only update if this update moves us forward.
-          this.latestQueryStatus = message;
-        }
-      })
-    );
-  }
-
-  onInstanceSelected($event: QueryResultInstanceSelectedEvent) {
-    this.instanceSelected$.next($event);
-  }
-
-  public downloadQueryHistory(fileType: ExportFormat) {
-    if (fileType === ExportFormat.TEST_CASE) {
-      this.queryService.getHistorySummaryFromClientId(this.queryClientId)
-        .subscribe(result => {
-          this.fileService.promptToDownloadTestCase(result.queryId);
-        });
-    } else {
-      this.fileService.downloadQueryHistoryFromClientQueryId(this.queryClientId, fileType);
-    }
-  }
-
-  private handleQueryFinished() {
-    this.loadingChanged.emit(false);
-    const currentState = this.currentState$.getValue();
-    // If we're already in an error state, then don't change the state.
-    if (currentState === 'Running' || currentState === 'Cancelling') {
-      this.currentState$.next('Result');
-      if (!this.queryReturnedResults) {
-        this.currentState$.next('Error');
-        this.lastErrorMessage = 'No results matched your query';
-      }
-    }
-    this.isErrorMessageSubscriptionSetup = false;
-    this.queryProfileData$ = null;
-    this.loadProfileData();
-    this.queryHistoryStoreService.getHistory();
-  }
-
-  cancelQuery() {
-    const previousState = this.currentState$.getValue();
-    this.currentState$.next('Cancelling');
-    let cancelOperation$: Observable<void>;
-
-    if (this.latestQueryStatus) {
-      cancelOperation$ = this.queryService.cancelQuery(this.latestQueryStatus.queryId);
-    } else {
-      cancelOperation$ = this.queryService.cancelQueryByClientQueryId(this.queryClientId);
-    }
-
-    cancelOperation$.subscribe(next => {
-      if (previousState === 'Running') {
-        this.currentState$.next('Editing');
-      } else {
-        this.currentState$.next('Result');
-      }
-    }, error => {
-      console.log('Error occurred trying to cancel query: ' + JSON.stringify(error));
-      this.currentState$.next('Editing');
-    });
-  }
-
-
-  loadProfileData() {
-    const currentState = this.currentState$.getValue();
-    const isFinished = (currentState === 'Result' || currentState === 'Error');
-    if (isFinished && !isNullOrUndefined(this.queryProfileData$)) {
-      // We've alreaded loaded the query profile data.  It won't be different, as
-      // the query is finished, so no point in loading it again.
-      return;
-    }
-
-    this.queryProfileData$ = this.queryService.getQueryProfileFromClientId(this.queryClientId);
-    this.isProfileDataLoading$ = this.queryProfileData$.pipe(map(val => false), startWith(true))
-    this.changeDetector.markForCheck();
-  }
-
-  copyQuery($event: CopyQueryFormat) {
-
-    if ($event === 'snippet') {
-      this.tuiDialogService.open(
-        new PolymorpheusComponent(QuerySnippetContainerComponent, this.injector),
-        {
-          size: 'l',
-          data: {
-            query: this.query,
-            returnType: this.resultType,
-            schema: this.schema,
-            anonymousTypes: this.anonymousTypes
-          } as CodeGenRequest,
-          dismissible: true
-        }
-      ).subscribe();
-    } else {
-      copyQueryAs(this.query, this.queryService.queryEndpoint, $event, this.clipboard);
-      this.alerts.open('Copied to clipboard', {status: TuiNotification.Success})
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe()
-    }
+  // TODO Would like to make this computed, but this isn't easily
+  //      achieved with the state prop, so wait to see how things pan
+  //      out with moving the props/output fully into the store.
+  get isStreamingQuery(): boolean {
+    return this.state.query()?.includes("stream {")
   }
 
   onAddToQueryClicked($event: QualifiedName) {
-    this.query = appendToQuery(this.query, $event);
+    this.state.query.set(appendToQuery(this.state.query(), $event));
   }
 
   createHttpEndpoint() {
     this.tuiDialogService.open<string>(new PolymorpheusComponent(HttpEndpointPanelComponent, this.injector),
       {
         size: 'l',
-        data: this.query,
+        data: this.state.query(),
         dismissible: true
       }
     ).subscribe(result => {
       if (result !== null) {
-        this.query = result;
+        this.state.query.set(result);
       }
       this.changeDetector.markForCheck();
     });
   }
 
-  private submitTextQuery() {
-    this.prepareToSubmitQuery();
-    this.queryParseResult = null;
-    this.currentState$.next('Generating');
-    this.queryService.textToQuery(this.chatQuery)
-      .subscribe(result => {
-        this.query = result.taxi;
-        this.queryParseResult = result;
-        // Submit the taxiQL query.  Make sure parsingQuery = true, so we don't come
-        // through this branch again,
-        this.submitTaxiQlQuery();
-      }, error => {
-        console.log('Failed to parse ChatGPT query');
-        console.log(error);
-        this.lastErrorMessage = `A problem occurred generating a query: ${error.error.message}`;
-
-        this.currentState$.next('Error');
-      });
-  }
-
-  private saveExistingQuery() {
-    const updatedSource: VersionedSource = {
-      ...this.savedQuery.sources[0],
-      content: this.query,
+  saveQuery() {
+    if (this.state.savedQuery() === null) {
+      this.saveNewQuery();
+    } else {
+      this.saveExistingQuery();
     }
-    const request: SaveQueryRequest = {
-      source: updatedSource,
-      changesetName: ''
-    }
-    this.editorService.saveQuery(request)
-      .subscribe(
-        result => {
-          this.snackbarService.open('Query saved successfully');
-          this.savedQuery = result;
-        },
-        error => {
-          console.error(error);
-          this.snackbarService.open('An error occurred saving the query')
-        }
-      )
-  }
-
-  queryHistoryElementClicked($event: QueryHistorySummary) {
-    this.query = $event.taxiQl;
   }
 
   private saveNewQuery() {
@@ -495,56 +154,57 @@ export class QueryEditorComponent implements OnInit {
       {
         size: 'l',
         data: {
-          query: this.query,
-          previousVersion: this.savedQuery
+          query: this.state.query(),
+          previousVersion: this.state.savedQuery()
         } as SaveQueryPanelProps,
         dismissible: true
       }
     ).subscribe(result => {
-      this.onSavedQuerySelected(result);
-      // this.savedQuery = result;
-      // this.query = result.sources[0].content;
-      // this.changeDetector.markForCheck();
+      if (result) {
+        this.onQuerySaved.emit(result)
+        this.state.savedQuery.set(result)
+      }
     });
   }
+f
+  private saveExistingQuery() {
+    const updatedSource: VersionedSource = {
+      ...this.state.savedQuery().sources[0],
+      content: this.state.query(),
+    }
+    const request: SaveQueryRequest = {
+      source: updatedSource,
+      changesetName: ''
+    }
+    this.typeEditorService.saveQuery(request)
+      .subscribe({
+        next: (result) =>
+          {
+            this.alerts.open('Query saved successfully', {status: TuiNotification.Success})
+              .pipe(takeUntilDestroyed(this.destroyRef))
+              .subscribe()
+            this.state.savedQuery.set(result);
+            this.changeDetector.markForCheck();
+          },
+        error: (error) => {
+          console.error(error);
+          this.alerts.open('An error occurred saving the query', {status: TuiNotification.Error})
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe()
+        }
+      })
+  }
 
-  onSavedQuerySelected(selectedQuery: SavedQuery) {
-    this.savedQuery = selectedQuery;
-    this.query = selectedQuery.sources[0].content;
-    this.changeDetector.markForCheck();
+  queryHistoryElementClicked($event: QueryHistorySummary) {
+    this.state.query.set($event.taxiQl);
+    this.state.savedQuery.set(null);
   }
 
   onQueryChanged(query: string) {
-    localStorage.setItem(this.PERSISTED_QUERY_LOCAL_STORAGE_KEY, this.query);
+    this.queryChanged.emit({query, chatQuery: this.state.chatQuery()});
   }
 
-  private formatErrorMessage(val: string): string {
-    return val?.replace("[Error]", "\n[Error]");
-  }
-
-  private setupErrorMessageSubscription() {
-    this.isErrorMessageSubscriptionSetup = true;
-    this.queryService.getQueryErrors(this.queryClientId)
-      .pipe(
-        retry({
-            count: 3,
-            delay: 250
-          }
-        ),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe(message => {
-          this.errorCount++;
-          this.errors$.next(message)
-        }
-      )
-  }
-
-  toggleStreamPauseState($event: boolean) {
-    this.pauseSubj$.next($event);
-  }
-
-  get isStreamingQuery(): boolean {
-    return this.query.includes("stream {")
+  onChatQueryChanged(chatQuery: string) {
+    this.queryChanged.emit({query: this.state.query(), chatQuery});
   }
 }

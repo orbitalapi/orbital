@@ -12,23 +12,15 @@ export class WebsocketService {
   private connections = new Map<string, WebSocketSubject<any>>();
   RETRY_SECONDS = 10;
 
-  getWsUrl(path: string) {
-    const apiUrl = environment.serverUrl;
-    if (apiUrl.startsWith('http')) {
-      return apiUrl.replace(/^http/, 'ws') + path;
-    } else {
-      // Handle urls that omit the scheme (ie., defer to the page protocol)
-      const protocol = document.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      return protocol + apiUrl + path;
-    }
-  }
-
   /**
    * Returns a websocket that supports sending and receiving,
    * but does not reconnect on failure.
    */
-  websocket(path: string): WebSocketSubject<any> {
-    return this.getOrBuildWebsocket(this.getWsUrl(path))
+  websocket(path: string, useNewSocket?: boolean): WebSocketSubject<any> {
+    const wsUrl = this.getWsUrl(path)
+    return useNewSocket ?
+      this.getNewConnection(wsUrl) :
+      this.getOrBuildWebsocket(wsUrl)
   }
 
   /**
@@ -43,12 +35,25 @@ export class WebsocketService {
   }
 
   private getOrBuildWebsocket(wsUrl): WebSocketSubject<any> {
-    if (this.connections.has(wsUrl)) {
-      return this.connections.get(wsUrl);
+    return this.connections.has(wsUrl) ?
+      this.connections.get(wsUrl) :
+      this.getNewConnection(wsUrl)
+  }
+
+  private getNewConnection(wsUrl): WebSocketSubject<any> {
+    const connection$ = webSocket(wsUrl);
+    this.connections.set(wsUrl, connection$);
+    return connection$;
+  }
+
+  private getWsUrl(path: string) {
+    const apiUrl = environment.serverUrl;
+    if (apiUrl.startsWith('http')) {
+      return apiUrl.replace(/^http/, 'ws') + path;
     } else {
-      const connection$ = webSocket(wsUrl);
-      this.connections.set(wsUrl, connection$);
-      return connection$;
+      // Handle urls that omit the scheme (ie., defer to the page protocol)
+      const protocol = document.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      return protocol + apiUrl + path;
     }
   }
 
