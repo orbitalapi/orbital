@@ -6,6 +6,7 @@ import lang.taxi.services.Service
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.ImportableToken
 import lang.taxi.types.ObjectType
+import lang.taxi.types.toQualifiedName
 
 /**
  * Simple implementation, where we place a single type per file.
@@ -30,9 +31,25 @@ object SingleTypePerFileSplitter : SourceSplitter {
             .filter { it.toQualifiedName().namespace != "lang.taxi" }
             .map { "import ${it.qualifiedName}" }
          val imports = (sourceInImports + importsFromTypes).distinct()
+         val namespace = type.qualifiedName.toQualifiedName().namespace.let { namespace ->
+            if (namespace.isNotEmpty()) {
+               "namespace $namespace\n"
+            } else ""
+            }
 
-         val sourceWithImports = if (imports.isNotEmpty()) {
-            imports.joinToString("\n") + "\n" + sourceWithoutImports
+         val prelude = imports.joinToString("\n").let { imports ->
+            if (namespace.isNotEmpty()) {
+               if (imports.isNotEmpty()) {
+                  "$imports\n\n$namespace"
+               }  else {
+                  namespace
+               }
+            } else imports
+         }
+
+
+         val sourceWithImports = if (prelude.isNotEmpty()) {
+            prelude + "\n" + sourceWithoutImports
          } else {
             sourceWithoutImports
          }
