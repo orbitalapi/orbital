@@ -1,18 +1,20 @@
-import {moduleMetadata, storiesOf} from '@storybook/angular';
-import {APP_BASE_HREF, CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
-import {PipelinesModule} from '../pipelines.module';
-import {TypeAutocompleteModule} from '../../type-autocomplete/type-autocomplete.module';
-import {prepareSchema} from '../../services/types.service';
-import {testSchema} from '../../object-view/test-schema';
-import {pipeline} from './pipeline-sample';
-import {HttpClientTestingModule} from '@angular/common/http/testing';
-import {RouterTestingModule} from '@angular/router/testing';
-import {ConfirmationDialogComponent} from '../../confirmation-dialog/confirmation-dialog.component';
-import {MAT_LEGACY_DIALOG_DATA as MAT_DIALOG_DATA} from '@angular/material/legacy-dialog';
+import { moduleMetadata } from "@storybook/angular";
+import { APP_BASE_HREF, CommonModule } from "@angular/common";
+import { BrowserModule } from "@angular/platform-browser";
+import { PipelinesModule } from "../pipelines.module";
+import { TypeAutocompleteModule } from "../../type-autocomplete/type-autocomplete.module";
+import { prepareSchema } from "../../services/types.service";
+import { testSchema } from "../../object-view/test-schema";
+import { pipeline } from "./pipeline-sample";
+import { HttpClientTestingModule } from "@angular/common/http/testing";
+import { RouterTestingModule } from "@angular/router/testing";
+import { ConfirmationDialogComponent } from "../../confirmation-dialog/confirmation-dialog.component";
+import { MAT_DIALOG_DATA } from "@angular/material/dialog";
 
-storiesOf('Pipeline view', module)
-  .addDecorator(
+export default {
+  title: "Pipeline view",
+
+  decorators: [
     moduleMetadata({
       imports: [
         CommonModule,
@@ -20,21 +22,26 @@ storiesOf('Pipeline view', module)
         PipelinesModule,
         TypeAutocompleteModule,
         HttpClientTestingModule,
-        RouterTestingModule
+        RouterTestingModule,
       ],
       entryComponents: [ConfirmationDialogComponent],
-      providers: [
-        [{provide: MAT_DIALOG_DATA, useValue: {}}],
-      ]
-    })
-  ).add('default', () => {
+      providers: [[{ provide: MAT_DIALOG_DATA, useValue: {} }]],
+    }),
+  ],
+};
+
+export const Default = () => {
   return {
     template: `<div style="padding: 40px">
     <app-pipeline-view [pipeline]="pipeline" [schema]="schema"></app-pipeline-view>
     </div>`,
     props: {
       pipeline: pipeline,
-      schema: testSchema
-    }
+      schema: testSchema,
+    },
   };
-});
+};
+
+Default.story = {
+  name: "default",
+};

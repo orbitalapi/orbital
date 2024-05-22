@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {CsvOptions, ParsedCsvContent} from '../services/types.service';
-import {MatLegacyDialog as MatDialog, MatLegacyDialogConfig as MatDialogConfig} from '@angular/material/legacy-dialog';
+import {MatDialog, MatDialogConfig} from '@angular/material/dialog';
 import {
   AssignedTypeData,
   AssignTypeToColumnDialogComponent

@@ -1,7 +1,7 @@
 import {NgModule} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {TabbedResultsViewComponent} from './tabbed-results-view.component';
-import {MatLegacyTabsModule as MatTabsModule} from '@angular/material/legacy-tabs';
+import {MatTabsModule} from '@angular/material/tabs';
 import {ObjectViewModule} from '../object-view/object-view.module';
 import {CallExplorerModule} from '../query-panel/taxi-viewer/call-explorer/call-explorer.module';
 import {CommonModule} from '@angular/common';

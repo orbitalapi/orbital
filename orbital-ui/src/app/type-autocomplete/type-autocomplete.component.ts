@@ -4,8 +4,8 @@ import {UntypedFormControl} from '@angular/forms';
 import {map, startWith} from 'rxjs/operators';
 import {Observable} from 'rxjs';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {LegacyFloatLabelType as FloatLabelType, MatLegacyFormFieldAppearance as MatFormFieldAppearance, MatLegacyFormFieldControl as MatFormFieldControl} from '@angular/material/legacy-form-field';
-import {MatLegacyAutocompleteSelectedEvent as MatAutocompleteSelectedEvent} from '@angular/material/legacy-autocomplete';
+import {FloatLabelType, MatFormFieldAppearance, MatFormFieldControl} from '@angular/material/form-field';
+import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 
 /**
  * Consider using type-autocomplete-tui instead, which is built on top of Taiga UI, and
@@ -17,15 +17,15 @@ import {MatLegacyAutocompleteSelectedEvent as MatAutocompleteSelectedEvent} from
   template: `
     <mat-form-field style="width: 100%" [floatLabel]="floatLabel" [appearance]="appearance" >
       <mat-label *ngIf="label">{{ label }}</mat-label>
-      <mat-chip-list #chipList *ngIf="multiSelect">
-        <mat-chip
+      <mat-chip-grid #chipList *ngIf="multiSelect">
+        <mat-chip-row
           *ngFor="let selectedType of selectedTypes"
           selectable="true"
           removable="true"
           (removed)="remove(selectedType)">
           {{selectedType.name.name}}
           <mat-icon matChipRemove>cancel</mat-icon>
-        </mat-chip>
+        </mat-chip-row>
         <input
           [placeholder]="placeholder"
           #chipInput
@@ -35,7 +35,7 @@ import {MatLegacyAutocompleteSelectedEvent as MatAutocompleteSelectedEvent} from
           [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
           matChipInputAddOnBlur="true"
           (matChipInputTokenEnd)="add($event)">
-      </mat-chip-list>
+      </mat-chip-grid>
       <input type="text"
              *ngIf="!multiSelect"
              [placeholder]="placeholder" matInput
@@ -59,7 +59,7 @@ export class TypeAutocompleteComponent implements OnInit {
   @ViewChild('chipInput') chipInput: ElementRef<HTMLInputElement>;
 
   @Input()
-  appearance: MatFormFieldAppearance = 'standard';
+  appearance: MatFormFieldAppearance = 'outline';
 
   @Input()
   multiSelect = false;

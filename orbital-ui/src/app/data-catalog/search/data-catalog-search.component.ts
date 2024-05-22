@@ -13,12 +13,12 @@ import { Observable } from 'rxjs/internal/Observable';
     <div class='search-bar-container'>
       <ng-content></ng-content>
       <div class='input-container'>
-        <mat-form-field appearance='standard' class='text-input'>
+        <mat-form-field class='text-input' appearance="outline">
           <mat-label>Search for...</mat-label>
           <input matInput (input)='onSearchValueUpdated($event)' [value]='searchTerm' placeholder='Search'
                  name='search-input' id='search-input' type='text'>
         </mat-form-field>
-        <mat-form-field appearance='standard'
+        <mat-form-field
                         class='category-select'
                         *ngIf='showCategories'
         >

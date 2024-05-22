@@ -97,10 +97,10 @@ a:visited {
   color: $sky-500;
 }
 
-$custom-typography: mat.define-legacy-typography-config(
+$custom-typography: mat.define-typography-config(
   $font-family: $font-sans,
-  $headline: mat.define-typography-level(32px, 48px, 700),
-  $body-1: mat.define-typography-level(16px, 24px, 500)
+  $headline-5: mat.define-typography-level(32px, 48px, 700),
+  $body-2: mat.define-typography-level(16px, 24px, 500)
 );
 
 // Include the common styles for Angular Material. We include this here so that you only
@@ -115,7 +115,7 @@ $custom-typography: mat.define-legacy-typography-config(
 //  you can delete this line and instead use:
 //    `@include mat.legacy-typography-hierarchy($custom-typography);`
 //@include mat.all-legacy-component-typographies($custom-typography);
-@include mat.legacy-core();
+@include mat.core();
 
 // Define the palettes for your theme using the Material Design palettes available in palette.scss
 // (imported above). For each palette, you can optionally specify a default, lighter, and darker
@@ -127,26 +127,36 @@ $vyne-app-accent: mat.define-palette($vyne-grey-blue-palette, A400, A100, A700);
 $vyne-app-warn: mat.define-palette(mat.$red-palette);
 
 // Create the theme object (a Sass map containing all of the palettes).
-$vyne-app-theme: mat.define-light-theme($vyne-app-primary, $vyne-app-accent, $vyne-app-warn);
+$vyne-app-theme: mat.define-light-theme((
+  color: (
+    primary: $vyne-app-primary,
+    accent: $vyne-app-accent,
+    warn: $vyne-app-warn
+  ),
+  typography: $custom-typography,
+  density: 0
+));
 
 // Include theme styles for core and each component used in your app.
 // Alternatively, you can import and @include the theme mixins for each component
 // that you are using.
-@include mat.all-legacy-component-themes($vyne-app-theme);
-@include mat.all-legacy-component-typographies($custom-typography);
+@include mat.all-component-themes($vyne-app-theme);
+@include mat.all-component-typographies($custom-typography);
 
 // We want the tabs to fill 100% height of their parents.
 // If removing this, be sure to test the ag-grid height in the tabbed-results-view component
+/* TODO(mdc-migration): The following rule targets internal classes of tabs that may no longer apply for the MDC version.*/
 .mat-tab-body-wrapper {
   flex-grow: 1;
 }
 
+/* TODO(mdc-migration): The following rule targets internal classes of card that may no longer apply for the MDC version.*/
 .mat-card-header-text {
   // There's an annoying indent in the card headers that offsets things by 16px :(
   margin: 0 !important;
 }
 
-.mat-tab-link {
+.mat-mdc-tab-link {
   font-family: $headings-font;
 }
 
@@ -158,7 +168,7 @@ tui-dropdown-box {
   z-index: 1000000 !important;
 }
 
-.mat-stroked-button:not([class*=mat-elevation-z]) {
+.mat-mdc-outlined-button:not([class*=mat-elevation-z]) {
   box-shadow: 0 1px 2px rgb(19 20 22 / 10%);
   background-color: rgba(255, 255, 255, 0.7);
 }

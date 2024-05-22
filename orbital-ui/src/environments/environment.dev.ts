@@ -1,6 +1,7 @@
 export const environment = {
   production: false,
   // Convention for relative urls:  Start with an /, but don't end with one
+  serverUrl: `//${window.location.host}`,
   queryServiceUrl: `//localhost:9022`,
   websocketUrl: `ws://localhost:9033/stomp`,
   caskServiceUrl: `//localhost:8800`,

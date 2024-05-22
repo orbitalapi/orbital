@@ -2,7 +2,7 @@ import { Component, Inject } from '@angular/core';
 import { PartialSearchResult, SearchResult, SearchService } from '../../search/search.service';
 import { zip } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef as MatDialogRef } from '@angular/material/legacy-dialog';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { TypesService } from '../../services/types.service';
 import { SearchResultDocs } from './type-search.component';
 import { findType, Schema, Type } from '../../services/schema';
@@ -57,7 +57,7 @@ export class TypeSearchContainerComponent {
     private dialogRef: MatDialogRef<TypeSearchContainerComponent>,
     private service: SearchService,
     private typeService: TypesService,
-    @Inject(MAT_LEGACY_DIALOG_DATA) public data: {partialSchema: Schema, parentModel: Type}
+    @Inject(MAT_DIALOG_DATA) public data: {partialSchema: Schema, parentModel: Type}
   ) {
     typeService.getTypes().subscribe(schema => this.schema = schema);
   }

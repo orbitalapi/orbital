@@ -24,6 +24,13 @@ app-sequence-diagram {
 
 .toolbar {
   margin: 1rem;
+
+  // Override the width & height of the toggle button from 48x48 to
+  // 36x36 - just to keep inline with the buttons and minimize too much whitespace
+  ::ng-deep .mat-button-toggle-appearance-standard .mat-button-toggle-label-content {
+    padding: 0 6px !important;
+    line-height: 36px !important;
+  }
 }
 
 img.icon {

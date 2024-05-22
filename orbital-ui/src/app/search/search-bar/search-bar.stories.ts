@@ -1,26 +1,36 @@
-import {moduleMetadata, storiesOf} from '@storybook/angular';
-import {CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {FormsModule} from '@angular/forms';
-import {Subject} from 'rxjs';
-import {SearchResult} from '../search.service';
-import {searchResults} from '../search-result-list/search-result.stories';
-import {SearchResultComponent} from '../seach-result/search-result.component';
+import { moduleMetadata } from "@storybook/angular";
+import { CommonModule } from "@angular/common";
+import { BrowserModule } from "@angular/platform-browser";
+import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
+import { FormsModule } from "@angular/forms";
+import { Subject } from "rxjs";
+import { SearchResult } from "../search.service";
+import { searchResults } from "../search-result-list/search-result.stories";
+import { SearchResultComponent } from "../seach-result/search-result.component";
 
 const searchResults$ = new Subject<SearchResult[]>();
 const doSearch = function (string) {
-  console.log('Faking search results');
+  console.log("Faking search results");
   searchResults$.next(searchResults);
 };
 
-storiesOf('Search bar', module)
-  .addDecorator(
+export default {
+  title: "Search bar",
+
+  decorators: [
     moduleMetadata({
       declarations: [SearchResultComponent],
-      imports: [CommonModule, BrowserModule, BrowserAnimationsModule, FormsModule]
-    })
-  ).add('search box', () => {
+      imports: [
+        CommonModule,
+        BrowserModule,
+        BrowserAnimationsModule,
+        FormsModule,
+      ],
+    }),
+  ],
+};
+
+export const SearchBox = () => {
   return {
     template: `
 <div style="background-color: #F5F7F9; height: 4rem;
@@ -28,12 +38,14 @@ storiesOf('Search bar', module)
       align-items: center;
     padding-left: 100px;">
     <app-search-bar [searchResults$]="searchResults$" (search)="onSearch($event)"></app-search-bar>
-</div>`
-    ,
+</div>`,
     props: {
       searchResults$,
-      onSearch: doSearch
-    }
+      onSearch: doSearch,
+    },
   };
-});
+};
 
+SearchBox.story = {
+  name: "search box",
+};

@@ -1,23 +1,32 @@
-import {moduleMetadata, storiesOf} from '@storybook/angular';
-import {CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import { JsonViewerModule } from 'src/app/json-viewer/json-viewer.module';
+import { moduleMetadata } from "@storybook/angular";
+import { CommonModule } from "@angular/common";
+import { BrowserModule } from "@angular/platform-browser";
+import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
+import { JsonViewerModule } from "src/app/json-viewer/json-viewer.module";
 
-storiesOf('Json Viewer', module)
-  .addDecorator(
+export default {
+  title: "Json Viewer",
+
+  decorators: [
     moduleMetadata({
       declarations: [],
-      imports: [CommonModule, BrowserModule, BrowserAnimationsModule, JsonViewerModule]
-    })
-  )
-  .add('default', () => {
-    return {
-      template: `<div style="padding: 40px; height: 800px;">
+      imports: [
+        CommonModule,
+        BrowserModule,
+        BrowserAnimationsModule,
+        JsonViewerModule,
+      ],
+    }),
+  ],
+};
+
+export const Default = () => {
+  return {
+    template: `<div style="padding: 40px; height: 800px;">
 <app-json-viewer style="height: 100%;" [json]="json"></app-json-viewer>
     </div>`,
-      props: {
-        json: `{
+    props: {
+      json: `{
   "employees": [
     {
       "id": 1,
@@ -38,8 +47,11 @@ storiesOf('Json Viewer', module)
     "location": "USA"
   },
   "foo" : [ null ]
-}`
+}`,
+    },
+  };
+};
 
-      }
-    };
-  });
+Default.story = {
+  name: "default",
+};

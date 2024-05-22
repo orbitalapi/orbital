@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import { MatLegacyFormFieldModule } from '@angular/material/legacy-form-field';
-import { MatLegacyProgressBarModule } from '@angular/material/legacy-progress-bar';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { AgGridModule } from 'ag-grid-angular';
 import {ColumnMapping, JdbcTable, TableMetadata, TableModelMapping} from './db-importer.service';
 import {ColDef, ValueFormatterParams, ValueGetterParams, ValueSetterParams} from 'ag-grid-community';
@@ -18,7 +18,7 @@ import {
   ConfirmationDialogComponent,
   ConfirmationParams
 } from '../confirmation-dialog/confirmation-dialog.component';
-import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {isNullOrUndefined} from 'util';
 import {capitalizeFirstLetter} from '../utils/strings';
 import { NewTypeSpec } from 'src/app/type-editor/new-type-spec';
@@ -139,9 +139,9 @@ import { NewTypeSpec } from 'src/app/type-editor/new-type-spec';
   styleUrls: ['./table-importer.component.scss'],
   imports: [
     CommonModule,
-    MatLegacyProgressBarModule,
+    MatProgressBarModule,
     AgGridModule,
-    MatLegacyFormFieldModule,
+    MatFormFieldModule,
     ReactiveFormsModule
   ],
   standalone: true

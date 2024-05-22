@@ -4,7 +4,7 @@
     <span class="title">Parse source as: </span>
     <mat-radio-group [(ngModel)]="parsingTypeSelectorMode">
       <mat-radio-button value="createNew">Create new model</mat-radio-button>
-      <mat-form-field appearance="legacy" *ngIf="parsingTypeSelectorMode === 'createNew' && typesInSchema?.length > 0">
+      <mat-form-field *ngIf="parsingTypeSelectorMode === 'createNew' && typesInSchema?.length > 0">
         <mat-label>Select a model</mat-label>
         <mat-select [value]="customParseType" (valueChange)="onCustomerParseTypeSelected($event)"
                     [disabled]="typesInSchema.length < 2" [compareWith]="compareTypes">
@@ -25,7 +25,7 @@
     <span class="title">Transform content to: </span>
     <mat-radio-group [(ngModel)]="projectingTypeSelectorMode">
       <mat-radio-button value="createNew">Create new model</mat-radio-button>
-      <mat-form-field appearance="legacy"
+      <mat-form-field
                       *ngIf="projectingTypeSelectorMode === 'createNew' && typesInSchema?.length > 0">
         <mat-label>Select a model</mat-label>
         <mat-select [(value)]="customProjectionType"

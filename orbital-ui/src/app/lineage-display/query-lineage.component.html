@@ -2,12 +2,12 @@
      [class.mat-elevation-z8]="fullscreen"
      [class.fullscreen]="fullscreen">
   <div class="toolbar">
-    <mat-chip-list #chipList>
-      <mat-chip *ngIf="filteredNode" [removable]="true" (removed)="clearFilter()">
+    <mat-chip-listbox #chipList>
+      <mat-chip-option *ngIf="filteredNode" [removable]="true" (removed)="clearFilter()">
         {{filteredNode.label}}
         <mat-icon matChipRemove>cancel</mat-icon>
-      </mat-chip>
-    </mat-chip-list>
+      </mat-chip-option>
+    </mat-chip-listbox>
 
     <div class="spacer"></div>
     <button mat-icon-button (click)="toggleFullscreen()" class="fullscreen-toggle" title="toggle fullscreen">

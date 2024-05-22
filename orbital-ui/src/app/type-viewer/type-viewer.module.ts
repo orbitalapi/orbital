@@ -16,7 +16,7 @@ import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {UsagesTableComponent} from './usages-table/usages-table.component';
 import {OperationBadgeModule} from '../operation-badge/operation-badge.module';
 import {MatIconModule} from '@angular/material/icon';
-import {MatLegacyButtonModule as MatButtonModule} from '@angular/material/legacy-button';
+import {MatButtonModule} from '@angular/material/button';
 import {FormsModule} from '@angular/forms';
 import {LineageGraphModule} from './lineage-graph/lineage-graph.module';
 import {RouterModule} from '@angular/router';
@@ -44,13 +44,13 @@ import {TypeSearchResultComponent} from './type-search/type-search-result.compon
 import {ModelAttributeTreeListComponent} from './model-attribute-tree-list/model-attribute-tree-list.component';
 import {ModelMemberComponent} from './model-attribute-tree-list/model-member.component';
 import {ModelMemberTreeNodeComponent} from './model-attribute-tree-list/model-member-tree-node.component';
-import {MatLegacyProgressSpinnerModule as MatProgressSpinnerModule} from '@angular/material/legacy-progress-spinner';
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {TypedEditorModule} from '../type-editor/type-editor.module';
 import {SchemaDiagramModule} from '../schema-diagram/schema-diagram.module';
 import {ChangesetSelectorModule} from '../changeset-selector/changeset-selector.module';
 import { TuiAutoFocusModule } from '@taiga-ui/cdk';
 import { MarkdownModule } from 'ngx-markdown';
-import { MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef } from '@angular/material/legacy-dialog';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 
 @NgModule({
@@ -124,8 +124,8 @@ import { MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef } from '@angular/material/le
         ModelAttributeTreeListComponent,
     ],
     providers: [
-      { provide: MAT_LEGACY_DIALOG_DATA, useValue: {} },
-      { provide: MatLegacyDialogRef, useValue: {} }
+      { provide: MAT_DIALOG_DATA, useValue: {} },
+      { provide: MatDialogRef, useValue: {} }
     ]
 })
 export class TypeViewerModule {

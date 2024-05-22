@@ -1,5 +1,6 @@
 import { Edge, Node } from 'reactflow';
-import ELK, { ElkExtendedEdge, ElkNode } from 'elkjs/lib/elk.bundled';
+// TODO: what was the reason for importing via 'elkjs/lib/elk.bundled' instead of declaring it in package.json and using like below?
+import ELK, { ElkExtendedEdge, ElkNode } from 'elkjs';
 // import ELK, { ElkExtendedEdge, ElkNode } from 'elkjs/lib/elk-api';
 import { RelativeNodeXyPosition } from './schema-chart.controller';
 // import { Worker } from 'elkjs/lib/elk-worker';

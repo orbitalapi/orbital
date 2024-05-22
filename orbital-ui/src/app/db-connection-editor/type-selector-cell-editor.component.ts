@@ -1,12 +1,12 @@
 import {Component} from '@angular/core';
-import { MatLegacyButtonModule } from '@angular/material/legacy-button';
+import { MatButtonModule } from '@angular/material/button';
 import {ICellEditorAngularComp} from 'ag-grid-angular';
 import {ICellEditorParams} from 'ag-grid-community';
 import {isNullOrUndefined} from 'util';
 import {QualifiedName, Schema, Type} from '../services/schema';
 import { TypeAutocompleteModule } from '../type-autocomplete/type-autocomplete.module';
 import {TypeSpecContainer} from './db-importer.service';
-import {MatLegacyDialog as MatDialog, MatLegacyDialogRef as MatDialogRef} from '@angular/material/legacy-dialog';
+import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {TypeEditorPopupComponent} from '../type-editor/type-editor-popup.component';
 import {SchemaSubmissionResult, TypesService} from '../services/types.service';
 
@@ -25,7 +25,7 @@ import {SchemaSubmissionResult, TypesService} from '../services/types.service';
   standalone: true,
   imports: [
     TypeAutocompleteModule,
-    MatLegacyButtonModule
+    MatButtonModule
   ],
   styleUrls: ['./type-selector-cell-editor.component.scss']
 })

@@ -22,9 +22,10 @@ $dark-list-item-active: $code-base;
     background-color: $code-highlight !important;
     height: 3px !important;
   }
-  .mat-tab-header {
+  .mat-mdc-tab-header {
     border-bottom: 0px;
   }
+  /* TODO(mdc-migration): The following rule targets internal classes of tabs that may no longer apply for the MDC version.*/
   .mat-tab-label {
     opacity: 1;
     color: $dark-list-item;
@@ -33,7 +34,7 @@ $dark-list-item-active: $code-base;
     &:hover {
       color: $dark-list-item-hover;
     }
-
+    /* TODO(mdc-migration): The following rule targets internal classes of tabs that may no longer apply for the MDC version.*/
     &.mat-tab-label-active {
       color: $code-base;
       background-color: $code-background;

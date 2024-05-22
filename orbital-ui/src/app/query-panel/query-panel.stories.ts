@@ -1,30 +1,49 @@
-import {moduleMetadata, storiesOf} from '@storybook/angular';
-import {CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
-import {QueryPanelModule} from './query-panel.module';
-import {AngularSplitModule} from 'angular-split';
-import {RouterTestingModule} from '@angular/router/testing';
-import {ExpandingPanelSetModule} from '../expanding-panelset/expanding-panel-set.module';
-import {TuiRootModule} from "@taiga-ui/core";
-import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
+import { moduleMetadata } from "@storybook/angular";
+import { CommonModule } from "@angular/common";
+import { BrowserModule } from "@angular/platform-browser";
+import { QueryPanelModule } from "./query-panel.module";
+import { AngularSplitModule } from "angular-split";
+import { RouterTestingModule } from "@angular/router/testing";
+import { ExpandingPanelSetModule } from "../expanding-panelset/expanding-panel-set.module";
+import { TuiRootModule } from "@taiga-ui/core";
+import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
 
-storiesOf('Query panel', module)
-  .addDecorator(
+export default {
+  title: "Query panel",
+
+  decorators: [
     moduleMetadata({
       declarations: [],
-      imports: [CommonModule, BrowserModule,BrowserAnimationsModule,TuiRootModule, QueryPanelModule, ExpandingPanelSetModule, AngularSplitModule, RouterTestingModule]
-    })
-  ).add('Query editor', () => {
+      imports: [
+        CommonModule,
+        BrowserModule,
+        BrowserAnimationsModule,
+        TuiRootModule,
+        QueryPanelModule,
+        ExpandingPanelSetModule,
+        AngularSplitModule,
+        RouterTestingModule,
+      ],
+    }),
+  ],
+};
+
+export const QueryEditor = () => {
   return {
     template: `<div style="padding: 40px; width: 100%; height: 250px" >
     <app-query-editor></app-query-editor>
     </div>`,
-    props: {}
+    props: {},
   };
-})
-  .add('Bottom bar states', () => {
-    return {
-      template: `<div style="padding: 40px; width: 80%; height: 250px" >
+};
+
+QueryEditor.story = {
+  name: "Query editor",
+};
+
+export const BottomBarStates = () => {
+  return {
+    template: `<div style="padding: 40px; width: 80%; height: 250px" >
       <app-panel-header title="Code">
         <app-query-editor-toolbar currentState="Editing"></app-query-editor-toolbar>
       </app-panel-header>
@@ -38,41 +57,55 @@ storiesOf('Query panel', module)
        <app-query-editor-toolbar currentState="Error" error="A query failed to execute."></app-query-editor-toolbar>
       </app-panel-header>
     </div>`,
-      props: {
-        queryStartDate: new Date(),
-        aMinuteAgo: new Date(new Date().getTime() - (1000 * 60))
-      }
-    };
-  })
-  .add('save panel', () => {
-    return {
-      template: `
+    props: {
+      queryStartDate: new Date(),
+      aMinuteAgo: new Date(new Date().getTime() - 1000 * 60),
+    },
+  };
+};
+
+BottomBarStates.story = {
+  name: "Bottom bar states",
+};
+
+export const SavePanel = () => {
+  return {
+    template: `
 <tui-root>
 <div style="padding: 40px; " >
 <app-save-query-panel [packages]="projects"></app-save-query-panel>
 </div>
 </tui-root>
       `,
-      props: {
-        projects: [{
-          "identifier": {
-            "organisation": "io.vyne",
-            "name": "my-project",
-            "version": "1.0.0",
-            "unversionedId": "io.vyne/core-types",
-            "id": "io.vyne/core-types/1.0.0",
-            "uriSafeId": "io.vyne:core-types:1.0.0"
+    props: {
+      projects: [
+        {
+          identifier: {
+            organisation: "io.vyne",
+            name: "my-project",
+            version: "1.0.0",
+            unversionedId: "io.vyne/core-types",
+            id: "io.vyne/core-types/1.0.0",
+            uriSafeId: "io.vyne:core-types:1.0.0",
           },
-          "health": {"status": "Healthy", "message": null, "timestamp": "2023-04-14T06:54:00.040411019Z"},
-          "sourceCount": 11,
-          "warningCount": 0,
-          "errorCount": 0,
-          "publisherType": "Pushed",
-          "editable": true,
-          "packageConfig": null,
-          "uriPath": "io.vyne:core-types:1.0.0"
-        }]
-      }
-    }
-  })
-;
+          health: {
+            status: "Healthy",
+            message: null,
+            timestamp: "2023-04-14T06:54:00.040411019Z",
+          },
+          sourceCount: 11,
+          warningCount: 0,
+          errorCount: 0,
+          publisherType: "Pushed",
+          editable: true,
+          packageConfig: null,
+          uriPath: "io.vyne:core-types:1.0.0",
+        },
+      ],
+    },
+  };
+};
+
+SavePanel.story = {
+  name: "save panel",
+};

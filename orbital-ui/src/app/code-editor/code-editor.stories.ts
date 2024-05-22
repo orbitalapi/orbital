@@ -1,20 +1,26 @@
-import {moduleMetadata, storiesOf} from '@storybook/angular';
-import {CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
-import { CodeEditorComponent } from './code-editor.component';
+import { moduleMetadata } from "@storybook/angular";
+import { CommonModule } from "@angular/common";
+import { BrowserModule } from "@angular/platform-browser";
+import { CodeEditorComponent } from "./code-editor.component";
 
+export default {
+  title: "CodeEditor",
 
-storiesOf('CodeEditor', module)
-  .addDecorator(
+  decorators: [
     moduleMetadata({
       declarations: [CodeEditorComponent],
-      imports: [CommonModule, BrowserModule]
-    })
-  ).add('default', () => {
+      imports: [CommonModule, BrowserModule],
+    }),
+  ],
+};
+
+export const Default = () => {
   return {
     template: `<div style="height: 100vh"> <app-code-editor></app-code-editor> </div>`,
-    props: {
-    }
+    props: {},
   };
-});
+};
 
+Default.story = {
+  name: "default",
+};

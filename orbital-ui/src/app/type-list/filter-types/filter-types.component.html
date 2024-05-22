@@ -72,7 +72,7 @@
               <mat-option value="SERVICE" data-e2e-id="service">Service</mat-option>
             </mat-select>
           </mat-form-field>
-          <mat-form-field appearance="legacy" class="inputField">
+          <mat-form-field class="inputField">
             <mat-label>Namespace</mat-label>
             <input matInput placeholder="Namespace contains..." [formControl]="namespace"
                    [(ngModel)]="filter.namespace" (ngModelChange)="updateFilter()" data-e2e-id="namespace">
@@ -81,7 +81,7 @@
               <mat-icon>close</mat-icon>
             </button>
           </mat-form-field>
-          <mat-form-field appearance="legacy" class="inputField">
+          <mat-form-field class="inputField">
             <mat-label>Name</mat-label>
             <input matInput placeholder="Name contains..." [formControl]="name" [(ngModel)]="filter.name"
                    (ngModelChange)="updateFilter()" data-e2e-id="name">

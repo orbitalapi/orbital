@@ -1,46 +1,69 @@
-import {moduleMetadata, storiesOf} from '@storybook/angular';
-import {CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {importedSchema, schemaWithNestedTypes} from '../data-source-import/data-source-import.data';
-import {TuiRootModule} from '@taiga-ui/core';
-import {RouterTestingModule} from '@angular/router/testing';
+import { moduleMetadata } from "@storybook/angular";
+import { CommonModule } from "@angular/common";
+import { BrowserModule } from "@angular/platform-browser";
+import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
+import {
+  importedSchema,
+  schemaWithNestedTypes,
+} from "../data-source-import/data-source-import.data";
+import { TuiRootModule } from "@taiga-ui/core";
+import { RouterTestingModule } from "@angular/router/testing";
 
-storiesOf('Schema importer', module)
-  .addDecorator(
+export default {
+  title: "Schema importer",
+
+  decorators: [
     moduleMetadata({
       declarations: [],
-      imports: [CommonModule, BrowserModule, BrowserAnimationsModule, TuiRootModule, RouterTestingModule]
-    })
-  )
-  .add('default', () => {
-    return {
-      template: `
+      imports: [
+        CommonModule,
+        BrowserModule,
+        BrowserAnimationsModule,
+        TuiRootModule,
+        RouterTestingModule,
+      ],
+    }),
+  ],
+};
+
+export const Default = () => {
+  return {
+    template: `
 <tui-root>
 <div style="padding: 40px">
 <app-data-source-import [importedSchema]="importedSchema"></app-data-source-import>
     </div>
 </tui-root>`,
-      props: {
-        importedSchema
-      }
-    };
-  })
-  .add('schema source selector', () => {
-    return {
-      template: `
+    props: {
+      importedSchema,
+    },
+  };
+};
+
+Default.story = {
+  name: "default",
+};
+
+export const SchemaSourceSelector = () => {
+  return {
+    template: `
 <tui-root>
       <div style="padding: 40px">
 
       <app-data-source-panel></app-data-source-panel>
       </div>
       </tui-root>
-      `
-    }
-  })
-  .add('schema explorer table', () => {
-    return {
-      template: `
+      `,
+  };
+};
+
+SchemaSourceSelector.story = {
+  name: "schema source selector",
+};
+
+export const SchemaExplorerTable = () => {
+  return {
+    template: `
       <tui-root>
       <div style="padding: 40px">
       <app-schema-member-type-explorer
@@ -49,10 +72,13 @@ storiesOf('Schema importer', module)
       </div>
 
       `,
-      props: {
-        schema: schemaWithNestedTypes,
-        importedSchema: importedSchema
-      }
-    }
-  })
-;
+    props: {
+      schema: schemaWithNestedTypes,
+      importedSchema: importedSchema,
+    },
+  };
+};
+
+SchemaExplorerTable.story = {
+  name: "schema explorer table",
+};

@@ -4,8 +4,8 @@ import {UntypedFormControl} from '@angular/forms';
 import {map, startWith} from 'rxjs/operators';
 import {Observable} from 'rxjs';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {LegacyFloatLabelType as FloatLabelType, MatLegacyFormFieldAppearance as MatFormFieldAppearance} from '@angular/material/legacy-form-field';
-import {MatLegacyAutocompleteSelectedEvent as MatAutocompleteSelectedEvent} from '@angular/material/legacy-autocomplete';
+import {FloatLabelType, MatFormFieldAppearance} from '@angular/material/form-field';
+import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 
 /**
  * More flexible version of type auto complete, but does not allow multi-select (for simplicity ... can add in the future).
@@ -40,7 +40,7 @@ export class SchemaMemberAutocompleteComponent implements OnInit {
   @ViewChild('chipInput') chipInput: ElementRef<HTMLInputElement>;
 
   @Input()
-  appearance: MatFormFieldAppearance = 'standard';
+  appearance: MatFormFieldAppearance = 'outline';
 
   @Input()
   placeholder: string;

@@ -132,8 +132,8 @@ export class SchemaDiagramComponent implements OnInit {
   }
 
   resetComponent() {
-    console.log('Destroying and rebuilding schema diagram')
     if (this.containerRef && this.containerRef.nativeElement)  {
+      console.log('Destroying and rebuilding schema diagram')
       SchemaFlowWrapper.destroy(this.containerRef);
     }
   }

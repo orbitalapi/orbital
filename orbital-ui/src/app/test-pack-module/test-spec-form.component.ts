@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-import { MatLegacyDialogRef as MatDialogRef } from '@angular/material/legacy-dialog';
-import {UiCustomisations} from "../../environments/ui-customisations";
+import { MatDialogRef } from '@angular/material/dialog';
+import { UiCustomisations } from "../../environments/ui-customisations";
 
 @Component({
   selector: 'app-test-spec-form',

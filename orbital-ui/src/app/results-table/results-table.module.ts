@@ -3,7 +3,7 @@ import {NgModule} from '@angular/core';
 import {AgGridModule} from 'ag-grid-angular';
 import {ResultsTableComponent} from './results-table.component';
 import {TypeInfoHeaderComponent} from './type-info-header.component';
-import {MatLegacyTooltipModule as MatTooltipModule} from '@angular/material/legacy-tooltip';
+import {MatTooltipModule} from '@angular/material/tooltip';
 
 @NgModule({
     imports: [CommonModule,
