@@ -8,7 +8,7 @@ import {TuiAlertService, TuiDialogService} from '@taiga-ui/core';
 import {ShareDialogComponent} from 'src/app/voyager/share-dialog/share-dialog.component';
 import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
 import {ActivatedRoute, Params} from '@angular/router';
-import {StubQueryMessage, StubQueryMessageWithSlug} from "../app/services/query.service";
+import {emptyQueryMessage, StubQueryMessage, StubQueryMessageWithSlug} from "../app/services/query.service";
 import {isNullOrUndefined} from "../app/utils/utils";
 
 @Component({
@@ -20,7 +20,7 @@ import {isNullOrUndefined} from "../app/utils/utils";
                           (clear)="clear()"
       ></playground-toolbar>
       <div class="container">
-        <app-voyager-sidebar [(showDiagram)]="showDiagram" [(showQueryPanel)]="showQueryPanel"/>
+        <app-voyager-sidebar [(showDiagram)]="showDiagram" [(showQueryPanel)]="showQueryPanel" (copyDevCode)="copyDevCode()"/>
         <as-split direction="horizontal" unit="percent" gutterSize="1">
           <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
             <div class="thin-splitter-gutter-icon"></div>
@@ -44,8 +44,8 @@ import {isNullOrUndefined} from "../app/utils/utils";
             </div>
           </as-split-area>
           <as-split-area *ngIf="showQueryPanel" [order]="1">
-            <app-playground-query-panel [schema]="schema$ | async" [schemaSrc]="content"
-                                        [query]="queryMessage"></app-playground-query-panel>
+            <app-playground-query-panel [schema]="schema$ | async"
+                                        [queryMessage]="queryMessage"></app-playground-query-panel>
           </as-split-area>
           <as-split-area *ngIf="showDiagram" [order]="2">
             <div class="panel-with-header">
@@ -99,6 +99,7 @@ export class VoyagerAppComponent {
         }),
         switchMap((source: string) => {
           if (source && source.length > 0) {
+            this.queryMessage.schema = source;
             return this.service.parse(source)
               .pipe(
                 catchError((error) => {
@@ -173,13 +174,10 @@ export class VoyagerAppComponent {
     this.showQueryPanel = !isNullOrUndefined(queryMessage.query) && queryMessage.query.length > 0;
   }
 
+
+
   clear() {
-    this.setCodeFromExample({
-      schema: '',
-      query: '',
-      parameters: {},
-      stubs: []
-    })
+    this.setCodeFromExample(emptyQueryMessage())
   }
 
   setCode(code: string) {
@@ -201,5 +199,9 @@ export class VoyagerAppComponent {
       ).subscribe()
     })
 
+  }
+
+  copyDevCode() {
+    console.log(this.queryMessage)
   }
 }

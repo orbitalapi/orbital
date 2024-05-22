@@ -84,6 +84,10 @@ export class VoyagerModule {
       `trash`,
       this.domSanitizer.bypassSecurityTrustResourceUrl(`../../assets/img/tabler/trash.svg`)
     );
+    this.matIconRegistry.addSvgIcon(
+      `code-circle`,
+      this.domSanitizer.bypassSecurityTrustResourceUrl(`../../assets/img/tabler/code-circle.svg`)
+    );
   }
 }
 

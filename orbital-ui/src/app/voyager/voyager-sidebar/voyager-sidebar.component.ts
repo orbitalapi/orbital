@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import {MatIconModule} from "@angular/material/icon";
 import {TuiHintModule, TuiLinkModule} from "@taiga-ui/core";
 import {openNewSiteAndCancel} from "../toolbar/playground-toolbar.component";
+import {environment} from "../../../voyager-app/environments/environment";
 
 @Component({
   selector: 'app-voyager-sidebar',
@@ -17,6 +18,10 @@ import {openNewSiteAndCancel} from "../toolbar/playground-toolbar.component";
     </button>
 
     <div class="spacer"></div>
+    <button class="icon-toggle-button" *ngIf="showCopyCodeButton" (click)="copyDevCode.emit()" [tuiHint]="'Copy dev code'">
+      <mat-icon svgIcon="code-circle"></mat-icon>
+    </button>
+
     <a tuiLink href="https://github.com/orbitalapi/orbital" target="_blank"
        (click)="openNewSite($event, 'https://github.com/orbitalapi/orbital')">
       <mat-icon svgIcon="brandGitHub"></mat-icon>
@@ -34,6 +39,10 @@ export class VoyagerSidebarComponent {
   @Input()
   side: 'left' | 'right' = 'left';
 
+  // dev-tool button for copying a snippet at something we can then
+  // embed into Voyager.
+  showCopyCodeButton = !environment.production
+
   @Input()
   showDiagram: boolean;
 
@@ -45,6 +54,9 @@ export class VoyagerSidebarComponent {
 
   @Output()
   showQueryPanelChange = new EventEmitter<boolean>()
+
+  @Output()
+  copyDevCode = new EventEmitter<void>()
 
   @HostBinding('class') get sideClass() {
     return this.side;

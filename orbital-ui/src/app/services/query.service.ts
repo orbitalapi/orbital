@@ -577,6 +577,14 @@ export interface StubQueryMessage {
   stubs?: OperationStub[];
   expectedJson?: string | null;
 }
+export function emptyQueryMessage():StubQueryMessage {
+  return {
+    schema: '',
+    query: '',
+    parameters: {},
+    stubs: []
+  }
+}
 export interface OperationStub {
   operationName: string;
   response: string;

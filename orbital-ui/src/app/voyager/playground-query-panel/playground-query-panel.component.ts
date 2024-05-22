@@ -10,10 +10,10 @@ import {StubPanelComponent} from "./stub-panel.component";
 import {Schema} from "../../services/schema";
 import {HttpClient, HttpClientModule} from "@angular/common/http";
 import {Parameter, TaxiQlQuery, VoyagerService} from "../../../voyager-app/voyager.service";
-import {OperationStub, StubQueryMessage} from "../../services/query.service";
+import {emptyQueryMessage, OperationStub, StubQueryMessage} from "../../services/query.service";
 import {JsonViewerModule} from "../../json-viewer/json-viewer.module";
 import {QueryConfigPanelComponent} from "./query-config-panel.component";
-import {catchError, debounceTime, filter} from "rxjs/operators";
+import {catchError, debounceTime, filter, tap} from "rxjs/operators";
 
 @Component({
   selector: 'app-playground-query-panel',
@@ -47,8 +47,8 @@ import {catchError, debounceTime, filter} from "rxjs/operators";
             <div class="thin-splitter-gutter-icon"></div>
           </div>
           <as-split-area [lockSize]="!configPanelExpanded" [size]="configPanelExpanded ? 250 : 50">
-            <app-query-config-panel [(expanded)]="configPanelExpanded" [(stubs)]="query.stubs"
-                                    [parameters]="parameters"
+            <app-query-config-panel [(expanded)]="configPanelExpanded" [(stubs)]="queryMessage.stubs"
+                                    [parameters]="queryMessage.parameters"
                                     (parameterValuesChange)="updateQueryParameters($event)"
                                     [schema]="schema"></app-query-config-panel>
           </as-split-area>
@@ -79,13 +79,13 @@ export class PlaygroundQueryPanelComponent {
   constructor(private service: VoyagerService, private changeDetector: ChangeDetectorRef) {
     this.content
       .pipe(
+        tap(querySrc => this.queryMessage.query = querySrc),
         debounceTime(500),
         filter(query => {
-          return query && query.length > 0;
+          return this.queryMessage && this.queryMessage.query.length > 0;
         }),
         switchMap(query => {
-          const queryMessage = this.buildQueryMessage();
-          return this.service.parseQuery(queryMessage)
+          return this.service.parseQuery(this.queryMessage)
             .pipe(catchError(e => {
               return EMPTY;
             }))
@@ -108,39 +108,24 @@ export class PlaygroundQueryPanelComponent {
   @Input()
   schema: Schema
 
-  @Input()
-  schemaSrc: string;
-
   parsedQuery: TaxiQlQuery = null;
-
-  parameters: { [index: string]: any } = {};
 
   queryResult: string | null = null;
 
 
-  private _query: StubQueryMessage;
+  private _queryMessage: StubQueryMessage = emptyQueryMessage();
   @Input()
-  get query(): StubQueryMessage {
-    return this._query;
+  get queryMessage(): StubQueryMessage {
+    return this._queryMessage;
   }
 
-  set query(value: StubQueryMessage) {
-    this._query = value;
-    this.content.next(this.query.query || '');
-  }
-
-  private buildQueryMessage(): StubQueryMessage {
-    return {
-      query: this.content.getValue(),
-      schema: this.schemaSrc,
-      stubs: this.query.stubs,
-      parameters: this.query.parameters,
-    }
+  set queryMessage(value: StubQueryMessage) {
+    this._queryMessage = value;
+    this.content.next(this.queryMessage.query || '');
   }
 
   runQuery() {
-    const query = this.buildQueryMessage();
-    this.service.runQuery(query)
+    this.service.runQuery(this.queryMessage)
       .subscribe({
         next: result => {
           this.queryResult = JSON.stringify(result, null, 3)
@@ -154,26 +139,26 @@ export class PlaygroundQueryPanelComponent {
   }
 
   updateQueryParameters(updatedParams: { [index: string]: any }) {
+    this.queryMessage.parameters = {}
     Object.keys(updatedParams).forEach(key => {
-      this.parameters[key] = updatedParams[key]
+      this.queryMessage.parameters[key] = updatedParams[key]
     })
     this.changeDetector.markForCheck();
   }
 
   private updateQueryParametersFromServer(parsedQuery: TaxiQlQuery) {
     const paramKeys: Set<string> = new Set(parsedQuery.parameters.map(p => p.name));
-
     // Add missing keys from paramKeys to parameters
     for (const key of paramKeys) {
-      if (!(key in this.parameters)) {
-        this.parameters[key] = null; // Or set a default value as required
+      if (!(key in this.queryMessage.parameters)) {
+        this.queryMessage.parameters[key] = null; // Or set a default value as required
       }
     }
 
     // Remove keys from parameters that are not present in paramKeys
-    for (const key in this.parameters) {
+    for (const key in this.queryMessage.parameters) {
       if (!paramKeys.has(key)) {
-        delete this.parameters[key];
+        delete this.queryMessage.parameters[key];
       }
     }
 
