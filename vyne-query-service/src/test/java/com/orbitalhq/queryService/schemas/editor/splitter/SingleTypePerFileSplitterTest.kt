@@ -23,18 +23,18 @@ class SingleTypePerFileSplitterTest {
       val sources = SingleTypePerFileSplitter.toVersionedSources(taxi.types.getCompilationUnits())
       sources[0].name.should.equal("com/orbitalhq/test/FirstName.taxi")
       sources[0].content.should.equal(
-         """namespace com.orbitalhq.test {
-   type FirstName inherits String
-}"""
+         """namespace com.orbitalhq.test
+
+type FirstName inherits String"""
       )
       sources[1].name.should.equal("com/orbitalhq/test/Person.taxi")
       sources[1].content.withoutWhitespace().should.equal(
          """import com.orbitalhq.test.FirstName
-namespace com.orbitalhq.test {
-   model Person {
-               firstName : FirstName
-            }
-}""".withoutWhitespace()
+namespace com.orbitalhq.test
+model Person {
+   firstName : FirstName
+}
+""".withoutWhitespace()
       )
    }
 
@@ -49,9 +49,9 @@ namespace com.orbitalhq.test {
       ).taxi
       val sources = SingleTypePerFileSplitter.toVersionedSources(taxi.types.getCompilationUnits())
       sources[0].name.should.equal("com/orbitalhq/test/FirstName.taxi")
-      sources[0].content.should.equal("""namespace com.orbitalhq.test {
-   type FirstName
-}""")
+      sources[0].content.should.equal("""namespace com.orbitalhq.test
+
+type FirstName""")
    }
 
    @Test
@@ -72,11 +72,11 @@ namespace com.orbitalhq.test {
       sources[0].name.should.equal("com/orbitalhq/test/PersonService.taxi")
       sources[0].content.withoutWhitespace().should.equal("""import com.orbitalhq.test.FirstName
 import com.orbitalhq.test.Person
-namespace com.orbitalhq.test {
-   service PersonService {
-               operation findPeopleWithName(FirstName):Person[]
-            }
-}""".withoutWhitespace())
+namespace com.orbitalhq.test
+service PersonService {
+            operation findPeopleWithName(FirstName):Person[]
+}
+""".withoutWhitespace())
    }
 
 
