@@ -2,6 +2,7 @@ package com.orbitalhq.pipelines.jet
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.hazelcast.config.Config
+import com.hazelcast.config.YamlConfigBuilder
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.spring.context.SpringManagedContext
@@ -144,7 +145,7 @@ class JetPipelineApp {
    fun clock(): Clock = Clock.systemUTC()
 }
 
-
+private val logger = KotlinLogging.logger {  }
 @Configuration
 @EnableCloudMetrics
 class JetConfiguration {
@@ -154,14 +155,24 @@ class JetConfiguration {
    }
 
    @Bean
-   fun instance(@Value("\${vyne.hazelcast.port:25701}") hazelcastPort: Int = 25701): HazelcastInstance {
-      val config = Config()
-      config.clusterName = "orbital-stream-server"
-      config.networkConfig.port = hazelcastPort
-      config.networkConfig.isPortAutoIncrement = true
-      config.jetConfig.isEnabled = true
-      config.managedContext = springManagedContext()
-      return Hazelcast.newHazelcastInstance(config)
+   fun instance(@Value("\${vyne.hazelcast.port:25701}") hazelcastPort: Int = 25701,
+               @Value("\${vyne.hazelcast.cluster-name:dev}") clusterName: String = "orbital-stream-server",
+                @Value("\${vyne.hazelcast.configYamlPath:#{null}}") configYamlPath: String? = null): HazelcastInstance {
+      if (configYamlPath == null) {
+         logger.info { "hazelcast config yaml path is not provided, setting up multicast config with port: $hazelcastPort and cluster name $clusterName" }
+         val config = Config()
+         config.clusterName = clusterName
+         config.networkConfig.port = hazelcastPort
+         config.networkConfig.isPortAutoIncrement = true
+         config.jetConfig.isEnabled = true
+         config.managedContext = springManagedContext()
+         config.networkConfig.join.autoDetectionConfig.setEnabled(true)
+         return Hazelcast.newHazelcastInstance(config)
+      } else {
+         logger.info { "Creating Hazelcast config from yaml file at $configYamlPath" }
+         val yamlCfg = YamlConfigBuilder(configYamlPath).build()
+         yamlCfg.managedContext = springManagedContext()
+         return Hazelcast.newHazelcastInstance(yamlCfg)
+      }
    }
-
 }
