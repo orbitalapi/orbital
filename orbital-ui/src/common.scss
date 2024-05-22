@@ -54,7 +54,7 @@ $toolbar-height: 5rem;
   height: 100%;
 }
 
-.mat-list-base {
+.mat-mdc-list-base {
   // Remove top paddins so that the list items align with the header bar
   padding-top: 0;
 }
@@ -87,6 +87,16 @@ $toolbar-height: 5rem;
   }
 }
 
+mat-button-toggle {
+  mat-pseudo-checkbox {
+    display: none !important; // hide the tick from the Material button-toggle
+  }
+}
+
+::ng-deep .mat-mdc-select-panel {
+  min-width: fit-content !important;
+}
+
 .info-panel {
   background-color: rgba($blueish, 0.3);
   border-radius: 0.5rem;
@@ -94,10 +104,6 @@ $toolbar-height: 5rem;
   border: 1px solid $blueish;
 }
 
-
-mat-button-toggle-group.selector-button {
-  border-radius: 20px;
-}
 
 $light-grey-1: mat.get-color-from-palette($vyne-grey-blue-palette, 50);
 $light-grey-2: mat.get-color-from-palette($vyne-grey-blue-palette, 100);

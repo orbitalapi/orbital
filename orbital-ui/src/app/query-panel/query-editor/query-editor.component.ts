@@ -180,13 +180,13 @@ export class QueryEditorComponent {
     this.typeEditorService.saveQuery(request)
       .subscribe({
         next: (result) =>
-          {
-            this.alerts.open('Query saved successfully', {status: TuiNotification.Success})
-              .pipe(takeUntilDestroyed(this.destroyRef))
-              .subscribe()
-            this.state.savedQuery.set(result);
-            this.changeDetector.markForCheck();
-          },
+        {
+          this.alerts.open('Query saved successfully', {status: TuiNotification.Success})
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe()
+          this.state.savedQuery.set(result);
+          this.changeDetector.markForCheck();
+        },
         error: (error) => {
           console.error(error);
           this.alerts.open('An error occurred saving the query', {status: TuiNotification.Error})

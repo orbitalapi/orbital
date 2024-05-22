@@ -3,7 +3,7 @@ import {CommonModule} from '@angular/common';
 import {PlaygroundToolbarComponent} from 'src/app/voyager/toolbar/playground-toolbar.component';
 import {MatIconModule, MatIconRegistry} from '@angular/material/icon';
 import {DomSanitizer} from '@angular/platform-browser';
-import {MatLegacyButtonModule as MatButtonModule} from '@angular/material/legacy-button';
+import {MatButtonModule} from '@angular/material/button';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {SubscribeDialogComponent} from './subscribe-dialog/subscribe-dialog.component';
 import {

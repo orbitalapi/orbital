@@ -10,6 +10,7 @@
     "moduleResolution": "node",
     "emitDecoratorMetadata": false,
     "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
     "target": "ES2022",
     "skipLibCheck": true,
     "jsx": "react",

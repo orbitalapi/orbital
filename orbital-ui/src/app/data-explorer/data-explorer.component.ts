@@ -10,13 +10,13 @@ import {
 } from '../services/types.service';
 import { FileSystemFileEntry, NgxFileDropEntry } from 'ngx-file-drop';
 import { HttpErrorResponse } from '@angular/common/http';
-import { MatLegacyTabChangeEvent as MatTabChangeEvent } from '@angular/material/legacy-tabs';
+import { MatTabChangeEvent } from '@angular/material/tabs';
 import { CodeViewerComponent } from '../code-viewer/code-viewer.component';
 import { environment } from '../../environments/environment';
 import { CaskService } from '../services/cask.service';
 import { HeaderTypes } from './csv-viewer.component';
 import { SchemaGeneratorComponent } from './schema-generator-panel/schema-generator.component';
-import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { TestSpecFormComponent } from '../test-pack-module/test-spec-form.component';
 import { InstanceSelectedEvent } from '../query-panel/instance-selected-event';
 import { SchemaNotificationService } from '../services/schema-notification.service';

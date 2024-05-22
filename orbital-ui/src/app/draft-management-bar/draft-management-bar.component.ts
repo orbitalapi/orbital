@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { MatLegacySnackBar as MatSnackBar } from '@angular/material/legacy-snack-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ChangesetService } from 'src/app/changeset-selector/changeset.service';
-import * as moment from 'moment';
+import moment from 'moment';
 
 @Component({
   selector: 'app-draft-management-bar',

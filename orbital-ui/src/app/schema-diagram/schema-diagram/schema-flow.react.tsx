@@ -1,8 +1,8 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { useCallback, useEffect, useState } from 'react';
+import { ComponentType, useCallback, useEffect, useState } from 'react';
 import ReactFlow, {
-  ConnectionMode, ControlButton, Controls, Edge, FitViewOptions,
+  ConnectionMode, ControlButton, Controls, Edge, EdgeProps, EdgeTypes, FitViewOptions,
   Node,
   ReactFlowProvider,
   useEdgesState,
@@ -41,8 +41,8 @@ const nodeTypes: NodeMap = {
   'Service': ApiNode
 };
 
-const edgeTypes = {
-  'floating': FloatingEdge
+const edgeTypes: EdgeTypes = {
+  'floating': FloatingEdge as ComponentType<EdgeProps>
 };
 
 interface SchemaFlowDiagramProps {

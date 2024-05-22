@@ -9,7 +9,7 @@ import {
   SourcePackageDescription
 } from '../package-viewer/packages.service';
 import {Badge} from '../simple-badge-list/simple-badge-list.component';
-import * as moment from 'moment';
+import moment from 'moment';
 import {ChangeLogEntry, ChangelogService} from 'src/app/changelog/changelog.service';
 import {Observable} from 'rxjs';
 import {TypesService} from 'src/app/services/types.service';

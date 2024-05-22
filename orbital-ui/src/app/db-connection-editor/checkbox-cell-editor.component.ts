@@ -3,8 +3,8 @@ import { FormsModule } from '@angular/forms';
 import {ICellEditorAngularComp, ICellRendererAngularComp} from 'ag-grid-angular';
 import {ICellEditorParams, ICellRendererParams} from 'ag-grid-community';
 import {
-  MatLegacyCheckboxModule
-} from '@angular/material/legacy-checkbox';
+  MatCheckboxModule
+} from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-checkbox-cell-editor',
@@ -13,7 +13,7 @@ import {
   `,
   styleUrls: ['./checkbox-cell-editor.component.scss'],
   imports: [
-    MatLegacyCheckboxModule,
+    MatCheckboxModule,
     FormsModule
   ],
   standalone: true

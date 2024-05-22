@@ -1,11 +1,11 @@
-import {moduleMetadata, storiesOf} from '@storybook/angular';
-import {CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
-import {CodeViewerComponent} from './code-viewer.component';
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {MatLegacyTabsModule as MatTabsModule} from '@angular/material/legacy-tabs';
-import {sampleParsedSource} from './sample-code';
-import {FormsModule} from '@angular/forms';
+import { moduleMetadata } from "@storybook/angular";
+import { CommonModule } from "@angular/common";
+import { BrowserModule } from "@angular/platform-browser";
+import { CodeViewerComponent } from "./code-viewer.component";
+import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
+import { MatTabsModule } from "@angular/material/tabs";
+import { sampleParsedSource } from "./sample-code";
+import { FormsModule } from "@angular/forms";
 
 const code = `type Customer {
      email : CustomerEmailAddress
@@ -81,18 +81,33 @@ const typescript = `import { Injectable } from '@angular/core';
         }
       }
     }`;
-storiesOf('CodeViewer', module)
-  .addDecorator(
+
+export default {
+  title: "CodeViewer",
+
+  decorators: [
     moduleMetadata({
       declarations: [CodeViewerComponent],
-      imports: [CommonModule, BrowserModule, MatTabsModule, FormsModule, BrowserAnimationsModule]
-    })
-  ).add('default', () => {
+      imports: [
+        CommonModule,
+        BrowserModule,
+        MatTabsModule,
+        FormsModule,
+        BrowserAnimationsModule,
+      ],
+    }),
+  ],
+};
+
+export const Default = () => {
   return {
     template: `<app-code-viewer [sources]="sources"></app-code-viewer>`,
     props: {
-      sources: sampleParsedSource
-    }
+      sources: sampleParsedSource,
+    },
   };
-});
+};
 
+Default.story = {
+  name: "default",
+};

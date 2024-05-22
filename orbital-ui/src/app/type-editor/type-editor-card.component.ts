@@ -5,7 +5,7 @@ import { NewTypeSpec } from 'src/app/type-editor/new-type-spec';
 @Component({
   selector: 'app-type-editor-card',
   template: `
-    <mat-card>
+    <mat-card appearance="outlined">
       <mat-card-header>
         <mat-card-title>Create a new type</mat-card-title>
       </mat-card-header>

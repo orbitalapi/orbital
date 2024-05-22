@@ -1,24 +1,29 @@
-import {moduleMetadata, storiesOf} from '@storybook/angular';
-import {AttributeTableComponent} from './attribute-table/attribute-table.component';
-import {TypeViewerComponent} from './type-viewer.component';
-import {APP_BASE_HREF, CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
-import {RouterTestingModule} from '@angular/router/testing';
-import {MatToolbarModule} from '@angular/material/toolbar';
-import {TocHostDirective} from './toc-host.directive';
-import {action} from '@storybook/addon-actions';
+import { moduleMetadata } from "@storybook/angular";
+import { AttributeTableComponent } from "./attribute-table/attribute-table.component";
+import { TypeViewerComponent } from "./type-viewer.component";
+import { APP_BASE_HREF, CommonModule } from "@angular/common";
+import { BrowserModule } from "@angular/platform-browser";
+import { RouterTestingModule } from "@angular/router/testing";
+import { MatToolbarModule } from "@angular/material/toolbar";
+import { TocHostDirective } from "./toc-host.directive";
+import { action } from "@storybook/addon-actions";
 
 const actions = {
-  contentsChanged: action('contentsChanged')
+  contentsChanged: action("contentsChanged"),
 };
 
-storiesOf('TableOfContents', module)
-  .addDecorator(
+export default {
+  title: "TableOfContents",
+
+  decorators: [
     moduleMetadata({
       declarations: [TocHostDirective],
-      imports: [CommonModule, BrowserModule]
-    })
-  ).add('default', () => {
+      imports: [CommonModule, BrowserModule],
+    }),
+  ],
+};
+
+export const Default = () => {
   return {
     template: `<div appTocHost tocTag="h2" (contentsChanged)="onContentsChanged($event)">
     <h2>Chapter one</h2>
@@ -29,8 +34,11 @@ storiesOf('TableOfContents', module)
     <p>Trysail Sail ho Corsair red ensign hulk smartly boom jib rum gangway. Case shot Shiver me timbers gangplank crack Jennys tea cup ballast Blimey lee snow crow's nest rutters. Fluke jib scourge of the seven seas boatswain schooner gaff booty Jack Tar transom spirits.</p>
 </div>`,
     props: {
-      onContentsChanged: actions.contentsChanged
-    }
+      onContentsChanged: actions.contentsChanged,
+    },
   };
-});
+};
 
+Default.story = {
+  name: "default",
+};

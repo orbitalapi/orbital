@@ -28,7 +28,8 @@
             "allowedCommonJsDependencies": [
               "vscode-jsonrpc",
               "vscode-languageclient",
-              "vscode-languageserver-protocol"
+              "vscode-languageserver-protocol",
+              "ngx-moment"
             ],
             "assets": [
               "src/silent-refresh.html",

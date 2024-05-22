@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { debounceTime } from 'rxjs/operators';
-import { MatLegacySnackBar as MatSnackBar } from '@angular/material/legacy-snack-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { NamedAndDocumented } from '../../services/schema';
 import { CommitMode } from '../type-viewer.component';
 import { ChangesetService } from 'src/app/changeset-selector/changeset.service';

@@ -12,7 +12,7 @@ import {SchemaSubmissionResult, TypesService} from '../services/types.service';
 import {Schema, Type, VersionedSource} from '../services/schema';
 import {isNullOrUndefined} from 'util';
 import {HttpErrorResponse} from '@angular/common/http';
-import {MatLegacySnackBar as MatSnackBar} from '@angular/material/legacy-snack-bar';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import { NewTypeSpec, qualifiedName } from 'src/app/type-editor/new-type-spec';
 import { TableImporterComponent } from './table-importer.component';
 

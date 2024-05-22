@@ -1,30 +1,45 @@
-import {moduleMetadata, storiesOf} from '@storybook/angular';
-import {CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {ExpandingPanelSetModule} from './expanding-panel-set.module';
-import {TuiButtonModule} from '@taiga-ui/core';
+import { moduleMetadata } from "@storybook/angular";
+import { CommonModule } from "@angular/common";
+import { BrowserModule } from "@angular/platform-browser";
+import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
+import { ExpandingPanelSetModule } from "./expanding-panel-set.module";
+import { TuiButtonModule } from "@taiga-ui/core";
 
-storiesOf('Expanding panelset', module)
-  .addDecorator(
+export default {
+  title: "Expanding panelset",
+
+  decorators: [
     moduleMetadata({
       declarations: [],
-      imports: [CommonModule,TuiButtonModule, BrowserModule, BrowserAnimationsModule, ExpandingPanelSetModule]
-    })
-  )
-  .add('header', () => {
-    return {
-      template: `<div style="padding: 40px">
+      imports: [
+        CommonModule,
+        TuiButtonModule,
+        BrowserModule,
+        BrowserAnimationsModule,
+        ExpandingPanelSetModule,
+      ],
+    }),
+  ],
+};
+
+export const Header = () => {
+  return {
+    template: `<div style="padding: 40px">
 <app-panel-header title="Code">
     <button tuiButton size="s">Run</button>
 </app-panel-header>
     </div>`,
-      props: {}
-    };
-  })
-  .add('panelset', () => {
-    return {
-      template: `<div style="padding: 40px">
+    props: {},
+  };
+};
+
+Header.story = {
+  name: "header",
+};
+
+export const Panelset = () => {
+  return {
+    template: `<div style="padding: 40px">
 <app-panelset style="width: 400px;" >
 <app-panel title="Catalog" icon="assets/img/tabler/vocabulary.svg">
 <div>Hello, from Catalog</div>
@@ -36,11 +51,10 @@ storiesOf('Expanding panelset', module)
 </app-panel>
 </app-panelset>
     </div>`,
-      props: {
-      }
+    props: {},
+  };
+};
 
-    }
-  })
-
-
-;
+Panelset.story = {
+  name: "panelset",
+};

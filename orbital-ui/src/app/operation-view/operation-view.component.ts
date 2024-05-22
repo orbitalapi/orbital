@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { MatLegacyProgressSpinnerModule } from '@angular/material/legacy-progress-spinner';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router, RouterLink } from '@angular/router';
 import { TuiToggleModule } from '@taiga-ui/kit';
 import { ObjectViewModule } from '../object-view/object-view.module';
@@ -19,7 +19,7 @@ import {Fact} from '../services/query.service';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {BaseDeferredEditComponent} from '../type-viewer/base-deferred-edit.component';
-import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
+import {MatDialog} from '@angular/material/dialog';
 import { DescriptionEditorModule } from '../type-viewer/description-editor/description-editor.module';
 import {openTypeSearch} from '../type-viewer/model-attribute-tree-list/base-schema-member-display';
 import {isNullOrUndefined} from '../utils/utils';
@@ -170,7 +170,7 @@ import { OperationErrorComponent } from './operation-error.component';
     CommonModule,
     DescriptionEditorModule,
     TuiToggleModule,
-    MatLegacyProgressSpinnerModule,
+    MatProgressSpinnerModule,
     OperationErrorComponent,
     ObjectViewModule,
     FormsModule,

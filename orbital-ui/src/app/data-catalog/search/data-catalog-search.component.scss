@@ -25,10 +25,11 @@
 }
 
 .search-bar-container {
+  /* TODO(mdc-migration): The following rule targets internal classes of form-field that may no longer apply for the MDC version. */
   ::ng-deep .mat-form-field-underline {
     display: none;
   }
-
+  /* TODO(mdc-migration): The following rule targets internal classes of form-field that may no longer apply for the MDC version. */
   ::ng-deep .mat-form-field-wrapper {
     padding: 0;
   }
@@ -44,16 +45,12 @@
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-
+  /* TODO(mdc-migration): The following rule targets internal classes of tabs that may no longer apply for the MDC version. */
   mat-table {
     flex-grow: 1;
     width: 100%;
     margin-right: 1rem;
     border-radius: 8px;
-  }
-
-  mat-select {
-    width: fit-content;
   }
 }
 

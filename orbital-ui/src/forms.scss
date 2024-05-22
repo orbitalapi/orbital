@@ -85,7 +85,7 @@ app-description-editor {
   span, mat-progress-bar {
     margin-right: 1rem;
   }
-
+  /* TODO(mdc-migration): The following rule targets internal classes of progress-bar that may no longer apply for the MDC version.*/
   mat-progress-bar {
     width: 250px;
   }
