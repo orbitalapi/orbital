@@ -1,7 +1,6 @@
 package com.orbitalhq.pipelines.jet.streams
 
 import com.google.common.annotations.VisibleForTesting
-import com.hazelcast.config.MapStoreConfig
 import com.hazelcast.core.EntryEvent
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.map.IMap
@@ -40,14 +39,6 @@ class StreamStateManagerHazelcastConfig {
       val streamStateCache = hazelcastInstance
          .getMap<String, StreamStatus>(STREAM_STATUS_CACHE_NAME)
 
-      val mapStoreConfig = MapStoreConfig().apply {
-         isEnabled = true
-         implementation = mapStore
-         writeDelaySeconds = 0
-      }
-      hazelcastInstance.config.getMapConfig(STREAM_STATUS_CACHE_NAME).apply {
-         this.mapStoreConfig = mapStoreConfig
-      }
       return streamStateCache
    }
 }
@@ -65,6 +56,8 @@ class StreamStateManagerHazelcastConfig {
  */
 @Component
 class StreamStateManager(
+   @Value("\${vyne.streams.initialState:PAUSED}")
+   private val initialState: StreamStatus.State = StreamStatus.State.PAUSED,
    private val pipelineManager: PipelineManager,
    @VisibleForTesting
    @Qualifier(StreamStateManagerHazelcastConfig.STREAM_STATE_CACHE)
@@ -86,7 +79,16 @@ class StreamStateManager(
    fun getOrCreateStreamStatus(name: String): StreamStatus {
       // We can assert non-null here, as the backing store creates a default
       // status if it doesn't exist
-      return streamStateCache[name]!!
+
+      val status = streamStateCache[name]
+
+      return if (status == null) {
+         val initialStatus = StreamStatus(name, initialState)
+         streamStateCache[name] = initialStatus
+         initialStatus
+      } else {
+         status
+      }
    }
 
    /**
@@ -213,17 +215,10 @@ class StreamStatusMapStore(
    // So, by hoisting it here, I guess it forces creation in a different order, and the
    // method calls work.
    private val unusedTransactionManager: TransactionManager,
-   @Value("\${vyne.streams.initialState:PAUSED}")
-   private val initialState: StreamStatus.State = StreamStatus.State.PAUSED
+
 ) : MapStore<String, StreamStatus> {
-   override fun load(key: String): StreamStatus {
+   override fun load(key: String): StreamStatus? {
       return repository.findByIdOrNull(key)
-         ?: repository.save(
-            StreamStatus(
-               key,
-               initialState,
-            )
-         )
    }
 
    override fun loadAll(keys: MutableCollection<String>): MutableMap<String, StreamStatus> {
