@@ -2,6 +2,8 @@ package com.orbitalhq.pipelines.jet
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.hazelcast.config.Config
+import com.hazelcast.config.MapConfig
+import com.hazelcast.config.MapStoreConfig
 import com.hazelcast.config.YamlConfigBuilder
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
@@ -17,6 +19,8 @@ import com.orbitalhq.pipelines.jet.sink.PipelineSinkBuilder
 import com.orbitalhq.pipelines.jet.sink.PipelineSinkProvider
 import com.orbitalhq.pipelines.jet.source.PipelineSourceBuilder
 import com.orbitalhq.pipelines.jet.source.PipelineSourceProvider
+import com.orbitalhq.pipelines.jet.streams.StreamStateManagerHazelcastConfig
+import com.orbitalhq.pipelines.jet.streams.StreamStatusMapStore
 import com.orbitalhq.schema.consumer.SchemaChangedEventProvider
 import com.orbitalhq.schema.consumer.SchemaConfigSourceLoader
 import com.orbitalhq.schemas.readers.SourceConverterRegistry
@@ -155,7 +159,8 @@ class JetConfiguration {
    }
 
    @Bean
-   fun instance(@Value("\${vyne.hazelcast.port:25701}") hazelcastPort: Int = 25701,
+   fun instance(mapStore: StreamStatusMapStore,
+              @Value("\${vyne.hazelcast.port:25701}") hazelcastPort: Int = 25701,
                @Value("\${vyne.hazelcast.cluster-name:dev}") clusterName: String = "orbital-stream-server",
                 @Value("\${vyne.hazelcast.configYamlPath:#{null}}") configYamlPath: String? = null): HazelcastInstance {
       if (configYamlPath == null) {
@@ -167,12 +172,29 @@ class JetConfiguration {
          config.jetConfig.isEnabled = true
          config.managedContext = springManagedContext()
          config.networkConfig.join.autoDetectionConfig.setEnabled(true)
+         logger.info { "setting the mapstore config for ${StreamStateManagerHazelcastConfig.STREAM_STATUS_CACHE_NAME}" }
+         config.addMapConfig(getMapStoreConfig(mapStore))
          return Hazelcast.newHazelcastInstance(config)
       } else {
          logger.info { "Creating Hazelcast config from yaml file at $configYamlPath" }
          val yamlCfg = YamlConfigBuilder(configYamlPath).build()
          yamlCfg.managedContext = springManagedContext()
+         logger.info { "setting the mapstore config for ${StreamStateManagerHazelcastConfig.STREAM_STATUS_CACHE_NAME}" }
+         yamlCfg.addMapConfig(getMapStoreConfig(mapStore))
          return Hazelcast.newHazelcastInstance(yamlCfg)
       }
+   }
+
+   private fun getMapStoreConfig(mapStore: StreamStatusMapStore): MapConfig {
+      val mapStoreConfig = MapStoreConfig().apply {
+         isEnabled = true
+         implementation = mapStore
+         writeDelaySeconds = 0
+      }
+
+     val streamStatusMapConfig =  MapConfig(StreamStateManagerHazelcastConfig.STREAM_STATUS_CACHE_NAME)
+      streamStatusMapConfig.setMapStoreConfig(mapStoreConfig)
+      return streamStatusMapConfig
+
    }
 }

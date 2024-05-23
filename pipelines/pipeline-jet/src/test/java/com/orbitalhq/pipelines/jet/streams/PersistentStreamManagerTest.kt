@@ -16,7 +16,6 @@ import com.orbitalhq.pipelines.jet.api.RunningPipelineSummary
 import com.orbitalhq.pipelines.jet.api.SubmittedPipeline
 import com.orbitalhq.pipelines.jet.api.streams.StreamStatus
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
-import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportSpec
 import com.orbitalhq.pipelines.jet.api.transport.query.StreamingQueryInputSpec
 import com.orbitalhq.pipelines.jet.pipelines.PipelineManager
 import com.orbitalhq.schema.consumer.SimpleSchemaStore
@@ -130,7 +129,7 @@ $querySrc
 private fun storeAndManager(): Triple<SimpleSchemaStore, PersistentStreamManager, PipelineManager> {
    val store = SimpleSchemaStore()
    val pipelineManager: PipelineManager = mock { }
-   val stateManager = StreamStateManager(pipelineManager, mutableMapOf())
+   val stateManager = StreamStateManager(StreamStatus.State.PAUSED, pipelineManager, mutableMapOf())
    val manager = PersistentStreamManager(store, pipelineManager, stateManager)
    return Triple(store, manager, pipelineManager)
 }
