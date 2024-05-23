@@ -2,11 +2,11 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TuiHintModule, TuiSvgModule } from '@taiga-ui/core';
-import {BehaviorSubject, combineLatestWith, concat, merge, mergeAll} from 'rxjs';
+import { BehaviorSubject, combineLatestWith } from 'rxjs';
 import { Observable } from 'rxjs/internal/Observable';
 import { filter, map, tap } from 'rxjs/operators';
 import { HeaderBarModule } from '../header-bar/header-bar.module';
-import {AppInfo, AppInfoService} from '../services/app-info.service';
+import { AppInfo, AppInfoService } from '../services/app-info.service';
 import { UserInfoService, VynePrivileges, VyneUser } from '../services/user-info.service';
 
 export interface SidebarElement {
@@ -116,6 +116,7 @@ export class SidenavComponent implements OnInit {
 
   @Input()
   customSidebarElements$: BehaviorSubject<SidebarElement[]>;
+
   sidebarElements$: Observable<SidebarElement[]>
   userInfo$: BehaviorSubject<VyneUser> = new BehaviorSubject(null);
 
@@ -129,39 +130,36 @@ export class SidenavComponent implements OnInit {
   }
 
   private readonly IS_COLLAPSED_LOCAL_STORAGE_KEY: string = 'isSidebarCollapsed';
-  private defaultSidebarElements$: BehaviorSubject<SidebarElement[]> = new BehaviorSubject<SidebarElement[]>(this.sidebarElements)
+  private filteredSideBarElements$: Observable<SidebarElement[]>
 
-  constructor(private userInfoService: UserInfoService, private appInfoService: AppInfoService) {
+  constructor(
+    private userInfoService: UserInfoService,
+    private appInfoService: AppInfoService
+  ) {
+  }
 
-    this.userInfoService
-      .userInfo$
+  ngOnInit(): void {
+    this._isCollapsed = localStorage.getItem(this.IS_COLLAPSED_LOCAL_STORAGE_KEY) === 'true' ?? false;
+
+    this.filteredSideBarElements$ = this.userInfoService.userInfo$
       .pipe(
         filter(userInfo => userInfo != null),
         tap(userInfo => this.userInfo$.next(userInfo)),
         map(userInfo => this.sidebarElements
           .filter(sideBarElement => userInfo.grantedAuthorities.includes(sideBarElement.requiredAuthority))
         ),
-        combineLatestWith(appInfoService.getConfig()),
+        combineLatestWith(this.appInfoService.getConfig()),
         map(([sidebarElements,config]) => {
-          const featureToggledFilteredElements = sidebarElements.filter(sidebarElement => {
-            if (!sidebarElement.featureToggle) {
-              return true
-            } else {
-              return config.featureToggles[sidebarElement.featureToggle]
-            }
-          })
-          return featureToggledFilteredElements;
+          return sidebarElements.filter(sidebarElement => {
+            return !sidebarElement.featureToggle ? true : config.featureToggles[sidebarElement.featureToggle];
+          });
         })
-      ).subscribe(filteredSideBarElements => this.defaultSidebarElements$.next(filteredSideBarElements));
-  }
+      )
 
-  ngOnInit(): void {
-    this._isCollapsed = localStorage.getItem(this.IS_COLLAPSED_LOCAL_STORAGE_KEY) === 'true' ?? false;
-
-    this.sidebarElements$  = this.defaultSidebarElements$
+    this.sidebarElements$ = this.filteredSideBarElements$
       .pipe(
         combineLatestWith(this.customSidebarElements$),
-        map(([arr1, arr2]) => [...arr1, ...arr2])
+        map(([defaultSidebar, customSidebar, ]) => [...defaultSidebar, ...customSidebar])
       )
   }
 }
