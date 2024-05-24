@@ -21,18 +21,19 @@
           <div class='code-editor-section'>
             <app-panel-header title="Query editor">
               <app-query-editor-toolbar
-                (executeQuery)='submitQuery.emit()'
                 [currentState]='state.currentState'
                 [queryStarted]="state.queryStartTime()"
                 [queryLanguage]='state.queryLanguage()'
-                (queryLanguageChange)="queryLanguageChanged.emit($event)"
                 [runningQueryStatus]='state.queryMetadata() | async'
                 [resultType]="state.resultType()"
+                [savedQuery]="state.savedQueryWithSource()"
+                (queryLanguageChange)="queryLanguageChanged.emit($event)"
+                (executeQuery)='submitQuery.emit()'
                 (cancelQuery)='cancelQuery.emit()'
                 (copyQuery)='onCopyQuery.emit($event)'
                 (saveClicked)="saveQuery()"
-                (publishAsHttpEndpoint)="createHttpEndpoint()"
-                [publishAsHttpEndpointEnabled]="state.savedQuery() !== null"
+                (publishAsHttpEndpoint)="createEndpoint('HTTP')"
+                (publishAsWebsocketpoint)="createEndpoint('WEBSOCKET')"
               >
               </app-query-editor-toolbar>
             </app-panel-header>

@@ -4,7 +4,6 @@
           size="s"
           appearance="icon"
           icon="tuiIconPlus"
-          class="tab-plus-button"
           (click)="queryPanelStore.addTab()"
           [tuiHint]="'New tab'"
   ></button>
@@ -20,7 +19,7 @@
           src="tuiIconClose"
           class="close-tab-button"
           [class.show-close]="queryPanelStore.activeTabIndex() === i"
-          (click.stop)="queryPanelStore.closeTab(i)"
+          (click)="queryPanelStore.closeTab($event, i)"
         ></tui-svg>
       </button>
     </ng-container>

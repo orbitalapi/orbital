@@ -5,8 +5,8 @@ import {FileSystemPackageSpec, GitRepositoryConfig} from './project-import.model
 import {ConvertSchemaEvent} from '../data-source-import/data-source-import.models';
 import {environment} from '../../environments/environment';
 import {Observable} from 'rxjs/internal/Observable';
-import {SchemaSubmissionResult} from '../services/types.service';
-import { PartialSchema, QualifiedName, SchemaMemberKind, VersionedSource } from '../services/schema';
+import {SavedQuery, SchemaSubmissionResult} from '../services/types.service';
+import {PartialSchema, QualifiedName, SchemaMemberKind, VersionedSource} from '../services/schema';
 import {PackageIdentifier, PackagesService, SourcePackageDescription} from '../package-viewer/packages.service';
 import {switchMap} from 'rxjs/operators';
 import {WorkspacesService} from "../services/workspaces.service";
@@ -75,6 +75,26 @@ export class SchemaImporterService {
   removeRepository(packageDescription: SourcePackageDescription): Observable<any> {
     return this.httpClient.delete<any>(`${environment.serverUrl}/api/packages/${packageDescription.identifier.uriSafeId}`)
   }
+
+  // Util function
+  getQueryStateFromEditResult(editResult: SchemaSubmissionResult, fileName: string): SavedQueryWithSource {
+    const updatedFileSource = editResult.sourcePackage.sources.find(source => source.name === fileName)
+    const updatedState: SavedQueryWithSource = {
+      savedQuery: editResult.queries[0],
+      sourceFile: updatedFileSource
+    }
+    return updatedState
+  }
+
+  // Util function
+  extractFilenameFromVersionedSource(versionedSource: VersionedSource): string {
+    // the filename on the saved query is in the form
+    // [demo.vyne/films-demo/0.1.0]/a3.taxi
+    // So just grab the value after the ]/
+    return versionedSource.name.startsWith('[') ?
+      versionedSource.name.split(']/')[1] :
+      versionedSource.name;
+  }
 }
 
 export interface SchemaEdit {
@@ -85,18 +105,25 @@ export interface SchemaEdit {
 
 export type EditKind =
   'CreateOrReplace' |
+  'CreateOrReplaceQuery' |
   'ChangeFieldType' |
   'AddOrRemoveFieldAnnotation' |
   'ChangeOperationReturnType' |
   'ChangeOperationParameterType' |
   'EditMemberDescription' |
-  'ChangeInheritedType'
+  'ChangeInheritedType' |
+  'AddHttpEndpointToQuery' |
+  'AddWebsocketEndpointToQuery'
 
 export interface SchemaEditOperation {
   editKind: EditKind
   loadExistingState?: boolean
 }
 
+export interface CreateOrReplaceQuery extends SchemaEditOperation {
+  editKind: 'CreateOrReplaceQuery'
+  sources: VersionedSource[]
+}
 export interface CreateOrReplaceSource extends SchemaEditOperation {
   editKind: 'CreateOrReplace'
   sources: VersionedSource[]
@@ -145,6 +172,19 @@ export interface ChangeInheritedTypeEvent extends SchemaEditOperation {
   newBaseType: QualifiedName
 }
 
+export interface AddHttpEndpointToQueryEvent extends SchemaEditOperation {
+  editKind: 'AddHttpEndpointToQuery'
+  queryQualifiedName: QualifiedName
+  path: string
+  method: HttpMethod
+}
+
+export interface AddWebsocketEndpointToQueryEvent extends SchemaEditOperation {
+  editKind: 'AddWebsocketEndpointToQuery'
+  queryQualifiedName: QualifiedName
+  path: string
+}
+
 export interface SchemaConversionRequest {
   format: string;
   options: any;
@@ -175,4 +215,11 @@ export interface GitConnectionTestResult {
 export interface GitValidateFilePathRequest {
   repositoryUrl: string;
   filePath: string;
+}
+
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
+
+export interface SavedQueryWithSource {
+  savedQuery: SavedQuery
+  sourceFile: VersionedSource
 }

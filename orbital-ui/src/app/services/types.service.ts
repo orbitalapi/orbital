@@ -12,7 +12,6 @@ import {
   Message,
   Operation,
   OperationKind,
-  ParsedSource,
   PartialSchema,
   QualifiedName,
   Schema,
@@ -33,9 +32,8 @@ import {SchemaNotificationService, SchemaUpdatedNotification} from './schema-not
 import {ValueWithTypeName} from './models';
 import {ENVIRONMENT, Environment} from './environment';
 import {TuiDialogService} from '@taiga-ui/core';
-import {PackageIdentifier, PackageMetadata, SourcePackageDescription} from "../package-viewer/packages.service";
-import {SchemaEditOperation} from "../project-import/schema-importer.service";
-import {SavedQuery} from "./type-editor.service";
+import {PackageIdentifier, PackageMetadata} from "../package-viewer/packages.service";
+import { HttpMethod, SchemaEditOperation } from '../project-import/schema-importer.service';
 
 
 @Injectable({
@@ -485,5 +483,18 @@ export interface SchemaTreeNode {
   operationKind: OperationKind | null;
   fieldName: string | null;
   primitiveType: QualifiedName | null;
+}
 
+export interface SavedQuery {
+  name: QualifiedName;
+  sources: VersionedSource[];
+  queryKind: QueryKind;
+  httpEndpoint: HttpOperation;
+}
+
+export type QueryKind = 'Stream' | 'Query';
+
+interface HttpOperation {
+  method: HttpMethod;
+  url: string;
 }

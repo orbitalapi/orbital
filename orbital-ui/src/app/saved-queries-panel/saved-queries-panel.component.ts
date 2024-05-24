@@ -1,7 +1,7 @@
 import {Component, EventEmitter, OnInit, Output} from '@angular/core';
 import {TypesService} from "../services/types.service";
 import {map} from "rxjs/operators";
-import {SavedQuery} from "../services/type-editor.service";
+import {SavedQuery} from "../services/types.service";
 import {Observable} from "rxjs/internal/Observable";
 
 @Component({

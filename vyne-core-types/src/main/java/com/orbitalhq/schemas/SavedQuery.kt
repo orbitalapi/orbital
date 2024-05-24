@@ -2,13 +2,15 @@ package com.orbitalhq.schemas
 
 import com.orbitalhq.VersionedSource
 import lang.taxi.annotations.HttpOperation
+import lang.taxi.annotations.WebsocketOperation
 import lang.taxi.query.QueryMode
 
 data class SavedQuery(
    val name: QualifiedName,
    val sources: List<VersionedSource>,
    val queryKind: QueryKind,
-   val httpEndpoint: HttpOperation? = null
+   val httpEndpoint: HttpOperation? = null,
+   val websocketOperation: WebsocketOperation? = null
 ) {
    enum class QueryKind {
       Stream,

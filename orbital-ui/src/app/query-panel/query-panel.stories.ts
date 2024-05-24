@@ -73,7 +73,7 @@ export const SavePanel = () => {
     template: `
 <tui-root>
 <div style="padding: 40px; " >
-<app-save-query-panel [packages]="projects"></app-save-query-panel>
+<app-save-query-dialog [packages]="projects"></app-save-query-dialog>
 </div>
 </tui-root>
       `,

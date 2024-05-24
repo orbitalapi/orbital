@@ -70,6 +70,10 @@ data class SourcePackage(
    val sourcesWithPackageIdentifier: List<VersionedSource> =
       this.sources.map { it.copy(packageIdentifier = this.packageMetadata.identifier) }
 
+   fun source(filename: String):VersionedSource {
+      return this.sources.single { it.name == filename }
+   }
+
    companion object {
       fun withAdditionalSources(
          packageMetadata: PackageMetadata,
@@ -268,7 +272,7 @@ fun TaxiPackageProject.toPackageMetadata(): PackageMetadata {
 fun TaxiPackageSources.asSourcePackage(): SourcePackage {
    return SourcePackage.withAdditionalSources(
       this.project.toPackageMetadata(),
-      this.versionedSources(relativeTo = this.project.packageRootPath),
+      this.versionedSources(relativeTo = this.project.sourceRootPath),
       this.pathGlobs()
    )
 }

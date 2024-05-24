@@ -105,7 +105,12 @@ enum extension Bar {}""".withoutWhitespace()
       val projectPath = projectHome.deployProject("sample-project")
       val repositoryManager =
          ReactiveProjectStoreManager.testWithFileRepo(projectPath, isEditable = true)
-      val schema = TaxiSchema.compiled("namespace com.foo { model Person{} }").second
+      val schema = TaxiSchema.compiled("""namespace com.foo
+         |
+         |model Person {
+         |  name : FirstName inherits String
+         |}
+         |""".trimMargin()).second
       val editor = SchemaEditorService(repositoryManager, SimpleSchemaStore(SchemaSet.from(schema, 0)))
 
       val saved = editor.saveQuery(
@@ -115,14 +120,19 @@ enum extension Bar {}""".withoutWhitespace()
                   PackageIdentifier("taxi", "sample", "1.0.0"),
                   "MyQuery.taxi"
                ),
-               content = """find { Person }"""
+               content = """find { Person } as {
+                  |   name : FirstName
+                  |}
+               """.trimMargin()
             )
          )
       ).block()!!
       val expected = """query MyQuery {
-   find { Person }
+   find { Person } as {
+      name : FirstName
+   }
 }""".trimIndent()
-      saved.sources.single().formattedContent().shouldBe(expected)
+      saved.sources.single().content.shouldBe(expected)
       val savedSource = projectPath.resolve("src/MyQuery.taxi").readText()
       savedSource.withoutWhitespace().shouldBe(expected.withoutWhitespace())
    }

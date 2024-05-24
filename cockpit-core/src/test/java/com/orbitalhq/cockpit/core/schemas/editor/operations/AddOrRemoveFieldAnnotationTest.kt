@@ -1,13 +1,9 @@
 package com.orbitalhq.cockpit.core.schemas.editor.operations
 
-import com.orbitalhq.PackageIdentifier
-import com.orbitalhq.VersionedSource
-import com.orbitalhq.cockpit.core.schemas.editor.SchemaSubmissionResult
 import com.orbitalhq.schemas.fqn
 import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class AddOrRemoveFieldAnnotationTest : BaseSchemaEditOperationTest() {

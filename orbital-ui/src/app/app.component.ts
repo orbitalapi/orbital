@@ -2,15 +2,15 @@ import { DatePipe } from '@angular/common';
 import { Component, Inject, OnInit } from '@angular/core';
 import { NavigationEnd, RouteConfigLoadEnd, RouteConfigLoadStart, Router } from '@angular/router';
 import { TuiAlertService } from '@taiga-ui/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { filter, map } from 'rxjs/operators';
+import { BehaviorSubject, EMPTY, Observable, Subject, switchMap, takeUntil } from 'rxjs';
+import { catchError, filter, map } from 'rxjs/operators';
 import { UiCustomisations } from '../environments/ui-customisations';
 import { PackagesService } from './package-viewer/packages.service';
 import { AppInfo, AppInfoService } from './services/app-info.service';
 import { SchemaNotificationService, SourceNameWithPackage } from './services/schema-notification.service';
 import { SidebarElement } from './sidenav/sidenav.component';
 import { SystemAlert } from './system-alert/system-alert.component';
-import {DbConnectionService} from "./db-connection-editor/db-importer.service";
+import { DbConnectionService } from "./db-connection-editor/db-importer.service";
 
 @Component({
   selector: 'app-root',
@@ -46,6 +46,7 @@ export class AppComponent implements OnInit {
   alerts: SystemAlert[] = [];
   customSidebarElements$: BehaviorSubject<SidebarElement[]> = new BehaviorSubject([]);
   isLoadingRoute$: Observable<boolean>;
+  private destroyLoadProjectLoadersWithErrors = new Subject<void>();
 
   constructor(private appInfoService: AppInfoService,
               private router: Router,
@@ -55,18 +56,21 @@ export class AppComponent implements OnInit {
               private dbService: DbConnectionService,
               @Inject(TuiAlertService) private readonly alertService: TuiAlertService,
   ) {
-    appInfoService
-      .getConfig()
-      .subscribe(config => {
-        if (!config.licenseStatus.isLicensed) {
-          // this.setUnlicensedAlert(config.licenseStatus.expiresOn);
-        }
-        appInfoService
-          .getAppInfo(config.actuatorPath)
-          .subscribe(info => this.appInfo = info)
+    appInfoService.getConfig()
+      .pipe(
+        switchMap(config => {
+          this.customSidebarElements$.next(UiCustomisations.customSidebarElements(config))
+          return appInfoService.getAppInfo(config.actuatorPath)
+        }),
+        catchError(error => {
+          // Need to handle the unhappy path here...
+          return EMPTY;
+        })
+      )
+      .subscribe(info => {
+        this.appInfo = info
+      })
 
-        this.customSidebarElements$.next(UiCustomisations.customSidebarElements(config))
-      });
     // When the user navigates using the router, scroll back to the top.
     // Won't always be appropriate, (ie., when there are anchor links),
     // but it's right more often than it's not.
@@ -139,7 +143,9 @@ export class AppComponent implements OnInit {
   }
 
   private updateProjectsWithErrorsNotifications() {
+    this.destroyLoadProjectLoadersWithErrors.next()
     this.packagesService.loadProjectLoadersWithErrors()
+      .pipe(takeUntil(this.destroyLoadProjectLoadersWithErrors))
       .subscribe(projectsWithErrors => {
         if (projectsWithErrors.length > 0) {
           this.addAlertIfNotPresent({

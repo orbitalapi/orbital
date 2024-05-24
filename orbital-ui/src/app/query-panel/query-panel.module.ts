@@ -60,14 +60,14 @@ import {
   TuiTextAreaModule
 } from '@taiga-ui/kit';
 import {CatalogExplorerPanelModule} from "../catalog-explorer-panel/catalog-explorer-panel.module";
-import {SaveQueryPanelComponent} from "./query-editor/save-query-panel.component";
+import {SaveQueryDialogComponent} from "./query-editor/save-query-dialog.component";
 import {HeaderComponentLayoutModule} from "../header-component-layout/header-component-layout.module";
 import {DisableControlModule} from "../disable-control/disable-control.module";
 import {QueryHistoryPanelModule} from "../query-history-panel/query-history-panel.module";
 import {SavedQueriesPanelModule} from "../saved-queries-panel/saved-queries-panel.module";
-import {HttpEndpointPanelComponent} from "./query-editor/http-endpoint-panel.component";
+import {PublishEndpointDialogComponent} from "./query-editor/publish-endpoint-dialog.component";
 import {ProjectSelectorModule} from "../project-selector/project-selector.module";
-import {TuiActiveZoneModule} from "@taiga-ui/cdk";
+import { TuiActiveZoneModule, TuiAutoFocusModule } from '@taiga-ui/cdk';
 
 @NgModule({
   imports: [
@@ -130,19 +130,23 @@ import {TuiActiveZoneModule} from "@taiga-ui/cdk";
     TuiHostedDropdownModule,
     TuiDataListModule,
     TuiSvgModule,
+    TuiAutoFocusModule,
   ],
-  exports: [QueryPanelComponent,
+  exports: [
+    QueryPanelComponent,
     QueryEditorComponent,
     QueryEditorToolbar,
-    ErrorPanelComponent, SaveQueryPanelComponent],
-  declarations: [QueryPanelComponent,
+    ErrorPanelComponent,
+    SaveQueryDialogComponent
+  ],
+  declarations: [
+    QueryPanelComponent,
     VyneQueryViewerComponent,
     QueryEditorComponent,
     QueryEditorToolbar, CounterTimerComponent,
-    HttpEndpointPanelComponent,
+    PublishEndpointDialogComponent,
     ErrorPanelComponent,
-    SaveQueryPanelComponent
-
+    SaveQueryDialogComponent
   ],
   providers: [QueryPanelStoreService, QueryEditorStoreService]
 })

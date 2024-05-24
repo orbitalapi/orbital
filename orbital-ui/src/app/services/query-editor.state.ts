@@ -1,5 +1,5 @@
-import { inject, WritableSignal } from '@angular/core';
-import { BehaviorSubject, merge, Observable, ReplaySubject, Subject, takeUntil } from 'rxjs';
+import {inject, WritableSignal} from '@angular/core';
+import {BehaviorSubject, merge, Observable, ReplaySubject, Subject, takeUntil} from 'rxjs';
 import {
   bufferToggle,
   distinctUntilChanged,
@@ -11,13 +11,13 @@ import {
   tap,
   windowToggle
 } from 'rxjs/operators';
-import { QueryLanguage, QueryState } from '../query-panel/query-editor/query-editor-toolbar.component';
-import { QueryResultInstanceSelectedEvent } from '../query-panel/result-display/BaseQueryResultComponent';
-import { isNullOrUndefined } from '../utils/utils';
-import { ActiveQueriesNotificationService, RunningQueryStatus } from './active-queries-notification-service';
-import { AppConfig } from './app-info.service';
-import { FailedSearchResponse, isFailedSearchResponse, isValueWithTypeName, StreamingQueryMessage } from './models';
-import { QueryHistoryStoreService } from './query-history-store.service';
+import {QueryLanguage, QueryState} from '../query-panel/query-editor/query-editor-toolbar.component';
+import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
+import {isNullOrUndefined} from '../utils/utils';
+import {ActiveQueriesNotificationService, RunningQueryStatus} from './active-queries-notification-service';
+import {AppConfig} from './app-info.service';
+import {FailedSearchResponse, isFailedSearchResponse, isValueWithTypeName, StreamingQueryMessage} from './models';
+import {QueryHistoryStoreService} from './query-history-store.service';
 import {
   QueryProfileData,
   QueryResult,
@@ -26,14 +26,14 @@ import {
   ResultMode,
   StreamQueryErrorEvent
 } from './query.service';
-import { findType, InstanceLike, Schema, Type } from './schema';
-import { SavedQuery } from './type-editor.service';
+import {findType, InstanceLike, Schema, Type} from './schema';
+import {SavedQueryWithSource} from "../project-import/schema-importer.service";
 
 export type QueryEditorPayload = {
   queryLanguage: WritableSignal<QueryLanguage>
   query: WritableSignal<string>
   chatQuery: WritableSignal<string>
-  savedQuery: WritableSignal<SavedQuery>
+  savedQueryWithSource: WritableSignal<SavedQueryWithSource>
   currentState: WritableSignal<QueryState>
   queryClientId: WritableSignal<string>
   lastQueryResult: WritableSignal<QueryResult | FailedSearchResponse>
