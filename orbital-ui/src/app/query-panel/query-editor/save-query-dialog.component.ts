@@ -1,19 +1,25 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Input} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, Inject, Input} from '@angular/core';
 import {PackagesService, SourcePackageDescription} from "../../package-viewer/packages.service";
 import {UntypedFormControl, UntypedFormGroup, Validators} from "@angular/forms";
 import {TUI_VALIDATION_ERRORS} from "@taiga-ui/kit";
-import {TuiDialogContext, TuiDialogService} from "@taiga-ui/core";
+import {TuiAlertService, TuiDialogContext, TuiNotification} from '@taiga-ui/core';
 import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
-import {SavedQuery, TypeEditorService} from "../../services/type-editor.service";
-import {MatSnackBar} from "@angular/material/snack-bar";
+import {
+  CreateOrReplaceQuery,
+  SavedQueryWithSource,
+  SchemaEdit,
+  SchemaImporterService
+} from '../../project-import/schema-importer.service';
+import {VersionedSource} from '../../services/schema';
+import { SavedQuery } from '../../services/types.service';
 
-export interface SaveQueryPanelProps {
+export interface SaveQueryRequestProps {
   query: string,
-  previousVersion?: SavedQuery
+  previousVersion?: SavedQueryWithSource
 }
 
 @Component({
-  selector: 'app-save-query-panel',
+  selector: 'app-save-query-dialog',
   template: `
     <app-header-component-layout title="Save query">
       <tui-notification *ngIf="!hasEditablePackages"
@@ -76,7 +82,7 @@ export interface SaveQueryPanelProps {
 
     </app-header-component-layout>
   `,
-  styleUrls: ['./save-query-panel.component.scss'],
+  styleUrls: ['./save-query-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     {
@@ -88,7 +94,7 @@ export interface SaveQueryPanelProps {
     },
   ],
 })
-export class SaveQueryPanelComponent {
+export class SaveQueryDialogComponent {
   readonly stringify = (item: SourcePackageDescription) => item.identifier.name;
 
   @Input()
@@ -96,15 +102,13 @@ export class SaveQueryPanelComponent {
 
   formGroup: UntypedFormGroup
 
-  working: boolean = false;
+  private readonly alerts = inject(TuiAlertService);
 
   constructor(private packagesService: PackagesService,
-              private typeEditorService: TypeEditorService,
-              @Inject(TuiDialogService) private readonly dialogs: TuiDialogService,
+              private schemaImporterService: SchemaImporterService,
               @Inject(POLYMORPHEUS_CONTEXT)
-              private readonly context: TuiDialogContext<SavedQuery, SaveQueryPanelProps>,
+              private readonly context: TuiDialogContext<SavedQueryWithSource, SaveQueryRequestProps>,
               private changeRef: ChangeDetectorRef,
-              private snackBar: MatSnackBar
   ) {
     this.formGroup = new UntypedFormGroup({
       schemaPackage: new UntypedFormControl(null, Validators.required),
@@ -137,25 +141,39 @@ export class SaveQueryPanelComponent {
 
   save() {
     const formData = this.formGroup.getRawValue() as { schemaPackage: SourcePackageDescription, queryName: string }
-    this.working = true;
+    const fileName = formData.queryName + '.taxi'
+    const source: VersionedSource = {
+      name: fileName,
+      packageIdentifier: formData.schemaPackage.identifier,
+      content: this.context.data.query,
+      version: formData.schemaPackage.identifier.version,
+    }
+    const schemaEdit: SchemaEdit = {
+      packageIdentifier: formData.schemaPackage.identifier,
+      edits: [
+        {
+          editKind: 'CreateOrReplaceQuery',
+          sources: [source]
+        } as CreateOrReplaceQuery
+      ],
+      dryRun: false
+    }
     this.changeRef.markForCheck();
-    this.typeEditorService.saveQuery({
-      source: {
-        name: formData.queryName + '.taxi',
-        packageIdentifier: formData.schemaPackage.identifier,
-        content: this.context.data.query,
-        version: formData.schemaPackage.identifier.version,
-      },
-      changesetName: '' // TODO ... add changesets across this stuff.
-    })
-      .subscribe(result => {
-        this.snackBar.open('Query saved successfully');
-        this.context.completeWith(result);
-      }, error => {
-        console.error(error);
-        this.working = false;
-        this.errorMessage = error.error?.message || error.message;
-        this.changeRef.markForCheck();
+    this.schemaImporterService.submitSchemaEditOperation(schemaEdit)
+      .subscribe({
+        next: (result) => {
+          this.alerts.open('Query saved successfully', {status: TuiNotification.Success})
+            //.pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe()
+
+          const updatedState = this.schemaImporterService.getQueryStateFromEditResult(result, fileName)
+          this.context.completeWith(updatedState);
+        },
+        error: (error) => {
+          console.error(error);
+          this.errorMessage = error.error?.message || error.message;
+          this.changeRef.markForCheck();
+        }
       })
   }
 }

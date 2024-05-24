@@ -13,7 +13,12 @@ import com.orbitalhq.schemas.SchemaMemberKind
 import lang.taxi.CompilationException
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
+import lang.taxi.TaxiParser
+import lang.taxi.TaxiParser.MultiNamespaceDocumentContext
+import lang.taxi.TaxiParser.SingleNamespaceDocumentContext
 import lang.taxi.errors
+import lang.taxi.searchUpForRule
+import lang.taxi.source
 import org.antlr.v4.runtime.ParserRuleContext
 
 enum class EditKind(
@@ -24,12 +29,15 @@ enum class EditKind(
    val precedence: Int
 ) {
    CreateOrReplace(0),
+   CreateOrReplaceQuery(0),
    ChangeFieldType(10),
    ChangeOperationParameterType(11),
    AddOrRemoveFieldAnnotation(12),
    ChangeOperationReturnType(13),
    EditMemberDescription(14),
    ChangeInheritedType(15),
+   AddHttpEndpointToQuery(16),
+   AddWebsocketEndpointToQuery(16),
 }
 
 @JsonTypeInfo(
@@ -40,11 +48,14 @@ enum class EditKind(
 @JsonSubTypes(
    JsonSubTypes.Type(ChangeFieldType::class, name = "ChangeFieldType"),
    JsonSubTypes.Type(CreateOrReplaceSource::class, name = "CreateOrReplace"),
+   JsonSubTypes.Type(CreateOrReplaceQuery::class, name = "CreateOrReplaceQuery"),
    JsonSubTypes.Type(ChangeOperationParameterType::class, name = "ChangeOperationParameterType"),
    JsonSubTypes.Type(AddOrRemoveFieldAnnotation::class, name = "AddOrRemoveFieldAnnotation"),
    JsonSubTypes.Type(ChangeOperationReturnType::class, name = "ChangeOperationReturnType"),
    JsonSubTypes.Type(EditMemberDescription::class, name = "EditMemberDescription"),
    JsonSubTypes.Type(ChangeInheritedType::class, name = "ChangeInheritedType"),
+   JsonSubTypes.Type(AddHttpEndpointToQuery::class, name = "AddHttpEndpointToQuery"),
+   JsonSubTypes.Type(AddWebsocketEndpointToQuery::class, name = "AddWebsocketEndpointToQuery"),
 )
 abstract class SchemaEditOperation {
    abstract fun applyTo(
@@ -68,6 +79,34 @@ abstract class SchemaEditOperation {
    protected fun buildCompiler(sourcePackage: SourcePackage, source: TaxiDocument): Compiler {
       val sourceCode = sourcePackage.sources.asTaxiSource()
       return Compiler(sourceCode, importSources = listOf(source))
+   }
+
+   /**
+    * Adds imports at the top of the file containing the provided token.
+    * Respects existing imports, and handles where no imports exist
+    */
+   protected fun addImports(typeNamesToImport: List<String>, token: ParserRuleContext):SourceEdit {
+      val range = getInsertionLocationToAppendImport(token)
+      return SourceEdit(
+         sourceName = token.source().sourceName,
+         range = range,
+         newText = typeNamesToImport.joinToString(prefix = "\n", separator = "\n", postfix = "\n\n") { "import $it" }
+      )
+   }
+
+   private fun getInsertionLocationToAppendImport(token:ParserRuleContext):EditRange {
+      val rootToken = token.searchUpForRule(listOf(SingleNamespaceDocumentContext::class.java, TaxiParser.MultiNamespaceDocumentContext::class.java))
+      val lastImportLocation = when (rootToken) {
+         is SingleNamespaceDocumentContext -> rootToken.importDeclaration().lastOrNull()
+         is MultiNamespaceDocumentContext -> rootToken.importDeclaration().lastOrNull()
+         else -> error("Expected either a SingleNamespaceDocumentContext or a MultiNamespaceDocumentContext")
+      }
+      return if (lastImportLocation == null) {
+         CharacterPositionRange.PREPEND
+      } else {
+         lastImportLocation.asCharacterInsertionPoint(EditPosition.AfterPosition)
+      }
+
    }
 
 
@@ -163,7 +202,7 @@ data class CharacterPositionRange(val startPosition: Int, val endPosition: Int) 
    }
 
    override fun applyTo(newText: String, other: String): String {
-      val contentBeforeReplacement = other.substring(0, startPosition)
+      val contentBeforeReplacement = if (this == PREPEND) "" else other.substring(0, startPosition)
 
       val contentAfterReplacement = if (endPosition == other.length) "" else other.substring(endPosition + 1)
 

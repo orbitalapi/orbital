@@ -28,7 +28,7 @@ import { ExpandingPanelSetModule } from '../expanding-panelset/expanding-panel-s
 import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
 import { PipelineService } from '../pipelines/pipelines.service';
 import { DataSeries, MetricsPeriod, MetricsService, StreamMetricsData } from '../services/metrics.service';
-import { SavedQuery } from '../services/type-editor.service';
+import { SavedQuery } from '../services/types.service';
 
 type ChartConfig = {
   title: string;

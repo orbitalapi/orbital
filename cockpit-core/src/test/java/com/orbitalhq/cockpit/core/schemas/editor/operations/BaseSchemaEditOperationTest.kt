@@ -51,6 +51,14 @@ abstract class BaseSchemaEditOperationTest {
       )
    }
 
+   protected fun stubPackageApiToReturnPackage(source: String) {
+      whenever(packagesServiceApi.loadPackage(any())).thenReturn(
+         Mono.just(
+            sourcePackageOf(source).withDescription()
+         )
+      )
+   }
+
    private fun sourcePackageOf(
       source: String,
       packageIdentifier: PackageIdentifier = PackageIdentifier.fromId("test/test/1.0.0")

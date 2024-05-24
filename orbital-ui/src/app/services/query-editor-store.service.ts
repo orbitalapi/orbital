@@ -54,7 +54,7 @@ export class QueryEditorStoreService {
           queryLanguage: signal(localStorageQuery.queryLanguage),
           query: signal(localStorageQuery.query),
           chatQuery: signal(localStorageQuery.chatQuery),
-          savedQuery: signal(localStorageQuery.savedQuery),
+          savedQueryWithSource: signal(localStorageQuery.savedQueryWithSource),
           currentState: signal('Editing'),
           queryClientId: signal(null),
           lastQueryResult: signal(null),

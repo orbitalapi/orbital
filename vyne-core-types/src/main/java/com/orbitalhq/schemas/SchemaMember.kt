@@ -31,5 +31,6 @@ enum class SchemaMemberKind {
    SERVICE,
    TYPE,
    OPERATION,
-   FIELD
+   FIELD,
+   QUERY
 }

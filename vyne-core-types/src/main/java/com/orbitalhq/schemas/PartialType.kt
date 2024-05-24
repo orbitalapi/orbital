@@ -11,6 +11,10 @@ import lang.taxi.types.FormatsAndZoneOffset
 interface PartialSchema {
    val types: Set<out PartialType>
    val services: Set<PartialService>
+   val queries: Set<SavedQuery>
+      get() {
+         return emptySet()
+      }
 
    fun type(name: QualifiedName): PartialType {
       return types.single { it.name == name }

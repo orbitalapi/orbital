@@ -8,7 +8,7 @@ import { combineLatestWith, filter, Observable, of } from 'rxjs';
 import { map, mergeMap } from 'rxjs/operators';
 import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
 import { PipelineService, StreamRunningState, StreamStatus } from '../pipelines/pipelines.service';
-import { SavedQuery } from '../services/type-editor.service';
+import { SavedQuery } from '../services/types.service';
 import { TypesService } from '../services/types.service';
 import { EndpointMonitorComponent } from './endpoint-monitor.component';
 

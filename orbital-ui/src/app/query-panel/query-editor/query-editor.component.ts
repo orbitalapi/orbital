@@ -1,6 +1,5 @@
 import {
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
   DestroyRef,
   EventEmitter,
@@ -9,22 +8,32 @@ import {
   Input,
   Output,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { TuiAlertService, TuiDialogService, TuiNotification } from '@taiga-ui/core';
-import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
-import { editor, KeyCode, KeyMod } from 'monaco-editor';
-import { QueryEditorPayload } from '../../services/query-editor.state';
-import { QueryHistorySummary, QueryResult, QueryService } from '../../services/query.service';
-import { QueryLanguage } from './query-editor-toolbar.component';
-import { isQueryResult } from '../result-display/BaseQueryResultComponent';
-import { QualifiedName, VersionedSource } from '../../services/schema';
-import { ExportFormat, ResultsDownloadService } from 'src/app/results-download/results-download.service';
-import { CopyQueryFormat } from 'src/app/query-panel/query-editor/QueryFormatter';
-import { appendToQuery } from './query-code-generator';
-import { SaveQueryPanelComponent, SaveQueryPanelProps } from './save-query-panel.component';
-import { SavedQuery, SaveQueryRequest, TypeEditorService } from '../../services/type-editor.service';
-import { HttpEndpointPanelComponent } from './http-endpoint-panel.component';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {TuiAlertService, TuiDialogService, TuiNotification} from '@taiga-ui/core';
+import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
+import {editor, KeyCode, KeyMod} from 'monaco-editor';
+import {QueryEditorPayload} from '../../services/query-editor.state';
+import {QueryHistorySummary, QueryResult, QueryService} from '../../services/query.service';
+import {QueryLanguage} from './query-editor-toolbar.component';
+import {isQueryResult} from '../result-display/BaseQueryResultComponent';
+import {QualifiedName, VersionedSource} from '../../services/schema';
+import {ExportFormat, ResultsDownloadService} from 'src/app/results-download/results-download.service';
+import {CopyQueryFormat} from 'src/app/query-panel/query-editor/QueryFormatter';
+import {appendToQuery} from './query-code-generator';
+import {SaveQueryDialogComponent, SaveQueryRequestProps} from './save-query-dialog.component';
+import {SavedQuery} from '../../services/types.service';
+import {
+  EndpointType,
+  PublishEndpointDialogComponent,
+  PublishEndpointPanelProps
+} from './publish-endpoint-dialog.component';
 import {isNullOrUndefined} from "../../utils/utils";
+import {
+  CreateOrReplaceQuery,
+  SavedQueryWithSource,
+  SchemaEdit,
+  SchemaImporterService
+} from "../../project-import/schema-importer.service";
 
 @Component({
   // eslint-disable-next-line @angular-eslint/component-selector
@@ -44,7 +53,7 @@ export class QueryEditorComponent {
   state: QueryEditorPayload;
 
   @Output()
-  queryChanged = new EventEmitter<{query: string, chatQuery: string}>();
+  queryChanged = new EventEmitter<{ query: string, chatQuery: string }>();
 
   @Output()
   queryLanguageChanged = new EventEmitter<QueryLanguage>();
@@ -62,10 +71,10 @@ export class QueryEditorComponent {
   loadProfileData = new EventEmitter<void>();
 
   @Output()
-  onQuerySaved = new EventEmitter<SavedQuery>();
+  onQuerySaved = new EventEmitter<SavedQueryWithSource>();
 
   @Output()
-  onSavedQuerySelected = new EventEmitter<SavedQuery>();
+  onSavedQuerySelected = new EventEmitter<SavedQueryWithSource>();
 
   @Output()
   onCopyQuery = new EventEmitter<CopyQueryFormat>();
@@ -85,12 +94,11 @@ export class QueryEditorComponent {
 
   constructor(private queryService: QueryService,
               private fileService: ResultsDownloadService,
-              private changeDetector: ChangeDetectorRef,
               @Inject(TuiDialogService) private readonly tuiDialogService: TuiDialogService,
               @Inject(Injector) private readonly injector: Injector,
               @Inject(TuiAlertService) private readonly alerts: TuiAlertService,
-              private typeEditorService: TypeEditorService,
-              private destroyRef: DestroyRef
+              private destroyRef: DestroyRef,
+              private schemaImporterService: SchemaImporterService,
   ) {
   }
 
@@ -120,30 +128,38 @@ export class QueryEditorComponent {
   //      achieved with the state prop, so wait to see how things pan
   //      out with moving the props/output fully into the store.
   get isStreamingQuery(): boolean {
-    return this.state.query()?.includes("stream {")
+    return this.state.query()?.includes('stream {')
   }
 
   onAddToQueryClicked($event: QualifiedName) {
     this.state.query.set(appendToQuery(this.state.query(), $event));
   }
 
-  createHttpEndpoint() {
-    this.tuiDialogService.open<string>(new PolymorpheusComponent(HttpEndpointPanelComponent, this.injector),
+  createEndpoint(endpointType: EndpointType) {
+    this.tuiDialogService.open<SavedQueryWithSource>(new PolymorpheusComponent(PublishEndpointDialogComponent, this.injector),
       {
         size: 'l',
-        data: this.state.query(),
+        data: {
+          query: this.state.query(),
+          previousVersion: this.state.savedQueryWithSource(),
+          endpointType,
+          queryKind: this.state.savedQueryWithSource().savedQuery.queryKind
+        } as PublishEndpointPanelProps,
         dismissible: true
       }
     ).subscribe(result => {
-      if (result !== null) {
-        this.state.query.set(result);
+      if (result) {
+        this.onQuerySaved.emit(result)
+        this.state.savedQueryWithSource.set(result)
+        this.state.query.set(result.sourceFile.content);
       }
-      this.changeDetector.markForCheck();
     });
   }
 
+
+
   saveQuery() {
-    if (isNullOrUndefined(this.state.savedQuery())) {
+    if (isNullOrUndefined(this.state.savedQueryWithSource())) {
       this.saveNewQuery();
     } else {
       this.saveExistingQuery();
@@ -151,41 +167,49 @@ export class QueryEditorComponent {
   }
 
   private saveNewQuery() {
-    this.tuiDialogService.open<SavedQuery>(new PolymorpheusComponent(SaveQueryPanelComponent, this.injector),
+    this.tuiDialogService.open<SavedQueryWithSource>(new PolymorpheusComponent(SaveQueryDialogComponent, this.injector),
       {
         size: 'l',
         data: {
           query: this.state.query(),
-          previousVersion: this.state.savedQuery()
-        } as SaveQueryPanelProps,
+          previousVersion: this.state.savedQueryWithSource()
+        } as SaveQueryRequestProps,
         dismissible: true
       }
     ).subscribe(result => {
       if (result) {
         this.onQuerySaved.emit(result)
-        this.state.savedQuery.set(result)
+        this.state.savedQueryWithSource.set(result)
+        this.state.query.set(result.sourceFile.content);
       }
     });
   }
 
   private saveExistingQuery() {
+    const versionedSource: VersionedSource = this.state.savedQueryWithSource().sourceFile
     const updatedSource: VersionedSource = {
-      ...this.state.savedQuery().sources[0],
-      content: this.state.query(),
+      ...versionedSource,
+      content: this.state.query()
     }
-    const request: SaveQueryRequest = {
-      source: updatedSource,
-      changesetName: ''
-    }
-    this.typeEditorService.saveQuery(request)
-      .subscribe({
-        next: (result) =>
+    const schemaEdit: SchemaEdit = {
+      packageIdentifier: versionedSource.packageIdentifier,
+      edits: [
         {
+          editKind: 'CreateOrReplaceQuery',
+          sources: [updatedSource]
+        } as CreateOrReplaceQuery
+      ],
+      dryRun: false
+    }
+    this.schemaImporterService.submitSchemaEditOperation(schemaEdit)
+      .subscribe({
+        next: (result) => {
           this.alerts.open('Query saved successfully', {status: TuiNotification.Success})
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe()
-          this.state.savedQuery.set(result);
-          this.changeDetector.markForCheck();
+          const updatedState = this.schemaImporterService.getQueryStateFromEditResult(result, versionedSource.name)
+          this.state.query.set(updatedState.sourceFile.content)
+          this.state.savedQueryWithSource.set(updatedState)
         },
         error: (error) => {
           console.error(error);
@@ -196,9 +220,10 @@ export class QueryEditorComponent {
       })
   }
 
+
   queryHistoryElementClicked($event: QueryHistorySummary) {
     this.state.query.set($event.taxiQl);
-    this.state.savedQuery.set(null);
+    this.state.savedQueryWithSource.set(null);
   }
 
   onQueryChanged(query: string) {

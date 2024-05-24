@@ -5,8 +5,7 @@ import { TuiBadgeModule } from '@taiga-ui/kit';
 import {Observable} from 'rxjs';
 import { ConnectionStatusComponent } from '../data-source-manager/connection-status/connection-status.component';
 import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
-import {TypesService} from "../services/types.service";
-import {SavedQuery} from "../services/type-editor.service";
+import { SavedQuery, TypesService } from '../services/types.service';
 import {ActivatedRoute, Router} from "@angular/router";
 import {
   PipelineService, StreamServerStatusEvent,

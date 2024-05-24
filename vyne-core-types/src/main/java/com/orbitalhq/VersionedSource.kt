@@ -1,9 +1,11 @@
 package com.orbitalhq
 
+import ch.qos.logback.classic.spi.ThrowableProxy
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.github.zafarkhaja.semver.Version
 import com.google.common.annotations.VisibleForTesting
+import com.google.common.base.Throwables
 import com.google.common.hash.Hashing
 import com.orbitalhq.utils.log
 import com.orbitalhq.utils.orElse
@@ -171,24 +173,24 @@ data class ParsedSource(val source: VersionedSource, val errors: List<Compilatio
 fun TaxiPackageSources.versionedSources(relativeTo: Path?): List<VersionedSource> {
 
    return this.sources.map { source ->
-      source.asVersionedSource(this.project.version)
-         .let { versionedSource ->
-            if (relativeTo != null) {
-               try {
-                  versionedSource.copy(name = relativeTo.relativize(URI.create(versionedSource.name).toPath()).toString())
-               } catch (e:Exception) {
-                  logger.warn { "Failed to relativize path, will use original - ${e.message}" }
-                  versionedSource
-               }
-            } else {
-               versionedSource
-            }
-         }
+      source.asVersionedSource(this.project.version, relativeTo)
    }
 }
 
-fun SourceCode.asVersionedSource(version: String = VersionedSource.DEFAULT_VERSION.toString()): VersionedSource {
-   return VersionedSource(this.sourceName, version, this.content, path = this.path?.toString())
+fun SourceCode.asVersionedSource(version: String = VersionedSource.DEFAULT_VERSION.toString(), relativeTo: Path? = null): VersionedSource {
+   // Make the name relative to the srcRoot of the project
+   val name = if (relativeTo != null) {
+      try {
+         relativeTo.relativize(URI.create(this.sourceName).toPath()).toString()
+      } catch (e:Exception) {
+         val rootCause = Throwables.getRootCause(e)
+         logger.warn { "Failed to make sourceName ${this.sourceName} relative to path ${relativeTo}, will use original - ${rootCause.message}" }
+         this.sourceName
+      }
+
+   } else this.sourceName
+
+   return VersionedSource(name, version, this.content, path = this.path?.toString())
 }
 
 fun VersionedSource.asTaxiSource(): SourceCode {

@@ -134,9 +134,7 @@ class LocalSchemaEditingService(
                .map { (_, name) -> name }
                .let { affectedTypeNames: List<QualifiedName> ->
                   updatedTaxiSchema.types.filter {
-                     affectedTypeNames.contains(
-                        it.name
-                     )
+                     affectedTypeNames.contains(it.name)
                   }
                }
 
@@ -145,19 +143,31 @@ class LocalSchemaEditingService(
                .map { (_, name) -> name }
                .let { affectedTypeNames: List<QualifiedName> ->
                   updatedTaxiSchema.services.filter {
-                     affectedTypeNames.contains(
-                        it.name
-                     )
+                     affectedTypeNames.contains(it.name)
+                  }
+               }
+
+            val editedQueries = affectedSymbols.filter { (kind, _) -> kind == SchemaMemberKind.QUERY }
+               .map { (_, name) -> name }
+               .let { affectedTypeNames: List<QualifiedName> ->
+                  updatedTaxiSchema.queries.filter {
+                     affectedTypeNames.contains(it.name)
                   }
                }
 
             val sourcePackageWithOnlyTouchedFiles = updatedSourcePackage.copy(
                sources = updatedSourcePackage.sources.filter { touchedFilenames.contains(it.name) }
+                  .map {
+                     if (it.packageIdentifier == null) {
+                        it.copy(packageIdentifier = updatedSourcePackage.identifier)
+                     } else it
+                  }
             )
 
             val submissionResult = SchemaSubmissionResult(
                editedTypes.toSet(),
                editedServices.toSet(),
+               editedQueries.toSet(),
                compilationMessages,
                edit.dryRun,
                sourcePackageWithOnlyTouchedFiles,
@@ -351,14 +361,17 @@ class LocalSchemaEditingService(
       }
       val typesInThisRequest = getCompiledElementsInSources(compiled.types, importRequestSourceName)
       val servicesInThisRequest = getCompiledElementsInSources(compiled.services, importRequestSourceName)
+      val queriesInThisRequest = getCompiledElementsInSources(compiled.queries, importRequestSourceName)
       val generatedThings: List<Pair<ImportableToken, List<CompilationUnit>>> =
-         typesInThisRequest + servicesInThisRequest
+         typesInThisRequest + servicesInThisRequest + queriesInThisRequest
       val (updatedSchema, versionedSources) = toVersionedSourcesAndSchema(generatedThings, compiled)
       val persist = !validateOnly
       val vyneTypes = typesInThisRequest.map { (type, _) -> updatedSchema.type(type) }
       val vyneServices = servicesInThisRequest.map { (service, _) -> updatedSchema.service(service.qualifiedName) }
+      val vyneQueries =
+         queriesInThisRequest.map { (query, _) -> updatedSchema.queries.single { it.name.parameterizedName == query.name.parameterizedName } }
       val submissionResult = SchemaSubmissionResult(
-         vyneTypes.toSet(), vyneServices.toSet(), messages,
+         vyneTypes.toSet(), vyneServices.toSet(), vyneQueries.toSet(), messages,
          dryRun = validateOnly,
          // TODO : I think this whole doSubmit() method is about to be killed,
          // so stubbing these values for now.

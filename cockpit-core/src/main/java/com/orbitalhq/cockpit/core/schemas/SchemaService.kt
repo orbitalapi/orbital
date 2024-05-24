@@ -17,6 +17,7 @@ import com.orbitalhq.schemas.taxi.toVyneSources
 import com.orbitalhq.schemas.toVyneQualifiedName
 import com.orbitalhq.spring.http.NotFoundException
 import lang.taxi.annotations.HttpOperation
+import lang.taxi.annotations.WebsocketOperation
 import lang.taxi.generators.SourceFormatter
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -67,7 +68,8 @@ class SchemaService(
                query.name.toVyneQualifiedName(),
                query.compilationUnits.toVyneSources(),
                SavedQuery.QueryKind.forQueryMode(query.queryMode),
-               HttpOperation.fromQuery(query)
+               HttpOperation.fromQuery(query),
+               WebsocketOperation.fromQuery(query)
             )
          }
    }

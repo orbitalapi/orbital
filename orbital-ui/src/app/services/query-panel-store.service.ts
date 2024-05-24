@@ -10,13 +10,13 @@ import {
 } from '@angular/core';
 import { QueryLanguage } from '../query-panel/query-editor/query-editor-toolbar.component';
 import { QueryEditorStoreService } from './query-editor-store.service';
-import { SavedQuery } from './type-editor.service';
+import { SavedQueryWithSource } from '../project-import/schema-importer.service';
 
 export type LocalStorageQuery = {
   id: number,
   tabName: string,
   isActive: boolean,
-  savedQuery: SavedQuery,
+  savedQueryWithSource: SavedQueryWithSource,
   // isPublished: boolean, // TODO: implement this
   query: string,
   chatQuery: string,
@@ -64,12 +64,12 @@ export class QueryPanelStoreService {
     this.editorStore.activeQueryEditorState.set(this.editorStore.queryEditorStates()[index])
   }
 
-  addTab(title: string = '', query: string = '', chatQuery: string = '', savedQuery?: SavedQuery) {
+  addTab(title: string = '', query: string = '', chatQuery: string = '', savedQueryWithSource?: SavedQueryWithSource) {
     const newTab: LocalStorageQuery = {
       id: Date.now(), // TODO: use the same randomId() function as queryClientId?
       tabName: title || this.generateTabName(),
       isActive: true,
-      savedQuery,
+      savedQueryWithSource,
       query,
       chatQuery,
       queryLanguage: 'TaxiQL'
@@ -81,7 +81,8 @@ export class QueryPanelStoreService {
     this.onTabIndexChanged(this.queries().length - 1)
   }
 
-  closeTab(index: number) {
+  closeTab(event: MouseEvent, index: number) {
+    event.stopPropagation();
     const clonedQueries = this.queries().slice();
     clonedQueries.splice(index, 1)
     const previousActiveTabIndex = this.activeTabIndex();
@@ -97,7 +98,7 @@ export class QueryPanelStoreService {
       id: this.activeQuery().id,
       tabName: this.activeQuery().tabName,
       isActive: this.activeQuery().isActive,
-      savedQuery: this.activeQuery().savedQuery,
+      savedQueryWithSource: this.activeQuery().savedQueryWithSource,
       query,
       chatQuery,
       queryLanguage: this.activeQuery().queryLanguage
@@ -115,15 +116,15 @@ export class QueryPanelStoreService {
     this.editorStore.updateQueryLanguage($event)
   }
 
-  onQuerySaved($event: SavedQuery) {
+  onQuerySaved($event: SavedQueryWithSource) {
     const clonedQueries = this.queries().slice();
-    clonedQueries[this.activeTabIndex()].tabName = $event.name.shortDisplayName;
-    clonedQueries[this.activeTabIndex()].savedQuery = $event;
+    clonedQueries[this.activeTabIndex()].tabName = $event.savedQuery.name.shortDisplayName;
+    clonedQueries[this.activeTabIndex()].savedQueryWithSource = $event;
     this.queries.set(clonedQueries);
   }
 
-  onSavedQuerySelected($event: SavedQuery) {
-    this.addTab($event.name.name, $event.sources[0].content, null, $event)
+  onSavedQuerySelected($event: SavedQueryWithSource) {
+    this.addTab($event.savedQuery.name.name, $event.sourceFile.content, null, $event)
   }
 
   private updateLocalStorage() {

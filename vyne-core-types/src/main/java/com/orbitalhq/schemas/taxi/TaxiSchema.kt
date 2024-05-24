@@ -9,6 +9,7 @@ import com.orbitalhq.schemas.readers.SourceToTaxiConverter
 import com.orbitalhq.schemas.readers.TaxiSourceConverter
 import lang.taxi.*
 import lang.taxi.annotations.HttpOperation
+import lang.taxi.annotations.WebsocketOperation
 import lang.taxi.messages.Severity
 import lang.taxi.packages.TaxiSourcesLoader
 import lang.taxi.policies.Policy
@@ -501,7 +502,8 @@ fun TaxiQlQuery.asSavedQuery(packageIdentifier: PackageIdentifier? = null): Save
       this.name.toVyneQualifiedName(),
       this.compilationUnits.toVyneSources(packageIdentifier),
       SavedQuery.QueryKind.forQueryMode(this.queryMode),
-      HttpOperation.fromQuery(this)
+      HttpOperation.fromQuery(this),
+      WebsocketOperation.fromQuery(this)
    )
 }
 

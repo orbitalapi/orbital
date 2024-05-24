@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
-import {SavedQuery} from "../services/type-editor.service";
+import {SavedQuery} from "../services/types.service";
 import {trimPreludeFromQuery} from "../query-history/vyneql-record.component";
 
 @Component({
