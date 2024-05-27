@@ -1,6 +1,7 @@
 package com.orbitalhq.utils
 
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 
@@ -8,6 +9,9 @@ class ManualClock(private val startTime: Instant) : Clock() {
    private var time: Long = startTime.toEpochMilli()
    fun advanceMillis(millis: Long) {
       this.time += millis
+   }
+   fun advance(duration: Duration) {
+      this.advanceMillis(duration.toMillis())
    }
 
    override fun withZone(zone: ZoneId?): Clock {
