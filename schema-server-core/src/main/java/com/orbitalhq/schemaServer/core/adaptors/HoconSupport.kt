@@ -66,6 +66,7 @@ object PackageLoaderSpecHoconSupport : CustomType {
          PackageType.OpenApi -> loaderConfig.extract<OpenApiPackageLoaderSpec>()
          PackageType.Taxi -> TaxiPackageLoaderSpec
          PackageType.Soap -> loaderConfig.extract<SoapPackageLoaderSpec>()
+         PackageType.Avro -> loaderConfig.extract<AvroPackageLoaderSpec>()
          else -> TODO("Not yet implemented: $packageType")
       }
 

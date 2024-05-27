@@ -1,7 +1,7 @@
-import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
-import { OpenApiPackageLoaderSpec } from 'src/app/project-import/project-import.models';
-import { NgControl, NgModel } from '@angular/forms';
-import { UiCustomisations } from '../../../environments/ui-customisations';
+import {Component, EventEmitter, Input, Output, ViewChild} from '@angular/core';
+import {OpenApiPackageLoaderSpec} from 'src/app/project-import/project-import.models';
+import {NgControl, NgModel} from '@angular/forms';
+import {UiCustomisations} from '../../../environments/ui-customisations';
 
 @Component({
   selector: 'app-open-api-package-config',
@@ -9,12 +9,10 @@ import { UiCustomisations } from '../../../environments/ui-customisations';
     <div class="form-row">
       <div class="form-item-description-container">
         <h3>Path to Open API spec</h3>
-        <div class="help-text">
-          Specify the path (from the root of the git repository) to the OpenAPI spec file
-        </div>
+        <div class="help-text">{{pathLabel}}</div>
       </div>
       <div class="form-element">
-        <tui-input [ngModel]="path" (ngModelChange)="onPathChanged($event)" required name="path">
+        <tui-input [ngModel]="path" (ngModelChange)="onPathChanged($event)" required name="path" [readOnly]="!editable">
           Path
         </tui-input>
       </div>
@@ -23,39 +21,14 @@ import { UiCustomisations } from '../../../environments/ui-customisations';
       <div class="form-item-description-container">
         <h3>Package identifier</h3>
         <div class="help-text">
-          All schemas in {{UiCustomisations.productName}} need a Package Identifier - similar to npm or maven
+          All schemas in {{ UiCustomisations.productName }} need a Package Identifier - similar to npm or maven
           co-ordinates
         </div>
       </div>
       <div class="form-element">
-        <div tuiGroup *ngIf="openApiPackageSpec">
-          <tui-input [(ngModel)]="openApiPackageSpec.identifier.organisation" required name="openApiPackageOrg"
-                     (ngModelChange)="updateDefaultNamespace()" validIdentifier #openApiPackageOrg="ngModel">
-            Organisation
-          </tui-input>
-          <tui-input [(ngModel)]="openApiPackageSpec.identifier.name" required name="openApiPackageName"
-                     (ngModelChange)="updateDefaultNamespace()" validIdentifier #openApiPackageName="ngModel">
-            Name
-          </tui-input>
-          <tui-input [(ngModel)]="openApiPackageSpec.identifier.version" required name="openApiPackageVersion" semver
-                     #openApiPackageVersion="ngModel">
-            Version
-          </tui-input>
-        </div>
-        <tui-notification class="validation-error"
-                          *ngIf="openApiPackageOrg$ && openApiPackageOrg$.invalid && (openApiPackageOrg$.dirty || openApiPackageOrg$.touched)"
-                          status="error">Organisation names must start with a letter, and only contain letters,
-          underscores, hyphens or numbers
-        </tui-notification>
-        <tui-notification class="validation-error"
-                          *ngIf="openApiPackageOrg$ && openApiPackageName$.invalid && (openApiPackageName$.dirty || openApiPackageName$.touched)"
-                          status="error">Package names must start with a letter, and only contain letters, underscores,
-          hyphens or numbers
-        </tui-notification>
-        <tui-notification class="validation-error"
-                          *ngIf="openApiPackageOrg$ && openApiPackageVersion$.invalid && (openApiPackageVersion$.dirty || openApiPackageVersion$.touched)"
-                          status="error">Versions need to follow the convention of 0.0.0 (eg., 1.0.3)
-        </tui-notification>
+        <app-package-identifier-input [(packageIdentifier)]="openApiPackageSpec.identifier"
+                                      [editable]="editable"
+                                      (defaultNamespaceChange)="openApiPackageSpec.defaultNamespace = $event"></app-package-identifier-input>
       </div>
     </div>
     <div class="form-row">
@@ -67,7 +40,7 @@ import { UiCustomisations } from '../../../environments/ui-customisations';
         </div>
       </div>
       <div class="form-element">
-        <tui-input [(ngModel)]="openApiPackageSpec.serviceBasePath" name="serviceBasePath">
+        <tui-input [(ngModel)]="openApiPackageSpec.serviceBasePath" name="serviceBasePath" [readOnly]="!editable">
           Base path
         </tui-input>
       </div>
@@ -76,11 +49,12 @@ import { UiCustomisations } from '../../../environments/ui-customisations';
       <div class="form-item-description-container">
         <h3>Default namespace</h3>
         <div class="help-text">
-          When {{UiCustomisations.productName}} imports the OpenAPI spec, it will generate services within this namespace
+          When {{ UiCustomisations.productName }} imports the OpenAPI spec, it will generate services within this
+          namespace
         </div>
       </div>
       <div class="form-element">
-        <tui-input [(ngModel)]="openApiPackageSpec.defaultNamespace" name="defaultNamespace">
+        <tui-input [(ngModel)]="openApiPackageSpec.defaultNamespace" name="defaultNamespace" [readOnly]="!editable">
           Default namespace
         </tui-input>
       </div>
@@ -91,7 +65,21 @@ import { UiCustomisations } from '../../../environments/ui-customisations';
 export class OpenApiPackageConfigComponent {
 
   @Input()
+  projectType: 'file' | 'git' = 'file';
+
+  get pathLabel(): string {
+    if (this.projectType === 'file') {
+      return 'Specify the path to your Open API spec file'
+    } else {
+      return 'Specify the path (from the root of the git repository) to the OpenAPI spec file';
+    }
+  }
+
+  @Input()
   openApiPackageSpec: OpenApiPackageLoaderSpec;
+
+  @Input()
+  editable: boolean = true;
 
   @Input()
   path: string;
@@ -99,24 +87,9 @@ export class OpenApiPackageConfigComponent {
   @Output()
   pathChange = new EventEmitter<string>();
 
-  @ViewChild('openApiPackageOrg')
-  openApiPackageOrg$: NgModel
-
-  @ViewChild('openApiPackageName')
-  openApiPackageName$: NgControl
-  @ViewChild('openApiPackageVersion')
-  openApiPackageVersion$: NgControl
-
-
   onPathChanged(value: string) {
     this.path = value;
     this.pathChange.emit(value);
-  }
-
-  updateDefaultNamespace() {
-    const org = this.openApiPackageSpec.identifier?.organisation || null;
-    const name = this.openApiPackageSpec.identifier?.name || null;
-    this.openApiPackageSpec.defaultNamespace = [org, name].filter(d => d !== null).join('.');
   }
 
   protected readonly UiCustomisations = UiCustomisations;

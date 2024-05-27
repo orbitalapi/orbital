@@ -1,18 +1,19 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
-import { of } from 'rxjs';
-import { catchError, debounceTime, switchMap } from 'rxjs/operators';
-import { projectTypeToString } from 'src/app/project-import/project-source-config/git-config.component';
-import { UiCustomisations } from '../../../environments/ui-customisations';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
+import {HttpErrorResponse} from '@angular/common/http';
+import {of} from 'rxjs';
+import {catchError, debounceTime, switchMap} from 'rxjs/operators';
+import {projectTypeToString} from 'src/app/project-import/project-source-config/git-config.component';
+import {UiCustomisations} from '../../../environments/ui-customisations';
 import {
+  AvroPackageLoaderSpec,
   FileSystemPackageSpec,
   LoadablePackageType,
   OpenApiPackageLoaderSpec,
   TaxiPackageLoaderSpec
 } from '../project-import.models';
-import { isNullOrUndefined } from 'src/app/utils/utils';
-import { Message } from 'src/app/services/schema';
-import { FileRepositoryTestResponse, SchemaImporterService } from 'src/app/project-import/schema-importer.service';
+import {isNullOrUndefined} from 'src/app/utils/utils';
+import {Message} from 'src/app/services/schema';
+import {FileRepositoryTestResponse, SchemaImporterService} from 'src/app/project-import/schema-importer.service';
 
 @Component({
   selector: 'app-file-config',
@@ -45,15 +46,24 @@ import { FileRepositoryTestResponse, SchemaImporterService } from 'src/app/proje
                 Project type
                 <tui-data-list *tuiDataList>
                   <button tuiOption value='Taxi'>{{ stringifyProjectType('Taxi') }}</button>
-                  <button tuiOption value='OpenApi'>{{ stringifyProjectType('OpenApi')}}</button>
+                  <button tuiOption value='OpenApi'>{{ stringifyProjectType('OpenApi') }}</button>
+                  <button tuiOption value='Avro'>{{ stringifyProjectType('Avro') }}</button>
                 </tui-data-list>
               </tui-select>
             </div>
           </div>
           <app-open-api-package-config *ngIf="fileSystemPackageConfig.loader.packageType ==='OpenApi'"
                                        [openApiPackageSpec]='openApiPackageSpec'
+                                       [projectType]="'file'"
+                                       [editable]="editable"
                                        [(path)]='fileSystemPackageConfig.path'
           ></app-open-api-package-config>
+          <app-avro-package-config
+            *ngIf="fileSystemPackageConfig.loader.packageType === 'Avro'"
+            [packageSpec]="avroPackageSpec"
+            [editable]="editable"
+            [(path)]='fileSystemPackageConfig.path'
+          ></app-avro-package-config>
           <ng-container *ngIf="fileSystemPackageConfig.loader.packageType === 'Taxi'">
             <div class='form-row'>
               <div class='form-item-description-container'>
@@ -69,8 +79,7 @@ import { FileRepositoryTestResponse, SchemaImporterService } from 'src/app/proje
                   <div style='flex-grow: 1;'>
                     <tui-input [ngModel]='fileSystemPackageConfig.path' class='flex-grow'
                                name='pathToTaxi' required [readOnly]='!editable'
-                               (ngModelChange)='filePathUpdated($event)'
-                    >
+                               (ngModelChange)='filePathUpdated($event)'>
                       Path
                     </tui-input>
                     <div style='display: flex; margin-top: 0.5rem'>
@@ -79,7 +88,7 @@ import { FileRepositoryTestResponse, SchemaImporterService } from 'src/app/proje
                                   [textContent]="'Checking for a taxi project file at ' + expectedTaxiConfLocation"
                       ></tui-loader>
                       <tui-notification *ngIf='filePathTestResult?.exists' status='success'>
-                        Great - we've found project {{ filePathTestResult.identifier.id}} there
+                        Great - we've found project {{ filePathTestResult.identifier.id }} there
                       </tui-notification>
                       <div style='display: flex; width: 100%; align-items: center;'
                            *ngIf='filePathTestResult && !filePathTestResult.exists && !filePathTestResult.errorMessage'>
@@ -107,24 +116,14 @@ import { FileRepositoryTestResponse, SchemaImporterService } from 'src/app/proje
               <div class='form-item-description-container'>
                 <h3>Package identifier</h3>
                 <div class='help-text'>
-                  All schemas in {{UiCustomisations.productName}} need a Package Identifier - similar to npm or maven
+                  All schemas in {{ UiCustomisations.productName }} need a Package Identifier - similar to npm or maven
                   co-ordinates
                 </div>
               </div>
               <div class='form-element'>
                 <div tuiGroup>
-                  <tui-input [(ngModel)]='fileSystemPackageConfig.newProjectIdentifier.organisation' required
-                             name='openApiPackageOrg'>
-                    Organisation
-                  </tui-input>
-                  <tui-input [(ngModel)]='fileSystemPackageConfig.newProjectIdentifier.name' required
-                             name='openApiPackageName'>
-                    Name
-                  </tui-input>
-                  <tui-input [(ngModel)]='fileSystemPackageConfig.newProjectIdentifier.version' required
-                             name='openApiPackageVersion'>
-                    Version
-                  </tui-input>
+                  <app-package-identifier-input [(packageIdentifier)]="fileSystemPackageConfig.newProjectIdentifier"
+                                                [editable]="editable"></app-package-identifier-input>
                 </div>
               </div>
             </div>
@@ -133,7 +132,7 @@ import { FileRepositoryTestResponse, SchemaImporterService } from 'src/app/proje
                 <h3>Enable edits</h3>
                 <div class='help-text'>
                   <p>
-                    If enabled, edits can be made through the {{UiCustomisations.productName}} UI
+                    If enabled, edits can be made through the {{ UiCustomisations.productName }} UI
                   </p>
                 </div>
               </div>
@@ -192,7 +191,7 @@ export class FileConfigComponent {
         debounceTime(500),
         // distinctUntilChanged(),
         switchMap((path: string) => {
-          return schemaService.testFileConnection({ path }).pipe(
+          return schemaService.testFileConnection({path}).pipe(
             catchError((err: HttpErrorResponse) => of({
               exists: false,
               path: '',
@@ -226,6 +225,14 @@ export class FileConfigComponent {
     }
   }
 
+  get avroPackageSpec():AvroPackageLoaderSpec | null {
+    const packageType = this.fileSystemPackageConfig.loader?.packageType;
+    if (packageType === 'Avro') {
+      return this.fileSystemPackageConfig.loader as AvroPackageLoaderSpec;
+    } else {
+      return null;
+    }
+  }
   get openApiPackageSpec(): OpenApiPackageLoaderSpec | null {
     const packageType = this.fileSystemPackageConfig.loader?.packageType;
     if (packageType === 'OpenApi') {
@@ -243,6 +250,8 @@ export class FileConfigComponent {
       case 'OpenApi':
         this.fileSystemPackageConfig.loader = new OpenApiPackageLoaderSpec();
         break;
+      case "Avro":
+        this.fileSystemPackageConfig.loader = new AvroPackageLoaderSpec();
     }
     this.changeDetector.markForCheck();
   }
@@ -272,12 +281,8 @@ export class FileConfigComponent {
         });
   }
 
-  onFileSelected($event: any) {
-    console.log($event);
-  }
-
-
   filePathUpdated(value: string) {
+
     this.fileSystemPackageConfig.path = value;
     this.filePathChanged$.emit(value);
     this.filePathTestResult = null;

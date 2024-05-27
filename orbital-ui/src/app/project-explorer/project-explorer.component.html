@@ -26,7 +26,7 @@
 <app-code-viewer
   *ngIf="activeTabIndex == 2 && parsedPackage?.sources?.length>0"
   [useRouter]="true"
-  [sources]="parsedPackage?.sources"
+  [sources]="sources"
   sidebarMode="Visible"
 ></app-code-viewer>
 <app-project-settings *ngIf="activeTabIndex === 3" [packageDescription]="packageDescription"></app-project-settings>

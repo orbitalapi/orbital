@@ -8,6 +8,7 @@ const pattern = new RegExp('[a-zA-Z]\\w*');
 
 @Directive({
   selector: '[validIdentifier]',
+  standalone: true,
   providers: [{ provide: NG_VALIDATORS, useExisting: ValidIdentifierDirective, multi: true }]
 })
 export class ValidIdentifierDirective implements Validator {

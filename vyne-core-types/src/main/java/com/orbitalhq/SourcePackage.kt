@@ -14,6 +14,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import kotlin.io.path.readText
+import kotlin.io.path.relativeTo
 
 private val logger = KotlinLogging.logger {}
 
@@ -75,6 +76,21 @@ data class SourcePackage(
    }
 
    companion object {
+      const val ORIGINAL_SOURCE: SourcesType = "OriginalSource"
+
+      /**
+       * Returns a source package that is the result of transpiling.
+       * Sources in the original source package are moved to additional sources, tagged as OriginalSource,
+       * and the new transpiled sources become the source of the package
+       */
+      fun asTranspiledPackage(originalPackage: SourcePackage, transpiledSources: List<VersionedSource>):SourcePackage {
+         return SourcePackage(
+            packageMetadata = originalPackage.packageMetadata,
+            sources = transpiledSources,
+            additionalSources = originalPackage.additionalSources + mapOf(ORIGINAL_SOURCE to originalPackage.sources)
+         )
+      }
+
       fun withAdditionalSources(
          packageMetadata: PackageMetadata,
          /**
@@ -88,12 +104,23 @@ data class SourcePackage(
           * Additional sources (eg., config, pipelines, extensions, etc).
           * These aren't actively loaded, and it's left to the appropriate extensions to pull these in
           */
-         additionalSourcePaths: List<Pair<SourcesType, PathGlob>> = emptyList()
+         additionalSourcesPathGlobs: List<Pair<SourcesType, PathGlob>> = emptyList(),
+
+         /**
+          * Additional sources that are found in the path globs are relativized to this
+          * path, to avoid leaking full filepaths
+          */
+         relativeTo: Path?
       ): SourcePackage {
-         val additionalSources = additionalSourcePaths.associate { (sourceType, pathGlob) ->
+         val additionalSources = additionalSourcesPathGlobs.associate { (sourceType, pathGlob) ->
             val sources = pathGlob.mapEachDirectoryEntry { path ->
+               val pathString = if (relativeTo != null) {
+                  path.relativeTo(relativeTo).toString()
+               } else {
+                  path.toString()
+               }
                VersionedSource(
-                  path.toString(),
+                  pathString,
                   packageMetadata.identifier.version,
                   path.readText(),
                   packageMetadata.identifier
@@ -273,7 +300,8 @@ fun TaxiPackageSources.asSourcePackage(): SourcePackage {
    return SourcePackage.withAdditionalSources(
       this.project.toPackageMetadata(),
       this.versionedSources(relativeTo = this.project.sourceRootPath),
-      this.pathGlobs()
+      this.pathGlobs(),
+      relativeTo = this.project.packageRootPath
    )
 }
 

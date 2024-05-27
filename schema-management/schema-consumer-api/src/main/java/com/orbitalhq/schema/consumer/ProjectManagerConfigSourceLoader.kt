@@ -59,9 +59,10 @@ class ProjectManagerConfigSourceLoader(
          logger.warn { "No source loaders present (filePattern: $filePattern, sourcesType: $sourceType)" }
          return Mono.empty()
       }
-      val listOfObservables: List<Mono<SourcePackage>> = projectManager.loaders.map { packageTransport ->
-         loadAdditionalSources(packageTransport)
-      }
+      val listOfObservables: List<Mono<SourcePackage>> = projectManager.loaders
+         .map { packageTransport ->
+            loadAdditionalSources(packageTransport)
+         }
       logger.info { "Found ${listOfObservables.size} source packages to load from ${loaders.size} source loaders (filePattern: $filePattern, sourcesType: $sourceType)" }
 
       return Flux.fromIterable(listOfObservables)
@@ -85,7 +86,7 @@ class ProjectManagerConfigSourceLoader(
             sources = sourcePackage.additionalSources[sourceType] ?: emptyList()
          )
       }.onErrorResume {
-         logger.error(it) { "loading additional sources for $packageTransport (filePattern: $filePattern, sourcesType: $sourceType)"   }
+         logger.error(it) { "Exception thrown loading additional sources for $packageTransport (filePattern: $filePattern, sourcesType: $sourceType)" }
          Mono.empty()
       }
    }

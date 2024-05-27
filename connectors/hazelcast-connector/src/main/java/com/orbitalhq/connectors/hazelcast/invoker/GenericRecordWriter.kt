@@ -147,6 +147,7 @@ object GenericRecordWriter {
                PrimitiveType.BOOLEAN -> FieldType.BOOLEAN
                PrimitiveType.STRING -> FieldType.UTF
                PrimitiveType.INTEGER -> FieldType.INT
+               PrimitiveType.LONG -> FieldType.LONG
                PrimitiveType.DECIMAL -> FieldType.DECIMAL
                PrimitiveType.LOCAL_DATE -> FieldType.DATE
                PrimitiveType.TIME -> FieldType.TIME
@@ -165,6 +166,7 @@ object GenericRecordWriter {
                   PrimitiveType.BOOLEAN -> FieldType.BOOLEAN_ARRAY
                   PrimitiveType.STRING -> FieldType.UTF_ARRAY
                   PrimitiveType.INTEGER -> FieldType.INT_ARRAY
+                  PrimitiveType.LONG -> FieldType.LONG_ARRAY
                   PrimitiveType.DECIMAL -> FieldType.DECIMAL_ARRAY
                   PrimitiveType.LOCAL_DATE -> FieldType.DATE_ARRAY
                   PrimitiveType.TIME -> FieldType.TIME_ARRAY

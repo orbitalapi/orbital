@@ -25,9 +25,12 @@ import org.reactivestreams.FlowAdapters
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.publisher.Sinks
 import reactor.test.StepVerifier
+import reactor.test.StepVerifierOptions
 import java.net.URI
 import java.util.concurrent.SubmissionPublisher
+import kotlin.math.sin
 
 class ProjectManagerConfigSourceLoaderTest {
     @Test
@@ -44,8 +47,8 @@ class ProjectManagerConfigSourceLoaderTest {
                 // Upon 'expectSubscription'  we will call loadNow() on 2 SchemaPackageTransport. The first of the SchemaPackageTransport
                 // will emit Mono.error
                 //We want to ensure that an error on an underlying SchemaPackageTransport won't kill subscription to schema changed events.
-                schemaEventSource.publisher.submit(schemaChangedEvent())
-            }.expectNextMatches {
+                schemaEventSource.sink.emitNext(schemaChangedEvent(), Sinks.EmitFailureHandler.FAIL_FAST)
+            }.expectNextMatches { next ->
                 true
             }
             .thenCancel()
@@ -65,9 +68,9 @@ class ProjectManagerConfigSourceLoaderTest {
 }
 
 class DummySchemaChangedEventProvider : SchemaChangedEventProvider {
-    val publisher = SubmissionPublisher<SchemaSetChangedEvent>()
+   val sink = Sinks.many().multicast().onBackpressureBuffer<SchemaSetChangedEvent>()
     override val schemaChanged: Publisher<SchemaSetChangedEvent>
-        get() = FlowAdapters.toPublisher(publisher)
+        get() = sink.asFlux()
 
 
 }

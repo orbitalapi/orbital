@@ -8,14 +8,6 @@ import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.fqn
 import lang.taxi.generators.protobuf.ProtobufMessageAnnotation
 
-object ProtobufAnnotationSpec {
-   val NAME = "com.orbitalhq.formats.Protobuf".fqn()
-   val taxi = """
-      annotation com.orbitalhq.formats.Protobuf {
-      }
-   """.trimIndent()
-}
-
 object ProtobufFormatSpec : ModelFormatSpec {
    override val serializer: ModelFormatSerializer
       get() = TODO("Not yet implemented")

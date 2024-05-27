@@ -12,6 +12,7 @@ import com.orbitalhq.utils.log
 import lang.taxi.accessors.NullValue
 import lang.taxi.types.ArrayType
 import lang.taxi.types.FormatsAndZoneOffset
+import lang.taxi.types.MapType
 import lang.taxi.types.ObjectType
 import lang.taxi.types.isMapType
 
@@ -226,6 +227,9 @@ interface TypedInstance {
                type.enumTypedInstance(value, source)
             }
             type.taxiType is ObjectType && type.taxiType.isMapType() -> {
+               TypedMaps.parse(type, value, schema, performTypeConversions, nullValues, source, evaluateAccessors, functionRegistry, formatSpecs)
+            }
+            type.taxiType is MapType -> {
                TypedMaps.parse(type, value, schema, performTypeConversions, nullValues, source, evaluateAccessors, functionRegistry, formatSpecs)
             }
 

@@ -1,8 +1,9 @@
-import { Component, DestroyRef, HostBinding, Input } from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, HostBinding, Input} from '@angular/core';
 import {ActivatedRoute, Router} from "@angular/router";
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {CompilationMessage, ParsedSource, VersionedSource} from '../services/schema';
-import {FilenameWithDecorators} from "./file-tree.component";
+import {FileTreeNode, isFileTreeNodeList, sourcesToFileTreeNode} from "./file-tree.component";
+import {isNullOrUndefined} from "util";
 
 declare const require: any;
 /* eslint-disable-next-line */
@@ -14,38 +15,42 @@ export type CodeViewerFlexBoxMode = 'grid' | 'flex';
 @Component({
   selector: 'app-code-viewer',
   templateUrl: './code-viewer.component.html',
-  styleUrls: ['./code-viewer.component.scss']
+  styleUrls: ['./code-viewer.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CodeViewerComponent {
 
-  private _sources: ParsedSource[] | VersionedSource[];
+  private _sources: ParsedSource[] | VersionedSource[] | FileTreeNode[]
 
+  // Do not set directly - call setParsedSources()
   parsedSources: ParsedSource[];
-  filenames: FilenameWithDecorators[];
 
   errors: CompilationMessage[]
 
+  get fileTreeNodes():FileTreeNode[] {
+    if (isFileTreeNodeList(this.sources)) {
+      return this.sources;
+    } else {
+      const rootNode = sourcesToFileTreeNode(this.parsedSources, '/');
+      return [rootNode];
+    }
+
+  }
+
   @Input()
-  get sources(): ParsedSource[] | VersionedSource[] {
+  get sources(): ParsedSource[] | VersionedSource[] | FileTreeNode[] {
     return this._sources;
   }
 
-  set sources(value: ParsedSource[] | VersionedSource[]) {
+  set sources(value) {
     this._sources = value;
-    this.parsedSources = convertToParsedSources(this.sources);
-    this.filenames = this.parsedSources.map(s => {
-      return {
-        filename: s.source.name,
-        errorCount: s.errors.length
-      }
-    });
-    this.errors = this.parsedSources.flatMap(s => s.errors);
 
-    if (this.parsedSources && this.parsedSources.length > 0 && !this.selectedFilename) {
-      this.select(this.parsedSources[0].source.name);
-    } else if (this.selectedFilename) {
-      this.activateSelectedSource();
+    if (isFileTreeNodeList(this.sources)) {
+      this.setFromFileTreeNodeList(this.sources);
+    } else {
+      this.setParsedSources(convertToParsedSources(this.sources))
     }
+
   }
 
   @Input()
@@ -66,7 +71,8 @@ export class CodeViewerComponent {
 
   constructor(private activatedRoute: ActivatedRoute,
               private router: Router,
-              private destroyRef: DestroyRef
+              private destroyRef: DestroyRef,
+              private changeDetector: ChangeDetectorRef
   ) {
     activatedRoute.queryParams
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -82,11 +88,19 @@ export class CodeViewerComponent {
   get displaySidebar(): boolean {
     switch (this.sidebarMode) {
       case 'Auto':
-        return this._sources && this._sources.length > 1;
+        return this._sources && this.sourcesCount > 1;
       case 'Visible':
         return true;
       case 'Hidden' :
         return false;
+    }
+  }
+
+  get sourcesCount():number {
+    if (isNullOrUndefined(this.parsedSources)) {
+      return 0;
+    } else {
+      return this.parsedSources.length
     }
   }
 
@@ -136,17 +150,32 @@ export class CodeViewerComponent {
     }
 
   }
+
+  private setFromFileTreeNodeList(fileTreeNodes: FileTreeNode[]) {
+    // Build the list of parsed sources from the file tree
+    const parsedSources = fileTreeNodes.flatMap(fileTreeNode => {
+      return [fileTreeNode].concat(...fileTreeNode.descendants);
+    })
+      .map(fileTreeNode => {
+        return fileTreeNode.value?.source;
+      })
+      .filter(parsedSource => !isNullOrUndefined(parsedSource))
+    this.setParsedSources(parsedSources);
+  }
+
+  private setParsedSources(parsedSources: ParsedSource[]) {
+    this.parsedSources = parsedSources;
+    this.errors = this.parsedSources.flatMap(s => s.errors);
+
+    if (this.parsedSources && this.parsedSources.length > 0 && !this.selectedFilename) {
+      this.select(this.parsedSources[0].source.name);
+    } else if (this.selectedFilename) {
+      this.activateSelectedSource();
+    }
+  }
 }
 
 export type SidebarMode = 'Visible' | 'Hidden' | 'Auto';
-
-
-function isVersionedSource(source: ParsedSource | VersionedSource): source is VersionedSource {
-  if (!source) {
-    return false;
-  }
-  return !isParsedSource(source);
-}
 
 function isParsedSource(source: ParsedSource | VersionedSource): source is ParsedSource {
   if (!source) {
@@ -165,14 +194,6 @@ function parsedSource(input: ParsedSource | VersionedSource): ParsedSource {
   }
 }
 
-function versionedSource(input: ParsedSource | VersionedSource): VersionedSource {
-  if (isVersionedSource(input)) {
-    return input;
-  } else {
-    return (input as ParsedSource).source;
-  }
-}
-
-function convertToParsedSources(input: ParsedSource[] | VersionedSource[]): ParsedSource[] {
+export function convertToParsedSources(input: ParsedSource[] | VersionedSource[]): ParsedSource[] {
   return input.map((s: ParsedSource | VersionedSource) => parsedSource(s))
 }

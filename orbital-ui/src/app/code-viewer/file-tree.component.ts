@@ -1,11 +1,12 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
-import {VersionedSource} from "../services/schema";
+import {ParsedSource, VersionedSource} from "../services/schema";
 import {EMPTY_ARRAY, TuiHandler} from "@taiga-ui/cdk";
 import {TUI_TREE_CONTENT, TuiTreeItemComponent} from "@taiga-ui/kit";
 import {PolymorpheusComponent} from "@tinkoff/ng-polymorpheus";
 import {FileTreeFolderNodeComponent} from "./file-tree-folder-node.component";
 import {ActivatedRoute, Router} from "@angular/router";
 import {integer} from "vscode-languageclient";
+import {convertToParsedSources} from "./code-viewer.component";
 
 @Component({
   selector: 'app-file-tree',
@@ -14,7 +15,8 @@ import {integer} from "vscode-languageclient";
               [content]="content"
               [tuiTreeController]="false"
               [map]="nodeStatus"
-              [value]="tree"></tui-tree>
+              *ngFor="let treeNode of tree"
+              [value]="treeNode"></tui-tree>
     <ng-template
       #content
       let-node="node"
@@ -37,7 +39,7 @@ import {integer} from "vscode-languageclient";
 })
 export class FileTreeComponent {
 
-  hasError(node: FilenameWithDecorators): boolean {
+  hasError(node: FileEntryWithErrorCounts): boolean {
     return node.errorCount > 0;
   }
 
@@ -50,69 +52,111 @@ export class FileTreeComponent {
   @Output()
   itemClicked = new EventEmitter<string>()
 
-  readonly nodeStatus = new Map<TreeNode, boolean>();
+  readonly nodeStatus = new Map<FileTreeNode, boolean>();
 
-  readonly handler: TuiHandler<TreeNode, readonly TreeNode[]> = item =>
+  readonly handler: TuiHandler<FileTreeNode, readonly FileTreeNode[]> = item =>
     item.childNodes || EMPTY_ARRAY;
 
-  tree: TreeNode;
+  private _tree: FileTreeNode[];
 
-  private filenameWithDecorators: FilenameWithDecorators[];
-  private _filenames: string[] | FilenameWithDecorators[];
   @Input()
-  get filenames(): string[] | FilenameWithDecorators[] {
-    return this._filenames;
+  get tree(): FileTreeNode[] {
+    return this._tree;
   }
 
-  set filenames(value) {
-    this._filenames = value;
-    this.filenameWithDecorators = this._filenames.map(filename => {
-      if (typeof filename === 'string') {
-        return {
-          errorCount: 0,
-          filename: filename
-        } as FilenameWithDecorators
-      } else {
-        return filename
-      }
-    })
-    this.tree = this.createTree();
+  set tree(value: FileTreeNode[]) {
+    this._tree = value;
+    this.resetTreeState(value);
+  }
+
+  private filenameWithDecorators: FileEntryWithErrorCounts[];
+  private _files: string[] | FileEntryWithErrorCounts[] | FileTreeNode[];
+  @Input()
+  get files(): string[] | FileEntryWithErrorCounts[] | FileTreeNode[] {
+    return this._files;
+  }
+
+  set files(value) {
+    if (value === this._files) {
+      return;
+    }
+    this._files = value;
+
+    if (isFileTreeNodeList(value)) {
+      this.tree = value;
+    } else {
+      this.filenameWithDecorators = this._files.map(filename => {
+        if (typeof filename === 'string') {
+          return {
+            errorCount: 0,
+            filename: filename
+          } as FileEntryWithErrorCounts
+        } else {
+          return filename
+        }
+      })
+      const treeRoot = createTree("/", this.filenameWithDecorators);
+      this.tree = [treeRoot]
+    }
+
+  }
+
+
+  private resetTreeState(treeRoots: FileTreeNode[]) {
     this.nodeStatus.clear();
-    [this.tree, ...this.tree.descendants].forEach(node => this.nodeStatus.set(node, true))
+    treeRoots.forEach(treeRoot => {
+      [treeRoot, ...treeRoot.descendants].forEach(node => this.nodeStatus.set(node, true))
+    })
   }
 
-  toggleExpandedStatus(treeNode: TreeNode) {
+  toggleExpandedStatus(treeNode: FileTreeNode) {
     this.nodeStatus.set(treeNode, !this.nodeStatus.get(treeNode))
   }
 
-  onClick(treeNode: TreeNode) {
+  onClick(treeNode: FileTreeNode) {
     if (treeNode.value) {
       this.itemClicked.emit(treeNode.value.filename)
     } else {
       this.toggleExpandedStatus(treeNode);
     }
   }
+}
 
-  private createTree() {
-    const root: TreeNode = new TreeNode('/')
-    this.filenameWithDecorators.forEach(filePath => {
-      const parts = filePath.filename.split("/")
-      const directoryParts = parts.slice(0, -1) // drop the last element
-      const leaf = directoryParts.reduce((acc:TreeNode, currentValue:string) => acc.getOrCreateChild(currentValue), root)
-      const filename = parts[parts.length - 1];
-      leaf.addChild(new TreeNode(filename, filePath))
-    })
-    return root;
+export function sourcesToFileTreeNode(sources: ParsedSource[] | VersionedSource[], rootNodeName: string): FileTreeNode {
+  const parsedSources: ParsedSource[] = convertToParsedSources(sources);
+  const filenamesWithDecorators: FileEntryWithErrorCounts[] = parsedSources.map(parsedSource => {
+    return parsedSourceToDecoratedFileEntry(parsedSource)
+  });
+  return createTree(rootNodeName, filenamesWithDecorators)
+}
+
+export function parsedSourceToDecoratedFileEntry(parsedSource: ParsedSource): FileEntryWithErrorCounts {
+  return {
+    filename: parsedSource.source.name,
+    errorCount: parsedSource.errors.length,
+    source: parsedSource
   }
 }
 
-class TreeNode {
-  constructor(public readonly label: string, public readonly value: FilenameWithDecorators | null = null) {
+export function createTree(rootNodeName: string, files: FileEntryWithErrorCounts[]) {
+  const root: FileTreeNode = new FileTreeNode(rootNodeName)
+  files.forEach((file: FileEntryWithErrorCounts) => {
+    const parts = file.filename.split("/")
+    const directoryParts = parts.slice(0, -1) // drop the last element
+    const leaf = directoryParts.reduce((acc: FileTreeNode, currentValue: string) => acc.getOrCreateChild(currentValue), root)
+    const filename = parts[parts.length - 1];
+    leaf.addChild(new FileTreeNode(filename, file))
+  })
+  return root;
+}
+
+export class FileTreeNode {
+  constructor(public readonly label: string, public readonly value: FileEntryWithErrorCounts | null = null) {
   }
 
-  children: { [key: string]: TreeNode } = {};
+  children: { [key: string]: FileTreeNode } = {};
 
-  get childNodes(): TreeNode[] {
+  get childNodes(): FileTreeNode[] {
     return Object.values(this.children);
   }
 
@@ -124,12 +168,12 @@ class TreeNode {
   }
 
 
-  get descendants(): TreeNode[] {
+  get descendants(): FileTreeNode[] {
     const childDescendants = this.childNodes.map(it => it.descendants).flat()
     return this.childNodes.concat(...childDescendants)
   }
 
-  addChild(node: TreeNode): TreeNode {
+  addChild(node: FileTreeNode): FileTreeNode {
     this.children[node.label] = node;
     return node
   }
@@ -142,13 +186,26 @@ class TreeNode {
     }
   }
 
-  newChild(name: string): TreeNode {
-    return this.addChild(new TreeNode(name));
+  newChild(name: string): FileTreeNode {
+    return this.addChild(new FileTreeNode(name));
   }
 
 }
 
-export interface FilenameWithDecorators {
+export interface FileEntryWithErrorCounts {
   filename: string;
   errorCount: number;
+  source: ParsedSource
+}
+
+export function isFileTreeNodeList(value: any): value is FileTreeNode[] {
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return false;
+    } else {
+      return value[0] instanceof FileTreeNode;
+    }
+  } else {
+    return false;
+  }
 }

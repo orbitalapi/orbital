@@ -1,6 +1,6 @@
 <as-split direction="horizontal" unit="pixel">
   <as-split-area order="0" size="250" *ngIf="displaySidebar">
-    <app-file-tree [filenames]="filenames" (itemClicked)="select($event)"
+    <app-file-tree [files]="fileTreeNodes" (itemClicked)="select($event)"
                    [selectedFilename]="selectedSource?.source?.name"
     ></app-file-tree>
   </as-split-area>

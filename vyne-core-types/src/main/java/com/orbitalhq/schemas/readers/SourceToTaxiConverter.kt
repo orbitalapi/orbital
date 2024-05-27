@@ -3,17 +3,21 @@ package com.orbitalhq.schemas.readers
 import com.orbitalhq.SourcePackage
 import lang.taxi.CompilationError
 import lang.taxi.TaxiDocument
+import lang.taxi.generators.GeneratedTaxiCode
 
 /**
- * Design experiment:
- * We currently use special source adaptors to convert non-taxi sources (eg., OpenAPI)
- * to Taxi, and then load the taxi.
+ * Converter which accepts source code and returns an actual taxi document.
  *
- * That gets complex when sources need to also provide serialization details, like
- * SOAP and Protobuf clients.
+ * This is a more sophisticated approach then using a simple SchemaSourcesAdaptor.
+ * Use this approach when you need to attach special adaption / behaviour to actual generated
+ * services.
  *
- * Instead, playing with an approach of leave the source as-is, and convert to Taxi
- * when the TaxiSchema object is parsing the sources.
+ * For example - services generated from SOAP need to be able to fetch the original WSDL in order
+ * to execute the service. A SourceToTaxiConverter allows embedding the original wsdl in the created
+ * Service, which can be used at execution time.
+ *
+ * If you don't need to customize this behaviour, it's preferred to not use a SourceToTaxiConverter,
+ * and do the work in a SchemaSourcesAdaptor, emitting taxi code.
  */
 interface SourceToTaxiConverter {
    fun canLoad(sourcePackage: SourcePackage): Boolean
@@ -27,9 +31,34 @@ interface SourceToTaxiConverter {
    // That doesn't solve the problem, but works around them for now.
    // This means that things like Soap loaders are loaded after the taxi projects,
    // so for now, by convention, their dependencies are already loaded.
-//   fun load(sourcePackage: SourcePackage, imports: List<TaxiDocument>): Pair<List<CompilationError>, TaxiDocument>
+   fun load(sourcePackage: SourcePackage, imports: List<TaxiDocument>): SourceConverterLoadResult
 
-   fun loadAll(sourcePackages: List<SourcePackage>, imports: List<TaxiDocument>): Pair<List<CompilationError>, TaxiDocument>
+   fun loadAll(sourcePackages: List<SourcePackage>, imports: List<TaxiDocument>): SourceConverterLoadResult {
+      val allErrors = mutableListOf<CompilationError>()
+      val allTranspiledSources = mutableListOf<SourcePackage>()
+      val merged = sourcePackages.fold(TaxiDocument.empty()) { acc, sourcePackage ->
+         val (errors: List<CompilationError>, taxi: TaxiDocument, transpiledSource: List<SourcePackage>) = load(sourcePackage, imports)
+         allErrors.addAll(errors)
+         allTranspiledSources.addAll(transpiledSource)
+         acc.merge(taxi)
+      }
+      return SourceConverterLoadResult(allErrors, merged, allTranspiledSources)
+   }
 }
 
 
+/**
+ * Returns from a SourceToTaxiConverter.
+ * Allows the converter to additionally return the transpiled source.
+ * (eg., if the converter received a SourcePackage containing OpenAPI, and transpiled OpenAPI -> Taxi,
+ * can return the transpiled Taxi)
+ */
+data class SourceConverterLoadResult(
+   val errors: List<CompilationError>,
+   val taxi: TaxiDocument,
+   val transpiledSource: List<SourcePackage>
+) {
+   companion object {
+      fun empty() = SourceConverterLoadResult(emptyList(), TaxiDocument.empty(), emptyList())
+   }
+}

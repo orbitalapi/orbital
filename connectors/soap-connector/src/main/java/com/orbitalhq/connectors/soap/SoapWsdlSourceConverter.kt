@@ -1,8 +1,9 @@
 package com.orbitalhq.connectors.soap
 
 import com.orbitalhq.SourcePackage
+import com.orbitalhq.asVersionedSource
+import com.orbitalhq.schemas.readers.SourceConverterLoadResult
 import com.orbitalhq.schemas.readers.SourceToTaxiConverter
-import lang.taxi.CompilationError
 import lang.taxi.TaxiDocument
 import lang.taxi.generators.soap.SoapLanguage
 import lang.taxi.generators.soap.TaxiGenerator
@@ -14,34 +15,22 @@ object SoapWsdlSourceConverter : SourceToTaxiConverter {
       return sourcePackage.languages.contains(SoapLanguage.WSDL)
    }
 
-   override fun loadAll(
-      sourcePackages: List<SourcePackage>,
-      imports: List<TaxiDocument>
-   ): Pair<List<CompilationError>, TaxiDocument> {
-      val allErrors = mutableListOf<CompilationError>()
-      val merged = sourcePackages.fold(TaxiDocument.empty()) { acc, sourcePackage ->
-         val (errors, taxi) = load(sourcePackage, imports)
-         allErrors.addAll(errors)
-         acc.merge(taxi)
-      }
-      return allErrors to merged
-   }
-
-   fun load(
+   override fun load(
       sourcePackage: SourcePackage,
       imports: List<TaxiDocument>
-   ): Pair<List<CompilationError>, TaxiDocument> {
-      val sources = sourcePackage.sourcesWithPackageIdentifier
+   ): SourceConverterLoadResult {
+      val orignalWsdlSources = sourcePackage.sourcesWithPackageIdentifier
          .filter { it.language == SoapLanguage.WSDL }
-      require(sources.size == 1) { "Expected a single WSDL document, but found ${sources.size}" }
-      val versionedSource = sources.single()
-      val taxiDoc = try {
-         TaxiGenerator().generateTaxiDocument(versionedSource.content)
+      require(orignalWsdlSources.size == 1) { "Expected a single WSDL document, but found ${orignalWsdlSources.size}" }
+      val versionedSource = orignalWsdlSources.single()
+      val (taxiDoc,generatedTaxi) = try {
+         TaxiGenerator().generateTaxiAndCompile(versionedSource.content)
       } catch (e: Exception) {
          logger.error(e) { "Failed to convert WSDL to taxi - ${e.message}" }
          throw e
       }
-
-      return emptyList<CompilationError>() to taxiDoc
+      val generatedTaxiSources = generatedTaxi.asVersionedSource(sourcePackage.packageMetadata.identifier, "GeneratedFromSoap")
+      val transpiledPackage = SourcePackage.asTranspiledPackage(sourcePackage, generatedTaxiSources)
+      return SourceConverterLoadResult(emptyList(),taxiDoc, listOf(transpiledPackage))
    }
 }

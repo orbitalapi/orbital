@@ -58,6 +58,8 @@ class TaxiSchemaValidator(
          // an import from a removed schema, causing all compilation to fail.
          // Need to consider this, and find a solution.
          val (messages, schema) = TaxiSchema.fromPackages(packages, sourceConverters = sourceLoaders)
+         val packagesWithTranspiledCode = schema.packages
+
          val errors = messages.errors()
          val errorsByPackage = messages.errors().map { compilationError ->
             val compilationErrorSourceName = compilationError.sourceName
@@ -65,7 +67,7 @@ class TaxiSchemaValidator(
             val (packageIdentifier, sourceName) = VersionedSource.splitPackageIdentifier(compilationErrorSourceName)
             Triple(packageIdentifier, sourceName, compilationError)
          }
-         val parsedPackages = packages.map { sourcePackage ->
+         val parsedPackages = packagesWithTranspiledCode.map { sourcePackage ->
             val parsedSources = sourcePackage.sourcesWithPackageIdentifier.map { versionedSource ->
                val errors = errorsByPackage
                   .filter { error ->

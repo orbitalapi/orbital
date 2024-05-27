@@ -1,5 +1,6 @@
 package com.orbitalhq.schemaServer.core.adaptors.soap
 
+import com.orbitalhq.DefaultPackageMetadata
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
@@ -14,25 +15,13 @@ import reactor.core.publisher.Mono
 import java.net.URI
 import java.time.Instant
 
-data class SoapPackageMetadata(
-   override val identifier: PackageIdentifier,
-
-   /**
-    * The date that this packageMetadata was considered 'as-of'.
-    * In the case that two packages with the same identifier are submitted,
-    * the "latest" wins - using this data to determine latest.
-    */
-   override val submissionDate: Instant,
-   override val dependencies: List<PackageIdentifier>,
-) : PackageMetadata
-
 class SoapSchemaSourcesAdaptor(private val spec: SoapPackageLoaderSpec) : SchemaSourcesAdaptor {
    companion object {
       private val logger = KotlinLogging.logger {}
    }
    override fun buildMetadata(transport: SchemaPackageTransport): Mono<PackageMetadata> {
       return Mono.just(
-         SoapPackageMetadata(
+         DefaultPackageMetadata(
             spec.identifier,
             submissionDate = Instant.now(),
             dependencies = emptyList()

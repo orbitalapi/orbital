@@ -69,6 +69,11 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>avro-message-format</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>swagger2taxi</artifactId>
          <version>${taxi.version}</version>

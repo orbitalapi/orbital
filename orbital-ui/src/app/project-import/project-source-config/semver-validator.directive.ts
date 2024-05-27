@@ -6,6 +6,7 @@ const pattern = new RegExp(/\d+\.\d+\.\d+/);
 
 @Directive({
   selector: '[semver]',
+  standalone: true,
   providers: [{ provide: NG_VALIDATORS, useExisting: SemverValidatorDirective, multi: true }]
 })
 export class SemverValidatorDirective implements Validator {

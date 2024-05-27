@@ -24,7 +24,7 @@ class CockpitCoreConfig {
    fun sourceConverterRegistry(): SourceConverterRegistry = SourceConverterRegistry(
       setOf(
          TaxiSourceConverter,
-         SoapWsdlSourceConverter
+         SoapWsdlSourceConverter,
       ),
       registerWithStaticRegistry = true
    )

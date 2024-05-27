@@ -1,15 +1,16 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
-import { UiCustomisations } from '../../../environments/ui-customisations';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
+import {UiCustomisations} from '../../../environments/ui-customisations';
 import {
+  AvroPackageLoaderSpec,
   GitPullRequestConfig,
   GitRepositoryConfig,
   LoadablePackageType,
   OpenApiPackageLoaderSpec,
   TaxiPackageLoaderSpec
 } from '../project-import.models';
-import { isNullOrUndefined } from 'src/app/utils/utils';
-import { GitConnectionTestResult, SchemaImporterService } from 'src/app/project-import/schema-importer.service';
-import { Message } from 'src/app/services/schema';
+import {isNullOrUndefined} from 'src/app/utils/utils';
+import {GitConnectionTestResult, SchemaImporterService} from 'src/app/project-import/schema-importer.service';
+import {Message} from 'src/app/services/schema';
 
 
 export const projectTypeToString = (item: LoadablePackageType) => {
@@ -18,6 +19,8 @@ export const projectTypeToString = (item: LoadablePackageType) => {
       return 'Taxi';
     case 'OpenApi':
       return 'Open API'
+    default:
+      return item;
   }
 }
 
@@ -27,7 +30,8 @@ export const projectTypeToString = (item: LoadablePackageType) => {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="form-header-text">
-      <p>Connect {{UiCustomisations.productName}} to a Git repository to add individual OpenAPI schemas, or entire Taxi projects</p>
+      <p>Connect {{ UiCustomisations.productName }} to a Git repository to add individual OpenAPI schemas, or entire
+        Taxi projects</p>
     </div>
 
     <form #gitForm="ngForm">
@@ -125,13 +129,23 @@ export const projectTypeToString = (item: LoadablePackageType) => {
                 <tui-data-list *tuiDataList>
                   <button tuiOption value="Taxi">{{ stringifyProjectType('Taxi') }}</button>
                   <button tuiOption value="OpenApi">{{ stringifyProjectType('OpenApi') }}</button>
+                  <button tuiOption value="Avro">{{ stringifyProjectType('Avro') }}</button>
                 </tui-data-list>
               </tui-select>
             </div>
           </div>
           <ng-container *ngIf="gitConfig.loader.packageType === 'OpenApi'">
             <app-open-api-package-config [openApiPackageSpec]="openApiPackageSpec"
+                                         projectType="git"
+                                         [editable]="editable"
                                          [(path)]="gitConfig.path"></app-open-api-package-config>
+
+          </ng-container>
+          <ng-container *ngIf="gitConfig.loader.packageType === 'Avro'">
+            <app-avro-package-config [packageSpec]="avroPackageSpec"
+                                     projectType="git"
+                                     [editable]="editable"
+                                     [(path)]="gitConfig.path"></app-avro-package-config>
 
           </ng-container>
 
@@ -163,7 +177,7 @@ export const projectTypeToString = (item: LoadablePackageType) => {
                 <h3>Enable edits and pull requests</h3>
                 <div class="help-text">
                   <p>
-                    If enabled, edits can be made through the {{UiCustomisations.productName}} UI, which
+                    If enabled, edits can be made through the {{ UiCustomisations.productName }} UI, which
                     will result in Pull requests being opened
                   </p>
                 </div>
@@ -255,6 +269,16 @@ export class GitConfigComponent {
     }
   }
 
+  get avroPackageSpec():AvroPackageLoaderSpec | null {
+    const packageType = this.gitConfig.loader?.packageType;
+    if (packageType === 'Avro') {
+      return this.gitConfig.loader as AvroPackageLoaderSpec;
+    } else {
+      return null;
+    }
+  }
+
+
   selectedProjectTypeChanged(projectType: LoadablePackageType) {
     switch (projectType) {
       case 'Taxi':
@@ -262,6 +286,9 @@ export class GitConfigComponent {
         break;
       case 'OpenApi':
         this.gitConfig.loader = new OpenApiPackageLoaderSpec();
+        break;
+      case 'Avro':
+        this.gitConfig.loader = new AvroPackageLoaderSpec();
         break;
     }
     this.changeDetector.markForCheck();

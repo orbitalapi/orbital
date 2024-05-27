@@ -34,7 +34,7 @@ class FileSystemPackageLoader(
    // to act as the decorator to the underlying transport, and
    // do things like filter out uris etc
    private val transportDecorator: SchemaPackageTransport? = null
-) : SchemaPackageTransport, LoaderExposingTaxiProject  {
+) : SchemaPackageTransport, LoaderExposingTaxiProject {
 
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -77,10 +77,13 @@ class FileSystemPackageLoader(
 
    private val transport: SchemaPackageTransport = transportDecorator ?: this
 
-   private fun triggerLoad(){
+   private fun triggerLoad() {
       loadNow()
-         .doOnError {e ->
-            stateSink.emitNext(LoaderStatus.error(e.message ?: "An unknown error occurred - ${e::class.simpleName!!}"), Sinks.EmitFailureHandler.FAIL_FAST)
+         .doOnError { e ->
+            stateSink.emitNext(
+               LoaderStatus.error(e.message ?: "An unknown error occurred - ${e::class.simpleName!!}"),
+               Sinks.EmitFailureHandler.FAIL_FAST
+            )
             logger.warn { "Triggered load failed: ${e.message}" }
          }
          .onErrorComplete()
@@ -127,7 +130,10 @@ class FileSystemPackageLoader(
    override fun listUris(): Flux<URI> {
       return config.path
          .toFile()
-         .walkBottomUp()
+         .walk()
+         .onEnter { directory ->
+            !directory.isHidden && !directory.name.startsWith(".")
+         }
          .map { it.toURI() }
          .ifEmpty {
             // can't use packageIdentifier here, as
@@ -145,6 +151,7 @@ class FileSystemPackageLoader(
 
    override fun readUri(uri: URI): Mono<ByteArray> {
       return Mono.create { sink ->
+         logger.info { "Reading from ${uri.toASCIIString()}" }
          sink.success(Paths.get(uri).readBytes())
       }
    }

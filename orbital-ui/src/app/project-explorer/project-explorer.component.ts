@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnInit } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnInit} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
 import {SchemaNotificationService} from '../services/schema-notification.service';
 import {
@@ -13,9 +13,11 @@ import moment from 'moment';
 import {ChangeLogEntry, ChangelogService} from 'src/app/changelog/changelog.service';
 import {Observable} from 'rxjs';
 import {TypesService} from 'src/app/services/types.service';
-import {PartialSchema, Schema} from 'src/app/services/schema';
+import {ParsedSource, PartialSchema, Schema} from 'src/app/services/schema';
 import {appInstanceType} from 'src/app/app-config/app-instance.vyne';
 import {integer} from "vscode-languageclient";
+import {isNullOrUndefined} from "../utils/utils";
+import {FileTreeNode, sourcesToFileTreeNode} from "../code-viewer/file-tree.component";
 
 @Component({
   selector: 'app-project-explorer',
@@ -41,7 +43,7 @@ export class ProjectExplorerComponent implements OnInit {
 
   setActiveTab(index: integer) {
     const newRoute = this.tabs[index].route;
-    this.router.navigate(['..',newRoute], {relativeTo: this.activatedRoute})
+    this.router.navigate(['..', newRoute], {relativeTo: this.activatedRoute})
   }
 
 
@@ -57,6 +59,15 @@ export class ProjectExplorerComponent implements OnInit {
     return this.packageWithDescription?.parsedPackage
   }
 
+  private _fileTreeNodes: FileTreeNode[] = [];
+
+  /**
+   * Returns all the sources in the package (include "additionalSources") as a tree
+   */
+  get sources(): FileTreeNode[] {
+    return this._fileTreeNodes;
+  }
+
   constructor(private packagesService: PackagesService,
               private schemaNotificationService: SchemaNotificationService,
               private activatedRoute: ActivatedRoute,
@@ -69,19 +80,19 @@ export class ProjectExplorerComponent implements OnInit {
     this.activatedRoute.paramMap
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(
-      paramMap => {
-        const selectedTab = paramMap.get('selectedTab');
-        if (!selectedTab) {
-          this.router.navigate(
-            [this.tabs[0].route],
-            { relativeTo: this.activatedRoute, onSameUrlNavigation: "reload", skipLocationChange: true }
-          )
-        } else {
-          this.activeTabIndex = this.tabs.findIndex(tab => tab.route === selectedTab);
-          this.changeDetector.markForCheck();
+        paramMap => {
+          const selectedTab = paramMap.get('selectedTab');
+          if (!selectedTab) {
+            this.router.navigate(
+              [this.tabs[0].route],
+              {relativeTo: this.activatedRoute, onSameUrlNavigation: "reload", skipLocationChange: true}
+            )
+          } else {
+            this.activeTabIndex = this.tabs.findIndex(tab => tab.route === selectedTab);
+            this.changeDetector.markForCheck();
+          }
         }
-      }
-    )
+      )
   }
 
   ngOnInit() {
@@ -105,6 +116,7 @@ export class ProjectExplorerComponent implements OnInit {
         next: packageWithDescription => {
           this.packageWithDescription = packageWithDescription;
           this.updateBadges();
+          this.updateFileTree();
           this.changeDetector.markForCheck();
         },
         // there's a good chance that project no longer exists, pull the ripcord and eject back to the /projects route
@@ -133,5 +145,27 @@ export class ProjectExplorerComponent implements OnInit {
         iconPath: 'assets/img/tabler/clock.svg'
       },
     ]
+  }
+
+  private updateFileTree() {
+    if (isNullOrUndefined(this.parsedPackage)) {
+      return [];
+    } else {
+      const projectSources = sourcesToFileTreeNode(this.parsedPackage.sources, 'Taxi sources');
+      const additionalSources = Object.keys(this.parsedPackage.additionalSources).map(additionalSourceKey => {
+        const sources = this.parsedPackage.additionalSources[additionalSourceKey];
+        const fileTreeNode = sourcesToFileTreeNode(sources, additionalSourceKey);
+        return fileTreeNode;
+      });
+      const newFileTreeNodes = [projectSources];
+
+      if (additionalSources.length > 0) {
+        const additionalSourcesRoot: FileTreeNode = new FileTreeNode('Additional sources', null);
+        additionalSources.forEach(additionalSourcesTreeNode => additionalSourcesRoot.addChild(additionalSourcesTreeNode))
+        newFileTreeNodes.push(additionalSourcesRoot);
+      }
+
+      this._fileTreeNodes = newFileTreeNodes;
+    }
   }
 }
