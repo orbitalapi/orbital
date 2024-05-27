@@ -287,6 +287,16 @@
 
    <dependencyManagement>
       <dependencies>
+         <!-- Set to 1.26.0 because of vulnerabilities:
+         CVE-2024-25710 , CVE-2024-26308.
+         Transitive in avro. Hopefully resolved in a release of
+         avro > 1.11.3
+         -->
+         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>1.26.0</version>
+         </dependency>
          <!-- managing this here, as query-service is picking up an
          out-of-date kafka-clients version, and can't work out why.
          The old version has a CVS published against it, so needs to be managed
