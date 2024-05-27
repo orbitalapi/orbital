@@ -114,7 +114,7 @@ class QueryHistoryDao(
    }
 
    fun persistSankeyChart(queryId: String, sankeyViewBuilder: LineageSankeyViewBuilder) {
-      val chartRows = sankeyViewBuilder.asChartRows(queryId)
+      val chartRows = sankeyViewBuilder.takeChartRowsAndMarkClean(queryId)
 //      val ids = chartRows.map { it.toId() }
       chartRows.forEach {
          sankeyChartRowRepository.upsert(
@@ -128,6 +128,7 @@ class QueryHistoryDao(
             it.count
          )
       }
+      logger.info { "Saving ${chartRows.size} rows of profiler chart data" }
       sankeyChartRowRepository.saveAll(chartRows)
    }
 

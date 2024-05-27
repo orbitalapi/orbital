@@ -55,7 +55,7 @@ class QueryHistoryDbWriter(
    init {
 
       persistenceQueue.retrieveNewResultRows().index()
-         .publishOn(Schedulers.boundedElastic())
+         .publishOn(QuerySummaryPersister.queryHistoryScheduler)
          .bufferTimeout(config.writerMaxBatchSize, config.writerMaxDuration)
          .doOnError { t ->
             val rootCause = Throwables.getRootCause(t)
@@ -72,7 +72,7 @@ class QueryHistoryDbWriter(
          }
 
       persistenceQueue.retrieveNewLineageRecords().index()
-         .publishOn(Schedulers.boundedElastic())
+         .publishOn(QuerySummaryPersister.queryHistoryScheduler)
          .bufferTimeout(config.writerMaxBatchSize, config.writerMaxDuration)
          .doOnError { error ->
             val rootCause = Throwables.getRootCause(error)
@@ -94,7 +94,7 @@ class QueryHistoryDbWriter(
 
 
       persistenceQueue.retrieveNewRemoteCalls().index()
-         .publishOn(Schedulers.boundedElastic())
+         .publishOn(QuerySummaryPersister.queryHistoryScheduler)
          .bufferTimeout(config.writerMaxBatchSize, config.writerMaxDuration)
          .doOnError { error ->
             val rootCause = Throwables.getRootCause(error)

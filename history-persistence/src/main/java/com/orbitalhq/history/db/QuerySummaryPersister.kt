@@ -15,13 +15,17 @@ import com.orbitalhq.query.history.QuerySummary
 import com.orbitalhq.schemas.Schema
 import mu.KotlinLogging
 import reactor.core.publisher.Sinks
+import reactor.core.scheduler.Schedulers
 import java.time.Duration
 import java.time.Instant
+
+
 
 open class QuerySummaryPersister(private val queryHistoryDao: QueryHistoryDao, private val queryId: String, private val schema: Schema) {
 
    companion object {
       private val logger = KotlinLogging.logger {}
+      val queryHistoryScheduler = Schedulers.newBoundedElastic(8, Int.MAX_VALUE, "query-history-scheduler")
    }
    private object Tick
 
@@ -36,8 +40,11 @@ open class QuerySummaryPersister(private val queryHistoryDao: QueryHistoryDao, p
       // Write sankey events to the db while the query is running.
       // To avoid being too db chatty, we throttle these events.
       throttledSankeyEventSink.asFlux()
-         .bufferTimeout(50, Duration.ofSeconds(2))
+         .window(Duration.ofSeconds(5))
+         .publishOn(queryHistoryScheduler)
+         .filter { sankeyViewBuilder.isDirty }
          .subscribe {
+            logger.info { "Persisting sankey chart for query $queryId" }
             queryHistoryDao.persistSankeyChart(queryId, sankeyViewBuilder)
          }
    }

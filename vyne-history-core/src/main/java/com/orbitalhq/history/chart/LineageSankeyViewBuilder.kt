@@ -9,8 +9,10 @@ import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.utils.orElse
+import com.sun.jna.platform.unix.X11.Atom
 import mu.KotlinLogging
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * A SankeyGraph  is a visualization used to depict a flow from one set of values to another.
@@ -28,6 +30,14 @@ class LineageSankeyViewBuilder(private val schema: Schema) {
    private val dataSourceIdsToNodes = ConcurrentHashMap<String, SankeyNode>()
    private val dataSourcePairsToWeights = ConcurrentHashMap<Pair<SankeyNode, SankeyNode>, Int>()
    private val operationNodeDetails = ConcurrentHashMap<QualifiedName, SankeyOperationNodeDetails>()
+
+   private val _isDirty: AtomicBoolean = AtomicBoolean(false)
+
+   val isDirty: Boolean
+      get() {
+         return _isDirty.get()
+      }
+
    fun append(instance: TypedInstance) {
       when (instance) {
          is TypedObject -> buildForObject(instance)
@@ -95,6 +105,7 @@ class LineageSankeyViewBuilder(private val schema: Schema) {
       } else {
          incrementSankeyCount(sourceNode, targetNode)
       }
+      this._isDirty.set(true)
    }
 
    private fun incrementSankeyCount(source: SankeyNode, target: SankeyNode) {
@@ -103,6 +114,12 @@ class LineageSankeyViewBuilder(private val schema: Schema) {
       }
    }
 
+   fun takeChartRowsAndMarkClean(queryId: String): List<QuerySankeyChartRow> {
+      return synchronized(this) {
+         _isDirty.set(false)
+         asChartRows(queryId)
+      }
+   }
    fun asChartRows(queryId: String): List<QuerySankeyChartRow> {
       return dataSourcePairsToWeights.map { (key, value) ->
          val (sourceNode, targetNode) = key
@@ -155,7 +172,7 @@ class LineageSankeyViewBuilder(private val schema: Schema) {
                }
                if (source == null) {
                   val dataSourceId = sourceDataSourceId.orElse("null")
-                  when(dataSourceId) {
+                  when (dataSourceId) {
                      UndefinedSource.id -> {} // do nothing - we can't help undefined sources.
                      else -> logger.warn { "Received dataSourceId ${sourceDataSourceId.orElse("null")} for input parameter ${operationParam.parameterName} on operation $operationQualifiedName but that has not yet been mapped.  No entry will be added for this pair" }
                   }
@@ -168,6 +185,7 @@ class LineageSankeyViewBuilder(private val schema: Schema) {
             else -> logger.warn { "Unhandled type of operationParam value: ${operationParam.value!!::class.simpleName}" }
          }
       }
+      this._isDirty.set(true)
    }
 
    private fun isMixedSourcesAndShouldIntrospect(typeNamedInstance: TypeNamedInstance): Boolean {
