@@ -10,7 +10,7 @@ class QueryWithServiceRestrictionsTest {
    @Test
    fun `when services have inclusions specified other services are not called`():Unit = runBlocking {
       val (vyne,stub) = testVyne("""
-         model Film {
+         closed model Film {
             title : Title inherits String
          }
          service FilmService {
@@ -26,7 +26,6 @@ class QueryWithServiceRestrictionsTest {
          using { FilmService::getFilms }
       """.trimIndent())
          .rawObjects()
-
 
       stub.callCount("getFilms").shouldBe(1)
       stub.callCount("getBlockbusters").shouldBe(0)

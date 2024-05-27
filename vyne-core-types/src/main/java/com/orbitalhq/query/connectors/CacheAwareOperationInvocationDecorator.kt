@@ -148,7 +148,6 @@ typealias CacheFetcher = (OperationCacheKey, OperationInvocationParamMessage, ()
 @ObsoleteCoroutinesApi // At the time of writing, there's no alternative provided by Kotlin
 class CachingOperatorInvoker(
    private val cacheKey: OperationCacheKey,
-//   private val backingMap: ConcurrentMap<OperationCacheKey, Flux<TypedInstance>>,
    private val invoker: OperationInvoker,
    private val cacheFetcher: CacheFetcher
 ) {

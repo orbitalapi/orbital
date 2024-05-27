@@ -1,12 +1,9 @@
 package com.orbitalhq.query.projection
 
-import com.orbitalhq.models.PermittedQueryStrategies
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
-import com.orbitalhq.models.ValueLookupReturnedNull
 import com.orbitalhq.models.facts.FactBag
-import com.orbitalhq.models.facts.FactDiscoveryStrategy
 import com.orbitalhq.models.facts.ScopedFact
 import com.orbitalhq.models.facts.asIteratingScope
 import com.orbitalhq.query.MetricTags
@@ -16,20 +13,42 @@ import com.orbitalhq.query.TypeQueryExpression
 import com.orbitalhq.query.TypedInstanceWithMetadata
 import com.orbitalhq.query.withProcessingMetadata
 import com.orbitalhq.schemas.Type
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import lang.taxi.types.ArrayType
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.flow.withIndex
+import kotlinx.coroutines.isActive
 import lang.taxi.types.Arrays
-import lang.taxi.types.StreamType
 import mu.KotlinLogging
 import java.time.Instant
-import java.util.concurrent.Executors
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadFactory
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
-private val projectingDispatcher = Executors.newFixedThreadPool(16).asCoroutineDispatcher()
+
 private val logger = KotlinLogging.logger {}
 
 @OptIn(FlowPreview::class)
-class LocalProjectionProvider : ProjectionProvider {
+class LocalProjectionProvider(private val threadPoolSize: Int = 16) : ProjectionProvider {
+   private val projectingDispatcher =
+      ThreadPoolExecutor(threadPoolSize, threadPoolSize,
+      0L, TimeUnit.MILLISECONDS,
+      LinkedBlockingQueue(),
+      OrbitalProjectionProviderThreadFactory()
+   ).asCoroutineDispatcher()
 
    private val projectingScope = CoroutineScope(projectingDispatcher)
 
@@ -59,7 +78,7 @@ class LocalProjectionProvider : ProjectionProvider {
          .filter { !context.cancelRequested }
          .distinctUntilChanged()
          .map { emittedResult ->
-            logger.debug { "Starting to project instance of ${emittedResult.value.type.qualifiedName.shortDisplayName} (index ${emittedResult.index}) to instance of ${projection.type.qualifiedName.shortDisplayName}" }
+            logger.trace { "Starting to project instance of ${emittedResult.value.type.qualifiedName.shortDisplayName} (index ${emittedResult.index}) to instance of ${projection.type.qualifiedName.shortDisplayName}" }
             projectingScope.async {
                val startTime = Instant.now()
                if (!isActive) {
@@ -68,6 +87,7 @@ class LocalProjectionProvider : ProjectionProvider {
                }
 
                val scopedFact = buildScopedProjectionFacts(projection, emittedResult, context)
+               logger.trace { "project or map instance of ${emittedResult.value.type.qualifiedName.shortDisplayName} (index ${emittedResult.index}) to instance of ${projection.type.qualifiedName.shortDisplayName}" }
 
                projectOrMap(
                   scopedFact,
@@ -80,7 +100,11 @@ class LocalProjectionProvider : ProjectionProvider {
                )
             }
          }
-         .buffer(16).map { it.await() }.flatMapMerge { it }
+         .buffer(threadPoolSize).map {
+           val result = it.await()
+            logger.trace { "projected or mapped instance of ${projection.type.qualifiedName.shortDisplayName} completed" }
+            result
+         }.flatMapMerge { it }
    }
 
    /**
@@ -248,5 +272,24 @@ class LocalProjectionProvider : ProjectionProvider {
       return buildResult.results.map {
          it.withProcessingMetadata(asOf = startTime)
       }
+   }
+}
+
+
+private class OrbitalProjectionProviderThreadFactory : ThreadFactory {
+   private val group: ThreadGroup = Thread.currentThread().threadGroup
+   private val threadNumber = AtomicInteger(1)
+   private val namePrefix: String = "orbital_projection-"
+
+   override fun newThread(r: Runnable): Thread {
+      val t = Thread(
+         group, r,
+         namePrefix + threadNumber.getAndIncrement(),
+         0
+      )
+      if (t.isDaemon) t.isDaemon = false
+      if (t.priority != Thread.NORM_PRIORITY) t.priority = Thread.NORM_PRIORITY
+      logger.info { "created the projection thread - ${t.name}" }
+      return t
    }
 }

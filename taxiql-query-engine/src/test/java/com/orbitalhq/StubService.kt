@@ -1,6 +1,9 @@
 package com.orbitalhq
 
+import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.HashMultimap
+import com.google.common.collect.ListMultimap
+import com.google.common.collect.MultimapBuilder
 import com.google.common.collect.Multimaps
 import com.orbitalhq.models.DataSourceMutatingMapper
 import com.orbitalhq.models.DataSourceUpdater
@@ -119,7 +122,7 @@ class StubService(
       )
    }
 
-   val calls = HashMultimap.create<String,List<TypedInstance>>()
+   val calls = MultimapBuilder.hashKeys().arrayListValues().build<String,List<TypedInstance>>()
 
    fun callCount(stubKey:String):Int {
       return if (calls.containsKey(stubKey)) {
