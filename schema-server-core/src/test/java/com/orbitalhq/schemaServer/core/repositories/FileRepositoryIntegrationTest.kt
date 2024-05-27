@@ -14,6 +14,7 @@ import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoaderFactory
 import com.orbitalhq.schemaServer.core.publisher.SourceWatchingSchemaPublisher
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
+import com.orbitalhq.schemaServer.packages.AvroPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.SoapPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
@@ -125,6 +126,40 @@ class FileRepositoryIntegrationTest {
    }
 
    @Test
+   fun `can add an avro spec as a workspace project`() {
+      val (workspaceProjectsService, reactiveProjectStoreManager, schemaClient) = setupServices()
+
+      reactiveProjectStoreManager.use {
+         // First, create the new repository
+         val projectFolder = folder.newFolder()
+         val targetFile = projectFolder.resolve("src/addressBook.avsc")
+         targetFile.parentFile.mkdirs()
+         targetFile.createNewFile()
+         Resources.copy(Resources.getResource("avro/addressBook.avsc"), targetFile.outputStream())
+
+         workspaceProjectsService.createFileRepository(
+            CreateFileProjectStoreRequest(
+               projectFolder.canonicalPath,
+               true,
+               loader = AvroPackageLoaderSpec(
+                  PackageIdentifier.fromId("com/foo/1.0.0")
+               ),
+               newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
+            )
+         )
+
+         reactiveProjectStoreManager.fileLoaders.should.have.size(1)
+         Awaitility.await()
+            .atMost(10, TimeUnit.SECONDS)
+            .until<Boolean> {
+               // Should have the type defined in the avro schema
+               schemaClient.schema()
+                  .hasType("simple.AddressBook")
+            }
+      }
+   }
+
+   @Test
    fun `configure a file repository at runtime and when files are changes then schema updates are emitted`() {
       val (repositoryService, repositoryManager, schemaClient) = setupServices()
 
@@ -181,7 +216,7 @@ class FileRepositoryIntegrationTest {
          schemaValidator = TaxiSchemaValidator(
             listOf(
                TaxiSourceConverter,
-               SoapWsdlSourceConverter
+               SoapWsdlSourceConverter,
             )
          )
 

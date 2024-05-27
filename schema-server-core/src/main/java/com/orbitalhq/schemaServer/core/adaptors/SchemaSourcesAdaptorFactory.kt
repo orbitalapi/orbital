@@ -1,9 +1,11 @@
 package com.orbitalhq.schemaServer.core.adaptors
 
 import com.orbitalhq.schema.publisher.loaders.SchemaSourcesAdaptor
+import com.orbitalhq.schemaServer.core.adaptors.avro.AvroSchemaSourcesAdaptor
 import com.orbitalhq.schemaServer.core.adaptors.openapi.OpenApiSchemaSourcesAdaptor
 import com.orbitalhq.schemaServer.core.adaptors.soap.SoapSchemaSourcesAdaptor
 import com.orbitalhq.schemaServer.core.adaptors.taxi.TaxiSchemaSourcesAdaptor
+import com.orbitalhq.schemaServer.packages.AvroPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.PackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.PackageType
@@ -16,6 +18,7 @@ class SchemaSourcesAdaptorFactory {
          PackageType.Taxi -> TaxiSchemaSourcesAdaptor()
          PackageType.OpenApi -> OpenApiSchemaSourcesAdaptor(spec as OpenApiPackageLoaderSpec)
          PackageType.Soap -> SoapSchemaSourcesAdaptor(spec as SoapPackageLoaderSpec)
+         PackageType.Avro -> AvroSchemaSourcesAdaptor(spec as AvroPackageLoaderSpec)
          else -> TODO("Not Implemented: ${spec.packageType}")
       }
    }

@@ -20,7 +20,8 @@ object GenericRecordReader {
       val fromMap = TypedInstance.from(schema.type(type), map, schema, source = dataSource)
       return fromMap
    }
-   private fun readAsMap(genericRecord: GenericRecord?, type: ObjectType, schema: Schema):Map<String,Any?>? {
+
+   private fun readAsMap(genericRecord: GenericRecord?, type: ObjectType, schema: Schema): Map<String, Any?>? {
       if (genericRecord == null) {
          return null
       }
@@ -32,10 +33,11 @@ object GenericRecordReader {
    private fun readFieldValue(field: Field, genericRecord: GenericRecord, schema: Schema): Any? {
       val type = field.type
       if (type.inheritsFromPrimitive) {
-        return when (field.type.basePrimitive!!) {
+         return when (field.type.basePrimitive!!) {
             PrimitiveType.BOOLEAN -> genericRecord.getBoolean(field.name)
             PrimitiveType.STRING -> genericRecord.getString(field.name)
             PrimitiveType.INTEGER -> genericRecord.getInt32(field.name)
+            PrimitiveType.LONG -> genericRecord.getInt64(field.name)
             PrimitiveType.DECIMAL -> genericRecord.getDecimal(field.name)
             PrimitiveType.LOCAL_DATE -> genericRecord.getDate(field.name)
             PrimitiveType.TIME -> genericRecord.getTime(field.name)
@@ -52,6 +54,7 @@ object GenericRecordReader {
                PrimitiveType.BOOLEAN -> genericRecord.getArrayOfNullableBoolean(field.name)
                PrimitiveType.STRING -> genericRecord.getArrayOfString(field.name)
                PrimitiveType.INTEGER -> genericRecord.getArrayOfNullableInt32(field.name)
+               PrimitiveType.LONG -> genericRecord.getArrayOfInt64(field.name)
                PrimitiveType.DECIMAL -> genericRecord.getArrayOfDecimal(field.name)
                PrimitiveType.LOCAL_DATE -> genericRecord.getArrayOfDate(field.name)
                PrimitiveType.TIME -> genericRecord.getArrayOfTime(field.name)
@@ -69,7 +72,7 @@ object GenericRecordReader {
       }
       if (field.type is ObjectType) {
          val fieldGenericRecord = genericRecord.getGenericRecord(field.name)
-         return readAsMap(fieldGenericRecord,field.type as ObjectType, schema)
+         return readAsMap(fieldGenericRecord, field.type as ObjectType, schema)
       }
       error("No matching deserialization strategy was found for type ${field.type.toQualifiedName().parameterizedName}")
    }

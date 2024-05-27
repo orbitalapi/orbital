@@ -126,6 +126,22 @@ interface SchemaPackageTransport {
    val config: ProjectTransportConfig
 }
 
+
+/**
+ * Provides an approach for converting source from one language to another.
+ *
+ * Outputs Taxi source code.
+ *
+ * This is the simpler approach for transpiling source, however
+ * you lose the ability to control actual construction of the taxi document.
+ *
+ * Some transpiliation approaches (eg: SOAP) need the original source at execution time,
+ * generally for serialization.  In this case, the SchemaSourcesAdaptor should
+ * output source with a language other than Taxi, and create a SourceToTaxiConverter,
+ * which outputs a converted TaxiDocument, rather than Taxi source code. This allows
+ * attaching additional sources to the created services, used at execution time.
+ * (See SoapWsdlSourceConverter)
+ */
 interface SchemaSourcesAdaptor {
    fun buildMetadata(transport: SchemaPackageTransport): Mono<PackageMetadata>
    fun convert(packageMetadata: PackageMetadata, transport: SchemaPackageTransport): Mono<SourcePackage>

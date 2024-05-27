@@ -208,20 +208,17 @@ class FileWorkspaceConfigLoader(
          return ModifyWorkspaceResponse(ModifyProjectResponseStatus.Failed, "${fileSpec.path} already exists")
       }
 
-      val packageIdentifier = if (fileSpec.packageIdentifier != null) {
-         createProjectIfNotExists(fileSpec)
-      } else {
-         verifyProjectExists(fileSpec)
+      if (fileSpec.loader is TaxiPackageLoaderSpec) {
+         if (fileSpec.packageIdentifier != null) {
+            createProjectIfNotExists(fileSpec)
+         } else {
+            verifyProjectExists(fileSpec)
+         }
       }
-
-      val fileSpecWithPackageIdentifier = fileSpec.copy(packageIdentifier = packageIdentifier)
-
 
       val updated = current.copy(
          file = currentFileConfig.copy(
-            projects = currentFileConfig.projects.concat(
-               fileSpecWithPackageIdentifier
-            )
+            projects = currentFileConfig.projects.concat(fileSpec)
          )
       )
       save(updated)
@@ -289,11 +286,17 @@ class FileWorkspaceConfigLoader(
       val current = this.typedConfig() // Don't call load, as we want the original, not the one we resolve paths with
       val currentGitConfig = current.git ?: GitSchemaRepositoryConfig()
       if (currentGitConfig.repositories.any { it.name == gitSpec.name }) {
-         return ModifyWorkspaceResponse( ModifyProjectResponseStatus.Failed, "A git repository with the name ${gitSpec.name} already exists")
+         return ModifyWorkspaceResponse(
+            ModifyProjectResponseStatus.Failed,
+            "A git repository with the name ${gitSpec.name} already exists"
+         )
       }
 
       if (currentGitConfig.repositories.any { it.uri == gitSpec.uri }) {
-         return ModifyWorkspaceResponse( ModifyProjectResponseStatus.Failed, "A git repository already exists for ${gitSpec.uri}")
+         return ModifyWorkspaceResponse(
+            ModifyProjectResponseStatus.Failed,
+            "A git repository already exists for ${gitSpec.uri}"
+         )
       }
 
       val updated = current.copy(
@@ -303,7 +306,10 @@ class FileWorkspaceConfigLoader(
       )
       save(updated)
       eventDispatcher.gitRepositorySpecAdded(GitSpecAddedEvent(gitSpec, updated.git!!))
-      return ModifyWorkspaceResponse( ModifyProjectResponseStatus.Ok, "${gitSpec.name} added as a new project, you need to commit and push  your workspace.conf")
+      return ModifyWorkspaceResponse(
+         ModifyProjectResponseStatus.Ok,
+         "${gitSpec.name} added as a new project, you need to commit and push  your workspace.conf"
+      )
    }
 
    override fun removeGitRepository(

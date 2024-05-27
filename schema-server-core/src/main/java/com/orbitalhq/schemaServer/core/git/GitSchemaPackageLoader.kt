@@ -64,7 +64,8 @@ class GitSchemaPackageLoader(
       val pathWithGitRepo = workingDir.resolve(safePath).normalize()
       filePackageLoader = FileSystemPackageLoader(
          config = FileSystemPackageSpec(
-            pathWithGitRepo, config.loader,
+            pathWithGitRepo,
+            config.loader,
          ),
          adaptor = adaptor,
          fileMonitor = fileMonitor,
@@ -79,7 +80,7 @@ class GitSchemaPackageLoader(
    }
 
    override fun loadNow(): Mono<SourcePackage> {
-     // syncNow()
+      // syncNow()
       return filePackageLoader.loadNow()
    }
 
@@ -87,7 +88,7 @@ class GitSchemaPackageLoader(
    override fun start(): Flux<SourcePackage> {
       logger.info { "Starting with workingDir => $workingDir" }
       return GitRepoSync(workingDir, config, gitPollFrequency)
-         .start(true, {fileMonitor.suspend() }, { fileMonitor.resume()})
+         .start(true, { fileMonitor.suspend() }, { fileMonitor.resume() })
          .doOnNext {
             updateLoaderStatus(it)
          }

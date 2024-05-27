@@ -5,6 +5,7 @@ import com.google.common.base.Stopwatch
 import com.orbitalhq.*
 import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.schemas.*
+import com.orbitalhq.schemas.readers.SourceConverterLoadResult
 import com.orbitalhq.schemas.readers.SourceToTaxiConverter
 import com.orbitalhq.schemas.readers.TaxiSourceConverter
 import lang.taxi.*
@@ -268,12 +269,17 @@ class TaxiSchema(
          // TODO : We need to improve the processing order here, to consider
          // import / dependencies between projects.
          val packagesByLanguage = packages
-            .filter { it.languages.isNotEmpty() }
             .groupBy {
-            it.languages.singleOrNull()
-               ?: error("Package ${it.identifier} contains multiple languages, which is not currently supported")
+               when (it.languages.size) {
+                  0 -> SourceCodeLanguages.TAXI // Default to Taxi if there's nothing there
+                  1 -> it.languages.single()
+                  else -> error("Package ${it.identifier} contains multiple languages, which is not currently supported")
+               }
          }.toSortedMap { o1, o2 ->
-               when {
+            // Load Taxi first.
+            // This is a sloppy workaround to us not supporting dependenices when creating a Taxi Schema.
+            // Should be removed once dependency loading has advaned
+            when {
                   o1 == SourceCodeLanguages.TAXI && o2 == SourceCodeLanguages.TAXI -> 0
                   o1 == SourceCodeLanguages.TAXI && o2 != SourceCodeLanguages.TAXI -> -1
                   o1 != SourceCodeLanguages.TAXI && o2 == SourceCodeLanguages.TAXI -> 1
@@ -283,8 +289,8 @@ class TaxiSchema(
 
          val importedTaxiDocs = imports.map { it.taxi }
 
-         val empty = emptyList<CompilationError>() to TaxiDocument.empty()
-         val (compilationErrors, doc) = packagesByLanguage.values.fold(empty) { acc, sourcePackages ->
+         val empty = SourceConverterLoadResult.empty()
+         val (compilationErrors, doc, sourcePackagesWithConvertedCode) = packagesByLanguage.values.fold(empty) { acc, sourcePackages ->
             val (accErrors, accTaxiDoc) = acc
             val firstSourcePackage = sourcePackages.first()
             val converter = sourceConverters.firstOrNull { it.canLoad(firstSourcePackage) }
@@ -292,14 +298,18 @@ class TaxiSchema(
                logger.warn { "No converters provided capable of converting sources of languages(s): ${firstSourcePackage.languages.joinToString()}. This source package is being ignored." }
                acc
             } else {
-               val (errors, doc) = converter.loadAll(sourcePackages, listOf(accTaxiDoc) + importedTaxiDocs)
+               val (errors, doc, transpiledSources) = converter.loadAll(sourcePackages, listOf(accTaxiDoc) + importedTaxiDocs)
                // TODO : Need to get smarter about how errors are handled.
                // Currently, an error in an earlier compilation may be resolved by a later compilation.
                // However, it may not be, and at present, it may not be re-reported, as it's part of the
                // compiled imports.
                // Basically, this approach is wrong.  We don't report some errors, and we report other errors
                // incorrectly.
-               (errors + accErrors) to accTaxiDoc.merge(doc)
+               SourceConverterLoadResult(
+                  (errors + accErrors),
+                  accTaxiDoc.merge(doc),
+                  acc.transpiledSource + transpiledSources
+               )
             }
 
          }
@@ -330,17 +340,11 @@ class TaxiSchema(
          }
          return compilationErrors to TaxiSchema(
             doc,
-            packages,
+            sourcePackagesWithConvertedCode,
             functionRegistry,
          )
 
       }
-
-      private fun <A, B> List<Pair<A, B>>.groupByPairFirstValue(): List<Pair<A, List<B>>> {
-         return this.groupBy { it.first }
-            .map { (a, b) -> a to b.map { it.second } }
-      }
-
 
       /**
        * Returns a schema.  If compilation errors exist, defers to the onErrorBehaviour.

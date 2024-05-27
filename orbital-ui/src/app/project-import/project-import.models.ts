@@ -22,7 +22,7 @@ export class FileSystemPackageSpec {
   // classes are otherwise identical
   newProjectIdentifier: PackageIdentifier | null = null
 }
-export type LoadablePackageType = 'OpenApi' | 'Taxi' | 'Protobuf' | 'JsonSchema';
+export type LoadablePackageType = 'OpenApi' | 'Taxi' | 'Protobuf' | 'JsonSchema' | 'Avro';
 
 interface PackageLoaderSpec {
   packageType: LoadablePackageType;
@@ -48,4 +48,15 @@ export class OpenApiPackageLoaderSpec implements PackageLoaderSpec {
   }
   defaultNamespace: string;
   serviceBasePath: string;
+}
+
+export class AvroPackageLoaderSpec  implements PackageLoaderSpec  {
+  readonly packageType = 'Avro'
+  identifier: PackageIdentifier = {
+    name: null,
+    organisation: null,
+    version: null,
+    id: null,
+    unversionedId: null
+  }
 }

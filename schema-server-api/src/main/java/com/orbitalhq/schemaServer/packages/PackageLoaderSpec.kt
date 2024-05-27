@@ -5,7 +5,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 
 @JsonSubTypes(
    JsonSubTypes.Type(OpenApiPackageLoaderSpec::class, name = "OpenApi"),
-   JsonSubTypes.Type(TaxiPackageLoaderSpec::class, name = "Taxi")
+   JsonSubTypes.Type(TaxiPackageLoaderSpec::class, name = "Taxi"),
+   JsonSubTypes.Type(SoapPackageLoaderSpec::class, name = "Soap"),
+   JsonSubTypes.Type(AvroPackageLoaderSpec::class, name = "Avro"),
 )
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "packageType", include = JsonTypeInfo.As.EXISTING_PROPERTY)
 interface PackageLoaderSpec {
@@ -17,6 +19,7 @@ enum class PackageType {
    Taxi,
    Soap,
    Protobuf,
-   JsonSchema
+   JsonSchema,
+   Avro
 }
 

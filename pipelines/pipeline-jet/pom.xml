@@ -13,6 +13,11 @@
 
    <dependencies>
       <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>avro-message-format</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-mustache</artifactId>
       </dependency>

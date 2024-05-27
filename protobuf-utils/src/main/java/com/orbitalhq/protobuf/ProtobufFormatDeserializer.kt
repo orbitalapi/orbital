@@ -6,10 +6,12 @@ import com.orbitalhq.models.format.ModelFormatDeserializer
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
+import java.time.Duration
 
 class ProtobufFormatDeserializer : ModelFormatDeserializer {
    private val protoSchemaCache = CacheBuilder
       .newBuilder()
+      .expireAfterAccess(Duration.ofHours(1))
       .build<Type, com.squareup.wire.schema.Schema>()
 
    override fun canParse(value: Any, metadata: Metadata): Boolean = value is ByteArray

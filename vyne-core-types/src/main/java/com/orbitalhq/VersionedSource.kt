@@ -1,8 +1,6 @@
 package com.orbitalhq
 
-import ch.qos.logback.classic.spi.ThrowableProxy
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.github.zafarkhaja.semver.Version
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.base.Throwables
@@ -12,6 +10,7 @@ import com.orbitalhq.utils.orElse
 import lang.taxi.CompilationError
 import lang.taxi.errors
 import lang.taxi.formatter.TaxiCodeFormatter
+import lang.taxi.generators.GeneratedTaxiCode
 import lang.taxi.packages.TaxiPackageSources
 import lang.taxi.sources.SourceCode
 import lang.taxi.sources.SourceCodeLanguage
@@ -51,7 +50,11 @@ data class VersionedSource(
    val path: String? = null
 ) : Serializable {
    constructor(
-      name: String, version: String, content: String, language: SourceCodeLanguage = SourceCodeLanguages.TAXI, path: String? = null
+      name: String,
+      version: String,
+      content: String,
+      language: SourceCodeLanguage = SourceCodeLanguages.TAXI,
+      path: String? = null
    ) : this(
       splitPackageIdentifier(name).second,
       version,
@@ -62,7 +65,10 @@ data class VersionedSource(
    )
 
    constructor(
-      name: PackageSourceName, content: String, language: SourceCodeLanguage = SourceCodeLanguages.TAXI, path: String? = null
+      name: PackageSourceName,
+      content: String,
+      language: SourceCodeLanguage = SourceCodeLanguages.TAXI,
+      path: String? = null
    ) : this(
       name.sourceName,
       name.packageIdentifier.version, content,
@@ -73,7 +79,7 @@ data class VersionedSource(
 
    val packageQualifiedName = prependPackageIdentifier(packageIdentifier, name)
 
-   fun formattedContent():String {
+   fun formattedContent(): String {
       return TaxiCodeFormatter.format(content)
    }
 
@@ -82,7 +88,7 @@ data class VersionedSource(
     * or the name otherwise.
     */
    @get:JsonIgnore
-   val pathOrName:Path
+   val pathOrName: Path
       get() {
          return this.path?.let { Paths.get(it) }.orElse(Paths.get(name))
       }
@@ -182,7 +188,8 @@ fun SourceCode.asVersionedSource(version: String = VersionedSource.DEFAULT_VERSI
    val name = if (relativeTo != null) {
       try {
          relativeTo.relativize(URI.create(this.sourceName).toPath()).toString()
-      } catch (e:Exception) {
+
+               } catch (e: Exception) {
          val rootCause = Throwables.getRootCause(e)
          logger.warn { "Failed to make sourceName ${this.sourceName} relative to path ${relativeTo}, will use original - ${rootCause.message}" }
          this.sourceName
@@ -191,6 +198,20 @@ fun SourceCode.asVersionedSource(version: String = VersionedSource.DEFAULT_VERSI
    } else this.sourceName
 
    return VersionedSource(name, version, this.content, path = this.path?.toString())
+}
+
+fun GeneratedTaxiCode.asVersionedSource(
+   packageIdentifier: PackageIdentifier,
+   fileNameSeed: String
+): List<VersionedSource> {
+   return this.taxi.mapIndexed { index, content ->
+      VersionedSource(
+         "${fileNameSeed}_${index}.taxi",
+         packageIdentifier.version,
+         content,
+         packageIdentifier
+      )
+   }
 }
 
 fun VersionedSource.asTaxiSource(): SourceCode {

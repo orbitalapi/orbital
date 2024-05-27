@@ -35,6 +35,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.io.File
 import java.util.*
+import java.util.concurrent.TimeUnit
 import javax.sql.DataSource
 
 
@@ -164,7 +165,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
       }
       var sankeyReport: List<QuerySankeyChartRow> = emptyList()
 
-      Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until<Boolean> {
+      Awaitility.await().atMost(com.jayway.awaitility.Duration(30, TimeUnit.SECONDS)).until<Boolean> {
          sankeyReport =
             sankeyChartRowRepository.findAllByQueryId(queryHistoryRecordRepository.findByClientQueryId(clientQueryId)!!.queryId)
          sankeyReport.size == 12

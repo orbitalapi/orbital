@@ -1,6 +1,6 @@
-import { NgModule } from '@angular/core';
-import { FileConfigComponent } from 'src/app/project-import/project-source-config/file-config.component';
-import { GitConfigComponent } from 'src/app/project-import/project-source-config/git-config.component';
+import {NgModule} from '@angular/core';
+import {FileConfigComponent} from 'src/app/project-import/project-source-config/file-config.component';
+import {GitConfigComponent} from 'src/app/project-import/project-source-config/git-config.component';
 import {
   TuiCheckboxModule,
   TuiComboBoxModule,
@@ -15,11 +15,13 @@ import {
   TuiLoaderModule,
   TuiNotificationModule
 } from '@taiga-ui/core';
-import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { OpenApiPackageConfigComponent } from './open-api-package-config.component';
-import { ValidIdentifierDirective } from './valid-identifier.directive';
-import { SemverValidatorDirective } from './semver-validator.directive';
+import {FormsModule} from '@angular/forms';
+import {CommonModule} from '@angular/common';
+import {OpenApiPackageConfigComponent} from './open-api-package-config.component';
+import {ValidIdentifierDirective} from './valid-identifier.directive';
+import {SemverValidatorDirective} from './semver-validator.directive';
+import {AvroPackageConfigComponent} from "./avro-package-config.component";
+import {PackageIdentifierInputComponent} from "../../package-identifier-input/package-identifier-input.component";
 
 
 @NgModule({
@@ -35,10 +37,14 @@ import { SemverValidatorDirective } from './semver-validator.directive';
     TuiCheckboxModule,
     TuiGroupModule,
     TuiInputFilesModule,
-    TuiLoaderModule
+    TuiLoaderModule,
+    AvroPackageConfigComponent,
+    PackageIdentifierInputComponent,
+    ValidIdentifierDirective,
+    SemverValidatorDirective
   ],
   exports: [FileConfigComponent, GitConfigComponent],
-  declarations: [FileConfigComponent, GitConfigComponent, OpenApiPackageConfigComponent, ValidIdentifierDirective, SemverValidatorDirective],
+  declarations: [FileConfigComponent, GitConfigComponent, OpenApiPackageConfigComponent,],
   providers: [],
 })
 export class ProjectSourceConfigModule {
