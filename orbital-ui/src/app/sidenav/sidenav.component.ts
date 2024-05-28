@@ -85,7 +85,7 @@ export class SidenavComponent implements OnInit {
     },
     {
       title: 'Endpoints',
-      icon: 'assets/img/tabler/traffic-lights.svg',
+      icon: 'assets/img/tabler/broadcast.svg',
       route: 'endpoints',
       testId: 'endpoints',
       requiredAuthority: VynePrivileges.BrowseSchema

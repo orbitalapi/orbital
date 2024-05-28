@@ -59,6 +59,8 @@ as-split.query-panel-split {
   border-radius: 0;
 
   .error-message {
+    font-family: $mono;
+    font-size: 0.9rem;
     white-space: pre;
     max-height: 100px;
     overflow: auto;
