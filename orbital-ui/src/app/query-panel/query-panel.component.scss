@@ -7,49 +7,90 @@
   flex-direction: column;
 }
 
-.router-outlet {
-  flex-grow: 1;
-}
-
-.drawer-content {
-  margin: 2rem 3rem;
-  width: 40vw;
-}
-
 .tabs-container {
   display: flex;
   gap: 1rem;
   align-items: center;
-  margin-left: 0.8rem;
+  margin-left: 0.76rem;
+  background: $gray-100;
 
-  tui-tabs-with-more {
-    flex: auto;
-
-    .tab-button {
-      padding: 0 0.25rem 0 0.5rem;
-      --tui-tab-margin: 0.5rem !important;
+  .add-tab-button {
+    &:hover {
+      background: $whiteish;
     }
   }
 
-  .tab-button {
-    &:hover {
-      .close-tab-button {
-        opacity: 0.5;
+  tui-tabs-with-more {
+    flex: auto;
+    --tui-height-l: 3rem;
+
+    .tab-button {
+      padding: 0 0.25rem 0 0.8rem;
+      --tui-tab-margin: 0 !important;
+      border-left: 1px solid $gray-300;
+
+      &:last-child {
+        border-right: 1px solid $gray-300;
       }
     }
   }
 
-  .close-tab-button {
-    margin-left: 0.25rem;
-    opacity: 0;
-    transition: opacity 150ms ease-in-out;
+  // When tab is not saved, display save dot unless hovering over save dot then show close cross
+  // When tab is saved, display close cross when hovering over tab or tab is active
+  .tab-button {
+    &:hover {
+      .close-button-and-unsaved-dot:not(.is-unsaved):after {
+        opacity: 0.5;
+      }
 
-    &.show-close {
-      opacity: 0.8 !important;
+      .endpoint-published-icon {
+        opacity: 0.7;
+      }
     }
 
-    &:hover {
-      opacity: 1 !important;
+    .close-button-and-unsaved-dot {
+      &:after {
+        content: url('/assets/img/tabler/x.svg');
+        zoom: 0.75;
+        display: inline-flex;
+        margin: 0.5rem 0.25rem 0 0.35rem;
+        line-height: 0;
+        opacity: 0;
+        transition: opacity 150ms ease-in-out;
+      }
+
+      &.is-unsaved {
+        &:after {
+          content: url('/assets/img/tabler/point.svg');
+          opacity: 0.5;
+        }
+      }
+
+      &.is-active {
+        &:after {
+          opacity: 0.75 !important;
+        }
+      }
+
+      &:hover {
+        &:after {
+          content: url('/assets/img/tabler/x.svg');
+          opacity: 1 !important;
+          background: $white;
+          border-radius: 4px;
+        }
+      }
+    }
+
+    .endpoint-published-icon {
+      padding-left: 0.1rem;
+      opacity: 0.5;
+      transition: opacity 150ms ease-in-out;
+
+      &.is-active {
+        opacity: 1;
+      }
     }
   }
+
 }
