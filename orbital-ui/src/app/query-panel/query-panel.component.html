@@ -4,8 +4,10 @@
           size="s"
           appearance="icon"
           icon="tuiIconPlus"
+          class="add-tab-button"
+          tuiHint="New tab"
+          tuiHintAppearance="onDark"
           (click)="queryPanelStore.addTab()"
-          [tuiHint]="'New tab'"
   ></button>
   <tui-tabs-with-more [activeItemIndex]="queryPanelStore.activeTabIndex()"
                       (activeItemIndexChange)="queryPanelStore.onTabIndexChanged($event)"
@@ -14,13 +16,22 @@
     <ng-container *ngFor="let query of queryPanelStore.queries(); index as i; trackBy: queryPanelStore.getTabId">
       <button *tuiItem tuiTab class="tab-button">
         {{query.tabName}}
-        <tui-svg
-          *ngIf="queryPanelStore.queries().length !== 1"
-          src="tuiIconClose"
-          class="close-tab-button"
-          [class.show-close]="queryPanelStore.activeTabIndex() === i"
+        <img
+          *ngIf="query.savedQueryWithSource?.savedQuery.httpEndpoint"
+          src="assets/img/tabler/broadcast.svg"
+          class="endpoint-published-icon"
+          [class.is-active]="queryPanelStore.activeTabIndex() === i"
+          tuiHint="Endpoint exists for this query"
+          tuiHintAppearance="onDark"
+          tuiHintDirection="top"
+        >
+        <div
+          class="close-button-and-unsaved-dot"
+          [class.is-active]="queryPanelStore.activeTabIndex() === i"
+          [class.is-unsaved]="!query.savedQueryWithSource"
           (click)="queryPanelStore.closeTab($event, i)"
-        ></tui-svg>
+        >
+        </div>
       </button>
     </ng-container>
   </tui-tabs-with-more>

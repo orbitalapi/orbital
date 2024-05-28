@@ -70,6 +70,7 @@ import { map, scan, tap } from 'rxjs/operators';
             tuiButton type="button" appearance="outline" size="s"
             [icon]="isQueryPaused ? tuiIconPlay : tuiIconPause"
             [tuiHint]="isQueryPaused ? 'Resume the stream on the UI' : 'Pause the stream on the UI'"
+            tuiHintAppearance="onDark"
             (click)="pauseStreamToggled.emit(!isQueryPaused)"
             class="button-small menu-bar-button pause-stream-button"
             [class.is-query-paused]="isQueryPaused"

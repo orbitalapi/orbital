@@ -4,46 +4,11 @@
   display: flex;
   align-items: center;
   justify-content: right;
-}
-
-::ng-deep tui-select {
-  tui-wrapper[data-appearance=textfield] {
-    box-shadow:  0 0 0 rgb(19 20 22 / 10%);
-  }
-}
-
-tui-select {
-  width: 8rem;
-  margin-right: 1rem;
-}
-
-.footer-bar {
-  // Provide a consistent height so that we don't jump around
-  // as buttons are replaced etc
-  //min-height: 36px;
-  display: flex;
-  align-items: center;
-}
-
-.loader {
-  width: 1rem;
-  height: 1rem;
-  border: 2px solid $success-dark;
-  border-bottom-color: transparent;
-  border-radius: 50%;
-  display: inline-block;
-  box-sizing: border-box;
-  animation: rotation 1s linear infinite;
-  margin-right: 0.5rem;
-}
-
-@keyframes rotation {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  gap: 0.2rem;
+  background: $gray-200;
+  padding: 0.4rem 1rem;
+  border-bottom: 1px solid $gray-300;
+  border-top: 1px solid $gray-300;
 }
 
 button {
@@ -56,10 +21,23 @@ button {
   display: flex;
   align-items: center;
 
-  &:not(.no-separator):after {
-    content: "|";
-    color: $gray-200;
-    margin: 0 0.5rem;
+  &.has-separator:after {
+    content: "";
+    height: 1.5rem;
+    margin: 0 0 0 0.5rem;
+    border: 1px solid $gray-300;
+  }
+
+  .loader {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid $success-dark;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+    margin-right: 0.5rem;
   }
 
   img {
@@ -73,8 +51,17 @@ button {
   }
 
   .record-count {
-    color: $gray-400;
+    color: $gray-500;
     margin-left: 0.25rem;
+  }
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
   }
 }
 
@@ -85,4 +72,46 @@ button {
   100% {
     transform: rotate(360deg);
   }
+}
+
+.dropdown-link,
+.button-link {
+  display: flex;
+  cursor: pointer;
+  padding: 0.25rem 0.25rem 0.25rem 0.5rem;
+
+  &.is-open,
+  &:hover {
+    border-radius: 0.25rem;
+  }
+
+  &:hover {
+    background: $gray-100;
+  }
+
+  &.is-open,
+  &:active {
+    background: $white;
+  }
+
+  &.is-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+.button-link {
+  padding: 4px;
+}
+
+.dropdown-arrow {
+  transition: transform 150ms ease-in-out;
+
+  &_open {
+    transform: rotate(180deg);
+  }
+}
+
+.query-language-dropdown {
+  min-width: 6rem;
 }
