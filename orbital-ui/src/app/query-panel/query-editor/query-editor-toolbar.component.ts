@@ -18,6 +18,17 @@ import {SavedQueryWithSource} from '../../project-import/schema-importer.service
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-query-editor-toolbar',
   template: `
+    <div *ngIf="savedQuery()?.savedQuery.httpEndpoint" class="published-endpoint">
+      <a [routerLink]="'/endpoints/'+savedQuery()?.savedQuery.name.shortDisplayName" class="endpoint-link">
+        <img src="assets/img/tabler/broadcast.svg" class="filter-link-color">
+        {{savedQuery()?.savedQuery.name.shortDisplayName}}
+      </a> :
+      <span class="mono-badge">{{savedQuery()?.savedQuery.httpEndpoint.method}}</span>
+      <a [href]="savedQuery()?.savedQuery.httpEndpoint.url" target="_blank" class="endpoint-path">
+        {{savedQuery()?.savedQuery.httpEndpoint.url}}
+        <img src="assets/img/tabler/external-link.svg" class="filter-link-color">
+      </a>
+    </div>
     <div *ngIf="currentState() === 'Running'">
       <span class='running-timer has-separator'>
         <span class='loader'></span>
@@ -119,8 +130,9 @@ import {SavedQueryWithSource} from '../../project-import/schema-importer.service
       [content]="publishMenuDropdown"
       [(open)]="publishMenuOpen"
       [canOpen]="publishAsHttpEndpointEnabled()"
-      [tuiHint]="!publishAsHttpEndpointEnabled() ? 'You need to save a query before being able to publishing it' : null"
+      [tuiHint]="!publishAsHttpEndpointEnabled() ? 'You need to save a query before being able to publish it' : null"
       tuiHintAppearance="onDark"
+      tuiHintDirection="top"
     >
       <a
         tuiLink
@@ -158,7 +170,7 @@ import {SavedQueryWithSource} from '../../project-import/schema-importer.service
     <a
       tuiLink
       class="button-link"
-      tuiHint="Save query"
+      tuiHint="Save query to project"
       tuiHintAppearance="onDark"
       tuiHintDirection="top"
       (click)="saveClicked.emit()"

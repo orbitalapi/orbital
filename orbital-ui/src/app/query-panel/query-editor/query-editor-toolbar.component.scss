@@ -2,9 +2,8 @@
 
 :host {
   display: flex;
-  align-items: center;
+  gap: 0.15rem;
   justify-content: right;
-  gap: 0.2rem;
   background: $gray-200;
   padding: 0.4rem 1rem;
   border-bottom: 1px solid $gray-300;
@@ -74,11 +73,33 @@ button {
   }
 }
 
+.published-endpoint {
+  flex: auto;
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 0.25rem;
+
+  .endpoint-link,
+  .endpoint-path {
+    display: inline-flex;
+    color: $sky-500;
+
+    img {
+      margin: 0 0.2rem;
+    }
+  }
+
+  .mono-badge {
+    margin-top: 0;
+  }
+}
+
 .dropdown-link,
 .button-link {
   display: flex;
   cursor: pointer;
-  padding: 0.25rem 0.25rem 0.25rem 0.5rem;
+  padding: 0.25rem 0.2rem 0.25rem 0.4rem;
 
   &.is-open,
   &:hover {
