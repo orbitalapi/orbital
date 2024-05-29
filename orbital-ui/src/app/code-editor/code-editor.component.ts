@@ -32,7 +32,6 @@ export class CodeEditorComponent implements OnDestroy {
   private languageClient: MonacoLanguageClient;
   private monacoEditor: IStandaloneCodeEditor;
   private monacoModel: ITextFileEditorModel;
-  // private webSocket: WebSocket;
 
   private _codeEditorContainer: ElementRef;
   @ViewChild('codeEditorContainer')
@@ -60,9 +59,6 @@ export class CodeEditorComponent implements OnDestroy {
       this.updateActionsOnEditor();
     }
   }
-
-  @Input()
-  languageServerEnabled: Boolean = true;
 
   private _compilationMessages: CompilationMessage[];
   /**
@@ -152,11 +148,6 @@ export class CodeEditorComponent implements OnDestroy {
       takeUntilDestroyed()
     ).subscribe(async(e) => {
       this.updateContent(this.monacoModel.textEditorModel.getValue());
-      // if (this.webSocket.readyState != this.webSocket.OPEN && this.languageServerEnabled) {
-        console.log("Refresh websocket connection for language server");
-        // await this.createWebsocketAndTransport();
-        await this.sendOpenNotifcation();
-      // }
     })
   }
 
@@ -174,28 +165,12 @@ export class CodeEditorComponent implements OnDestroy {
     }
   }
 
-  private async createWebsocketAndTransport() {
-    // const [websocket, wsTransport] = await this.languageServerService.createLanguageServerWebsocketTransport()
-    // this.webSocket = websocket;
-    this.languageClient = await this.languageServerService.getLanguageClient();
-
-    /*// For testing websocket reconnection
-    // @ts-ignore
-    window.killWebsocket = () => {
-      this.webSocket.close()
-    }*/
-  }
-
-
   private async createMonacoEditor() {
     if (this.monacoEditor) {
       this.monacoEditor.dispose();
     }
 
-    // create the web socket
-    if (this.languageServerEnabled) {
-      await this.createWebsocketAndTransport()
-    }
+    this.languageClient = await this.languageServerService.getLanguageClient();
 
     const {modelRef, model} = await this.createNewMonacoModel();
     this.monacoModel = model;
@@ -210,20 +185,20 @@ export class CodeEditorComponent implements OnDestroy {
     await this.sendOpenNotifcation();
 
     this.updateActionsOnEditor()
-    // this.createWebsocket();
   }
 
   private async sendOpenNotifcation() {
-    if (this.languageServerEnabled) {
-      await this.languageClient.sendNotification(DidOpenTextDocumentNotification.type, {
-        textDocument: {
-          uri: this.monacoModel.resource.toString(),
-          languageId: 'taxi',
-          version: 0,
-          text: this.content,
-        }
-      })
+    if (!this.languageClient) {
+      this.languageClient = await this.languageServerService.getLanguageClient();
     }
+    await this.languageClient.sendNotification(DidOpenTextDocumentNotification.type, {
+      textDocument: {
+        uri: this.monacoModel.resource.toString(),
+        languageId: 'taxi',
+        version: 0,
+        text: this.content,
+      }
+    })
   }
 
   private async createNewMonacoModel() {
