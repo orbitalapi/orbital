@@ -50,13 +50,16 @@
 
     .close-button-and-unsaved-dot {
       &:after {
-        content: url('/assets/img/tabler/x.svg');
         zoom: 0.75;
         display: inline-flex;
         margin: 0.5rem 0.25rem 0 0.35rem;
         line-height: 0;
         opacity: 0;
         transition: opacity 150ms ease-in-out;
+      }
+
+      &:not(.no-close):after {
+        content: url('/assets/img/tabler/x.svg');
       }
 
       &.is-unsaved {
@@ -72,7 +75,7 @@
         }
       }
 
-      &:hover {
+      &:not(.no-close):hover {
         &:after {
           content: url('/assets/img/tabler/x.svg');
           opacity: 1 !important;

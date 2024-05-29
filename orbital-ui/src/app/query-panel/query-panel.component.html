@@ -29,7 +29,8 @@
           class="close-button-and-unsaved-dot"
           [class.is-active]="queryPanelStore.activeTabIndex() === i"
           [class.is-unsaved]="!query.savedQueryWithSource"
-          (click)="queryPanelStore.closeTab($event, i)"
+          [class.no-close]="queryPanelStore.queries().length === 1"
+          (click)="queryPanelStore.queries().length !== 1 && queryPanelStore.closeTab($event, i)"
         >
         </div>
       </button>
