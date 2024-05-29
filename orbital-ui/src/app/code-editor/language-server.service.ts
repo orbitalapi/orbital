@@ -1,14 +1,8 @@
 import {Inject, Injectable} from "@angular/core";
 import {LANGUAGE_SERVER_WS_ADDRESS_TOKEN} from "./language-server.tokens";
-import {initServices, MonacoLanguageClient} from "monaco-languageclient";
+import {MonacoLanguageClient} from "monaco-languageclient";
 import {defer, Observable} from "rxjs";
-import {map, shareReplay} from "rxjs/operators";
-import {Uri, languages} from "monaco-editor";
-import getConfigurationServiceOverride from '@codingame/monaco-vscode-configuration-service-override';
-import getKeybindingsServiceOverride from '@codingame/monaco-vscode-keybindings-service-override';
-import getThemeServiceOverride from '@codingame/monaco-vscode-theme-service-override';
-import getTextmateServiceOverride from '@codingame/monaco-vscode-textmate-service-override';
-import {TAXI_LANGUAGE_ID, taxiLanguageConfiguration, taxiLanguageTokenProvider} from "../code-viewer/taxi-lang.monaco";
+import {shareReplay} from "rxjs/operators";
 import {createLanguageClient, createWebsocketConnection, performInit, WsTransport} from "./language-server-commons";
 
 @Injectable({
@@ -21,9 +15,7 @@ export class MonacoLanguageServerService {
   private languageClient: MonacoLanguageClient;
   private webSocket: WebSocket;
 
-  //
   constructor(@Inject(LANGUAGE_SERVER_WS_ADDRESS_TOKEN) private languageServerWsAddress: string,) {
-
     this.languageServicesInit$ = defer(() => {
       // Copied from https://github.com/TypeFox/monaco-languageclient-ng-example/blob/main/src/app/app.component.ts
       console.info('Initializing Monaco language client')
@@ -31,6 +23,12 @@ export class MonacoLanguageServerService {
     }).pipe(
       shareReplay(1)
     );
+
+    /*// For testing websocket reconnection
+    // @ts-ignore
+    window.killWebsocket = () => {
+      this.webSocket.close()
+    }*/
   }
 
   private connection: Promise<[WebSocket, WsTransport]> | null = null;
