@@ -5,7 +5,6 @@ import com.orbitalhq.SourcePackage
 import com.orbitalhq.annotations.http.HttpOperations
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.SchemaMemberKind
-import com.orbitalhq.schemas.fqn
 import lang.taxi.CompilationException
 import lang.taxi.TaxiDocument
 import lang.taxi.TaxiParser
@@ -13,23 +12,27 @@ import lang.taxi.annotations.HttpOperation
 import lang.taxi.annotations.WebsocketOperation
 import lang.taxi.source
 
-data class AddWebsocketEndpointToQuery(
+data class AddOrRemoveWebsocketEndpointAnnotation(
    override val queryQualifiedName: QualifiedName,
    val path: String,
-) : AddAnnotationToQuery(EditKind.AddWebsocketEndpointToQuery) {
+   override val operation: Operation
+) : AddOrRemoveAnnotationFromQuery(EditKind.AddOrRemoveWebsocketEndpointAnnotation) {
    override val annotation: String = """@WebsocketOperation(path = "$path")"""
+   override val annotationName: String = "WebsocketOperation"
    override val typeNamesToImport: List<String> = listOf(WebsocketOperation.NAME)
 }
-data class AddHttpEndpointToQuery(
+data class AddOrRemoveHttpEndpointAnnotation(
    override val queryQualifiedName: QualifiedName,
    val path: String,
-   val method: HttpOperations.HttpMethod
-) : AddAnnotationToQuery(EditKind.AddHttpEndpointToQuery) {
+   val method: HttpOperations.HttpMethod,
+   override val operation: Operation
+) : AddOrRemoveAnnotationFromQuery(EditKind.AddOrRemoveHttpEndpointAnnotation) {
    override val annotation: String = """@HttpOperation(method = "$method", url = "$path")"""
+   override val annotationName: String = "HttpOperation"
    override val typeNamesToImport: List<String> = listOf(HttpOperation.NAME)
 }
 
-abstract class AddAnnotationToQuery(override val editKind: EditKind) : SchemaEditOperation() {
+abstract class AddOrRemoveAnnotationFromQuery(override val editKind: EditKind) : SchemaEditOperation() {
    override fun applyTo(
       sourcePackage: SourcePackage,
       taxiDocument: TaxiDocument
@@ -45,28 +48,46 @@ abstract class AddAnnotationToQuery(override val editKind: EditKind) : SchemaEdi
          else -> matchingQueries.single()
       }
 
+      val edit = when (operation) {
+         Operation.Add -> addAnnotation(namedQueryToken)
+         Operation.Remove -> removeAnnotation(namedQueryToken)
+      }
+
       return applyEditAndCompile(
-         listOf(
-            addAnnotation(namedQueryToken),
-            addImports(typeNamesToImport, namedQueryToken)
-         ), sourcePackage, taxiDocument
+         edit,
+         sourcePackage,
+         taxiDocument
       )
-//      return lines.joinToString("\n")
    }
 
-
-
-   private fun addAnnotation(token: TaxiParser.NamedQueryContext): SourceEdit {
-      return SourceEdit(
+   private fun removeAnnotation(token: TaxiParser.NamedQueryContext): List<SourceEdit> {
+      val matchingAnnotation = token.annotation()
+         .filter { it.qualifiedName().text == annotationName }
+      require (matchingAnnotation.size == 1) { "Expected a single annotation with name '$annotationName', but found ${matchingAnnotation.size}"}
+      val annotation = matchingAnnotation.single()
+      return listOf(SourceEdit(
          sourceName = token.source().sourceName,
-         range = token.asCharacterInsertionPoint(EditPosition.BeforePosition),
-         newText = annotation + "\n"
+         range = annotation.asCharacterPositionRange(),
+         newText = ""
+      ))
+   }
+
+   private fun addAnnotation(token: TaxiParser.NamedQueryContext): List<SourceEdit> {
+      return listOf(
+         SourceEdit(
+            sourceName = token.source().sourceName,
+            range = token.asCharacterInsertionPoint(EditPosition.BeforePosition),
+            newText = annotation + "\n"
+         ),
+         addImports(typeNamesToImport, token)
       )
    }
 
    abstract val annotation: String
+   abstract val annotationName: String
    abstract val queryQualifiedName: QualifiedName
    abstract val typeNamesToImport: List<String>
+   abstract val operation: Operation
 
 
    override val loadExistingState: Boolean = false
@@ -75,4 +96,7 @@ abstract class AddAnnotationToQuery(override val editKind: EditKind) : SchemaEdi
       return listOf(SchemaMemberKind.QUERY to queryQualifiedName)
    }
 
+   enum class Operation {
+      Add, Remove
+   }
 }

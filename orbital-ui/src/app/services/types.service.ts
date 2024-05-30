@@ -490,6 +490,7 @@ export interface SavedQuery {
   sources: VersionedSource[];
   queryKind: QueryKind;
   httpEndpoint: HttpOperation;
+  websocketOperation: WebsocketOperation;
 }
 
 export type QueryKind = 'Stream' | 'Query';
@@ -497,4 +498,8 @@ export type QueryKind = 'Stream' | 'Query';
 interface HttpOperation {
   method: HttpMethod;
   url: string;
+}
+
+interface WebsocketOperation {
+  path: string;
 }

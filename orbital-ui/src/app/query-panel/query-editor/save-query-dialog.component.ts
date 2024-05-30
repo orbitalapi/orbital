@@ -11,7 +11,6 @@ import {
   SchemaImporterService
 } from '../../project-import/schema-importer.service';
 import {VersionedSource} from '../../services/schema';
-import { SavedQuery } from '../../services/types.service';
 
 export interface SaveQueryRequestProps {
   query: string,
