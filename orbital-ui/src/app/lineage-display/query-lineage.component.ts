@@ -1,6 +1,8 @@
-import {Component, Input} from '@angular/core';
+import {AfterViewInit, Component, DestroyRef, ElementRef, Input, ViewChild} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {BaseGraphComponent} from '../inheritence-graph/base-graph-component';
 import {QuerySankeyChartRow, SankeyNodeType, SankeyOperationNodeDetails} from '../services/query.service';
+import {ResizeObservableService} from '../services/resize-observable.service';
 import {SchemaGraph, SchemaGraphLink, SchemaGraphNode, SchemaGraphNodeType, SchemaNodeSet} from '../services/schema';
 import {ClusterNode} from '@swimlane/ngx-graph';
 import {Subject} from 'rxjs';
@@ -10,9 +12,10 @@ import {capitalizeFirstLetter} from "../utils/strings";
 @Component({
   selector: 'app-query-lineage',
   templateUrl: './query-lineage.component.html',
-  styleUrls: ['./query-lineage.component.scss']
+  styleUrls: ['./query-lineage.component.scss'],
+  providers: [ResizeObservableService]
 })
-export class QueryLineageComponent extends BaseGraphComponent {
+export class QueryLineageComponent extends BaseGraphComponent implements AfterViewInit {
 
   fullscreen = false;
 
@@ -23,8 +26,26 @@ export class QueryLineageComponent extends BaseGraphComponent {
 
   clusters: ClusterNode[] = [];
 
-  constructor() {
+  zoomToFit$: Subject<{autoCenter?: boolean, force?: boolean;}> = new Subject();
+
+  @ViewChild('chartOuterContianer')
+  chartContainer: ElementRef;
+
+  constructor(
+    private resizeObservableService: ResizeObservableService,
+    private destroyRef: DestroyRef
+  ) {
     super();
+  }
+
+  ngAfterViewInit(): void {
+    this.resizeObservableService.resizeObservable(this.chartContainer.nativeElement)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(resizeEntry => {
+        this.zoomToFit$.next({autoCenter: true, force: true});
+      })
   }
 
   filteredNode: SchemaGraphNode | null;
@@ -41,6 +62,9 @@ export class QueryLineageComponent extends BaseGraphComponent {
     this._rows = value;
     if (this.rows) {
       this.refreshChartData();
+      setTimeout(() => {
+        this.zoomToFit$.next({autoCenter: true, force: true});
+      });
     }
   }
 

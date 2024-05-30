@@ -1,4 +1,5 @@
-<div #chartOuterContianer class="chart-outer-container" *ngIf="schemaNodeSet?.links?.length > 0"
+<div #chartOuterContianer
+     class="chart-outer-container"
      [class.mat-elevation-z8]="fullscreen"
      [class.fullscreen]="fullscreen">
   <div class="toolbar">
@@ -15,14 +16,15 @@
       <img src="assets/img/full-screen-off.svg" *ngIf="fullscreen">
     </button>
   </div>
-  <ngx-graph class="chart-container"
+  <ngx-graph *ngIf="schemaNodeSet?.links?.length > 0"
+             class="chart-container"
              [update$]="redrawChart$"
              [links]="schemaNodeSet.links"
              [nodes]="schemaNodeSet.nodes"
              (select)="onNodeClicked($event)"
              [enableZoom]="true"
              [panningEnabled]="true"
-             [autoZoom]="true"
+             [zoomToFit$]="zoomToFit$"
              [autoCenter]="true"
              [draggingEnabled]="true"
              [nodeMaxWidth]="40"
@@ -186,7 +188,7 @@
     </ng-template>
 
   </ngx-graph>
-</div>
-<div *ngIf="!schemaNodeSet || schemaNodeSet?.links?.length === 0">
-  <p class="subtle">No data to display</p>
+  <div *ngIf="!schemaNodeSet || schemaNodeSet?.links?.length === 0">
+    <p class="subtle">No data to display</p>
+  </div>
 </div>
