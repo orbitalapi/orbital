@@ -8,9 +8,13 @@ import {
   signal,
   WritableSignal
 } from '@angular/core';
-import { QueryLanguage } from '../query-panel/query-editor/query-editor-toolbar.component';
-import { QueryEditorStoreService } from './query-editor-store.service';
-import { SavedQueryWithSource } from '../project-import/schema-importer.service';
+import {QueryLanguage} from '../query-panel/query-editor/query-editor-toolbar.component';
+import {QueryEditorStoreService} from './query-editor-store.service';
+import {
+  dangerouslyConvertToSavedQueryWithSource,
+  SavedQueryWithSource
+} from '../project-import/schema-importer.service';
+import {SavedQuery} from "./types.service";
 
 export type LocalStorageQuery = {
   id: number,
@@ -123,8 +127,10 @@ export class QueryPanelStoreService {
     this.queries.set(clonedQueries);
   }
 
-  onSavedQuerySelected($event: SavedQueryWithSource) {
-    this.addTab($event.savedQuery.name.name, $event.sourceFile.content, null, $event)
+  onSavedQuerySelected($event: SavedQuery) {
+    const savedQueryWithSource:SavedQueryWithSource = dangerouslyConvertToSavedQueryWithSource($event)
+
+    this.addTab($event.name.name, $event.sources[0].content, null, savedQueryWithSource)
   }
 
   private updateLocalStorage() {
