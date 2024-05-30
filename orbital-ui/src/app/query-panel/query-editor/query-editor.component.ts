@@ -74,7 +74,7 @@ export class QueryEditorComponent {
   onQuerySaved = new EventEmitter<SavedQueryWithSource>();
 
   @Output()
-  onSavedQuerySelected = new EventEmitter<SavedQueryWithSource>();
+  onSavedQuerySelected = new EventEmitter<SavedQuery>();
 
   @Output()
   onCopyQuery = new EventEmitter<CopyQueryFormat>();

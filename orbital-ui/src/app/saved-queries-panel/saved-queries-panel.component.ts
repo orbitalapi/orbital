@@ -16,7 +16,7 @@ import {Observable} from "rxjs/internal/Observable";
 export class SavedQueriesPanelComponent {
   queries$: Observable<SavedQuery[]>;
 
-  constructor(private typeService: TypesService) {
+  constructor(typeService: TypesService) {
     this.queries$ = typeService.getTypes()
       .pipe(map(schema => schema.queries))
   }

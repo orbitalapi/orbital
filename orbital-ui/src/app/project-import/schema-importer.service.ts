@@ -225,3 +225,32 @@ export interface SavedQueryWithSource {
   savedQuery: SavedQuery
   sourceFile: VersionedSource
 }
+
+
+/**
+ * Converts a SavedQuery to a SavedQueryWithSource, or something resembling it.
+ * Generally, this shouldn't be constructed like this, as there are subltle situations where
+ * the source in a SavedQuery is different from the source that's in the VersionedSource that contains it.
+ *
+ * However, sometimes we don't have access to the versioned source - like when we're recovering state
+ * from localStorage.
+ *
+ * A better option in these situations is to load the state from the server.
+ * I wish that were the world we lived in. But it isn't. you could make it that kind of world, by
+ * building that type of capability. Be the change you want to see.
+ *
+ * @param savedQuery
+ */
+export function dangerouslyConvertToSavedQueryWithSource(savedQuery: SavedQuery):SavedQueryWithSource {
+
+  const savedQuerySource = savedQuery.sources[0]
+  // name is stored in form of [demo.vyne/films-demo/0.1.0]/ass1.taxi:0.0.0
+  const cleanedFilename = savedQuerySource.name.split(']/')[1]
+  return {
+    savedQuery: savedQuery,
+    sourceFile:  {
+      ...savedQuerySource,
+      name: cleanedFilename
+    }
+  }
+}
