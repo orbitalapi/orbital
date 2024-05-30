@@ -31,6 +31,7 @@ import { isNullOrUndefined } from '../../utils/utils';
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [ResizeObservableService]
 })
 export class SchemaDiagramComponent implements OnInit {
 

@@ -101,7 +101,7 @@ stages:
 
 .build-ui:
    stage: build
-   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:18.13
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:18.18
    before_script:
       - npm config set cache .npm/cache --global
       - npm --global cache verify
@@ -236,7 +236,7 @@ regression-test:
       - docker:dind
    script:
       - |
-         if [[ "${registry}" == "quay.io/" ]]; then 
+         if [[ "${registry}" == "quay.io/" ]]; then
            echo $QUAY_IO_PASSWORD | docker login quay.io -u $QUAY_IO_USER --password-stdin
          else
            docker login -u vynecd -p $DOCKER_HUB_PASSWORD

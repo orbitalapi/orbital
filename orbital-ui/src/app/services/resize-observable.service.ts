@@ -1,12 +1,12 @@
-import { Injectable } from '@angular/core';
+import {Injectable, OnDestroy} from '@angular/core';
 import { filter, map, NextObserver, Observable, Subscriber } from "rxjs";
 import { debounceTime } from 'rxjs/operators';
-import { VyneServicesModule } from './vyne-services.module';
 
-@Injectable({
-  providedIn: VyneServicesModule,
-})
-export class ResizeObservableService {
+// NOTE: this should be Provided by the view that needs it,
+//       not at a root level and when the view is destroyed, the
+//       service will run it's ngOnDestroy method for cleanup.
+@Injectable()
+export class ResizeObservableService implements OnDestroy {
   private resizeObserver: ResizeObserver;
   private notifiers: NextObserver<ResizeObserverEntry[]>[] = [];
 
@@ -14,6 +14,10 @@ export class ResizeObservableService {
     this.resizeObserver = new ResizeObserver((entries: ResizeObserverEntry[]) => {
       this.notifiers.forEach(obs => obs.next(entries));
     });
+  }
+
+  ngOnDestroy(): void {
+    this.resizeObserver.disconnect()
   }
 
   resizeObservable(elem: Element): Observable<ResizeObserverEntry> {
