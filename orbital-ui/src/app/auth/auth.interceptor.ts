@@ -1,6 +1,13 @@
 import {Injectable, Optional, Provider} from '@angular/core';
 import {OAuthModuleConfig, OAuthResourceServerErrorHandler, OAuthStorage} from 'angular-oauth2-oidc';
-import {HTTP_INTERCEPTORS, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest} from '@angular/common/http';
+import {
+  HTTP_INTERCEPTORS,
+  HttpErrorResponse,
+  HttpEvent,
+  HttpHandler,
+  HttpInterceptor,
+  HttpRequest, HttpStatusCode
+} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {catchError} from "rxjs/operators";
 import {AuthService} from "./auth.service";
@@ -46,7 +53,14 @@ export class DefaultOAuthInterceptor implements HttpInterceptor {
 
     return next.handle(req)
       .pipe(
-        catchError(err => this.errorHandler.handleError(err)
+        catchError(err => {
+             console.log(this.authService.tokenEndPoint())
+             if (err instanceof HttpErrorResponse && err.status === HttpStatusCode.Unauthorized) {
+               console.log("doing silent refresh");
+               return this.authService.doSilentRefresh();
+             }
+             return this.errorHandler.handleError(err);
+            }
         )
       );
 

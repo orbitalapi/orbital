@@ -134,6 +134,13 @@ export class AuthService {
     }
   }
 
+   async doSilentRefresh(): Promise<void> {
+    await this.oauthService.silentRefresh();
+   }
+
+   tokenEndPoint(): string {
+      return this.oauthService.tokenEndpoint;
+   }
   async logoutOidc(): Promise<void> {
     await this.oauthService.revokeTokenAndLogout();
   }
