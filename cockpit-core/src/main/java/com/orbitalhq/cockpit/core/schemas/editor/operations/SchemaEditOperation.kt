@@ -36,8 +36,8 @@ enum class EditKind(
    ChangeOperationReturnType(13),
    EditMemberDescription(14),
    ChangeInheritedType(15),
-   AddHttpEndpointToQuery(16),
-   AddWebsocketEndpointToQuery(16),
+   AddOrRemoveHttpEndpointAnnotation(16),
+   AddOrRemoveWebsocketEndpointAnnotation(16),
 }
 
 @JsonTypeInfo(
@@ -54,8 +54,8 @@ enum class EditKind(
    JsonSubTypes.Type(ChangeOperationReturnType::class, name = "ChangeOperationReturnType"),
    JsonSubTypes.Type(EditMemberDescription::class, name = "EditMemberDescription"),
    JsonSubTypes.Type(ChangeInheritedType::class, name = "ChangeInheritedType"),
-   JsonSubTypes.Type(AddHttpEndpointToQuery::class, name = "AddHttpEndpointToQuery"),
-   JsonSubTypes.Type(AddWebsocketEndpointToQuery::class, name = "AddWebsocketEndpointToQuery"),
+   JsonSubTypes.Type(AddOrRemoveHttpEndpointAnnotation::class, name = "AddOrRemoveHttpEndpointAnnotation"),
+   JsonSubTypes.Type(AddOrRemoveWebsocketEndpointAnnotation::class, name = "AddOrRemoveWebsocketEndpointAnnotation"),
 )
 abstract class SchemaEditOperation {
    abstract fun applyTo(
@@ -86,6 +86,7 @@ abstract class SchemaEditOperation {
     * Respects existing imports, and handles where no imports exist
     */
    protected fun addImports(typeNamesToImport: List<String>, token: ParserRuleContext):SourceEdit {
+      // only want to import if it doesn't exist already right?
       val range = getInsertionLocationToAppendImport(token)
       return SourceEdit(
          sourceName = token.source().sourceName,

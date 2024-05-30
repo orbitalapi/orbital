@@ -112,8 +112,8 @@ export type EditKind =
   'ChangeOperationParameterType' |
   'EditMemberDescription' |
   'ChangeInheritedType' |
-  'AddHttpEndpointToQuery' |
-  'AddWebsocketEndpointToQuery'
+  'AddOrRemoveHttpEndpointAnnotation' |
+  'AddOrRemoveWebsocketEndpointAnnotation'
 
 export interface SchemaEditOperation {
   editKind: EditKind
@@ -172,17 +172,19 @@ export interface ChangeInheritedTypeEvent extends SchemaEditOperation {
   newBaseType: QualifiedName
 }
 
-export interface AddHttpEndpointToQueryEvent extends SchemaEditOperation {
-  editKind: 'AddHttpEndpointToQuery'
+interface AddOrRemoveEndpointAnnotationBaseEvent extends SchemaEditOperation {
   queryQualifiedName: QualifiedName
   path: string
-  method: HttpMethod
+  operation: 'Add' | 'Remove'
 }
 
-export interface AddWebsocketEndpointToQueryEvent extends SchemaEditOperation {
-  editKind: 'AddWebsocketEndpointToQuery'
-  queryQualifiedName: QualifiedName
-  path: string
+export interface AddOrRemoveHttpEndpointAnnotationEvent extends AddOrRemoveEndpointAnnotationBaseEvent {
+  editKind: 'AddOrRemoveHttpEndpointAnnotation'
+  method: HttpMethod,
+}
+
+export interface AddOrRemoveWebsocketEndpointAnnotationEvent extends AddOrRemoveEndpointAnnotationBaseEvent {
+  editKind: 'AddOrRemoveWebsocketEndpointAnnotation'
 }
 
 export interface SchemaConversionRequest {

@@ -17,7 +17,7 @@
       <button *tuiItem tuiTab class="tab-button">
         {{query.tabName}}
         <img
-          *ngIf="query.savedQueryWithSource?.savedQuery.httpEndpoint"
+          *ngIf="query.savedQueryWithSource?.savedQuery.httpEndpoint || query.savedQueryWithSource?.savedQuery.websocketOperation"
           src="assets/img/tabler/broadcast.svg"
           class="endpoint-published-icon"
           [class.is-active]="queryPanelStore.activeTabIndex() === i"

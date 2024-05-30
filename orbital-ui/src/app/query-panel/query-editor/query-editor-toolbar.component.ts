@@ -18,16 +18,28 @@ import {SavedQueryWithSource} from '../../project-import/schema-importer.service
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-query-editor-toolbar',
   template: `
-    <div *ngIf="savedQuery()?.savedQuery.httpEndpoint" class="published-endpoint">
-      <a [routerLink]="'/endpoints/'+savedQuery()?.savedQuery.name.shortDisplayName" class="endpoint-link">
-        <img src="assets/img/tabler/broadcast.svg" class="filter-link-color">
-        {{savedQuery()?.savedQuery.name.shortDisplayName}}
-      </a> :
-      <span class="mono-badge">{{savedQuery()?.savedQuery.httpEndpoint.method}}</span>
-      <a [href]="savedQuery()?.savedQuery.httpEndpoint.url" target="_blank" class="endpoint-path">
-        {{savedQuery()?.savedQuery.httpEndpoint.url}}
-        <img src="assets/img/tabler/external-link.svg" class="filter-link-color">
-      </a>
+    <div class="published-endpoint-container">
+      <div *ngIf="savedQuery()?.savedQuery.httpEndpoint" class="published-endpoint">
+        <a [routerLink]="'/endpoints/'+savedQuery()?.savedQuery.name.shortDisplayName" class="endpoint-link">
+          <img src="assets/img/tabler/broadcast.svg" class="filter-link-color">
+          {{savedQuery()?.savedQuery.name.shortDisplayName}}
+        </a> :
+        <span class="mono-badge">{{savedQuery()?.savedQuery.httpEndpoint.method}}</span>
+        <a [href]="savedQuery()?.savedQuery.httpEndpoint.url" target="_blank" class="endpoint-path">
+          {{savedQuery()?.savedQuery.httpEndpoint.url}}
+          <img src="assets/img/tabler/external-link.svg" class="filter-link-color">
+        </a>
+      </div>
+      <div *ngIf="savedQuery()?.savedQuery.websocketOperation" class="published-endpoint">
+        <a [routerLink]="'/endpoints/'+savedQuery()?.savedQuery.name.shortDisplayName" class="endpoint-link">
+          <img src="assets/img/tabler/broadcast.svg" class="filter-link-color">
+          {{savedQuery()?.savedQuery.name.shortDisplayName}}
+        </a> :
+        <a [href]="savedQuery()?.savedQuery.websocketOperation.path" target="_blank" class="endpoint-path">
+          {{savedQuery()?.savedQuery.websocketOperation.path}}
+          <img src="assets/img/tabler/external-link.svg" class="filter-link-color">
+        </a>
+      </div>
     </div>
     <div *ngIf="currentState() === 'Running'">
       <span class='running-timer has-separator'>
@@ -120,7 +132,7 @@ import {SavedQueryWithSource} from '../../project-import/schema-importer.service
                 tuiHintAppearance="onDark"
                 [disabled]="!resultType"
         >
-          As code
+          As code...
         </button>
       </tui-data-list>
     </ng-template>
@@ -158,11 +170,17 @@ import {SavedQueryWithSource} from '../../project-import/schema-importer.service
       <tui-data-list>
         @switch (savedQuery().savedQuery.queryKind) {
           @case ('Query') {
-            <button tuiOption (click)="publishAsHttpEndpoint.emit()">As HTTP Endpoint</button>
+            <button tuiOption (click)="publishAsHttpEndpoint.emit()">
+              {{savedQuery().savedQuery.httpEndpoint ? 'Remove' : 'Publish as'}} HTTP Endpoint...
+            </button>
           }
           @case ('Stream') {
-            <button tuiOption (click)="publishAsHttpEndpoint.emit()">As Server Sent Events</button>
-            <button tuiOption (click)="publishAsWebsocketpoint.emit()">As Websocket Endpoint</button>
+            <button tuiOption (click)="publishAsHttpEndpoint.emit()">
+              {{savedQuery().savedQuery.httpEndpoint ? 'Remove' : 'Publish as'}} Server Sent Event...
+            </button>
+            <button tuiOption (click)="publishAsWebsocketpoint.emit()">
+              {{savedQuery().savedQuery.websocketOperation ? 'Remove' : 'Publish as'}} Websocket Endpoint...
+            </button>
           }
         }
       </tui-data-list>

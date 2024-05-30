@@ -3,9 +3,9 @@
 :host {
   display: flex;
   gap: 0.15rem;
-  justify-content: right;
+  align-items: center;
   background: $gray-200;
-  padding: 0.4rem 1rem;
+  padding: 0.35rem 1rem 0.35rem 0.5rem;
   border-bottom: 1px solid $gray-300;
   border-top: 1px solid $gray-300;
 }
@@ -73,8 +73,12 @@ button {
   }
 }
 
-.published-endpoint {
+.published-endpoint-container {
+  display: flex;
   flex: auto;
+}
+
+.published-endpoint {
   align-items: center;
   display: flex;
   flex-direction: row;
@@ -92,6 +96,12 @@ button {
 
   .mono-badge {
     margin-top: 0;
+  }
+
+  &:first-child:not(only-child) {
+    padding-right: 0.5rem;
+    margin-right: 0.5rem;
+    border-right: 1px solid $gray-300;
   }
 }
 
