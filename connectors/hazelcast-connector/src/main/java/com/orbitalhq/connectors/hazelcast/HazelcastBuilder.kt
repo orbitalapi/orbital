@@ -3,7 +3,7 @@ package com.orbitalhq.connectors.hazelcast
 import com.hazelcast.client.HazelcastClient
 import com.hazelcast.client.config.ClientConfig
 import com.hazelcast.config.SSLConfig
-import com.hazelcast.config.SerializationConfig
+import com.hazelcast.config.SerializerConfig
 import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
 
@@ -13,8 +13,10 @@ object HazelcastBuilder {
          config.hazelcastClusterName()?.let {
             clusterName = it
          }
-         serializationConfig.compactSerializationConfig
-            .addSerializer(ExpiringByteArraySerializer())
+         serializationConfig.addSerializerConfig(SerializerConfig().apply {
+            implementation = ExpiringByteArrayCustomSerializer()
+            typeClass = ExpiringByteArray::class.java
+         })
          config.hazelcastClientName()?.let {
             instanceName = "${it}$instanceNameSuffix"
          }

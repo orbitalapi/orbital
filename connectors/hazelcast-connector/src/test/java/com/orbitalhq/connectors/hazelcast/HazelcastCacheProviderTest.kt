@@ -1,6 +1,7 @@
 package com.orbitalhq.connectors.hazelcast
 
 import com.hazelcast.config.Config
+import com.hazelcast.config.SerializerConfig
 import com.hazelcast.core.Hazelcast.newHazelcastInstance
 import com.hazelcast.core.HazelcastInstance
 import com.nhaarman.mockito_kotlin.mock
@@ -9,7 +10,6 @@ import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.query.CacheExchange
-import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.query.connectors.OperationInvocationParamMessage
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.consumer.SimpleSchemaStore
@@ -50,11 +50,15 @@ class HazelcastCacheProviderTest : DescribeSpec({
 
 
       beforeTest {
+         clock = ManualClock(Instant.now())
          hazelcast = newHazelcastInstance(Config().apply {
-            serializationConfig.compactSerializationConfig.addSerializer(ExpiringByteArraySerializer())
+            serializationConfig.addSerializerConfig(SerializerConfig().apply {
+               implementation = ExpiringByteArrayCustomSerializer(clock)
+               typeClass = ExpiringByteArray::class.java
+            })
          })
 
-         clock = ManualClock(Instant.now())
+
          cacheProvider = HazelcastOperationCacheProvider(
             hazelcast,
             schemaStore,

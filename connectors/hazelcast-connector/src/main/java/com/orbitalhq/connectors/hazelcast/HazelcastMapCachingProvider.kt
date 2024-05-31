@@ -1,6 +1,9 @@
 package com.orbitalhq.connectors.hazelcast
 
 import com.hazelcast.core.HazelcastInstance
+import com.hazelcast.nio.ObjectDataInput
+import com.hazelcast.nio.ObjectDataOutput
+import com.hazelcast.nio.serialization.StreamSerializer
 import com.hazelcast.nio.serialization.compact.CompactReader
 import com.hazelcast.nio.serialization.compact.CompactSerializer
 import com.hazelcast.nio.serialization.compact.CompactWriter
@@ -116,10 +119,6 @@ class HazelcastMapCachingProvider(
       // Use Mono.create() to ensure the map reading below doesn't happen
       // on the main thread
       return Mono.create { sink ->
-
-
-
-
          // Design choice: use map.compute()...
          // We've tried multiple approaches here.
          // We need an async, atomic way to ensure the loader is only invoked once.
@@ -287,7 +286,35 @@ private data class UpdateTtlEvent(val key: String, val expiresAt: Instant, val a
 
 }
 
-class ExpiringByteArraySerializer : CompactSerializer<ExpiringByteArray> {
+class ExpiringByteArrayCustomSerializer(private val clock: Clock = Clock.systemUTC()) : StreamSerializer<ExpiringByteArray> {
+   override fun getTypeId(): Int {
+      return ExpiringByteArray::class.java.hashCode()
+   }
+
+   override fun read(input: ObjectDataInput): ExpiringByteArray {
+      val expirationDate = input.readLong()
+      // If this is already expired, don't bother reading any further
+      if (expirationDate < clock.instant().toEpochMilli()) {
+         return ExpiringByteArray(expirationDate, emptyList())
+      }
+
+      val listSize = input.readInt()
+      val byteArrayList = mutableListOf<ByteArray>()
+      for (i in 0 until listSize) {
+         val bytes = input.readByteArray() ?: error("Expected to find a byteArray at index $i, but value was null")
+         byteArrayList.add(bytes)
+      }
+      return ExpiringByteArray(expirationDate,byteArrayList)
+   }
+
+   override fun write(out: ObjectDataOutput, value: ExpiringByteArray) {
+      out.writeLong(value.expiresAt ?: -1)
+      out.writeInt(value.value.size)
+      value.value.forEach { out.writeByteArray(it) }
+   }
+
+}
+class ExpiringByteArrayCompactSerializer : CompactSerializer<ExpiringByteArray> {
    override fun read(reader: CompactReader): ExpiringByteArray {
       val expiresAt = reader.readNullableInt64("expiresAt")
       val listSize = reader.readInt32("listSize")
