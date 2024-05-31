@@ -56,6 +56,11 @@ class HazelcastCacheProviderTest : DescribeSpec({
                implementation = ExpiringByteArrayCustomSerializer(clock)
                typeClass = ExpiringByteArray::class.java
             })
+
+            serializationConfig.addSerializerConfig(SerializerConfig().apply {
+               implementation = ExpiringTypedInstanceCustomSerializer(schemaStore, clock)
+               typeClass = ExpiringTypedInstance::class.java
+            })
          })
 
 

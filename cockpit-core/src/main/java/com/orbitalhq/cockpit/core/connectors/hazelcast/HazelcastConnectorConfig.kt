@@ -12,8 +12,8 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 class HazelcastConnectorConfig {
    @Bean
-   fun hazelcastConnectionsManager(connectors: SourceLoaderConnectorsRegistry): HazelcastConnectionsManager {
-      return HazelcastConnectionsManager(connectors)
+   fun hazelcastConnectionsManager(connectors: SourceLoaderConnectorsRegistry, schemaStore: SchemaStore): HazelcastConnectionsManager {
+      return HazelcastConnectionsManager(connectors, schemaStore)
 
    }
    @Bean

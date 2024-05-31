@@ -17,6 +17,7 @@ import java.time.Clock
 import java.time.Duration
 
 private val logger = KotlinLogging.logger {}
+
 class HazelcastOperationCacheProvider(
    private val hazelcast: HazelcastInstance,
    private val schemaStore: SchemaStore,
@@ -82,7 +83,11 @@ class HazelcastOperationCacheBuilder(
       return hazelcastConnectionsManager.canProvideHazelcastInstance(strategy.connectionName)
    }
 
-   override fun buildOperationCache(strategy: CachingStrategy,  maxCachedOperations: Int, cachedOperationTtl: Duration): OperationCacheProvider {
+   override fun buildOperationCache(
+      strategy: CachingStrategy,
+      maxCachedOperations: Int,
+      cachedOperationTtl: Duration
+   ): OperationCacheProvider {
       require(strategy is RemoteCache)
       val (client, config) = hazelcastConnectionsManager.hazelcastConnection(strategy.connectionName)
       return HazelcastOperationCacheProvider(

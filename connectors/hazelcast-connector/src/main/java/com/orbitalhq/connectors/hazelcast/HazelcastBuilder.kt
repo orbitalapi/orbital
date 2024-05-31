@@ -2,24 +2,43 @@ package com.orbitalhq.connectors.hazelcast
 
 import com.hazelcast.client.HazelcastClient
 import com.hazelcast.client.config.ClientConfig
+import com.hazelcast.config.InMemoryFormat
+import com.hazelcast.config.NearCacheConfig
 import com.hazelcast.config.SSLConfig
 import com.hazelcast.config.SerializerConfig
 import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
+import com.orbitalhq.schema.consumer.SchemaStore
 
 object HazelcastBuilder {
-   fun build(config: HazelcastConfiguration, instanceNameSuffix: String = ""): HazelcastInstance {
+   fun build(config: HazelcastConfiguration, instanceNameSuffix: String = "", schemaStore: SchemaStore): HazelcastInstance {
       val clientConfig = ClientConfig().apply {
          config.hazelcastClusterName()?.let {
             clusterName = it
          }
+
+//         addNearCacheConfig(NearCacheConfig().apply {
+//            name = HazelcastMapCachingProvider.OPERATION_CACHE_NAME
+//            inMemoryFormat = InMemoryFormat.OBJECT
+//            setInvalidateOnChange(true)
+//            timeToLiveSeconds = 3000
+//            setCacheLocalEntries(true)
+//            setMaxIdleSeconds(120)
+//         })
+
          serializationConfig.addSerializerConfig(SerializerConfig().apply {
             implementation = ExpiringByteArrayCustomSerializer()
             typeClass = ExpiringByteArray::class.java
          })
+
+         serializationConfig.addSerializerConfig(SerializerConfig().apply {
+            implementation = ExpiringTypedInstanceCustomSerializer(schemaStore)
+            typeClass = ExpiringTypedInstance::class.java
+         })
          config.hazelcastClientName()?.let {
             instanceName = "${it}$instanceNameSuffix"
          }
+
 
          when {
             config.isSslEnabledCloudConfig() -> {

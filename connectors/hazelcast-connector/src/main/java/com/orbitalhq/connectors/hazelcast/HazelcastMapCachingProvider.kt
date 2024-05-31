@@ -7,9 +7,11 @@ import com.hazelcast.nio.serialization.StreamSerializer
 import com.hazelcast.nio.serialization.compact.CompactReader
 import com.hazelcast.nio.serialization.compact.CompactSerializer
 import com.hazelcast.nio.serialization.compact.CompactWriter
+import com.orbitalhq.models.DataSourceUpdater
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.OperationResultDataSourceWrapper
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.UndefinedSource
 import com.orbitalhq.models.serde.SerializableTypedInstance
 import com.orbitalhq.models.serde.toSerializable
 import com.orbitalhq.query.CacheExchange
@@ -21,6 +23,7 @@ import com.orbitalhq.query.connectors.OperationCacheKey
 import com.orbitalhq.query.connectors.OperationInvocationParamMessage
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemas.fqn
+import com.orbitalhq.utils.StrategyPerformanceProfiler
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -65,7 +68,7 @@ class HazelcastMapCachingProvider(
       private val logger = KotlinLogging.logger {}
    }
 
-   private val map = hazelcast.getMap<String, ExpiringByteArray>(OPERATION_CACHE_NAME)
+   private val map = hazelcast.getMap<String, ExpiringTypedInstance>(OPERATION_CACHE_NAME)
 
    // see startTtlUpdateListener...
    private val updateTtlSink = Sinks.many().unicast().onBackpressureError<UpdateTtlEvent>()
@@ -126,17 +129,23 @@ class HazelcastMapCachingProvider(
          // cannot be run remotely.
          // compute(key) promises atomic processing (so the loader is only invoked once),
          // and runs locally on the client.
-         val byteArray = map.computeIfAbsent(key) { invokeLoader(key, loader, resultsFromLoader) }!!
-         sink.success(byteArray)
-      }.map { expiringByteArray ->
+
+         // Note - use a map.get() before a map.computeIfAbsent()
+         // allows us to read the near-cache first.
+         // The downside is that there will be more cache-misses (this isn't atomic),
+         // but that's an acceptable trade-off,
+         // as the near-cache values do not incur (de)/serialization costs
+         val typedInstance = map[key] ?: map.computeIfAbsent(key) { invokeLoader(key, loader, resultsFromLoader) }!!
+         sink.success(typedInstance)
+      }.map { typedInstance ->
 
          // Edge case: We loaded a value from the cache which is already expired.
          // In this case, force a reload using compute() vs computeIfAbsent()
-         if (expiringByteArray.isExpired(clock)) {
+         if (typedInstance.isExpired(clock)) {
             map.compute(key) { key, _ ->
                invokeLoader(key, loader, resultsFromLoader)
             }!!
-         } else expiringByteArray
+         } else typedInstance
       }
          .flatMapIterable { expiringByteArray ->
 
@@ -150,16 +159,22 @@ class HazelcastMapCachingProvider(
                // ... otherwise we fetched from the cache.
                // This means that we should update the datasource so it shows
                // the cache call and notify the eventDispatcher
-               val byteArrays = expiringByteArray.value
+               val typedInstances = expiringByteArray.instances
+//               val byteArrays = expiringByteArray.value
 
-               val (operationResult, dataSource) = createDatasource(startTime, message, key, byteArrays.size)
+               val (operationResult, dataSource) = createDatasource(startTime, message, key, typedInstances.size)
                message.eventDispatcher.reportRemoteOperationInvoked(operationResult, message.queryId)
 
-               val typedInstances = byteArrays.map { byteArray ->
-                  SerializableTypedInstance.fromBytes(byteArray)
-                     .toTypedInstance(schemaStore.schema(), dataSource = dataSource)
+               val typedInstancesWithUpdatedDataSource = typedInstances.map {
+                  DataSourceUpdater.update(it, dataSource)
                }
-               typedInstances
+
+
+//               val typedInstances = byteArrays.map { byteArray ->
+//                  SerializableTypedInstance.fromBytes(byteArray)
+//                     .toTypedInstance(schemaStore.schema(), dataSource = dataSource)
+//               }
+               typedInstancesWithUpdatedDataSource
             }
          }
          .subscribeOn(Schedulers.boundedElastic())
@@ -169,29 +184,43 @@ class HazelcastMapCachingProvider(
       key: String,
       loader: () -> Flux<TypedInstance>,
       resultsFromCacheMiss: MutableList<TypedInstance>
-   ): ExpiringByteArray {
+   ): ExpiringTypedInstance {
       val invocationReturnValue = loader.invoke()
-      val resultValues: MutableList<Pair<ByteArray, Instant?>> = (invocationReturnValue
-         .mapNotNull { typedInstance ->
-            resultsFromCacheMiss.add(typedInstance)
+      val values = invocationReturnValue
+
+         .map { typedInstance ->
             val expiration = typedInstance.metadata[TypedInstance.EXPIRY_METADATA] as? Instant
-            val bytes = typedInstance.toSerializable().toBytes()
-            bytes to expiration
+            typedInstance to expiration
          }
          .collectList()
-         .block(Duration.ofSeconds(60)))!!
+         .block(Duration.ofSeconds(60))!!
 
-      val (expirationTime, ttl) = calculateTtlFromResults(resultValues, defaultTTL, clock)
-      val resultValueBytes = resultValues.map { it.first }
+      val (expirationTime, ttl) = calculateTtlFromResults(values, defaultTTL, clock)
+      val expiringTypedInstance = ExpiringTypedInstance(expirationTime, values.map { it.first  })
 
-      val expiringByteArray = ExpiringByteArray(expirationTime, resultValueBytes)
+//
+//      val resultValues: MutableList<Pair<ByteArray, Instant?>> = (invocationReturnValue
+//         .mapNotNull { typedInstance ->
+//            resultsFromCacheMiss.add(typedInstance)
+//            val expiration = typedInstance.metadata[TypedInstance.EXPIRY_METADATA] as? Instant
+//            val bytes = typedInstance.toSerializable().toBytes()
+//            bytes to expiration
+//         }
+//         .collectList()
+//         .block(Duration.ofSeconds(60)))!!
+
+//      val (expirationTime, ttl) = calculateTtlFromResults(resultValues, defaultTTL, clock)
+//      val resultValueBytes = resultValues.map { it.first }
+
+//      val expiringByteArray = ExpiringByteArray(expirationTime, resultValueBytes)
 
       // We can't directly set the TTL here, so we queue an instruction to set the ttl in a bit
       updateTtlSink.emitNext(
          UpdateTtlEvent(key, expirationTime),
          Sinks.EmitFailureHandler.busyLooping(Duration.ofSeconds(10))
       )
-      return expiringByteArray
+//      return expiringByteArray
+      return expiringTypedInstance
    }
 
 
@@ -243,6 +272,68 @@ class HazelcastMapCachingProvider(
 
    override fun evict(operationKey: OperationCacheKey) {
       map.remove(operationKey)
+   }
+}
+
+/**
+ * A entry for our map containing an explicit expiration time.
+ * We track this because of a race condition where Hazelcast has not yet removed an entry with a TTL,
+ * even though it has expired.
+ *
+ * In this scenario, we need to treat the value as a cache miss, and re-load from the loader
+ */
+data class ExpiringTypedInstance(val expiresAt: Long?, val instances: List<TypedInstance>) {
+   constructor(expiresAt: Instant?, value: List<TypedInstance>) : this(expiresAt?.toEpochMilli(), value)
+
+   fun isExpired(clock: Clock): Boolean {
+      return when {
+         expiresAt == null -> false
+         else -> expiresAt < clock.instant().toEpochMilli()
+      }
+   }
+}
+
+class ExpiringTypedInstanceCustomSerializer(
+   private val schemaStore: SchemaStore,
+   private val clock: Clock = Clock.systemUTC(),
+   ) : StreamSerializer<ExpiringTypedInstance> {
+   override fun getTypeId(): Int {
+      return ExpiringTypedInstance::class.java.hashCode()
+   }
+
+   override fun write(out: ObjectDataOutput, value: ExpiringTypedInstance) {
+      StrategyPerformanceProfiler.profiled("Hazelcast serialize") {
+         out.writeLong(value.expiresAt ?: -1L)
+         out.writeInt(value.instances.count())
+         value.instances.forEach { typedInstance ->
+            out.writeByteArray(typedInstance.toSerializable()
+               .toBytes())
+         }
+      }
+
+   }
+
+   override fun read(input: ObjectDataInput): ExpiringTypedInstance {
+      val expirationDate = input.readLong()
+      // If this is already expired, don't bother reading any further
+      if (expirationDate != -1L && expirationDate < clock.instant().toEpochMilli()) {
+         return ExpiringTypedInstance(expirationDate, emptyList())
+      }
+
+
+      val typedInstances = mutableListOf<TypedInstance>()
+      StrategyPerformanceProfiler.profiled("Hazelcast deserialize") {
+         val listSize = input.readInt()
+         for (i in 0 until listSize) {
+            val bytes = input.readByteArray() ?: error("Expected to find a byteArray at index $i, but value was null")
+            val typedInstance = SerializableTypedInstance.fromBytes(bytes)
+               .toTypedInstance(schemaStore.schema(), dataSource = UndefinedSource) //we update the data source before returning to the consumer
+            typedInstances.add(typedInstance)
+         }
+      }
+
+
+      return ExpiringTypedInstance(expirationDate, typedInstances)
    }
 }
 
@@ -340,7 +431,7 @@ class ExpiringByteArrayCompactSerializer : CompactSerializer<ExpiringByteArray> 
 }
 
 private fun calculateTtlFromResults(
-   resultValues: List<Pair<ByteArray, Instant?>>,
+   resultValues: List<Pair<out Any, Instant?>>,
    defaultTTL: Duration,
    clock: Clock
 ): Pair<Instant, Duration> {
