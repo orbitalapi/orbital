@@ -8,8 +8,9 @@ import {TuiAlertService, TuiDialogService} from '@taiga-ui/core';
 import {ShareDialogComponent} from 'src/app/voyager/share-dialog/share-dialog.component';
 import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
 import {ActivatedRoute, Params} from '@angular/router';
-import {emptyQueryMessage, StubQueryMessage, StubQueryMessageWithSlug} from "../app/services/query.service";
+import {emptyQueryMessage, StubQueryMessage} from "../app/services/query.service";
 import {isNullOrUndefined} from "../app/utils/utils";
+import {Clipboard} from '@angular/cdk/clipboard';
 
 @Component({
   selector: 'voyager-app',
@@ -20,7 +21,8 @@ import {isNullOrUndefined} from "../app/utils/utils";
                           (clear)="clear()"
       ></playground-toolbar>
       <div class="container">
-        <app-voyager-sidebar [(showDiagram)]="showDiagram" [(showQueryPanel)]="showQueryPanel" (copyDevCode)="copyDevCode()"/>
+        <app-voyager-sidebar [(showDiagram)]="showDiagram" [(showQueryPanel)]="showQueryPanel"
+                             (copyDevCode)="copyDevCode()"/>
         <as-split direction="horizontal" unit="percent" gutterSize="1">
           <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
             <div class="thin-splitter-gutter-icon"></div>
@@ -38,7 +40,8 @@ import {isNullOrUndefined} from "../app/utils/utils";
                   </app-code-editor>
                 </as-split-area>
                 <as-split-area [size]="200" *ngIf="(parsedSchema$ | async)?.hasErrors">
-                  <app-compilation-message-list [compilationMessages]="(parsedSchema$ | async).messages"></app-compilation-message-list>
+                  <app-compilation-message-list
+                    [compilationMessages]="(parsedSchema$ | async).messages"></app-compilation-message-list>
                 </as-split-area>
               </as-split>
             </div>
@@ -88,7 +91,8 @@ export class VoyagerAppComponent {
               @Inject(Injector) private readonly injector: Injector,
               private readonly activatedRoute: ActivatedRoute,
               private readonly changeDetectorRef: ChangeDetectorRef,
-              private readonly alertsService: TuiAlertService
+              private readonly alertsService: TuiAlertService,
+              private readonly clipboard: Clipboard
   ) {
     this.parsedSchema$ = this.codeUpdated$
       .pipe(
@@ -175,7 +179,6 @@ export class VoyagerAppComponent {
   }
 
 
-
   clear() {
     this.setCodeFromExample(emptyQueryMessage())
   }
@@ -202,6 +205,59 @@ export class VoyagerAppComponent {
   }
 
   copyDevCode() {
-    console.log(this.queryMessage)
+    // We do quite a bit of string manipulation to turn the JSON object
+    // into a javascript snippet, where long strings like the query and schema
+    // have actual new-lines (instead of the string "\n"), and are quoted in backticks.
+    const snippet = this.createJavascriptSnippet(this.queryMessage)
+
+    // Even though the string is now correct, if we copy it to the clipboard as-is,
+    // we get the \n output in lines, rather than actual newlines.
+    // So, we stick it in a text area, then copy the value from there.
+    // Create a temporary textarea element to hold the text
+    const textarea = document.createElement('textarea');
+    textarea.value = snippet;
+    document.body.appendChild(textarea);
+
+    // Select the text in the textarea
+    textarea.select();
+    textarea.setSelectionRange(0, 99999); // For mobile devices
+
+    // Copy the text to the clipboard
+    document.execCommand('copy');
+
+    // Remove the temporary textarea element
+    document.body.removeChild(textarea);
+  }
+
+  createJavascriptSnippet(queryMessage:StubQueryMessage):string {
+    // We do quite a bit of string manipulation to turn the JSON object
+    // into a javascript snippet, where long strings like the query and schema
+    // have actual new-lines (instead of the string "\n"), and are quoted in backticks.
+    const wrapperObject = {
+      title: 'Title goes here',
+      slug: 'slug-goes-here',
+      query: "REPLACEME"
+    }
+
+    function asBackTickedString(value: string): string {
+      // replace newline strings with actual newLines
+      const formattedValue = value.replace(/\\n/g, '\n')
+      return "`" + formattedValue + "`"
+    }
+
+    let queryAsJson = JSON.stringify({
+      ...queryMessage,
+      schema: 'SCHEMA_GOES_HERE',
+      query: 'QUERY_GOES_HERE'
+    }, null, 3)
+    queryAsJson = queryAsJson.replace('"SCHEMA_GOES_HERE"', asBackTickedString(queryMessage.schema))
+      .replace('"QUERY_GOES_HERE"', asBackTickedString(queryMessage.query))
+
+    const wrapperObjectJson = JSON.stringify(wrapperObject, null, 3)
+    const exampleAsJs = wrapperObjectJson.replace('"REPLACEME"', queryAsJson);
+    const formattedJsSnippet = `import {StubQueryMessageWithSlug} from "../../app/services/query.service";
+
+export const example: StubQueryMessageWithSlug = ${exampleAsJs}`
+    return formattedJsSnippet
   }
 }

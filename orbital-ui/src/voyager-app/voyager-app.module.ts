@@ -1,7 +1,7 @@
 import {NgModule} from '@angular/core';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {CommonModule} from '@angular/common';
+import {AsyncPipe, CommonModule} from '@angular/common';
 import {AngularSplitModule} from 'angular-split';
 import {CodeEditorModule} from 'src/app/code-editor/code-editor.module';
 import {SchemaDiagramModule} from 'src/app/schema-diagram/schema-diagram.module';
@@ -51,6 +51,7 @@ import {CompilationMessageListModule} from "../app/compilation-message-list/comp
         VoyagerSidebarComponent,
         ExpandingPanelSetModule,
         CompilationMessageListModule,
+        AsyncPipe,
     ],
   declarations: [VoyagerContainerAppComponent, VoyagerAppComponent],
   exports: [VoyagerContainerAppComponent, VoyagerAppComponent],
