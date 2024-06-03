@@ -5,13 +5,17 @@
   gap: 0.15rem;
   align-items: center;
   background: $gray-200;
-  padding: 0.35rem 1rem 0.35rem 0.5rem;
+  padding: 0.35rem 1rem 0.15rem 0.5rem;
   border-bottom: 1px solid $gray-300;
   border-top: 1px solid $gray-300;
 }
 
 button {
   flex-shrink: 0;
+}
+
+.menu-bar-button {
+  margin-bottom: 0.2rem;
 }
 
 .running-timer {
@@ -73,54 +77,16 @@ button {
   }
 }
 
-.published-endpoint-container {
-  display: flex;
-  flex: auto;
-}
-
-.published-endpoint {
-  align-items: center;
-  display: flex;
-  flex-direction: row;
-  gap: 0.25rem;
-
-  .endpoint-link,
-  .endpoint-path {
-    display: inline-flex;
-    color: $sky-500;
-
-    img {
-      margin: 0 0.2rem;
-    }
-  }
-
-  .mono-badge {
-    margin-top: 0;
-  }
-
-  &:first-child:not(only-child) {
-    padding-right: 0.5rem;
-    margin-right: 0.5rem;
-    border-right: 1px solid $gray-300;
-  }
-}
-
-.dropdown-link,
 .button-link {
   display: flex;
   cursor: pointer;
-  padding: 0.25rem 0.2rem 0.25rem 0.4rem;
+  padding: 4px;
 
-  &.is-open,
   &:hover {
     border-radius: 0.25rem;
+    background: $whiteish;
   }
 
-  &:hover {
-    background: $gray-100;
-  }
-
-  &.is-open,
   &:active {
     background: $white;
   }
@@ -131,17 +97,6 @@ button {
   }
 }
 
-.button-link {
-  padding: 4px;
-}
-
-.dropdown-arrow {
-  transition: transform 150ms ease-in-out;
-
-  &_open {
-    transform: rotate(180deg);
-  }
-}
 
 .query-language-dropdown {
   min-width: 6rem;

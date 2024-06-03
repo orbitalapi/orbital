@@ -14,19 +14,19 @@ import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
 import {editor, KeyCode, KeyMod} from 'monaco-editor';
 import {QueryEditorPayload} from '../../services/query-editor.state';
 import {QueryHistorySummary, QueryResult, QueryService} from '../../services/query.service';
-import {QueryLanguage} from './query-editor-toolbar.component';
+import {QueryLanguage} from './query-editor-toolbar/query-editor-toolbar.component';
 import {isQueryResult} from '../result-display/BaseQueryResultComponent';
 import {QualifiedName, VersionedSource} from '../../services/schema';
 import {ExportFormat, ResultsDownloadService} from 'src/app/results-download/results-download.service';
 import {CopyQueryFormat} from 'src/app/query-panel/query-editor/QueryFormatter';
 import {appendToQuery} from './query-code-generator';
-import {SaveQueryDialogComponent, SaveQueryRequestProps} from './save-query-dialog.component';
+import {SaveQueryDialogComponent, SaveQueryRequestProps} from './query-editor-toolbar/save-query-dialog.component';
 import {SavedQuery} from '../../services/types.service';
 import {
   EndpointType,
   PublishEndpointDialogComponent,
   PublishEndpointPanelProps
-} from './publish-endpoint-dialog.component';
+} from './query-editor-toolbar/publish-endpoint-dialog.component';
 import {isNullOrUndefined} from "../../utils/utils";
 import {
   CreateOrReplaceQuery,
@@ -51,6 +51,11 @@ export class QueryEditorComponent {
   //       instead of on the QueryEditorState where they're hard to access
   @Input()
   state: QueryEditorPayload;
+
+  // KLUDGE: this is a computed prop from the QueryEditorStoreService which we need to pass down
+  @Input()
+  existingEndpointPaths: string[];
+
 
   @Output()
   queryChanged = new EventEmitter<{ query: string, chatQuery: string }>();
@@ -136,6 +141,7 @@ export class QueryEditorComponent {
   }
 
   createEndpoint(endpointType: EndpointType) {
+    const existingEndpointPaths =
     this.tuiDialogService.open<SavedQueryWithSource>(new PolymorpheusComponent(PublishEndpointDialogComponent, this.injector),
       {
         size: 'l',
@@ -143,7 +149,8 @@ export class QueryEditorComponent {
           query: this.state.query(),
           previousVersion: this.state.savedQueryWithSource(),
           endpointType,
-          queryKind: this.state.savedQueryWithSource().savedQuery.queryKind
+          queryKind: this.state.savedQueryWithSource().savedQuery.queryKind,
+          existingEndpointPaths: this.existingEndpointPaths
         } as PublishEndpointPanelProps,
         dismissible: true
       }
@@ -155,8 +162,6 @@ export class QueryEditorComponent {
       }
     });
   }
-
-
 
   saveQuery() {
     if (isNullOrUndefined(this.state.savedQueryWithSource())) {
@@ -219,7 +224,6 @@ export class QueryEditorComponent {
         }
       })
   }
-
 
   queryHistoryElementClicked($event: QueryHistorySummary) {
     this.state.query.set($event.taxiQl);

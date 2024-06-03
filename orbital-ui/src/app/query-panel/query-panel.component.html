@@ -43,6 +43,7 @@
 </div>
 <app-query-editor
   [state]="editorStore.activeQueryEditorState().payload"
+  [existingEndpointPaths]="editorStore.existingQueryEndpoints()"
   (queryChanged)="queryPanelStore.updateQuery($event.query, $event.chatQuery)"
   (queryLanguageChanged)="queryPanelStore.updateQueryLanguage($event)"
   (submitQuery)="editorStore.submitQuery()"

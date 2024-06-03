@@ -8,6 +8,9 @@ import { combineLatestWith, filter, Observable, of } from 'rxjs';
 import { map, mergeMap } from 'rxjs/operators';
 import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
 import { PipelineService, StreamRunningState, StreamStatus } from '../pipelines/pipelines.service';
+import {
+  PublishedEndpointInfoComponent
+} from '../query-panel/query-editor/query-editor-toolbar/published-endpoint-info.component';
 import { SavedQuery } from '../services/types.service';
 import { TypesService } from '../services/types.service';
 import { EndpointMonitorComponent } from './endpoint-monitor.component';
@@ -16,16 +19,14 @@ import { EndpointMonitorComponent } from './endpoint-monitor.component';
   selector: 'app-endpoint-monitor-container',
   standalone: true,
   template: `
-    <app-header-component-layout *ngIf="query$ | async as query" [title]="query?.name.name"
+    <app-header-component-layout *ngIf="query$ | async as query"
+                                 [title]="query?.name.name"
                                  [subtitle]="query.queryKind"
-                                 [iconUrl]="getIconUrl(query.queryKind)"
+                                 backLink="/endpoints"
     >
       <ng-container ngProjectAs="header-components">
-        <div *ngIf="query.httpEndpoint" class="url-parts">
-          <span class="method">{{ query.httpEndpoint.method }}</span>
-          <span class="url">{{ query.httpEndpoint.url }}</span>
-        </div>
-        <div *ngIf="query.queryKind === 'Stream'" class="row">
+        <app-published-endpoint-info [savedQuery]="query" [showTitle]="false"></app-published-endpoint-info>
+        <div *ngIf="query.queryKind === 'Stream'" class="row stream-status-and-toggle">
           <tui-toggle [ngModel]="streamIsRunning" (click)="handleToggleClick($event)" size="l"></tui-toggle>
           <tui-badge size="l" [value]="streamStatusBadge.label | titlecase"
                      [status]="streamStatusBadge.status"></tui-badge>
@@ -45,7 +46,8 @@ import { EndpointMonitorComponent } from './endpoint-monitor.component';
     TuiToggleModule,
     TuiBadgeModule,
     EndpointMonitorComponent,
-    FormsModule
+    FormsModule,
+    PublishedEndpointInfoComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -59,8 +61,8 @@ export class EndpointMonitorContainerComponent {
 
   get streamStatusBadge() {
     return {
-      label: this.streamStatus?.state,
-      status: this.streamIsRunning ? 'success' : 'warning' as TuiStatus
+      label: this.streamStatus?.state || 'Unknown',
+      status: this.streamIsRunning ? 'success' : this.streamStatus?.state ? 'warning' : null as TuiStatus
     }
   }
 

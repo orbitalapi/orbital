@@ -2,45 +2,27 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  EventEmitter, input,
+  EventEmitter,
+  input,
   Input,
   Output,
   WritableSignal
 } from '@angular/core';
-import {RunningQueryStatus} from '../../services/active-queries-notification-service';
+import {RunningQueryStatus} from '../../../services/active-queries-notification-service';
 import {CopyQueryFormat} from 'src/app/query-panel/query-editor/QueryFormatter';
 import {AppInfoService, AppConfig} from 'src/app/services/app-info.service';
 import {isNullOrUndefined} from 'src/app/utils/utils';
-import {Type} from '../../services/schema';
-import {SavedQueryWithSource} from '../../project-import/schema-importer.service';
+import {Type} from '../../../services/schema';
+import {SavedQueryWithSource} from '../../../project-import/schema-importer.service';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-query-editor-toolbar',
   template: `
-    <div class="published-endpoint-container">
-      <div *ngIf="savedQuery()?.savedQuery.httpEndpoint" class="published-endpoint">
-        <a [routerLink]="'/endpoints/'+savedQuery()?.savedQuery.name.shortDisplayName" class="endpoint-link">
-          <img src="assets/img/tabler/broadcast.svg" class="filter-link-color">
-          {{savedQuery()?.savedQuery.name.shortDisplayName}}
-        </a> :
-        <span class="mono-badge">{{savedQuery()?.savedQuery.httpEndpoint.method}}</span>
-        <a [href]="savedQuery()?.savedQuery.httpEndpoint.url" target="_blank" class="endpoint-path">
-          {{savedQuery()?.savedQuery.httpEndpoint.url}}
-          <img src="assets/img/tabler/external-link.svg" class="filter-link-color">
-        </a>
-      </div>
-      <div *ngIf="savedQuery()?.savedQuery.websocketOperation" class="published-endpoint">
-        <a [routerLink]="'/endpoints/'+savedQuery()?.savedQuery.name.shortDisplayName" class="endpoint-link">
-          <img src="assets/img/tabler/broadcast.svg" class="filter-link-color">
-          {{savedQuery()?.savedQuery.name.shortDisplayName}}
-        </a> :
-        <a [href]="savedQuery()?.savedQuery.websocketOperation.path" target="_blank" class="endpoint-path">
-          {{savedQuery()?.savedQuery.websocketOperation.path}}
-          <img src="assets/img/tabler/external-link.svg" class="filter-link-color">
-        </a>
-      </div>
-    </div>
+    <app-published-endpoint-info
+      [savedQuery]="savedQueryWithSource()?.savedQuery"
+      [showTitle]="true"
+    ></app-published-endpoint-info>
     <div *ngIf="currentState() === 'Running'">
       <span class='running-timer has-separator'>
         <span class='loader'></span>
@@ -64,66 +46,18 @@ import {SavedQueryWithSource} from '../../project-import/schema-importer.service
       </span>
     </div>
 
-    <tui-hosted-dropdown
-      tuiDropdownAlign="left"
-      [content]="queryLanguageDropdown"
-      [(open)]="queryLanguageDropdownOpen"
-    >
-      <a
-        tuiLink
-        class="dropdown-link"
-        [class.is-open]="queryLanguageDropdownOpen"
-        tuiHint="Query language"
-        tuiHintAppearance="onDark"
-        tuiHintDirection="top"
-      >
-        {{queryLanguage}}
-        <tui-svg
-          src="tuiIconChevronDown"
-          class="dropdown-arrow"
-          [class.dropdown-arrow_open]="queryLanguageDropdownOpen"
-        ></tui-svg>
-      </a>
-    </tui-hosted-dropdown>
-    <ng-template
-      #queryLanguageDropdown
-      let-close="close"
-    >
+    <app-dropdown [value]="queryLanguage" hint="Query language" [(isMenuOpen)]="queryLanguageDropdownOpen">
       <tui-data-list class="query-language-dropdown">
         @for (ql of queryLanguages; track ql) {
-          <button tuiOption (click)="queryLanguageChange.emit(ql); close()">
-            {{ql}}
+          <button tuiOption (click)="queryLanguageChange.emit(ql); queryLanguageDropdownOpen = false">
+            {{ ql }}
             <tui-svg *ngIf="ql === queryLanguage" src="tuiIconCheck"></tui-svg>
           </button>
         }
       </tui-data-list>
-    </ng-template>
+    </app-dropdown>
 
-    <tui-hosted-dropdown
-      tuiDropdownAlign="left"
-      [content]="copyMenuDropdown"
-      [(open)]="copyMenuOpen"
-    >
-      <a
-        tuiLink
-        class="dropdown-link"
-        [class.is-open]="copyMenuOpen"
-        tuiHint="Copy..."
-        tuiHintAppearance="onDark"
-        tuiHintDirection="top"
-      >
-        <tui-svg src="tuiIconClipboard"></tui-svg>
-        <tui-svg
-          src="tuiIconChevronDown"
-          class="dropdown-arrow"
-          [class.dropdown-arrow_open]="copyMenuOpen"
-        ></tui-svg>
-      </a>
-    </tui-hosted-dropdown>
-    <ng-template
-      #copyMenuDropdown
-      let-close="close"
-    >
+    <app-dropdown iconUrl="assets/img/tabler/clipboard.svg" hint="Copy query...">
       <tui-data-list>
         <button tuiOption (click)="copyQuery.emit('query')">Query only</button>
         <button tuiOption (click)="copyQuery.emit('curl')">As cURL statement</button>
@@ -135,56 +69,33 @@ import {SavedQueryWithSource} from '../../project-import/schema-importer.service
           As code...
         </button>
       </tui-data-list>
-    </ng-template>
+    </app-dropdown>
 
-    <tui-hosted-dropdown
-      tuiDropdownAlign="left"
-      [content]="publishMenuDropdown"
-      [(open)]="publishMenuOpen"
-      [canOpen]="publishAsHttpEndpointEnabled()"
-      [tuiHint]="!publishAsHttpEndpointEnabled() ? 'You need to save a query before being able to publish it' : null"
-      tuiHintAppearance="onDark"
-      tuiHintDirection="top"
-    >
-      <a
-        tuiLink
-        class="dropdown-link"
-        [class.is-open]="publishMenuOpen"
-        [class.is-disabled]="!publishAsHttpEndpointEnabled()"
-        tuiHint="Publish endpoint..."
-        tuiHintAppearance="onDark"
-        tuiHintDirection="top"
-      >
-        <img src="assets/img/tabler/broadcast.svg">
-        <tui-svg
-          src="tuiIconChevronDown"
-          class="dropdown-arrow"
-          [class.dropdown-arrow_open]="publishMenuOpen"
-        ></tui-svg>
-      </a>
-    </tui-hosted-dropdown>
-    <ng-template
-      #publishMenuDropdown
-      let-close="close"
+    <app-dropdown
+      iconUrl="assets/img/tabler/broadcast.svg"
+      hint="Publish endpoint..."
+      [isDisabled]="!publishEndpointEnabled()"
+      hintWhenDisabled="You need to save a query before being able to publish it"
     >
       <tui-data-list>
-        @switch (savedQuery().savedQuery.queryKind) {
+        @switch (savedQueryWithSource()?.savedQuery.queryKind) {
           @case ('Query') {
             <button tuiOption (click)="publishAsHttpEndpoint.emit()">
-              {{savedQuery().savedQuery.httpEndpoint ? 'Remove' : 'Publish as'}} HTTP Endpoint...
+              {{ savedQueryWithSource().savedQuery.httpEndpoint ? 'Remove' : 'Publish as' }} HTTP Endpoint...
             </button>
           }
           @case ('Stream') {
             <button tuiOption (click)="publishAsHttpEndpoint.emit()">
-              {{savedQuery().savedQuery.httpEndpoint ? 'Remove' : 'Publish as'}} Server Sent Event...
+              {{ savedQueryWithSource().savedQuery.httpEndpoint ? 'Remove' : 'Publish as' }} Server Sent Event...
             </button>
             <button tuiOption (click)="publishAsWebsocketpoint.emit()">
-              {{savedQuery().savedQuery.websocketOperation ? 'Remove' : 'Publish as'}} Websocket Endpoint...
+              {{ savedQueryWithSource().savedQuery.websocketOperation ? 'Remove' : 'Publish as' }} Websocket Endpoint...
             </button>
           }
         }
       </tui-data-list>
-    </ng-template>
+    </app-dropdown>
+
     <a
       tuiLink
       class="button-link"
@@ -244,8 +155,6 @@ export class QueryEditorToolbar {
   config: AppConfig;
 
   queryLanguageDropdownOpen = false;
-  publishMenuOpen = false;
-  copyMenuOpen = false;
 
   constructor(appInfo: AppInfoService) {
       appInfo.getConfig()
@@ -271,8 +180,8 @@ export class QueryEditorToolbar {
   publishAsWebsocketpoint = new EventEmitter();
 
   // NOTE: first usage of an input signal in the codebase!
-  savedQuery = input<SavedQueryWithSource>();
-  publishAsHttpEndpointEnabled = computed(() => !!this.savedQuery())
+  savedQueryWithSource = input<SavedQueryWithSource>();
+  publishEndpointEnabled = computed(() => !!this.savedQueryWithSource())
 
   @Input()
   currentState: WritableSignal<QueryState>;

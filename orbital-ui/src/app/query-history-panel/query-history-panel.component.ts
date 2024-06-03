@@ -23,7 +23,7 @@ import {QueryHistoryStoreService} from '../services/query-history-store.service'
         </app-query-history-entry>
       </div>
       <tui-notification *ngIf='history.value?.length === 0'>
-        No queries have been run yet
+        No queries have finished running yet
       </tui-notification>
       <!-- Show an error message if state is error -->
       <tui-notification *ngIf='history.error' status='error'>

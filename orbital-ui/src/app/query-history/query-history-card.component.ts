@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {QueryHistorySummary} from '../services/query.service';
-import {Timespan} from '../query-panel/query-editor/counter-timer.component';
+import {Timespan} from '../query-panel/query-editor/query-editor-toolbar/counter-timer.component';
 import {Router} from '@angular/router';
 import {isNullOrUndefined} from 'util';
 

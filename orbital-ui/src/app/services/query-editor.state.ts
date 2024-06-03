@@ -11,7 +11,7 @@ import {
   tap,
   windowToggle
 } from 'rxjs/operators';
-import {QueryLanguage, QueryState} from '../query-panel/query-editor/query-editor-toolbar.component';
+import {QueryLanguage, QueryState} from '../query-panel/query-editor/query-editor-toolbar/query-editor-toolbar.component';
 import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
 import {isNullOrUndefined} from '../utils/utils';
 import {ActiveQueriesNotificationService, RunningQueryStatus} from './active-queries-notification-service';

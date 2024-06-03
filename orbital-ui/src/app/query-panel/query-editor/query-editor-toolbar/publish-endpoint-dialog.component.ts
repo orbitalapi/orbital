@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject} from '@angular/core';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
+import {AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {TuiAlertService, TuiDialogContext, TuiNotification} from '@taiga-ui/core';
 import {POLYMORPHEUS_CONTEXT} from '@tinkoff/ng-polymorpheus';
 import {
@@ -10,15 +10,16 @@ import {
   SchemaEdit,
   SchemaEditOperation,
   SchemaImporterService
-} from '../../project-import/schema-importer.service';
-import {QueryKind} from '../../services/types.service';
+} from '../../../project-import/schema-importer.service';
+import {QueryKind} from '../../../services/types.service';
 import {SaveQueryRequestProps} from './save-query-dialog.component';
 
 export type EndpointType = 'HTTP' | 'WEBSOCKET'
 
 export interface PublishEndpointPanelProps extends SaveQueryRequestProps {
   endpointType: EndpointType
-  queryKind: QueryKind
+  queryKind: QueryKind,
+  existingEndpointPaths: string[]
 }
 
 @Component({
@@ -100,7 +101,7 @@ export class PublishEndpointDialogComponent {
   ) {
     this.formGroup = new FormGroup({
       endpoint: new FormControl(null,
-        this.operation === 'Remove' ? null : [Validators.required, Validators.pattern('[A-Za-z0-9_-]+')]),
+        this.operation === 'Remove' ? null : [Validators.required, Validators.pattern('[A-Za-z0-9_-]+'), this.existingEndpointPathValidator()]),
       httpMethod: new FormControl<HttpMethod>('GET', context.data.endpointType === 'HTTP' ? Validators.required : null)
     })
     this.httpMethods = context.data.queryKind === 'Query' ?
@@ -180,6 +181,19 @@ export class PublishEndpointDialogComponent {
         path,
         operation
       } as AddOrRemoveWebsocketEndpointAnnotationEvent
+  }
+
+  private existingEndpointPathValidator(): ValidatorFn {
+    return (control:AbstractControl) : ValidationErrors | null => {
+      if (!control.value) {
+        return null;
+      }
+      const httpValue = this.httpPrefix + control.value;
+      const wsValue = this.websocketPrefix + control.value;
+      const valueExists = this.context.data.existingEndpointPaths.includes(httpValue) ||
+        this.context.data.existingEndpointPaths.includes(wsValue)
+      return valueExists ? {isExisting: true}: null;
+    }
   }
 }
 
