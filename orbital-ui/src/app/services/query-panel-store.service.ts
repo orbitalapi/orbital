@@ -29,7 +29,9 @@ export type LocalStorageQuery = {
 const PERSISTED_QUERIES_LOCAL_STORAGE_KEY: string = 'persistedQueries'
 const DEPRECATED_QUERY_LOCAL_STORAGE_KEY: string = 'persistedQuery'
 
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class QueryPanelStoreService {
   readonly queries: WritableSignal<LocalStorageQuery[]> = signal([]);
   readonly activeQuery: Signal<LocalStorageQuery> = computed(() => this.queries()[this.activeTabIndex()])
@@ -64,7 +66,7 @@ export class QueryPanelStoreService {
     clonedQueries.map(query => query.isActive = false);
     clonedQueries[index].isActive = true;
     this.queries.set(clonedQueries);
-    this.editorStore.activeQueryEditorState.set(this.editorStore.queryEditorStates()[index])
+    this.editorStore.updateActiveQueryEditorStateIndex(index)
   }
 
   addTab(title: string = '', query: string = '', chatQuery: string = '', savedQueryWithSource?: SavedQueryWithSource) {

@@ -74,7 +74,6 @@ import { UiCustomisations } from '../../environments/ui-customisations';
     QueryListComponent,
     QueryHistoryCardComponent,
     ActiveQueryCardComponent],
-  providers: [],
 })
 export class QueryHistoryModule {
 }
