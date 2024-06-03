@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { isNullOrUndefined } from 'util';
-import { Timespan } from '../query-panel/query-editor/counter-timer.component';
+import { Timespan } from '../query-panel/query-editor/query-editor-toolbar/counter-timer.component';
 import { RunningQueryStatus } from '../services/active-queries-notification-service';
 
 @Component({

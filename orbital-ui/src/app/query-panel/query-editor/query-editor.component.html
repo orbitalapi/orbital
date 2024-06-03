@@ -25,7 +25,7 @@
               [queryLanguage]='state.queryLanguage()'
               [runningQueryStatus]='state.queryMetadata() | async'
               [resultType]="state.resultType()"
-              [savedQuery]="state.savedQueryWithSource()"
+              [savedQueryWithSource]="state.savedQueryWithSource()"
               (queryLanguageChange)="queryLanguageChanged.emit($event)"
               (executeQuery)='submitQuery.emit()'
               (cancelQuery)='cancelQuery.emit()'

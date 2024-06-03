@@ -10,7 +10,7 @@ import {ActivatedRoute, Router} from "@angular/router";
 import {
   PipelineService, StreamServerStatusEvent,
 } from "../pipelines/pipelines.service";
-import {map, tap} from "rxjs/operators";
+import {map, tap} from 'rxjs/operators';
 import {ConnectionStatus} from "../db-connection-editor/db-importer.service";
 import {TuiStatus} from "@taiga-ui/kit/types";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
@@ -46,10 +46,14 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
             </td>
             <td>{{ query.queryKind }}</td>
             <td>
-              <div *ngIf="query.httpEndpoint" class="url-parts">
-                <span class="method">{{ query.httpEndpoint.method }}</span>
+              <span *ngIf="query.httpEndpoint" class="url-parts">
+                <span class="mono-badge method">{{ query.httpEndpoint.method }}</span>
                 <span class="url">{{ query.httpEndpoint.url }}</span>
-              </div>
+              </span>
+              <span *ngIf="query.websocketOperation" class="url-parts">
+                <span class="mono-badge method">WS</span>
+                <span class="url">{{ query.websocketOperation.path }}</span>
+              </span>
             </td>
           </tr>
           </tbody>
@@ -86,6 +90,7 @@ export class EndpointListComponent {
               private changeDetector: ChangeDetectorRef) {
     this.queries$ = typeService.getQueries()
       .pipe(
+        map(savedQueries => savedQueries.filter(savedQuery => savedQuery.httpEndpoint || savedQuery.websocketOperation)),
         tap(next => {
           this.hasStreamingQueries = next.some(query => query.queryKind === "Stream")
         })

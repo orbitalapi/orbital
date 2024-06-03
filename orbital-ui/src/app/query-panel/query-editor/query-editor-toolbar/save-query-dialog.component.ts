@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, Inject, Input} from '@angular/core';
-import {PackagesService, SourcePackageDescription} from "../../package-viewer/packages.service";
+import {PackagesService, SourcePackageDescription} from "../../../package-viewer/packages.service";
 import {UntypedFormControl, UntypedFormGroup, Validators} from "@angular/forms";
 import {TUI_VALIDATION_ERRORS} from "@taiga-ui/kit";
 import {TuiAlertService, TuiDialogContext, TuiNotification} from '@taiga-ui/core';
@@ -9,8 +9,8 @@ import {
   SavedQueryWithSource,
   SchemaEdit,
   SchemaImporterService
-} from '../../project-import/schema-importer.service';
-import {VersionedSource} from '../../services/schema';
+} from '../../../project-import/schema-importer.service';
+import {VersionedSource} from '../../../services/schema';
 
 export interface SaveQueryRequestProps {
   query: string,

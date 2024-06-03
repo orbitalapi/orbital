@@ -1,10 +1,10 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { Inject, Injectable, Injector, signal, WritableSignal } from '@angular/core';
+import {computed, Inject, Injectable, Injector, Signal, signal, WritableSignal} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TuiAlertService, TuiDialogService, TuiNotification } from '@taiga-ui/core';
 import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
 import { ReplaySubject } from 'rxjs';
-import { QueryLanguage } from '../query-panel/query-editor/query-editor-toolbar.component';
+import { QueryLanguage } from '../query-panel/query-editor/query-editor-toolbar/query-editor-toolbar.component';
 import { copyQueryAs, CopyQueryFormat } from '../query-panel/query-editor/QueryFormatter';
 import { QueryResultInstanceSelectedEvent } from '../query-panel/result-display/BaseQueryResultComponent';
 import {
@@ -22,6 +22,16 @@ import { TypesService } from './types.service';
 export class QueryEditorStoreService {
   readonly queryEditorStates: WritableSignal<QueryEditorState[]> = signal([])
   readonly activeQueryEditorState: WritableSignal<QueryEditorState> = signal(null);
+  readonly existingQueryEndpoints: Signal<string[]> = computed(() => {
+    return this.queryEditorStates().reduce((accum, query) => {
+
+      const url = query.payload.savedQueryWithSource()?.savedQuery.httpEndpoint?.url;
+      const path = query.payload.savedQueryWithSource()?.savedQuery.websocketOperation?.path;
+      if (url) accum.push(url)
+      if (path) accum.push(path)
+      return accum
+    }, [])
+  })
 
   schema: Schema
 
@@ -44,7 +54,6 @@ export class QueryEditorStoreService {
       .pipe(takeUntilDestroyed())
       .subscribe(schema => this.schema = schema);
   }
-
 
   addQueryEditorState(localStorageQuery: LocalStorageQuery) {
     this.queryEditorStates.update(tabs => {

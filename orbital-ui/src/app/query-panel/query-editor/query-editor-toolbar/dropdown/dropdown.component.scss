@@ -1,0 +1,31 @@
+@import "src/common";
+
+.dropdown-link {
+  display: flex;
+  cursor: pointer;
+  padding: 0.25rem 0.15rem 0.25rem 0.35rem;
+
+  &.is-open,
+  &:hover {
+    border-radius: 0.25rem;
+    background: $whiteish;
+  }
+
+  &.is-open,
+  &:active {
+    background: $white;
+  }
+
+  &.is-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+.dropdown-arrow {
+  transition: transform 150ms ease-in-out;
+
+  &_open {
+    transform: rotate(180deg);
+  }
+}

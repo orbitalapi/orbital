@@ -6,18 +6,15 @@
   @include orbital-table-with-selectable-rows();
 }
 
-.method {
-  font-family: $mono;
-  background-color: $slate-300;
-  border-radius: 4px;
-
-  padding: 0.2rem 0.4rem;
-  margin-right: 0.5rem;
-}
-
 .url-parts {
   font-size: 0.8rem;
   font-family: $mono;
-  display: flex;
+  display: inline-table;
   align-items: center;
+
+  &:first-child:not(:only-child) {
+    padding-right: 0.6rem;
+    margin-right: 0.5rem;
+    border-right: 1px solid $gray-300;
+  }
 }

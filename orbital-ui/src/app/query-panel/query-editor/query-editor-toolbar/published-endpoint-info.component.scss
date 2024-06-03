@@ -1,0 +1,54 @@
+@import "src/common";
+
+:host {
+  display: flex;
+  flex: auto;
+}
+
+.published-endpoint {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 0.25rem;
+
+  .endpoint-link,
+  .endpoint-path {
+    display: inline-flex;
+    align-items: center;
+
+    img {
+      margin: 0 0.2rem;
+      cursor: pointer;
+    }
+  }
+
+  .endpoint-link {
+    text-decoration: none;
+    color: $primary;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .endpoint-path {
+    img {
+      margin-top: 0.1rem;
+      opacity: 0.8;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+
+  .mono-badge {
+    margin-top: 0;
+  }
+
+  &:first-child:not(:only-child) {
+    padding-right: 0.25rem;
+    margin-right: 0.5rem;
+    border-right: 1px solid $gray-300;
+  }
+}

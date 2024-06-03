@@ -8,7 +8,7 @@ import {
   signal,
   WritableSignal
 } from '@angular/core';
-import {QueryLanguage} from '../query-panel/query-editor/query-editor-toolbar.component';
+import {QueryLanguage} from '../query-panel/query-editor/query-editor-toolbar/query-editor-toolbar.component';
 import {QueryEditorStoreService} from './query-editor-store.service';
 import {
   dangerouslyConvertToSavedQueryWithSource,
@@ -21,7 +21,6 @@ export type LocalStorageQuery = {
   tabName: string,
   isActive: boolean,
   savedQueryWithSource: SavedQueryWithSource,
-  // isPublished: boolean, // TODO: implement this
   query: string,
   chatQuery: string,
   queryLanguage: QueryLanguage
